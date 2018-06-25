@@ -15,15 +15,15 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.map.impl.CommitResult;
+import io.atomix.core.transaction.impl.CommitResult;
 import io.atomix.core.map.impl.ConsistentMapProxyBuilder;
 import io.atomix.core.map.impl.ConsistentMapResource;
 import io.atomix.core.map.impl.ConsistentMapService;
 import io.atomix.core.map.impl.DefaultConsistentMapService;
 import io.atomix.core.map.impl.MapEntryUpdateResult;
 import io.atomix.core.map.impl.MapUpdate;
-import io.atomix.core.map.impl.PrepareResult;
-import io.atomix.core.map.impl.RollbackResult;
+import io.atomix.core.transaction.impl.PrepareResult;
+import io.atomix.core.transaction.impl.RollbackResult;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.PrimitiveManagementService;

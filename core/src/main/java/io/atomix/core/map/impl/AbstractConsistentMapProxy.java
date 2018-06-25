@@ -28,11 +28,13 @@ import io.atomix.core.collection.DistributedCollectionType;
 import io.atomix.core.collection.DistributedSet;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
 import io.atomix.core.collection.impl.BlockingDistributedSet;
+import io.atomix.core.collection.impl.SetUpdate;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
+import io.atomix.core.transaction.impl.PrepareResult;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.PrimitiveException;
@@ -323,7 +325,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
 
     return Futures.allOf(transactionsByMap.entrySet()
         .stream()
-        .map(e -> getProxyClient().applyOn(e.getKey(), service -> service.prepare(transactionLog))
+        .map(e -> getProxyClient().applyOn(e.getKey(), service -> service.prepare(e.getValue()))
             .thenApply(v -> v == PrepareResult.OK || v == PrepareResult.PARTIAL_FAILURE))
         .collect(Collectors.toList()))
         .thenApply(list -> list.stream().reduce(Boolean::logicalAnd).orElse(true));
@@ -485,6 +487,21 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
     public CompletableFuture<Void> close() {
       return CompletableFuture.completedFuture(null);
     }
+
+    @Override
+    public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<Entry<String, Versioned<byte[]>>>> transactionLog) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompletableFuture<Void> commit(TransactionId transactionId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompletableFuture<Void> rollback(TransactionId transactionId) {
+      throw new UnsupportedOperationException();
+    }
   }
 
   /**
@@ -606,6 +623,21 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
     @Override
     public CompletableFuture<Void> close() {
       return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<String>> transactionLog) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompletableFuture<Void> commit(TransactionId transactionId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompletableFuture<Void> rollback(TransactionId transactionId) {
+      throw new UnsupportedOperationException();
     }
   }
 

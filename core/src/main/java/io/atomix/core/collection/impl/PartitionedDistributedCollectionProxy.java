@@ -23,6 +23,7 @@ import io.atomix.core.collection.AsyncIterator;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.primitive.AbstractAsyncPrimitive;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.partition.PartitionId;
@@ -71,12 +72,14 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
 
   @Override
   public CompletableFuture<Boolean> add(String element) {
-    return getProxyClient().applyBy(element, service -> service.add(element));
+    return getProxyClient().applyBy(element, service -> service.add(element))
+        .thenCompose(result -> checkLocked(result));
   }
 
   @Override
   public CompletableFuture<Boolean> remove(String element) {
-    return getProxyClient().applyBy(element, service -> service.remove(element));
+    return getProxyClient().applyBy(element, service -> service.remove(element))
+        .thenCompose(result -> checkLocked(result));
   }
 
   @Override
@@ -90,7 +93,8 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
     c.forEach(key -> partitions.computeIfAbsent(getProxyClient().getPartitionId(key), k -> Lists.newArrayList()).add(key));
     return Futures.allOf(partitions.entrySet().stream()
         .map(entry -> getProxyClient()
-            .applyOn(entry.getKey(), service -> service.addAll(entry.getValue())))
+            .applyOn(entry.getKey(), service -> service.addAll(entry.getValue()))
+            .thenCompose(result -> checkLocked(result)))
         .collect(Collectors.toList()))
         .thenApply(results -> results.stream().reduce(Boolean::logicalOr).orElse(false));
   }
@@ -112,7 +116,8 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
     c.forEach(key -> partitions.computeIfAbsent(getProxyClient().getPartitionId(key), k -> Lists.newArrayList()).add(key));
     return Futures.allOf(partitions.entrySet().stream()
         .map(entry -> getProxyClient()
-            .applyOn(entry.getKey(), service -> service.retainAll(entry.getValue())))
+            .applyOn(entry.getKey(), service -> service.retainAll(entry.getValue()))
+            .thenCompose(result -> checkLocked(result)))
         .collect(Collectors.toList()))
         .thenApply(results -> results.stream().reduce(Boolean::logicalOr).orElse(false));
   }
@@ -123,9 +128,17 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
     c.forEach(key -> partitions.computeIfAbsent(getProxyClient().getPartitionId(key), k -> Lists.newArrayList()).add(key));
     return Futures.allOf(partitions.entrySet().stream()
         .map(entry -> getProxyClient()
-            .applyOn(entry.getKey(), service -> service.removeAll(entry.getValue())))
+            .applyOn(entry.getKey(), service -> service.removeAll(entry.getValue()))
+            .thenCompose(result -> checkLocked(result)))
         .collect(Collectors.toList()))
         .thenApply(results -> results.stream().reduce(Boolean::logicalOr).orElse(false));
+  }
+
+  protected <T> CompletableFuture<T> checkLocked(CollectionUpdateResult<T> result) {
+    if (result.status() == CollectionUpdateResult.Status.WRITE_LOCK_CONFLICT) {
+      return Futures.exceptionalFuture(new PrimitiveException.ConcurrentModification());
+    }
+    return CompletableFuture.completedFuture(result.result());
   }
 
   @Override

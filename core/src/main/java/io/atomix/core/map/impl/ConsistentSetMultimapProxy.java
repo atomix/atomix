@@ -30,10 +30,13 @@ import io.atomix.core.collection.DistributedSet;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
 import io.atomix.core.collection.impl.BlockingDistributedMultiset;
 import io.atomix.core.collection.impl.BlockingDistributedSet;
+import io.atomix.core.collection.impl.SetUpdate;
 import io.atomix.core.map.AsyncConsistentMultimap;
 import io.atomix.core.map.ConsistentMultimap;
 import io.atomix.core.map.MultimapEvent;
 import io.atomix.core.map.MultimapEventListener;
+import io.atomix.core.transaction.TransactionId;
+import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveState;
@@ -329,6 +332,21 @@ public class ConsistentSetMultimapProxy
     @Override
     public DistributedSet<String> sync(Duration operationTimeout) {
       return new BlockingDistributedSet<>(this, operationTimeout.toMillis());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<String>> transactionLog) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompletableFuture<Void> commit(TransactionId transactionId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompletableFuture<Void> rollback(TransactionId transactionId) {
+      throw new UnsupportedOperationException();
     }
   }
 

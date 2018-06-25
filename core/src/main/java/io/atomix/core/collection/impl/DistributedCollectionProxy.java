@@ -21,6 +21,7 @@ import io.atomix.core.collection.AsyncIterator;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.primitive.AbstractAsyncPrimitive;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.proxy.ProxyClient;
@@ -65,12 +66,14 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
 
   @Override
   public CompletableFuture<Boolean> add(String element) {
-    return getProxyClient().applyBy(name(), service -> service.add(element));
+    return getProxyClient().applyBy(name(), service -> service.add(element))
+        .thenCompose(result -> checkLocked(result));
   }
 
   @Override
   public CompletableFuture<Boolean> remove(String element) {
-    return getProxyClient().applyBy(name(), service -> service.remove(element));
+    return getProxyClient().applyBy(name(), service -> service.remove(element))
+        .thenCompose(result -> checkLocked(result));
   }
 
   @Override
@@ -80,7 +83,8 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
 
   @Override
   public CompletableFuture<Boolean> addAll(Collection<? extends String> c) {
-    return getProxyClient().applyBy(name(), service -> service.addAll(c));
+    return getProxyClient().applyBy(name(), service -> service.addAll(c))
+        .thenCompose(result -> checkLocked(result));
   }
 
   @Override
@@ -90,12 +94,21 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
 
   @Override
   public CompletableFuture<Boolean> retainAll(Collection<? extends String> c) {
-    return getProxyClient().applyBy(name(), service -> service.removeAll(c));
+    return getProxyClient().applyBy(name(), service -> service.removeAll(c))
+        .thenCompose(result -> checkLocked(result));
   }
 
   @Override
   public CompletableFuture<Boolean> removeAll(Collection<? extends String> c) {
-    return getProxyClient().applyBy(name(), service -> service.removeAll(c));
+    return getProxyClient().applyBy(name(), service -> service.removeAll(c))
+        .thenCompose(result -> checkLocked(result));
+  }
+
+  protected <T> CompletableFuture<T> checkLocked(CollectionUpdateResult<T> result) {
+    if (result.status() == CollectionUpdateResult.Status.WRITE_LOCK_CONFLICT) {
+      return Futures.exceptionalFuture(new PrimitiveException.ConcurrentModification());
+    }
+    return CompletableFuture.completedFuture(result.result());
   }
 
   @Override

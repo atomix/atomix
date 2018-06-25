@@ -17,6 +17,9 @@ package io.atomix.core.map.impl;
 
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
+import io.atomix.core.transaction.impl.CommitResult;
+import io.atomix.core.transaction.impl.PrepareResult;
+import io.atomix.core.transaction.impl.RollbackResult;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
 import io.atomix.utils.time.Versioned;

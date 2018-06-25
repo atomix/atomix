@@ -19,14 +19,19 @@ import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.AsyncDistributedSet;
 import io.atomix.core.collection.DistributedSet;
 import io.atomix.core.collection.DistributedSetType;
+import io.atomix.core.transaction.TransactionId;
+import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Unmodifiable distributed set.
  */
 public class UnmodifiableAsyncDistributedSet<E> extends UnmodifiableAsyncDistributedCollection<E> implements AsyncDistributedSet<E> {
+  private static final String ERROR_MSG = "updates are not allowed";
+
   public UnmodifiableAsyncDistributedSet(AsyncDistributedCollection<E> delegateCollection) {
     super(delegateCollection);
   }
@@ -34,6 +39,21 @@ public class UnmodifiableAsyncDistributedSet<E> extends UnmodifiableAsyncDistrib
   @Override
   public PrimitiveType type() {
     return DistributedSetType.instance();
+  }
+
+  @Override
+  public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<E>> transactionLog) {
+    throw new UnsupportedOperationException(ERROR_MSG);
+  }
+
+  @Override
+  public CompletableFuture<Void> commit(TransactionId transactionId) {
+    throw new UnsupportedOperationException(ERROR_MSG);
+  }
+
+  @Override
+  public CompletableFuture<Void> rollback(TransactionId transactionId) {
+    throw new UnsupportedOperationException(ERROR_MSG);
   }
 
   @Override
