@@ -17,8 +17,8 @@ package io.atomix.core.collection;
 
 import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.collection.impl.DefaultDistributedSetService;
-import io.atomix.core.collection.impl.DistributedSetProxyBuilder;
 import io.atomix.core.collection.impl.DistributedCollectionService;
+import io.atomix.core.collection.impl.DistributedSetProxyBuilder;
 import io.atomix.core.collection.impl.DistributedSetResource;
 import io.atomix.core.collection.impl.SetUpdate;
 import io.atomix.core.transaction.TransactionId;

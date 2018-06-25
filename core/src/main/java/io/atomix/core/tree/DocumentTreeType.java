@@ -15,11 +15,11 @@
  */
 package io.atomix.core.tree;
 
+import io.atomix.core.transaction.TransactionId;
+import io.atomix.core.transaction.TransactionLog;
 import io.atomix.core.transaction.impl.CommitResult;
 import io.atomix.core.transaction.impl.PrepareResult;
 import io.atomix.core.transaction.impl.RollbackResult;
-import io.atomix.core.transaction.TransactionId;
-import io.atomix.core.transaction.TransactionLog;
 import io.atomix.core.tree.impl.DefaultDocumentTreeService;
 import io.atomix.core.tree.impl.DocumentTreeProxyBuilder;
 import io.atomix.core.tree.impl.DocumentTreeResource;

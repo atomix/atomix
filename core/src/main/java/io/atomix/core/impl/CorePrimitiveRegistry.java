@@ -15,11 +15,11 @@
  */
 package io.atomix.core.impl;
 
-import io.atomix.core.map.AsyncConsistentMap;
-import io.atomix.core.map.ConsistentMapType;
-import io.atomix.core.map.impl.ConsistentMapProxy;
-import io.atomix.core.map.impl.ConsistentMapService;
-import io.atomix.core.map.impl.TranscodingAsyncConsistentMap;
+import io.atomix.core.atomic.AsyncAtomicMap;
+import io.atomix.core.atomic.AtomicMapType;
+import io.atomix.core.atomic.impl.AtomicMapProxy;
+import io.atomix.core.atomic.impl.AtomicMapService;
+import io.atomix.core.atomic.impl.TranscodingAsyncAtomicMap;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
 import io.atomix.primitive.PrimitiveException;
@@ -53,7 +53,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   private final PartitionService partitionService;
   private final PrimitiveTypeRegistry primitiveTypeRegistry;
   private final AtomicBoolean started = new AtomicBoolean();
-  private AsyncConsistentMap<String, String> primitives;
+  private AsyncAtomicMap<String, String> primitives;
 
   public CorePrimitiveRegistry(PartitionService partitionService, PrimitiveTypeRegistry primitiveTypeRegistry) {
     this.partitionService = checkNotNull(partitionService);
@@ -111,16 +111,16 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   @SuppressWarnings("unchecked")
   public CompletableFuture<PrimitiveRegistry> start() {
     PrimitiveProtocol protocol = partitionService.getSystemPartitionGroup().newProtocol();
-    ProxyClient<ConsistentMapService> proxy = protocol.newProxy(
+    ProxyClient<AtomicMapService> proxy = protocol.newProxy(
         "primitives",
-        ConsistentMapType.instance(),
-        ConsistentMapService.class,
+        AtomicMapType.instance(),
+        AtomicMapService.class,
         new ServiceConfig(),
         partitionService);
     return proxy.connect()
         .thenApply(v -> {
-          ConsistentMapProxy mapProxy = new ConsistentMapProxy(proxy, this);
-          primitives = new TranscodingAsyncConsistentMap<>(
+          AtomicMapProxy mapProxy = new AtomicMapProxy(proxy, this);
+          primitives = new TranscodingAsyncAtomicMap<>(
               mapProxy,
               key -> key,
               key -> key,

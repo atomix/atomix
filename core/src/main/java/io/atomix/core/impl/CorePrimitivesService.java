@@ -24,9 +24,17 @@ import io.atomix.core.AtomixRegistry;
 import io.atomix.core.ManagedPrimitivesService;
 import io.atomix.core.PrimitivesService;
 import io.atomix.core.atomic.AtomicCounter;
+import io.atomix.core.atomic.AtomicCounterMap;
+import io.atomix.core.atomic.AtomicCounterMapType;
 import io.atomix.core.atomic.AtomicCounterType;
 import io.atomix.core.atomic.AtomicIdGenerator;
 import io.atomix.core.atomic.AtomicIdGeneratorType;
+import io.atomix.core.atomic.AtomicMap;
+import io.atomix.core.atomic.AtomicMapType;
+import io.atomix.core.atomic.AtomicMultimap;
+import io.atomix.core.atomic.AtomicMultimapType;
+import io.atomix.core.atomic.AtomicTreeMap;
+import io.atomix.core.atomic.AtomicTreeMapType;
 import io.atomix.core.atomic.AtomicValue;
 import io.atomix.core.atomic.AtomicValueType;
 import io.atomix.core.collection.DistributedList;
@@ -45,14 +53,6 @@ import io.atomix.core.coordination.LeaderElector;
 import io.atomix.core.coordination.LeaderElectorType;
 import io.atomix.core.coordination.WorkQueue;
 import io.atomix.core.coordination.WorkQueueType;
-import io.atomix.core.map.AtomicCounterMap;
-import io.atomix.core.map.AtomicCounterMapType;
-import io.atomix.core.map.ConsistentMap;
-import io.atomix.core.map.ConsistentMapType;
-import io.atomix.core.map.ConsistentMultimap;
-import io.atomix.core.map.ConsistentMultimapType;
-import io.atomix.core.map.ConsistentTreeMap;
-import io.atomix.core.map.ConsistentTreeMapType;
 import io.atomix.core.transaction.ManagedTransactionService;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionConfig;
@@ -135,8 +135,8 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public <K, V> ConsistentMap<K, V> getConsistentMap(String name) {
-    return getPrimitive(name, ConsistentMapType.instance(), configService.getConfig(name));
+  public <K, V> AtomicMap<K, V> getConsistentMap(String name) {
+    return getPrimitive(name, AtomicMapType.instance(), configService.getConfig(name));
   }
 
   @Override
@@ -145,13 +145,13 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public <V> ConsistentTreeMap<V> getTreeMap(String name) {
-    return getPrimitive(name, ConsistentTreeMapType.instance(), configService.getConfig(name));
+  public <V> AtomicTreeMap<V> getTreeMap(String name) {
+    return getPrimitive(name, AtomicTreeMapType.instance(), configService.getConfig(name));
   }
 
   @Override
-  public <K, V> ConsistentMultimap<K, V> getConsistentMultimap(String name) {
-    return getPrimitive(name, ConsistentMultimapType.instance(), configService.getConfig(name));
+  public <K, V> AtomicMultimap<K, V> getConsistentMultimap(String name) {
+    return getPrimitive(name, AtomicMultimapType.instance(), configService.getConfig(name));
   }
 
   @Override

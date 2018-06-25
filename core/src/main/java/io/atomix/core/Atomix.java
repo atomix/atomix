@@ -32,10 +32,10 @@ import io.atomix.core.coordination.LeaderElection;
 import io.atomix.core.coordination.LeaderElector;
 import io.atomix.core.coordination.WorkQueue;
 import io.atomix.core.impl.CorePrimitivesService;
-import io.atomix.core.map.AtomicCounterMap;
-import io.atomix.core.map.ConsistentMap;
-import io.atomix.core.map.ConsistentMultimap;
-import io.atomix.core.map.ConsistentTreeMap;
+import io.atomix.core.atomic.AtomicCounterMap;
+import io.atomix.core.atomic.AtomicMap;
+import io.atomix.core.atomic.AtomicMultimap;
+import io.atomix.core.atomic.AtomicTreeMap;
 import io.atomix.core.profile.Profile;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionService;
@@ -333,7 +333,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @Override
-  public <K, V> ConsistentMap<K, V> getConsistentMap(String name) {
+  public <K, V> AtomicMap<K, V> getConsistentMap(String name) {
     return primitives.getConsistentMap(name);
   }
 
@@ -343,12 +343,12 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @Override
-  public <V> ConsistentTreeMap<V> getTreeMap(String name) {
+  public <V> AtomicTreeMap<V> getTreeMap(String name) {
     return primitives.getTreeMap(name);
   }
 
   @Override
-  public <K, V> ConsistentMultimap<K, V> getConsistentMultimap(String name) {
+  public <K, V> AtomicMultimap<K, V> getConsistentMultimap(String name) {
     return primitives.getConsistentMultimap(name);
   }
 
