@@ -23,43 +23,43 @@ import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.core.AtomixRegistry;
 import io.atomix.core.ManagedPrimitivesService;
 import io.atomix.core.PrimitivesService;
-import io.atomix.core.atomic.AtomicCounter;
-import io.atomix.core.atomic.AtomicCounterMap;
-import io.atomix.core.atomic.AtomicCounterMapType;
-import io.atomix.core.atomic.AtomicCounterType;
-import io.atomix.core.atomic.AtomicIdGenerator;
-import io.atomix.core.atomic.AtomicIdGeneratorType;
-import io.atomix.core.atomic.AtomicMap;
-import io.atomix.core.atomic.AtomicMapType;
-import io.atomix.core.atomic.AtomicMultimap;
-import io.atomix.core.atomic.AtomicMultimapType;
-import io.atomix.core.atomic.AtomicTreeMap;
-import io.atomix.core.atomic.AtomicTreeMapType;
-import io.atomix.core.atomic.AtomicValue;
-import io.atomix.core.atomic.AtomicValueType;
-import io.atomix.core.collection.DistributedList;
-import io.atomix.core.collection.DistributedListType;
-import io.atomix.core.collection.DistributedQueue;
-import io.atomix.core.collection.DistributedQueueType;
-import io.atomix.core.collection.DistributedSet;
-import io.atomix.core.collection.DistributedSetType;
-import io.atomix.core.concurrent.DistributedLock;
-import io.atomix.core.concurrent.DistributedLockType;
-import io.atomix.core.concurrent.DistributedSemaphore;
-import io.atomix.core.concurrent.DistributedSemaphoreType;
-import io.atomix.core.coordination.LeaderElection;
-import io.atomix.core.coordination.LeaderElectionType;
-import io.atomix.core.coordination.LeaderElector;
-import io.atomix.core.coordination.LeaderElectorType;
-import io.atomix.core.coordination.WorkQueue;
-import io.atomix.core.coordination.WorkQueueType;
+import io.atomix.core.atomic.counter.AtomicCounter;
+import io.atomix.core.atomic.counter.AtomicCounterMap;
+import io.atomix.core.atomic.counter.AtomicCounterType;
+import io.atomix.core.atomic.countermap.AtomicCounterMapType;
+import io.atomix.core.atomic.idgenerator.AtomicIdGenerator;
+import io.atomix.core.atomic.idgenerator.AtomicIdGeneratorType;
+import io.atomix.core.atomic.map.AtomicMap;
+import io.atomix.core.atomic.map.AtomicMapType;
+import io.atomix.core.atomic.multimap.AtomicMultimap;
+import io.atomix.core.atomic.multimap.AtomicMultimapType;
+import io.atomix.core.atomic.tree.AtomicDocumentTree;
+import io.atomix.core.atomic.tree.AtomicDocumentTreeType;
+import io.atomix.core.atomic.treemap.AtomicTreeMap;
+import io.atomix.core.atomic.treemap.AtomicTreeMapType;
+import io.atomix.core.atomic.value.AtomicValue;
+import io.atomix.core.atomic.value.AtomicValueType;
+import io.atomix.core.collection.list.DistributedList;
+import io.atomix.core.collection.list.DistributedListType;
+import io.atomix.core.collection.queue.DistributedQueue;
+import io.atomix.core.collection.queue.DistributedQueueType;
+import io.atomix.core.collection.set.DistributedSet;
+import io.atomix.core.collection.set.DistributedSetType;
+import io.atomix.core.concurrent.lock.DistributedLock;
+import io.atomix.core.concurrent.lock.DistributedLockType;
+import io.atomix.core.concurrent.semaphore.DistributedSemaphore;
+import io.atomix.core.concurrent.semaphore.DistributedSemaphoreType;
+import io.atomix.core.coordination.leadership.LeaderElection;
+import io.atomix.core.coordination.leadership.LeaderElectionType;
+import io.atomix.core.coordination.leadership.LeaderElector;
+import io.atomix.core.coordination.leadership.LeaderElectorType;
+import io.atomix.core.coordination.workqueue.WorkQueue;
+import io.atomix.core.coordination.workqueue.WorkQueueType;
 import io.atomix.core.transaction.ManagedTransactionService;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionConfig;
 import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.transaction.impl.DefaultTransactionBuilder;
-import io.atomix.core.tree.DocumentTree;
-import io.atomix.core.tree.DocumentTreeType;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
@@ -135,22 +135,22 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public <K, V> AtomicMap<K, V> getConsistentMap(String name) {
+  public <K, V> AtomicMap<K, V> getAtomicMap(String name) {
     return getPrimitive(name, AtomicMapType.instance(), configService.getConfig(name));
   }
 
   @Override
-  public <V> DocumentTree<V> getDocumentTree(String name) {
-    return getPrimitive(name, DocumentTreeType.instance(), configService.getConfig(name));
+  public <V> AtomicDocumentTree<V> getAtomicDocumentTree(String name) {
+    return getPrimitive(name, AtomicDocumentTreeType.instance(), configService.getConfig(name));
   }
 
   @Override
-  public <V> AtomicTreeMap<V> getTreeMap(String name) {
+  public <V> AtomicTreeMap<V> getAtomicTreeMap(String name) {
     return getPrimitive(name, AtomicTreeMapType.instance(), configService.getConfig(name));
   }
 
   @Override
-  public <K, V> AtomicMultimap<K, V> getConsistentMultimap(String name) {
+  public <K, V> AtomicMultimap<K, V> getAtomicMultimap(String name) {
     return getPrimitive(name, AtomicMultimapType.instance(), configService.getConfig(name));
   }
 

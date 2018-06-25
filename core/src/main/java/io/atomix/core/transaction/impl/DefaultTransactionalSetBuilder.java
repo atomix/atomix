@@ -15,9 +15,9 @@
  */
 package io.atomix.core.transaction.impl;
 
-import io.atomix.core.collection.DistributedSetBuilder;
-import io.atomix.core.collection.DistributedSetConfig;
-import io.atomix.core.collection.DistributedSetType;
+import io.atomix.core.collection.set.DistributedSetBuilder;
+import io.atomix.core.collection.set.DistributedSetConfig;
+import io.atomix.core.collection.set.DistributedSetType;
 import io.atomix.core.transaction.TransactionalSet;
 import io.atomix.core.transaction.TransactionalSetBuilder;
 import io.atomix.core.transaction.TransactionalSetConfig;

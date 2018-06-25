@@ -20,26 +20,26 @@ import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.core.atomic.AtomicCounter;
-import io.atomix.core.atomic.AtomicIdGenerator;
-import io.atomix.core.atomic.AtomicValue;
-import io.atomix.core.collection.DistributedList;
-import io.atomix.core.collection.DistributedQueue;
-import io.atomix.core.collection.DistributedSet;
-import io.atomix.core.concurrent.DistributedLock;
-import io.atomix.core.concurrent.DistributedSemaphore;
-import io.atomix.core.coordination.LeaderElection;
-import io.atomix.core.coordination.LeaderElector;
-import io.atomix.core.coordination.WorkQueue;
+import io.atomix.core.atomic.counter.AtomicCounter;
+import io.atomix.core.atomic.idgenerator.AtomicIdGenerator;
+import io.atomix.core.atomic.tree.AtomicDocumentTree;
+import io.atomix.core.atomic.value.AtomicValue;
+import io.atomix.core.collection.list.DistributedList;
+import io.atomix.core.collection.queue.DistributedQueue;
+import io.atomix.core.collection.set.DistributedSet;
+import io.atomix.core.concurrent.lock.DistributedLock;
+import io.atomix.core.concurrent.semaphore.DistributedSemaphore;
+import io.atomix.core.coordination.leadership.LeaderElection;
+import io.atomix.core.coordination.leadership.LeaderElector;
+import io.atomix.core.coordination.workqueue.WorkQueue;
 import io.atomix.core.impl.CorePrimitivesService;
-import io.atomix.core.atomic.AtomicCounterMap;
-import io.atomix.core.atomic.AtomicMap;
-import io.atomix.core.atomic.AtomicMultimap;
-import io.atomix.core.atomic.AtomicTreeMap;
+import io.atomix.core.atomic.counter.AtomicCounterMap;
+import io.atomix.core.atomic.map.AtomicMap;
+import io.atomix.core.atomic.multimap.AtomicMultimap;
+import io.atomix.core.atomic.treemap.AtomicTreeMap;
 import io.atomix.core.profile.Profile;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionService;
-import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.utils.config.PartitionGroupConfigMapper;
 import io.atomix.core.utils.config.PolymorphicConfigMapper;
 import io.atomix.core.utils.config.PrimitiveConfigMapper;
@@ -333,23 +333,23 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @Override
-  public <K, V> AtomicMap<K, V> getConsistentMap(String name) {
-    return primitives.getConsistentMap(name);
+  public <K, V> AtomicMap<K, V> getAtomicMap(String name) {
+    return primitives.getAtomicMap(name);
   }
 
   @Override
-  public <V> DocumentTree<V> getDocumentTree(String name) {
-    return primitives.getDocumentTree(name);
+  public <V> AtomicDocumentTree<V> getAtomicDocumentTree(String name) {
+    return primitives.getAtomicDocumentTree(name);
   }
 
   @Override
-  public <V> AtomicTreeMap<V> getTreeMap(String name) {
-    return primitives.getTreeMap(name);
+  public <V> AtomicTreeMap<V> getAtomicTreeMap(String name) {
+    return primitives.getAtomicTreeMap(name);
   }
 
   @Override
-  public <K, V> AtomicMultimap<K, V> getConsistentMultimap(String name) {
-    return primitives.getConsistentMultimap(name);
+  public <K, V> AtomicMultimap<K, V> getAtomicMultimap(String name) {
+    return primitives.getAtomicMultimap(name);
   }
 
   @Override

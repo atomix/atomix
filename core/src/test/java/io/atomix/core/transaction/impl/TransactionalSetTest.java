@@ -16,7 +16,7 @@
 package io.atomix.core.transaction.impl;
 
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.core.collection.DistributedSet;
+import io.atomix.core.collection.set.DistributedSet;
 import io.atomix.core.transaction.CommitStatus;
 import io.atomix.core.transaction.Isolation;
 import io.atomix.core.transaction.Transaction;
