@@ -17,10 +17,22 @@ package io.atomix.core;
 
 import io.atomix.core.atomic.AtomicCounter;
 import io.atomix.core.atomic.AtomicCounterBuilder;
+import io.atomix.core.atomic.AtomicCounterMap;
+import io.atomix.core.atomic.AtomicCounterMapBuilder;
+import io.atomix.core.atomic.AtomicCounterMapType;
 import io.atomix.core.atomic.AtomicCounterType;
 import io.atomix.core.atomic.AtomicIdGenerator;
 import io.atomix.core.atomic.AtomicIdGeneratorBuilder;
 import io.atomix.core.atomic.AtomicIdGeneratorType;
+import io.atomix.core.atomic.AtomicMap;
+import io.atomix.core.atomic.AtomicMapBuilder;
+import io.atomix.core.atomic.AtomicMapType;
+import io.atomix.core.atomic.AtomicMultimap;
+import io.atomix.core.atomic.AtomicMultimapBuilder;
+import io.atomix.core.atomic.AtomicMultimapType;
+import io.atomix.core.atomic.AtomicTreeMap;
+import io.atomix.core.atomic.AtomicTreeMapBuilder;
+import io.atomix.core.atomic.AtomicTreeMapType;
 import io.atomix.core.atomic.AtomicValue;
 import io.atomix.core.atomic.AtomicValueBuilder;
 import io.atomix.core.atomic.AtomicValueType;
@@ -48,18 +60,6 @@ import io.atomix.core.coordination.LeaderElectorType;
 import io.atomix.core.coordination.WorkQueue;
 import io.atomix.core.coordination.WorkQueueBuilder;
 import io.atomix.core.coordination.WorkQueueType;
-import io.atomix.core.map.AtomicCounterMap;
-import io.atomix.core.map.AtomicCounterMapBuilder;
-import io.atomix.core.map.AtomicCounterMapType;
-import io.atomix.core.map.ConsistentMap;
-import io.atomix.core.map.ConsistentMapBuilder;
-import io.atomix.core.map.ConsistentMapType;
-import io.atomix.core.map.ConsistentMultimap;
-import io.atomix.core.map.ConsistentMultimapBuilder;
-import io.atomix.core.map.ConsistentMultimapType;
-import io.atomix.core.map.ConsistentTreeMap;
-import io.atomix.core.map.ConsistentTreeMapBuilder;
-import io.atomix.core.map.ConsistentTreeMapType;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeBuilder;
@@ -86,8 +86,8 @@ public interface PrimitivesService {
    * @param <V>  value type
    * @return builder for a consistent map
    */
-  default <K, V> ConsistentMapBuilder<K, V> consistentMapBuilder(String name) {
-    return primitiveBuilder(name, ConsistentMapType.instance());
+  default <K, V> AtomicMapBuilder<K, V> consistentMapBuilder(String name) {
+    return primitiveBuilder(name, AtomicMapType.instance());
   }
 
   /**
@@ -99,8 +99,8 @@ public interface PrimitivesService {
    * @param <V>      value type
    * @return builder for a consistent map
    */
-  default <K, V> ConsistentMapBuilder<K, V> consistentMapBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, ConsistentMapType.instance(), protocol);
+  default <K, V> AtomicMapBuilder<K, V> consistentMapBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, AtomicMapType.instance(), protocol);
   }
 
   /**
@@ -133,8 +133,8 @@ public interface PrimitivesService {
    * @param <V>  value type
    * @return builder for a async consistent tree map
    */
-  default <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder(String name) {
-    return primitiveBuilder(name, ConsistentTreeMapType.instance());
+  default <V> AtomicTreeMapBuilder<V> consistentTreeMapBuilder(String name) {
+    return primitiveBuilder(name, AtomicTreeMapType.instance());
   }
 
   /**
@@ -145,8 +145,8 @@ public interface PrimitivesService {
    * @param <V>      value type
    * @return builder for a async consistent tree map
    */
-  default <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, ConsistentTreeMapType.instance(), protocol);
+  default <V> AtomicTreeMapBuilder<V> consistentTreeMapBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, AtomicTreeMapType.instance(), protocol);
   }
 
   /**
@@ -157,8 +157,8 @@ public interface PrimitivesService {
    * @param <V>  value type
    * @return builder for a set based async consistent multimap
    */
-  default <K, V> ConsistentMultimapBuilder<K, V> consistentMultimapBuilder(String name) {
-    return primitiveBuilder(name, ConsistentMultimapType.instance());
+  default <K, V> AtomicMultimapBuilder<K, V> consistentMultimapBuilder(String name) {
+    return primitiveBuilder(name, AtomicMultimapType.instance());
   }
 
   /**
@@ -170,8 +170,8 @@ public interface PrimitivesService {
    * @param <V>      value type
    * @return builder for a set based async consistent multimap
    */
-  default <K, V> ConsistentMultimapBuilder<K, V> consistentMultimapBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, ConsistentMultimapType.instance(), protocol);
+  default <K, V> AtomicMultimapBuilder<K, V> consistentMultimapBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, AtomicMultimapType.instance(), protocol);
   }
 
   /**
@@ -463,7 +463,7 @@ public interface PrimitivesService {
    * @param <V>  value type
    * @return builder for a consistent map
    */
-  <K, V> ConsistentMap<K, V> getConsistentMap(String name);
+  <K, V> AtomicMap<K, V> getConsistentMap(String name);
 
   /**
    * Creates a new ConsistentMapBuilder.
@@ -481,7 +481,7 @@ public interface PrimitivesService {
    * @param <V>  value type
    * @return builder for a async consistent tree map
    */
-  <V> ConsistentTreeMap<V> getTreeMap(String name);
+  <V> AtomicTreeMap<V> getTreeMap(String name);
 
   /**
    * Creates a new {@code AsyncConsistentSetMultimapBuilder}.
@@ -491,7 +491,7 @@ public interface PrimitivesService {
    * @param <V>  value type
    * @return builder for a set based async consistent multimap
    */
-  <K, V> ConsistentMultimap<K, V> getConsistentMultimap(String name);
+  <K, V> AtomicMultimap<K, V> getConsistentMultimap(String name);
 
   /**
    * Creates a new {@code AtomicCounterMapBuilder}.
