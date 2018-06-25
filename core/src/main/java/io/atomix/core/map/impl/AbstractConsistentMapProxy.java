@@ -21,11 +21,11 @@ import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.AsyncDistributedSet;
 import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.collection.CollectionEvent;
+import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.DistributedCollectionType;
 import io.atomix.core.collection.DistributedSet;
-import io.atomix.core.collection.SetEvent;
-import io.atomix.core.collection.SetEventListener;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
 import io.atomix.core.collection.impl.BlockingDistributedSet;
 import io.atomix.core.map.AsyncConsistentMap;
@@ -362,7 +362,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
    * Provides a view of the ConsistentMap's entry set.
    */
   private class ConsistentMapEntrySet implements AsyncDistributedSet<Map.Entry<String, Versioned<byte[]>>> {
-    private final Map<SetEventListener<Map.Entry<String, Versioned<byte[]>>>, MapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
+    private final Map<CollectionEventListener<Entry<String, Versioned<byte[]>>>, MapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
 
     @Override
     public String name() {
@@ -375,14 +375,14 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(SetEventListener<Map.Entry<String, Versioned<byte[]>>> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Entry<String, Versioned<byte[]>>> listener) {
       MapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
-            listener.event(new SetEvent<>(name(), SetEvent.Type.ADD, Maps.immutableEntry(event.key(), event.newValue())));
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, Maps.immutableEntry(event.key(), event.newValue())));
             break;
           case REMOVE:
-            listener.event(new SetEvent<>(name(), SetEvent.Type.REMOVE, Maps.immutableEntry(event.key(), event.oldValue())));
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, Maps.immutableEntry(event.key(), event.oldValue())));
             break;
           default:
             break;
@@ -393,7 +393,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
     }
 
     @Override
-    public synchronized CompletableFuture<Void> removeListener(SetEventListener<Map.Entry<String, Versioned<byte[]>>> listener) {
+    public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<Entry<String, Versioned<byte[]>>> listener) {
       MapEventListener<String, byte[]> mapListener = eventListeners.remove(listener);
       if (mapListener != null) {
         return AbstractConsistentMapProxy.this.removeListener(mapListener);
@@ -491,7 +491,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
    * Provides a view of the ConsistentMap's key set.
    */
   private class ConsistentMapKeySet implements AsyncDistributedSet<String> {
-    private final Map<SetEventListener<String>, MapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
+    private final Map<CollectionEventListener<String>, MapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
 
     @Override
     public String name() {
@@ -504,14 +504,14 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(SetEventListener<String> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener) {
       MapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
-            listener.event(new SetEvent<>(name(), SetEvent.Type.ADD, event.key()));
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, event.key()));
             break;
           case REMOVE:
-            listener.event(new SetEvent<>(name(), SetEvent.Type.REMOVE, event.key()));
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.key()));
             break;
           default:
             break;
@@ -522,7 +522,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
     }
 
     @Override
-    public synchronized CompletableFuture<Void> removeListener(SetEventListener<String> listener) {
+    public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<String> listener) {
       MapEventListener<String, byte[]> mapListener = eventListeners.remove(listener);
       if (mapListener != null) {
         return AbstractConsistentMapProxy.this.removeListener(mapListener);
@@ -613,6 +613,8 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
    * Provides a view of the ConsistentMap's values collection.
    */
   private class ConsistentMapValuesCollection implements AsyncDistributedCollection<Versioned<byte[]>> {
+    private final Map<CollectionEventListener<Versioned<byte[]>>, MapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
+
     @Override
     public String name() {
       return AbstractConsistentMapProxy.this.name();
@@ -682,7 +684,7 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
     public CompletableFuture<AsyncIterator<Versioned<byte[]>>> iterator() {
       return Futures.allOf(getProxyClient().getPartitionIds().stream()
           .map(partitionId -> getProxyClient().applyOn(partitionId, service -> service.iterateValues())
-              .thenApply(iteratorId -> new ConsistentMapPartitionIterator<>(
+              .thenApply(iteratorId -> new ConsistentMapPartitionIterator<Versioned<byte[]>>(
                   partitionId,
                   iteratorId,
                   (service, position) -> service.nextValues(iteratorId, position),
@@ -697,6 +699,33 @@ public abstract class AbstractConsistentMapProxy<P extends AsyncPrimitive, S ext
 
     @Override
     public CompletableFuture<Void> close() {
+      return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Versioned<byte[]>> listener) {
+      MapEventListener<String, byte[]> mapListener = event -> {
+        switch (event.type()) {
+          case INSERT:
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, event.newValue()));
+            break;
+          case REMOVE:
+            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.oldValue()));
+            break;
+          default:
+            break;
+        }
+      };
+      eventListeners.put(listener, mapListener);
+      return AbstractConsistentMapProxy.this.addListener(mapListener);
+    }
+
+    @Override
+    public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<Versioned<byte[]>> listener) {
+      MapEventListener<String, byte[]> mapListener = eventListeners.remove(listener);
+      if (mapListener != null) {
+        return AbstractConsistentMapProxy.this.removeListener(mapListener);
+      }
       return CompletableFuture.completedFuture(null);
     }
   }

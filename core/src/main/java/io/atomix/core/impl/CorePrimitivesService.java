@@ -29,6 +29,8 @@ import io.atomix.core.atomic.AtomicIdGenerator;
 import io.atomix.core.atomic.AtomicIdGeneratorType;
 import io.atomix.core.atomic.AtomicValue;
 import io.atomix.core.atomic.AtomicValueType;
+import io.atomix.core.collection.DistributedQueue;
+import io.atomix.core.collection.DistributedQueueType;
 import io.atomix.core.collection.DistributedSet;
 import io.atomix.core.collection.DistributedSetType;
 import io.atomix.core.concurrent.DistributedLock;
@@ -39,6 +41,8 @@ import io.atomix.core.coordination.LeaderElection;
 import io.atomix.core.coordination.LeaderElectionType;
 import io.atomix.core.coordination.LeaderElector;
 import io.atomix.core.coordination.LeaderElectorType;
+import io.atomix.core.coordination.WorkQueue;
+import io.atomix.core.coordination.WorkQueueType;
 import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.AtomicCounterMapType;
 import io.atomix.core.map.ConsistentMap;
@@ -54,8 +58,6 @@ import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.transaction.impl.DefaultTransactionBuilder;
 import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeType;
-import io.atomix.core.coordination.WorkQueue;
-import io.atomix.core.coordination.WorkQueueType;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
@@ -158,6 +160,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public <E> DistributedSet<E> getSet(String name) {
     return getPrimitive(name, DistributedSetType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public <E> DistributedQueue<E> getQueue(String name) {
+    return getPrimitive(name, DistributedQueueType.instance(), configService.getConfig(name));
   }
 
   @Override

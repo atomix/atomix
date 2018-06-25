@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,19 @@
  */
 package io.atomix.core.collection.impl;
 
-import io.atomix.core.collection.AsyncDistributedSet;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
+import io.atomix.protocols.raft.ReadConsistency;
 
 /**
- * Distributed set resource.
+ * Raft distributed queue test.
  */
-public class DistributedSetResource extends DistributedCollectionResource {
-  public DistributedSetResource(AsyncDistributedSet<String> set) {
-    super(set);
+public class RaftDistributedQueueTest extends DistributedQueueTest {
+  @Override
+  protected PrimitiveProtocol protocol() {
+    return MultiRaftProtocol.builder()
+        .withReadConsistency(ReadConsistency.LINEARIZABLE)
+        .withMaxRetries(5)
+        .build();
   }
 }

@@ -16,15 +16,19 @@
 
 package io.atomix.core.collection.impl;
 
+import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.collection.CollectionEvent;
+import io.atomix.core.collection.CollectionEventListener;
+import io.atomix.core.collection.DistributedCollection;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -40,16 +44,17 @@ import java.util.stream.Collectors;
 public class TranscodingAsyncDistributedCollection<E1, E2> implements AsyncDistributedCollection<E1> {
 
   private final AsyncDistributedCollection<E2> backingCollection;
-  private final Function<E1, E2> entryEncoder;
-  private final Function<E2, E1> entryDecoder;
+  private final Function<E1, E2> elementEncoder;
+  private final Function<E2, E1> elementDecoder;
+  private final Map<CollectionEventListener<E1>, InternalCollectionEventListener> listeners = Maps.newIdentityHashMap();
 
   public TranscodingAsyncDistributedCollection(
       AsyncDistributedCollection<E2> backingCollection,
-      Function<E1, E2> entryEncoder,
-      Function<E2, E1> entryDecoder) {
+      Function<E1, E2> elementEncoder,
+      Function<E2, E1> elementDecoder) {
     this.backingCollection = backingCollection;
-    this.entryEncoder = k -> k == null ? null : entryEncoder.apply(k);
-    this.entryDecoder = k -> k == null ? null : entryDecoder.apply(k);
+    this.elementEncoder = k -> k == null ? null : elementEncoder.apply(k);
+    this.elementDecoder = k -> k == null ? null : elementDecoder.apply(k);
   }
 
   @Override
@@ -74,12 +79,12 @@ public class TranscodingAsyncDistributedCollection<E1, E2> implements AsyncDistr
 
   @Override
   public CompletableFuture<Boolean> add(E1 element) {
-    return backingCollection.add(entryEncoder.apply(element));
+    return backingCollection.add(elementEncoder.apply(element));
   }
 
   @Override
   public CompletableFuture<Boolean> remove(E1 element) {
-    return backingCollection.remove(entryEncoder.apply(element));
+    return backingCollection.remove(elementEncoder.apply(element));
   }
 
   @Override
@@ -94,32 +99,53 @@ public class TranscodingAsyncDistributedCollection<E1, E2> implements AsyncDistr
 
   @Override
   public CompletableFuture<Boolean> contains(E1 element) {
-    return backingCollection.contains(entryEncoder.apply(element));
+    return backingCollection.contains(elementEncoder.apply(element));
   }
 
   @Override
   public CompletableFuture<Boolean> addAll(Collection<? extends E1> c) {
-    return backingCollection.addAll(c.stream().map(entryEncoder).collect(Collectors.toList()));
+    return backingCollection.addAll(c.stream().map(elementEncoder).collect(Collectors.toList()));
   }
 
   @Override
   public CompletableFuture<Boolean> containsAll(Collection<? extends E1> c) {
-    return backingCollection.containsAll(c.stream().map(entryEncoder).collect(Collectors.toList()));
+    return backingCollection.containsAll(c.stream().map(elementEncoder).collect(Collectors.toList()));
   }
 
   @Override
   public CompletableFuture<Boolean> retainAll(Collection<? extends E1> c) {
-    return backingCollection.retainAll(c.stream().map(entryEncoder).collect(Collectors.toList()));
+    return backingCollection.retainAll(c.stream().map(elementEncoder).collect(Collectors.toList()));
   }
 
   @Override
   public CompletableFuture<Boolean> removeAll(Collection<? extends E1> c) {
-    return backingCollection.removeAll(c.stream().map(entryEncoder).collect(Collectors.toList()));
+    return backingCollection.removeAll(c.stream().map(elementEncoder).collect(Collectors.toList()));
   }
 
   @Override
   public CompletableFuture<AsyncIterator<E1>> iterator() {
-    return backingCollection.iterator().thenApply(iterator -> new TranscodingIterator<>(iterator, entryDecoder));
+    return backingCollection.iterator().thenApply(iterator -> new TranscodingIterator<>(iterator, elementDecoder));
+  }
+
+  @Override
+  public CompletableFuture<Void> addListener(CollectionEventListener<E1> listener) {
+    synchronized (listeners) {
+      InternalCollectionEventListener collectionListener =
+          listeners.computeIfAbsent(listener, k -> new InternalCollectionEventListener(listener));
+      return backingCollection.addListener(collectionListener);
+    }
+  }
+
+  @Override
+  public CompletableFuture<Void> removeListener(CollectionEventListener<E1> listener) {
+    synchronized (listeners) {
+      InternalCollectionEventListener collectionListener = listeners.remove(listener);
+      if (collectionListener != null) {
+        return backingCollection.removeListener(collectionListener);
+      } else {
+        return CompletableFuture.completedFuture(null);
+      }
+    }
   }
 
   @Override
@@ -140,5 +166,18 @@ public class TranscodingAsyncDistributedCollection<E1, E2> implements AsyncDistr
   @Override
   public CompletableFuture<Void> close() {
     return backingCollection.close();
+  }
+
+  private class InternalCollectionEventListener implements CollectionEventListener<E2> {
+    private final CollectionEventListener<E1> listener;
+
+    InternalCollectionEventListener(CollectionEventListener<E1> listener) {
+      this.listener = listener;
+    }
+
+    @Override
+    public void onEvent(CollectionEvent<E2> event) {
+      listener.onEvent(new CollectionEvent<>(event.type(), elementDecoder.apply(event.element())));
+    }
   }
 }

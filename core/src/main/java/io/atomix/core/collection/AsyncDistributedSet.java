@@ -15,7 +15,6 @@
  */
 package io.atomix.core.collection;
 
-import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveType;
 
@@ -36,23 +35,6 @@ public interface AsyncDistributedSet<E> extends AsyncDistributedCollection<E> {
   default PrimitiveType type() {
     return DistributedSetType.instance();
   }
-
-  /**
-   * Registers the specified listener to be notified whenever
-   * the set is updated.
-   *
-   * @param listener listener to notify about set update events
-   * @return CompletableFuture that is completed when the operation completes
-   */
-  CompletableFuture<Void> addListener(SetEventListener<E> listener);
-
-  /**
-   * Unregisters the specified listener.
-   *
-   * @param listener listener to unregister.
-   * @return CompletableFuture that is completed when the operation completes
-   */
-  CompletableFuture<Void> removeListener(SetEventListener<E> listener);
 
   @Override
   default DistributedSet<E> sync() {

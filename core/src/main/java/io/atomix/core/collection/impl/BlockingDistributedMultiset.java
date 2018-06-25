@@ -17,7 +17,7 @@ package io.atomix.core.collection.impl;
 
 import io.atomix.core.collection.AsyncDistributedMultiset;
 import io.atomix.core.collection.DistributedMultiset;
-import io.atomix.core.collection.SetEventListener;
+import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.SyncIterator;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
@@ -119,12 +119,12 @@ public class BlockingDistributedMultiset<E> extends Synchronous<AsyncDistributed
   }
 
   @Override
-  public void addListener(SetEventListener<E> listener) {
+  public void addListener(CollectionEventListener<E> listener) {
     complete(asyncSet.addListener(listener));
   }
 
   @Override
-  public void removeListener(SetEventListener<E> listener) {
+  public void removeListener(CollectionEventListener<E> listener) {
     complete(asyncSet.removeListener(listener));
   }
 

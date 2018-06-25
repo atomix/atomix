@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.collection.impl;
+package io.atomix.core.collection;
 
-import io.atomix.core.collection.AsyncDistributedSet;
+import java.util.Queue;
 
 /**
- * Distributed set resource.
+ * Distributed queue.
  */
-public class DistributedSetResource extends DistributedCollectionResource {
-  public DistributedSetResource(AsyncDistributedSet<String> set) {
-    super(set);
-  }
+public interface DistributedQueue<E> extends DistributedCollection<E>, Queue<E> {
 }

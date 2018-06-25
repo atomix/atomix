@@ -16,12 +16,14 @@
 package io.atomix.core.collection.impl;
 
 import io.atomix.core.collection.AsyncDistributedCollection;
+import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.SyncIterator;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 
 import java.util.Collection;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -106,6 +108,16 @@ public class BlockingDistributedCollection<E> extends Synchronous<AsyncDistribut
   }
 
   @Override
+  public void addListener(CollectionEventListener<E> listener) {
+    complete(asyncCollection.addListener(listener));
+  }
+
+  @Override
+  public void removeListener(CollectionEventListener<E> listener) {
+    complete(asyncCollection.removeListener(listener));
+  }
+
+  @Override
   public Object[] toArray() {
     return stream().toArray();
   }
@@ -122,7 +134,7 @@ public class BlockingDistributedCollection<E> extends Synchronous<AsyncDistribut
     return asyncCollection;
   }
 
-  private <T> T complete(CompletableFuture<T> future) {
+  protected <T> T complete(CompletableFuture<T> future) {
     try {
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
@@ -133,6 +145,8 @@ public class BlockingDistributedCollection<E> extends Synchronous<AsyncDistribut
     } catch (ExecutionException e) {
       if (e.getCause() instanceof PrimitiveException) {
         throw (PrimitiveException) e.getCause();
+      } else if (e.getCause() instanceof NoSuchElementException) {
+        throw (NoSuchElementException) e.getCause();
       } else {
         throw new PrimitiveException(e.getCause());
       }

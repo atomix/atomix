@@ -18,10 +18,10 @@ package io.atomix.core.collection.impl;
 import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedSet;
 import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.collection.CollectionEvent;
+import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedSet;
 import io.atomix.core.collection.DistributedSetType;
-import io.atomix.core.collection.SetEvent;
-import io.atomix.core.collection.SetEventListener;
 import io.atomix.core.map.AsyncConsistentMap;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 public class DelegatingAsyncDistributedSet<E> extends DelegatingAsyncPrimitive implements AsyncDistributedSet<E> {
 
   private final AsyncConsistentMap<E, Boolean> backingMap;
-  private final Map<SetEventListener<E>, MapEventListener<E, Boolean>> listenerMapping = Maps.newIdentityHashMap();
+  private final Map<CollectionEventListener<E>, MapEventListener<E, Boolean>> listenerMapping = Maps.newIdentityHashMap();
 
   public DelegatingAsyncDistributedSet(AsyncConsistentMap<E, Boolean> backingMap) {
     super(backingMap);
@@ -115,12 +115,12 @@ public class DelegatingAsyncDistributedSet<E> extends DelegatingAsyncPrimitive i
   }
 
   @Override
-  public CompletableFuture<Void> addListener(SetEventListener<E> listener) {
+  public CompletableFuture<Void> addListener(CollectionEventListener<E> listener) {
     MapEventListener<E, Boolean> mapEventListener = mapEvent -> {
       if (mapEvent.type() == MapEvent.Type.INSERT) {
-        listener.event(new SetEvent<>(backingMap.name(), SetEvent.Type.ADD, mapEvent.key()));
+        listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, mapEvent.key()));
       } else if (mapEvent.type() == MapEvent.Type.REMOVE) {
-        listener.event(new SetEvent<>(backingMap.name(), SetEvent.Type.REMOVE, mapEvent.key()));
+        listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, mapEvent.key()));
       }
     };
     if (listenerMapping.putIfAbsent(listener, mapEventListener) == null) {
@@ -130,7 +130,7 @@ public class DelegatingAsyncDistributedSet<E> extends DelegatingAsyncPrimitive i
   }
 
   @Override
-  public CompletableFuture<Void> removeListener(SetEventListener<E> listener) {
+  public CompletableFuture<Void> removeListener(CollectionEventListener<E> listener) {
     MapEventListener<E, Boolean> mapEventListener = listenerMapping.remove(listener);
     if (mapEventListener != null) {
       return backingMap.removeListener(mapEventListener);

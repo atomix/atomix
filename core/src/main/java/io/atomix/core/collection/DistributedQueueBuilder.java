@@ -15,14 +15,16 @@
  */
 package io.atomix.core.collection;
 
+import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveManagementService;
+
 /**
- * Listener to be notified about updates to a DistributedSet.
+ * Builder for distributed queue.
+ *
+ * @param <E> queue element type
  */
-public interface SetEventListener<E> {
-  /**
-   * Reacts to the specified event.
-   *
-   * @param event the event
-   */
-  void event(SetEvent<E> event);
+public abstract class DistributedQueueBuilder<E> extends DistributedPrimitiveBuilder<DistributedQueueBuilder<E>, DistributedQueueConfig, DistributedQueue<E>> {
+  public DistributedQueueBuilder(String name, DistributedQueueConfig config, PrimitiveManagementService managementService) {
+    super(DistributedQueueType.instance(), name, config, managementService);
+  }
 }
