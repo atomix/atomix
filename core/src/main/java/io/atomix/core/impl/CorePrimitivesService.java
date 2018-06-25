@@ -29,6 +29,8 @@ import io.atomix.core.atomic.AtomicIdGenerator;
 import io.atomix.core.atomic.AtomicIdGeneratorType;
 import io.atomix.core.atomic.AtomicValue;
 import io.atomix.core.atomic.AtomicValueType;
+import io.atomix.core.collection.DistributedList;
+import io.atomix.core.collection.DistributedListType;
 import io.atomix.core.collection.DistributedQueue;
 import io.atomix.core.collection.DistributedQueueType;
 import io.atomix.core.collection.DistributedSet;
@@ -165,6 +167,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public <E> DistributedQueue<E> getQueue(String name) {
     return getPrimitive(name, DistributedQueueType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public <E> DistributedList<E> getList(String name) {
+    return getPrimitive(name, DistributedListType.instance(), configService.getConfig(name));
   }
 
   @Override
