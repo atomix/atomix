@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Unit tests for {@link DocumentTreeProxy}.
+ * Unit tests for {@link AtomicDocumentTreeProxy}.
  */
 public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
 
