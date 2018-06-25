@@ -130,24 +130,35 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
 
   @Override
   public boolean addAll(Collection<? extends String> c) {
-    boolean allAdded = true;
+    boolean changed = false;
     for (String element : c) {
-      if (!add(element)) {
-        allAdded = false;
+      if (add(element)) {
+        changed = true;
       }
     }
-    return allAdded;
+    return changed;
+  }
+
+  @Override
+  public boolean retainAll(Collection<?> c) {
+    boolean changed = false;
+    for (String element : collection) {
+      if (!c.contains(element) && remove(element)) {
+        changed = true;
+      }
+    }
+    return changed;
   }
 
   @Override
   public boolean removeAll(Collection<?> c) {
-    boolean allRemoved = true;
+    boolean changed = false;
     for (Object element : c) {
-      if (!remove(element)) {
-        allRemoved = false;
+      if (remove(element)) {
+        changed = true;
       }
     }
-    return allRemoved;
+    return changed;
   }
 
   @Override
