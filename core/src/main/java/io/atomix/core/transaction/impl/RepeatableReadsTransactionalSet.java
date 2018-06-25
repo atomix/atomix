@@ -17,8 +17,8 @@ package io.atomix.core.transaction.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.atomix.core.collection.AsyncDistributedSet;
-import io.atomix.core.collection.impl.SetUpdate;
+import io.atomix.core.collection.set.AsyncDistributedSet;
+import io.atomix.core.collection.set.impl.SetUpdate;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.protocol.PrimitiveProtocol;

@@ -19,7 +19,7 @@ import com.google.common.base.Joiner;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.core.Atomix;
-import io.atomix.core.map.ConsistentMap;
+import io.atomix.core.atomic.map.AtomicMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -114,8 +114,8 @@ public class AtomixAgentTest {
         .build();
     client2.start().join();
 
-    ConsistentMap<String, String> map1 = client1.getConsistentMap("test");
-    ConsistentMap<String, String> map2 = client2.getConsistentMap("test");
+    AtomicMap<String, String> map1 = client1.getAtomicMap("test");
+    AtomicMap<String, String> map2 = client2.getAtomicMap("test");
 
     map1.put("foo", "bar");
     assertEquals("bar", map2.get("foo").value());
@@ -192,8 +192,8 @@ public class AtomixAgentTest {
         .build();
     client2.start().join();
 
-    ConsistentMap<String, String> map1 = client1.getConsistentMap("test");
-    ConsistentMap<String, String> map2 = client2.getConsistentMap("test");
+    AtomicMap<String, String> map1 = client1.getAtomicMap("test");
+    AtomicMap<String, String> map2 = client2.getAtomicMap("test");
 
     map1.put("foo", "bar");
     assertEquals("bar", map2.get("foo").value());

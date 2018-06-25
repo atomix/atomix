@@ -15,6 +15,6 @@
  */
 
 /**
- * Distributed lock primitive interfaces.
+ * Distributed concurrency control primitives.
  */
 package io.atomix.core.concurrent;

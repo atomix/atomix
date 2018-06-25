@@ -15,6 +15,6 @@
  */
 
 /**
- * Distributed set primitive interfaces.
+ * Distributed collection primitives.
  */
 package io.atomix.core.collection;
