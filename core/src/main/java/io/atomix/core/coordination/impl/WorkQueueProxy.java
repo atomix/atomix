@@ -1,0 +1,211 @@
+/*
+ * Copyright 2016-present Open Networking Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.atomix.core.coordination.impl;
+
+import com.google.common.collect.ImmutableList;
+import io.atomix.core.coordination.AsyncWorkQueue;
+import io.atomix.core.coordination.Task;
+import io.atomix.core.coordination.WorkQueue;
+import io.atomix.core.coordination.WorkQueueStats;
+import io.atomix.primitive.AbstractAsyncPrimitive;
+import io.atomix.primitive.PrimitiveRegistry;
+import io.atomix.primitive.PrimitiveState;
+import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.utils.concurrent.AbstractAccumulator;
+import io.atomix.utils.concurrent.Accumulator;
+import org.slf4j.Logger;
+
+import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
+import java.util.Timer;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+
+import static io.atomix.utils.concurrent.Threads.namedThreads;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
+import static org.slf4j.LoggerFactory.getLogger;
+
+/**
+ * Distributed resource providing the {@link WorkQueue} primitive.
+ */
+public class WorkQueueProxy
+    extends AbstractAsyncPrimitive<AsyncWorkQueue<byte[]>, WorkQueueService>
+    implements AsyncWorkQueue<byte[]>, WorkQueueClient {
+
+  private final Logger log = getLogger(getClass());
+  private final ExecutorService executor;
+  private final AtomicReference<TaskProcessor> taskProcessor = new AtomicReference<>();
+  private final Timer timer = new Timer("atomix-work-queue-completer");
+  private final AtomicBoolean isRegistered = new AtomicBoolean(false);
+
+  public WorkQueueProxy(ProxyClient<WorkQueueService> proxy, PrimitiveRegistry registry) {
+    super(proxy, registry);
+    executor = newSingleThreadExecutor(namedThreads("atomix-work-queue-" + proxy.name() + "-%d", log));
+  }
+
+  @Override
+  public void taskAvailable() {
+    resumeWork();
+  }
+
+  @Override
+  public CompletableFuture<Void> delete() {
+    executor.shutdown();
+    timer.cancel();
+    return getProxyClient().acceptBy(name(), service -> service.clear());
+  }
+
+  @Override
+  public CompletableFuture<Void> addMultiple(Collection<byte[]> items) {
+    if (items.isEmpty()) {
+      return CompletableFuture.completedFuture(null);
+    }
+    return getProxyClient().acceptBy(name(), service -> service.add(items));
+  }
+
+  @Override
+  public CompletableFuture<Collection<Task<byte[]>>> take(int maxTasks) {
+    if (maxTasks <= 0) {
+      return CompletableFuture.completedFuture(ImmutableList.of());
+    }
+    return getProxyClient().applyBy(name(), service -> service.take(maxTasks));
+  }
+
+  @Override
+  public CompletableFuture<Void> complete(Collection<String> taskIds) {
+    if (taskIds.isEmpty()) {
+      return CompletableFuture.completedFuture(null);
+    }
+    return getProxyClient().acceptBy(name(), service -> service.complete(taskIds));
+  }
+
+  @Override
+  public CompletableFuture<Void> registerTaskProcessor(Consumer<byte[]> callback,
+                                                       int parallelism,
+                                                       Executor executor) {
+    Accumulator<String> completedTaskAccumulator =
+        new CompletedTaskAccumulator(timer, 50, 50); // TODO: make configurable
+    taskProcessor.set(new TaskProcessor(callback,
+        parallelism,
+        executor,
+        completedTaskAccumulator));
+    return register().thenCompose(v -> take(parallelism))
+        .thenAccept(taskProcessor.get());
+  }
+
+  @Override
+  public CompletableFuture<Void> stopProcessing() {
+    return unregister();
+  }
+
+  @Override
+  public CompletableFuture<WorkQueueStats> stats() {
+    return getProxyClient().applyBy(name(), service -> service.stats());
+  }
+
+  private void resumeWork() {
+    TaskProcessor activeProcessor = taskProcessor.get();
+    if (activeProcessor == null) {
+      return;
+    }
+    this.take(activeProcessor.headRoom())
+        .whenCompleteAsync((tasks, e) -> activeProcessor.accept(tasks), executor);
+  }
+
+  private CompletableFuture<Void> register() {
+    return getProxyClient().acceptBy(name(), service -> service.register()).thenRun(() -> isRegistered.set(true));
+  }
+
+  private CompletableFuture<Void> unregister() {
+    return getProxyClient().acceptBy(name(), service -> service.unregister()).thenRun(() -> isRegistered.set(false));
+  }
+
+  @Override
+  public CompletableFuture<AsyncWorkQueue<byte[]>> connect() {
+    return super.connect()
+        .thenRun(() -> getProxyClient().getPartition(name()).addStateChangeListener(state -> {
+          if (state == PrimitiveState.CONNECTED && isRegistered.get()) {
+            getProxyClient().acceptBy(name(), service -> service.register());
+          }
+        }))
+        .thenApply(v -> this);
+  }
+
+  @Override
+  public WorkQueue<byte[]> sync(Duration operationTimeout) {
+    return new BlockingWorkQueue<>(this, operationTimeout.toMillis());
+  }
+
+  // TaskId accumulator for paced triggering of task completion calls.
+  private class CompletedTaskAccumulator extends AbstractAccumulator<String> {
+    CompletedTaskAccumulator(Timer timer, int maxTasksToBatch, int maxBatchMillis) {
+      super(timer, maxTasksToBatch, maxBatchMillis, Integer.MAX_VALUE);
+    }
+
+    @Override
+    public void processItems(List<String> items) {
+      complete(items);
+    }
+  }
+
+  private class TaskProcessor implements Consumer<Collection<Task<byte[]>>> {
+
+    private final AtomicInteger headRoom;
+    private final Consumer<byte[]> backingConsumer;
+    private final Executor executor;
+    private final Accumulator<String> taskCompleter;
+
+    public TaskProcessor(Consumer<byte[]> backingConsumer,
+                         int parallelism,
+                         Executor executor,
+                         Accumulator<String> taskCompleter) {
+      this.backingConsumer = backingConsumer;
+      this.headRoom = new AtomicInteger(parallelism);
+      this.executor = executor;
+      this.taskCompleter = taskCompleter;
+    }
+
+    public int headRoom() {
+      return headRoom.get();
+    }
+
+    @Override
+    public void accept(Collection<Task<byte[]>> tasks) {
+      if (tasks == null) {
+        return;
+      }
+      headRoom.addAndGet(-1 * tasks.size());
+      tasks.forEach(task ->
+          executor.execute(() -> {
+            try {
+              backingConsumer.accept(task.payload());
+              taskCompleter.add(task.taskId());
+            } catch (Exception e) {
+              log.debug("Task execution failed", e);
+            } finally {
+              headRoom.incrementAndGet();
+              resumeWork();
+            }
+          }));
+    }
+  }
+}
