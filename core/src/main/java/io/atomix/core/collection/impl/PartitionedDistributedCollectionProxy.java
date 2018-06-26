@@ -237,13 +237,14 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
   private class DistributedCollectionPartitionIterator implements AsyncIterator<String> {
     private final PartitionId partitionId;
     private final long iteratorId;
-    private volatile CompletableFuture<DistributedCollectionService.Batch> batch;
+    private volatile CompletableFuture<DistributedCollectionService.Batch<String>> batch;
     private volatile CompletableFuture<Void> closeFuture;
 
     DistributedCollectionPartitionIterator(PartitionId partitionId, long iteratorId) {
       this.partitionId = partitionId;
       this.iteratorId = iteratorId;
-      this.batch = CompletableFuture.completedFuture(new DistributedCollectionService.Batch(0, Collections.emptyList()));
+      this.batch = CompletableFuture.completedFuture(
+          new DistributedCollectionService.Batch<>(0, Collections.emptyList()));
     }
 
     /**
@@ -267,7 +268,7 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
      * @param position the position from which to fetch the next batch
      * @return the next batch of entries from the cluster
      */
-    private CompletableFuture<DistributedCollectionService.Batch> fetch(int position) {
+    private CompletableFuture<DistributedCollectionService.Batch<String>> fetch(int position) {
       return getProxyClient().applyOn(partitionId, service -> service.next(iteratorId, position))
           .thenCompose(batch -> {
             if (batch == null) {

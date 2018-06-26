@@ -29,6 +29,7 @@ import io.atomix.core.atomic.tree.AtomicDocumentTree;
 import io.atomix.core.atomic.treemap.AtomicTreeMap;
 import io.atomix.core.atomic.value.AtomicValue;
 import io.atomix.core.collection.list.DistributedList;
+import io.atomix.core.collection.multiset.DistributedMultiset;
 import io.atomix.core.collection.queue.DistributedQueue;
 import io.atomix.core.collection.set.DistributedSet;
 import io.atomix.core.concurrent.lock.DistributedLock;
@@ -370,6 +371,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   public <E> DistributedList<E> getList(String name) {
     return primitives.getList(name);
+  }
+
+  @Override
+  public <E> DistributedMultiset<E> getMultiset(String name) {
+    return primitives.getMultiset(name);
   }
 
   @Override

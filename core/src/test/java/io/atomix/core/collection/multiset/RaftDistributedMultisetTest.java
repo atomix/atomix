@@ -15,21 +15,19 @@
  */
 package io.atomix.core.collection.multiset;
 
-import com.google.common.collect.Multiset;
-import io.atomix.core.collection.DistributedCollection;
-import io.atomix.core.collection.set.DistributedSet;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
+import io.atomix.protocols.raft.ReadConsistency;
 
 /**
- * Distributed multiset.
+ * Raft distributed multiset test.
  */
-public interface DistributedMultiset<E> extends DistributedCollection<E>, Multiset<E> {
-
+public class RaftDistributedMultisetTest extends DistributedMultisetTest {
   @Override
-  DistributedSet<E> elementSet();
-
-  @Override
-  DistributedSet<Entry<E>> entrySet();
-
-  @Override
-  AsyncDistributedMultiset<E> async();
+  protected PrimitiveProtocol protocol() {
+    return MultiRaftProtocol.builder()
+        .withReadConsistency(ReadConsistency.LINEARIZABLE)
+        .withMaxRetries(5)
+        .build();
+  }
 }

@@ -41,6 +41,8 @@ import io.atomix.core.atomic.value.AtomicValue;
 import io.atomix.core.atomic.value.AtomicValueType;
 import io.atomix.core.collection.list.DistributedList;
 import io.atomix.core.collection.list.DistributedListType;
+import io.atomix.core.collection.multiset.DistributedMultiset;
+import io.atomix.core.collection.multiset.DistributedMultisetType;
 import io.atomix.core.collection.queue.DistributedQueue;
 import io.atomix.core.collection.queue.DistributedQueueType;
 import io.atomix.core.collection.set.DistributedSet;
@@ -172,6 +174,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public <E> DistributedList<E> getList(String name) {
     return getPrimitive(name, DistributedListType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public <E> DistributedMultiset<E> getMultiset(String name) {
+    return getPrimitive(name, DistributedMultisetType.instance(), configService.getConfig(name));
   }
 
   @Override

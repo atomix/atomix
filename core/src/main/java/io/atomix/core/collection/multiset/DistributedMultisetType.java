@@ -15,20 +15,24 @@
  */
 package io.atomix.core.collection.multiset;
 
-import io.atomix.core.collection.set.DistributedSet;
-import io.atomix.core.collection.set.DistributedSetBuilder;
-import io.atomix.core.collection.set.DistributedSetConfig;
+import io.atomix.core.collection.CollectionEvent;
+import io.atomix.core.collection.impl.CollectionUpdateResult;
+import io.atomix.core.collection.impl.DistributedCollectionService;
+import io.atomix.core.collection.multiset.impl.DefaultDistributedMultisetService;
+import io.atomix.core.collection.multiset.impl.DistributedMultisetProxyBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Placeholder type for the distributed multiset primitive type.
  */
-public class DistributedMultisetType<E> implements PrimitiveType<DistributedSetBuilder<E>, DistributedSetConfig, DistributedSet<E>> {
+public class DistributedMultisetType<E> implements PrimitiveType<DistributedMultisetBuilder<E>, DistributedMultisetConfig, DistributedMultiset<E>> {
   private static final String NAME = "multiset";
   private static final DistributedMultisetType INSTANCE = new DistributedMultisetType();
 
@@ -49,18 +53,32 @@ public class DistributedMultisetType<E> implements PrimitiveType<DistributedSetB
   }
 
   @Override
+  public Namespace namespace() {
+    return Namespace.builder()
+        .register(PrimitiveType.super.namespace())
+        .register(Namespaces.BASIC)
+        .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
+        .register(CollectionUpdateResult.class)
+        .register(CollectionUpdateResult.Status.class)
+        .register(CollectionEvent.class)
+        .register(CollectionEvent.Type.class)
+        .register(DistributedCollectionService.Batch.class)
+        .build();
+  }
+
+  @Override
   public PrimitiveService newService(ServiceConfig config) {
-    throw new UnsupportedOperationException();
+    return new DefaultDistributedMultisetService();
   }
 
   @Override
-  public DistributedSetConfig newConfig() {
-    throw new UnsupportedOperationException();
+  public DistributedMultisetConfig newConfig() {
+    return new DistributedMultisetConfig();
   }
 
   @Override
-  public DistributedSetBuilder<E> newBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
-    throw new UnsupportedOperationException();
+  public DistributedMultisetBuilder<E> newBuilder(String name, DistributedMultisetConfig config, PrimitiveManagementService managementService) {
+    return new DistributedMultisetProxyBuilder<E>(name, config, managementService);
   }
 
   @Override

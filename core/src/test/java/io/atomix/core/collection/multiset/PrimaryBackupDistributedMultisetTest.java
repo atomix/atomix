@@ -15,21 +15,18 @@
  */
 package io.atomix.core.collection.multiset;
 
-import com.google.common.collect.Multiset;
-import io.atomix.core.collection.DistributedCollection;
-import io.atomix.core.collection.set.DistributedSet;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**
- * Distributed multiset.
+ * Primary-backup distributed list test.
  */
-public interface DistributedMultiset<E> extends DistributedCollection<E>, Multiset<E> {
-
+public class PrimaryBackupDistributedMultisetTest extends DistributedMultisetTest {
   @Override
-  DistributedSet<E> elementSet();
-
-  @Override
-  DistributedSet<Entry<E>> entrySet();
-
-  @Override
-  AsyncDistributedMultiset<E> async();
+  protected PrimitiveProtocol protocol() {
+    return MultiPrimaryProtocol.builder()
+        .withBackups(2)
+        .withMaxRetries(5)
+        .build();
+  }
 }

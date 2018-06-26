@@ -15,21 +15,15 @@
  */
 package io.atomix.core.collection.multiset;
 
-import com.google.common.collect.Multiset;
-import io.atomix.core.collection.DistributedCollection;
-import io.atomix.core.collection.set.DistributedSet;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
- * Distributed multiset.
+ * Distributed multiset configuration.
  */
-public interface DistributedMultiset<E> extends DistributedCollection<E>, Multiset<E> {
-
+public class DistributedMultisetConfig extends PrimitiveConfig<DistributedMultisetConfig> {
   @Override
-  DistributedSet<E> elementSet();
-
-  @Override
-  DistributedSet<Entry<E>> entrySet();
-
-  @Override
-  AsyncDistributedMultiset<E> async();
+  public PrimitiveType getType() {
+    return DistributedMultisetType.instance();
+  }
 }
