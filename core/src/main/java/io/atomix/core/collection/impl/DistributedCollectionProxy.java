@@ -164,13 +164,13 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
    */
   private class DistributedCollectionIterator implements AsyncIterator<String> {
     private final long id;
-    private volatile CompletableFuture<DistributedCollectionService.Batch> batch;
+    private volatile CompletableFuture<DistributedCollectionService.Batch<String>> batch;
     private volatile CompletableFuture<Void> closeFuture;
 
     DistributedCollectionIterator(long id) {
       this.id = id;
       this.batch = CompletableFuture.completedFuture(
-          new DistributedCollectionService.Batch(0, Collections.emptyList()));
+          new DistributedCollectionService.Batch<>(0, Collections.emptyList()));
     }
 
     /**
@@ -194,7 +194,7 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
      * @param position the position from which to fetch the next batch
      * @return the next batch of entries from the cluster
      */
-    private CompletableFuture<DistributedCollectionService.Batch> fetch(int position) {
+    private CompletableFuture<DistributedCollectionService.Batch<String>> fetch(int position) {
       return getProxyClient().applyBy(name(), service -> service.next(id, position))
           .thenCompose(batch -> {
             if (batch == null) {

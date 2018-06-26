@@ -259,7 +259,7 @@ public interface DistributedCollectionService {
    * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
    */
   @Query
-  Batch next(long iteratorId, int position);
+  Batch<String> next(long iteratorId, int position);
 
   /**
    * Closes an iterator.
@@ -272,12 +272,12 @@ public interface DistributedCollectionService {
   /**
    * Iterator batch.
    */
-  final class Batch implements Iterator<String> {
+  final class Batch<T> implements Iterator<T> {
     private final int position;
-    private final Collection<String> elements;
-    private transient volatile Iterator<String> iterator;
+    private final Collection<T> elements;
+    private transient volatile Iterator<T> iterator;
 
-    Batch(int position, Collection<String> elements) {
+    public Batch(int position, Collection<T> elements) {
       this.position = position;
       this.elements = elements;
     }
@@ -296,11 +296,11 @@ public interface DistributedCollectionService {
      *
      * @return the batch of elements
      */
-    public Collection<String> elements() {
+    public Collection<T> elements() {
       return elements;
     }
 
-    private Iterator<String> iterator() {
+    private Iterator<T> iterator() {
       if (iterator == null) {
         synchronized (this) {
           if (iterator == null) {
@@ -317,7 +317,7 @@ public interface DistributedCollectionService {
     }
 
     @Override
-    public String next() {
+    public T next() {
       return iterator().next();
     }
   }

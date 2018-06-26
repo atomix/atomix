@@ -15,15 +15,15 @@
  */
 package io.atomix.core.collection.multiset.impl;
 
-import com.google.common.collect.Maps;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Multisets;
 import io.atomix.core.collection.impl.TranscodingAsyncDistributedCollection;
 import io.atomix.core.collection.multiset.AsyncDistributedMultiset;
-import io.atomix.core.collection.CollectionEvent;
-import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.multiset.DistributedMultiset;
+import io.atomix.core.collection.set.AsyncDistributedSet;
+import io.atomix.core.collection.set.impl.TranscodingAsyncDistributedSet;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -32,54 +32,60 @@ import java.util.function.Function;
  */
 public class TranscodingAsyncDistributedMultiset<E1, E2> extends TranscodingAsyncDistributedCollection<E1, E2> implements AsyncDistributedMultiset<E1> {
   private final AsyncDistributedMultiset<E2> backingMultiset;
-  private final Function<E2, E1> entryDecoder;
-  private final Map<CollectionEventListener<E1>, InternalBackingCollectionEventListener> listeners = Maps.newIdentityHashMap();
+  private final Function<E1, E2> elementEncoder;
+  private final Function<E2, E1> elementDecoder;
 
   public TranscodingAsyncDistributedMultiset(
       AsyncDistributedMultiset<E2> backingMultiset,
-      Function<E1, E2> entryEncoder,
-      Function<E2, E1> entryDecoder) {
-    super(backingMultiset, entryEncoder, entryDecoder);
+      Function<E1, E2> elementEncoder,
+      Function<E2, E1> elementDecoder) {
+    super(backingMultiset, elementEncoder, elementDecoder);
     this.backingMultiset = backingMultiset;
-    this.entryDecoder = entryDecoder;
+    this.elementEncoder = k -> k == null ? null : elementEncoder.apply(k);
+    this.elementDecoder = k -> k == null ? null : elementDecoder.apply(k);
   }
 
   @Override
-  public CompletableFuture<Void> addListener(CollectionEventListener<E1> listener) {
-    synchronized (listeners) {
-      InternalBackingCollectionEventListener backingSetListener =
-          listeners.computeIfAbsent(listener, k -> new InternalBackingCollectionEventListener(listener));
-      return backingMultiset.addListener(backingSetListener);
-    }
+  public CompletableFuture<Integer> count(Object element) {
+    return backingMultiset.count(elementEncoder.apply((E1) element));
   }
 
   @Override
-  public CompletableFuture<Void> removeListener(CollectionEventListener<E1> listener) {
-    synchronized (listeners) {
-      InternalBackingCollectionEventListener backingMapListener = listeners.remove(listener);
-      if (backingMapListener != null) {
-        return backingMultiset.removeListener(backingMapListener);
-      } else {
-        return CompletableFuture.completedFuture(null);
-      }
-    }
+  public CompletableFuture<Integer> add(E1 element, int occurrences) {
+    return backingMultiset.add(elementEncoder.apply(element), occurrences);
+  }
+
+  @Override
+  public CompletableFuture<Integer> remove(Object element, int occurrences) {
+    return backingMultiset.remove(elementEncoder.apply((E1) element), occurrences);
+  }
+
+  @Override
+  public CompletableFuture<Integer> setCount(E1 element, int count) {
+    return backingMultiset.setCount(elementEncoder.apply(element), count);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> setCount(E1 element, int oldCount, int newCount) {
+    return backingMultiset.setCount(elementEncoder.apply(element), oldCount, newCount);
+  }
+
+  @Override
+  public AsyncDistributedSet<E1> elementSet() {
+    return new TranscodingAsyncDistributedSet<>(backingMultiset.elementSet(), elementEncoder, elementDecoder);
+  }
+
+  @Override
+  public AsyncDistributedSet<Multiset.Entry<E1>> entrySet() {
+    Function<Multiset.Entry<E1>, Multiset.Entry<E2>> entryEncoder = entry ->
+        Multisets.immutableEntry(elementEncoder.apply(entry.getElement()), entry.getCount());
+    Function<Multiset.Entry<E2>, Multiset.Entry<E1>> entryDecoder = entry ->
+        Multisets.immutableEntry(elementDecoder.apply(entry.getElement()), entry.getCount());
+    return new TranscodingAsyncDistributedSet<>(backingMultiset.entrySet(), entryEncoder, entryDecoder);
   }
 
   @Override
   public DistributedMultiset<E1> sync(Duration operationTimeout) {
     return new BlockingDistributedMultiset<>(this, operationTimeout.toMillis());
-  }
-
-  private class InternalBackingCollectionEventListener implements CollectionEventListener<E2> {
-    private final CollectionEventListener<E1> listener;
-
-    InternalBackingCollectionEventListener(CollectionEventListener<E1> listener) {
-      this.listener = listener;
-    }
-
-    @Override
-    public void onEvent(CollectionEvent<E2> event) {
-      listener.onEvent(new CollectionEvent<>(event.type(), entryDecoder.apply(event.element())));
-    }
   }
 }

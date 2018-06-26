@@ -18,6 +18,7 @@ package io.atomix.core.atomic.multimap.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multiset;
 import io.atomix.core.atomic.multimap.AsyncAtomicMultimap;
 import io.atomix.core.atomic.multimap.AtomicMultimap;
 import io.atomix.core.atomic.multimap.AtomicMultimapEvent;
@@ -394,6 +395,41 @@ public class AtomicMultimapProxy
     }
 
     @Override
+    public CompletableFuture<Integer> count(Object element) {
+      return get((String) element).thenApply(value -> value == null ? 0 : value.value().size());
+    }
+
+    @Override
+    public CompletableFuture<Integer> add(String element, int occurrences) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Integer> remove(Object element, int occurrences) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Integer> setCount(String element, int count) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> setCount(String element, int oldCount, int newCount) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public AsyncDistributedSet<String> elementSet() {
+      return new AtomicMultimapKeySet();
+    }
+
+    @Override
+    public AsyncDistributedSet<Multiset.Entry<String>> entrySet() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public CompletableFuture<Boolean> addAll(Collection<? extends String> c) {
       return Futures.exceptionalFuture(new UnsupportedOperationException());
     }
@@ -510,6 +546,41 @@ public class AtomicMultimapProxy
     @Override
     public CompletableFuture<Boolean> contains(byte[] element) {
       return containsValue(element);
+    }
+
+    @Override
+    public CompletableFuture<Integer> count(Object element) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Integer> add(byte[] element, int occurrences) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Integer> remove(Object element, int occurrences) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Integer> setCount(byte[] element, int count) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> setCount(byte[] element, int oldCount, int newCount) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public AsyncDistributedSet<byte[]> elementSet() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AsyncDistributedSet<Multiset.Entry<byte[]>> entrySet() {
+      throw new UnsupportedOperationException();
     }
 
     @Override

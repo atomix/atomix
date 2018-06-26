@@ -42,6 +42,9 @@ import io.atomix.core.atomic.value.AtomicValueType;
 import io.atomix.core.collection.list.DistributedList;
 import io.atomix.core.collection.list.DistributedListBuilder;
 import io.atomix.core.collection.list.DistributedListType;
+import io.atomix.core.collection.multiset.DistributedMultiset;
+import io.atomix.core.collection.multiset.DistributedMultisetBuilder;
+import io.atomix.core.collection.multiset.DistributedMultisetType;
 import io.atomix.core.collection.queue.DistributedQueue;
 import io.atomix.core.collection.queue.DistributedQueueBuilder;
 import io.atomix.core.collection.queue.DistributedQueueType;
@@ -264,6 +267,29 @@ public interface PrimitivesService {
    */
   default <E> DistributedListBuilder<E> listBuilder(String name, PrimitiveProtocol protocol) {
     return primitiveBuilder(name, DistributedListType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new DistributedMultisetBuilder.
+   *
+   * @param name the primitive name
+   * @param <E>  multiset element type
+   * @return builder for a distributed multiset
+   */
+  default <E> DistributedMultisetBuilder<E> multisetBuilder(String name) {
+    return primitiveBuilder(name, DistributedMultisetType.instance());
+  }
+
+  /**
+   * Creates a new DistributedMultisetBuilder.
+   *
+   * @param name     the primitive name
+   * @param protocol the primitive protocol
+   * @param <E>      multiset element type
+   * @return builder for a distributed multiset
+   */
+  default <E> DistributedMultisetBuilder<E> multisetBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedMultisetType.instance(), protocol);
   }
 
   /**
@@ -528,6 +554,15 @@ public interface PrimitivesService {
    * @return a multiton instance of a distributed list
    */
   <E> DistributedList<E> getList(String name);
+
+  /**
+   * Creates a new DistributedMultiset.
+   *
+   * @param name the primitive name
+   * @param <E>  multiset element type
+   * @return a multiton instance of a distributed multiset
+   */
+  <E> DistributedMultiset<E> getMultiset(String name);
 
   /**
    * Creates a new AtomicCounterBuilder.

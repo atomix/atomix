@@ -15,14 +15,17 @@
  */
 package io.atomix.core.collection.multiset.impl;
 
+import io.atomix.core.collection.CollectionEventListener;
+import io.atomix.core.collection.SyncIterator;
 import io.atomix.core.collection.impl.BlockingIterator;
 import io.atomix.core.collection.multiset.AsyncDistributedMultiset;
 import io.atomix.core.collection.multiset.DistributedMultiset;
-import io.atomix.core.collection.CollectionEventListener;
-import io.atomix.core.collection.SyncIterator;
+import io.atomix.core.collection.set.DistributedSet;
+import io.atomix.core.collection.set.impl.BlockingDistributedSet;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -95,6 +98,41 @@ public class BlockingDistributedMultiset<E> extends Synchronous<AsyncDistributed
   @Override
   public boolean removeAll(Collection<?> c) {
     return complete(asyncSet.removeAll((Collection<? extends E>) c));
+  }
+
+  @Override
+  public int count(@Nullable Object element) {
+    return complete(asyncSet.count(element));
+  }
+
+  @Override
+  public int add(@Nullable E element, int occurrences) {
+    return complete(asyncSet.add(element, occurrences));
+  }
+
+  @Override
+  public int remove(@Nullable Object element, int occurrences) {
+    return complete(asyncSet.remove(element, occurrences));
+  }
+
+  @Override
+  public int setCount(E element, int count) {
+    return complete(asyncSet.setCount(element, count));
+  }
+
+  @Override
+  public boolean setCount(E element, int oldCount, int newCount) {
+    return complete(asyncSet.setCount(element, oldCount, newCount));
+  }
+
+  @Override
+  public DistributedSet<E> elementSet() {
+    return new BlockingDistributedSet<>(asyncSet.elementSet(), operationTimeoutMillis);
+  }
+
+  @Override
+  public DistributedSet<Entry<E>> entrySet() {
+    return new BlockingDistributedSet<>(async().entrySet(), operationTimeoutMillis);
   }
 
   @Override

@@ -13,27 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.collection.multiset;
+package io.atomix.core.collection.multiset.impl;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multiset;
-import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.collection.set.AsyncDistributedSet;
-import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveType;
+import io.atomix.core.collection.impl.CollectionUpdateResult;
+import io.atomix.core.collection.impl.DistributedCollectionService;
+import io.atomix.primitive.operation.Command;
+import io.atomix.primitive.operation.Query;
 
-import java.time.Duration;
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
 
 /**
- * Asynchronous distributed multiset.
+ * Distributed multiset service.
  */
-public interface AsyncDistributedMultiset<E> extends AsyncDistributedCollection<E> {
-  @Override
-  default PrimitiveType type() {
-    return DistributedMultisetType.instance();
-  }
+public interface DistributedMultisetService extends DistributedCollectionService {
 
   /**
    * Returns the number of occurrences of an element in this multiset (the <i>count</i> of the
@@ -48,12 +42,13 @@ public interface AsyncDistributedMultiset<E> extends AsyncDistributedCollection<
    * @return the number of occurrences of the element in this multiset; possibly zero but never
    *     negative
    */
-  CompletableFuture<Integer> count(Object element);
+  @Query("countOccurrences")
+  int count(Object element);
 
   /**
    * Adds a number of occurrences of an element to this multiset. Note that if
    * {@code occurrences == 1}, this method has the identical effect to {@link
-   * #add(Object)}. This method is functionally equivalent (except in the case
+   * #add(String)}. This method is functionally equivalent (except in the case
    * of overflow) to the call {@code addAll(Collections.nCopies(element,
    * occurrences))}, which would presumably perform much more poorly.
    *
@@ -69,7 +64,8 @@ public interface AsyncDistributedMultiset<E> extends AsyncDistributedCollection<
    *     implementation does not permit null elements. Note that if {@code
    *     occurrences} is zero, the implementation may opt to return normally.
    */
-  CompletableFuture<Integer> add(E element, int occurrences);
+  @Command("addOccurrences")
+  CollectionUpdateResult<Integer> add(String element, int occurrences);
 
   /**
    * Removes a number of occurrences of the specified element from this multiset. If the multiset
@@ -83,7 +79,8 @@ public interface AsyncDistributedMultiset<E> extends AsyncDistributedCollection<
    * @return the count of the element before the operation; possibly zero
    * @throws IllegalArgumentException if {@code occurrences} is negative
    */
-  CompletableFuture<Integer> remove(Object element, int occurrences);
+  @Command("removeOccurrences")
+  CollectionUpdateResult<Integer> remove(Object element, int occurrences);
 
   /**
    * Adds or removes the necessary occurrences of an element such that the
@@ -98,11 +95,12 @@ public interface AsyncDistributedMultiset<E> extends AsyncDistributedCollection<
    *     implementation does not permit null elements. Note that if {@code
    *     count} is zero, the implementor may optionally return zero instead.
    */
-  CompletableFuture<Integer> setCount(E element, int count);
+  @Command("setCount")
+  CollectionUpdateResult<Integer> setCount(String element, int count);
 
   /**
    * Conditionally sets the count of an element to a new value, as described in
-   * {@link #setCount(Object, int)}, provided that the element has the expected
+   * {@link #setCount(String, int)}, provided that the element has the expected
    * current count. If the current count is not {@code oldCount}, no change is
    * made.
    *
@@ -120,52 +118,67 @@ public interface AsyncDistributedMultiset<E> extends AsyncDistributedCollection<
    *     oldCount} and {@code newCount} are both zero, the implementor may
    *     optionally return {@code true} instead.
    */
-  CompletableFuture<Boolean> setCount(E element, int oldCount, int newCount);
+  @Command("updateCount")
+  CollectionUpdateResult<Boolean> setCount(String element, int oldCount, int newCount);
 
   /**
-   * Returns the set of distinct elements contained in this multiset. The
-   * element set is backed by the same data as the multiset, so any change to
-   * either is immediately reflected in the other. The order of the elements in
-   * the element set is unspecified.
+   * Returns the number of distinct elements in the multiset.
    *
-   * <p>If the element set supports any removal operations, these necessarily
-   * cause <b>all</b> occurrences of the removed element(s) to be removed from
-   * the multiset. Implementations are not expected to support the add
-   * operations, although this is possible.
-   *
-   * <p>A common use for the element set is to find the number of distinct
-   * elements in the multiset: {@code elementSet().size()}.
-   *
-   * @return a view of the set of distinct elements in this multiset
+   * @return the number of distinct elements in the multiset
    */
-  AsyncDistributedSet<E> elementSet();
+  @Query
+  int elements();
 
   /**
-   * Returns a view of the contents of this multiset, grouped into {@code
-   * Multiset.Entry} instances, each providing an element of the multiset and
-   * the count of that element. This set contains exactly one entry for each
-   * distinct element in the multiset (thus it always has the same size as the
-   * {@link #elementSet}). The order of the elements in the element set is
-   * unspecified.
+   * Returns an iterator.
    *
-   * <p>The entry set is backed by the same data as the multiset, so any change
-   * to either is immediately reflected in the other. However, multiset changes
-   * may or may not be reflected in any {@code Entry} instances already
-   * retrieved from the entry set (this is implementation-dependent).
-   * Furthermore, implementations are not required to support modifications to
-   * the entry set at all, and the {@code Entry} instances themselves don't
-   * even have methods for modification. See the specific implementation class
-   * for more details on how its entry set handles modifications.
-   *
-   * @return a set of entries representing the data of this multiset
+   * @return the iterator ID
    */
-  AsyncDistributedSet<Multiset.Entry<E>> entrySet();
+  @Command
+  long iterateElements();
 
-  @Override
-  default DistributedMultiset<E> sync() {
-    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
-  }
+  /**
+   * Returns the next batch of elements for the given iterator.
+   *
+   * @param iteratorId the iterator identifier
+   * @param position   the iterator position
+   * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
+   */
+  @Query
+  Batch<String> nextElements(long iteratorId, int position);
 
-  @Override
-  DistributedMultiset<E> sync(Duration operationTimeout);
+  /**
+   * Closes an iterator.
+   *
+   * @param iteratorId the iterator identifier
+   */
+  @Command
+  void closeElements(long iteratorId);
+
+  /**
+   * Returns an iterator.
+   *
+   * @return the iterator ID
+   */
+  @Command
+  long iterateEntries();
+
+  /**
+   * Returns the next batch of elements for the given iterator.
+   *
+   * @param iteratorId the iterator identifier
+   * @param position   the iterator position
+   * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
+   */
+  @Query
+  Batch<Multiset.Entry<String>> nextEntries(long iteratorId, int position);
+
+  /**
+   * Closes an iterator.
+   *
+   * @param iteratorId the iterator identifier
+   */
+  @Command
+  void closeEntries(long iteratorId);
+
 }

@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multisets;
 import com.google.common.collect.Sets;
 import io.atomix.utils.serializer.serializers.ArraysAsListSerializer;
 import io.atomix.utils.serializer.serializers.ImmutableListSerializer;
@@ -77,6 +78,7 @@ public final class Namespaces {
           ArrayDeque.class
       )
       .register(HashMultiset.class)
+      .register(Multisets.immutableEntry("", 0).getClass())
       .register(Sets.class)
       .register(Maps.immutableEntry("a", "b").getClass())
       .register(new ArraysAsListSerializer(), Arrays.asList().getClass())
