@@ -15,11 +15,11 @@
  */
 package io.atomix.core.impl;
 
-import io.atomix.core.atomic.map.AsyncAtomicMap;
-import io.atomix.core.atomic.map.AtomicMapType;
-import io.atomix.core.atomic.map.impl.AtomicMapProxy;
-import io.atomix.core.atomic.map.impl.AtomicMapService;
-import io.atomix.core.atomic.map.impl.TranscodingAsyncAtomicMap;
+import io.atomix.core.map.AsyncAtomicMap;
+import io.atomix.core.map.AtomicMapType;
+import io.atomix.core.map.impl.AtomicMapProxy;
+import io.atomix.core.map.impl.AtomicMapService;
+import io.atomix.core.map.impl.TranscodingAsyncAtomicMap;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
 import io.atomix.primitive.PrimitiveException;

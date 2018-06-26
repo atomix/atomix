@@ -15,8 +15,8 @@
  */
 package io.atomix.core.transaction.impl;
 
-import io.atomix.core.atomic.map.AsyncAtomicMap;
-import io.atomix.core.atomic.map.impl.MapUpdate;
+import io.atomix.core.map.AsyncAtomicMap;
+import io.atomix.core.map.impl.MapUpdate;
 import io.atomix.core.transaction.AsyncTransactionalMap;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionParticipant;

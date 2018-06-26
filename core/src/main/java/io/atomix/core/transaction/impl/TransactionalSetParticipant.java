@@ -15,8 +15,8 @@
  */
 package io.atomix.core.transaction.impl;
 
-import io.atomix.core.collection.set.AsyncDistributedSet;
-import io.atomix.core.collection.set.impl.SetUpdate;
+import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.core.set.impl.SetUpdate;
 import io.atomix.core.transaction.AsyncTransactionalSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionParticipant;
