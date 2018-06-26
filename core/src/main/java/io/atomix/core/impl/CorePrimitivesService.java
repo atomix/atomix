@@ -47,6 +47,8 @@ import io.atomix.core.collection.queue.DistributedQueue;
 import io.atomix.core.collection.queue.DistributedQueueType;
 import io.atomix.core.collection.set.DistributedSet;
 import io.atomix.core.collection.set.DistributedSetType;
+import io.atomix.core.concurrent.barrier.DistributedCyclicBarrier;
+import io.atomix.core.concurrent.barrier.DistributedCyclicBarrierType;
 import io.atomix.core.concurrent.lock.DistributedLock;
 import io.atomix.core.concurrent.lock.DistributedLockType;
 import io.atomix.core.concurrent.semaphore.DistributedSemaphore;
@@ -209,6 +211,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public DistributedLock getLock(String name) {
     return getPrimitive(name, DistributedLockType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public DistributedCyclicBarrier getCyclicBarrier(String name) {
+    return getPrimitive(name, DistributedCyclicBarrierType.instance(), configService.getConfig(name));
   }
 
   @Override

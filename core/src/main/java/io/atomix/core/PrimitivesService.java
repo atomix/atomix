@@ -51,6 +51,9 @@ import io.atomix.core.collection.queue.DistributedQueueType;
 import io.atomix.core.collection.set.DistributedSet;
 import io.atomix.core.collection.set.DistributedSetBuilder;
 import io.atomix.core.collection.set.DistributedSetType;
+import io.atomix.core.concurrent.barrier.DistributedCyclicBarrier;
+import io.atomix.core.concurrent.barrier.DistributedCyclicBarrierBuilder;
+import io.atomix.core.concurrent.barrier.DistributedCyclicBarrierType;
 import io.atomix.core.concurrent.lock.DistributedLock;
 import io.atomix.core.concurrent.lock.DistributedLockBuilder;
 import io.atomix.core.concurrent.lock.DistributedLockType;
@@ -421,6 +424,27 @@ public interface PrimitivesService {
   }
 
   /**
+   * Creates a new DistributedCyclicBarrierBuilder.
+   *
+   * @param name the primitive name
+   * @return distributed cyclic barrier builder
+   */
+  default DistributedCyclicBarrierBuilder cyclicBarrierBuilder(String name) {
+    return primitiveBuilder(name, DistributedCyclicBarrierType.instance());
+  }
+
+  /**
+   * Creates a new DistributedCyclicBarrierBuilder.
+   *
+   * @param name     the primitive name
+   * @param protocol the primitive protocol
+   * @return distributed cyclic barrier builder
+   */
+  default DistributedCyclicBarrierBuilder cyclicBarrierBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedCyclicBarrierType.instance(), protocol);
+  }
+
+  /**
    * Creates a new DistributedSemaphoreBuilder.
    *
    * @param name the primitive name
@@ -612,6 +636,14 @@ public interface PrimitivesService {
    * @return distributed lock builder
    */
   DistributedLock getLock(String name);
+
+  /**
+   * Returns a multiton cyclic barrier.
+   *
+   * @param name the primitive name
+   * @return the cyclic barrier
+   */
+  DistributedCyclicBarrier getCyclicBarrier(String name);
 
   /**
    * Creates a new DistributedSemaphore.

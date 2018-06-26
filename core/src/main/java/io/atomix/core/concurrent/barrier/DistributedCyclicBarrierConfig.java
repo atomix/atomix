@@ -13,29 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.concurrent.semaphore;
+package io.atomix.core.concurrent.barrier;
 
-import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
- * Semaphore service configuration.
+ * Distributed cyclic barrier configuration.
  */
-public class DistributedSemaphoreServiceConfig extends ServiceConfig {
-  private int initialCapacity;
-
-  /**
-   * Initialize this semaphore with the given permit count.
-   * Only the first initialization will be accepted.
-   *
-   * @param permits initial permits
-   * @return configuration
-   */
-  public DistributedSemaphoreServiceConfig setInitialCapacity(int permits) {
-    initialCapacity = permits;
-    return this;
-  }
-
-  public int initialCapacity() {
-    return initialCapacity;
+public class DistributedCyclicBarrierConfig extends PrimitiveConfig<DistributedCyclicBarrierConfig> {
+  @Override
+  public PrimitiveType getType() {
+    return DistributedCyclicBarrierType.instance();
   }
 }

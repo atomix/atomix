@@ -18,6 +18,7 @@ package io.atomix.core.concurrent.semaphore;
 import io.atomix.core.concurrent.semaphore.impl.DefaultDistributedSemaphoreService;
 import io.atomix.core.concurrent.semaphore.impl.DistributedSemaphoreProxyBuilder;
 import io.atomix.core.concurrent.semaphore.impl.DistributedSemaphoreResource;
+import io.atomix.core.concurrent.semaphore.impl.DistributedSemaphoreServiceConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
