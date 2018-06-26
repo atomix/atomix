@@ -245,7 +245,7 @@
             -notimestamp
             -link http://docs.oracle.com/javase/8/docs/api/
             -group "Core" io.atomix.core*
-            -group "Primitives" io.atomix.core.counter:io.atomix.core.election:io.atomix.core.generator:io.atomix.core.lock:io.atomix.core.map:io.atomix.core.multimap:io.atomix.core.queue:io.atomix.core.semaphore:io.atomix.core.set:io.atomix.core.transaction:io.atomix.core.tree:io.atomix.core.value
+            -group "Primitives" io.atomix.core.barrier:io.atomix.core.collection:io.atomix.core.counter:io.atomix.core.countermap:io.atomix.core.idgenerator:io.atomix.core.leadership:io.atomix.core.list:io.atomix.core.lock:io.atomix.core.map:io.atomix.core.multimap:io.atomix.core.multiset:io.atomix.core.queue:io.atomix.core.semaphore:io.atomix.core.set:io.atomix.core.transaction:io.atomix.core.tree:io.atomix.core.treemap:io.atomix.core.value:io.atomix.core.workqueue
             -group "Cluster Management" io.atomix.cluster*:io.atomix.messaging*:io.atomix.cluster.messaging*
             -group "Primitive API" io.atomix.primitive*
             -group "Raft Protocol" io.atomix.protocols.raft*
