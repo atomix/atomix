@@ -17,7 +17,6 @@ package io.atomix.core.concurrent.semaphore.impl;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import io.atomix.core.concurrent.semaphore.DistributedSemaphoreServiceConfig;
 import io.atomix.core.concurrent.semaphore.DistributedSemaphoreType;
 import io.atomix.core.concurrent.semaphore.QueueStatus;
 import io.atomix.primitive.service.AbstractPrimitiveService;

@@ -19,7 +19,6 @@ import io.atomix.core.concurrent.semaphore.AsyncDistributedSemaphore;
 import io.atomix.core.concurrent.semaphore.DistributedSemaphore;
 import io.atomix.core.concurrent.semaphore.DistributedSemaphoreBuilder;
 import io.atomix.core.concurrent.semaphore.DistributedSemaphoreConfig;
-import io.atomix.core.concurrent.semaphore.DistributedSemaphoreServiceConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 

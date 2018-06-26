@@ -32,6 +32,7 @@ import io.atomix.core.collection.list.DistributedList;
 import io.atomix.core.collection.multiset.DistributedMultiset;
 import io.atomix.core.collection.queue.DistributedQueue;
 import io.atomix.core.collection.set.DistributedSet;
+import io.atomix.core.concurrent.barrier.DistributedCyclicBarrier;
 import io.atomix.core.concurrent.lock.DistributedLock;
 import io.atomix.core.concurrent.semaphore.DistributedSemaphore;
 import io.atomix.core.coordination.leadership.LeaderElection;
@@ -406,6 +407,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   public DistributedLock getLock(String name) {
     return primitives.getLock(name);
+  }
+
+  @Override
+  public DistributedCyclicBarrier getCyclicBarrier(String name) {
+    return primitives.getCyclicBarrier(name);
   }
 
   @Override
