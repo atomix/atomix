@@ -15,8 +15,8 @@
  */
 package io.atomix.core.semaphore;
 
-import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
  * Semaphore configuration.

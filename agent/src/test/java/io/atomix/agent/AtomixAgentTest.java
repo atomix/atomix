@@ -19,7 +19,7 @@ import com.google.common.base.Joiner;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.core.Atomix;
-import io.atomix.core.map.ConsistentMap;
+import io.atomix.core.map.AtomicMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -65,9 +65,11 @@ public class AtomixAgentTest {
   @Test
   @Ignore
   public void testFormCluster() throws Exception {
+    String path = getClass().getClassLoader().getResource("test.conf").getPath();
+
     Thread thread1 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"node1@localhost:5000"});
+        AtomixAgent.main(new String[]{"node1@localhost:5000", "-c", path});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();
@@ -76,7 +78,7 @@ public class AtomixAgentTest {
 
     Thread thread2 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"node2@localhost:5001"});
+        AtomixAgent.main(new String[]{"node2@localhost:5001", "-c", path});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();
@@ -85,7 +87,7 @@ public class AtomixAgentTest {
 
     Thread thread3 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"node3@localhost:5002"});
+        AtomixAgent.main(new String[]{"node3@localhost:5002", "-c", path});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();
@@ -98,22 +100,22 @@ public class AtomixAgentTest {
 
     Thread.sleep(5000);
 
-    Atomix client1 = Atomix.builder()
+    Atomix client1 = Atomix.builder(path)
         .withLocalMember(Member.builder("client1")
             .withAddress("localhost:5003")
             .build())
         .build();
     client1.start().join();
 
-    Atomix client2 = Atomix.builder()
+    Atomix client2 = Atomix.builder(path)
         .withLocalMember(Member.builder("client2")
             .withAddress("localhost:5004")
             .build())
         .build();
     client2.start().join();
 
-    ConsistentMap<String, String> map1 = client1.getConsistentMap("test");
-    ConsistentMap<String, String> map2 = client2.getConsistentMap("test");
+    AtomicMap<String, String> map1 = client1.getAtomicMap("test");
+    AtomicMap<String, String> map2 = client2.getAtomicMap("test");
 
     map1.put("foo", "bar");
     assertEquals("bar", map2.get("foo").value());
@@ -190,8 +192,8 @@ public class AtomixAgentTest {
         .build();
     client2.start().join();
 
-    ConsistentMap<String, String> map1 = client1.getConsistentMap("test");
-    ConsistentMap<String, String> map2 = client2.getConsistentMap("test");
+    AtomicMap<String, String> map1 = client1.getAtomicMap("test");
+    AtomicMap<String, String> map2 = client2.getAtomicMap("test");
 
     map1.put("foo", "bar");
     assertEquals("bar", map2.get("foo").value());

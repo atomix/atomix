@@ -15,6 +15,6 @@
  */
 
 /**
- * Distributed counter primitive interfaces.
+ * Atomic counter primitive.
  */
 package io.atomix.core.counter;

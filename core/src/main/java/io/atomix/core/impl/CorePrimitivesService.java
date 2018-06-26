@@ -24,38 +24,46 @@ import io.atomix.core.AtomixRegistry;
 import io.atomix.core.ManagedPrimitivesService;
 import io.atomix.core.PrimitivesService;
 import io.atomix.core.counter.AtomicCounter;
+import io.atomix.core.counter.AtomicCounterMap;
 import io.atomix.core.counter.AtomicCounterType;
-import io.atomix.core.election.LeaderElection;
-import io.atomix.core.election.LeaderElectionType;
-import io.atomix.core.election.LeaderElector;
-import io.atomix.core.election.LeaderElectorType;
-import io.atomix.core.generator.AtomicIdGenerator;
-import io.atomix.core.generator.AtomicIdGeneratorType;
-import io.atomix.core.lock.DistributedLock;
-import io.atomix.core.lock.DistributedLockType;
-import io.atomix.core.map.AtomicCounterMap;
-import io.atomix.core.map.AtomicCounterMapType;
-import io.atomix.core.map.ConsistentMap;
-import io.atomix.core.map.ConsistentMapType;
-import io.atomix.core.map.ConsistentTreeMap;
-import io.atomix.core.map.ConsistentTreeMapType;
-import io.atomix.core.multimap.ConsistentMultimap;
-import io.atomix.core.multimap.ConsistentMultimapType;
-import io.atomix.core.queue.WorkQueue;
-import io.atomix.core.queue.WorkQueueType;
-import io.atomix.core.semaphore.DistributedSemaphore;
-import io.atomix.core.semaphore.DistributedSemaphoreType;
+import io.atomix.core.countermap.AtomicCounterMapType;
+import io.atomix.core.idgenerator.AtomicIdGenerator;
+import io.atomix.core.idgenerator.AtomicIdGeneratorType;
+import io.atomix.core.map.AtomicMap;
+import io.atomix.core.map.AtomicMapType;
+import io.atomix.core.multimap.AtomicMultimap;
+import io.atomix.core.multimap.AtomicMultimapType;
+import io.atomix.core.tree.AtomicDocumentTree;
+import io.atomix.core.tree.AtomicDocumentTreeType;
+import io.atomix.core.treemap.AtomicTreeMap;
+import io.atomix.core.treemap.AtomicTreeMapType;
+import io.atomix.core.value.AtomicValue;
+import io.atomix.core.value.AtomicValueType;
+import io.atomix.core.list.DistributedList;
+import io.atomix.core.list.DistributedListType;
+import io.atomix.core.multiset.DistributedMultiset;
+import io.atomix.core.multiset.DistributedMultisetType;
+import io.atomix.core.queue.DistributedQueue;
+import io.atomix.core.queue.DistributedQueueType;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetType;
+import io.atomix.core.barrier.DistributedCyclicBarrier;
+import io.atomix.core.barrier.DistributedCyclicBarrierType;
+import io.atomix.core.lock.DistributedLock;
+import io.atomix.core.lock.DistributedLockType;
+import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.semaphore.DistributedSemaphoreType;
+import io.atomix.core.leadership.LeaderElection;
+import io.atomix.core.leadership.LeaderElectionType;
+import io.atomix.core.leadership.LeaderElector;
+import io.atomix.core.leadership.LeaderElectorType;
+import io.atomix.core.workqueue.WorkQueue;
+import io.atomix.core.workqueue.WorkQueueType;
 import io.atomix.core.transaction.ManagedTransactionService;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionConfig;
 import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.transaction.impl.DefaultTransactionBuilder;
-import io.atomix.core.tree.DocumentTree;
-import io.atomix.core.tree.DocumentTreeType;
-import io.atomix.core.value.AtomicValue;
-import io.atomix.core.value.AtomicValueType;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
@@ -131,23 +139,23 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public <K, V> ConsistentMap<K, V> getConsistentMap(String name) {
-    return getPrimitive(name, ConsistentMapType.instance(), configService.getConfig(name));
+  public <K, V> AtomicMap<K, V> getAtomicMap(String name) {
+    return getPrimitive(name, AtomicMapType.instance(), configService.getConfig(name));
   }
 
   @Override
-  public <V> DocumentTree<V> getDocumentTree(String name) {
-    return getPrimitive(name, DocumentTreeType.instance(), configService.getConfig(name));
+  public <V> AtomicDocumentTree<V> getAtomicDocumentTree(String name) {
+    return getPrimitive(name, AtomicDocumentTreeType.instance(), configService.getConfig(name));
   }
 
   @Override
-  public <V> ConsistentTreeMap<V> getTreeMap(String name) {
-    return getPrimitive(name, ConsistentTreeMapType.instance(), configService.getConfig(name));
+  public <V> AtomicTreeMap<V> getAtomicTreeMap(String name) {
+    return getPrimitive(name, AtomicTreeMapType.instance(), configService.getConfig(name));
   }
 
   @Override
-  public <K, V> ConsistentMultimap<K, V> getConsistentMultimap(String name) {
-    return getPrimitive(name, ConsistentMultimapType.instance(), configService.getConfig(name));
+  public <K, V> AtomicMultimap<K, V> getAtomicMultimap(String name) {
+    return getPrimitive(name, AtomicMultimapType.instance(), configService.getConfig(name));
   }
 
   @Override
@@ -158,6 +166,21 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public <E> DistributedSet<E> getSet(String name) {
     return getPrimitive(name, DistributedSetType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public <E> DistributedQueue<E> getQueue(String name) {
+    return getPrimitive(name, DistributedQueueType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public <E> DistributedList<E> getList(String name) {
+    return getPrimitive(name, DistributedListType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public <E> DistributedMultiset<E> getMultiset(String name) {
+    return getPrimitive(name, DistributedMultisetType.instance(), configService.getConfig(name));
   }
 
   @Override
@@ -188,6 +211,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public DistributedLock getLock(String name) {
     return getPrimitive(name, DistributedLockType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public DistributedCyclicBarrier getCyclicBarrier(String name) {
+    return getPrimitive(name, DistributedCyclicBarrierType.instance(), configService.getConfig(name));
   }
 
   @Override

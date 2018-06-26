@@ -93,7 +93,7 @@ public class PrimaryBackupServerContext implements Managed<Void> {
    * @return the current server role
    */
   public Role getRole() {
-    return Objects.equals(primaryElection.getTerm().join().primary().memberId(), clusterMembershipService.getLocalMember().id())
+    return Objects.equals(Futures.get(primaryElection.getTerm()).primary().memberId(), clusterMembershipService.getLocalMember().id())
         ? Role.PRIMARY
         : Role.BACKUP;
   }
@@ -175,7 +175,7 @@ public class PrimaryBackupServerContext implements Managed<Void> {
    */
   private CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
     return CompletableFuture.completedFuture(MetadataResponse.ok(services.entrySet().stream()
-        .filter(entry -> entry.getValue().join().serviceType().name().equals(request.primitiveType()))
+        .filter(entry -> Futures.get(entry.getValue()).serviceType().name().equals(request.primitiveType()))
         .map(entry -> entry.getKey())
         .collect(Collectors.toSet())));
   }

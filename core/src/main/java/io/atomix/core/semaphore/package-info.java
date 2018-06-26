@@ -15,6 +15,6 @@
  */
 
 /**
- * Atomix profiles used to apply common node configurations.
+ * Distributed semaphore primitive.
  */
 package io.atomix.core.semaphore;

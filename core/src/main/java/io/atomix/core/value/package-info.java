@@ -15,6 +15,6 @@
  */
 
 /**
- * Distributed value primitive interfaces.
+ * Atomic value primitive.
  */
 package io.atomix.core.value;

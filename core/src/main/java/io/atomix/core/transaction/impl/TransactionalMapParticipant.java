@@ -15,7 +15,7 @@
  */
 package io.atomix.core.transaction.impl;
 
-import io.atomix.core.map.AsyncConsistentMap;
+import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.impl.MapUpdate;
 import io.atomix.core.transaction.AsyncTransactionalMap;
 import io.atomix.core.transaction.TransactionId;
@@ -34,9 +34,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public abstract class TransactionalMapParticipant<K, V> implements AsyncTransactionalMap<K, V>, TransactionParticipant<MapUpdate<K, V>> {
   protected final TransactionId transactionId;
-  protected final AsyncConsistentMap<K, V> consistentMap;
+  protected final AsyncAtomicMap<K, V> consistentMap;
 
-  protected TransactionalMapParticipant(TransactionId transactionId, AsyncConsistentMap<K, V> consistentMap) {
+  protected TransactionalMapParticipant(TransactionId transactionId, AsyncAtomicMap<K, V> consistentMap) {
     this.transactionId = checkNotNull(transactionId);
     this.consistentMap = checkNotNull(consistentMap);
   }

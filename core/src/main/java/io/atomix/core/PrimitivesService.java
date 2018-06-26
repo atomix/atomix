@@ -17,52 +17,64 @@ package io.atomix.core;
 
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterBuilder;
+import io.atomix.core.counter.AtomicCounterMap;
 import io.atomix.core.counter.AtomicCounterType;
-import io.atomix.core.election.LeaderElection;
-import io.atomix.core.election.LeaderElectionBuilder;
-import io.atomix.core.election.LeaderElectionType;
-import io.atomix.core.election.LeaderElector;
-import io.atomix.core.election.LeaderElectorBuilder;
-import io.atomix.core.election.LeaderElectorType;
-import io.atomix.core.generator.AtomicIdGenerator;
-import io.atomix.core.generator.AtomicIdGeneratorBuilder;
-import io.atomix.core.generator.AtomicIdGeneratorType;
-import io.atomix.core.lock.DistributedLock;
-import io.atomix.core.lock.DistributedLockBuilder;
-import io.atomix.core.lock.DistributedLockType;
-import io.atomix.core.map.AtomicCounterMap;
-import io.atomix.core.map.AtomicCounterMapBuilder;
-import io.atomix.core.map.AtomicCounterMapType;
-import io.atomix.core.map.ConsistentMap;
-import io.atomix.core.map.ConsistentMapBuilder;
-import io.atomix.core.map.ConsistentMapType;
-import io.atomix.core.map.ConsistentTreeMap;
-import io.atomix.core.map.ConsistentTreeMapBuilder;
-import io.atomix.core.map.ConsistentTreeMapType;
-import io.atomix.core.multimap.ConsistentMultimap;
-import io.atomix.core.multimap.ConsistentMultimapBuilder;
-import io.atomix.core.multimap.ConsistentMultimapType;
-import io.atomix.core.queue.WorkQueue;
-import io.atomix.core.queue.WorkQueueBuilder;
-import io.atomix.core.queue.WorkQueueType;
-import io.atomix.core.semaphore.DistributedSemaphore;
-import io.atomix.core.semaphore.DistributedSemaphoreBuilder;
-import io.atomix.core.semaphore.DistributedSemaphoreType;
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.DistributedSetBuilder;
-import io.atomix.core.set.DistributedSetType;
-import io.atomix.core.transaction.TransactionBuilder;
-import io.atomix.core.tree.DocumentTree;
-import io.atomix.core.tree.DocumentTreeBuilder;
-import io.atomix.core.tree.DocumentTreeType;
+import io.atomix.core.countermap.AtomicCounterMapBuilder;
+import io.atomix.core.countermap.AtomicCounterMapType;
+import io.atomix.core.idgenerator.AtomicIdGenerator;
+import io.atomix.core.idgenerator.AtomicIdGeneratorBuilder;
+import io.atomix.core.idgenerator.AtomicIdGeneratorType;
+import io.atomix.core.map.AtomicMap;
+import io.atomix.core.map.AtomicMapBuilder;
+import io.atomix.core.map.AtomicMapType;
+import io.atomix.core.multimap.AtomicMultimap;
+import io.atomix.core.multimap.AtomicMultimapBuilder;
+import io.atomix.core.multimap.AtomicMultimapType;
+import io.atomix.core.tree.AtomicDocumentTree;
+import io.atomix.core.tree.AtomicDocumentTreeBuilder;
+import io.atomix.core.tree.AtomicDocumentTreeType;
+import io.atomix.core.treemap.AtomicTreeMap;
+import io.atomix.core.treemap.AtomicTreeMapBuilder;
+import io.atomix.core.treemap.AtomicTreeMapType;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueBuilder;
 import io.atomix.core.value.AtomicValueType;
+import io.atomix.core.list.DistributedList;
+import io.atomix.core.list.DistributedListBuilder;
+import io.atomix.core.list.DistributedListType;
+import io.atomix.core.multiset.DistributedMultiset;
+import io.atomix.core.multiset.DistributedMultisetBuilder;
+import io.atomix.core.multiset.DistributedMultisetType;
+import io.atomix.core.queue.DistributedQueue;
+import io.atomix.core.queue.DistributedQueueBuilder;
+import io.atomix.core.queue.DistributedQueueType;
+import io.atomix.core.set.DistributedSet;
+import io.atomix.core.set.DistributedSetBuilder;
+import io.atomix.core.set.DistributedSetType;
+import io.atomix.core.barrier.DistributedCyclicBarrier;
+import io.atomix.core.barrier.DistributedCyclicBarrierBuilder;
+import io.atomix.core.barrier.DistributedCyclicBarrierType;
+import io.atomix.core.lock.DistributedLock;
+import io.atomix.core.lock.DistributedLockBuilder;
+import io.atomix.core.lock.DistributedLockType;
+import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.semaphore.DistributedSemaphoreBuilder;
+import io.atomix.core.semaphore.DistributedSemaphoreType;
+import io.atomix.core.leadership.LeaderElection;
+import io.atomix.core.leadership.LeaderElectionBuilder;
+import io.atomix.core.leadership.LeaderElectionType;
+import io.atomix.core.leadership.LeaderElector;
+import io.atomix.core.leadership.LeaderElectorBuilder;
+import io.atomix.core.leadership.LeaderElectorType;
+import io.atomix.core.workqueue.WorkQueue;
+import io.atomix.core.workqueue.WorkQueueBuilder;
+import io.atomix.core.workqueue.WorkQueueType;
+import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.util.Collection;
@@ -73,99 +85,99 @@ import java.util.Collection;
 public interface PrimitivesService {
 
   /**
-   * Creates a new ConsistentMapBuilder.
+   * Creates a new AtomicMapBuilder.
    *
    * @param name the primitive name
    * @param <K>  key type
    * @param <V>  value type
-   * @return builder for a consistent map
+   * @return builder for a atomic map
    */
-  default <K, V> ConsistentMapBuilder<K, V> consistentMapBuilder(String name) {
-    return primitiveBuilder(name, ConsistentMapType.instance());
+  default <K, V> AtomicMapBuilder<K, V> atomicMapBuilder(String name) {
+    return primitiveBuilder(name, AtomicMapType.instance());
   }
 
   /**
-   * Creates a new ConsistentMapBuilder.
+   * Creates a new AtomicMapBuilder.
    *
    * @param name     the primitive name
    * @param protocol the primitive protocol
    * @param <K>      key type
    * @param <V>      value type
-   * @return builder for a consistent map
+   * @return builder for a atomic map
    */
-  default <K, V> ConsistentMapBuilder<K, V> consistentMapBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, ConsistentMapType.instance(), protocol);
+  default <K, V> AtomicMapBuilder<K, V> atomicMapBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, AtomicMapType.instance(), protocol);
   }
 
   /**
-   * Creates a new ConsistentMapBuilder.
+   * Creates a new AtomicDocumentTreeBuilder.
    *
    * @param name the primitive name
    * @param <V>  value type
-   * @return builder for a consistent map
+   * @return builder for a atomic document tree
    */
-  default <V> DocumentTreeBuilder<V> documentTreeBuilder(String name) {
-    return primitiveBuilder(name, DocumentTreeType.instance());
+  default <V> AtomicDocumentTreeBuilder<V> atomicDocumentTreeBuilder(String name) {
+    return primitiveBuilder(name, AtomicDocumentTreeType.instance());
   }
 
   /**
-   * Creates a new ConsistentMapBuilder.
+   * Creates a new AtomicDocumentTreeBuilder.
    *
    * @param name     the primitive name
    * @param protocol the primitive protocol
    * @param <V>      value type
-   * @return builder for a consistent map
+   * @return builder for a atomic document tree
    */
-  default <V> DocumentTreeBuilder<V> documentTreeBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, DocumentTreeType.instance(), protocol);
+  default <V> AtomicDocumentTreeBuilder<V> atomicDocumentTreeBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, AtomicDocumentTreeType.instance(), protocol);
   }
 
   /**
-   * Creates a new {@code AsyncConsistentTreeMapBuilder}.
+   * Creates a new {@code AtomicTreeMapBuilder}.
    *
    * @param name the primitive name
    * @param <V>  value type
-   * @return builder for a async consistent tree map
+   * @return builder for a async atomic tree map
    */
-  default <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder(String name) {
-    return primitiveBuilder(name, ConsistentTreeMapType.instance());
+  default <V> AtomicTreeMapBuilder<V> atomicTreeMapBuilder(String name) {
+    return primitiveBuilder(name, AtomicTreeMapType.instance());
   }
 
   /**
-   * Creates a new {@code AsyncConsistentTreeMapBuilder}.
+   * Creates a new {@code AtomicTreeMapBuilder}.
    *
    * @param name     the primitive name
    * @param protocol the primitive protocol
    * @param <V>      value type
-   * @return builder for a async consistent tree map
+   * @return builder for a async atomic tree map
    */
-  default <V> ConsistentTreeMapBuilder<V> consistentTreeMapBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, ConsistentTreeMapType.instance(), protocol);
+  default <V> AtomicTreeMapBuilder<V> atomicTreeMapBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, AtomicTreeMapType.instance(), protocol);
   }
 
   /**
-   * Creates a new {@code AsyncConsistentSetMultimapBuilder}.
+   * Creates a new {@code AtomicMultimapBuilder}.
    *
    * @param name the primitive name
    * @param <K>  key type
    * @param <V>  value type
-   * @return builder for a set based async consistent multimap
+   * @return builder for a set based async atomic multimap
    */
-  default <K, V> ConsistentMultimapBuilder<K, V> consistentMultimapBuilder(String name) {
-    return primitiveBuilder(name, ConsistentMultimapType.instance());
+  default <K, V> AtomicMultimapBuilder<K, V> atomicMultimapBuilder(String name) {
+    return primitiveBuilder(name, AtomicMultimapType.instance());
   }
 
   /**
-   * Creates a new {@code AsyncConsistentSetMultimapBuilder}.
+   * Creates a new {@code AtomicMultimapBuilder}.
    *
    * @param name     the primitive name
    * @param protocol the primitive protocol
    * @param <K>      key type
    * @param <V>      value type
-   * @return builder for a set based async consistent multimap
+   * @return builder for a set based async atomic multimap
    */
-  default <K, V> ConsistentMultimapBuilder<K, V> consistentMultimapBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, ConsistentMultimapType.instance(), protocol);
+  default <K, V> AtomicMultimapBuilder<K, V> atomicMultimapBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, AtomicMultimapType.instance(), protocol);
   }
 
   /**
@@ -212,6 +224,75 @@ public interface PrimitivesService {
    */
   default <E> DistributedSetBuilder<E> setBuilder(String name, PrimitiveProtocol protocol) {
     return primitiveBuilder(name, DistributedSetType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new DistributedQueueBuilder.
+   *
+   * @param name the primitive name
+   * @param <E>  queue element type
+   * @return builder for a distributed queue
+   */
+  default <E> DistributedQueueBuilder<E> queueBuilder(String name) {
+    return primitiveBuilder(name, DistributedQueueType.instance());
+  }
+
+  /**
+   * Creates a new DistributedQueueBuilder.
+   *
+   * @param name     the primitive name
+   * @param protocol the primitive protocol
+   * @param <E>      queue element type
+   * @return builder for a distributed queue
+   */
+  default <E> DistributedQueueBuilder<E> queueBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedQueueType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new DistributedListBuilder.
+   *
+   * @param name the primitive name
+   * @param <E>  list element type
+   * @return builder for a distributed list
+   */
+  default <E> DistributedListBuilder<E> listBuilder(String name) {
+    return primitiveBuilder(name, DistributedListType.instance());
+  }
+
+  /**
+   * Creates a new DistributedQueueBuilder.
+   *
+   * @param name     the primitive name
+   * @param protocol the primitive protocol
+   * @param <E>      list element type
+   * @return builder for a distributed list
+   */
+  default <E> DistributedListBuilder<E> listBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedListType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new DistributedMultisetBuilder.
+   *
+   * @param name the primitive name
+   * @param <E>  multiset element type
+   * @return builder for a distributed multiset
+   */
+  default <E> DistributedMultisetBuilder<E> multisetBuilder(String name) {
+    return primitiveBuilder(name, DistributedMultisetType.instance());
+  }
+
+  /**
+   * Creates a new DistributedMultisetBuilder.
+   *
+   * @param name     the primitive name
+   * @param protocol the primitive protocol
+   * @param <E>      multiset element type
+   * @return builder for a distributed multiset
+   */
+  default <E> DistributedMultisetBuilder<E> multisetBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedMultisetType.instance(), protocol);
   }
 
   /**
@@ -343,6 +424,27 @@ public interface PrimitivesService {
   }
 
   /**
+   * Creates a new DistributedCyclicBarrierBuilder.
+   *
+   * @param name the primitive name
+   * @return distributed cyclic barrier builder
+   */
+  default DistributedCyclicBarrierBuilder cyclicBarrierBuilder(String name) {
+    return primitiveBuilder(name, DistributedCyclicBarrierType.instance());
+  }
+
+  /**
+   * Creates a new DistributedCyclicBarrierBuilder.
+   *
+   * @param name     the primitive name
+   * @param protocol the primitive protocol
+   * @return distributed cyclic barrier builder
+   */
+  default DistributedCyclicBarrierBuilder cyclicBarrierBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedCyclicBarrierType.instance(), protocol);
+  }
+
+  /**
    * Creates a new DistributedSemaphoreBuilder.
    *
    * @param name the primitive name
@@ -404,60 +506,87 @@ public interface PrimitivesService {
   TransactionBuilder transactionBuilder(String name);
 
   /**
-   * Creates a new ConsistentMapBuilder.
+   * Creates a new AtomicMap.
    *
    * @param name the primitive name
    * @param <K>  key type
    * @param <V>  value type
-   * @return builder for a consistent map
+   * @return a new atomic map
    */
-  <K, V> ConsistentMap<K, V> getConsistentMap(String name);
+  <K, V> AtomicMap<K, V> getAtomicMap(String name);
 
   /**
-   * Creates a new ConsistentMapBuilder.
+   * Creates a new AtomicMap.
    *
    * @param name the primitive name
    * @param <V>  value type
-   * @return builder for a consistent map
+   * @return a new atomic map
    */
-  <V> DocumentTree<V> getDocumentTree(String name);
+  <V> AtomicDocumentTree<V> getAtomicDocumentTree(String name);
 
   /**
-   * Creates a new {@code AsyncConsistentTreeMapBuilder}.
+   * Creates a new {@code AtomicTreeMap}.
    *
    * @param name the primitive name
    * @param <V>  value type
-   * @return builder for a async consistent tree map
+   * @return a new atomic tree map
    */
-  <V> ConsistentTreeMap<V> getTreeMap(String name);
+  <V> AtomicTreeMap<V> getAtomicTreeMap(String name);
 
   /**
-   * Creates a new {@code AsyncConsistentSetMultimapBuilder}.
+   * Creates a new {@code AtomicTreeMap}.
    *
    * @param name the primitive name
    * @param <K>  key type
    * @param <V>  value type
-   * @return builder for a set based async consistent multimap
+   * @return a new atomic tree map
    */
-  <K, V> ConsistentMultimap<K, V> getConsistentMultimap(String name);
+  <K, V> AtomicMultimap<K, V> getAtomicMultimap(String name);
 
   /**
-   * Creates a new {@code AtomicCounterMapBuilder}.
+   * Creates a new {@code AtomicCounterMap}.
    *
    * @param name the primitive name
    * @param <K>  key type
-   * @return builder for an atomic counter map
+   * @return a new atomic counter map
    */
   <K> AtomicCounterMap<K> getAtomicCounterMap(String name);
 
   /**
-   * Creates a new DistributedSetBuilder.
+   * Creates a new DistributedSet.
    *
    * @param name the primitive name
    * @param <E>  set element type
-   * @return builder for an distributed set
+   * @return a multiton instance of a distributed set
    */
   <E> DistributedSet<E> getSet(String name);
+
+  /**
+   * Creates a new DistributedQueue.
+   *
+   * @param name the primitive name
+   * @param <E>  queue element type
+   * @return a multiton instance of a distributed queue
+   */
+  <E> DistributedQueue<E> getQueue(String name);
+
+  /**
+   * Creates a new DistributedList.
+   *
+   * @param name the primitive name
+   * @param <E>  list element type
+   * @return a multiton instance of a distributed list
+   */
+  <E> DistributedList<E> getList(String name);
+
+  /**
+   * Creates a new DistributedMultiset.
+   *
+   * @param name the primitive name
+   * @param <E>  multiset element type
+   * @return a multiton instance of a distributed multiset
+   */
+  <E> DistributedMultiset<E> getMultiset(String name);
 
   /**
    * Creates a new AtomicCounterBuilder.
@@ -507,6 +636,14 @@ public interface PrimitivesService {
    * @return distributed lock builder
    */
   DistributedLock getLock(String name);
+
+  /**
+   * Returns a multiton cyclic barrier.
+   *
+   * @param name the primitive name
+   * @return the cyclic barrier
+   */
+  DistributedCyclicBarrier getCyclicBarrier(String name);
 
   /**
    * Creates a new DistributedSemaphore.

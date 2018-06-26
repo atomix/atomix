@@ -163,7 +163,7 @@ public class DistributedSemaphoreProxy
    *
    * @return CompletableFuture that is completed with the current permit holders
    */
-  CompletableFuture<Map<Long, Integer>> holderStatus() {
+  public CompletableFuture<Map<Long, Integer>> holderStatus() {
     return getProxyClient().applyBy(name(), service -> service.holderStatus());
   }
 

@@ -170,7 +170,7 @@ public class AtomixTest extends AbstractAtomixTest {
     Atomix atomix1 = startAtomix(1, Arrays.asList(1), Profile.CONSENSUS).get(30, TimeUnit.SECONDS);
     atomix1.stop().get(30, TimeUnit.SECONDS);
     try {
-      atomix1.start().join();
+      atomix1.start().get(30, TimeUnit.SECONDS);
       fail("Expected CompletionException");
     } catch (CompletionException ex) {
       assertTrue(ex.getCause() instanceof IllegalStateException);

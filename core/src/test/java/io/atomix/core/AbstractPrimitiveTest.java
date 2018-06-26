@@ -86,7 +86,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
   public static void teardownCluster() throws Exception {
     List<CompletableFuture<Void>> futures = servers.stream().map(Atomix::stop).collect(Collectors.toList());
     try {
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
     } catch (Exception e) {
       // Do nothing
     }
@@ -103,7 +103,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
   public void teardownTest() throws Exception {
     List<CompletableFuture<Void>> futures = clients.stream().map(Atomix::stop).collect(Collectors.toList());
     try {
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
     } catch (Exception e) {
       // Do nothing
     }

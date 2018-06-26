@@ -20,9 +20,9 @@ import com.google.common.collect.ImmutableSet;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.MemberId;
-import io.atomix.core.map.AsyncConsistentMap;
-import io.atomix.core.map.ConsistentMapConfig;
-import io.atomix.core.map.ConsistentMapType;
+import io.atomix.core.map.AsyncAtomicMap;
+import io.atomix.core.map.AtomicMapConfig;
+import io.atomix.core.map.AtomicMapType;
 import io.atomix.core.transaction.ManagedTransactionService;
 import io.atomix.core.transaction.ParticipantInfo;
 import io.atomix.core.transaction.TransactionException;
@@ -71,7 +71,7 @@ public class CoreTransactionService implements ManagedTransactionService {
   private final PrimitiveManagementService managementService;
   private final MemberId localMemberId;
   private final ClusterMembershipEventListener clusterEventListener = this::onMembershipChange;
-  private AsyncConsistentMap<TransactionId, TransactionInfo> transactions;
+  private AsyncAtomicMap<TransactionId, TransactionInfo> transactions;
   private final AtomicBoolean started = new AtomicBoolean();
 
   public CoreTransactionService(PrimitiveManagementService managementService) {
@@ -82,7 +82,7 @@ public class CoreTransactionService implements ManagedTransactionService {
   @Override
   public Set<TransactionId> getActiveTransactions() {
     checkState(isRunning());
-    return transactions.keySet().join();
+    return transactions.sync().keySet();
   }
 
   @Override
@@ -180,11 +180,11 @@ public class CoreTransactionService implements ManagedTransactionService {
    */
   private void onMembershipChange(ClusterMembershipEvent event) {
     if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
-      transactions.entrySet().thenAccept(entries -> entries.stream()
-          .filter(entry -> entry.getValue().value().coordinator.equals(event.subject().id()))
-          .forEach(entry -> {
-            recoverTransaction(entry.getKey(), entry.getValue().value());
-          }));
+      transactions.entrySet().stream()
+          .thenAccept(stream -> stream.filter(entry -> entry.getValue().value().coordinator.equals(event.subject().id()))
+              .forEach(entry -> {
+                recoverTransaction(entry.getKey(), entry.getValue().value());
+              }));
     }
   }
 
@@ -357,8 +357,8 @@ public class CoreTransactionService implements ManagedTransactionService {
   @SuppressWarnings("unchecked")
   public CompletableFuture<TransactionService> start() {
     managementService.getMembershipService().addListener(clusterEventListener);
-    return ConsistentMapType.<TransactionId, TransactionInfo>instance()
-        .newBuilder("atomix-transactions", new ConsistentMapConfig(), managementService)
+    return AtomicMapType.<TransactionId, TransactionInfo>instance()
+        .newBuilder("atomix-transactions", new AtomicMapConfig(), managementService)
         .withProtocol(managementService.getPartitionService().getSystemPartitionGroup().newProtocol())
         .withSerializer(SERIALIZER)
         .withCacheEnabled()

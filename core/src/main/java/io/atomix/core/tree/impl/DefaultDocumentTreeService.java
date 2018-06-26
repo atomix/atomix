@@ -21,10 +21,10 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
+import io.atomix.core.tree.AtomicDocumentTree;
+import io.atomix.core.tree.AtomicDocumentTreeType;
 import io.atomix.core.tree.DocumentPath;
-import io.atomix.core.tree.DocumentTree;
 import io.atomix.core.tree.DocumentTreeEvent;
-import io.atomix.core.tree.DocumentTreeType;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
 import io.atomix.primitive.Ordering;
@@ -49,11 +49,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
- * State Machine for {@link DocumentTreeProxy} resource.
+ * State Machine for {@link AtomicDocumentTreeProxy} resource.
  */
 public class DefaultDocumentTreeService extends AbstractPrimitiveService<DocumentTreeClient> implements DocumentTreeService {
   private final Serializer serializer = Serializer.using(Namespace.builder()
-      .register(DocumentTreeType.instance().namespace())
+      .register(AtomicDocumentTreeType.instance().namespace())
       .register(Versioned.class)
       .register(DocumentPath.class)
       .register(new LinkedHashMap().keySet().getClass())
@@ -61,30 +61,30 @@ public class DefaultDocumentTreeService extends AbstractPrimitiveService<Documen
       .register(Ordering.class)
       .register(SessionListenCommits.class)
       .register(SessionId.class)
-      .register(new com.esotericsoftware.kryo.Serializer<DefaultDocumentTree>() {
+      .register(new com.esotericsoftware.kryo.Serializer<DefaultAtomicDocumentTree>() {
         @Override
-        public void write(Kryo kryo, Output output, DefaultDocumentTree object) {
+        public void write(Kryo kryo, Output output, DefaultAtomicDocumentTree object) {
           kryo.writeObject(output, object.root);
         }
 
         @Override
         @SuppressWarnings("unchecked")
-        public DefaultDocumentTree read(Kryo kryo, Input input, Class<DefaultDocumentTree> type) {
-          return new DefaultDocumentTree(versionCounter::incrementAndGet,
+        public DefaultAtomicDocumentTree read(Kryo kryo, Input input, Class<DefaultAtomicDocumentTree> type) {
+          return new DefaultAtomicDocumentTree(versionCounter::incrementAndGet,
               kryo.readObject(input, DefaultDocumentTreeNode.class));
         }
-      }, DefaultDocumentTree.class)
+      }, DefaultAtomicDocumentTree.class)
       .register(DefaultDocumentTreeNode.class)
       .build());
 
   private Map<SessionId, SessionListenCommits> listeners = new HashMap<>();
   private AtomicLong versionCounter = new AtomicLong(0);
-  private DocumentTree<byte[]> docTree;
+  private AtomicDocumentTree<byte[]> docTree;
   private Set<DocumentPath> preparedKeys = Sets.newHashSet();
 
   public DefaultDocumentTreeService() {
-    super(DocumentTreeType.instance(), DocumentTreeClient.class);
-    this.docTree = new DefaultDocumentTree<>(versionCounter::incrementAndGet, Ordering.NATURAL);
+    super(AtomicDocumentTreeType.instance(), DocumentTreeClient.class);
+    this.docTree = new DefaultAtomicDocumentTree<>(versionCounter::incrementAndGet, Ordering.NATURAL);
   }
 
   @Override

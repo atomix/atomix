@@ -542,6 +542,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public void expireSession(long sessionId) {
     PrimaryBackupSession session = sessions.remove(sessionId);
     if (session != null) {
+      log.debug("Expiring session {}", session.sessionId());
       session.expire();
       service.expire(session.sessionId());
     }
@@ -555,6 +556,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public void closeSession(long sessionId) {
     PrimaryBackupSession session = sessions.remove(sessionId);
     if (session != null) {
+      log.debug("Closing session {}", session.sessionId());
       session.close();
       service.close(session.sessionId());
     }

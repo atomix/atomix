@@ -27,6 +27,7 @@ import com.typesafe.config.ConfigValue;
 import io.atomix.utils.Named;
 import io.atomix.utils.memory.MemorySize;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -52,6 +53,27 @@ public class ConfigMapper {
 
   public ConfigMapper(ClassLoader classLoader) {
     this.classLoader = classLoader;
+  }
+
+  /**
+   * Loads the given configuration file using the mapper, falling back to the given resources.
+   *
+   * @param type      the type to load
+   * @param file      the file to load
+   * @param resources the resources to which to fall back
+   * @param <T>       the resulting type
+   * @return the loaded configuration
+   */
+  public <T> T loadFile(Class<T> type, File file, String... resources) {
+    if (file == null) {
+      return loadResources(type, resources);
+    }
+
+    Config config = ConfigFactory.parseFile(file);
+    for (String resource : resources) {
+      config = config.withFallback(ConfigFactory.load(classLoader, resource));
+    }
+    return map(config, type);
   }
 
   /**
@@ -95,8 +117,8 @@ public class ConfigMapper {
   /**
    * Applies the given configuration to the given type.
    *
-   * @param config     the configuration to apply
-   * @param clazz      the class to which to apply the configuration
+   * @param config the configuration to apply
+   * @param clazz  the class to which to apply the configuration
    */
   @SuppressWarnings("unchecked")
   protected <T> T map(Config config, String path, String name, Class<T> clazz) {
