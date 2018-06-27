@@ -123,7 +123,7 @@ public class NettyBroadcastService implements ManagedBroadcastService {
 
   public NettyBroadcastService(Address localAddress, Address groupAddress, boolean enabled) {
     this.enabled = enabled;
-    this.localAddress = new InetSocketAddress(localAddress.host(), groupAddress.port());
+    this.localAddress = new InetSocketAddress(localAddress.host(), localAddress.port());
     this.groupAddress = new InetSocketAddress(groupAddress.host(), groupAddress.port());
     try {
       iface = NetworkInterface.getByInetAddress(localAddress.address());
