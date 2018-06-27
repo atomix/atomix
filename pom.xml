@@ -86,7 +86,7 @@
         <argLine.java9>--add-modules jdk.unsupported --add-opens=java.base/java.nio=ALL-UNNAMED</argLine.java9>
       </properties>
       <activation>
-        <jdk>9</jdk>
+        <jdk>!8</jdk>
       </activation>
     </profile>
   </profiles>
