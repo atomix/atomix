@@ -111,7 +111,7 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
     protected PrimitiveTypeRegistry primitiveTypes;
     protected MemberGroupProvider memberGroupProvider;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
-    protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
+    protected int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 16), 4);
     protected ThreadContextFactory threadContextFactory;
 
     /**
