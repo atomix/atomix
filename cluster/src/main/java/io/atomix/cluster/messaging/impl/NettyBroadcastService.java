@@ -135,7 +135,7 @@ public class NettyBroadcastService implements ManagedBroadcastService {
   @Override
   public void broadcast(byte[] message) {
     if (enabled) {
-      ByteBuf buf = serverChannel.alloc().buffer();
+      ByteBuf buf = serverChannel.alloc().buffer(4 + message.length);
       buf.writeInt(message.length).writeBytes(message);
       serverChannel.writeAndFlush(new DatagramPacket(buf, groupAddress));
     }
