@@ -188,7 +188,7 @@ public interface RaftClient {
     protected MemberId memberId;
     protected RaftClientProtocol protocol;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
-    protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
+    protected int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 16), 4);
 
     protected Builder(Collection<MemberId> cluster) {
       this.cluster = checkNotNull(cluster, "cluster cannot be null");

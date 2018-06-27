@@ -252,7 +252,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     super(config.getClusterConfig());
     config.getProfiles().forEach(profile -> registry.profiles().getProfile(profile).configure(config));
     this.executorService = Executors.newScheduledThreadPool(
-        Runtime.getRuntime().availableProcessors(),
+        Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 8), 4),
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
     this.registry = registry;
     this.config = new DefaultConfigService(config.getPrimitives().values());

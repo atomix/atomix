@@ -155,7 +155,8 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
 
   @Override
   public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
-    threadFactory = new BlockingAwareThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
+    int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 32), 4);
+    threadFactory = new BlockingAwareThreadPoolContextFactory("atomix-" + name() + "-%d", threadPoolSize, LOGGER);
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
         .map(p -> p.join(managementService, threadFactory))
         .collect(Collectors.toList());
@@ -167,7 +168,8 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
 
   @Override
   public CompletableFuture<ManagedPartitionGroup> connect(PartitionManagementService managementService) {
-    threadFactory = new BlockingAwareThreadPoolContextFactory("atomix-" + name() + "-%d", Runtime.getRuntime().availableProcessors() * 2, LOGGER);
+    int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 32), 4);
+    threadFactory = new BlockingAwareThreadPoolContextFactory("atomix-" + name() + "-%d", threadPoolSize, LOGGER);
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
         .map(p -> p.connect(managementService, threadFactory))
         .collect(Collectors.toList());
