@@ -21,6 +21,7 @@ import io.atomix.cluster.GroupMembershipConfig;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
+import io.atomix.cluster.impl.TestMemberLocationProvider;
 import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.MessagingService;
@@ -63,7 +64,6 @@ public class DefaultClusterEventServiceTest {
   @Test
   public void testClusterEventService() throws Exception {
     TestMessagingServiceFactory messagingServiceFactory = new TestMessagingServiceFactory();
-    TestBroadcastServiceFactory broadcastServiceFactory = new TestBroadcastServiceFactory();
 
     Collection<Member> bootstrapMembers = buildBootstrapMembers(1, 2, 3);
 
@@ -73,7 +73,7 @@ public class DefaultClusterEventServiceTest {
         localMember1,
         bootstrapMembers,
         messagingService1,
-        broadcastServiceFactory.newBroadcastService().start().join(),
+        new TestMemberLocationProvider(),
         new GroupMembershipConfig());
     ClusterMembershipService clusterMembershipService1 = clusterService1.start().join();
     ManagedClusterEventService clusterEventingService1 = new DefaultClusterEventService(clusterMembershipService1, messagingService1);
@@ -85,7 +85,7 @@ public class DefaultClusterEventServiceTest {
         localMember2,
         bootstrapMembers,
         messagingService2,
-        broadcastServiceFactory.newBroadcastService().start().join(),
+        new TestMemberLocationProvider(),
         new GroupMembershipConfig());
     ClusterMembershipService clusterMembershipService2 = clusterService2.start().join();
     ManagedClusterEventService clusterEventingService2 = new DefaultClusterEventService(clusterMembershipService2, messagingService2);
@@ -97,7 +97,7 @@ public class DefaultClusterEventServiceTest {
         localMember3,
         bootstrapMembers,
         messagingService3,
-        broadcastServiceFactory.newBroadcastService().start().join(),
+        new TestMemberLocationProvider(),
         new GroupMembershipConfig());
     ClusterMembershipService clusterMembershipService3 = clusterService3.start().join();
     ManagedClusterEventService clusterEventingService3 = new DefaultClusterEventService(clusterMembershipService3, messagingService3);

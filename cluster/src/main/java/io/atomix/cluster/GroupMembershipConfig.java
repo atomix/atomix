@@ -16,6 +16,7 @@
 package io.atomix.cluster;
 
 import io.atomix.utils.config.Config;
+import io.atomix.utils.config.ConfigurationException;
 
 /**
  * Group membership protocol configuration.
@@ -25,9 +26,44 @@ public class GroupMembershipConfig implements Config {
   private static final int DEFAULT_FAILURE_TIMEOUT = 10000;
   private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
 
+  private MemberLocationProvider locationProvider;
   private int heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
   private int phiFailureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
   private int failureTimeout = DEFAULT_FAILURE_TIMEOUT;
+
+  /**
+   * Returns the member location provider.
+   *
+   * @return the member location provider
+   */
+  public MemberLocationProvider getLocationProvider() {
+    return locationProvider;
+  }
+
+  /**
+   * Sets the member location provider.
+   *
+   * @param locationProvider the member location provider
+   * @return the membership configuration
+   */
+  public GroupMembershipConfig setLocationProvider(Class<? extends MemberLocationProvider> locationProvider) {
+    try {
+      return setLocationProvider(locationProvider.newInstance());
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ConfigurationException("Failed to instantiate location provider", e);
+    }
+  }
+
+  /**
+   * Sets the member location provider.
+   *
+   * @param locationProvider the member location provider
+   * @return the membership configuration
+   */
+  public GroupMembershipConfig setLocationProvider(MemberLocationProvider locationProvider) {
+    this.locationProvider = locationProvider;
+    return this;
+  }
 
   /**
    * Returns the failure detector heartbeat interval.
