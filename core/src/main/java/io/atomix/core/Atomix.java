@@ -19,33 +19,34 @@ import com.google.common.collect.Streams;
 import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
+import io.atomix.cluster.MemberLocationProvider;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.core.barrier.DistributedCyclicBarrier;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterMap;
 import io.atomix.core.idgenerator.AtomicIdGenerator;
-import io.atomix.core.map.AtomicMap;
-import io.atomix.core.multimap.AtomicMultimap;
-import io.atomix.core.tree.AtomicDocumentTree;
-import io.atomix.core.treemap.AtomicTreeMap;
-import io.atomix.core.value.AtomicValue;
-import io.atomix.core.list.DistributedList;
-import io.atomix.core.multiset.DistributedMultiset;
-import io.atomix.core.queue.DistributedQueue;
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.barrier.DistributedCyclicBarrier;
-import io.atomix.core.lock.DistributedLock;
-import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.impl.CorePrimitivesService;
 import io.atomix.core.leadership.LeaderElection;
 import io.atomix.core.leadership.LeaderElector;
-import io.atomix.core.workqueue.WorkQueue;
-import io.atomix.core.impl.CorePrimitivesService;
+import io.atomix.core.list.DistributedList;
+import io.atomix.core.lock.DistributedLock;
+import io.atomix.core.map.AtomicMap;
+import io.atomix.core.multimap.AtomicMultimap;
+import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.profile.Profile;
+import io.atomix.core.queue.DistributedQueue;
+import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionService;
+import io.atomix.core.tree.AtomicDocumentTree;
+import io.atomix.core.treemap.AtomicTreeMap;
 import io.atomix.core.utils.config.PartitionGroupConfigMapper;
 import io.atomix.core.utils.config.PolymorphicConfigMapper;
 import io.atomix.core.utils.config.PrimitiveConfigMapper;
 import io.atomix.core.utils.config.PrimitiveProtocolConfigMapper;
+import io.atomix.core.value.AtomicValue;
+import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveInfo;
@@ -679,6 +680,12 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     }
 
     @Override
+    public Builder withLocalMember(String localMember) {
+      super.withLocalMember(localMember);
+      return this;
+    }
+
+    @Override
     public Builder withMembers(Member... members) {
       super.withMembers(members);
       return this;
@@ -705,6 +712,12 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     @Override
     public Builder withMulticastAddress(Address address) {
       super.withMulticastAddress(address);
+      return this;
+    }
+
+    @Override
+    public Builder withLocationProvider(MemberLocationProvider locationProvider) {
+      super.withLocationProvider(locationProvider);
       return this;
     }
 

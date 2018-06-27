@@ -15,12 +15,10 @@
  */
 package io.atomix.cluster.impl;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
@@ -29,7 +27,9 @@ import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.Member.State;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.messaging.BroadcastService;
+import io.atomix.cluster.MemberLocationEvent;
+import io.atomix.cluster.MemberLocationEventListener;
+import io.atomix.cluster.MemberLocationProvider;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
@@ -50,7 +50,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -82,7 +81,7 @@ public class DefaultClusterMembershipService
           .build("ClusterMembershipService"));
 
   private final MessagingService messagingService;
-  private final BroadcastService broadcastService;
+  private final MemberLocationProvider locationProvider;
   private final Collection<Member> bootstrapMembers;
 
   private final int heartbeatInterval;
@@ -91,10 +90,11 @@ public class DefaultClusterMembershipService
 
   private final AtomicBoolean started = new AtomicBoolean();
   private final StatefulMember localMember;
-  private volatile Map<String, String> localMetadata;
+  private volatile Map<String, String> localMetadata = Maps.newConcurrentMap();
   private final Map<MemberId, StatefulMember> members = Maps.newConcurrentMap();
+  private final Set<Address> locations = Sets.newConcurrentHashSet();
   private final Map<MemberId, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
-  private final Consumer<byte[]> broadcastListener = this::handleBroadcastMessage;
+  private final MemberLocationEventListener locationEventListener = this::handleLocationEvent;
 
   private final ScheduledExecutorService heartbeatScheduler = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-cluster-heartbeat-sender", LOGGER));
@@ -106,10 +106,10 @@ public class DefaultClusterMembershipService
       Member localMember,
       Collection<Member> bootstrapMembers,
       MessagingService messagingService,
-      BroadcastService broadcastService,
+      MemberLocationProvider locationProvider,
       GroupMembershipConfig config) {
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
-    this.broadcastService = checkNotNull(broadcastService, "broadcastService cannot be null");
+    this.locationProvider = checkNotNull(locationProvider, "locationProvider cannot be null");
     this.localMember = new StatefulMember(
         localMember.id(),
         localMember.address(),
@@ -143,20 +143,30 @@ public class DefaultClusterMembershipService
   }
 
   /**
-   * Broadcasts this member's identity.
+   * Handles a member location event.
+   *
+   * @param event the member location event
    */
-  private void broadcastIdentity() {
-    broadcastService.broadcast(SERIALIZER.encode(localMember));
-  }
-
-  /**
-   * Handles a broadcast message.
-   */
-  private void handleBroadcastMessage(byte[] message) {
-    StatefulMember member = SERIALIZER.decode(message);
-    if (members.putIfAbsent(member.id(), member) == null) {
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, member));
-      sendHeartbeats();
+  private void handleLocationEvent(MemberLocationEvent event) {
+    switch (event.type()) {
+      case JOIN:
+        locations.add(event.address());
+        break;
+      case LEAVE:
+        locations.remove(event.address());
+        members.values()
+            .stream()
+            .filter(m -> m.address().equals(event.address()))
+            .findFirst()
+            .ifPresent(m -> {
+              StatefulMember member = members.remove(m.id());
+              if (member != null) {
+                post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_REMOVED, member));
+              }
+            });
+        break;
+      default:
+        throw new AssertionError();
     }
   }
 
@@ -188,13 +198,15 @@ public class DefaultClusterMembershipService
             member.host(),
             member.metadata()));
 
+    Collection<StatefulMember> allMembers = Stream.concat(clusterMembers, bootstrapMembers).collect(Collectors.toList());
+
     byte[] payload = SERIALIZER.encode(new ClusterHeartbeat(
         localMember.id(),
         localMember.zone(),
         localMember.rack(),
         localMember.host(),
         localMember.metadata()));
-    return Futures.allOf(Stream.concat(clusterMembers, bootstrapMembers).map(member -> {
+    return Futures.allOf(allMembers.stream().map(member -> {
       LOGGER.trace("{} - Sending heartbeat: {}", localMember.id(), member.id());
       CompletableFuture<Void> future = sendHeartbeat(member.address(), payload);
       PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(member.id(), n -> new PhiAccrualFailureDetector());
@@ -210,6 +222,10 @@ public class DefaultClusterMembershipService
       }
       return future.exceptionally(v -> null);
     }).collect(Collectors.toList()))
+        .thenCompose(v -> {
+          Set<Address> missingLocations = Sets.difference(locations, allMembers.stream().map(member -> member.address()).collect(Collectors.toSet()));
+          return Futures.allOf(missingLocations.stream().map(address -> sendHeartbeat(address, payload)));
+        })
         .thenApply(v -> null);
   }
 
@@ -297,20 +313,18 @@ public class DefaultClusterMembershipService
   @Override
   public CompletableFuture<ClusterMembershipService> start() {
     if (started.compareAndSet(false, true)) {
-      broadcastService.addListener(broadcastListener);
+      locationProvider.addListener(locationEventListener);
       LOGGER.info("{} - Member activated: {}", localMember.id(), localMember);
       localMember.setState(State.ACTIVE);
       members.put(localMember.id(), localMember);
       messagingService.registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatExecutor);
 
       ComposableFuture<Void> future = new ComposableFuture<>();
-      broadcastIdentity();
       sendHeartbeats().whenComplete((r, e) -> {
         future.complete(null);
       });
 
       heartbeatFuture = heartbeatScheduler.scheduleWithFixedDelay(() -> {
-        broadcastIdentity();
         sendHeartbeats();
       }, 0, heartbeatInterval, TimeUnit.MILLISECONDS);
 
@@ -340,23 +354,5 @@ public class DefaultClusterMembershipService
       LOGGER.info("Stopped");
     }
     return CompletableFuture.completedFuture(null);
-  }
-
-  /**
-   * Address serializer.
-   */
-  private static class AddressSerializer extends com.esotericsoftware.kryo.Serializer<Address> {
-    @Override
-    public void write(Kryo kryo, Output output, Address address) {
-      output.writeString(address.address().getHostAddress());
-      output.writeInt(address.port());
-    }
-
-    @Override
-    public Address read(Kryo kryo, Input input, Class<Address> type) {
-      String host = input.readString();
-      int port = input.readInt();
-      return Address.from(host, port);
-    }
   }
 }

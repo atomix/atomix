@@ -22,7 +22,6 @@ import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.Member.State;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.messaging.impl.TestBroadcastServiceFactory;
 import io.atomix.cluster.messaging.impl.TestMessagingServiceFactory;
 import org.junit.Test;
 
@@ -60,7 +59,6 @@ public class DefaultClusterMembershipServiceTest {
   @Test
   public void testClusterService() throws Exception {
     TestMessagingServiceFactory messagingServiceFactory = new TestMessagingServiceFactory();
-    TestBroadcastServiceFactory broadcastServiceFactory = new TestBroadcastServiceFactory();
 
     Collection<Member> bootstrapNodes = buildBootstrapMembers(1, 2, 3);
 
@@ -69,7 +67,7 @@ public class DefaultClusterMembershipServiceTest {
         localMember1,
         bootstrapNodes,
         messagingServiceFactory.newMessagingService(localMember1.address()).start().join(),
-        broadcastServiceFactory.newBroadcastService().start().join(),
+        new TestMemberLocationProvider(),
         new GroupMembershipConfig());
 
     Member localMember2 = buildMember(2);
@@ -77,7 +75,7 @@ public class DefaultClusterMembershipServiceTest {
         localMember2,
         bootstrapNodes,
         messagingServiceFactory.newMessagingService(localMember2.address()).start().join(),
-        broadcastServiceFactory.newBroadcastService().start().join(),
+        new TestMemberLocationProvider(),
         new GroupMembershipConfig());
 
     Member localMember3 = buildMember(3);
@@ -85,7 +83,7 @@ public class DefaultClusterMembershipServiceTest {
         localMember3,
         bootstrapNodes,
         messagingServiceFactory.newMessagingService(localMember3.address()).start().join(),
-        broadcastServiceFactory.newBroadcastService().start().join(),
+        new TestMemberLocationProvider(),
         new GroupMembershipConfig());
 
     assertNull(clusterService1.getMember(MemberId.from("1")));
@@ -117,7 +115,7 @@ public class DefaultClusterMembershipServiceTest {
         anonymousMember,
         bootstrapNodes,
         messagingServiceFactory.newMessagingService(anonymousMember.address()).start().join(),
-        broadcastServiceFactory.newBroadcastService().start().join(),
+        new TestMemberLocationProvider(),
         new GroupMembershipConfig());
 
     assertEquals(State.INACTIVE, ephemeralClusterService.getLocalMember().getState());

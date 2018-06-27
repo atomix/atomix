@@ -20,7 +20,10 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -74,6 +77,69 @@ public class AtomixClusterTest {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
     } catch (Exception e) {
       // Do nothing
+    }
+  }
+
+  @Test
+  public void testDiscovery() throws Exception {
+    AtomixCluster cluster1 = AtomixCluster.builder()
+        .withLocalMember(Member.member("localhost:5000"))
+        .withMulticastEnabled()
+        .build();
+    AtomixCluster cluster2 = AtomixCluster.builder()
+        .withLocalMember(Member.member("localhost:5001"))
+        .withMulticastEnabled()
+        .build();
+    AtomixCluster cluster3 = AtomixCluster.builder()
+        .withLocalMember(Member.member("localhost:5002"))
+        .withMulticastEnabled()
+        .build();
+
+    TestClusterMembershipEventListener listener1 = new TestClusterMembershipEventListener();
+    cluster1.getMembershipService().addListener(listener1);
+    TestClusterMembershipEventListener listener2 = new TestClusterMembershipEventListener();
+    cluster2.getMembershipService().addListener(listener2);
+    TestClusterMembershipEventListener listener3 = new TestClusterMembershipEventListener();
+    cluster3.getMembershipService().addListener(listener3);
+
+    List<CompletableFuture<Void>> startFutures = Stream.of(cluster1, cluster2, cluster3).map(AtomixCluster::start)
+        .collect(Collectors.toList());
+    CompletableFuture.allOf(startFutures.toArray(new CompletableFuture[startFutures.size()])).get(10, TimeUnit.SECONDS);
+
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener1.nextEvent().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener1.nextEvent().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener2.nextEvent().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener2.nextEvent().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener3.nextEvent().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener3.nextEvent().type());
+
+    assertEquals(3, cluster1.getMembershipService().getMembers().size());
+    assertEquals(3, cluster2.getMembershipService().getMembers().size());
+    assertEquals(3, cluster3.getMembershipService().getMembers().size());
+
+    List<CompletableFuture<Void>> stopFutures = Stream.of(cluster1, cluster2, cluster3).map(AtomixCluster::stop)
+        .collect(Collectors.toList());
+    try {
+      CompletableFuture.allOf(stopFutures.toArray(new CompletableFuture[stopFutures.size()])).get(10, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      // Do nothing
+    }
+  }
+
+  private class TestClusterMembershipEventListener implements ClusterMembershipEventListener {
+    private BlockingQueue<ClusterMembershipEvent> queue = new ArrayBlockingQueue<ClusterMembershipEvent>(10);
+
+    @Override
+    public void onEvent(ClusterMembershipEvent event) {
+      queue.add(event);
+    }
+
+    ClusterMembershipEvent nextEvent() {
+      try {
+        return queue.poll(10, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        return null;
+      }
     }
   }
 }

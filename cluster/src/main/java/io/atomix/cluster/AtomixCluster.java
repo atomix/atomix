@@ -16,6 +16,7 @@
 package io.atomix.cluster;
 
 import com.google.common.collect.Streams;
+import io.atomix.cluster.impl.BroadcastMemberLocationProvider;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.messaging.BroadcastService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
@@ -124,6 +125,7 @@ public class AtomixCluster implements Managed<Void> {
 
   protected final ManagedMessagingService messagingService;
   protected final ManagedBroadcastService broadcastService;
+  protected final MemberLocationProvider locationProvider;
   protected final ManagedClusterMembershipService membershipService;
   protected final ManagedClusterCommunicationService communicationService;
   protected final ManagedClusterEventService eventService;
@@ -143,7 +145,8 @@ public class AtomixCluster implements Managed<Void> {
   public AtomixCluster(ClusterConfig config) {
     this.messagingService = buildMessagingService(config);
     this.broadcastService = buildBroadcastService(config);
-    this.membershipService = buildClusterMembershipService(config, messagingService, broadcastService);
+    this.locationProvider = buildLocationProvider(config, broadcastService);
+    this.membershipService = buildClusterMembershipService(config, messagingService, locationProvider);
     this.communicationService = buildClusterMessagingService(membershipService, messagingService);
     this.eventService = buildClusterEventService(membershipService, messagingService);
   }
@@ -215,6 +218,7 @@ public class AtomixCluster implements Managed<Void> {
     return messagingService.start()
         .thenComposeAsync(v -> broadcastService.start(), threadContext)
         .thenComposeAsync(v -> membershipService.start(), threadContext)
+        .thenComposeAsync(v -> locationProvider.join(membershipService.getLocalMember().address()), threadContext)
         .thenComposeAsync(v -> communicationService.start(), threadContext)
         .thenComposeAsync(v -> eventService.start(), threadContext)
         .thenApply(v -> null);
@@ -246,6 +250,8 @@ public class AtomixCluster implements Managed<Void> {
     return communicationService.stop()
         .exceptionally(e -> null)
         .thenComposeAsync(v -> eventService.stop(), threadContext)
+        .exceptionally(e -> null)
+        .thenComposeAsync(v -> locationProvider.leave(), threadContext)
         .exceptionally(e -> null)
         .thenComposeAsync(v -> membershipService.stop(), threadContext)
         .exceptionally(e -> null)
@@ -297,12 +303,23 @@ public class AtomixCluster implements Managed<Void> {
   }
 
   /**
+   * Builds a member location provider.
+   */
+  protected static MemberLocationProvider buildLocationProvider(ClusterConfig config, BroadcastService broadcastService) {
+    MemberLocationProvider locationProvider = config.getMembershipConfig().getLocationProvider();
+    if (locationProvider != null) {
+      return locationProvider;
+    }
+    return new BroadcastMemberLocationProvider(broadcastService, config.isMulticastEnabled());
+  }
+
+  /**
    * Builds a cluster service.
    */
   protected static ManagedClusterMembershipService buildClusterMembershipService(
       ClusterConfig config,
       MessagingService messagingService,
-      BroadcastService broadcastService) {
+      MemberLocationProvider locationProvider) {
     // If the local node has not be configured, create a default node.
     Member localMember;
     if (config.getLocalMember() == null) {
@@ -316,7 +333,10 @@ public class AtomixCluster implements Managed<Void> {
         config.getMembers()
             .stream()
             .map(Member::new)
-            .collect(Collectors.toList()), messagingService, broadcastService, config.getMembershipConfig());
+            .collect(Collectors.toList()),
+        messagingService,
+        locationProvider,
+        config.getMembershipConfig());
   }
 
   /**
@@ -431,6 +451,17 @@ public class AtomixCluster implements Managed<Void> {
      */
     public Builder withMulticastAddress(Address address) {
       config.setMulticastAddress(address);
+      return this;
+    }
+
+    /**
+     * Sets the member location provider.
+     *
+     * @param locationProvider the member location provider
+     * @return the Atomix cluster builder
+     */
+    public Builder withLocationProvider(MemberLocationProvider locationProvider) {
+      config.getMembershipConfig().setLocationProvider(locationProvider);
       return this;
     }
 
