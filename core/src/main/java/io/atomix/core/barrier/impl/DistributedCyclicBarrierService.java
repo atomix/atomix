@@ -24,6 +24,12 @@ import io.atomix.primitive.operation.Query;
 public interface DistributedCyclicBarrierService {
 
   /**
+   * Joins the barrier.
+   */
+  @Command
+  void join();
+
+  /**
    * Invokes await on the barrier, waiting until the given timeout.
    *
    * @param timeout the timeout
