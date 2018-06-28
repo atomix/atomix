@@ -129,19 +129,20 @@ public class DefaultRaftClient implements RaftClient {
       @Override
       public SessionClient build() {
         // Create a proxy builder that uses the session manager to open a session.
-        Supplier<SessionClient> proxyFactory = () -> new DefaultRaftSessionClient(
-            primitiveName,
-            primitiveType,
-            serviceConfig,
-            partitionId,
-            DefaultRaftClient.this.protocol,
-            selectorManager,
-            sessionManager,
-            readConsistency,
-            communicationStrategy,
-            threadContextFactory.createContext(),
-            minTimeout,
-            maxTimeout);
+        Supplier<CompletableFuture<SessionClient>> proxyFactory = () -> CompletableFuture.completedFuture(
+            new DefaultRaftSessionClient(
+                primitiveName,
+                primitiveType,
+                serviceConfig,
+                partitionId,
+                DefaultRaftClient.this.protocol,
+                selectorManager,
+                sessionManager,
+                readConsistency,
+                communicationStrategy,
+                threadContextFactory.createContext(),
+                minTimeout,
+                maxTimeout));
 
         SessionClient proxy;
 
@@ -157,7 +158,7 @@ public class DefaultRaftClient implements RaftClient {
               proxyFactory,
               context);
         } else {
-          proxy = proxyFactory.get();
+          proxy = proxyFactory.get().join();
         }
 
         // If max retries is set, wrap the client in a retrying proxy client.
