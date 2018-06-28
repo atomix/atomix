@@ -74,6 +74,7 @@ public class RaftStorage {
   private final boolean flushOnCommit;
   private final boolean retainStaleSnapshots;
   private final StorageStatistics statistics;
+  private final MemoryStatus memoryStatus;
 
   private RaftStorage(
       String prefix,
@@ -85,7 +86,8 @@ public class RaftStorage {
       boolean dynamicCompaction,
       double freeDiskBuffer,
       boolean flushOnCommit,
-      boolean retainStaleSnapshots) {
+      boolean retainStaleSnapshots,
+      MemoryStatus memoryStatus) {
     this.prefix = prefix;
     this.storageLevel = storageLevel;
     this.directory = directory;
@@ -96,6 +98,7 @@ public class RaftStorage {
     this.freeDiskBuffer = freeDiskBuffer;
     this.flushOnCommit = flushOnCommit;
     this.retainStaleSnapshots = retainStaleSnapshots;
+    this.memoryStatus = memoryStatus;
     this.statistics = new StorageStatistics(directory);
     directory.mkdirs();
   }
@@ -140,6 +143,18 @@ public class RaftStorage {
    */
   public StorageLevel storageLevel() {
     return storageLevel;
+  }
+
+  /**
+   * Returns the memory status.
+   * <p>
+   * The memory status is used to check if the node {@link MemoryStatus}
+   * is out of memory.
+   *
+   * @return The memory status.
+   */
+  public MemoryStatus memoryStatus() {
+    return memoryStatus;
   }
 
   /**
@@ -352,6 +367,7 @@ public class RaftStorage {
     private double freeDiskBuffer = DEFAULT_FREE_DISK_BUFFER;
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
     private boolean retainStaleSnapshots = DEFAULT_RETAIN_STALE_SNAPSHOTS;
+    private MemoryStatus memoryStatus;
 
     private Builder() {
     }
@@ -378,6 +394,20 @@ public class RaftStorage {
      */
     public Builder withStorageLevel(StorageLevel storageLevel) {
       this.storageLevel = checkNotNull(storageLevel, "storageLevel");
+      return this;
+    }
+
+    /**
+     * Sets the memory status, returning the builder for method chaining.
+     * <p>
+     * The memory status is used to check if the node {@link MemoryStatus}
+     * is out of memory.
+     *
+     * @param memoryStatus object.
+     * @return The storage builder.
+     */
+    public Builder withMemoryStatus(MemoryStatus memoryStatus) {
+      this.memoryStatus = checkNotNull(memoryStatus, "memoryStatus");
       return this;
     }
 
@@ -579,7 +609,8 @@ public class RaftStorage {
           dynamicCompaction,
           freeDiskBuffer,
           flushOnCommit,
-          retainStaleSnapshots);
+          retainStaleSnapshots,
+          memoryStatus);
     }
   }
 

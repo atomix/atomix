@@ -28,6 +28,7 @@ import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.service.RaftServiceContext;
 import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.storage.MemoryStatus;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
@@ -125,6 +126,21 @@ public class RaftServiceManager implements AutoCloseable {
   }
 
   /**
+   * Returns a boolean indicating whether the node is running out of memory.
+   */
+  private boolean isRunningOutOfMemory() {
+    StorageLevel level = raft.getStorage().storageLevel();
+    if (level == StorageLevel.MEMORY || level == StorageLevel.MAPPED) {
+        MemoryStatus status = raft.getStorage().memoryStatus();
+        if (status != null) {
+            return status.isRunningOutOfMemory();
+        }
+    }
+
+    return false;
+  }
+
+  /**
    * Schedules a snapshot iteration.
    */
   private void scheduleSnapshots() {
@@ -160,10 +176,13 @@ public class RaftServiceManager implements AutoCloseable {
       // Determine whether the node is running out of disk space.
       boolean runningOutOfDiskSpace = isRunningOutOfDiskSpace();
 
+      // Determine whether the node is running out of disk space.
+      boolean runningOutOfMemory = isRunningOutOfMemory();
+
       // If compaction is not already being forced...
       if (!force
-          // And the log is not in memory (we need to free up memory if it is)...
-          && raft.getStorage().storageLevel() != StorageLevel.MEMORY
+          // And the node isn't running out of memory (we need to free up memory if it is)...
+          && !runningOutOfMemory
           // And dynamic compaction is enabled (we need to compact immediately if it's disabled)...
           && raft.getStorage().dynamicCompaction()
           // And the node isn't running out of disk space (we need to compact immediately if it is)...
