@@ -84,6 +84,8 @@
       <id>java9</id>
       <properties>
         <argLine.java9>--add-modules jdk.unsupported --add-opens=java.base/java.nio=ALL-UNNAMED</argLine.java9>
+        <!-- coverall version 4.3.0 does not work with java 9, see https://github.com/trautonen/coveralls-maven-plugin/issues/112 -->
+        <coveralls.skip>true</coveralls.skip>
       </properties>
       <activation>
         <jdk>[1.9,)</jdk>
