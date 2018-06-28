@@ -50,7 +50,7 @@ public class RecoveringSessionClient implements SessionClient {
   private final PartitionId partitionId;
   private final String name;
   private final PrimitiveType primitiveType;
-  private final Supplier<SessionClient> proxyFactory;
+  private final Supplier<CompletableFuture<SessionClient>> proxyFactory;
   private final ThreadContext context;
   private Logger log;
   private volatile CompletableFuture<SessionClient> connectFuture;
@@ -67,7 +67,7 @@ public class RecoveringSessionClient implements SessionClient {
       PartitionId partitionId,
       String name,
       PrimitiveType primitiveType,
-      Supplier<SessionClient> sessionFactory,
+      Supplier<CompletableFuture<SessionClient>> sessionFactory,
       ThreadContext context) {
     this.partitionId = checkNotNull(partitionId);
     this.name = checkNotNull(name);
@@ -160,7 +160,7 @@ public class RecoveringSessionClient implements SessionClient {
    */
   private void openProxy(CompletableFuture<SessionClient> future) {
     log.debug("Opening proxy session");
-    proxyFactory.get().connect().whenComplete((proxy, error) -> {
+    proxyFactory.get().thenCompose(proxy -> proxy.connect()).whenComplete((proxy, error) -> {
       if (error == null) {
         synchronized (this) {
           this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(SessionClient.class)
