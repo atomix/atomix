@@ -56,7 +56,7 @@ public class NettyBroadcastServiceTest extends ConcurrentTestCase {
   @Before
   public void setUp() throws Exception {
     localAddress1 = Address.from("127.0.0.1", findAvailablePort(5001));
-    localAddress2 = Address.from("127.0.0.1", findAvailablePort(5001));
+    localAddress2 = Address.from("127.0.0.1", findAvailablePort(5002));
     groupAddress = Address.from("230.0.0.1", findAvailablePort(1234));
 
     netty1 = (ManagedBroadcastService) NettyBroadcastService.builder()

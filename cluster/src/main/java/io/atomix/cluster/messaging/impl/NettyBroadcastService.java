@@ -123,6 +123,7 @@ public class NettyBroadcastService implements ManagedBroadcastService {
 
   public NettyBroadcastService(Address localAddress, Address groupAddress, boolean enabled) {
     this.enabled = enabled;
+    // intentionally using the multicast port for localAddress
     this.localAddress = new InetSocketAddress(localAddress.host(), groupAddress.port());
     this.groupAddress = new InetSocketAddress(groupAddress.host(), groupAddress.port());
     try {
