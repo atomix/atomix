@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -171,8 +171,8 @@ public class AtomixTest extends AbstractAtomixTest {
     atomix1.stop().get(30, TimeUnit.SECONDS);
     try {
       atomix1.start().get(30, TimeUnit.SECONDS);
-      fail("Expected CompletionException");
-    } catch (CompletionException ex) {
+      fail("Expected ExecutionException");
+    } catch (ExecutionException ex) {
       assertTrue(ex.getCause() instanceof IllegalStateException);
       assertEquals("Atomix instance shutdown", ex.getCause().getMessage());
     }
