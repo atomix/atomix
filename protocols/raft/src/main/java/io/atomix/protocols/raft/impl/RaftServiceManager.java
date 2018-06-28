@@ -257,7 +257,7 @@ public class RaftServiceManager implements AutoCloseable {
         logger.debug("Completing snapshot {}", snapshot.index());
         snapshot.complete();
         // If log compaction is being forced, immediately compact the logs.
-        if (!raft.getLoadMonitor().isUnderHighLoad() || isRunningOutOfDiskSpace()) {
+        if (!raft.getLoadMonitor().isUnderHighLoad() || isRunningOutOfDiskSpace() || isRunningOutOfMemory()) {
           compactLogs(snapshot.index());
         } else {
           scheduleCompaction(snapshot.index());
