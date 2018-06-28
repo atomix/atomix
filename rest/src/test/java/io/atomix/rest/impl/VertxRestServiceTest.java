@@ -328,7 +328,7 @@ public class VertxRestServiceTest {
   public void testMap() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     JsonNode json = jsonFactory.objectNode()
-        .put("type", "consistent-map")
+        .put("type", "atomic-map")
         .put("cache-enabled", true)
         .put("null-values", false)
         .set("protocol", jsonFactory.objectNode()
