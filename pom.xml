@@ -75,7 +75,8 @@
     <maven.bundle.plugin.version>2.5.3</maven.bundle.plugin.version>
     <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
 
-    <argLine.java9 /> <!-- Overridden when 'java9' profile is active -->
+    <argLine.common>-Xss256k -Xms2G -Xmx4G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.scanSpec=io.atomix</argLine.common>
+    <argLine.extras /> <!-- Overridden when 'java9' profile is active -->
   </properties>
 
   <profiles>
@@ -83,13 +84,26 @@
     <profile>
       <id>java9</id>
       <properties>
-        <argLine.java9>--add-modules jdk.unsupported --add-opens=java.base/java.nio=ALL-UNNAMED</argLine.java9>
+        <argLine.common>-Xss256k -Xms2G -Xmx4G -Dio.atomix.scanSpec=io.atomix</argLine.common>
+        <argLine.extras>--add-modules jdk.unsupported --add-opens=java.base/java.nio=ALL-UNNAMED</argLine.extras>
         <!-- coverall version 4.3.0 does not work with java 9, see https://github.com/trautonen/coveralls-maven-plugin/issues/112 -->
         <coveralls.skip>true</coveralls.skip>
       </properties>
       <activation>
         <jdk>[1.9,)</jdk>
       </activation>
+    </profile>
+    <!-- JDK11+ -->
+    <profile>
+        <id>java11</id>
+        <properties>
+          <!--argLine.common>-Xss256k -Xms2G -Xmx4G -XX:+UseShenandoahGC -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages -XX:+UseNUMA -XX:-OmitStackTraceInFastThrow -Dio.atomix.scanSpec=io.atomix</argLine.common-->
+          <!-- jacoco version 0.8.1 does not work with java 11, see https://github.com/jacoco/jacoco/issues/663 -->
+          <jacoco.skip>true</jacoco.skip>
+        </properties>
+        <activation>
+            <jdk>[11,)</jdk>
+        </activation>
     </profile>
   </profiles>
 
@@ -201,7 +215,7 @@
         <version>${maven.surefire.plugin.version}</version>
         <configuration>
           <shutdown>kill</shutdown>
-          <argLine>${argLine} ${argLine.java9} -Xss256k -Xms2G -Xmx4G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.scanSpec=io.atomix</argLine>
+          <argLine>${argLine} ${argLine.extras} ${argLine.common}</argLine>
         </configuration>
       </plugin>
 
