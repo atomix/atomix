@@ -117,7 +117,9 @@ public class DistributedCyclicBarrierProxy
 
   @Override
   public CompletableFuture<AsyncDistributedCyclicBarrier> connect() {
-    return super.connect().thenCompose(v -> getProxyClient().getPartition(name()).connect()).thenApply(v -> this);
+    return super.connect()
+        .thenCompose(v -> getProxyClient().acceptBy(name(), service -> service.join()))
+        .thenApply(v -> this);
   }
 
   @Override

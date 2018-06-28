@@ -16,6 +16,7 @@
 package io.atomix.core.barrier.impl;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import io.atomix.core.barrier.DistributedCyclicBarrierType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
@@ -28,6 +29,7 @@ import io.atomix.utils.serializer.Serializer;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -41,6 +43,7 @@ public class DefaultDistributedCyclicBarrierService extends AbstractPrimitiveSer
       .register(SessionId.class)
       .build());
 
+  private Set<SessionId> parties = Sets.newHashSet();
   private long barrierId;
   private Map<SessionId, Waiter> waiters = Maps.newLinkedHashMap();
   private boolean broken;
@@ -56,6 +59,7 @@ public class DefaultDistributedCyclicBarrierService extends AbstractPrimitiveSer
 
   @Override
   public void backup(BackupOutput output) {
+    output.writeObject(parties);
     output.writeLong(barrierId);
     output.writeBoolean(broken);
     output.writeObject(waiters.entrySet().stream()
@@ -65,6 +69,7 @@ public class DefaultDistributedCyclicBarrierService extends AbstractPrimitiveSer
 
   @Override
   public void restore(BackupInput input) {
+    parties = input.readObject();
     barrierId = input.readLong();
     broken = input.readBoolean();
     this.waiters = Maps.newLinkedHashMap();
@@ -82,6 +87,8 @@ public class DefaultDistributedCyclicBarrierService extends AbstractPrimitiveSer
 
   @Override
   public void onClose(Session session) {
+    parties.remove(session.sessionId());
+
     Waiter waiter = waiters.remove(session.sessionId());
     if (waiter != null) {
       waiter.cancel();
@@ -112,8 +119,13 @@ public class DefaultDistributedCyclicBarrierService extends AbstractPrimitiveSer
   private void timeout(long barrierId) {
     if (this.barrierId == barrierId && !broken) {
       broken = true;
-      getSessions().forEach(session -> session.accept(client -> client.broken(barrierId)));
+      parties.forEach(session -> getSession(session).accept(client -> client.broken(barrierId)));
     }
+  }
+
+  @Override
+  public void join() {
+    parties.add(getCurrentSession().sessionId());
   }
 
   @Override
@@ -151,7 +163,7 @@ public class DefaultDistributedCyclicBarrierService extends AbstractPrimitiveSer
 
   @Override
   public int getParties() {
-    return getSessions().size();
+    return parties.size();
   }
 
   @Override
