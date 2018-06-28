@@ -29,7 +29,7 @@ public class DefaultRegistryTest {
   public void testRegistry() throws Exception {
     AtomixRegistry registry = AtomixRegistry.registry();
     assertFalse(registry.primitiveTypes().getPrimitiveTypes().isEmpty());
-    assertEquals("consistent-map", registry.primitiveTypes().getPrimitiveType("consistent-map").name());
+    assertEquals("atomic-map", registry.primitiveTypes().getPrimitiveType("atomic-map").name());
     assertFalse(registry.partitionGroupTypes().getGroupTypes().isEmpty());
     assertEquals("raft", registry.partitionGroupTypes().getGroupType("raft").name());
     assertFalse(registry.protocolTypes().getProtocolTypes().isEmpty());
