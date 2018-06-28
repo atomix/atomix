@@ -19,6 +19,9 @@ import com.google.common.collect.Multiset;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.set.DistributedSet;
 
+import java.util.Spliterator;
+import java.util.Spliterators;
+
 /**
  * Distributed multiset.
  */
@@ -29,6 +32,11 @@ public interface DistributedMultiset<E> extends DistributedCollection<E>, Multis
 
   @Override
   DistributedSet<Entry<E>> entrySet();
+
+  @Override
+  default Spliterator<E> spliterator() {
+    return Spliterators.spliterator(this, 0);
+  }
 
   @Override
   AsyncDistributedMultiset<E> async();
