@@ -101,21 +101,22 @@ public class PrimaryBackupClient {
     return new PrimaryBackupSessionClient.Builder() {
       @Override
       public SessionClient build() {
-        Supplier<SessionClient> proxyBuilder = () -> new PrimaryBackupSessionClient(
-            clientName,
-            partitionId,
-            Futures.get(sessionIdService.nextSessionId()),
-            primitiveType,
-            new PrimitiveDescriptor(
-                primitiveName,
-                primitiveType.name(),
-                configBytes,
-                numBackups,
-                replication),
-            clusterMembershipService,
-            PrimaryBackupClient.this.protocol,
-            primaryElection,
-            threadContextFactory.createContext());
+        Supplier<CompletableFuture<SessionClient>> proxyBuilder = () -> sessionIdService.nextSessionId()
+            .thenApply(sessionId -> new PrimaryBackupSessionClient(
+                clientName,
+                partitionId,
+                sessionId,
+                primitiveType,
+                new PrimitiveDescriptor(
+                    primitiveName,
+                    primitiveType.name(),
+                    configBytes,
+                    numBackups,
+                    replication),
+                clusterMembershipService,
+                PrimaryBackupClient.this.protocol,
+                primaryElection,
+                threadContextFactory.createContext()));
 
         SessionClient proxy;
         ThreadContext context = threadContextFactory.createContext();
@@ -128,7 +129,7 @@ public class PrimaryBackupClient {
               proxyBuilder,
               context);
         } else {
-          proxy = proxyBuilder.get();
+          proxy = Futures.get(proxyBuilder.get());
         }
 
         // If max retries is set, wrap the client in a retrying proxy client.
