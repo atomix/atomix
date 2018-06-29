@@ -23,6 +23,7 @@ verify:jdk8:
 verify:jdk11:
   <<: *verify
   image: maven:3-jdk-11
+  when: manual
 
 deploy:jdk8:
   stage: deploy
