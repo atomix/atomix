@@ -4,7 +4,7 @@
 
 ## [Website][Website] | [Javadoc][Javadoc] | [Google Group][Google group]
 
-[![Build Status](https://travis-ci.org/atomix/atomix.svg?branch=master)](https://travis-ci.org/atomix/atomix)
+[![Build Status](https://gitlab.com/atomix-io/atomix/badges/master/build.svg)](https://gitlab.com/atomix-io/atomix)
 [![Coverage Status](https://coveralls.io/repos/github/atomix/atomix/badge.svg?branch=master)](https://coveralls.io/github/atomix/atomix?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix)
 [![Gitter](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/atomix/atomix)
