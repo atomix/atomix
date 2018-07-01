@@ -17,7 +17,7 @@ package io.atomix.rest.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import io.atomix.cluster.Member;
+import io.atomix.cluster.MulticastMembershipProvider;
 import io.atomix.core.Atomix;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.rest.ManagedRestService;
@@ -41,12 +41,9 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -420,17 +417,12 @@ public class VertxRestServiceTest {
   }
 
   protected Atomix buildAtomix(int memberId) {
-    Member localMember = Member.builder(String.valueOf(memberId))
-        .withAddress("localhost", findAvailablePort(BASE_PORT))
-        .build();
-
-    Collection<Member> members = Stream.concat(Stream.of(localMember), instances.stream().map(instance -> instance.getMembershipService().getLocalMember()))
-        .collect(Collectors.toList());
-
     return Atomix.builder()
         .withClusterName("test")
-        .withLocalMember(localMember)
-        .withMembers(members)
+        .withMemberId(String.valueOf(memberId))
+        .withAddress(Address.from("localhost", findAvailablePort(BASE_PORT)))
+        .withMulticastEnabled()
+        .withLocationProvider(new MulticastMembershipProvider())
         .withManagementGroup(PrimaryBackupPartitionGroup.builder("system")
             .withNumPartitions(1)
             .build())

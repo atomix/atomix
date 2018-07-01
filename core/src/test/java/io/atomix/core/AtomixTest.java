@@ -109,9 +109,9 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testScaleUpPersistent() throws Exception {
-    Atomix atomix1 = startAtomix(1, Arrays.asList(1), Profile.CONSENSUS).get(30, TimeUnit.SECONDS);
-    Atomix atomix2 = startAtomix(2, Arrays.asList(1, 2), Profile.CLIENT).get(30, TimeUnit.SECONDS);
-    Atomix atomix3 = startAtomix(3, Arrays.asList(1, 2, 3), Profile.CLIENT).get(30, TimeUnit.SECONDS);
+    Atomix atomix1 = startAtomix(1, Arrays.asList(1), Profile.consensus("1")).get(30, TimeUnit.SECONDS);
+    Atomix atomix2 = startAtomix(2, Arrays.asList(1, 2), Profile.client()).get(30, TimeUnit.SECONDS);
+    Atomix atomix3 = startAtomix(3, Arrays.asList(1, 2, 3), Profile.client()).get(30, TimeUnit.SECONDS);
   }
 
   /**
@@ -120,9 +120,9 @@ public class AtomixTest extends AbstractAtomixTest {
   @Test
   public void testBootstrapDataGrid() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>(3);
-    futures.add(startAtomix(1, Arrays.asList(), Profile.DATA_GRID));
-    futures.add(startAtomix(2, Arrays.asList(1), Profile.DATA_GRID));
-    futures.add(startAtomix(3, Arrays.asList(1), Profile.DATA_GRID));
+    futures.add(startAtomix(1, Arrays.asList(), Profile.dataGrid()));
+    futures.add(startAtomix(2, Arrays.asList(1), Profile.dataGrid()));
+    futures.add(startAtomix(3, Arrays.asList(1), Profile.dataGrid()));
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
   }
 
@@ -131,34 +131,34 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testScaleUpEphemeral() throws Exception {
-    Atomix atomix1 = startAtomix(1, Arrays.asList(), Profile.DATA_GRID).get(30, TimeUnit.SECONDS);
-    Atomix atomix2 = startAtomix(2, Arrays.asList(1), Profile.DATA_GRID).get(30, TimeUnit.SECONDS);
-    Atomix atomix3 = startAtomix(3, Arrays.asList(1), Profile.DATA_GRID).get(30, TimeUnit.SECONDS);
+    Atomix atomix1 = startAtomix(1, Arrays.asList(), Profile.dataGrid()).get(30, TimeUnit.SECONDS);
+    Atomix atomix2 = startAtomix(2, Arrays.asList(1), Profile.dataGrid()).get(30, TimeUnit.SECONDS);
+    Atomix atomix3 = startAtomix(3, Arrays.asList(1), Profile.dataGrid()).get(30, TimeUnit.SECONDS);
   }
 
   @Test
   public void testDiscoverData() throws Exception {
     Address multicastAddress = Address.from("230.0.0.1", findAvailablePort(1234));
     Atomix atomix1 = startAtomix(1, Arrays.asList(), builder ->
-        builder.withProfiles(Profile.DATA_GRID)
+        builder.withProfiles(Profile.dataGrid())
             .withMulticastEnabled()
             .withMulticastAddress(multicastAddress)
             .build())
         .get(30, TimeUnit.SECONDS);
     Atomix atomix2 = startAtomix(2, Arrays.asList(), builder ->
-        builder.withProfiles(Profile.DATA_GRID)
+        builder.withProfiles(Profile.dataGrid())
             .withMulticastEnabled()
             .withMulticastAddress(multicastAddress)
             .build())
         .get(30, TimeUnit.SECONDS);
     Atomix atomix3 = startAtomix(3, Arrays.asList(), builder ->
-        builder.withProfiles(Profile.DATA_GRID)
+        builder.withProfiles(Profile.dataGrid())
             .withMulticastEnabled()
             .withMulticastAddress(multicastAddress)
             .build())
         .get(30, TimeUnit.SECONDS);
 
-    Thread.sleep(1000);
+    Thread.sleep(5000);
 
     assertEquals(3, atomix1.getMembershipService().getMembers().size());
     assertEquals(3, atomix2.getMembershipService().getMembers().size());
@@ -167,7 +167,7 @@ public class AtomixTest extends AbstractAtomixTest {
 
   @Test
   public void testStopStartConsensus() throws Exception {
-    Atomix atomix1 = startAtomix(1, Arrays.asList(1), Profile.CONSENSUS).get(30, TimeUnit.SECONDS);
+    Atomix atomix1 = startAtomix(1, Arrays.asList(1), Profile.consensus("1")).get(30, TimeUnit.SECONDS);
     atomix1.stop().get(30, TimeUnit.SECONDS);
     try {
       atomix1.start().get(30, TimeUnit.SECONDS);
@@ -184,9 +184,9 @@ public class AtomixTest extends AbstractAtomixTest {
   @Test
   public void testScaleDownPersistent() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.DATA_GRID));
-    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.DATA_GRID));
-    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), Profile.DATA_GRID));
+    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.dataGrid()));
+    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.dataGrid()));
+    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), Profile.dataGrid()));
     Futures.allOf(futures).get(30, TimeUnit.SECONDS);
     TestClusterMembershipEventListener eventListener1 = new TestClusterMembershipEventListener();
     instances.get(0).getMembershipService().addListener(eventListener1);
@@ -210,7 +210,7 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testClientJoinLeaveDataGrid() throws Exception {
-    testClientJoinLeave(Profile.DATA_GRID);
+    testClientJoinLeave(Profile.dataGrid());
   }
 
   /**
@@ -218,7 +218,7 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testClientJoinLeaveConsensus() throws Exception {
-    testClientJoinLeave(Profile.CONSENSUS);
+    testClientJoinLeave(Profile.consensus("1", "2", "3"));
   }
 
   private void testClientJoinLeave(Profile profile) throws Exception {
@@ -231,7 +231,7 @@ public class AtomixTest extends AbstractAtomixTest {
     TestClusterMembershipEventListener dataListener = new TestClusterMembershipEventListener();
     instances.get(0).getMembershipService().addListener(dataListener);
 
-    Atomix client1 = startAtomix(4, Arrays.asList(1, 2, 3), Profile.CLIENT).get(30, TimeUnit.SECONDS);
+    Atomix client1 = startAtomix(4, Arrays.asList(1, 2, 3), Profile.client()).get(30, TimeUnit.SECONDS);
     assertEquals(1, client1.getPartitionService().getPartitionGroups().size());
 
     // client1 added to data node
@@ -243,7 +243,7 @@ public class AtomixTest extends AbstractAtomixTest {
     TestClusterMembershipEventListener clientListener = new TestClusterMembershipEventListener();
     client1.getMembershipService().addListener(clientListener);
 
-    Atomix client2 = startAtomix(5, Arrays.asList(1, 2, 3), Profile.CLIENT).get(30, TimeUnit.SECONDS);
+    Atomix client2 = startAtomix(5, Arrays.asList(1, 2, 3), Profile.client()).get(30, TimeUnit.SECONDS);
     assertEquals(1, client2.getPartitionService().getPartitionGroups().size());
 
     // client2 added to data node
@@ -271,15 +271,15 @@ public class AtomixTest extends AbstractAtomixTest {
   @Test
   public void testClientMetadata() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
-    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
-    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
+    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
+    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
+    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
     Futures.allOf(futures).get(30, TimeUnit.SECONDS);
 
     TestClusterMembershipEventListener dataListener = new TestClusterMembershipEventListener();
     instances.get(0).getMembershipService().addListener(dataListener);
 
-    Atomix client1 = startAtomix(4, Arrays.asList(1, 2, 3), Collections.singletonMap("a-key", "a-value"), Profile.CLIENT).get(30, TimeUnit.SECONDS);
+    Atomix client1 = startAtomix(4, Arrays.asList(1, 2, 3), Collections.singletonMap("a-key", "a-value"), Profile.client()).get(30, TimeUnit.SECONDS);
     assertEquals(1, client1.getPartitionService().getPartitionGroups().size());
 
     // client1 added to data node
@@ -310,7 +310,7 @@ public class AtomixTest extends AbstractAtomixTest {
     }
 
     public ClusterMembershipEvent event() throws InterruptedException {
-      return queue.take();
+      return queue.poll(10, TimeUnit.SECONDS);
     }
   }
 }

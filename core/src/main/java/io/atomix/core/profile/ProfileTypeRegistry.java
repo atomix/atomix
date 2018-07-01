@@ -13,22 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.utils.config;
+package io.atomix.core.profile;
 
-import io.atomix.core.AtomixRegistry;
-import io.atomix.primitive.partition.PartitionGroupConfig;
+import java.util.Collection;
 
 /**
- * Partition group mapper.
+ * Profile type registry.
  */
-public class PartitionGroupConfigMapper extends PolymorphicTypeMapper<PartitionGroupConfig<?>> {
-  public PartitionGroupConfigMapper() {
-    super(PartitionGroupConfig.class);
-  }
+public interface ProfileTypeRegistry {
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public Class<? extends PartitionGroupConfig<?>> getConcreteClass(AtomixRegistry registry, String type) {
-    return (Class<? extends PartitionGroupConfig<?>>) registry.partitionGroupTypes().getGroupType(type).newConfig().getClass();
-  }
+  /**
+   * Returns the collection of all registered profiles.
+   *
+   * @return the collection of all registered profiles
+   */
+  Collection<Profile.Type> getProfileTypes();
+
+  /**
+   * Returns the profile for the given name.
+   *
+   * @param name the profile name
+   * @return the profile
+   */
+  Profile.Type getProfileType(String name);
+
 }

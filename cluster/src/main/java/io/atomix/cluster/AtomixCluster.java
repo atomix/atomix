@@ -16,7 +16,6 @@
 package io.atomix.cluster;
 
 import com.google.common.collect.Streams;
-import io.atomix.cluster.impl.BroadcastMemberLocationProvider;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.messaging.BroadcastService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
@@ -40,11 +39,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -53,7 +51,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Cluster configuration.
  */
-public class AtomixCluster implements Managed<Void> {
+public class AtomixCluster implements BootstrapService, Managed<Void> {
   private static final String[] DEFAULT_RESOURCES = new String[]{"cluster"};
 
   private static String[] withDefaultResources(String config) {
@@ -125,7 +123,7 @@ public class AtomixCluster implements Managed<Void> {
 
   protected final ManagedMessagingService messagingService;
   protected final ManagedBroadcastService broadcastService;
-  protected final MemberLocationProvider locationProvider;
+  protected final ClusterMembershipProvider locationProvider;
   protected final ManagedClusterMembershipService membershipService;
   protected final ManagedClusterCommunicationService communicationService;
   protected final ManagedClusterEventService eventService;
@@ -145,26 +143,18 @@ public class AtomixCluster implements Managed<Void> {
   public AtomixCluster(ClusterConfig config) {
     this.messagingService = buildMessagingService(config);
     this.broadcastService = buildBroadcastService(config);
-    this.locationProvider = buildLocationProvider(config, broadcastService);
-    this.membershipService = buildClusterMembershipService(config, messagingService, locationProvider);
+    this.locationProvider = buildLocationProvider(config);
+    this.membershipService = buildClusterMembershipService(config, this, locationProvider);
     this.communicationService = buildClusterMessagingService(membershipService, messagingService);
     this.eventService = buildClusterEventService(membershipService, messagingService);
   }
 
-  /**
-   * Returns the broadcast service.
-   *
-   * @return the broadcast service
-   */
+  @Override
   public BroadcastService getBroadcastService() {
     return broadcastService;
   }
 
-  /**
-   * Returns the messaging service.
-   *
-   * @return the messaging service
-   */
+  @Override
   public MessagingService getMessagingService() {
     return messagingService;
   }
@@ -218,7 +208,6 @@ public class AtomixCluster implements Managed<Void> {
     return messagingService.start()
         .thenComposeAsync(v -> broadcastService.start(), threadContext)
         .thenComposeAsync(v -> membershipService.start(), threadContext)
-        .thenComposeAsync(v -> locationProvider.join(membershipService.getLocalMember().address()), threadContext)
         .thenComposeAsync(v -> communicationService.start(), threadContext)
         .thenComposeAsync(v -> eventService.start(), threadContext)
         .thenApply(v -> null);
@@ -250,8 +239,6 @@ public class AtomixCluster implements Managed<Void> {
     return communicationService.stop()
         .exceptionally(e -> null)
         .thenComposeAsync(v -> eventService.stop(), threadContext)
-        .exceptionally(e -> null)
-        .thenComposeAsync(v -> locationProvider.leave(), threadContext)
         .exceptionally(e -> null)
         .thenComposeAsync(v -> membershipService.stop(), threadContext)
         .exceptionally(e -> null)
@@ -287,7 +274,7 @@ public class AtomixCluster implements Managed<Void> {
   protected static ManagedMessagingService buildMessagingService(ClusterConfig config) {
     return NettyMessagingService.builder()
         .withName(config.getName())
-        .withAddress(config.getLocalMember().getAddress())
+        .withAddress(config.getAddress())
         .build();
   }
 
@@ -296,7 +283,7 @@ public class AtomixCluster implements Managed<Void> {
    */
   protected static ManagedBroadcastService buildBroadcastService(ClusterConfig config) {
     return NettyBroadcastService.builder()
-        .withLocalAddress(config.getLocalMember().getAddress())
+        .withLocalAddress(config.getAddress())
         .withGroupAddress(config.getMulticastAddress())
         .withEnabled(config.isMulticastEnabled())
         .build();
@@ -305,12 +292,17 @@ public class AtomixCluster implements Managed<Void> {
   /**
    * Builds a member location provider.
    */
-  protected static MemberLocationProvider buildLocationProvider(ClusterConfig config, BroadcastService broadcastService) {
-    MemberLocationProvider locationProvider = config.getMembershipConfig().getLocationProvider();
-    if (locationProvider != null) {
-      return locationProvider;
+  @SuppressWarnings("unchecked")
+  protected static ClusterMembershipProvider buildLocationProvider(ClusterConfig config) {
+    ClusterMembershipProvider.Config locationProviderConfig = config.getLocationProviderConfig();
+    if (locationProviderConfig != null) {
+      return locationProviderConfig.getType().newProvider(locationProviderConfig);
     }
-    return new BroadcastMemberLocationProvider(broadcastService, config.isMulticastEnabled());
+    if (config.isMulticastEnabled()) {
+      return new MulticastMembershipProvider(new MulticastMembershipProvider.Config());
+    } else {
+      return new BootstrapMembershipProvider(Collections.emptyList());
+    }
   }
 
   /**
@@ -318,25 +310,18 @@ public class AtomixCluster implements Managed<Void> {
    */
   protected static ManagedClusterMembershipService buildClusterMembershipService(
       ClusterConfig config,
-      MessagingService messagingService,
-      MemberLocationProvider locationProvider) {
+      BootstrapService bootstrapService,
+      ClusterMembershipProvider locationProvider) {
     // If the local node has not be configured, create a default node.
-    Member localMember;
-    if (config.getLocalMember() == null) {
-      Address address = Address.local();
-      localMember = Member.member(address);
-    } else {
-      localMember = new Member(config.getLocalMember());
-    }
-    return new DefaultClusterMembershipService(
-        localMember,
-        config.getMembers()
-            .stream()
-            .map(Member::new)
-            .collect(Collectors.toList()),
-        messagingService,
-        locationProvider,
-        config.getMembershipConfig());
+    Member localMember = Member.builder()
+        .withId(config.getMemberId())
+        .withAddress(config.getAddress())
+        .withHost(config.getHost())
+        .withRack(config.getRack())
+        .withZone(config.getZone())
+        .withMetadata(config.getMetadata())
+        .build();
+    return new DefaultClusterMembershipService(localMember, bootstrapService, locationProvider);
   }
 
   /**
@@ -383,43 +368,114 @@ public class AtomixCluster implements Managed<Void> {
     /**
      * Sets the local member name.
      *
-     * @param localMember the local member name
+     * @param localMemberId the local member name
      * @return the cluster builder
      */
-    public Builder withLocalMember(String localMember) {
-      config.setLocalMemberId(localMember);
+    public Builder withMemberId(String localMemberId) {
+      config.setMemberId(localMemberId);
       return this;
     }
 
     /**
-     * Sets the local node metadata.
+     * Sets the member address.
      *
-     * @param localMember the local node metadata
-     * @return the cluster metadata builder
+     * @param address a host:port tuple
+     * @return the member builder
+     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
      */
-    public Builder withLocalMember(Member localMember) {
-      config.setLocalMember(localMember.config());
+    public Builder withAddress(String address) {
+      return withAddress(Address.from(address));
+    }
+
+    /**
+     * Sets the member host/port.
+     *
+     * @param host the host name
+     * @param port the port number
+     * @return the member builder
+     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
+     */
+    public Builder withAddress(String host, int port) {
+      return withAddress(Address.from(host, port));
+    }
+
+    /**
+     * Sets the member address using local host.
+     *
+     * @param port the port number
+     * @return the member builder
+     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
+     */
+    public Builder withAddress(int port) {
+      return withAddress(Address.from(port));
+    }
+
+    /**
+     * Sets the member address.
+     *
+     * @param address the member address
+     * @return the member builder
+     */
+    public Builder withAddress(Address address) {
+      config.setAddress(address);
       return this;
     }
 
     /**
-     * Sets the core nodes.
+     * Sets the zone to which the member belongs.
      *
-     * @param members the core nodes
-     * @return the Atomix builder
+     * @param zone the zone to which the member belongs
+     * @return the member builder
      */
-    public Builder withMembers(Member... members) {
-      return withMembers(Arrays.asList(checkNotNull(members)));
+    public Builder withZone(String zone) {
+      config.setZone(zone);
+      return this;
     }
 
     /**
-     * Sets the core nodes.
+     * Sets the rack to which the member belongs.
      *
-     * @param members the core nodes
-     * @return the Atomix builder
+     * @param rack the rack to which the member belongs
+     * @return the member builder
      */
-    public Builder withMembers(Collection<Member> members) {
-      members.forEach(member -> config.addMember(member.config()));
+    public Builder withRack(String rack) {
+      config.setRack(rack);
+      return this;
+    }
+
+    /**
+     * Sets the host to which the member belongs.
+     *
+     * @param host the host to which the member belongs
+     * @return the member builder
+     */
+    public Builder withHost(String host) {
+      config.setHost(host);
+      return this;
+    }
+
+    /**
+     * Sets the member metadata.
+     *
+     * @param metadata the member metadata
+     * @return the member builder
+     * @throws NullPointerException if the tags are null
+     */
+    public Builder withMetadata(Map<String, String> metadata) {
+      config.setMetadata(metadata);
+      return this;
+    }
+
+    /**
+     * Adds metadata to the member.
+     *
+     * @param key   the metadata key to add
+     * @param value the metadata value to add
+     * @return the member builder
+     * @throws NullPointerException if the tag is null
+     */
+    public Builder addMetadata(String key, String value) {
+      config.addMetadata(key, value);
       return this;
     }
 
@@ -460,8 +516,8 @@ public class AtomixCluster implements Managed<Void> {
      * @param locationProvider the member location provider
      * @return the Atomix cluster builder
      */
-    public Builder withLocationProvider(MemberLocationProvider locationProvider) {
-      config.getMembershipConfig().setLocationProvider(locationProvider);
+    public Builder withLocationProvider(ClusterMembershipProvider locationProvider) {
+      config.setLocationProviderConfig(locationProvider.config());
       return this;
     }
 

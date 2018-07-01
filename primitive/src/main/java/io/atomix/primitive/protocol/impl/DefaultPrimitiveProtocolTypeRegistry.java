@@ -20,15 +20,16 @@ import io.atomix.primitive.protocol.PrimitiveProtocolTypeRegistry;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Primitive protocol type registry.
  */
 public class DefaultPrimitiveProtocolTypeRegistry implements PrimitiveProtocolTypeRegistry {
-  private final Map<String, PrimitiveProtocol.Type> protocolTypes;
+  private final Map<String, PrimitiveProtocol.Type> protocolTypes = new ConcurrentHashMap<>();
 
-  public DefaultPrimitiveProtocolTypeRegistry(Map<String, PrimitiveProtocol.Type> protocolTypes) {
-    this.protocolTypes = protocolTypes;
+  public DefaultPrimitiveProtocolTypeRegistry(Collection<PrimitiveProtocol.Type> protocolTypes) {
+    protocolTypes.forEach(type -> this.protocolTypes.put(type.name(), type));
   }
 
   @Override

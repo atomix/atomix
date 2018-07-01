@@ -18,8 +18,7 @@ package io.atomix.core;
 import com.google.common.collect.Streams;
 import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.cluster.Member;
-import io.atomix.cluster.MemberLocationProvider;
+import io.atomix.cluster.ClusterMembershipProvider;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.barrier.DistributedCyclicBarrier;
 import io.atomix.core.counter.AtomicCounter;
@@ -41,10 +40,8 @@ import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.treemap.AtomicTreeMap;
-import io.atomix.core.utils.config.PartitionGroupConfigMapper;
 import io.atomix.core.utils.config.PolymorphicConfigMapper;
-import io.atomix.core.utils.config.PrimitiveConfigMapper;
-import io.atomix.core.utils.config.PrimitiveProtocolConfigMapper;
+import io.atomix.core.utils.config.PolymorphicTypeMapper;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.primitive.DistributedPrimitive;
@@ -54,11 +51,16 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.config.ConfigService;
 import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.config.impl.DefaultConfigService;
+import io.atomix.primitive.impl.DefaultPrimitiveTypeRegistry;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionService;
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionService;
+import io.atomix.primitive.partition.impl.DefaultPartitionGroupTypeRegistry;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -73,6 +75,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -153,9 +156,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     ConfigMapper mapper = new PolymorphicConfigMapper(
         classLoader,
         registry,
-        new PartitionGroupConfigMapper(),
-        new PrimitiveConfigMapper(),
-        new PrimitiveProtocolConfigMapper());
+        new PolymorphicTypeMapper(PartitionGroupConfig.class, PartitionGroup.Type.class),
+        new PolymorphicTypeMapper(PrimitiveConfig.class, PrimitiveType.class),
+        new PolymorphicTypeMapper(PrimitiveProtocolConfig.class, PrimitiveProtocol.Type.class),
+        new PolymorphicTypeMapper(Profile.Config.class, Profile.Type.class),
+        new PolymorphicTypeMapper(ClusterMembershipProvider.Config.class, ClusterMembershipProvider.Type.class));
     return mapper.loadFile(AtomixConfig.class, file, RESOURCES);
   }
 
@@ -249,9 +254,10 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     this(config(configFile, classLoader, AtomixRegistry.registry(classLoader)), AtomixRegistry.registry(classLoader));
   }
 
+  @SuppressWarnings("unchecked")
   private Atomix(AtomixConfig config, AtomixRegistry registry) {
     super(config.getClusterConfig());
-    config.getProfiles().forEach(profile -> registry.profiles().getProfile(profile).configure(config));
+    config.getProfiles().forEach(profile -> profile.getType().newProfile(profile).configure(config));
     this.executorService = Executors.newScheduledThreadPool(
         Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 8), 4),
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
@@ -550,10 +556,10 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     return new DefaultPartitionService(
         clusterMembershipService,
         messagingService,
-        registry.primitiveTypes(),
+        new DefaultPrimitiveTypeRegistry(registry.getTypes(PrimitiveType.class)),
         buildSystemPartitionGroup(config),
         partitionGroups,
-        registry.partitionGroupTypes());
+        new DefaultPartitionGroupTypeRegistry(registry.getTypes(PartitionGroup.Type.class)));
   }
 
   /**
@@ -606,7 +612,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
      * @return the Atomix builder
      */
     public Builder withProfiles(Collection<Profile> profiles) {
-      profiles.forEach(profile -> config.addProfile(profile.name()));
+      profiles.forEach(profile -> config.addProfile(profile.config()));
       return this;
     }
 
@@ -617,7 +623,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
      * @return the Atomix builder
      */
     public Builder addProfile(Profile profile) {
-      config.addProfile(profile.name());
+      config.addProfile(profile.config());
       return this;
     }
 
@@ -674,26 +680,62 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     }
 
     @Override
-    public Builder withLocalMember(Member localMember) {
-      super.withLocalMember(localMember);
+    public Builder withMemberId(String localMemberId) {
+      super.withMemberId(localMemberId);
       return this;
     }
 
     @Override
-    public Builder withLocalMember(String localMember) {
-      super.withLocalMember(localMember);
+    public Builder withAddress(String address) {
+      super.withAddress(address);
       return this;
     }
 
     @Override
-    public Builder withMembers(Member... members) {
-      super.withMembers(members);
+    public Builder withAddress(String host, int port) {
+      super.withAddress(host, port);
       return this;
     }
 
     @Override
-    public Builder withMembers(Collection<Member> members) {
-      super.withMembers(members);
+    public Builder withAddress(int port) {
+      super.withAddress(port);
+      return this;
+    }
+
+    @Override
+    public Builder withAddress(Address address) {
+      super.withAddress(address);
+      return this;
+    }
+
+    @Override
+    public Builder withZone(String zone) {
+      super.withZone(zone);
+      return this;
+    }
+
+    @Override
+    public Builder withRack(String rack) {
+      super.withRack(rack);
+      return this;
+    }
+
+    @Override
+    public Builder withHost(String host) {
+      super.withHost(host);
+      return this;
+    }
+
+    @Override
+    public Builder withMetadata(Map<String, String> metadata) {
+      super.withMetadata(metadata);
+      return this;
+    }
+
+    @Override
+    public Builder addMetadata(String key, String value) {
+      super.addMetadata(key, value);
       return this;
     }
 
@@ -716,7 +758,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     }
 
     @Override
-    public Builder withLocationProvider(MemberLocationProvider locationProvider) {
+    public Builder withLocationProvider(ClusterMembershipProvider locationProvider) {
       super.withLocationProvider(locationProvider);
       return this;
     }

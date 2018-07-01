@@ -21,11 +21,53 @@ import io.atomix.core.AtomixConfig;
  * Client profile.
  */
 public class ClientProfile implements Profile {
-  private static final String NAME = "client";
+  public static final Type TYPE = new Type();
+
+  /**
+   * Client profile type.
+   */
+  public static class Type implements Profile.Type<Config> {
+    private static final String NAME = "client";
+
+    @Override
+    public String name() {
+      return NAME;
+    }
+
+    @Override
+    public Config newConfig() {
+      return new Config();
+    }
+
+    @Override
+    public Profile newProfile(Config config) {
+      return new ClientProfile();
+    }
+  }
+
+  /**
+   * Client profile configuration.
+   */
+  public static class Config implements Profile.Config {
+    @Override
+    public Profile.Type getType() {
+      return TYPE;
+    }
+  }
+
+  private final Config config;
+
+  ClientProfile() {
+    this(new Config());
+  }
+
+  ClientProfile(Config config) {
+    this.config = config;
+  }
 
   @Override
-  public String name() {
-    return NAME;
+  public Config config() {
+    return config;
   }
 
   @Override

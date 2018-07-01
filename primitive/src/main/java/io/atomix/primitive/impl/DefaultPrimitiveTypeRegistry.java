@@ -21,15 +21,16 @@ import io.atomix.utils.ServiceException;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Primitive type registry.
  */
 public class DefaultPrimitiveTypeRegistry implements PrimitiveTypeRegistry {
-  private final Map<String, PrimitiveType> primitiveTypes;
+  private final Map<String, PrimitiveType> primitiveTypes = new ConcurrentHashMap<>();
 
-  public DefaultPrimitiveTypeRegistry(Map<String, PrimitiveType> primitiveTypes) {
-    this.primitiveTypes = primitiveTypes;
+  public DefaultPrimitiveTypeRegistry(Collection<PrimitiveType> primitiveTypes) {
+    primitiveTypes.forEach(type -> this.primitiveTypes.put(type.name(), type));
   }
 
   @Override
