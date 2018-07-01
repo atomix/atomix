@@ -16,7 +16,8 @@
 package io.atomix.protocols.raft.test;
 
 import com.google.common.collect.Maps;
-import io.atomix.cluster.GroupMembershipConfig;
+import io.atomix.cluster.BootstrapMembershipProvider;
+import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
@@ -25,14 +26,13 @@ import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
-import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
@@ -40,6 +40,7 @@ import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftError;
@@ -104,7 +105,6 @@ import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -455,7 +455,7 @@ public class RaftPerformanceTest implements Runnable {
 
     CountDownLatch latch = new CountDownLatch(nodes);
     for (int i = 0; i < nodes; i++) {
-      RaftServer server = createServer(members.get(i), members);
+      RaftServer server = createServer(members.get(i), members.stream().map(Member::address).collect(Collectors.toList()));
       server.bootstrap(members.stream().map(Member::id).collect(Collectors.toList())).thenRun(latch::countDown);
       servers.add(server);
     }
@@ -468,7 +468,7 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Creates a Raft server.
    */
-  private RaftServer createServer(Member member, List<Member> members) throws UnknownHostException {
+  private RaftServer createServer(Member member, List<Address> members) {
     RaftServerProtocol protocol;
     ManagedMessagingService messagingService;
     if (USE_NETTY) {
@@ -488,10 +488,18 @@ public class RaftPerformanceTest implements Runnable {
         .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
         .withMembershipService(new DefaultClusterMembershipService(
             member,
-            members,
-            messagingService,
-            new BroadcastServiceAdapter(),
-            new GroupMembershipConfig()))
+            new BootstrapService() {
+              @Override
+              public MessagingService getMessagingService() {
+                return messagingService;
+              }
+
+              @Override
+              public BroadcastService getBroadcastService() {
+                return new BroadcastServiceAdapter();
+              }
+            },
+            new BootstrapMembershipProvider(members)))
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.MAPPED)
             .withDirectory(new File(String.format("target/perf-logs/%s", member.id())))
@@ -595,7 +603,7 @@ public class RaftPerformanceTest implements Runnable {
     @Override
     public void backup(BackupOutput writer) {
       writer.writeInt(map.size());
-      for (Map.Entry<String, String> entry : map.entrySet()) {
+      for (Map.Entry<String, String> entry: map.entrySet()) {
         writer.writeString(entry.getKey());
         writer.writeString(entry.getValue());
       }

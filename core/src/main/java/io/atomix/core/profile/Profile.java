@@ -16,28 +16,90 @@
 package io.atomix.core.profile;
 
 import io.atomix.core.AtomixConfig;
-import io.atomix.utils.NamedType;
+import io.atomix.utils.ConfiguredType;
+import io.atomix.utils.config.Configured;
+import io.atomix.utils.config.TypedConfig;
+
+import java.util.Collection;
 
 /**
  * Atomix profile.
  */
-public interface Profile extends NamedType {
+public interface Profile extends Configured<Profile.Config> {
 
   /**
-   * The consensus profile configures an Atomix instance with a Raft system partition and a multi-Raft data partition group.
+   * Creates a consensus profile.
+   *
+   * @param members the consensus members
+   * @return the consensus profile
    */
-  Profile CONSENSUS = new ConsensusProfile();
+  static Profile consensus(String... members) {
+    return new ConsensusProfile(members);
+  }
 
   /**
-   * The data grid profile configures an Atomix instance with a primary-backup system partition if no system partition
-   * is configured, and a primary-backup data partition group.
+   * Creates a consensus profile.
+   *
+   * @param members the consensus members
+   * @return the consensus profile
    */
-  Profile DATA_GRID = new DataGridProfile();
+  static Profile consensus(Collection<String> members) {
+    return new ConsensusProfile(members);
+  }
 
   /**
-   * The client profile does not change the configuration of a node. It is intended only for code clarity.
+   * Creates a new data grid profile.
+   *
+   * @return a new data grid profile
    */
-  Profile CLIENT = new ClientProfile();
+  static Profile dataGrid() {
+    return new DataGridProfile();
+  }
+
+  /**
+   * Creates a new data grid profile with the given number of partitions.
+   *
+   * @param numPartitions the number of partitions
+   * @return the data grid profile
+   */
+  static Profile dataGrid(int numPartitions) {
+    return new DataGridProfile(numPartitions);
+  }
+
+  /**
+   * Creates a new client profile.
+   *
+   * @return a new client profile
+   */
+  static Profile client() {
+    return new ClientProfile();
+  }
+
+  /**
+   * Profile type.
+   */
+  interface Type<C extends Config> extends ConfiguredType<C> {
+
+    /**
+     * Creates a new instance of the profile.
+     *
+     * @param config the profile configuration
+     * @return the profile instance
+     */
+    Profile newProfile(C config);
+  }
+
+  /**
+   * Profile configuration.
+   */
+  interface Config extends TypedConfig<Type> {
+  }
+
+  /**
+   * Profile builder.
+   */
+  interface Builder extends io.atomix.utils.Builder<Profile> {
+  }
 
   /**
    * Configures the Atomix instance.

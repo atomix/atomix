@@ -27,7 +27,6 @@ public class AtomixConfigTest {
   @Test
   public void testDefaultAtomixConfig() throws Exception {
     AtomixConfig config = Atomix.config();
-    assertTrue(config.getClusterConfig().getMembers().isEmpty());
     assertTrue(config.getPartitionGroups().isEmpty());
     assertTrue(config.getProfiles().isEmpty());
   }
@@ -35,8 +34,8 @@ public class AtomixConfigTest {
   @Test
   public void testAtomixConfig() throws Exception {
     AtomixConfig config = Atomix.config(getClass().getClassLoader().getResource("test.conf").getPath());
-    assertEquals(3, config.getClusterConfig().getMembers().size());
     assertEquals("raft", config.getManagementGroup().getType().name());
+    assertEquals(1, config.getManagementGroup().getPartitions());
     assertEquals(2, config.getPartitionGroups().size());
     assertEquals(2, config.getProfiles().size());
   }

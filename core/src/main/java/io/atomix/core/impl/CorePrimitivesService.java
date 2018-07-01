@@ -23,47 +23,47 @@ import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.core.AtomixRegistry;
 import io.atomix.core.ManagedPrimitivesService;
 import io.atomix.core.PrimitivesService;
+import io.atomix.core.barrier.DistributedCyclicBarrier;
+import io.atomix.core.barrier.DistributedCyclicBarrierType;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterMap;
 import io.atomix.core.counter.AtomicCounterType;
 import io.atomix.core.countermap.AtomicCounterMapType;
 import io.atomix.core.idgenerator.AtomicIdGenerator;
 import io.atomix.core.idgenerator.AtomicIdGeneratorType;
+import io.atomix.core.leadership.LeaderElection;
+import io.atomix.core.leadership.LeaderElectionType;
+import io.atomix.core.leadership.LeaderElector;
+import io.atomix.core.leadership.LeaderElectorType;
+import io.atomix.core.list.DistributedList;
+import io.atomix.core.list.DistributedListType;
+import io.atomix.core.lock.DistributedLock;
+import io.atomix.core.lock.DistributedLockType;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapType;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapType;
+import io.atomix.core.multiset.DistributedMultiset;
+import io.atomix.core.multiset.DistributedMultisetType;
+import io.atomix.core.queue.DistributedQueue;
+import io.atomix.core.queue.DistributedQueueType;
+import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.semaphore.DistributedSemaphoreType;
+import io.atomix.core.set.DistributedSet;
+import io.atomix.core.set.DistributedSetType;
+import io.atomix.core.transaction.ManagedTransactionService;
+import io.atomix.core.transaction.TransactionBuilder;
+import io.atomix.core.transaction.TransactionConfig;
+import io.atomix.core.transaction.TransactionService;
+import io.atomix.core.transaction.impl.DefaultTransactionBuilder;
 import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.tree.AtomicDocumentTreeType;
 import io.atomix.core.treemap.AtomicTreeMap;
 import io.atomix.core.treemap.AtomicTreeMapType;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueType;
-import io.atomix.core.list.DistributedList;
-import io.atomix.core.list.DistributedListType;
-import io.atomix.core.multiset.DistributedMultiset;
-import io.atomix.core.multiset.DistributedMultisetType;
-import io.atomix.core.queue.DistributedQueue;
-import io.atomix.core.queue.DistributedQueueType;
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.DistributedSetType;
-import io.atomix.core.barrier.DistributedCyclicBarrier;
-import io.atomix.core.barrier.DistributedCyclicBarrierType;
-import io.atomix.core.lock.DistributedLock;
-import io.atomix.core.lock.DistributedLockType;
-import io.atomix.core.semaphore.DistributedSemaphore;
-import io.atomix.core.semaphore.DistributedSemaphoreType;
-import io.atomix.core.leadership.LeaderElection;
-import io.atomix.core.leadership.LeaderElectionType;
-import io.atomix.core.leadership.LeaderElector;
-import io.atomix.core.leadership.LeaderElectorType;
 import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.core.workqueue.WorkQueueType;
-import io.atomix.core.transaction.ManagedTransactionService;
-import io.atomix.core.transaction.TransactionBuilder;
-import io.atomix.core.transaction.TransactionConfig;
-import io.atomix.core.transaction.TransactionService;
-import io.atomix.core.transaction.impl.DefaultTransactionBuilder;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
@@ -72,7 +72,12 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.config.ConfigService;
 import io.atomix.primitive.config.PrimitiveConfig;
+import io.atomix.primitive.impl.DefaultPrimitiveTypeRegistry;
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionService;
+import io.atomix.primitive.partition.impl.DefaultPartitionGroupTypeRegistry;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.impl.DefaultPrimitiveProtocolTypeRegistry;
 import io.atomix.utils.AtomixRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,7 +114,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       PartitionService partitionService,
       AtomixRegistry registry,
       ConfigService configService) {
-    this.primitiveRegistry = new CorePrimitiveRegistry(partitionService, registry.primitiveTypes());
+    this.primitiveRegistry = new CorePrimitiveRegistry(partitionService, new DefaultPrimitiveTypeRegistry(registry.getTypes(PrimitiveType.class)));
     this.managementService = new CorePrimitiveManagementService(
         executorService,
         membershipService,
@@ -117,9 +122,9 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
         eventService,
         partitionService,
         primitiveRegistry,
-        registry.primitiveTypes(),
-        registry.protocolTypes(),
-        registry.partitionGroupTypes());
+        new DefaultPrimitiveTypeRegistry(registry.getTypes(PrimitiveType.class)),
+        new DefaultPrimitiveProtocolTypeRegistry(registry.getTypes(PrimitiveProtocol.Type.class)),
+        new DefaultPartitionGroupTypeRegistry(registry.getTypes(PartitionGroup.Type.class)));
     this.transactionService = new CoreTransactionService(managementService);
     this.configService = checkNotNull(configService);
   }

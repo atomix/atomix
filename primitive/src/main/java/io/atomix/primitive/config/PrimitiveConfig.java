@@ -24,7 +24,7 @@ import io.atomix.utils.serializer.NamespaceConfig;
 /**
  * Primitive configuration.
  */
-public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> implements TypedConfig<C, PrimitiveType>, NamedConfig<C> {
+public abstract class PrimitiveConfig<C extends PrimitiveConfig<C>> implements TypedConfig<PrimitiveType>, NamedConfig<C> {
   private static final int DEFAULT_CACHE_SIZE = 1000;
 
   private String name;

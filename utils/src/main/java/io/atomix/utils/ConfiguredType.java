@@ -13,31 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.profile.impl;
+package io.atomix.utils;
 
-import io.atomix.core.profile.Profile;
-import io.atomix.core.profile.ProfileRegistry;
-
-import java.util.Collection;
-import java.util.Map;
+import io.atomix.utils.config.TypedConfig;
 
 /**
- * Profile type registry.
+ * Configured type.
  */
-public class DefaultProfileRegistry implements ProfileRegistry {
-  private final Map<String, Profile> profileTypes;
+public interface ConfiguredType<C extends TypedConfig> extends NamedType {
 
-  public DefaultProfileRegistry(Map<String, Profile> profileTypes) {
-    this.profileTypes = profileTypes;
-  }
+  /**
+   * Returns a new configuration.
+   *
+   * @return a new configuration
+   */
+  C newConfig();
 
-  @Override
-  public Collection<Profile> getProfiles() {
-    return profileTypes.values();
-  }
-
-  @Override
-  public Profile getProfile(String name) {
-    return profileTypes.get(name);
-  }
 }

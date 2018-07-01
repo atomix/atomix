@@ -13,22 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.utils.config;
+package io.atomix.cluster;
 
-import io.atomix.core.AtomixRegistry;
-import io.atomix.primitive.config.PrimitiveConfig;
+import io.atomix.cluster.messaging.BroadcastService;
+import io.atomix.cluster.messaging.MessagingService;
 
 /**
- * Primitive configuration mapper.
+ * Cluster bootstrap service.
+ * <p>
+ * This service provides the low level APIs that can be used to bootstrap a cluster.
  */
-public class PrimitiveConfigMapper extends PolymorphicTypeMapper<PrimitiveConfig<?>> {
-  public PrimitiveConfigMapper() {
-    super(PrimitiveConfig.class);
-  }
+public interface BootstrapService {
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public Class<? extends PrimitiveConfig<?>> getConcreteClass(AtomixRegistry registry, String type) {
-    return (Class<? extends PrimitiveConfig<?>>) registry.primitiveTypes().getPrimitiveType(type).newConfig().getClass();
-  }
+  /**
+   * Returns the cluster messaging service.
+   *
+   * @return the cluster messaging service
+   */
+  MessagingService getMessagingService();
+
+  /**
+   * Returns the cluster broadcast service
+   *
+   * @return the cluster broadcast service
+   */
+  BroadcastService getBroadcastService();
+
 }

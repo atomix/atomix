@@ -174,9 +174,9 @@ public final class Address {
   public String toString() {
     switch (type) {
       case IPV4:
-        return String.format("%s:%d", host(), port());
+        return String.format("%s:%d", address().getHostName(), port());
       case IPV6:
-        return String.format("[%s]:%d", host(), port());
+        return String.format("[%s]:%d", address().getHostName(), port());
       default:
         throw new AssertionError();
     }

@@ -19,8 +19,10 @@ import io.atomix.utils.config.Config;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.net.MalformedAddressException;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Cluster configuration.
@@ -31,12 +33,15 @@ public class ClusterConfig implements Config {
   private static final int DEFAULT_MULTICAST_PORT = 54321;
 
   private String name = DEFAULT_CLUSTER_NAME;
-  private String localMemberId;
-  private MemberConfig localMember;
-  private List<MemberConfig> members = new ArrayList<>();
+  private MemberId memberId = MemberId.anonymous();
+  private Address address;
+  private String zone;
+  private String rack;
+  private String host;
+  private Map<String, String> metadata = new HashMap<>();
+  private ClusterMembershipProvider.Config locationProviderConfig;
   private boolean multicastEnabled = false;
   private Address multicastAddress;
-  private GroupMembershipConfig membershipConfig = new GroupMembershipConfig();
 
   public ClusterConfig() {
     try {
@@ -67,80 +72,177 @@ public class ClusterConfig implements Config {
   }
 
   /**
-   * Returns the local member identifier.
+   * Returns the node identifier.
    *
-   * @return the local member identifier
+   * @return the node identifier
    */
-  public String getLocalMemberId() {
-    return localMemberId;
-  }
-
-  /**
-   * Sets the local member identifier.
-   *
-   * @param localMemberId the local member identifier
-   * @return the cluster configuration
-   */
-  public ClusterConfig setLocalMemberId(String localMemberId) {
-    this.localMemberId = localMemberId;
-    return this;
-  }
-
-  /**
-   * Returns the local node configuration.
-   *
-   * @return the local node configuration
-   */
-  public MemberConfig getLocalMember() {
-    MemberConfig member = localMember;
-    if (member == null && localMemberId != null) {
-      member = members.stream()
-          .filter(m -> m.getId().id().equals(localMemberId))
-          .findFirst()
-          .orElse(null);
+  public MemberId getMemberId() {
+    if (memberId == null) {
+      memberId = MemberId.from(address.address().getHostName());
     }
-    return member;
+    return memberId;
   }
 
   /**
-   * Sets the local node configuration.
+   * Sets the node identifier.
    *
-   * @param localMember the local node configuration
-   * @return the cluster configuration
+   * @param memberId the node identifier
+   * @return the node configuration
    */
-  public ClusterConfig setLocalMember(MemberConfig localMember) {
-    this.localMember = localMember;
+  public ClusterConfig setMemberId(String memberId) {
+    return setMemberId(MemberId.from(memberId));
+  }
+
+  /**
+   * Sets the node identifier.
+   *
+   * @param id the node identifier
+   * @return the node configuration
+   */
+  public ClusterConfig setMemberId(MemberId id) {
+    this.memberId = id != null ? id : MemberId.anonymous();
     return this;
   }
 
   /**
-   * Returns the cluster nodes.
+   * Returns the node address.
    *
-   * @return the cluster nodes
+   * @return the node address
    */
-  public List<MemberConfig> getMembers() {
-    return members;
+  public Address getAddress() {
+    return address;
   }
 
   /**
-   * Sets the cluster nodes.
+   * Sets the node address.
    *
-   * @param members the cluster nodes
-   * @return the cluster configuration
+   * @param address the node address
+   * @return the node configuration
    */
-  public ClusterConfig setMembers(List<MemberConfig> members) {
-    this.members = members;
+  public ClusterConfig setAddress(String address) {
+    return setAddress(Address.from(address));
+  }
+
+  /**
+   * Sets the node address.
+   *
+   * @param address the node address
+   * @return the node configuration
+   */
+  public ClusterConfig setAddress(Address address) {
+    this.address = address;
     return this;
   }
 
   /**
-   * Adds a member to the configuration.
+   * Returns the node zone.
    *
-   * @param member the member to add
-   * @return the cluster configuration
+   * @return the node zone
    */
-  public ClusterConfig addMember(MemberConfig member) {
-    members.add(member);
+  public String getZone() {
+    return zone;
+  }
+
+  /**
+   * Sets the node zone.
+   *
+   * @param zone the node zone
+   * @return the node configuration
+   */
+  public ClusterConfig setZone(String zone) {
+    this.zone = zone;
+    return this;
+  }
+
+  /**
+   * Returns the node rack.
+   *
+   * @return the node rack
+   */
+  public String getRack() {
+    return rack;
+  }
+
+  /**
+   * Sets the node rack.
+   *
+   * @param rack the node rack
+   * @return the node configuration
+   */
+  public ClusterConfig setRack(String rack) {
+    this.rack = rack;
+    return this;
+  }
+
+  /**
+   * Returns the node host.
+   *
+   * @return the node host
+   */
+  public String getHost() {
+    return host;
+  }
+
+  /**
+   * Sets the node host.
+   *
+   * @param host the node host
+   * @return the node configuration
+   */
+  public ClusterConfig setHost(String host) {
+    this.host = host;
+    return this;
+  }
+
+  /**
+   * Returns the node metadata.
+   *
+   * @return the node metadata
+   */
+  public Map<String, String> getMetadata() {
+    return metadata;
+  }
+
+  /**
+   * Sets the node metadata.
+   *
+   * @param metadata the node metadata
+   * @return the node configuration
+   */
+  public ClusterConfig setMetadata(Map<String, String> metadata) {
+    this.metadata = metadata;
+    return this;
+  }
+
+  /**
+   * Adds a node tag.
+   *
+   * @param key   the metadata key to add
+   * @param value the metadata value to add
+   * @return the node configuration
+   */
+  public ClusterConfig addMetadata(String key, String value) {
+    this.metadata.put(key, value);
+    return this;
+  }
+
+  /**
+   * Returns the location provider configuration.
+   *
+   * @return the location provider configuration
+   */
+  public ClusterMembershipProvider.Config getLocationProviderConfig() {
+    return locationProviderConfig;
+  }
+
+  /**
+   * Sets the location provider configuration.
+   *
+   * @param locationProviderConfig the location provider configuration
+   * @return the node configuration
+   */
+  public ClusterConfig setLocationProviderConfig(ClusterMembershipProvider.Config locationProviderConfig) {
+    this.locationProviderConfig = checkNotNull(locationProviderConfig);
     return this;
   }
 
@@ -181,26 +283,6 @@ public class ClusterConfig implements Config {
    */
   public ClusterConfig setMulticastAddress(Address multicastAddress) {
     this.multicastAddress = multicastAddress;
-    return this;
-  }
-
-  /**
-   * Returns the group membership configuration.
-   *
-   * @return the group membership configuration
-   */
-  public GroupMembershipConfig getMembershipConfig() {
-    return membershipConfig;
-  }
-
-  /**
-   * Sets the group membership configuration.
-   *
-   * @param membershipConfig the group membership configuration
-   * @return the cluster configuration
-   */
-  public ClusterConfig setMembershipConfig(GroupMembershipConfig membershipConfig) {
-    this.membershipConfig = membershipConfig;
     return this;
   }
 }

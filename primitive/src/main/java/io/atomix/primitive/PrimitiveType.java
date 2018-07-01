@@ -19,14 +19,14 @@ import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.NamedType;
+import io.atomix.utils.ConfiguredType;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
 
 /**
  * Primitive type.
  */
-public interface PrimitiveType<B extends DistributedPrimitiveBuilder, C extends PrimitiveConfig, P extends DistributedPrimitive> extends NamedType {
+public interface PrimitiveType<B extends DistributedPrimitiveBuilder, C extends PrimitiveConfig, P extends DistributedPrimitive> extends ConfiguredType<C> {
 
   /**
    * Returns the primitive type namespace.
@@ -41,10 +41,11 @@ public interface PrimitiveType<B extends DistributedPrimitiveBuilder, C extends 
   }
 
   /**
-   * Returns a new configuration for the primitive type.
+   * Returns a new instance of the primitive configuration.
    *
-   * @return a new primitive configuration
+   * @return a new instance of the primitive configuration
    */
+  @Override
   C newConfig();
 
   /**

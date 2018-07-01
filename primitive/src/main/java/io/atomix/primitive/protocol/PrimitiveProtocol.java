@@ -19,7 +19,7 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.NamedType;
+import io.atomix.utils.ConfiguredType;
 
 /**
  * Primitive protocol.
@@ -29,14 +29,7 @@ public interface PrimitiveProtocol {
   /**
    * Distributed primitive protocol type.
    */
-  interface Type<C extends PrimitiveProtocolConfig<C>> extends NamedType, Comparable<Type<C>> {
-
-    /**
-     * Returns a new protocol configuration.
-     *
-     * @return a new protocol configuration
-     */
-    C newConfig();
+  interface Type<C extends PrimitiveProtocolConfig<C>> extends ConfiguredType<C>, Comparable<Type<C>> {
 
     /**
      * Creates a new protocol instance.

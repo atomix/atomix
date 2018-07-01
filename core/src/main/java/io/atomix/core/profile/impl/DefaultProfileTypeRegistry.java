@@ -13,28 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.profile;
+package io.atomix.core.profile.impl;
+
+import io.atomix.core.profile.Profile;
+import io.atomix.core.profile.ProfileTypeRegistry;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Profile type registry.
  */
-public interface ProfileRegistry {
+public class DefaultProfileTypeRegistry implements ProfileTypeRegistry {
+  private final Map<String, Profile.Type> profileTypes;
 
-  /**
-   * Returns the collection of all registered profiles.
-   *
-   * @return the collection of all registered profiles
-   */
-  Collection<Profile> getProfiles();
+  public DefaultProfileTypeRegistry(Map<String, Profile.Type> profileTypes) {
+    this.profileTypes = profileTypes;
+  }
 
-  /**
-   * Returns the profile for the given name.
-   *
-   * @param name the profile name
-   * @return the profile
-   */
-  Profile getProfile(String name);
+  @Override
+  public Collection<Profile.Type> getProfileTypes() {
+    return profileTypes.values();
+  }
 
+  @Override
+  public Profile.Type getProfileType(String name) {
+    return profileTypes.get(name);
+  }
 }

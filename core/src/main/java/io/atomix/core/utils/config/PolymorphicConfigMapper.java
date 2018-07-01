@@ -43,14 +43,14 @@ public class PolymorphicConfigMapper extends ConfigMapper {
     this(classLoader, registry, Collections.emptyList());
   }
 
-  public PolymorphicConfigMapper(ClassLoader classLoader, AtomixRegistry registry, PolymorphicTypeMapper... polymorphicTypeMappers) {
-    this(classLoader, registry, Arrays.asList(polymorphicTypeMappers));
+  public PolymorphicConfigMapper(ClassLoader classLoader, AtomixRegistry registry, PolymorphicTypeMapper... mappers) {
+    this(classLoader, registry, Arrays.asList(mappers));
   }
 
-  public PolymorphicConfigMapper(ClassLoader classLoader, AtomixRegistry registry, Collection<PolymorphicTypeMapper> polymorphicTypeMappers) {
+  public PolymorphicConfigMapper(ClassLoader classLoader, AtomixRegistry registry, Collection<PolymorphicTypeMapper> mappers) {
     super(classLoader);
     this.registry = checkNotNull(registry);
-    polymorphicTypeMappers.forEach(mapper -> this.polymorphicTypes.put(mapper.getTypedClass(), mapper));
+    mappers.forEach(mapper -> this.polymorphicTypes.put(mapper.getConfigClass(), mapper));
   }
 
   @Override
@@ -66,7 +66,7 @@ public class PolymorphicConfigMapper extends ConfigMapper {
       }
 
       String typeName = config.getString(typeMapper.getTypePath());
-      Class<? extends TypedConfig<?, ?>> concreteClass = typeMapper.getConcreteClass(registry, typeName);
+      Class<? extends TypedConfig<?>> concreteClass = typeMapper.getConcreteClass(registry, typeName);
       try {
         instance = (T) concreteClass.newInstance();
       } catch (InstantiationException | IllegalAccessException e) {

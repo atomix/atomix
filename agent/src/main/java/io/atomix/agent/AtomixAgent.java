@@ -15,17 +15,15 @@
  */
 package io.atomix.agent;
 
-import io.atomix.cluster.MemberConfig;
-import io.atomix.cluster.MemberId;
+import io.atomix.cluster.BootstrapMembershipProvider;
+import io.atomix.cluster.MulticastMembershipProvider;
 import io.atomix.core.Atomix;
 import io.atomix.core.AtomixConfig;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.utils.net.Address;
-import io.atomix.utils.net.MalformedAddressException;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.action.StoreTrueArgumentAction;
-import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.ArgumentType;
@@ -42,39 +40,52 @@ public class AtomixAgent {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixAgent.class);
 
   public static void main(String[] args) throws Exception {
-    ArgumentType<MemberConfig> memberArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> new MemberConfig()
-        .setId(parseMemberId(value))
-        .setAddress(parseAddress(value));
-
     ArgumentType<Address> addressArgumentType = (argumentParser, argument, value) -> Address.from(value);
 
     ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
         .defaultHelp(true)
         .description("Atomix server");
-    parser.addArgument("member")
+    parser.addArgument("--member", "-m")
         .type(String.class)
         .nargs("?")
-        .metavar("NAME@HOST:PORT")
         .required(false)
-        .help("The member info for the local member. This should be in the format [NAME@]HOST[:PORT]. " +
-            "If no name is provided, the member name will default to the host. " +
-            "If no port is provided, the port will default to 5679.");
+        .help("The local member identifier, used in inter-cluster communication.");
+    parser.addArgument("--address", "-a")
+        .type(addressArgumentType)
+        .metavar("HOST:PORT")
+        .nargs("?")
+        .required(false)
+        .help("The address for the local member. If no address is specified, the first public interface will be used.");
+    parser.addArgument("--host")
+        .type(String.class)
+        .nargs("?")
+        .required(false)
+        .help("The host on which this member runs, used for host-aware partition management.");
+    parser.addArgument("--rack")
+        .type(String.class)
+        .nargs("?")
+        .required(false)
+        .help("The rack on which this member runs, used for rack-aware partition management.");
+    parser.addArgument("--zone")
+        .type(String.class)
+        .nargs("?")
+        .required(false)
+        .help("The zone in which this member runs, used for zone-aware partition management.");
     parser.addArgument("--config", "-c")
         .metavar("FILE|JSON|YAML")
         .required(false)
         .help("The Atomix configuration. Can be specified as a file path or JSON/YAML string.");
     parser.addArgument("--bootstrap", "-b")
         .nargs("*")
-        .type(memberArgumentType)
-        .metavar("NAME@HOST:PORT")
+        .type(addressArgumentType)
+        .metavar("HOST:PORT")
         .required(false)
-        .help("The set of core members, if any. When bootstrapping a new cluster, if the local member is a core member " +
-            "then it should be present in the core configuration as well.");
-    parser.addArgument("--multicast", "-m")
+        .help("The set of bootstrap members, if any. If bootstrap members are provided then the bootstrap location provider will be used");
+    parser.addArgument("--multicast")
         .action(new StoreTrueArgumentAction())
         .setDefault(false)
         .help("Enables multicast discovery. Note that the network must support multicast for this feature to work.");
-    parser.addArgument("--multicast-address", "-a")
+    parser.addArgument("--multicast-address")
         .type(addressArgumentType)
         .metavar("HOST:PORT")
         .help("Sets the multicast discovery address. Defaults to 230.0.0.1:54321");
@@ -94,8 +105,12 @@ public class AtomixAgent {
     }
 
     final String configString = namespace.get("config");
-    final String localMemberInfo = namespace.get("member");
-    final List<MemberConfig> bootstrapMembers = namespace.getList("bootstrap");
+    final String memberId = namespace.getString("member");
+    final Address address = namespace.get("address");
+    final String host = namespace.getString("host");
+    final String rack = namespace.getString("rack");
+    final String zone = namespace.getString("zone");
+    final List<Address> bootstrap = namespace.getList("bootstrap");
     final boolean multicastEnabled = namespace.getBoolean("multicast");
     final Address multicastAddress = namespace.get("multicast_address");
     final Integer httpPort = namespace.getInt("http_port");
@@ -108,54 +123,34 @@ public class AtomixAgent {
       config = Atomix.config();
     }
 
-    // If the local member info is specified, attempt to look up the member in the members list.
-    // Otherwise, create a new member.
-    MemberConfig localMember = null;
-    if (localMemberInfo != null) {
-      MemberId localMemberId = parseMemberId(localMemberInfo);
-      if (localMemberId != null) {
-        localMember = config.getClusterConfig().getMembers().stream()
-            .filter(member -> member.getId().equals(localMemberId))
-            .findFirst()
-            .orElse(null);
-        if (localMember == null && bootstrapMembers != null) {
-          localMember = bootstrapMembers.stream()
-              .filter(member -> member.getId().equals(localMemberId))
-              .findFirst()
-              .orElse(null);
-        }
-      } else {
-        Address localMemberAddress = parseAddress(localMemberInfo);
-        localMember = config.getClusterConfig().getMembers().stream()
-            .filter(member -> member.getAddress().equals(localMemberAddress))
-            .findFirst()
-            .orElse(null);
-        if (localMember == null && bootstrapMembers != null) {
-          localMember = bootstrapMembers.stream()
-              .filter(member -> member.getAddress().equals(localMemberAddress))
-              .findFirst()
-              .orElse(null);
-        }
-      }
-
-      if (localMember == null) {
-        localMember = new MemberConfig()
-            .setId(parseMemberId(localMemberInfo))
-            .setAddress(parseAddress(localMemberInfo));
-      }
+    if (memberId != null) {
+      config.getClusterConfig().setMemberId(memberId);
     }
 
-    if (localMember != null) {
-      config.getClusterConfig().setLocalMember(localMember);
+    if (address != null) {
+      config.getClusterConfig().setAddress(address);
     }
 
-    if (bootstrapMembers != null) {
-      config.getClusterConfig().setMembers(bootstrapMembers);
+    if (host != null) {
+      config.getClusterConfig().setHost(host);
+    }
+    if (rack != null) {
+      config.getClusterConfig().setRack(rack);
+    }
+    if (zone != null) {
+      config.getClusterConfig().setZone(zone);
+    }
+
+    if (bootstrap != null && !bootstrap.isEmpty()) {
+      config.getClusterConfig().setLocationProviderConfig(new BootstrapMembershipProvider.Config().setLocations(bootstrap));
     }
 
     if (multicastEnabled) {
       config.getClusterConfig().setMulticastEnabled(true);
       config.getClusterConfig().setMulticastAddress(multicastAddress);
+      if (bootstrap == null || bootstrap.isEmpty()) {
+        config.getClusterConfig().setLocationProviderConfig(new MulticastMembershipProvider.Config());
+      }
     }
 
     Atomix atomix = Atomix.builder(config).withShutdownHookEnabled().build();
@@ -177,27 +172,6 @@ public class AtomixAgent {
       while (atomix.isRunning()) {
         Atomix.class.wait();
       }
-    }
-  }
-
-  static MemberId parseMemberId(String address) {
-    int endIndex = address.indexOf('@');
-    if (endIndex > 0) {
-      return MemberId.from(address.substring(0, endIndex));
-    }
-    return null;
-  }
-
-  static Address parseAddress(String address) {
-    int startIndex = address.indexOf('@');
-    if (startIndex == -1) {
-      try {
-        return Address.from(address);
-      } catch (MalformedAddressException e) {
-        return Address.local();
-      }
-    } else {
-      return Address.from(address.substring(startIndex + 1));
     }
   }
 }

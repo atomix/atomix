@@ -16,25 +16,26 @@
 package io.atomix.cluster.messaging.impl;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import io.atomix.cluster.BootstrapMembershipProvider;
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.cluster.GroupMembershipConfig;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
+import io.atomix.cluster.TestBootstrapService;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
-import io.atomix.cluster.impl.TestMemberLocationProvider;
 import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -51,30 +52,25 @@ public class DefaultClusterEventServiceTest {
         .build();
   }
 
-  private Collection<Member> buildBootstrapMembers(Integer... bootstrapNodes) {
-    List<Member> bootstrap = new ArrayList<>(bootstrapNodes.length);
-    for (int bootstrapNode : bootstrapNodes) {
-      bootstrap.add(Member.builder(String.valueOf(bootstrapNode))
-          .withAddress("localhost", bootstrapNode)
-          .build());
-    }
-    return bootstrap;
+  private Collection<Address> buildBootstrapLocations(int nodes) {
+    return IntStream.range(1, nodes + 1)
+        .mapToObj(id -> Address.from("localhost", id))
+        .collect(Collectors.toList());
   }
 
   @Test
   public void testClusterEventService() throws Exception {
     TestMessagingServiceFactory messagingServiceFactory = new TestMessagingServiceFactory();
+    TestBroadcastServiceFactory broadcastServiceFactory = new TestBroadcastServiceFactory();
 
-    Collection<Member> bootstrapMembers = buildBootstrapMembers(1, 2, 3);
+    Collection<Address> bootstrapLocations = buildBootstrapLocations(3);
 
     Member localMember1 = buildNode(1);
     MessagingService messagingService1 = messagingServiceFactory.newMessagingService(localMember1.address()).start().join();
     ManagedClusterMembershipService clusterService1 = new DefaultClusterMembershipService(
         localMember1,
-        bootstrapMembers,
-        messagingService1,
-        new TestMemberLocationProvider(),
-        new GroupMembershipConfig());
+        new TestBootstrapService(messagingService1, broadcastServiceFactory.newBroadcastService().start().join()),
+        new BootstrapMembershipProvider(bootstrapLocations));
     ClusterMembershipService clusterMembershipService1 = clusterService1.start().join();
     ManagedClusterEventService clusterEventingService1 = new DefaultClusterEventService(clusterMembershipService1, messagingService1);
     ClusterEventService eventService1 = clusterEventingService1.start().join();
@@ -83,10 +79,8 @@ public class DefaultClusterEventServiceTest {
     MessagingService messagingService2 = messagingServiceFactory.newMessagingService(localMember2.address()).start().join();
     ManagedClusterMembershipService clusterService2 = new DefaultClusterMembershipService(
         localMember2,
-        bootstrapMembers,
-        messagingService2,
-        new TestMemberLocationProvider(),
-        new GroupMembershipConfig());
+        new TestBootstrapService(messagingService2, broadcastServiceFactory.newBroadcastService().start().join()),
+        new BootstrapMembershipProvider(bootstrapLocations));
     ClusterMembershipService clusterMembershipService2 = clusterService2.start().join();
     ManagedClusterEventService clusterEventingService2 = new DefaultClusterEventService(clusterMembershipService2, messagingService2);
     ClusterEventService eventService2 = clusterEventingService2.start().join();
@@ -95,10 +89,8 @@ public class DefaultClusterEventServiceTest {
     MessagingService messagingService3 = messagingServiceFactory.newMessagingService(localMember3.address()).start().join();
     ManagedClusterMembershipService clusterService3 = new DefaultClusterMembershipService(
         localMember3,
-        bootstrapMembers,
-        messagingService3,
-        new TestMemberLocationProvider(),
-        new GroupMembershipConfig());
+        new TestBootstrapService(messagingService3, broadcastServiceFactory.newBroadcastService().start().join()),
+        new BootstrapMembershipProvider(bootstrapLocations));
     ClusterMembershipService clusterMembershipService3 = clusterService3.start().join();
     ManagedClusterEventService clusterEventingService3 = new DefaultClusterEventService(clusterMembershipService3, messagingService3);
     ClusterEventService eventService3 = clusterEventingService3.start().join();
