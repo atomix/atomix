@@ -27,10 +27,13 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Cluster membership provider.
  * <p>
- * The member location provider is an SPI that the {@link ClusterMembershipService} uses to locate new members joining
+ * The membership provider is an SPI that the {@link ClusterMembershipService} uses to locate new members joining
  * the cluster. It provides a simple TCP {@link Address} for members which will be used by the
- * {@link ClusterMembershipService} to exchange higher level {@link Member} information. The location provider is only
- * used for member discovery, not failure detection.
+ * {@link ClusterMembershipService} to exchange higher level {@link Member} information. Membership providers are
+ * responsible for providing an actively managed view of cluster membership.
+ *
+ * @see BootstrapMembershipProvider
+ * @see MulticastMembershipProvider
  */
 public interface ClusterMembershipProvider
     extends ListenerService<MemberLocationEvent, MemberLocationEventListener>, Configured<ClusterMembershipProvider.Config> {

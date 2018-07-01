@@ -42,7 +42,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
- * Member location provider implementation that uses the broadcast service.
+ * Cluster membership provider that uses multicast for member discovery.
+ * <p>
+ * This implementation uses the {@link io.atomix.cluster.messaging.BroadcastService} internally and thus requires
+ * that multicast is {@link AtomixCluster.Builder#withMulticastEnabled() enabled} on the Atomix instance. Membership
+ * is determined by each node broadcasting to a multicast group, and phi accrual failure detectors are used to detect
+ * nodes joining and leaving the cluster.
  */
 public class MulticastMembershipProvider
     extends AbstractListenerManager<MemberLocationEvent, MemberLocationEventListener>

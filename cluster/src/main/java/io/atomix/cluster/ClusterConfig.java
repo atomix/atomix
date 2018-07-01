@@ -84,7 +84,7 @@ public class ClusterConfig implements Config {
   }
 
   /**
-   * Sets the node identifier.
+   * Sets the local member identifier.
    *
    * @param memberId the node identifier
    * @return the node configuration
@@ -94,7 +94,7 @@ public class ClusterConfig implements Config {
   }
 
   /**
-   * Sets the node identifier.
+   * Sets the local member identifier.
    *
    * @param id the node identifier
    * @return the node configuration
@@ -105,29 +105,29 @@ public class ClusterConfig implements Config {
   }
 
   /**
-   * Returns the node address.
+   * Returns the local member address.
    *
-   * @return the node address
+   * @return the local member address
    */
   public Address getAddress() {
     return address;
   }
 
   /**
-   * Sets the node address.
+   * Sets the local member address.
    *
-   * @param address the node address
-   * @return the node configuration
+   * @param address the local member address
+   * @return the cluster configuration
    */
   public ClusterConfig setAddress(String address) {
     return setAddress(Address.from(address));
   }
 
   /**
-   * Sets the node address.
+   * Sets the local member address.
    *
-   * @param address the node address
-   * @return the node configuration
+   * @param address the local member address
+   * @return the cluster configuration
    */
   public ClusterConfig setAddress(Address address) {
     this.address = address;
@@ -241,7 +241,7 @@ public class ClusterConfig implements Config {
    * @param locationProviderConfig the location provider configuration
    * @return the node configuration
    */
-  public ClusterConfig setLocationProviderConfig(ClusterMembershipProvider.Config locationProviderConfig) {
+  public ClusterConfig setMembershipProviderConfig(ClusterMembershipProvider.Config locationProviderConfig) {
     this.locationProviderConfig = checkNotNull(locationProviderConfig);
     return this;
   }

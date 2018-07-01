@@ -758,8 +758,8 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     }
 
     @Override
-    public Builder withLocationProvider(ClusterMembershipProvider locationProvider) {
-      super.withLocationProvider(locationProvider);
+    public Builder withMembershipProvider(ClusterMembershipProvider locationProvider) {
+      super.withMembershipProvider(locationProvider);
       return this;
     }
 

@@ -49,7 +49,7 @@ public class AtomixAgent {
         .type(String.class)
         .nargs("?")
         .required(false)
-        .help("The local member identifier, used in inter-cluster communication.");
+        .help("The local member identifier, used in intra-cluster communication.");
     parser.addArgument("--address", "-a")
         .type(addressArgumentType)
         .metavar("HOST:PORT")
@@ -142,14 +142,14 @@ public class AtomixAgent {
     }
 
     if (bootstrap != null && !bootstrap.isEmpty()) {
-      config.getClusterConfig().setLocationProviderConfig(new BootstrapMembershipProvider.Config().setLocations(bootstrap));
+      config.getClusterConfig().setMembershipProviderConfig(new BootstrapMembershipProvider.Config().setLocations(bootstrap));
     }
 
     if (multicastEnabled) {
       config.getClusterConfig().setMulticastEnabled(true);
       config.getClusterConfig().setMulticastAddress(multicastAddress);
       if (bootstrap == null || bootstrap.isEmpty()) {
-        config.getClusterConfig().setLocationProviderConfig(new MulticastMembershipProvider.Config());
+        config.getClusterConfig().setMembershipProviderConfig(new MulticastMembershipProvider.Config());
       }
     }
 

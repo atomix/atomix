@@ -49,7 +49,42 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Cluster configuration.
+ * Atomix cluster manager.
+ * <p>
+ * The cluster manager is the basis for all cluster management and communication in an Atomix cluster. This class is
+ * responsible for bootstrapping new clusters or joining existing ones, establishing communication between nodes,
+ * and detecting failures.
+ * <p>
+ * The Atomix cluster can be run as a standalone instance for cluster management and communication. To build a cluster
+ * instance, use {@link #builder()} to create a new builder.
+ * <pre>
+ *   {@code
+ *   AtomixCluster cluster = AtomixCluster.builder()
+ *     .withClusterName("my-cluster")
+ *     .withMemberId("member-1")
+ *     .withAddress("localhost:1234")
+ *     .withMulticastEnabled()
+ *     .build();
+ *   }
+ * </pre>
+ * The instance can be configured with a unique identifier via {@link Builder#withMemberId(String)}. The member ID
+ * can be used to lookup the member in the {@link ClusterMembershipService} or send messages to this node from other
+ * member nodes. The {@link Builder#withAddress(Address) address} is the host and port to which the node will bind
+ * for intra-cluster communication over TCP.
+ * <p>
+ * Once an instance has been configured, the {@link #start()} method must be called to bootstrap the instance. The
+ * {@code start()} method returns a {@link CompletableFuture} which will be completed once all the services have been
+ * bootstrapped.
+ * <pre>
+ *   {@code
+ *   cluster.start().join();
+ *   }
+ * </pre>
+ * <p>
+ * Cluster membership is determined by a configurable {@link ClusterMembershipProvider}. To configure the membership
+ * provider use {@link Builder#withMembershipProvider(ClusterMembershipProvider)}. By default, the
+ * {@link MulticastMembershipProvider} will be used if multicast is {@link Builder#withMulticastEnabled() enabled},
+ * otherwise the {@link BootstrapMembershipProvider} will be used if no provider is explicitly provided.
  */
 public class AtomixCluster implements BootstrapService, Managed<Void> {
   private static final String[] DEFAULT_RESOURCES = new String[]{"cluster"};
@@ -366,12 +401,23 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     }
 
     /**
-     * Sets the local member name.
+     * Sets the local member identifier.
      *
-     * @param localMemberId the local member name
+     * @param localMemberId the local member identifier
      * @return the cluster builder
      */
     public Builder withMemberId(String localMemberId) {
+      config.setMemberId(localMemberId);
+      return this;
+    }
+
+    /**
+     * Sets the local member identifier.
+     *
+     * @param localMemberId the local member identifier
+     * @return the cluster builder
+     */
+    public Builder withMemberId(MemberId localMemberId) {
       config.setMemberId(localMemberId);
       return this;
     }
@@ -511,13 +557,13 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     }
 
     /**
-     * Sets the member location provider.
+     * Sets the membership provider.
      *
-     * @param locationProvider the member location provider
+     * @param locationProvider the membership provider
      * @return the Atomix cluster builder
      */
-    public Builder withLocationProvider(ClusterMembershipProvider locationProvider) {
-      config.setLocationProviderConfig(locationProvider.config());
+    public Builder withMembershipProvider(ClusterMembershipProvider locationProvider) {
+      config.setMembershipProviderConfig(locationProvider.config());
       return this;
     }
 
