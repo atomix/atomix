@@ -422,7 +422,7 @@ public class VertxRestServiceTest {
         .withMemberId(String.valueOf(memberId))
         .withAddress(Address.from("localhost", findAvailablePort(BASE_PORT)))
         .withMulticastEnabled()
-        .withLocationProvider(new MulticastMembershipProvider())
+        .withMembershipProvider(new MulticastMembershipProvider())
         .withManagementGroup(PrimaryBackupPartitionGroup.builder("system")
             .withNumPartitions(1)
             .build())

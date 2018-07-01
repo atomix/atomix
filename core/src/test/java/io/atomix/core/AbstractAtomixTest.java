@@ -58,7 +58,7 @@ public abstract class AbstractAtomixTest {
         .withAddress("localhost", BASE_PORT + id)
         .withMetadata(metadata)
         .withMulticastEnabled()
-        .withLocationProvider(new MulticastMembershipProvider());
+        .withMembershipProvider(new MulticastMembershipProvider());
   }
 
   /**
@@ -75,7 +75,7 @@ public abstract class AbstractAtomixTest {
         .withAddress("localhost", BASE_PORT + id)
         .withMetadata(metadata)
         .withMulticastEnabled()
-        .withLocationProvider(!locations.isEmpty() ? new BootstrapMembershipProvider(locations) : new MulticastMembershipProvider());
+        .withMembershipProvider(!locations.isEmpty() ? new BootstrapMembershipProvider(locations) : new MulticastMembershipProvider());
   }
 
   /**

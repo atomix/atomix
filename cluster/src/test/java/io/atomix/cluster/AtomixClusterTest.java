@@ -45,7 +45,7 @@ public class AtomixClusterTest {
     AtomixCluster cluster1 = AtomixCluster.builder()
         .withMemberId("foo")
         .withAddress("localhost:5000")
-        .withLocationProvider(BootstrapMembershipProvider.builder()
+        .withMembershipProvider(BootstrapMembershipProvider.builder()
             .withLocations(bootstrapLocations)
             .build())
         .build();
@@ -56,7 +56,7 @@ public class AtomixClusterTest {
     AtomixCluster cluster2 = AtomixCluster.builder()
         .withMemberId("bar")
         .withAddress("localhost:5001")
-        .withLocationProvider(BootstrapMembershipProvider.builder()
+        .withMembershipProvider(BootstrapMembershipProvider.builder()
             .withLocations(bootstrapLocations)
             .build())
         .build();
@@ -67,7 +67,7 @@ public class AtomixClusterTest {
     AtomixCluster cluster3 = AtomixCluster.builder()
         .withMemberId("baz")
         .withAddress("localhost:5002")
-        .withLocationProvider(BootstrapMembershipProvider.builder()
+        .withMembershipProvider(BootstrapMembershipProvider.builder()
             .withLocations(bootstrapLocations)
             .build())
         .build();
@@ -89,17 +89,17 @@ public class AtomixClusterTest {
     AtomixCluster cluster1 = AtomixCluster.builder()
         .withAddress("localhost:5000")
         .withMulticastEnabled()
-        .withLocationProvider(new MulticastMembershipProvider())
+        .withMembershipProvider(new MulticastMembershipProvider())
         .build();
     AtomixCluster cluster2 = AtomixCluster.builder()
         .withAddress("localhost:5001")
         .withMulticastEnabled()
-        .withLocationProvider(new MulticastMembershipProvider())
+        .withMembershipProvider(new MulticastMembershipProvider())
         .build();
     AtomixCluster cluster3 = AtomixCluster.builder()
         .withAddress("localhost:5002")
         .withMulticastEnabled()
-        .withLocationProvider(new MulticastMembershipProvider())
+        .withMembershipProvider(new MulticastMembershipProvider())
         .build();
 
     TestClusterMembershipEventListener listener1 = new TestClusterMembershipEventListener();

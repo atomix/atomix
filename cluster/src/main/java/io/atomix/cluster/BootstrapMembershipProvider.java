@@ -51,7 +51,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
- * Bootstrap member location provider.
+ * Cluster membership provider that bootstraps membership from a pre-defined set of peers.
+ * <p>
+ * The bootstrap member provider takes a set of peer {@link Config#setLocations(Collection) addresses} and uses them
+ * to join the cluster. Using the {@link io.atomix.cluster.messaging.MessagingService}, each node sends a heartbeat to
+ * its configured bootstrap peers. Peers respond to each heartbeat message with a list of all known peers, thus
+ * propagating membership information using a gossip style protocol.
+ * <p>
+ * A phi accrual failure detector is used to detect failures and remove peers from the configuration. In order to avoid
+ * flapping of membership following a {@link MemberLocationEvent.Type#LEAVE} event, the implementation attempts to
+ * heartbeat all newly discovered peers before triggering a {@link MemberLocationEvent.Type#JOIN} event.
  */
 public class BootstrapMembershipProvider
     extends AbstractListenerManager<MemberLocationEvent, MemberLocationEventListener>
@@ -328,8 +337,12 @@ public class BootstrapMembershipProvider
       if (error == null) {
         Collection<Address> locations = SERIALIZER.decode(response);
         for (Address location : locations) {
-          if (this.locations.add(location)) {
-            post(new MemberLocationEvent(MemberLocationEvent.Type.JOIN, location));
+          if (address.equals(location)) {
+            if (this.locations.add(location)) {
+              post(new MemberLocationEvent(MemberLocationEvent.Type.JOIN, location));
+            }
+          } else if (!this.locations.contains(location)) {
+            sendHeartbeat(localAddress, location);
           }
         }
       } else {
