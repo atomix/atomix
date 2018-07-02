@@ -71,10 +71,10 @@ public class RaftStorage {
   private final int maxEntriesPerSegment;
   private final boolean dynamicCompaction;
   private final double freeDiskBuffer;
+  private final double freeMemoryBuffer;
   private final boolean flushOnCommit;
   private final boolean retainStaleSnapshots;
   private final StorageStatistics statistics;
-  private final MemoryStatus memoryStatus;
 
   private RaftStorage(
       String prefix,
@@ -85,9 +85,9 @@ public class RaftStorage {
       int maxEntriesPerSegment,
       boolean dynamicCompaction,
       double freeDiskBuffer,
+      double freeMemoryBuffer,
       boolean flushOnCommit,
-      boolean retainStaleSnapshots,
-      MemoryStatus memoryStatus) {
+      boolean retainStaleSnapshots) {
     this.prefix = prefix;
     this.storageLevel = storageLevel;
     this.directory = directory;
@@ -96,9 +96,9 @@ public class RaftStorage {
     this.maxEntriesPerSegment = maxEntriesPerSegment;
     this.dynamicCompaction = dynamicCompaction;
     this.freeDiskBuffer = freeDiskBuffer;
+    this.freeMemoryBuffer = freeMemoryBuffer;
     this.flushOnCommit = flushOnCommit;
     this.retainStaleSnapshots = retainStaleSnapshots;
-    this.memoryStatus = memoryStatus;
     this.statistics = new StorageStatistics(directory);
     directory.mkdirs();
   }
@@ -146,18 +146,6 @@ public class RaftStorage {
   }
 
   /**
-   * Returns the memory status.
-   * <p>
-   * The memory status is used to check if the node {@link MemoryStatus}
-   * is out of memory.
-   *
-   * @return The memory status.
-   */
-  public MemoryStatus memoryStatus() {
-    return memoryStatus;
-  }
-
-  /**
    * Returns the maximum log segment size.
    * <p>
    * The maximum segment size dictates the maximum size any segment in a {@link RaftLog} may consume
@@ -197,6 +185,15 @@ public class RaftStorage {
    */
   public double freeDiskBuffer() {
     return freeDiskBuffer;
+  }
+
+  /**
+   * Returns the percentage of memory space that must be available before log compaction is forced.
+   *
+   * @return the percentage of memory space that must be available before log compaction is forced
+   */
+  public double freeMemoryBuffer() {
+    return freeMemoryBuffer;
   }
 
   /**
@@ -354,6 +351,7 @@ public class RaftStorage {
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
     private static final boolean DEFAULT_DYNAMIC_COMPACTION = true;
     private static final double DEFAULT_FREE_DISK_BUFFER = .2;
+    private static final double DEFAULT_FREE_MEMORY_BUFFER = .2;
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = true;
     private static final boolean DEFAULT_RETAIN_STALE_SNAPSHOTS = false;
 
@@ -365,9 +363,9 @@ public class RaftStorage {
     private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
     private boolean dynamicCompaction = DEFAULT_DYNAMIC_COMPACTION;
     private double freeDiskBuffer = DEFAULT_FREE_DISK_BUFFER;
+    private double freeMemoryBuffer = DEFAULT_FREE_MEMORY_BUFFER;
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
     private boolean retainStaleSnapshots = DEFAULT_RETAIN_STALE_SNAPSHOTS;
-    private MemoryStatus memoryStatus;
 
     private Builder() {
     }
@@ -394,20 +392,6 @@ public class RaftStorage {
      */
     public Builder withStorageLevel(StorageLevel storageLevel) {
       this.storageLevel = checkNotNull(storageLevel, "storageLevel");
-      return this;
-    }
-
-    /**
-     * Sets the memory status, returning the builder for method chaining.
-     * <p>
-     * The memory status is used to check if the node {@link MemoryStatus}
-     * is out of memory.
-     *
-     * @param memoryStatus object.
-     * @return The storage builder.
-     */
-    public Builder withMemoryStatus(MemoryStatus memoryStatus) {
-      this.memoryStatus = checkNotNull(memoryStatus, "memoryStatus");
       return this;
     }
 
@@ -533,6 +517,19 @@ public class RaftStorage {
     }
 
     /**
+     * Sets the percentage of free memory space that must be preserved before log compaction is forced.
+     *
+     * @param freeMemoryBuffer the free disk percentage
+     * @return the Raft log builder
+     */
+    public Builder withFreeMemoryBuffer(double freeMemoryBuffer) {
+      checkArgument(freeMemoryBuffer > 0, "freeMemoryBuffer must be positive");
+      checkArgument(freeMemoryBuffer < 1, "freeMemoryBuffer must be less than 1");
+      this.freeMemoryBuffer = freeMemoryBuffer;
+      return this;
+    }
+
+    /**
      * Enables flushing buffers to disk when entries are committed to a segment, returning the builder
      * for method chaining.
      * <p>
@@ -608,9 +605,9 @@ public class RaftStorage {
           maxEntriesPerSegment,
           dynamicCompaction,
           freeDiskBuffer,
+          freeMemoryBuffer,
           flushOnCommit,
-          retainStaleSnapshots,
-          memoryStatus);
+          retainStaleSnapshots);
     }
   }
 

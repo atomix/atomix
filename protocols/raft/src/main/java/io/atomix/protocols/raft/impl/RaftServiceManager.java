@@ -28,7 +28,6 @@ import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.service.RaftServiceContext;
 import io.atomix.protocols.raft.session.RaftSession;
-import io.atomix.protocols.raft.storage.MemoryStatus;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
@@ -131,10 +130,7 @@ public class RaftServiceManager implements AutoCloseable {
   private boolean isRunningOutOfMemory() {
     StorageLevel level = raft.getStorage().storageLevel();
     if (level == StorageLevel.MEMORY || level == StorageLevel.MAPPED) {
-        MemoryStatus status = raft.getStorage().memoryStatus();
-        if (status != null) {
-            return status.isRunningOutOfMemory();
-        }
+        return raft.getStorage().statistics().getFreeMemory() / (double) raft.getStorage().statistics().getTotalMemory() < raft.getStorage().freeMemoryBuffer();
     }
 
     return false;

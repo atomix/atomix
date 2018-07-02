@@ -16,15 +16,19 @@
 package io.atomix.storage.statistics;
 
 import java.io.File;
+import java.lang.management.ManagementFactory;
+import com.sun.management.OperatingSystemMXBean;
 
 /**
  * Atomix storage statistics.
  */
 public class StorageStatistics {
   private final File file;
+  private final OperatingSystemMXBean osMxBean;
 
   public StorageStatistics(File file) {
     this.file = file;
+    this.osMxBean = (OperatingSystemMXBean)ManagementFactory.getOperatingSystemMXBean();
   }
 
   /**
@@ -52,5 +56,23 @@ public class StorageStatistics {
    */
   public long getTotalSpace() {
     return file.getTotalSpace();
+  }
+
+  /**
+   * Returns the amount of free memory remaining.
+   *
+   * @return the amount of free memory remaining
+   */
+  public long getFreeMemory() {
+    return osMxBean.getFreePhysicalMemorySize();
+  }
+
+  /**
+   * Returns the total amount of memory.
+   *
+   * @return the total amount of memory
+   */
+  public long getTotalMemory() {
+    return osMxBean.getTotalPhysicalMemorySize();
   }
 }
