@@ -34,6 +34,7 @@ import io.atomix.core.map.AtomicMap;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.profile.Profile;
+import io.atomix.core.profile.ProfileConfig;
 import io.atomix.core.queue.DistributedQueue;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.set.DistributedSet;
@@ -77,7 +78,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -162,7 +162,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         new PolymorphicTypeMapper(PartitionGroupConfig.class, PartitionGroup.Type.class),
         new PolymorphicTypeMapper(PrimitiveConfig.class, PrimitiveType.class),
         new PolymorphicTypeMapper(PrimitiveProtocolConfig.class, PrimitiveProtocol.Type.class),
-        new PolymorphicTypeMapper(Profile.Config.class, Profile.Type.class),
+        new PolymorphicTypeMapper(ProfileConfig.class, Profile.Type.class),
         new PolymorphicTypeMapper(NodeDiscoveryProvider.Config.class, NodeDiscoveryProvider.Type.class));
     return mapper.loadFile(AtomixConfig.class, file, RESOURCES);
   }

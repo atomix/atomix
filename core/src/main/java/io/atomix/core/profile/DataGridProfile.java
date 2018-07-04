@@ -19,8 +19,6 @@ import io.atomix.core.AtomixConfig;
 import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroupConfig;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * In-memory data grid profile.
  */
@@ -32,14 +30,14 @@ public class DataGridProfile implements Profile {
    *
    * @return a new data grid profile builder
    */
-  public static Builder builder() {
-    return new Builder();
+  public static DataGridProfileBuilder builder() {
+    return new DataGridProfileBuilder();
   }
 
   /**
    * Data-grid profile type.
    */
-  public static class Type implements Profile.Type<Config> {
+  public static class Type implements Profile.Type<DataGridProfileConfig> {
     private static final String NAME = "data-grid";
 
     @Override
@@ -48,154 +46,32 @@ public class DataGridProfile implements Profile {
     }
 
     @Override
-    public Config newConfig() {
-      return new Config();
+    public DataGridProfileConfig newConfig() {
+      return new DataGridProfileConfig();
     }
 
     @Override
-    public Profile newProfile(Config config) {
+    public Profile newProfile(DataGridProfileConfig config) {
       return new DataGridProfile(config);
     }
   }
 
-  /**
-   * Data grid profile builder.
-   */
-  public static class Builder implements Profile.Builder {
-    private final Config config = new Config();
-
-    private Builder() {
-    }
-
-    /**
-     * Sets the management partition group name.
-     *
-     * @param managementGroup the management partition group name
-     * @return the data grid profile builder
-     */
-    public Builder withManagementGroup(String managementGroup) {
-      config.setManagementGroup(managementGroup);
-      return this;
-    }
-
-    /**
-     * Sets the data partition group name.
-     *
-     * @param dataGroup the data partition group name
-     * @return the data grid profile builder
-     */
-    public Builder withDataGroup(String dataGroup) {
-      config.setDataGroup(dataGroup);
-      return this;
-    }
-
-    /**
-     * Sets the number of data partitions.
-     *
-     * @param numPartitions the number of data partitions
-     * @return the data grid profile builder
-     */
-    public Builder withNumPartitions(int numPartitions) {
-      config.setPartitions(numPartitions);
-      return this;
-    }
-
-    @Override
-    public Profile build() {
-      return new DataGridProfile(config);
-    }
-  }
-
-  /**
-   * Data grid profile configuration.
-   */
-  public static class Config implements Profile.Config {
-    private String managementGroup = "system";
-    private String dataGroup = "data";
-    private int partitions = 71;
-
-    @Override
-    public Profile.Type getType() {
-      return TYPE;
-    }
-
-    /**
-     * Returns the management partition group name.
-     *
-     * @return the management partition group name
-     */
-    public String getManagementGroup() {
-      return managementGroup;
-    }
-
-    /**
-     * Sets the management partition group name.
-     *
-     * @param managementGroup the management partition group name
-     * @return the data grid profile configuration
-     */
-    public Config setManagementGroup(String managementGroup) {
-      this.managementGroup = checkNotNull(managementGroup);
-      return this;
-    }
-
-    /**
-     * Returns the data partition group name.
-     *
-     * @return the data partition group name
-     */
-    public String getDataGroup() {
-      return dataGroup;
-    }
-
-    /**
-     * Sets the data partition group name.
-     *
-     * @param dataGroup the data partition group name
-     * @return the data grid profile configuration
-     */
-    public Config setDataGroup(String dataGroup) {
-      this.dataGroup = checkNotNull(dataGroup);
-      return this;
-    }
-
-    /**
-     * Returns the number of data partitions to configure.
-     *
-     * @return the number of data partitions to configure
-     */
-    public int getPartitions() {
-      return partitions;
-    }
-
-    /**
-     * Sets the number of data partitions to configure.
-     *
-     * @param partitions the number of data partitions to configure
-     * @return the data grid profile configuration
-     */
-    public Config setPartitions(int partitions) {
-      this.partitions = partitions;
-      return this;
-    }
-  }
-
-  private final Config config;
+  private final DataGridProfileConfig config;
 
   DataGridProfile() {
-    this(new Config());
+    this(new DataGridProfileConfig());
   }
 
   DataGridProfile(int numPartitions) {
-    this(new Config().setPartitions(numPartitions));
+    this(new DataGridProfileConfig().setPartitions(numPartitions));
   }
 
-  private DataGridProfile(Config config) {
+  DataGridProfile(DataGridProfileConfig config) {
     this.config = config;
   }
 
   @Override
-  public Profile.Config config() {
+  public DataGridProfileConfig config() {
     return config;
   }
 

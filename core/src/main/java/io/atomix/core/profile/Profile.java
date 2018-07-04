@@ -18,14 +18,13 @@ package io.atomix.core.profile;
 import io.atomix.core.AtomixConfig;
 import io.atomix.utils.ConfiguredType;
 import io.atomix.utils.config.Configured;
-import io.atomix.utils.config.TypedConfig;
 
 import java.util.Collection;
 
 /**
  * Atomix profile.
  */
-public interface Profile extends Configured<Profile.Config> {
+public interface Profile extends Configured<ProfileConfig> {
 
   /**
    * Creates a consensus profile.
@@ -78,7 +77,7 @@ public interface Profile extends Configured<Profile.Config> {
   /**
    * Profile type.
    */
-  interface Type<C extends Config> extends ConfiguredType<C> {
+  interface Type<C extends ProfileConfig> extends ConfiguredType<C> {
 
     /**
      * Creates a new instance of the profile.
@@ -87,18 +86,6 @@ public interface Profile extends Configured<Profile.Config> {
      * @return the profile instance
      */
     Profile newProfile(C config);
-  }
-
-  /**
-   * Profile configuration.
-   */
-  interface Config extends TypedConfig<Type> {
-  }
-
-  /**
-   * Profile builder.
-   */
-  interface Builder extends io.atomix.utils.Builder<Profile> {
   }
 
   /**
