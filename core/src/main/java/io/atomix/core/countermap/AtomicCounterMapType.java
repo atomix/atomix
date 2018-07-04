@@ -16,7 +16,7 @@
 package io.atomix.core.countermap;
 
 import io.atomix.core.counter.AtomicCounterMap;
-import io.atomix.core.countermap.impl.AtomicCounterMapProxyBuilder;
+import io.atomix.core.countermap.impl.DefaultAtomicCounterMapBuilder;
 import io.atomix.core.countermap.impl.DefaultAtomicCounterMapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
@@ -60,7 +60,7 @@ public class AtomicCounterMapType<K> implements PrimitiveType<AtomicCounterMapBu
 
   @Override
   public AtomicCounterMapBuilder<K> newBuilder(String name, AtomicCounterMapConfig config, PrimitiveManagementService managementService) {
-    return new AtomicCounterMapProxyBuilder<>(name, config, managementService);
+    return new DefaultAtomicCounterMapBuilder<>(name, config, managementService);
   }
 
   @Override

@@ -32,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <E> type for set elements
  */
-public class DistributedSetProxyBuilder<E> extends DistributedSetBuilder<E> {
-  public DistributedSetProxyBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
+public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
+  public DefaultDistributedSetBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 

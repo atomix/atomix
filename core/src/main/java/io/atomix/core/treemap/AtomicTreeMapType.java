@@ -15,7 +15,7 @@
  */
 package io.atomix.core.treemap;
 
-import io.atomix.core.treemap.impl.AtomicTreeMapProxyBuilder;
+import io.atomix.core.treemap.impl.DefaultAtomicTreeMapBuilder;
 import io.atomix.core.treemap.impl.DefaultAtomicTreeMapService;
 import io.atomix.core.map.AtomicMapType;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -67,7 +67,7 @@ public class AtomicTreeMapType<V>
 
   @Override
   public AtomicTreeMapBuilder<V> newBuilder(String name, AtomicTreeMapConfig config, PrimitiveManagementService managementService) {
-    return new AtomicTreeMapProxyBuilder<>(name, config, managementService);
+    return new DefaultAtomicTreeMapBuilder<>(name, config, managementService);
   }
 
   @Override

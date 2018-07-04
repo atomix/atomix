@@ -19,7 +19,7 @@ import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.collection.impl.DistributedCollectionService;
 import io.atomix.core.multiset.impl.DefaultDistributedMultisetService;
-import io.atomix.core.multiset.impl.DistributedMultisetProxyBuilder;
+import io.atomix.core.multiset.impl.DefaultDistributedMultisetBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -78,7 +78,7 @@ public class DistributedMultisetType<E> implements PrimitiveType<DistributedMult
 
   @Override
   public DistributedMultisetBuilder<E> newBuilder(String name, DistributedMultisetConfig config, PrimitiveManagementService managementService) {
-    return new DistributedMultisetProxyBuilder<E>(name, config, managementService);
+    return new DefaultDistributedMultisetBuilder<E>(name, config, managementService);
   }
 
   @Override

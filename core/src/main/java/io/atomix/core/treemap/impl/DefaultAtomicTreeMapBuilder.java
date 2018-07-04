@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.tree.impl;
+package io.atomix.core.treemap.impl;
 
-import io.atomix.core.tree.AsyncAtomicDocumentTree;
-import io.atomix.core.tree.AtomicDocumentTree;
-import io.atomix.core.tree.AtomicDocumentTreeBuilder;
-import io.atomix.core.tree.AtomicDocumentTreeConfig;
+import io.atomix.core.treemap.AsyncAtomicTreeMap;
+import io.atomix.core.treemap.AtomicTreeMap;
+import io.atomix.core.treemap.AtomicTreeMapBuilder;
+import io.atomix.core.treemap.AtomicTreeMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
@@ -27,31 +27,31 @@ import io.atomix.utils.serializer.Serializer;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Default {@link AsyncAtomicDocumentTree} builder.
+ * Default {@link AsyncAtomicTreeMap} builder.
  *
- * @param <V> type for document tree value
+ * @param <V> type for map value
  */
-public class AtomicDocumentTreeProxyBuilder<V> extends AtomicDocumentTreeBuilder<V> {
-  public AtomicDocumentTreeProxyBuilder(String name, AtomicDocumentTreeConfig config, PrimitiveManagementService managementService) {
+public class DefaultAtomicTreeMapBuilder<V> extends AtomicTreeMapBuilder<V> {
+  public DefaultAtomicTreeMapBuilder(String name, AtomicTreeMapConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<AtomicDocumentTree<V>> buildAsync() {
-    ProxyClient<DocumentTreeService> proxy = protocol().newProxy(
+  public CompletableFuture<AtomicTreeMap<V>> buildAsync() {
+    ProxyClient<AtomicTreeMapService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
-        DocumentTreeService.class,
+        AtomicTreeMapService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
-    return new AtomicDocumentTreeProxy(proxy, managementService.getPrimitiveRegistry())
+    return new AtomicTreeMapProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
-        .thenApply(tree -> {
+        .thenApply(map -> {
           Serializer serializer = serializer();
-          return new TranscodingAsyncAtomicDocumentTree<V, byte[]>(
-              tree,
-              key -> serializer.encode(key),
+          return new TranscodingAsyncAtomicTreeMap<V, byte[]>(
+              (AsyncAtomicTreeMap) map,
+              value -> serializer.encode(value),
               bytes -> serializer.decode(bytes))
               .sync();
         });

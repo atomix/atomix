@@ -32,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <E> type for list elements
  */
-public class DistributedListProxyBuilder<E> extends DistributedListBuilder<E> {
-  public DistributedListProxyBuilder(String name, DistributedListConfig config, PrimitiveManagementService managementService) {
+public class DefaultDistributedListBuilder<E> extends DistributedListBuilder<E> {
+  public DefaultDistributedListBuilder(String name, DistributedListConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 

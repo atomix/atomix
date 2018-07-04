@@ -17,7 +17,7 @@ package io.atomix.core.barrier;
 
 import io.atomix.core.barrier.impl.CyclicBarrierResult;
 import io.atomix.core.barrier.impl.DefaultDistributedCyclicBarrierService;
-import io.atomix.core.barrier.impl.DistributedCyclicBarrierProxyBuilder;
+import io.atomix.core.barrier.impl.DefaultDistributedCyclicBarrierBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -68,7 +68,7 @@ public class DistributedCyclicBarrierType implements PrimitiveType<DistributedCy
 
   @Override
   public DistributedCyclicBarrierBuilder newBuilder(String name, DistributedCyclicBarrierConfig config, PrimitiveManagementService managementService) {
-    return new DistributedCyclicBarrierProxyBuilder(name, config, managementService);
+    return new DefaultDistributedCyclicBarrierBuilder(name, config, managementService);
   }
 
   @Override

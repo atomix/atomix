@@ -15,7 +15,7 @@
  */
 package io.atomix.core.leadership;
 
-import io.atomix.core.leadership.impl.LeaderElectionProxyBuilder;
+import io.atomix.core.leadership.impl.DefaultLeaderElectionBuilder;
 import io.atomix.core.leadership.impl.DefaultLeaderElectionService;
 import io.atomix.core.leadership.impl.LeaderElectionResource;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -77,7 +77,7 @@ public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilde
 
   @Override
   public LeaderElectionBuilder<T> newBuilder(String name, LeaderElectionConfig config, PrimitiveManagementService managementService) {
-    return new LeaderElectionProxyBuilder<>(name, config, managementService);
+    return new DefaultLeaderElectionBuilder<>(name, config, managementService);
   }
 
   @Override

@@ -19,7 +19,7 @@ import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.queue.impl.DefaultDistributedQueueService;
 import io.atomix.core.collection.impl.DistributedCollectionService;
-import io.atomix.core.queue.impl.DistributedQueueProxyBuilder;
+import io.atomix.core.queue.impl.DefaultDistributedQueueBuilder;
 import io.atomix.core.queue.impl.DistributedQueueResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
@@ -86,7 +86,7 @@ public class DistributedQueueType<E> implements PrimitiveType<DistributedQueueBu
 
   @Override
   public DistributedQueueBuilder<E> newBuilder(String name, DistributedQueueConfig config, PrimitiveManagementService managementService) {
-    return new DistributedQueueProxyBuilder<>(name, config, managementService);
+    return new DefaultDistributedQueueBuilder<>(name, config, managementService);
   }
 
   @Override

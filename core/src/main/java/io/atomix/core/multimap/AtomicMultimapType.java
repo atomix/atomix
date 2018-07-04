@@ -16,7 +16,7 @@
 package io.atomix.core.multimap;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.multimap.impl.AtomicMultimapProxyBuilder;
+import io.atomix.core.multimap.impl.DefaultAtomicMultimapBuilder;
 import io.atomix.core.multimap.impl.AtomicMultimapService;
 import io.atomix.core.multimap.impl.DefaultAtomicMultimapService;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -79,7 +79,7 @@ public class AtomicMultimapType<K, V> implements PrimitiveType<AtomicMultimapBui
 
   @Override
   public AtomicMultimapBuilder<K, V> newBuilder(String name, AtomicMultimapConfig config, PrimitiveManagementService managementService) {
-    return new AtomicMultimapProxyBuilder<>(name, config, managementService);
+    return new DefaultAtomicMultimapBuilder<>(name, config, managementService);
   }
 
   @Override

@@ -30,8 +30,8 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <V> value type
  */
-public class AtomicValueProxyBuilder<V> extends AtomicValueBuilder<V> {
-  public AtomicValueProxyBuilder(String name, AtomicValueConfig config, PrimitiveManagementService managementService) {
+public class DefaultAtomicValueBuilder<V> extends AtomicValueBuilder<V> {
+  public DefaultAtomicValueBuilder(String name, AtomicValueConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 

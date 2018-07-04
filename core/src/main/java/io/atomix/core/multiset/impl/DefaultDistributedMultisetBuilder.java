@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.queue.impl;
+package io.atomix.core.multiset.impl;
 
 import com.google.common.io.BaseEncoding;
-import io.atomix.core.queue.AsyncDistributedQueue;
-import io.atomix.core.queue.DistributedQueue;
-import io.atomix.core.queue.DistributedQueueBuilder;
-import io.atomix.core.queue.DistributedQueueConfig;
+import io.atomix.core.multiset.AsyncDistributedMultiset;
+import io.atomix.core.multiset.DistributedMultiset;
+import io.atomix.core.multiset.DistributedMultisetBuilder;
+import io.atomix.core.multiset.DistributedMultisetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
@@ -28,41 +28,41 @@ import io.atomix.utils.serializer.Serializer;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Default distributed queue builder.
+ * Default distributed multiset builder.
  *
- * @param <E> type for queue elements
+ * @param <E> type for multiset elements
  */
-public class DistributedQueueProxyBuilder<E> extends DistributedQueueBuilder<E> {
-  public DistributedQueueProxyBuilder(String name, DistributedQueueConfig config, PrimitiveManagementService managementService) {
+public class DefaultDistributedMultisetBuilder<E> extends DistributedMultisetBuilder<E> {
+  public DefaultDistributedMultisetBuilder(String name, DistributedMultisetConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<DistributedQueue<E>> buildAsync() {
-    ProxyClient<DistributedQueueService> proxy = protocol().newProxy(
+  public CompletableFuture<DistributedMultiset<E>> buildAsync() {
+    ProxyClient<DistributedMultisetService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
-        DistributedQueueService.class,
+        DistributedMultisetService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
-    return new DistributedQueueProxy(proxy, managementService.getPrimitiveRegistry())
+    return new DistributedMultisetProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
-        .thenApply(rawQueue -> {
+        .thenApply(rawList -> {
           Serializer serializer = serializer();
-          AsyncDistributedQueue<E> queue = new TranscodingAsyncDistributedQueue<>(
-              rawQueue,
+          AsyncDistributedMultiset<E> list = new TranscodingAsyncDistributedMultiset<>(
+              rawList,
               element -> BaseEncoding.base16().encode(serializer.encode(element)),
               string -> serializer.decode(BaseEncoding.base16().decode(string)));
 
           if (config.isCacheEnabled()) {
-            queue = new CachingAsyncDistributedQueue<>(queue, config.getCacheSize());
+            list = new CachingAsyncDistributedMultiset<>(list, config.getCacheSize());
           }
 
           if (config.isReadOnly()) {
-            queue = new UnmodifiableAsyncDistributedQueue<>(queue);
+            list = new UnmodifiableAsyncDistributedMultiset<>(list);
           }
-          return queue.sync();
+          return list.sync();
         });
   }
 }

@@ -13,44 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.workqueue.impl;
+package io.atomix.core.counter.impl;
 
-import io.atomix.core.workqueue.WorkQueue;
-import io.atomix.core.workqueue.WorkQueueBuilder;
-import io.atomix.core.workqueue.WorkQueueConfig;
+import io.atomix.core.counter.AtomicCounterConfig;
+import io.atomix.core.counter.AtomicCounter;
+import io.atomix.core.counter.AtomicCounterBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Default work queue builder implementation.
+ * Atomic counter proxy builder.
  */
-public class WorkQueueProxyBuilder<E> extends WorkQueueBuilder<E> {
-  public WorkQueueProxyBuilder(String name, WorkQueueConfig config, PrimitiveManagementService managementService) {
+public class DefaultAtomicCounterBuilder extends AtomicCounterBuilder {
+  public DefaultAtomicCounterBuilder(String name, AtomicCounterConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<WorkQueue<E>> buildAsync() {
-    ProxyClient<WorkQueueService> proxy = protocol().newProxy(
+  public CompletableFuture<AtomicCounter> buildAsync() {
+    ProxyClient<AtomicCounterService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
-        WorkQueueService.class,
+        AtomicCounterService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
-    return new WorkQueueProxy(proxy, managementService.getPrimitiveRegistry())
+    return new AtomicCounterProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
-        .thenApply(queue -> {
-          Serializer serializer = serializer();
-          return new TranscodingAsyncWorkQueue<E, byte[]>(
-              queue,
-              item -> serializer.encode(item),
-              bytes -> serializer.decode(bytes))
-              .sync();
-        });
+        .thenApply(counter -> counter.sync());
   }
 }
