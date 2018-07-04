@@ -19,9 +19,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.cluster.BootstrapDiscoveryProvider;
 import io.atomix.cluster.BootstrapService;
-import io.atomix.cluster.ClusterConfig;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
+import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.impl.DefaultNodeDiscoveryService;
@@ -504,7 +504,7 @@ public class RaftPerformanceTest implements Runnable {
             member,
             new DefaultNodeDiscoveryService(bootstrapService, member, new BootstrapDiscoveryProvider(members)),
             bootstrapService,
-            new ClusterConfig()))
+            new MembershipConfig()))
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.MAPPED)
             .withDirectory(new File(String.format("target/perf-logs/%s", member.id())))
@@ -608,7 +608,7 @@ public class RaftPerformanceTest implements Runnable {
     @Override
     public void backup(BackupOutput writer) {
       writer.writeInt(map.size());
-      for (Map.Entry<String, String> entry: map.entrySet()) {
+      for (Map.Entry<String, String> entry : map.entrySet()) {
         writer.writeString(entry.getKey());
         writer.writeString(entry.getValue());
       }
@@ -714,17 +714,17 @@ public class RaftPerformanceTest implements Runnable {
 
   private static class BroadcastServiceAdapter implements BroadcastService {
     @Override
-    public void broadcast(byte[] message) {
+    public void broadcast(String subject, byte[] message) {
 
     }
 
     @Override
-    public void addListener(Consumer<byte[]> listener) {
+    public void addListener(String subject, Consumer<byte[]> listener) {
 
     }
 
     @Override
-    public void removeListener(Consumer<byte[]> listener) {
+    public void removeListener(String subject, Consumer<byte[]> listener) {
 
     }
   }

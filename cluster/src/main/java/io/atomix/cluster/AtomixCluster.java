@@ -321,8 +321,11 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   protected static ManagedBroadcastService buildBroadcastService(ClusterConfig config) {
     return NettyBroadcastService.builder()
         .withLocalAddress(config.getAddress())
-        .withGroupAddress(config.getMulticastAddress())
-        .withEnabled(config.isMulticastEnabled())
+        .withGroupAddress(new Address(
+            config.getMulticastConfig().getGroup().getHostName(),
+            config.getMulticastConfig().getPort(),
+            config.getMulticastConfig().getGroup()))
+        .withEnabled(config.getMulticastConfig().isEnabled())
         .build();
   }
 
@@ -331,11 +334,11 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    */
   @SuppressWarnings("unchecked")
   protected static NodeDiscoveryProvider buildLocationProvider(ClusterConfig config) {
-    NodeDiscoveryProvider.Config locationProviderConfig = config.getDiscoveryConfig();
-    if (locationProviderConfig != null) {
-      return locationProviderConfig.getType().newProvider(locationProviderConfig);
+    NodeDiscoveryProvider.Config discoveryProviderConfig = config.getDiscoveryConfig();
+    if (discoveryProviderConfig != null) {
+      return discoveryProviderConfig.getType().newProvider(discoveryProviderConfig);
     }
-    if (config.isMulticastEnabled()) {
+    if (config.getMulticastConfig().isEnabled()) {
       return new MulticastDiscoveryProvider(new MulticastDiscoveryProvider.Config());
     } else {
       return new BootstrapDiscoveryProvider(Collections.emptyList());
@@ -362,7 +365,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
         localMember,
         new DefaultNodeDiscoveryService(bootstrapService, localMember, discoveryProvider),
         bootstrapService,
-        config);
+        config.getMembershipConfig());
   }
 
   /**
@@ -547,7 +550,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the Atomix builder
      */
     public Builder withMulticastEnabled(boolean multicastEnabled) {
-      config.setMulticastEnabled(multicastEnabled);
+      config.getMulticastConfig().setEnabled(multicastEnabled);
       return this;
     }
 
@@ -558,7 +561,8 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the Atomix builder
      */
     public Builder withMulticastAddress(Address address) {
-      config.setMulticastAddress(address);
+      config.getMulticastConfig().setGroup(address.address());
+      config.getMulticastConfig().setPort(address.port());
       return this;
     }
 
@@ -569,7 +573,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the Atomix builder
      */
     public Builder setBroadcastInterval(Duration interval) {
-      config.setBroadcastInterval((int) interval.toMillis());
+      config.getMembershipConfig().setBroadcastInterval((int) interval.toMillis());
       return this;
     }
 
@@ -580,7 +584,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the Atomix builder
      */
     public Builder setReachabilityThreshold(int threshold) {
-      config.setReachabilityThreshold(threshold);
+      config.getMembershipConfig().setReachabilityThreshold(threshold);
       return this;
     }
 
@@ -591,7 +595,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the Atomix builder
      */
     public Builder withReachabilityTimeout(Duration timeout) {
-      config.setReachabilityTimeout((int) timeout.toMillis());
+      config.getMembershipConfig().setReachabilityTimeout((int) timeout.toMillis());
       return this;
     }
 

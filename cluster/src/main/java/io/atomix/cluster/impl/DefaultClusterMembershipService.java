@@ -18,7 +18,6 @@ package io.atomix.cluster.impl;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import io.atomix.cluster.BootstrapService;
-import io.atomix.cluster.ClusterConfig;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
@@ -26,6 +25,7 @@ import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.ManagedNodeDiscoveryService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
+import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeDiscoveryEvent;
 import io.atomix.cluster.NodeDiscoveryEventListener;
@@ -92,7 +92,7 @@ public class DefaultClusterMembershipService
       Member localMember,
       ManagedNodeDiscoveryService discoveryService,
       BootstrapService bootstrapService,
-      ClusterConfig config) {
+      MembershipConfig config) {
     this.discoveryService = checkNotNull(discoveryService, "discoveryService cannot be null");
     this.bootstrapService = checkNotNull(bootstrapService, "bootstrapService cannot be null");
     this.localMember = new StatefulMember(

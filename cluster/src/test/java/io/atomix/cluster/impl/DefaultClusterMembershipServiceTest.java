@@ -17,12 +17,12 @@ package io.atomix.cluster.impl;
 
 import io.atomix.cluster.BootstrapDiscoveryProvider;
 import io.atomix.cluster.BootstrapService;
-import io.atomix.cluster.ClusterConfig;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
+import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.TestBootstrapService;
 import io.atomix.cluster.messaging.impl.TestBroadcastServiceFactory;
@@ -78,7 +78,7 @@ public class DefaultClusterMembershipServiceTest {
         localMember1,
         new DefaultNodeDiscoveryService(bootstrapService1, localMember1, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService1,
-        new ClusterConfig());
+        new MembershipConfig());
 
     Member localMember2 = buildMember(2);
     BootstrapService bootstrapService2 = new TestBootstrapService(
@@ -88,7 +88,7 @@ public class DefaultClusterMembershipServiceTest {
         localMember2,
         new DefaultNodeDiscoveryService(bootstrapService2, localMember2, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService2,
-        new ClusterConfig());
+        new MembershipConfig());
 
     Member localMember3 = buildMember(3);
     BootstrapService bootstrapService3 = new TestBootstrapService(
@@ -98,7 +98,7 @@ public class DefaultClusterMembershipServiceTest {
         localMember3,
         new DefaultNodeDiscoveryService(bootstrapService3, localMember3, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService3,
-        new ClusterConfig());
+        new MembershipConfig());
 
     assertNull(clusterService1.getMember(MemberId.from("1")));
     assertNull(clusterService1.getMember(MemberId.from("2")));
@@ -126,7 +126,7 @@ public class DefaultClusterMembershipServiceTest {
         anonymousMember,
         new DefaultNodeDiscoveryService(ephemeralBootstrapService, anonymousMember, new BootstrapDiscoveryProvider(bootstrapLocations)),
         ephemeralBootstrapService,
-        new ClusterConfig());
+        new MembershipConfig());
 
     assertFalse(ephemeralClusterService.getLocalMember().isActive());
 

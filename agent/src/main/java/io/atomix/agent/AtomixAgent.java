@@ -95,10 +95,14 @@ public class AtomixAgent {
         .action(new StoreTrueArgumentAction())
         .setDefault(false)
         .help("Enables multicast discovery. Note that the network must support multicast for this feature to work.");
-    parser.addArgument("--multicast-address")
-        .type(addressArgumentType)
-        .metavar("IP:PORT")
-        .help("Sets the multicast discovery address. Defaults to 230.0.0.1:54321");
+    parser.addArgument("--multicast-group")
+        .type(String.class)
+        .metavar("IP")
+        .help("Sets the multicast group. Defaults to 230.0.0.1");
+    parser.addArgument("--multicast-port")
+        .type(Integer.class)
+        .metavar("PORT")
+        .help("Sets the multicast port. Defaults to 54321");
     parser.addArgument("--http-port", "-p")
         .type(Integer.class)
         .metavar("PORT")
@@ -122,7 +126,8 @@ public class AtomixAgent {
     final String zone = namespace.getString("zone");
     final List<Node> bootstrap = namespace.getList("bootstrap");
     final boolean multicastEnabled = namespace.getBoolean("multicast");
-    final Address multicastAddress = namespace.get("multicast_address");
+    final String multicastGroup = namespace.get("multicast_group");
+    final Integer multicastPort = namespace.get("multicast_port");
     final Integer httpPort = namespace.getInt("http_port");
 
     // If a configuration was provided, merge the configuration's member information with the provided command line arguments.
@@ -156,8 +161,13 @@ public class AtomixAgent {
     }
 
     if (multicastEnabled) {
-      config.getClusterConfig().setMulticastEnabled(true);
-      config.getClusterConfig().setMulticastAddress(multicastAddress);
+      config.getClusterConfig().getMulticastConfig().setEnabled(true);
+      if (multicastGroup != null) {
+        config.getClusterConfig().getMulticastConfig().setGroup(multicastGroup);
+      }
+      if (multicastPort != null) {
+        config.getClusterConfig().getMulticastConfig().setPort(multicastPort);
+      }
       if (bootstrap == null || bootstrap.isEmpty()) {
         config.getClusterConfig().setDiscoveryConfig(new MulticastDiscoveryProvider.Config());
       }
