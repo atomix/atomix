@@ -139,21 +139,21 @@ public class AtomixAgent {
     }
 
     if (memberId != null) {
-      config.getClusterConfig().setMemberId(memberId);
+      config.getClusterConfig().getNodeConfig().setId(memberId);
     }
 
     if (address != null) {
-      config.getClusterConfig().setAddress(address);
+      config.getClusterConfig().getNodeConfig().setAddress(address);
     }
 
     if (host != null) {
-      config.getClusterConfig().setHost(host);
+      config.getClusterConfig().getNodeConfig().setHost(host);
     }
     if (rack != null) {
-      config.getClusterConfig().setRack(rack);
+      config.getClusterConfig().getNodeConfig().setRack(rack);
     }
     if (zone != null) {
-      config.getClusterConfig().setZone(zone);
+      config.getClusterConfig().getNodeConfig().setZone(zone);
     }
 
     if (bootstrap != null && !bootstrap.isEmpty()) {

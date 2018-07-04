@@ -17,6 +17,10 @@ package io.atomix.cluster;
 
 import io.atomix.utils.config.Config;
 
+import java.time.Duration;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Cluster membership configuration.
  */
@@ -25,16 +29,16 @@ public class MembershipConfig implements Config {
   private static final int DEFAULT_REACHABILITY_TIMEOUT = 10000;
   private static final int DEFAULT_REACHABILITY_THRESHOLD = 10;
 
-  private int broadcastInterval = DEFAULT_BROADCAST_INTERVAL;
+  private Duration broadcastInterval = Duration.ofMillis(DEFAULT_BROADCAST_INTERVAL);
   private int reachabilityThreshold = DEFAULT_REACHABILITY_THRESHOLD;
-  private int reachabilityTimeout = DEFAULT_REACHABILITY_TIMEOUT;
+  private Duration reachabilityTimeout = Duration.ofMillis(DEFAULT_REACHABILITY_TIMEOUT);
 
   /**
    * Returns the reachability broadcast interval.
    *
    * @return the reachability broadcast interval
    */
-  public int getBroadcastInterval() {
+  public Duration getBroadcastInterval() {
     return broadcastInterval;
   }
 
@@ -44,8 +48,8 @@ public class MembershipConfig implements Config {
    * @param broadcastInterval the reachability broadcast interval
    * @return the membership configuration
    */
-  public MembershipConfig setBroadcastInterval(int broadcastInterval) {
-    this.broadcastInterval = broadcastInterval;
+  public MembershipConfig setBroadcastInterval(Duration broadcastInterval) {
+    this.broadcastInterval = checkNotNull(broadcastInterval);
     return this;
   }
 
@@ -74,7 +78,7 @@ public class MembershipConfig implements Config {
    *
    * @return the reachability failure timeout
    */
-  public int getReachabilityTimeout() {
+  public Duration getReachabilityTimeout() {
     return reachabilityTimeout;
   }
 
@@ -84,8 +88,8 @@ public class MembershipConfig implements Config {
    * @param reachabilityTimeout the reachability failure timeout
    * @return the membership configuration
    */
-  public MembershipConfig setReachabilityTimeout(int reachabilityTimeout) {
-    this.reachabilityTimeout = reachabilityTimeout;
+  public MembershipConfig setReachabilityTimeout(Duration reachabilityTimeout) {
+    this.reachabilityTimeout = checkNotNull(reachabilityTimeout);
     return this;
   }
 }

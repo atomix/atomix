@@ -52,7 +52,7 @@ public class MulticastDiscoveryProvider
     extends AbstractListenerManager<NodeDiscoveryEvent, NodeDiscoveryEventListener>
     implements NodeDiscoveryProvider {
 
-  private static final Type TYPE = new Type();
+  public static final Type TYPE = new Type();
 
   /**
    * Returns a new multicast member location provider builder.
@@ -101,7 +101,7 @@ public class MulticastDiscoveryProvider
      * @return the location provider builder
      */
     public Builder withBroadcastInterval(Duration broadcastInterval) {
-      config.setBroadcastInterval((int) broadcastInterval.toMillis());
+      config.setBroadcastInterval(broadcastInterval);
       return this;
     }
 
@@ -123,7 +123,7 @@ public class MulticastDiscoveryProvider
      * @return the location provider builder
      */
     public Builder withFailureTimeout(Duration failureTimeout) {
-      config.setFailureTimeout((int) failureTimeout.toMillis());
+      config.setFailureTimeout(failureTimeout);
       return this;
     }
 
@@ -141,9 +141,9 @@ public class MulticastDiscoveryProvider
     private static final int DEFAULT_FAILURE_TIMEOUT = 10000;
     private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
 
-    private int broadcastInterval = DEFAULT_BROADCAST_INTERVAL;
+    private Duration broadcastInterval = Duration.ofMillis(DEFAULT_BROADCAST_INTERVAL);
     private int failureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
-    private int failureTimeout = DEFAULT_FAILURE_TIMEOUT;
+    private Duration failureTimeout = Duration.ofMillis(DEFAULT_FAILURE_TIMEOUT);
 
     @Override
     public NodeDiscoveryProvider.Type getType() {
@@ -155,7 +155,7 @@ public class MulticastDiscoveryProvider
      *
      * @return the broadcast interval
      */
-    public int getBroadcastInterval() {
+    public Duration getBroadcastInterval() {
       return broadcastInterval;
     }
 
@@ -165,8 +165,8 @@ public class MulticastDiscoveryProvider
      * @param broadcastInterval the broadcast interval
      * @return the group membership configuration
      */
-    public Config setBroadcastInterval(int broadcastInterval) {
-      this.broadcastInterval = broadcastInterval;
+    public Config setBroadcastInterval(Duration broadcastInterval) {
+      this.broadcastInterval = checkNotNull(broadcastInterval);
       return this;
     }
 
@@ -195,7 +195,7 @@ public class MulticastDiscoveryProvider
      *
      * @return the base failure timeout
      */
-    public int getFailureTimeout() {
+    public Duration getFailureTimeout() {
       return failureTimeout;
     }
 
@@ -205,8 +205,8 @@ public class MulticastDiscoveryProvider
      * @param failureTimeout the base failure timeout
      * @return the group membership configuration
      */
-    public Config setFailureTimeout(int failureTimeout) {
-      this.failureTimeout = failureTimeout;
+    public Config setFailureTimeout(Duration failureTimeout) {
+      this.failureTimeout = checkNotNull(failureTimeout);
       return this;
     }
   }
@@ -227,7 +227,6 @@ public class MulticastDiscoveryProvider
 
   private final ScheduledExecutorService broadcastScheduler = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-cluster-broadcast", LOGGER));
-  private final Duration broadcastInterval = Duration.ofSeconds(5);
   private volatile ScheduledFuture<?> broadcastFuture;
   private final Consumer<byte[]> broadcastListener = this::handleBroadcastMessage;
 
@@ -279,7 +278,7 @@ public class MulticastDiscoveryProvider
     PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
     double phi = failureDetector.phi();
     if (phi >= config.getFailureThreshold()
-        || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout())) {
+        || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout().toMillis())) {
       LOGGER.info("Lost contact with {}", node);
       nodes.remove(node.address());
       failureDetectors.remove(node.id());
@@ -295,13 +294,13 @@ public class MulticastDiscoveryProvider
       bootstrap.getBroadcastService().addListener(DISCOVERY_SUBJECT, broadcastListener);
       broadcastFuture = broadcastScheduler.scheduleAtFixedRate(
           () -> broadcastNode(localNode),
-          broadcastInterval.toMillis(),
-          broadcastInterval.toMillis(),
+          config.getBroadcastInterval().toMillis(),
+          config.getBroadcastInterval().toMillis(),
           TimeUnit.MILLISECONDS);
       failureFuture = broadcastScheduler.scheduleAtFixedRate(
           () -> detectFailures(localNode),
-          config.getBroadcastInterval() / 2,
-          config.getBroadcastInterval() / 2,
+          config.getBroadcastInterval().toMillis() / 2,
+          config.getBroadcastInterval().toMillis() / 2,
           TimeUnit.MILLISECONDS);
       broadcastNode(localNode);
       LOGGER.info("Joined");

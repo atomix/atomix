@@ -17,6 +17,7 @@ package io.atomix.cluster;
 
 import io.atomix.utils.net.Address;
 
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -162,6 +163,18 @@ public class MemberConfig extends NodeConfig {
    */
   public Properties getProperties() {
     return properties;
+  }
+
+  /**
+   * Sets the member properties.
+   *
+   * @param map the member properties
+   * @return the member configuration
+   */
+  public MemberConfig setProperties(Map<String, String> map) {
+    Properties properties = new Properties();
+    properties.putAll(map);
+    return setProperties(properties);
   }
 
   /**
