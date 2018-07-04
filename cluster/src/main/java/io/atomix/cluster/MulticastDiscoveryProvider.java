@@ -220,6 +220,8 @@ public class MulticastDiscoveryProvider
       .register(new AddressSerializer(), Address.class)
       .build());
 
+  private static final String DISCOVERY_SUBJECT = "atomix-discovery";
+
   private final Config config;
   private volatile BootstrapService bootstrap;
 
@@ -266,7 +268,7 @@ public class MulticastDiscoveryProvider
   }
 
   private void broadcastNode(Node localNode) {
-    bootstrap.getBroadcastService().broadcast(SERIALIZER.encode(localNode));
+    bootstrap.getBroadcastService().broadcast(DISCOVERY_SUBJECT, SERIALIZER.encode(localNode));
   }
 
   private void detectFailures(Node localNode) {
@@ -290,7 +292,7 @@ public class MulticastDiscoveryProvider
     if (nodes.putIfAbsent(localNode.address(), localNode) == null) {
       this.bootstrap = bootstrap;
       post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, localNode));
-      bootstrap.getBroadcastService().addListener(broadcastListener);
+      bootstrap.getBroadcastService().addListener(DISCOVERY_SUBJECT, broadcastListener);
       broadcastFuture = broadcastScheduler.scheduleAtFixedRate(
           () -> broadcastNode(localNode),
           broadcastInterval.toMillis(),
@@ -311,7 +313,7 @@ public class MulticastDiscoveryProvider
   public CompletableFuture<Void> leave(Node localNode) {
     if (nodes.remove(localNode.address()) != null) {
       post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.LEAVE, localNode));
-      bootstrap.getBroadcastService().removeListener(broadcastListener);
+      bootstrap.getBroadcastService().removeListener(DISCOVERY_SUBJECT, broadcastListener);
       ScheduledFuture<?> broadcastFuture = this.broadcastFuture;
       if (broadcastFuture != null) {
         broadcastFuture.cancel(false);

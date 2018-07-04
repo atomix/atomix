@@ -44,12 +44,12 @@ public class NettyBroadcastServiceTest extends ConcurrentTestCase {
 
   @Test
   public void testBroadcast() throws Exception {
-    netty1.addListener(bytes -> {
+    netty1.addListener("test", bytes -> {
       threadAssertEquals(0, bytes.length);
       resume();
     });
 
-    netty2.broadcast(new byte[0]);
+    netty2.broadcast("test", new byte[0]);
     await(5000);
   }
 
