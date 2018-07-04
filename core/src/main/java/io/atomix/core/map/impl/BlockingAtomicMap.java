@@ -22,7 +22,6 @@ import io.atomix.core.collection.impl.BlockingDistributedCollection;
 import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.AtomicMap;
-import io.atomix.core.map.AtomicMapBackedJavaMap;
 import io.atomix.core.map.AtomicMapEventListener;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;

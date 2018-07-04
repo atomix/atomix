@@ -29,8 +29,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Default {@code AtomicCounterMapBuilder}.
  */
-public class AtomicCounterMapProxyBuilder<K> extends AtomicCounterMapBuilder<K> {
-  public AtomicCounterMapProxyBuilder(String name, AtomicCounterMapConfig config, PrimitiveManagementService managementService) {
+public class DefaultAtomicCounterMapBuilder<K> extends AtomicCounterMapBuilder<K> {
+  public DefaultAtomicCounterMapBuilder(String name, AtomicCounterMapConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 

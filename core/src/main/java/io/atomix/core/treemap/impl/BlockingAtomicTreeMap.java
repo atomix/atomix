@@ -22,7 +22,7 @@ import io.atomix.core.set.DistributedSet;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
 import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.core.treemap.AsyncAtomicTreeMap;
-import io.atomix.core.map.AtomicMapBackedJavaMap;
+import io.atomix.core.map.impl.AtomicMapBackedJavaMap;
 import io.atomix.core.treemap.AtomicTreeMap;
 import io.atomix.core.map.AtomicMapEventListener;
 import io.atomix.primitive.PrimitiveException;

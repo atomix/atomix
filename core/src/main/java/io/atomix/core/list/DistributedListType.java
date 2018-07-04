@@ -19,7 +19,7 @@ import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.list.impl.DefaultDistributedListService;
 import io.atomix.core.collection.impl.DistributedCollectionService;
-import io.atomix.core.list.impl.DistributedListProxyBuilder;
+import io.atomix.core.list.impl.DefaultDistributedListBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -78,7 +78,7 @@ public class DistributedListType<E> implements PrimitiveType<DistributedListBuil
 
   @Override
   public DistributedListBuilder<E> newBuilder(String name, DistributedListConfig config, PrimitiveManagementService managementService) {
-    return new DistributedListProxyBuilder<>(name, config, managementService);
+    return new DefaultDistributedListBuilder<>(name, config, managementService);
   }
 
   @Override

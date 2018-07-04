@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.map;
+package io.atomix.core.map.impl;
 
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps;
+import io.atomix.core.map.AtomicMap;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;

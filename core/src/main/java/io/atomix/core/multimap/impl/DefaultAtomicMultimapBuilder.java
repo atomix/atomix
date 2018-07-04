@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-present Open Networking Foundation
+ * Copyright 2016 Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.map.impl;
+
+package io.atomix.core.multimap.impl;
 
 import com.google.common.io.BaseEncoding;
-import io.atomix.core.map.AsyncAtomicMap;
-import io.atomix.core.map.AtomicMap;
-import io.atomix.core.map.AtomicMapBuilder;
-import io.atomix.core.map.AtomicMapConfig;
+import io.atomix.core.multimap.AsyncAtomicMultimap;
+import io.atomix.core.multimap.AtomicMultimap;
+import io.atomix.core.multimap.AtomicMultimapBuilder;
+import io.atomix.core.multimap.AtomicMultimapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
@@ -28,48 +29,36 @@ import io.atomix.utils.serializer.Serializer;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Default {@link AsyncAtomicMap} builder.
- *
- * @param <K> type for map key
- * @param <V> type for map value
+ * Default {@link AsyncAtomicMultimap} builder.
  */
-public class AtomicMapProxyBuilder<K, V> extends AtomicMapBuilder<K, V> {
-  public AtomicMapProxyBuilder(String name, AtomicMapConfig config, PrimitiveManagementService managementService) {
+public class DefaultAtomicMultimapBuilder<K, V> extends AtomicMultimapBuilder<K, V> {
+  public DefaultAtomicMultimapBuilder(String name, AtomicMultimapConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<AtomicMap<K, V>> buildAsync() {
-    ProxyClient<AtomicMapService> proxy = protocol().newProxy(
+  public CompletableFuture<AtomicMultimap<K, V>> buildAsync() {
+    ProxyClient<AtomicMultimapService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
-        AtomicMapService.class,
+        AtomicMultimapService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
-    return new AtomicMapProxy(proxy, managementService.getPrimitiveRegistry())
+    return new AtomicMultimapProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
-        .thenApply(rawMap -> {
+        .thenApply(rawMultimap -> {
           Serializer serializer = serializer();
-          AsyncAtomicMap<K, V> map = new TranscodingAsyncAtomicMap<K, V, String, byte[]>(
-              rawMap,
+          AsyncAtomicMultimap<K, V> multimap = new TranscodingAsyncAtomicMultimap<>(
+              rawMultimap,
               key -> BaseEncoding.base16().encode(serializer.encode(key)),
               string -> serializer.decode(BaseEncoding.base16().decode(string)),
               value -> serializer.encode(value),
               bytes -> serializer.decode(bytes));
-
-          if (!config.isNullValues()) {
-            map = new NotNullAsyncAtomicMap<>(map);
-          }
-
           if (config.isCacheEnabled()) {
-            map = new CachingAsyncAtomicMap<>(map, config.getCacheSize());
+            multimap = new CachingAsyncAtomicMultimap<>(multimap);
           }
-
-          if (config.isReadOnly()) {
-            map = new UnmodifiableAsyncAtomicMap<>(map);
-          }
-          return map.sync();
+          return multimap.sync();
         });
   }
 }

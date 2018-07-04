@@ -28,8 +28,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Default distributed lock builder implementation.
  */
-public class DistributedLockProxyBuilder extends DistributedLockBuilder {
-  public DistributedLockProxyBuilder(String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
+public class DefaultDistributedLockBuilder extends DistributedLockBuilder {
+  public DefaultDistributedLockBuilder(String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 

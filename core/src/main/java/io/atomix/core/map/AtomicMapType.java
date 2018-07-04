@@ -15,7 +15,7 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.map.impl.AtomicMapProxyBuilder;
+import io.atomix.core.map.impl.DefaultAtomicMapBuilder;
 import io.atomix.core.map.impl.AtomicMapResource;
 import io.atomix.core.map.impl.AtomicMapService;
 import io.atomix.core.map.impl.DefaultAtomicMapService;
@@ -103,7 +103,7 @@ public class AtomicMapType<K, V> implements PrimitiveType<AtomicMapBuilder<K, V>
 
   @Override
   public AtomicMapBuilder<K, V> newBuilder(String name, AtomicMapConfig config, PrimitiveManagementService managementService) {
-    return new AtomicMapProxyBuilder<>(name, config, managementService);
+    return new DefaultAtomicMapBuilder<>(name, config, managementService);
   }
 
   @Override

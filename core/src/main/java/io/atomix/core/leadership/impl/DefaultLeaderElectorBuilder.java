@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.treemap.impl;
+package io.atomix.core.leadership.impl;
 
-import io.atomix.core.treemap.AsyncAtomicTreeMap;
-import io.atomix.core.treemap.AtomicTreeMap;
-import io.atomix.core.treemap.AtomicTreeMapBuilder;
-import io.atomix.core.treemap.AtomicTreeMapConfig;
+import io.atomix.core.leadership.LeaderElectorBuilder;
+import io.atomix.core.leadership.LeaderElectorConfig;
+import io.atomix.core.leadership.LeaderElector;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
@@ -27,31 +26,29 @@ import io.atomix.utils.serializer.Serializer;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Default {@link AsyncAtomicTreeMap} builder.
- *
- * @param <V> type for map value
+ * Default implementation of {@code LeaderElectorBuilder}.
  */
-public class AtomicTreeMapProxyBuilder<V> extends AtomicTreeMapBuilder<V> {
-  public AtomicTreeMapProxyBuilder(String name, AtomicTreeMapConfig config, PrimitiveManagementService managementService) {
+public class DefaultLeaderElectorBuilder<T> extends LeaderElectorBuilder<T> {
+  public DefaultLeaderElectorBuilder(String name, LeaderElectorConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<AtomicTreeMap<V>> buildAsync() {
-    ProxyClient<AtomicTreeMapService> proxy = protocol().newProxy(
+  public CompletableFuture<LeaderElector<T>> buildAsync() {
+    ProxyClient<LeaderElectorService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
-        AtomicTreeMapService.class,
+        LeaderElectorService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
-    return new AtomicTreeMapProxy(proxy, managementService.getPrimitiveRegistry())
+    return new LeaderElectorProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
-        .thenApply(map -> {
+        .thenApply(elector -> {
           Serializer serializer = serializer();
-          return new TranscodingAsyncAtomicTreeMap<V, byte[]>(
-              (AsyncAtomicTreeMap) map,
-              value -> serializer.encode(value),
+          return new TranscodingAsyncLeaderElector<T, byte[]>(
+              elector,
+              key -> serializer.encode(key),
               bytes -> serializer.decode(bytes))
               .sync();
         });

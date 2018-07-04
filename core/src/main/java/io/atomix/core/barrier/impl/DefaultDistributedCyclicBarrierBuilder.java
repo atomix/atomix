@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.counter.impl;
+package io.atomix.core.barrier.impl;
 
-import io.atomix.core.counter.AtomicCounterConfig;
-import io.atomix.core.counter.AtomicCounter;
-import io.atomix.core.counter.AtomicCounterBuilder;
+import io.atomix.core.barrier.AsyncDistributedCyclicBarrier;
+import io.atomix.core.barrier.DistributedCyclicBarrier;
+import io.atomix.core.barrier.DistributedCyclicBarrierBuilder;
+import io.atomix.core.barrier.DistributedCyclicBarrierConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
@@ -25,24 +26,24 @@ import io.atomix.primitive.service.ServiceConfig;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Atomic counter proxy builder.
+ * Default distributed cyclic barrier builder implementation.
  */
-public class AtomicCounterProxyBuilder extends AtomicCounterBuilder {
-  public AtomicCounterProxyBuilder(String name, AtomicCounterConfig config, PrimitiveManagementService managementService) {
+public class DefaultDistributedCyclicBarrierBuilder extends DistributedCyclicBarrierBuilder {
+  public DefaultDistributedCyclicBarrierBuilder(String name, DistributedCyclicBarrierConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<AtomicCounter> buildAsync() {
-    ProxyClient<AtomicCounterService> proxy = protocol().newProxy(
+  public CompletableFuture<DistributedCyclicBarrier> buildAsync() {
+    ProxyClient<DistributedCyclicBarrierService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
-        AtomicCounterService.class,
+        DistributedCyclicBarrierService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
-    return new AtomicCounterProxy(proxy, managementService.getPrimitiveRegistry())
+    return new DistributedCyclicBarrierProxy(proxy, managementService.getPrimitiveRegistry(), barrierAction)
         .connect()
-        .thenApply(counter -> counter.sync());
+        .thenApply(AsyncDistributedCyclicBarrier::sync);
   }
 }
