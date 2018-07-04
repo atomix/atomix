@@ -418,7 +418,7 @@ public class VertxRestServiceTest {
 
   protected Atomix buildAtomix(int memberId) {
     return Atomix.builder()
-        .withClusterName("test")
+        .withClusterId("test")
         .withMemberId(String.valueOf(memberId))
         .withAddress(Address.from("localhost", findAvailablePort(BASE_PORT)))
         .withMulticastEnabled()

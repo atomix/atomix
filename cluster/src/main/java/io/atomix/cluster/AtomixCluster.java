@@ -310,7 +310,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    */
   protected static ManagedMessagingService buildMessagingService(ClusterConfig config) {
     return NettyMessagingService.builder()
-        .withName(config.getName())
+        .withName(config.getClusterId())
         .withAddress(config.getAddress())
         .build();
   }
@@ -396,13 +396,13 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     }
 
     /**
-     * Sets the cluster name.
+     * Sets the cluster identifier.
      *
-     * @param clusterName the cluster name
+     * @param clusterId the cluster identifier
      * @return the cluster builder
      */
-    public Builder withClusterName(String clusterName) {
-      config.setName(clusterName);
+    public Builder withClusterId(String clusterId) {
+      config.setClusterId(clusterId);
       return this;
     }
 

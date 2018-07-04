@@ -54,7 +54,7 @@ public abstract class AbstractAtomixTest {
    */
   protected static Atomix.Builder buildAtomix(int id, Map<String, String> metadata) {
     return Atomix.builder()
-        .withClusterName("test")
+        .withClusterId("test")
         .withMemberId(String.valueOf(id))
         .withAddress("localhost", BASE_PORT + id)
         .withMetadata(metadata)
@@ -74,7 +74,7 @@ public abstract class AbstractAtomixTest {
         .collect(Collectors.toList());
 
     return Atomix.builder()
-        .withClusterName("test")
+        .withClusterId("test")
         .withMemberId(String.valueOf(id))
         .withAddress("localhost", BASE_PORT + id)
         .withMetadata(metadata)
