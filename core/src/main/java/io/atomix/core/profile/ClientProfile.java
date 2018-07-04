@@ -26,7 +26,7 @@ public class ClientProfile implements Profile {
   /**
    * Client profile type.
    */
-  public static class Type implements Profile.Type<Config> {
+  public static class Type implements Profile.Type<ClientProfileConfig> {
     private static final String NAME = "client";
 
     @Override
@@ -35,38 +35,28 @@ public class ClientProfile implements Profile {
     }
 
     @Override
-    public Config newConfig() {
-      return new Config();
+    public ClientProfileConfig newConfig() {
+      return new ClientProfileConfig();
     }
 
     @Override
-    public Profile newProfile(Config config) {
+    public Profile newProfile(ClientProfileConfig config) {
       return new ClientProfile();
     }
   }
 
-  /**
-   * Client profile configuration.
-   */
-  public static class Config implements Profile.Config {
-    @Override
-    public Profile.Type getType() {
-      return TYPE;
-    }
-  }
-
-  private final Config config;
+  private final ClientProfileConfig config;
 
   ClientProfile() {
-    this(new Config());
+    this(new ClientProfileConfig());
   }
 
-  ClientProfile(Config config) {
+  ClientProfile(ClientProfileConfig config) {
     this.config = config;
   }
 
   @Override
-  public Config config() {
+  public ClientProfileConfig config() {
     return config;
   }
 

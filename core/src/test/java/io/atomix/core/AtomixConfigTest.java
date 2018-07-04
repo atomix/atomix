@@ -22,7 +22,9 @@ import io.atomix.cluster.MulticastConfig;
 import io.atomix.cluster.MulticastDiscoveryProvider;
 import io.atomix.core.map.AtomicMapConfig;
 import io.atomix.core.profile.ConsensusProfile;
+import io.atomix.core.profile.ConsensusProfileConfig;
 import io.atomix.core.profile.DataGridProfile;
+import io.atomix.core.profile.DataGridProfileConfig;
 import io.atomix.core.set.DistributedSetConfig;
 import io.atomix.core.value.AtomicValueConfig;
 import io.atomix.primitive.Recovery;
@@ -102,14 +104,14 @@ public class AtomixConfigTest {
     assertEquals("two", groupTwo.getName());
     assertEquals(32, groupTwo.getPartitions());
 
-    ConsensusProfile.Config consensusProfile = (ConsensusProfile.Config) config.getProfiles().get(0);
+    ConsensusProfileConfig consensusProfile = (ConsensusProfileConfig) config.getProfiles().get(0);
     assertEquals(ConsensusProfile.TYPE, consensusProfile.getType());
     assertEquals("management", consensusProfile.getManagementGroup());
     assertEquals("consensus", consensusProfile.getDataGroup());
     assertEquals(3, consensusProfile.getPartitions());
     assertTrue(consensusProfile.getMembers().containsAll(Arrays.asList("one", "two", "three")));
 
-    DataGridProfile.Config dataGridProfile = (DataGridProfile.Config) config.getProfiles().get(1);
+    DataGridProfileConfig dataGridProfile = (DataGridProfileConfig) config.getProfiles().get(1);
     assertEquals(DataGridProfile.TYPE, dataGridProfile.getType());
     assertEquals("management", dataGridProfile.getManagementGroup());
     assertEquals("data", dataGridProfile.getDataGroup());
