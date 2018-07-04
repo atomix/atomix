@@ -152,14 +152,14 @@ public class AtomixAgent {
     }
 
     if (bootstrap != null && !bootstrap.isEmpty()) {
-      config.getClusterConfig().setMembershipProviderConfig(new BootstrapDiscoveryProvider.Config().setNodes(bootstrap));
+      config.getClusterConfig().setDiscoveryConfig(new BootstrapDiscoveryProvider.Config().setNodes(bootstrap));
     }
 
     if (multicastEnabled) {
       config.getClusterConfig().setMulticastEnabled(true);
       config.getClusterConfig().setMulticastAddress(multicastAddress);
       if (bootstrap == null || bootstrap.isEmpty()) {
-        config.getClusterConfig().setMembershipProviderConfig(new MulticastDiscoveryProvider.Config());
+        config.getClusterConfig().setDiscoveryConfig(new MulticastDiscoveryProvider.Config());
       }
     }
 

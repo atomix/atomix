@@ -331,7 +331,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    */
   @SuppressWarnings("unchecked")
   protected static NodeDiscoveryProvider buildLocationProvider(ClusterConfig config) {
-    NodeDiscoveryProvider.Config locationProviderConfig = config.getLocationProviderConfig();
+    NodeDiscoveryProvider.Config locationProviderConfig = config.getDiscoveryConfig();
     if (locationProviderConfig != null) {
       return locationProviderConfig.getType().newProvider(locationProviderConfig);
     }
@@ -602,7 +602,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the Atomix cluster builder
      */
     public Builder withMembershipProvider(NodeDiscoveryProvider locationProvider) {
-      config.setMembershipProviderConfig(locationProvider.config());
+      config.setDiscoveryConfig(locationProvider.config());
       return this;
     }
 
