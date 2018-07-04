@@ -117,7 +117,8 @@ public class Member extends Node {
     this.zone = config.getZone();
     this.rack = config.getRack();
     this.host = config.getHost();
-    this.properties = new Properties(config.getProperties());
+    this.properties = new Properties();
+    properties.putAll(config.getProperties());
   }
 
   protected Member(MemberId id, Address address) {

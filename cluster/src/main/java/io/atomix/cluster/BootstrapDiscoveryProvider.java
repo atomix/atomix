@@ -65,7 +65,7 @@ public class BootstrapDiscoveryProvider
     extends AbstractListenerManager<NodeDiscoveryEvent, NodeDiscoveryEventListener>
     implements NodeDiscoveryProvider {
 
-  private static final Type TYPE = new Type();
+  public static final Type TYPE = new Type();
 
   /**
    * Creates a new bootstrap provider builder.
@@ -146,7 +146,7 @@ public class BootstrapDiscoveryProvider
      * @return the location provider builder
      */
     public Builder withHeartbeatInterval(Duration heartbeatInterval) {
-      config.setHeartbeatInterval((int) heartbeatInterval.toMillis());
+      config.setHeartbeatInterval(heartbeatInterval);
       return this;
     }
 
@@ -168,7 +168,7 @@ public class BootstrapDiscoveryProvider
      * @return the location provider builder
      */
     public Builder withFailureTimeout(Duration failureTimeout) {
-      config.setFailureTimeout((int) failureTimeout.toMillis());
+      config.setFailureTimeout(failureTimeout);
       return this;
     }
 
@@ -186,9 +186,9 @@ public class BootstrapDiscoveryProvider
     private static final int DEFAULT_FAILURE_TIMEOUT = 10000;
     private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
 
-    private int heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
+    private Duration heartbeatInterval = Duration.ofMillis(DEFAULT_HEARTBEAT_INTERVAL);
     private int failureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
-    private int failureTimeout = DEFAULT_FAILURE_TIMEOUT;
+    private Duration failureTimeout = Duration.ofMillis(DEFAULT_FAILURE_TIMEOUT);
     private Collection<Node> nodes = Collections.emptySet();
 
     @Override
@@ -221,7 +221,7 @@ public class BootstrapDiscoveryProvider
      *
      * @return the heartbeat interval
      */
-    public int getHeartbeatInterval() {
+    public Duration getHeartbeatInterval() {
       return heartbeatInterval;
     }
 
@@ -231,8 +231,8 @@ public class BootstrapDiscoveryProvider
      * @param heartbeatInterval the heartbeat interval
      * @return the group membership configuration
      */
-    public Config setHeartbeatInterval(int heartbeatInterval) {
-      this.heartbeatInterval = heartbeatInterval;
+    public Config setHeartbeatInterval(Duration heartbeatInterval) {
+      this.heartbeatInterval = checkNotNull(heartbeatInterval);
       return this;
     }
 
@@ -261,7 +261,7 @@ public class BootstrapDiscoveryProvider
      *
      * @return the base failure timeout
      */
-    public int getFailureTimeout() {
+    public Duration getFailureTimeout() {
       return failureTimeout;
     }
 
@@ -271,8 +271,8 @@ public class BootstrapDiscoveryProvider
      * @param failureTimeout the base failure timeout
      * @return the group membership configuration
      */
-    public Config setFailureTimeout(int failureTimeout) {
-      this.failureTimeout = failureTimeout;
+    public Config setFailureTimeout(Duration failureTimeout) {
+      this.failureTimeout = checkNotNull(failureTimeout);
       return this;
     }
   }
@@ -371,7 +371,7 @@ public class BootstrapDiscoveryProvider
         PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(address, n -> new PhiAccrualFailureDetector());
         double phi = failureDetector.phi();
         if (phi >= config.getFailureThreshold()
-            || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout())) {
+            || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout().toMillis())) {
           Node node = this.nodes.remove(address);
           if (node != null) {
             failureDetectors.remove(node.address());
@@ -416,9 +416,9 @@ public class BootstrapDiscoveryProvider
         future.complete(null);
       });
 
-      heartbeatFuture = heartbeatScheduler.scheduleWithFixedDelay(() -> {
+      heartbeatFuture = heartbeatScheduler.scheduleAtFixedRate(() -> {
         sendHeartbeats(localNode);
-      }, 0, config.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+      }, 0, config.getHeartbeatInterval().toMillis(), TimeUnit.MILLISECONDS);
 
       return future.thenRun(() -> {
         LOGGER.info("Joined");

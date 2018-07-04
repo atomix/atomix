@@ -144,7 +144,7 @@ public class ConfigMapper {
     mapFields(instance, clazz, path, name, propertyNames, config);
 
     // If any properties present in the configuration were not found on config beans, throw an exception.
-    if (path != null && !propertyNames.isEmpty()) {
+    if (!propertyNames.isEmpty()) {
       checkRemainingProperties(propertyNames.keySet(), toPath(path, name), clazz);
     }
     return instance;
@@ -255,8 +255,9 @@ public class ConfigMapper {
         throw new ConfigurationException("Failed to load class: " + className);
       }
     } else if (parameterClass.isEnum()) {
+      String value = config.getString(configPropName);
       @SuppressWarnings("unchecked")
-      Enum enumValue = config.getEnum((Class<Enum>) parameterClass, configPropName);
+      Enum enumValue = Enum.valueOf((Class<Enum>) parameterClass, value.replace("-", "_").toUpperCase());
       return enumValue;
     } else {
       return map(config.getConfig(configPropName), configPath, configPropName, parameterClass);

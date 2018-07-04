@@ -311,7 +311,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   protected static ManagedMessagingService buildMessagingService(ClusterConfig config) {
     return NettyMessagingService.builder()
         .withName(config.getClusterId())
-        .withAddress(config.getAddress())
+        .withAddress(config.getNodeConfig().getAddress())
         .build();
   }
 
@@ -320,7 +320,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    */
   protected static ManagedBroadcastService buildBroadcastService(ClusterConfig config) {
     return NettyBroadcastService.builder()
-        .withLocalAddress(config.getAddress())
+        .withLocalAddress(config.getNodeConfig().getAddress())
         .withGroupAddress(new Address(
             config.getMulticastConfig().getGroup().getHostName(),
             config.getMulticastConfig().getPort(),
@@ -354,12 +354,12 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
       NodeDiscoveryProvider discoveryProvider) {
     // If the local node has not be configured, create a default node.
     Member localMember = Member.builder()
-        .withId(config.getMemberId())
-        .withAddress(config.getAddress())
-        .withHost(config.getHost())
-        .withRack(config.getRack())
-        .withZone(config.getZone())
-        .withProperties(config.getProperties())
+        .withId(config.getNodeConfig().getId())
+        .withAddress(config.getNodeConfig().getAddress())
+        .withHost(config.getNodeConfig().getHost())
+        .withRack(config.getNodeConfig().getRack())
+        .withZone(config.getNodeConfig().getZone())
+        .withProperties(config.getNodeConfig().getProperties())
         .build();
     return new DefaultClusterMembershipService(
         localMember,
@@ -416,7 +416,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the cluster builder
      */
     public Builder withMemberId(String localMemberId) {
-      config.setMemberId(localMemberId);
+      config.getNodeConfig().setId(localMemberId);
       return this;
     }
 
@@ -427,7 +427,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the cluster builder
      */
     public Builder withMemberId(MemberId localMemberId) {
-      config.setMemberId(localMemberId);
+      config.getNodeConfig().setId(localMemberId);
       return this;
     }
 
@@ -472,7 +472,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the member builder
      */
     public Builder withAddress(Address address) {
-      config.setAddress(address);
+      config.getNodeConfig().setAddress(address);
       return this;
     }
 
@@ -483,7 +483,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the member builder
      */
     public Builder withZone(String zone) {
-      config.setZone(zone);
+      config.getNodeConfig().setZone(zone);
       return this;
     }
 
@@ -494,7 +494,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the member builder
      */
     public Builder withRack(String rack) {
-      config.setRack(rack);
+      config.getNodeConfig().setRack(rack);
       return this;
     }
 
@@ -505,7 +505,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the member builder
      */
     public Builder withHost(String host) {
-      config.setHost(host);
+      config.getNodeConfig().setHost(host);
       return this;
     }
 
@@ -517,7 +517,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @throws NullPointerException if the properties are null
      */
     public Builder withProperties(Properties properties) {
-      config.setProperties(properties);
+      config.getNodeConfig().setProperties(properties);
       return this;
     }
 
@@ -530,7 +530,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @throws NullPointerException if the property is null
      */
     public Builder withProperty(String key, String value) {
-      config.setProperty(key, value);
+      config.getNodeConfig().setProperty(key, value);
       return this;
     }
 
@@ -573,7 +573,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the Atomix builder
      */
     public Builder setBroadcastInterval(Duration interval) {
-      config.getMembershipConfig().setBroadcastInterval((int) interval.toMillis());
+      config.getMembershipConfig().setBroadcastInterval(interval);
       return this;
     }
 
@@ -595,7 +595,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
      * @return the Atomix builder
      */
     public Builder withReachabilityTimeout(Duration timeout) {
-      config.getMembershipConfig().setReachabilityTimeout((int) timeout.toMillis());
+      config.getMembershipConfig().setReachabilityTimeout(timeout);
       return this;
     }
 

@@ -71,12 +71,9 @@ public class DefaultClusterMembershipService
           .register(new AddressSerializer(), Address.class)
           .build("ClusterMembershipService"));
 
+  private final MembershipConfig config;
   private final ManagedNodeDiscoveryService discoveryService;
   private final BootstrapService bootstrapService;
-
-  private final int broadcastInterval;
-  private final int reachabilityThreshold;
-  private final int reachabilityTimeout;
 
   private final AtomicBoolean started = new AtomicBoolean();
   private final StatefulMember localMember;
@@ -96,6 +93,7 @@ public class DefaultClusterMembershipService
       MembershipConfig config) {
     this.discoveryService = checkNotNull(discoveryService, "discoveryService cannot be null");
     this.bootstrapService = checkNotNull(bootstrapService, "bootstrapService cannot be null");
+    this.config = checkNotNull(config);
     this.localMember = new StatefulMember(
         localMember.id(),
         localMember.address(),
@@ -103,9 +101,6 @@ public class DefaultClusterMembershipService
         localMember.rack(),
         localMember.host(),
         localMember.properties());
-    this.broadcastInterval = config.getBroadcastInterval();
-    this.reachabilityThreshold = config.getReachabilityThreshold();
-    this.reachabilityTimeout = config.getReachabilityTimeout();
   }
 
   @Override
@@ -240,9 +235,8 @@ public class DefaultClusterMembershipService
   private void detectFailure(StatefulMember member) {
     PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(member.id(), n -> new PhiAccrualFailureDetector());
     double phi = failureDetector.phi();
-    if (phi >= reachabilityThreshold
-        || (phi == 0.0 && failureDetector.lastUpdated() > 0
-        && System.currentTimeMillis() - failureDetector.lastUpdated() > reachabilityTimeout)) {
+    if (phi >= config.getReachabilityThreshold()
+        || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getReachabilityTimeout().toMillis())) {
       if (member.isReachable()) {
         member.setReachable(false);
         post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, member));
@@ -260,7 +254,8 @@ public class DefaultClusterMembershipService
         localMember.setReachable(true);
         members.put(localMember.id(), localMember);
         bootstrapService.getMessagingService().registerHandler(METADATA_BROADCAST, this::handleMetadata, heartbeatScheduler);
-        heartbeatFuture = heartbeatScheduler.scheduleAtFixedRate(this::broadcastMetadata, 0, broadcastInterval, TimeUnit.MILLISECONDS);
+        heartbeatFuture = heartbeatScheduler.scheduleAtFixedRate(
+            this::broadcastMetadata, 0, config.getBroadcastInterval().toMillis(), TimeUnit.MILLISECONDS);
       }).thenApply(v -> {
         LOGGER.info("Started");
         return this;

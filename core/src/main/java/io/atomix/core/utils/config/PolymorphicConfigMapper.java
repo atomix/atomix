@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -84,10 +85,13 @@ public class PolymorphicConfigMapper extends ConfigMapper {
 
   @Override
   protected void checkRemainingProperties(Set<String> propertyNames, String path, Class<?> clazz) {
+    Properties properties = System.getProperties();
     Set<String> cleanNames = propertyNames
         .stream()
         .filter(propertyName -> !isPolymorphicType(clazz) || !propertyName.equals(polymorphicTypes.get(clazz).getTypePath()))
         .map(propertyName -> toPath(path, propertyName))
+        .filter(propertyName -> !properties.containsKey(propertyName))
+        .filter(propertyName -> properties.entrySet().stream().noneMatch(entry -> entry.getKey().toString().startsWith(propertyName + ".")))
         .collect(Collectors.toSet());
     if (!cleanNames.isEmpty()) {
       throw new ConfigurationException("Unknown properties present in configuration: " + Joiner.on(", ").join(cleanNames));
