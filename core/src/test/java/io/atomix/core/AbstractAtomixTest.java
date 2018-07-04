@@ -17,6 +17,7 @@ package io.atomix.core;
 
 import io.atomix.cluster.BootstrapDiscoveryProvider;
 import io.atomix.cluster.MulticastDiscoveryProvider;
+import io.atomix.cluster.Node;
 import io.atomix.core.profile.Profile;
 import io.atomix.utils.net.Address;
 import org.junit.AfterClass;
@@ -65,8 +66,11 @@ public abstract class AbstractAtomixTest {
    * Creates an Atomix instance.
    */
   protected static Atomix.Builder buildAtomix(int id, List<Integer> memberIds, Map<String, String> metadata) {
-    Collection<Address> locations = memberIds.stream()
-        .map(memberId -> Address.from("localhost", BASE_PORT + memberId))
+    Collection<Node> nodes = memberIds.stream()
+        .map(memberId -> Node.builder()
+            .withId(String.valueOf(id))
+            .withAddress(Address.from("localhost", BASE_PORT + memberId))
+            .build())
         .collect(Collectors.toList());
 
     return Atomix.builder()
@@ -75,7 +79,7 @@ public abstract class AbstractAtomixTest {
         .withAddress("localhost", BASE_PORT + id)
         .withMetadata(metadata)
         .withMulticastEnabled()
-        .withMembershipProvider(!locations.isEmpty() ? new BootstrapDiscoveryProvider(locations) : new MulticastDiscoveryProvider());
+        .withMembershipProvider(!nodes.isEmpty() ? new BootstrapDiscoveryProvider(nodes) : new MulticastDiscoveryProvider());
   }
 
   /**

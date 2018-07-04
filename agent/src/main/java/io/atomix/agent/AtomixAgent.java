@@ -16,14 +16,19 @@
 package io.atomix.agent;
 
 import io.atomix.cluster.BootstrapDiscoveryProvider;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.MulticastDiscoveryProvider;
+import io.atomix.cluster.Node;
+import io.atomix.cluster.NodeConfig;
 import io.atomix.core.Atomix;
 import io.atomix.core.AtomixConfig;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
 import io.atomix.utils.net.Address;
+import io.atomix.utils.net.MalformedAddressException;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.action.StoreTrueArgumentAction;
+import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.ArgumentType;
@@ -40,6 +45,10 @@ public class AtomixAgent {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixAgent.class);
 
   public static void main(String[] args) throws Exception {
+    ArgumentType<NodeConfig> nodeArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> new NodeConfig()
+        .setId(parseMemberId(value))
+        .setAddress(parseAddress(value));
+
     ArgumentType<Address> addressArgumentType = (argumentParser, argument, value) -> Address.from(value);
 
     ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
@@ -77,17 +86,18 @@ public class AtomixAgent {
         .help("The Atomix configuration. Can be specified as a file path or JSON/YAML string.");
     parser.addArgument("--bootstrap", "-b")
         .nargs("*")
-        .type(addressArgumentType)
-        .metavar("HOST:PORT")
+        .type(nodeArgumentType)
+        .metavar("NAME@HOST:PORT")
         .required(false)
-        .help("The set of bootstrap members, if any. If bootstrap members are provided then the bootstrap location provider will be used");
+        .help("The set of core members, if any. When bootstrapping a new cluster, if the local member is a core member " +
+            "then it should be present in the core configuration as well.");
     parser.addArgument("--multicast")
         .action(new StoreTrueArgumentAction())
         .setDefault(false)
         .help("Enables multicast discovery. Note that the network must support multicast for this feature to work.");
     parser.addArgument("--multicast-address")
         .type(addressArgumentType)
-        .metavar("HOST:PORT")
+        .metavar("IP:PORT")
         .help("Sets the multicast discovery address. Defaults to 230.0.0.1:54321");
     parser.addArgument("--http-port", "-p")
         .type(Integer.class)
@@ -110,7 +120,7 @@ public class AtomixAgent {
     final String host = namespace.getString("host");
     final String rack = namespace.getString("rack");
     final String zone = namespace.getString("zone");
-    final List<Address> bootstrap = namespace.getList("bootstrap");
+    final List<Node> bootstrap = namespace.getList("bootstrap");
     final boolean multicastEnabled = namespace.getBoolean("multicast");
     final Address multicastAddress = namespace.get("multicast_address");
     final Integer httpPort = namespace.getInt("http_port");
@@ -142,7 +152,7 @@ public class AtomixAgent {
     }
 
     if (bootstrap != null && !bootstrap.isEmpty()) {
-      config.getClusterConfig().setMembershipProviderConfig(new BootstrapDiscoveryProvider.Config().setLocations(bootstrap));
+      config.getClusterConfig().setMembershipProviderConfig(new BootstrapDiscoveryProvider.Config().setNodes(bootstrap));
     }
 
     if (multicastEnabled) {
@@ -172,6 +182,27 @@ public class AtomixAgent {
       while (atomix.isRunning()) {
         Atomix.class.wait();
       }
+    }
+  }
+
+  static MemberId parseMemberId(String address) {
+    int endIndex = address.indexOf('@');
+    if (endIndex > 0) {
+      return MemberId.from(address.substring(0, endIndex));
+    }
+    return null;
+  }
+
+  static Address parseAddress(String address) {
+    int startIndex = address.indexOf('@');
+    if (startIndex == -1) {
+      try {
+        return Address.from(address);
+      } catch (MalformedAddressException e) {
+        return Address.local();
+      }
+    } else {
+      return Address.from(address.substring(startIndex + 1));
     }
   }
 }

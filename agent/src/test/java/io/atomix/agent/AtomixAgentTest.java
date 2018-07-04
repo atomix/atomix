@@ -45,7 +45,7 @@ public class AtomixAgentTest {
 
     Thread thread1 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"-m", "node1", "-a", "localhost:5000", "-c", path});
+        AtomixAgent.main(new String[]{"-m", "node1", "-a", "localhost:5000", "-c", path, "-p", "6000"});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();
@@ -54,7 +54,7 @@ public class AtomixAgentTest {
 
     Thread thread2 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"-m", "node2", "-a", "localhost:5001", "-c", path});
+        AtomixAgent.main(new String[]{"-m", "node2", "-a", "localhost:5001", "-c", path, "-p", "6001"});
         AtomixAgent.main(new String[]{"node2@localhost:5001", "-c", path});
       } catch (Exception e) {
         e.printStackTrace();
@@ -64,7 +64,7 @@ public class AtomixAgentTest {
 
     Thread thread3 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"-m", "node3", "-a", "localhost:5002", "-c", path});
+        AtomixAgent.main(new String[]{"-m", "node3", "-a", "localhost:5002", "-c", path, "-p", "6002"});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();

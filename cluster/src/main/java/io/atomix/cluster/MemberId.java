@@ -28,7 +28,7 @@ public class MemberId extends NodeId {
    * @return node id
    */
   public static MemberId anonymous() {
-    return new MemberId(UUID.randomUUID().toString(), Type.ANONYMOUS);
+    return new MemberId(UUID.randomUUID().toString());
   }
 
   /**
@@ -38,10 +38,10 @@ public class MemberId extends NodeId {
    * @return node id
    */
   public static MemberId from(String id) {
-    return new MemberId(id, Type.IDENTIFIED);
+    return new MemberId(id);
   }
 
-  public MemberId(String id, Type type) {
-    super(id, type);
+  public MemberId(String id) {
+    super(id);
   }
 }

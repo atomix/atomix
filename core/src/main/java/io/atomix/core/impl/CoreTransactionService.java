@@ -62,7 +62,6 @@ public class CoreTransactionService implements ManagedTransactionService {
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .register(TransactionId.class)
       .register(TransactionState.class)
       .register(ParticipantInfo.class)

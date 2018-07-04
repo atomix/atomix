@@ -54,7 +54,6 @@ public final class PrimaryBackupNamespaces {
       .register(Namespaces.BASIC)
       .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .register(PrimaryBackupResponse.Status.class)
       .register(ExecuteRequest.class)
       .register(ExecuteResponse.class)

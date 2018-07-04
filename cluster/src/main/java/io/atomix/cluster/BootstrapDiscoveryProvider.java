@@ -52,7 +52,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 /**
  * Cluster membership provider that bootstraps membership from a pre-defined set of peers.
  * <p>
- * The bootstrap member provider takes a set of peer {@link Config#setLocations(Collection) addresses} and uses them
+ * The bootstrap member provider takes a set of peer {@link Config#setNodes(Collection) addresses} and uses them
  * to join the cluster. Using the {@link io.atomix.cluster.messaging.MessagingService}, each node sends a heartbeat to
  * its configured bootstrap peers. Peers respond to each heartbeat message with a list of all known peers, thus
  * propagating membership information using a gossip style protocol.
@@ -105,23 +105,37 @@ public class BootstrapDiscoveryProvider
     private final Config config = new Config();
 
     /**
-     * Sets the bootstrap member locations.
+     * Sets the bootstrap nodes.
      *
-     * @param locations the bootstrap member locations
+     * @param nodes the bootstrap nodes
      * @return the location provider builder
      */
-    public Builder withLocations(Address... locations) {
-      return withLocations(Arrays.asList(locations));
+    public Builder withNodes(Address... nodes) {
+      return withNodes(Stream.of(nodes)
+          .map(address -> Node.builder()
+              .withAddress(address)
+              .build())
+          .collect(Collectors.toSet()));
     }
 
     /**
-     * Sets the bootstrap member locations.
+     * Sets the bootstrap nodes.
+     *
+     * @param nodes the bootstrap nodes
+     * @return the location provider builder
+     */
+    public Builder withNodes(Node... nodes) {
+      return withNodes(Arrays.asList(nodes));
+    }
+
+    /**
+     * Sets the bootstrap nodes.
      *
      * @param locations the bootstrap member locations
      * @return the location provider builder
      */
-    public Builder withLocations(Collection<Address> locations) {
-      config.setLocations(locations);
+    public Builder withNodes(Collection<Node> locations) {
+      config.setNodes(locations);
       return this;
     }
 
@@ -168,14 +182,14 @@ public class BootstrapDiscoveryProvider
    * Bootstrap location provider configuration.
    */
   public static class Config implements NodeDiscoveryProvider.Config {
-    private static final int DEFAULT_HEARTBEAT_INTERVAL = 100;
+    private static final int DEFAULT_HEARTBEAT_INTERVAL = 1000;
     private static final int DEFAULT_FAILURE_TIMEOUT = 10000;
     private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
 
     private int heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     private int failureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
     private int failureTimeout = DEFAULT_FAILURE_TIMEOUT;
-    private Collection<Address> locations = Collections.emptySet();
+    private Collection<Node> nodes = Collections.emptySet();
 
     @Override
     public NodeDiscoveryProvider.Type getType() {
@@ -183,22 +197,22 @@ public class BootstrapDiscoveryProvider
     }
 
     /**
-     * Returns the configured bootstrap locations.
+     * Returns the configured bootstrap nodes.
      *
-     * @return the configured bootstrap locations
+     * @return the configured bootstrap nodes
      */
-    public Collection<Address> getLocations() {
-      return locations;
+    public Collection<Node> getNodes() {
+      return nodes;
     }
 
     /**
-     * Sets the bootstrap locations.
+     * Sets the bootstrap nodes.
      *
-     * @param locations the bootstrap locations
+     * @param nodes the bootstrap nodes
      * @return the bootstrap provider configuration
      */
-    public Config setLocations(Collection<Address> locations) {
-      this.locations = locations;
+    public Config setNodes(Collection<Node> nodes) {
+      this.nodes = nodes;
       return this;
     }
 
@@ -269,13 +283,12 @@ public class BootstrapDiscoveryProvider
       .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
       .register(Node.class)
       .register(NodeId.class)
-      .register(NodeId.Type.class)
       .register(new AddressSerializer(), Address.class)
       .build());
 
   private static final String HEARTBEAT_MESSAGE = "atomix-cluster-heartbeat";
 
-  private final Collection<Address> bootstrapLocations;
+  private final Collection<Node> bootstrapNodes;
   private final Config config;
 
   private volatile BootstrapService bootstrap;
@@ -290,17 +303,17 @@ public class BootstrapDiscoveryProvider
 
   private final Map<Address, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
 
-  public BootstrapDiscoveryProvider(Address... bootstrapLocations) {
-    this(Arrays.asList(bootstrapLocations));
+  public BootstrapDiscoveryProvider(Node... bootstrapNodes) {
+    this(Arrays.asList(bootstrapNodes));
   }
 
-  public BootstrapDiscoveryProvider(Collection<Address> bootstrapLocations) {
-    this(new Config().setLocations(bootstrapLocations));
+  public BootstrapDiscoveryProvider(Collection<Node> bootstrapNodes) {
+    this(new Config().setNodes(bootstrapNodes));
   }
 
   BootstrapDiscoveryProvider(Config config) {
     this.config = checkNotNull(config);
-    this.bootstrapLocations = ImmutableSet.copyOf(config.getLocations());
+    this.bootstrapNodes = ImmutableSet.copyOf(config.getNodes());
   }
 
   @Override
@@ -321,8 +334,9 @@ public class BootstrapDiscoveryProvider
         .filter(node -> !node.address().equals(localNode.address()))
         .map(node -> node.address());
 
-    Stream<Address> bootstrapLocations = this.bootstrapLocations.stream()
-        .filter(location -> !location.equals(localNode.address()));
+    Stream<Address> bootstrapLocations = this.bootstrapNodes.stream()
+        .filter(node -> !node.address().equals(localNode.address()) && !nodes.containsKey(node.address()))
+        .map(node -> node.address());
 
     return Futures.allOf(Stream.concat(clusterLocations, bootstrapLocations).map(address -> {
       LOGGER.trace("{} - Sending heartbeat: {}", localNode.address(), address);

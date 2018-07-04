@@ -37,16 +37,16 @@ public class AtomixClusterTest {
 
   @Test
   public void testBootstrap() throws Exception {
-    Collection<Address> bootstrapLocations = Arrays.asList(
-        Address.from("localhost:5000"),
-        Address.from("localhost:5001"),
-        Address.from("localhost:5002"));
+    Collection<Node> bootstrapLocations = Arrays.asList(
+        Node.builder().withId("foo").withAddress(Address.from("localhost:5000")).build(),
+        Node.builder().withId("bar").withAddress(Address.from("localhost:5001")).build(),
+        Node.builder().withId("baz").withAddress(Address.from("localhost:5002")).build());
 
     AtomixCluster cluster1 = AtomixCluster.builder()
         .withMemberId("foo")
         .withAddress("localhost:5000")
         .withMembershipProvider(BootstrapDiscoveryProvider.builder()
-            .withLocations(bootstrapLocations)
+            .withNodes(bootstrapLocations)
             .build())
         .build();
     cluster1.start().join();
@@ -57,7 +57,7 @@ public class AtomixClusterTest {
         .withMemberId("bar")
         .withAddress("localhost:5001")
         .withMembershipProvider(BootstrapDiscoveryProvider.builder()
-            .withLocations(bootstrapLocations)
+            .withNodes(bootstrapLocations)
             .build())
         .build();
     cluster2.start().join();
@@ -68,7 +68,7 @@ public class AtomixClusterTest {
         .withMemberId("baz")
         .withAddress("localhost:5002")
         .withMembershipProvider(BootstrapDiscoveryProvider.builder()
-            .withLocations(bootstrapLocations)
+            .withNodes(bootstrapLocations)
             .build())
         .build();
     cluster3.start().join();
