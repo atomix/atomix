@@ -180,7 +180,7 @@ public class HashBasedPrimaryElection
     List<GroupMember> candidates = new ArrayList<>();
     for (MemberId memberId : membership.members()) {
       Member member = clusterMembershipService.getMember(memberId);
-      if (member != null && member.getState() == Member.State.ACTIVE) {
+      if (member != null && member.isReachable()) {
         candidates.add(new GroupMember(memberId, MemberGroupId.from(memberId.id())));
       }
     }

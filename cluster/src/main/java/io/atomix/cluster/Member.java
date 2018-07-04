@@ -15,7 +15,7 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.utils.config.Configured;
+import com.google.common.collect.Maps;
 import io.atomix.utils.net.Address;
 
 import java.util.HashMap;
@@ -26,9 +26,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Represents a controller instance as a member in a cluster.
+ * Represents a node as a member in a cluster.
  */
-public class Member implements Configured<MemberConfig> {
+public class Member extends Node {
 
   /**
    * Returns a new member builder with no ID.
@@ -36,7 +36,7 @@ public class Member implements Configured<MemberConfig> {
    * @return the member builder
    */
   public static Builder builder() {
-    return new Builder(null);
+    return new Builder(new MemberConfig());
   }
 
   /**
@@ -107,73 +107,55 @@ public class Member implements Configured<MemberConfig> {
         .build();
   }
 
-  /**
-   * Represents the operational state of the instance.
-   */
-  public enum State {
-
-    /**
-     * Signifies that the instance is active and operating normally.
-     */
-    ACTIVE,
-
-    /**
-     * Signifies that the instance is inactive, which means either down or
-     * up, but not operational.
-     */
-    INACTIVE,
-  }
-
   private final MemberId id;
-  private final Address address;
   private final String zone;
   private final String rack;
   private final String host;
   private final Map<String, String> metadata;
 
   public Member(MemberConfig config) {
+    super(config);
     this.id = config.getId();
-    this.address = checkNotNull(config.getAddress(), "address cannot be null");
     this.zone = config.getZone();
     this.rack = config.getRack();
     this.host = config.getHost();
     this.metadata = new HashMap<>(config.getMetadata());
   }
 
+  protected Member(MemberId id, Address address) {
+    this(id, address, null, null, null, Maps.newConcurrentMap());
+  }
+
   protected Member(MemberId id, Address address, String zone, String rack, String host, Map<String, String> metadata) {
+    super(id, address);
     this.id = checkNotNull(id, "id cannot be null");
-    this.address = checkNotNull(address, "address cannot be null");
     this.zone = zone;
     this.rack = rack;
     this.host = host;
     this.metadata = new HashMap<>(metadata);
   }
 
-  /**
-   * Returns the instance identifier.
-   *
-   * @return instance identifier
-   */
+  @Override
   public MemberId id() {
     return id;
   }
 
   /**
-   * Returns the node address.
+   * Returns a boolean indicating whether this member is an active member of the cluster.
    *
-   * @return the node address
+   * @return indicates whether this member is an active member of the cluster
    */
-  public Address address() {
-    return address;
+  public boolean isActive() {
+    return false;
   }
 
   /**
-   * Returns the node state.
+   * Returns the node reachability.
    *
-   * @return the node state
+   * @return the node reachability
    */
-  public State getState() {
-    throw new UnsupportedOperationException();
+  public boolean isReachable() {
+    return false;
   }
 
   /**
@@ -215,33 +197,42 @@ public class Member implements Configured<MemberConfig> {
   @Override
   public MemberConfig config() {
     return new MemberConfig()
-        .setId(id)
-        .setAddress(address)
-        .setZone(zone)
-        .setRack(rack)
-        .setHost(host)
-        .setMetadata(metadata);
+        .setId(id())
+        .setAddress(address())
+        .setZone(zone())
+        .setRack(rack())
+        .setHost(host())
+        .setMetadata(metadata());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id);
+    return Objects.hash(id(), address(), zone(), rack(), host(), metadata());
   }
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof Member && ((Member) object).id.equals(id);
+    if (object instanceof Member) {
+      Member member = (Member) object;
+      return member.id().equals(id())
+          && member.address().equals(address())
+          && Objects.equals(member.zone(), zone())
+          && Objects.equals(member.rack(), rack())
+          && Objects.equals(member.host(), host())
+          && Objects.equals(member.metadata(), metadata());
+    }
+    return false;
   }
 
   @Override
   public String toString() {
-    return toStringHelper(this)
-        .add("id", id)
-        .add("address", address)
-        .add("zone", zone)
-        .add("rack", rack)
-        .add("host", host)
-        .add("metadata", metadata)
+    return toStringHelper(Member.class)
+        .add("id", id())
+        .add("address", address())
+        .add("zone", zone())
+        .add("rack", rack())
+        .add("host", host())
+        .add("metadata", metadata())
         .omitNullValues()
         .toString();
   }
@@ -249,23 +240,24 @@ public class Member implements Configured<MemberConfig> {
   /**
    * Member builder.
    */
-  public static class Builder implements io.atomix.utils.Builder<Member> {
-    protected final MemberConfig config = new MemberConfig();
+  public static class Builder extends Node.Builder {
+    protected final MemberConfig config;
 
-    protected Builder(MemberId id) {
-      if (id != null) {
-        config.setId(id);
-      }
+    protected Builder(MemberConfig config) {
+      super(config);
+      this.config = config;
     }
 
-    /**
-     * Sets the member identifier.
-     *
-     * @param id the member identifier
-     * @return the member builder
-     */
+    @Override
     public Builder withId(String id) {
-      return withId(MemberId.from(id));
+      super.withId(id);
+      return this;
+    }
+
+    @Override
+    public Builder withId(NodeId id) {
+      super.withId(id);
+      return this;
     }
 
     /**

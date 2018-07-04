@@ -31,6 +31,9 @@ public class ClusterConfig implements Config {
   private static final String DEFAULT_CLUSTER_NAME = "atomix";
   private static final String DEFAULT_MULTICAST_IP = "230.0.0.1";
   private static final int DEFAULT_MULTICAST_PORT = 54321;
+  private static final int DEFAULT_BROADCAST_INTERVAL = 100;
+  private static final int DEFAULT_REACHABILITY_TIMEOUT = 10000;
+  private static final int DEFAULT_REACHABILITY_THRESHOLD = 10;
 
   private String name = DEFAULT_CLUSTER_NAME;
   private MemberId memberId = MemberId.anonymous();
@@ -39,9 +42,12 @@ public class ClusterConfig implements Config {
   private String rack;
   private String host;
   private Map<String, String> metadata = new HashMap<>();
-  private ClusterMembershipProvider.Config locationProviderConfig;
+  private NodeDiscoveryProvider.Config locationProviderConfig;
   private boolean multicastEnabled = false;
   private Address multicastAddress;
+  private int broadcastInterval = DEFAULT_BROADCAST_INTERVAL;
+  private int reachabilityThreshold = DEFAULT_REACHABILITY_THRESHOLD;
+  private int reachabilityTimeout = DEFAULT_REACHABILITY_TIMEOUT;
 
   public ClusterConfig() {
     try {
@@ -231,7 +237,7 @@ public class ClusterConfig implements Config {
    *
    * @return the location provider configuration
    */
-  public ClusterMembershipProvider.Config getLocationProviderConfig() {
+  public NodeDiscoveryProvider.Config getLocationProviderConfig() {
     return locationProviderConfig;
   }
 
@@ -241,7 +247,7 @@ public class ClusterConfig implements Config {
    * @param locationProviderConfig the location provider configuration
    * @return the node configuration
    */
-  public ClusterConfig setMembershipProviderConfig(ClusterMembershipProvider.Config locationProviderConfig) {
+  public ClusterConfig setMembershipProviderConfig(NodeDiscoveryProvider.Config locationProviderConfig) {
     this.locationProviderConfig = checkNotNull(locationProviderConfig);
     return this;
   }
@@ -283,6 +289,66 @@ public class ClusterConfig implements Config {
    */
   public ClusterConfig setMulticastAddress(Address multicastAddress) {
     this.multicastAddress = multicastAddress;
+    return this;
+  }
+
+  /**
+   * Returns the reachability broadcast interval.
+   *
+   * @return the reachability broadcast interval
+   */
+  public int getBroadcastInterval() {
+    return broadcastInterval;
+  }
+
+  /**
+   * Sets the reachability broadcast interval.
+   *
+   * @param broadcastInterval the reachability broadcast interval
+   * @return the cluster configuration
+   */
+  public ClusterConfig setBroadcastInterval(int broadcastInterval) {
+    this.broadcastInterval = broadcastInterval;
+    return this;
+  }
+
+  /**
+   * Returns the reachability failure detection threshold.
+   *
+   * @return the reachability failure detection threshold
+   */
+  public int getReachabilityThreshold() {
+    return reachabilityThreshold;
+  }
+
+  /**
+   * Sets the reachability failure detection threshold.
+   *
+   * @param reachabilityThreshold the reachability failure detection threshold
+   * @return the cluster configuration
+   */
+  public ClusterConfig setReachabilityThreshold(int reachabilityThreshold) {
+    this.reachabilityThreshold = reachabilityThreshold;
+    return this;
+  }
+
+  /**
+   * Returns the reachability failure timeout.
+   *
+   * @return the reachability failure timeout
+   */
+  public int getReachabilityTimeout() {
+    return reachabilityTimeout;
+  }
+
+  /**
+   * Sets the reachability failure timeout.
+   *
+   * @param reachabilityTimeout the reachability failure timeout
+   * @return the cluster configuration
+   */
+  public ClusterConfig setReachabilityTimeout(int reachabilityTimeout) {
+    this.reachabilityTimeout = reachabilityTimeout;
     return this;
   }
 }

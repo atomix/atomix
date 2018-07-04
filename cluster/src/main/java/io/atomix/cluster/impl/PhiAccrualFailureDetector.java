@@ -99,9 +99,7 @@ public class PhiAccrualFailureDetector {
   public void report(long arrivalTime) {
     checkArgument(arrivalTime >= 0, "arrivalTime must not be negative");
     long latestHeartbeat = history.latestHeartbeatTime();
-    if (latestHeartbeat != -1) {
-      history.samples().addValue(arrivalTime - latestHeartbeat);
-    }
+    history.samples().addValue(arrivalTime - latestHeartbeat);
     history.setLatestHeartbeatTime(arrivalTime);
   }
 
@@ -113,7 +111,7 @@ public class PhiAccrualFailureDetector {
   public double phi() {
     long latestHeartbeat = history.latestHeartbeatTime();
     DescriptiveStatistics samples = history.samples();
-    if (latestHeartbeat == -1 || samples.getN() < minSamples) {
+    if (samples.getN() < minSamples) {
       return 0.0;
     }
     return computePhi(samples, latestHeartbeat, System.currentTimeMillis());
@@ -122,8 +120,8 @@ public class PhiAccrualFailureDetector {
   /**
    * Computes the phi value from the given samples.
    * <p>
-   *The original phi value in Hayashibara's paper is calculated based on a normal distribution.
-   *Here, we calculate it based on an exponential distribution.
+   * The original phi value in Hayashibara's paper is calculated based on a normal distribution.
+   * Here, we calculate it based on an exponential distribution.
    *
    * @param samples       the samples from which to compute phi
    * @param lastHeartbeat the last heartbeat
@@ -143,7 +141,7 @@ public class PhiAccrualFailureDetector {
    */
   private static class History {
     private final DescriptiveStatistics samples;
-    long lastHeartbeatTime = -1;
+    long lastHeartbeatTime = System.currentTimeMillis();
 
     private History(int windowSize) {
       this.samples = new DescriptiveStatistics(windowSize);

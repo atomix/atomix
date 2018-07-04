@@ -15,7 +15,7 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.ClusterMembershipProvider;
+import io.atomix.cluster.NodeDiscoveryProvider;
 import io.atomix.core.impl.ClasspathScanningAtomixRegistry;
 import io.atomix.core.profile.Profile;
 import io.atomix.primitive.PrimitiveType;
@@ -52,7 +52,7 @@ public interface AtomixRegistry {
         PrimitiveType.class,
         PrimitiveProtocol.Type.class,
         Profile.Type.class,
-        ClusterMembershipProvider.Type.class);
+        NodeDiscoveryProvider.Type.class);
   }
 
   /**

@@ -19,6 +19,7 @@ import io.atomix.utils.event.ListenerService;
 import io.atomix.utils.net.Address;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Service for obtaining information about the individual members within
@@ -39,6 +40,17 @@ public interface ClusterMembershipService extends ListenerService<ClusterMembers
    * @return set of cluster members
    */
   Set<Member> getMembers();
+
+  /**
+   * Returns the set of active reachable members.
+   *
+   * @return the set of active reachable members
+   */
+  default Set<Member> getReachableMembers() {
+    return getMembers().stream()
+        .filter(member -> member.isReachable())
+        .collect(Collectors.toSet());
+  }
 
   /**
    * Returns the specified member node.

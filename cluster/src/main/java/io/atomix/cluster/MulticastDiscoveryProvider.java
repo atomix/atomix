@@ -17,7 +17,6 @@ package io.atomix.cluster;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import io.atomix.cluster.impl.AddressSerializer;
 import io.atomix.cluster.impl.PhiAccrualFailureDetector;
 import io.atomix.utils.event.AbstractListenerManager;
@@ -49,9 +48,9 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * is determined by each node broadcasting to a multicast group, and phi accrual failure detectors are used to detect
  * nodes joining and leaving the cluster.
  */
-public class MulticastMembershipProvider
-    extends AbstractListenerManager<MemberLocationEvent, MemberLocationEventListener>
-    implements ClusterMembershipProvider {
+public class MulticastDiscoveryProvider
+    extends AbstractListenerManager<NodeDiscoveryEvent, NodeDiscoveryEventListener>
+    implements NodeDiscoveryProvider {
 
   private static final Type TYPE = new Type();
 
@@ -67,7 +66,7 @@ public class MulticastMembershipProvider
   /**
    * Broadcast member location provider type.
    */
-  public static class Type implements ClusterMembershipProvider.Type<Config> {
+  public static class Type implements NodeDiscoveryProvider.Type<Config> {
     private static final String NAME = "multicast";
 
     @Override
@@ -81,15 +80,15 @@ public class MulticastMembershipProvider
     }
 
     @Override
-    public ClusterMembershipProvider newProvider(Config config) {
-      return new MulticastMembershipProvider(config);
+    public NodeDiscoveryProvider newProvider(Config config) {
+      return new MulticastDiscoveryProvider(config);
     }
   }
 
   /**
    * Multicast member location provider builder.
    */
-  public static class Builder implements ClusterMembershipProvider.Builder {
+  public static class Builder implements NodeDiscoveryProvider.Builder {
     private final Config config = new Config();
 
     private Builder() {
@@ -129,15 +128,15 @@ public class MulticastMembershipProvider
     }
 
     @Override
-    public ClusterMembershipProvider build() {
-      return new MulticastMembershipProvider(config);
+    public NodeDiscoveryProvider build() {
+      return new MulticastDiscoveryProvider(config);
     }
   }
 
   /**
    * Member location provider configuration.
    */
-  public static class Config implements ClusterMembershipProvider.Config {
+  public static class Config implements NodeDiscoveryProvider.Config {
     private static final int DEFAULT_BROADCAST_INTERVAL = 100;
     private static final int DEFAULT_FAILURE_TIMEOUT = 10000;
     private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
@@ -147,7 +146,7 @@ public class MulticastMembershipProvider
     private int failureTimeout = DEFAULT_FAILURE_TIMEOUT;
 
     @Override
-    public ClusterMembershipProvider.Type getType() {
+    public NodeDiscoveryProvider.Type getType() {
       return TYPE;
     }
 
@@ -212,10 +211,13 @@ public class MulticastMembershipProvider
     }
   }
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MulticastMembershipProvider.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(MulticastDiscoveryProvider.class);
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
+      .register(Node.class)
+      .register(NodeId.class)
+      .register(NodeId.Type.class)
       .register(new AddressSerializer(), Address.class)
       .build());
 
@@ -228,86 +230,88 @@ public class MulticastMembershipProvider
   private volatile ScheduledFuture<?> broadcastFuture;
   private final Consumer<byte[]> broadcastListener = this::handleBroadcastMessage;
 
-  // A set of active peer locations.
-  private final Set<Address> locations = Sets.newConcurrentHashSet();
+  private final Map<Address, Node> nodes = Maps.newConcurrentMap();
 
   // A map of failure detectors, one for each active peer.
-  private final Map<Address, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
+  private final Map<NodeId, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
   private volatile ScheduledFuture<?> failureFuture;
 
-  public MulticastMembershipProvider() {
+  public MulticastDiscoveryProvider() {
     this(new Config());
   }
 
-  MulticastMembershipProvider(Config config) {
+  MulticastDiscoveryProvider(Config config) {
     this.config = checkNotNull(config);
   }
 
   @Override
-  public ClusterMembershipProvider.Config config() {
+  public NodeDiscoveryProvider.Config config() {
     return config;
   }
 
   @Override
-  public Set<Address> getLocations() {
-    return ImmutableSet.copyOf(locations);
+  public Set<Node> getNodes() {
+    return ImmutableSet.copyOf(nodes.values());
   }
 
   private void handleBroadcastMessage(byte[] message) {
-    Address address = SERIALIZER.decode(message);
-    if (locations.add(address)) {
-      LOGGER.info("Found peer at {}", address);
-      post(new MemberLocationEvent(MemberLocationEvent.Type.JOIN, address));
+    Node node = SERIALIZER.decode(message);
+    Node oldNode = nodes.put(node.address(), node);
+    if (oldNode != null && !oldNode.id().equals(node.id())) {
+      post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.LEAVE, oldNode));
+      post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, node));
+    } else if (oldNode == null) {
+      post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, node));
     }
   }
 
-  private void broadcastLocation(Address address) {
-    bootstrap.getBroadcastService().broadcast(SERIALIZER.encode(address));
+  private void broadcastLocation(Node localNode) {
+    bootstrap.getBroadcastService().broadcast(SERIALIZER.encode(localNode));
   }
 
-  private void detectFailures(Address address) {
-    locations.stream().filter(location -> !location.equals(address)).forEach(this::detectFailure);
+  private void detectFailures(Node localNode) {
+    nodes.values().stream().filter(node -> !node.address().equals(localNode)).forEach(this::detectFailure);
   }
 
-  private void detectFailure(Address address) {
-    PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(address, n -> new PhiAccrualFailureDetector());
+  private void detectFailure(Node node) {
+    PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
     double phi = failureDetector.phi();
     if (phi >= config.getFailureThreshold()
         || (phi == 0.0 && failureDetector.lastUpdated() > 0
         && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout())) {
-      LOGGER.info("Lost contact with {}", address);
-      locations.remove(address);
-      failureDetectors.remove(address);
-      post(new MemberLocationEvent(MemberLocationEvent.Type.LEAVE, address));
+      LOGGER.info("Lost contact with {}", node);
+      nodes.remove(node.address());
+      failureDetectors.remove(node.id());
+      post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.LEAVE, node));
     }
   }
 
   @Override
-  public CompletableFuture<Void> join(BootstrapService bootstrap, Address address) {
-    if (locations.add(address)) {
+  public CompletableFuture<Void> join(BootstrapService bootstrap, Node localNode) {
+    if (nodes.putIfAbsent(localNode.address(), localNode) == null) {
       this.bootstrap = bootstrap;
-      post(new MemberLocationEvent(MemberLocationEvent.Type.JOIN, address));
+      post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, localNode));
       bootstrap.getBroadcastService().addListener(broadcastListener);
       broadcastFuture = broadcastScheduler.scheduleAtFixedRate(
-          () -> broadcastLocation(address),
+          () -> broadcastLocation(localNode),
           broadcastInterval.toMillis(),
           broadcastInterval.toMillis(),
           TimeUnit.MILLISECONDS);
       failureFuture = broadcastScheduler.scheduleAtFixedRate(
-          () -> detectFailures(address),
+          () -> detectFailures(localNode),
           config.getBroadcastInterval() / 2,
           config.getBroadcastInterval() / 2,
           TimeUnit.MILLISECONDS);
-      broadcastLocation(address);
+      broadcastLocation(localNode);
       LOGGER.info("Joined");
     }
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
-  public CompletableFuture<Void> leave(Address address) {
-    if (locations.remove(address)) {
-      post(new MemberLocationEvent(MemberLocationEvent.Type.LEAVE, address));
+  public CompletableFuture<Void> leave(Node localNode) {
+    if (nodes.remove(localNode.address()) != null) {
+      post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.LEAVE, localNode));
       bootstrap.getBroadcastService().removeListener(broadcastListener);
       ScheduledFuture<?> broadcastFuture = this.broadcastFuture;
       if (broadcastFuture != null) {

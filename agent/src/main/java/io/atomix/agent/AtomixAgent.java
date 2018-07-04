@@ -15,8 +15,8 @@
  */
 package io.atomix.agent;
 
-import io.atomix.cluster.BootstrapMembershipProvider;
-import io.atomix.cluster.MulticastMembershipProvider;
+import io.atomix.cluster.BootstrapDiscoveryProvider;
+import io.atomix.cluster.MulticastDiscoveryProvider;
 import io.atomix.core.Atomix;
 import io.atomix.core.AtomixConfig;
 import io.atomix.rest.ManagedRestService;
@@ -142,14 +142,14 @@ public class AtomixAgent {
     }
 
     if (bootstrap != null && !bootstrap.isEmpty()) {
-      config.getClusterConfig().setMembershipProviderConfig(new BootstrapMembershipProvider.Config().setLocations(bootstrap));
+      config.getClusterConfig().setMembershipProviderConfig(new BootstrapDiscoveryProvider.Config().setLocations(bootstrap));
     }
 
     if (multicastEnabled) {
       config.getClusterConfig().setMulticastEnabled(true);
       config.getClusterConfig().setMulticastAddress(multicastAddress);
       if (bootstrap == null || bootstrap.isEmpty()) {
-        config.getClusterConfig().setMembershipProviderConfig(new MulticastMembershipProvider.Config());
+        config.getClusterConfig().setMembershipProviderConfig(new MulticastDiscoveryProvider.Config());
       }
     }
 
