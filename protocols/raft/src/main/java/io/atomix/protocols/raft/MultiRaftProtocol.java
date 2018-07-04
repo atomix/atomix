@@ -16,20 +16,15 @@
 package io.atomix.protocols.raft;
 
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.PartitionService;
-import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.impl.DefaultProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.SessionClient;
 import io.atomix.protocols.raft.partition.RaftPartition;
-import io.atomix.protocols.raft.session.CommunicationStrategy;
 
-import java.time.Duration;
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -45,8 +40,8 @@ public class MultiRaftProtocol implements PrimitiveProtocol {
    *
    * @return a new multi-Raft protocol builder
    */
-  public static Builder builder() {
-    return new Builder(new MultiRaftProtocolConfig());
+  public static MultiRaftProtocolBuilder builder() {
+    return new MultiRaftProtocolBuilder(new MultiRaftProtocolConfig());
   }
 
   /**
@@ -55,8 +50,8 @@ public class MultiRaftProtocol implements PrimitiveProtocol {
    * @param group the partition group
    * @return the multi-Raft protocol builder
    */
-  public static Builder builder(String group) {
-    return new Builder(new MultiRaftProtocolConfig().setGroup(group));
+  public static MultiRaftProtocolBuilder builder(String group) {
+    return new MultiRaftProtocolBuilder(new MultiRaftProtocolConfig().setGroup(group));
   }
 
   /**
@@ -114,130 +109,5 @@ public class MultiRaftProtocol implements PrimitiveProtocol {
             .build())
         .collect(Collectors.toList());
     return new DefaultProxyClient<>(primitiveName, primitiveType, this, serviceType, partitions, config.getPartitioner());
-  }
-
-  /**
-   * Multi-Raft protocol builder.
-   */
-  public static class Builder extends PrimitiveProtocol.Builder<MultiRaftProtocolConfig, MultiRaftProtocol> {
-    protected Builder(MultiRaftProtocolConfig config) {
-      super(config);
-    }
-
-    /**
-     * Sets the protocol partitioner.
-     *
-     * @param partitioner the protocol partitioner
-     * @return the protocol builder
-     */
-    public Builder withPartitioner(Partitioner<String> partitioner) {
-      config.setPartitioner(partitioner);
-      return this;
-    }
-
-    /**
-     * Sets the minimum session timeout.
-     *
-     * @param minTimeout the minimum session timeout
-     * @return the Raft protocol builder
-     */
-    public Builder withMinTimeout(Duration minTimeout) {
-      config.setMinTimeout(minTimeout);
-      return this;
-    }
-
-    /**
-     * Sets the maximum session timeout.
-     *
-     * @param maxTimeout the maximum session timeout
-     * @return the Raft protocol builder
-     */
-    public Builder withMaxTimeout(Duration maxTimeout) {
-      config.setMaxTimeout(maxTimeout);
-      return this;
-    }
-
-    /**
-     * Sets the read consistency level.
-     *
-     * @param readConsistency the read consistency level
-     * @return the Raft protocol builder
-     */
-    public Builder withReadConsistency(ReadConsistency readConsistency) {
-      config.setReadConsistency(readConsistency);
-      return this;
-    }
-
-    /**
-     * Sets the communication strategy.
-     *
-     * @param communicationStrategy the communication strategy
-     * @return the Raft protocol builder
-     */
-    public Builder withCommunicationStrategy(CommunicationStrategy communicationStrategy) {
-      config.setCommunicationStrategy(communicationStrategy);
-      return this;
-    }
-
-    /**
-     * Sets the recovery strategy.
-     *
-     * @param recoveryStrategy the recovery strategy
-     * @return the Raft protocol builder
-     */
-    public Builder withRecoveryStrategy(Recovery recoveryStrategy) {
-      config.setRecoveryStrategy(recoveryStrategy);
-      return this;
-    }
-
-    /**
-     * Sets the maximum number of retries before an operation can be failed.
-     *
-     * @param maxRetries the maximum number of retries before an operation can be failed
-     * @return the proxy builder
-     */
-    public Builder withMaxRetries(int maxRetries) {
-      config.setMaxRetries(maxRetries);
-      return this;
-    }
-
-    /**
-     * Sets the operation retry delay.
-     *
-     * @param retryDelayMillis the delay between operation retries in milliseconds
-     * @return the proxy builder
-     */
-    public Builder withRetryDelayMillis(long retryDelayMillis) {
-      return withRetryDelay(Duration.ofMillis(retryDelayMillis));
-    }
-
-    /**
-     * Sets the operation retry delay.
-     *
-     * @param retryDelay the delay between operation retries
-     * @param timeUnit   the delay time unit
-     * @return the proxy builder
-     * @throws NullPointerException if the time unit is null
-     */
-    public Builder withRetryDelay(long retryDelay, TimeUnit timeUnit) {
-      return withRetryDelay(Duration.ofMillis(timeUnit.toMillis(retryDelay)));
-    }
-
-    /**
-     * Sets the operation retry delay.
-     *
-     * @param retryDelay the delay between operation retries
-     * @return the proxy builder
-     * @throws NullPointerException if the delay is null
-     */
-    public Builder withRetryDelay(Duration retryDelay) {
-      config.setRetryDelay(retryDelay);
-      return this;
-    }
-
-    @Override
-    public MultiRaftProtocol build() {
-      return new MultiRaftProtocol(config);
-    }
   }
 }
