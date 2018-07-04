@@ -18,6 +18,7 @@ package io.atomix.core;
 import com.google.common.collect.Streams;
 import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.NodeDiscoveryProvider;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.barrier.DistributedCyclicBarrier;
@@ -71,6 +72,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -674,13 +676,19 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     }
 
     @Override
-    public Builder withClusterName(String clusterName) {
-      super.withClusterName(clusterName);
+    public Builder withClusterId(String clusterId) {
+      super.withClusterId(clusterId);
       return this;
     }
 
     @Override
     public Builder withMemberId(String localMemberId) {
+      super.withMemberId(localMemberId);
+      return this;
+    }
+
+    @Override
+    public Builder withMemberId(MemberId localMemberId) {
       super.withMemberId(localMemberId);
       return this;
     }
@@ -760,6 +768,24 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     @Override
     public Builder withMembershipProvider(NodeDiscoveryProvider locationProvider) {
       super.withMembershipProvider(locationProvider);
+      return this;
+    }
+
+    @Override
+    public Builder setBroadcastInterval(Duration interval) {
+      super.setBroadcastInterval(interval);
+      return this;
+    }
+
+    @Override
+    public Builder setReachabilityThreshold(int threshold) {
+      super.setReachabilityThreshold(threshold);
+      return this;
+    }
+
+    @Override
+    public Builder withReachabilityTimeout(Duration timeout) {
+      super.withReachabilityTimeout(timeout);
       return this;
     }
 

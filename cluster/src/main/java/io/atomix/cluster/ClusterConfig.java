@@ -35,7 +35,7 @@ public class ClusterConfig implements Config {
   private static final int DEFAULT_REACHABILITY_TIMEOUT = 10000;
   private static final int DEFAULT_REACHABILITY_THRESHOLD = 10;
 
-  private String name = DEFAULT_CLUSTER_NAME;
+  private String clusterId = DEFAULT_CLUSTER_NAME;
   private MemberId memberId = MemberId.anonymous();
   private Address address;
   private String zone;
@@ -58,22 +58,22 @@ public class ClusterConfig implements Config {
   }
 
   /**
-   * Returns the cluster name.
+   * Returns the cluster identifier.
    *
-   * @return the cluster name
+   * @return the cluster identifier
    */
-  public String getName() {
-    return name;
+  public String getClusterId() {
+    return clusterId;
   }
 
   /**
-   * Sets the cluster name.
+   * Sets the cluster identifier.
    *
-   * @param name the cluster name
+   * @param name the cluster identifier
    * @return the cluster configuration
    */
-  public ClusterConfig setName(String name) {
-    this.name = name;
+  public ClusterConfig setClusterId(String name) {
+    this.clusterId = name;
     return this;
   }
 
@@ -83,9 +83,6 @@ public class ClusterConfig implements Config {
    * @return the node identifier
    */
   public MemberId getMemberId() {
-    if (memberId == null) {
-      memberId = MemberId.from(address.address().getHostName());
-    }
     return memberId;
   }
 
