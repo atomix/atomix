@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -88,6 +89,7 @@ public final class Namespaces {
       .register(Optional.class)
       .register(Collections.emptyList().getClass())
       .register(Collections.singleton(Object.class).getClass())
+      .register(Properties.class)
       .register(int[].class)
       .register(long[].class)
       .register(short[].class)

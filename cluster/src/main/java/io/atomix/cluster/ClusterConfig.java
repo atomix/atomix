@@ -18,8 +18,7 @@ package io.atomix.cluster;
 import io.atomix.utils.config.Config;
 import io.atomix.utils.net.Address;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Properties;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -35,7 +34,7 @@ public class ClusterConfig implements Config {
   private String zone;
   private String rack;
   private String host;
-  private Map<String, String> metadata = new HashMap<>();
+  private Properties properties = new Properties();
   private NodeDiscoveryProvider.Config discoveryConfig;
   private MulticastConfig multicastConfig = new MulticastConfig();
   private MembershipConfig membershipConfig = new MembershipConfig();
@@ -185,30 +184,30 @@ public class ClusterConfig implements Config {
    *
    * @return the node metadata
    */
-  public Map<String, String> getMetadata() {
-    return metadata;
+  public Properties getProperties() {
+    return properties;
   }
 
   /**
-   * Sets the node metadata.
+   * Sets the node properties.
    *
-   * @param metadata the node metadata
+   * @param properties the node properties
    * @return the node configuration
    */
-  public ClusterConfig setMetadata(Map<String, String> metadata) {
-    this.metadata = metadata;
+  public ClusterConfig setProperties(Properties properties) {
+    this.properties = properties;
     return this;
   }
 
   /**
-   * Adds a node tag.
+   * Sets a local member property.
    *
-   * @param key   the metadata key to add
-   * @param value the metadata value to add
-   * @return the node configuration
+   * @param key   the property key to set
+   * @param value the property value to set
+   * @return the cluster configuration
    */
-  public ClusterConfig addMetadata(String key, String value) {
-    this.metadata.put(key, value);
+  public ClusterConfig setProperty(String key, String value) {
+    this.properties.put(key, value);
     return this;
   }
 

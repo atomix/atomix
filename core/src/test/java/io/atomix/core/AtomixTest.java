@@ -27,9 +27,8 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -89,8 +88,8 @@ public class AtomixTest extends AbstractAtomixTest {
   /**
    * Creates and starts a new test Atomix instance.
    */
-  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Map<String, String> metadata, Profile... profiles) {
-    Atomix atomix = createAtomix(id, persistentIds, metadata, builder -> builder.withProfiles(profiles).build());
+  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Properties properties, Profile... profiles) {
+    Atomix atomix = createAtomix(id, persistentIds, properties, builder -> builder.withProfiles(profiles).build());
     instances.add(atomix);
     return atomix.start().thenApply(v -> atomix);
   }
@@ -98,8 +97,8 @@ public class AtomixTest extends AbstractAtomixTest {
   /**
    * Creates and starts a new test Atomix instance.
    */
-  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Map<String, String> metadata, Function<Atomix.Builder, Atomix> builderFunction) {
-    Atomix atomix = createAtomix(id, persistentIds, metadata, builderFunction);
+  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Properties properties, Function<Atomix.Builder, Atomix> builderFunction) {
+    Atomix atomix = createAtomix(id, persistentIds, properties, builderFunction);
     instances.add(atomix);
     return atomix.start().thenApply(v -> atomix);
   }
@@ -267,10 +266,10 @@ public class AtomixTest extends AbstractAtomixTest {
   }
 
   /**
-   * Tests a client metadata.
+   * Tests a client properties.
    */
   @Test
-  public void testClientMetadata() throws Exception {
+  public void testClientProperties() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
     futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
     futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
@@ -280,7 +279,9 @@ public class AtomixTest extends AbstractAtomixTest {
     TestClusterMembershipEventListener dataListener = new TestClusterMembershipEventListener();
     instances.get(0).getMembershipService().addListener(dataListener);
 
-    Atomix client1 = startAtomix(4, Arrays.asList(1, 2, 3), Collections.singletonMap("a-key", "a-value"), Profile.client()).get(30, TimeUnit.SECONDS);
+    Properties properties = new Properties();
+    properties.setProperty("a-key", "a-value");
+    Atomix client1 = startAtomix(4, Arrays.asList(1, 2, 3), properties, Profile.client()).get(30, TimeUnit.SECONDS);
     assertEquals(1, client1.getPartitionService().getPartitionGroups().size());
 
     // client1 added to data node
@@ -291,9 +292,9 @@ public class AtomixTest extends AbstractAtomixTest {
 
     Member member = event1.subject();
 
-    assertNotNull(member.metadata());
-    assertEquals(1, member.metadata().size());
-    assertEquals("a-value", member.metadata().get("a-key"));
+    assertNotNull(member.properties());
+    assertEquals(1, member.properties().size());
+    assertEquals("a-value", member.properties().get("a-key"));
   }
 
   private static class TestClusterMembershipEventListener implements ClusterMembershipEventListener {

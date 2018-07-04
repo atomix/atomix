@@ -178,11 +178,11 @@ public class DefaultClusterMembershipServiceTest {
     TestClusterMembershipEventListener eventListener = new TestClusterMembershipEventListener();
     clusterService2.addListener(eventListener);
 
-    clusterService3.getLocalMember().metadata().put("foo", "bar");
+    clusterService3.getLocalMember().properties().put("foo", "bar");
 
     ClusterMembershipEvent event = eventListener.nextEvent();
     assertEquals(ClusterMembershipEvent.Type.METADATA_CHANGED, event.type());
-    assertEquals("bar", event.subject().metadata().get("foo"));
+    assertEquals("bar", event.subject().properties().get("foo"));
 
     CompletableFuture.allOf(new CompletableFuture[]{clusterService1.stop(), clusterService2.stop(),
         clusterService3.stop()}).join();

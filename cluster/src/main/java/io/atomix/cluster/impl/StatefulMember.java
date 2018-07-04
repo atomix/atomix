@@ -19,7 +19,7 @@ import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.utils.net.Address;
 
-import java.util.Map;
+import java.util.Properties;
 
 /**
  * Default cluster node.
@@ -38,8 +38,8 @@ public class StatefulMember extends Member {
       String zone,
       String rack,
       String host,
-      Map<String, String> metadata) {
-    super(id, address, zone, rack, host, metadata);
+      Properties properties) {
+    super(id, address, zone, rack, host, properties);
   }
 
   /**

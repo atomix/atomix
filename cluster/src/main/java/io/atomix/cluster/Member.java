@@ -15,12 +15,10 @@
  */
 package io.atomix.cluster;
 
-import com.google.common.collect.Maps;
 import io.atomix.utils.net.Address;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -111,7 +109,7 @@ public class Member extends Node {
   private final String zone;
   private final String rack;
   private final String host;
-  private final Map<String, String> metadata;
+  private final Properties properties;
 
   public Member(MemberConfig config) {
     super(config);
@@ -119,20 +117,20 @@ public class Member extends Node {
     this.zone = config.getZone();
     this.rack = config.getRack();
     this.host = config.getHost();
-    this.metadata = new HashMap<>(config.getMetadata());
+    this.properties = new Properties(config.getProperties());
   }
 
   protected Member(MemberId id, Address address) {
-    this(id, address, null, null, null, Maps.newConcurrentMap());
+    this(id, address, null, null, null, new Properties());
   }
 
-  protected Member(MemberId id, Address address, String zone, String rack, String host, Map<String, String> metadata) {
+  protected Member(MemberId id, Address address, String zone, String rack, String host, Properties properties) {
     super(id, address);
     this.id = checkNotNull(id, "id cannot be null");
     this.zone = zone;
     this.rack = rack;
     this.host = host;
-    this.metadata = new HashMap<>(metadata);
+    this.properties = new Properties(properties);
   }
 
   @Override
@@ -159,39 +157,39 @@ public class Member extends Node {
   }
 
   /**
-   * Returns the zone to which the node belongs.
+   * Returns the zone to which the member belongs.
    *
-   * @return the zone to which the node belongs
+   * @return the zone to which the member belongs
    */
   public String zone() {
     return zone;
   }
 
   /**
-   * Returns the rack to which the node belongs.
+   * Returns the rack to which the member belongs.
    *
-   * @return the rack to which the node belongs
+   * @return the rack to which the member belongs
    */
   public String rack() {
     return rack;
   }
 
   /**
-   * Returns the host to which the rack belongs.
+   * Returns the host to which the member belongs.
    *
-   * @return the host to which the rack belongs
+   * @return the host to which the member belongs
    */
   public String host() {
     return host;
   }
 
   /**
-   * Returns the node metadata.
+   * Returns the member properties.
    *
-   * @return the node metadata
+   * @return the member properties
    */
-  public Map<String, String> metadata() {
-    return metadata;
+  public Properties properties() {
+    return properties;
   }
 
   @Override
@@ -202,12 +200,12 @@ public class Member extends Node {
         .setZone(zone())
         .setRack(rack())
         .setHost(host())
-        .setMetadata(metadata());
+        .setProperties(properties());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id(), address(), zone(), rack(), host(), metadata());
+    return Objects.hash(id(), address(), zone(), rack(), host(), properties());
   }
 
   @Override
@@ -219,7 +217,7 @@ public class Member extends Node {
           && Objects.equals(member.zone(), zone())
           && Objects.equals(member.rack(), rack())
           && Objects.equals(member.host(), host())
-          && Objects.equals(member.metadata(), metadata());
+          && Objects.equals(member.properties(), properties());
     }
     return false;
   }
@@ -232,7 +230,7 @@ public class Member extends Node {
         .add("zone", zone())
         .add("rack", rack())
         .add("host", host())
-        .add("metadata", metadata())
+        .add("metadata", properties())
         .omitNullValues()
         .toString();
   }
@@ -350,27 +348,27 @@ public class Member extends Node {
     }
 
     /**
-     * Sets the member metadata.
+     * Sets the member properties.
      *
-     * @param metadata the member metadata
+     * @param properties the member properties
      * @return the member builder
-     * @throws NullPointerException if the tags are null
+     * @throws NullPointerException if the properties are null
      */
-    public Builder withMetadata(Map<String, String> metadata) {
-      config.setMetadata(metadata);
+    public Builder withProperties(Properties properties) {
+      config.setProperties(properties);
       return this;
     }
 
     /**
-     * Adds metadata to the member.
+     * Sets a member property.
      *
-     * @param key   the metadata key to add
-     * @param value the metadata value to add
+     * @param key   the property key to set
+     * @param value the property value to set
      * @return the member builder
-     * @throws NullPointerException if the tag is null
+     * @throws NullPointerException if the property is null
      */
-    public Builder addMetadata(String key, String value) {
-      config.addMetadata(key, value);
+    public Builder withProperty(String key, String value) {
+      config.setProperty(key, value);
       return this;
     }
 

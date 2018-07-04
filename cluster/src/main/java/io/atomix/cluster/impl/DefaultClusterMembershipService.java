@@ -37,6 +37,7 @@ import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -79,7 +80,7 @@ public class DefaultClusterMembershipService
 
   private final AtomicBoolean started = new AtomicBoolean();
   private final StatefulMember localMember;
-  private volatile Map<String, String> localMetadata = Maps.newConcurrentMap();
+  private volatile Properties localProperties = new Properties();
   private final Map<MemberId, StatefulMember> members = Maps.newConcurrentMap();
   private final Map<MemberId, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
   private final NodeDiscoveryEventListener discoveryEventListener = this::handleDiscoveryEvent;
@@ -101,7 +102,7 @@ public class DefaultClusterMembershipService
         localMember.zone(),
         localMember.rack(),
         localMember.host(),
-        localMember.metadata());
+        localMember.properties());
     this.broadcastInterval = config.getBroadcastInterval();
     this.reachabilityThreshold = config.getReachabilityThreshold();
     this.reachabilityTimeout = config.getReachabilityTimeout();
@@ -167,10 +168,10 @@ public class DefaultClusterMembershipService
    */
   private void checkMetadata() {
     Member localMember = getLocalMember();
-    if (!localMember.metadata().equals(localMetadata)) {
+    if (!localMember.properties().equals(localProperties)) {
       synchronized (this) {
-        if (!localMember.metadata().equals(localMetadata)) {
-          localMetadata = localMember.metadata();
+        if (!localMember.properties().equals(localProperties)) {
+          localProperties = localMember.properties();
           post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.METADATA_CHANGED, localMember));
           broadcastMetadata();
         }
@@ -213,7 +214,7 @@ public class DefaultClusterMembershipService
         post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, localMember));
       }
 
-      if (!localMember.metadata().equals(remoteMember.metadata())) {
+      if (!localMember.properties().equals(remoteMember.properties())) {
         LOGGER.info("{} - Member updated: {}", remoteMember.id(), remoteMember);
         members.put(remoteMember.id(), remoteMember);
         post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.METADATA_CHANGED, remoteMember));
