@@ -32,11 +32,12 @@ import java.util.concurrent.CompletableFuture;
  * {@link ClusterMembershipService} to exchange higher level {@link Member} information. Membership providers are
  * responsible for providing an actively managed view of cluster membership.
  *
- * @see BootstrapMembershipProvider
- * @see MulticastMembershipProvider
+ * @see BootstrapDiscoveryProvider
+ * @see MulticastDiscoveryProvider
  */
-public interface ClusterMembershipProvider
-    extends ListenerService<MemberLocationEvent, MemberLocationEventListener>, Configured<ClusterMembershipProvider.Config> {
+public interface NodeDiscoveryProvider
+    extends ListenerService<NodeDiscoveryEvent, NodeDiscoveryEventListener>,
+    Configured<NodeDiscoveryProvider.Config> {
 
   /**
    * Membership provider type.
@@ -49,7 +50,7 @@ public interface ClusterMembershipProvider
      * @param config the provider configuration
      * @return the provider instance
      */
-    ClusterMembershipProvider newProvider(C config);
+    NodeDiscoveryProvider newProvider(C config);
   }
 
   /**
@@ -61,31 +62,31 @@ public interface ClusterMembershipProvider
   /**
    * Membership provider builder.
    */
-  interface Builder extends io.atomix.utils.Builder<ClusterMembershipProvider> {
+  interface Builder extends io.atomix.utils.Builder<NodeDiscoveryProvider> {
   }
 
   /**
-   * Returns the set of active member locations.
+   * Returns the set of active nodes.
    *
-   * @return the set of active member locations
+   * @return the set of active nodes
    */
-  Set<Address> getLocations();
+  Set<Node> getNodes();
 
   /**
    * Joins the cluster.
    *
    * @param bootstrap the bootstrap service
-   * @param address   the address with which to join
+   * @param localNode the local node info
    * @return a future to be completed once the join is complete
    */
-  CompletableFuture<Void> join(BootstrapService bootstrap, Address address);
+  CompletableFuture<Void> join(BootstrapService bootstrap, Node localNode);
 
   /**
    * Leaves the cluster.
    *
-   * @param address the address with which to leave
+   * @param localNode the local node info
    * @return a future to be completed once the leave is complete
    */
-  CompletableFuture<Void> leave(Address address);
+  CompletableFuture<Void> leave(Node localNode);
 
 }

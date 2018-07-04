@@ -18,16 +18,17 @@ package io.atomix.cluster.impl;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import io.atomix.cluster.BootstrapService;
+import io.atomix.cluster.ClusterConfig;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.ManagedClusterMembershipService;
+import io.atomix.cluster.ManagedNodeDiscoveryService;
 import io.atomix.cluster.Member;
-import io.atomix.cluster.Member.State;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.MemberLocationEvent;
-import io.atomix.cluster.MemberLocationEventListener;
-import io.atomix.cluster.ClusterMembershipProvider;
+import io.atomix.cluster.Node;
+import io.atomix.cluster.NodeDiscoveryEvent;
+import io.atomix.cluster.NodeDiscoveryEventListener;
 import io.atomix.utils.event.AbstractListenerManager;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.Namespace;
@@ -43,7 +44,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
@@ -58,7 +58,6 @@ public class DefaultClusterMembershipService
 
   private static final Logger LOGGER = getLogger(DefaultClusterMembershipService.class);
 
-  private static final String MEMBER_INFO = "atomix-cluster-member-info";
   private static final String METADATA_BROADCAST = "atomix-cluster-metadata";
 
   private static final byte[] EMPTY_PAYLOAD = new byte[0];
@@ -69,31 +68,36 @@ public class DefaultClusterMembershipService
           .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
           .register(MemberId.class)
           .register(MemberId.Type.class)
-          .register(Member.State.class)
           .register(ClusterHeartbeat.class)
           .register(StatefulMember.class)
           .register(new AddressSerializer(), Address.class)
           .build("ClusterMembershipService"));
 
-  private final BootstrapService bootstrap;
-  private final ClusterMembershipProvider locationProvider;
+  private final ManagedNodeDiscoveryService discoveryService;
+  private final BootstrapService bootstrapService;
+
+  private final int broadcastInterval;
+  private final int reachabilityThreshold;
+  private final int reachabilityTimeout;
 
   private final AtomicBoolean started = new AtomicBoolean();
   private final StatefulMember localMember;
   private volatile Map<String, String> localMetadata = Maps.newConcurrentMap();
   private final Map<MemberId, StatefulMember> members = Maps.newConcurrentMap();
-  private final MemberLocationEventListener locationEventListener = this::handleLocationEvent;
+  private final Map<MemberId, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
+  private final NodeDiscoveryEventListener discoveryEventListener = this::handleDiscoveryEvent;
 
-  private final ScheduledExecutorService metadataScheduler = Executors.newSingleThreadScheduledExecutor(
+  private final ScheduledExecutorService heartbeatScheduler = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-cluster-heartbeat-sender", LOGGER));
-  private ScheduledFuture<?> metadataFuture;
+  private ScheduledFuture<?> heartbeatFuture;
 
   public DefaultClusterMembershipService(
       Member localMember,
-      BootstrapService bootstrap,
-      ClusterMembershipProvider locationProvider) {
-    this.bootstrap = checkNotNull(bootstrap, "bootstrapService cannot be null");
-    this.locationProvider = checkNotNull(locationProvider, "locationProvider cannot be null");
+      ManagedNodeDiscoveryService discoveryService,
+      BootstrapService bootstrapService,
+      ClusterConfig config) {
+    this.discoveryService = checkNotNull(discoveryService, "discoveryService cannot be null");
+    this.bootstrapService = checkNotNull(bootstrapService, "bootstrapService cannot be null");
     this.localMember = new StatefulMember(
         localMember.id(),
         localMember.address(),
@@ -101,6 +105,9 @@ public class DefaultClusterMembershipService
         localMember.rack(),
         localMember.host(),
         localMember.metadata());
+    this.broadcastInterval = config.getBroadcastInterval();
+    this.reachabilityThreshold = config.getReachabilityThreshold();
+    this.reachabilityTimeout = config.getReachabilityTimeout();
   }
 
   @Override
@@ -110,61 +117,12 @@ public class DefaultClusterMembershipService
 
   @Override
   public Set<Member> getMembers() {
-    return ImmutableSet.copyOf(members.values()
-        .stream()
-        .filter(member -> member.getState() == State.ACTIVE)
-        .collect(Collectors.toList()));
+    return ImmutableSet.copyOf(members.values());
   }
 
   @Override
   public Member getMember(MemberId memberId) {
-    Member member = members.get(memberId);
-    return member != null && member.getState() == State.ACTIVE ? member : null;
-  }
-
-  /**
-   * Bootstraps all members in the cluster.
-   *
-   * @return a future to be completed once all members have been bootstrapped
-   */
-  private CompletableFuture<Void> bootstrapMembers() {
-    return locationProvider.join(bootstrap, localMember.address())
-        .thenCompose(v -> CompletableFuture.allOf(locationProvider.getLocations().stream()
-            .filter(location -> !location.equals(localMember.address()))
-            .map(this::bootstrapMember)
-            .toArray(CompletableFuture[]::new)));
-  }
-
-  /**
-   * Requests member information from the given address.
-   *
-   * @param address the address from which to request member information
-   * @return a future to be completed once member info has been received
-   */
-  private CompletableFuture<Void> bootstrapMember(Address address) {
-    LOGGER.debug("{} - Bootstrapping member {}", localMember.id(), address);
-    return bootstrap.getMessagingService().sendAndReceive(address, MEMBER_INFO, EMPTY_PAYLOAD)
-        .thenAccept(response -> {
-          StatefulMember member = SERIALIZER.decode(response);
-          if (members.putIfAbsent(member.id(), member) == null) {
-            LOGGER.info("{} - Member added: {}", localMember.id(), member);
-            post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, member));
-          }
-        }).exceptionally(e -> {
-          LOGGER.debug("{} - Failed to bootstrap member {}", localMember.id(), address, e);
-          return null;
-        });
-  }
-
-  /**
-   * Handles a member info request.
-   *
-   * @param address the address from which the request was sent
-   * @param payload the message payload
-   * @return the serialized local member info
-   */
-  private byte[] handleMemberInfo(Address address, byte[] payload) {
-    return SERIALIZER.encode(localMember);
+    return members.get(memberId);
   }
 
   /**
@@ -172,27 +130,38 @@ public class DefaultClusterMembershipService
    *
    * @param event the member location event
    */
-  private void handleLocationEvent(MemberLocationEvent event) {
+  private void handleDiscoveryEvent(NodeDiscoveryEvent event) {
     switch (event.type()) {
       case JOIN:
-        if (!event.address().equals(localMember.address())) {
-          bootstrapMember(event.address());
-        }
+        handleJoinEvent(event.subject());
         break;
       case LEAVE:
-        members.values()
-            .stream()
-            .filter(m -> m.address().equals(event.address()))
-            .findFirst()
-            .ifPresent(m -> {
-              StatefulMember member = members.remove(m.id());
-              if (member != null) {
-                post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_REMOVED, member));
-              }
-            });
+        handleLeaveEvent(event.subject());
         break;
       default:
         throw new AssertionError();
+    }
+  }
+
+  /**
+   * Handles a node join event.
+   */
+  private void handleJoinEvent(Node node) {
+    StatefulMember member = new StatefulMember(MemberId.from(node.id().id()), node.address());
+    member.setActive(true);
+    member.setReachable(true);
+    if (members.putIfAbsent(member.id(), member) == null) {
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, member));
+    }
+  }
+
+  /**
+   * Handles a node leave event.
+   */
+  private void handleLeaveEvent(Node node) {
+    StatefulMember member = members.remove(MemberId.from(node.id().id()));
+    if (member != null) {
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_REMOVED, member));
     }
   }
 
@@ -205,7 +174,7 @@ public class DefaultClusterMembershipService
       synchronized (this) {
         if (!localMember.metadata().equals(localMetadata)) {
           localMetadata = localMember.metadata();
-          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_UPDATED, localMember));
+          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.METADATA_CHANGED, localMember));
           broadcastMetadata();
         }
       }
@@ -216,9 +185,11 @@ public class DefaultClusterMembershipService
    * Broadcasts a local member metadata change to all peers.
    */
   private void broadcastMetadata() {
+    checkMetadata();
     members.values().stream()
         .filter(member -> !member.id().equals(localMember.id()))
         .forEach(this::broadcastMetadata);
+    detectFailures();
   }
 
   /**
@@ -227,7 +198,7 @@ public class DefaultClusterMembershipService
    * @param member the member to which to broadcast the metadata
    */
   private void broadcastMetadata(StatefulMember member) {
-    bootstrap.getMessagingService().sendAsync(member.address(), METADATA_BROADCAST, SERIALIZER.encode(localMember));
+    bootstrapService.getMessagingService().sendAsync(member.address(), METADATA_BROADCAST, SERIALIZER.encode(localMember));
   }
 
   /**
@@ -239,24 +210,60 @@ public class DefaultClusterMembershipService
   private void handleMetadata(Address address, byte[] message) {
     StatefulMember remoteMember = SERIALIZER.decode(message);
     StatefulMember localMember = members.get(remoteMember.id());
-    if (localMember != null && !localMember.metadata().equals(remoteMember.metadata())) {
-      LOGGER.info("{} - Member updated: {}", remoteMember.id(), remoteMember);
-      members.put(remoteMember.id(), remoteMember);
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_UPDATED, remoteMember));
+    if (localMember != null) {
+      if (!localMember.isReachable()) {
+        localMember.setReachable(true);
+        post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, localMember));
+      }
+
+      if (!localMember.metadata().equals(remoteMember.metadata())) {
+        LOGGER.info("{} - Member updated: {}", remoteMember.id(), remoteMember);
+        members.put(remoteMember.id(), remoteMember);
+        post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.METADATA_CHANGED, remoteMember));
+      }
+      failureDetectors.computeIfAbsent(localMember.id(), id -> new PhiAccrualFailureDetector()).report();
+    }
+  }
+
+  /**
+   * Checks for heartbeat failures.
+   */
+  private void detectFailures() {
+    members.values().stream()
+        .filter(member -> !member.id().equals(localMember.id()))
+        .forEach(this::detectFailure);
+  }
+
+  /**
+   * Checks the given member for a heartbeat failure.
+   *
+   * @param member the member to check
+   */
+  private void detectFailure(StatefulMember member) {
+    PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(member.id(), n -> new PhiAccrualFailureDetector());
+    double phi = failureDetector.phi();
+    if (phi >= reachabilityThreshold
+        || (phi == 0.0 && failureDetector.lastUpdated() > 0
+        && System.currentTimeMillis() - failureDetector.lastUpdated() > reachabilityTimeout)) {
+      if (member.isReachable()) {
+        member.setReachable(false);
+        post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, member));
+      }
     }
   }
 
   @Override
   public CompletableFuture<ClusterMembershipService> start() {
     if (started.compareAndSet(false, true)) {
-      locationProvider.addListener(locationEventListener);
-      LOGGER.info("{} - Member activated: {}", localMember.id(), localMember);
-      localMember.setState(State.ACTIVE);
-      members.put(localMember.id(), localMember);
-      bootstrap.getMessagingService().registerHandler(MEMBER_INFO, this::handleMemberInfo, metadataScheduler);
-      bootstrap.getMessagingService().registerHandler(METADATA_BROADCAST, this::handleMetadata, metadataScheduler);
-      metadataFuture = metadataScheduler.scheduleAtFixedRate(() -> checkMetadata(), 0, 1, TimeUnit.SECONDS);
-      return bootstrapMembers().thenApply(v -> {
+      discoveryService.addListener(discoveryEventListener);
+      return discoveryService.start().thenRun(() -> {
+        LOGGER.info("{} - Member activated: {}", localMember.id(), localMember);
+        localMember.setActive(true);
+        localMember.setReachable(true);
+        members.put(localMember.id(), localMember);
+        bootstrapService.getMessagingService().registerHandler(METADATA_BROADCAST, this::handleMetadata, heartbeatScheduler);
+        heartbeatFuture = heartbeatScheduler.scheduleAtFixedRate(this::broadcastMetadata, 0, broadcastInterval, TimeUnit.MILLISECONDS);
+      }).thenApply(v -> {
         LOGGER.info("Started");
         return this;
       });
@@ -272,15 +279,16 @@ public class DefaultClusterMembershipService
   @Override
   public CompletableFuture<Void> stop() {
     if (started.compareAndSet(true, false)) {
-      return locationProvider.leave(localMember.address())
+      return discoveryService.stop()
           .thenRun(() -> {
-            metadataScheduler.shutdownNow();
+            discoveryService.removeListener(discoveryEventListener);
+            heartbeatFuture.cancel(true);
+            heartbeatScheduler.shutdownNow();
             LOGGER.info("{} - Member deactivated: {}", localMember.id(), localMember);
-            localMember.setState(State.INACTIVE);
+            localMember.setActive(false);
+            localMember.setReachable(false);
             members.clear();
-            metadataFuture.cancel(true);
-            bootstrap.getMessagingService().unregisterHandler(MEMBER_INFO);
-            bootstrap.getMessagingService().unregisterHandler(METADATA_BROADCAST);
+            bootstrapService.getMessagingService().unregisterHandler(METADATA_BROADCAST);
             LOGGER.info("Stopped");
           });
     }

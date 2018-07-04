@@ -18,7 +18,6 @@ package io.atomix.cluster;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import io.atomix.cluster.impl.AddressSerializer;
 import io.atomix.cluster.impl.PhiAccrualFailureDetector;
 import io.atomix.utils.concurrent.ComposableFuture;
@@ -59,12 +58,12 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * propagating membership information using a gossip style protocol.
  * <p>
  * A phi accrual failure detector is used to detect failures and remove peers from the configuration. In order to avoid
- * flapping of membership following a {@link MemberLocationEvent.Type#LEAVE} event, the implementation attempts to
- * heartbeat all newly discovered peers before triggering a {@link MemberLocationEvent.Type#JOIN} event.
+ * flapping of membership following a {@link ClusterMembershipEvent.Type#MEMBER_ADDED} event, the implementation attempts
+ * to heartbeat all newly discovered peers before triggering a {@link ClusterMembershipEvent.Type#MEMBER_REMOVED} event.
  */
-public class BootstrapMembershipProvider
-    extends AbstractListenerManager<MemberLocationEvent, MemberLocationEventListener>
-    implements ClusterMembershipProvider {
+public class BootstrapDiscoveryProvider
+    extends AbstractListenerManager<NodeDiscoveryEvent, NodeDiscoveryEventListener>
+    implements NodeDiscoveryProvider {
 
   private static final Type TYPE = new Type();
 
@@ -80,7 +79,7 @@ public class BootstrapMembershipProvider
   /**
    * Bootstrap member location provider type.
    */
-  public static class Type implements ClusterMembershipProvider.Type<Config> {
+  public static class Type implements NodeDiscoveryProvider.Type<Config> {
     private static final String NAME = "bootstrap";
 
     @Override
@@ -94,15 +93,15 @@ public class BootstrapMembershipProvider
     }
 
     @Override
-    public ClusterMembershipProvider newProvider(Config config) {
-      return new BootstrapMembershipProvider(config);
+    public NodeDiscoveryProvider newProvider(Config config) {
+      return new BootstrapDiscoveryProvider(config);
     }
   }
 
   /**
    * Bootstrap member location provider builder.
    */
-  public static class Builder implements ClusterMembershipProvider.Builder {
+  public static class Builder implements NodeDiscoveryProvider.Builder {
     private final Config config = new Config();
 
     /**
@@ -160,15 +159,15 @@ public class BootstrapMembershipProvider
     }
 
     @Override
-    public ClusterMembershipProvider build() {
-      return new BootstrapMembershipProvider(config);
+    public NodeDiscoveryProvider build() {
+      return new BootstrapDiscoveryProvider(config);
     }
   }
 
   /**
    * Bootstrap location provider configuration.
    */
-  public static class Config implements ClusterMembershipProvider.Config {
+  public static class Config implements NodeDiscoveryProvider.Config {
     private static final int DEFAULT_HEARTBEAT_INTERVAL = 100;
     private static final int DEFAULT_FAILURE_TIMEOUT = 10000;
     private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
@@ -179,7 +178,7 @@ public class BootstrapMembershipProvider
     private Collection<Address> locations = Collections.emptySet();
 
     @Override
-    public ClusterMembershipProvider.Type getType() {
+    public NodeDiscoveryProvider.Type getType() {
       return TYPE;
     }
 
@@ -264,22 +263,24 @@ public class BootstrapMembershipProvider
     }
   }
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(BootstrapMembershipProvider.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(BootstrapDiscoveryProvider.class);
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
+      .register(Node.class)
+      .register(NodeId.class)
+      .register(NodeId.Type.class)
       .register(new AddressSerializer(), Address.class)
       .build());
 
   private static final String HEARTBEAT_MESSAGE = "atomix-cluster-heartbeat";
-  private static final byte[] EMPTY_PAYLOAD = new byte[0];
 
   private final Collection<Address> bootstrapLocations;
   private final Config config;
 
   private volatile BootstrapService bootstrap;
 
-  private Set<Address> locations = Sets.newCopyOnWriteArraySet();
+  private Map<Address, Node> nodes = Maps.newConcurrentMap();
 
   private final ScheduledExecutorService heartbeatScheduler = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-cluster-heartbeat-sender", LOGGER));
@@ -289,42 +290,43 @@ public class BootstrapMembershipProvider
 
   private final Map<Address, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
 
-  public BootstrapMembershipProvider(Address... bootstrapLocations) {
+  public BootstrapDiscoveryProvider(Address... bootstrapLocations) {
     this(Arrays.asList(bootstrapLocations));
   }
 
-  public BootstrapMembershipProvider(Collection<Address> bootstrapLocations) {
+  public BootstrapDiscoveryProvider(Collection<Address> bootstrapLocations) {
     this(new Config().setLocations(bootstrapLocations));
   }
 
-  BootstrapMembershipProvider(Config config) {
+  BootstrapDiscoveryProvider(Config config) {
     this.config = checkNotNull(config);
     this.bootstrapLocations = ImmutableSet.copyOf(config.getLocations());
   }
 
   @Override
-  public ClusterMembershipProvider.Config config() {
+  public NodeDiscoveryProvider.Config config() {
     return config;
   }
 
   @Override
-  public Set<Address> getLocations() {
-    return ImmutableSet.copyOf(locations);
+  public Set<Node> getNodes() {
+    return ImmutableSet.copyOf(nodes.values());
   }
 
   /**
    * Sends heartbeats to all peers.
    */
-  private CompletableFuture<Void> sendHeartbeats(Address localAddress) {
-    Stream<Address> clusterLocations = this.locations.stream()
-        .filter(location -> !location.equals(localAddress));
+  private CompletableFuture<Void> sendHeartbeats(Node localNode) {
+    Stream<Address> clusterLocations = this.nodes.values().stream()
+        .filter(node -> !node.address().equals(localNode.address()))
+        .map(node -> node.address());
 
     Stream<Address> bootstrapLocations = this.bootstrapLocations.stream()
-        .filter(location -> !location.equals(localAddress));
+        .filter(location -> !location.equals(localNode.address()));
 
     return Futures.allOf(Stream.concat(clusterLocations, bootstrapLocations).map(address -> {
-      LOGGER.trace("{} - Sending heartbeat: {}", localAddress, address);
-      return sendHeartbeat(localAddress, address).exceptionally(v -> null);
+      LOGGER.trace("{} - Sending heartbeat: {}", localNode.address(), address);
+      return sendHeartbeat(localNode, address).exceptionally(v -> null);
     }).collect(Collectors.toList()))
         .thenApply(v -> null);
   }
@@ -332,28 +334,34 @@ public class BootstrapMembershipProvider
   /**
    * Sends a heartbeat to the given peer.
    */
-  private CompletableFuture<Void> sendHeartbeat(Address localAddress, Address address) {
-    return bootstrap.getMessagingService().sendAndReceive(address, HEARTBEAT_MESSAGE, EMPTY_PAYLOAD).whenComplete((response, error) -> {
+  private CompletableFuture<Void> sendHeartbeat(Node localNode, Address address) {
+    return bootstrap.getMessagingService().sendAndReceive(address, HEARTBEAT_MESSAGE, SERIALIZER.encode(localNode)).whenComplete((response, error) -> {
       if (error == null) {
-        Collection<Address> locations = SERIALIZER.decode(response);
-        for (Address location : locations) {
-          if (address.equals(location)) {
-            if (this.locations.add(location)) {
-              post(new MemberLocationEvent(MemberLocationEvent.Type.JOIN, location));
+        Collection<Node> nodes = SERIALIZER.decode(response);
+        for (Node node : nodes) {
+          if (node.address().equals(address)) {
+            Node oldNode = this.nodes.put(node.address(), node);
+            if (oldNode != null && !oldNode.id().equals(node.id())) {
+              failureDetectors.remove(oldNode.address());
+              post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.LEAVE, oldNode));
+              post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, node));
+            } else if (oldNode == null) {
+              post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, node));
             }
-          } else if (!this.locations.contains(location)) {
-            sendHeartbeat(localAddress, location);
+          } else if (!this.nodes.containsKey(node.address()) || !this.nodes.get(node.address()).id().equals(node.id())) {
+            sendHeartbeat(localNode, node.address());
           }
         }
       } else {
-        LOGGER.debug("{} - Sending heartbeat to {} failed", localAddress, address, error);
+        LOGGER.debug("{} - Sending heartbeat to {} failed", localNode, address, error);
         PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(address, n -> new PhiAccrualFailureDetector());
         double phi = failureDetector.phi();
         if (phi >= config.getFailureThreshold()
-            || (phi == 0.0 && failureDetector.lastUpdated() > 0
-            && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout())) {
-          if (this.locations.remove(address)) {
-            post(new MemberLocationEvent(MemberLocationEvent.Type.LEAVE, address));
+            || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout())) {
+          Node node = this.nodes.remove(address);
+          if (node != null) {
+            failureDetectors.remove(node.address());
+            post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.LEAVE, node));
           }
         }
       }
@@ -364,32 +372,38 @@ public class BootstrapMembershipProvider
   /**
    * Handles a heartbeat message.
    */
-  private byte[] handleHeartbeat(Address localAddress, Address address) {
-    LOGGER.trace("{} - Received heartbeat: {}", localAddress, address);
-    failureDetectors.computeIfAbsent(address, n -> new PhiAccrualFailureDetector()).report();
-    if (locations.add(address)) {
-      post(new MemberLocationEvent(MemberLocationEvent.Type.JOIN, address));
+  private byte[] handleHeartbeat(Node localNode, Node node) {
+    LOGGER.trace("{} - Received heartbeat: {}", localNode.address(), localNode.address());
+    failureDetectors.computeIfAbsent(localNode.address(), n -> new PhiAccrualFailureDetector()).report();
+    Node oldNode = nodes.put(node.address(), node);
+    if (oldNode != null && !oldNode.id().equals(node.id())) {
+      failureDetectors.remove(oldNode.address());
+      post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.LEAVE, oldNode));
+      post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, node));
+    } else if (oldNode == null) {
+      post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, node));
     }
-    return SERIALIZER.encode(Lists.newArrayList(locations));
+    return SERIALIZER.encode(Lists.newArrayList(nodes.values()));
   }
 
   @Override
-  public CompletableFuture<Void> join(BootstrapService bootstrap, Address address) {
-    if (locations.add(address)) {
+  public CompletableFuture<Void> join(BootstrapService bootstrap, Node localNode) {
+    if (nodes.putIfAbsent(localNode.address(), localNode) == null) {
       this.bootstrap = bootstrap;
-      post(new MemberLocationEvent(MemberLocationEvent.Type.JOIN, address));
+      post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, localNode));
 
       bootstrap.getMessagingService().registerHandler(
           HEARTBEAT_MESSAGE,
-          (BiFunction<Address, byte[], byte[]>) (a, p) -> handleHeartbeat(address, a), heartbeatExecutor);
+          (BiFunction<Address, byte[], byte[]>) (a, p) ->
+              handleHeartbeat(localNode, SERIALIZER.decode(p)), heartbeatExecutor);
 
       ComposableFuture<Void> future = new ComposableFuture<>();
-      sendHeartbeats(address).whenComplete((r, e) -> {
+      sendHeartbeats(localNode).whenComplete((r, e) -> {
         future.complete(null);
       });
 
       heartbeatFuture = heartbeatScheduler.scheduleWithFixedDelay(() -> {
-        sendHeartbeats(address);
+        sendHeartbeats(localNode);
       }, 0, config.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
 
       return future.thenRun(() -> {
@@ -400,9 +414,9 @@ public class BootstrapMembershipProvider
   }
 
   @Override
-  public CompletableFuture<Void> leave(Address address) {
-    if (locations.remove(address)) {
-      post(new MemberLocationEvent(MemberLocationEvent.Type.LEAVE, address));
+  public CompletableFuture<Void> leave(Node localNode) {
+    if (nodes.remove(localNode.address()) != null) {
+      post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.LEAVE, localNode));
 
       bootstrap.getMessagingService().unregisterHandler(HEARTBEAT_MESSAGE);
       ScheduledFuture<?> heartbeatFuture = this.heartbeatFuture;

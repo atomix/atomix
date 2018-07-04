@@ -17,6 +17,7 @@ package io.atomix.cluster;
 
 import com.google.common.collect.Streams;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
+import io.atomix.cluster.impl.DefaultNodeDiscoveryService;
 import io.atomix.cluster.messaging.BroadcastService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventService;
@@ -39,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -81,10 +83,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  * </pre>
  * <p>
- * Cluster membership is determined by a configurable {@link ClusterMembershipProvider}. To configure the membership
- * provider use {@link Builder#withMembershipProvider(ClusterMembershipProvider)}. By default, the
- * {@link MulticastMembershipProvider} will be used if multicast is {@link Builder#withMulticastEnabled() enabled},
- * otherwise the {@link BootstrapMembershipProvider} will be used if no provider is explicitly provided.
+ * Cluster membership is determined by a configurable {@link NodeDiscoveryProvider}. To configure the membership
+ * provider use {@link Builder#withMembershipProvider(NodeDiscoveryProvider)}. By default, the
+ * {@link MulticastDiscoveryProvider} will be used if multicast is {@link Builder#withMulticastEnabled() enabled},
+ * otherwise the {@link BootstrapDiscoveryProvider} will be used if no provider is explicitly provided.
  */
 public class AtomixCluster implements BootstrapService, Managed<Void> {
   private static final String[] DEFAULT_RESOURCES = new String[]{"cluster"};
@@ -158,7 +160,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
 
   protected final ManagedMessagingService messagingService;
   protected final ManagedBroadcastService broadcastService;
-  protected final ClusterMembershipProvider locationProvider;
+  protected final NodeDiscoveryProvider locationProvider;
   protected final ManagedClusterMembershipService membershipService;
   protected final ManagedClusterCommunicationService communicationService;
   protected final ManagedClusterEventService eventService;
@@ -179,7 +181,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     this.messagingService = buildMessagingService(config);
     this.broadcastService = buildBroadcastService(config);
     this.locationProvider = buildLocationProvider(config);
-    this.membershipService = buildClusterMembershipService(config, this, locationProvider);
+    this.membershipService = buildClusterMembershipService(config, this, messagingService, locationProvider);
     this.communicationService = buildClusterMessagingService(membershipService, messagingService);
     this.eventService = buildClusterEventService(membershipService, messagingService);
   }
@@ -328,15 +330,15 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    * Builds a member location provider.
    */
   @SuppressWarnings("unchecked")
-  protected static ClusterMembershipProvider buildLocationProvider(ClusterConfig config) {
-    ClusterMembershipProvider.Config locationProviderConfig = config.getLocationProviderConfig();
+  protected static NodeDiscoveryProvider buildLocationProvider(ClusterConfig config) {
+    NodeDiscoveryProvider.Config locationProviderConfig = config.getLocationProviderConfig();
     if (locationProviderConfig != null) {
       return locationProviderConfig.getType().newProvider(locationProviderConfig);
     }
     if (config.isMulticastEnabled()) {
-      return new MulticastMembershipProvider(new MulticastMembershipProvider.Config());
+      return new MulticastDiscoveryProvider(new MulticastDiscoveryProvider.Config());
     } else {
-      return new BootstrapMembershipProvider(Collections.emptyList());
+      return new BootstrapDiscoveryProvider(Collections.emptyList());
     }
   }
 
@@ -346,7 +348,8 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   protected static ManagedClusterMembershipService buildClusterMembershipService(
       ClusterConfig config,
       BootstrapService bootstrapService,
-      ClusterMembershipProvider locationProvider) {
+      MessagingService messagingService,
+      NodeDiscoveryProvider discoveryProvider) {
     // If the local node has not be configured, create a default node.
     Member localMember = Member.builder()
         .withId(config.getMemberId())
@@ -356,7 +359,11 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
         .withZone(config.getZone())
         .withMetadata(config.getMetadata())
         .build();
-    return new DefaultClusterMembershipService(localMember, bootstrapService, locationProvider);
+    return new DefaultClusterMembershipService(
+        localMember,
+        new DefaultNodeDiscoveryService(bootstrapService, localMember, discoveryProvider),
+        bootstrapService,
+        config);
   }
 
   /**
@@ -557,12 +564,45 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     }
 
     /**
+     * Sets the reachability broadcast interval.
+     *
+     * @param interval the reachability broadcast interval
+     * @return the Atomix builder
+     */
+    public Builder setBroadcastInterval(Duration interval) {
+      config.setBroadcastInterval((int) interval.toMillis());
+      return this;
+    }
+
+    /**
+     * Sets the reachability failure detection threshold.
+     *
+     * @param threshold the reachability failure detection threshold
+     * @return the Atomix builder
+     */
+    public Builder setReachabilityThreshold(int threshold) {
+      config.setReachabilityThreshold(threshold);
+      return this;
+    }
+
+    /**
+     * Sets the reachability failure timeout.
+     *
+     * @param timeout the reachability failure timeout
+     * @return the Atomix builder
+     */
+    public Builder withReachabilityTimeout(Duration timeout) {
+      config.setReachabilityTimeout((int) timeout.toMillis());
+      return this;
+    }
+
+    /**
      * Sets the membership provider.
      *
      * @param locationProvider the membership provider
      * @return the Atomix cluster builder
      */
-    public Builder withMembershipProvider(ClusterMembershipProvider locationProvider) {
+    public Builder withMembershipProvider(NodeDiscoveryProvider locationProvider) {
       config.setMembershipProviderConfig(locationProvider.config());
       return this;
     }

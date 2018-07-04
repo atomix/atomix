@@ -15,50 +15,50 @@
  */
 package io.atomix.cluster;
 
-import io.atomix.utils.config.Config;
 import io.atomix.utils.net.Address;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Node configuration.
+ * Member configuration.
  */
-public class MemberConfig implements Config {
+public class MemberConfig extends NodeConfig {
   private MemberId id = MemberId.anonymous();
-  private Address address;
   private String zone;
   private String rack;
   private String host;
   private Map<String, String> metadata = new HashMap<>();
 
   /**
-   * Returns the node identifier.
+   * Returns the member identifier.
    *
-   * @return the node identifier
+   * @return the member identifier
    */
   public MemberId getId() {
-    if (id == null) {
-      id = MemberId.from(address.address().getHostName());
-    }
     return id;
   }
 
   /**
-   * Sets the node identifier.
+   * Sets the member identifier.
    *
-   * @param id the node identifier
-   * @return the node configuration
+   * @param id the member identifier
+   * @return the member configuration
    */
   public MemberConfig setId(String id) {
-    return setId(MemberId.from(id));
+    return setId(id != null ? MemberId.from(id) : null);
+  }
+
+  @Override
+  public MemberConfig setId(NodeId id) {
+    return setId(id != null ? MemberId.from(id.id()) : null);
   }
 
   /**
-   * Sets the node identifier.
+   * Sets the member identifier.
    *
-   * @param id the node identifier
-   * @return the node configuration
+   * @param id the member identifier
+   * @return the member configuration
    */
   public MemberConfig setId(MemberId id) {
     this.id = id != null ? id : MemberId.anonymous();
@@ -66,49 +66,50 @@ public class MemberConfig implements Config {
   }
 
   /**
-   * Returns the node address.
+   * Returns the member address.
    *
-   * @return the node address
+   * @return the member address
    */
   public Address getAddress() {
-    return address;
+    return super.getAddress();
   }
 
   /**
-   * Sets the node address.
+   * Sets the member address.
    *
-   * @param address the node address
-   * @return the node configuration
+   * @param address the member address
+   * @return the member configuration
    */
   public MemberConfig setAddress(String address) {
-    return setAddress(Address.from(address));
-  }
-
-  /**
-   * Sets the node address.
-   *
-   * @param address the node address
-   * @return the node configuration
-   */
-  public MemberConfig setAddress(Address address) {
-    this.address = address;
+    super.setAddress(address);
     return this;
   }
 
   /**
-   * Returns the node zone.
+   * Sets the member address.
    *
-   * @return the node zone
+   * @param address the member address
+   * @return the member configuration
+   */
+  public MemberConfig setAddress(Address address) {
+    super.setAddress(address);
+    return this;
+  }
+
+  /**
+   * Returns the member zone.
+   *
+   * @return the member zone
    */
   public String getZone() {
     return zone;
   }
 
   /**
-   * Sets the node zone.
+   * Sets the member zone.
    *
-   * @param zone the node zone
-   * @return the node configuration
+   * @param zone the member zone
+   * @return the member configuration
    */
   public MemberConfig setZone(String zone) {
     this.zone = zone;
@@ -116,19 +117,19 @@ public class MemberConfig implements Config {
   }
 
   /**
-   * Returns the node rack.
+   * Returns the member rack.
    *
-   * @return the node rack
+   * @return the member rack
    */
   public String getRack() {
     return rack;
   }
 
   /**
-   * Sets the node rack.
+   * Sets the member rack.
    *
-   * @param rack the node rack
-   * @return the node configuration
+   * @param rack the member rack
+   * @return the member configuration
    */
   public MemberConfig setRack(String rack) {
     this.rack = rack;
@@ -136,19 +137,19 @@ public class MemberConfig implements Config {
   }
 
   /**
-   * Returns the node host.
+   * Returns the member host.
    *
-   * @return the node host
+   * @return the member host
    */
   public String getHost() {
     return host;
   }
 
   /**
-   * Sets the node host.
+   * Sets the member host.
    *
-   * @param host the node host
-   * @return the node configuration
+   * @param host the member host
+   * @return the member configuration
    */
   public MemberConfig setHost(String host) {
     this.host = host;
@@ -156,19 +157,19 @@ public class MemberConfig implements Config {
   }
 
   /**
-   * Returns the node metadata.
+   * Returns the member metadata.
    *
-   * @return the node metadata
+   * @return the member metadata
    */
   public Map<String, String> getMetadata() {
     return metadata;
   }
 
   /**
-   * Sets the node metadata.
+   * Sets the member metadata.
    *
-   * @param metadata the node metadata
-   * @return the node configuration
+   * @param metadata the member metadata
+   * @return the member configuration
    */
   public MemberConfig setMetadata(Map<String, String> metadata) {
     this.metadata = metadata;
@@ -176,11 +177,11 @@ public class MemberConfig implements Config {
   }
 
   /**
-   * Adds a node tag.
+   * Adds member metadata.
    *
    * @param key   the metadata key to add
    * @param value the metadata value to add
-   * @return the node configuration
+   * @return the member configuration
    */
   public MemberConfig addMetadata(String key, String value) {
     this.metadata.put(key, value);

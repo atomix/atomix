@@ -16,11 +16,13 @@
 package io.atomix.protocols.raft.test;
 
 import com.google.common.collect.Maps;
-import io.atomix.cluster.BootstrapMembershipProvider;
+import io.atomix.cluster.BootstrapDiscoveryProvider;
 import io.atomix.cluster.BootstrapService;
+import io.atomix.cluster.ClusterConfig;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
+import io.atomix.cluster.impl.DefaultNodeDiscoveryService;
 import io.atomix.cluster.messaging.BroadcastService;
 import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingService;
@@ -483,23 +485,26 @@ public class RaftPerformanceTest implements Runnable {
       protocol = protocolFactory.newServerProtocol(member.id());
     }
 
+    BootstrapService bootstrapService = new BootstrapService() {
+      @Override
+      public MessagingService getMessagingService() {
+        return messagingService;
+      }
+
+      @Override
+      public BroadcastService getBroadcastService() {
+        return new BroadcastServiceAdapter();
+      }
+    };
+
     RaftServer.Builder builder = RaftServer.builder(member.id())
         .withProtocol(protocol)
         .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
         .withMembershipService(new DefaultClusterMembershipService(
             member,
-            new BootstrapService() {
-              @Override
-              public MessagingService getMessagingService() {
-                return messagingService;
-              }
-
-              @Override
-              public BroadcastService getBroadcastService() {
-                return new BroadcastServiceAdapter();
-              }
-            },
-            new BootstrapMembershipProvider(members)))
+            new DefaultNodeDiscoveryService(bootstrapService, member, new BootstrapDiscoveryProvider(members)),
+            bootstrapService,
+            new ClusterConfig()))
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.MAPPED)
             .withDirectory(new File(String.format("target/perf-logs/%s", member.id())))

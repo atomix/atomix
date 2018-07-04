@@ -18,7 +18,7 @@ package io.atomix.cluster;
 import io.atomix.utils.event.EventListener;
 
 /**
- * Member location event listener.
+ * Node discovery event listener.
  */
-public interface MemberLocationEventListener extends EventListener<MemberLocationEvent> {
+public interface NodeDiscoveryEventListener extends EventListener<NodeDiscoveryEvent> {
 }

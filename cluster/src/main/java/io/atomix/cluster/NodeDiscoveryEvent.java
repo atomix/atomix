@@ -16,43 +16,41 @@
 package io.atomix.cluster;
 
 import io.atomix.utils.event.AbstractEvent;
-import io.atomix.utils.net.Address;
 
 /**
- * Member location event.
+ * Node discovery event.
  */
-public class MemberLocationEvent extends AbstractEvent<MemberLocationEvent.Type, Address> {
+public class NodeDiscoveryEvent extends AbstractEvent<NodeDiscoveryEvent.Type, Node> {
 
   /**
-   * Location event type.
+   * Node discovery event type.
    */
   public enum Type {
-
     /**
-     * Called when a member has joined the cluster.
+     * Indicates that the node joined the cluster.
      */
     JOIN,
 
     /**
-     * Called when a member has left the cluster.
+     * Indicates that the node left the cluster.
      */
     LEAVE,
   }
 
-  public MemberLocationEvent(Type type, Address subject) {
+  public NodeDiscoveryEvent(Type type, Node subject) {
     super(type, subject);
   }
 
-  public MemberLocationEvent(Type type, Address subject, long time) {
+  public NodeDiscoveryEvent(Type type, Node subject, long time) {
     super(type, subject, time);
   }
 
   /**
-   * Returns the member location address.
+   * Returns the node.
    *
-   * @return the member location address
+   * @return the node
    */
-  public Address address() {
+  public Node node() {
     return subject();
   }
 }

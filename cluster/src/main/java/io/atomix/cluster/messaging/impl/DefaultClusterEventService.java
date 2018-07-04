@@ -23,9 +23,9 @@ import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
-import io.atomix.cluster.messaging.Subscription;
 import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.cluster.messaging.Subscription;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.Namespace;
@@ -102,7 +102,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
     byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.ALL, encoder.apply(message)));
     getSubscriberNodes(topic).forEach(memberId -> {
       Member member = membershipService.getMember(memberId);
-      if (member != null && member.getState() == Member.State.ACTIVE) {
+      if (member != null && member.isReachable()) {
         messagingService.sendAsync(member.address(), topic, payload);
       }
     });
@@ -113,7 +113,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
     MemberId memberId = getNextMemberId(topic);
     if (memberId != null) {
       Member member = membershipService.getMember(memberId);
-      if (member != null && member.getState() == Member.State.ACTIVE) {
+      if (member != null && member.isReachable()) {
         byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.DIRECT, encoder.apply(message)));
         return messagingService.sendAsync(member.address(), topic, payload);
       }
@@ -126,7 +126,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
     MemberId memberId = getNextMemberId(topic);
     if (memberId != null) {
       Member member = membershipService.getMember(memberId);
-      if (member != null && member.getState() == Member.State.ACTIVE) {
+      if (member != null && member.isReachable()) {
         byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.DIRECT, encoder.apply(message)));
         return messagingService.sendAndReceive(member.address(), topic, payload, timeout).thenApply(decoder);
       }
@@ -227,7 +227,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
     List<Member> members = membershipService.getMembers()
         .stream()
         .filter(node -> !localMemberId.equals(node.id()))
-        .filter(node -> node.getState() == Member.State.ACTIVE)
+        .filter(node -> node.isReachable())
         .collect(Collectors.toList());
 
     if (!members.isEmpty()) {

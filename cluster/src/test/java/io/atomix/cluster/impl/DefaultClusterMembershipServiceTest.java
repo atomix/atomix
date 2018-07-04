@@ -15,12 +15,13 @@
  */
 package io.atomix.cluster.impl;
 
-import io.atomix.cluster.BootstrapMembershipProvider;
+import io.atomix.cluster.BootstrapDiscoveryProvider;
+import io.atomix.cluster.BootstrapService;
+import io.atomix.cluster.ClusterConfig;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
-import io.atomix.cluster.Member.State;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.TestBootstrapService;
 import io.atomix.cluster.messaging.impl.TestBroadcastServiceFactory;
@@ -37,7 +38,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Default cluster service test.
@@ -64,28 +67,34 @@ public class DefaultClusterMembershipServiceTest {
     Collection<Address> bootstrapLocations = buildBootstrapLocations(3);
 
     Member localMember1 = buildMember(1);
+    BootstrapService bootstrapService1 = new TestBootstrapService(
+        messagingServiceFactory.newMessagingService(localMember1.address()).start().join(),
+        broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService clusterService1 = new DefaultClusterMembershipService(
         localMember1,
-        new TestBootstrapService(
-            messagingServiceFactory.newMessagingService(localMember1.address()).start().join(),
-            broadcastServiceFactory.newBroadcastService().start().join()),
-        new BootstrapMembershipProvider(bootstrapLocations));
+        new DefaultNodeDiscoveryService(bootstrapService1, localMember1, new BootstrapDiscoveryProvider(bootstrapLocations)),
+        bootstrapService1,
+        new ClusterConfig());
 
     Member localMember2 = buildMember(2);
+    BootstrapService bootstrapService2 = new TestBootstrapService(
+        messagingServiceFactory.newMessagingService(localMember2.address()).start().join(),
+        broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService clusterService2 = new DefaultClusterMembershipService(
         localMember2,
-        new TestBootstrapService(
-            messagingServiceFactory.newMessagingService(localMember2.address()).start().join(),
-            broadcastServiceFactory.newBroadcastService().start().join()),
-        new BootstrapMembershipProvider(bootstrapLocations));
+        new DefaultNodeDiscoveryService(bootstrapService2, localMember2, new BootstrapDiscoveryProvider(bootstrapLocations)),
+        bootstrapService2,
+        new ClusterConfig());
 
     Member localMember3 = buildMember(3);
+    BootstrapService bootstrapService3 = new TestBootstrapService(
+        messagingServiceFactory.newMessagingService(localMember3.address()).start().join(),
+        broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService clusterService3 = new DefaultClusterMembershipService(
         localMember3,
-        new TestBootstrapService(
-            messagingServiceFactory.newMessagingService(localMember3.address()).start().join(),
-            broadcastServiceFactory.newBroadcastService().start().join()),
-        new BootstrapMembershipProvider(bootstrapLocations));
+        new DefaultNodeDiscoveryService(bootstrapService3, localMember3, new BootstrapDiscoveryProvider(bootstrapLocations)),
+        bootstrapService3,
+        new ClusterConfig());
 
     assertNull(clusterService1.getMember(MemberId.from("1")));
     assertNull(clusterService1.getMember(MemberId.from("2")));
@@ -105,21 +114,22 @@ public class DefaultClusterMembershipServiceTest {
     assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getMember(MemberId.from("2")).id().type());
     assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getMember(MemberId.from("3")).id().type());
 
-    assertEquals(State.ACTIVE, clusterService1.getLocalMember().getState());
-    assertEquals(State.ACTIVE, clusterService1.getMember(MemberId.from("1")).getState());
-    assertEquals(State.ACTIVE, clusterService1.getMember(MemberId.from("2")).getState());
-    assertEquals(State.ACTIVE, clusterService1.getMember(MemberId.from("3")).getState());
+    assertTrue(clusterService1.getLocalMember().isActive());
+    assertTrue(clusterService1.getMember(MemberId.from("1")).isActive());
+    assertTrue(clusterService1.getMember(MemberId.from("2")).isActive());
+    assertTrue(clusterService1.getMember(MemberId.from("3")).isActive());
 
     Member anonymousMember = buildMember(4);
-
+    BootstrapService ephemeralBootstrapService = new TestBootstrapService(
+        messagingServiceFactory.newMessagingService(anonymousMember.address()).start().join(),
+        broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService ephemeralClusterService = new DefaultClusterMembershipService(
         anonymousMember,
-        new TestBootstrapService(
-            messagingServiceFactory.newMessagingService(anonymousMember.address()).start().join(),
-            broadcastServiceFactory.newBroadcastService().start().join()),
-        new BootstrapMembershipProvider(bootstrapLocations));
+        new DefaultNodeDiscoveryService(ephemeralBootstrapService, anonymousMember, new BootstrapDiscoveryProvider(bootstrapLocations)),
+        ephemeralBootstrapService,
+        new ClusterConfig());
 
-    assertEquals(State.INACTIVE, ephemeralClusterService.getLocalMember().getState());
+    assertFalse(ephemeralClusterService.getLocalMember().isActive());
 
     assertNull(ephemeralClusterService.getMember(MemberId.from("1")));
     assertNull(ephemeralClusterService.getMember(MemberId.from("2")));
@@ -143,9 +153,9 @@ public class DefaultClusterMembershipServiceTest {
     assertEquals(3, clusterService2.getMembers().size());
 
     assertNull(clusterService2.getMember(MemberId.from("1")));
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("2")).getState());
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("3")).getState());
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("4")).getState());
+    assertTrue(clusterService2.getMember(MemberId.from("2")).isActive());
+    assertTrue(clusterService2.getMember(MemberId.from("3")).isActive());
+    assertTrue(clusterService2.getMember(MemberId.from("4")).isActive());
 
     ephemeralClusterService.stop().join();
 
@@ -153,8 +163,8 @@ public class DefaultClusterMembershipServiceTest {
 
     assertEquals(2, clusterService2.getMembers().size());
     assertNull(clusterService2.getMember(MemberId.from("1")));
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("2")).getState());
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("3")).getState());
+    assertTrue(clusterService2.getMember(MemberId.from("2")).isActive());
+    assertTrue(clusterService2.getMember(MemberId.from("3")).isActive());
     assertNull(clusterService2.getMember(MemberId.from("4")));
 
     Thread.sleep(2500);
@@ -162,8 +172,8 @@ public class DefaultClusterMembershipServiceTest {
     assertEquals(2, clusterService2.getMembers().size());
 
     assertNull(clusterService2.getMember(MemberId.from("1")));
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("2")).getState());
-    assertEquals(State.ACTIVE, clusterService2.getMember(MemberId.from("3")).getState());
+    assertTrue(clusterService2.getMember(MemberId.from("2")).isActive());
+    assertTrue(clusterService2.getMember(MemberId.from("3")).isActive());
     assertNull(clusterService2.getMember(MemberId.from("4")));
 
     TestClusterMembershipEventListener eventListener = new TestClusterMembershipEventListener();
@@ -172,7 +182,7 @@ public class DefaultClusterMembershipServiceTest {
     clusterService3.getLocalMember().metadata().put("foo", "bar");
 
     ClusterMembershipEvent event = eventListener.nextEvent();
-    assertEquals(ClusterMembershipEvent.Type.MEMBER_UPDATED, event.type());
+    assertEquals(ClusterMembershipEvent.Type.METADATA_CHANGED, event.type());
     assertEquals("bar", event.subject().metadata().get("foo"));
 
     CompletableFuture.allOf(new CompletableFuture[]{clusterService1.stop(), clusterService2.stop(),

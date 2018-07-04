@@ -17,7 +17,7 @@ package io.atomix.rest.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import io.atomix.cluster.MulticastMembershipProvider;
+import io.atomix.cluster.MulticastDiscoveryProvider;
 import io.atomix.core.Atomix;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.rest.ManagedRestService;
@@ -422,7 +422,7 @@ public class VertxRestServiceTest {
         .withMemberId(String.valueOf(memberId))
         .withAddress(Address.from("localhost", findAvailablePort(BASE_PORT)))
         .withMulticastEnabled()
-        .withMembershipProvider(new MulticastMembershipProvider())
+        .withMembershipProvider(new MulticastDiscoveryProvider())
         .withManagementGroup(PrimaryBackupPartitionGroup.builder("system")
             .withNumPartitions(1)
             .build())

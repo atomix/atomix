@@ -45,7 +45,7 @@ public class AtomixClusterTest {
     AtomixCluster cluster1 = AtomixCluster.builder()
         .withMemberId("foo")
         .withAddress("localhost:5000")
-        .withMembershipProvider(BootstrapMembershipProvider.builder()
+        .withMembershipProvider(BootstrapDiscoveryProvider.builder()
             .withLocations(bootstrapLocations)
             .build())
         .build();
@@ -56,7 +56,7 @@ public class AtomixClusterTest {
     AtomixCluster cluster2 = AtomixCluster.builder()
         .withMemberId("bar")
         .withAddress("localhost:5001")
-        .withMembershipProvider(BootstrapMembershipProvider.builder()
+        .withMembershipProvider(BootstrapDiscoveryProvider.builder()
             .withLocations(bootstrapLocations)
             .build())
         .build();
@@ -67,7 +67,7 @@ public class AtomixClusterTest {
     AtomixCluster cluster3 = AtomixCluster.builder()
         .withMemberId("baz")
         .withAddress("localhost:5002")
-        .withMembershipProvider(BootstrapMembershipProvider.builder()
+        .withMembershipProvider(BootstrapDiscoveryProvider.builder()
             .withLocations(bootstrapLocations)
             .build())
         .build();
@@ -89,17 +89,17 @@ public class AtomixClusterTest {
     AtomixCluster cluster1 = AtomixCluster.builder()
         .withAddress("localhost:5000")
         .withMulticastEnabled()
-        .withMembershipProvider(new MulticastMembershipProvider())
+        .withMembershipProvider(new MulticastDiscoveryProvider())
         .build();
     AtomixCluster cluster2 = AtomixCluster.builder()
         .withAddress("localhost:5001")
         .withMulticastEnabled()
-        .withMembershipProvider(new MulticastMembershipProvider())
+        .withMembershipProvider(new MulticastDiscoveryProvider())
         .build();
     AtomixCluster cluster3 = AtomixCluster.builder()
         .withAddress("localhost:5002")
         .withMulticastEnabled()
-        .withMembershipProvider(new MulticastMembershipProvider())
+        .withMembershipProvider(new MulticastDiscoveryProvider())
         .build();
 
     TestClusterMembershipEventListener listener1 = new TestClusterMembershipEventListener();

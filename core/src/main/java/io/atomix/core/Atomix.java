@@ -18,7 +18,7 @@ package io.atomix.core;
 import com.google.common.collect.Streams;
 import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.cluster.ClusterMembershipProvider;
+import io.atomix.cluster.NodeDiscoveryProvider;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.barrier.DistributedCyclicBarrier;
 import io.atomix.core.counter.AtomicCounter;
@@ -160,7 +160,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         new PolymorphicTypeMapper(PrimitiveConfig.class, PrimitiveType.class),
         new PolymorphicTypeMapper(PrimitiveProtocolConfig.class, PrimitiveProtocol.Type.class),
         new PolymorphicTypeMapper(Profile.Config.class, Profile.Type.class),
-        new PolymorphicTypeMapper(ClusterMembershipProvider.Config.class, ClusterMembershipProvider.Type.class));
+        new PolymorphicTypeMapper(NodeDiscoveryProvider.Config.class, NodeDiscoveryProvider.Type.class));
     return mapper.loadFile(AtomixConfig.class, file, RESOURCES);
   }
 
@@ -758,7 +758,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     }
 
     @Override
-    public Builder withMembershipProvider(ClusterMembershipProvider locationProvider) {
+    public Builder withMembershipProvider(NodeDiscoveryProvider locationProvider) {
       super.withMembershipProvider(locationProvider);
       return this;
     }

@@ -15,8 +15,8 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.BootstrapMembershipProvider;
-import io.atomix.cluster.MulticastMembershipProvider;
+import io.atomix.cluster.BootstrapDiscoveryProvider;
+import io.atomix.cluster.MulticastDiscoveryProvider;
 import io.atomix.core.profile.Profile;
 import io.atomix.utils.net.Address;
 import org.junit.AfterClass;
@@ -58,7 +58,7 @@ public abstract class AbstractAtomixTest {
         .withAddress("localhost", BASE_PORT + id)
         .withMetadata(metadata)
         .withMulticastEnabled()
-        .withMembershipProvider(new MulticastMembershipProvider());
+        .withMembershipProvider(new MulticastDiscoveryProvider());
   }
 
   /**
@@ -75,7 +75,7 @@ public abstract class AbstractAtomixTest {
         .withAddress("localhost", BASE_PORT + id)
         .withMetadata(metadata)
         .withMulticastEnabled()
-        .withMembershipProvider(!locations.isEmpty() ? new BootstrapMembershipProvider(locations) : new MulticastMembershipProvider());
+        .withMembershipProvider(!locations.isEmpty() ? new BootstrapDiscoveryProvider(locations) : new MulticastDiscoveryProvider());
   }
 
   /**
