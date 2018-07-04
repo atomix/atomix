@@ -195,11 +195,14 @@ public class AtomixTest extends AbstractAtomixTest {
     TestClusterMembershipEventListener eventListener3 = new TestClusterMembershipEventListener();
     instances.get(2).getMembershipService().addListener(eventListener3);
     instances.get(0).stop().get(30, TimeUnit.SECONDS);
+    assertEquals(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, eventListener2.event().type());
     assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, eventListener2.event().type());
     assertEquals(2, instances.get(1).getMembershipService().getMembers().size());
+    assertEquals(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, eventListener3.event().type());
     assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, eventListener3.event().type());
     assertEquals(2, instances.get(2).getMembershipService().getMembers().size());
     instances.get(1).stop().get(30, TimeUnit.SECONDS);
+    assertEquals(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, eventListener3.event().type());
     assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, eventListener3.event().type());
     assertEquals(1, instances.get(2).getMembershipService().getMembers().size());
     instances.get(2).stop().get(30, TimeUnit.SECONDS);
@@ -247,22 +250,20 @@ public class AtomixTest extends AbstractAtomixTest {
     assertEquals(1, client2.getPartitionService().getPartitionGroups().size());
 
     // client2 added to data node
-    ClusterMembershipEvent event2 = dataListener.event();
-    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, event2.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, dataListener.event().type());
 
     // client2 added to client node
-    event1 = clientListener.event();
-    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, clientListener.event().type());
 
     client2.stop().get(30, TimeUnit.SECONDS);
 
     // client2 removed from data node
-    event1 = dataListener.event();
-    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, dataListener.event().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, dataListener.event().type());
 
     // client2 removed from client node
-    event1 = clientListener.event();
-    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, clientListener.event().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, clientListener.event().type());
   }
 
   /**
