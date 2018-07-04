@@ -131,7 +131,8 @@ public class Member extends Node {
     this.zone = zone;
     this.rack = rack;
     this.host = host;
-    this.properties = new Properties(properties);
+    this.properties = new Properties();
+    this.properties.putAll(properties);
   }
 
   @Override
@@ -231,7 +232,7 @@ public class Member extends Node {
         .add("zone", zone())
         .add("rack", rack())
         .add("host", host())
-        .add("metadata", properties())
+        .add("properties", properties())
         .omitNullValues()
         .toString();
   }
