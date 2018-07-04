@@ -15,11 +15,11 @@
  */
 package io.atomix.core.semaphore;
 
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
 public abstract class DistributedSemaphoreBuilder
-        extends DistributedPrimitiveBuilder<DistributedSemaphoreBuilder, DistributedSemaphoreConfig, DistributedSemaphore> {
+        extends PrimitiveBuilder<DistributedSemaphoreBuilder, DistributedSemaphoreConfig, DistributedSemaphore> {
   public DistributedSemaphoreBuilder(String name, DistributedSemaphoreConfig config, PrimitiveManagementService managementService) {
     super(DistributedSemaphoreType.instance(), name, config, managementService);
   }

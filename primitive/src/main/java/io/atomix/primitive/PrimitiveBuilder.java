@@ -39,7 +39,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @param <B> builder type
  * @param <P> primitive type
  */
-public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig, P extends DistributedPrimitive> implements Builder<P> {
+public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig, P extends DistributedPrimitive> implements Builder<P> {
   protected final PrimitiveType type;
   protected final String name;
   protected final C config;
@@ -47,7 +47,7 @@ public abstract class DistributedPrimitiveBuilder<B extends DistributedPrimitive
   protected PrimitiveProtocol protocol;
   protected final PrimitiveManagementService managementService;
 
-  public DistributedPrimitiveBuilder(PrimitiveType type, String name, C config, PrimitiveManagementService managementService) {
+  public PrimitiveBuilder(PrimitiveType type, String name, C config, PrimitiveManagementService managementService) {
     this.type = checkNotNull(type, "type cannot be null");
     this.name = checkNotNull(name, "name cannot be null");
     this.config = checkNotNull(config, "config cannot be null");

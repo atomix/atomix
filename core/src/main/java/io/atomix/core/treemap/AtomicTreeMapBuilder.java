@@ -16,14 +16,14 @@
 
 package io.atomix.core.treemap;
 
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
 /**
  * Builder for {@link AtomicTreeMap}.
  */
 public abstract class AtomicTreeMapBuilder<V>
-    extends DistributedPrimitiveBuilder<AtomicTreeMapBuilder<V>, AtomicTreeMapConfig, AtomicTreeMap<V>> {
+    extends PrimitiveBuilder<AtomicTreeMapBuilder<V>, AtomicTreeMapConfig, AtomicTreeMap<V>> {
   public AtomicTreeMapBuilder(String name, AtomicTreeMapConfig config, PrimitiveManagementService managementService) {
     super(AtomicTreeMapType.instance(), name, config, managementService);
   }

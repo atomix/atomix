@@ -16,14 +16,14 @@
 
 package io.atomix.core.multimap;
 
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
 /**
  * A builder class for {@code AsyncConsistentMultimap}.
  */
 public abstract class AtomicMultimapBuilder<K, V>
-    extends DistributedPrimitiveBuilder<AtomicMultimapBuilder<K, V>, AtomicMultimapConfig, AtomicMultimap<K, V>> {
+    extends PrimitiveBuilder<AtomicMultimapBuilder<K, V>, AtomicMultimapConfig, AtomicMultimap<K, V>> {
   public AtomicMultimapBuilder(String name, AtomicMultimapConfig config, PrimitiveManagementService managementService) {
     super(AtomicMultimapType.instance(), name, config, managementService);
   }

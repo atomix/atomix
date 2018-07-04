@@ -16,14 +16,14 @@
 package io.atomix.core.transaction;
 
 import io.atomix.core.map.AtomicMapType;
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
 /**
  * Transactional map builder.
  */
 public abstract class TransactionalMapBuilder<K, V>
-    extends DistributedPrimitiveBuilder<TransactionalMapBuilder<K, V>, TransactionalMapConfig, TransactionalMap<K, V>> {
+    extends PrimitiveBuilder<TransactionalMapBuilder<K, V>, TransactionalMapConfig, TransactionalMap<K, V>> {
   protected TransactionalMapBuilder(String name, TransactionalMapConfig config, PrimitiveManagementService managementService) {
     super(AtomicMapType.instance(), name, config, managementService);
   }

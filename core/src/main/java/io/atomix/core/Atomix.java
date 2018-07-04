@@ -47,7 +47,7 @@ import io.atomix.core.utils.config.PolymorphicTypeMapper;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.config.ConfigService;
@@ -338,7 +338,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @Override
-  public <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
+  public <B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
       PrimitiveType<B, C, P> primitiveType) {
     return primitives.primitiveBuilder(name, primitiveType);
