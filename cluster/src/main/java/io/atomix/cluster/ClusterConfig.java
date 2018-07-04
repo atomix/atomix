@@ -42,7 +42,7 @@ public class ClusterConfig implements Config {
   private String rack;
   private String host;
   private Map<String, String> metadata = new HashMap<>();
-  private NodeDiscoveryProvider.Config locationProviderConfig;
+  private NodeDiscoveryProvider.Config discoveryConfig;
   private boolean multicastEnabled = false;
   private Address multicastAddress;
   private int broadcastInterval = DEFAULT_BROADCAST_INTERVAL;
@@ -230,22 +230,22 @@ public class ClusterConfig implements Config {
   }
 
   /**
-   * Returns the location provider configuration.
+   * Returns the node discovery provider configuration.
    *
-   * @return the location provider configuration
+   * @return the node discovery provider configuration
    */
-  public NodeDiscoveryProvider.Config getLocationProviderConfig() {
-    return locationProviderConfig;
+  public NodeDiscoveryProvider.Config getDiscoveryConfig() {
+    return discoveryConfig;
   }
 
   /**
-   * Sets the location provider configuration.
+   * Sets the node discovery provider configuration.
    *
-   * @param locationProviderConfig the location provider configuration
+   * @param discoveryConfig the node discovery provider configuration
    * @return the node configuration
    */
-  public ClusterConfig setMembershipProviderConfig(NodeDiscoveryProvider.Config locationProviderConfig) {
-    this.locationProviderConfig = checkNotNull(locationProviderConfig);
+  public ClusterConfig setDiscoveryConfig(NodeDiscoveryProvider.Config discoveryConfig) {
+    this.discoveryConfig = checkNotNull(discoveryConfig);
     return this;
   }
 
