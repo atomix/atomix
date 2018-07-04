@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -151,9 +152,12 @@ public class ConfigMapper {
   }
 
   protected void checkRemainingProperties(Set<String> propertyNames, String path, Class<?> clazz) {
+    Properties properties = System.getProperties();
     Set<String> cleanNames = propertyNames
         .stream()
         .map(propertyName -> toPath(path, propertyName))
+        .filter(propertyName -> !properties.containsKey(propertyName))
+        .filter(propertyName -> properties.entrySet().stream().noneMatch(entry -> entry.getKey().toString().startsWith(propertyName + ".")))
         .collect(Collectors.toSet());
     if (!cleanNames.isEmpty()) {
       throw new ConfigurationException("Unknown properties present in configuration: " + Joiner.on(", ").join(cleanNames));
