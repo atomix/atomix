@@ -23,6 +23,7 @@ import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
+import io.atomix.cluster.Node;
 import io.atomix.cluster.TestBootstrapService;
 import io.atomix.cluster.messaging.impl.TestBroadcastServiceFactory;
 import io.atomix.cluster.messaging.impl.TestMessagingServiceFactory;
@@ -53,9 +54,12 @@ public class DefaultClusterMembershipServiceTest {
         .build();
   }
 
-  private Collection<Address> buildBootstrapLocations(int nodes) {
+  private Collection<Node> buildBootstrapNodes(int nodes) {
     return IntStream.range(1, nodes + 1)
-        .mapToObj(id -> Address.from("localhost", id))
+        .mapToObj(id -> Node.builder()
+            .withId(String.valueOf(id))
+            .withAddress(Address.from("localhost", id))
+            .build())
         .collect(Collectors.toList());
   }
 
@@ -64,7 +68,7 @@ public class DefaultClusterMembershipServiceTest {
     TestMessagingServiceFactory messagingServiceFactory = new TestMessagingServiceFactory();
     TestBroadcastServiceFactory broadcastServiceFactory = new TestBroadcastServiceFactory();
 
-    Collection<Address> bootstrapLocations = buildBootstrapLocations(3);
+    Collection<Node> bootstrapLocations = buildBootstrapNodes(3);
 
     Member localMember1 = buildMember(1);
     BootstrapService bootstrapService1 = new TestBootstrapService(
@@ -108,11 +112,6 @@ public class DefaultClusterMembershipServiceTest {
     assertEquals(3, clusterService1.getMembers().size());
     assertEquals(3, clusterService2.getMembers().size());
     assertEquals(3, clusterService3.getMembers().size());
-
-    assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getLocalMember().id().type());
-    assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getMember(MemberId.from("1")).id().type());
-    assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getMember(MemberId.from("2")).id().type());
-    assertEquals(MemberId.Type.IDENTIFIED, clusterService1.getMember(MemberId.from("3")).id().type());
 
     assertTrue(clusterService1.getLocalMember().isActive());
     assertTrue(clusterService1.getMember(MemberId.from("1")).isActive());

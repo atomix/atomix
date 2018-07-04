@@ -15,12 +15,14 @@
  */
 package io.atomix.protocols.raft.test;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.cluster.BootstrapDiscoveryProvider;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.ClusterConfig;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
+import io.atomix.cluster.Node;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.impl.DefaultNodeDiscoveryService;
 import io.atomix.cluster.messaging.BroadcastService;
@@ -214,7 +216,6 @@ public class RaftPerformanceTest implements Runnable {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .register(SessionId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
@@ -238,7 +239,6 @@ public class RaftPerformanceTest implements Runnable {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
@@ -457,7 +457,7 @@ public class RaftPerformanceTest implements Runnable {
 
     CountDownLatch latch = new CountDownLatch(nodes);
     for (int i = 0; i < nodes; i++) {
-      RaftServer server = createServer(members.get(i), members.stream().map(Member::address).collect(Collectors.toList()));
+      RaftServer server = createServer(members.get(i), Lists.newArrayList(members));
       server.bootstrap(members.stream().map(Member::id).collect(Collectors.toList())).thenRun(latch::countDown);
       servers.add(server);
     }
@@ -470,7 +470,7 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Creates a Raft server.
    */
-  private RaftServer createServer(Member member, List<Address> members) {
+  private RaftServer createServer(Member member, List<Node> members) {
     RaftServerProtocol protocol;
     ManagedMessagingService messagingService;
     if (USE_NETTY) {

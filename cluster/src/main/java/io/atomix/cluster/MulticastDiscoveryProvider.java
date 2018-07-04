@@ -137,7 +137,7 @@ public class MulticastDiscoveryProvider
    * Member location provider configuration.
    */
   public static class Config implements NodeDiscoveryProvider.Config {
-    private static final int DEFAULT_BROADCAST_INTERVAL = 100;
+    private static final int DEFAULT_BROADCAST_INTERVAL = 1000;
     private static final int DEFAULT_FAILURE_TIMEOUT = 10000;
     private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
 
@@ -217,7 +217,6 @@ public class MulticastDiscoveryProvider
       .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
       .register(Node.class)
       .register(NodeId.class)
-      .register(NodeId.Type.class)
       .register(new AddressSerializer(), Address.class)
       .build());
 
@@ -263,22 +262,22 @@ public class MulticastDiscoveryProvider
     } else if (oldNode == null) {
       post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, node));
     }
+    failureDetectors.computeIfAbsent(node.id(), id -> new PhiAccrualFailureDetector()).report();
   }
 
-  private void broadcastLocation(Node localNode) {
+  private void broadcastNode(Node localNode) {
     bootstrap.getBroadcastService().broadcast(SERIALIZER.encode(localNode));
   }
 
   private void detectFailures(Node localNode) {
-    nodes.values().stream().filter(node -> !node.address().equals(localNode)).forEach(this::detectFailure);
+    nodes.values().stream().filter(node -> !node.address().equals(localNode.address())).forEach(this::detectFailure);
   }
 
   private void detectFailure(Node node) {
     PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
     double phi = failureDetector.phi();
     if (phi >= config.getFailureThreshold()
-        || (phi == 0.0 && failureDetector.lastUpdated() > 0
-        && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout())) {
+        || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout())) {
       LOGGER.info("Lost contact with {}", node);
       nodes.remove(node.address());
       failureDetectors.remove(node.id());
@@ -293,7 +292,7 @@ public class MulticastDiscoveryProvider
       post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, localNode));
       bootstrap.getBroadcastService().addListener(broadcastListener);
       broadcastFuture = broadcastScheduler.scheduleAtFixedRate(
-          () -> broadcastLocation(localNode),
+          () -> broadcastNode(localNode),
           broadcastInterval.toMillis(),
           broadcastInterval.toMillis(),
           TimeUnit.MILLISECONDS);
@@ -302,7 +301,7 @@ public class MulticastDiscoveryProvider
           config.getBroadcastInterval() / 2,
           config.getBroadcastInterval() / 2,
           TimeUnit.MILLISECONDS);
-      broadcastLocation(localNode);
+      broadcastNode(localNode);
       LOGGER.info("Joined");
     }
     return CompletableFuture.completedFuture(null);

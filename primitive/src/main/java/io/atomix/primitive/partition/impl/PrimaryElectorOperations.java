@@ -60,7 +60,6 @@ public enum PrimaryElectorOperations implements OperationId {
       .register(GetTerm.class)
       .register(GroupMember.class)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .register(MemberGroupId.class)
       .register(PartitionId.class)
       .build(PrimaryElectorOperations.class.getSimpleName());

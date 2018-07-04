@@ -60,14 +60,11 @@ public class DefaultClusterMembershipService
 
   private static final String METADATA_BROADCAST = "atomix-cluster-metadata";
 
-  private static final byte[] EMPTY_PAYLOAD = new byte[0];
-
   private static final Serializer SERIALIZER = Serializer.using(
       Namespace.builder()
           .register(Namespaces.BASIC)
           .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
           .register(MemberId.class)
-          .register(MemberId.Type.class)
           .register(ClusterHeartbeat.class)
           .register(StatefulMember.class)
           .register(new AddressSerializer(), Address.class)

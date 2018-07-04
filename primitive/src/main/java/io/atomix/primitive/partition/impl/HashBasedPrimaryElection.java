@@ -64,7 +64,6 @@ public class HashBasedPrimaryElection
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .build());
 
   private final PartitionId partitionId;

@@ -69,7 +69,6 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .register(LogicalTimestamp.class)
       .register(WallClockTimestamp.class)
       .register(InternalSubscriptionInfo.class)

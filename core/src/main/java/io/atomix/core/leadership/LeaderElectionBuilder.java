@@ -19,9 +19,9 @@ import io.atomix.cluster.MemberId;
 import io.atomix.primitive.DistributedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.NamespaceConfig;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.serializer.NamespaceConfig;
 
 /**
  * Builder for constructing new {@link AsyncLeaderElection} instances.
@@ -42,13 +42,11 @@ public abstract class LeaderElectionBuilder<T>
         serializer = Serializer.using(Namespace.builder()
             .register(Namespaces.BASIC)
             .register(MemberId.class)
-            .register(MemberId.Type.class)
             .build());
       } else {
         serializer = Serializer.using(Namespace.builder()
             .register(Namespaces.BASIC)
             .register(MemberId.class)
-            .register(MemberId.Type.class)
             .register(new Namespace(config))
             .build());
       }

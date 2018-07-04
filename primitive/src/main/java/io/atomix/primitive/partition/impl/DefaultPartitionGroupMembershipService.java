@@ -107,7 +107,6 @@ public class DefaultPartitionGroupMembershipService
     Namespace.Builder namespaceBuilder = Namespace.builder()
         .register(Namespaces.BASIC)
         .register(MemberId.class)
-        .register(MemberId.Type.class)
         .register(PartitionGroupMembership.class)
         .register(PartitionGroupInfo.class)
         .register(PartitionGroupConfig.class)

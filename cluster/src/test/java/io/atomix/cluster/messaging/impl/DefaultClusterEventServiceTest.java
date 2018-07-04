@@ -22,6 +22,7 @@ import io.atomix.cluster.ClusterConfig;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
+import io.atomix.cluster.Node;
 import io.atomix.cluster.TestBootstrapService;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.impl.DefaultNodeDiscoveryService;
@@ -55,9 +56,12 @@ public class DefaultClusterEventServiceTest {
         .build();
   }
 
-  private Collection<Address> buildBootstrapLocations(int nodes) {
+  private Collection<Node> buildBootstrapNodes(int nodes) {
     return IntStream.range(1, nodes + 1)
-        .mapToObj(id -> Address.from("localhost", id))
+        .mapToObj(id -> Node.builder()
+            .withId(String.valueOf(id))
+            .withAddress(Address.from("localhost", id))
+            .build())
         .collect(Collectors.toList());
   }
 
@@ -66,7 +70,7 @@ public class DefaultClusterEventServiceTest {
     TestMessagingServiceFactory messagingServiceFactory = new TestMessagingServiceFactory();
     TestBroadcastServiceFactory broadcastServiceFactory = new TestBroadcastServiceFactory();
 
-    Collection<Address> bootstrapLocations = buildBootstrapLocations(3);
+    Collection<Node> bootstrapLocations = buildBootstrapNodes(3);
 
     Member localMember1 = buildNode(1);
     MessagingService messagingService1 = messagingServiceFactory.newMessagingService(localMember1.address()).start().join();

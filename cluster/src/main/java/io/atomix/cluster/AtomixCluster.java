@@ -160,7 +160,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
 
   protected final ManagedMessagingService messagingService;
   protected final ManagedBroadcastService broadcastService;
-  protected final NodeDiscoveryProvider locationProvider;
+  protected final NodeDiscoveryProvider discoveryProvider;
   protected final ManagedClusterMembershipService membershipService;
   protected final ManagedClusterCommunicationService communicationService;
   protected final ManagedClusterEventService eventService;
@@ -180,8 +180,8 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   public AtomixCluster(ClusterConfig config) {
     this.messagingService = buildMessagingService(config);
     this.broadcastService = buildBroadcastService(config);
-    this.locationProvider = buildLocationProvider(config);
-    this.membershipService = buildClusterMembershipService(config, this, messagingService, locationProvider);
+    this.discoveryProvider = buildLocationProvider(config);
+    this.membershipService = buildClusterMembershipService(config, this, discoveryProvider);
     this.communicationService = buildClusterMessagingService(membershipService, messagingService);
     this.eventService = buildClusterEventService(membershipService, messagingService);
   }
@@ -348,7 +348,6 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   protected static ManagedClusterMembershipService buildClusterMembershipService(
       ClusterConfig config,
       BootstrapService bootstrapService,
-      MessagingService messagingService,
       NodeDiscoveryProvider discoveryProvider) {
     // If the local node has not be configured, create a default node.
     Member localMember = Member.builder()

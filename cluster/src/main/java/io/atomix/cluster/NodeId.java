@@ -31,7 +31,7 @@ public class NodeId extends AbstractIdentifier<String> implements Comparable<Nod
    * @return node id
    */
   public static NodeId anonymous() {
-    return new NodeId(UUID.randomUUID().toString(), Type.ANONYMOUS);
+    return new NodeId(UUID.randomUUID().toString());
   }
 
   /**
@@ -41,32 +41,14 @@ public class NodeId extends AbstractIdentifier<String> implements Comparable<Nod
    * @return node id
    */
   public static NodeId from(String id) {
-    return new NodeId(id, Type.IDENTIFIED);
+    return new NodeId(id);
   }
-
-  /**
-   * Member ID type.
-   */
-  public enum Type {
-
-    /**
-     * Represents a user-provided member identifier.
-     */
-    IDENTIFIED,
-
-    /**
-     * Represents a randomly generated member identifier.
-     */
-    ANONYMOUS,
-  }
-
-  private final Type type;
 
   /**
    * Constructor for serialization.
    */
   private NodeId() {
-    this("", Type.ANONYMOUS);
+    this("");
   }
 
   /**
@@ -74,32 +56,18 @@ public class NodeId extends AbstractIdentifier<String> implements Comparable<Nod
    *
    * @param id string identifier
    */
-  public NodeId(String id, Type type) {
+  public NodeId(String id) {
     super(id);
-    this.type = type;
-  }
-
-  /**
-   * Returns the member identifier type.
-   *
-   * @return the member identifier type
-   */
-  public Type type() {
-    return type;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id(), type());
+    return Objects.hash(id());
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof NodeId) {
-      NodeId memberId = (NodeId) object;
-      return memberId.id().equals(id()) && memberId.type() == type();
-    }
-    return false;
+    return object instanceof NodeId && ((NodeId) object).id().equals(id());
   }
 
   @Override
