@@ -17,8 +17,7 @@ package io.atomix.cluster;
 
 import io.atomix.utils.net.Address;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Properties;
 
 /**
  * Member configuration.
@@ -28,7 +27,7 @@ public class MemberConfig extends NodeConfig {
   private String zone;
   private String rack;
   private String host;
-  private Map<String, String> metadata = new HashMap<>();
+  private Properties properties = new Properties();
 
   /**
    * Returns the member identifier.
@@ -157,34 +156,34 @@ public class MemberConfig extends NodeConfig {
   }
 
   /**
-   * Returns the member metadata.
+   * Returns the member properties.
    *
-   * @return the member metadata
+   * @return the member properties
    */
-  public Map<String, String> getMetadata() {
-    return metadata;
+  public Properties getProperties() {
+    return properties;
   }
 
   /**
-   * Sets the member metadata.
+   * Sets the member properties.
    *
-   * @param metadata the member metadata
+   * @param properties the member properties
    * @return the member configuration
    */
-  public MemberConfig setMetadata(Map<String, String> metadata) {
-    this.metadata = metadata;
+  public MemberConfig setProperties(Properties properties) {
+    this.properties = properties;
     return this;
   }
 
   /**
-   * Adds member metadata.
+   * Sets a member property.
    *
-   * @param key   the metadata key to add
-   * @param value the metadata value to add
+   * @param key   the property key to et
+   * @param value the property value to et
    * @return the member configuration
    */
-  public MemberConfig addMetadata(String key, String value) {
-    this.metadata.put(key, value);
+  public MemberConfig setProperty(String key, String value) {
+    this.properties.put(key, value);
     return this;
   }
 }

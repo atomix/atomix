@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.time.Duration;
 import java.util.Collections;
-import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
@@ -359,7 +359,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
         .withHost(config.getHost())
         .withRack(config.getRack())
         .withZone(config.getZone())
-        .withMetadata(config.getMetadata())
+        .withProperties(config.getProperties())
         .build();
     return new DefaultClusterMembershipService(
         localMember,
@@ -510,27 +510,27 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     }
 
     /**
-     * Sets the member metadata.
+     * Sets the member properties.
      *
-     * @param metadata the member metadata
+     * @param properties the member properties
      * @return the member builder
-     * @throws NullPointerException if the tags are null
+     * @throws NullPointerException if the properties are null
      */
-    public Builder withMetadata(Map<String, String> metadata) {
-      config.setMetadata(metadata);
+    public Builder withProperties(Properties properties) {
+      config.setProperties(properties);
       return this;
     }
 
     /**
-     * Adds metadata to the member.
+     * Sets a property of the member.
      *
-     * @param key   the metadata key to add
-     * @param value the metadata value to add
+     * @param key   the property key to set
+     * @param value the property value to set
      * @return the member builder
-     * @throws NullPointerException if the tag is null
+     * @throws NullPointerException if the property is null
      */
-    public Builder addMetadata(String key, String value) {
-      config.addMetadata(key, value);
+    public Builder withProperty(String key, String value) {
+      config.setProperty(key, value);
       return this;
     }
 

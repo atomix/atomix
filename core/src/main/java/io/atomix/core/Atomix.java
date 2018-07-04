@@ -78,6 +78,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -736,14 +737,14 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     }
 
     @Override
-    public Builder withMetadata(Map<String, String> metadata) {
-      super.withMetadata(metadata);
+    public Builder withProperties(Properties properties) {
+      super.withProperties(properties);
       return this;
     }
 
     @Override
-    public Builder addMetadata(String key, String value) {
-      super.addMetadata(key, value);
+    public Builder withProperty(String key, String value) {
+      super.withProperty(key, value);
       return this;
     }
 
