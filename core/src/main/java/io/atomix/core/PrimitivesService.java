@@ -71,7 +71,7 @@ import io.atomix.core.workqueue.WorkQueueBuilder;
 import io.atomix.core.workqueue.WorkQueueType;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.config.PrimitiveConfig;
@@ -705,7 +705,7 @@ public interface PrimitivesService {
    * @param <P>           the primitive type
    * @return the primitive builder
    */
-  <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
+  <B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
       PrimitiveType<B, C, P> primitiveType);
 
@@ -719,7 +719,7 @@ public interface PrimitivesService {
    * @param <P>           the primitive type
    * @return the primitive builder
    */
-  default <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
+  default <B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
       String name,
       PrimitiveType<B, C, P> primitiveType,
       PrimitiveProtocol protocol) {

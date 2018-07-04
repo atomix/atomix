@@ -20,7 +20,7 @@ import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveRegistry;
@@ -1356,7 +1356,7 @@ public class RaftTest extends ConcurrentTestCase {
     }
 
     @Override
-    public DistributedPrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
+    public PrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
       throw new UnsupportedOperationException();
     }
 

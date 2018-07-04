@@ -26,7 +26,7 @@ import io.atomix.utils.serializer.Namespaces;
 /**
  * Primitive type.
  */
-public interface PrimitiveType<B extends DistributedPrimitiveBuilder, C extends PrimitiveConfig, P extends DistributedPrimitive> extends ConfiguredType<C> {
+public interface PrimitiveType<B extends PrimitiveBuilder, C extends PrimitiveConfig, P extends DistributedPrimitive> extends ConfiguredType<C> {
 
   /**
    * Returns the primitive type namespace.

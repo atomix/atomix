@@ -16,7 +16,7 @@
 package io.atomix.core.leadership;
 
 import io.atomix.cluster.MemberId;
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.NamespaceConfig;
@@ -27,7 +27,7 @@ import io.atomix.utils.serializer.Serializer;
  * Builder for constructing new {@link AsyncLeaderElector} instances.
  */
 public abstract class LeaderElectorBuilder<T>
-    extends DistributedPrimitiveBuilder<LeaderElectorBuilder<T>, LeaderElectorConfig, LeaderElector<T>> {
+    extends PrimitiveBuilder<LeaderElectorBuilder<T>, LeaderElectorConfig, LeaderElector<T>> {
   public LeaderElectorBuilder(String name, LeaderElectorConfig config, PrimitiveManagementService managementService) {
     super(LeaderElectorType.instance(), name, config, managementService);
   }

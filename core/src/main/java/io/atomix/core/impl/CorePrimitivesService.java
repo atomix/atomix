@@ -65,7 +65,7 @@ import io.atomix.core.value.AtomicValueType;
 import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.core.workqueue.WorkQueueType;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -234,7 +234,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public <B extends DistributedPrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
+  public <B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
       String name, PrimitiveType<B, C, P> primitiveType) {
     return primitiveType.newBuilder(name, primitiveType.newConfig(), managementService);
   }

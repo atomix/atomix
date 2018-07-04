@@ -17,7 +17,7 @@ package io.atomix.protocols.backup;
 
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.TestClusterMembershipService;
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Replication;
@@ -503,7 +503,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     }
 
     @Override
-    public DistributedPrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
+    public PrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
       throw new UnsupportedOperationException();
     }
 

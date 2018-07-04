@@ -15,7 +15,7 @@
  */
 package io.atomix.core.queue;
 
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
 /**
@@ -23,7 +23,7 @@ import io.atomix.primitive.PrimitiveManagementService;
  *
  * @param <E> queue element type
  */
-public abstract class DistributedQueueBuilder<E> extends DistributedPrimitiveBuilder<DistributedQueueBuilder<E>, DistributedQueueConfig, DistributedQueue<E>> {
+public abstract class DistributedQueueBuilder<E> extends PrimitiveBuilder<DistributedQueueBuilder<E>, DistributedQueueConfig, DistributedQueue<E>> {
   public DistributedQueueBuilder(String name, DistributedQueueConfig config, PrimitiveManagementService managementService) {
     super(DistributedQueueType.instance(), name, config, managementService);
   }

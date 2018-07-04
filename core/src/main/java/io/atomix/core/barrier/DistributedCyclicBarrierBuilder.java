@@ -15,7 +15,7 @@
  */
 package io.atomix.core.barrier;
 
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -24,7 +24,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Distributed cyclic barrier builder.
  */
 public abstract class DistributedCyclicBarrierBuilder
-    extends DistributedPrimitiveBuilder<DistributedCyclicBarrierBuilder, DistributedCyclicBarrierConfig, DistributedCyclicBarrier> {
+    extends PrimitiveBuilder<DistributedCyclicBarrierBuilder, DistributedCyclicBarrierConfig, DistributedCyclicBarrier> {
 
   protected Runnable barrierAction = () -> {};
 
