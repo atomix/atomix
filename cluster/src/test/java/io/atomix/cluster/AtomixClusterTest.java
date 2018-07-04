@@ -115,8 +115,11 @@ public class AtomixClusterTest {
 
     assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener1.nextEvent().type());
     assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener1.nextEvent().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener1.nextEvent().type());
     assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener2.nextEvent().type());
     assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener2.nextEvent().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener2.nextEvent().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener3.nextEvent().type());
     assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener3.nextEvent().type());
     assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, listener3.nextEvent().type());
 
