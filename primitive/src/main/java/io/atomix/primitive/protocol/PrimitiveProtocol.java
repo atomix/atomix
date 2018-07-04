@@ -75,15 +75,4 @@ public interface PrimitiveProtocol {
       Class<S> serviceType,
       ServiceConfig serviceConfig,
       PartitionService partitionService);
-
-  /**
-   * Primitive protocol.
-   */
-  abstract class Builder<C extends PrimitiveProtocolConfig<C>, P extends PrimitiveProtocol> implements io.atomix.utils.Builder<P> {
-    protected final C config;
-
-    protected Builder(C config) {
-      this.config = config;
-    }
-  }
 }
