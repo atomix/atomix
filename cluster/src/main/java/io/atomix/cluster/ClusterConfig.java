@@ -17,7 +17,6 @@ package io.atomix.cluster;
 
 import io.atomix.utils.config.Config;
 import io.atomix.utils.net.Address;
-import io.atomix.utils.net.MalformedAddressException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,11 +28,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class ClusterConfig implements Config {
   private static final String DEFAULT_CLUSTER_NAME = "atomix";
-  private static final String DEFAULT_MULTICAST_IP = "230.0.0.1";
-  private static final int DEFAULT_MULTICAST_PORT = 54321;
-  private static final int DEFAULT_BROADCAST_INTERVAL = 100;
-  private static final int DEFAULT_REACHABILITY_TIMEOUT = 10000;
-  private static final int DEFAULT_REACHABILITY_THRESHOLD = 10;
 
   private String clusterId = DEFAULT_CLUSTER_NAME;
   private MemberId memberId = MemberId.anonymous();
@@ -43,19 +37,8 @@ public class ClusterConfig implements Config {
   private String host;
   private Map<String, String> metadata = new HashMap<>();
   private NodeDiscoveryProvider.Config discoveryConfig;
-  private boolean multicastEnabled = false;
-  private Address multicastAddress;
-  private int broadcastInterval = DEFAULT_BROADCAST_INTERVAL;
-  private int reachabilityThreshold = DEFAULT_REACHABILITY_THRESHOLD;
-  private int reachabilityTimeout = DEFAULT_REACHABILITY_TIMEOUT;
-
-  public ClusterConfig() {
-    try {
-      multicastAddress = Address.from(DEFAULT_MULTICAST_IP, DEFAULT_MULTICAST_PORT);
-    } catch (MalformedAddressException e) {
-      multicastAddress = Address.from(DEFAULT_MULTICAST_PORT);
-    }
-  }
+  private MulticastConfig multicastConfig = new MulticastConfig();
+  private MembershipConfig membershipConfig = new MembershipConfig();
 
   /**
    * Returns the cluster identifier.
@@ -250,102 +233,42 @@ public class ClusterConfig implements Config {
   }
 
   /**
-   * Returns whether multicast is enabled.
+   * Returns the multicast configuration.
    *
-   * @return whether multicast is enabled
+   * @return the multicast configuration
    */
-  public boolean isMulticastEnabled() {
-    return multicastEnabled;
+  public MulticastConfig getMulticastConfig() {
+    return multicastConfig;
   }
 
   /**
-   * Sets whether multicast is enabled.
+   * Sets the multicast configuration.
    *
-   * @param multicastEnabled whether multicast is enabled
+   * @param multicastConfig the multicast configuration
    * @return the cluster configuration
    */
-  public ClusterConfig setMulticastEnabled(boolean multicastEnabled) {
-    this.multicastEnabled = multicastEnabled;
+  public ClusterConfig setMulticastConfig(MulticastConfig multicastConfig) {
+    this.multicastConfig = checkNotNull(multicastConfig);
     return this;
   }
 
   /**
-   * Returns the multicast address.
+   * Returns the cluster membership configuration.
    *
-   * @return the multicast address
+   * @return the cluster membership configuration
    */
-  public Address getMulticastAddress() {
-    return multicastAddress;
+  public MembershipConfig getMembershipConfig() {
+    return membershipConfig;
   }
 
   /**
-   * Sets the multicast address.
+   * Sets the cluster membership configuration.
    *
-   * @param multicastAddress the multicast address
+   * @param membershipConfig the cluster membership configuration
    * @return the cluster configuration
    */
-  public ClusterConfig setMulticastAddress(Address multicastAddress) {
-    this.multicastAddress = multicastAddress;
-    return this;
-  }
-
-  /**
-   * Returns the reachability broadcast interval.
-   *
-   * @return the reachability broadcast interval
-   */
-  public int getBroadcastInterval() {
-    return broadcastInterval;
-  }
-
-  /**
-   * Sets the reachability broadcast interval.
-   *
-   * @param broadcastInterval the reachability broadcast interval
-   * @return the cluster configuration
-   */
-  public ClusterConfig setBroadcastInterval(int broadcastInterval) {
-    this.broadcastInterval = broadcastInterval;
-    return this;
-  }
-
-  /**
-   * Returns the reachability failure detection threshold.
-   *
-   * @return the reachability failure detection threshold
-   */
-  public int getReachabilityThreshold() {
-    return reachabilityThreshold;
-  }
-
-  /**
-   * Sets the reachability failure detection threshold.
-   *
-   * @param reachabilityThreshold the reachability failure detection threshold
-   * @return the cluster configuration
-   */
-  public ClusterConfig setReachabilityThreshold(int reachabilityThreshold) {
-    this.reachabilityThreshold = reachabilityThreshold;
-    return this;
-  }
-
-  /**
-   * Returns the reachability failure timeout.
-   *
-   * @return the reachability failure timeout
-   */
-  public int getReachabilityTimeout() {
-    return reachabilityTimeout;
-  }
-
-  /**
-   * Sets the reachability failure timeout.
-   *
-   * @param reachabilityTimeout the reachability failure timeout
-   * @return the cluster configuration
-   */
-  public ClusterConfig setReachabilityTimeout(int reachabilityTimeout) {
-    this.reachabilityTimeout = reachabilityTimeout;
+  public ClusterConfig setMembershipConfig(MembershipConfig membershipConfig) {
+    this.membershipConfig = membershipConfig;
     return this;
   }
 }
