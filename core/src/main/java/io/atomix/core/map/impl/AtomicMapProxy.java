@@ -25,9 +25,9 @@ import java.time.Duration;
 /**
  * Distributed resource providing the {@link AsyncAtomicMap} primitive.
  */
-public class AtomicMapProxy extends AbstractAtomicMapProxy<AsyncAtomicMap<String, byte[]>, AtomicMapService>
-    implements AsyncAtomicMap<String, byte[]>, AtomicMapClient {
-  public AtomicMapProxy(ProxyClient<AtomicMapService> proxy, PrimitiveRegistry registry) {
+public class AtomicMapProxy extends AbstractAtomicMapProxy<AsyncAtomicMap<String, byte[]>, AtomicMapService<String>, String>
+    implements AsyncAtomicMap<String, byte[]>, AtomicMapClient<String> {
+  public AtomicMapProxy(ProxyClient<AtomicMapService<String>> proxy, PrimitiveRegistry registry) {
     super(proxy, registry);
   }
 

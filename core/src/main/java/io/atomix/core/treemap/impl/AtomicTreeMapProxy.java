@@ -33,112 +33,112 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Implementation of {@link AsyncAtomicTreeMap}.
  */
-public class AtomicTreeMapProxy extends AbstractAtomicMapProxy<AsyncAtomicTreeMap<byte[]>, AtomicTreeMapService> implements AsyncAtomicTreeMap<byte[]> {
-  public AtomicTreeMapProxy(ProxyClient<AtomicTreeMapService> proxy, PrimitiveRegistry registry) {
+public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicMapProxy<AsyncAtomicTreeMap<K, byte[]>, AtomicTreeMapService<K>, K> implements AsyncAtomicTreeMap<K, byte[]> {
+  public AtomicTreeMapProxy(ProxyClient<AtomicTreeMapService<K>> proxy, PrimitiveRegistry registry) {
     super(proxy, registry);
   }
 
-  protected String greaterKey(String a, String b) {
+  protected K greaterKey(K a, K b) {
     return a.compareTo(b) > 0 ? a : b;
   }
 
-  protected String lesserKey(String a, String b) {
+  protected K lesserKey(K a, K b) {
     return a.compareTo(b) < 0 ? a : b;
   }
 
-  protected Map.Entry<String, Versioned<byte[]>> greaterEntry(Map.Entry<String, Versioned<byte[]>> a, Map.Entry<String, Versioned<byte[]>> b) {
+  protected Map.Entry<K, Versioned<byte[]>> greaterEntry(Map.Entry<K, Versioned<byte[]>> a, Map.Entry<K, Versioned<byte[]>> b) {
     return a.getKey().compareTo(b.getKey()) > 0 ? a : b;
   }
 
-  protected Map.Entry<String, Versioned<byte[]>> lesserEntry(Map.Entry<String, Versioned<byte[]>> a, Map.Entry<String, Versioned<byte[]>> b) {
+  protected Map.Entry<K, Versioned<byte[]>> lesserEntry(Map.Entry<K, Versioned<byte[]>> a, Map.Entry<K, Versioned<byte[]>> b) {
     return a.getKey().compareTo(b.getKey()) < 0 ? a : b;
   }
 
   @Override
-  public CompletableFuture<String> firstKey() {
+  public CompletableFuture<K> firstKey() {
     return getProxyClient().applyAll(service -> service.firstKey())
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
   }
 
   @Override
-  public CompletableFuture<String> lastKey() {
+  public CompletableFuture<K> lastKey() {
     return getProxyClient().applyAll(service -> service.lastKey())
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> ceilingEntry(String key) {
+  public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> ceilingEntry(K key) {
     return getProxyClient().applyAll(service -> service.ceilingEntry(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> floorEntry(String key) {
+  public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> floorEntry(K key) {
     return getProxyClient().applyAll(service -> service.floorEntry(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> higherEntry(String key) {
+  public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> higherEntry(K key) {
     return getProxyClient().applyAll(service -> service.higherEntry(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> lowerEntry(String key) {
+  public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> lowerEntry(K key) {
     return getProxyClient().applyAll(service -> service.lowerEntry(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> firstEntry() {
+  public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> firstEntry() {
     return getProxyClient().applyAll(service -> service.firstEntry())
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<byte[]>>> lastEntry() {
+  public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> lastEntry() {
     return getProxyClient().applyAll(service -> service.lastEntry())
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
   }
 
   @Override
-  public CompletableFuture<String> lowerKey(String key) {
+  public CompletableFuture<K> lowerKey(K key) {
     return getProxyClient().applyAll(service -> service.lowerKey(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
   }
 
   @Override
-  public CompletableFuture<String> floorKey(String key) {
+  public CompletableFuture<K> floorKey(K key) {
     return getProxyClient().applyAll(service -> service.floorKey(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
   }
 
   @Override
-  public CompletableFuture<String> ceilingKey(String key) {
+  public CompletableFuture<K> ceilingKey(K key) {
     return getProxyClient().applyAll(service -> service.ceilingKey(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
   }
 
   @Override
-  public CompletableFuture<String> higherKey(String key) {
+  public CompletableFuture<K> higherKey(K key) {
     return getProxyClient().applyAll(service -> service.higherKey(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
   }
 
   @Override
-  public CompletableFuture<NavigableSet<String>> navigableKeySet() {
+  public CompletableFuture<NavigableSet<K>> navigableKeySet() {
     throw new UnsupportedOperationException("This operation is not yet supported.");
   }
 
   @Override
-  public CompletableFuture<NavigableMap<String, byte[]>> subMap(
-      String upperKey, String lowerKey, boolean inclusiveUpper, boolean inclusiveLower) {
+  public CompletableFuture<NavigableMap<K, byte[]>> subMap(
+      K upperKey, K lowerKey, boolean inclusiveUpper, boolean inclusiveLower) {
     throw new UnsupportedOperationException("This operation is not yet supported.");
   }
 
   @Override
-  public AtomicTreeMap<byte[]> sync(Duration operationTimeout) {
+  public AtomicTreeMap<K, byte[]> sync(Duration operationTimeout) {
     return new BlockingAtomicTreeMap<>(this, operationTimeout.toMillis());
   }
 }

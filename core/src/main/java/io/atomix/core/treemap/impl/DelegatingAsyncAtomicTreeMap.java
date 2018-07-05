@@ -16,14 +16,14 @@
 
 package io.atomix.core.treemap.impl;
 
-import io.atomix.core.map.impl.MapUpdate;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.set.AsyncDistributedSet;
-import io.atomix.core.treemap.AsyncAtomicTreeMap;
-import io.atomix.core.treemap.AtomicTreeMap;
 import io.atomix.core.map.AtomicMapEventListener;
+import io.atomix.core.map.impl.MapUpdate;
+import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
+import io.atomix.core.treemap.AsyncAtomicTreeMap;
+import io.atomix.core.treemap.AtomicTreeMap;
 import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.time.Versioned;
@@ -43,13 +43,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * A {@link AsyncAtomicTreeMap} that delegates control to another instance
  * of {@link AsyncAtomicTreeMap}.
  */
-public class DelegatingAsyncAtomicTreeMap<V>
+public class DelegatingAsyncAtomicTreeMap<K extends Comparable<K>, V>
     extends DelegatingAsyncPrimitive
-    implements AsyncAtomicTreeMap<V> {
+    implements AsyncAtomicTreeMap<K, V> {
 
-  private final AsyncAtomicTreeMap<V> delegateMap;
+  private final AsyncAtomicTreeMap<K, V> delegateMap;
 
-  DelegatingAsyncAtomicTreeMap(AsyncAtomicTreeMap<V> delegateMap) {
+  DelegatingAsyncAtomicTreeMap(AsyncAtomicTreeMap<K, V> delegateMap) {
     super(delegateMap);
     this.delegateMap = checkNotNull(delegateMap,
         "delegate map cannot be null");
@@ -61,74 +61,74 @@ public class DelegatingAsyncAtomicTreeMap<V>
   }
 
   @Override
-  public CompletableFuture<String> firstKey() {
+  public CompletableFuture<K> firstKey() {
     return delegateMap.firstKey();
   }
 
   @Override
-  public CompletableFuture<String> lastKey() {
+  public CompletableFuture<K> lastKey() {
     return delegateMap.lastKey();
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V>>> ceilingEntry(String key) {
+  public CompletableFuture<Map.Entry<K, Versioned<V>>> ceilingEntry(K key) {
     return delegateMap.ceilingEntry(key);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V>>> floorEntry(String key) {
+  public CompletableFuture<Map.Entry<K, Versioned<V>>> floorEntry(K key) {
     return delegateMap.floorEntry(key);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V>>> higherEntry(String key) {
+  public CompletableFuture<Map.Entry<K, Versioned<V>>> higherEntry(K key) {
     return delegateMap.higherEntry(key);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V>>> lowerEntry(String key) {
+  public CompletableFuture<Map.Entry<K, Versioned<V>>> lowerEntry(K key) {
     return delegateMap.lowerEntry(key);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V>>> firstEntry() {
+  public CompletableFuture<Map.Entry<K, Versioned<V>>> firstEntry() {
     return delegateMap.firstEntry();
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V>>> lastEntry() {
+  public CompletableFuture<Map.Entry<K, Versioned<V>>> lastEntry() {
     return delegateMap.lastEntry();
   }
 
   @Override
-  public CompletableFuture<String> lowerKey(String key) {
+  public CompletableFuture<K> lowerKey(K key) {
     return delegateMap.lowerKey(key);
   }
 
   @Override
-  public CompletableFuture<String> floorKey(String key) {
+  public CompletableFuture<K> floorKey(K key) {
     return delegateMap.floorKey(key);
   }
 
   @Override
-  public CompletableFuture<String> ceilingKey(String key) {
+  public CompletableFuture<K> ceilingKey(K key) {
     return delegateMap.ceilingKey(key);
   }
 
   @Override
-  public CompletableFuture<String> higherKey(String key) {
+  public CompletableFuture<K> higherKey(K key) {
     return delegateMap.higherKey(key);
   }
 
   @Override
-  public CompletableFuture<NavigableSet<String>> navigableKeySet() {
+  public CompletableFuture<NavigableSet<K>> navigableKeySet() {
     return delegateMap.navigableKeySet();
   }
 
   @Override
-  public CompletableFuture<NavigableMap<String, V>> subMap(
-      String upperKey,
-      String lowerKey,
+  public CompletableFuture<NavigableMap<K, V>> subMap(
+      K upperKey,
+      K lowerKey,
       boolean inclusiveUpper,
       boolean inclusiveLower) {
     return delegateMap.subMap(upperKey, lowerKey,
@@ -141,7 +141,7 @@ public class DelegatingAsyncAtomicTreeMap<V>
   }
 
   @Override
-  public CompletableFuture<Boolean> containsKey(String key) {
+  public CompletableFuture<Boolean> containsKey(K key) {
     return delegateMap.containsKey(key);
   }
 
@@ -151,41 +151,41 @@ public class DelegatingAsyncAtomicTreeMap<V>
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> get(String key) {
+  public CompletableFuture<Versioned<V>> get(K key) {
     return delegateMap.get(key);
   }
 
   @Override
-  public CompletableFuture<Map<String, Versioned<V>>> getAllPresent(Iterable<String> keys) {
+  public CompletableFuture<Map<K, Versioned<V>>> getAllPresent(Iterable<K> keys) {
     return delegateMap.getAllPresent(keys);
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> getOrDefault(String key, V defaultValue) {
+  public CompletableFuture<Versioned<V>> getOrDefault(K key, V defaultValue) {
     return delegateMap.getOrDefault(key, defaultValue);
   }
 
   @Override
   public CompletableFuture<Versioned<V>> computeIf(
-      String key,
+      K key,
       Predicate<? super V> condition,
-      BiFunction<? super String, ? super V,
+      BiFunction<? super K, ? super V,
           ? extends V> remappingFunction) {
     return delegateMap.computeIf(key, condition, remappingFunction);
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> put(String key, V value, Duration ttl) {
+  public CompletableFuture<Versioned<V>> put(K key, V value, Duration ttl) {
     return delegateMap.put(key, value, ttl);
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> putAndGet(String key, V value, Duration ttl) {
+  public CompletableFuture<Versioned<V>> putAndGet(K key, V value, Duration ttl) {
     return delegateMap.putAndGet(key, value, ttl);
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> remove(String key) {
+  public CompletableFuture<Versioned<V>> remove(K key) {
     return delegateMap.remove(key);
   }
 
@@ -195,7 +195,7 @@ public class DelegatingAsyncAtomicTreeMap<V>
   }
 
   @Override
-  public AsyncDistributedSet<String> keySet() {
+  public AsyncDistributedSet<K> keySet() {
     return delegateMap.keySet();
   }
 
@@ -205,56 +205,56 @@ public class DelegatingAsyncAtomicTreeMap<V>
   }
 
   @Override
-  public AsyncDistributedSet<Map.Entry<String, Versioned<V>>> entrySet() {
+  public AsyncDistributedSet<Map.Entry<K, Versioned<V>>> entrySet() {
     return delegateMap.entrySet();
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> putIfAbsent(String key, V value, Duration ttl) {
+  public CompletableFuture<Versioned<V>> putIfAbsent(K key, V value, Duration ttl) {
     return delegateMap.putIfAbsent(key, value, ttl);
   }
 
   @Override
-  public CompletableFuture<Boolean> remove(String key, V value) {
+  public CompletableFuture<Boolean> remove(K key, V value) {
     return delegateMap.remove(key, value);
   }
 
   @Override
-  public CompletableFuture<Boolean> remove(String key, long version) {
+  public CompletableFuture<Boolean> remove(K key, long version) {
     return delegateMap.remove(key, version);
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> replace(String key, V value) {
+  public CompletableFuture<Versioned<V>> replace(K key, V value) {
     return delegateMap.replace(key, value);
   }
 
   @Override
-  public CompletableFuture<Boolean> replace(String key, V oldValue,
+  public CompletableFuture<Boolean> replace(K key, V oldValue,
                                             V newValue) {
     return delegateMap.replace(key, oldValue, newValue);
   }
 
   @Override
-  public CompletableFuture<Boolean> replace(String key, long oldVersion,
+  public CompletableFuture<Boolean> replace(K key, long oldVersion,
                                             V newValue) {
     return delegateMap.replace(key, oldVersion, newValue);
   }
 
   @Override
   public CompletableFuture<Void> addListener(
-      AtomicMapEventListener<String, V> listener, Executor executor) {
+      AtomicMapEventListener<K, V> listener, Executor executor) {
     return delegateMap.addListener(listener, executor);
   }
 
   @Override
   public CompletableFuture<Void> removeListener(
-      AtomicMapEventListener<String, V> listener) {
+      AtomicMapEventListener<K, V> listener) {
     return delegateMap.removeListener(listener);
   }
 
   @Override
-  public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<String, V>> transactionLog) {
+  public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<K, V>> transactionLog) {
     return delegateMap.prepare(transactionLog);
   }
 
@@ -269,7 +269,7 @@ public class DelegatingAsyncAtomicTreeMap<V>
   }
 
   @Override
-  public AtomicTreeMap<V> sync(Duration operationTimeout) {
+  public AtomicTreeMap<K, V> sync(Duration operationTimeout) {
     return new BlockingAtomicTreeMap<>(this, operationTimeout.toMillis());
   }
 }

@@ -111,7 +111,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   @SuppressWarnings("unchecked")
   public CompletableFuture<PrimitiveRegistry> start() {
     PrimitiveProtocol protocol = partitionService.getSystemPartitionGroup().newProtocol();
-    ProxyClient<AtomicMapService> proxy = protocol.newProxy(
+    ProxyClient proxy = protocol.newProxy(
         "primitives",
         AtomicMapType.instance(),
         AtomicMapService.class,

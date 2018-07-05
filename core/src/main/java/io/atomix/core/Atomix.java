@@ -356,7 +356,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @Override
-  public <V> AtomicTreeMap<V> getAtomicTreeMap(String name) {
+  public <K extends Comparable<K>, V> AtomicTreeMap<K, V> getAtomicTreeMap(String name) {
     return primitives.getAtomicTreeMap(name);
   }
 

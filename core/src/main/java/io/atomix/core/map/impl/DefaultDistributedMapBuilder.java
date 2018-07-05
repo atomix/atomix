@@ -37,7 +37,7 @@ public class DefaultDistributedMapBuilder<K, V> extends DistributedMapBuilder<K,
 
   @Override
   public CompletableFuture<DistributedMap<K, V>> buildAsync() {
-    ProxyClient<AtomicMapService> proxy = protocol().newProxy(
+    ProxyClient proxy = protocol().newProxy(
         name(),
         primitiveType(),
         AtomicMapService.class,

@@ -50,18 +50,18 @@ import java.util.function.Predicate;
  * @param <V2> value type of other map
  * @param <V1> value type of this map
  */
-public class TranscodingAsyncAtomicTreeMap<V1, V2> extends DelegatingAsyncPrimitive implements AsyncAtomicTreeMap<V1> {
-  private final AsyncAtomicTreeMap<V2> backingMap;
+public class TranscodingAsyncAtomicTreeMap<K extends Comparable<K>, V1, V2> extends DelegatingAsyncPrimitive implements AsyncAtomicTreeMap<K, V1> {
+  private final AsyncAtomicTreeMap<K, V2> backingMap;
   private final Function<V2, V1> valueDecoder;
   private final Function<V1, V2> valueEncoder;
   private final Function<Versioned<V2>, Versioned<V1>> versionedValueDecoder;
   private final Function<Versioned<V1>, Versioned<V2>> versionedValueEncoder;
-  private final Function<Map.Entry<String, Versioned<V2>>, Map.Entry<String, Versioned<V1>>> entryDecoder;
-  private final Function<Map.Entry<String, Versioned<V1>>, Map.Entry<String, Versioned<V2>>> entryEncoder;
-  private final Map<AtomicMapEventListener<String, V1>, InternalBackingAtomicMapEventListener> listeners = Maps.newIdentityHashMap();
+  private final Function<Map.Entry<K, Versioned<V2>>, Map.Entry<K, Versioned<V1>>> entryDecoder;
+  private final Function<Map.Entry<K, Versioned<V1>>, Map.Entry<K, Versioned<V2>>> entryEncoder;
+  private final Map<AtomicMapEventListener<K, V1>, InternalBackingAtomicMapEventListener> listeners = Maps.newIdentityHashMap();
 
   public TranscodingAsyncAtomicTreeMap(
-      AsyncAtomicTreeMap<V2> backingMap,
+      AsyncAtomicTreeMap<K, V2> backingMap,
       Function<V1, V2> valueEncoder,
       Function<V2, V1> valueDecoder) {
     super(backingMap);
@@ -75,85 +75,80 @@ public class TranscodingAsyncAtomicTreeMap<V1, V2> extends DelegatingAsyncPrimit
   }
 
   @Override
-  public CompletableFuture<String> firstKey() {
+  public CompletableFuture<K> firstKey() {
     return backingMap.firstKey();
   }
 
   @Override
-  public CompletableFuture<String> lastKey() {
+  public CompletableFuture<K> lastKey() {
     return backingMap.lastKey();
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>> ceilingEntry(String key) {
+  public CompletableFuture<Map.Entry<K, Versioned<V1>>> ceilingEntry(K key) {
     return backingMap.ceilingEntry(key)
         .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>> floorEntry(String key) {
+  public CompletableFuture<Map.Entry<K, Versioned<V1>>> floorEntry(K key) {
     return backingMap.floorEntry(key)
         .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>> higherEntry(String key) {
+  public CompletableFuture<Map.Entry<K, Versioned<V1>>> higherEntry(K key) {
     return backingMap.higherEntry(key)
         .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>> lowerEntry(String key) {
+  public CompletableFuture<Map.Entry<K, Versioned<V1>>> lowerEntry(K key) {
     return backingMap.lowerEntry(key)
         .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>> firstEntry() {
+  public CompletableFuture<Map.Entry<K, Versioned<V1>>> firstEntry() {
     return backingMap.firstEntry()
         .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<Map.Entry<String, Versioned<V1>>> lastEntry() {
+  public CompletableFuture<Map.Entry<K, Versioned<V1>>> lastEntry() {
     return backingMap.lastEntry()
         .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null);
   }
 
   @Override
-  public CompletableFuture<String> lowerKey(String key) {
+  public CompletableFuture<K> lowerKey(K key) {
     return backingMap.lowerKey(key);
   }
 
   @Override
-  public CompletableFuture<String> floorKey(String key) {
+  public CompletableFuture<K> floorKey(K key) {
     return backingMap.floorKey(key);
   }
 
   @Override
-  public CompletableFuture<String> ceilingKey(String key) {
+  public CompletableFuture<K> ceilingKey(K key) {
     return backingMap.ceilingKey(key);
   }
 
   @Override
-  public CompletableFuture<String> higherKey(String key) {
+  public CompletableFuture<K> higherKey(K key) {
     return backingMap.higherKey(key);
   }
 
   @Override
-  public CompletableFuture<NavigableSet<String>> navigableKeySet() {
+  public CompletableFuture<NavigableSet<K>> navigableKeySet() {
     return backingMap.navigableKeySet();
   }
 
   @Override
-  public CompletableFuture<NavigableMap<String, V1>> subMap(
-      String upperKey, String lowerKey, boolean inclusiveUpper, boolean inclusiveLower) {
+  public CompletableFuture<NavigableMap<K, V1>> subMap(
+      K upperKey, K lowerKey, boolean inclusiveUpper, boolean inclusiveLower) {
     throw new UnsupportedOperationException("This operation is not yet supported.");
-  }
-
-  @Override
-  public String name() {
-    return backingMap.name();
   }
 
   @Override
@@ -162,7 +157,7 @@ public class TranscodingAsyncAtomicTreeMap<V1, V2> extends DelegatingAsyncPrimit
   }
 
   @Override
-  public CompletableFuture<Boolean> containsKey(String key) {
+  public CompletableFuture<Boolean> containsKey(K key) {
     return backingMap.containsKey(key);
   }
 
@@ -172,26 +167,26 @@ public class TranscodingAsyncAtomicTreeMap<V1, V2> extends DelegatingAsyncPrimit
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> get(String key) {
+  public CompletableFuture<Versioned<V1>> get(K key) {
     return backingMap.get(key).thenApply(versionedValueDecoder);
   }
 
   @Override
-  public CompletableFuture<Map<String, Versioned<V1>>> getAllPresent(Iterable<String> keys) {
+  public CompletableFuture<Map<K, Versioned<V1>>> getAllPresent(Iterable<K> keys) {
     return backingMap.getAllPresent(keys)
         .thenApply(map -> Maps.transformValues(map, versionedValueDecoder::apply));
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> getOrDefault(String key, V1 defaultValue) {
+  public CompletableFuture<Versioned<V1>> getOrDefault(K key, V1 defaultValue) {
     return backingMap.getOrDefault(key, valueEncoder.apply(defaultValue)).thenApply(versionedValueDecoder);
   }
 
   @Override
   public CompletableFuture<Versioned<V1>> computeIf(
-      String key,
+      K key,
       Predicate<? super V1> condition,
-      BiFunction<? super String, ? super V1, ? extends V1> remappingFunction) {
+      BiFunction<? super K, ? super V1, ? extends V1> remappingFunction) {
     try {
       return backingMap.computeIf(
           key,
@@ -204,19 +199,19 @@ public class TranscodingAsyncAtomicTreeMap<V1, V2> extends DelegatingAsyncPrimit
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> put(String key, V1 value, Duration ttl) {
+  public CompletableFuture<Versioned<V1>> put(K key, V1 value, Duration ttl) {
     return backingMap.put(key, valueEncoder.apply(value), ttl)
         .thenApply(versionedValueDecoder);
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> putAndGet(String key, V1 value, Duration ttl) {
+  public CompletableFuture<Versioned<V1>> putAndGet(K key, V1 value, Duration ttl) {
     return backingMap.putAndGet(key, valueEncoder.apply(value), ttl)
         .thenApply(versionedValueDecoder);
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> remove(String key) {
+  public CompletableFuture<Versioned<V1>> remove(K key) {
     return backingMap.remove(key).thenApply(versionedValueDecoder);
   }
 
@@ -226,7 +221,7 @@ public class TranscodingAsyncAtomicTreeMap<V1, V2> extends DelegatingAsyncPrimit
   }
 
   @Override
-  public AsyncDistributedSet<String> keySet() {
+  public AsyncDistributedSet<K> keySet() {
     return backingMap.keySet();
   }
 
@@ -236,53 +231,53 @@ public class TranscodingAsyncAtomicTreeMap<V1, V2> extends DelegatingAsyncPrimit
   }
 
   @Override
-  public AsyncDistributedSet<Map.Entry<String, Versioned<V1>>> entrySet() {
+  public AsyncDistributedSet<Map.Entry<K, Versioned<V1>>> entrySet() {
     return new TranscodingAsyncDistributedSet<>(backingMap.entrySet(), entryEncoder, entryDecoder);
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> putIfAbsent(String key, V1 value, Duration ttl) {
+  public CompletableFuture<Versioned<V1>> putIfAbsent(K key, V1 value, Duration ttl) {
     return backingMap.putIfAbsent(key, valueEncoder.apply(value), ttl)
         .thenApply(versionedValueDecoder);
   }
 
   @Override
-  public CompletableFuture<Boolean> remove(String key, V1 value) {
+  public CompletableFuture<Boolean> remove(K key, V1 value) {
     return backingMap.remove(key, valueEncoder.apply(value));
   }
 
   @Override
-  public CompletableFuture<Boolean> remove(String key, long version) {
+  public CompletableFuture<Boolean> remove(K key, long version) {
     return backingMap.remove(key, version);
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> replace(String key, V1 value) {
+  public CompletableFuture<Versioned<V1>> replace(K key, V1 value) {
     return backingMap.replace(key, valueEncoder.apply(value))
         .thenApply(versionedValueDecoder);
   }
 
   @Override
-  public CompletableFuture<Boolean> replace(String key, V1 oldValue, V1 newValue) {
+  public CompletableFuture<Boolean> replace(K key, V1 oldValue, V1 newValue) {
     return backingMap.replace(key, valueEncoder.apply(oldValue),
         valueEncoder.apply(newValue));
   }
 
   @Override
-  public CompletableFuture<Boolean> replace(String key, long oldVersion, V1 newValue) {
+  public CompletableFuture<Boolean> replace(K key, long oldVersion, V1 newValue) {
     return backingMap.replace(key, oldVersion,
         valueEncoder.apply(newValue));
   }
 
   @Override
-  public CompletableFuture<Void> addListener(AtomicMapEventListener<String, V1> listener, Executor executor) {
+  public CompletableFuture<Void> addListener(AtomicMapEventListener<K, V1> listener, Executor executor) {
     InternalBackingAtomicMapEventListener backingMapEventListener = listeners.computeIfAbsent(listener,
         k -> new InternalBackingAtomicMapEventListener(listener));
     return backingMap.addListener(backingMapEventListener, executor);
   }
 
   @Override
-  public CompletableFuture<Void> removeListener(AtomicMapEventListener<String, V1> listener) {
+  public CompletableFuture<Void> removeListener(AtomicMapEventListener<K, V1> listener) {
     InternalBackingAtomicMapEventListener backingMapEventListener = listeners.remove(listener);
     if (backingMapEventListener == null) {
       return CompletableFuture.completedFuture(null);
@@ -292,7 +287,7 @@ public class TranscodingAsyncAtomicTreeMap<V1, V2> extends DelegatingAsyncPrimit
   }
 
   @Override
-  public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<String, V1>> transactionLog) {
+  public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<K, V1>> transactionLog) {
     throw new UnsupportedOperationException("This operation is not yet supported.");
   }
 
@@ -307,19 +302,19 @@ public class TranscodingAsyncAtomicTreeMap<V1, V2> extends DelegatingAsyncPrimit
   }
 
   @Override
-  public AtomicTreeMap<V1> sync(Duration operationTimeout) {
+  public AtomicTreeMap<K, V1> sync(Duration operationTimeout) {
     return new BlockingAtomicTreeMap<>(this, operationTimeout.toMillis());
   }
 
-  private class InternalBackingAtomicMapEventListener implements AtomicMapEventListener<String, V2> {
-    private final AtomicMapEventListener<String, V1> listener;
+  private class InternalBackingAtomicMapEventListener implements AtomicMapEventListener<K, V2> {
+    private final AtomicMapEventListener<K, V1> listener;
 
-    InternalBackingAtomicMapEventListener(AtomicMapEventListener<String, V1> listener) {
+    InternalBackingAtomicMapEventListener(AtomicMapEventListener<K, V1> listener) {
       this.listener = listener;
     }
 
     @Override
-    public void event(AtomicMapEvent<String, V2> event) {
+    public void event(AtomicMapEvent<K, V2> event) {
       listener.event(new AtomicMapEvent<>(
           event.type(),
           event.name(),

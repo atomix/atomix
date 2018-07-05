@@ -32,7 +32,7 @@ import java.util.Set;
 /**
  * Consistent map service.
  */
-public interface AtomicMapService {
+public interface AtomicMapService<K> {
 
   /**
    * Returns the number of entries in the map.
@@ -57,7 +57,7 @@ public interface AtomicMapService {
    * @return true if map contains key, false otherwise
    */
   @Query
-  boolean containsKey(String key);
+  boolean containsKey(K key);
 
   /**
    * Returns true if this map contains mappings for all the specified keys.
@@ -66,7 +66,7 @@ public interface AtomicMapService {
    * @return true if map contains key, false otherwise
    */
   @Query
-  boolean containsKeys(Collection<? extends String> keys);
+  boolean containsKeys(Collection<? extends K> keys);
 
   /**
    * Returns true if this map contains the specified value.
@@ -86,7 +86,7 @@ public interface AtomicMapService {
    * this map contains no mapping for the key
    */
   @Query
-  Versioned<byte[]> get(String key);
+  Versioned<byte[]> get(K key);
 
   /**
    * Returns a map of the values associated with the {@code keys} in this map. The returned map
@@ -99,7 +99,7 @@ public interface AtomicMapService {
    * @return the unmodifiable mapping of keys to values for the specified keys found in the map
    */
   @Query
-  Map<String, Versioned<byte[]>> getAllPresent(Set<String> keys);
+  Map<K, Versioned<byte[]>> getAllPresent(Set<K> keys);
 
   /**
    * Returns the value (and version) to which the specified key is mapped, or the provided
@@ -114,7 +114,7 @@ public interface AtomicMapService {
    * this map contains no mapping for the key
    */
   @Query
-  Versioned<byte[]> getOrDefault(String key, byte[] defaultValue);
+  Versioned<byte[]> getOrDefault(K key, byte[] defaultValue);
 
   /**
    * Associates the specified value with the specified key in this map (optional operation).
@@ -127,7 +127,7 @@ public interface AtomicMapService {
    * no mapping for key.
    */
   @Command
-  default MapEntryUpdateResult<String, byte[]> put(String key, byte[] value) {
+  default MapEntryUpdateResult<K, byte[]> put(K key, byte[] value) {
     return put(key, value, 0);
   }
 
@@ -143,7 +143,7 @@ public interface AtomicMapService {
    * no mapping for key.
    */
   @Command("putWithTtl")
-  MapEntryUpdateResult<String, byte[]> put(String key, byte[] value, long ttl);
+  MapEntryUpdateResult<K, byte[]> put(K key, byte[] value, long ttl);
 
   /**
    * Associates the specified value with the specified key in this map (optional operation).
@@ -155,7 +155,7 @@ public interface AtomicMapService {
    * @return new value.
    */
   @Command
-  default MapEntryUpdateResult<String, byte[]> putAndGet(String key, byte[] value) {
+  default MapEntryUpdateResult<K, byte[]> putAndGet(K key, byte[] value) {
     return putAndGet(key, value, 0);
   }
 
@@ -170,7 +170,7 @@ public interface AtomicMapService {
    * @return new value.
    */
   @Command("putAndGetWithTtl")
-  MapEntryUpdateResult<String, byte[]> putAndGet(String key, byte[] value, long ttl);
+  MapEntryUpdateResult<K, byte[]> putAndGet(K key, byte[] value, long ttl);
 
   /**
    * Removes the mapping for a key from this map if it is present (optional operation).
@@ -180,7 +180,7 @@ public interface AtomicMapService {
    * or null if the map contained no mapping for the key.
    */
   @Command
-  MapEntryUpdateResult<String, byte[]> remove(String key);
+  MapEntryUpdateResult<K, byte[]> remove(K key);
 
   /**
    * Removes all of the mappings from this map (optional operation).
@@ -199,7 +199,7 @@ public interface AtomicMapService {
    * @return a set of the keys contained in this map
    */
   @Query
-  Set<String> keySet();
+  Set<K> keySet();
 
   /**
    * Returns the collection of values (and associated versions) contained in this map.
@@ -223,7 +223,7 @@ public interface AtomicMapService {
    * @return set of entries contained in this map.
    */
   @Query
-  Set<Map.Entry<String, Versioned<byte[]>>> entrySet();
+  Set<Map.Entry<K, Versioned<byte[]>>> entrySet();
 
   /**
    * If the specified key is not already associated with a value
@@ -235,7 +235,7 @@ public interface AtomicMapService {
    * if key does not already mapped to a value.
    */
   @Command
-  default MapEntryUpdateResult<String, byte[]> putIfAbsent(String key, byte[] value) {
+  default MapEntryUpdateResult<K, byte[]> putIfAbsent(K key, byte[] value) {
     return putIfAbsent(key, value, 0);
   }
 
@@ -250,7 +250,7 @@ public interface AtomicMapService {
    * if key does not already mapped to a value.
    */
   @Command("putIfAbsentWithTtl")
-  MapEntryUpdateResult<String, byte[]> putIfAbsent(String key, byte[] value, long ttl);
+  MapEntryUpdateResult<K, byte[]> putIfAbsent(K key, byte[] value, long ttl);
 
   /**
    * Removes the entry for the specified key only if it is currently
@@ -261,7 +261,7 @@ public interface AtomicMapService {
    * @return true if the value was removed
    */
   @Command("removeValue")
-  MapEntryUpdateResult<String, byte[]> remove(String key, byte[] value);
+  MapEntryUpdateResult<K, byte[]> remove(K key, byte[] value);
 
   /**
    * Removes the entry for the specified key only if its current
@@ -272,7 +272,7 @@ public interface AtomicMapService {
    * @return true if the value was removed
    */
   @Command("removeVersion")
-  MapEntryUpdateResult<String, byte[]> remove(String key, long version);
+  MapEntryUpdateResult<K, byte[]> remove(K key, long version);
 
   /**
    * Replaces the entry for the specified key only if there is any value
@@ -283,7 +283,7 @@ public interface AtomicMapService {
    * @return the previous value associated with the specified key or null
    */
   @Command("replace")
-  MapEntryUpdateResult<String, byte[]> replace(String key, byte[] value);
+  MapEntryUpdateResult<K, byte[]> replace(K key, byte[] value);
 
   /**
    * Replaces the entry for the specified key only if currently mapped
@@ -295,7 +295,7 @@ public interface AtomicMapService {
    * @return true if the value was replaced
    */
   @Command("replaceValue")
-  MapEntryUpdateResult<String, byte[]> replace(String key, byte[] oldValue, byte[] newValue);
+  MapEntryUpdateResult<K, byte[]> replace(K key, byte[] oldValue, byte[] newValue);
 
   /**
    * Replaces the entry for the specified key only if it is currently mapped to the
@@ -307,7 +307,7 @@ public interface AtomicMapService {
    * @return true if the value was replaced
    */
   @Command("replaceVersion")
-  MapEntryUpdateResult<String, byte[]> replace(String key, long oldVersion, byte[] newValue);
+  MapEntryUpdateResult<K, byte[]> replace(K key, long oldVersion, byte[] newValue);
 
   /**
    * Returns a key iterator.
@@ -325,7 +325,7 @@ public interface AtomicMapService {
    * @return the next batch of keys for the iterator or {@code null} if the iterator is complete
    */
   @Query
-  Batch<String> nextKeys(long iteratorId, int position);
+  Batch<K> nextKeys(long iteratorId, int position);
 
   /**
    * Closes a key iterator.
@@ -377,7 +377,7 @@ public interface AtomicMapService {
    * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
    */
   @Query
-  Batch<Map.Entry<String, Versioned<byte[]>>> nextEntries(long iteratorId, int position);
+  Batch<Map.Entry<K, Versioned<byte[]>>> nextEntries(long iteratorId, int position);
 
   /**
    * Closes an entry iterator.
@@ -415,7 +415,7 @@ public interface AtomicMapService {
    * @return the prepare result
    */
   @Command
-  PrepareResult prepareAndCommit(TransactionLog<MapUpdate<String, byte[]>> transactionLog);
+  PrepareResult prepareAndCommit(TransactionLog<MapUpdate<K, byte[]>> transactionLog);
 
   /**
    * Prepares a transaction.
@@ -424,7 +424,7 @@ public interface AtomicMapService {
    * @return the prepare result
    */
   @Command
-  PrepareResult prepare(TransactionLog<MapUpdate<String, byte[]>> transactionLog);
+  PrepareResult prepare(TransactionLog<MapUpdate<K, byte[]>> transactionLog);
 
   /**
    * Commits a transaction.

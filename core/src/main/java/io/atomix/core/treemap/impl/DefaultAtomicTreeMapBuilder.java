@@ -31,14 +31,14 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <V> type for map value
  */
-public class DefaultAtomicTreeMapBuilder<V> extends AtomicTreeMapBuilder<V> {
+public class DefaultAtomicTreeMapBuilder<K extends Comparable<K>, V> extends AtomicTreeMapBuilder<K, V> {
   public DefaultAtomicTreeMapBuilder(String name, AtomicTreeMapConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<AtomicTreeMap<V>> buildAsync() {
+  public CompletableFuture<AtomicTreeMap<K, V>> buildAsync() {
     ProxyClient<AtomicTreeMapService> proxy = protocol().newProxy(
         name(),
         primitiveType(),
@@ -49,7 +49,7 @@ public class DefaultAtomicTreeMapBuilder<V> extends AtomicTreeMapBuilder<V> {
         .connect()
         .thenApply(map -> {
           Serializer serializer = serializer();
-          return new TranscodingAsyncAtomicTreeMap<V, byte[]>(
+          return new TranscodingAsyncAtomicTreeMap<K, V, byte[]>(
               (AsyncAtomicTreeMap) map,
               value -> serializer.encode(value),
               bytes -> serializer.decode(bytes))
