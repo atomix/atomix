@@ -15,7 +15,7 @@
  */
 package io.atomix.core.list;
 
-import io.atomix.primitive.PrimitiveBuilder;
+import io.atomix.core.collection.DistributedCollectionBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
 /**
@@ -23,7 +23,7 @@ import io.atomix.primitive.PrimitiveManagementService;
  *
  * @param <E> queue element type
  */
-public abstract class DistributedListBuilder<E> extends PrimitiveBuilder<DistributedListBuilder<E>, DistributedListConfig, DistributedList<E>> {
+public abstract class DistributedListBuilder<E> extends DistributedCollectionBuilder<DistributedListBuilder<E>, DistributedListConfig, DistributedList<E>, E> {
   public DistributedListBuilder(String name, DistributedListConfig config, PrimitiveManagementService managementService) {
     super(DistributedListType.instance(), name, config, managementService);
   }

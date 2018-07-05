@@ -15,7 +15,7 @@
  */
 package io.atomix.core.set;
 
-import io.atomix.primitive.PrimitiveBuilder;
+import io.atomix.core.collection.DistributedCollectionBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
 /**
@@ -23,7 +23,7 @@ import io.atomix.primitive.PrimitiveManagementService;
  *
  * @param <E> type set elements.
  */
-public abstract class DistributedSetBuilder<E> extends PrimitiveBuilder<DistributedSetBuilder<E>, DistributedSetConfig, DistributedSet<E>> {
+public abstract class DistributedSetBuilder<E> extends DistributedCollectionBuilder<DistributedSetBuilder<E>, DistributedSetConfig, DistributedSet<E>, E> {
   public DistributedSetBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
     super(DistributedSetType.instance(), name, config, managementService);
   }

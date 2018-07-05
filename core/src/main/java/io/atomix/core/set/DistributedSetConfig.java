@@ -15,13 +15,13 @@
  */
 package io.atomix.core.set;
 
-import io.atomix.primitive.config.PrimitiveConfig;
+import io.atomix.core.collection.DistributedCollectionConfig;
 import io.atomix.primitive.PrimitiveType;
 
 /**
  * Distributed set configuration.
  */
-public class DistributedSetConfig extends PrimitiveConfig<DistributedSetConfig> {
+public class DistributedSetConfig extends DistributedCollectionConfig<DistributedSetConfig> {
   @Override
   public PrimitiveType getType() {
     return DistributedSetType.instance();

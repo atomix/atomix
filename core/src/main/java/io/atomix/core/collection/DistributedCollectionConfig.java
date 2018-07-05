@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.multiset;
+package io.atomix.core.collection;
 
-import io.atomix.core.collection.DistributedCollectionConfig;
-import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
- * Distributed multiset configuration.
+ * Distributed collection configuration.
  */
-public class DistributedMultisetConfig extends DistributedCollectionConfig<DistributedMultisetConfig> {
-  @Override
-  public PrimitiveType getType() {
-    return DistributedMultisetType.instance();
-  }
+public abstract class DistributedCollectionConfig<C extends DistributedCollectionConfig<C>> extends PrimitiveConfig<C> {
 }
