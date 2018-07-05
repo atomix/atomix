@@ -19,6 +19,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableSet;
+import io.atomix.core.cache.CacheConfig;
 import io.atomix.core.multimap.AsyncAtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapEventListener;
 import io.atomix.primitive.PrimitiveState;
@@ -47,24 +48,15 @@ public class CachingAsyncAtomicMultimap<K, V> extends DelegatingAsyncAtomicMulti
   private final Consumer<PrimitiveState> stateListener;
 
   /**
-   * Default constructor.
-   *
-   * @param backingMap a distributed, strongly consistent map for backing
-   */
-  public CachingAsyncAtomicMultimap(AsyncAtomicMultimap<K, V> backingMap) {
-    this(backingMap, DEFAULT_CACHE_SIZE);
-  }
-
-  /**
    * Constructor to configure cache size.
    *
-   * @param backingMap a distributed, strongly consistent map for backing
-   * @param cacheSize  the maximum size of the cache
+   * @param backingMap  a distributed, strongly consistent map for backing
+   * @param cacheConfig the cache configuration
    */
-  public CachingAsyncAtomicMultimap(AsyncAtomicMultimap<K, V> backingMap, int cacheSize) {
+  public CachingAsyncAtomicMultimap(AsyncAtomicMultimap<K, V> backingMap, CacheConfig cacheConfig) {
     super(backingMap);
     cache = CacheBuilder.newBuilder()
-        .maximumSize(cacheSize)
+        .maximumSize(cacheConfig.getSize())
         .build(CacheLoader.from(CachingAsyncAtomicMultimap.super::get));
     cacheUpdater = event -> {
       V oldValue = event.oldValue();

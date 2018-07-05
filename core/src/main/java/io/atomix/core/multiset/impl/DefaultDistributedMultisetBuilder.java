@@ -55,8 +55,8 @@ public class DefaultDistributedMultisetBuilder<E> extends DistributedMultisetBui
               element -> BaseEncoding.base16().encode(serializer.encode(element)),
               string -> serializer.decode(BaseEncoding.base16().decode(string)));
 
-          if (config.isCacheEnabled()) {
-            list = new CachingAsyncDistributedMultiset<>(list, config.getCacheSize());
+          if (config.getCacheConfig().isEnabled()) {
+            list = new CachingAsyncDistributedMultiset<>(list, config.getCacheConfig());
           }
 
           if (config.isReadOnly()) {

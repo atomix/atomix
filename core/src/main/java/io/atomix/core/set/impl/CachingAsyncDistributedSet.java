@@ -15,6 +15,7 @@
  */
 package io.atomix.core.set.impl;
 
+import io.atomix.core.cache.CacheConfig;
 import io.atomix.core.collection.impl.CachingAsyncDistributedCollection;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.set.DistributedSet;
@@ -30,13 +31,8 @@ import java.util.concurrent.CompletableFuture;
 public class CachingAsyncDistributedSet<E> extends CachingAsyncDistributedCollection<E> implements AsyncDistributedSet<E> {
   private final AsyncDistributedSet<E> backingSet;
 
-  public CachingAsyncDistributedSet(AsyncDistributedSet<E> backingCollection) {
-    super(backingCollection);
-    this.backingSet = backingCollection;
-  }
-
-  public CachingAsyncDistributedSet(AsyncDistributedSet<E> backingCollection, int cacheSize) {
-    super(backingCollection, cacheSize);
+  public CachingAsyncDistributedSet(AsyncDistributedSet<E> backingCollection, CacheConfig cacheConfig) {
+    super(backingCollection, cacheConfig);
     this.backingSet = backingCollection;
   }
 

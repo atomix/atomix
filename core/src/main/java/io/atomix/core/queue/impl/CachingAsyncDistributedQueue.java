@@ -15,6 +15,7 @@
  */
 package io.atomix.core.queue.impl;
 
+import io.atomix.core.cache.CacheConfig;
 import io.atomix.core.collection.impl.CachingAsyncDistributedCollection;
 import io.atomix.core.queue.AsyncDistributedQueue;
 import io.atomix.core.queue.DistributedQueue;
@@ -28,13 +29,8 @@ import java.util.concurrent.CompletableFuture;
 public class CachingAsyncDistributedQueue<E> extends CachingAsyncDistributedCollection<E> implements AsyncDistributedQueue<E> {
   private final AsyncDistributedQueue<E> backingQueue;
 
-  public CachingAsyncDistributedQueue(AsyncDistributedQueue<E> backingCollection) {
-    super(backingCollection);
-    this.backingQueue = backingCollection;
-  }
-
-  public CachingAsyncDistributedQueue(AsyncDistributedQueue<E> backingCollection, int cacheSize) {
-    super(backingCollection, cacheSize);
+  public CachingAsyncDistributedQueue(AsyncDistributedQueue<E> backingCollection, CacheConfig cacheConfig) {
+    super(backingCollection, cacheConfig);
     this.backingQueue = backingCollection;
   }
 

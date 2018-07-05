@@ -62,8 +62,8 @@ public class DefaultAtomicMapBuilder<K, V> extends AtomicMapBuilder<K, V> {
             map = new NotNullAsyncAtomicMap<>(map);
           }
 
-          if (config.isCacheEnabled()) {
-            map = new CachingAsyncAtomicMap<>(map, config.getCacheSize());
+          if (config.getCacheConfig().isEnabled()) {
+            map = new CachingAsyncAtomicMap<>(map, config.getCacheConfig());
           }
 
           if (config.isReadOnly()) {

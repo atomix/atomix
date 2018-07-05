@@ -55,8 +55,8 @@ public class DefaultAtomicMultimapBuilder<K, V> extends AtomicMultimapBuilder<K,
               string -> serializer.decode(BaseEncoding.base16().decode(string)),
               value -> serializer.encode(value),
               bytes -> serializer.decode(bytes));
-          if (config.isCacheEnabled()) {
-            multimap = new CachingAsyncAtomicMultimap<>(multimap);
+          if (config.getCacheConfig().isEnabled()) {
+            multimap = new CachingAsyncAtomicMultimap<>(multimap, config.getCacheConfig());
           }
           return multimap.sync();
         });

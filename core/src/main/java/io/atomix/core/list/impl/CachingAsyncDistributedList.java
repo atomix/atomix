@@ -15,6 +15,7 @@
  */
 package io.atomix.core.list.impl;
 
+import io.atomix.core.cache.CacheConfig;
 import io.atomix.core.collection.impl.CachingAsyncDistributedCollection;
 import io.atomix.core.list.AsyncDistributedList;
 import io.atomix.core.list.DistributedList;
@@ -29,13 +30,8 @@ import java.util.concurrent.CompletableFuture;
 public class CachingAsyncDistributedList<E> extends CachingAsyncDistributedCollection<E> implements AsyncDistributedList<E> {
   private final AsyncDistributedList<E> backingList;
 
-  public CachingAsyncDistributedList(AsyncDistributedList<E> backingCollection) {
-    super(backingCollection);
-    this.backingList = backingCollection;
-  }
-
-  public CachingAsyncDistributedList(AsyncDistributedList<E> backingCollection, int cacheSize) {
-    super(backingCollection, cacheSize);
+  public CachingAsyncDistributedList(AsyncDistributedList<E> backingCollection, CacheConfig cacheConfig) {
+    super(backingCollection, cacheConfig);
     this.backingList = backingCollection;
   }
 

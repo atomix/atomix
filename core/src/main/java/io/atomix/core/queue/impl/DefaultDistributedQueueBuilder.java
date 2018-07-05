@@ -55,8 +55,8 @@ public class DefaultDistributedQueueBuilder<E> extends DistributedQueueBuilder<E
               element -> BaseEncoding.base16().encode(serializer.encode(element)),
               string -> serializer.decode(BaseEncoding.base16().decode(string)));
 
-          if (config.isCacheEnabled()) {
-            queue = new CachingAsyncDistributedQueue<>(queue, config.getCacheSize());
+          if (config.getCacheConfig().isEnabled()) {
+            queue = new CachingAsyncDistributedQueue<>(queue, config.getCacheConfig());
           }
 
           if (config.isReadOnly()) {

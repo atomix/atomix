@@ -13,12 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.collection;
-
-import io.atomix.core.cache.CachedPrimitiveConfig;
 
 /**
- * Distributed collection configuration.
+ * Cached primitive configurations and builders.
  */
-public abstract class DistributedCollectionConfig<C extends DistributedCollectionConfig<C>> extends CachedPrimitiveConfig<C> {
-}
+package io.atomix.core.cache;
