@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive;
+package io.atomix.primitive.impl;
 
 import com.google.common.base.MoreObjects;
+import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.PrimitiveState;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.util.Objects;

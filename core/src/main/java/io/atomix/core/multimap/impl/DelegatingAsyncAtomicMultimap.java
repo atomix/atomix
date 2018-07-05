@@ -22,7 +22,7 @@ import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.multimap.AsyncAtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapEventListener;
-import io.atomix.primitive.DelegatingAsyncPrimitive;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;

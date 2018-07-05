@@ -24,7 +24,7 @@ import io.atomix.core.treemap.AtomicTreeMap;
 import io.atomix.core.map.AtomicMapEventListener;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.DelegatingAsyncPrimitive;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.time.Versioned;
 
