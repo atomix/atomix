@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package io.atomix.core.treemap;
+package io.atomix.core.map;
 
-import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.utils.time.Versioned;
 

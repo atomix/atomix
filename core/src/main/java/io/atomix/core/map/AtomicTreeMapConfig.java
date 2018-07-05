@@ -13,8 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.atomix.core.map;
+
+import io.atomix.primitive.config.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
- * Atomic tree map primitive.
+ * Consistent tree-map configuration.
  */
-package io.atomix.core.treemap;
+public class AtomicTreeMapConfig extends PrimitiveConfig<AtomicTreeMapConfig> {
+  @Override
+  public PrimitiveType getType() {
+    return AtomicTreeMapType.instance();
+  }
+}

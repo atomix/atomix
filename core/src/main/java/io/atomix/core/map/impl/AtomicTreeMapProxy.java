@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package io.atomix.core.treemap.impl;
+package io.atomix.core.map.impl;
 
-import io.atomix.core.map.impl.AbstractAtomicMapProxy;
-import io.atomix.core.treemap.AsyncAtomicTreeMap;
-import io.atomix.core.treemap.AtomicTreeMap;
+import io.atomix.core.map.AsyncAtomicTreeMap;
+import io.atomix.core.map.AtomicTreeMap;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.time.Versioned;

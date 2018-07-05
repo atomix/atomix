@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.atomix.core.treemap;
+package io.atomix.core.map;
 
 import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;

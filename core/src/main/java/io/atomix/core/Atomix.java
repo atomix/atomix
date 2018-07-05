@@ -42,7 +42,7 @@ import io.atomix.core.set.DistributedSet;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.tree.AtomicDocumentTree;
-import io.atomix.core.treemap.AtomicTreeMap;
+import io.atomix.core.map.AtomicTreeMap;
 import io.atomix.core.utils.config.PolymorphicConfigMapper;
 import io.atomix.core.utils.config.PolymorphicTypeMapper;
 import io.atomix.core.value.AtomicValue;

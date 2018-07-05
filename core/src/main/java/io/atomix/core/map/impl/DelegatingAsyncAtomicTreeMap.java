@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package io.atomix.core.treemap.impl;
+package io.atomix.core.map.impl;
 
 import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.map.AtomicMapEventListener;
-import io.atomix.core.map.impl.MapUpdate;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.core.treemap.AsyncAtomicTreeMap;
-import io.atomix.core.treemap.AtomicTreeMap;
+import io.atomix.core.map.AsyncAtomicTreeMap;
+import io.atomix.core.map.AtomicTreeMap;
 import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.time.Versioned;
