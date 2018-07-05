@@ -61,7 +61,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
   @BeforeClass
   public static void setupCluster() throws Exception {
     AbstractAtomixTest.setupAtomix();
-    Function<Atomix.Builder, Atomix> build = builder ->
+    Function<AtomixBuilder, Atomix> build = builder ->
         builder.withManagementGroup(RaftPartitionGroup.builder("system")
             .withNumPartitions(1)
             .withMembers("1", "2", "3")
