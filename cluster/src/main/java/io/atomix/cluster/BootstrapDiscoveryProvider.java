@@ -30,10 +30,8 @@ import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -52,7 +50,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 /**
  * Cluster membership provider that bootstraps membership from a pre-defined set of peers.
  * <p>
- * The bootstrap member provider takes a set of peer {@link Config#setNodes(Collection) addresses} and uses them
+ * The bootstrap member provider takes a set of peer {@link BootstrapDiscoveryConfig#setNodes(Collection) addresses} and uses them
  * to join the cluster. Using the {@link io.atomix.cluster.messaging.MessagingService}, each node sends a heartbeat to
  * its configured bootstrap peers. Peers respond to each heartbeat message with a list of all known peers, thus
  * propagating membership information using a gossip style protocol.
@@ -72,14 +70,14 @@ public class BootstrapDiscoveryProvider
    *
    * @return a new bootstrap provider builder
    */
-  public static Builder builder() {
-    return new Builder();
+  public static BootstrapDiscoveryBuilder builder() {
+    return new BootstrapDiscoveryBuilder();
   }
 
   /**
    * Bootstrap member location provider type.
    */
-  public static class Type implements NodeDiscoveryProvider.Type<Config> {
+  public static class Type implements NodeDiscoveryProvider.Type<BootstrapDiscoveryConfig> {
     private static final String NAME = "bootstrap";
 
     @Override
@@ -88,192 +86,13 @@ public class BootstrapDiscoveryProvider
     }
 
     @Override
-    public Config newConfig() {
-      return new Config();
+    public BootstrapDiscoveryConfig newConfig() {
+      return new BootstrapDiscoveryConfig();
     }
 
     @Override
-    public NodeDiscoveryProvider newProvider(Config config) {
+    public NodeDiscoveryProvider newProvider(BootstrapDiscoveryConfig config) {
       return new BootstrapDiscoveryProvider(config);
-    }
-  }
-
-  /**
-   * Bootstrap member location provider builder.
-   */
-  public static class Builder implements NodeDiscoveryProvider.Builder {
-    private final Config config = new Config();
-
-    /**
-     * Sets the bootstrap nodes.
-     *
-     * @param nodes the bootstrap nodes
-     * @return the location provider builder
-     */
-    public Builder withNodes(Address... nodes) {
-      return withNodes(Stream.of(nodes)
-          .map(address -> Node.builder()
-              .withAddress(address)
-              .build())
-          .collect(Collectors.toSet()));
-    }
-
-    /**
-     * Sets the bootstrap nodes.
-     *
-     * @param nodes the bootstrap nodes
-     * @return the location provider builder
-     */
-    public Builder withNodes(Node... nodes) {
-      return withNodes(Arrays.asList(nodes));
-    }
-
-    /**
-     * Sets the bootstrap nodes.
-     *
-     * @param locations the bootstrap member locations
-     * @return the location provider builder
-     */
-    public Builder withNodes(Collection<Node> locations) {
-      config.setNodes(locations);
-      return this;
-    }
-
-    /**
-     * Sets the failure detection heartbeat interval.
-     *
-     * @param heartbeatInterval the failure detection heartbeat interval
-     * @return the location provider builder
-     */
-    public Builder withHeartbeatInterval(Duration heartbeatInterval) {
-      config.setHeartbeatInterval(heartbeatInterval);
-      return this;
-    }
-
-    /**
-     * Sets the phi accrual failure threshold.
-     *
-     * @param failureThreshold the phi accrual failure threshold
-     * @return the location provider builder
-     */
-    public Builder withFailureThreshold(int failureThreshold) {
-      config.setFailureThreshold(failureThreshold);
-      return this;
-    }
-
-    /**
-     * Sets the failure timeout to use prior to phi failure detectors being populated.
-     *
-     * @param failureTimeout the failure timeout
-     * @return the location provider builder
-     */
-    public Builder withFailureTimeout(Duration failureTimeout) {
-      config.setFailureTimeout(failureTimeout);
-      return this;
-    }
-
-    @Override
-    public NodeDiscoveryProvider build() {
-      return new BootstrapDiscoveryProvider(config);
-    }
-  }
-
-  /**
-   * Bootstrap location provider configuration.
-   */
-  public static class Config implements NodeDiscoveryProvider.Config {
-    private static final int DEFAULT_HEARTBEAT_INTERVAL = 1000;
-    private static final int DEFAULT_FAILURE_TIMEOUT = 10000;
-    private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
-
-    private Duration heartbeatInterval = Duration.ofMillis(DEFAULT_HEARTBEAT_INTERVAL);
-    private int failureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
-    private Duration failureTimeout = Duration.ofMillis(DEFAULT_FAILURE_TIMEOUT);
-    private Collection<Node> nodes = Collections.emptySet();
-
-    @Override
-    public NodeDiscoveryProvider.Type getType() {
-      return TYPE;
-    }
-
-    /**
-     * Returns the configured bootstrap nodes.
-     *
-     * @return the configured bootstrap nodes
-     */
-    public Collection<Node> getNodes() {
-      return nodes;
-    }
-
-    /**
-     * Sets the bootstrap nodes.
-     *
-     * @param nodes the bootstrap nodes
-     * @return the bootstrap provider configuration
-     */
-    public Config setNodes(Collection<Node> nodes) {
-      this.nodes = nodes;
-      return this;
-    }
-
-    /**
-     * Returns the heartbeat interval.
-     *
-     * @return the heartbeat interval
-     */
-    public Duration getHeartbeatInterval() {
-      return heartbeatInterval;
-    }
-
-    /**
-     * Sets the heartbeat interval.
-     *
-     * @param heartbeatInterval the heartbeat interval
-     * @return the group membership configuration
-     */
-    public Config setHeartbeatInterval(Duration heartbeatInterval) {
-      this.heartbeatInterval = checkNotNull(heartbeatInterval);
-      return this;
-    }
-
-    /**
-     * Returns the failure detector threshold.
-     *
-     * @return the failure detector threshold
-     */
-    public int getFailureThreshold() {
-      return failureThreshold;
-    }
-
-    /**
-     * Sets the failure detector threshold.
-     *
-     * @param failureThreshold the failure detector threshold
-     * @return the group membership configuration
-     */
-    public Config setFailureThreshold(int failureThreshold) {
-      this.failureThreshold = failureThreshold;
-      return this;
-    }
-
-    /**
-     * Returns the base failure timeout.
-     *
-     * @return the base failure timeout
-     */
-    public Duration getFailureTimeout() {
-      return failureTimeout;
-    }
-
-    /**
-     * Sets the base failure timeout.
-     *
-     * @param failureTimeout the base failure timeout
-     * @return the group membership configuration
-     */
-    public Config setFailureTimeout(Duration failureTimeout) {
-      this.failureTimeout = checkNotNull(failureTimeout);
-      return this;
     }
   }
 
@@ -289,7 +108,7 @@ public class BootstrapDiscoveryProvider
   private static final String HEARTBEAT_MESSAGE = "atomix-cluster-heartbeat";
 
   private final Collection<Node> bootstrapNodes;
-  private final Config config;
+  private final BootstrapDiscoveryConfig config;
 
   private volatile BootstrapService bootstrap;
 
@@ -308,16 +127,16 @@ public class BootstrapDiscoveryProvider
   }
 
   public BootstrapDiscoveryProvider(Collection<Node> bootstrapNodes) {
-    this(new Config().setNodes(bootstrapNodes));
+    this(new BootstrapDiscoveryConfig().setNodes(bootstrapNodes));
   }
 
-  BootstrapDiscoveryProvider(Config config) {
+  BootstrapDiscoveryProvider(BootstrapDiscoveryConfig config) {
     this.config = checkNotNull(config);
     this.bootstrapNodes = ImmutableSet.copyOf(config.getNodes());
   }
 
   @Override
-  public NodeDiscoveryProvider.Config config() {
+  public BootstrapDiscoveryConfig config() {
     return config;
   }
 

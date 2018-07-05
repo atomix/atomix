@@ -19,6 +19,7 @@ import io.atomix.cluster.ClusterConfig;
 import io.atomix.cluster.MemberConfig;
 import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.MulticastConfig;
+import io.atomix.cluster.MulticastDiscoveryConfig;
 import io.atomix.cluster.MulticastDiscoveryProvider;
 import io.atomix.core.map.AtomicMapConfig;
 import io.atomix.core.profile.ConsensusProfile;
@@ -83,7 +84,7 @@ public class AtomixConfigTest {
     assertEquals(12, membership.getReachabilityThreshold());
     assertEquals(Duration.ofSeconds(15), membership.getReachabilityTimeout());
 
-    MulticastDiscoveryProvider.Config discovery = (MulticastDiscoveryProvider.Config) cluster.getDiscoveryConfig();
+    MulticastDiscoveryConfig discovery = (MulticastDiscoveryConfig) cluster.getDiscoveryConfig();
     assertEquals(MulticastDiscoveryProvider.TYPE, discovery.getType());
     assertEquals(Duration.ofSeconds(1), discovery.getBroadcastInterval());
     assertEquals(12, discovery.getFailureThreshold());

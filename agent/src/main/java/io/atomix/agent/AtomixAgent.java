@@ -15,9 +15,9 @@
  */
 package io.atomix.agent;
 
-import io.atomix.cluster.BootstrapDiscoveryProvider;
+import io.atomix.cluster.BootstrapDiscoveryConfig;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.MulticastDiscoveryProvider;
+import io.atomix.cluster.MulticastDiscoveryConfig;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeConfig;
 import io.atomix.core.Atomix;
@@ -157,7 +157,7 @@ public class AtomixAgent {
     }
 
     if (bootstrap != null && !bootstrap.isEmpty()) {
-      config.getClusterConfig().setDiscoveryConfig(new BootstrapDiscoveryProvider.Config().setNodes(bootstrap));
+      config.getClusterConfig().setDiscoveryConfig(new BootstrapDiscoveryConfig().setNodes(bootstrap));
     }
 
     if (multicastEnabled) {
@@ -169,7 +169,7 @@ public class AtomixAgent {
         config.getClusterConfig().getMulticastConfig().setPort(multicastPort);
       }
       if (bootstrap == null || bootstrap.isEmpty()) {
-        config.getClusterConfig().setDiscoveryConfig(new MulticastDiscoveryProvider.Config());
+        config.getClusterConfig().setDiscoveryConfig(new MulticastDiscoveryConfig());
       }
     }
 

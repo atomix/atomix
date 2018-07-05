@@ -27,7 +27,7 @@ public class ClusterConfig implements Config {
 
   private String clusterId = DEFAULT_CLUSTER_NAME;
   private MemberConfig nodeConfig = new MemberConfig();
-  private NodeDiscoveryProvider.Config discoveryConfig;
+  private NodeDiscoveryConfig discoveryConfig;
   private MulticastConfig multicastConfig = new MulticastConfig();
   private MembershipConfig membershipConfig = new MembershipConfig();
 
@@ -76,7 +76,7 @@ public class ClusterConfig implements Config {
    *
    * @return the node discovery provider configuration
    */
-  public NodeDiscoveryProvider.Config getDiscoveryConfig() {
+  public NodeDiscoveryConfig getDiscoveryConfig() {
     return discoveryConfig;
   }
 
@@ -86,7 +86,7 @@ public class ClusterConfig implements Config {
    * @param discoveryConfig the node discovery provider configuration
    * @return the node configuration
    */
-  public ClusterConfig setDiscoveryConfig(NodeDiscoveryProvider.Config discoveryConfig) {
+  public ClusterConfig setDiscoveryConfig(NodeDiscoveryConfig discoveryConfig) {
     this.discoveryConfig = checkNotNull(discoveryConfig);
     return this;
   }

@@ -331,12 +331,12 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    */
   @SuppressWarnings("unchecked")
   protected static NodeDiscoveryProvider buildLocationProvider(ClusterConfig config) {
-    NodeDiscoveryProvider.Config discoveryProviderConfig = config.getDiscoveryConfig();
+    NodeDiscoveryConfig discoveryProviderConfig = config.getDiscoveryConfig();
     if (discoveryProviderConfig != null) {
       return discoveryProviderConfig.getType().newProvider(discoveryProviderConfig);
     }
     if (config.getMulticastConfig().isEnabled()) {
-      return new MulticastDiscoveryProvider(new MulticastDiscoveryProvider.Config());
+      return new MulticastDiscoveryProvider(new MulticastDiscoveryConfig());
     } else {
       return new BootstrapDiscoveryProvider(Collections.emptyList());
     }
