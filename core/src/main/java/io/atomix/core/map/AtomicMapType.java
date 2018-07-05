@@ -15,9 +15,9 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.map.impl.DefaultAtomicMapBuilder;
 import io.atomix.core.map.impl.AtomicMapResource;
 import io.atomix.core.map.impl.AtomicMapService;
+import io.atomix.core.map.impl.DefaultAtomicMapBuilder;
 import io.atomix.core.map.impl.DefaultAtomicMapService;
 import io.atomix.core.map.impl.MapEntryUpdateResult;
 import io.atomix.core.map.impl.MapUpdate;

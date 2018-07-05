@@ -15,13 +15,13 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.AtomicMapType;
+import io.atomix.core.map.DistributedMapType;
 
 /**
- * Default atomic map service.
+ * Default distributed map service.
  */
-public class DefaultAtomicMapService extends AbstractAtomicMapService {
-  public DefaultAtomicMapService() {
-    super(AtomicMapType.instance());
+public class DefaultDistributedMapService extends AbstractAtomicMapService {
+  public DefaultDistributedMapService() {
+    super(DistributedMapType.instance());
   }
 }
