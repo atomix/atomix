@@ -23,4 +23,8 @@ import java.util.List;
  * Distributed list.
  */
 public interface DistributedList<E> extends DistributedCollection<E>, List<E> {
+
+  @Override
+  AsyncDistributedList<E> async();
+
 }
