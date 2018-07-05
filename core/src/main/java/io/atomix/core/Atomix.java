@@ -31,6 +31,7 @@ import io.atomix.core.leadership.LeaderElector;
 import io.atomix.core.list.DistributedList;
 import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.map.AtomicMap;
+import io.atomix.core.map.DistributedMap;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.profile.Profile;
@@ -337,6 +338,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
       String name,
       PrimitiveType<B, C, P> primitiveType) {
     return primitives.primitiveBuilder(name, primitiveType);
+  }
+
+  @Override
+  public <K, V> DistributedMap<K, V> getMap(String name) {
+    return primitives.getMap(name);
   }
 
   @Override

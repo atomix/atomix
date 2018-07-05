@@ -41,6 +41,8 @@ import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.lock.DistributedLockType;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapType;
+import io.atomix.core.map.DistributedMap;
+import io.atomix.core.map.DistributedMapType;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapType;
 import io.atomix.core.multiset.DistributedMultiset;
@@ -141,6 +143,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public TransactionBuilder transactionBuilder(String name) {
     return new DefaultTransactionBuilder(name, new TransactionConfig(), managementService, transactionService);
+  }
+
+  @Override
+  public <K, V> DistributedMap<K, V> getMap(String name) {
+    return getPrimitive(name, DistributedMapType.instance(), configService.getConfig(name));
   }
 
   @Override
