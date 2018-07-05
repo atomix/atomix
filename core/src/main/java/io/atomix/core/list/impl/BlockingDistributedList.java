@@ -83,4 +83,9 @@ public class BlockingDistributedList<E> extends BlockingDistributedCollection<E>
   public List<E> subList(int fromIndex, int toIndex) {
     throw new UnsupportedOperationException();
   }
+
+  @Override
+  public AsyncDistributedList<E> async() {
+    return asyncList;
+  }
 }

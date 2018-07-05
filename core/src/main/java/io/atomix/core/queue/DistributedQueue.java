@@ -23,4 +23,6 @@ import java.util.Queue;
  * Distributed queue.
  */
 public interface DistributedQueue<E> extends DistributedCollection<E>, Queue<E> {
+  @Override
+  AsyncDistributedQueue<E> async();
 }

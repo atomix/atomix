@@ -41,4 +41,7 @@ public interface DistributedCollection<E> extends SyncPrimitive, SyncIterable<E>
    */
   void removeListener(CollectionEventListener<E> listener);
 
+  @Override
+  AsyncDistributedCollection<E> async();
+
 }
