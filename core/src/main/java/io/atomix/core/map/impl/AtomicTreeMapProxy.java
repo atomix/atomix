@@ -16,16 +16,16 @@
 
 package io.atomix.core.map.impl;
 
+import io.atomix.core.map.AsyncAtomicNavigableMap;
 import io.atomix.core.map.AsyncAtomicTreeMap;
 import io.atomix.core.map.AtomicTreeMap;
+import io.atomix.core.set.AsyncDistributedNavigableSet;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.NavigableMap;
-import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -102,6 +102,18 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
   }
 
   @Override
+  public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> pollFirstEntry() {
+    return getProxyClient().applyAll(service -> service.pollFirstEntry())
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
+  }
+
+  @Override
+  public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> pollLastEntry() {
+    return getProxyClient().applyAll(service -> service.pollLastEntry())
+        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
+  }
+
+  @Override
   public CompletableFuture<K> lowerKey(K key) {
     return getProxyClient().applyAll(service -> service.lowerKey(key))
         .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
@@ -126,14 +138,18 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
   }
 
   @Override
-  public CompletableFuture<NavigableSet<K>> navigableKeySet() {
+  public AsyncDistributedNavigableSet<K> navigableKeySet() {
     throw new UnsupportedOperationException("This operation is not yet supported.");
   }
 
   @Override
-  public CompletableFuture<NavigableMap<K, byte[]>> subMap(
-      K upperKey, K lowerKey, boolean inclusiveUpper, boolean inclusiveLower) {
-    throw new UnsupportedOperationException("This operation is not yet supported.");
+  public AsyncAtomicNavigableMap<K, Versioned<byte[]>> descendingMap() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public AsyncDistributedNavigableSet<K> descendingKeySet() {
+    throw new UnsupportedOperationException();
   }
 
   @Override

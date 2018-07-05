@@ -32,6 +32,7 @@ import io.atomix.core.list.DistributedList;
 import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.DistributedMap;
+import io.atomix.core.map.DistributedTreeMap;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.profile.Profile;
@@ -343,6 +344,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   public <K, V> DistributedMap<K, V> getMap(String name) {
     return primitives.getMap(name);
+  }
+
+  @Override
+  public <K extends Comparable<K>, V> DistributedTreeMap<K, V> getTreeMap(String name) {
+    return primitives.getTreeMap(name);
   }
 
   @Override

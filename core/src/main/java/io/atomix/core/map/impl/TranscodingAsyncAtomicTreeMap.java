@@ -19,22 +19,22 @@ package io.atomix.core.map.impl;
 import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.impl.TranscodingAsyncDistributedCollection;
+import io.atomix.core.map.AsyncAtomicNavigableMap;
+import io.atomix.core.map.AsyncAtomicTreeMap;
 import io.atomix.core.map.AtomicMapEvent;
 import io.atomix.core.map.AtomicMapEventListener;
+import io.atomix.core.map.AtomicTreeMap;
+import io.atomix.core.set.AsyncDistributedNavigableSet;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.set.impl.TranscodingAsyncDistributedSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.core.map.AsyncAtomicTreeMap;
-import io.atomix.core.map.AtomicTreeMap;
 import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.NavigableMap;
-import java.util.NavigableSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
@@ -73,6 +73,10 @@ public class TranscodingAsyncAtomicTreeMap<K extends Comparable<K>, V1, V2> exte
     this.entryEncoder = e -> e == null ? null : Maps.immutableEntry(e.getKey(), versionedValueEncoder.apply(e.getValue()));
   }
 
+  private Map.Entry<K, Versioned<V1>> decodeEntry(Map.Entry<K, Versioned<V2>> entry) {
+    return entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null;
+  }
+
   @Override
   public CompletableFuture<K> firstKey() {
     return backingMap.firstKey();
@@ -85,38 +89,42 @@ public class TranscodingAsyncAtomicTreeMap<K extends Comparable<K>, V1, V2> exte
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<V1>>> ceilingEntry(K key) {
-    return backingMap.ceilingEntry(key)
-        .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null);
+    return backingMap.ceilingEntry(key).thenApply(this::decodeEntry);
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<V1>>> floorEntry(K key) {
-    return backingMap.floorEntry(key)
-        .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null);
+    return backingMap.floorEntry(key).thenApply(this::decodeEntry);
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<V1>>> higherEntry(K key) {
-    return backingMap.higherEntry(key)
-        .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null);
+    return backingMap.higherEntry(key).thenApply(this::decodeEntry);
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<V1>>> lowerEntry(K key) {
-    return backingMap.lowerEntry(key)
-        .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null);
+    return backingMap.lowerEntry(key).thenApply(this::decodeEntry);
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<V1>>> firstEntry() {
-    return backingMap.firstEntry()
-        .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null);
+    return backingMap.firstEntry().thenApply(this::decodeEntry);
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<V1>>> lastEntry() {
-    return backingMap.lastEntry()
-        .thenApply(entry -> entry != null ? Maps.immutableEntry(entry.getKey(), versionedValueDecoder.apply(entry.getValue())) : null);
+    return backingMap.lastEntry().thenApply(this::decodeEntry);
+  }
+
+  @Override
+  public CompletableFuture<Map.Entry<K, Versioned<V1>>> pollFirstEntry() {
+    return backingMap.pollFirstEntry().thenApply(this::decodeEntry);
+  }
+
+  @Override
+  public CompletableFuture<Map.Entry<K, Versioned<V1>>> pollLastEntry() {
+    return backingMap.pollLastEntry().thenApply(this::decodeEntry);
   }
 
   @Override
@@ -140,14 +148,18 @@ public class TranscodingAsyncAtomicTreeMap<K extends Comparable<K>, V1, V2> exte
   }
 
   @Override
-  public CompletableFuture<NavigableSet<K>> navigableKeySet() {
+  public AsyncDistributedNavigableSet<K> navigableKeySet() {
     return backingMap.navigableKeySet();
   }
 
   @Override
-  public CompletableFuture<NavigableMap<K, V1>> subMap(
-      K upperKey, K lowerKey, boolean inclusiveUpper, boolean inclusiveLower) {
-    throw new UnsupportedOperationException("This operation is not yet supported.");
+  public AsyncAtomicNavigableMap<K, Versioned<V1>> descendingMap() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public AsyncDistributedNavigableSet<K> descendingKeySet() {
+    return backingMap.descendingKeySet();
   }
 
   @Override

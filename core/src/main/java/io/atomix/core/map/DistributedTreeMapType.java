@@ -15,33 +15,32 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.map.impl.DefaultAtomicTreeMapBuilder;
-import io.atomix.core.map.impl.AbstractAtomicTreeMapService;
+import io.atomix.core.map.impl.DefaultDistributedTreeMapBuilder;
+import io.atomix.core.map.impl.DefaultDistributedTreeMapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.serializer.Namespace;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Consistent tree map primitive type.
+ * Distributed tree map primitive type.
  */
-public class AtomicTreeMapType<K extends Comparable<K>, V>
-    implements PrimitiveType<AtomicTreeMapBuilder<K, V>, AtomicTreeMapConfig, AtomicTreeMap<K, V>> {
-  private static final String NAME = "atomic-tree-map";
-  private static final AtomicTreeMapType INSTANCE = new AtomicTreeMapType();
+public class DistributedTreeMapType<K extends Comparable<K>, V> implements PrimitiveType<DistributedTreeMapBuilder<K, V>, DistributedTreeMapConfig, DistributedTreeMap<K, V>> {
+  private static final String NAME = "treemap";
+
+  private static final DistributedTreeMapType INSTANCE = new DistributedTreeMapType();
 
   /**
-   * Returns a new consistent tree map type.
+   * Returns a new distributed tree map type.
    *
    * @param <K> the key type
    * @param <V> the value type
-   * @return a new consistent tree map type
+   * @return a new distributed tree map type
    */
   @SuppressWarnings("unchecked")
-  public static <K extends Comparable<K>, V> AtomicTreeMapType<K, V> instance() {
+  public static <K extends Comparable<K>, V> DistributedTreeMapType<K, V> instance() {
     return INSTANCE;
   }
 
@@ -51,23 +50,18 @@ public class AtomicTreeMapType<K extends Comparable<K>, V>
   }
 
   @Override
-  public Namespace namespace() {
-    return AtomicMapType.instance().namespace();
-  }
-
-  @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new AbstractAtomicTreeMapService();
+    return new DefaultDistributedTreeMapService();
   }
 
   @Override
-  public AtomicTreeMapConfig newConfig() {
-    return new AtomicTreeMapConfig();
+  public DistributedTreeMapConfig newConfig() {
+    return new DistributedTreeMapConfig();
   }
 
   @Override
-  public AtomicTreeMapBuilder<K, V> newBuilder(String name, AtomicTreeMapConfig config, PrimitiveManagementService managementService) {
-    return new DefaultAtomicTreeMapBuilder<>(name, config, managementService);
+  public DistributedTreeMapBuilder<K, V> newBuilder(String name, DistributedTreeMapConfig config, PrimitiveManagementService managementService) {
+    return new DefaultDistributedTreeMapBuilder<>(name, config, managementService);
   }
 
   @Override

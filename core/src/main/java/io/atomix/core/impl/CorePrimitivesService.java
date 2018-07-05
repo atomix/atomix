@@ -26,8 +26,8 @@ import io.atomix.core.PrimitivesService;
 import io.atomix.core.barrier.DistributedCyclicBarrier;
 import io.atomix.core.barrier.DistributedCyclicBarrierType;
 import io.atomix.core.counter.AtomicCounter;
-import io.atomix.core.countermap.AtomicCounterMap;
 import io.atomix.core.counter.AtomicCounterType;
+import io.atomix.core.countermap.AtomicCounterMap;
 import io.atomix.core.countermap.AtomicCounterMapType;
 import io.atomix.core.idgenerator.AtomicIdGenerator;
 import io.atomix.core.idgenerator.AtomicIdGeneratorType;
@@ -41,8 +41,12 @@ import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.lock.DistributedLockType;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapType;
+import io.atomix.core.map.AtomicTreeMap;
+import io.atomix.core.map.AtomicTreeMapType;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapType;
+import io.atomix.core.map.DistributedTreeMap;
+import io.atomix.core.map.DistributedTreeMapType;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapType;
 import io.atomix.core.multiset.DistributedMultiset;
@@ -60,15 +64,13 @@ import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.transaction.impl.DefaultTransactionBuilder;
 import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.tree.AtomicDocumentTreeType;
-import io.atomix.core.map.AtomicTreeMap;
-import io.atomix.core.map.AtomicTreeMapType;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueType;
 import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.core.workqueue.WorkQueueType;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
@@ -148,6 +150,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public <K, V> DistributedMap<K, V> getMap(String name) {
     return getPrimitive(name, DistributedMapType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public <K extends Comparable<K>, V> DistributedTreeMap<K, V> getTreeMap(String name) {
+    return getPrimitive(name, DistributedTreeMapType.instance(), configService.getConfig(name));
   }
 
   @Override
