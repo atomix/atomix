@@ -23,11 +23,13 @@ import io.atomix.core.multiset.AsyncDistributedMultiset;
 import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.set.DistributedSet;
+import io.atomix.core.set.DistributedSetType;
 import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.core.set.impl.SetUpdate;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.PrimitiveRegistry;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
@@ -105,6 +107,11 @@ public class DistributedMultisetProxy
     @Override
     public String name() {
       return DistributedMultisetProxy.this.name();
+    }
+
+    @Override
+    public PrimitiveType type() {
+      return DistributedSetType.instance();
     }
 
     @Override
@@ -218,6 +225,11 @@ public class DistributedMultisetProxy
     @Override
     public String name() {
       return DistributedMultisetProxy.this.name();
+    }
+
+    @Override
+    public PrimitiveType type() {
+      return DistributedSetType.instance();
     }
 
     @Override

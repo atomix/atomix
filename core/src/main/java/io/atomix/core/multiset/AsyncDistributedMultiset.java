@@ -20,7 +20,6 @@ import com.google.common.collect.Multiset;
 import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -30,10 +29,6 @@ import java.util.concurrent.CompletableFuture;
  * Asynchronous distributed multiset.
  */
 public interface AsyncDistributedMultiset<E> extends AsyncDistributedCollection<E> {
-  @Override
-  default PrimitiveType type() {
-    return DistributedMultisetType.instance();
-  }
 
   /**
    * Returns the number of occurrences of an element in this multiset (the <i>count</i> of the

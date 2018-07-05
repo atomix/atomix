@@ -19,7 +19,7 @@ import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.AsyncIterator;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -28,21 +28,12 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Delegating distributed collection.
  */
-public class DelegatingAsyncDistributedCollection<E> implements AsyncDistributedCollection<E> {
+public class DelegatingAsyncDistributedCollection<E> extends DelegatingAsyncPrimitive implements AsyncDistributedCollection<E> {
   private final AsyncDistributedCollection<E> delegateCollection;
 
   public DelegatingAsyncDistributedCollection(AsyncDistributedCollection<E> delegateCollection) {
+    super(delegateCollection);
     this.delegateCollection = delegateCollection;
-  }
-
-  @Override
-  public String name() {
-    return delegateCollection.name();
-  }
-
-  @Override
-  public PrimitiveProtocol protocol() {
-    return delegateCollection.protocol();
   }
 
   @Override
@@ -108,11 +99,6 @@ public class DelegatingAsyncDistributedCollection<E> implements AsyncDistributed
   @Override
   public CompletableFuture<AsyncIterator<E>> iterator() {
     return delegateCollection.iterator();
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return delegateCollection.close();
   }
 
   @Override

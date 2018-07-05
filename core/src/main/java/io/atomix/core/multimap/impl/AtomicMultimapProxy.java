@@ -19,21 +19,24 @@ package io.atomix.core.multimap.impl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
-import io.atomix.core.multimap.AsyncAtomicMultimap;
-import io.atomix.core.multimap.AtomicMultimap;
-import io.atomix.core.multimap.AtomicMultimapEvent;
-import io.atomix.core.multimap.AtomicMultimapEventListener;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.multiset.AsyncDistributedMultiset;
-import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.collection.AsyncIterator;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
-import io.atomix.core.multiset.DistributedMultiset;
-import io.atomix.core.set.DistributedSet;
+import io.atomix.core.collection.DistributedCollectionType;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
+import io.atomix.core.multimap.AsyncAtomicMultimap;
+import io.atomix.core.multimap.AtomicMultimap;
+import io.atomix.core.multimap.AtomicMultimapEvent;
+import io.atomix.core.multimap.AtomicMultimapEventListener;
+import io.atomix.core.multiset.AsyncDistributedMultiset;
+import io.atomix.core.multiset.DistributedMultiset;
+import io.atomix.core.multiset.DistributedMultisetType;
 import io.atomix.core.multiset.impl.BlockingDistributedMultiset;
+import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.core.set.DistributedSet;
+import io.atomix.core.set.DistributedSetType;
 import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.core.set.impl.SetUpdate;
 import io.atomix.core.transaction.TransactionId;
@@ -41,6 +44,7 @@ import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveState;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
@@ -225,6 +229,11 @@ public class AtomicMultimapProxy
     }
 
     @Override
+    public PrimitiveType type() {
+      return DistributedSetType.instance();
+    }
+
+    @Override
     public PrimitiveProtocol protocol() {
       return AtomicMultimapProxy.this.protocol();
     }
@@ -357,6 +366,11 @@ public class AtomicMultimapProxy
     @Override
     public String name() {
       return AtomicMultimapProxy.this.name();
+    }
+
+    @Override
+    public PrimitiveType type() {
+      return DistributedMultisetType.instance();
     }
 
     @Override
@@ -514,6 +528,11 @@ public class AtomicMultimapProxy
     }
 
     @Override
+    public PrimitiveType type() {
+      return DistributedMultisetType.instance();
+    }
+
+    @Override
     public PrimitiveProtocol protocol() {
       return AtomicMultimapProxy.this.protocol();
     }
@@ -661,6 +680,11 @@ public class AtomicMultimapProxy
     @Override
     public String name() {
       return AtomicMultimapProxy.this.name();
+    }
+
+    @Override
+    public PrimitiveType type() {
+      return DistributedCollectionType.instance();
     }
 
     @Override

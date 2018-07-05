@@ -18,8 +18,9 @@ package io.atomix.core.idgenerator.impl;
 import io.atomix.core.counter.AsyncAtomicCounter;
 import io.atomix.core.idgenerator.AsyncAtomicIdGenerator;
 import io.atomix.core.idgenerator.AtomicIdGenerator;
+import io.atomix.core.idgenerator.AtomicIdGeneratorType;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -29,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@code AsyncAtomicIdGenerator} implementation backed by Atomix
  * {@link AsyncAtomicCounter}.
  */
-public class DelegatingAtomicIdGenerator implements AsyncAtomicIdGenerator {
+public class DelegatingAtomicIdGenerator extends DelegatingAsyncPrimitive implements AsyncAtomicIdGenerator {
 
   private static final long DEFAULT_BATCH_SIZE = 1000;
   private final AsyncAtomicCounter counter;
@@ -43,23 +44,14 @@ public class DelegatingAtomicIdGenerator implements AsyncAtomicIdGenerator {
   }
 
   public DelegatingAtomicIdGenerator(AsyncAtomicCounter counter, long batchSize) {
+    super(counter);
     this.counter = counter;
     this.batchSize = batchSize;
   }
 
   @Override
-  public String name() {
-    return counter.name();
-  }
-
-  @Override
   public PrimitiveType type() {
-    return counter.type();
-  }
-
-  @Override
-  public PrimitiveProtocol protocol() {
-    return counter.protocol();
+    return AtomicIdGeneratorType.instance();
   }
 
   @Override
@@ -72,11 +64,6 @@ public class DelegatingAtomicIdGenerator implements AsyncAtomicIdGenerator {
     } else {
       return reserveFuture.thenApply(base -> base + nextDelta);
     }
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return counter.close();
   }
 
   @Override

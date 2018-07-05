@@ -16,13 +16,12 @@
 package io.atomix.core.leadership.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.leadership.Leadership;
 import io.atomix.core.leadership.AsyncLeaderElector;
 import io.atomix.core.leadership.LeaderElector;
+import io.atomix.core.leadership.Leadership;
 import io.atomix.core.leadership.LeadershipEvent;
 import io.atomix.core.leadership.LeadershipEventListener;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 
 import java.time.Duration;
 import java.util.Map;
@@ -34,7 +33,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Transcoding leader elector.
  */
-public class TranscodingAsyncLeaderElector<V1, V2> implements AsyncLeaderElector<V1> {
+public class TranscodingAsyncLeaderElector<V1, V2> extends DelegatingAsyncPrimitive implements AsyncLeaderElector<V1> {
 
   private final AsyncLeaderElector<V2> backingElector;
   private final Function<V1, V2> valueEncoder;
@@ -42,24 +41,10 @@ public class TranscodingAsyncLeaderElector<V1, V2> implements AsyncLeaderElector
   private final Map<LeadershipEventListener<V1>, InternalLeadershipEventListener> listeners = Maps.newIdentityHashMap();
 
   public TranscodingAsyncLeaderElector(AsyncLeaderElector<V2> backingElector, Function<V1, V2> valueEncoder, Function<V2, V1> valueDecoder) {
+    super(backingElector);
     this.backingElector = backingElector;
     this.valueEncoder = valueEncoder;
     this.valueDecoder = valueDecoder;
-  }
-
-  @Override
-  public String name() {
-    return backingElector.name();
-  }
-
-  @Override
-  public PrimitiveType type() {
-    return backingElector.type();
-  }
-
-  @Override
-  public PrimitiveProtocol protocol() {
-    return backingElector.protocol();
   }
 
   @Override
@@ -140,11 +125,6 @@ public class TranscodingAsyncLeaderElector<V1, V2> implements AsyncLeaderElector
         return CompletableFuture.completedFuture(null);
       }
     }
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return backingElector.close();
   }
 
   @Override
