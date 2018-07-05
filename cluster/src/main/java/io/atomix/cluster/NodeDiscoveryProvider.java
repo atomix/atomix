@@ -17,7 +17,6 @@ package io.atomix.cluster;
 
 import io.atomix.utils.ConfiguredType;
 import io.atomix.utils.config.Configured;
-import io.atomix.utils.config.TypedConfig;
 import io.atomix.utils.event.ListenerService;
 import io.atomix.utils.net.Address;
 
@@ -37,12 +36,12 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface NodeDiscoveryProvider
     extends ListenerService<NodeDiscoveryEvent, NodeDiscoveryEventListener>,
-    Configured<NodeDiscoveryProvider.Config> {
+    Configured<NodeDiscoveryConfig> {
 
   /**
    * Membership provider type.
    */
-  interface Type<C extends Config> extends ConfiguredType<C> {
+  interface Type<C extends NodeDiscoveryConfig> extends ConfiguredType<C> {
 
     /**
      * Creates a new instance of the provider.
@@ -51,18 +50,6 @@ public interface NodeDiscoveryProvider
      * @return the provider instance
      */
     NodeDiscoveryProvider newProvider(C config);
-  }
-
-  /**
-   * Membership provider configuration.
-   */
-  interface Config extends TypedConfig<Type> {
-  }
-
-  /**
-   * Membership provider builder.
-   */
-  interface Builder extends io.atomix.utils.Builder<NodeDiscoveryProvider> {
   }
 
   /**

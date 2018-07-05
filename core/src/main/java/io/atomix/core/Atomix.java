@@ -18,6 +18,7 @@ package io.atomix.core;
 import com.google.common.collect.Streams;
 import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.NodeDiscoveryConfig;
 import io.atomix.cluster.NodeDiscoveryProvider;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.barrier.DistributedCyclicBarrier;
@@ -157,7 +158,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         new PolymorphicTypeMapper(PrimitiveConfig.class, PrimitiveType.class),
         new PolymorphicTypeMapper(PrimitiveProtocolConfig.class, PrimitiveProtocol.Type.class),
         new PolymorphicTypeMapper(ProfileConfig.class, Profile.Type.class),
-        new PolymorphicTypeMapper(NodeDiscoveryProvider.Config.class, NodeDiscoveryProvider.Type.class));
+        new PolymorphicTypeMapper(NodeDiscoveryConfig.class, NodeDiscoveryProvider.Type.class));
     return mapper.loadFile(AtomixConfig.class, file, RESOURCES);
   }
 

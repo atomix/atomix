@@ -27,7 +27,6 @@ import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -44,7 +43,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * Cluster membership provider that uses multicast for member discovery.
  * <p>
  * This implementation uses the {@link io.atomix.cluster.messaging.BroadcastService} internally and thus requires
- * that multicast is {@link AtomixCluster.Builder#withMulticastEnabled() enabled} on the Atomix instance. Membership
+ * that multicast is {@link AtomixClusterBuilder#withMulticastEnabled() enabled} on the Atomix instance. Membership
  * is determined by each node broadcasting to a multicast group, and phi accrual failure detectors are used to detect
  * nodes joining and leaving the cluster.
  */
@@ -59,14 +58,14 @@ public class MulticastDiscoveryProvider
    *
    * @return a new multicast location provider builder
    */
-  public static Builder builder() {
-    return new Builder();
+  public static MulticastDiscoveryBuilder builder() {
+    return new MulticastDiscoveryBuilder();
   }
 
   /**
    * Broadcast member location provider type.
    */
-  public static class Type implements NodeDiscoveryProvider.Type<Config> {
+  public static class Type implements NodeDiscoveryProvider.Type<MulticastDiscoveryConfig> {
     private static final String NAME = "multicast";
 
     @Override
@@ -75,139 +74,13 @@ public class MulticastDiscoveryProvider
     }
 
     @Override
-    public Config newConfig() {
-      return new Config();
+    public MulticastDiscoveryConfig newConfig() {
+      return new MulticastDiscoveryConfig();
     }
 
     @Override
-    public NodeDiscoveryProvider newProvider(Config config) {
+    public NodeDiscoveryProvider newProvider(MulticastDiscoveryConfig config) {
       return new MulticastDiscoveryProvider(config);
-    }
-  }
-
-  /**
-   * Multicast member location provider builder.
-   */
-  public static class Builder implements NodeDiscoveryProvider.Builder {
-    private final Config config = new Config();
-
-    private Builder() {
-    }
-
-    /**
-     * Sets the broadcast interval.
-     *
-     * @param broadcastInterval the broadcast interval
-     * @return the location provider builder
-     */
-    public Builder withBroadcastInterval(Duration broadcastInterval) {
-      config.setBroadcastInterval(broadcastInterval);
-      return this;
-    }
-
-    /**
-     * Sets the phi accrual failure threshold.
-     *
-     * @param failureThreshold the phi accrual failure threshold
-     * @return the location provider builder
-     */
-    public Builder withFailureThreshold(int failureThreshold) {
-      config.setFailureThreshold(failureThreshold);
-      return this;
-    }
-
-    /**
-     * Sets the failure timeout to use prior to phi failure detectors being populated.
-     *
-     * @param failureTimeout the failure timeout
-     * @return the location provider builder
-     */
-    public Builder withFailureTimeout(Duration failureTimeout) {
-      config.setFailureTimeout(failureTimeout);
-      return this;
-    }
-
-    @Override
-    public NodeDiscoveryProvider build() {
-      return new MulticastDiscoveryProvider(config);
-    }
-  }
-
-  /**
-   * Member location provider configuration.
-   */
-  public static class Config implements NodeDiscoveryProvider.Config {
-    private static final int DEFAULT_BROADCAST_INTERVAL = 1000;
-    private static final int DEFAULT_FAILURE_TIMEOUT = 10000;
-    private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
-
-    private Duration broadcastInterval = Duration.ofMillis(DEFAULT_BROADCAST_INTERVAL);
-    private int failureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
-    private Duration failureTimeout = Duration.ofMillis(DEFAULT_FAILURE_TIMEOUT);
-
-    @Override
-    public NodeDiscoveryProvider.Type getType() {
-      return TYPE;
-    }
-
-    /**
-     * Returns the broadcast interval.
-     *
-     * @return the broadcast interval
-     */
-    public Duration getBroadcastInterval() {
-      return broadcastInterval;
-    }
-
-    /**
-     * Sets the broadcast interval.
-     *
-     * @param broadcastInterval the broadcast interval
-     * @return the group membership configuration
-     */
-    public Config setBroadcastInterval(Duration broadcastInterval) {
-      this.broadcastInterval = checkNotNull(broadcastInterval);
-      return this;
-    }
-
-    /**
-     * Returns the failure detector threshold.
-     *
-     * @return the failure detector threshold
-     */
-    public int getFailureThreshold() {
-      return failureThreshold;
-    }
-
-    /**
-     * Sets the failure detector threshold.
-     *
-     * @param failureThreshold the failure detector threshold
-     * @return the group membership configuration
-     */
-    public Config setFailureThreshold(int failureThreshold) {
-      this.failureThreshold = failureThreshold;
-      return this;
-    }
-
-    /**
-     * Returns the base failure timeout.
-     *
-     * @return the base failure timeout
-     */
-    public Duration getFailureTimeout() {
-      return failureTimeout;
-    }
-
-    /**
-     * Sets the base failure timeout.
-     *
-     * @param failureTimeout the base failure timeout
-     * @return the group membership configuration
-     */
-    public Config setFailureTimeout(Duration failureTimeout) {
-      this.failureTimeout = checkNotNull(failureTimeout);
-      return this;
     }
   }
 
@@ -222,7 +95,7 @@ public class MulticastDiscoveryProvider
 
   private static final String DISCOVERY_SUBJECT = "atomix-discovery";
 
-  private final Config config;
+  private final MulticastDiscoveryConfig config;
   private volatile BootstrapService bootstrap;
 
   private final ScheduledExecutorService broadcastScheduler = Executors.newSingleThreadScheduledExecutor(
@@ -237,15 +110,15 @@ public class MulticastDiscoveryProvider
   private volatile ScheduledFuture<?> failureFuture;
 
   public MulticastDiscoveryProvider() {
-    this(new Config());
+    this(new MulticastDiscoveryConfig());
   }
 
-  MulticastDiscoveryProvider(Config config) {
+  MulticastDiscoveryProvider(MulticastDiscoveryConfig config) {
     this.config = checkNotNull(config);
   }
 
   @Override
-  public NodeDiscoveryProvider.Config config() {
+  public MulticastDiscoveryConfig config() {
     return config;
   }
 
