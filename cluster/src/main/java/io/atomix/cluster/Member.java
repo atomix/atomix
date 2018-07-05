@@ -33,8 +33,8 @@ public class Member extends Node {
    *
    * @return the member builder
    */
-  public static Builder builder() {
-    return new Builder(new MemberConfig());
+  public static MemberBuilder builder() {
+    return new MemberBuilder(new MemberConfig());
   }
 
   /**
@@ -44,7 +44,7 @@ public class Member extends Node {
    * @return the member builder
    * @throws NullPointerException if the member ID is null
    */
-  public static Builder builder(String memberId) {
+  public static MemberBuilder builder(String memberId) {
     return builder(MemberId.from(memberId));
   }
 
@@ -55,7 +55,7 @@ public class Member extends Node {
    * @return the member builder
    * @throws NullPointerException if the member ID is null
    */
-  public static Builder builder(MemberId memberId) {
+  public static MemberBuilder builder(MemberId memberId) {
     return builder().withId(memberId);
   }
 
@@ -235,148 +235,5 @@ public class Member extends Node {
         .add("properties", properties())
         .omitNullValues()
         .toString();
-  }
-
-  /**
-   * Member builder.
-   */
-  public static class Builder extends Node.Builder {
-    protected final MemberConfig config;
-
-    protected Builder(MemberConfig config) {
-      super(config);
-      this.config = config;
-    }
-
-    @Override
-    public Builder withId(String id) {
-      super.withId(id);
-      return this;
-    }
-
-    @Override
-    public Builder withId(NodeId id) {
-      super.withId(id);
-      return this;
-    }
-
-    /**
-     * Sets the member identifier.
-     *
-     * @param id the member identifier
-     * @return the member builder
-     */
-    public Builder withId(MemberId id) {
-      config.setId(id);
-      return this;
-    }
-
-    /**
-     * Sets the member address.
-     *
-     * @param address a host:port tuple
-     * @return the member builder
-     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
-     */
-    public Builder withAddress(String address) {
-      return withAddress(Address.from(address));
-    }
-
-    /**
-     * Sets the member host/port.
-     *
-     * @param host the host name
-     * @param port the port number
-     * @return the member builder
-     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
-     */
-    public Builder withAddress(String host, int port) {
-      return withAddress(Address.from(host, port));
-    }
-
-    /**
-     * Sets the member address using local host.
-     *
-     * @param port the port number
-     * @return the member builder
-     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
-     */
-    public Builder withAddress(int port) {
-      return withAddress(Address.from(port));
-    }
-
-    /**
-     * Sets the member address.
-     *
-     * @param address the member address
-     * @return the member builder
-     */
-    public Builder withAddress(Address address) {
-      config.setAddress(address);
-      return this;
-    }
-
-    /**
-     * Sets the zone to which the member belongs.
-     *
-     * @param zone the zone to which the member belongs
-     * @return the member builder
-     */
-    public Builder withZone(String zone) {
-      config.setZone(zone);
-      return this;
-    }
-
-    /**
-     * Sets the rack to which the member belongs.
-     *
-     * @param rack the rack to which the member belongs
-     * @return the member builder
-     */
-    public Builder withRack(String rack) {
-      config.setRack(rack);
-      return this;
-    }
-
-    /**
-     * Sets the host to which the member belongs.
-     *
-     * @param host the host to which the member belongs
-     * @return the member builder
-     */
-    public Builder withHost(String host) {
-      config.setHost(host);
-      return this;
-    }
-
-    /**
-     * Sets the member properties.
-     *
-     * @param properties the member properties
-     * @return the member builder
-     * @throws NullPointerException if the properties are null
-     */
-    public Builder withProperties(Properties properties) {
-      config.setProperties(properties);
-      return this;
-    }
-
-    /**
-     * Sets a member property.
-     *
-     * @param key   the property key to set
-     * @param value the property value to set
-     * @return the member builder
-     * @throws NullPointerException if the property is null
-     */
-    public Builder withProperty(String key, String value) {
-      config.setProperty(key, value);
-      return this;
-    }
-
-    @Override
-    public Member build() {
-      return new Member(config);
-    }
   }
 }
