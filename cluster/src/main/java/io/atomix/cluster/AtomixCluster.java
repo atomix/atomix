@@ -40,15 +40,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.time.Duration;
 import java.util.Collections;
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Atomix cluster manager.
@@ -69,9 +66,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *     .build();
  *   }
  * </pre>
- * The instance can be configured with a unique identifier via {@link Builder#withMemberId(String)}. The member ID
+ * The instance can be configured with a unique identifier via {@link AtomixClusterBuilder#withMemberId(String)}. The member ID
  * can be used to lookup the member in the {@link ClusterMembershipService} or send messages to this node from other
- * member nodes. The {@link Builder#withAddress(Address) address} is the host and port to which the node will bind
+ * member nodes. The {@link AtomixClusterBuilder#withAddress(Address) address} is the host and port to which the node will bind
  * for intra-cluster communication over TCP.
  * <p>
  * Once an instance has been configured, the {@link #start()} method must be called to bootstrap the instance. The
@@ -84,8 +81,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * </pre>
  * <p>
  * Cluster membership is determined by a configurable {@link NodeDiscoveryProvider}. To configure the membership
- * provider use {@link Builder#withMembershipProvider(NodeDiscoveryProvider)}. By default, the
- * {@link MulticastDiscoveryProvider} will be used if multicast is {@link Builder#withMulticastEnabled() enabled},
+ * provider use {@link AtomixClusterBuilder#withMembershipProvider(NodeDiscoveryProvider)}. By default, the
+ * {@link MulticastDiscoveryProvider} will be used if multicast is {@link AtomixClusterBuilder#withMulticastEnabled() enabled},
  * otherwise the {@link BootstrapDiscoveryProvider} will be used if no provider is explicitly provided.
  */
 public class AtomixCluster implements BootstrapService, Managed<Void> {
@@ -111,7 +108,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    *
    * @return a new Atomix builder
    */
-  public static Builder builder() {
+  public static AtomixClusterBuilder builder() {
     return builder(Thread.currentThread().getContextClassLoader());
   }
 
@@ -121,7 +118,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    * @param classLoader the class loader
    * @return a new Atomix builder
    */
-  public static Builder builder(ClassLoader classLoader) {
+  public static AtomixClusterBuilder builder(ClassLoader classLoader) {
     return builder(config(DEFAULT_RESOURCES, classLoader));
   }
 
@@ -131,7 +128,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    * @param config the Atomix configuration
    * @return a new Atomix builder
    */
-  public static Builder builder(String config) {
+  public static AtomixClusterBuilder builder(String config) {
     return builder(config, Thread.currentThread().getContextClassLoader());
   }
 
@@ -142,8 +139,8 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    * @param classLoader the class loader
    * @return a new Atomix builder
    */
-  public static Builder builder(String config, ClassLoader classLoader) {
-    return new Builder(config(withDefaultResources(config), classLoader));
+  public static AtomixClusterBuilder builder(String config, ClassLoader classLoader) {
+    return new AtomixClusterBuilder(config(withDefaultResources(config), classLoader));
   }
 
   /**
@@ -152,8 +149,8 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    * @param config the Atomix configuration
    * @return a new Atomix builder
    */
-  public static Builder builder(ClusterConfig config) {
-    return new Builder(config);
+  public static AtomixClusterBuilder builder(ClusterConfig config) {
+    return new AtomixClusterBuilder(config);
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixCluster.class);
@@ -382,237 +379,5 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   protected static ManagedClusterEventService buildClusterEventService(
       ClusterMembershipService membershipService, MessagingService messagingService) {
     return new DefaultClusterEventService(membershipService, messagingService);
-  }
-
-  /**
-   * Cluster builder.
-   */
-  public static class Builder implements io.atomix.utils.Builder<AtomixCluster> {
-    protected final ClusterConfig config;
-
-    protected Builder() {
-      this(new ClusterConfig());
-    }
-
-    protected Builder(ClusterConfig config) {
-      this.config = checkNotNull(config);
-    }
-
-    /**
-     * Sets the cluster identifier.
-     *
-     * @param clusterId the cluster identifier
-     * @return the cluster builder
-     */
-    public Builder withClusterId(String clusterId) {
-      config.setClusterId(clusterId);
-      return this;
-    }
-
-    /**
-     * Sets the local member identifier.
-     *
-     * @param localMemberId the local member identifier
-     * @return the cluster builder
-     */
-    public Builder withMemberId(String localMemberId) {
-      config.getNodeConfig().setId(localMemberId);
-      return this;
-    }
-
-    /**
-     * Sets the local member identifier.
-     *
-     * @param localMemberId the local member identifier
-     * @return the cluster builder
-     */
-    public Builder withMemberId(MemberId localMemberId) {
-      config.getNodeConfig().setId(localMemberId);
-      return this;
-    }
-
-    /**
-     * Sets the member address.
-     *
-     * @param address a host:port tuple
-     * @return the member builder
-     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
-     */
-    public Builder withAddress(String address) {
-      return withAddress(Address.from(address));
-    }
-
-    /**
-     * Sets the member host/port.
-     *
-     * @param host the host name
-     * @param port the port number
-     * @return the member builder
-     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
-     */
-    public Builder withAddress(String host, int port) {
-      return withAddress(Address.from(host, port));
-    }
-
-    /**
-     * Sets the member address using local host.
-     *
-     * @param port the port number
-     * @return the member builder
-     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
-     */
-    public Builder withAddress(int port) {
-      return withAddress(Address.from(port));
-    }
-
-    /**
-     * Sets the member address.
-     *
-     * @param address the member address
-     * @return the member builder
-     */
-    public Builder withAddress(Address address) {
-      config.getNodeConfig().setAddress(address);
-      return this;
-    }
-
-    /**
-     * Sets the zone to which the member belongs.
-     *
-     * @param zone the zone to which the member belongs
-     * @return the member builder
-     */
-    public Builder withZone(String zone) {
-      config.getNodeConfig().setZone(zone);
-      return this;
-    }
-
-    /**
-     * Sets the rack to which the member belongs.
-     *
-     * @param rack the rack to which the member belongs
-     * @return the member builder
-     */
-    public Builder withRack(String rack) {
-      config.getNodeConfig().setRack(rack);
-      return this;
-    }
-
-    /**
-     * Sets the host to which the member belongs.
-     *
-     * @param host the host to which the member belongs
-     * @return the member builder
-     */
-    public Builder withHost(String host) {
-      config.getNodeConfig().setHost(host);
-      return this;
-    }
-
-    /**
-     * Sets the member properties.
-     *
-     * @param properties the member properties
-     * @return the member builder
-     * @throws NullPointerException if the properties are null
-     */
-    public Builder withProperties(Properties properties) {
-      config.getNodeConfig().setProperties(properties);
-      return this;
-    }
-
-    /**
-     * Sets a property of the member.
-     *
-     * @param key   the property key to set
-     * @param value the property value to set
-     * @return the member builder
-     * @throws NullPointerException if the property is null
-     */
-    public Builder withProperty(String key, String value) {
-      config.getNodeConfig().setProperty(key, value);
-      return this;
-    }
-
-    /**
-     * Enables multicast node discovery.
-     *
-     * @return the Atomix builder
-     */
-    public Builder withMulticastEnabled() {
-      return withMulticastEnabled(true);
-    }
-
-    /**
-     * Sets whether multicast node discovery is enabled.
-     *
-     * @param multicastEnabled whether to enable multicast node discovery
-     * @return the Atomix builder
-     */
-    public Builder withMulticastEnabled(boolean multicastEnabled) {
-      config.getMulticastConfig().setEnabled(multicastEnabled);
-      return this;
-    }
-
-    /**
-     * Sets the multicast address.
-     *
-     * @param address the multicast address
-     * @return the Atomix builder
-     */
-    public Builder withMulticastAddress(Address address) {
-      config.getMulticastConfig().setGroup(address.address());
-      config.getMulticastConfig().setPort(address.port());
-      return this;
-    }
-
-    /**
-     * Sets the reachability broadcast interval.
-     *
-     * @param interval the reachability broadcast interval
-     * @return the Atomix builder
-     */
-    public Builder setBroadcastInterval(Duration interval) {
-      config.getMembershipConfig().setBroadcastInterval(interval);
-      return this;
-    }
-
-    /**
-     * Sets the reachability failure detection threshold.
-     *
-     * @param threshold the reachability failure detection threshold
-     * @return the Atomix builder
-     */
-    public Builder setReachabilityThreshold(int threshold) {
-      config.getMembershipConfig().setReachabilityThreshold(threshold);
-      return this;
-    }
-
-    /**
-     * Sets the reachability failure timeout.
-     *
-     * @param timeout the reachability failure timeout
-     * @return the Atomix builder
-     */
-    public Builder withReachabilityTimeout(Duration timeout) {
-      config.getMembershipConfig().setReachabilityTimeout(timeout);
-      return this;
-    }
-
-    /**
-     * Sets the membership provider.
-     *
-     * @param locationProvider the membership provider
-     * @return the Atomix cluster builder
-     */
-    public Builder withMembershipProvider(NodeDiscoveryProvider locationProvider) {
-      config.setDiscoveryConfig(locationProvider.config());
-      return this;
-    }
-
-    @Override
-    public AtomixCluster build() {
-      return new AtomixCluster(config);
-    }
   }
 }

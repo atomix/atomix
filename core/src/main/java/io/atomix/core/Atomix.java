@@ -18,7 +18,6 @@ package io.atomix.core;
 import com.google.common.collect.Streams;
 import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.cluster.MemberId;
 import io.atomix.cluster.NodeDiscoveryProvider;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.barrier.DistributedCyclicBarrier;
@@ -68,24 +67,19 @@ import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.Threads;
 import io.atomix.utils.config.ConfigMapper;
-import io.atomix.utils.net.Address;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Atomix!
@@ -172,7 +166,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    *
    * @return a new Atomix builder
    */
-  public static Builder builder() {
+  public static AtomixBuilder builder() {
     return builder(Thread.currentThread().getContextClassLoader());
   }
 
@@ -182,9 +176,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * @param classLoader the class loader
    * @return a new Atomix builder
    */
-  public static Builder builder(ClassLoader classLoader) {
+  public static AtomixBuilder builder(ClassLoader classLoader) {
     AtomixRegistry registry = AtomixRegistry.registry(classLoader);
-    return new Builder(config(null, classLoader, registry), registry);
+    return new AtomixBuilder(config(null, classLoader, registry), registry);
   }
 
   /**
@@ -193,7 +187,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * @param config the Atomix configuration
    * @return a new Atomix builder
    */
-  public static Builder builder(String config) {
+  public static AtomixBuilder builder(String config) {
     return builder(config, Thread.currentThread().getContextClassLoader());
   }
 
@@ -204,9 +198,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * @param classLoader the class loader
    * @return a new Atomix builder
    */
-  public static Builder builder(String configFile, ClassLoader classLoader) {
+  public static AtomixBuilder builder(String configFile, ClassLoader classLoader) {
     AtomixRegistry registry = AtomixRegistry.registry(classLoader);
-    return new Builder(config(new File(configFile), classLoader, registry), registry);
+    return new AtomixBuilder(config(new File(configFile), classLoader, registry), registry);
   }
 
   /**
@@ -215,7 +209,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * @param config the Atomix configuration
    * @return the Atomix builder
    */
-  public static Builder builder(AtomixConfig config) {
+  public static AtomixBuilder builder(AtomixConfig config) {
     return builder(config, Thread.currentThread().getContextClassLoader());
   }
 
@@ -226,8 +220,8 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * @param classLoader the class loader with which to load the Atomix registry
    * @return the Atomix builder
    */
-  public static Builder builder(AtomixConfig config, ClassLoader classLoader) {
-    return new Builder(config, AtomixRegistry.registry(classLoader));
+  public static AtomixBuilder builder(AtomixConfig config, ClassLoader classLoader) {
+    return new AtomixBuilder(config, AtomixRegistry.registry(classLoader));
   }
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
@@ -258,7 +252,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @SuppressWarnings("unchecked")
-  private Atomix(AtomixConfig config, AtomixRegistry registry) {
+  protected Atomix(AtomixConfig config, AtomixRegistry registry) {
     super(config.getClusterConfig());
     config.getProfiles().forEach(profile -> profile.getType().newProfile(profile).configure(config));
     this.executorService = Executors.newScheduledThreadPool(
@@ -563,241 +557,5 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         buildSystemPartitionGroup(config),
         partitionGroups,
         new DefaultPartitionGroupTypeRegistry(registry.getTypes(PartitionGroup.Type.class)));
-  }
-
-  /**
-   * Atomix builder.
-   */
-  public static class Builder extends AtomixCluster.Builder {
-    private final AtomixConfig config;
-    private final AtomixRegistry registry;
-
-    private Builder(AtomixConfig config, AtomixRegistry registry) {
-      super(config.getClusterConfig());
-      this.config = checkNotNull(config);
-      this.registry = checkNotNull(registry);
-    }
-
-    /**
-     * Enables the shutdown hook.
-     *
-     * @return the Atomix builder
-     */
-    public Builder withShutdownHookEnabled() {
-      return withShutdownHook(true);
-    }
-
-    /**
-     * Enables the shutdown hook.
-     *
-     * @param enabled if <code>true</code> a shutdown hook will be registered
-     * @return the Atomix builder
-     */
-    public Builder withShutdownHook(boolean enabled) {
-      config.setEnableShutdownHook(enabled);
-      return this;
-    }
-
-    /**
-     * Sets the Atomix profiles.
-     *
-     * @param profiles the profiles
-     * @return the Atomix builder
-     */
-    public Builder withProfiles(Profile... profiles) {
-      return withProfiles(Arrays.asList(checkNotNull(profiles)));
-    }
-
-    /**
-     * Sets the Atomix profiles.
-     *
-     * @param profiles the profiles
-     * @return the Atomix builder
-     */
-    public Builder withProfiles(Collection<Profile> profiles) {
-      profiles.forEach(profile -> config.addProfile(profile.config()));
-      return this;
-    }
-
-    /**
-     * Adds an Atomix profile.
-     *
-     * @param profile the profile to add
-     * @return the Atomix builder
-     */
-    public Builder addProfile(Profile profile) {
-      config.addProfile(profile.config());
-      return this;
-    }
-
-    /**
-     * Sets the system management partition group.
-     *
-     * @param systemManagementGroup the system management partition group
-     * @return the Atomix builder
-     */
-    public Builder withManagementGroup(ManagedPartitionGroup systemManagementGroup) {
-      config.setManagementGroup(systemManagementGroup.config());
-      return this;
-    }
-
-    /**
-     * Sets the partition groups.
-     *
-     * @param partitionGroups the partition groups
-     * @return the Atomix builder
-     * @throws NullPointerException if the partition groups are null
-     */
-    public Builder withPartitionGroups(ManagedPartitionGroup... partitionGroups) {
-      return withPartitionGroups(Arrays.asList(checkNotNull(partitionGroups, "partitionGroups cannot be null")));
-    }
-
-    /**
-     * Sets the partition groups.
-     *
-     * @param partitionGroups the partition groups
-     * @return the Atomix builder
-     * @throws NullPointerException if the partition groups are null
-     */
-    public Builder withPartitionGroups(Collection<ManagedPartitionGroup> partitionGroups) {
-      partitionGroups.forEach(group -> config.addPartitionGroup(group.config()));
-      return this;
-    }
-
-    /**
-     * Adds a partition group.
-     *
-     * @param partitionGroup the partition group to add
-     * @return the Atomix builder
-     * @throws NullPointerException if the partition group is null
-     */
-    public Builder addPartitionGroup(ManagedPartitionGroup partitionGroup) {
-      config.addPartitionGroup(partitionGroup.config());
-      return this;
-    }
-
-    @Override
-    public Builder withClusterId(String clusterId) {
-      super.withClusterId(clusterId);
-      return this;
-    }
-
-    @Override
-    public Builder withMemberId(String localMemberId) {
-      super.withMemberId(localMemberId);
-      return this;
-    }
-
-    @Override
-    public Builder withMemberId(MemberId localMemberId) {
-      super.withMemberId(localMemberId);
-      return this;
-    }
-
-    @Override
-    public Builder withAddress(String address) {
-      super.withAddress(address);
-      return this;
-    }
-
-    @Override
-    public Builder withAddress(String host, int port) {
-      super.withAddress(host, port);
-      return this;
-    }
-
-    @Override
-    public Builder withAddress(int port) {
-      super.withAddress(port);
-      return this;
-    }
-
-    @Override
-    public Builder withAddress(Address address) {
-      super.withAddress(address);
-      return this;
-    }
-
-    @Override
-    public Builder withZone(String zone) {
-      super.withZone(zone);
-      return this;
-    }
-
-    @Override
-    public Builder withRack(String rack) {
-      super.withRack(rack);
-      return this;
-    }
-
-    @Override
-    public Builder withHost(String host) {
-      super.withHost(host);
-      return this;
-    }
-
-    @Override
-    public Builder withProperties(Properties properties) {
-      super.withProperties(properties);
-      return this;
-    }
-
-    @Override
-    public Builder withProperty(String key, String value) {
-      super.withProperty(key, value);
-      return this;
-    }
-
-    @Override
-    public Builder withMulticastEnabled() {
-      super.withMulticastEnabled();
-      return this;
-    }
-
-    @Override
-    public Builder withMulticastEnabled(boolean multicastEnabled) {
-      super.withMulticastEnabled(multicastEnabled);
-      return this;
-    }
-
-    @Override
-    public Builder withMulticastAddress(Address address) {
-      super.withMulticastAddress(address);
-      return this;
-    }
-
-    @Override
-    public Builder withMembershipProvider(NodeDiscoveryProvider locationProvider) {
-      super.withMembershipProvider(locationProvider);
-      return this;
-    }
-
-    @Override
-    public Builder setBroadcastInterval(Duration interval) {
-      super.setBroadcastInterval(interval);
-      return this;
-    }
-
-    @Override
-    public Builder setReachabilityThreshold(int threshold) {
-      super.setReachabilityThreshold(threshold);
-      return this;
-    }
-
-    @Override
-    public Builder withReachabilityTimeout(Duration timeout) {
-      super.withReachabilityTimeout(timeout);
-      return this;
-    }
-
-    /**
-     * Builds a new Atomix instance.
-     *
-     * @return a new Atomix instance
-     */
-    @Override
-    public Atomix build() {
-      return new Atomix(config, registry);
-    }
   }
 }

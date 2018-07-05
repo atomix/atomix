@@ -79,7 +79,7 @@ public class AtomixTest extends AbstractAtomixTest {
   /**
    * Creates and starts a new test Atomix instance.
    */
-  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Function<Atomix.Builder, Atomix> builderFunction) {
+  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Function<AtomixBuilder, Atomix> builderFunction) {
     Atomix atomix = createAtomix(id, persistentIds, builderFunction);
     instances.add(atomix);
     return atomix.start().thenApply(v -> atomix);
@@ -97,7 +97,7 @@ public class AtomixTest extends AbstractAtomixTest {
   /**
    * Creates and starts a new test Atomix instance.
    */
-  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Properties properties, Function<Atomix.Builder, Atomix> builderFunction) {
+  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Properties properties, Function<AtomixBuilder, Atomix> builderFunction) {
     Atomix atomix = createAtomix(id, persistentIds, properties, builderFunction);
     instances.add(atomix);
     return atomix.start().thenApply(v -> atomix);
