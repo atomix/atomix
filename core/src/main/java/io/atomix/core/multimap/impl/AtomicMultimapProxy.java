@@ -26,10 +26,16 @@ import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.DistributedCollectionType;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
+import io.atomix.core.map.AsyncDistributedMap;
+import io.atomix.core.map.DistributedMap;
+import io.atomix.core.map.DistributedMapType;
+import io.atomix.core.map.MapEventListener;
+import io.atomix.core.map.impl.BlockingDistributedMap;
 import io.atomix.core.multimap.AsyncAtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapEvent;
 import io.atomix.core.multimap.AtomicMultimapEventListener;
+import io.atomix.core.multimap.MultimapEventListener;
 import io.atomix.core.multiset.AsyncDistributedMultiset;
 import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.multiset.DistributedMultisetType;
@@ -132,7 +138,7 @@ public class AtomicMultimapProxy
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<? extends byte[]>>> removeAll(String key) {
+  public CompletableFuture<Versioned<Collection<byte[]>>> removeAll(String key) {
     return getProxyClient().applyBy(key, service -> service.removeAll(key));
   }
 
@@ -142,7 +148,7 @@ public class AtomicMultimapProxy
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<? extends byte[]>>> replaceValues(
+  public CompletableFuture<Versioned<Collection<byte[]>>> replaceValues(
       String key, Collection<byte[]> values) {
     return getProxyClient().applyBy(key, service -> service.replaceValues(key, values));
   }
@@ -153,28 +159,33 @@ public class AtomicMultimapProxy
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<? extends byte[]>>> get(String key) {
+  public CompletableFuture<Versioned<Collection<byte[]>>> get(String key) {
     return getProxyClient().applyBy(key, service -> service.get(key));
   }
 
   @Override
   public AsyncDistributedSet<String> keySet() {
-    return new AtomicMultimapKeySet();
+    return new KeySet();
   }
 
   @Override
   public AsyncDistributedMultiset<String> keys() {
-    return new AtomicMultimapKeys();
+    return new Keys();
   }
 
   @Override
   public AsyncDistributedMultiset<byte[]> values() {
-    return new AtomicMultimapValues();
+    return new Values();
   }
 
   @Override
   public AsyncDistributedCollection<Map.Entry<String, byte[]>> entries() {
-    return new AtomicMultimapEntries();
+    return new Entries();
+  }
+
+  @Override
+  public AsyncDistributedMap<String, Versioned<Collection<byte[]>>> asMap() {
+    return new AsMap();
   }
 
   @Override
@@ -217,10 +228,159 @@ public class AtomicMultimapProxy
     return new BlockingAtomicMultimap<>(this, operationTimeout.toMillis());
   }
 
+  private class AsMap implements AsyncDistributedMap<String, Versioned<Collection<byte[]>>> {
+    private final Map<MapEventListener<String, Versioned<Collection<byte[]>>>, MultimapEventListener<String, byte[]>> listenerMap = Maps.newConcurrentMap();
+
+    @Override
+    public String name() {
+      return AtomicMultimapProxy.this.name();
+    }
+
+    @Override
+    public PrimitiveType type() {
+      return DistributedMapType.instance();
+    }
+
+    @Override
+    public PrimitiveProtocol protocol() {
+      return AtomicMultimapProxy.this.protocol();
+    }
+
+    @Override
+    public CompletableFuture<Integer> size() {
+      return getProxyClient().applyAll(service -> service.keyCount())
+          .thenApply(results -> results.reduce(Math::addExact).orElse(0));
+    }
+
+    @Override
+    public CompletableFuture<Boolean> isEmpty() {
+      return size().thenApply(size -> size == 0);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> containsKey(String key) {
+      return AtomicMultimapProxy.this.containsKey(key);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> containsValue(Versioned<Collection<byte[]>> values) {
+      return Futures.allOf(values.value().stream()
+          .map(value -> AtomicMultimapProxy.this.containsValue(value)))
+          .thenApply(results -> results.reduce(Boolean::logicalAnd).orElse(true));
+    }
+
+    @Override
+    public CompletableFuture<Versioned<Collection<byte[]>>> get(String key) {
+      return AtomicMultimapProxy.this.get(key);
+    }
+
+    @Override
+    public CompletableFuture<Versioned<Collection<byte[]>>> put(String key, Versioned<Collection<byte[]>> value) {
+      return replaceValues(key, value.value());
+    }
+
+    @Override
+    public CompletableFuture<Versioned<Collection<byte[]>>> remove(String key) {
+      return removeAll(key);
+    }
+
+    @Override
+    public CompletableFuture<Void> putAll(Map<? extends String, ? extends Versioned<Collection<byte[]>>> map) {
+      return Futures.allOf(map.entrySet().stream()
+          .map(entry -> AtomicMultimapProxy.this.putAll(entry.getKey(), entry.getValue().value())))
+          .thenApply(v -> null);
+    }
+
+    @Override
+    public CompletableFuture<Void> clear() {
+      return AtomicMultimapProxy.this.clear();
+    }
+
+    @Override
+    public AsyncDistributedSet<String> keySet() {
+      return AtomicMultimapProxy.this.keySet();
+    }
+
+    @Override
+    public AsyncDistributedCollection<Versioned<Collection<byte[]>>> values() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AsyncDistributedSet<Map.Entry<String, Versioned<Collection<byte[]>>>> entrySet() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompletableFuture<Versioned<Collection<byte[]>>> getOrDefault(String key, Versioned<Collection<byte[]>> defaultValue) {
+      return AtomicMultimapProxy.this.get(key).thenApply(value -> value == null ? defaultValue : value);
+    }
+
+    @Override
+    public CompletableFuture<Versioned<Collection<byte[]>>> putIfAbsent(String key, Versioned<Collection<byte[]>> value) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> remove(String key, Versioned<Collection<byte[]>> value) {
+      return removeAll(key, value.value());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> replace(String key, Versioned<Collection<byte[]>> oldValue, Versioned<Collection<byte[]>> newValue) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Versioned<Collection<byte[]>>> replace(String key, Versioned<Collection<byte[]>> value) {
+      return replaceValues(key, value.value());
+    }
+
+    @Override
+    public CompletableFuture<Versioned<Collection<byte[]>>> computeIfAbsent(
+        String key, Function<? super String, ? extends Versioned<Collection<byte[]>>> mappingFunction) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Versioned<Collection<byte[]>>> computeIfPresent(
+        String key,
+        BiFunction<? super String, ? super Versioned<Collection<byte[]>>, ? extends Versioned<Collection<byte[]>>> remappingFunction) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Versioned<Collection<byte[]>>> compute(
+        String key,
+        BiFunction<? super String, ? super Versioned<Collection<byte[]>>, ? extends Versioned<Collection<byte[]>>> remappingFunction) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Void> addListener(MapEventListener<String, Versioned<Collection<byte[]>>> listener, Executor executor) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Void> removeListener(MapEventListener<String, Versioned<Collection<byte[]>>> listener) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public DistributedMap<String, Versioned<Collection<byte[]>>> sync(Duration operationTimeout) {
+      return new BlockingDistributedMap<>(this, operationTimeout.toMillis());
+    }
+
+    @Override
+    public CompletableFuture<Void> close() {
+      return CompletableFuture.completedFuture(null);
+    }
+  }
+
   /**
    * Multimap key set.
    */
-  private class AtomicMultimapKeySet implements AsyncDistributedSet<String> {
+  private class KeySet implements AsyncDistributedSet<String> {
     private final Map<CollectionEventListener<String>, AtomicMultimapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
 
     @Override
@@ -360,7 +520,7 @@ public class AtomicMultimapProxy
     }
   }
 
-  private class AtomicMultimapKeys implements AsyncDistributedMultiset<String> {
+  private class Keys implements AsyncDistributedMultiset<String> {
     private final Map<CollectionEventListener<String>, AtomicMultimapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
 
     @Override
@@ -435,7 +595,7 @@ public class AtomicMultimapProxy
 
     @Override
     public AsyncDistributedSet<String> elementSet() {
-      return new AtomicMultimapKeySet();
+      return new KeySet();
     }
 
     @Override
@@ -519,7 +679,7 @@ public class AtomicMultimapProxy
     }
   }
 
-  private class AtomicMultimapValues implements AsyncDistributedMultiset<byte[]> {
+  private class Values implements AsyncDistributedMultiset<byte[]> {
     private final Map<CollectionEventListener<byte[]>, AtomicMultimapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
 
     @Override
@@ -674,7 +834,7 @@ public class AtomicMultimapProxy
     }
   }
 
-  private class AtomicMultimapEntries implements AsyncDistributedCollection<Map.Entry<String, byte[]>> {
+  private class Entries implements AsyncDistributedCollection<Map.Entry<String, byte[]>> {
     private final Map<CollectionEventListener<Map.Entry<String, byte[]>>, AtomicMultimapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
 
     @Override

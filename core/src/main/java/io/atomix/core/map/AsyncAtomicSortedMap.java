@@ -15,6 +15,7 @@
  */
 package io.atomix.core.map;
 
+import java.time.Duration;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 
@@ -39,4 +40,11 @@ public interface AsyncAtomicSortedMap<K extends Comparable<K>, V> extends AsyncA
    */
   CompletableFuture<K> lastKey();
 
+  @Override
+  default AtomicSortedMap<K, V> sync() {
+    return sync(Duration.ofMillis(DEFAULT_OPERATION_TIMEOUT_MILLIS));
+  }
+
+  @Override
+  AtomicSortedMap<K, V> sync(Duration operationTimeout);
 }

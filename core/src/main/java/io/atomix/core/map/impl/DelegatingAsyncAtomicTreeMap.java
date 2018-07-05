@@ -17,20 +17,20 @@
 package io.atomix.core.map.impl;
 
 import io.atomix.core.collection.AsyncDistributedCollection;
+import io.atomix.core.map.AsyncAtomicNavigableMap;
+import io.atomix.core.map.AsyncAtomicTreeMap;
 import io.atomix.core.map.AtomicMapEventListener;
+import io.atomix.core.map.AtomicTreeMap;
+import io.atomix.core.set.AsyncDistributedNavigableSet;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.core.map.AsyncAtomicTreeMap;
-import io.atomix.core.map.AtomicTreeMap;
 import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.NavigableMap;
-import java.util.NavigableSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
@@ -100,6 +100,16 @@ public class DelegatingAsyncAtomicTreeMap<K extends Comparable<K>, V>
   }
 
   @Override
+  public CompletableFuture<Map.Entry<K, Versioned<V>>> pollFirstEntry() {
+    return delegateMap.pollFirstEntry();
+  }
+
+  @Override
+  public CompletableFuture<Map.Entry<K, Versioned<V>>> pollLastEntry() {
+    return delegateMap.pollLastEntry();
+  }
+
+  @Override
   public CompletableFuture<K> lowerKey(K key) {
     return delegateMap.lowerKey(key);
   }
@@ -120,18 +130,33 @@ public class DelegatingAsyncAtomicTreeMap<K extends Comparable<K>, V>
   }
 
   @Override
-  public CompletableFuture<NavigableSet<K>> navigableKeySet() {
+  public AsyncAtomicNavigableMap<K, V> descendingMap() {
+    return delegateMap.descendingMap();
+  }
+
+  @Override
+  public AsyncDistributedNavigableSet<K> descendingKeySet() {
+    return delegateMap.descendingKeySet();
+  }
+
+  @Override
+  public AsyncDistributedNavigableSet<K> navigableKeySet() {
     return delegateMap.navigableKeySet();
   }
 
   @Override
-  public CompletableFuture<NavigableMap<K, V>> subMap(
-      K upperKey,
-      K lowerKey,
-      boolean inclusiveUpper,
-      boolean inclusiveLower) {
-    return delegateMap.subMap(upperKey, lowerKey,
-        inclusiveUpper, inclusiveLower);
+  public AsyncAtomicNavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return delegateMap.subMap(fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public AsyncAtomicNavigableMap<K, V> headMap(K toKey, boolean inclusive) {
+    return delegateMap.headMap(toKey, inclusive);
+  }
+
+  @Override
+  public AsyncAtomicNavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
+    return delegateMap.tailMap(fromKey, inclusive);
   }
 
   @Override

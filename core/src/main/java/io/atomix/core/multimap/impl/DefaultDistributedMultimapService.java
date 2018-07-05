@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set;
+package io.atomix.core.multimap.impl;
 
-import java.util.NavigableSet;
+import io.atomix.core.multimap.DistributedMultimapType;
 
 /**
- * Distributed navigable set.
+ * Default distributed multimap service.
  */
-public interface DistributedNavigableSet<E> extends DistributedSortedSet<E>, NavigableSet<E> {
-  @Override
-  AsyncDistributedNavigableSet<E> async();
+public class DefaultDistributedMultimapService extends AbstractAtomicMultimapService {
+  public DefaultDistributedMultimapService() {
+    super(DistributedMultimapType.instance());
+  }
 }

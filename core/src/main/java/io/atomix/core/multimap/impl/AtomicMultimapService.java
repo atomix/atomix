@@ -139,7 +139,7 @@ public interface AtomicMultimapService {
    * values did not exist the version will be less than one.
    */
   @Command
-  Versioned<Collection<? extends byte[]>> removeAll(String key);
+  Versioned<Collection<byte[]>> removeAll(String key);
 
   /**
    * Adds the set of key-value pairs of the specified key with each of the
@@ -165,7 +165,7 @@ public interface AtomicMultimapService {
    * @return the collection of removed values, which may be empty
    */
   @Command
-  Versioned<Collection<? extends byte[]>> replaceValues(String key, Collection<byte[]> values);
+  Versioned<Collection<byte[]>> replaceValues(String key, Collection<byte[]> values);
 
   /**
    * Removes all key-value pairs, after which it will be empty.
@@ -182,7 +182,7 @@ public interface AtomicMultimapService {
    * associated with the specified key, the collection may be empty
    */
   @Query
-  Versioned<Collection<? extends byte[]>> get(String key);
+  Versioned<Collection<byte[]>> get(String key);
 
   /**
    * Returns a set of the keys contained in this multimap with one or more

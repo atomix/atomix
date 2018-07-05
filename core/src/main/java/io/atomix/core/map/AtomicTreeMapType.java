@@ -16,7 +16,7 @@
 package io.atomix.core.map;
 
 import io.atomix.core.map.impl.DefaultAtomicTreeMapBuilder;
-import io.atomix.core.map.impl.AbstractAtomicTreeMapService;
+import io.atomix.core.map.impl.DefaultAtomicTreeMapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -57,7 +57,7 @@ public class AtomicTreeMapType<K extends Comparable<K>, V>
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new AbstractAtomicTreeMapService();
+    return new DefaultAtomicTreeMapService();
   }
 
   @Override

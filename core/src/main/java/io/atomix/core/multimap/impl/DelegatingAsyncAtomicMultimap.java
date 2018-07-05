@@ -17,11 +17,12 @@
 package io.atomix.core.multimap.impl;
 
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.multiset.AsyncDistributedMultiset;
-import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.core.map.AsyncDistributedMap;
 import io.atomix.core.multimap.AsyncAtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapEventListener;
+import io.atomix.core.multiset.AsyncDistributedMultiset;
+import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
@@ -91,7 +92,7 @@ public class DelegatingAsyncAtomicMultimap<K, V>
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<? extends V>>>
+  public CompletableFuture<Versioned<Collection<V>>>
   removeAll(K key) {
     return delegateMap.removeAll(key);
   }
@@ -103,7 +104,7 @@ public class DelegatingAsyncAtomicMultimap<K, V>
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<? extends V>>>
+  public CompletableFuture<Versioned<Collection<V>>>
   replaceValues(K key, Collection<V> values) {
     return delegateMap.replaceValues(key, values);
   }
@@ -114,7 +115,7 @@ public class DelegatingAsyncAtomicMultimap<K, V>
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<? extends V>>> get(K key) {
+  public CompletableFuture<Versioned<Collection<V>>> get(K key) {
     return delegateMap.get(key);
   }
 
@@ -136,6 +137,11 @@ public class DelegatingAsyncAtomicMultimap<K, V>
   @Override
   public AsyncDistributedCollection<Map.Entry<K, V>> entries() {
     return delegateMap.entries();
+  }
+
+  @Override
+  public AsyncDistributedMap<K, Versioned<Collection<V>>> asMap() {
+    return delegateMap.asMap();
   }
 
   @Override

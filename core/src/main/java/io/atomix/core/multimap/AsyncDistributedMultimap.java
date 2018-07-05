@@ -23,7 +23,6 @@ import io.atomix.core.multiset.AsyncDistributedMultiset;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -39,7 +38,7 @@ import java.util.concurrent.Executor;
  * Certain operations may be too expensive when backed by a distributed data
  * structure and have been labeled as such.
  */
-public interface AsyncAtomicMultimap<K, V> extends AsyncPrimitive {
+public interface AsyncDistributedMultimap<K, V> extends AsyncPrimitive {
 
   @Override
   default CompletableFuture<Void> delete() {
@@ -143,7 +142,7 @@ public interface AsyncAtomicMultimap<K, V> extends AsyncPrimitive {
    * which may be empty, if the values did not exist the version will be
    * less than one.
    */
-  CompletableFuture<Versioned<Collection<V>>> removeAll(K key);
+  CompletableFuture<Collection<V>> removeAll(K key);
 
   /**
    * Adds the set of key-value pairs of the specified key with each of the
@@ -168,7 +167,7 @@ public interface AsyncAtomicMultimap<K, V> extends AsyncPrimitive {
    * @return a future whose value will be the collection of removed values,
    * which may be empty
    */
-  CompletableFuture<Versioned<Collection<V>>> replaceValues(K key, Collection<V> values);
+  CompletableFuture<Collection<V>> replaceValues(K key, Collection<V> values);
 
   /**
    * Removes all key-value pairs, after which it will be empty.
@@ -186,7 +185,7 @@ public interface AsyncAtomicMultimap<K, V> extends AsyncPrimitive {
    * @return a future whose value will be the collection of the values
    * associated with the specified key, the collection may be empty
    */
-  CompletableFuture<Versioned<Collection<V>>> get(K key);
+  CompletableFuture<Collection<V>> get(K key);
 
   /**
    * Returns a set of the keys contained in this multimap with one or more
@@ -230,7 +229,7 @@ public interface AsyncAtomicMultimap<K, V> extends AsyncPrimitive {
    *
    * @return the multimap as a distributed map
    */
-  AsyncDistributedMap<K, Versioned<Collection<V>>> asMap();
+  AsyncDistributedMap<K, Collection<V>> asMap();
 
   /**
    * Registers the specified listener to be notified whenever the map is updated.
@@ -238,7 +237,7 @@ public interface AsyncAtomicMultimap<K, V> extends AsyncPrimitive {
    * @param listener listener to notify about map events
    * @return future that will be completed when the operation finishes
    */
-  default CompletableFuture<Void> addListener(AtomicMultimapEventListener<K, V> listener) {
+  default CompletableFuture<Void> addListener(MultimapEventListener<K, V> listener) {
     return addListener(listener, MoreExecutors.directExecutor());
   }
 
@@ -249,7 +248,7 @@ public interface AsyncAtomicMultimap<K, V> extends AsyncPrimitive {
    * @param executor executor to use for handling incoming map events
    * @return future that will be completed when the operation finishes
    */
-  CompletableFuture<Void> addListener(AtomicMultimapEventListener<K, V> listener, Executor executor);
+  CompletableFuture<Void> addListener(MultimapEventListener<K, V> listener, Executor executor);
 
   /**
    * Unregisters the specified listener such that it will no longer
@@ -258,13 +257,13 @@ public interface AsyncAtomicMultimap<K, V> extends AsyncPrimitive {
    * @param listener listener to unregister
    * @return future that will be completed when the operation finishes
    */
-  CompletableFuture<Void> removeListener(AtomicMultimapEventListener<K, V> listener);
+  CompletableFuture<Void> removeListener(MultimapEventListener<K, V> listener);
 
   @Override
-  default AtomicMultimap<K, V> sync() {
+  default DistributedMultimap<K, V> sync() {
     return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
   @Override
-  AtomicMultimap<K, V> sync(Duration operationTimeout);
+  DistributedMultimap<K, V> sync(Duration operationTimeout);
 }
