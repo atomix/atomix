@@ -56,14 +56,14 @@ import java.util.stream.Collectors;
 public class TranscodingAsyncAtomicMap<K1, V1, K2, V2> extends DelegatingAsyncPrimitive implements AsyncAtomicMap<K1, V1> {
 
   private final AsyncAtomicMap<K2, V2> backingMap;
-  private final Function<K1, K2> keyEncoder;
-  private final Function<K2, K1> keyDecoder;
-  private final Function<V2, V1> valueDecoder;
-  private final Function<V1, V2> valueEncoder;
-  private final Function<Versioned<V2>, Versioned<V1>> versionedValueDecoder;
-  private final Function<Versioned<V1>, Versioned<V2>> versionedValueEncoder;
-  private final Function<Entry<K2, Versioned<V2>>, Entry<K1, Versioned<V1>>> entryDecoder;
-  private final Function<Entry<K1, Versioned<V1>>, Entry<K2, Versioned<V2>>> entryEncoder;
+  protected final Function<K1, K2> keyEncoder;
+  protected final Function<K2, K1> keyDecoder;
+  protected final Function<V2, V1> valueDecoder;
+  protected final Function<V1, V2> valueEncoder;
+  protected final Function<Versioned<V2>, Versioned<V1>> versionedValueDecoder;
+  protected final Function<Versioned<V1>, Versioned<V2>> versionedValueEncoder;
+  protected final Function<Entry<K2, Versioned<V2>>, Entry<K1, Versioned<V1>>> entryDecoder;
+  protected final Function<Entry<K1, Versioned<V1>>, Entry<K2, Versioned<V2>>> entryEncoder;
   private final Map<AtomicMapEventListener<K1, V1>, InternalBackingAtomicMapEventListener> listeners =
       Maps.newIdentityHashMap();
 

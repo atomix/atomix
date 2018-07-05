@@ -36,5 +36,5 @@ public interface AtomicSortedMap<K extends Comparable<K>, V> extends AtomicMap<K
   K lastKey();
 
   @Override
-  AsyncAtomicTreeMap<K, V> async();
+  AsyncAtomicSortedMap<K, V> async();
 }

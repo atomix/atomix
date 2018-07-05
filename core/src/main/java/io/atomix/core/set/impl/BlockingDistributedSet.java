@@ -134,7 +134,7 @@ public class BlockingDistributedSet<E> extends Synchronous<AsyncDistributedSet<E
     return asyncSet;
   }
 
-  private <T> T complete(CompletableFuture<T> future) {
+  protected <T> T complete(CompletableFuture<T> future) {
     try {
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {

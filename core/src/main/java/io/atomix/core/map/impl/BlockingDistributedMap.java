@@ -185,7 +185,7 @@ public class BlockingDistributedMap<K, V> extends Synchronous<AsyncDistributedMa
     return asyncMap;
   }
 
-  private <T> T complete(CompletableFuture<T> future) {
+  protected <T> T complete(CompletableFuture<T> future) {
     try {
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {

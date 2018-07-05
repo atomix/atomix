@@ -15,26 +15,36 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.AsyncAtomicTreeMap;
-import io.atomix.core.map.AtomicTreeMap;
+import io.atomix.core.map.AsyncAtomicSortedMap;
+import io.atomix.core.map.AtomicSortedMap;
 
 /**
- * Default implementation of {@code AtomicTreeMap}.
+ * Default implementation of {@code AtomicSortedMap}.
  *
  * @param <K> type of key.
  * @param <V> type of value.
  */
-public class BlockingAtomicTreeMap<K extends Comparable<K>, V> extends BlockingAtomicNavigableMap<K, V> implements AtomicTreeMap<K, V> {
+public class BlockingAtomicSortedMap<K extends Comparable<K>, V> extends BlockingAtomicMap<K, V> implements AtomicSortedMap<K, V> {
 
-  private final AsyncAtomicTreeMap<K, V> asyncMap;
+  private final AsyncAtomicSortedMap<K, V> asyncMap;
 
-  public BlockingAtomicTreeMap(AsyncAtomicTreeMap<K, V> asyncMap, long operationTimeoutMillis) {
+  public BlockingAtomicSortedMap(AsyncAtomicSortedMap<K, V> asyncMap, long operationTimeoutMillis) {
     super(asyncMap, operationTimeoutMillis);
     this.asyncMap = asyncMap;
   }
 
   @Override
-  public AsyncAtomicTreeMap<K, V> async() {
+  public K firstKey() {
+    return complete(asyncMap.firstKey());
+  }
+
+  @Override
+  public K lastKey() {
+    return complete(asyncMap.lastKey());
+  }
+
+  @Override
+  public AsyncAtomicSortedMap<K, V> async() {
     return asyncMap;
   }
 }

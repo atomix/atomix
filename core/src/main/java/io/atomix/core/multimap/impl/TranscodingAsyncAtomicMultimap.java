@@ -19,6 +19,8 @@ package io.atomix.core.multimap.impl;
 import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.impl.TranscodingAsyncDistributedCollection;
+import io.atomix.core.map.AsyncDistributedMap;
+import io.atomix.core.map.impl.TranscodingAsyncDistributedMap;
 import io.atomix.core.multimap.AsyncAtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapEvent;
@@ -58,10 +60,9 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> extends DelegatingAs
   private final Function<V1, V2> valueEncoder;
   private final Function<Map.Entry<K1, V1>, Map.Entry<K2, V2>> entryEncoder;
   private final Function<Map.Entry<K2, V2>, Map.Entry<K1, V1>> entryDecoder;
-  private final Function<Versioned<Collection<? extends V2>>,
-      Versioned<Collection<? extends V1>>> versionedValueCollectionDecode;
-  private final Function<Collection<? extends V1>, Collection<V2>>
-      valueCollectionEncode;
+  private final Function<Versioned<Collection<V1>>, Versioned<Collection<V2>>> versionedValueEncoder;
+  private final Function<Versioned<Collection<V2>>, Versioned<Collection<V1>>> versionedValueDecoder;
+  private final Function<Collection<? extends V1>, Collection<V2>> valueCollectionEncode;
   private final Map<AtomicMultimapEventListener<K1, V1>, InternalBackingAtomicMultimapEventListener> listeners =
       Maps.newIdentityHashMap();
 
@@ -79,7 +80,15 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> extends DelegatingAs
     this.valueDecoder = v -> v == null ? null : valueDecoder.apply(v);
     this.entryEncoder = e -> Maps.immutableEntry(this.keyEncoder.apply(e.getKey()), this.valueEncoder.apply(e.getValue()));
     this.entryDecoder = e -> Maps.immutableEntry(this.keyDecoder.apply(e.getKey()), this.valueDecoder.apply(e.getValue()));
-    this.versionedValueCollectionDecode = v -> v == null ? null :
+    this.versionedValueEncoder = v -> v == null ? null :
+        new Versioned<>(
+            v.value()
+                .stream()
+                .map(valueEncoder)
+                .collect(Collectors.toSet()),
+            v.version(),
+            v.creationTime());
+    this.versionedValueDecoder = v -> v == null ? null :
         new Versioned<>(
             v.value()
                 .stream()
@@ -163,11 +172,11 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> extends DelegatingAs
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<? extends V1>>>
+  public CompletableFuture<Versioned<Collection<V1>>>
   removeAll(K1 key) {
     try {
       return backingMap.removeAll(keyEncoder.apply(key))
-          .thenApply(versionedValueCollectionDecode);
+          .thenApply(versionedValueDecoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -185,12 +194,12 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> extends DelegatingAs
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<? extends V1>>>
+  public CompletableFuture<Versioned<Collection<V1>>>
   replaceValues(K1 key, Collection<V1> values) {
     try {
       return backingMap.replaceValues(keyEncoder.apply(key),
           valueCollectionEncode.apply(values))
-          .thenApply(versionedValueCollectionDecode);
+          .thenApply(versionedValueDecoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -202,10 +211,10 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> extends DelegatingAs
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<? extends V1>>> get(K1 key) {
+  public CompletableFuture<Versioned<Collection<V1>>> get(K1 key) {
     try {
       return backingMap.get(keyEncoder.apply(key))
-          .thenApply(versionedValueCollectionDecode);
+          .thenApply(versionedValueDecoder);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -229,6 +238,11 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> extends DelegatingAs
   @Override
   public AsyncDistributedCollection<Map.Entry<K1, V1>> entries() {
     return new TranscodingAsyncDistributedCollection<>(backingMap.entries(), entryEncoder, entryDecoder);
+  }
+
+  @Override
+  public AsyncDistributedMap<K1, Versioned<Collection<V1>>> asMap() {
+    return new TranscodingAsyncDistributedMap<>(backingMap.asMap(), keyEncoder, keyDecoder, versionedValueEncoder, versionedValueDecoder);
   }
 
   @Override

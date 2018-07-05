@@ -138,12 +138,27 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
   }
 
   @Override
+  public AsyncAtomicNavigableMap<K, byte[]> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    throw new UnsupportedOperationException("This operation is not yet supported.");
+  }
+
+  @Override
+  public AsyncAtomicNavigableMap<K, byte[]> headMap(K toKey, boolean inclusive) {
+    throw new UnsupportedOperationException("This operation is not yet supported.");
+  }
+
+  @Override
+  public AsyncAtomicNavigableMap<K, byte[]> tailMap(K fromKey, boolean inclusive) {
+    throw new UnsupportedOperationException("This operation is not yet supported.");
+  }
+
+  @Override
   public AsyncDistributedNavigableSet<K> navigableKeySet() {
     throw new UnsupportedOperationException("This operation is not yet supported.");
   }
 
   @Override
-  public AsyncAtomicNavigableMap<K, Versioned<byte[]>> descendingMap() {
+  public AsyncAtomicNavigableMap<K, byte[]> descendingMap() {
     throw new UnsupportedOperationException();
   }
 

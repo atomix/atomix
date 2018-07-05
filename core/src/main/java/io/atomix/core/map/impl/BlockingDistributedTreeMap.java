@@ -15,26 +15,28 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.AsyncAtomicTreeMap;
-import io.atomix.core.map.AtomicTreeMap;
+import io.atomix.core.map.AsyncDistributedTreeMap;
+import io.atomix.core.map.DistributedTreeMap;
 
 /**
- * Default implementation of {@code AtomicTreeMap}.
+ * Blocking implementation of {@code DistributedTreeMap}.
  *
  * @param <K> type of key.
  * @param <V> type of value.
  */
-public class BlockingAtomicTreeMap<K extends Comparable<K>, V> extends BlockingAtomicNavigableMap<K, V> implements AtomicTreeMap<K, V> {
+public class BlockingDistributedTreeMap<K extends Comparable<K>, V> extends BlockingDistributedNavigableMap<K, V> implements DistributedTreeMap<K, V> {
 
-  private final AsyncAtomicTreeMap<K, V> asyncMap;
+  private final long operationTimeoutMillis;
+  private final AsyncDistributedTreeMap<K, V> asyncMap;
 
-  public BlockingAtomicTreeMap(AsyncAtomicTreeMap<K, V> asyncMap, long operationTimeoutMillis) {
+  public BlockingDistributedTreeMap(AsyncDistributedTreeMap<K, V> asyncMap, long operationTimeoutMillis) {
     super(asyncMap, operationTimeoutMillis);
     this.asyncMap = asyncMap;
+    this.operationTimeoutMillis = operationTimeoutMillis;
   }
 
   @Override
-  public AsyncAtomicTreeMap<K, V> async() {
+  public AsyncDistributedTreeMap<K, V> async() {
     return asyncMap;
   }
 }

@@ -213,7 +213,7 @@ public class BlockingAtomicMap<K, V> extends Synchronous<AsyncAtomicMap<K, V>> i
     return asyncMap;
   }
 
-  private <T> T complete(CompletableFuture<T> future) {
+  protected <T> T complete(CompletableFuture<T> future) {
     try {
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {

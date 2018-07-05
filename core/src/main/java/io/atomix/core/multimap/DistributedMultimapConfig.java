@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set;
+package io.atomix.core.multimap;
 
-import java.util.NavigableSet;
+import io.atomix.core.cache.CachedPrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
- * Distributed navigable set.
+ * Consistent multimap configuration.
  */
-public interface DistributedNavigableSet<E> extends DistributedSortedSet<E>, NavigableSet<E> {
+public class DistributedMultimapConfig extends CachedPrimitiveConfig<DistributedMultimapConfig> {
   @Override
-  AsyncDistributedNavigableSet<E> async();
+  public PrimitiveType getType() {
+    return AtomicMultimapType.instance();
+  }
 }

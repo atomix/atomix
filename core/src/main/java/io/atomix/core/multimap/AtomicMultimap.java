@@ -18,6 +18,7 @@ package io.atomix.core.multimap;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.core.collection.DistributedCollection;
+import io.atomix.core.map.DistributedMap;
 import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.primitive.SyncPrimitive;
@@ -125,7 +126,7 @@ public interface AtomicMultimap<K, V> extends SyncPrimitive {
    * @return the set of values that were removed, which may be empty, if the
    * values did not exist the version will be less than one.
    */
-  Versioned<Collection<? extends V>> removeAll(K key);
+  Versioned<Collection<V>> removeAll(K key);
 
   /**
    * Adds the set of key-value pairs of the specified key with each of the
@@ -149,7 +150,7 @@ public interface AtomicMultimap<K, V> extends SyncPrimitive {
    * @param values the values to be associated with the key
    * @return the collection of removed values, which may be empty
    */
-  Versioned<Collection<? extends V>> replaceValues(K key, Collection<V> values);
+  Versioned<Collection<V>> replaceValues(K key, Collection<V> values);
 
   /**
    * Removes all key-value pairs, after which it will be empty.
@@ -164,7 +165,7 @@ public interface AtomicMultimap<K, V> extends SyncPrimitive {
    * @return the collection of the values
    * associated with the specified key, the collection may be empty
    */
-  Versioned<Collection<? extends V>> get(K key);
+  Versioned<Collection<V>> get(K key);
 
   /**
    * Returns a set of the keys contained in this multimap with one or more
@@ -199,6 +200,13 @@ public interface AtomicMultimap<K, V> extends SyncPrimitive {
    * @return a collection of all entries in the map, this may be empty
    */
   DistributedCollection<Map.Entry<K, V>> entries();
+
+  /**
+   * Returns the multimap as a distributed map.
+   *
+   * @return the multimap as a distributed map
+   */
+  DistributedMap<K, Versioned<Collection<V>>> asMap();
 
   /**
    * Registers the specified listener to be notified whenever the map is updated.

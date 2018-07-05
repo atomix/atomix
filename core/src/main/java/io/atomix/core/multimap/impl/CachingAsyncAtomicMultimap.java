@@ -40,10 +40,9 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Caching {@link AsyncAtomicMultimap} implementation.
  */
 public class CachingAsyncAtomicMultimap<K, V> extends DelegatingAsyncAtomicMultimap<K, V> {
-  private static final int DEFAULT_CACHE_SIZE = 1000;
   private final Logger log = getLogger(getClass());
 
-  private final LoadingCache<K, CompletableFuture<Versioned<Collection<? extends V>>>> cache;
+  private final LoadingCache<K, CompletableFuture<Versioned<Collection<V>>>> cache;
   private final AtomicMultimapEventListener<K, V> cacheUpdater;
   private final Consumer<PrimitiveState> stateListener;
 
@@ -61,12 +60,12 @@ public class CachingAsyncAtomicMultimap<K, V> extends DelegatingAsyncAtomicMulti
     cacheUpdater = event -> {
       V oldValue = event.oldValue();
       V newValue = event.newValue();
-      CompletableFuture<Versioned<Collection<? extends V>>> future = cache.getUnchecked(event.key());
+      CompletableFuture<Versioned<Collection<V>>> future = cache.getUnchecked(event.key());
       switch (event.type()) {
         case INSERT:
           if (future.isDone()) {
-            Versioned<Collection<? extends V>> oldVersioned = future.join();
-            Versioned<Collection<? extends V>> newVersioned = new Versioned<>(
+            Versioned<Collection<V>> oldVersioned = future.join();
+            Versioned<Collection<V>> newVersioned = new Versioned<>(
                 ImmutableSet.<V>builder().addAll(oldVersioned.value()).add(newValue).build(),
                 oldVersioned.version(),
                 oldVersioned.creationTime());
@@ -80,7 +79,7 @@ public class CachingAsyncAtomicMultimap<K, V> extends DelegatingAsyncAtomicMulti
           break;
         case REMOVE:
           if (future.isDone()) {
-            Versioned<Collection<? extends V>> oldVersioned = future.join();
+            Versioned<Collection<V>> oldVersioned = future.join();
             cache.put(event.key(), CompletableFuture.completedFuture(new Versioned<>(oldVersioned.value()
                 .stream()
                 .filter(value -> !Objects.equals(value, oldValue))
@@ -132,7 +131,7 @@ public class CachingAsyncAtomicMultimap<K, V> extends DelegatingAsyncAtomicMulti
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<? extends V>>> removeAll(K key) {
+  public CompletableFuture<Versioned<Collection<V>>> removeAll(K key) {
     return super.removeAll(key)
         .whenComplete((r, e) -> cache.invalidate(key));
   }
@@ -144,7 +143,7 @@ public class CachingAsyncAtomicMultimap<K, V> extends DelegatingAsyncAtomicMulti
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<? extends V>>> replaceValues(K key, Collection<V> values) {
+  public CompletableFuture<Versioned<Collection<V>>> replaceValues(K key, Collection<V> values) {
     return super.replaceValues(key, values)
         .whenComplete((r, e) -> cache.invalidate(key));
   }
@@ -156,7 +155,7 @@ public class CachingAsyncAtomicMultimap<K, V> extends DelegatingAsyncAtomicMulti
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<? extends V>>> get(K key) {
+  public CompletableFuture<Versioned<Collection<V>>> get(K key) {
     return cache.getUnchecked(key)
         .whenComplete((r, e) -> {
           if (e != null) {

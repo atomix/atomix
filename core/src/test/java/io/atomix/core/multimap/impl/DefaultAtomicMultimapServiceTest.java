@@ -63,7 +63,7 @@ public class DefaultAtomicMultimapServiceTest {
     service.init(context);
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
-    Versioned<Collection<? extends byte[]>> value = service.get("foo");
+    Versioned<Collection<byte[]>> value = service.get("foo");
     assertNotNull(value);
     assertEquals(1, value.value().size());
     assertArrayEquals("Hello world!".getBytes(), value.value().iterator().next());
