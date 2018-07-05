@@ -161,7 +161,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public <V> AtomicTreeMap<V> getAtomicTreeMap(String name) {
+  public <K extends Comparable<K>, V> AtomicTreeMap<K, V> getAtomicTreeMap(String name) {
     return getPrimitive(name, AtomicTreeMapType.instance(), configService.getConfig(name));
   }
 

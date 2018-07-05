@@ -63,7 +63,7 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
     //make sure that the previous section has been cleaned up, they serve
     //the secondary purpose of testing isEmpty but that is not their
     //primary purpose.
-    AsyncAtomicTreeMap<String> map = createResource("basicTestMap");
+    AsyncAtomicTreeMap<String, String> map = createResource("basicTestMap");
     //test size
     map.size().thenAccept(result -> assertEquals(0, (int) result)).join();
     map.isEmpty().thenAccept(result -> assertTrue(result)).join();
@@ -243,7 +243,7 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AsyncAtomicTreeMap<String> map = createResource("treeMapListenerTestMap");
+    AsyncAtomicTreeMap<String, String> map = createResource("treeMapListenerTestMap");
     TestAtomicMapEventListener listener = new TestAtomicMapEventListener();
 
     // add listener; insert new value into map and verify an INSERT event
@@ -306,7 +306,7 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void treeMapFunctionsTest() {
-    AsyncAtomicTreeMap<String> map = createResource("treeMapFunctionTestMap");
+    AsyncAtomicTreeMap<String, String> map = createResource("treeMapFunctionTestMap");
     //Tests on empty map
     map.firstKey().thenAccept(result -> assertNull(result)).join();
     map.lastKey().thenAccept(result -> assertNull(result)).join();
@@ -410,7 +410,7 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testTreeMapViews() {
-    AtomicTreeMap<String> map = createResource("testTreeMapViews").sync();
+    AtomicTreeMap<String, String> map = createResource("testTreeMapViews").sync();
 
     assertTrue(map.isEmpty());
     assertTrue(map.keySet().isEmpty());
@@ -483,9 +483,9 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
     assertEquals(String.valueOf(27), map.get(String.valueOf(27)).value());
   }
 
-  private AsyncAtomicTreeMap<String> createResource(String mapName) {
+  private AsyncAtomicTreeMap<String, String> createResource(String mapName) {
     try {
-      return atomix().<String>atomicTreeMapBuilder(mapName, protocol()).build().async();
+      return atomix().<String, String>atomicTreeMapBuilder(mapName, protocol()).build().async();
     } catch (Throwable e) {
       throw new RuntimeException(e.toString());
     }

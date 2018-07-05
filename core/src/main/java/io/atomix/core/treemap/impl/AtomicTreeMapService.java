@@ -25,7 +25,7 @@ import java.util.NavigableMap;
 /**
  * Consistent tree map service.
  */
-public interface AtomicTreeMapService extends AtomicMapService {
+public interface AtomicTreeMapService<K extends Comparable<K>> extends AtomicMapService<K> {
 
   /**
    * Returns the lowest key in the map.
@@ -33,7 +33,7 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * @return the key or null if none exist
    */
   @Query
-  String firstKey();
+  K firstKey();
 
   /**
    * Returns the highest key in the map.
@@ -41,7 +41,7 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * @return the key or null if none exist
    */
   @Query
-  String lastKey();
+  K lastKey();
 
   /**
    * Returns the entry associated with the least key greater than or equal to the key.
@@ -50,7 +50,7 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * @return the entry or null
    */
   @Query
-  Map.Entry<String, Versioned<byte[]>> ceilingEntry(String key);
+  Map.Entry<K, Versioned<byte[]>> ceilingEntry(K key);
 
   /**
    * Returns the entry associated with the greatest key less than or equal to key.
@@ -59,7 +59,7 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * @return the entry or null
    */
   @Query
-  Map.Entry<String, Versioned<byte[]>> floorEntry(String key);
+  Map.Entry<K, Versioned<byte[]>> floorEntry(K key);
 
   /**
    * Returns the entry associated with the lest key greater than key.
@@ -68,7 +68,7 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * @return the entry or null
    */
   @Query
-  Map.Entry<String, Versioned<byte[]>> higherEntry(String key);
+  Map.Entry<K, Versioned<byte[]>> higherEntry(K key);
 
   /**
    * Returns the entry associated with the largest key less than key.
@@ -77,7 +77,7 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * @return the entry or null
    */
   @Query
-  Map.Entry<String, Versioned<byte[]>> lowerEntry(String key);
+  Map.Entry<K, Versioned<byte[]>> lowerEntry(K key);
 
   /**
    * Returns the entry associated with the lowest key in the map.
@@ -85,7 +85,7 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * @return the entry or null
    */
   @Query
-  Map.Entry<String, Versioned<byte[]>> firstEntry();
+  Map.Entry<K, Versioned<byte[]>> firstEntry();
 
   /**
    * Returns the entry associated with the highest key in the map.
@@ -93,7 +93,7 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * @return the entry or null
    */
   @Query
-  Map.Entry<String, Versioned<byte[]>> lastEntry();
+  Map.Entry<K, Versioned<byte[]>> lastEntry();
 
   /**
    * Returns the entry associated with the greatest key less than key.
@@ -102,7 +102,7 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * @return the entry or null
    */
   @Query
-  String lowerKey(String key);
+  K lowerKey(K key);
 
   /**
    * Returns the entry associated with the highest key less than or equal to key.
@@ -111,7 +111,7 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * @return the entry or null
    */
   @Query
-  String floorKey(String key);
+  K floorKey(K key);
 
   /**
    * Returns the lowest key greater than or equal to key.
@@ -120,7 +120,7 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * @return the key or null
    */
   @Query
-  String ceilingKey(String key);
+  K ceilingKey(K key);
 
   /**
    * Returns the lowest key greater than key.
@@ -129,7 +129,7 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * @return the key or null
    */
   @Query
-  String higherKey(String key);
+  K higherKey(K key);
 
   /**
    * Returns a navigable map containing the entries from the original map
@@ -144,6 +144,6 @@ public interface AtomicTreeMapService extends AtomicMapService {
    * may be empty)
    */
   @Query
-  NavigableMap<String, byte[]> subMap(String fromKey, boolean fromInclusive, String toKey, boolean toInclusive);
+  NavigableMap<K, byte[]> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
 
 }

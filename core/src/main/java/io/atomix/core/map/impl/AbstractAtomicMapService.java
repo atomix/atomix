@@ -54,15 +54,15 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * State Machine for {@link AtomicMapProxy} resource.
  */
-public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<AtomicMapClient> implements AtomicMapService {
+public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveService<AtomicMapClient> implements AtomicMapService<K> {
 
   private static final int MAX_ITERATOR_BATCH_SIZE = 1024 * 32;
 
   private final Serializer serializer;
   protected Set<SessionId> listeners = Sets.newLinkedHashSet();
-  private Map<String, MapEntryValue> map;
-  protected Set<String> preparedKeys = Sets.newHashSet();
-  protected Map<TransactionId, TransactionScope> activeTransactions = Maps.newHashMap();
+  private Map<K, MapEntryValue> map;
+  protected Set<K> preparedKeys = Sets.newHashSet();
+  protected Map<TransactionId, TransactionScope<K>> activeTransactions = Maps.newHashMap();
   protected Map<Long, IteratorContext> entryIterators = Maps.newHashMap();
   protected long currentVersion;
 
@@ -82,11 +82,11 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
     map = createMap();
   }
 
-  protected Map<String, MapEntryValue> createMap() {
+  protected Map<K, MapEntryValue> createMap() {
     return Maps.newConcurrentMap();
   }
 
-  protected Map<String, MapEntryValue> entries() {
+  protected Map<K, MapEntryValue> entries() {
     return map;
   }
 
@@ -125,14 +125,14 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public boolean containsKey(String key) {
+  public boolean containsKey(K key) {
     MapEntryValue value = entries().get(key);
     return value != null && value.type() != MapEntryValue.Type.TOMBSTONE;
   }
 
   @Override
-  public boolean containsKeys(Collection<? extends String> keys) {
-    for (String key : keys) {
+  public boolean containsKeys(Collection<? extends K> keys) {
+    for (K key : keys) {
       if (!containsKey(key)) {
         return false;
       }
@@ -148,12 +148,12 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public Versioned<byte[]> get(String key) {
+  public Versioned<byte[]> get(K key) {
     return toVersioned(entries().get(key));
   }
 
   @Override
-  public Map<String, Versioned<byte[]>> getAllPresent(Set<String> keys) {
+  public Map<K, Versioned<byte[]>> getAllPresent(Set<K> keys) {
     return entries().entrySet().stream()
         .filter(entry -> entry.getValue().type() != MapEntryValue.Type.TOMBSTONE
             && keys.contains(entry.getKey()))
@@ -161,7 +161,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public Versioned<byte[]> getOrDefault(String key, byte[] defaultValue) {
+  public Versioned<byte[]> getOrDefault(K key, byte[] defaultValue) {
     MapEntryValue value = entries().get(key);
     if (value == null) {
       return new Versioned<>(defaultValue, 0);
@@ -186,7 +186,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public Set<String> keySet() {
+  public Set<K> keySet() {
     return entries().entrySet().stream()
         .filter(entry -> entry.getValue().type() != MapEntryValue.Type.TOMBSTONE)
         .map(Map.Entry::getKey)
@@ -202,7 +202,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public Set<Map.Entry<String, Versioned<byte[]>>> entrySet() {
+  public Set<Map.Entry<K, Versioned<byte[]>>> entrySet() {
     return entries().entrySet().stream()
         .filter(entry -> entry.getValue().type() != MapEntryValue.Type.TOMBSTONE)
         .map(e -> Maps.immutableEntry(e.getKey(), toVersioned(e.getValue())))
@@ -249,7 +249,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
    * @param key   the key to update
    * @param value the value to update
    */
-  protected void putValue(String key, MapEntryValue value) {
+  protected void putValue(K key, MapEntryValue value) {
     MapEntryValue oldValue = entries().put(key, value);
     cancelTtl(oldValue);
     scheduleTtl(key, value);
@@ -260,7 +260,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
    *
    * @param value the value for which to schedule the TTL
    */
-  protected void scheduleTtl(String key, MapEntryValue value) {
+  protected void scheduleTtl(K key, MapEntryValue value) {
     if (value.ttl() > 0) {
       value.timer = getScheduler().schedule(Duration.ofMillis(value.ttl()), () -> {
         entries().remove(key, value);
@@ -281,7 +281,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public MapEntryUpdateResult<String, byte[]> put(String key, byte[] value, long ttl) {
+  public MapEntryUpdateResult<K, byte[]> put(K key, byte[] value, long ttl) {
     MapEntryValue oldValue = entries().get(key);
     MapEntryValue newValue = new MapEntryValue(
         MapEntryValue.Type.VALUE,
@@ -324,7 +324,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public MapEntryUpdateResult<String, byte[]> putIfAbsent(String key, byte[] value, long ttl) {
+  public MapEntryUpdateResult<K, byte[]> putIfAbsent(K key, byte[] value, long ttl) {
     MapEntryValue oldValue = entries().get(key);
 
     // If the value is null, this is an INSERT.
@@ -356,7 +356,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public MapEntryUpdateResult<String, byte[]> putAndGet(String key, byte[] value, long ttl) {
+  public MapEntryUpdateResult<K, byte[]> putAndGet(K key, byte[] value, long ttl) {
     MapEntryValue oldValue = entries().get(key);
     MapEntryValue newValue = new MapEntryValue(MapEntryValue.Type.VALUE, getCurrentIndex(), value, getWallClock().getTime().unixTimestamp(), ttl);
 
@@ -400,7 +400,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
    * @param predicate predicate to determine whether to remove the entry
    * @return map entry update result
    */
-  private MapEntryUpdateResult<String, byte[]> removeIf(long index, String key, Predicate<MapEntryValue> predicate) {
+  private MapEntryUpdateResult<K, byte[]> removeIf(long index, K key, Predicate<MapEntryValue> predicate) {
     MapEntryValue value = entries().get(key);
 
     // If the value does not exist or doesn't match the predicate, return a PRECONDITION_FAILED error.
@@ -429,18 +429,18 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public MapEntryUpdateResult<String, byte[]> remove(String key) {
+  public MapEntryUpdateResult<K, byte[]> remove(K key) {
     return removeIf(getCurrentIndex(), key, v -> true);
   }
 
   @Override
-  public MapEntryUpdateResult<String, byte[]> remove(String key, byte[] value) {
+  public MapEntryUpdateResult<K, byte[]> remove(K key, byte[] value) {
     return removeIf(getCurrentIndex(), key, v ->
         valuesEqual(v, new MapEntryValue(MapEntryValue.Type.VALUE, getCurrentIndex(), value, getWallClock().getTime().unixTimestamp(), 0)));
   }
 
   @Override
-  public MapEntryUpdateResult<String, byte[]> remove(String key, long version) {
+  public MapEntryUpdateResult<K, byte[]> remove(K key, long version) {
     return removeIf(getCurrentIndex(), key, v -> v.version() == version);
   }
 
@@ -453,8 +453,8 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
    * @param predicate a predicate to determine whether to replace the key
    * @return map entry update result
    */
-  private MapEntryUpdateResult<String, byte[]> replaceIf(
-      long index, String key, MapEntryValue newValue, Predicate<MapEntryValue> predicate) {
+  private MapEntryUpdateResult<K, byte[]> replaceIf(
+      long index, K key, MapEntryValue newValue, Predicate<MapEntryValue> predicate) {
     MapEntryValue oldValue = entries().get(key);
 
     // If the key is not set or the current value doesn't match the predicate, return a PRECONDITION_FAILED error.
@@ -478,7 +478,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public MapEntryUpdateResult<String, byte[]> replace(String key, byte[] value) {
+  public MapEntryUpdateResult<K, byte[]> replace(K key, byte[] value) {
     MapEntryValue entryValue = new MapEntryValue(
         MapEntryValue.Type.VALUE,
         getCurrentIndex(),
@@ -489,7 +489,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public MapEntryUpdateResult<String, byte[]> replace(String key, byte[] oldValue, byte[] newValue) {
+  public MapEntryUpdateResult<K, byte[]> replace(K key, byte[] oldValue, byte[] newValue) {
     MapEntryValue entryValue = new MapEntryValue(
         MapEntryValue.Type.VALUE,
         getCurrentIndex(),
@@ -501,7 +501,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public MapEntryUpdateResult<String, byte[]> replace(String key, long oldVersion, byte[] newValue) {
+  public MapEntryUpdateResult<K, byte[]> replace(K key, long oldVersion, byte[] newValue) {
     MapEntryValue value = new MapEntryValue(
         MapEntryValue.Type.VALUE,
         getCurrentIndex(),
@@ -514,11 +514,11 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
 
   @Override
   public void clear() {
-    Iterator<Map.Entry<String, MapEntryValue>> iterator = entries().entrySet().iterator();
-    Map<String, MapEntryValue> entriesToAdd = new HashMap<>();
+    Iterator<Map.Entry<K, MapEntryValue>> iterator = entries().entrySet().iterator();
+    Map<K, MapEntryValue> entriesToAdd = new HashMap<>();
     while (iterator.hasNext()) {
-      Map.Entry<String, MapEntryValue> entry = iterator.next();
-      String key = entry.getKey();
+      Map.Entry<K, MapEntryValue> entry = iterator.next();
+      K key = entry.getKey();
       MapEntryValue value = entry.getValue();
       if (!valueIsNull(value)) {
         Versioned<byte[]> removedValue = new Versioned<>(value.value(), value.version());
@@ -540,8 +540,8 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public Batch<String> nextKeys(long iteratorId, int position) {
-    Batch<Map.Entry<String, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
+  public Batch<K> nextKeys(long iteratorId, int position) {
+    Batch<Map.Entry<K, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
     return batch == null ? null : new Batch<>(batch.position(), batch.entries().stream()
         .map(Map.Entry::getKey)
         .collect(Collectors.toSet()));
@@ -559,7 +559,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
 
   @Override
   public Batch<Versioned<byte[]>> nextValues(long iteratorId, int position) {
-    Batch<Map.Entry<String, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
+    Batch<Map.Entry<K, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
     return batch == null ? null : new Batch<>(batch.position(), batch.entries().stream()
         .map(Map.Entry::getValue)
         .collect(Collectors.toSet()));
@@ -577,20 +577,19 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public Batch<Map.Entry<String, Versioned<byte[]>>> nextEntries(long iteratorId, int position) {
+  public Batch<Map.Entry<K, Versioned<byte[]>>> nextEntries(long iteratorId, int position) {
     IteratorContext context = entryIterators.get(iteratorId);
     if (context == null) {
       return null;
     }
 
-    List<Map.Entry<String, Versioned<byte[]>>> entries = new ArrayList<>();
+    List<Map.Entry<K, Versioned<byte[]>>> entries = new ArrayList<>();
     int size = 0;
     while (context.iterator.hasNext()) {
       context.position++;
       if (context.position > position) {
-        Map.Entry<String, MapEntryValue> entry = context.iterator.next();
+        Map.Entry<K, MapEntryValue> entry = context.iterator.next();
         entries.add(Maps.immutableEntry(entry.getKey(), toVersioned(entry.getValue())));
-        size += entry.getKey().length();
         size += entry.getValue().value().length;
 
         if (size >= MAX_ITERATOR_BATCH_SIZE) {
@@ -623,15 +622,15 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   @Override
   public long begin(TransactionId transactionId) {
     long version = getCurrentIndex();
-    activeTransactions.put(transactionId, new TransactionScope(version));
+    activeTransactions.put(transactionId, new TransactionScope<>(version));
     return version;
   }
 
   @Override
-  public PrepareResult prepareAndCommit(TransactionLog<MapUpdate<String, byte[]>> transactionLog) {
+  public PrepareResult prepareAndCommit(TransactionLog<MapUpdate<K, byte[]>> transactionLog) {
     TransactionId transactionId = transactionLog.transactionId();
     PrepareResult prepareResult = prepare(transactionLog);
-    TransactionScope transactionScope = activeTransactions.remove(transactionId);
+    TransactionScope<K> transactionScope = activeTransactions.remove(transactionId);
     if (prepareResult == PrepareResult.OK) {
       this.currentVersion = getCurrentIndex();
       transactionScope = transactionScope.prepared(transactionLog);
@@ -642,11 +641,11 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   }
 
   @Override
-  public PrepareResult prepare(TransactionLog<MapUpdate<String, byte[]>> transactionLog) {
+  public PrepareResult prepare(TransactionLog<MapUpdate<K, byte[]>> transactionLog) {
     try {
       // Iterate through records in the transaction log and perform isolation checks.
-      for (MapUpdate<String, byte[]> record : transactionLog.records()) {
-        String key = record.key();
+      for (MapUpdate<K, byte[]> record : transactionLog.records()) {
+        K key = record.key();
 
         // If the record is a VERSION_MATCH then check that the record's version matches the current
         // version of the state machine.
@@ -692,11 +691,11 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
       // Update the transaction scope. If the transaction scope is not set on this node, that indicates the
       // coordinator is communicating with another node. Transactions assume that the client is communicating
       // with a single leader in order to limit the overhead of retaining tombstones.
-      TransactionScope transactionScope = activeTransactions.get(transactionLog.transactionId());
+      TransactionScope<K> transactionScope = activeTransactions.get(transactionLog.transactionId());
       if (transactionScope == null) {
         activeTransactions.put(
             transactionLog.transactionId(),
-            new TransactionScope(transactionLog.version(), transactionLog));
+            new TransactionScope<>(transactionLog.version(), transactionLog));
         return PrepareResult.PARTIAL_FAILURE;
       } else {
         activeTransactions.put(
@@ -711,7 +710,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
 
   @Override
   public CommitResult commit(TransactionId transactionId) {
-    TransactionScope transactionScope = activeTransactions.remove(transactionId);
+    TransactionScope<K> transactionScope = activeTransactions.remove(transactionId);
     if (transactionScope == null) {
       return CommitResult.UNKNOWN_TRANSACTION_ID;
     }
@@ -729,17 +728,17 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   /**
    * Applies committed operations to the state machine.
    */
-  private CommitResult commitTransaction(TransactionScope transactionScope) {
-    TransactionLog<MapUpdate<String, byte[]>> transactionLog = transactionScope.transactionLog();
+  private CommitResult commitTransaction(TransactionScope<K> transactionScope) {
+    TransactionLog<MapUpdate<K, byte[]>> transactionLog = transactionScope.transactionLog();
     boolean retainTombstones = !activeTransactions.isEmpty();
 
-    List<AtomicMapEvent<String, byte[]>> eventsToPublish = Lists.newArrayList();
-    for (MapUpdate<String, byte[]> record : transactionLog.records()) {
+    List<AtomicMapEvent<K, byte[]>> eventsToPublish = Lists.newArrayList();
+    for (MapUpdate<K, byte[]> record : transactionLog.records()) {
       if (record.type() == MapUpdate.Type.VERSION_MATCH) {
         continue;
       }
 
-      String key = record.key();
+      K key = record.key();
       checkState(preparedKeys.remove(key), "key is not prepared");
 
       if (record.type() == MapUpdate.Type.LOCK) {
@@ -761,7 +760,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
         newValue = new MapEntryValue(MapEntryValue.Type.TOMBSTONE, currentVersion, null, 0, 0);
       }
 
-      AtomicMapEvent<String, byte[]> event;
+      AtomicMapEvent<K, byte[]> event;
       if (newValue != null) {
         entries().put(key, newValue);
         if (!valueIsNull(newValue)) {
@@ -804,7 +803,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
 
   @Override
   public RollbackResult rollback(TransactionId transactionId) {
-    TransactionScope transactionScope = activeTransactions.remove(transactionId);
+    TransactionScope<K> transactionScope = activeTransactions.remove(transactionId);
     if (transactionScope == null) {
       return RollbackResult.UNKNOWN_TRANSACTION_ID;
     } else if (!transactionScope.isPrepared()) {
@@ -830,7 +829,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
    */
   private void discardTombstones() {
     if (activeTransactions.isEmpty()) {
-      Iterator<Map.Entry<String, MapEntryValue>> iterator = entries().entrySet().iterator();
+      Iterator<Map.Entry<K, MapEntryValue>> iterator = entries().entrySet().iterator();
       while (iterator.hasNext()) {
         MapEntryValue value = iterator.next().getValue();
         if (value.type() == MapEntryValue.Type.TOMBSTONE) {
@@ -841,7 +840,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
       long lowWaterMark = activeTransactions.values().stream()
           .mapToLong(TransactionScope::version)
           .min().getAsLong();
-      Iterator<Map.Entry<String, MapEntryValue>> iterator = entries().entrySet().iterator();
+      Iterator<Map.Entry<K, MapEntryValue>> iterator = entries().entrySet().iterator();
       while (iterator.hasNext()) {
         MapEntryValue value = iterator.next().getValue();
         if (value.type() == MapEntryValue.Type.TOMBSTONE && value.version < lowWaterMark) {
@@ -867,7 +866,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
    *
    * @param event event to publish
    */
-  private void publish(AtomicMapEvent<String, byte[]> event) {
+  private void publish(AtomicMapEvent<K, byte[]> event) {
     publish(Lists.newArrayList(event));
   }
 
@@ -876,7 +875,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
    *
    * @param events list of map event to publish
    */
-  private void publish(List<AtomicMapEvent<String, byte[]>> events) {
+  private void publish(List<AtomicMapEvent<K, byte[]>> events) {
     listeners.forEach(listener -> events.forEach(event -> getSession(listener).accept(client -> client.change(event))));
   }
 
@@ -968,15 +967,15 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   /**
    * Map transaction scope.
    */
-  protected static final class TransactionScope {
+  protected static final class TransactionScope<K> {
     private final long version;
-    private final TransactionLog<MapUpdate<String, byte[]>> transactionLog;
+    private final TransactionLog<MapUpdate<K, byte[]>> transactionLog;
 
     private TransactionScope(long version) {
       this(version, null);
     }
 
-    private TransactionScope(long version, TransactionLog<MapUpdate<String, byte[]>> transactionLog) {
+    private TransactionScope(long version, TransactionLog<MapUpdate<K, byte[]>> transactionLog) {
       this.version = version;
       this.transactionLog = transactionLog;
     }
@@ -1004,7 +1003,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
      *
      * @return the transaction commit log
      */
-    TransactionLog<MapUpdate<String, byte[]>> transactionLog() {
+    TransactionLog<MapUpdate<K, byte[]>> transactionLog() {
       checkState(isPrepared());
       return transactionLog;
     }
@@ -1015,7 +1014,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
      * @param transactionLog the transaction log
      * @return new transaction scope updated with the prepare commit
      */
-    TransactionScope prepared(TransactionLog<MapUpdate<String, byte[]>> transactionLog) {
+    TransactionScope<K> prepared(TransactionLog<MapUpdate<K, byte[]>> transactionLog) {
       return new TransactionScope(version, transactionLog);
     }
   }
@@ -1023,7 +1022,7 @@ public abstract class AbstractAtomicMapService extends AbstractPrimitiveService<
   private class IteratorContext {
     private final long sessionId;
     private int position = 0;
-    private transient Iterator<Map.Entry<String, MapEntryValue>> iterator = entries().entrySet().iterator();
+    private transient Iterator<Map.Entry<K, MapEntryValue>> iterator = entries().entrySet().iterator();
 
     IteratorContext(long sessionId) {
       this.sessionId = sessionId;

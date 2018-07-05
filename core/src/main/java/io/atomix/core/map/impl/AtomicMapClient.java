@@ -21,7 +21,7 @@ import io.atomix.primitive.event.Event;
 /**
  * Consistent map client interface.
  */
-public interface AtomicMapClient {
+public interface AtomicMapClient<K> {
 
   /**
    * Called when a map change event occurs.
@@ -29,6 +29,6 @@ public interface AtomicMapClient {
    * @param event the change event
    */
   @Event("change")
-  void change(AtomicMapEvent<String, byte[]> event);
+  void change(AtomicMapEvent<K, byte[]> event);
 
 }

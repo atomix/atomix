@@ -73,17 +73,17 @@ import java.util.stream.Collectors;
 /**
  * Distributed resource providing the {@link AsyncAtomicMap} primitive.
  */
-public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends AtomicMapService>
+public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends AtomicMapService<K>, K>
     extends AbstractAsyncPrimitive<P, S>
-    implements AsyncAtomicMap<String, byte[]>, AtomicMapClient {
-  private final Map<AtomicMapEventListener<String, byte[]>, Executor> mapEventListeners = new ConcurrentHashMap<>();
+    implements AsyncAtomicMap<K, byte[]>, AtomicMapClient<K> {
+  private final Map<AtomicMapEventListener<K, byte[]>, Executor> mapEventListeners = new ConcurrentHashMap<>();
 
   protected AbstractAtomicMapProxy(ProxyClient<S> proxy, PrimitiveRegistry registry) {
     super(proxy, registry);
   }
 
   @Override
-  public void change(AtomicMapEvent<String, byte[]> event) {
+  public void change(AtomicMapEvent<K, byte[]> event) {
     mapEventListeners.forEach((listener, executor) -> executor.execute(() -> listener.event(event)));
   }
 
@@ -99,8 +99,8 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   }
 
   @Override
-  public CompletableFuture<Boolean> containsKey(String key) {
-    return getProxyClient().applyBy(key, service -> service.containsKey(key));
+  public CompletableFuture<Boolean> containsKey(K key) {
+    return getProxyClient().applyBy(key.toString(), service -> service.containsKey(key));
   }
 
   @Override
@@ -110,25 +110,25 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   }
 
   @Override
-  public CompletableFuture<Versioned<byte[]>> get(String key) {
-    return getProxyClient().applyBy(key, service -> service.get(key));
+  public CompletableFuture<Versioned<byte[]>> get(K key) {
+    return getProxyClient().applyBy(key.toString(), service -> service.get(key));
   }
 
   @Override
-  public CompletableFuture<Map<String, Versioned<byte[]>>> getAllPresent(Iterable<String> keys) {
+  public CompletableFuture<Map<K, Versioned<byte[]>>> getAllPresent(Iterable<K> keys) {
     return Futures.allOf(getProxyClient().getPartitions()
         .stream()
         .map(partition -> {
-          Set<String> uniqueKeys = new HashSet<>();
-          for (String key : keys) {
+          Set<K> uniqueKeys = new HashSet<>();
+          for (K key : keys) {
             uniqueKeys.add(key);
           }
           return partition.apply(service -> service.getAllPresent(uniqueKeys));
         })
         .collect(Collectors.toList()))
         .thenApply(maps -> {
-          Map<String, Versioned<byte[]>> result = new HashMap<>();
-          for (Map<String, Versioned<byte[]>> map : maps) {
+          Map<K, Versioned<byte[]>> result = new HashMap<>();
+          for (Map<K, Versioned<byte[]>> map : maps) {
             result.putAll(map);
           }
           return ImmutableMap.copyOf(result);
@@ -136,12 +136,12 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   }
 
   @Override
-  public CompletableFuture<Versioned<byte[]>> getOrDefault(String key, byte[] defaultValue) {
-    return getProxyClient().applyBy(key, service -> service.getOrDefault(key, defaultValue));
+  public CompletableFuture<Versioned<byte[]>> getOrDefault(K key, byte[] defaultValue) {
+    return getProxyClient().applyBy(key.toString(), service -> service.getOrDefault(key, defaultValue));
   }
 
   @Override
-  public AsyncDistributedSet<String> keySet() {
+  public AsyncDistributedSet<K> keySet() {
     return new AtomicMapKeySet();
   }
 
@@ -151,78 +151,78 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   }
 
   @Override
-  public AsyncDistributedSet<Entry<String, Versioned<byte[]>>> entrySet() {
+  public AsyncDistributedSet<Entry<K, Versioned<byte[]>>> entrySet() {
     return new AtomicMapEntrySet();
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Versioned<byte[]>> put(String key, byte[] value, Duration ttl) {
-    return getProxyClient().applyBy(key, service -> service.put(key, value, ttl.toMillis()))
+  public CompletableFuture<Versioned<byte[]>> put(K key, byte[] value, Duration ttl) {
+    return getProxyClient().applyBy(key.toString(), service -> service.put(key, value, ttl.toMillis()))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Versioned<byte[]>> putAndGet(String key, byte[] value, Duration ttl) {
-    return getProxyClient().applyBy(key, service -> service.putAndGet(key, value, ttl.toMillis()))
+  public CompletableFuture<Versioned<byte[]>> putAndGet(K key, byte[] value, Duration ttl) {
+    return getProxyClient().applyBy(key.toString(), service -> service.putAndGet(key, value, ttl.toMillis()))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Versioned<byte[]>> putIfAbsent(String key, byte[] value, Duration ttl) {
-    return getProxyClient().applyBy(key, service -> service.putIfAbsent(key, value, ttl.toMillis()))
+  public CompletableFuture<Versioned<byte[]>> putIfAbsent(K key, byte[] value, Duration ttl) {
+    return getProxyClient().applyBy(key.toString(), service -> service.putIfAbsent(key, value, ttl.toMillis()))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Versioned<byte[]>> remove(String key) {
-    return getProxyClient().applyBy(key, service -> service.remove(key))
+  public CompletableFuture<Versioned<byte[]>> remove(K key) {
+    return getProxyClient().applyBy(key.toString(), service -> service.remove(key))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> remove(String key, byte[] value) {
-    return getProxyClient().applyBy(key, service -> service.remove(key, value))
+  public CompletableFuture<Boolean> remove(K key, byte[] value) {
+    return getProxyClient().applyBy(key.toString(), service -> service.remove(key, value))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.updated());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> remove(String key, long version) {
-    return getProxyClient().applyBy(key, service -> service.remove(key, version))
+  public CompletableFuture<Boolean> remove(K key, long version) {
+    return getProxyClient().applyBy(key.toString(), service -> service.remove(key, version))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.updated());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Versioned<byte[]>> replace(String key, byte[] value) {
-    return getProxyClient().applyBy(key, service -> service.replace(key, value))
+  public CompletableFuture<Versioned<byte[]>> replace(K key, byte[] value) {
+    return getProxyClient().applyBy(key.toString(), service -> service.replace(key, value))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.result());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> replace(String key, byte[] oldValue, byte[] newValue) {
-    return getProxyClient().applyBy(key, service -> service.replace(key, oldValue, newValue))
+  public CompletableFuture<Boolean> replace(K key, byte[] oldValue, byte[] newValue) {
+    return getProxyClient().applyBy(key.toString(), service -> service.replace(key, oldValue, newValue))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.updated());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> replace(String key, long oldVersion, byte[] newValue) {
-    return getProxyClient().applyBy(key, service -> service.replace(key, oldVersion, newValue))
+  public CompletableFuture<Boolean> replace(K key, long oldVersion, byte[] newValue) {
+    return getProxyClient().applyBy(key.toString(), service -> service.replace(key, oldVersion, newValue))
         .whenComplete((r, e) -> throwIfLocked(r))
         .thenApply(v -> v.updated());
   }
@@ -234,9 +234,9 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Versioned<byte[]>> computeIf(String key,
+  public CompletableFuture<Versioned<byte[]>> computeIf(K key,
                                                         Predicate<? super byte[]> condition,
-                                                        BiFunction<? super String, ? super byte[], ? extends byte[]> remappingFunction) {
+                                                        BiFunction<? super K, ? super byte[], ? extends byte[]> remappingFunction) {
     return get(key).thenCompose(r1 -> {
       byte[] existingValue = r1 == null ? null : r1.value();
       // if the condition evaluates to false, return existing value.
@@ -256,17 +256,17 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
       }
 
       if (r1 == null) {
-        return getProxyClient().applyBy(key, service -> service.putIfAbsent(key, computedValue))
+        return getProxyClient().applyBy(key.toString(), service -> service.putIfAbsent(key, computedValue))
             .whenComplete((r, e) -> throwIfLocked(r))
             .thenCompose(r -> checkLocked(r))
             .thenApply(result -> new Versioned<>(computedValue, result.version()));
       } else if (computedValue == null) {
-        return getProxyClient().applyBy(key, service -> service.remove(key, r1.version()))
+        return getProxyClient().applyBy(key.toString(), service -> service.remove(key, r1.version()))
             .whenComplete((r, e) -> throwIfLocked(r))
             .thenCompose(r -> checkLocked(r))
             .thenApply(v -> null);
       } else {
-        return getProxyClient().applyBy(key, service -> service.replace(key, r1.version(), computedValue))
+        return getProxyClient().applyBy(key.toString(), service -> service.replace(key, r1.version(), computedValue))
             .whenComplete((r, e) -> throwIfLocked(r))
             .thenCompose(r -> checkLocked(r))
             .thenApply(result -> result.status() == MapEntryUpdateResult.Status.OK
@@ -275,8 +275,8 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     });
   }
 
-  private CompletableFuture<MapEntryUpdateResult<String, byte[]>> checkLocked(
-      MapEntryUpdateResult<String, byte[]> result) {
+  private CompletableFuture<MapEntryUpdateResult<K, byte[]>> checkLocked(
+      MapEntryUpdateResult<K, byte[]> result) {
     if (result.status() == MapEntryUpdateResult.Status.PRECONDITION_FAILED ||
         result.status() == MapEntryUpdateResult.Status.WRITE_LOCK) {
       return Futures.exceptionalFuture(new PrimitiveException.ConcurrentModification());
@@ -285,7 +285,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   }
 
   @Override
-  public synchronized CompletableFuture<Void> addListener(AtomicMapEventListener<String, byte[]> listener, Executor executor) {
+  public synchronized CompletableFuture<Void> addListener(AtomicMapEventListener<K, byte[]> listener, Executor executor) {
     if (mapEventListeners.isEmpty()) {
       mapEventListeners.put(listener, executor);
       return getProxyClient().acceptAll(service -> service.listen()).thenApply(v -> null);
@@ -296,14 +296,14 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   }
 
   @Override
-  public synchronized CompletableFuture<Void> removeListener(AtomicMapEventListener<String, byte[]> listener) {
+  public synchronized CompletableFuture<Void> removeListener(AtomicMapEventListener<K, byte[]> listener) {
     if (mapEventListeners.remove(listener) != null && mapEventListeners.isEmpty()) {
       return getProxyClient().acceptAll(service -> service.unlisten()).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);
   }
 
-  private void throwIfLocked(MapEntryUpdateResult<String, byte[]> result) {
+  private void throwIfLocked(MapEntryUpdateResult<K, byte[]> result) {
     if (result != null) {
       throwIfLocked(result.status());
     }
@@ -316,12 +316,12 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   }
 
   @Override
-  public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<String, byte[]>> transactionLog) {
-    Map<PartitionId, List<MapUpdate<String, byte[]>>> updatesGroupedByMap = Maps.newIdentityHashMap();
+  public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<K, byte[]>> transactionLog) {
+    Map<PartitionId, List<MapUpdate<K, byte[]>>> updatesGroupedByMap = Maps.newIdentityHashMap();
     transactionLog.records().forEach(update -> {
-      updatesGroupedByMap.computeIfAbsent(getProxyClient().getPartitionId(update.key()), k -> Lists.newLinkedList()).add(update);
+      updatesGroupedByMap.computeIfAbsent(getProxyClient().getPartitionId(update.key().toString()), k -> Lists.newLinkedList()).add(update);
     });
-    Map<PartitionId, TransactionLog<MapUpdate<String, byte[]>>> transactionsByMap =
+    Map<PartitionId, TransactionLog<MapUpdate<K, byte[]>>> transactionsByMap =
         Maps.transformValues(updatesGroupedByMap, list -> new TransactionLog<>(transactionLog.transactionId(), transactionLog.version(), list));
 
     return Futures.allOf(transactionsByMap.entrySet()
@@ -364,8 +364,8 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   /**
    * Provides a view of the AtomicMap's entry set.
    */
-  private class AtomicMapEntrySet implements AsyncDistributedSet<Map.Entry<String, Versioned<byte[]>>> {
-    private final Map<CollectionEventListener<Map.Entry<String, Versioned<byte[]>>>, AtomicMapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
+  private class AtomicMapEntrySet implements AsyncDistributedSet<Map.Entry<K, Versioned<byte[]>>> {
+    private final Map<CollectionEventListener<Map.Entry<K, Versioned<byte[]>>>, AtomicMapEventListener<K, byte[]>> eventListeners = Maps.newIdentityHashMap();
 
     @Override
     public String name() {
@@ -383,8 +383,8 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<String, Versioned<byte[]>>> listener) {
-      AtomicMapEventListener<String, byte[]> mapListener = event -> {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<K, Versioned<byte[]>>> listener) {
+      AtomicMapEventListener<K, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
             listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, Maps.immutableEntry(event.key(), event.newValue())));
@@ -401,8 +401,8 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<Map.Entry<String, Versioned<byte[]>>> listener) {
-      AtomicMapEventListener<String, byte[]> mapListener = eventListeners.remove(listener);
+    public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<Map.Entry<K, Versioned<byte[]>>> listener) {
+      AtomicMapEventListener<K, byte[]> mapListener = eventListeners.remove(listener);
       if (mapListener != null) {
         return AbstractAtomicMapProxy.this.removeListener(mapListener);
       }
@@ -410,12 +410,12 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public CompletableFuture<Boolean> add(Entry<String, Versioned<byte[]>> element) {
+    public CompletableFuture<Boolean> add(Entry<K, Versioned<byte[]>> element) {
       return Futures.exceptionalFuture(new UnsupportedOperationException());
     }
 
     @Override
-    public CompletableFuture<Boolean> remove(Entry<String, Versioned<byte[]>> element) {
+    public CompletableFuture<Boolean> remove(Entry<K, Versioned<byte[]>> element) {
       if (element.getValue().version() > 0) {
         return AbstractAtomicMapProxy.this.remove(element.getKey(), element.getValue().version());
       } else {
@@ -439,7 +439,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public CompletableFuture<Boolean> contains(Entry<String, Versioned<byte[]>> element) {
+    public CompletableFuture<Boolean> contains(Entry<K, Versioned<byte[]>> element) {
       return get(element.getKey()).thenApply(versioned -> {
         if (versioned == null) {
           return false;
@@ -453,27 +453,27 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public CompletableFuture<Boolean> addAll(Collection<? extends Entry<String, Versioned<byte[]>>> c) {
+    public CompletableFuture<Boolean> addAll(Collection<? extends Entry<K, Versioned<byte[]>>> c) {
       return Futures.exceptionalFuture(new UnsupportedOperationException());
     }
 
     @Override
-    public CompletableFuture<Boolean> containsAll(Collection<? extends Entry<String, Versioned<byte[]>>> c) {
+    public CompletableFuture<Boolean> containsAll(Collection<? extends Entry<K, Versioned<byte[]>>> c) {
       return Futures.exceptionalFuture(new UnsupportedOperationException());
     }
 
     @Override
-    public CompletableFuture<Boolean> retainAll(Collection<? extends Entry<String, Versioned<byte[]>>> c) {
+    public CompletableFuture<Boolean> retainAll(Collection<? extends Entry<K, Versioned<byte[]>>> c) {
       return Futures.exceptionalFuture(new UnsupportedOperationException());
     }
 
     @Override
-    public CompletableFuture<Boolean> removeAll(Collection<? extends Entry<String, Versioned<byte[]>>> c) {
+    public CompletableFuture<Boolean> removeAll(Collection<? extends Entry<K, Versioned<byte[]>>> c) {
       return Futures.exceptionalFuture(new UnsupportedOperationException());
     }
 
     @Override
-    public CompletableFuture<AsyncIterator<Map.Entry<String, Versioned<byte[]>>>> iterator() {
+    public CompletableFuture<AsyncIterator<Map.Entry<K, Versioned<byte[]>>>> iterator() {
       return Futures.allOf(getProxyClient().getPartitionIds().stream()
           .map(partitionId -> getProxyClient().applyOn(partitionId, service -> service.iterateEntries())
               .thenApply(iteratorId -> new AtomicMapPartitionIterator<>(
@@ -485,7 +485,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public DistributedSet<Entry<String, Versioned<byte[]>>> sync(Duration operationTimeout) {
+    public DistributedSet<Entry<K, Versioned<byte[]>>> sync(Duration operationTimeout) {
       return new BlockingDistributedSet<>(this, operationTimeout.toMillis());
     }
 
@@ -495,7 +495,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<Entry<String, Versioned<byte[]>>>> transactionLog) {
+    public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<Entry<K, Versioned<byte[]>>>> transactionLog) {
       throw new UnsupportedOperationException();
     }
 
@@ -513,8 +513,8 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   /**
    * Provides a view of the AtomicMap's key set.
    */
-  private class AtomicMapKeySet implements AsyncDistributedSet<String> {
-    private final Map<CollectionEventListener<String>, AtomicMapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
+  private class AtomicMapKeySet implements AsyncDistributedSet<K> {
+    private final Map<CollectionEventListener<K>, AtomicMapEventListener<K, byte[]>> eventListeners = Maps.newIdentityHashMap();
 
     @Override
     public String name() {
@@ -532,8 +532,8 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener) {
-      AtomicMapEventListener<String, byte[]> mapListener = event -> {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<K> listener) {
+      AtomicMapEventListener<K, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
             listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, event.key()));
@@ -550,8 +550,8 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<String> listener) {
-      AtomicMapEventListener<String, byte[]> mapListener = eventListeners.remove(listener);
+    public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<K> listener) {
+      AtomicMapEventListener<K, byte[]> mapListener = eventListeners.remove(listener);
       if (mapListener != null) {
         return AbstractAtomicMapProxy.this.removeListener(mapListener);
       }
@@ -559,12 +559,12 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public CompletableFuture<Boolean> add(String element) {
+    public CompletableFuture<Boolean> add(K element) {
       return Futures.exceptionalFuture(new UnsupportedOperationException());
     }
 
     @Override
-    public CompletableFuture<Boolean> remove(String element) {
+    public CompletableFuture<Boolean> remove(K element) {
       return AbstractAtomicMapProxy.this.remove(element).thenApply(value -> value != null);
     }
 
@@ -584,19 +584,19 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public CompletableFuture<Boolean> contains(String element) {
+    public CompletableFuture<Boolean> contains(K element) {
       return containsKey(element);
     }
 
     @Override
-    public CompletableFuture<Boolean> addAll(Collection<? extends String> c) {
+    public CompletableFuture<Boolean> addAll(Collection<? extends K> c) {
       return Futures.exceptionalFuture(new UnsupportedOperationException());
     }
 
     @Override
-    public CompletableFuture<Boolean> containsAll(Collection<? extends String> keys) {
-      Map<PartitionId, Collection<String>> partitions = Maps.newHashMap();
-      keys.forEach(key -> partitions.computeIfAbsent(getProxyClient().getPartitionId(key), k -> Lists.newArrayList()).add(key));
+    public CompletableFuture<Boolean> containsAll(Collection<? extends K> keys) {
+      Map<PartitionId, Collection<K>> partitions = Maps.newHashMap();
+      keys.forEach(key -> partitions.computeIfAbsent(getProxyClient().getPartitionId(key.toString()), k -> Lists.newArrayList()).add(key));
       return Futures.allOf(partitions.entrySet().stream()
           .map(entry -> getProxyClient()
               .applyOn(entry.getKey(), service -> service.containsKeys(entry.getValue())))
@@ -605,17 +605,17 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public CompletableFuture<Boolean> retainAll(Collection<? extends String> c) {
+    public CompletableFuture<Boolean> retainAll(Collection<? extends K> c) {
       return Futures.exceptionalFuture(new UnsupportedOperationException());
     }
 
     @Override
-    public CompletableFuture<Boolean> removeAll(Collection<? extends String> c) {
+    public CompletableFuture<Boolean> removeAll(Collection<? extends K> c) {
       return Futures.exceptionalFuture(new UnsupportedOperationException());
     }
 
     @Override
-    public CompletableFuture<AsyncIterator<String>> iterator() {
+    public CompletableFuture<AsyncIterator<K>> iterator() {
       return Futures.allOf(getProxyClient().getPartitionIds().stream()
           .map(partitionId -> getProxyClient().applyOn(partitionId, service -> service.iterateKeys())
               .thenApply(iteratorId -> new AtomicMapPartitionIterator<>(
@@ -627,7 +627,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public DistributedSet<String> sync(Duration operationTimeout) {
+    public DistributedSet<K> sync(Duration operationTimeout) {
       return new BlockingDistributedSet<>(this, operationTimeout.toMillis());
     }
 
@@ -637,7 +637,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<String>> transactionLog) {
+    public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<K>> transactionLog) {
       throw new UnsupportedOperationException();
     }
 
@@ -656,7 +656,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
    * Provides a view of the AtomicMap's values collection.
    */
   private class AtomicMapValuesCollection implements AsyncDistributedCollection<Versioned<byte[]>> {
-    private final Map<CollectionEventListener<Versioned<byte[]>>, AtomicMapEventListener<String, byte[]>> eventListeners = Maps.newIdentityHashMap();
+    private final Map<CollectionEventListener<Versioned<byte[]>>, AtomicMapEventListener<K, byte[]>> eventListeners = Maps.newIdentityHashMap();
 
     @Override
     public String name() {
@@ -747,7 +747,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
 
     @Override
     public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Versioned<byte[]>> listener) {
-      AtomicMapEventListener<String, byte[]> mapListener = event -> {
+      AtomicMapEventListener<K, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
             listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, event.newValue()));
@@ -765,7 +765,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
 
     @Override
     public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<Versioned<byte[]>> listener) {
-      AtomicMapEventListener<String, byte[]> mapListener = eventListeners.remove(listener);
+      AtomicMapEventListener<K, byte[]> mapListener = eventListeners.remove(listener);
       if (mapListener != null) {
         return AbstractAtomicMapProxy.this.removeListener(mapListener);
       }
@@ -820,16 +820,16 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   private class AtomicMapPartitionIterator<T> implements AsyncIterator<T> {
     private final PartitionId partitionId;
     private final long iteratorId;
-    private final BiFunction<AtomicMapService, Integer, AtomicMapService.Batch<T>> nextFunction;
-    private final Consumer<AtomicMapService> closeFunction;
+    private final BiFunction<AtomicMapService<K>, Integer, AtomicMapService.Batch<T>> nextFunction;
+    private final Consumer<AtomicMapService<K>> closeFunction;
     private volatile CompletableFuture<AtomicMapService.Batch<T>> batch;
     private volatile CompletableFuture<Void> closeFuture;
 
     AtomicMapPartitionIterator(
         PartitionId partitionId,
         long iteratorId,
-        BiFunction<AtomicMapService, Integer, AtomicMapService.Batch<T>> nextFunction,
-        Consumer<AtomicMapService> closeFunction) {
+        BiFunction<AtomicMapService<K>, Integer, AtomicMapService.Batch<T>> nextFunction,
+        Consumer<AtomicMapService<K>> closeFunction) {
       this.partitionId = partitionId;
       this.iteratorId = iteratorId;
       this.nextFunction = nextFunction;

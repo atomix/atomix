@@ -30,90 +30,90 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * State machine corresponding to {@link AtomicTreeMapProxy} backed by a
  * {@link TreeMap}.
  */
-public class DefaultAtomicTreeMapService extends AbstractAtomicMapService implements AtomicTreeMapService {
+public class DefaultAtomicTreeMapService<K extends Comparable<K>> extends AbstractAtomicMapService<K> implements AtomicTreeMapService<K> {
   public DefaultAtomicTreeMapService() {
     super(AtomicTreeMapType.instance());
   }
 
   @Override
-  protected NavigableMap<String, MapEntryValue> createMap() {
+  protected NavigableMap<K, MapEntryValue> createMap() {
     return new ConcurrentSkipListMap<>();
   }
 
   @Override
-  protected NavigableMap<String, MapEntryValue> entries() {
-    return (NavigableMap<String, MapEntryValue>) super.entries();
+  protected NavigableMap<K, MapEntryValue> entries() {
+    return (NavigableMap<K, MapEntryValue>) super.entries();
   }
 
   @Override
-  public NavigableMap<String, byte[]> subMap(String fromKey, boolean fromInclusive, String toKey, boolean toInclusive) {
-    NavigableMap<String, byte[]> map = new TreeMap<>();
+  public NavigableMap<K, byte[]> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    NavigableMap<K, byte[]> map = new TreeMap<>();
     entries().subMap(fromKey, fromInclusive, toKey, toInclusive).forEach((k, v) -> map.put(k, v.value()));
     return map;
   }
 
   @Override
-  public String firstKey() {
+  public K firstKey() {
     return isEmpty() ? null : entries().firstKey();
   }
 
   @Override
-  public String lastKey() {
+  public K lastKey() {
     return isEmpty() ? null : entries().lastKey();
   }
 
   @Override
-  public Map.Entry<String, Versioned<byte[]>> higherEntry(String key) {
+  public Map.Entry<K, Versioned<byte[]>> higherEntry(K key) {
     return isEmpty() ? null : toVersionedEntry(entries().higherEntry(key));
   }
 
   @Override
-  public Map.Entry<String, Versioned<byte[]>> firstEntry() {
+  public Map.Entry<K, Versioned<byte[]>> firstEntry() {
     return isEmpty() ? null : toVersionedEntry(entries().firstEntry());
   }
 
   @Override
-  public Map.Entry<String, Versioned<byte[]>> lastEntry() {
+  public Map.Entry<K, Versioned<byte[]>> lastEntry() {
     return isEmpty() ? null : toVersionedEntry(entries().lastEntry());
   }
 
   @Override
-  public Map.Entry<String, Versioned<byte[]>> lowerEntry(String key) {
+  public Map.Entry<K, Versioned<byte[]>> lowerEntry(K key) {
     return toVersionedEntry(entries().lowerEntry(key));
   }
 
   @Override
-  public String lowerKey(String key) {
+  public K lowerKey(K key) {
     return entries().lowerKey(key);
   }
 
   @Override
-  public Map.Entry<String, Versioned<byte[]>> floorEntry(String key) {
+  public Map.Entry<K, Versioned<byte[]>> floorEntry(K key) {
     return toVersionedEntry(entries().floorEntry(key));
   }
 
   @Override
-  public String floorKey(String key) {
+  public K floorKey(K key) {
     return entries().floorKey(key);
   }
 
   @Override
-  public Map.Entry<String, Versioned<byte[]>> ceilingEntry(String key) {
+  public Map.Entry<K, Versioned<byte[]>> ceilingEntry(K key) {
     return toVersionedEntry(entries().ceilingEntry(key));
   }
 
   @Override
-  public String ceilingKey(String key) {
+  public K ceilingKey(K key) {
     return entries().ceilingKey(key);
   }
 
   @Override
-  public String higherKey(String key) {
+  public K higherKey(K key) {
     return entries().higherKey(key);
   }
 
-  private Map.Entry<String, Versioned<byte[]>> toVersionedEntry(
-      Map.Entry<String, MapEntryValue> entry) {
+  private Map.Entry<K, Versioned<byte[]>> toVersionedEntry(
+      Map.Entry<K, MapEntryValue> entry) {
     return entry == null || valueIsNull(entry.getValue())
         ? null : Maps.immutableEntry(entry.getKey(), toVersioned(entry.getValue()));
   }

@@ -164,10 +164,11 @@ public interface PrimitivesService {
    * Creates a new {@code AtomicTreeMapBuilder}.
    *
    * @param name the primitive name
+   * @param <K>  key type
    * @param <V>  value type
    * @return builder for a async atomic tree map
    */
-  default <V> AtomicTreeMapBuilder<V> atomicTreeMapBuilder(String name) {
+  default <K extends Comparable<K>, V> AtomicTreeMapBuilder<K, V> atomicTreeMapBuilder(String name) {
     return primitiveBuilder(name, AtomicTreeMapType.instance());
   }
 
@@ -176,10 +177,11 @@ public interface PrimitivesService {
    *
    * @param name     the primitive name
    * @param protocol the primitive protocol
+   * @param <K>      key type
    * @param <V>      value type
    * @return builder for a async atomic tree map
    */
-  default <V> AtomicTreeMapBuilder<V> atomicTreeMapBuilder(String name, PrimitiveProtocol protocol) {
+  default <K extends Comparable<K>, V> AtomicTreeMapBuilder<K, V> atomicTreeMapBuilder(String name, PrimitiveProtocol protocol) {
     return primitiveBuilder(name, AtomicTreeMapType.instance(), protocol);
   }
 
@@ -566,10 +568,11 @@ public interface PrimitivesService {
    * Creates a new {@code AtomicTreeMap}.
    *
    * @param name the primitive name
+   * @param <K>  key type
    * @param <V>  value type
    * @return a new atomic tree map
    */
-  <V> AtomicTreeMap<V> getAtomicTreeMap(String name);
+  <K extends Comparable<K>, V> AtomicTreeMap<K, V> getAtomicTreeMap(String name);
 
   /**
    * Creates a new {@code AtomicTreeMap}.

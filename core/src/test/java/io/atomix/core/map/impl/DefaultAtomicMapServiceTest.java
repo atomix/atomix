@@ -71,6 +71,10 @@ public class DefaultAtomicMapServiceTest {
   }
 
   private static class TestAtomicMapService extends AbstractAtomicMapService {
+    TestAtomicMapService() {
+      super(AtomicMapType.instance());
+    }
+
     @Override
     protected Scheduler getScheduler() {
       return new Scheduler() {

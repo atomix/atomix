@@ -22,8 +22,8 @@ import io.atomix.primitive.PrimitiveManagementService;
 /**
  * Builder for {@link AtomicTreeMap}.
  */
-public abstract class AtomicTreeMapBuilder<V>
-    extends PrimitiveBuilder<AtomicTreeMapBuilder<V>, AtomicTreeMapConfig, AtomicTreeMap<V>> {
+public abstract class AtomicTreeMapBuilder<K extends Comparable<K>, V>
+    extends PrimitiveBuilder<AtomicTreeMapBuilder<K, V>, AtomicTreeMapConfig, AtomicTreeMap<K, V>> {
   public AtomicTreeMapBuilder(String name, AtomicTreeMapConfig config, PrimitiveManagementService managementService) {
     super(AtomicTreeMapType.instance(), name, config, managementService);
   }

@@ -29,21 +29,21 @@ import java.util.concurrent.CompletableFuture;
 /**
  * API for a distributed tree map implementation.
  */
-public interface AsyncAtomicTreeMap<V> extends AsyncAtomicMap<String, V> {
+public interface AsyncAtomicTreeMap<K extends Comparable<K>, V> extends AsyncAtomicMap<K, V> {
 
   /**
    * Return the lowest key in the map.
    *
    * @return the key or null if none exist
    */
-  CompletableFuture<String> firstKey();
+  CompletableFuture<K> firstKey();
 
   /**
    * Return the highest key in the map.
    *
    * @return the key or null if none exist
    */
-  CompletableFuture<String> lastKey();
+  CompletableFuture<K> lastKey();
 
   /**
    * Returns the entry associated with the least key greater than or equal to
@@ -52,7 +52,7 @@ public interface AsyncAtomicTreeMap<V> extends AsyncAtomicMap<String, V> {
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> ceilingEntry(String key);
+  CompletableFuture<Map.Entry<K, Versioned<V>>> ceilingEntry(K key);
 
   /**
    * Returns the entry associated with the greatest key less than or equal
@@ -61,7 +61,7 @@ public interface AsyncAtomicTreeMap<V> extends AsyncAtomicMap<String, V> {
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> floorEntry(String key);
+  CompletableFuture<Map.Entry<K, Versioned<V>>> floorEntry(K key);
 
   /**
    * Returns the entry associated with the least key greater than key.
@@ -69,7 +69,7 @@ public interface AsyncAtomicTreeMap<V> extends AsyncAtomicMap<String, V> {
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> higherEntry(String key);
+  CompletableFuture<Map.Entry<K, Versioned<V>>> higherEntry(K key);
 
   /**
    * Returns the entry associated with the largest key less than key.
@@ -77,21 +77,21 @@ public interface AsyncAtomicTreeMap<V> extends AsyncAtomicMap<String, V> {
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> lowerEntry(String key);
+  CompletableFuture<Map.Entry<K, Versioned<V>>> lowerEntry(K key);
 
   /**
    * Return the entry associated with the lowest key in the map.
    *
    * @return the entry or null if none exist
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> firstEntry();
+  CompletableFuture<Map.Entry<K, Versioned<V>>> firstEntry();
 
   /**
    * Return the entry associated with the highest key in the map.
    *
    * @return the entry or null if none exist
    */
-  CompletableFuture<Map.Entry<String, Versioned<V>>> lastEntry();
+  CompletableFuture<Map.Entry<K, Versioned<V>>> lastEntry();
 
   /**
    * Return the entry associated with the greatest key less than key.
@@ -99,7 +99,7 @@ public interface AsyncAtomicTreeMap<V> extends AsyncAtomicMap<String, V> {
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<String> lowerKey(String key);
+  CompletableFuture<K> lowerKey(K key);
 
   /**
    * Return the highest key less than or equal to key.
@@ -107,7 +107,7 @@ public interface AsyncAtomicTreeMap<V> extends AsyncAtomicMap<String, V> {
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<String> floorKey(String key);
+  CompletableFuture<K> floorKey(K key);
 
   /**
    * Return the lowest key greater than or equal to key.
@@ -115,7 +115,7 @@ public interface AsyncAtomicTreeMap<V> extends AsyncAtomicMap<String, V> {
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<String> ceilingKey(String key);
+  CompletableFuture<K> ceilingKey(K key);
 
   /**
    * Return the lowest key greater than key.
@@ -123,14 +123,14 @@ public interface AsyncAtomicTreeMap<V> extends AsyncAtomicMap<String, V> {
    * @param key the key
    * @return the entry or null if no suitable key exists
    */
-  CompletableFuture<String> higherKey(String key);
+  CompletableFuture<K> higherKey(K key);
 
   /**
    * Returns a navigable set of the keys in this map.
    *
    * @return a navigable key set (this may be empty)
    */
-  CompletableFuture<NavigableSet<String>> navigableKeySet();
+  CompletableFuture<NavigableSet<K>> navigableKeySet();
 
   /**
    * Returns a navigable map containing the entries from the original map
@@ -146,17 +146,17 @@ public interface AsyncAtomicTreeMap<V> extends AsyncAtomicMap<String, V> {
    * @return a navigable map containing entries in the specified range (this
    * may be empty)
    */
-  CompletableFuture<NavigableMap<String, V>> subMap(
-      String upperKey,
-      String lowerKey,
+  CompletableFuture<NavigableMap<K, V>> subMap(
+      K upperKey,
+      K lowerKey,
       boolean inclusiveUpper,
       boolean inclusiveLower);
 
   @Override
-  default AtomicTreeMap<V> sync() {
+  default AtomicTreeMap<K, V> sync() {
     return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
   @Override
-  AtomicTreeMap<V> sync(Duration operationTimeout);
+  AtomicTreeMap<K, V> sync(Duration operationTimeout);
 }
