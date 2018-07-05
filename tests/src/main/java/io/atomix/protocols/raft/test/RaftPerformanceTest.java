@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.atomix.cluster.BootstrapDiscoveryProvider;
+import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;

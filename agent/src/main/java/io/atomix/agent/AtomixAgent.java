@@ -15,9 +15,9 @@
  */
 package io.atomix.agent;
 
-import io.atomix.cluster.BootstrapDiscoveryConfig;
+import io.atomix.cluster.discovery.BootstrapDiscoveryConfig;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.MulticastDiscoveryConfig;
+import io.atomix.cluster.discovery.MulticastDiscoveryConfig;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeConfig;
 import io.atomix.core.Atomix;

@@ -15,7 +15,7 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.NodeDiscoveryProvider;
+import io.atomix.cluster.discovery.NodeDiscoveryProvider;
 import io.atomix.core.impl.ClasspathScanningAtomixRegistry;
 import io.atomix.core.profile.Profile;
 import io.atomix.primitive.PrimitiveType;

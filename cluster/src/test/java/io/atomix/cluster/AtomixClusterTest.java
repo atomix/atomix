@@ -15,6 +15,8 @@
  */
 package io.atomix.cluster;
 
+import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
+import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
 import io.atomix.utils.net.Address;
 import org.junit.Test;
 

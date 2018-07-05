@@ -17,7 +17,7 @@ package io.atomix.core;
 
 import io.atomix.cluster.AtomixClusterBuilder;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.NodeDiscoveryProvider;
+import io.atomix.cluster.discovery.NodeDiscoveryProvider;
 import io.atomix.core.profile.Profile;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.utils.net.Address;

@@ -15,6 +15,7 @@
  */
 package io.atomix.cluster;
 
+import io.atomix.cluster.discovery.NodeDiscoveryConfig;
 import io.atomix.utils.config.Config;
 
 import static com.google.common.base.Preconditions.checkNotNull;

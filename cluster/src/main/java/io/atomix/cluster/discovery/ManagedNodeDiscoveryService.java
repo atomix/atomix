@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
+package io.atomix.cluster.discovery;
 
-import io.atomix.utils.event.EventListener;
+import io.atomix.utils.Managed;
 
 /**
- * Node discovery event listener.
+ * Managed node discovery service.
  */
-public interface NodeDiscoveryEventListener extends EventListener<NodeDiscoveryEvent> {
+public interface ManagedNodeDiscoveryService extends NodeDiscoveryService, Managed<NodeDiscoveryService> {
 }

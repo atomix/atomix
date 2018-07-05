@@ -15,6 +15,7 @@
  */
 package io.atomix.cluster;
 
+import io.atomix.cluster.discovery.NodeDiscoveryProvider;
 import io.atomix.utils.Builder;
 import io.atomix.utils.net.Address;
 
