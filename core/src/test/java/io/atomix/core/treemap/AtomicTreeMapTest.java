@@ -18,9 +18,11 @@ package io.atomix.core.treemap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.core.AbstractPrimitiveTest;
+import io.atomix.core.map.AsyncAtomicTreeMap;
 import io.atomix.core.map.AtomicMapEvent;
 import io.atomix.core.map.AtomicMapEventListener;
-import io.atomix.core.treemap.impl.AtomicTreeMapProxy;
+import io.atomix.core.map.AtomicTreeMap;
+import io.atomix.core.map.impl.AtomicTreeMapProxy;
 import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 

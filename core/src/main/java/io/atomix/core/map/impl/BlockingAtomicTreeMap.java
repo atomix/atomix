@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.atomix.core.treemap.impl;
+package io.atomix.core.map.impl;
 
 import com.google.common.base.Throwables;
 import io.atomix.core.collection.DistributedCollection;
@@ -22,8 +22,8 @@ import io.atomix.core.collection.impl.BlockingDistributedCollection;
 import io.atomix.core.map.AtomicMapEventListener;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.impl.BlockingDistributedSet;
-import io.atomix.core.treemap.AsyncAtomicTreeMap;
-import io.atomix.core.treemap.AtomicTreeMap;
+import io.atomix.core.map.AsyncAtomicTreeMap;
+import io.atomix.core.map.AtomicTreeMap;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.time.Versioned;

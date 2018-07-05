@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package io.atomix.core.treemap.impl;
+package io.atomix.core.map.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.map.impl.AbstractAtomicMapService;
-import io.atomix.core.treemap.AtomicTreeMapType;
+import io.atomix.core.map.AtomicTreeMapType;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Map;

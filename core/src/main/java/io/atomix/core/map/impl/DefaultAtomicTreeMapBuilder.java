@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.treemap.impl;
+package io.atomix.core.map.impl;
 
-import io.atomix.core.treemap.AsyncAtomicTreeMap;
-import io.atomix.core.treemap.AtomicTreeMap;
-import io.atomix.core.treemap.AtomicTreeMapBuilder;
-import io.atomix.core.treemap.AtomicTreeMapConfig;
+import io.atomix.core.map.AsyncAtomicTreeMap;
+import io.atomix.core.map.AtomicTreeMap;
+import io.atomix.core.map.AtomicTreeMapBuilder;
+import io.atomix.core.map.AtomicTreeMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;

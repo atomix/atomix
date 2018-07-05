@@ -1,11 +1,11 @@
 /*
- * Copyright 2016-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.atomix.core.map.impl;
 
-package io.atomix.core.treemap;
-
-import io.atomix.core.map.AtomicMap;
+import io.atomix.core.map.impl.AtomicMapService;
+import io.atomix.primitive.operation.Query;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.NavigableSet;
 
 /**
- * Tree map interface counterpart to {@link AsyncAtomicTreeMap}.
+ * Consistent tree map service.
  */
-public interface AtomicTreeMap<K extends Comparable<K>, V> extends AtomicMap<K, V> {
+public interface AtomicTreeMapService<K extends Comparable<K>> extends AtomicMapService<K> {
 
   /**
    * Returns the lowest key in the map.
    *
    * @return the key or null if none exist
    */
+  @Query
   K firstKey();
 
   /**
@@ -40,6 +40,7 @@ public interface AtomicTreeMap<K extends Comparable<K>, V> extends AtomicMap<K, 
    *
    * @return the key or null if none exist
    */
+  @Query
   K lastKey();
 
   /**
@@ -48,7 +49,8 @@ public interface AtomicTreeMap<K extends Comparable<K>, V> extends AtomicMap<K, 
    * @param key the key
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> ceilingEntry(K key);
+  @Query
+  Map.Entry<K, Versioned<byte[]>> ceilingEntry(K key);
 
   /**
    * Returns the entry associated with the greatest key less than or equal to key.
@@ -56,7 +58,8 @@ public interface AtomicTreeMap<K extends Comparable<K>, V> extends AtomicMap<K, 
    * @param key the key
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> floorEntry(K key);
+  @Query
+  Map.Entry<K, Versioned<byte[]>> floorEntry(K key);
 
   /**
    * Returns the entry associated with the lest key greater than key.
@@ -64,7 +67,8 @@ public interface AtomicTreeMap<K extends Comparable<K>, V> extends AtomicMap<K, 
    * @param key the key
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> higherEntry(K key);
+  @Query
+  Map.Entry<K, Versioned<byte[]>> higherEntry(K key);
 
   /**
    * Returns the entry associated with the largest key less than key.
@@ -72,21 +76,24 @@ public interface AtomicTreeMap<K extends Comparable<K>, V> extends AtomicMap<K, 
    * @param key the key
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> lowerEntry(K key);
+  @Query
+  Map.Entry<K, Versioned<byte[]>> lowerEntry(K key);
 
   /**
    * Returns the entry associated with the lowest key in the map.
    *
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> firstEntry();
+  @Query
+  Map.Entry<K, Versioned<byte[]>> firstEntry();
 
   /**
    * Returns the entry associated with the highest key in the map.
    *
    * @return the entry or null
    */
-  Map.Entry<K, Versioned<V>> lastEntry();
+  @Query
+  Map.Entry<K, Versioned<byte[]>> lastEntry();
 
   /**
    * Returns the entry associated with the greatest key less than key.
@@ -94,6 +101,7 @@ public interface AtomicTreeMap<K extends Comparable<K>, V> extends AtomicMap<K, 
    * @param key the key
    * @return the entry or null
    */
+  @Query
   K lowerKey(K key);
 
   /**
@@ -102,6 +110,7 @@ public interface AtomicTreeMap<K extends Comparable<K>, V> extends AtomicMap<K, 
    * @param key the key
    * @return the entry or null
    */
+  @Query
   K floorKey(K key);
 
   /**
@@ -110,6 +119,7 @@ public interface AtomicTreeMap<K extends Comparable<K>, V> extends AtomicMap<K, 
    * @param key the key
    * @return the key or null
    */
+  @Query
   K ceilingKey(K key);
 
   /**
@@ -118,35 +128,22 @@ public interface AtomicTreeMap<K extends Comparable<K>, V> extends AtomicMap<K, 
    * @param key the key
    * @return the key or null
    */
+  @Query
   K higherKey(K key);
-
-  /**
-   * Returns a navigable set of the keys in this map.
-   *
-   * @return a navigable key set
-   */
-  NavigableSet<K> navigableKeySet();
 
   /**
    * Returns a navigable map containing the entries from the original map
    * which are larger than (or if specified equal to) {@code lowerKey} AND
    * less than (or if specified equal to) {@code upperKey}.
    *
-   * @param upperKey       the upper bound for the keys in this map
-   * @param lowerKey       the lower bound for the keys in this map
-   * @param inclusiveUpper whether keys equal to the upperKey should be
-   *                       included
-   * @param inclusiveLower whether keys equal to the lowerKey should be
-   *                       included
+   * @param fromKey       the start key
+   * @param fromInclusive whether the start key is inclusive
+   * @param toKey         the end key
+   * @param toInclusive   whether the end key is inclusive
    * @return a navigable map containing entries in the specified range (this
    * may be empty)
    */
-  NavigableMap<K, V> subMap(
-      K upperKey,
-      K lowerKey,
-      boolean inclusiveUpper,
-      boolean inclusiveLower);
+  @Query
+  NavigableMap<K, byte[]> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
 
-  @Override
-  AsyncAtomicTreeMap<K, V> async();
 }
