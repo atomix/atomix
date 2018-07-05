@@ -54,7 +54,7 @@ public class DefaultAtomicMapServiceTest {
     Session session = mock(Session.class);
     when(session.sessionId()).thenReturn(SessionId.from(1));
 
-    DefaultAtomicMapService service = new TestAtomicMapService();
+    AbstractAtomicMapService service = new TestAtomicMapService();
     service.init(context);
 
     service.put("foo", "Hello world!".getBytes());
@@ -70,7 +70,7 @@ public class DefaultAtomicMapServiceTest {
     assertArrayEquals("Hello world!".getBytes(), value.value());
   }
 
-  private static class TestAtomicMapService extends DefaultAtomicMapService {
+  private static class TestAtomicMapService extends AbstractAtomicMapService {
     @Override
     protected Scheduler getScheduler() {
       return new Scheduler() {

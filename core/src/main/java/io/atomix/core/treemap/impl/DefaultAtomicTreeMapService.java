@@ -17,7 +17,8 @@
 package io.atomix.core.treemap.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.map.impl.DefaultAtomicMapService;
+import io.atomix.core.map.impl.AbstractAtomicMapService;
+import io.atomix.core.treemap.AtomicTreeMapType;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Map;
@@ -29,9 +30,9 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * State machine corresponding to {@link AtomicTreeMapProxy} backed by a
  * {@link TreeMap}.
  */
-public class DefaultAtomicTreeMapService extends DefaultAtomicMapService implements AtomicTreeMapService {
+public class DefaultAtomicTreeMapService extends AbstractAtomicMapService implements AtomicTreeMapService {
   public DefaultAtomicTreeMapService() {
-    super();
+    super(AtomicTreeMapType.instance());
   }
 
   @Override

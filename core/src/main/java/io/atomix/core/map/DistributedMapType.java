@@ -15,8 +15,9 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.map.impl.DefaultAtomicMapService;
+import io.atomix.core.map.impl.AbstractAtomicMapService;
 import io.atomix.core.map.impl.DefaultDistributedMapBuilder;
+import io.atomix.core.map.impl.DefaultDistributedMapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -51,7 +52,7 @@ public class DistributedMapType<K, V> implements PrimitiveType<DistributedMapBui
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultAtomicMapService();
+    return new DefaultDistributedMapService();
   }
 
   @Override

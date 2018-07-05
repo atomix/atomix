@@ -15,12 +15,15 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.AtomicMapConfig;
-import io.atomix.core.map.AtomicMapType;
+import com.google.common.io.BaseEncoding;
+import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapBuilder;
 import io.atomix.core.map.DistributedMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -34,13 +37,35 @@ public class DefaultDistributedMapBuilder<K, V> extends DistributedMapBuilder<K,
 
   @Override
   public CompletableFuture<DistributedMap<K, V>> buildAsync() {
-    return AtomicMapType.<K, V>instance().newBuilder(name, new AtomicMapConfig()
-        .setName(config.getName())
-        .setProtocolConfig(config.getProtocolConfig())
-        .setNamespaceConfig(config.getNamespaceConfig())
-        .setCacheConfig(config.getCacheConfig())
-        .setReadOnly(config.isReadOnly()), managementService)
-        .buildAsync()
-        .thenApply(atomicMap -> new DelegatingAsyncDistributedMap<>(atomicMap.async()).sync());
+    ProxyClient<AtomicMapService> proxy = protocol().newProxy(
+        name(),
+        primitiveType(),
+        AtomicMapService.class,
+        new ServiceConfig(),
+        managementService.getPartitionService());
+    return new AtomicMapProxy(proxy, managementService.getPrimitiveRegistry())
+        .connect()
+        .thenApply(rawMap -> {
+          Serializer serializer = serializer();
+          AsyncAtomicMap<K, V> map = new TranscodingAsyncAtomicMap<K, V, String, byte[]>(
+              rawMap,
+              key -> BaseEncoding.base16().encode(serializer.encode(key)),
+              string -> serializer.decode(BaseEncoding.base16().decode(string)),
+              value -> serializer.encode(value),
+              bytes -> serializer.decode(bytes));
+
+          if (!config.isNullValues()) {
+            map = new NotNullAsyncAtomicMap<>(map);
+          }
+
+          if (config.getCacheConfig().isEnabled()) {
+            map = new CachingAsyncAtomicMap<>(map, config.getCacheConfig());
+          }
+
+          if (config.isReadOnly()) {
+            map = new UnmodifiableAsyncAtomicMap<>(map);
+          }
+          return map;
+        }).thenApply(atomicMap -> new DelegatingAsyncDistributedMap<>(atomicMap).sync());
   }
 }
