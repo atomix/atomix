@@ -15,13 +15,13 @@
  */
 package io.atomix.core.queue;
 
+import io.atomix.core.collection.DistributedCollectionConfig;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
  * Distributed queue configuration.
  */
-public class DistributedQueueConfig extends PrimitiveConfig<DistributedQueueConfig> {
+public class DistributedQueueConfig extends DistributedCollectionConfig<DistributedQueueConfig> {
   @Override
   public PrimitiveType getType() {
     return DistributedQueueType.instance();

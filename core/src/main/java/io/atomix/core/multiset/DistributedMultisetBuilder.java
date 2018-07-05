@@ -15,7 +15,7 @@
  */
 package io.atomix.core.multiset;
 
-import io.atomix.primitive.PrimitiveBuilder;
+import io.atomix.core.collection.DistributedCollectionBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
 /**
@@ -23,7 +23,7 @@ import io.atomix.primitive.PrimitiveManagementService;
  *
  * @param <E> multiset element type
  */
-public abstract class DistributedMultisetBuilder<E> extends PrimitiveBuilder<DistributedMultisetBuilder<E>, DistributedMultisetConfig, DistributedMultiset<E>> {
+public abstract class DistributedMultisetBuilder<E> extends DistributedCollectionBuilder<DistributedMultisetBuilder<E>, DistributedMultisetConfig, DistributedMultiset<E>, E> {
   public DistributedMultisetBuilder(String name, DistributedMultisetConfig config, PrimitiveManagementService managementService) {
     super(DistributedMultisetType.instance(), name, config, managementService);
   }

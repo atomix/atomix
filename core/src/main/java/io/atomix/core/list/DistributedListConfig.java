@@ -15,13 +15,13 @@
  */
 package io.atomix.core.list;
 
+import io.atomix.core.collection.DistributedCollectionConfig;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
  * Distributed list configuration.
  */
-public class DistributedListConfig extends PrimitiveConfig<DistributedListConfig> {
+public class DistributedListConfig extends DistributedCollectionConfig<DistributedListConfig> {
   @Override
   public PrimitiveType getType() {
     return DistributedListType.instance();
