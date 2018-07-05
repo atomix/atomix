@@ -17,9 +17,24 @@
 package io.atomix.core.map;
 
 /**
- * Tree map interface counterpart to {@link AsyncAtomicTreeMap}.
+ * Atomic sorted map.
  */
-public interface AtomicTreeMap<K extends Comparable<K>, V> extends AtomicNavigableMap<K, V> {
+public interface AtomicSortedMap<K extends Comparable<K>, V> extends AtomicMap<K, V> {
+
+  /**
+   * Returns the lowest key in the map.
+   *
+   * @return the key or null if none exist
+   */
+  K firstKey();
+
+  /**
+   * Returns the highest key in the map.
+   *
+   * @return the key or null if none exist
+   */
+  K lastKey();
+
   @Override
   AsyncAtomicTreeMap<K, V> async();
 }

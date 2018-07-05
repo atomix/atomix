@@ -42,9 +42,15 @@ import io.atomix.core.lock.DistributedLockType;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapBuilder;
 import io.atomix.core.map.AtomicMapType;
+import io.atomix.core.map.AtomicTreeMap;
+import io.atomix.core.map.AtomicTreeMapBuilder;
+import io.atomix.core.map.AtomicTreeMapType;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapBuilder;
 import io.atomix.core.map.DistributedMapType;
+import io.atomix.core.map.DistributedTreeMap;
+import io.atomix.core.map.DistributedTreeMapBuilder;
+import io.atomix.core.map.DistributedTreeMapType;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapBuilder;
 import io.atomix.core.multimap.AtomicMultimapType;
@@ -64,9 +70,6 @@ import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.tree.AtomicDocumentTreeBuilder;
 import io.atomix.core.tree.AtomicDocumentTreeType;
-import io.atomix.core.map.AtomicTreeMap;
-import io.atomix.core.map.AtomicTreeMapBuilder;
-import io.atomix.core.map.AtomicTreeMapType;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueBuilder;
 import io.atomix.core.value.AtomicValueType;
@@ -110,6 +113,31 @@ public interface PrimitivesService {
    */
   default <K, V> DistributedMapBuilder<K, V> mapBuilder(String name, PrimitiveProtocol protocol) {
     return primitiveBuilder(name, DistributedMapType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new AtomicMapBuilder.
+   *
+   * @param name the primitive name
+   * @param <K>  key type
+   * @param <V>  value type
+   * @return builder for a atomic map
+   */
+  default <K extends Comparable<K>, V> DistributedTreeMapBuilder<K, V> treeMapBuilder(String name) {
+    return primitiveBuilder(name, DistributedTreeMapType.instance());
+  }
+
+  /**
+   * Creates a new AtomicMapBuilder.
+   *
+   * @param name     the primitive name
+   * @param protocol the primitive protocol
+   * @param <K>      key type
+   * @param <V>      value type
+   * @return builder for a atomic map
+   */
+  default <K extends Comparable<K>, V> DistributedTreeMapBuilder<K, V> treeMapBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedTreeMapType.instance(), protocol);
   }
 
   /**
@@ -544,6 +572,16 @@ public interface PrimitivesService {
    * @return a new distributed map
    */
   <K, V> DistributedMap<K, V> getMap(String name);
+
+  /**
+   * Creates a new DistributedMap.
+   *
+   * @param name the primitive name
+   * @param <K>  key type
+   * @param <V>  value type
+   * @return a new distributed map
+   */
+  <K extends Comparable<K>, V> DistributedTreeMap<K, V> getTreeMap(String name);
 
   /**
    * Creates a new AtomicMap.
