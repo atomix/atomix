@@ -15,7 +15,6 @@
  */
 package io.atomix.core.countermap;
 
-import io.atomix.core.counter.AtomicCounterMap;
 import io.atomix.core.countermap.impl.DefaultAtomicCounterMapBuilder;
 import io.atomix.core.countermap.impl.DefaultAtomicCounterMapService;
 import io.atomix.primitive.PrimitiveManagementService;

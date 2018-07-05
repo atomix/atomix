@@ -16,7 +16,7 @@
 package io.atomix.core.countermap.impl;
 
 import io.atomix.core.countermap.AsyncAtomicCounterMap;
-import io.atomix.core.counter.AtomicCounterMap;
+import io.atomix.core.countermap.AtomicCounterMap;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.proxy.ProxyClient;

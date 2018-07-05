@@ -17,7 +17,7 @@ package io.atomix.core.countermap.impl;
 
 import com.google.common.base.Throwables;
 import io.atomix.core.countermap.AsyncAtomicCounterMap;
-import io.atomix.core.counter.AtomicCounterMap;
+import io.atomix.core.countermap.AtomicCounterMap;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 

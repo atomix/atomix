@@ -15,7 +15,6 @@
  */
 package io.atomix.core.countermap;
 
-import io.atomix.core.counter.AtomicCounterMap;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
 

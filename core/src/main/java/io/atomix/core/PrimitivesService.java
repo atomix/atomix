@@ -17,7 +17,7 @@ package io.atomix.core;
 
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterBuilder;
-import io.atomix.core.counter.AtomicCounterMap;
+import io.atomix.core.countermap.AtomicCounterMap;
 import io.atomix.core.counter.AtomicCounterType;
 import io.atomix.core.countermap.AtomicCounterMapBuilder;
 import io.atomix.core.countermap.AtomicCounterMapType;
