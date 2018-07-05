@@ -123,7 +123,7 @@ public class AtomixConfigTest {
     assertTrue(foo.isNullValues());
 
     DistributedSetConfig bar = config.getPrimitive("bar");
-    assertTrue(bar.isCacheEnabled());
+    assertTrue(bar.getCacheConfig().isEnabled());
 
     MultiPrimaryProtocolConfig multiPrimary = (MultiPrimaryProtocolConfig) bar.getProtocolConfig();
     assertEquals(MultiPrimaryProtocol.TYPE, multiPrimary.getType());

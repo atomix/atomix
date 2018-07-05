@@ -55,8 +55,8 @@ public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
               element -> BaseEncoding.base16().encode(serializer.encode(element)),
               string -> serializer.decode(BaseEncoding.base16().decode(string)));
 
-          if (config.isCacheEnabled()) {
-            set = new CachingAsyncDistributedSet<>(set, config.getCacheSize());
+          if (config.getCacheConfig().isEnabled()) {
+            set = new CachingAsyncDistributedSet<>(set, config.getCacheConfig());
           }
 
           if (config.isReadOnly()) {

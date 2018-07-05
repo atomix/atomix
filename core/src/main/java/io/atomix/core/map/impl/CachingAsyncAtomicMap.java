@@ -18,6 +18,7 @@ package io.atomix.core.map.impl;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import io.atomix.core.cache.CacheConfig;
 import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.AtomicMapEventListener;
 import io.atomix.primitive.PrimitiveState;
@@ -46,7 +47,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @param <V> value type
  */
 public class CachingAsyncAtomicMap<K, V> extends DelegatingAsyncAtomicMap<K, V> {
-  private static final int DEFAULT_CACHE_SIZE = 10000;
   private final Logger log = getLogger(getClass());
 
   private final LoadingCache<K, CompletableFuture<Versioned<V>>> cache;
@@ -55,25 +55,16 @@ public class CachingAsyncAtomicMap<K, V> extends DelegatingAsyncAtomicMap<K, V> 
   private final Consumer<PrimitiveState> statusListener;
 
   /**
-   * Default constructor.
-   *
-   * @param backingMap a distributed, strongly consistent map for backing
-   */
-  public CachingAsyncAtomicMap(AsyncAtomicMap<K, V> backingMap) {
-    this(backingMap, DEFAULT_CACHE_SIZE);
-  }
-
-  /**
    * Constructor to configure cache size.
    *
-   * @param backingMap a distributed, strongly consistent map for backing
-   * @param cacheSize  the maximum size of the cache
+   * @param backingMap  a distributed, strongly consistent map for backing
+   * @param cacheConfig the cache configuration
    */
-  public CachingAsyncAtomicMap(AsyncAtomicMap<K, V> backingMap, int cacheSize) {
+  public CachingAsyncAtomicMap(AsyncAtomicMap<K, V> backingMap, CacheConfig cacheConfig) {
     super(backingMap);
     this.backingMap = backingMap;
     cache = CacheBuilder.newBuilder()
-        .maximumSize(cacheSize)
+        .maximumSize(cacheConfig.getSize())
         .build(CacheLoader.from(CachingAsyncAtomicMap.super::get));
     cacheUpdater = event -> {
       Versioned<V> newValue = event.newValue();

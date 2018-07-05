@@ -16,6 +16,7 @@
 package io.atomix.core.multiset.impl;
 
 import com.google.common.collect.Multiset;
+import io.atomix.core.cache.CacheConfig;
 import io.atomix.core.collection.impl.CachingAsyncDistributedCollection;
 import io.atomix.core.multiset.AsyncDistributedMultiset;
 import io.atomix.core.multiset.DistributedMultiset;
@@ -30,13 +31,8 @@ import java.util.concurrent.CompletableFuture;
 public class CachingAsyncDistributedMultiset<E> extends CachingAsyncDistributedCollection<E> implements AsyncDistributedMultiset<E> {
   private final AsyncDistributedMultiset<E> backingMultiset;
 
-  public CachingAsyncDistributedMultiset(AsyncDistributedMultiset<E> backingCollection) {
-    super(backingCollection);
-    this.backingMultiset = backingCollection;
-  }
-
-  public CachingAsyncDistributedMultiset(AsyncDistributedMultiset<E> backingCollection, int cacheSize) {
-    super(backingCollection, cacheSize);
+  public CachingAsyncDistributedMultiset(AsyncDistributedMultiset<E> backingCollection, CacheConfig config) {
+    super(backingCollection, config);
     this.backingMultiset = backingCollection;
   }
 

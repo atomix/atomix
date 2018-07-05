@@ -18,6 +18,7 @@ package io.atomix.core.collection.impl;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import io.atomix.core.cache.CacheConfig;
 import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.primitive.PrimitiveState;
@@ -34,11 +35,9 @@ import java.util.function.Consumer;
  * The cache entries are automatically invalidated when updates are detected either locally or
  * remotely.
  *
- * @param <K> key type
- * @param <V> value type
+ * @param <E> element type
  */
 public class CachingAsyncDistributedCollection<E> extends DelegatingAsyncDistributedCollection<E> {
-  private static final int DEFAULT_CACHE_SIZE = 10000;
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   protected final LoadingCache<E, CompletableFuture<Boolean>> cache;
@@ -46,24 +45,15 @@ public class CachingAsyncDistributedCollection<E> extends DelegatingAsyncDistrib
   private final Consumer<PrimitiveState> statusListener;
 
   /**
-   * Default constructor.
-   *
-   * @param backingCollection a distributed collection for backing
-   */
-  public CachingAsyncDistributedCollection(AsyncDistributedCollection<E> backingCollection) {
-    this(backingCollection, DEFAULT_CACHE_SIZE);
-  }
-
-  /**
    * Constructor to configure cache size.
    *
    * @param backingCollection a distributed collection for backing
-   * @param cacheSize         the maximum size of the cache
+   * @param cacheConfig       the cache configuration
    */
-  public CachingAsyncDistributedCollection(AsyncDistributedCollection<E> backingCollection, int cacheSize) {
+  public CachingAsyncDistributedCollection(AsyncDistributedCollection<E> backingCollection, CacheConfig cacheConfig) {
     super(backingCollection);
     cache = CacheBuilder.newBuilder()
-        .maximumSize(cacheSize)
+        .maximumSize(cacheConfig.getSize())
         .build(CacheLoader.from(CachingAsyncDistributedCollection.super::contains));
     cacheUpdater = event -> cache.invalidate(event.element());
     statusListener = status -> {

@@ -23,9 +23,9 @@ import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.utils.Builder;
 import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.NamespaceConfig;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.serializer.NamespaceConfig;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -75,41 +75,6 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
   @SuppressWarnings("unchecked")
   public B withProtocol(PrimitiveProtocol protocol) {
     this.protocol = protocol;
-    return (B) this;
-  }
-
-  /**
-   * Enables caching for the primitive.
-   *
-   * @return the primitive builder
-   */
-  @SuppressWarnings("unchecked")
-  public B withCacheEnabled() {
-    config.setCacheEnabled();
-    return (B) this;
-  }
-
-  /**
-   * Sets whether caching is enabled.
-   *
-   * @param cacheEnabled whether caching is enabled
-   * @return the primitive builder
-   */
-  @SuppressWarnings("unchecked")
-  public B withCacheEnabled(boolean cacheEnabled) {
-    config.setCacheEnabled(cacheEnabled);
-    return (B) this;
-  }
-
-  /**
-   * Sets the cache size.
-   *
-   * @param cacheSize the cache size
-   * @return the primitive builder
-   */
-  @SuppressWarnings("unchecked")
-  public B withCacheSize(int cacheSize) {
-    config.setCacheSize(cacheSize);
     return (B) this;
   }
 
