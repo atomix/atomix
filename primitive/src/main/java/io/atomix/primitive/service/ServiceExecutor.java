@@ -16,6 +16,7 @@
 
 package io.atomix.primitive.service;
 
+import io.atomix.primitive.Consistency;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
@@ -37,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * {@link OperationType#COMMAND commands} are guaranteed to be applied to the state machine in the order in which
  * they appear in the Raft log and always in the same thread, so state machines don't have to be thread safe.
  * {@link OperationType#QUERY queries} are not generally written to the Raft log and will instead be applied according
- * to their {@link ReadConsistency}.
+ * to their {@link Consistency}.
  * <p>
  * State machines can use the executor to provide deterministic scheduling during the execution of command callbacks.
  * <pre>

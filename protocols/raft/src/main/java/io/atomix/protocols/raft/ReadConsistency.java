@@ -15,10 +15,12 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.protocols.raft.protocol.QueryRequest;
+
 /**
- * Constants for specifying Raft {@link RaftQuery} consistency levels.
+ * Constants for specifying Raft {@link QueryRequest} consistency levels.
  * <p>
- * This enum provides identifiers for configuring consistency levels for {@link RaftQuery queries}
+ * This enum provides identifiers for configuring consistency levels for {@link QueryRequest queries}
  * submitted to a Raft cluster.
  * <p>
  * Consistency levels are used to dictate how queries are routed through the Raft cluster and the requirements for
@@ -32,7 +34,7 @@ public enum ReadConsistency {
    * Enforces sequential query consistency.
    * <p>
    * Sequential read consistency requires that clients always see state progress in monotonically increasing order. Note that
-   * this constraint allows reads from followers. When a sequential {@link RaftQuery} is submitted to the cluster, the first
+   * this constraint allows reads from followers. When a sequential {@link QueryRequest} is submitted to the cluster, the first
    * server that receives the query will handle it. However, in order to ensure that state does not go back in time, the
    * client must submit its last known index with the query as well. If the server that receives the query has not advanced
    * past the provided client index, it will queue the query and await more entries from the leader.
@@ -44,7 +46,7 @@ public enum ReadConsistency {
    * <p>
    * Bounded linearizability is a special implementation of linearizable reads that relies on the semantics of Raft's
    * election timers to determine whether it is safe to immediately apply a query to the Raft state machine. When a
-   * linearizable {@link RaftQuery} is submitted to the Raft cluster with linearizable consistency,
+   * linearizable {@link QueryRequest} is submitted to the Raft cluster with linearizable consistency,
    * it must be forwarded to the current cluster leader. For lease-based linearizability, the leader will determine whether
    * it's safe to apply the query to its state machine based on the last time it successfully contacted a majority of the
    * cluster. If the leader contacted a majority of the cluster within the last election timeout, it assumes that no other
@@ -58,10 +60,10 @@ public enum ReadConsistency {
    * Enforces linearizable query consistency.
    * <p>
    * The linearizable consistency level guarantees consistency by contacting a majority of the cluster on every read.
-   * When a {@link RaftQuery} is submitted to the cluster with linearizable consistency, it must be
+   * When a {@link QueryRequest} is submitted to the cluster with linearizable consistency, it must be
    * forwarded to the current cluster leader. Once received by the leader, the leader will contact a majority of the
    * cluster before applying the query to its state machine and returning the result. Note that if the leader is already
-   * in the process of contacting a majority of the cluster, it will queue the {@link RaftQuery} to
+   * in the process of contacting a majority of the cluster, it will queue the {@link QueryRequest} to
    * be processed on the next round trip. This allows the leader to batch expensive quorum based reads for efficiency.
    */
   LINEARIZABLE
