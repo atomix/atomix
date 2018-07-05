@@ -17,12 +17,12 @@ package io.atomix.core.map.impl;
 
 import com.google.common.base.Throwables;
 import io.atomix.core.collection.DistributedCollection;
-import io.atomix.core.set.DistributedSet;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
-import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapEventListener;
+import io.atomix.core.set.DistributedSet;
+import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.Synchronous;
@@ -53,7 +53,6 @@ public class BlockingAtomicMap<K, V> extends Synchronous<AsyncAtomicMap<K, V>> i
   private static final int MAX_DELAY_BETWEEN_RETRY_MILLS = 50;
   private final AsyncAtomicMap<K, V> asyncMap;
   private final long operationTimeoutMillis;
-  private Map<K, V> javaMap;
 
   public BlockingAtomicMap(AsyncAtomicMap<K, V> asyncMap, long operationTimeoutMillis) {
     super(asyncMap);
@@ -207,21 +206,6 @@ public class BlockingAtomicMap<K, V> extends Synchronous<AsyncAtomicMap<K, V>> i
   @Override
   public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
     asyncMap.removeStateChangeListener(listener);
-  }
-
-  @Override
-  public Map<K, V> asJavaMap() {
-    synchronized (this) {
-      if (javaMap == null) {
-        javaMap = new AtomicMapBackedJavaMap<>(this);
-      }
-    }
-    return javaMap;
-  }
-
-  @Override
-  public String toString() {
-    return asJavaMap().toString();
   }
 
   @Override

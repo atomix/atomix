@@ -364,13 +364,6 @@ public interface AtomicMap<K, V> extends SyncPrimitive {
    */
   void removeListener(AtomicMapEventListener<K, V> listener);
 
-  /**
-   * Returns a java.util.Map instance backed by this ConsistentMap.
-   *
-   * @return java.util.Map
-   */
-  Map<K, V> asJavaMap();
-
   @Override
   AsyncAtomicMap<K, V> async();
 }

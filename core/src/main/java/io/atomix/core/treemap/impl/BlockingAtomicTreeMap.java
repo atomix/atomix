@@ -18,13 +18,12 @@ package io.atomix.core.treemap.impl;
 
 import com.google.common.base.Throwables;
 import io.atomix.core.collection.DistributedCollection;
-import io.atomix.core.set.DistributedSet;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
+import io.atomix.core.map.AtomicMapEventListener;
+import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.impl.BlockingDistributedSet;
 import io.atomix.core.treemap.AsyncAtomicTreeMap;
-import io.atomix.core.map.impl.AtomicMapBackedJavaMap;
 import io.atomix.core.treemap.AtomicTreeMap;
-import io.atomix.core.map.AtomicMapEventListener;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.time.Versioned;
@@ -50,7 +49,6 @@ public class BlockingAtomicTreeMap<V>
     implements AtomicTreeMap<V> {
   private final AsyncAtomicTreeMap<V> treeMap;
   private final long operationTimeoutMillis;
-  private Map<String, V> javaMap;
 
   public BlockingAtomicTreeMap(AsyncAtomicTreeMap<V> treeMap, long operationTimeoutMillis) {
     super(treeMap);
@@ -267,16 +265,6 @@ public class BlockingAtomicTreeMap<V>
   @Override
   public void removeListener(AtomicMapEventListener<String, V> listener) {
     complete(treeMap.removeListener(listener));
-  }
-
-  @Override
-  public Map<String, V> asJavaMap() {
-    synchronized (this) {
-      if (javaMap == null) {
-        javaMap = new AtomicMapBackedJavaMap<>(this);
-      }
-    }
-    return javaMap;
   }
 
   @Override
