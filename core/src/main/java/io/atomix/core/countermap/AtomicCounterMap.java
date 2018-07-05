@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.counter;
+package io.atomix.core.countermap;
 
 import io.atomix.core.countermap.AsyncAtomicCounterMap;
 import io.atomix.primitive.SyncPrimitive;

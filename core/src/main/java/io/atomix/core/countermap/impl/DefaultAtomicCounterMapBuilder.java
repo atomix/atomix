@@ -16,7 +16,7 @@
 package io.atomix.core.countermap.impl;
 
 import com.google.common.io.BaseEncoding;
-import io.atomix.core.counter.AtomicCounterMap;
+import io.atomix.core.countermap.AtomicCounterMap;
 import io.atomix.core.countermap.AtomicCounterMapBuilder;
 import io.atomix.core.countermap.AtomicCounterMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
