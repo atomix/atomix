@@ -22,15 +22,12 @@ import io.atomix.core.collection.AsyncIterator;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
-import io.atomix.primitive.PrimitiveState;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -41,7 +38,7 @@ import java.util.stream.Collectors;
  * @param <E2> element type of other collection
  * @param <E1> element type of this collection
  */
-public class TranscodingAsyncDistributedCollection<E1, E2> implements AsyncDistributedCollection<E1> {
+public class TranscodingAsyncDistributedCollection<E1, E2> extends DelegatingAsyncPrimitive implements AsyncDistributedCollection<E1> {
 
   private final AsyncDistributedCollection<E2> backingCollection;
   private final Function<E1, E2> elementEncoder;
@@ -52,24 +49,10 @@ public class TranscodingAsyncDistributedCollection<E1, E2> implements AsyncDistr
       AsyncDistributedCollection<E2> backingCollection,
       Function<E1, E2> elementEncoder,
       Function<E2, E1> elementDecoder) {
+    super(backingCollection);
     this.backingCollection = backingCollection;
     this.elementEncoder = k -> k == null ? null : elementEncoder.apply(k);
     this.elementDecoder = k -> k == null ? null : elementDecoder.apply(k);
-  }
-
-  @Override
-  public String name() {
-    return backingCollection.name();
-  }
-
-  @Override
-  public PrimitiveType type() {
-    return backingCollection.type();
-  }
-
-  @Override
-  public PrimitiveProtocol protocol() {
-    return backingCollection.protocol();
   }
 
   @Override
@@ -149,23 +132,8 @@ public class TranscodingAsyncDistributedCollection<E1, E2> implements AsyncDistr
   }
 
   @Override
-  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
-    backingCollection.addStateChangeListener(listener);
-  }
-
-  @Override
-  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
-    backingCollection.removeStateChangeListener(listener);
-  }
-
-  @Override
   public DistributedCollection<E1> sync(Duration operationTimeout) {
     return new BlockingDistributedCollection<>(this, operationTimeout.toMillis());
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return backingCollection.close();
   }
 
   private class InternalCollectionEventListener implements CollectionEventListener<E2> {

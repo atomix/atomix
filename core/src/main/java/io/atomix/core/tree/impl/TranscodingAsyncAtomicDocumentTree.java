@@ -17,12 +17,11 @@ package io.atomix.core.tree.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
-import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.AtomicDocumentTree;
+import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTreeEvent;
 import io.atomix.core.tree.DocumentTreeListener;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -35,7 +34,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Transcoding document tree.
  */
-public class TranscodingAsyncAtomicDocumentTree<V1, V2> implements AsyncAtomicDocumentTree<V1> {
+public class TranscodingAsyncAtomicDocumentTree<V1, V2> extends DelegatingAsyncPrimitive implements AsyncAtomicDocumentTree<V1> {
 
   private final AsyncAtomicDocumentTree<V2> backingTree;
   private final Function<V1, V2> valueEncoder;
@@ -43,24 +42,10 @@ public class TranscodingAsyncAtomicDocumentTree<V1, V2> implements AsyncAtomicDo
   private final Map<DocumentTreeListener<V1>, InternalDocumentTreeListener> listeners = Maps.newIdentityHashMap();
 
   public TranscodingAsyncAtomicDocumentTree(AsyncAtomicDocumentTree<V2> backingTree, Function<V1, V2> valueEncoder, Function<V2, V1> valueDecoder) {
+    super(backingTree);
     this.backingTree = backingTree;
     this.valueEncoder = valueEncoder;
     this.valueDecoder = valueDecoder;
-  }
-
-  @Override
-  public String name() {
-    return backingTree.name();
-  }
-
-  @Override
-  public PrimitiveType type() {
-    return backingTree.type();
-  }
-
-  @Override
-  public PrimitiveProtocol protocol() {
-    return backingTree.protocol();
   }
 
   @Override
@@ -133,11 +118,6 @@ public class TranscodingAsyncAtomicDocumentTree<V1, V2> implements AsyncAtomicDo
   @Override
   public CompletableFuture<Void> delete() {
     return backingTree.delete();
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return backingTree.close();
   }
 
   @Override

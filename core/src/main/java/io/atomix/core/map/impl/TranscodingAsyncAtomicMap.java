@@ -19,18 +19,16 @@ package io.atomix.core.map.impl;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.collection.impl.TranscodingAsyncDistributedCollection;
-import io.atomix.core.set.impl.TranscodingAsyncDistributedSet;
 import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapEvent;
 import io.atomix.core.map.AtomicMapEventListener;
+import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.core.set.impl.TranscodingAsyncDistributedSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.PrimitiveState;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
@@ -42,7 +40,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -56,7 +53,7 @@ import java.util.stream.Collectors;
  * @param <K1> key type of this map
  * @param <V1> value type of this map
  */
-public class TranscodingAsyncAtomicMap<K1, V1, K2, V2> implements AsyncAtomicMap<K1, V1> {
+public class TranscodingAsyncAtomicMap<K1, V1, K2, V2> extends DelegatingAsyncPrimitive implements AsyncAtomicMap<K1, V1> {
 
   private final AsyncAtomicMap<K2, V2> backingMap;
   private final Function<K1, K2> keyEncoder;
@@ -70,11 +67,13 @@ public class TranscodingAsyncAtomicMap<K1, V1, K2, V2> implements AsyncAtomicMap
   private final Map<AtomicMapEventListener<K1, V1>, InternalBackingAtomicMapEventListener> listeners =
       Maps.newIdentityHashMap();
 
-  public TranscodingAsyncAtomicMap(AsyncAtomicMap<K2, V2> backingMap,
-                                   Function<K1, K2> keyEncoder,
-                                   Function<K2, K1> keyDecoder,
-                                   Function<V1, V2> valueEncoder,
-                                   Function<V2, V1> valueDecoder) {
+  public TranscodingAsyncAtomicMap(
+      AsyncAtomicMap<K2, V2> backingMap,
+      Function<K1, K2> keyEncoder,
+      Function<K2, K1> keyDecoder,
+      Function<V1, V2> valueEncoder,
+      Function<V2, V1> valueDecoder) {
+    super(backingMap);
     this.backingMap = backingMap;
     this.keyEncoder = k -> k == null ? null : keyEncoder.apply(k);
     this.keyDecoder = k -> k == null ? null : keyDecoder.apply(k);
@@ -84,21 +83,6 @@ public class TranscodingAsyncAtomicMap<K1, V1, K2, V2> implements AsyncAtomicMap
     this.versionedValueEncoder = v -> v == null ? null : v.map(valueEncoder);
     this.entryDecoder = e -> e == null ? null : Maps.immutableEntry(keyDecoder.apply(e.getKey()), versionedValueDecoder.apply(e.getValue()));
     this.entryEncoder = e -> e == null ? null : Maps.immutableEntry(keyEncoder.apply(e.getKey()), versionedValueEncoder.apply(e.getValue()));
-  }
-
-  @Override
-  public String name() {
-    return backingMap.name();
-  }
-
-  @Override
-  public PrimitiveType type() {
-    return backingMap.type();
-  }
-
-  @Override
-  public PrimitiveProtocol protocol() {
-    return backingMap.protocol();
   }
 
   @Override
@@ -330,23 +314,8 @@ public class TranscodingAsyncAtomicMap<K1, V1, K2, V2> implements AsyncAtomicMap
   }
 
   @Override
-  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
-    backingMap.addStateChangeListener(listener);
-  }
-
-  @Override
-  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
-    backingMap.removeStateChangeListener(listener);
-  }
-
-  @Override
   public AtomicMap<K1, V1> sync(Duration operationTimeout) {
     return new BlockingAtomicMap<>(this, operationTimeout.toMillis());
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return backingMap.close();
   }
 
   private class InternalBackingAtomicMapEventListener implements AtomicMapEventListener<K2, V2> {

@@ -17,19 +17,18 @@
 package io.atomix.core.treemap.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.map.impl.MapUpdate;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.collection.impl.TranscodingAsyncDistributedCollection;
-import io.atomix.core.set.impl.TranscodingAsyncDistributedSet;
-import io.atomix.core.treemap.AsyncAtomicTreeMap;
-import io.atomix.core.treemap.AtomicTreeMap;
 import io.atomix.core.map.AtomicMapEvent;
 import io.atomix.core.map.AtomicMapEventListener;
+import io.atomix.core.map.impl.MapUpdate;
+import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.core.set.impl.TranscodingAsyncDistributedSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.core.treemap.AsyncAtomicTreeMap;
+import io.atomix.core.treemap.AtomicTreeMap;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
@@ -51,7 +50,7 @@ import java.util.function.Predicate;
  * @param <V2> value type of other map
  * @param <V1> value type of this map
  */
-public class TranscodingAsyncAtomicTreeMap<V1, V2> implements AsyncAtomicTreeMap<V1> {
+public class TranscodingAsyncAtomicTreeMap<V1, V2> extends DelegatingAsyncPrimitive implements AsyncAtomicTreeMap<V1> {
   private final AsyncAtomicTreeMap<V2> backingMap;
   private final Function<V2, V1> valueDecoder;
   private final Function<V1, V2> valueEncoder;
@@ -65,6 +64,7 @@ public class TranscodingAsyncAtomicTreeMap<V1, V2> implements AsyncAtomicTreeMap
       AsyncAtomicTreeMap<V2> backingMap,
       Function<V1, V2> valueEncoder,
       Function<V2, V1> valueDecoder) {
+    super(backingMap);
     this.backingMap = backingMap;
     this.valueEncoder = v -> v == null ? null : valueEncoder.apply(v);
     this.valueDecoder = v -> v == null ? null : valueDecoder.apply(v);
@@ -72,16 +72,6 @@ public class TranscodingAsyncAtomicTreeMap<V1, V2> implements AsyncAtomicTreeMap
     this.versionedValueEncoder = v -> v == null ? null : v.map(valueEncoder);
     this.entryDecoder = e -> e == null ? null : Maps.immutableEntry(e.getKey(), versionedValueDecoder.apply(e.getValue()));
     this.entryEncoder = e -> e == null ? null : Maps.immutableEntry(e.getKey(), versionedValueEncoder.apply(e.getValue()));
-  }
-
-  @Override
-  public PrimitiveType type() {
-    return backingMap.type();
-  }
-
-  @Override
-  public PrimitiveProtocol protocol() {
-    return backingMap.protocol();
   }
 
   @Override
@@ -314,11 +304,6 @@ public class TranscodingAsyncAtomicTreeMap<V1, V2> implements AsyncAtomicTreeMap
   @Override
   public CompletableFuture<Void> rollback(TransactionId transactionId) {
     throw new UnsupportedOperationException("This operation is not yet supported.");
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return backingMap.close();
   }
 
   @Override

@@ -16,38 +16,27 @@
 
 package io.atomix.core.multimap.impl;
 
-import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multiset;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.multiset.AsyncDistributedMultiset;
-import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.collection.impl.TranscodingAsyncDistributedCollection;
-import io.atomix.core.multiset.impl.TranscodingAsyncDistributedMultiset;
-import io.atomix.core.set.impl.TranscodingAsyncDistributedSet;
 import io.atomix.core.multimap.AsyncAtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapEvent;
 import io.atomix.core.multimap.AtomicMultimapEventListener;
-import io.atomix.primitive.PrimitiveState;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.core.multiset.AsyncDistributedMultiset;
+import io.atomix.core.multiset.impl.TranscodingAsyncDistributedMultiset;
+import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.core.set.impl.TranscodingAsyncDistributedSet;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -60,7 +49,7 @@ import java.util.stream.Collectors;
  * @param <K1> key type of this map
  * @param <V1> value type of this map
  */
-public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> implements AsyncAtomicMultimap<K1, V1> {
+public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> extends DelegatingAsyncPrimitive implements AsyncAtomicMultimap<K1, V1> {
 
   private final AsyncAtomicMultimap<K2, V2> backingMap;
   private final Function<K1, K2> keyEncoder;
@@ -69,8 +58,6 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> implements AsyncAtom
   private final Function<V1, V2> valueEncoder;
   private final Function<Map.Entry<K1, V1>, Map.Entry<K2, V2>> entryEncoder;
   private final Function<Map.Entry<K2, V2>, Map.Entry<K1, V1>> entryDecoder;
-  private final Function<? extends Versioned<V2>,
-      ? extends Versioned<V1>> versionedValueTransform;
   private final Function<Versioned<Collection<? extends V2>>,
       Versioned<Collection<? extends V1>>> versionedValueCollectionDecode;
   private final Function<Collection<? extends V1>, Collection<V2>>
@@ -84,6 +71,7 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> implements AsyncAtom
       Function<K2, K1> keyDecoder,
       Function<V1, V2> valueEncoder,
       Function<V2, V1> valueDecoder) {
+    super(backingMap);
     this.backingMap = backingMap;
     this.keyEncoder = k -> k == null ? null : keyEncoder.apply(k);
     this.keyDecoder = k -> k == null ? null : keyDecoder.apply(k);
@@ -91,8 +79,6 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> implements AsyncAtom
     this.valueDecoder = v -> v == null ? null : valueDecoder.apply(v);
     this.entryEncoder = e -> Maps.immutableEntry(this.keyEncoder.apply(e.getKey()), this.valueEncoder.apply(e.getValue()));
     this.entryDecoder = e -> Maps.immutableEntry(this.keyDecoder.apply(e.getKey()), this.valueDecoder.apply(e.getValue()));
-    this.versionedValueTransform = v -> v == null ? null :
-        v.map(valueDecoder);
     this.versionedValueCollectionDecode = v -> v == null ? null :
         new Versioned<>(
             v.value()
@@ -103,21 +89,6 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> implements AsyncAtom
             v.creationTime());
     this.valueCollectionEncode = v -> v == null ? null :
         v.stream().map(valueEncoder).collect(Collectors.toSet());
-  }
-
-  @Override
-  public String name() {
-    return backingMap.name();
-  }
-
-  @Override
-  public PrimitiveType type() {
-    return backingMap.type();
-  }
-
-  @Override
-  public PrimitiveProtocol protocol() {
-    return backingMap.protocol();
   }
 
   @Override
@@ -282,56 +253,8 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> implements AsyncAtom
   }
 
   @Override
-  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
-    backingMap.addStateChangeListener(listener);
-  }
-
-  @Override
-  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
-    backingMap.removeStateChangeListener(listener);
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return backingMap.close();
-  }
-
-  @Override
   public AtomicMultimap<K1, V1> sync(Duration operationTimeout) {
     return new BlockingAtomicMultimap<>(this, operationTimeout.toMillis());
-  }
-
-  private class MultisetCollector<T> implements Collector<T,
-      ImmutableMultiset.Builder<T>,
-      Multiset<T>> {
-
-    @Override
-    public Supplier<ImmutableMultiset.Builder<T>> supplier() {
-      return ImmutableMultiset::builder;
-    }
-
-    @Override
-    public BiConsumer<ImmutableMultiset.Builder<T>, T> accumulator() {
-      return ((builder, t) -> builder.add(t));
-    }
-
-    @Override
-    public BinaryOperator<ImmutableMultiset.Builder<T>> combiner() {
-      return (a, b) -> {
-        a.addAll(b.build());
-        return a;
-      };
-    }
-
-    @Override
-    public Function<ImmutableMultiset.Builder<T>, Multiset<T>> finisher() {
-      return ImmutableMultiset.Builder::build;
-    }
-
-    @Override
-    public Set<Characteristics> characteristics() {
-      return EnumSet.of(Characteristics.UNORDERED);
-    }
   }
 
   private class InternalBackingAtomicMultimapEventListener implements AtomicMultimapEventListener<K2, V2> {
@@ -344,7 +267,7 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> implements AsyncAtom
 
     @Override
     public void event(AtomicMultimapEvent<K2, V2> event) {
-      listener.event(new AtomicMultimapEvent(event.name(),
+      listener.event(new AtomicMultimapEvent<>(event.name(),
           keyDecoder.apply(event.key()),
           valueDecoder.apply(event.newValue()),
           valueDecoder.apply(event.oldValue())));

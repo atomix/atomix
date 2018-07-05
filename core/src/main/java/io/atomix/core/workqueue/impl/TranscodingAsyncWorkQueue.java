@@ -19,8 +19,7 @@ import io.atomix.core.workqueue.AsyncWorkQueue;
 import io.atomix.core.workqueue.Task;
 import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.core.workqueue.WorkQueueStats;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -35,31 +34,20 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Transcoding async work queue.
  */
-public class TranscodingAsyncWorkQueue<V1, V2> implements AsyncWorkQueue<V1> {
+public class TranscodingAsyncWorkQueue<V1, V2> extends DelegatingAsyncPrimitive implements AsyncWorkQueue<V1> {
 
   private final AsyncWorkQueue<V2> backingQueue;
   private final Function<V1, V2> valueEncoder;
   private final Function<V2, V1> valueDecoder;
 
-  public TranscodingAsyncWorkQueue(AsyncWorkQueue<V2> backingQueue, Function<V1, V2> valueEncoder, Function<V2, V1> valueDecoder) {
+  public TranscodingAsyncWorkQueue(
+      AsyncWorkQueue<V2> backingQueue,
+      Function<V1, V2> valueEncoder,
+      Function<V2, V1> valueDecoder) {
+    super(backingQueue);
     this.backingQueue = backingQueue;
     this.valueEncoder = valueEncoder;
     this.valueDecoder = valueDecoder;
-  }
-
-  @Override
-  public String name() {
-    return backingQueue.name();
-  }
-
-  @Override
-  public PrimitiveType type() {
-    return backingQueue.type();
-  }
-
-  @Override
-  public PrimitiveProtocol protocol() {
-    return backingQueue.protocol();
   }
 
   @Override
@@ -92,16 +80,6 @@ public class TranscodingAsyncWorkQueue<V1, V2> implements AsyncWorkQueue<V1> {
   @Override
   public CompletableFuture<WorkQueueStats> stats() {
     return backingQueue.stats();
-  }
-
-  @Override
-  public CompletableFuture<Void> delete() {
-    return backingQueue.delete();
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return backingQueue.close();
   }
 
   @Override
