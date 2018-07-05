@@ -33,8 +33,8 @@ public class Node implements Configured<NodeConfig> {
    *
    * @return the member builder
    */
-  public static Builder builder() {
-    return new Builder(new NodeConfig());
+  public static NodeBuilder builder() {
+    return new NodeBuilder(new NodeConfig());
   }
 
   private final NodeId id;
@@ -97,88 +97,5 @@ public class Node implements Configured<NodeConfig> {
         .add("address", address)
         .omitNullValues()
         .toString();
-  }
-
-  /**
-   * Node builder.
-   */
-  public static class Builder implements io.atomix.utils.Builder<Node> {
-    protected final NodeConfig config;
-
-    protected Builder(NodeConfig config) {
-      this.config = config;
-    }
-
-    /**
-     * Sets the node identifier.
-     *
-     * @param id the node identifier
-     * @return the node builder
-     */
-    public Builder withId(String id) {
-      config.setId(id);
-      return this;
-    }
-
-    /**
-     * Sets the node identifier.
-     *
-     * @param id the node identifier
-     * @return the node builder
-     */
-    public Builder withId(NodeId id) {
-      config.setId(id);
-      return this;
-    }
-
-    /**
-     * Sets the node address.
-     *
-     * @param address a host:port tuple
-     * @return the node builder
-     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
-     */
-    public Builder withAddress(String address) {
-      return withAddress(Address.from(address));
-    }
-
-    /**
-     * Sets the node host/port.
-     *
-     * @param host the host name
-     * @param port the port number
-     * @return the node builder
-     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
-     */
-    public Builder withAddress(String host, int port) {
-      return withAddress(Address.from(host, port));
-    }
-
-    /**
-     * Sets the node address using local host.
-     *
-     * @param port the port number
-     * @return the node builder
-     * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
-     */
-    public Builder withAddress(int port) {
-      return withAddress(Address.from(port));
-    }
-
-    /**
-     * Sets the node address.
-     *
-     * @param address the node address
-     * @return the node builder
-     */
-    public Builder withAddress(Address address) {
-      config.setAddress(address);
-      return this;
-    }
-
-    @Override
-    public Node build() {
-      return new Node(config);
-    }
   }
 }
