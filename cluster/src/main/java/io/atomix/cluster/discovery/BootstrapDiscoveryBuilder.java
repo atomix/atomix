@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
+package io.atomix.cluster.discovery;
 
+import io.atomix.cluster.Node;
 import io.atomix.utils.net.Address;
 
 import java.time.Duration;

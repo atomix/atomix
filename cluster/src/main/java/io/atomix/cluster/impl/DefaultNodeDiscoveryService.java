@@ -16,12 +16,12 @@
 package io.atomix.cluster.impl;
 
 import io.atomix.cluster.BootstrapService;
-import io.atomix.cluster.ManagedNodeDiscoveryService;
+import io.atomix.cluster.discovery.ManagedNodeDiscoveryService;
 import io.atomix.cluster.Node;
-import io.atomix.cluster.NodeDiscoveryEvent;
-import io.atomix.cluster.NodeDiscoveryEventListener;
-import io.atomix.cluster.NodeDiscoveryProvider;
-import io.atomix.cluster.NodeDiscoveryService;
+import io.atomix.cluster.discovery.NodeDiscoveryEvent;
+import io.atomix.cluster.discovery.NodeDiscoveryEventListener;
+import io.atomix.cluster.discovery.NodeDiscoveryProvider;
+import io.atomix.cluster.discovery.NodeDiscoveryService;
 import io.atomix.utils.event.AbstractListenerManager;
 
 import java.util.Set;

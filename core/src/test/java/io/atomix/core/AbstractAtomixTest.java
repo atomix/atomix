@@ -15,8 +15,8 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.BootstrapDiscoveryProvider;
-import io.atomix.cluster.MulticastDiscoveryProvider;
+import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
+import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
 import io.atomix.cluster.Node;
 import io.atomix.core.profile.Profile;
 import io.atomix.utils.net.Address;

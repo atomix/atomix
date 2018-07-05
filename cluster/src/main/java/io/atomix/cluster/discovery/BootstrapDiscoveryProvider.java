@@ -13,11 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
+package io.atomix.cluster.discovery;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.atomix.cluster.BootstrapService;
+import io.atomix.cluster.ClusterMembershipEvent;
+import io.atomix.cluster.Node;
+import io.atomix.cluster.NodeId;
 import io.atomix.cluster.impl.AddressSerializer;
 import io.atomix.cluster.impl.PhiAccrualFailureDetector;
 import io.atomix.utils.concurrent.ComposableFuture;

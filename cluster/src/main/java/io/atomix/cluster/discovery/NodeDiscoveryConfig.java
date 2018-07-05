@@ -13,22 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
+package io.atomix.cluster.discovery;
 
-import io.atomix.utils.event.ListenerService;
-
-import java.util.Set;
+import io.atomix.utils.config.TypedConfig;
 
 /**
- * Node discovery service.
+ * Node discovery configuration.
  */
-public interface NodeDiscoveryService extends ListenerService<NodeDiscoveryEvent, NodeDiscoveryEventListener> {
-
-  /**
-   * Returns the set of active nodes.
-   *
-   * @return the set of active nodes
-   */
-  Set<Node> getNodes();
-
+public abstract class NodeDiscoveryConfig implements TypedConfig<NodeDiscoveryProvider.Type> {
 }

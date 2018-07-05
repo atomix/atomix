@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
+package io.atomix.cluster.discovery;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import io.atomix.cluster.AtomixClusterBuilder;
+import io.atomix.cluster.BootstrapService;
+import io.atomix.cluster.Node;
+import io.atomix.cluster.NodeId;
 import io.atomix.cluster.impl.AddressSerializer;
 import io.atomix.cluster.impl.PhiAccrualFailureDetector;
 import io.atomix.utils.event.AbstractListenerManager;
@@ -113,7 +117,7 @@ public class MulticastDiscoveryProvider
     this(new MulticastDiscoveryConfig());
   }
 
-  MulticastDiscoveryProvider(MulticastDiscoveryConfig config) {
+  public MulticastDiscoveryProvider(MulticastDiscoveryConfig config) {
     this.config = checkNotNull(config);
   }
 

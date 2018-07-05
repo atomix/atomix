@@ -16,7 +16,6 @@
 package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.cluster.MemberId;
-import io.atomix.protocols.raft.session.impl.MemberSelectorManager;
 import org.junit.Test;
 
 import java.util.Arrays;

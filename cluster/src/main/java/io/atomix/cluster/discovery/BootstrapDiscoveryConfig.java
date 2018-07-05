@@ -13,46 +13,71 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
+package io.atomix.cluster.discovery;
+
+import io.atomix.cluster.Node;
 
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Collections;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Multicast discovery configuration.
+ * Bootstrap discovery configuration.
  */
-public class MulticastDiscoveryConfig extends NodeDiscoveryConfig {
-  private static final int DEFAULT_BROADCAST_INTERVAL = 1000;
+public class BootstrapDiscoveryConfig extends NodeDiscoveryConfig {
+  private static final int DEFAULT_HEARTBEAT_INTERVAL = 1000;
   private static final int DEFAULT_FAILURE_TIMEOUT = 10000;
   private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
 
-  private Duration broadcastInterval = Duration.ofMillis(DEFAULT_BROADCAST_INTERVAL);
+  private Duration heartbeatInterval = Duration.ofMillis(DEFAULT_HEARTBEAT_INTERVAL);
   private int failureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
   private Duration failureTimeout = Duration.ofMillis(DEFAULT_FAILURE_TIMEOUT);
+  private Collection<Node> nodes = Collections.emptySet();
 
   @Override
   public NodeDiscoveryProvider.Type getType() {
-    return MulticastDiscoveryProvider.TYPE;
+    return BootstrapDiscoveryProvider.TYPE;
   }
 
   /**
-   * Returns the broadcast interval.
+   * Returns the configured bootstrap nodes.
    *
-   * @return the broadcast interval
+   * @return the configured bootstrap nodes
    */
-  public Duration getBroadcastInterval() {
-    return broadcastInterval;
+  public Collection<Node> getNodes() {
+    return nodes;
   }
 
   /**
-   * Sets the broadcast interval.
+   * Sets the bootstrap nodes.
    *
-   * @param broadcastInterval the broadcast interval
+   * @param nodes the bootstrap nodes
+   * @return the bootstrap provider configuration
+   */
+  public BootstrapDiscoveryConfig setNodes(Collection<Node> nodes) {
+    this.nodes = nodes;
+    return this;
+  }
+
+  /**
+   * Returns the heartbeat interval.
+   *
+   * @return the heartbeat interval
+   */
+  public Duration getHeartbeatInterval() {
+    return heartbeatInterval;
+  }
+
+  /**
+   * Sets the heartbeat interval.
+   *
+   * @param heartbeatInterval the heartbeat interval
    * @return the group membership configuration
    */
-  public MulticastDiscoveryConfig setBroadcastInterval(Duration broadcastInterval) {
-    this.broadcastInterval = checkNotNull(broadcastInterval);
+  public BootstrapDiscoveryConfig setHeartbeatInterval(Duration heartbeatInterval) {
+    this.heartbeatInterval = checkNotNull(heartbeatInterval);
     return this;
   }
 
@@ -71,7 +96,7 @@ public class MulticastDiscoveryConfig extends NodeDiscoveryConfig {
    * @param failureThreshold the failure detector threshold
    * @return the group membership configuration
    */
-  public MulticastDiscoveryConfig setFailureThreshold(int failureThreshold) {
+  public BootstrapDiscoveryConfig setFailureThreshold(int failureThreshold) {
     this.failureThreshold = failureThreshold;
     return this;
   }
@@ -91,7 +116,7 @@ public class MulticastDiscoveryConfig extends NodeDiscoveryConfig {
    * @param failureTimeout the base failure timeout
    * @return the group membership configuration
    */
-  public MulticastDiscoveryConfig setFailureTimeout(Duration failureTimeout) {
+  public BootstrapDiscoveryConfig setFailureTimeout(Duration failureTimeout) {
     this.failureTimeout = checkNotNull(failureTimeout);
     return this;
   }

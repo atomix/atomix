@@ -17,8 +17,6 @@ package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.cluster.MemberId;
 import io.atomix.protocols.raft.session.CommunicationStrategy;
-import io.atomix.protocols.raft.session.impl.MemberSelector;
-import io.atomix.protocols.raft.session.impl.MemberSelectorManager;
 import org.junit.Test;
 
 import java.util.Arrays;

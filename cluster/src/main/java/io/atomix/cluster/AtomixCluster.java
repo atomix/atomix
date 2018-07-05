@@ -16,6 +16,11 @@
 package io.atomix.cluster;
 
 import com.google.common.collect.Streams;
+import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
+import io.atomix.cluster.discovery.MulticastDiscoveryConfig;
+import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
+import io.atomix.cluster.discovery.NodeDiscoveryConfig;
+import io.atomix.cluster.discovery.NodeDiscoveryProvider;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.impl.DefaultNodeDiscoveryService;
 import io.atomix.cluster.messaging.BroadcastService;

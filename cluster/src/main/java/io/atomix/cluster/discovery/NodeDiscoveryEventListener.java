@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
+package io.atomix.cluster.discovery;
 
-import io.atomix.utils.config.TypedConfig;
+import io.atomix.utils.event.EventListener;
 
 /**
- * Node discovery configuration.
+ * Node discovery event listener.
  */
-public abstract class NodeDiscoveryConfig implements TypedConfig<NodeDiscoveryProvider.Type> {
+public interface NodeDiscoveryEventListener extends EventListener<NodeDiscoveryEvent> {
 }
