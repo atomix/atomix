@@ -17,6 +17,7 @@ package io.atomix.rest.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
 import io.atomix.core.Atomix;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
@@ -324,13 +325,14 @@ public class VertxRestServiceTest {
   @Test
   public void testMap() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
-    JsonNode json = jsonFactory.objectNode()
-        .put("type", "atomic-map")
-        .put("cache-enabled", true)
-        .put("null-values", false)
-        .set("protocol", jsonFactory.objectNode()
+    ObjectNode json = jsonFactory.objectNode()
+            .put("type", "atomic-map")
+            .put("null-values", false);
+    json.set("protocol", jsonFactory.objectNode()
             .put("type", "multi-primary")
             .put("backups", 2));
+    json.set("cache", jsonFactory.objectNode()
+            .put("enabled", true));
 
     given()
         .spec(specs.get(0))
