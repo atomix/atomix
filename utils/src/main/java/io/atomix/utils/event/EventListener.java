@@ -26,6 +26,6 @@ public interface EventListener<E extends Event> extends EventFilter<E> {
    *
    * @param event event to be processed
    */
-  void onEvent(E event);
+  void event(E event);
 
 }

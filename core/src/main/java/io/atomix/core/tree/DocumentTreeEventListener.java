@@ -15,17 +15,12 @@
  */
 package io.atomix.core.tree;
 
+import io.atomix.utils.event.EventListener;
+
 /**
  * A listener for {@link DocumentTreeEvent}.
  *
  * @param <V> document tree node value type
  */
-public interface DocumentTreeListener<V> {
-
-  /**
-   * Callback notifying about change to document tree node.
-   *
-   * @param event event
-   */
-  void event(DocumentTreeEvent<V> event);
+public interface DocumentTreeEventListener<V> extends EventListener<DocumentTreeEvent<V>> {
 }

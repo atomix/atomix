@@ -40,7 +40,7 @@ public class AtomicValueProxy extends AbstractAsyncPrimitive<AsyncAtomicValue<by
 
   @Override
   public void change(byte[] newValue, byte[] oldValue) {
-    eventListeners.forEach(l -> l.event(new AtomicValueEvent<>(newValue, oldValue)));
+    eventListeners.forEach(l -> l.event(new AtomicValueEvent<>(AtomicValueEvent.Type.UPDATE, newValue, oldValue)));
   }
 
   @Override

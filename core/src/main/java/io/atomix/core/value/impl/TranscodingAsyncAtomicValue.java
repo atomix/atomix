@@ -109,6 +109,7 @@ public class TranscodingAsyncAtomicValue<V1, V2> extends DelegatingAsyncPrimitiv
     @Override
     public void event(AtomicValueEvent<V2> event) {
       listener.event(new AtomicValueEvent<>(
+          AtomicValueEvent.Type.UPDATE,
           valueDecoder.apply(event.newValue()),
           valueDecoder.apply(event.oldValue())));
     }

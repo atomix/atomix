@@ -16,6 +16,7 @@
 package io.atomix.core.map;
 
 import com.google.common.base.MoreObjects;
+import io.atomix.utils.event.AbstractEvent;
 
 import java.util.Objects;
 
@@ -25,7 +26,7 @@ import java.util.Objects;
  * @param <K> key type
  * @param <V> value type
  */
-public class MapEvent<K, V> {
+public class MapEvent<K, V> extends AbstractEvent<MapEvent.Type, K> {
 
   /**
    * MapEvent type.
@@ -47,58 +48,21 @@ public class MapEvent<K, V> {
     REMOVE
   }
 
-  private final String name;
-  private final Type type;
-  private final K key;
   private final V newValue;
   private final V oldValue;
 
   /**
    * Creates a new event object.
    *
-   * @param name          map name
-   * @param key           key the event concerns
-   * @param currentValue  new value key is mapped to
-   * @param previousValue value that was replaced
-   */
-  public MapEvent(String name, K key, V currentValue, V previousValue) {
-    this(currentValue != null ? previousValue != null ? Type.UPDATE : Type.INSERT : Type.REMOVE,
-        name, key, currentValue, previousValue);
-  }
-
-  /**
-   * Creates a new event object.
-   *
    * @param type          event type
-   * @param name          map name
    * @param key           key the event concerns
    * @param currentValue  new value key is mapped to
    * @param previousValue value that was replaced
    */
-  public MapEvent(Type type, String name, K key, V currentValue, V previousValue) {
-    this.type = type;
-    this.name = name;
-    this.key = key;
+  public MapEvent(Type type, K key, V currentValue, V previousValue) {
+    super(type, key);
     this.newValue = currentValue;
     this.oldValue = previousValue;
-  }
-
-  /**
-   * Returns the map name.
-   *
-   * @return name of map
-   */
-  public String name() {
-    return name;
-  }
-
-  /**
-   * Returns the type of the event.
-   *
-   * @return the type of event
-   */
-  public Type type() {
-    return type;
   }
 
   /**
@@ -107,7 +71,7 @@ public class MapEvent<K, V> {
    * @return the key
    */
   public K key() {
-    return key;
+    return subject();
   }
 
   /**
@@ -136,24 +100,22 @@ public class MapEvent<K, V> {
     }
 
     MapEvent<K, V> that = (MapEvent) o;
-    return Objects.equals(this.name, that.name) &&
-        Objects.equals(this.type, that.type) &&
-        Objects.equals(this.key, that.key) &&
+    return Objects.equals(this.type(), that.type()) &&
+        Objects.equals(this.key(), that.key()) &&
         Objects.equals(this.newValue, that.newValue) &&
         Objects.equals(this.oldValue, that.oldValue);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, type, key, newValue, oldValue);
+    return Objects.hash(type(), key(), newValue, oldValue);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(getClass())
-        .add("name", name)
-        .add("type", type)
-        .add("key", key)
+        .add("type", type())
+        .add("key", key())
         .add("newValue", newValue)
         .add("oldValue", oldValue)
         .toString();

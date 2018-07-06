@@ -16,6 +16,7 @@
 package io.atomix.core.value;
 
 import com.google.common.base.MoreObjects;
+import io.atomix.utils.event.AbstractEvent;
 
 import java.util.Objects;
 
@@ -24,7 +25,7 @@ import java.util.Objects;
  *
  * @param <V> atomic value type
  */
-public final class AtomicValueEvent<V> {
+public final class AtomicValueEvent<V> extends AbstractEvent<AtomicValueEvent.Type, Void> {
 
   /**
    * AtomicValueEvent type.
@@ -46,18 +47,10 @@ public final class AtomicValueEvent<V> {
    * @param newValue the new value
    * @param oldValue the old value
    */
-  public AtomicValueEvent(V newValue, V oldValue) {
+  public AtomicValueEvent(Type type, V newValue, V oldValue) {
+    super(type, null);
     this.newValue = newValue;
     this.oldValue = oldValue;
-  }
-
-  /**
-   * Returns the type of the event.
-   *
-   * @return the type of the event
-   */
-  public Type type() {
-    return AtomicValueEvent.Type.UPDATE;
   }
 
   /**
@@ -97,6 +90,7 @@ public final class AtomicValueEvent<V> {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(getClass())
+        .add("type", type())
         .add("newValue", newValue)
         .add("oldValue", oldValue)
         .toString();

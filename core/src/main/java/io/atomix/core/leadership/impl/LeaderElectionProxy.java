@@ -45,7 +45,7 @@ public class LeaderElectionProxy
 
   @Override
   public void onLeadershipChange(Leadership<byte[]> oldLeadership, Leadership<byte[]> newLeadership) {
-    leadershipChangeListeners.forEach(l -> l.onEvent(
+    leadershipChangeListeners.forEach(l -> l.event(
         new LeadershipEvent<>(LeadershipEvent.Type.CHANGE, name(), oldLeadership, newLeadership)));
   }
 

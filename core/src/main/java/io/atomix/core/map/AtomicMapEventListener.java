@@ -15,14 +15,10 @@
  */
 package io.atomix.core.map;
 
+import io.atomix.utils.event.EventListener;
+
 /**
  * Listener to be notified about updates to a ConsistentMap.
  */
-public interface AtomicMapEventListener<K, V> {
-  /**
-   * Reacts to the specified event.
-   *
-   * @param event the event
-   */
-  void event(AtomicMapEvent<K, V> event);
+public interface AtomicMapEventListener<K, V> extends EventListener<AtomicMapEvent<K, V>> {
 }

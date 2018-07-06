@@ -78,7 +78,7 @@ public class HashBasedPrimaryElection
 
   private final PartitionGroupMembershipEventListener groupMembershipEventListener = new PartitionGroupMembershipEventListener() {
     @Override
-    public void onEvent(PartitionGroupMembershipEvent event) {
+    public void event(PartitionGroupMembershipEvent event) {
       recomputeTerm(event.membership());
     }
 

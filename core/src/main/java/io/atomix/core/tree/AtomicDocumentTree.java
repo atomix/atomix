@@ -122,21 +122,21 @@ public interface AtomicDocumentTree<V> extends SyncPrimitive {
    * @param path     path to root of subtree to monitor for updates
    * @param listener listener to be notified
    */
-  void addListener(DocumentPath path, DocumentTreeListener<V> listener);
+  void addListener(DocumentPath path, DocumentTreeEventListener<V> listener);
 
   /**
    * Unregisters a previously added listener.
    *
    * @param listener listener to unregister
    */
-  void removeListener(DocumentTreeListener<V> listener);
+  void removeListener(DocumentTreeEventListener<V> listener);
 
   /**
    * Registers a listener to be notified when the tree is modified.
    *
    * @param listener listener to be notified
    */
-  default void addListener(DocumentTreeListener<V> listener) {
+  default void addListener(DocumentTreeEventListener<V> listener) {
     addListener(root(), listener);
   }
 

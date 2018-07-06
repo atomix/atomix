@@ -51,7 +51,7 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
 
   @Override
   public void onEvent(CollectionEvent<String> event) {
-    eventListeners.forEach(l -> l.onEvent(event));
+    eventListeners.forEach(l -> l.event(event));
   }
 
   @Override

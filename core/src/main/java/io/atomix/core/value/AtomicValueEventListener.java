@@ -15,14 +15,10 @@
  */
 package io.atomix.core.value;
 
+import io.atomix.utils.event.EventListener;
+
 /**
  * Listener to be notified about updates to a AtomicValue.
  */
-public interface AtomicValueEventListener<V> {
-  /**
-   * Reacts to the specified event.
-   *
-   * @param event the event
-   */
-  void event(AtomicValueEvent<V> event);
+public interface AtomicValueEventListener<V> extends EventListener<AtomicValueEvent<V>> {
 }

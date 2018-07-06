@@ -147,8 +147,8 @@ public class TranscodingAsyncLeaderElector<V1, V2> extends DelegatingAsyncPrimit
     }
 
     @Override
-    public void onEvent(LeadershipEvent<V2> event) {
-      listener.onEvent(new LeadershipEvent<>(
+    public void event(LeadershipEvent<V2> event) {
+      listener.event(new LeadershipEvent<>(
           event.type(),
           event.topic(),
           event.oldLeadership() != null ? event.oldLeadership().map(valueDecoder) : null,

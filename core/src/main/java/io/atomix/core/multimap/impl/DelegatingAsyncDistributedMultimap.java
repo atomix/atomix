@@ -171,7 +171,7 @@ public class DelegatingAsyncDistributedMultimap<K, V> extends DelegatingAsyncPri
 
     @Override
     public void event(AtomicMultimapEvent<K, V> event) {
-      mapListener.event(new MultimapEvent<>(event.name(), event.key(), event.newValue(), event.oldValue()));
+      mapListener.event(new MultimapEvent<>(MultimapEvent.Type.valueOf(event.type().name()), event.key(), event.newValue(), event.oldValue()));
     }
   }
 }

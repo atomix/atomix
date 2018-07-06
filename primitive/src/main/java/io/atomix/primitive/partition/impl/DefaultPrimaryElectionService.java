@@ -58,7 +58,7 @@ public class DefaultPrimaryElectionService implements ManagedPrimaryElectionServ
   private final Set<PrimaryElectionEventListener> listeners = Sets.newCopyOnWriteArraySet();
   private final Consumer<PrimitiveEvent> eventListener = event -> {
     PrimaryElectionEvent electionEvent = SERIALIZER.decode(event.value());
-    listeners.forEach(l -> l.onEvent(electionEvent));
+    listeners.forEach(l -> l.event(electionEvent));
   };
   private final Map<PartitionId, ManagedPrimaryElection> elections = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();

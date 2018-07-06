@@ -156,10 +156,10 @@ public class DefaultDocumentTreeService extends AbstractPrimitiveService<Documen
       Versioned<byte[]> oldValue = docTree.get(path);
       if (oldValue == null) {
         docTree.set(path, value);
-        notifyListeners(new DocumentTreeEvent<>(path, DocumentTreeEvent.Type.CREATED, Optional.of(docTree.get(path)), Optional.empty()));
+        notifyListeners(new DocumentTreeEvent<>(DocumentTreeEvent.Type.CREATED, path, Optional.of(docTree.get(path)), Optional.empty()));
       } else if (!Arrays.equals(oldValue.value(), value)) {
         docTree.set(path, value);
-        notifyListeners(new DocumentTreeEvent<>(path, DocumentTreeEvent.Type.UPDATED, Optional.of(docTree.get(path)), Optional.of(oldValue)));
+        notifyListeners(new DocumentTreeEvent<>(DocumentTreeEvent.Type.UPDATED, path, Optional.of(docTree.get(path)), Optional.of(oldValue)));
       }
       return DocumentTreeResult.ok(oldValue);
     } catch (NoSuchDocumentPathException e) {
@@ -173,7 +173,7 @@ public class DefaultDocumentTreeService extends AbstractPrimitiveService<Documen
   public DocumentTreeResult<Void> create(DocumentPath path, byte[] value) {
     try {
       if (docTree.create(path, value)) {
-        notifyListeners(new DocumentTreeEvent<>(path, DocumentTreeEvent.Type.CREATED, Optional.of(docTree.get(path)), Optional.empty()));
+        notifyListeners(new DocumentTreeEvent<>(DocumentTreeEvent.Type.CREATED, path, Optional.of(docTree.get(path)), Optional.empty()));
         return DocumentTreeResult.ok(null);
       }
       return DocumentTreeResult.NOOP;
@@ -188,7 +188,7 @@ public class DefaultDocumentTreeService extends AbstractPrimitiveService<Documen
   public DocumentTreeResult<Void> createRecursive(DocumentPath path, byte[] value) {
     try {
       if (docTree.create(path, value)) {
-        notifyListeners(new DocumentTreeEvent<>(path, DocumentTreeEvent.Type.CREATED, Optional.of(docTree.get(path)), Optional.empty()));
+        notifyListeners(new DocumentTreeEvent<>(DocumentTreeEvent.Type.CREATED, path, Optional.of(docTree.get(path)), Optional.empty()));
         return DocumentTreeResult.ok(null);
       }
       return DocumentTreeResult.NOOP;
@@ -203,7 +203,7 @@ public class DefaultDocumentTreeService extends AbstractPrimitiveService<Documen
     try {
       Versioned<byte[]> oldValue = docTree.get(path);
       if (docTree.replace(path, newValue, version)) {
-        notifyListeners(new DocumentTreeEvent<>(path, DocumentTreeEvent.Type.UPDATED, Optional.of(docTree.get(path)), Optional.of(oldValue)));
+        notifyListeners(new DocumentTreeEvent<>(DocumentTreeEvent.Type.UPDATED, path, Optional.of(docTree.get(path)), Optional.of(oldValue)));
         return DocumentTreeResult.ok(null);
       }
       return DocumentTreeResult.NOOP;
@@ -220,7 +220,7 @@ public class DefaultDocumentTreeService extends AbstractPrimitiveService<Documen
         return DocumentTreeResult.NOOP;
       } else if (oldValue.value() != null && currentValue != null && Arrays.equals(oldValue.value(), currentValue)) {
         docTree.set(path, newValue);
-        notifyListeners(new DocumentTreeEvent<>(path, DocumentTreeEvent.Type.UPDATED, Optional.of(docTree.get(path)), Optional.of(oldValue)));
+        notifyListeners(new DocumentTreeEvent<>(DocumentTreeEvent.Type.UPDATED, path, Optional.of(docTree.get(path)), Optional.of(oldValue)));
         return DocumentTreeResult.ok(null);
       }
       return DocumentTreeResult.NOOP;
@@ -233,7 +233,7 @@ public class DefaultDocumentTreeService extends AbstractPrimitiveService<Documen
   public DocumentTreeResult<Versioned<byte[]>> removeNode(DocumentPath path) {
     try {
       Versioned<byte[]> result = docTree.removeNode(path);
-      notifyListeners(new DocumentTreeEvent<>(path, DocumentTreeEvent.Type.DELETED, Optional.empty(), Optional.of(result)));
+      notifyListeners(new DocumentTreeEvent<>(DocumentTreeEvent.Type.DELETED, path, Optional.empty(), Optional.of(result)));
       return DocumentTreeResult.ok(result);
     } catch (IllegalDocumentModificationException e) {
       return DocumentTreeResult.illegalModification();

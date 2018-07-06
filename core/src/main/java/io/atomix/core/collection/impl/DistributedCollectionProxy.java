@@ -47,7 +47,7 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
 
   @Override
   public void onEvent(CollectionEvent<String> event) {
-    eventListeners.forEach(l -> l.onEvent(event));
+    eventListeners.forEach(l -> l.event(event));
   }
 
   @Override
