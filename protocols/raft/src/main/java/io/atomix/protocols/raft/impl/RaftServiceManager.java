@@ -64,6 +64,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import javax.management.AttributeNotFoundException;
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
+import javax.management.MalformedObjectNameException;
+import javax.management.ReflectionException;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -130,7 +136,11 @@ public class RaftServiceManager implements AutoCloseable {
   private boolean isRunningOutOfMemory() {
     StorageLevel level = raft.getStorage().storageLevel();
     if (level == StorageLevel.MEMORY || level == StorageLevel.MAPPED) {
-        return raft.getStorage().statistics().getFreeMemory() / (double) raft.getStorage().statistics().getTotalMemory() < raft.getStorage().freeMemoryBuffer();
+        try {
+            return raft.getStorage().statistics().getFreeMemory() / (double) raft.getStorage().statistics().getTotalMemory() < raft.getStorage().freeMemoryBuffer();
+        } catch (Exception e) {
+            logger.error("An exception occurred during memory check: {}", e);
+        }
     }
 
     return false;

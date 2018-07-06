@@ -17,18 +17,25 @@ package io.atomix.storage.statistics;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
-import com.sun.management.OperatingSystemMXBean;
+
+import javax.management.AttributeNotFoundException;
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
 
 /**
  * Atomix storage statistics.
  */
 public class StorageStatistics {
   private final File file;
-  private final OperatingSystemMXBean osMxBean;
+  private final MBeanServer mBeanServer;
 
   public StorageStatistics(File file) {
     this.file = file;
-    this.osMxBean = (OperatingSystemMXBean)ManagementFactory.getOperatingSystemMXBean();
+    this.mBeanServer = ManagementFactory.getPlatformMBeanServer();
   }
 
   /**
@@ -62,17 +69,27 @@ public class StorageStatistics {
    * Returns the amount of free memory remaining.
    *
    * @return the amount of free memory remaining
+ * @throws MBeanException
+ * @throws ReflectionException
+ * @throws MalformedObjectNameException
+ * @throws AttributeNotFoundException
+ * @throws InstanceNotFoundException
    */
-  public long getFreeMemory() {
-    return osMxBean.getFreePhysicalMemorySize();
+  public long getFreeMemory() throws InstanceNotFoundException, AttributeNotFoundException, MalformedObjectNameException, ReflectionException, MBeanException {
+    return (long) mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "FreePhysicalMemorySize");
   }
 
   /**
    * Returns the total amount of memory.
    *
    * @return the total amount of memory
+ * @throws MBeanException
+ * @throws ReflectionException
+ * @throws MalformedObjectNameException
+ * @throws AttributeNotFoundException
+ * @throws InstanceNotFoundException
    */
-  public long getTotalMemory() {
-    return osMxBean.getTotalPhysicalMemorySize();
+  public long getTotalMemory() throws InstanceNotFoundException, AttributeNotFoundException, MalformedObjectNameException, ReflectionException, MBeanException {
+    return (long) mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "TotalPhysicalMemorySize");
   }
 }
