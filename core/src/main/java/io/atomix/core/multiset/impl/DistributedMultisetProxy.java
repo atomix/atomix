@@ -19,6 +19,7 @@ import com.google.common.collect.Multiset;
 import io.atomix.core.collection.AsyncIterator;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.impl.PartitionedDistributedCollectionProxy;
+import io.atomix.core.collection.impl.PartitionedProxyIterator;
 import io.atomix.core.multiset.AsyncDistributedMultiset;
 import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.set.AsyncDistributedSet;
@@ -30,21 +31,12 @@ import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
-import io.atomix.utils.concurrent.Futures;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Distributed multiset proxy.
@@ -176,15 +168,12 @@ public class DistributedMultisetProxy
     }
 
     @Override
-    public CompletableFuture<AsyncIterator<String>> iterator() {
-      return Futures.allOf(getProxyClient().getPartitionIds().stream()
-          .map(partitionId -> getProxyClient().applyOn(partitionId, service -> service.iterateElements())
-              .thenApply(iteratorId -> new MultisetPartitionIterator<>(
-                  partitionId,
-                  iteratorId,
-                  (service, position) -> service.nextElements(iteratorId, position),
-                  service -> service.closeElements(iteratorId)))))
-          .thenApply(iterators -> new MultisetIterator<>(iterators.collect(Collectors.toList())));
+    public AsyncIterator<String> iterator() {
+      return new PartitionedProxyIterator<>(
+          getProxyClient(),
+          DistributedMultisetService::iterateElements,
+          DistributedMultisetService::nextElements,
+          DistributedMultisetService::closeElements);
     }
 
     @Override
@@ -295,15 +284,12 @@ public class DistributedMultisetProxy
     }
 
     @Override
-    public CompletableFuture<AsyncIterator<Multiset.Entry<String>>> iterator() {
-      return Futures.allOf(getProxyClient().getPartitionIds().stream()
-          .map(partitionId -> getProxyClient().applyOn(partitionId, service -> service.iterateEntries())
-              .thenApply(iteratorId -> new MultisetPartitionIterator<>(
-                  partitionId,
-                  iteratorId,
-                  (service, position) -> service.nextEntries(iteratorId, position),
-                  service -> service.closeEntries(iteratorId)))))
-          .thenApply(iterators -> new MultisetIterator<>(iterators.collect(Collectors.toList())));
+    public AsyncIterator<Multiset.Entry<String>> iterator() {
+      return new PartitionedProxyIterator<>(
+          getProxyClient(),
+          DistributedMultisetService::iterateEntries,
+          DistributedMultisetService::nextEntries,
+          DistributedMultisetService::closeEntries);
     }
 
     @Override
@@ -334,134 +320,6 @@ public class DistributedMultisetProxy
     @Override
     public DistributedSet<Multiset.Entry<String>> sync(Duration operationTimeout) {
       return new BlockingDistributedSet<>(this, operationTimeout.toMillis());
-    }
-  }
-
-  /**
-   * Multiset iterator.
-   */
-  private class MultisetIterator<T> implements AsyncIterator<T> {
-    private final Iterator<AsyncIterator<T>> iterators;
-    private volatile AsyncIterator<T> iterator;
-
-    public MultisetIterator(Collection<AsyncIterator<T>> iterators) {
-      this.iterators = iterators.iterator();
-    }
-
-    @Override
-    public CompletableFuture<Boolean> hasNext() {
-      if (iterator == null && iterators.hasNext()) {
-        iterator = iterators.next();
-      }
-      if (iterator == null) {
-        return CompletableFuture.completedFuture(false);
-      }
-      return iterator.hasNext()
-          .thenCompose(hasNext -> {
-            if (!hasNext) {
-              iterator = null;
-              return hasNext();
-            }
-            return CompletableFuture.completedFuture(true);
-          });
-    }
-
-    @Override
-    public CompletableFuture<T> next() {
-      if (iterator == null && iterators.hasNext()) {
-        iterator = iterators.next();
-      }
-      if (iterator == null) {
-        return Futures.exceptionalFuture(new NoSuchElementException());
-      }
-      return iterator.next();
-    }
-  }
-
-  /**
-   * Multiset partition iterator.
-   */
-  private class MultisetPartitionIterator<T> implements AsyncIterator<T> {
-    private final PartitionId partitionId;
-    private final long iteratorId;
-    private final BiFunction<DistributedMultisetService, Integer, DistributedMultisetService.Batch<T>> nextFunction;
-    private final Consumer<DistributedMultisetService> closeFunction;
-    private volatile CompletableFuture<DistributedMultisetService.Batch<T>> batch;
-    private volatile CompletableFuture<Void> closeFuture;
-
-    MultisetPartitionIterator(
-        PartitionId partitionId,
-        long iteratorId,
-        BiFunction<DistributedMultisetService, Integer, DistributedMultisetService.Batch<T>> nextFunction,
-        Consumer<DistributedMultisetService> closeFunction) {
-      this.partitionId = partitionId;
-      this.iteratorId = iteratorId;
-      this.nextFunction = nextFunction;
-      this.closeFunction = closeFunction;
-      this.batch = CompletableFuture.completedFuture(
-          new DistributedMultisetService.Batch<T>(0, Collections.emptyList()));
-    }
-
-    /**
-     * Returns the current batch iterator or lazily fetches the next batch from the cluster.
-     *
-     * @return the next batch iterator
-     */
-    private CompletableFuture<Iterator<T>> batch() {
-      return batch.thenCompose(iterator -> {
-        if (iterator != null && !iterator.hasNext()) {
-          batch = fetch(iterator.position());
-          return batch.thenApply(Function.identity());
-        }
-        return CompletableFuture.completedFuture(iterator);
-      });
-    }
-
-    /**
-     * Fetches the next batch of entries from the cluster.
-     *
-     * @param position the position from which to fetch the next batch
-     * @return the next batch of entries from the cluster
-     */
-    private CompletableFuture<DistributedMultisetService.Batch<T>> fetch(int position) {
-      return getProxyClient().applyOn(partitionId, service -> nextFunction.apply(service, position))
-          .thenCompose(batch -> {
-            if (batch == null) {
-              return close().thenApply(v -> null);
-            }
-            return CompletableFuture.completedFuture(batch);
-          });
-    }
-
-    /**
-     * Closes the iterator.
-     *
-     * @return future to be completed once the iterator has been closed
-     */
-    private CompletableFuture<Void> close() {
-      if (closeFuture == null) {
-        synchronized (this) {
-          if (closeFuture == null) {
-            closeFuture = getProxyClient().acceptOn(partitionId, service -> closeFunction.accept(service));
-          }
-        }
-      }
-      return closeFuture;
-    }
-
-    @Override
-    public CompletableFuture<Boolean> hasNext() {
-      return batch().thenApply(iterator -> iterator != null && iterator.hasNext());
-    }
-
-    @Override
-    public CompletableFuture<T> next() {
-      return batch().thenCompose(iterator -> {
-        if (iterator == null) {
-          return Futures.exceptionalFuture(new NoSuchElementException());
-        }
-        return CompletableFuture.completedFuture(iterator.next());
-      });
     }
   }
 }

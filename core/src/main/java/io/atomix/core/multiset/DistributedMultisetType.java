@@ -17,9 +17,9 @@ package io.atomix.core.multiset;
 
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
-import io.atomix.core.collection.impl.DistributedCollectionService;
-import io.atomix.core.multiset.impl.DefaultDistributedMultisetService;
+import io.atomix.core.collection.impl.IteratorBatch;
 import io.atomix.core.multiset.impl.DefaultDistributedMultisetBuilder;
+import io.atomix.core.multiset.impl.DefaultDistributedMultisetService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -62,7 +62,7 @@ public class DistributedMultisetType<E> implements PrimitiveType<DistributedMult
         .register(CollectionUpdateResult.Status.class)
         .register(CollectionEvent.class)
         .register(CollectionEvent.Type.class)
-        .register(DistributedCollectionService.Batch.class)
+        .register(IteratorBatch.class)
         .build();
   }
 

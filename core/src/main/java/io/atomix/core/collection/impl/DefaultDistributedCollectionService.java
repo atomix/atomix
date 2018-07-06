@@ -188,7 +188,7 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
   }
 
   @Override
-  public Batch next(long iteratorId, int position) {
+  public IteratorBatch<String> next(long iteratorId, int position) {
     IteratorContext context = iterators.get(iteratorId);
     if (context == null) {
       return null;
@@ -212,7 +212,7 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
     if (elements.isEmpty()) {
       return null;
     }
-    return new Batch(context.position, elements);
+    return new IteratorBatch<>(context.position, elements);
   }
 
   @Override

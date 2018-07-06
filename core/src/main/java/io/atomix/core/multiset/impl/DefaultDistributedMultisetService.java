@@ -21,6 +21,7 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.collection.impl.DefaultDistributedCollectionService;
+import io.atomix.core.collection.impl.IteratorBatch;
 import io.atomix.core.multiset.DistributedMultisetType;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
@@ -142,9 +143,9 @@ public class DefaultDistributedMultisetService extends DefaultDistributedCollect
   }
 
   @Override
-  public Batch<String> nextElements(long iteratorId, int position) {
-    Batch<Multiset.Entry<String>> batch = nextEntries(iteratorId, position);
-    return batch == null ? null : new Batch<>(batch.position(), batch.elements()
+  public IteratorBatch<String> nextElements(long iteratorId, int position) {
+    IteratorBatch<Multiset.Entry<String>> batch = nextEntries(iteratorId, position);
+    return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries()
         .stream()
         .map(element -> element.getElement())
         .collect(Collectors.toList()));
@@ -162,7 +163,7 @@ public class DefaultDistributedMultisetService extends DefaultDistributedCollect
   }
 
   @Override
-  public Batch<Multiset.Entry<String>> nextEntries(long iteratorId, int position) {
+  public IteratorBatch<Multiset.Entry<String>> nextEntries(long iteratorId, int position) {
     IteratorContext context = entryIterators.get(iteratorId);
     if (context == null) {
       return null;
@@ -186,7 +187,7 @@ public class DefaultDistributedMultisetService extends DefaultDistributedCollect
     if (entries.isEmpty()) {
       return null;
     }
-    return new Batch<>(context.position, entries);
+    return new IteratorBatch<>(context.position, entries);
   }
 
   @Override

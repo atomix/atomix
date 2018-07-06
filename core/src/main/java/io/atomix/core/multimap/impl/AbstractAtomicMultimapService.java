@@ -23,6 +23,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.atomix.core.collection.impl.IteratorBatch;
 import io.atomix.core.multimap.AtomicMultimapType;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
@@ -307,9 +308,9 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   }
 
   @Override
-  public Batch<String> nextKeySet(long iteratorId, int position) {
-    Batch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, position);
-    return batch == null ? null : new Batch<>(batch.position(), batch.entries().stream()
+  public IteratorBatch<String> nextKeySet(long iteratorId, int position) {
+    IteratorBatch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, position);
+    return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries().stream()
         .map(Map.Entry::getKey)
         .collect(Collectors.toSet()));
   }
@@ -325,9 +326,9 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   }
 
   @Override
-  public Batch<String> nextKeys(long iteratorId, int position) {
-    Batch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, position);
-    return batch == null ? null : new Batch<>(batch.position(), batch.entries().stream()
+  public IteratorBatch<String> nextKeys(long iteratorId, int position) {
+    IteratorBatch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, position);
+    return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries().stream()
         .map(Map.Entry::getKey)
         .collect(Collectors.toList()));
   }
@@ -343,9 +344,9 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   }
 
   @Override
-  public Batch<byte[]> nextValues(long iteratorId, int position) {
-    Batch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, position);
-    return batch == null ? null : new Batch<>(batch.position(), batch.entries().stream()
+  public IteratorBatch<byte[]> nextValues(long iteratorId, int position) {
+    IteratorBatch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, position);
+    return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries().stream()
         .map(Map.Entry::getValue)
         .collect(Collectors.toSet()));
   }
@@ -362,7 +363,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   }
 
   @Override
-  public Batch<Map.Entry<String, byte[]>> nextEntries(long iteratorId, int position) {
+  public IteratorBatch<Map.Entry<String, byte[]>> nextEntries(long iteratorId, int position) {
     IteratorContext context = entryIterators.get(iteratorId);
     if (context == null) {
       return null;
@@ -391,7 +392,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
     if (entries.isEmpty()) {
       return null;
     }
-    return new Batch<>(context.position, entries);
+    return new IteratorBatch<>(context.position, entries);
   }
 
   @Override

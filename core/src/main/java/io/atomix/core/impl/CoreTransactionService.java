@@ -179,18 +179,17 @@ public class CoreTransactionService implements ManagedTransactionService {
    */
   private void onMembershipChange(ClusterMembershipEvent event) {
     if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
-      transactions.entrySet().stream()
-          .thenAccept(stream -> stream.filter(entry -> entry.getValue().value().coordinator.equals(event.subject().id()))
-              .forEach(entry -> {
-                recoverTransaction(entry.getKey(), entry.getValue().value());
-              }));
+      transactions.entrySet().stream().filter(entry -> entry.getValue().value().coordinator.equals(event.subject().id()))
+          .forEach(entry -> {
+            recoverTransaction(entry.getKey(), entry.getValue().value());
+          });
     }
   }
 
   /**
    * Recovers and completes the given transaction.
    *
-   * @param transactionId   the transaction identifier
+   * @param transactionId the transaction identifier
    * @param transactionInfo the transaction info
    */
   private void recoverTransaction(TransactionId transactionId, TransactionInfo transactionInfo) {
@@ -314,8 +313,8 @@ public class CoreTransactionService implements ManagedTransactionService {
   }
 
   /**
-   * Completes an individual participant in a transaction by loading the primitive by type/protocol/partition group
-   * and applying the given completion function to it.
+   * Completes an individual participant in a transaction by loading the primitive by type/protocol/partition group and
+   * applying the given completion function to it.
    */
   @SuppressWarnings("unchecked")
   private CompletableFuture<Void> completeParticipant(

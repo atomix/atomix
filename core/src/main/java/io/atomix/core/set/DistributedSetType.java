@@ -17,9 +17,9 @@ package io.atomix.core.set;
 
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
-import io.atomix.core.set.impl.DefaultDistributedSetService;
-import io.atomix.core.collection.impl.DistributedCollectionService;
+import io.atomix.core.collection.impl.IteratorBatch;
 import io.atomix.core.set.impl.DefaultDistributedSetBuilder;
+import io.atomix.core.set.impl.DefaultDistributedSetService;
 import io.atomix.core.set.impl.DistributedSetResource;
 import io.atomix.core.set.impl.SetUpdate;
 import io.atomix.core.transaction.TransactionId;
@@ -70,7 +70,7 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
         .register(CollectionUpdateResult.Status.class)
         .register(CollectionEvent.class)
         .register(CollectionEvent.Type.class)
-        .register(DistributedCollectionService.Batch.class)
+        .register(IteratorBatch.class)
         .register(TransactionId.class)
         .register(TransactionLog.class)
         .register(SetUpdate.class)

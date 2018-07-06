@@ -286,8 +286,8 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
     }
 
     @Override
-    public CompletableFuture<AsyncIterator<V>> iterator() {
-      return values.iterator().thenApply(UnwrappedIterator::new);
+    public AsyncIterator<V> iterator() {
+      return new UnwrappedIterator(values.iterator());
     }
 
     @Override
@@ -424,8 +424,8 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
     }
 
     @Override
-    public CompletableFuture<AsyncIterator<Map.Entry<K, V>>> iterator() {
-      return entries.iterator().thenApply(UnwrappedIterator::new);
+    public AsyncIterator<Map.Entry<K, V>> iterator() {
+      return new UnwrappedIterator(entries.iterator());
     }
 
     @Override

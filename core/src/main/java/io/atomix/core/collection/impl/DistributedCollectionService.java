@@ -19,7 +19,6 @@ import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
 
 import java.util.Collection;
-import java.util.Iterator;
 
 /**
  * Distributed collection service.
@@ -259,7 +258,7 @@ public interface DistributedCollectionService {
    * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
    */
   @Query
-  Batch<String> next(long iteratorId, int position);
+  IteratorBatch<String> next(long iteratorId, int position);
 
   /**
    * Closes an iterator.
@@ -268,58 +267,5 @@ public interface DistributedCollectionService {
    */
   @Command
   void close(long iteratorId);
-
-  /**
-   * Iterator batch.
-   */
-  final class Batch<T> implements Iterator<T> {
-    private final int position;
-    private final Collection<T> elements;
-    private transient volatile Iterator<T> iterator;
-
-    public Batch(int position, Collection<T> elements) {
-      this.position = position;
-      this.elements = elements;
-    }
-
-    /**
-     * Returns the iterator position.
-     *
-     * @return the iterator position
-     */
-    public int position() {
-      return position;
-    }
-
-    /**
-     * Returns the batch of elements.
-     *
-     * @return the batch of elements
-     */
-    public Collection<T> elements() {
-      return elements;
-    }
-
-    private Iterator<T> iterator() {
-      if (iterator == null) {
-        synchronized (this) {
-          if (iterator == null) {
-            iterator = elements.iterator();
-          }
-        }
-      }
-      return iterator;
-    }
-
-    @Override
-    public boolean hasNext() {
-      return iterator().hasNext();
-    }
-
-    @Override
-    public T next() {
-      return iterator().next();
-    }
-  }
 
 }

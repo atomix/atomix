@@ -16,8 +16,8 @@
 package io.atomix.core.multimap;
 
 import com.google.common.collect.Maps;
+import io.atomix.core.collection.impl.IteratorBatch;
 import io.atomix.core.multimap.impl.DefaultAtomicMultimapBuilder;
-import io.atomix.core.multimap.impl.AtomicMultimapService;
 import io.atomix.core.multimap.impl.DefaultAtomicMultimapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
@@ -63,7 +63,7 @@ public class AtomicMultimapType<K, V> implements PrimitiveType<AtomicMultimapBui
         .register(Versioned.class)
         .register(ArrayList.class)
         .register(Maps.immutableEntry("", "").getClass())
-        .register(AtomicMultimapService.Batch.class)
+        .register(IteratorBatch.class)
         .build();
   }
 

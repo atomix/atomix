@@ -142,7 +142,7 @@ public class BlockingDistributedMultiset<E> extends Synchronous<AsyncDistributed
 
   @Override
   public SyncIterator<E> iterator() {
-    return new BlockingIterator<>(complete(asyncSet.iterator()), operationTimeoutMillis);
+    return new BlockingIterator<>(asyncSet.iterator(), operationTimeoutMillis);
   }
 
   @Override

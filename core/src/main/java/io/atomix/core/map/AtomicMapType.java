@@ -15,8 +15,8 @@
  */
 package io.atomix.core.map;
 
+import io.atomix.core.collection.impl.IteratorBatch;
 import io.atomix.core.map.impl.AtomicMapResource;
-import io.atomix.core.map.impl.AtomicMapService;
 import io.atomix.core.map.impl.DefaultAtomicMapBuilder;
 import io.atomix.core.map.impl.DefaultAtomicMapService;
 import io.atomix.core.map.impl.MapEntryUpdateResult;
@@ -80,7 +80,7 @@ public class AtomicMapType<K, V> implements PrimitiveType<AtomicMapBuilder<K, V>
         .register(Versioned.class)
         .register(AtomicMapEvent.class)
         .register(AtomicMapEvent.Type.class)
-        .register(AtomicMapService.Batch.class)
+        .register(IteratorBatch.class)
         .register(Versioned.class)
         .register(byte[].class)
         .build();

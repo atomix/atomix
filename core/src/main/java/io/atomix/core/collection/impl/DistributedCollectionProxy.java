@@ -29,12 +29,8 @@ import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 /**
  * Distributed collection proxy.
@@ -135,9 +131,13 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
   }
 
   @Override
-  public CompletableFuture<AsyncIterator<String>> iterator() {
-    return getProxyClient().applyBy(name(), service -> service.iterate())
-        .thenApply(DistributedCollectionIterator::new);
+  public AsyncIterator<String> iterator() {
+    return new ProxyIterator<>(
+        getProxyClient(),
+        getProxyClient().getPartitionId(name()),
+        DistributedCollectionService::iterate,
+        DistributedCollectionService::next,
+        DistributedCollectionService::close);
   }
 
   @Override
@@ -157,82 +157,5 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
           });
         })
         .thenApply(v -> (A) this);
-  }
-
-  /**
-   * Distributed collection iterator.
-   */
-  private class DistributedCollectionIterator implements AsyncIterator<String> {
-    private final long id;
-    private volatile CompletableFuture<DistributedCollectionService.Batch<String>> batch;
-    private volatile CompletableFuture<Void> closeFuture;
-
-    DistributedCollectionIterator(long id) {
-      this.id = id;
-      this.batch = CompletableFuture.completedFuture(
-          new DistributedCollectionService.Batch<>(0, Collections.emptyList()));
-    }
-
-    /**
-     * Returns the current batch iterator or lazily fetches the next batch from the cluster.
-     *
-     * @return the next batch iterator
-     */
-    private CompletableFuture<Iterator<String>> batch() {
-      return batch.thenCompose(iterator -> {
-        if (iterator != null && !iterator.hasNext()) {
-          batch = fetch(iterator.position());
-          return batch.thenApply(Function.identity());
-        }
-        return CompletableFuture.completedFuture(iterator);
-      });
-    }
-
-    /**
-     * Fetches the next batch of entries from the cluster.
-     *
-     * @param position the position from which to fetch the next batch
-     * @return the next batch of entries from the cluster
-     */
-    private CompletableFuture<DistributedCollectionService.Batch<String>> fetch(int position) {
-      return getProxyClient().applyBy(name(), service -> service.next(id, position))
-          .thenCompose(batch -> {
-            if (batch == null) {
-              return close().thenApply(v -> null);
-            }
-            return CompletableFuture.completedFuture(batch);
-          });
-    }
-
-    /**
-     * Closes the iterator.
-     *
-     * @return future to be completed once the iterator has been closed
-     */
-    private CompletableFuture<Void> close() {
-      if (closeFuture == null) {
-        synchronized (this) {
-          if (closeFuture == null) {
-            closeFuture = getProxyClient().acceptBy(name(), service -> service.close(id));
-          }
-        }
-      }
-      return closeFuture;
-    }
-
-    @Override
-    public CompletableFuture<Boolean> hasNext() {
-      return batch().thenApply(iterator -> iterator != null && iterator.hasNext());
-    }
-
-    @Override
-    public CompletableFuture<String> next() {
-      return batch().thenCompose(iterator -> {
-        if (iterator == null) {
-          return Futures.exceptionalFuture(new NoSuchElementException());
-        }
-        return CompletableFuture.completedFuture(iterator.next());
-      });
-    }
   }
 }

@@ -15,12 +15,12 @@
  */
 package io.atomix.core.multimap.impl;
 
+import io.atomix.core.collection.impl.IteratorBatch;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -231,7 +231,7 @@ public interface AtomicMultimapService {
    * @return the next batch of keys for the iterator or {@code null} if the iterator is complete
    */
   @Query
-  Batch<String> nextKeySet(long iteratorId, int position);
+  IteratorBatch<String> nextKeySet(long iteratorId, int position);
 
   /**
    * Closes a key iterator.
@@ -257,7 +257,7 @@ public interface AtomicMultimapService {
    * @return the next batch of keys for the iterator or {@code null} if the iterator is complete
    */
   @Query
-  Batch<String> nextKeys(long iteratorId, int position);
+  IteratorBatch<String> nextKeys(long iteratorId, int position);
 
   /**
    * Closes a key iterator.
@@ -283,7 +283,7 @@ public interface AtomicMultimapService {
    * @return the next batch of values for the iterator or {@code null} if the iterator is complete
    */
   @Query
-  Batch<byte[]> nextValues(long iteratorId, int position);
+  IteratorBatch<byte[]> nextValues(long iteratorId, int position);
 
   /**
    * Closes a value iterator.
@@ -309,7 +309,7 @@ public interface AtomicMultimapService {
    * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
    */
   @Query
-  Batch<Map.Entry<String, byte[]>> nextEntries(long iteratorId, int position);
+  IteratorBatch<Map.Entry<String, byte[]>> nextEntries(long iteratorId, int position);
 
   /**
    * Closes an entry iterator.
@@ -318,60 +318,5 @@ public interface AtomicMultimapService {
    */
   @Command
   void closeEntries(long iteratorId);
-
-  /**
-   * Iterator batch.
-   *
-   * @param <T> the batch element type
-   */
-  final class Batch<T> implements Iterator<T> {
-    private final int position;
-    private final Collection<T> entries;
-    private transient volatile Iterator<T> iterator;
-
-    Batch(int position, Collection<T> entries) {
-      this.position = position;
-      this.entries = entries;
-    }
-
-    /**
-     * Returns the iterator position.
-     *
-     * @return the iterator position
-     */
-    public int position() {
-      return position;
-    }
-
-    /**
-     * Returns the batch of entries.
-     *
-     * @return the batch of entries
-     */
-    public Collection<T> entries() {
-      return entries;
-    }
-
-    private Iterator<T> iterator() {
-      if (iterator == null) {
-        synchronized (this) {
-          if (iterator == null) {
-            iterator = entries.iterator();
-          }
-        }
-      }
-      return iterator;
-    }
-
-    @Override
-    public boolean hasNext() {
-      return iterator().hasNext();
-    }
-
-    @Override
-    public T next() {
-      return iterator().next();
-    }
-  }
 
 }

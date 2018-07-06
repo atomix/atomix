@@ -17,9 +17,9 @@ package io.atomix.core.list;
 
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
-import io.atomix.core.list.impl.DefaultDistributedListService;
-import io.atomix.core.collection.impl.DistributedCollectionService;
+import io.atomix.core.collection.impl.IteratorBatch;
 import io.atomix.core.list.impl.DefaultDistributedListBuilder;
+import io.atomix.core.list.impl.DefaultDistributedListService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -62,7 +62,7 @@ public class DistributedListType<E> implements PrimitiveType<DistributedListBuil
         .register(CollectionUpdateResult.Status.class)
         .register(CollectionEvent.class)
         .register(CollectionEvent.Type.class)
-        .register(DistributedCollectionService.Batch.class)
+        .register(IteratorBatch.class)
         .build();
   }
 
