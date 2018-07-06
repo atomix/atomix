@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.countermap.impl;
+package io.atomix.core.map.impl;
 
 import com.google.common.io.BaseEncoding;
-import io.atomix.core.countermap.AtomicCounterMap;
-import io.atomix.core.countermap.AtomicCounterMapBuilder;
-import io.atomix.core.countermap.AtomicCounterMapConfig;
+import io.atomix.core.map.AtomicCounterMap;
+import io.atomix.core.map.AtomicCounterMapBuilder;
+import io.atomix.core.map.AtomicCounterMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;

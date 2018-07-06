@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.countermap.impl;
+package io.atomix.core.map.impl;
 
 import com.google.common.base.Throwables;
-import io.atomix.core.countermap.AsyncAtomicCounterMap;
-import io.atomix.core.countermap.AtomicCounterMap;
+import io.atomix.core.map.AsyncAtomicCounterMap;
+import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 

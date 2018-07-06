@@ -1,11 +1,11 @@
 /*
- * Copyright 2015-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.countermap;
+package io.atomix.core.map.impl;
 
-import io.atomix.primitive.AsyncPrimitive;
-import io.atomix.primitive.DistributedPrimitive;
-
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
+import io.atomix.primitive.operation.Command;
+import io.atomix.primitive.operation.Query;
 
 /**
- * An async atomic counter map dispenses monotonically increasing values associated with key.
+ * Atomic counter map service.
  */
-public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
+public interface AtomicCounterMapService {
 
   /**
    * Increments by one the value currently associated with key, and returns the new value.
@@ -32,7 +29,8 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @param key key with which the specified value is to be associated
    * @return incremented value
    */
-  CompletableFuture<Long> incrementAndGet(K key);
+  @Command
+  long incrementAndGet(String key);
 
   /**
    * Decrements by one the value currently associated with key, and returns the new value.
@@ -40,7 +38,8 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @param key key with which the specified value is to be associated
    * @return updated value
    */
-  CompletableFuture<Long> decrementAndGet(K key);
+  @Command
+  long decrementAndGet(String key);
 
   /**
    * Increments by one the value currently associated with key, and returns the old value.
@@ -48,7 +47,8 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @param key key with which the specified value is to be associated
    * @return previous value
    */
-  CompletableFuture<Long> getAndIncrement(K key);
+  @Command
+  long getAndIncrement(String key);
 
   /**
    * Decrements by one the value currently associated with key, and returns the old value.
@@ -56,7 +56,8 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @param key key with which the specified value is to be associated
    * @return previous value
    */
-  CompletableFuture<Long> getAndDecrement(K key);
+  @Command
+  long getAndDecrement(String key);
 
   /**
    * Adds delta to the value currently associated with key, and returns the new value.
@@ -65,7 +66,8 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @param delta the value to add
    * @return updated value
    */
-  CompletableFuture<Long> addAndGet(K key, long delta);
+  @Command
+  long addAndGet(String key, long delta);
 
   /**
    * Adds delta to the value currently associated with key, and returns the old value.
@@ -74,7 +76,8 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @param delta the value to add
    * @return previous value
    */
-  CompletableFuture<Long> getAndAdd(K key, long delta);
+  @Command
+  long getAndAdd(String key, long delta);
 
   /**
    * Returns the value associated with key, or zero if there is no value associated with key.
@@ -82,7 +85,8 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @param key key with which the specified value is to be associated
    * @return current value
    */
-  CompletableFuture<Long> get(K key);
+  @Query
+  long get(String key);
 
   /**
    * Associates ewValue with key in this map, and returns the value previously
@@ -92,8 +96,8 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @param newValue the value to put
    * @return previous value or zero
    */
-  CompletableFuture<Long> put(K key, long newValue);
-
+  @Command
+  long put(String key, long newValue);
 
   /**
    * If key is not already associated with a value or if key is associated with
@@ -104,7 +108,8 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @param newValue the value to put
    * @return previous value or zero
    */
-  CompletableFuture<Long> putIfAbsent(K key, long newValue);
+  @Command
+  long putIfAbsent(String key, long newValue);
 
   /**
    * If (key, expectedOldValue) is currently in the map, this method replaces
@@ -118,7 +123,8 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @param newValue         the value to replace
    * @return true if the value was replaced, false otherwise
    */
-  CompletableFuture<Boolean> replace(K key, long expectedOldValue, long newValue);
+  @Command
+  boolean replace(String key, long expectedOldValue, long newValue);
 
   /**
    * Removes and returns the value associated with key. If key is not
@@ -127,7 +133,8 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @param key key with which the specified value is to be associated
    * @return the previous value associated with the specified key or null
    */
-  CompletableFuture<Long> remove(K key);
+  @Command
+  long remove(String key);
 
   /**
    * If (key, value) is currently in the map, this method removes it and returns
@@ -137,34 +144,29 @@ public interface AsyncAtomicCounterMap<K> extends AsyncPrimitive {
    * @param value the value to remove
    * @return true if the value was removed, false otherwise
    */
-  CompletableFuture<Boolean> remove(K key, long value);
+  @Command("removeValue")
+  boolean remove(String key, long value);
 
   /**
    * Returns the number of entries in the map.
    *
-   * @return the number of entries in the map
+   * @return the number of entries in the map, including {@code 0} values
    */
-  CompletableFuture<Integer> size();
+  @Query
+  int size();
 
   /**
-   * Returns a boolean indicating whether the map is empty.
+   * If the map is empty, returns true, otherwise false.
    *
-   * @return true if the map is empty, false otherwise
+   * @return true if the map is empty.
    */
-  CompletableFuture<Boolean> isEmpty();
+  @Query
+  boolean isEmpty();
 
   /**
-   * Removes all entries from the map.
-   *
-   * @return void
+   * Clears all entries from the map.
    */
-  CompletableFuture<Void> clear();
+  @Command
+  void clear();
 
-  @Override
-  default AtomicCounterMap<K> sync() {
-    return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
-  }
-
-  @Override
-  AtomicCounterMap<K> sync(Duration operationTimeout);
 }

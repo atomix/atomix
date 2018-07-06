@@ -274,7 +274,7 @@
             </group>
             <group>
               <title>Primitives</title>
-              <packages>io.atomix.core.barrier:io.atomix.core.cache:io.atomix.core.collection:io.atomix.core.counter:io.atomix.core.countermap:io.atomix.core.idgenerator:io.atomix.core.leadership:io.atomix.core.list:io.atomix.core.lock:io.atomix.core.map:io.atomix.core.multimap:io.atomix.core.multiset:io.atomix.core.queue:io.atomix.core.semaphore:io.atomix.core.set:io.atomix.core.transaction:io.atomix.core.tree:io.atomix.core.treemap:io.atomix.core.value:io.atomix.core.workqueue</packages>
+              <packages>io.atomix.core.barrier:io.atomix.core.cache:io.atomix.core.collection:io.atomix.core.counter:io.atomix.core.idgenerator:io.atomix.core.leadership:io.atomix.core.list:io.atomix.core.lock:io.atomix.core.map:io.atomix.core.multimap:io.atomix.core.multiset:io.atomix.core.queue:io.atomix.core.semaphore:io.atomix.core.set:io.atomix.core.transaction:io.atomix.core.tree:io.atomix.core.value:io.atomix.core.workqueue</packages>
             </group>
             <group>
               <title>Cluster Management</title>
