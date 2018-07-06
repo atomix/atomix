@@ -54,6 +54,9 @@ import io.atomix.core.map.DistributedTreeMapType;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapBuilder;
 import io.atomix.core.multimap.AtomicMultimapType;
+import io.atomix.core.multimap.DistributedMultimap;
+import io.atomix.core.multimap.DistributedMultimapBuilder;
+import io.atomix.core.multimap.DistributedMultimapType;
 import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.multiset.DistributedMultisetBuilder;
 import io.atomix.core.multiset.DistributedMultisetType;
@@ -96,7 +99,7 @@ public interface PrimitivesService {
    * @param name the primitive name
    * @param <K>  key type
    * @param <V>  value type
-   * @return builder for a atomic map
+   * @return builder for a distributed map
    */
   default <K, V> DistributedMapBuilder<K, V> mapBuilder(String name) {
     return primitiveBuilder(name, DistributedMapType.instance());
@@ -109,7 +112,7 @@ public interface PrimitivesService {
    * @param protocol the primitive protocol
    * @param <K>      key type
    * @param <V>      value type
-   * @return builder for a atomic map
+   * @return builder for a distributed map
    */
   default <K, V> DistributedMapBuilder<K, V> mapBuilder(String name, PrimitiveProtocol protocol) {
     return primitiveBuilder(name, DistributedMapType.instance(), protocol);
@@ -121,7 +124,7 @@ public interface PrimitivesService {
    * @param name the primitive name
    * @param <K>  key type
    * @param <V>  value type
-   * @return builder for a atomic map
+   * @return builder for a tree map
    */
   default <K extends Comparable<K>, V> DistributedTreeMapBuilder<K, V> treeMapBuilder(String name) {
     return primitiveBuilder(name, DistributedTreeMapType.instance());
@@ -134,10 +137,35 @@ public interface PrimitivesService {
    * @param protocol the primitive protocol
    * @param <K>      key type
    * @param <V>      value type
-   * @return builder for a atomic map
+   * @return builder for a tree map
    */
   default <K extends Comparable<K>, V> DistributedTreeMapBuilder<K, V> treeMapBuilder(String name, PrimitiveProtocol protocol) {
     return primitiveBuilder(name, DistributedTreeMapType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new AtomicMultimapBuilder.
+   *
+   * @param name the primitive name
+   * @param <K>  key type
+   * @param <V>  value type
+   * @return builder for a multimap
+   */
+  default <K, V> DistributedMultimapBuilder<K, V> multimapBuilder(String name) {
+    return primitiveBuilder(name, DistributedMultimapType.instance());
+  }
+
+  /**
+   * Creates a new AtomicMultimapBuilder.
+   *
+   * @param name     the primitive name
+   * @param protocol the primitive protocol
+   * @param <K>      key type
+   * @param <V>      value type
+   * @return builder for a multimap
+   */
+  default <K, V> DistributedMultimapBuilder<K, V> multimapBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedMultimapType.instance(), protocol);
   }
 
   /**
@@ -574,7 +602,7 @@ public interface PrimitivesService {
   <K, V> DistributedMap<K, V> getMap(String name);
 
   /**
-   * Creates a new DistributedMap.
+   * Creates a new DistributedTreeMap.
    *
    * @param name the primitive name
    * @param <K>  key type
@@ -582,6 +610,16 @@ public interface PrimitivesService {
    * @return a new distributed map
    */
   <K extends Comparable<K>, V> DistributedTreeMap<K, V> getTreeMap(String name);
+
+  /**
+   * Creates a new DistributedMultimap.
+   *
+   * @param name the primitive name
+   * @param <K>  key type
+   * @param <V>  value type
+   * @return a new distributed multimap
+   */
+  <K, V> DistributedMultimap<K, V> getMultimap(String name);
 
   /**
    * Creates a new AtomicMap.
