@@ -37,7 +37,7 @@ innovative and intelligent tools for profiling Java and .NET applications.
 
 ![YourKit](https://www.yourkit.com/images/yklogo.png)
 
-[Website]: http://atomix.io
+[Website]: https://atomix.io
 [Google group]: https://groups.google.com/forum/#!forum/atomixio
 [Javadoc]: http://atomix.io/docs/latest/api/
 [Raft]: https://raft.github.io/
