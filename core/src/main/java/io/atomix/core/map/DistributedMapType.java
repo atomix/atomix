@@ -15,13 +15,13 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.map.impl.AbstractAtomicMapService;
 import io.atomix.core.map.impl.DefaultDistributedMapBuilder;
 import io.atomix.core.map.impl.DefaultDistributedMapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.serializer.Namespace;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -48,6 +48,11 @@ public class DistributedMapType<K, V> implements PrimitiveType<DistributedMapBui
   @Override
   public String name() {
     return NAME;
+  }
+
+  @Override
+  public Namespace namespace() {
+    return AtomicMapType.instance().namespace();
   }
 
   @Override

@@ -20,7 +20,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.core.map.AtomicMapEvent;
-import io.atomix.core.map.AtomicMapType;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.core.transaction.impl.CommitResult;
@@ -69,7 +68,6 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   public AbstractAtomicMapService(PrimitiveType primitiveType) {
     super(primitiveType, AtomicMapClient.class);
     serializer = Serializer.using(Namespace.builder()
-        .register(AtomicMapType.instance().namespace())
         .register(primitiveType.namespace())
         .register(SessionId.class)
         .register(TransactionId.class)

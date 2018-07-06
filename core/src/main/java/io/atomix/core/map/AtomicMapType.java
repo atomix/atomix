@@ -81,6 +81,7 @@ public class AtomicMapType<K, V> implements PrimitiveType<AtomicMapBuilder<K, V>
         .register(AtomicMapEvent.class)
         .register(AtomicMapEvent.Type.class)
         .register(AtomicMapService.Batch.class)
+        .register(Versioned.class)
         .register(byte[].class)
         .build();
   }
