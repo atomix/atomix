@@ -19,6 +19,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Multiset;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.collection.impl.DistributedCollectionService;
+import io.atomix.core.collection.impl.IteratorBatch;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
 
@@ -145,7 +146,7 @@ public interface DistributedMultisetService extends DistributedCollectionService
    * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
    */
   @Query
-  Batch<String> nextElements(long iteratorId, int position);
+  IteratorBatch<String> nextElements(long iteratorId, int position);
 
   /**
    * Closes an iterator.
@@ -171,7 +172,7 @@ public interface DistributedMultisetService extends DistributedCollectionService
    * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
    */
   @Query
-  Batch<Multiset.Entry<String>> nextEntries(long iteratorId, int position);
+  IteratorBatch<Multiset.Entry<String>> nextEntries(long iteratorId, int position);
 
   /**
    * Closes an iterator.

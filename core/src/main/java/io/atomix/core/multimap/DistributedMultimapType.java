@@ -16,7 +16,7 @@
 package io.atomix.core.multimap;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.multimap.impl.AtomicMultimapService;
+import io.atomix.core.collection.impl.IteratorBatch;
 import io.atomix.core.multimap.impl.DefaultDistributedMultimapBuilder;
 import io.atomix.core.multimap.impl.DefaultDistributedMultimapService;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -63,7 +63,7 @@ public class DistributedMultimapType<K, V> implements PrimitiveType<DistributedM
         .register(Versioned.class)
         .register(ArrayList.class)
         .register(Maps.immutableEntry("", "").getClass())
-        .register(AtomicMultimapService.Batch.class)
+        .register(IteratorBatch.class)
         .build();
   }
 

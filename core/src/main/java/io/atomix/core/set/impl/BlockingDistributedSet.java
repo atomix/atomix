@@ -15,11 +15,11 @@
  */
 package io.atomix.core.set.impl;
 
+import io.atomix.core.collection.CollectionEventListener;
+import io.atomix.core.collection.SyncIterator;
 import io.atomix.core.collection.impl.BlockingIterator;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.set.DistributedSet;
-import io.atomix.core.collection.CollectionEventListener;
-import io.atomix.core.collection.SyncIterator;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 
@@ -104,7 +104,7 @@ public class BlockingDistributedSet<E> extends Synchronous<AsyncDistributedSet<E
 
   @Override
   public SyncIterator<E> iterator() {
-    return new BlockingIterator<>(complete(asyncSet.iterator()), operationTimeoutMillis);
+    return new BlockingIterator<>(asyncSet.iterator(), operationTimeoutMillis);
   }
 
   @Override

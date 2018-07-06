@@ -25,6 +25,7 @@ import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.DistributedCollectionType;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
+import io.atomix.core.collection.impl.PartitionedProxyIterator;
 import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.AtomicMapEvent;
 import io.atomix.core.map.AtomicMapEventListener;
@@ -51,22 +52,17 @@ import io.atomix.utils.time.Versioned;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -473,15 +469,12 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public CompletableFuture<AsyncIterator<Map.Entry<K, Versioned<byte[]>>>> iterator() {
-      return Futures.allOf(getProxyClient().getPartitionIds().stream()
-          .map(partitionId -> getProxyClient().applyOn(partitionId, service -> service.iterateEntries())
-              .thenApply(iteratorId -> new AtomicMapPartitionIterator<>(
-                  partitionId,
-                  iteratorId,
-                  (service, position) -> service.nextEntries(iteratorId, position),
-                  service -> service.closeEntries(iteratorId)))))
-          .thenApply(iterators -> new AtomicMapIterator<>(iterators.collect(Collectors.toList())));
+    public AsyncIterator<Map.Entry<K, Versioned<byte[]>>> iterator() {
+      return new PartitionedProxyIterator<>(
+          getProxyClient(),
+          AtomicMapService::iterateEntries,
+          AtomicMapService::nextEntries,
+          AtomicMapService::closeEntries);
     }
 
     @Override
@@ -615,15 +608,12 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public CompletableFuture<AsyncIterator<K>> iterator() {
-      return Futures.allOf(getProxyClient().getPartitionIds().stream()
-          .map(partitionId -> getProxyClient().applyOn(partitionId, service -> service.iterateKeys())
-              .thenApply(iteratorId -> new AtomicMapPartitionIterator<>(
-                  partitionId,
-                  iteratorId,
-                  (service, position) -> service.nextKeys(iteratorId, position),
-                  service -> service.closeKeys(iteratorId)))))
-          .thenApply(iterators -> new AtomicMapIterator<>(iterators.collect(Collectors.toList())));
+    public AsyncIterator<K> iterator() {
+      return new PartitionedProxyIterator<>(
+          getProxyClient(),
+          AtomicMapService::iterateKeys,
+          AtomicMapService::nextKeys,
+          AtomicMapService::closeKeys);
     }
 
     @Override
@@ -724,15 +714,12 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
     }
 
     @Override
-    public CompletableFuture<AsyncIterator<Versioned<byte[]>>> iterator() {
-      return Futures.allOf(getProxyClient().getPartitionIds().stream()
-          .map(partitionId -> getProxyClient().applyOn(partitionId, service -> service.iterateValues())
-              .thenApply(iteratorId -> new AtomicMapPartitionIterator<>(
-                  partitionId,
-                  iteratorId,
-                  (service, position) -> service.nextValues(iteratorId, position),
-                  service -> service.closeValues(iteratorId)))))
-          .thenApply(iterators -> new AtomicMapIterator<>(iterators.collect(Collectors.toList())));
+    public AsyncIterator<Versioned<byte[]>> iterator() {
+      return new PartitionedProxyIterator<>(
+          getProxyClient(),
+          AtomicMapService::iterateValues,
+          AtomicMapService::nextValues,
+          AtomicMapService::closeValues);
     }
 
     @Override
@@ -770,134 +757,6 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
         return AbstractAtomicMapProxy.this.removeListener(mapListener);
       }
       return CompletableFuture.completedFuture(null);
-    }
-  }
-
-  /**
-   * Atomic map iterator.
-   */
-  private class AtomicMapIterator<T> implements AsyncIterator<T> {
-    private final Iterator<AsyncIterator<T>> iterators;
-    private volatile AsyncIterator<T> iterator;
-
-    public AtomicMapIterator(Collection<AsyncIterator<T>> iterators) {
-      this.iterators = iterators.iterator();
-    }
-
-    @Override
-    public CompletableFuture<Boolean> hasNext() {
-      if (iterator == null && iterators.hasNext()) {
-        iterator = iterators.next();
-      }
-      if (iterator == null) {
-        return CompletableFuture.completedFuture(false);
-      }
-      return iterator.hasNext()
-          .thenCompose(hasNext -> {
-            if (!hasNext) {
-              iterator = null;
-              return hasNext();
-            }
-            return CompletableFuture.completedFuture(true);
-          });
-    }
-
-    @Override
-    public CompletableFuture<T> next() {
-      if (iterator == null && iterators.hasNext()) {
-        iterator = iterators.next();
-      }
-      if (iterator == null) {
-        return Futures.exceptionalFuture(new NoSuchElementException());
-      }
-      return iterator.next();
-    }
-  }
-
-  /**
-   * Atomic map partition iterator.
-   */
-  private class AtomicMapPartitionIterator<T> implements AsyncIterator<T> {
-    private final PartitionId partitionId;
-    private final long iteratorId;
-    private final BiFunction<AtomicMapService<K>, Integer, AtomicMapService.Batch<T>> nextFunction;
-    private final Consumer<AtomicMapService<K>> closeFunction;
-    private volatile CompletableFuture<AtomicMapService.Batch<T>> batch;
-    private volatile CompletableFuture<Void> closeFuture;
-
-    AtomicMapPartitionIterator(
-        PartitionId partitionId,
-        long iteratorId,
-        BiFunction<AtomicMapService<K>, Integer, AtomicMapService.Batch<T>> nextFunction,
-        Consumer<AtomicMapService<K>> closeFunction) {
-      this.partitionId = partitionId;
-      this.iteratorId = iteratorId;
-      this.nextFunction = nextFunction;
-      this.closeFunction = closeFunction;
-      this.batch = CompletableFuture.completedFuture(
-          new AtomicMapService.Batch<T>(0, Collections.emptyList()));
-    }
-
-    /**
-     * Returns the current batch iterator or lazily fetches the next batch from the cluster.
-     *
-     * @return the next batch iterator
-     */
-    private CompletableFuture<Iterator<T>> batch() {
-      return batch.thenCompose(iterator -> {
-        if (iterator != null && !iterator.hasNext()) {
-          batch = fetch(iterator.position());
-          return batch.thenApply(Function.identity());
-        }
-        return CompletableFuture.completedFuture(iterator);
-      });
-    }
-
-    /**
-     * Fetches the next batch of entries from the cluster.
-     *
-     * @param position the position from which to fetch the next batch
-     * @return the next batch of entries from the cluster
-     */
-    private CompletableFuture<AtomicMapService.Batch<T>> fetch(int position) {
-      return getProxyClient().applyOn(partitionId, service -> nextFunction.apply(service, position))
-          .thenCompose(batch -> {
-            if (batch == null) {
-              return close().thenApply(v -> null);
-            }
-            return CompletableFuture.completedFuture(batch);
-          });
-    }
-
-    /**
-     * Closes the iterator.
-     *
-     * @return future to be completed once the iterator has been closed
-     */
-    private CompletableFuture<Void> close() {
-      if (closeFuture == null) {
-        synchronized (this) {
-          if (closeFuture == null) {
-            closeFuture = getProxyClient().acceptOn(partitionId, service -> closeFunction.accept(service));
-          }
-        }
-      }
-      return closeFuture;
-    }
-
-    @Override
-    public CompletableFuture<Boolean> hasNext() {
-      return batch().thenApply(iterator -> iterator != null && iterator.hasNext());
-    }
-
-    @Override
-    public CompletableFuture<T> next() {
-      return batch().thenCompose(iterator -> {
-        if (iterator == null) {
-          return Futures.exceptionalFuture(new NoSuchElementException());
-        }
-        return CompletableFuture.completedFuture(iterator.next());
-      });
     }
   }
 }

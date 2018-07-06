@@ -106,8 +106,8 @@ public class TranscodingAsyncDistributedCollection<E1, E2> extends DelegatingAsy
   }
 
   @Override
-  public CompletableFuture<AsyncIterator<E1>> iterator() {
-    return backingCollection.iterator().thenApply(iterator -> new TranscodingIterator<>(iterator, elementDecoder));
+  public AsyncIterator<E1> iterator() {
+    return new TranscodingIterator<>(backingCollection.iterator(), elementDecoder);
   }
 
   @Override

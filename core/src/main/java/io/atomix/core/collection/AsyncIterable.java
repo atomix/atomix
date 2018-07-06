@@ -15,10 +15,8 @@
  */
 package io.atomix.core.collection;
 
-import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -32,17 +30,14 @@ public interface AsyncIterable<T> {
    *
    * @return an asynchronous iterator
    */
-  CompletableFuture<AsyncIterator<T>> iterator();
+  AsyncIterator<T> iterator();
 
   /**
    * Returns a stream.
    *
    * @return a new stream
    */
-  default CompletableFuture<Stream<T>> stream() {
-    return iterator().thenApply(asyncIterator -> {
-      Iterator<T> iterator = asyncIterator.sync();
-      return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);
-    });
+  default Stream<T> stream() {
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator().sync(), Spliterator.ORDERED), false);
   }
 }

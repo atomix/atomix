@@ -97,7 +97,7 @@ public class DelegatingAsyncDistributedCollection<E> extends DelegatingAsyncPrim
   }
 
   @Override
-  public CompletableFuture<AsyncIterator<E>> iterator() {
+  public AsyncIterator<E> iterator() {
     return delegateCollection.iterator();
   }
 

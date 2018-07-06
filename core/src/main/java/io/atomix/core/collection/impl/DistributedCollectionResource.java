@@ -47,14 +47,7 @@ public abstract class DistributedCollectionResource implements PrimitiveResource
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public void get(@Suspended AsyncResponse response) {
-    collection.iterator().whenComplete((iterator, error) -> {
-      if (error == null) {
-        response.resume(Response.ok(Sets.newHashSet(iterator.sync())).build());
-      } else {
-        LOGGER.warn("{}", error);
-        response.resume(Response.serverError().build());
-      }
-    });
+    response.resume(Response.ok(Sets.newHashSet(collection.iterator().sync())));
   }
 
   @PUT

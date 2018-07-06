@@ -94,14 +94,7 @@ public class AtomicMapResource implements PrimitiveResource {
   @Path("/keys")
   @Produces(MediaType.APPLICATION_JSON)
   public void keys(@Suspended AsyncResponse response) {
-    map.keySet().iterator().whenComplete((result, error) -> {
-      if (error == null) {
-        response.resume(Response.ok(Sets.newHashSet(result.sync())).build());
-      } else {
-        LOGGER.warn("{}", error);
-        response.resume(Response.serverError().build());
-      }
-    });
+    response.resume(Response.ok(Sets.newHashSet(map.keySet().iterator().sync())).build());
   }
 
   @GET

@@ -104,7 +104,7 @@ public class BlockingDistributedCollection<E> extends Synchronous<AsyncDistribut
 
   @Override
   public SyncIterator<E> iterator() {
-    return new BlockingIterator<>(complete(asyncCollection.iterator()), operationTimeoutMillis);
+    return new BlockingIterator<>(asyncCollection.iterator(), operationTimeoutMillis);
   }
 
   @Override

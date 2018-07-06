@@ -19,6 +19,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.atomix.core.collection.impl.IteratorBatch;
 import io.atomix.core.map.AtomicMapEvent;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
@@ -538,9 +539,9 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   }
 
   @Override
-  public Batch<K> nextKeys(long iteratorId, int position) {
-    Batch<Map.Entry<K, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
-    return batch == null ? null : new Batch<>(batch.position(), batch.entries().stream()
+  public IteratorBatch<K> nextKeys(long iteratorId, int position) {
+    IteratorBatch<Map.Entry<K, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
+    return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries().stream()
         .map(Map.Entry::getKey)
         .collect(Collectors.toSet()));
   }
@@ -556,9 +557,9 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   }
 
   @Override
-  public Batch<Versioned<byte[]>> nextValues(long iteratorId, int position) {
-    Batch<Map.Entry<K, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
-    return batch == null ? null : new Batch<>(batch.position(), batch.entries().stream()
+  public IteratorBatch<Versioned<byte[]>> nextValues(long iteratorId, int position) {
+    IteratorBatch<Map.Entry<K, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
+    return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries().stream()
         .map(Map.Entry::getValue)
         .collect(Collectors.toSet()));
   }
@@ -575,7 +576,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   }
 
   @Override
-  public Batch<Map.Entry<K, Versioned<byte[]>>> nextEntries(long iteratorId, int position) {
+  public IteratorBatch<Map.Entry<K, Versioned<byte[]>>> nextEntries(long iteratorId, int position) {
     IteratorContext context = entryIterators.get(iteratorId);
     if (context == null) {
       return null;
@@ -599,7 +600,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
     if (entries.isEmpty()) {
       return null;
     }
-    return new Batch<>(context.position, entries);
+    return new IteratorBatch<>(context.position, entries);
   }
 
   @Override
