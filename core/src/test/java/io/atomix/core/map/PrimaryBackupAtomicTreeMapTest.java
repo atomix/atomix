@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.treemap;
+package io.atomix.core.map;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
