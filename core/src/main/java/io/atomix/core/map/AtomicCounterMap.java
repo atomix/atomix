@@ -1,11 +1,11 @@
 /*
- * Copyright 2018-present Open Networking Foundation
+ * Copyright 2015-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.countermap.impl;
+package io.atomix.core.map;
 
-import io.atomix.primitive.operation.Command;
-import io.atomix.primitive.operation.Query;
+import io.atomix.primitive.SyncPrimitive;
 
 /**
- * Atomic counter map service.
+ * Distributed version of com.google.common.util.concurrent.AtomicLongMap.
  */
-public interface AtomicCounterMapService {
+public interface AtomicCounterMap<K> extends SyncPrimitive {
 
   /**
    * Increments by one the value currently associated with key, and returns the new value.
@@ -29,8 +28,7 @@ public interface AtomicCounterMapService {
    * @param key key with which the specified value is to be associated
    * @return incremented value
    */
-  @Command
-  long incrementAndGet(String key);
+  long incrementAndGet(K key);
 
   /**
    * Decrements by one the value currently associated with key, and returns the new value.
@@ -38,8 +36,7 @@ public interface AtomicCounterMapService {
    * @param key key with which the specified value is to be associated
    * @return updated value
    */
-  @Command
-  long decrementAndGet(String key);
+  long decrementAndGet(K key);
 
   /**
    * Increments by one the value currently associated with key, and returns the old value.
@@ -47,8 +44,7 @@ public interface AtomicCounterMapService {
    * @param key key with which the specified value is to be associated
    * @return previous value
    */
-  @Command
-  long getAndIncrement(String key);
+  long getAndIncrement(K key);
 
   /**
    * Decrements by one the value currently associated with key, and returns the old value.
@@ -56,8 +52,7 @@ public interface AtomicCounterMapService {
    * @param key key with which the specified value is to be associated
    * @return previous value
    */
-  @Command
-  long getAndDecrement(String key);
+  long getAndDecrement(K key);
 
   /**
    * Adds delta to the value currently associated with key, and returns the new value.
@@ -66,8 +61,7 @@ public interface AtomicCounterMapService {
    * @param delta the value to add
    * @return updated value
    */
-  @Command
-  long addAndGet(String key, long delta);
+  long addAndGet(K key, long delta);
 
   /**
    * Adds delta to the value currently associated with key, and returns the old value.
@@ -76,8 +70,7 @@ public interface AtomicCounterMapService {
    * @param delta the value to add
    * @return previous value
    */
-  @Command
-  long getAndAdd(String key, long delta);
+  long getAndAdd(K key, long delta);
 
   /**
    * Returns the value associated with key, or zero if there is no value associated with key.
@@ -85,8 +78,7 @@ public interface AtomicCounterMapService {
    * @param key key with which the specified value is to be associated
    * @return current value
    */
-  @Query
-  long get(String key);
+  long get(K key);
 
   /**
    * Associates ewValue with key in this map, and returns the value previously
@@ -96,8 +88,7 @@ public interface AtomicCounterMapService {
    * @param newValue the value to put
    * @return previous value or zero
    */
-  @Command
-  long put(String key, long newValue);
+  long put(K key, long newValue);
 
   /**
    * If key is not already associated with a value or if key is associated with
@@ -108,8 +99,7 @@ public interface AtomicCounterMapService {
    * @param newValue the value to put
    * @return previous value or zero
    */
-  @Command
-  long putIfAbsent(String key, long newValue);
+  long putIfAbsent(K key, long newValue);
 
   /**
    * If (key, expectedOldValue) is currently in the map, this method replaces
@@ -123,8 +113,7 @@ public interface AtomicCounterMapService {
    * @param newValue         the value to replace
    * @return true if the value was replaced, false otherwise
    */
-  @Command
-  boolean replace(String key, long expectedOldValue, long newValue);
+  boolean replace(K key, long expectedOldValue, long newValue);
 
   /**
    * Removes and returns the value associated with key. If key is not
@@ -133,8 +122,7 @@ public interface AtomicCounterMapService {
    * @param key key with which the specified value is to be associated
    * @return the previous value associated with the specified key or null
    */
-  @Command
-  long remove(String key);
+  long remove(K key);
 
   /**
    * If (key, value) is currently in the map, this method removes it and returns
@@ -144,15 +132,13 @@ public interface AtomicCounterMapService {
    * @param value the value to remove
    * @return true if the value was removed, false otherwise
    */
-  @Command("removeValue")
-  boolean remove(String key, long value);
+  boolean remove(K key, long value);
 
   /**
    * Returns the number of entries in the map.
    *
    * @return the number of entries in the map, including {@code 0} values
    */
-  @Query
   int size();
 
   /**
@@ -160,13 +146,13 @@ public interface AtomicCounterMapService {
    *
    * @return true if the map is empty.
    */
-  @Query
   boolean isEmpty();
 
   /**
    * Clears all entries from the map.
    */
-  @Command
   void clear();
 
+  @Override
+  AsyncAtomicCounterMap<K> async();
 }

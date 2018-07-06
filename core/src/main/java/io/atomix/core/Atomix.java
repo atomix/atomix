@@ -23,7 +23,7 @@ import io.atomix.cluster.discovery.NodeDiscoveryProvider;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.barrier.DistributedCyclicBarrier;
 import io.atomix.core.counter.AtomicCounter;
-import io.atomix.core.countermap.AtomicCounterMap;
+import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.idgenerator.AtomicIdGenerator;
 import io.atomix.core.impl.CorePrimitivesService;
 import io.atomix.core.leadership.LeaderElection;

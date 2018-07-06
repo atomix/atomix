@@ -13,8 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.atomix.core.map;
+
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 
 /**
- * Atomic counter map primitive.
+ * Raft atomic counter map test.
  */
-package io.atomix.core.countermap;
+public class RaftAtomicCounterMapTest extends AtomicCounterMapTest {
+  @Override
+  protected PrimitiveProtocol protocol() {
+    return MultiRaftProtocol.builder()
+        .withMaxRetries(5)
+        .build();
+  }
+}

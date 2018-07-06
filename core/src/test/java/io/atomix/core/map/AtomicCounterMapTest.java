@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.countermap;
+package io.atomix.core.map;
 
 import io.atomix.core.AbstractPrimitiveTest;
 
+import io.atomix.core.map.AsyncAtomicCounterMap;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;

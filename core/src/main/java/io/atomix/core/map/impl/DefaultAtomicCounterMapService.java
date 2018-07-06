@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.countermap.impl;
+package io.atomix.core.map.impl;
 
-import io.atomix.core.countermap.AtomicCounterMapType;
+import io.atomix.core.map.AtomicCounterMapType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
