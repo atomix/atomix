@@ -49,6 +49,8 @@ import io.atomix.core.map.DistributedTreeMap;
 import io.atomix.core.map.DistributedTreeMapType;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapType;
+import io.atomix.core.multimap.DistributedMultimap;
+import io.atomix.core.multimap.DistributedMultimapType;
 import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.multiset.DistributedMultisetType;
 import io.atomix.core.queue.DistributedQueue;
@@ -155,6 +157,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public <K extends Comparable<K>, V> DistributedTreeMap<K, V> getTreeMap(String name) {
     return getPrimitive(name, DistributedTreeMapType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public <K, V> DistributedMultimap<K, V> getMultimap(String name) {
+    return getPrimitive(name, DistributedMultimapType.instance(), configService.getConfig(name));
   }
 
   @Override
