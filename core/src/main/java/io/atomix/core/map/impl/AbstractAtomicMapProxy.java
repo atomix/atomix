@@ -383,10 +383,10 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
       AtomicMapEventListener<K, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, Maps.immutableEntry(event.key(), event.newValue())));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.ADD, Maps.immutableEntry(event.key(), event.newValue())));
             break;
           case REMOVE:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, Maps.immutableEntry(event.key(), event.oldValue())));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.REMOVE, Maps.immutableEntry(event.key(), event.oldValue())));
             break;
           default:
             break;
@@ -529,10 +529,10 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
       AtomicMapEventListener<K, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, event.key()));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.ADD, event.key()));
             break;
           case REMOVE:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.key()));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.key()));
             break;
           default:
             break;
@@ -737,10 +737,10 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
       AtomicMapEventListener<K, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, event.newValue()));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.ADD, event.newValue()));
             break;
           case REMOVE:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.oldValue()));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.oldValue()));
             break;
           default:
             break;

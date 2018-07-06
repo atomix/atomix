@@ -144,8 +144,8 @@ public class TranscodingAsyncDistributedCollection<E1, E2> extends DelegatingAsy
     }
 
     @Override
-    public void onEvent(CollectionEvent<E2> event) {
-      listener.onEvent(new CollectionEvent<>(event.type(), elementDecoder.apply(event.element())));
+    public void event(CollectionEvent<E2> event) {
+      listener.event(new CollectionEvent<>(event.type(), elementDecoder.apply(event.element())));
     }
   }
 }

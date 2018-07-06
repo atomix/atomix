@@ -60,7 +60,7 @@ public class DefaultPrimaryElection implements ManagedPrimaryElection {
     this.service = service;
     this.eventListener = event -> {
       if (event.partitionId().equals(partitionId)) {
-        listeners.forEach(l -> l.onEvent(event));
+        listeners.forEach(l -> l.event(event));
       }
     };
   }

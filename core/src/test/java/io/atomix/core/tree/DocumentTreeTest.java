@@ -360,7 +360,7 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
     assertEquals(path("root.a.b.c"), event.path());
   }
 
-  private static class TestEventListener implements DocumentTreeListener<String> {
+  private static class TestEventListener implements DocumentTreeEventListener<String> {
     private final BlockingQueue<DocumentTreeEvent<String>> queue = new LinkedBlockingQueue<>();
 
     @Override

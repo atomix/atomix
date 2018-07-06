@@ -192,7 +192,7 @@ public class DefaultClusterMembershipServiceTest {
     private BlockingQueue<ClusterMembershipEvent> queue = new ArrayBlockingQueue<ClusterMembershipEvent>(10);
 
     @Override
-    public void onEvent(ClusterMembershipEvent event) {
+    public void event(ClusterMembershipEvent event) {
       queue.add(event);
     }
 

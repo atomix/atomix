@@ -87,7 +87,8 @@ public class AtomicMultimapProxy
 
   @Override
   public void onChange(String key, byte[] oldValue, byte[] newValue) {
-    AtomicMultimapEvent<String, byte[]> event = new AtomicMultimapEvent<>(name(), key, newValue, oldValue);
+    AtomicMultimapEvent<String, byte[]> event = new AtomicMultimapEvent<>(
+        newValue != null ? AtomicMultimapEvent.Type.INSERT : AtomicMultimapEvent.Type.REMOVE, key, newValue, oldValue);
     mapEventListeners.forEach((listener, executor) -> executor.execute(() -> listener.event(event)));
   }
 
@@ -466,10 +467,10 @@ public class AtomicMultimapProxy
       AtomicMultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, event.key()));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.ADD, event.key()));
             break;
           case REMOVE:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.key()));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.key()));
             break;
           default:
             break;
@@ -637,10 +638,10 @@ public class AtomicMultimapProxy
       AtomicMultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, event.key()));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.ADD, event.key()));
             break;
           case REMOVE:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.key()));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.key()));
             break;
           default:
             break;
@@ -789,10 +790,10 @@ public class AtomicMultimapProxy
       AtomicMultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, event.newValue()));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.ADD, event.newValue()));
             break;
           case REMOVE:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.oldValue()));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.REMOVE, event.oldValue()));
             break;
           default:
             break;
@@ -906,10 +907,10 @@ public class AtomicMultimapProxy
       AtomicMultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, Maps.immutableEntry(event.key(), event.newValue())));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.ADD, Maps.immutableEntry(event.key(), event.newValue())));
             break;
           case REMOVE:
-            listener.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, Maps.immutableEntry(event.key(), event.oldValue())));
+            listener.event(new CollectionEvent<>(CollectionEvent.Type.REMOVE, Maps.immutableEntry(event.key(), event.oldValue())));
             break;
           default:
             break;

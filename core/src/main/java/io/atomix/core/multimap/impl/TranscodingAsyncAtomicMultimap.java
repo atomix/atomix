@@ -273,7 +273,8 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> extends DelegatingAs
 
     @Override
     public void event(AtomicMultimapEvent<K2, V2> event) {
-      listener.event(new AtomicMultimapEvent<>(event.name(),
+      listener.event(new AtomicMultimapEvent<>(
+          event.type(),
           keyDecoder.apply(event.key()),
           valueDecoder.apply(event.newValue()),
           valueDecoder.apply(event.oldValue())));

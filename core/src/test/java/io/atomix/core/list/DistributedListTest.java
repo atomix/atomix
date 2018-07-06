@@ -121,7 +121,7 @@ public abstract class DistributedListTest extends AbstractPrimitiveTest {
     private final BlockingQueue<CollectionEvent<String>> queue = new LinkedBlockingQueue<>();
 
     @Override
-    public void onEvent(CollectionEvent<String> event) {
+    public void event(CollectionEvent<String> event) {
       try {
         queue.put(event);
       } catch (InterruptedException e) {

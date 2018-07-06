@@ -22,7 +22,7 @@ import com.google.common.collect.Maps;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.AtomicDocumentTree;
-import io.atomix.core.tree.DocumentTreeListener;
+import io.atomix.core.tree.DocumentTreeEventListener;
 import io.atomix.core.tree.DocumentTreeNode;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
@@ -188,12 +188,12 @@ public class DefaultAtomicDocumentTree<V> implements AtomicDocumentTree<V> {
   }
 
   @Override
-  public void addListener(DocumentPath path, DocumentTreeListener<V> listener) {
+  public void addListener(DocumentPath path, DocumentTreeEventListener<V> listener) {
     // TODO Auto-generated method stub
   }
 
   @Override
-  public void removeListener(DocumentTreeListener<V> listener) {
+  public void removeListener(DocumentTreeEventListener<V> listener) {
     // TODO Auto-generated method stub
   }
 

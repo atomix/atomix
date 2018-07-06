@@ -63,7 +63,7 @@ public class ListenerRegistry<E extends Event, L extends EventListener<E>>
         lastListener = listener;
         lastStart = System.currentTimeMillis();
         if (listener.isRelevant(event)) {
-          listener.onEvent(event);
+          listener.event(event);
         }
         lastStart = 0;
       } catch (Exception error) {

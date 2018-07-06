@@ -50,10 +50,10 @@ public class LeaderElectorProxy
   @Override
   public void onLeadershipChange(String topic, Leadership<byte[]> oldLeadership, Leadership<byte[]> newLeadership) {
     LeadershipEvent<byte[]> event = new LeadershipEvent<byte[]>(LeadershipEvent.Type.CHANGE, topic, oldLeadership, newLeadership);
-    leadershipChangeListeners.forEach(l -> l.onEvent(event));
+    leadershipChangeListeners.forEach(l -> l.event(event));
     Set<LeadershipEventListener<byte[]>> listenerSet = topicListeners.get(topic);
     if (listenerSet != null) {
-      listenerSet.forEach(l -> l.onEvent(event));
+      listenerSet.forEach(l -> l.event(event));
     }
   }
 

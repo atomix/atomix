@@ -330,7 +330,6 @@ public class TranscodingAsyncAtomicMap<K1, V1, K2, V2> extends DelegatingAsyncPr
     public void event(AtomicMapEvent<K2, V2> event) {
       listener.event(new AtomicMapEvent<K1, V1>(
           event.type(),
-          event.name(),
           keyDecoder.apply(event.key()),
           event.newValue() != null ? event.newValue().map(valueDecoder) : null,
           event.oldValue() != null ? event.oldValue().map(valueDecoder) : null));

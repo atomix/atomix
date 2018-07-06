@@ -21,7 +21,7 @@ import com.google.common.cache.LoadingCache;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.AtomicDocumentTree;
-import io.atomix.core.tree.DocumentTreeListener;
+import io.atomix.core.tree.DocumentTreeEventListener;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
@@ -42,7 +42,7 @@ public class CachingAsyncAtomicDocumentTree<V> extends DelegatingAsyncAtomicDocu
   private final Logger log = getLogger(getClass());
 
   private final LoadingCache<DocumentPath, CompletableFuture<Versioned<V>>> cache;
-  private final DocumentTreeListener<V> cacheUpdater;
+  private final DocumentTreeEventListener<V> cacheUpdater;
   private final Consumer<PrimitiveState> stateListener;
 
   /**

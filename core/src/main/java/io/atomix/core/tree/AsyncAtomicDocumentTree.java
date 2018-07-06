@@ -131,7 +131,7 @@ public interface AsyncAtomicDocumentTree<V> extends AsyncPrimitive {
    * @param listener listener to be notified
    * @return a future that is completed when the operation completes
    */
-  CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeListener<V> listener);
+  CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<V> listener);
 
   /**
    * Unregisters a previously added listener.
@@ -139,7 +139,7 @@ public interface AsyncAtomicDocumentTree<V> extends AsyncPrimitive {
    * @param listener listener to unregister
    * @return a future that is completed when the operation completes
    */
-  CompletableFuture<Void> removeListener(DocumentTreeListener<V> listener);
+  CompletableFuture<Void> removeListener(DocumentTreeEventListener<V> listener);
 
   /**
    * Registers a listener to be notified when the tree is modified.
@@ -147,7 +147,7 @@ public interface AsyncAtomicDocumentTree<V> extends AsyncPrimitive {
    * @param listener listener to be notified
    * @return a future that is completed when the operation completes
    */
-  default CompletableFuture<Void> addListener(DocumentTreeListener<V> listener) {
+  default CompletableFuture<Void> addListener(DocumentTreeEventListener<V> listener) {
     return addListener(root(), listener);
   }
 

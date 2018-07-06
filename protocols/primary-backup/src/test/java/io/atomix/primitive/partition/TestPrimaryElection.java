@@ -44,12 +44,12 @@ public class TestPrimaryElection implements PrimaryElection {
     candidates.add(member);
     if (term == null) {
       term = new PrimaryTerm(++counter, member, Collections.emptyList());
-      listeners.forEach(l -> l.onEvent(new PrimaryElectionEvent(Type.CHANGED, partitionId, term)));
+      listeners.forEach(l -> l.event(new PrimaryElectionEvent(Type.CHANGED, partitionId, term)));
     } else {
       term = new PrimaryTerm(term.term(), term.primary(), candidates.stream()
           .filter(candidate -> !candidate.equals(term.primary()))
           .collect(Collectors.toList()));
-      listeners.forEach(l -> l.onEvent(new PrimaryElectionEvent(Type.CHANGED, partitionId, term)));
+      listeners.forEach(l -> l.event(new PrimaryElectionEvent(Type.CHANGED, partitionId, term)));
     }
     return CompletableFuture.completedFuture(term);
   }

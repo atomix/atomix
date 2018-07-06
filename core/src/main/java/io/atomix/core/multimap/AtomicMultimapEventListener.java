@@ -15,15 +15,10 @@
  */
 package io.atomix.core.multimap;
 
+import io.atomix.utils.event.EventListener;
+
 /**
  * Listener to be notified about updates to a ConsistentMultimap.
  */
-public interface AtomicMultimapEventListener<K, V> {
-
-  /**
-   * Reacts to the specified event.
-   *
-   * @param event the event
-   */
-  void event(AtomicMultimapEvent<K, V> event);
+public interface AtomicMultimapEventListener<K, V> extends EventListener<AtomicMultimapEvent<K, V>> {
 }

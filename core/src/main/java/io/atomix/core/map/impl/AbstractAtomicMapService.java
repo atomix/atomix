@@ -117,7 +117,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
       if (value.ttl() > 0) {
         value.timer = getScheduler().schedule(Duration.ofMillis(value.ttl() - (getWallClock().getTime().unixTimestamp() - value.created())), () -> {
           entries().remove(key, value);
-          publish(new AtomicMapEvent<>(AtomicMapEvent.Type.REMOVE, "", key, null, toVersioned(value)));
+          publish(new AtomicMapEvent<>(AtomicMapEvent.Type.REMOVE, key, null, toVersioned(value)));
         });
       }
     });
@@ -263,7 +263,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
     if (value.ttl() > 0) {
       value.timer = getScheduler().schedule(Duration.ofMillis(value.ttl()), () -> {
         entries().remove(key, value);
-        publish(new AtomicMapEvent<>(AtomicMapEvent.Type.REMOVE, "", key, null, toVersioned(value)));
+        publish(new AtomicMapEvent<>(AtomicMapEvent.Type.REMOVE, key, null, toVersioned(value)));
       });
     }
   }
@@ -302,7 +302,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
       }
       putValue(key, newValue);
       Versioned<byte[]> result = toVersioned(oldValue);
-      publish(new AtomicMapEvent<>(AtomicMapEvent.Type.INSERT, "", key, toVersioned(newValue), result));
+      publish(new AtomicMapEvent<>(AtomicMapEvent.Type.INSERT, key, toVersioned(newValue), result));
       return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, getCurrentIndex(), key, result);
     } else if (!valuesEqual(oldValue, newValue)) {
       // If the key has been locked by a transaction, return a WRITE_LOCK error.
@@ -315,7 +315,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
       }
       putValue(key, newValue);
       Versioned<byte[]> result = toVersioned(oldValue);
-      publish(new AtomicMapEvent<>(AtomicMapEvent.Type.UPDATE, "", key, toVersioned(newValue), result));
+      publish(new AtomicMapEvent<>(AtomicMapEvent.Type.UPDATE, key, toVersioned(newValue), result));
       return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, getCurrentIndex(), key, result);
     }
     // If the value hasn't changed, return a NOOP result.
@@ -344,7 +344,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
           ttl);
       putValue(key, newValue);
       Versioned<byte[]> result = toVersioned(newValue);
-      publish(new AtomicMapEvent<>(AtomicMapEvent.Type.INSERT, "", key, result, null));
+      publish(new AtomicMapEvent<>(AtomicMapEvent.Type.INSERT, key, result, null));
       return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, getCurrentIndex(), key, null);
     }
     return new MapEntryUpdateResult<>(
@@ -372,7 +372,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
       }
       putValue(key, newValue);
       Versioned<byte[]> result = toVersioned(newValue);
-      publish(new AtomicMapEvent<>(AtomicMapEvent.Type.INSERT, "", key, result, null));
+      publish(new AtomicMapEvent<>(AtomicMapEvent.Type.INSERT, key, result, null));
       return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, getCurrentIndex(), key, result);
     } else if (!valuesEqual(oldValue, newValue)) {
       // If the key has been locked by a transaction, return a WRITE_LOCK error.
@@ -385,7 +385,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
       }
       putValue(key, newValue);
       Versioned<byte[]> result = toVersioned(newValue);
-      publish(new AtomicMapEvent<>(AtomicMapEvent.Type.UPDATE, "", key, result, toVersioned(oldValue)));
+      publish(new AtomicMapEvent<>(AtomicMapEvent.Type.UPDATE, key, result, toVersioned(oldValue)));
       return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, getCurrentIndex(), key, result);
     }
     return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.NOOP, getCurrentIndex(), key, toVersioned(oldValue));
@@ -423,7 +423,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
     cancelTtl(value);
 
     Versioned<byte[]> result = toVersioned(value);
-    publish(new AtomicMapEvent<>(AtomicMapEvent.Type.REMOVE, "", key, null, result));
+    publish(new AtomicMapEvent<>(AtomicMapEvent.Type.REMOVE, key, null, result));
     return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, index, key, result);
   }
 
@@ -472,7 +472,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
 
     putValue(key, newValue);
     Versioned<byte[]> result = toVersioned(oldValue);
-    publish(new AtomicMapEvent<>(AtomicMapEvent.Type.UPDATE, "", key, toVersioned(newValue), result));
+    publish(new AtomicMapEvent<>(AtomicMapEvent.Type.UPDATE, key, toVersioned(newValue), result));
     return new MapEntryUpdateResult<>(MapEntryUpdateResult.Status.OK, index, key, result);
   }
 
@@ -521,7 +521,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
       MapEntryValue value = entry.getValue();
       if (!valueIsNull(value)) {
         Versioned<byte[]> removedValue = new Versioned<>(value.value(), value.version());
-        publish(new AtomicMapEvent<>(AtomicMapEvent.Type.REMOVE, "", key, null, removedValue));
+        publish(new AtomicMapEvent<>(AtomicMapEvent.Type.REMOVE, key, null, removedValue));
         cancelTtl(value);
         if (activeTransactions.isEmpty()) {
           iterator.remove();
@@ -766,14 +766,12 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
           if (!valueIsNull(previousValue)) {
             event = new AtomicMapEvent<>(
                 AtomicMapEvent.Type.UPDATE,
-                "",
                 key,
                 toVersioned(newValue),
                 toVersioned(previousValue));
           } else {
             event = new AtomicMapEvent<>(
                 AtomicMapEvent.Type.INSERT,
-                "",
                 key,
                 toVersioned(newValue),
                 null);
@@ -781,7 +779,6 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
         } else {
           event = new AtomicMapEvent<>(
               AtomicMapEvent.Type.REMOVE,
-              "",
               key,
               null,
               toVersioned(previousValue));
@@ -789,7 +786,6 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
       } else {
         event = new AtomicMapEvent<>(
             AtomicMapEvent.Type.REMOVE,
-            "",
             key,
             null,
             toVersioned(previousValue));

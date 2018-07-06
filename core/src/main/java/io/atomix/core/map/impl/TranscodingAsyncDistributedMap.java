@@ -266,7 +266,6 @@ public class TranscodingAsyncDistributedMap<K1, V1, K2, V2> extends DelegatingAs
     public void event(MapEvent<K2, V2> event) {
       listener.event(new MapEvent<>(
           event.type(),
-          event.name(),
           keyDecoder.apply(event.key()),
           event.newValue() != null ? valueDecoder.apply(event.newValue()) : null,
           event.oldValue() != null ? valueDecoder.apply(event.oldValue()) : null));

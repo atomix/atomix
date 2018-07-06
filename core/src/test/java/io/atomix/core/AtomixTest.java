@@ -301,7 +301,7 @@ public class AtomixTest extends AbstractAtomixTest {
     private final BlockingQueue<ClusterMembershipEvent> queue = new LinkedBlockingQueue<>();
 
     @Override
-    public void onEvent(ClusterMembershipEvent event) {
+    public void event(ClusterMembershipEvent event) {
       try {
         queue.put(event);
       } catch (InterruptedException e) {

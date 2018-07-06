@@ -22,7 +22,7 @@ import io.atomix.core.tree.AsyncAtomicDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.tree.DocumentTreeEvent;
-import io.atomix.core.tree.DocumentTreeListener;
+import io.atomix.core.tree.DocumentTreeEventListener;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
 import io.atomix.primitive.AbstractAsyncPrimitive;
@@ -46,7 +46,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class AtomicDocumentTreeProxy
     extends AbstractAsyncPrimitive<AsyncAtomicDocumentTree<byte[]>, DocumentTreeService>
     implements AsyncAtomicDocumentTree<byte[]>, DocumentTreeClient {
-  private final Map<DocumentTreeListener<byte[]>, InternalListener> eventListeners = new HashMap<>();
+  private final Map<DocumentTreeEventListener<byte[]>, InternalListener> eventListeners = new HashMap<>();
 
   public AtomicDocumentTreeProxy(ProxyClient<DocumentTreeService> proxy, PrimitiveRegistry registry) {
     super(proxy, registry);
@@ -156,7 +156,7 @@ public class AtomicDocumentTreeProxy
   }
 
   @Override
-  public CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeListener<byte[]> listener) {
+  public CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<byte[]> listener) {
     checkNotNull(path);
     checkNotNull(listener);
     InternalListener internalListener = new InternalListener(path, listener, MoreExecutors.directExecutor());
@@ -169,7 +169,7 @@ public class AtomicDocumentTreeProxy
   }
 
   @Override
-  public CompletableFuture<Void> removeListener(DocumentTreeListener<byte[]> listener) {
+  public CompletableFuture<Void> removeListener(DocumentTreeEventListener<byte[]> listener) {
     checkNotNull(listener);
     InternalListener internalListener = eventListeners.remove(listener);
     if (internalListener != null && eventListeners.isEmpty()) {
@@ -207,13 +207,13 @@ public class AtomicDocumentTreeProxy
     eventListeners.values().forEach(listener -> listener.event(event));
   }
 
-  private static class InternalListener implements DocumentTreeListener<byte[]> {
+  private static class InternalListener implements DocumentTreeEventListener<byte[]> {
 
     private final DocumentPath path;
-    private final DocumentTreeListener<byte[]> listener;
+    private final DocumentTreeEventListener<byte[]> listener;
     private final Executor executor;
 
-    public InternalListener(DocumentPath path, DocumentTreeListener<byte[]> listener, Executor executor) {
+    public InternalListener(DocumentPath path, DocumentTreeEventListener<byte[]> listener, Executor executor) {
       this.path = path;
       this.listener = listener;
       this.executor = executor;

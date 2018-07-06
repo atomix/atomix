@@ -19,7 +19,7 @@ import com.google.common.base.MoreObjects;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.AtomicDocumentTree;
-import io.atomix.core.tree.DocumentTreeListener;
+import io.atomix.core.tree.DocumentTreeEventListener;
 import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
@@ -84,12 +84,12 @@ public class DelegatingAsyncAtomicDocumentTree<V> extends DelegatingAsyncPrimiti
   }
 
   @Override
-  public CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeListener<V> listener) {
+  public CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<V> listener) {
     return delegateTree.addListener(path, listener);
   }
 
   @Override
-  public CompletableFuture<Void> removeListener(DocumentTreeListener<V> listener) {
+  public CompletableFuture<Void> removeListener(DocumentTreeEventListener<V> listener) {
     return delegateTree.removeListener(listener);
   }
 

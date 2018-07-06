@@ -335,7 +335,7 @@ public abstract class LeaderElectorTest extends AbstractPrimitiveTest {
     CompletableFuture<LeadershipEvent<MemberId>> pendingFuture;
 
     @Override
-    public void onEvent(LeadershipEvent<MemberId> change) {
+    public void event(LeadershipEvent<MemberId> change) {
       synchronized (this) {
         if (pendingFuture != null) {
           pendingFuture.complete(change);

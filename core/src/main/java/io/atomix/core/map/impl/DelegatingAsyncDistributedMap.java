@@ -308,8 +308,8 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
       }
 
       @Override
-      public void onEvent(CollectionEvent<Versioned<V>> event) {
-        listener.onEvent(new CollectionEvent<>(event.type(), Versioned.valueOrNull(event.element())));
+      public void event(CollectionEvent<Versioned<V>> event) {
+        listener.event(new CollectionEvent<>(event.type(), Versioned.valueOrNull(event.element())));
       }
     }
 
@@ -461,8 +461,8 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
       }
 
       @Override
-      public void onEvent(CollectionEvent<Map.Entry<K, Versioned<V>>> event) {
-        listener.onEvent(new CollectionEvent<>(event.type(), event.element() == null ? null
+      public void event(CollectionEvent<Map.Entry<K, Versioned<V>>> event) {
+        listener.event(new CollectionEvent<>(event.type(), event.element() == null ? null
             : Maps.immutableEntry(event.element().getKey(), Versioned.valueOrNull(event.element().getValue()))));
       }
     }
@@ -499,7 +499,6 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
         case INSERT:
           mapListener.event(new MapEvent<>(
               MapEvent.Type.INSERT,
-              name(),
               event.key(),
               Versioned.valueOrNull(event.newValue()),
               Versioned.valueOrNull(event.oldValue())));
@@ -507,7 +506,6 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
         case UPDATE:
           mapListener.event(new MapEvent<>(
               MapEvent.Type.UPDATE,
-              name(),
               event.key(),
               Versioned.valueOrNull(event.newValue()),
               Versioned.valueOrNull(event.oldValue())));
@@ -515,7 +513,6 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
         case REMOVE:
           mapListener.event(new MapEvent<>(
               MapEvent.Type.REMOVE,
-              name(),
               event.key(),
               Versioned.valueOrNull(event.newValue()),
               Versioned.valueOrNull(event.oldValue())));
