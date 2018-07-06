@@ -42,9 +42,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * An {@link AsyncAtomicMultimap} that maps its operation to operations to
- * a differently typed {@link AsyncAtomicMultimap} by transcoding operation
- * inputs and outputs while maintaining version numbers.
+ * An {@link AsyncAtomicMultimap} that maps its operation to operations to a differently typed {@link
+ * AsyncAtomicMultimap} by transcoding operation inputs and outputs while maintaining version numbers.
  *
  * @param <K2> key type of other map
  * @param <V2> value type of other map
@@ -159,21 +158,16 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> extends DelegatingAs
   }
 
   @Override
-  public CompletableFuture<Boolean> removeAll(
-      K1 key, Collection<? extends V1> values) {
+  public CompletableFuture<Boolean> removeAll(K1 key, Collection<? extends V1> values) {
     try {
-      return backingMap.removeAll(
-          keyEncoder.apply(key),
-          values.stream().map(valueEncoder).collect(
-              Collectors.toSet()));
+      return backingMap.removeAll(keyEncoder.apply(key), values.stream().map(valueEncoder).collect(Collectors.toSet()));
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<V1>>>
-  removeAll(K1 key) {
+  public CompletableFuture<Versioned<Collection<V1>>> removeAll(K1 key) {
     try {
       return backingMap.removeAll(keyEncoder.apply(key))
           .thenApply(versionedValueDecoder);
@@ -183,8 +177,7 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> extends DelegatingAs
   }
 
   @Override
-  public CompletableFuture<Boolean>
-  putAll(K1 key, Collection<? extends V1> values) {
+  public CompletableFuture<Boolean> putAll(K1 key, Collection<? extends V1> values) {
     try {
       return backingMap.putAll(keyEncoder.apply(key),
           valueCollectionEncode.apply(values));
@@ -194,8 +187,7 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> extends DelegatingAs
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<V1>>>
-  replaceValues(K1 key, Collection<V1> values) {
+  public CompletableFuture<Versioned<Collection<V1>>> replaceValues(K1 key, Collection<V1> values) {
     try {
       return backingMap.replaceValues(keyEncoder.apply(key),
           valueCollectionEncode.apply(values))

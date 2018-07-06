@@ -32,7 +32,7 @@ import io.atomix.utils.serializer.Serializer;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Default {@link AsyncDistributedMultimap} builder.
+ * Default {@link DistributedMultimap} builder.
  */
 public class DefaultDistributedMultimapBuilder<K, V> extends DistributedMultimapBuilder<K, V> {
   public DefaultDistributedMultimapBuilder(String name, DistributedMultimapConfig config, PrimitiveManagementService managementService) {
