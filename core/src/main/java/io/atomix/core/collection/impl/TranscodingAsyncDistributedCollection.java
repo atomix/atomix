@@ -18,10 +18,11 @@ package io.atomix.core.collection.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
+import io.atomix.core.iterator.impl.TranscodingIterator;
 import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 
 import java.time.Duration;

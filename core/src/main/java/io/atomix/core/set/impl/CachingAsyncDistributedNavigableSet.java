@@ -16,7 +16,7 @@
 package io.atomix.core.set.impl;
 
 import io.atomix.core.cache.CacheConfig;
-import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.set.AsyncDistributedNavigableSet;
 import io.atomix.core.set.DistributedNavigableSet;
 

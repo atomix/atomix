@@ -16,10 +16,10 @@
 package io.atomix.core.multiset.impl;
 
 import com.google.common.collect.Multiset;
-import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.impl.PartitionedDistributedCollectionProxy;
-import io.atomix.core.collection.impl.PartitionedProxyIterator;
+import io.atomix.core.iterator.impl.PartitionedProxyIterator;
 import io.atomix.core.multiset.AsyncDistributedMultiset;
 import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.set.AsyncDistributedSet;

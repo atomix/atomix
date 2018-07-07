@@ -17,7 +17,7 @@ package io.atomix.core.list;
 
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
-import io.atomix.core.collection.impl.IteratorBatch;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.list.impl.DefaultDistributedListBuilder;
 import io.atomix.core.list.impl.DefaultDistributedListService;
 import io.atomix.primitive.PrimitiveManagementService;

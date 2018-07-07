@@ -15,6 +15,7 @@
  */
 package io.atomix.core.collection;
 
+import io.atomix.core.iterator.AsyncIterable;
 import io.atomix.primitive.AsyncPrimitive;
 
 import java.time.Duration;

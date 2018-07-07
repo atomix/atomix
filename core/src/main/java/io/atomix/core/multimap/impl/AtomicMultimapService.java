@@ -15,7 +15,7 @@
  */
 package io.atomix.core.multimap.impl;
 
-import io.atomix.core.collection.impl.IteratorBatch;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
 import io.atomix.utils.time.Versioned;

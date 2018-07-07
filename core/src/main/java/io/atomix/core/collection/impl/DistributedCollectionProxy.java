@@ -17,9 +17,10 @@ package io.atomix.core.collection.impl;
 
 import com.google.common.collect.Sets;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
+import io.atomix.core.iterator.impl.ProxyIterator;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveRegistry;

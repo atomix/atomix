@@ -18,7 +18,8 @@ package io.atomix.core.collection.impl;
 import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
-import io.atomix.core.collection.SyncIterator;
+import io.atomix.core.iterator.SyncIterator;
+import io.atomix.core.iterator.impl.BlockingIterator;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 

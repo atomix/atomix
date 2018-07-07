@@ -15,6 +15,8 @@
  */
 package io.atomix.core.collection;
 
+import io.atomix.core.iterator.SyncIterable;
+import io.atomix.core.iterator.SyncIterator;
 import io.atomix.primitive.SyncPrimitive;
 
 import java.util.Collection;

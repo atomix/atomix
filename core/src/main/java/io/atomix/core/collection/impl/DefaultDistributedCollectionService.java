@@ -18,6 +18,7 @@ package io.atomix.core.collection.impl;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.core.collection.CollectionEvent;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;

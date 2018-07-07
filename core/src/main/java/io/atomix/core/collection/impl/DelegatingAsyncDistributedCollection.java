@@ -16,7 +16,7 @@
 package io.atomix.core.collection.impl;
 
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.primitive.impl.DelegatingAsyncPrimitive;

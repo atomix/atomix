@@ -16,8 +16,8 @@
 package io.atomix.core.multiset.impl;
 
 import io.atomix.core.collection.CollectionEventListener;
-import io.atomix.core.collection.SyncIterator;
-import io.atomix.core.collection.impl.BlockingIterator;
+import io.atomix.core.iterator.SyncIterator;
+import io.atomix.core.iterator.impl.BlockingIterator;
 import io.atomix.core.multiset.AsyncDistributedMultiset;
 import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.set.DistributedSet;
