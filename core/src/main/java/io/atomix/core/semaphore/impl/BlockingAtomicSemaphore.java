@@ -15,77 +15,60 @@
  */
 package io.atomix.core.semaphore.impl;
 
-import io.atomix.core.semaphore.AsyncDistributedSemaphore;
-import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.semaphore.AsyncAtomicSemaphore;
+import io.atomix.core.semaphore.AtomicSemaphore;
+import io.atomix.core.semaphore.QueueStatus;
 import io.atomix.primitive.PrimitiveException;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.Synchronous;
+import io.atomix.utils.time.Version;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class BlockingDistributedSemaphore extends DistributedSemaphore {
+public class BlockingAtomicSemaphore extends Synchronous<AsyncAtomicSemaphore> implements AtomicSemaphore {
 
-  private final AsyncDistributedSemaphore asyncSemaphore;
+  private final AsyncAtomicSemaphore asyncSemaphore;
   private final Duration timeout;
 
-  public BlockingDistributedSemaphore(AsyncDistributedSemaphore asyncSemaphore, Duration timeout) {
-    this.asyncSemaphore = asyncSemaphore;
+  public BlockingAtomicSemaphore(AsyncAtomicSemaphore asyncAtomicSemaphore, Duration timeout) {
+    super(asyncAtomicSemaphore);
+    this.asyncSemaphore = asyncAtomicSemaphore;
     this.timeout = timeout;
   }
 
   @Override
-  public String name() {
-    return asyncSemaphore.name();
+  public Version acquire() {
+    return complete(asyncSemaphore.acquire(), 1);
   }
 
   @Override
-  public PrimitiveType type() {
-    return asyncSemaphore.type();
+  public Version acquire(int permits) {
+    return complete(asyncSemaphore.acquire(permits), permits);
   }
 
   @Override
-  public PrimitiveProtocol protocol() {
-    return asyncSemaphore.protocol();
+  public Optional<Version> tryAcquire() {
+    return complete(asyncSemaphore.tryAcquire(), 1);
   }
 
   @Override
-  public void acquireUninterruptibly() {
-    complete(asyncSemaphore.acquire());
+  public Optional<Version> tryAcquire(int permits) {
+    return complete(asyncSemaphore.tryAcquire(permits), permits);
   }
 
   @Override
-  public void acquire(int permits) throws InterruptedException {
-    complete(asyncSemaphore.acquire(permits));
+  public Optional<Version> tryAcquire(Duration timeout) {
+    return complete(asyncSemaphore.tryAcquire(timeout), 1);
   }
 
   @Override
-  public void acquireUninterruptibly(int permits) {
-    complete(asyncSemaphore.acquire(permits));
-  }
-
-  @Override
-  public boolean tryAcquire(int permits) {
-    return complete(asyncSemaphore.tryAcquire(permits));
-  }
-
-  @Override
-  public boolean tryAcquire(int permits, Duration timeout) throws InterruptedException {
-    return complete(asyncSemaphore.tryAcquire(permits, timeout));
-  }
-
-  @Override
-  public boolean tryAcquire() {
-    return complete(asyncSemaphore.tryAcquire());
-  }
-
-  @Override
-  public boolean tryAcquire(Duration timeout) throws InterruptedException {
-    return complete(asyncSemaphore.tryAcquire(timeout));
+  public Optional<Version> tryAcquire(int permits, Duration timeout) {
+    return complete(asyncSemaphore.tryAcquire(permits, timeout), permits);
   }
 
   @Override
@@ -109,23 +92,23 @@ public class BlockingDistributedSemaphore extends DistributedSemaphore {
   }
 
   @Override
-  protected void reducePermits(int reduction) {
-    complete(asyncSemaphore.reducePermits(reduction));
+  public int increasePermits(int permits) {
+    return complete(asyncSemaphore.increasePermits(permits));
   }
 
   @Override
-  public boolean isFair() {
-    return true;
+  public int reducePermits(int permits) {
+    return complete(asyncSemaphore.reducePermits(permits));
   }
 
   @Override
-  public AsyncDistributedSemaphore async() {
+  public QueueStatus queueStatus() {
+    return complete(asyncSemaphore.queueStatus());
+  }
+
+  @Override
+  public AsyncAtomicSemaphore async() {
     return asyncSemaphore;
-  }
-
-  @Override
-  public void close() {
-    complete(asyncSemaphore.close());
   }
 
   private <T> T complete(CompletableFuture<T> future) {

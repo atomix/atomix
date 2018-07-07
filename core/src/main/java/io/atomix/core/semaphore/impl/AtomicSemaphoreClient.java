@@ -15,13 +15,17 @@
  */
 package io.atomix.core.semaphore.impl;
 
-import io.atomix.core.semaphore.DistributedSemaphoreType;
+import io.atomix.primitive.event.Event;
 
 /**
- * Default distributed semaphore service.
+ * Distributed semaphore client.
  */
-public class DefaultDistributedSemaphoreService extends AbstractAtomicSemaphoreService {
-  public DefaultDistributedSemaphoreService(AtomicSemaphoreServiceConfig config) {
-    super(DistributedSemaphoreType.instance(), config.initialCapacity());
-  }
+public interface AtomicSemaphoreClient {
+
+  @Event("succeeded")
+  void succeeded(long id, long version, int permits);
+
+  @Event("failed")
+  void failed(long id);
+
 }

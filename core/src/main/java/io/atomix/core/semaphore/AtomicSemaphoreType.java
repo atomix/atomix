@@ -15,10 +15,10 @@
  */
 package io.atomix.core.semaphore;
 
+import io.atomix.core.semaphore.impl.AtomicSemaphoreResource;
 import io.atomix.core.semaphore.impl.AtomicSemaphoreServiceConfig;
-import io.atomix.core.semaphore.impl.DefaultDistributedSemaphoreBuilder;
-import io.atomix.core.semaphore.impl.DefaultDistributedSemaphoreService;
-import io.atomix.core.semaphore.impl.DistributedSemaphoreResource;
+import io.atomix.core.semaphore.impl.DefaultAtomicSemaphoreBuilder;
+import io.atomix.core.semaphore.impl.DefaultAtomicSemaphoreService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
@@ -33,16 +33,16 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Distributed semaphore primitive type.
  */
-public class DistributedSemaphoreType implements PrimitiveType<DistributedSemaphoreBuilder, DistributedSemaphoreConfig, DistributedSemaphore> {
-  private static final String NAME = "semaphore";
-  private static final DistributedSemaphoreType INSTANCE = new DistributedSemaphoreType();
+public class AtomicSemaphoreType implements PrimitiveType<AtomicSemaphoreBuilder, AtomicSemaphoreConfig, AtomicSemaphore> {
+  private static final String NAME = "atomic-semaphore";
+  private static final AtomicSemaphoreType INSTANCE = new AtomicSemaphoreType();
 
   /**
    * Returns a semaphore type instance.
    *
    * @return the semaphore type
    */
-  public static DistributedSemaphoreType instance() {
+  public static AtomicSemaphoreType instance() {
     return INSTANCE;
   }
 
@@ -63,22 +63,22 @@ public class DistributedSemaphoreType implements PrimitiveType<DistributedSemaph
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultDistributedSemaphoreService((AtomicSemaphoreServiceConfig) config);
+    return new DefaultAtomicSemaphoreService((AtomicSemaphoreServiceConfig) config);
   }
 
   @Override
-  public DistributedSemaphoreConfig newConfig() {
-    return new DistributedSemaphoreConfig();
+  public AtomicSemaphoreConfig newConfig() {
+    return new AtomicSemaphoreConfig();
   }
 
   @Override
-  public DistributedSemaphoreBuilder newBuilder(String name, DistributedSemaphoreConfig config, PrimitiveManagementService managementService) {
-    return new DefaultDistributedSemaphoreBuilder(name, config, managementService);
+  public AtomicSemaphoreBuilder newBuilder(String name, AtomicSemaphoreConfig config, PrimitiveManagementService managementService) {
+    return new DefaultAtomicSemaphoreBuilder(name, config, managementService);
   }
 
   @Override
-  public PrimitiveResource newResource(DistributedSemaphore primitive) {
-    return new DistributedSemaphoreResource(primitive.async());
+  public PrimitiveResource newResource(AtomicSemaphore primitive) {
+    return new AtomicSemaphoreResource(primitive.async());
   }
 
   @Override

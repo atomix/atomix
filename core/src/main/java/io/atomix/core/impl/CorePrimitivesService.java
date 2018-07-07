@@ -57,6 +57,8 @@ import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.multiset.DistributedMultisetType;
 import io.atomix.core.queue.DistributedQueue;
 import io.atomix.core.queue.DistributedQueueType;
+import io.atomix.core.semaphore.AtomicSemaphore;
+import io.atomix.core.semaphore.AtomicSemaphoreType;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphoreType;
 import io.atomix.core.set.DistributedSet;
@@ -261,6 +263,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public DistributedSemaphore getSemaphore(String name) {
     return getPrimitive(name, DistributedSemaphoreType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public AtomicSemaphore getAtomicSemaphore(String name) {
+    return getPrimitive(name, AtomicSemaphoreType.instance(), configService.getConfig(name));
   }
 
   @Override

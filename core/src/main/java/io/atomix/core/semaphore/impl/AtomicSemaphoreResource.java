@@ -15,7 +15,7 @@
  */
 package io.atomix.core.semaphore.impl;
 
-import io.atomix.core.semaphore.AsyncDistributedSemaphore;
+import io.atomix.core.semaphore.AsyncAtomicSemaphore;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,11 +33,11 @@ import javax.ws.rs.core.Response;
 /**
  * Distributed semaphore resource.
  */
-public class DistributedSemaphoreResource implements PrimitiveResource {
-  private static final Logger LOGGER = LoggerFactory.getLogger(DistributedSemaphoreResource.class);
-  private final AsyncDistributedSemaphore semaphore;
+public class AtomicSemaphoreResource implements PrimitiveResource {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AtomicSemaphoreResource.class);
+  private final AsyncAtomicSemaphore semaphore;
 
-  public DistributedSemaphoreResource(AsyncDistributedSemaphore semaphore) {
+  public AtomicSemaphoreResource(AsyncAtomicSemaphore semaphore) {
     this.semaphore = semaphore;
   }
 
@@ -48,7 +48,7 @@ public class DistributedSemaphoreResource implements PrimitiveResource {
   public void acquire(Integer permits, @Suspended AsyncResponse response) {
     semaphore.acquire(permits != null ? permits : 1).whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.ok().build());
+        response.resume(Response.ok(result.value()).build());
       } else {
         LOGGER.warn("An error occurred", error);
         response.resume(Response.serverError());
