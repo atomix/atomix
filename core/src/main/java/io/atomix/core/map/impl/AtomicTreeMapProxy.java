@@ -22,6 +22,7 @@ import io.atomix.core.map.AtomicTreeMap;
 import io.atomix.core.set.AsyncDistributedNavigableSet;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -103,14 +104,12 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> pollFirstEntry() {
-    return getProxyClient().applyAll(service -> service.pollFirstEntry())
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
+    return Futures.exceptionalFuture(new UnsupportedOperationException());
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> pollLastEntry() {
-    return getProxyClient().applyAll(service -> service.pollLastEntry())
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
+    return Futures.exceptionalFuture(new UnsupportedOperationException());
   }
 
   @Override

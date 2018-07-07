@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 /**
  * Base class for tree map services.
  */
-public class AbstractAtomicTreeMapService<K extends Comparable<K>> extends AbstractAtomicMapService<K> implements AtomicTreeMapService<K> {
+public abstract class AbstractAtomicTreeMapService<K extends Comparable<K>> extends AbstractAtomicMapService<K> implements AtomicTreeMapService<K> {
   public AbstractAtomicTreeMapService(PrimitiveType primitiveType) {
     super(primitiveType);
   }
@@ -77,12 +77,12 @@ public class AbstractAtomicTreeMapService<K extends Comparable<K>> extends Abstr
 
   @Override
   public Map.Entry<K, Versioned<byte[]>> pollFirstEntry() {
-    return isEmpty() ? null : toVersionedEntry(entries().firstEntry());
+    return isEmpty() ? null : toVersionedEntry(entries().pollFirstEntry());
   }
 
   @Override
   public Map.Entry<K, Versioned<byte[]>> pollLastEntry() {
-    return isEmpty() ? null : toVersionedEntry(entries().lastEntry());
+    return isEmpty() ? null : toVersionedEntry(entries().pollLastEntry());
   }
 
   @Override

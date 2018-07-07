@@ -119,7 +119,7 @@ public class AtomixTest extends AbstractAtomixTest {
   @Test
   public void testBootstrapDataGrid() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>(3);
-    futures.add(startAtomix(1, Arrays.asList(), Profile.dataGrid()));
+    futures.add(startAtomix(1, Arrays.asList(2), Profile.dataGrid()));
     futures.add(startAtomix(2, Arrays.asList(1), Profile.dataGrid()));
     futures.add(startAtomix(3, Arrays.asList(1), Profile.dataGrid()));
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
@@ -130,7 +130,7 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testScaleUpEphemeral() throws Exception {
-    Atomix atomix1 = startAtomix(1, Arrays.asList(), Profile.dataGrid()).get(30, TimeUnit.SECONDS);
+    Atomix atomix1 = startAtomix(1, Arrays.asList(2), Profile.dataGrid()).get(30, TimeUnit.SECONDS);
     Atomix atomix2 = startAtomix(2, Arrays.asList(1), Profile.dataGrid()).get(30, TimeUnit.SECONDS);
     Atomix atomix3 = startAtomix(3, Arrays.asList(1), Profile.dataGrid()).get(30, TimeUnit.SECONDS);
   }
