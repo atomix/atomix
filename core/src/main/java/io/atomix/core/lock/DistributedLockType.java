@@ -15,9 +15,9 @@
  */
 package io.atomix.core.lock;
 
-import io.atomix.core.lock.impl.AtomicLockResource;
-import io.atomix.core.lock.impl.DefaultAtomicLockBuilder;
-import io.atomix.core.lock.impl.DefaultAtomicLockService;
+import io.atomix.core.lock.impl.DefaultDistributedLockBuilder;
+import io.atomix.core.lock.impl.DefaultDistributedLockService;
+import io.atomix.core.lock.impl.DistributedLockResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
@@ -27,18 +27,18 @@ import io.atomix.primitive.service.ServiceConfig;
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Atomic lock primitive type.
+ * Distributed lock primitive type.
  */
-public class AtomicLockType implements PrimitiveType<AtomicLockBuilder, AtomicLockConfig, AtomicLock> {
-  private static final String NAME = "atomic-lock";
-  private static final AtomicLockType INSTANCE = new AtomicLockType();
+public class DistributedLockType implements PrimitiveType<DistributedLockBuilder, DistributedLockConfig, DistributedLock> {
+  private static final String NAME = "lock";
+  private static final DistributedLockType INSTANCE = new DistributedLockType();
 
   /**
    * Returns a new distributed lock type.
    *
    * @return a new distributed lock type
    */
-  public static AtomicLockType instance() {
+  public static DistributedLockType instance() {
     return INSTANCE;
   }
 
@@ -49,23 +49,23 @@ public class AtomicLockType implements PrimitiveType<AtomicLockBuilder, AtomicLo
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultAtomicLockService();
+    return new DefaultDistributedLockService();
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(AtomicLock primitive) {
-    return new AtomicLockResource(primitive.async());
+  public PrimitiveResource newResource(DistributedLock primitive) {
+    return new DistributedLockResource(primitive.async());
   }
 
   @Override
-  public AtomicLockConfig newConfig() {
-    return new AtomicLockConfig();
+  public DistributedLockConfig newConfig() {
+    return new DistributedLockConfig();
   }
 
   @Override
-  public AtomicLockBuilder newBuilder(String name, AtomicLockConfig config, PrimitiveManagementService managementService) {
-    return new DefaultAtomicLockBuilder(name, config, managementService);
+  public DistributedLockBuilder newBuilder(String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
+    return new DefaultDistributedLockBuilder(name, config, managementService);
   }
 
   @Override

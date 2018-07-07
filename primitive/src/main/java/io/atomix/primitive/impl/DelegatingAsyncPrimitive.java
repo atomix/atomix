@@ -30,11 +30,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Base class for primitive delegates.
  */
-public abstract class DelegatingAsyncPrimitive implements AsyncPrimitive {
-  private final AsyncPrimitive primitive;
+public abstract class DelegatingAsyncPrimitive<T extends AsyncPrimitive> implements AsyncPrimitive {
+  private final T primitive;
 
-  public DelegatingAsyncPrimitive(AsyncPrimitive primitive) {
+  public DelegatingAsyncPrimitive(T primitive) {
     this.primitive = checkNotNull(primitive);
+  }
+
+  /**
+   * Returns the delegate primitive.
+   *
+   * @return the underlying primitive
+   */
+  protected T delegate() {
+    return primitive;
   }
 
   @Override

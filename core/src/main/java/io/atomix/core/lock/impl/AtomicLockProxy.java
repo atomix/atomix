@@ -16,7 +16,7 @@
 package io.atomix.core.lock.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.lock.AsyncDistributedLock;
+import io.atomix.core.lock.AsyncAtomicLock;
 import io.atomix.core.lock.AtomicLock;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveException;
@@ -37,8 +37,8 @@ import java.util.function.Consumer;
  * Raft lock.
  */
 public class AtomicLockProxy
-    extends AbstractAsyncPrimitive<AsyncDistributedLock, AtomicLockService>
-    implements AsyncDistributedLock, AtomicLockClient {
+    extends AbstractAsyncPrimitive<AsyncAtomicLock, AtomicLockService>
+    implements AsyncAtomicLock, AtomicLockClient {
   private final Map<Integer, LockAttempt> attempts = Maps.newConcurrentMap();
   private final AtomicInteger id = new AtomicInteger();
   private final AtomicInteger lock = new AtomicInteger();
@@ -148,7 +148,7 @@ public class AtomicLockProxy
   }
 
   @Override
-  public CompletableFuture<AsyncDistributedLock> connect() {
+  public CompletableFuture<AsyncAtomicLock> connect() {
     return super.connect()
         .thenCompose(v -> getProxyClient().getPartition(name()).connect())
         .thenApply(v -> this);
