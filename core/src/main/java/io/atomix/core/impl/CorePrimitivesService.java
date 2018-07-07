@@ -37,8 +37,8 @@ import io.atomix.core.election.LeaderElector;
 import io.atomix.core.election.LeaderElectorType;
 import io.atomix.core.list.DistributedList;
 import io.atomix.core.list.DistributedListType;
-import io.atomix.core.lock.DistributedLock;
-import io.atomix.core.lock.DistributedLockType;
+import io.atomix.core.lock.AtomicLock;
+import io.atomix.core.lock.AtomicLockType;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapType;
 import io.atomix.core.map.AtomicTreeMap;
@@ -242,8 +242,8 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public DistributedLock getLock(String name) {
-    return getPrimitive(name, DistributedLockType.instance(), configService.getConfig(name));
+  public AtomicLock getAtomicLock(String name) {
+    return getPrimitive(name, AtomicLockType.instance(), configService.getConfig(name));
   }
 
   @Override

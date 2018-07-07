@@ -58,10 +58,10 @@ public interface AsyncDistributedLock extends AsyncPrimitive {
   CompletableFuture<Void> unlock();
 
   @Override
-  default DistributedLock sync() {
+  default AtomicLock sync() {
     return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
 
   @Override
-  DistributedLock sync(Duration operationTimeout);
+  AtomicLock sync(Duration operationTimeout);
 }

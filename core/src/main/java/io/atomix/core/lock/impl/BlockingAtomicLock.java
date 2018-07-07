@@ -16,7 +16,7 @@
 package io.atomix.core.lock.impl;
 
 import io.atomix.core.lock.AsyncDistributedLock;
-import io.atomix.core.lock.DistributedLock;
+import io.atomix.core.lock.AtomicLock;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.time.Version;
@@ -31,12 +31,12 @@ import java.util.concurrent.TimeoutException;
 /**
  * Default implementation for a {@code DistributedLock} backed by a {@link AsyncDistributedLock}.
  */
-public class BlockingDistributedLock extends Synchronous<AsyncDistributedLock> implements DistributedLock {
+public class BlockingAtomicLock extends Synchronous<AsyncDistributedLock> implements AtomicLock {
 
   private final AsyncDistributedLock asyncLock;
   private final long operationTimeoutMillis;
 
-  public BlockingDistributedLock(AsyncDistributedLock asyncLock, long operationTimeoutMillis) {
+  public BlockingAtomicLock(AsyncDistributedLock asyncLock, long operationTimeoutMillis) {
     super(asyncLock);
     this.asyncLock = asyncLock;
     this.operationTimeoutMillis = operationTimeoutMillis;

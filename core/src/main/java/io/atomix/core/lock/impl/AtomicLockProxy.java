@@ -17,7 +17,7 @@ package io.atomix.core.lock.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.core.lock.AsyncDistributedLock;
-import io.atomix.core.lock.DistributedLock;
+import io.atomix.core.lock.AtomicLock;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveRegistry;
@@ -36,14 +36,14 @@ import java.util.function.Consumer;
 /**
  * Raft lock.
  */
-public class DistributedLockProxy
-    extends AbstractAsyncPrimitive<AsyncDistributedLock, DistributedLockService>
-    implements AsyncDistributedLock, DistributedLockClient {
+public class AtomicLockProxy
+    extends AbstractAsyncPrimitive<AsyncDistributedLock, AtomicLockService>
+    implements AsyncDistributedLock, AtomicLockClient {
   private final Map<Integer, LockAttempt> attempts = Maps.newConcurrentMap();
   private final AtomicInteger id = new AtomicInteger();
   private final AtomicInteger lock = new AtomicInteger();
 
-  public DistributedLockProxy(ProxyClient<DistributedLockService> proxy, PrimitiveRegistry registry) {
+  public AtomicLockProxy(ProxyClient<AtomicLockService> proxy, PrimitiveRegistry registry) {
     super(proxy, registry);
     proxy.addStateChangeListener(this::onStateChange);
   }
@@ -155,8 +155,8 @@ public class DistributedLockProxy
   }
 
   @Override
-  public DistributedLock sync(Duration operationTimeout) {
-    return new BlockingDistributedLock(this, operationTimeout.toMillis());
+  public AtomicLock sync(Duration operationTimeout) {
+    return new BlockingAtomicLock(this, operationTimeout.toMillis());
   }
 
   /**
@@ -171,7 +171,7 @@ public class DistributedLockProxy
     }
 
     LockAttempt(Duration duration, Consumer<LockAttempt> callback) {
-      this.id = DistributedLockProxy.this.id.incrementAndGet();
+      this.id = AtomicLockProxy.this.id.incrementAndGet();
       this.scheduled = duration != null && callback != null
           ? getProxyClient().getPartition(name()).context().schedule(duration, () -> callback.accept(this)) : null;
       attempts.put(id, this);

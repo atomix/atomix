@@ -24,7 +24,7 @@ import java.util.Optional;
 /**
  * Asynchronous lock primitive.
  */
-public interface DistributedLock extends SyncPrimitive {
+public interface AtomicLock extends SyncPrimitive {
 
   /**
    * Acquires the lock, blocking until it's available.

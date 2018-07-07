@@ -15,7 +15,7 @@
  */
 package io.atomix.core.lock.impl;
 
-import io.atomix.core.lock.DistributedLockType;
+import io.atomix.core.lock.AtomicLockType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
@@ -36,9 +36,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Raft atomic value service.
  */
-public class DefaultDistributedLockService extends AbstractPrimitiveService<DistributedLockClient> implements DistributedLockService {
+public class DefaultAtomicLockService extends AbstractPrimitiveService<AtomicLockClient> implements AtomicLockService {
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
-      .register(DistributedLockType.instance().namespace())
+      .register(AtomicLockType.instance().namespace())
       .register(LockHolder.class)
       .register(SessionId.class)
       .build());
@@ -47,8 +47,8 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
   private Queue<LockHolder> queue = new ArrayDeque<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
 
-  public DefaultDistributedLockService() {
-    super(DistributedLockType.instance(), DistributedLockClient.class);
+  public DefaultAtomicLockService() {
+    super(AtomicLockType.instance(), AtomicLockClient.class);
   }
 
   @Override
@@ -97,7 +97,7 @@ public class DefaultDistributedLockService extends AbstractPrimitiveService<Dist
 
   @Override
   public void lock(int id, long timeout) {
-    Session<DistributedLockClient> session = getCurrentSession();
+    Session<AtomicLockClient> session = getCurrentSession();
     // If the lock is not already owned, immediately grant the lock to the requester.
     // Note that we still have to publish an event to the session. The event is guaranteed to be received
     // by the client-side primitive after the LOCK response.

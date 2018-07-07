@@ -13,17 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.lock;
+package io.atomix.core.lock.impl;
 
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.config.PrimitiveConfig;
+import io.atomix.primitive.event.Event;
 
 /**
- * Distributed lock configuration.
+ * Distributed lock client.
  */
-public class DistributedLockConfig extends PrimitiveConfig<DistributedLockConfig> {
-  @Override
-  public PrimitiveType getType() {
-    return DistributedLockType.instance();
-  }
+public interface AtomicLockClient {
+
+  /**
+   * Called when the client has acquired a lock.
+   *
+   * @param id      the lock identifier
+   * @param version the lock version
+   */
+  @Event("locked")
+  void locked(int id, long version);
+
+  /**
+   * Called when a lock attempt has failed.
+   *
+   * @param id the lock identifier
+   */
+  @Event("failed")
+  void failed(int id);
+
 }
