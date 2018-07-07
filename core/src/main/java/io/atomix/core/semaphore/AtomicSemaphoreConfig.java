@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.semaphore.impl;
+package io.atomix.core.semaphore;
 
-import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
- * Semaphore service configuration.
+ * Semaphore configuration.
  */
-public class DistributedSemaphoreServiceConfig extends ServiceConfig {
+public class AtomicSemaphoreConfig extends PrimitiveConfig<AtomicSemaphoreConfig> {
   private int initialCapacity;
+
+  @Override
+  public PrimitiveType getType() {
+    return AtomicSemaphoreType.instance();
+  }
 
   /**
    * Initialize this semaphore with the given permit count.
@@ -30,7 +36,7 @@ public class DistributedSemaphoreServiceConfig extends ServiceConfig {
    * @param permits initial permits
    * @return configuration
    */
-  public DistributedSemaphoreServiceConfig setInitialCapacity(int permits) {
+  public AtomicSemaphoreConfig setInitialCapacity(int permits) {
     initialCapacity = permits;
     return this;
   }

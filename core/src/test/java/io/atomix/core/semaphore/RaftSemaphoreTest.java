@@ -40,7 +40,7 @@ public class RaftSemaphoreTest extends SemaphoreTest {
   @Test(timeout = 10000)
   public void testQueueStatus() throws Exception {
     Atomix atomix = atomix();
-    AsyncDistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-status", protocol())
+    AsyncAtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-status", protocol())
             .withInitialCapacity(10)
             .build()
             .async();

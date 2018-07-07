@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.semaphore.impl;
+package io.atomix.core.semaphore;
 
-import io.atomix.core.semaphore.DistributedSemaphoreType;
+import io.atomix.primitive.PrimitiveBuilder;
+import io.atomix.primitive.PrimitiveManagementService;
 
-/**
- * Default distributed semaphore service.
- */
-public class DefaultDistributedSemaphoreService extends AbstractAtomicSemaphoreService {
-  public DefaultDistributedSemaphoreService(AtomicSemaphoreServiceConfig config) {
-    super(DistributedSemaphoreType.instance(), config.initialCapacity());
+public abstract class AtomicSemaphoreBuilder
+        extends PrimitiveBuilder<AtomicSemaphoreBuilder, AtomicSemaphoreConfig, AtomicSemaphore> {
+  public AtomicSemaphoreBuilder(String name, AtomicSemaphoreConfig config, PrimitiveManagementService managementService) {
+    super(AtomicSemaphoreType.instance(), name, config, managementService);
+  }
+
+  public AtomicSemaphoreBuilder withInitialCapacity(int permits) {
+    config.setInitialCapacity(permits);
+    return this;
   }
 }

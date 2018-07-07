@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * Distributed semaphore service.
  */
-public interface DistributedSemaphoreService {
+public interface AtomicSemaphoreService {
 
   @Operation(value = "acquire", type = OperationType.COMMAND)
   void acquire(long id, int permits, long timeout);

@@ -40,6 +40,7 @@ import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.profile.Profile;
 import io.atomix.core.profile.ProfileConfig;
 import io.atomix.core.queue.DistributedQueue;
+import io.atomix.core.semaphore.AtomicSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedTreeSet;
@@ -452,6 +453,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   public DistributedSemaphore getSemaphore(String name) {
     return primitives.getSemaphore(name);
+  }
+
+  @Override
+  public AtomicSemaphore getAtomicSemaphore(String name) {
+    return primitives.getAtomicSemaphore(name);
   }
 
   @Override

@@ -15,8 +15,8 @@
  */
 package io.atomix.core.semaphore.impl;
 
-import io.atomix.core.semaphore.AsyncDistributedSemaphore;
-import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.semaphore.AsyncAtomicSemaphore;
+import io.atomix.core.semaphore.AtomicSemaphore;
 import io.atomix.core.semaphore.QueueStatus;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
@@ -34,16 +34,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-public class DistributedSemaphoreProxy
-    extends AbstractAsyncPrimitive<AsyncDistributedSemaphore, DistributedSemaphoreService>
-    implements AsyncDistributedSemaphore, DistributedSemaphoreClient {
+public class AtomicSemaphoreProxy
+    extends AbstractAsyncPrimitive<AsyncAtomicSemaphore, AtomicSemaphoreService>
+    implements AsyncAtomicSemaphore, AtomicSemaphoreClient {
   private static Duration NO_TIMEOUT = Duration.ofMillis(-1);
 
   private final ScheduledExecutorService scheduledExecutor;
   private final Map<Long, AcquireAttempt> attempts = new ConcurrentHashMap<>();
   private final AtomicLong attemptId = new AtomicLong();
 
-  public DistributedSemaphoreProxy(ProxyClient<DistributedSemaphoreService> proxy, PrimitiveRegistry registry, ScheduledExecutorService scheduledExecutor) {
+  public AtomicSemaphoreProxy(ProxyClient<AtomicSemaphoreService> proxy, PrimitiveRegistry registry, ScheduledExecutorService scheduledExecutor) {
     super(proxy, registry);
     this.scheduledExecutor = scheduledExecutor;
   }
@@ -138,12 +138,12 @@ public class DistributedSemaphoreProxy
   }
 
   @Override
-  public CompletableFuture<Integer> increase(int permits) {
+  public CompletableFuture<Integer> increasePermits(int permits) {
     return getProxyClient().applyBy(name(), service -> service.increase(permits));
   }
 
   @Override
-  public CompletableFuture<Integer> reduce(int permits) {
+  public CompletableFuture<Integer> reducePermits(int permits) {
     return getProxyClient().applyBy(name(), service -> service.reduce(permits));
   }
 
@@ -153,8 +153,8 @@ public class DistributedSemaphoreProxy
   }
 
   @Override
-  public DistributedSemaphore sync(Duration operationTimeout) {
-    return new BlockingDistributedSemaphore(this, operationTimeout);
+  public AtomicSemaphore sync(Duration operationTimeout) {
+    return new BlockingAtomicSemaphore(this, operationTimeout);
   }
 
   /**
