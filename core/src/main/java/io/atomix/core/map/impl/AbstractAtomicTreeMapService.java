@@ -17,20 +17,45 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.collect.Maps;
+import io.atomix.core.map.AtomicTreeMapType;
+import io.atomix.core.transaction.TransactionId;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.session.SessionId;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Base class for tree map services.
  */
 public abstract class AbstractAtomicTreeMapService<K extends Comparable<K>> extends AbstractAtomicMapService<K> implements AtomicTreeMapService<K> {
+  private final Serializer serializer;
+
   public AbstractAtomicTreeMapService(PrimitiveType primitiveType) {
     super(primitiveType);
+    serializer = Serializer.using(Namespace.builder()
+        .register(AtomicTreeMapType.instance().namespace())
+        .register(SessionId.class)
+        .register(TransactionId.class)
+        .register(TransactionScope.class)
+        .register(MapEntryValue.class)
+        .register(MapEntryValue.Type.class)
+        .register(new HashMap().keySet().getClass())
+        .register(DefaultIterator.class)
+        .register(AscendingIterator.class)
+        .register(DescendingIterator.class)
+        .build());
+  }
+
+  @Override
+  public Serializer serializer() {
+    return serializer;
   }
 
   @Override
@@ -41,13 +66,6 @@ public abstract class AbstractAtomicTreeMapService<K extends Comparable<K>> exte
   @Override
   protected NavigableMap<K, MapEntryValue> entries() {
     return (NavigableMap<K, MapEntryValue>) super.entries();
-  }
-
-  @Override
-  public NavigableMap<K, byte[]> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
-    NavigableMap<K, byte[]> map = new TreeMap<>();
-    entries().subMap(fromKey, fromInclusive, toKey, toInclusive).forEach((k, v) -> map.put(k, v.value()));
-    return map;
   }
 
   @Override
@@ -120,9 +138,87 @@ public abstract class AbstractAtomicTreeMapService<K extends Comparable<K>> exte
     return entries().higherKey(key);
   }
 
+  @Override
+  public int size(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return entries().subMap(fromKey, fromInclusive, toKey, toInclusive).size();
+  }
+
+  @Override
+  public long iterate(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    entryIterators.put(getCurrentIndex(), new AscendingIterator(getCurrentSession().sessionId().id(), fromKey, fromInclusive, toKey, toInclusive));
+    return getCurrentIndex();
+  }
+
+  @Override
+  public long iterateDescending(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    entryIterators.put(getCurrentIndex(), new DescendingIterator(getCurrentSession().sessionId().id(), fromKey, fromInclusive, toKey, toInclusive));
+    return getCurrentIndex();
+  }
+
+  @Override
+  public void clear(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    entries().subMap(fromKey, fromInclusive, toKey, toInclusive).clear();
+  }
+
   private Map.Entry<K, Versioned<byte[]>> toVersionedEntry(
       Map.Entry<K, MapEntryValue> entry) {
     return entry == null || valueIsNull(entry.getValue())
         ? null : Maps.immutableEntry(entry.getKey(), toVersioned(entry.getValue()));
+  }
+
+  protected class AscendingIterator extends IteratorContext {
+    private final K fromKey;
+    private final boolean fromInclusive;
+    private final K toKey;
+    private final boolean toInclusive;
+
+    AscendingIterator(long sessionId, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+      super(sessionId);
+      this.fromKey = fromKey;
+      this.fromInclusive = fromInclusive;
+      this.toKey = toKey;
+      this.toInclusive = toInclusive;
+    }
+
+    @Override
+    protected Iterator<Map.Entry<K, MapEntryValue>> create() {
+      if (fromKey != null && toKey != null) {
+        return entries().subMap(fromKey, fromInclusive, toKey, toInclusive).entrySet().iterator();
+      } else if (fromKey != null) {
+        return entries().tailMap(fromKey, fromInclusive).entrySet().iterator();
+      } else if (toKey != null) {
+        return entries().headMap(toKey, toInclusive).entrySet().iterator();
+      } else {
+        return entries().entrySet().iterator();
+      }
+    }
+  }
+
+  protected class DescendingIterator extends IteratorContext {
+    private final K fromKey;
+    private final boolean fromInclusive;
+    private final K toKey;
+    private final boolean toInclusive;
+
+    DescendingIterator(long sessionId, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+      super(sessionId);
+      this.fromKey = fromKey;
+      this.fromInclusive = fromInclusive;
+      this.toKey = toKey;
+      this.toInclusive = toInclusive;
+    }
+
+    @Override
+    protected Iterator<Map.Entry<K, MapEntryValue>> create() {
+      if (fromKey != null && toKey != null) {
+        return entries().subMap(fromKey, fromInclusive, toKey, toInclusive).descendingMap().entrySet().iterator();
+      } else if (fromKey != null) {
+        return entries().tailMap(fromKey, fromInclusive).descendingMap().entrySet().iterator();
+      } else if (toKey != null) {
+        return entries().headMap(toKey, toInclusive).descendingMap().entrySet().iterator();
+      } else {
+        return entries().descendingMap().entrySet().iterator();
+      }
+    }
   }
 }

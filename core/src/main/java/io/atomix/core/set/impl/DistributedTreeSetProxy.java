@@ -15,9 +15,9 @@
  */
 package io.atomix.core.set.impl;
 
-import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.impl.DistributedCollectionProxy;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.iterator.impl.ProxyIterator;
 import io.atomix.core.set.AsyncDistributedNavigableSet;
 import io.atomix.core.set.AsyncDistributedSortedSet;
@@ -202,25 +202,19 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
 
     @Override
     public CompletableFuture<E> pollFirst() {
-      if (fromInclusive) {
-        return DistributedTreeSetProxy.this.ceiling(fromElement);
-      } else {
-        return DistributedTreeSetProxy.this.higher(fromElement);
-      }
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
     }
 
     @Override
     public CompletableFuture<E> pollLast() {
-      if (toInclusive) {
-        return DistributedTreeSetProxy.this.floor(toElement);
-      } else {
-        return DistributedTreeSetProxy.this.lower(toElement);
-      }
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
     }
 
     @Override
     public CompletableFuture<E> first() {
-      if (fromInclusive) {
+      if (fromElement == null) {
+        return DistributedTreeSetProxy.this.first();
+      } else if (fromInclusive) {
         return DistributedTreeSetProxy.this.ceiling(fromElement);
       } else {
         return DistributedTreeSetProxy.this.higher(fromElement);
@@ -229,7 +223,9 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
 
     @Override
     public CompletableFuture<E> last() {
-      if (toInclusive) {
+      if (toElement == null) {
+        return DistributedTreeSetProxy.this.last();
+      } else if (toInclusive) {
         return DistributedTreeSetProxy.this.floor(toElement);
       } else {
         return DistributedTreeSetProxy.this.lower(toElement);
@@ -238,22 +234,46 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
 
     @Override
     public CompletableFuture<E> lower(E e) {
-      return DistributedTreeSetProxy.this.lower(e).thenApply(result -> isInBounds(result) ? result : null);
+      if (toElement == null) {
+        return DistributedTreeSetProxy.this.lower(e);
+      } else if (toInclusive && toElement.compareTo(e) < 0) {
+        return DistributedTreeSetProxy.this.floor(toElement).thenApply(result -> isInBounds(result) ? result : null);
+      } else {
+        return DistributedTreeSetProxy.this.lower(min(toElement, e)).thenApply(result -> isInBounds(result) ? result : null);
+      }
     }
 
     @Override
     public CompletableFuture<E> floor(E e) {
-      return DistributedTreeSetProxy.this.floor(e).thenApply(result -> isInBounds(result) ? result : null);
+      if (toElement == null) {
+        return DistributedTreeSetProxy.this.floor(e);
+      } else if (!toInclusive && toElement.compareTo(e) < 0) {
+        return DistributedTreeSetProxy.this.lower(toElement).thenApply(result -> isInBounds(result) ? result : null);
+      } else {
+        return DistributedTreeSetProxy.this.floor(min(toElement, e)).thenApply(result -> isInBounds(result) ? result : null);
+      }
     }
 
     @Override
     public CompletableFuture<E> ceiling(E e) {
-      return DistributedTreeSetProxy.this.ceiling(e).thenApply(result -> isInBounds(result) ? result : null);
+      if (fromElement == null) {
+        return DistributedTreeSetProxy.this.ceiling(e);
+      } else if (!fromInclusive && fromElement.compareTo(e) > 0) {
+        return DistributedTreeSetProxy.this.higher(toElement).thenApply(result -> isInBounds(result) ? result : null);
+      } else {
+        return DistributedTreeSetProxy.this.ceiling(max(fromElement, e)).thenApply(result -> isInBounds(result) ? result : null);
+      }
     }
 
     @Override
     public CompletableFuture<E> higher(E e) {
-      return DistributedTreeSetProxy.this.higher(e).thenApply(result -> isInBounds(result) ? result : null);
+      if (fromElement == null) {
+        return DistributedTreeSetProxy.this.higher(e);
+      } else if (fromInclusive && fromElement.compareTo(e) > 0) {
+        return DistributedTreeSetProxy.this.ceiling(fromElement).thenApply(result -> isInBounds(result) ? result : null);
+      } else {
+        return DistributedTreeSetProxy.this.higher(max(fromElement, e)).thenApply(result -> isInBounds(result) ? result : null);
+      }
     }
 
     @Override

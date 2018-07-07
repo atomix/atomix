@@ -15,12 +15,11 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.impl.AtomicMapService;
+import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Map;
-import java.util.NavigableMap;
 
 /**
  * Consistent tree map service.
@@ -148,18 +147,50 @@ public interface AtomicTreeMapService<K extends Comparable<K>> extends AtomicMap
   K higherKey(K key);
 
   /**
-   * Returns a navigable map containing the entries from the original map
-   * which are larger than (or if specified equal to) {@code lowerKey} AND
-   * less than (or if specified equal to) {@code upperKey}.
+   * Returns the size of a submap.
    *
-   * @param fromKey       the start key
-   * @param fromInclusive whether the start key is inclusive
-   * @param toKey         the end key
-   * @param toInclusive   whether the end key is inclusive
-   * @return a navigable map containing entries in the specified range (this
-   * may be empty)
+   * @param fromKey the from key
+   * @param fromInclusive whether the from key is inclusive
+   * @param toKey the to key
+   * @param toInclusive whether the to key is inclusive
+   * @return the key iterator ID
    */
-  @Query
-  NavigableMap<K, byte[]> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
+  @Query("subMapSize")
+  int size(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
+
+  /**
+   * Returns a key iterator.
+   *
+   * @param fromKey the from key
+   * @param fromInclusive whether the from key is inclusive
+   * @param toKey the to key
+   * @param toInclusive whether the to key is inclusive
+   * @return the key iterator ID
+   */
+  @Command("subMapIterate")
+  long iterate(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
+
+  /**
+   * Returns a key iterator.
+   *
+   * @param fromKey the from key
+   * @param fromInclusive whether the from key is inclusive
+   * @param toKey the to key
+   * @param toInclusive whether the to key is inclusive
+   * @return the key iterator ID
+   */
+  @Command("subMapIterateDescending")
+  long iterateDescending(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
+
+  /**
+   * Clears the given view from the set.
+   *
+   * @param fromKey low endpoint of the returned set
+   * @param fromInclusive {@code true} if the low endpoint is to be included in the returned view
+   * @param toKey high endpoint of the returned set
+   * @param toInclusive {@code true} if the high endpoint is to be included in the returned view
+   */
+  @Command("subMapClear")
+  void clear(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
 
 }
