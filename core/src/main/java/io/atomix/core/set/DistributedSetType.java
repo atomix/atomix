@@ -17,7 +17,7 @@ package io.atomix.core.set;
 
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
-import io.atomix.core.collection.impl.IteratorBatch;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.set.impl.DefaultDistributedSetBuilder;
 import io.atomix.core.set.impl.DefaultDistributedSetService;
 import io.atomix.core.set.impl.DistributedSetResource;

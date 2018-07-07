@@ -17,7 +17,7 @@ package io.atomix.core.multiset;
 
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
-import io.atomix.core.collection.impl.IteratorBatch;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.multiset.impl.DefaultDistributedMultisetBuilder;
 import io.atomix.core.multiset.impl.DefaultDistributedMultisetService;
 import io.atomix.primitive.PrimitiveManagementService;

@@ -15,7 +15,7 @@
  */
 package io.atomix.core.set.impl;
 
-import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.set.AsyncDistributedNavigableSet;
 import io.atomix.core.set.AsyncDistributedSortedSet;

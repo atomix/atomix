@@ -15,6 +15,7 @@
  */
 package io.atomix.core.collection.impl;
 
+import io.atomix.core.iterator.impl.IterableService;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
 
@@ -23,7 +24,7 @@ import java.util.Collection;
 /**
  * Distributed collection service.
  */
-public interface DistributedCollectionService<E> {
+public interface DistributedCollectionService<E> extends IterableService<E> {
 
   /**
    * Returns the number of elements in this collection.  If this collection
@@ -241,31 +242,5 @@ public interface DistributedCollectionService<E> {
    */
   @Command
   void unlisten();
-
-  /**
-   * Returns an iterator.
-   *
-   * @return the iterator ID
-   */
-  @Command
-  long iterate();
-
-  /**
-   * Returns the next batch of elements for the given iterator.
-   *
-   * @param iteratorId the iterator identifier
-   * @param position   the iterator position
-   * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
-   */
-  @Query
-  IteratorBatch<E> next(long iteratorId, int position);
-
-  /**
-   * Closes an iterator.
-   *
-   * @param iteratorId the iterator identifier
-   */
-  @Command
-  void close(long iteratorId);
 
 }

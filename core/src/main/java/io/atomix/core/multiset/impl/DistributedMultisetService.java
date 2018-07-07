@@ -19,7 +19,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Multiset;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.collection.impl.DistributedCollectionService;
-import io.atomix.core.collection.impl.IteratorBatch;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
 

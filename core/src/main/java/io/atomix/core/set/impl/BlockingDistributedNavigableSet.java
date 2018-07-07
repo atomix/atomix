@@ -15,7 +15,7 @@
  */
 package io.atomix.core.set.impl;
 
-import io.atomix.core.collection.impl.BlockingIterator;
+import io.atomix.core.iterator.impl.BlockingIterator;
 import io.atomix.core.set.AsyncDistributedNavigableSet;
 import io.atomix.core.set.DistributedNavigableSet;
 

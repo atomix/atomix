@@ -23,7 +23,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.atomix.core.collection.impl.IteratorBatch;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.multimap.AtomicMultimapType;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.AbstractPrimitiveService;

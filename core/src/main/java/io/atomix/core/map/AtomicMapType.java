@@ -15,7 +15,7 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.collection.impl.IteratorBatch;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.map.impl.AtomicMapResource;
 import io.atomix.core.map.impl.DefaultAtomicMapBuilder;
 import io.atomix.core.map.impl.DefaultAtomicMapService;

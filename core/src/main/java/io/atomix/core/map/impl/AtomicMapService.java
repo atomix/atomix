@@ -15,7 +15,7 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.collection.impl.IteratorBatch;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.core.transaction.impl.CommitResult;

@@ -17,7 +17,7 @@ package io.atomix.core.queue;
 
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
-import io.atomix.core.collection.impl.IteratorBatch;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.queue.impl.DefaultDistributedQueueBuilder;
 import io.atomix.core.queue.impl.DefaultDistributedQueueService;
 import io.atomix.core.queue.impl.DistributedQueueResource;

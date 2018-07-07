@@ -16,7 +16,7 @@
 package io.atomix.core.multimap;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.collection.impl.IteratorBatch;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.multimap.impl.DefaultDistributedMultimapBuilder;
 import io.atomix.core.multimap.impl.DefaultDistributedMultimapService;
 import io.atomix.primitive.PrimitiveManagementService;

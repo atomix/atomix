@@ -15,7 +15,7 @@
  */
 package io.atomix.core.set;
 
-import io.atomix.core.collection.AsyncIterator;
+import io.atomix.core.iterator.AsyncIterator;
 
 import java.time.Duration;
 import java.util.Collections;
