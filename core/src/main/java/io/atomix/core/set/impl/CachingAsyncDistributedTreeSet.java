@@ -15,16 +15,24 @@
  */
 package io.atomix.core.set.impl;
 
-import com.google.common.collect.Sets;
-import io.atomix.core.set.DistributedSetType;
+import io.atomix.core.cache.CacheConfig;
+import io.atomix.core.set.AsyncDistributedTreeSet;
+import io.atomix.core.set.DistributedTreeSet;
 
-import java.util.Set;
+import java.time.Duration;
 
 /**
- * Default distributed set service.
+ * Caching tree set.
  */
-public class DefaultDistributedSetService<E> extends AbstractDistributedSetService<Set<E>, E> implements DistributedSetService<E> {
-  public DefaultDistributedSetService() {
-    super(DistributedSetType.instance(), Sets.newConcurrentHashSet());
+public class CachingAsyncDistributedTreeSet<E extends Comparable<E>>
+    extends CachingAsyncDistributedNavigableSet<E>
+    implements AsyncDistributedTreeSet<E> {
+  public CachingAsyncDistributedTreeSet(AsyncDistributedTreeSet<E> set, CacheConfig cacheConfig) {
+    super(set, cacheConfig);
+  }
+
+  @Override
+  public DistributedTreeSet<E> sync(Duration timeout) {
+    return new BlockingDistributedTreeSet<>(this, timeout.toMillis());
   }
 }

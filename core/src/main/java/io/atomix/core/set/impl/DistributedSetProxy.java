@@ -37,20 +37,20 @@ import java.util.stream.Collectors;
 /**
  * Distributed set proxy.
  */
-public class DistributedSetProxy extends PartitionedDistributedCollectionProxy<AsyncDistributedSet<String>, DistributedSetService>
-    implements AsyncDistributedSet<String> {
+public class DistributedSetProxy<E> extends PartitionedDistributedCollectionProxy<AsyncDistributedSet<E>, DistributedSetService<E>, E>
+    implements AsyncDistributedSet<E> {
 
-  public DistributedSetProxy(ProxyClient<DistributedSetService> client, PrimitiveRegistry registry) {
+  public DistributedSetProxy(ProxyClient<DistributedSetService<E>> client, PrimitiveRegistry registry) {
     super(client, registry);
   }
 
   @Override
-  public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<String>> transactionLog) {
-    Map<PartitionId, List<SetUpdate<String>>> updatesGroupedBySet = Maps.newIdentityHashMap();
+  public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<E>> transactionLog) {
+    Map<PartitionId, List<SetUpdate<E>>> updatesGroupedBySet = Maps.newIdentityHashMap();
     transactionLog.records().forEach(update -> {
       updatesGroupedBySet.computeIfAbsent(getProxyClient().getPartitionId(update.element()), k -> Lists.newLinkedList()).add(update);
     });
-    Map<PartitionId, TransactionLog<SetUpdate<String>>> transactionsBySet =
+    Map<PartitionId, TransactionLog<SetUpdate<E>>> transactionsBySet =
         Maps.transformValues(updatesGroupedBySet, list -> new TransactionLog<>(transactionLog.transactionId(), transactionLog.version(), list));
 
     return Futures.allOf(transactionsBySet.entrySet()
@@ -74,7 +74,7 @@ public class DistributedSetProxy extends PartitionedDistributedCollectionProxy<A
   }
 
   @Override
-  public DistributedSet<String> sync(Duration operationTimeout) {
+  public DistributedSet<E> sync(Duration operationTimeout) {
     return new BlockingDistributedSet<>(this, operationTimeout.toMillis());
   }
 }

@@ -23,7 +23,7 @@ import java.util.Collection;
 /**
  * Distributed collection service.
  */
-public interface DistributedCollectionService {
+public interface DistributedCollectionService<E> {
 
   /**
    * Returns the number of elements in this collection.  If this collection
@@ -60,7 +60,7 @@ public interface DistributedCollectionService {
    *         (<a href="#optional-restrictions">optional</a>)
    */
   @Query
-  boolean contains(Object o);
+  boolean contains(E o);
 
   /**
    * Ensures that this collection contains the specified element (optional
@@ -96,7 +96,7 @@ public interface DistributedCollectionService {
    *         time due to insertion restrictions
    */
   @Command
-  CollectionUpdateResult<Boolean> add(String element);
+  CollectionUpdateResult<Boolean> add(E element);
 
   /**
    * Removes a single instance of the specified element from this
@@ -119,7 +119,7 @@ public interface DistributedCollectionService {
    *         is not supported by this collection
    */
   @Command("removeValue")
-  CollectionUpdateResult<Boolean> remove(Object o);
+  CollectionUpdateResult<Boolean> remove(E o);
 
   /**
    * Returns <tt>true</tt> if this collection contains all of the elements
@@ -164,10 +164,10 @@ public interface DistributedCollectionService {
    *         collection
    * @throws IllegalStateException if not all the elements can be added at
    *         this time due to insertion restrictions
-   * @see #add(String)
+   * @see #add(Object)
    */
   @Command
-  CollectionUpdateResult<Boolean> addAll(Collection<? extends String> c);
+  CollectionUpdateResult<Boolean> addAll(Collection<? extends E> c);
 
   /**
    * Retains only the elements in this collection that are contained in the
@@ -258,7 +258,7 @@ public interface DistributedCollectionService {
    * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
    */
   @Query
-  IteratorBatch<String> next(long iteratorId, int position);
+  IteratorBatch<E> next(long iteratorId, int position);
 
   /**
    * Closes an iterator.

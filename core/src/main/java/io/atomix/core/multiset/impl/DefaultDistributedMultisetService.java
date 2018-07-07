@@ -40,7 +40,7 @@ import static io.atomix.core.collection.impl.CollectionUpdateResult.ok;
 /**
  * Default distributed multiset service.
  */
-public class DefaultDistributedMultisetService extends DefaultDistributedCollectionService<Multiset<String>> implements DistributedMultisetService {
+public class DefaultDistributedMultisetService extends DefaultDistributedCollectionService<Multiset<String>, String> implements DistributedMultisetService {
   private static final int MAX_ITERATOR_BATCH_SIZE = 1024 * 32;
 
   private final Serializer serializer;

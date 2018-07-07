@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Asynchronous distributed navigable set.
  */
-public interface AsyncDistributedNavigableSet<E> extends AsyncDistributedSortedSet<E> {
+public interface AsyncDistributedNavigableSet<E extends Comparable<E>> extends AsyncDistributedSortedSet<E> {
 
   /**
    * Returns the greatest element in this set strictly less than the

@@ -15,52 +15,42 @@
  */
 package io.atomix.core.set.impl;
 
-import com.google.common.io.BaseEncoding;
-import io.atomix.core.set.AsyncDistributedSet;
-import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.DistributedSetBuilder;
-import io.atomix.core.set.DistributedSetConfig;
+import io.atomix.core.set.DistributedTreeSet;
+import io.atomix.core.set.DistributedTreeSetBuilder;
+import io.atomix.core.set.DistributedTreeSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Default distributed set builder.
+ * Default distributed tree set builder.
  *
  * @param <E> type for set elements
  */
-public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
-  public DefaultDistributedSetBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
+public class DefaultDistributedTreeSetBuilder<E extends Comparable<E>> extends DistributedTreeSetBuilder<E> {
+  public DefaultDistributedTreeSetBuilder(String name, DistributedTreeSetConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<DistributedSet<E>> buildAsync() {
+  public CompletableFuture<DistributedTreeSet<E>> buildAsync() {
     ProxyClient proxy = protocol().newProxy(
         name(),
         primitiveType(),
-        DistributedSetService.class,
+        DistributedTreeSetService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
-    return new DistributedSetProxy<String>(proxy, managementService.getPrimitiveRegistry())
-        .connect()
-        .thenApply(rawSet -> {
-          Serializer serializer = serializer();
-          AsyncDistributedSet<E> set = new TranscodingAsyncDistributedSet<>(
-              rawSet,
-              element -> BaseEncoding.base16().encode(serializer.encode(element)),
-              string -> serializer.decode(BaseEncoding.base16().decode(string)));
-
+    return new DistributedTreeSetProxy<E>(proxy, managementService.getPrimitiveRegistry()).connect()
+        .thenApply(set -> {
           if (config.getCacheConfig().isEnabled()) {
-            set = new CachingAsyncDistributedSet<>(set, config.getCacheConfig());
+            set = new CachingAsyncDistributedTreeSet<>(set, config.getCacheConfig());
           }
 
           if (config.isReadOnly()) {
-            set = new UnmodifiableAsyncDistributedSet<>(set);
+            set = new UnmodifiableAsyncDistributedTreeSet<>(set);
           }
           return set.sync();
         });

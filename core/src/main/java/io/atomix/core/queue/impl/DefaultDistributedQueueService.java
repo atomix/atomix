@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * Default distributed queue service.
  */
-public class DefaultDistributedQueueService extends DefaultDistributedCollectionService<Queue<String>> implements DistributedQueueService {
+public class DefaultDistributedQueueService extends DefaultDistributedCollectionService<Queue<String>, String> implements DistributedQueueService {
   public DefaultDistributedQueueService() {
     super(DistributedQueueType.instance(), new ConcurrentLinkedQueue<>());
   }

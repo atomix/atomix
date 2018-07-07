@@ -28,7 +28,7 @@ import java.util.Collections;
 /**
  * Distributed multiset service.
  */
-public interface DistributedMultisetService extends DistributedCollectionService {
+public interface DistributedMultisetService extends DistributedCollectionService<String> {
 
   /**
    * Returns the number of occurrences of an element in this multiset (the <i>count</i> of the

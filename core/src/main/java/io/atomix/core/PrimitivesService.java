@@ -21,9 +21,6 @@ import io.atomix.core.barrier.DistributedCyclicBarrierType;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterBuilder;
 import io.atomix.core.counter.AtomicCounterType;
-import io.atomix.core.map.AtomicCounterMap;
-import io.atomix.core.map.AtomicCounterMapBuilder;
-import io.atomix.core.map.AtomicCounterMapType;
 import io.atomix.core.idgenerator.AtomicIdGenerator;
 import io.atomix.core.idgenerator.AtomicIdGeneratorBuilder;
 import io.atomix.core.idgenerator.AtomicIdGeneratorType;
@@ -39,6 +36,9 @@ import io.atomix.core.list.DistributedListType;
 import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.lock.DistributedLockBuilder;
 import io.atomix.core.lock.DistributedLockType;
+import io.atomix.core.map.AtomicCounterMap;
+import io.atomix.core.map.AtomicCounterMapBuilder;
+import io.atomix.core.map.AtomicCounterMapType;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapBuilder;
 import io.atomix.core.map.AtomicMapType;
@@ -69,6 +69,9 @@ import io.atomix.core.semaphore.DistributedSemaphoreType;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetBuilder;
 import io.atomix.core.set.DistributedSetType;
+import io.atomix.core.set.DistributedTreeSet;
+import io.atomix.core.set.DistributedTreeSetBuilder;
+import io.atomix.core.set.DistributedTreeSetType;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.tree.AtomicDocumentTreeBuilder;
@@ -310,6 +313,29 @@ public interface PrimitivesService {
    */
   default <E> DistributedSetBuilder<E> setBuilder(String name, PrimitiveProtocol protocol) {
     return primitiveBuilder(name, DistributedSetType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new DistributedTreeSetBuilder.
+   *
+   * @param name the primitive name
+   * @param <E>  set element type
+   * @return builder for an distributed set
+   */
+  default <E extends Comparable<E>> DistributedTreeSetBuilder<E> treeSetBuilder(String name) {
+    return primitiveBuilder(name, DistributedTreeSetType.instance());
+  }
+
+  /**
+   * Creates a new DistributedTreeSetBuilder.
+   *
+   * @param name     the primitive name
+   * @param protocol the primitive protocol
+   * @param <E>      set element type
+   * @return builder for an distributed set
+   */
+  default <E extends Comparable<E>> DistributedTreeSetBuilder<E> treeSetBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedTreeSetType.instance(), protocol);
   }
 
   /**
@@ -677,6 +703,15 @@ public interface PrimitivesService {
    * @return a multiton instance of a distributed set
    */
   <E> DistributedSet<E> getSet(String name);
+
+  /**
+   * Creates a new DistributedTreeSet.
+   *
+   * @param name the primitive name
+   * @param <E>  set element type
+   * @return a multiton instance of a distributed tree set
+   */
+  <E extends Comparable<E>> DistributedTreeSet<E> getTreeSet(String name);
 
   /**
    * Creates a new DistributedQueue.

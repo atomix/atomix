@@ -40,15 +40,15 @@ import static io.atomix.core.collection.impl.CollectionUpdateResult.ok;
 /**
  * Default distributed collection service.
  */
-public abstract class DefaultDistributedCollectionService<T extends Collection<String>>
+public abstract class DefaultDistributedCollectionService<T extends Collection<E>, E>
     extends AbstractPrimitiveService<DistributedCollectionClient>
-    implements DistributedCollectionService {
+    implements DistributedCollectionService<E> {
 
-  private static final int MAX_ITERATOR_BATCH_SIZE = 1024 * 32;
+  protected static final int MAX_ITERATOR_BATCH_SIZE = 1000;
 
   private final Serializer serializer;
   private T collection;
-  private Map<Long, IteratorContext> iterators = Maps.newHashMap();
+  protected Map<Long, AbstractIteratorContext> iterators = Maps.newHashMap();
   private Set<SessionId> listeners = Sets.newHashSet();
 
   protected DefaultDistributedCollectionService(PrimitiveType primitiveType, T collection) {
@@ -85,11 +85,11 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
     collection = input.readObject();
   }
 
-  protected void added(String element) {
+  protected void added(E element) {
     listeners.forEach(l -> getSession(l).accept(client -> client.onEvent(new CollectionEvent<>(CollectionEvent.Type.ADD, element))));
   }
 
-  protected void removed(String element) {
+  protected void removed(E element) {
     listeners.forEach(l -> getSession(l).accept(client -> client.onEvent(new CollectionEvent<>(CollectionEvent.Type.REMOVE, element))));
   }
 
@@ -109,7 +109,7 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
   }
 
   @Override
-  public CollectionUpdateResult<Boolean> add(String element) {
+  public CollectionUpdateResult<Boolean> add(E element) {
     if (collection.add(element)) {
       added(element);
       return ok(true);
@@ -118,9 +118,9 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
   }
 
   @Override
-  public CollectionUpdateResult<Boolean> remove(Object element) {
+  public CollectionUpdateResult<Boolean> remove(E element) {
     if (collection.remove(element)) {
-      removed((String) element);
+      removed(element);
       return ok(true);
     }
     return noop(false);
@@ -132,9 +132,9 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
   }
 
   @Override
-  public CollectionUpdateResult<Boolean> addAll(Collection<? extends String> c) {
+  public CollectionUpdateResult<Boolean> addAll(Collection<? extends E> c) {
     boolean changed = false;
-    for (String element : c) {
+    for (E element : c) {
       if (add(element).status() == CollectionUpdateResult.Status.OK) {
         changed = true;
       }
@@ -145,7 +145,7 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
   @Override
   public CollectionUpdateResult<Boolean> retainAll(Collection<?> c) {
     boolean changed = false;
-    for (String element : collection) {
+    for (E element : collection) {
       if (!c.contains(element) && remove(element).status() == CollectionUpdateResult.Status.OK) {
         changed = true;
       }
@@ -157,7 +157,7 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
   public CollectionUpdateResult<Boolean> removeAll(Collection<?> c) {
     boolean changed = false;
     for (Object element : c) {
-      if (remove(element).status() == CollectionUpdateResult.Status.OK) {
+      if (remove((E) element).status() == CollectionUpdateResult.Status.OK) {
         changed = true;
       }
     }
@@ -188,22 +188,20 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
   }
 
   @Override
-  public IteratorBatch<String> next(long iteratorId, int position) {
-    IteratorContext context = iterators.get(iteratorId);
+  public IteratorBatch<E> next(long iteratorId, int position) {
+    AbstractIteratorContext context = iterators.get(iteratorId);
     if (context == null) {
       return null;
     }
 
-    List<String> elements = new ArrayList<>();
-    int size = 0;
-    while (context.iterator.hasNext()) {
-      context.position++;
-      if (context.position > position) {
-        String element = context.iterator.next();
-        size += element.length();
+    List<E> elements = new ArrayList<>();
+    while (context.iterator().hasNext()) {
+      context.incrementPosition();
+      if (context.position() > position) {
+        E element = context.iterator().next();
         elements.add(element);
 
-        if (size >= MAX_ITERATOR_BATCH_SIZE) {
+        if (elements.size() >= MAX_ITERATOR_BATCH_SIZE) {
           break;
         }
       }
@@ -212,7 +210,7 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
     if (elements.isEmpty()) {
       return null;
     }
-    return new IteratorBatch<>(context.position, elements);
+    return new IteratorBatch<>(context.position(), elements);
   }
 
   @Override
@@ -223,22 +221,54 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<S
   @Override
   public void onExpire(Session session) {
     listeners.remove(session.sessionId());
-    iterators.entrySet().removeIf(entry -> entry.getValue().sessionId == session.sessionId().id());
+    iterators.entrySet().removeIf(entry -> entry.getValue().sessionId() == session.sessionId().id());
   }
 
   @Override
   public void onClose(Session session) {
     listeners.remove(session.sessionId());
-    iterators.entrySet().removeIf(entry -> entry.getValue().sessionId == session.sessionId().id());
+    iterators.entrySet().removeIf(entry -> entry.getValue().sessionId() == session.sessionId().id());
   }
 
-  protected class IteratorContext {
+  protected abstract class AbstractIteratorContext {
     private final long sessionId;
     private int position = 0;
-    private transient Iterator<String> iterator = collection().iterator();
+    private transient Iterator<E> iterator;
 
-    IteratorContext(long sessionId) {
+    public AbstractIteratorContext(long sessionId) {
       this.sessionId = sessionId;
+    }
+
+    protected abstract Iterator<E> create();
+
+    public long sessionId() {
+      return sessionId;
+    }
+
+    public int position() {
+      return position;
+    }
+
+    public void incrementPosition() {
+      position++;
+    }
+
+    public Iterator<E> iterator() {
+      if (iterator == null) {
+        iterator = create();
+      }
+      return iterator;
+    }
+  }
+
+  protected class IteratorContext extends AbstractIteratorContext {
+    public IteratorContext(long sessionId) {
+      super(sessionId);
+    }
+
+    @Override
+    protected Iterator<E> create() {
+      return collection().iterator();
     }
   }
 }

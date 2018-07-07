@@ -30,7 +30,7 @@ import static io.atomix.core.collection.impl.CollectionUpdateResult.ok;
 /**
  * Default distributed list service.
  */
-public class DefaultDistributedListService extends DefaultDistributedCollectionService<List<String>> implements DistributedListService {
+public class DefaultDistributedListService extends DefaultDistributedCollectionService<List<String>, String> implements DistributedListService {
   public DefaultDistributedListService() {
     super(DistributedListType.instance(), Collections.synchronizedList(new ArrayList<>()));
   }

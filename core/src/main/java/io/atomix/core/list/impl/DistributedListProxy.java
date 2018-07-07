@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Distributed list proxy.
  */
-public class DistributedListProxy extends DistributedCollectionProxy<AsyncDistributedList<String>, DistributedListService> implements AsyncDistributedList<String> {
+public class DistributedListProxy extends DistributedCollectionProxy<AsyncDistributedList<String>, DistributedListService, String> implements AsyncDistributedList<String> {
   public DistributedListProxy(ProxyClient<DistributedListService> client, PrimitiveRegistry registry) {
     super(client, registry);
   }

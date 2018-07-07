@@ -35,18 +35,18 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Distributed collection proxy.
  */
-public abstract class DistributedCollectionProxy<A extends AsyncDistributedCollection<String>, S extends DistributedCollectionService>
+public abstract class DistributedCollectionProxy<A extends AsyncDistributedCollection<E>, S extends DistributedCollectionService<E>, E>
     extends AbstractAsyncPrimitive<A, S>
-    implements AsyncDistributedCollection<String>, DistributedCollectionClient {
+    implements AsyncDistributedCollection<E>, DistributedCollectionClient<E> {
 
-  private final Set<CollectionEventListener<String>> eventListeners = Sets.newIdentityHashSet();
+  private final Set<CollectionEventListener<E>> eventListeners = Sets.newIdentityHashSet();
 
   public DistributedCollectionProxy(ProxyClient<S> client, PrimitiveRegistry registry) {
     super(client, registry);
   }
 
   @Override
-  public void onEvent(CollectionEvent<String> event) {
+  public void onEvent(CollectionEvent<E> event) {
     eventListeners.forEach(l -> l.event(event));
   }
 
@@ -61,41 +61,41 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
   }
 
   @Override
-  public CompletableFuture<Boolean> add(String element) {
+  public CompletableFuture<Boolean> add(E element) {
     return getProxyClient().applyBy(name(), service -> service.add(element))
         .thenCompose(result -> checkLocked(result));
   }
 
   @Override
-  public CompletableFuture<Boolean> remove(String element) {
+  public CompletableFuture<Boolean> remove(E element) {
     return getProxyClient().applyBy(name(), service -> service.remove(element))
         .thenCompose(result -> checkLocked(result));
   }
 
   @Override
-  public CompletableFuture<Boolean> contains(String element) {
+  public CompletableFuture<Boolean> contains(E element) {
     return getProxyClient().applyBy(name(), service -> service.contains(element));
   }
 
   @Override
-  public CompletableFuture<Boolean> addAll(Collection<? extends String> c) {
+  public CompletableFuture<Boolean> addAll(Collection<? extends E> c) {
     return getProxyClient().applyBy(name(), service -> service.addAll(c))
         .thenCompose(result -> checkLocked(result));
   }
 
   @Override
-  public CompletableFuture<Boolean> containsAll(Collection<? extends String> c) {
+  public CompletableFuture<Boolean> containsAll(Collection<? extends E> c) {
     return getProxyClient().applyBy(name(), service -> service.containsAll(c));
   }
 
   @Override
-  public CompletableFuture<Boolean> retainAll(Collection<? extends String> c) {
+  public CompletableFuture<Boolean> retainAll(Collection<? extends E> c) {
     return getProxyClient().applyBy(name(), service -> service.removeAll(c))
         .thenCompose(result -> checkLocked(result));
   }
 
   @Override
-  public CompletableFuture<Boolean> removeAll(Collection<? extends String> c) {
+  public CompletableFuture<Boolean> removeAll(Collection<? extends E> c) {
     return getProxyClient().applyBy(name(), service -> service.removeAll(c))
         .thenCompose(result -> checkLocked(result));
   }
@@ -108,7 +108,7 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
   }
 
   @Override
-  public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener) {
+  public synchronized CompletableFuture<Void> addListener(CollectionEventListener<E> listener) {
     if (eventListeners.isEmpty()) {
       eventListeners.add(listener);
       return getProxyClient().acceptBy(name(), service -> service.listen()).thenApply(v -> null);
@@ -119,7 +119,7 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
   }
 
   @Override
-  public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<String> listener) {
+  public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<E> listener) {
     if (eventListeners.remove(listener) && eventListeners.isEmpty()) {
       return getProxyClient().acceptAll(service -> service.unlisten()).thenApply(v -> null);
     }
@@ -131,7 +131,7 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
   }
 
   @Override
-  public AsyncIterator<String> iterator() {
+  public AsyncIterator<E> iterator() {
     return new ProxyIterator<>(
         getProxyClient(),
         getProxyClient().getPartitionId(name()),

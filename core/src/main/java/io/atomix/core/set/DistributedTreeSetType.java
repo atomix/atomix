@@ -18,8 +18,8 @@ package io.atomix.core.set;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.collection.impl.IteratorBatch;
-import io.atomix.core.set.impl.DefaultDistributedSetBuilder;
-import io.atomix.core.set.impl.DefaultDistributedSetService;
+import io.atomix.core.set.impl.DefaultDistributedTreeSetBuilder;
+import io.atomix.core.set.impl.DefaultDistributedTreeSetService;
 import io.atomix.core.set.impl.DistributedSetResource;
 import io.atomix.core.set.impl.SetUpdate;
 import io.atomix.core.transaction.TransactionId;
@@ -38,11 +38,11 @@ import io.atomix.utils.serializer.Namespaces;
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Distributed set primitive type.
+ * Distributed tree set primitive type.
  */
-public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilder<E>, DistributedSetConfig, DistributedSet<E>> {
-  private static final String NAME = "set";
-  private static final DistributedSetType INSTANCE = new DistributedSetType();
+public class DistributedTreeSetType<E extends Comparable<E>> implements PrimitiveType<DistributedTreeSetBuilder<E>, DistributedTreeSetConfig, DistributedTreeSet<E>> {
+  private static final String NAME = "tree-set";
+  private static final DistributedTreeSetType INSTANCE = new DistributedTreeSetType();
 
   /**
    * Returns a new distributed set type.
@@ -51,7 +51,7 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
    * @return a new distributed set type
    */
   @SuppressWarnings("unchecked")
-  public static <E> DistributedSetType<E> instance() {
+  public static <E extends Comparable<E>> DistributedTreeSetType<E> instance() {
     return INSTANCE;
   }
 
@@ -83,23 +83,23 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultDistributedSetService<>();
+    return new DefaultDistributedTreeSetService<>();
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(DistributedSet<E> primitive) {
+  public PrimitiveResource newResource(DistributedTreeSet<E> primitive) {
     return new DistributedSetResource((AsyncDistributedSet<String>) primitive.async());
   }
 
   @Override
-  public DistributedSetConfig newConfig() {
-    return new DistributedSetConfig();
+  public DistributedTreeSetConfig newConfig() {
+    return new DistributedTreeSetConfig();
   }
 
   @Override
-  public DistributedSetBuilder<E> newBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
-    return new DefaultDistributedSetBuilder<>(name, config, managementService);
+  public DistributedTreeSetBuilder<E> newBuilder(String name, DistributedTreeSetConfig config, PrimitiveManagementService managementService) {
+    return new DefaultDistributedTreeSetBuilder<>(name, config, managementService);
   }
 
   @Override

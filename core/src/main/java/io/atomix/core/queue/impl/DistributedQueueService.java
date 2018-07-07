@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
 /**
  * Distributed queue service.
  */
-public interface DistributedQueueService extends DistributedCollectionService {
+public interface DistributedQueueService extends DistributedCollectionService<String> {
 
   /**
    * Inserts the specified element into this queue if it is possible to do

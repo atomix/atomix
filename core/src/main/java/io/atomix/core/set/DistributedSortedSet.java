@@ -20,7 +20,7 @@ import java.util.SortedSet;
 /**
  * Distributed sorted set.
  */
-public interface DistributedSortedSet<E> extends DistributedSet<E>, SortedSet<E> {
+public interface DistributedSortedSet<E extends Comparable<E>> extends DistributedSet<E>, SortedSet<E> {
   @Override
   AsyncDistributedSortedSet<E> async();
 }

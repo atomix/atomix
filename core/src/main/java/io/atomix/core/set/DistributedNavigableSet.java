@@ -20,7 +20,7 @@ import java.util.NavigableSet;
 /**
  * Distributed navigable set.
  */
-public interface DistributedNavigableSet<E> extends DistributedSortedSet<E>, NavigableSet<E> {
+public interface DistributedNavigableSet<E extends Comparable<E>> extends DistributedSortedSet<E>, NavigableSet<E> {
   @Override
   AsyncDistributedNavigableSet<E> async();
 }

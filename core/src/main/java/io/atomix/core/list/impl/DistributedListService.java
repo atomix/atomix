@@ -25,7 +25,7 @@ import java.util.Collection;
 /**
  * Distributed list service.
  */
-public interface DistributedListService extends DistributedCollectionService {
+public interface DistributedListService extends DistributedCollectionService<String> {
 
   /**
    * Inserts all of the elements in the specified collection into this

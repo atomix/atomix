@@ -28,7 +28,7 @@ import java.util.NavigableSet;
  *
  * @param <E> set element type
  */
-public class BlockingDistributedNavigableSet<E> extends BlockingDistributedSortedSet<E> implements DistributedNavigableSet<E> {
+public class BlockingDistributedNavigableSet<E extends Comparable<E>> extends BlockingDistributedSortedSet<E> implements DistributedNavigableSet<E> {
 
   private final long operationTimeoutMillis;
 

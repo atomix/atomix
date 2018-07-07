@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Asynchronous distributed sorted set.
  */
-public interface AsyncDistributedSortedSet<E> extends AsyncDistributedSet<E> {
+public interface AsyncDistributedSortedSet<E extends Comparable<E>> extends AsyncDistributedSet<E> {
 
   /**
    * Returns a view of the portion of this set whose elements range
