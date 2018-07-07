@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.set;
 
-import com.google.common.collect.Sets;
-import io.atomix.core.set.DistributedSetType;
-
-import java.util.Set;
+import io.atomix.core.collection.DistributedCollectionConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
- * Default distributed set service.
+ * Distributed tree set configuration.
  */
-public class DefaultDistributedSetService<E> extends AbstractDistributedSetService<Set<E>, E> implements DistributedSetService<E> {
-  public DefaultDistributedSetService() {
-    super(DistributedSetType.instance(), Sets.newConcurrentHashSet());
+public class DistributedTreeSetConfig extends DistributedCollectionConfig<DistributedTreeSetConfig> {
+  @Override
+  public PrimitiveType getType() {
+    return DistributedTreeSetType.instance();
   }
 }

@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.set;
 
-import com.google.common.collect.Sets;
-import io.atomix.core.set.DistributedSetType;
-
-import java.util.Set;
+import java.time.Duration;
 
 /**
- * Default distributed set service.
+ * Asynchronous distributed tree set.
  */
-public class DefaultDistributedSetService<E> extends AbstractDistributedSetService<Set<E>, E> implements DistributedSetService<E> {
-  public DefaultDistributedSetService() {
-    super(DistributedSetType.instance(), Sets.newConcurrentHashSet());
+public interface AsyncDistributedTreeSet<E extends Comparable<E>> extends AsyncDistributedNavigableSet<E> {
+  @Override
+  default DistributedTreeSet<E> sync() {
+    return sync(Duration.ofMillis(DEFAULT_OPERATION_TIMEOUT_MILLIS));
   }
+
+  @Override
+  DistributedTreeSet<E> sync(Duration operationTimeout);
 }

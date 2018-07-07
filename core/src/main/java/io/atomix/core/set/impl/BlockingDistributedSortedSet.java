@@ -27,7 +27,7 @@ import java.util.SortedSet;
  *
  * @param <E> set element type
  */
-public class BlockingDistributedSortedSet<E> extends BlockingDistributedSet<E> implements DistributedSortedSet<E> {
+public class BlockingDistributedSortedSet<E extends Comparable<E>> extends BlockingDistributedSet<E> implements DistributedSortedSet<E> {
 
   private final long operationTimeoutMillis;
 
@@ -41,7 +41,7 @@ public class BlockingDistributedSortedSet<E> extends BlockingDistributedSet<E> i
 
   @Override
   public Comparator<? super E> comparator() {
-    throw new UnsupportedOperationException();
+    return null;
   }
 
   @Override

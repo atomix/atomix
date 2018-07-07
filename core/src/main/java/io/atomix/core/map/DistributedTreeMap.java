@@ -19,4 +19,6 @@ package io.atomix.core.map;
  * Distributed tree map.
  */
 public interface DistributedTreeMap<K extends Comparable<K>, V> extends DistributedNavigableMap<K, V> {
+  @Override
+  AsyncDistributedTreeMap<K, V> async();
 }

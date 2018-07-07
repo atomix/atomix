@@ -92,12 +92,30 @@ public interface ProxyClient<S> {
   PartitionId getPartitionId(String key);
 
   /**
+   * Returns the partition ID for the given key.
+   *
+   * @param key the key for which to return the partition ID
+   * @return the partition ID for the given key
+   */
+  PartitionId getPartitionId(Object key);
+
+  /**
    * Returns the partition proxy for the given key.
    *
    * @param key the key for which to return the partition proxy
    * @return the partition proxy for the given key
    */
   default ProxySession<S> getPartition(String key) {
+    return getPartition(getPartitionId(key));
+  }
+
+  /**
+   * Returns the partition proxy for the given key.
+   *
+   * @param key the key for which to return the partition proxy
+   * @return the partition proxy for the given key
+   */
+  default ProxySession<S> getPartition(Object key) {
     return getPartition(getPartitionId(key));
   }
 
@@ -186,6 +204,20 @@ public interface ProxyClient<S> {
    * @throws NullPointerException if {@code operation} is null
    */
   default <R> CompletableFuture<R> applyBy(String key, Function<S, R> operation) {
+    return getPartition(key).apply(operation);
+  }
+
+  /**
+   * Submits an empty operation to the owning partition for the given key.
+   *
+   * @param key       the key for which to submit the operation
+   * @param operation the operation
+   * @param <R>       the operation result type
+   * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
+   * {@link PrimitiveOperation} submission futures that preceded it.
+   * @throws NullPointerException if {@code operation} is null
+   */
+  default <R> CompletableFuture<R> applyBy(Object key, Function<S, R> operation) {
     return getPartition(key).apply(operation);
   }
 

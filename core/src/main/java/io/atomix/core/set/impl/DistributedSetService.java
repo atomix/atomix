@@ -26,7 +26,7 @@ import io.atomix.primitive.operation.Command;
 /**
  * Distributed set service.
  */
-public interface DistributedSetService extends DistributedCollectionService {
+public interface DistributedSetService<E> extends DistributedCollectionService<E> {
 
   /**
    * Prepares and commits a transaction.
@@ -35,7 +35,7 @@ public interface DistributedSetService extends DistributedCollectionService {
    * @return the prepare result
    */
   @Command
-  PrepareResult prepareAndCommit(TransactionLog<SetUpdate<String>> transactionLog);
+  PrepareResult prepareAndCommit(TransactionLog<SetUpdate<E>> transactionLog);
 
   /**
    * Prepares a transaction.
@@ -44,7 +44,7 @@ public interface DistributedSetService extends DistributedCollectionService {
    * @return the prepare result
    */
   @Command
-  PrepareResult prepare(TransactionLog<SetUpdate<String>> transactionLog);
+  PrepareResult prepare(TransactionLog<SetUpdate<E>> transactionLog);
 
   /**
    * Commits a transaction.

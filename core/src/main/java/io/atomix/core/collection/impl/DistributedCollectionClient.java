@@ -21,7 +21,7 @@ import io.atomix.primitive.event.Event;
 /**
  * Distributed collection client.
  */
-public interface DistributedCollectionClient {
+public interface DistributedCollectionClient<E> {
 
   /**
    * Called when an event is received by the client.
@@ -29,6 +29,6 @@ public interface DistributedCollectionClient {
    * @param event the collection event
    */
   @Event
-  void onEvent(CollectionEvent<String> event);
+  void onEvent(CollectionEvent<E> event);
 
 }

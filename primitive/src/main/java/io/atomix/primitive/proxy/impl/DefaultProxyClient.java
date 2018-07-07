@@ -17,6 +17,7 @@ package io.atomix.primitive.proxy.impl;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.BaseEncoding;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionId;
@@ -114,6 +115,11 @@ public class DefaultProxyClient<S> implements ProxyClient<S> {
   @Override
   public PartitionId getPartitionId(String key) {
     return partitioner.partition(key, partitionIds);
+  }
+
+  @Override
+  public PartitionId getPartitionId(Object key) {
+    return partitioner.partition(BaseEncoding.base16().encode(serializer.encode(key)), partitionIds);
   }
 
   @Override

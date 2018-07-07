@@ -41,6 +41,7 @@ import io.atomix.core.profile.ProfileConfig;
 import io.atomix.core.queue.DistributedQueue;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.set.DistributedSet;
+import io.atomix.core.set.DistributedTreeSet;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.tree.AtomicDocumentTree;
@@ -385,6 +386,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   public <E> DistributedSet<E> getSet(String name) {
     return primitives.getSet(name);
+  }
+
+  @Override
+  public <E extends Comparable<E>> DistributedTreeSet<E> getTreeSet(String name) {
+    return primitives.getTreeSet(name);
   }
 
   @Override

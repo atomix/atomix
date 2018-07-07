@@ -59,6 +59,8 @@ import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphoreType;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetType;
+import io.atomix.core.set.DistributedTreeSet;
+import io.atomix.core.set.DistributedTreeSetType;
 import io.atomix.core.transaction.ManagedTransactionService;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionConfig;
@@ -192,6 +194,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public <E> DistributedSet<E> getSet(String name) {
     return getPrimitive(name, DistributedSetType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public <E extends Comparable<E>> DistributedTreeSet<E> getTreeSet(String name) {
+    return getPrimitive(name, DistributedTreeSetType.instance(), configService.getConfig(name));
   }
 
   @Override

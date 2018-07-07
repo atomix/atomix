@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Distributed queue proxy.
  */
-public class DistributedQueueProxy extends DistributedCollectionProxy<AsyncDistributedQueue<String>, DistributedQueueService>
+public class DistributedQueueProxy extends DistributedCollectionProxy<AsyncDistributedQueue<String>, DistributedQueueService, String>
     implements AsyncDistributedQueue<String> {
   public DistributedQueueProxy(ProxyClient<DistributedQueueService> client, PrimitiveRegistry registry) {
     super(client, registry);

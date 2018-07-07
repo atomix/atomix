@@ -19,7 +19,6 @@ package io.atomix.core.map.impl;
 import io.atomix.core.map.AsyncAtomicNavigableMap;
 import io.atomix.core.map.AtomicNavigableMap;
 import io.atomix.core.set.AsyncDistributedNavigableSet;
-import io.atomix.core.set.impl.TranscodingAsyncDistributedNavigableSet;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -139,12 +138,12 @@ public class TranscodingAsyncAtomicNavigableMap<K extends Comparable<K>, V1, V2>
 
   @Override
   public AsyncDistributedNavigableSet<K> navigableKeySet() {
-    return new TranscodingAsyncDistributedNavigableSet<>(backingMap.navigableKeySet(), keyEncoder, keyDecoder);
+    return backingMap.navigableKeySet();
   }
 
   @Override
   public AsyncDistributedNavigableSet<K> descendingKeySet() {
-    return new TranscodingAsyncDistributedNavigableSet<>(backingMap.descendingKeySet(), keyEncoder, keyDecoder);
+    return backingMap.descendingKeySet();
   }
 
   @Override

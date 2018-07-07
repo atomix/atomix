@@ -38,7 +38,7 @@ public class ProxyIterator<S, T> implements AsyncIterator<T> {
   private volatile CompletableFuture<IteratorBatch<T>> batch;
   private volatile CompletableFuture<Void> closeFuture;
 
-  ProxyIterator(
+  public ProxyIterator(
       ProxyClient<S> client,
       PartitionId partitionId,
       OpenFunction<S> openFunction,

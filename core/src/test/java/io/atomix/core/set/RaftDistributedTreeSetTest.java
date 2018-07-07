@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.set;
 
-import com.google.common.collect.Sets;
-import io.atomix.core.set.DistributedSetType;
-
-import java.util.Set;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
+import io.atomix.protocols.raft.ReadConsistency;
 
 /**
- * Default distributed set service.
+ * Raft distributed tree set test.
  */
-public class DefaultDistributedSetService<E> extends AbstractDistributedSetService<Set<E>, E> implements DistributedSetService<E> {
-  public DefaultDistributedSetService() {
-    super(DistributedSetType.instance(), Sets.newConcurrentHashSet());
+public class RaftDistributedTreeSetTest extends DistributedTreeSetTest {
+  @Override
+  protected PrimitiveProtocol protocol() {
+    return MultiRaftProtocol.builder()
+        .withReadConsistency(ReadConsistency.LINEARIZABLE)
+        .withMaxRetries(5)
+        .build();
   }
 }

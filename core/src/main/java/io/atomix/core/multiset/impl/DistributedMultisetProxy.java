@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
  * Distributed multiset proxy.
  */
 public class DistributedMultisetProxy
-    extends PartitionedDistributedCollectionProxy<AsyncDistributedMultiset<String>, DistributedMultisetService>
+    extends PartitionedDistributedCollectionProxy<AsyncDistributedMultiset<String>, DistributedMultisetService, String>
     implements AsyncDistributedMultiset<String> {
   public DistributedMultisetProxy(ProxyClient<DistributedMultisetService> client, PrimitiveRegistry registry) {
     super(client, registry);
