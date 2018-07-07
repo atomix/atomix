@@ -20,7 +20,7 @@ import io.atomix.primitive.operation.Command;
 /**
  * Distributed lock service.
  */
-public interface DistributedLockService {
+public interface AtomicLockService {
 
   /**
    * Attempts to acquire a lock.

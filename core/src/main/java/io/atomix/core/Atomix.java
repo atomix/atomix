@@ -29,7 +29,7 @@ import io.atomix.core.impl.CorePrimitivesService;
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElector;
 import io.atomix.core.list.DistributedList;
-import io.atomix.core.lock.DistributedLock;
+import io.atomix.core.lock.AtomicLock;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedTreeMap;
@@ -434,8 +434,8 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @Override
-  public DistributedLock getLock(String name) {
-    return primitives.getLock(name);
+  public AtomicLock getAtomicLock(String name) {
+    return primitives.getAtomicLock(name);
   }
 
   @Override

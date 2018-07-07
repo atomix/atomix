@@ -21,7 +21,7 @@ import io.atomix.protocols.raft.MultiRaftProtocol;
 /**
  * Raft distributed lock test.
  */
-public class RaftDistributedLockTest extends DistributedLockTest {
+public class RaftAtomicLockTest extends AtomicLockTest {
   @Override
   protected PrimitiveProtocol protocol() {
     return MultiRaftProtocol.builder()

@@ -21,7 +21,7 @@ import io.atomix.protocols.backup.MultiPrimaryProtocol;
 /**
  * Primary-backup distributed lock test.
  */
-public class PrimaryBackupDistributedLockTest extends DistributedLockTest {
+public class PrimaryBackupAtomicLockTest extends AtomicLockTest {
   @Override
   protected PrimitiveProtocol protocol() {
     return MultiPrimaryProtocol.builder()

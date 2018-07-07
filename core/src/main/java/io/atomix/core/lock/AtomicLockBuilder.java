@@ -21,9 +21,9 @@ import io.atomix.primitive.PrimitiveManagementService;
 /**
  * Builder for AtomicIdGenerator.
  */
-public abstract class DistributedLockBuilder
-    extends PrimitiveBuilder<DistributedLockBuilder, DistributedLockConfig, DistributedLock> {
-  public DistributedLockBuilder(String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
-    super(DistributedLockType.instance(), name, config, managementService);
+public abstract class AtomicLockBuilder
+    extends PrimitiveBuilder<AtomicLockBuilder, AtomicLockConfig, AtomicLock> {
+  public AtomicLockBuilder(String name, AtomicLockConfig config, PrimitiveManagementService managementService) {
+    super(AtomicLockType.instance(), name, config, managementService);
   }
 }

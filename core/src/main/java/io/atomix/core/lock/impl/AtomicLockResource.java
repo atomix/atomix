@@ -32,12 +32,12 @@ import javax.ws.rs.core.Response;
 /**
  * Distributed lock resource.
  */
-public class DistributedLockResource implements PrimitiveResource {
-  private static final Logger LOGGER = LoggerFactory.getLogger(DistributedLockResource.class);
+public class AtomicLockResource implements PrimitiveResource {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AtomicLockResource.class);
 
   private final AsyncDistributedLock lock;
 
-  public DistributedLockResource(AsyncDistributedLock lock) {
+  public AtomicLockResource(AsyncDistributedLock lock) {
     this.lock = lock;
   }
 

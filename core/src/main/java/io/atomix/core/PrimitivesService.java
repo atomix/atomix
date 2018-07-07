@@ -33,9 +33,9 @@ import io.atomix.core.election.LeaderElectorType;
 import io.atomix.core.list.DistributedList;
 import io.atomix.core.list.DistributedListBuilder;
 import io.atomix.core.list.DistributedListType;
-import io.atomix.core.lock.DistributedLock;
-import io.atomix.core.lock.DistributedLockBuilder;
-import io.atomix.core.lock.DistributedLockType;
+import io.atomix.core.lock.AtomicLock;
+import io.atomix.core.lock.AtomicLockBuilder;
+import io.atomix.core.lock.AtomicLockType;
 import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.AtomicCounterMapBuilder;
 import io.atomix.core.map.AtomicCounterMapType;
@@ -520,8 +520,8 @@ public interface PrimitivesService {
    * @param name the primitive name
    * @return distributed lock builder
    */
-  default DistributedLockBuilder lockBuilder(String name) {
-    return primitiveBuilder(name, DistributedLockType.instance());
+  default AtomicLockBuilder atomicLockBuilder(String name) {
+    return primitiveBuilder(name, AtomicLockType.instance());
   }
 
   /**
@@ -531,8 +531,8 @@ public interface PrimitivesService {
    * @param protocol the primitive protocol
    * @return distributed lock builder
    */
-  default DistributedLockBuilder lockBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, DistributedLockType.instance(), protocol);
+  default AtomicLockBuilder atomicLockBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, AtomicLockType.instance(), protocol);
   }
 
   /**
@@ -782,12 +782,12 @@ public interface PrimitivesService {
   <T> LeaderElector<T> getLeaderElector(String name);
 
   /**
-   * Creates a new DistributedLockBuilder.
+   * Creates a new AtomicLockBuilder.
    *
    * @param name the primitive name
-   * @return distributed lock builder
+   * @return atomic lock builder
    */
-  DistributedLock getLock(String name);
+  AtomicLock getAtomicLock(String name);
 
   /**
    * Returns a multiton cyclic barrier.
