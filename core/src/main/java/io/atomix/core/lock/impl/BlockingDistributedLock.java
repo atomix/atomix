@@ -15,45 +15,54 @@
  */
 package io.atomix.core.lock.impl;
 
-import io.atomix.core.lock.AsyncAtomicLock;
-import io.atomix.core.lock.AtomicLock;
+import io.atomix.core.lock.AsyncDistributedLock;
+import io.atomix.core.lock.DistributedLock;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
-import io.atomix.utils.time.Version;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.Condition;
 
 /**
- * Default implementation for a {@code DistributedLock} backed by a {@link AsyncAtomicLock}.
+ * Default implementation for a {@code DistributedLock} backed by a {@link AsyncDistributedLock}.
  */
-public class BlockingAtomicLock extends Synchronous<AsyncAtomicLock> implements AtomicLock {
+public class BlockingDistributedLock extends Synchronous<AsyncDistributedLock> implements DistributedLock {
 
-  private final AsyncAtomicLock asyncLock;
+  private final AsyncDistributedLock asyncLock;
   private final long operationTimeoutMillis;
 
-  public BlockingAtomicLock(AsyncAtomicLock asyncLock, long operationTimeoutMillis) {
+  public BlockingDistributedLock(AsyncDistributedLock asyncLock, long operationTimeoutMillis) {
     super(asyncLock);
     this.asyncLock = asyncLock;
     this.operationTimeoutMillis = operationTimeoutMillis;
   }
 
   @Override
-  public Version lock() {
-    return asyncLock.lock().join();
+  public void lock() {
+    asyncLock.lock().join();
   }
 
   @Override
-  public Optional<Version> tryLock() {
+  public void lockInterruptibly() throws InterruptedException {
+    asyncLock.lock().join();
+  }
+
+  @Override
+  public Condition newCondition() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public boolean tryLock() {
     return asyncLock.tryLock().join();
   }
 
   @Override
-  public Optional<Version> tryLock(Duration timeout) {
+  public boolean tryLock(Duration timeout) {
     return asyncLock.tryLock(timeout).join();
   }
 
@@ -63,7 +72,7 @@ public class BlockingAtomicLock extends Synchronous<AsyncAtomicLock> implements 
   }
 
   @Override
-  public AsyncAtomicLock async() {
+  public AsyncDistributedLock async() {
     return asyncLock;
   }
 

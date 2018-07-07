@@ -15,13 +15,13 @@
  */
 package io.atomix.core.lock.impl;
 
-import io.atomix.core.lock.AtomicLockType;
+import io.atomix.core.lock.DistributedLockType;
 
 /**
- * Default atomic lock service.
+ * Default distributed lock service.
  */
-public class DefaultAtomicLockService extends AbstractAtomicLockService {
-  public DefaultAtomicLockService() {
-    super(AtomicLockType.instance());
+public class DefaultDistributedLockService extends AbstractAtomicLockService {
+  public DefaultDistributedLockService() {
+    super(DistributedLockType.instance());
   }
 }

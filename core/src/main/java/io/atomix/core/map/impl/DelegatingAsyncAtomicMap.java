@@ -18,14 +18,14 @@ package io.atomix.core.map.impl;
 
 import com.google.common.base.MoreObjects;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapEventListener;
+import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.primitive.PrimitiveState;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -45,161 +45,151 @@ import java.util.function.Predicate;
  * @param <V> value type
  */
 public class DelegatingAsyncAtomicMap<K, V>
-    extends DelegatingAsyncPrimitive implements AsyncAtomicMap<K, V> {
+    extends DelegatingAsyncPrimitive<AsyncAtomicMap<K, V>> implements AsyncAtomicMap<K, V> {
 
-  private final AsyncAtomicMap<K, V> delegateMap;
-
-  DelegatingAsyncAtomicMap(AsyncAtomicMap<K, V> delegateMap) {
-    super(delegateMap);
-    this.delegateMap = delegateMap;
+  DelegatingAsyncAtomicMap(AsyncAtomicMap<K, V> delegate) {
+    super(delegate);
   }
 
   @Override
   public CompletableFuture<Integer> size() {
-    return delegateMap.size();
+    return delegate().size();
   }
 
   @Override
   public CompletableFuture<Boolean> containsKey(K key) {
-    return delegateMap.containsKey(key);
+    return delegate().containsKey(key);
   }
 
   @Override
   public CompletableFuture<Boolean> containsValue(V value) {
-    return delegateMap.containsValue(value);
+    return delegate().containsValue(value);
   }
 
   @Override
   public CompletableFuture<Versioned<V>> get(K key) {
-    return delegateMap.get(key);
+    return delegate().get(key);
   }
 
   @Override
   public CompletableFuture<Map<K, Versioned<V>>> getAllPresent(Iterable<K> keys) {
-    return delegateMap.getAllPresent(keys);
+    return delegate().getAllPresent(keys);
   }
 
   @Override
   public CompletableFuture<Versioned<V>> getOrDefault(K key, V defaultValue) {
-    return delegateMap.getOrDefault(key, defaultValue);
+    return delegate().getOrDefault(key, defaultValue);
   }
 
   @Override
   public CompletableFuture<Versioned<V>> computeIf(K key,
                                                    Predicate<? super V> condition,
                                                    BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-    return delegateMap.computeIf(key, condition, remappingFunction);
+    return delegate().computeIf(key, condition, remappingFunction);
   }
 
   @Override
   public CompletableFuture<Versioned<V>> put(K key, V value, Duration ttl) {
-    return delegateMap.put(key, value, ttl);
+    return delegate().put(key, value, ttl);
   }
 
   @Override
   public CompletableFuture<Versioned<V>> putAndGet(K key, V value, Duration ttl) {
-    return delegateMap.putAndGet(key, value, ttl);
+    return delegate().putAndGet(key, value, ttl);
   }
 
   @Override
   public CompletableFuture<Versioned<V>> remove(K key) {
-    return delegateMap.remove(key);
+    return delegate().remove(key);
   }
 
   @Override
   public CompletableFuture<Void> clear() {
-    return delegateMap.clear();
+    return delegate().clear();
   }
 
   @Override
   public AsyncDistributedSet<K> keySet() {
-    return delegateMap.keySet();
+    return delegate().keySet();
   }
 
   @Override
   public AsyncDistributedCollection<Versioned<V>> values() {
-    return delegateMap.values();
+    return delegate().values();
   }
 
   @Override
   public AsyncDistributedSet<Entry<K, Versioned<V>>> entrySet() {
-    return delegateMap.entrySet();
+    return delegate().entrySet();
   }
 
   @Override
   public CompletableFuture<Versioned<V>> putIfAbsent(K key, V value, Duration ttl) {
-    return delegateMap.putIfAbsent(key, value, ttl);
+    return delegate().putIfAbsent(key, value, ttl);
   }
 
   @Override
   public CompletableFuture<Boolean> remove(K key, V value) {
-    return delegateMap.remove(key, value);
+    return delegate().remove(key, value);
   }
 
   @Override
   public CompletableFuture<Boolean> remove(K key, long version) {
-    return delegateMap.remove(key, version);
+    return delegate().remove(key, version);
   }
 
   @Override
   public CompletableFuture<Versioned<V>> replace(K key, V value) {
-    return delegateMap.replace(key, value);
+    return delegate().replace(key, value);
   }
 
   @Override
   public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
-    return delegateMap.replace(key, oldValue, newValue);
+    return delegate().replace(key, oldValue, newValue);
   }
 
   @Override
   public CompletableFuture<Boolean> replace(K key, long oldVersion, V newValue) {
-    return delegateMap.replace(key, oldVersion, newValue);
+    return delegate().replace(key, oldVersion, newValue);
   }
 
   @Override
   public CompletableFuture<Void> addListener(AtomicMapEventListener<K, V> listener, Executor executor) {
-    return delegateMap.addListener(listener, executor);
+    return delegate().addListener(listener, executor);
   }
 
   @Override
   public CompletableFuture<Void> removeListener(AtomicMapEventListener<K, V> listener) {
-    return delegateMap.removeListener(listener);
+    return delegate().removeListener(listener);
   }
 
   @Override
   public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<K, V>> transactionLog) {
-    return delegateMap.prepare(transactionLog);
+    return delegate().prepare(transactionLog);
   }
 
   @Override
   public CompletableFuture<Void> commit(TransactionId transactionId) {
-    return delegateMap.commit(transactionId);
+    return delegate().commit(transactionId);
   }
 
   @Override
   public CompletableFuture<Void> rollback(TransactionId transactionId) {
-    return delegateMap.rollback(transactionId);
+    return delegate().rollback(transactionId);
   }
 
   @Override
   public void addStateChangeListener(Consumer<PrimitiveState> listener) {
-    delegateMap.addStateChangeListener(listener);
+    delegate().addStateChangeListener(listener);
   }
 
   @Override
   public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
-    delegateMap.removeStateChangeListener(listener);
+    delegate().removeStateChangeListener(listener);
   }
 
   @Override
   public AtomicMap<K, V> sync(Duration operationTimeout) {
     return new BlockingAtomicMap<>(this, operationTimeout.toMillis());
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(getClass())
-        .add("delegateMap", delegateMap)
-        .toString();
   }
 }

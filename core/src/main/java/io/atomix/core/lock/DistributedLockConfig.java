@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.lock.impl;
+package io.atomix.core.lock;
 
-import io.atomix.core.lock.AtomicLockType;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
- * Default atomic lock service.
+ * Distributed lock configuration.
  */
-public class DefaultAtomicLockService extends AbstractAtomicLockService {
-  public DefaultAtomicLockService() {
-    super(AtomicLockType.instance());
+public class DistributedLockConfig extends PrimitiveConfig<DistributedLockConfig> {
+  @Override
+  public PrimitiveType getType() {
+    return DistributedLockType.instance();
   }
 }

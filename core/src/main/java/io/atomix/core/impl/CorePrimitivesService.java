@@ -27,18 +27,20 @@ import io.atomix.core.barrier.DistributedCyclicBarrier;
 import io.atomix.core.barrier.DistributedCyclicBarrierType;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterType;
-import io.atomix.core.map.AtomicCounterMap;
-import io.atomix.core.map.AtomicCounterMapType;
-import io.atomix.core.idgenerator.AtomicIdGenerator;
-import io.atomix.core.idgenerator.AtomicIdGeneratorType;
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElectionType;
 import io.atomix.core.election.LeaderElector;
 import io.atomix.core.election.LeaderElectorType;
+import io.atomix.core.idgenerator.AtomicIdGenerator;
+import io.atomix.core.idgenerator.AtomicIdGeneratorType;
 import io.atomix.core.list.DistributedList;
 import io.atomix.core.list.DistributedListType;
 import io.atomix.core.lock.AtomicLock;
 import io.atomix.core.lock.AtomicLockType;
+import io.atomix.core.lock.DistributedLock;
+import io.atomix.core.lock.DistributedLockType;
+import io.atomix.core.map.AtomicCounterMap;
+import io.atomix.core.map.AtomicCounterMapType;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapType;
 import io.atomix.core.map.AtomicTreeMap;
@@ -239,6 +241,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public <T> LeaderElector<T> getLeaderElector(String name) {
     return getPrimitive(name, LeaderElectorType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public DistributedLock getLock(String name) {
+    return getPrimitive(name, DistributedLockType.instance(), configService.getConfig(name));
   }
 
   @Override

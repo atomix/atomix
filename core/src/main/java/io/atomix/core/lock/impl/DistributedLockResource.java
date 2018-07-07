@@ -15,7 +15,7 @@
  */
 package io.atomix.core.lock.impl;
 
-import io.atomix.core.lock.AsyncAtomicLock;
+import io.atomix.core.lock.AsyncDistributedLock;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,12 +32,12 @@ import javax.ws.rs.core.Response;
 /**
  * Distributed lock resource.
  */
-public class AtomicLockResource implements PrimitiveResource {
-  private static final Logger LOGGER = LoggerFactory.getLogger(AtomicLockResource.class);
+public class DistributedLockResource implements PrimitiveResource {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DistributedLockResource.class);
 
-  private final AsyncAtomicLock lock;
+  private final AsyncDistributedLock lock;
 
-  public AtomicLockResource(AsyncAtomicLock lock) {
+  public DistributedLockResource(AsyncDistributedLock lock) {
     this.lock = lock;
   }
 
@@ -47,7 +47,7 @@ public class AtomicLockResource implements PrimitiveResource {
   public void lock(@Suspended AsyncResponse response) {
     lock.lock().whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.ok(result.value()).build());
+        response.resume(Response.ok().build());
       } else {
         LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
