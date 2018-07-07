@@ -76,7 +76,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
         .register(MapEntryValue.class)
         .register(MapEntryValue.Type.class)
         .register(new HashMap().keySet().getClass())
-        .register(IteratorContext.class)
+        .register(DefaultIterator.class)
         .build());
     map = createMap();
   }
@@ -571,7 +571,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
 
   @Override
   public long iterateEntries() {
-    entryIterators.put(getCurrentIndex(), new IteratorContext(getCurrentSession().sessionId().id()));
+    entryIterators.put(getCurrentIndex(), new DefaultIterator(getCurrentSession().sessionId().id()));
     return getCurrentIndex();
   }
 
@@ -584,10 +584,10 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
 
     List<Map.Entry<K, Versioned<byte[]>>> entries = new ArrayList<>();
     int size = 0;
-    while (context.iterator.hasNext()) {
-      context.position++;
-      if (context.position > position) {
-        Map.Entry<K, MapEntryValue> entry = context.iterator.next();
+    while (context.iterator().hasNext()) {
+      context.incrementPosition();
+      if (context.position() > position) {
+        Map.Entry<K, MapEntryValue> entry = context.iterator().next();
         entries.add(Maps.immutableEntry(entry.getKey(), toVersioned(entry.getValue())));
         size += entry.getValue().value().length;
 
@@ -1014,13 +1014,45 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
     }
   }
 
-  private class IteratorContext {
+  protected abstract class IteratorContext {
     private final long sessionId;
     private int position = 0;
-    private transient Iterator<Map.Entry<K, MapEntryValue>> iterator = entries().entrySet().iterator();
+    private transient Iterator<Map.Entry<K, MapEntryValue>> iterator;
 
-    IteratorContext(long sessionId) {
+    public IteratorContext(long sessionId) {
       this.sessionId = sessionId;
+    }
+
+    protected abstract Iterator<Map.Entry<K, MapEntryValue>> create();
+
+    public long sessionId() {
+      return sessionId;
+    }
+
+    public int position() {
+      return position;
+    }
+
+    public void incrementPosition() {
+      position++;
+    }
+
+    public Iterator<Map.Entry<K, MapEntryValue>> iterator() {
+      if (iterator == null) {
+        iterator = create();
+      }
+      return iterator;
+    }
+  }
+
+  protected class DefaultIterator extends IteratorContext {
+    public DefaultIterator(long sessionId) {
+      super(sessionId);
+    }
+
+    @Override
+    protected Iterator<Map.Entry<K, MapEntryValue>> create() {
+      return entries().entrySet().iterator();
     }
   }
 }

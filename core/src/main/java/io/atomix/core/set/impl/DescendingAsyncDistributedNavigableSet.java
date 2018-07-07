@@ -15,14 +15,15 @@
  */
 package io.atomix.core.set.impl;
 
-import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEventListener;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.set.AsyncDistributedNavigableSet;
 import io.atomix.core.set.AsyncDistributedSortedSet;
 import io.atomix.core.set.DistributedNavigableSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.time.Duration;
@@ -32,76 +33,76 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Descending navigable set.
  */
-public class DescendingAsyncDistributedNavigableSet<E extends Comparable<E>> implements AsyncDistributedNavigableSet<E> {
-  private final AsyncDistributedNavigableSet<E> set;
-
-  public DescendingAsyncDistributedNavigableSet(AsyncDistributedNavigableSet<E> set) {
-    this.set = set;
+public class DescendingAsyncDistributedNavigableSet<E extends Comparable<E>>
+    extends DelegatingAsyncPrimitive<AsyncDistributedNavigableSet<E>>
+    implements AsyncDistributedNavigableSet<E> {
+  public DescendingAsyncDistributedNavigableSet(AsyncDistributedNavigableSet<E> primitive) {
+    super(primitive);
   }
 
   @Override
   public String name() {
-    return set.name();
+    return delegate().name();
   }
 
   @Override
   public PrimitiveType type() {
-    return set.type();
+    return delegate().type();
   }
 
   @Override
   public PrimitiveProtocol protocol() {
-    return set.protocol();
+    return delegate().protocol();
   }
 
   @Override
   public CompletableFuture<E> lower(E e) {
-    return set.higher(e);
+    return delegate().higher(e);
   }
 
   @Override
   public CompletableFuture<E> floor(E e) {
-    return set.ceiling(e);
+    return delegate().ceiling(e);
   }
 
   @Override
   public CompletableFuture<E> ceiling(E e) {
-    return set.floor(e);
+    return delegate().floor(e);
   }
 
   @Override
   public CompletableFuture<E> higher(E e) {
-    return set.lower(e);
+    return delegate().lower(e);
   }
 
   @Override
   public CompletableFuture<E> pollFirst() {
-    return set.pollLast();
+    return delegate().pollLast();
   }
 
   @Override
   public CompletableFuture<E> pollLast() {
-    return set.pollFirst();
+    return delegate().pollFirst();
   }
 
   @Override
   public AsyncDistributedNavigableSet<E> descendingSet() {
-    return set;
+    return delegate();
   }
 
   @Override
   public AsyncIterator<E> descendingIterator() {
-    return set.iterator();
+    return delegate().iterator();
   }
 
   @Override
   public AsyncDistributedNavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
-    return set.subSet(fromElement, fromInclusive, toElement, toInclusive).descendingSet();
+    return delegate().subSet(fromElement, fromInclusive, toElement, toInclusive).descendingSet();
   }
 
   @Override
   public AsyncDistributedNavigableSet<E> headSet(E toElement, boolean inclusive) {
-    return set.headSet(toElement, inclusive).descendingSet();
+    return delegate().headSet(toElement, inclusive).descendingSet();
   }
 
   @Override
@@ -126,97 +127,97 @@ public class DescendingAsyncDistributedNavigableSet<E extends Comparable<E>> imp
 
   @Override
   public CompletableFuture<E> first() {
-    return set.last();
+    return delegate().last();
   }
 
   @Override
   public CompletableFuture<E> last() {
-    return set.first();
+    return delegate().first();
   }
 
   @Override
   public CompletableFuture<Boolean> add(E element) {
-    return set.add(element);
+    return delegate().add(element);
   }
 
   @Override
   public CompletableFuture<Boolean> remove(E element) {
-    return remove(element);
+    return delegate().remove(element);
   }
 
   @Override
   public CompletableFuture<Integer> size() {
-    return set.size();
+    return delegate().size();
   }
 
   @Override
   public CompletableFuture<Boolean> isEmpty() {
-    return set.isEmpty();
+    return delegate().isEmpty();
   }
 
   @Override
   public CompletableFuture<Void> clear() {
-    return set.clear();
+    return delegate().clear();
   }
 
   @Override
   public CompletableFuture<Boolean> contains(E element) {
-    return set.contains(element);
+    return delegate().contains(element);
   }
 
   @Override
   public CompletableFuture<Boolean> addAll(Collection<? extends E> c) {
-    return set.addAll(c);
+    return delegate().addAll(c);
   }
 
   @Override
   public CompletableFuture<Boolean> containsAll(Collection<? extends E> c) {
-    return set.containsAll(c);
+    return delegate().containsAll(c);
   }
 
   @Override
   public CompletableFuture<Boolean> retainAll(Collection<? extends E> c) {
-    return retainAll(c);
+    return delegate().retainAll(c);
   }
 
   @Override
   public CompletableFuture<Boolean> removeAll(Collection<? extends E> c) {
-    return set.removeAll(c);
+    return delegate().removeAll(c);
   }
 
   @Override
   public CompletableFuture<Void> addListener(CollectionEventListener<E> listener) {
-    return set.addListener(listener);
+    return delegate().addListener(listener);
   }
 
   @Override
   public CompletableFuture<Void> removeListener(CollectionEventListener<E> listener) {
-    return set.removeListener(listener);
+    return delegate().removeListener(listener);
   }
 
   @Override
   public AsyncIterator<E> iterator() {
-    return set.descendingIterator();
+    return delegate().descendingIterator();
   }
 
   @Override
   public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<E>> transactionLog) {
-    return set.prepare(transactionLog);
+    return delegate().prepare(transactionLog);
   }
 
   @Override
   public CompletableFuture<Void> commit(TransactionId transactionId) {
-    return set.commit(transactionId);
+    return delegate().commit(transactionId);
   }
 
   @Override
   public CompletableFuture<Void> rollback(TransactionId transactionId) {
-    return set.rollback(transactionId);
+    return delegate().rollback(transactionId);
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return set.close();
+    return delegate().close();
   }
 
   @Override
