@@ -308,6 +308,7 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
         if (order == 0) {
           fromInclusive = this.fromInclusive && fromInclusive;
         } else if (order > 0) {
+          fromElement = this.fromElement;
           fromInclusive = this.fromInclusive;
         }
       }
@@ -316,7 +317,8 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
         int order = this.toElement.compareTo(toElement);
         if (order == 0) {
           toInclusive = this.toInclusive && toInclusive;
-        } else if (order > 0) {
+        } else if (order < 0) {
+          toElement = this.toElement;
           toInclusive = this.toInclusive;
         }
       }
@@ -331,7 +333,8 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
         int order = this.toElement.compareTo(toElement);
         if (order == 0) {
           inclusive = this.toInclusive && inclusive;
-        } else if (order > 0) {
+        } else if (order < 0) {
+          toElement = this.toElement;
           inclusive = this.toInclusive;
         }
       }
@@ -347,6 +350,7 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
         if (order == 0) {
           inclusive = this.fromInclusive && inclusive;
         } else if (order > 0) {
+          fromElement = this.fromElement;
           inclusive = this.fromInclusive;
         }
       }
