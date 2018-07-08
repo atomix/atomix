@@ -46,7 +46,7 @@ public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
         DistributedSetService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
-    return new DistributedSetProxy<String>(proxy, managementService.getPrimitiveRegistry())
+    return new DistributedSetProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(rawSet -> {
           Serializer serializer = serializer();
