@@ -29,7 +29,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Base class for tree map services.
@@ -139,7 +142,105 @@ public abstract class AbstractAtomicTreeMapService<K extends Comparable<K>> exte
   }
 
   @Override
-  public int size(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+  public K pollFirstKey() {
+    Map.Entry<K, MapEntryValue> entry = entries().pollFirstEntry();
+    return entry != null ? entry.getKey() : null;
+  }
+
+  @Override
+  public K pollLastKey() {
+    Map.Entry<K, MapEntryValue> entry = entries().pollLastEntry();
+    return entry != null ? entry.getKey() : null;
+  }
+
+  @Override
+  public K subMapFirstKey(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(NavigableMap::firstKey, fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public K subMapLastKey(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(NavigableMap::lastKey, fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public Map.Entry<K, Versioned<byte[]>> subMapCeilingEntry(K key, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> toVersionedEntry(map.ceilingEntry(key)), fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public Map.Entry<K, Versioned<byte[]>> subMapFloorEntry(K key, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> toVersionedEntry(map.floorEntry(key)), fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public Map.Entry<K, Versioned<byte[]>> subMapHigherEntry(K key, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> toVersionedEntry(map.higherEntry(key)), fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public Map.Entry<K, Versioned<byte[]>> subMapLowerEntry(K key, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> toVersionedEntry(map.lowerEntry(key)), fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public Map.Entry<K, Versioned<byte[]>> subMapFirstEntry(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> toVersionedEntry(map.firstEntry()), fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public Map.Entry<K, Versioned<byte[]>> subMapLastEntry(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> toVersionedEntry(map.lastEntry()), fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public Map.Entry<K, Versioned<byte[]>> subMapPollFirstEntry(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> toVersionedEntry(map.pollFirstEntry()), fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public Map.Entry<K, Versioned<byte[]>> subMapPollLastEntry(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> toVersionedEntry(map.pollLastEntry()), fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public K subMapLowerKey(K key, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> map.lowerKey(key), fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public K subMapFloorKey(K key, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> map.floorKey(key), fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public K subMapCeilingKey(K key, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> map.ceilingKey(key), fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public K subMapHigherKey(K key, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> map.higherKey(key), fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public K subMapPollFirstKey(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> {
+      Map.Entry<K, MapEntryValue> entry = map.pollFirstEntry();
+      return entry != null ? entry.getKey() : null;
+    }, fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public K subMapPollLastKey(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return subMapApply(map -> {
+      Map.Entry<K, MapEntryValue> entry = map.pollLastEntry();
+      return entry != null ? entry.getKey() : null;
+    }, fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  @Override
+  public int subMapSize(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
     if (fromKey != null && toKey != null) {
       return entries().subMap(fromKey, fromInclusive, toKey, toInclusive).size();
     } else if (fromKey != null) {
@@ -152,27 +253,50 @@ public abstract class AbstractAtomicTreeMapService<K extends Comparable<K>> exte
   }
 
   @Override
-  public long iterate(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+  public long subMapIterate(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
     entryIterators.put(getCurrentIndex(), new AscendingIterator(getCurrentSession().sessionId().id(), fromKey, fromInclusive, toKey, toInclusive));
     return getCurrentIndex();
   }
 
   @Override
-  public long iterateDescending(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+  public long subMapIterateDescending(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
     entryIterators.put(getCurrentIndex(), new DescendingIterator(getCurrentSession().sessionId().id(), fromKey, fromInclusive, toKey, toInclusive));
     return getCurrentIndex();
   }
 
   @Override
-  public void clear(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
-    if (fromKey != null && toKey != null) {
-      entries().subMap(fromKey, fromInclusive, toKey, toInclusive).clear();
-    } else if (fromKey != null) {
-      entries().tailMap(fromKey, fromInclusive).clear();
-    } else if (toKey != null) {
-      entries().headMap(toKey, toInclusive).clear();
-    } else {
-      entries().clear();
+  public void subMapClear(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    subMapAccept(NavigableMap::clear, fromKey, fromInclusive, toKey, toInclusive);
+  }
+
+  private void subMapAccept(Consumer<NavigableMap<K, MapEntryValue>> function, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    try {
+      if (fromKey != null && toKey != null) {
+        function.accept(entries().subMap(fromKey, fromInclusive, toKey, toInclusive));
+      } else if (fromKey != null) {
+        function.accept(entries().tailMap(fromKey, fromInclusive));
+      } else if (toKey != null) {
+        function.accept(entries().headMap(toKey, toInclusive));
+      } else {
+        function.accept(entries());
+      }
+    } catch (NoSuchElementException e) {
+    }
+  }
+
+  private <T> T subMapApply(Function<NavigableMap<K, MapEntryValue>, T> function, K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    try {
+      if (fromKey != null && toKey != null) {
+        return function.apply(entries().subMap(fromKey, fromInclusive, toKey, toInclusive));
+      } else if (fromKey != null) {
+        return function.apply(entries().tailMap(fromKey, fromInclusive));
+      } else if (toKey != null) {
+        return function.apply(entries().headMap(toKey, toInclusive));
+      } else {
+        return function.apply(entries());
+      }
+    } catch (NoSuchElementException e) {
+      return null;
     }
   }
 
@@ -198,15 +322,7 @@ public abstract class AbstractAtomicTreeMapService<K extends Comparable<K>> exte
 
     @Override
     protected Iterator<Map.Entry<K, MapEntryValue>> create() {
-      if (fromKey != null && toKey != null) {
-        return entries().subMap(fromKey, fromInclusive, toKey, toInclusive).entrySet().iterator();
-      } else if (fromKey != null) {
-        return entries().tailMap(fromKey, fromInclusive).entrySet().iterator();
-      } else if (toKey != null) {
-        return entries().headMap(toKey, toInclusive).entrySet().iterator();
-      } else {
-        return entries().entrySet().iterator();
-      }
+      return subMapApply(m -> m.entrySet().iterator(), fromKey, fromInclusive, toKey, toInclusive);
     }
   }
 
@@ -226,15 +342,7 @@ public abstract class AbstractAtomicTreeMapService<K extends Comparable<K>> exte
 
     @Override
     protected Iterator<Map.Entry<K, MapEntryValue>> create() {
-      if (fromKey != null && toKey != null) {
-        return entries().subMap(fromKey, fromInclusive, toKey, toInclusive).descendingMap().entrySet().iterator();
-      } else if (fromKey != null) {
-        return entries().tailMap(fromKey, fromInclusive).descendingMap().entrySet().iterator();
-      } else if (toKey != null) {
-        return entries().headMap(toKey, toInclusive).descendingMap().entrySet().iterator();
-      } else {
-        return entries().descendingMap().entrySet().iterator();
-      }
+      return subMapApply(m -> m.descendingMap().entrySet().iterator(), fromKey, fromInclusive, toKey, toInclusive);
     }
   }
 }
