@@ -18,10 +18,8 @@ package io.atomix.core.iterator.impl;
 import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.ProxyClient;
-import io.atomix.utils.concurrent.Futures;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -45,21 +43,19 @@ public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
     this.openFunction = openFunction;
     this.nextFunction = nextFunction;
     this.closeFunction = closeFunction;
+    iterator = new ProxyIterator<>(client, partitions.next(), openFunction, nextFunction, closeFunction);
   }
 
   @Override
   public CompletableFuture<Boolean> hasNext() {
-    if (iterator == null && partitions.hasNext()) {
-      iterator = new ProxyIterator<>(client, partitions.next(), openFunction, nextFunction, closeFunction);
-    }
-    if (iterator == null) {
-      return CompletableFuture.completedFuture(false);
-    }
     return iterator.hasNext()
         .thenCompose(hasNext -> {
           if (!hasNext) {
-            iterator = null;
-            return hasNext();
+            if (partitions.hasNext()) {
+              iterator = new ProxyIterator<>(client, partitions.next(), openFunction, nextFunction, closeFunction);
+              return hasNext();
+            }
+            return CompletableFuture.completedFuture(false);
           }
           return CompletableFuture.completedFuture(true);
         });
@@ -67,12 +63,6 @@ public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
 
   @Override
   public CompletableFuture<T> next() {
-    if (iterator == null && partitions.hasNext()) {
-      iterator = new ProxyIterator<>(client, partitions.next(), openFunction, nextFunction, closeFunction);
-    }
-    if (iterator == null) {
-      return Futures.exceptionalFuture(new NoSuchElementException());
-    }
     return iterator.next();
   }
 }
