@@ -140,7 +140,15 @@ public abstract class AbstractAtomicTreeMapService<K extends Comparable<K>> exte
 
   @Override
   public int size(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
-    return entries().subMap(fromKey, fromInclusive, toKey, toInclusive).size();
+    if (fromKey != null && toKey != null) {
+      return entries().subMap(fromKey, fromInclusive, toKey, toInclusive).size();
+    } else if (fromKey != null) {
+      return entries().tailMap(fromKey, fromInclusive).size();
+    } else if (toKey != null) {
+      return entries().headMap(toKey, toInclusive).size();
+    } else {
+      return entries().size();
+    }
   }
 
   @Override
@@ -157,7 +165,15 @@ public abstract class AbstractAtomicTreeMapService<K extends Comparable<K>> exte
 
   @Override
   public void clear(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
-    entries().subMap(fromKey, fromInclusive, toKey, toInclusive).clear();
+    if (fromKey != null && toKey != null) {
+      entries().subMap(fromKey, fromInclusive, toKey, toInclusive).clear();
+    } else if (fromKey != null) {
+      entries().tailMap(fromKey, fromInclusive).clear();
+    } else if (toKey != null) {
+      entries().headMap(toKey, toInclusive).clear();
+    } else {
+      entries().clear();
+    }
   }
 
   private Map.Entry<K, Versioned<byte[]>> toVersionedEntry(

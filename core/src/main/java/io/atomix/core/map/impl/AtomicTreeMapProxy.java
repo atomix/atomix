@@ -52,12 +52,15 @@ import io.atomix.utils.time.Versioned;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Implementation of {@link AsyncAtomicTreeMap}.
@@ -229,13 +232,13 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
     }
 
     protected boolean isInBounds(K key) {
-      return isInLowerBounds(key) && isInUpperBounds(key);
+      return key != null && isInLowerBounds(key) && isInUpperBounds(key);
     }
 
     protected boolean isInLowerBounds(K key) {
       if (fromKey != null) {
         int lower = key.compareTo(fromKey);
-        if (!fromInclusive && lower < 0 || fromInclusive && lower <= 0) {
+        if (!fromInclusive && lower <= 0 || fromInclusive && lower < 0) {
           return false;
         }
       }
@@ -245,7 +248,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
     protected boolean isInUpperBounds(K key) {
       if (toKey != null) {
         int upper = key.compareTo(toKey);
-        if (!toInclusive && upper > 0 || toInclusive && upper >= 0) {
+        if (!toInclusive && upper >= 0 || toInclusive && upper > 0) {
           return false;
         }
       }
@@ -270,9 +273,9 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
       if (toKey == null) {
         return lowerKey(key);
       } else if (toInclusive && toKey.compareTo(key) < 0) {
-        return floorKey(toKey).thenApply(result -> isInLowerBounds(result) ? result : null);
+        return floorKey(toKey).thenApply(result -> isInBounds(result) ? result : null);
       } else {
-        return lowerKey(min(toKey, key)).thenApply(result -> isInLowerBounds(result) ? result : null);
+        return lowerKey(min(toKey, key)).thenApply(result -> isInBounds(result) ? result : null);
       }
     }
 
@@ -280,10 +283,10 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
     public CompletableFuture<K> floor(K key) {
       if (toKey == null) {
         return floorKey(key);
-      } else if (!toInclusive && toKey.compareTo(key) < 0) {
-        return lowerKey(toKey).thenApply(result -> isInLowerBounds(result) ? result : null);
+      } else if (!toInclusive && toKey.compareTo(key) <= 0) {
+        return lowerKey(toKey).thenApply(result -> isInBounds(result) ? result : null);
       } else {
-        return floorKey(min(toKey, key)).thenApply(result -> isInLowerBounds(result) ? result : null);
+        return floorKey(min(toKey, key)).thenApply(result -> isInBounds(result) ? result : null);
       }
     }
 
@@ -291,10 +294,10 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
     public CompletableFuture<K> ceiling(K key) {
       if (fromKey == null) {
         return ceilingKey(key);
-      } else if (!fromInclusive && fromKey.compareTo(key) > 0) {
-        return higherKey(fromKey).thenApply(result -> isInUpperBounds(result) ? result : null);
+      } else if (!fromInclusive && fromKey.compareTo(key) >= 0) {
+        return higherKey(fromKey).thenApply(result -> isInBounds(result) ? result : null);
       } else {
-        return ceilingKey(max(fromKey, key)).thenApply(result -> isInUpperBounds(result) ? result : null);
+        return ceilingKey(max(fromKey, key)).thenApply(result -> isInBounds(result) ? result : null);
       }
     }
 
@@ -303,9 +306,9 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
       if (fromKey == null) {
         return higherKey(key);
       } else if (fromInclusive && fromKey.compareTo(key) > 0) {
-        return ceilingKey(fromKey).thenApply(result -> isInUpperBounds(result) ? result : null);
+        return ceilingKey(fromKey).thenApply(result -> isInBounds(result) ? result : null);
       } else {
-        return higherKey(max(fromKey, key)).thenApply(result -> isInUpperBounds(result) ? result : null);
+        return higherKey(max(fromKey, key)).thenApply(result -> isInBounds(result) ? result : null);
       }
     }
 
@@ -346,17 +349,61 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public AsyncDistributedNavigableSet<K> subSet(K fromElement, boolean fromInclusive, K toElement, boolean toInclusive) {
-      return new KeySet(max(this.fromKey, fromElement), fromInclusive, min(this.toKey, toElement), toInclusive);
+      checkNotNull(fromElement);
+      checkNotNull(toElement);
+
+      if (this.fromKey != null) {
+        int order = this.fromKey.compareTo(fromElement);
+        if (order == 0) {
+          fromInclusive = this.fromInclusive && fromInclusive;
+        } else if (order > 0) {
+          fromElement = this.fromKey;
+          fromInclusive = this.fromInclusive;
+        }
+      }
+
+      if (this.toKey != null) {
+        int order = this.toKey.compareTo(toElement);
+        if (order == 0) {
+          toInclusive = this.toInclusive && toInclusive;
+        } else if (order < 0) {
+          toElement = this.toKey;
+          toInclusive = this.toInclusive;
+        }
+      }
+      return new KeySet(fromElement, fromInclusive, toElement, toInclusive);
     }
 
     @Override
     public AsyncDistributedNavigableSet<K> headSet(K toElement, boolean inclusive) {
-      return new KeySet(fromKey, fromInclusive, min(toKey, toElement), inclusive);
+      checkNotNull(toElement);
+
+      if (this.toKey != null) {
+        int order = this.toKey.compareTo(toElement);
+        if (order == 0) {
+          inclusive = this.toInclusive && inclusive;
+        } else if (order < 0) {
+          toElement = this.toKey;
+          inclusive = this.toInclusive;
+        }
+      }
+      return new KeySet(fromKey, fromInclusive, toElement, inclusive);
     }
 
     @Override
     public AsyncDistributedNavigableSet<K> tailSet(K fromElement, boolean inclusive) {
-      return new KeySet(max(fromKey, fromElement), inclusive, toKey, toInclusive);
+      checkNotNull(fromElement);
+
+      if (this.fromKey != null) {
+        int order = this.fromKey.compareTo(fromElement);
+        if (order == 0) {
+          inclusive = this.fromInclusive && inclusive;
+        } else if (order > 0) {
+          fromElement = this.fromKey;
+          inclusive = this.fromInclusive;
+        }
+      }
+      return new KeySet(fromElement, inclusive, toKey, toInclusive);
     }
 
     @Override
@@ -377,22 +424,28 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
     @Override
     public CompletableFuture<K> first() {
       if (fromKey == null) {
-        return AtomicTreeMapProxy.this.firstKey();
+        return AtomicTreeMapProxy.this.firstKey()
+            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
       } else if (fromInclusive) {
-        return AtomicTreeMapProxy.this.ceilingKey(fromKey);
+        return AtomicTreeMapProxy.this.ceilingKey(fromKey)
+            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
       } else {
-        return AtomicTreeMapProxy.this.higherKey(fromKey);
+        return AtomicTreeMapProxy.this.higherKey(fromKey)
+            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
       }
     }
 
     @Override
     public CompletableFuture<K> last() {
       if (toKey == null) {
-        return AtomicTreeMapProxy.this.lastKey();
+        return AtomicTreeMapProxy.this.lastKey()
+            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
       } else if (toInclusive) {
-        return AtomicTreeMapProxy.this.floorKey(toKey);
+        return AtomicTreeMapProxy.this.floorKey(toKey)
+            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
       } else {
-        return AtomicTreeMapProxy.this.lowerKey(toKey);
+        return AtomicTreeMapProxy.this.lowerKey(toKey)
+            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
       }
     }
 
