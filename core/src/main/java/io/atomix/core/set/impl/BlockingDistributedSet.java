@@ -24,6 +24,7 @@ import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 
 import java.util.Collection;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -145,6 +146,8 @@ public class BlockingDistributedSet<E> extends Synchronous<AsyncDistributedSet<E
     } catch (ExecutionException e) {
       if (e.getCause() instanceof PrimitiveException) {
         throw (PrimitiveException) e.getCause();
+      } else if (e.getCause() instanceof NoSuchElementException) {
+        throw (NoSuchElementException) e.getCause();
       } else {
         throw new PrimitiveException(e.getCause());
       }

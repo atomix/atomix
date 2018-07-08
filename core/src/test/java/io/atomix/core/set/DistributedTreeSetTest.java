@@ -22,13 +22,16 @@ import io.atomix.core.collection.CollectionEventListener;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Distributed tree set test.
@@ -95,6 +98,97 @@ public abstract class DistributedTreeSetTest extends AbstractPrimitiveTest {
     event = listener.event();
     assertEquals(CollectionEvent.Type.REMOVE, event.type());
     assertTrue(event.element().equals("bar") || event.element().equals("baz"));
+  }
+
+  @Test
+  public void testTreeSetOperations() throws Throwable {
+    DistributedTreeSet<String> set = atomix().<String>treeSetBuilder("testTreeSetOperations")
+        .withProtocol(protocol())
+        .build();
+
+    try {
+      set.first();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    try {
+      set.last();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    assertNull(set.pollFirst());
+    assertNull(set.pollLast());
+
+    assertEquals(0, set.size());
+    assertTrue(set.isEmpty());
+    assertEquals(0, set.subSet("a", true, "b", true).size());
+    assertTrue(set.subSet("a", true, "b", true).isEmpty());
+    assertEquals(0, set.headSet("a").size());
+    assertTrue(set.headSet("a").isEmpty());
+    assertEquals(0, set.tailSet("b").size());
+    assertTrue(set.tailSet("b").isEmpty());
+
+    for (char letter = 'a'; letter <= 'z'; letter++) {
+      set.add(String.valueOf(letter));
+    }
+
+    assertEquals("a", set.first());
+    assertEquals("z", set.last());
+    assertEquals("a", set.pollFirst());
+    assertEquals("z", set.pollLast());
+    assertEquals("b", set.first());
+    assertEquals("y", set.last());
+
+    assertEquals("d", set.subSet("c", false, "x", false)
+        .subSet("c", true, "x", true).first());
+    assertEquals("w", set.subSet("c", false, "x", false)
+        .subSet("c", true, "x", true).last());
+
+    assertEquals("y", set.headSet("y", true).last());
+    assertEquals("x", set.headSet("y", false).last());
+    assertEquals("y", set.headSet("y", true)
+        .subSet("a", true, "z", false).last());
+
+    assertEquals("b", set.tailSet("b", true).first());
+    assertEquals("c", set.tailSet("b", false).first());
+    assertEquals("b", set.tailSet("b", true)
+        .subSet("a", false, "z", true).first());
+
+    assertEquals("b", set.higher("a"));
+    assertEquals("c", set.higher("b"));
+    assertEquals("y", set.lower("z"));
+    assertEquals("x", set.lower("y"));
+
+    assertEquals("b", set.ceiling("a"));
+    assertEquals("b", set.ceiling("b"));
+    assertEquals("y", set.floor("z"));
+    assertEquals("y", set.floor("y"));
+
+    assertEquals("c", set.subSet("c", true, "x", true).higher("b"));
+    assertEquals("d", set.subSet("c", true, "x", true).higher("c"));
+    assertEquals("x", set.subSet("c", true, "x", true).lower("y"));
+    assertEquals("w", set.subSet("c", true, "x", true).lower("x"));
+
+    assertEquals("d", set.subSet("c", false, "x", false).higher("b"));
+    assertEquals("d", set.subSet("c", false, "x", false).higher("c"));
+    assertEquals("e", set.subSet("c", false, "x", false).higher("d"));
+    assertEquals("w", set.subSet("c", false, "x", false).lower("y"));
+    assertEquals("w", set.subSet("c", false, "x", false).lower("x"));
+    assertEquals("v", set.subSet("c", false, "x", false).lower("w"));
+
+    assertEquals("c", set.subSet("c", true, "x", true).ceiling("b"));
+    assertEquals("c", set.subSet("c", true, "x", true).ceiling("c"));
+    assertEquals("x", set.subSet("c", true, "x", true).floor("y"));
+    assertEquals("x", set.subSet("c", true, "x", true).floor("x"));
+
+    assertEquals("d", set.subSet("c", false, "x", false).ceiling("b"));
+    assertEquals("d", set.subSet("c", false, "x", false).ceiling("c"));
+    assertEquals("d", set.subSet("c", false, "x", false).ceiling("d"));
+    assertEquals("w", set.subSet("c", false, "x", false).floor("y"));
+    assertEquals("w", set.subSet("c", false, "x", false).floor("x"));
+    assertEquals("w", set.subSet("c", false, "x", false).floor("w"));
   }
 
   @Test
