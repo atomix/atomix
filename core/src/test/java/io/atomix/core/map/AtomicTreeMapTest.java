@@ -485,6 +485,135 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
   }
 
   @Test
+  public void testSubMaps() throws Throwable {
+    AtomicTreeMap<String, String> map = createResource("testSubMaps").sync();
+
+    for (char letter = 'a'; letter <= 'z'; letter++) {
+      map.put(String.valueOf(letter), String.valueOf(letter));
+    }
+
+    assertEquals("a", map.firstKey());
+    assertTrue(map.navigableKeySet().remove("a"));
+    assertEquals("b", map.firstKey());
+    assertTrue("b", map.navigableKeySet().descendingSet().remove("b"));
+    assertEquals("c", map.firstKey());
+    assertEquals("c", map.firstEntry().getValue().value());
+
+    assertEquals("z", map.lastKey());
+    assertTrue(map.navigableKeySet().remove("z"));
+    assertEquals("y", map.lastKey());
+    assertTrue(map.navigableKeySet().descendingSet().remove("y"));
+    assertEquals("x", map.lastKey());
+    assertEquals("x", map.lastEntry().getValue().value());
+
+    assertEquals("d", map.subMap("d", true, "w", false).firstKey());
+    assertEquals("d", map.subMap("d", true, "w", false).firstEntry().getValue().value());
+    assertEquals("e", map.subMap("d", false, "w", false).firstKey());
+    assertEquals("e", map.subMap("d", false, "w", false).firstEntry().getValue().value());
+    assertEquals("d", map.tailMap("d", true).firstKey());
+    assertEquals("d", map.tailMap("d", true).firstEntry().getValue().value());
+    assertEquals("e", map.tailMap("d", false).firstKey());
+    assertEquals("e", map.tailMap("d", false).firstEntry().getValue().value());
+    assertEquals("w", map.headMap("w", true).navigableKeySet().descendingSet().first());
+    assertEquals("v", map.headMap("w", false).navigableKeySet().descendingSet().first());
+
+    assertEquals("w", map.subMap("d", false, "w", true).lastKey());
+    assertEquals("w", map.subMap("d", false, "w", true).lastEntry().getValue().value());
+    assertEquals("v", map.subMap("d", false, "w", false).lastKey());
+    assertEquals("v", map.subMap("d", false, "w", false).lastEntry().getValue().value());
+    assertEquals("w", map.headMap("w", true).lastKey());
+    assertEquals("w", map.headMap("w", true).lastEntry().getValue().value());
+    assertEquals("v", map.headMap("w", false).lastKey());
+    assertEquals("v", map.headMap("w", false).lastEntry().getValue().value());
+    assertEquals("d", map.tailMap("d", true).navigableKeySet().descendingSet().last());
+    assertEquals("d", map.tailMap("d", true).navigableKeySet().descendingSet().last());
+    assertEquals("e", map.tailMap("d", false).navigableKeySet().descendingSet().last());
+    assertEquals("e", map.tailMap("d", false).navigableKeySet().descendingSet().last());
+
+    assertEquals("w", map.subMap("d", false, "w", true).navigableKeySet().descendingSet().first());
+    assertEquals("v", map.subMap("d", false, "w", false).navigableKeySet().descendingSet().first());
+
+    assertEquals(20, map.subMap("d", true, "w", true).size());
+    assertEquals(19, map.subMap("d", true, "w", false).size());
+    assertEquals(19, map.subMap("d", false, "w", true).size());
+    assertEquals(18, map.subMap("d", false, "w", false).size());
+
+    assertEquals(20, map.subMap("d", true, "w", true).entrySet().stream().count());
+    assertEquals(19, map.subMap("d", true, "w", false).entrySet().stream().count());
+    assertEquals(19, map.subMap("d", false, "w", true).entrySet().stream().count());
+    assertEquals(18, map.subMap("d", false, "w", false).entrySet().stream().count());
+
+    assertEquals("d", map.subMap("d", true, "w", true).entrySet().stream().findFirst().get().getValue().value());
+    assertEquals("d", map.subMap("d", true, "w", false).entrySet().stream().findFirst().get().getValue().value());
+    assertEquals("e", map.subMap("d", false, "w", true).entrySet().stream().findFirst().get().getValue().value());
+    assertEquals("e", map.subMap("d", false, "w", false).entrySet().stream().findFirst().get().getValue().value());
+
+    assertEquals("w", map.subMap("d", true, "w", true).navigableKeySet().descendingSet().stream().findFirst().get());
+    assertEquals("v", map.subMap("d", true, "w", false).navigableKeySet().descendingSet().stream().findFirst().get());
+    assertEquals("w", map.subMap("d", false, "w", true).navigableKeySet().descendingSet().stream().findFirst().get());
+    assertEquals("v", map.subMap("d", false, "w", false).navigableKeySet().descendingSet().stream().findFirst().get());
+
+    assertEquals("d", map.subMap("d", true, "w", true).entrySet().iterator().next().getKey());
+    assertEquals("w", map.subMap("d", true, "w", true).navigableKeySet().descendingIterator().next());
+    assertEquals("w", map.subMap("d", true, "w", true).navigableKeySet().descendingSet().iterator().next());
+
+    assertEquals("e", map.subMap("d", false, "w", true).entrySet().iterator().next().getKey());
+    assertEquals("e", map.subMap("d", false, "w", true).navigableKeySet().descendingSet().descendingIterator().next());
+    assertEquals("w", map.subMap("d", false, "w", true).navigableKeySet().descendingIterator().next());
+    assertEquals("w", map.subMap("d", false, "w", true).navigableKeySet().descendingSet().iterator().next());
+
+    assertEquals("d", map.subMap("d", true, "w", false).entrySet().iterator().next().getKey());
+    assertEquals("d", map.subMap("d", true, "w", false).navigableKeySet().descendingSet().descendingIterator().next());
+    assertEquals("v", map.subMap("d", true, "w", false).navigableKeySet().descendingIterator().next());
+    assertEquals("v", map.subMap("d", true, "w", false).navigableKeySet().descendingSet().iterator().next());
+
+    assertEquals("e", map.subMap("d", false, "w", false).entrySet().iterator().next().getKey());
+    assertEquals("e", map.subMap("d", false, "w", false).navigableKeySet().descendingSet().descendingIterator().next());
+    assertEquals("v", map.subMap("d", false, "w", false).navigableKeySet().descendingIterator().next());
+    assertEquals("v", map.subMap("d", false, "w", false).navigableKeySet().descendingSet().iterator().next());
+
+    assertEquals("d", map.subMap("d", true, "w", true).navigableKeySet().headSet("m", true).iterator().next());
+    assertEquals("m", map.subMap("d", true, "w", true).navigableKeySet().headSet("m", true).descendingIterator().next());
+    assertEquals("d", map.subMap("d", true, "w", true).navigableKeySet().headSet("m", false).iterator().next());
+    assertEquals("l", map.subMap("d", true, "w", true).navigableKeySet().headSet("m", false).descendingIterator().next());
+
+    assertEquals("m", map.subMap("d", true, "w", true).navigableKeySet().tailSet("m", true).iterator().next());
+    assertEquals("w", map.subMap("d", true, "w", true).navigableKeySet().tailSet("m", true).descendingIterator().next());
+    assertEquals("n", map.subMap("d", true, "w", true).navigableKeySet().tailSet("m", false).iterator().next());
+    assertEquals("w", map.subMap("d", true, "w", true).navigableKeySet().tailSet("m", false).descendingIterator().next());
+
+    assertEquals(18, map.subMap("d", true, "w", true)
+        .subMap("e", true, "v", true)
+        .subMap("d", true, "w", true)
+        .size());
+
+    assertEquals("x", map.tailMap("d", true).navigableKeySet().descendingIterator().next());
+    assertEquals("x", map.tailMap("d", true).navigableKeySet().descendingSet().iterator().next());
+    assertEquals("c", map.headMap("w", true).navigableKeySet().iterator().next());
+    assertEquals("c", map.headMap("w", true).navigableKeySet().descendingSet().descendingSet().iterator().next());
+
+    map.headMap("e", false).clear();
+    assertEquals("e", map.navigableKeySet().first());
+    assertEquals(20, map.navigableKeySet().size());
+
+    map.headMap("g", true).clear();
+    assertEquals("h", map.navigableKeySet().first());
+    assertEquals(17, map.navigableKeySet().size());
+
+    map.tailMap("t", false).clear();
+    assertEquals("t", map.navigableKeySet().last());
+    assertEquals(13, map.navigableKeySet().size());
+
+    map.tailMap("o", true).clear();
+    assertEquals("n", map.navigableKeySet().last());
+    assertEquals(7, map.navigableKeySet().size());
+
+    map.navigableKeySet().subSet("k", false, "n", false).clear();
+    assertEquals(5, map.navigableKeySet().size());
+    assertEquals(Sets.newHashSet(map.navigableKeySet()), Sets.newHashSet("h", "i", "j", "k", "n"));
+  }
+
+  @Test
   public void testKeySetOperations() throws Throwable {
     AtomicTreeMap<String, String> map = createResource("testKeySetOperations").sync();
 
