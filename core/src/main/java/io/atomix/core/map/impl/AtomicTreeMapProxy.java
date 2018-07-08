@@ -270,56 +270,32 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<K> lower(K key) {
-      if (toKey == null) {
-        return lowerKey(key);
-      } else if (toInclusive && toKey.compareTo(key) < 0) {
-        return floorKey(toKey).thenApply(result -> isInBounds(result) ? result : null);
-      } else {
-        return lowerKey(min(toKey, key)).thenApply(result -> isInBounds(result) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapLowerKey(key, fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<K> floor(K key) {
-      if (toKey == null) {
-        return floorKey(key);
-      } else if (!toInclusive && toKey.compareTo(key) <= 0) {
-        return lowerKey(toKey).thenApply(result -> isInBounds(result) ? result : null);
-      } else {
-        return floorKey(min(toKey, key)).thenApply(result -> isInBounds(result) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapFloorKey(key, fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<K> ceiling(K key) {
-      if (fromKey == null) {
-        return ceilingKey(key);
-      } else if (!fromInclusive && fromKey.compareTo(key) >= 0) {
-        return higherKey(fromKey).thenApply(result -> isInBounds(result) ? result : null);
-      } else {
-        return ceilingKey(max(fromKey, key)).thenApply(result -> isInBounds(result) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapCeilingKey(key, fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<K> higher(K key) {
-      if (fromKey == null) {
-        return higherKey(key);
-      } else if (fromInclusive && fromKey.compareTo(key) > 0) {
-        return ceilingKey(fromKey).thenApply(result -> isInBounds(result) ? result : null);
-      } else {
-        return higherKey(max(fromKey, key)).thenApply(result -> isInBounds(result) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapHigherKey(key, fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<K> pollFirst() {
-      return Futures.exceptionalFuture(new UnsupportedOperationException());
+      return getProxyClient().applyBy(name(), service -> service.subMapPollFirstKey(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<K> pollLast() {
-      return Futures.exceptionalFuture(new UnsupportedOperationException());
+      return getProxyClient().applyBy(name(), service -> service.subMapPollLastKey(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
@@ -332,7 +308,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.iterate(fromKey, fromInclusive, toKey, toInclusive),
+          service -> service.subMapIterate(fromKey, fromInclusive, toKey, toInclusive),
           AtomicTreeMapService::nextKeys,
           AtomicTreeMapService::closeKeys);
     }
@@ -342,7 +318,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.iterateDescending(fromKey, fromInclusive, toKey, toInclusive),
+          service -> service.subMapIterateDescending(fromKey, fromInclusive, toKey, toInclusive),
           AtomicTreeMapService::nextKeys,
           AtomicTreeMapService::closeKeys);
     }
@@ -423,30 +399,14 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<K> first() {
-      if (fromKey == null) {
-        return AtomicTreeMapProxy.this.firstKey()
-            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
-      } else if (fromInclusive) {
-        return AtomicTreeMapProxy.this.ceilingKey(fromKey)
-            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
-      } else {
-        return AtomicTreeMapProxy.this.higherKey(fromKey)
-            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapFirstKey(fromKey, fromInclusive, toKey, toInclusive))
+          .thenCompose(result -> result != null ? Futures.completedFuture(result) : Futures.exceptionalFuture(new NoSuchElementException()));
     }
 
     @Override
     public CompletableFuture<K> last() {
-      if (toKey == null) {
-        return AtomicTreeMapProxy.this.lastKey()
-            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
-      } else if (toInclusive) {
-        return AtomicTreeMapProxy.this.floorKey(toKey)
-            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
-      } else {
-        return AtomicTreeMapProxy.this.lowerKey(toKey)
-            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapLastKey(fromKey, fromInclusive, toKey, toInclusive))
+          .thenCompose(result -> result != null ? Futures.completedFuture(result) : Futures.exceptionalFuture(new NoSuchElementException()));
     }
 
     @Override
@@ -464,7 +424,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Integer> size() {
-      return getProxyClient().applyBy(name(), service -> service.size(fromKey, fromInclusive, toKey, toInclusive));
+      return getProxyClient().applyBy(name(), service -> service.subMapSize(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
@@ -474,7 +434,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Void> clear() {
-      return getProxyClient().acceptBy(name(), service -> service.clear(fromKey, fromInclusive, toKey, toInclusive));
+      return getProxyClient().acceptBy(name(), service -> service.subMapClear(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
@@ -567,128 +527,62 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> lowerEntry(K key) {
-      if (toKey == null) {
-        return AtomicTreeMapProxy.this.lowerEntry(key);
-      } else if (toInclusive && toKey.compareTo(key) < 0) {
-        return AtomicTreeMapProxy.this.floorEntry(toKey).thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      } else {
-        return AtomicTreeMapProxy.this.lowerEntry(min(toKey, key)).thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapLowerEntry(key, fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<K> lowerKey(K key) {
-      if (toKey == null) {
-        return lowerKey(key);
-      } else if (toInclusive && toKey.compareTo(key) < 0) {
-        return floorKey(toKey).thenApply(result -> isInBounds(result) ? result : null);
-      } else {
-        return lowerKey(min(toKey, key)).thenApply(result -> isInBounds(result) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapLowerKey(key, fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> floorEntry(K key) {
-      if (toKey == null) {
-        return AtomicTreeMapProxy.this.floorEntry(key);
-      } else if (!toInclusive && toKey.compareTo(key) <= 0) {
-        return AtomicTreeMapProxy.this.lowerEntry(toKey).thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      } else {
-        return AtomicTreeMapProxy.this.floorEntry(min(toKey, key)).thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapFloorEntry(key, fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<K> floorKey(K key) {
-      if (toKey == null) {
-        return floorKey(key);
-      } else if (!toInclusive && toKey.compareTo(key) <= 0) {
-        return lowerKey(toKey).thenApply(result -> isInBounds(result) ? result : null);
-      } else {
-        return floorKey(min(toKey, key)).thenApply(result -> isInBounds(result) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapFloorKey(key, fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> ceilingEntry(K key) {
-      if (fromKey == null) {
-        return AtomicTreeMapProxy.this.ceilingEntry(key);
-      } else if (!fromInclusive && fromKey.compareTo(key) >= 0) {
-        return AtomicTreeMapProxy.this.higherEntry(fromKey).thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      } else {
-        return AtomicTreeMapProxy.this.ceilingEntry(max(fromKey, key)).thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapCeilingEntry(key, fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<K> ceilingKey(K key) {
-      if (fromKey == null) {
-        return ceilingKey(key);
-      } else if (!fromInclusive && fromKey.compareTo(key) >= 0) {
-        return higherKey(fromKey).thenApply(result -> isInBounds(result) ? result : null);
-      } else {
-        return ceilingKey(max(fromKey, key)).thenApply(result -> isInBounds(result) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapCeilingKey(key, fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> higherEntry(K key) {
-      if (fromKey == null) {
-        return AtomicTreeMapProxy.this.higherEntry(key);
-      } else if (fromInclusive && fromKey.compareTo(key) > 0) {
-        return AtomicTreeMapProxy.this.ceilingEntry(fromKey).thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      } else {
-        return AtomicTreeMapProxy.this.higherEntry(max(fromKey, key)).thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapHigherEntry(key, fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<K> higherKey(K key) {
-      if (fromKey == null) {
-        return higherKey(key);
-      } else if (fromInclusive && fromKey.compareTo(key) > 0) {
-        return ceilingKey(fromKey).thenApply(result -> isInBounds(result) ? result : null);
-      } else {
-        return higherKey(max(fromKey, key)).thenApply(result -> isInBounds(result) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapHigherKey(key, fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> firstEntry() {
-      if (fromKey == null) {
-        return AtomicTreeMapProxy.this.firstEntry()
-            .thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      } else if (fromInclusive) {
-        return AtomicTreeMapProxy.this.ceilingEntry(fromKey)
-            .thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      } else {
-        return AtomicTreeMapProxy.this.higherEntry(fromKey)
-            .thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapFirstEntry(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> lastEntry() {
-      if (toKey == null) {
-        return AtomicTreeMapProxy.this.lastEntry()
-            .thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      } else if (toInclusive) {
-        return AtomicTreeMapProxy.this.floorEntry(toKey)
-            .thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      } else {
-        return AtomicTreeMapProxy.this.lowerEntry(toKey)
-            .thenApply(result -> isInBounds(result.getKey()) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapLastEntry(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> pollFirstEntry() {
-      return Futures.exceptionalFuture(new UnsupportedOperationException());
+      return getProxyClient().applyBy(name(), service -> service.subMapPollFirstEntry(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
     public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> pollLastEntry() {
-      return Futures.exceptionalFuture(new UnsupportedOperationException());
+      return getProxyClient().applyBy(name(), service -> service.subMapPollLastEntry(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
@@ -765,29 +659,19 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<K> firstKey() {
-      if (fromKey == null) {
-        return AtomicTreeMapProxy.this.firstKey();
-      } else if (fromInclusive) {
-        return AtomicTreeMapProxy.this.ceilingKey(fromKey);
-      } else {
-        return AtomicTreeMapProxy.this.higherKey(fromKey);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapFirstKey(fromKey, fromInclusive, toKey, toInclusive))
+          .thenCompose(result -> result != null ? Futures.completedFuture(result) : Futures.exceptionalFuture(new NoSuchElementException()));
     }
 
     @Override
     public CompletableFuture<K> lastKey() {
-      if (toKey == null) {
-        return AtomicTreeMapProxy.this.firstKey();
-      } else if (fromInclusive) {
-        return AtomicTreeMapProxy.this.ceilingKey(toKey);
-      } else {
-        return AtomicTreeMapProxy.this.higherKey(toKey);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subMapLastKey(fromKey, fromInclusive, toKey, toInclusive))
+          .thenCompose(result -> result != null ? Futures.completedFuture(result) : Futures.exceptionalFuture(new NoSuchElementException()));
     }
 
     @Override
     public CompletableFuture<Integer> size() {
-      return getProxyClient().applyBy(name(), service -> service.size(fromKey, fromInclusive, toKey, toInclusive));
+      return getProxyClient().applyBy(name(), service -> service.subMapSize(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
@@ -838,7 +722,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Void> clear() {
-      return getProxyClient().acceptBy(name(), service -> service.clear(fromKey, fromInclusive, toKey, toInclusive));
+      return getProxyClient().acceptBy(name(), service -> service.subMapClear(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
@@ -948,7 +832,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Integer> size() {
-      return getProxyClient().applyBy(name(), service -> service.size(fromKey, fromInclusive, toKey, toInclusive));
+      return getProxyClient().applyBy(name(), service -> service.subMapSize(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
@@ -958,7 +842,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Void> clear() {
-      return getProxyClient().acceptBy(name(), service -> service.clear(fromKey, fromInclusive, toKey, toInclusive));
+      return getProxyClient().acceptBy(name(), service -> service.subMapClear(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
@@ -1022,7 +906,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.iterate(fromKey, fromInclusive, toKey, toInclusive),
+          service -> service.subMapIterate(fromKey, fromInclusive, toKey, toInclusive),
           AtomicTreeMapService::nextEntries,
           AtomicTreeMapService::closeEntries);
     }
@@ -1072,7 +956,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Integer> size() {
-      return getProxyClient().applyBy(name(), service -> service.size(fromKey, fromInclusive, toKey, toInclusive));
+      return getProxyClient().applyBy(name(), service -> service.subMapSize(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
@@ -1082,7 +966,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Void> clear() {
-      return getProxyClient().acceptBy(name(), service -> service.clear(fromKey, fromInclusive, toKey, toInclusive));
+      return getProxyClient().acceptBy(name(), service -> service.subMapClear(fromKey, fromInclusive, toKey, toInclusive));
     }
 
     @Override
@@ -1146,7 +1030,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.iterate(fromKey, fromInclusive, toKey, toInclusive),
+          service -> service.subMapIterate(fromKey, fromInclusive, toKey, toInclusive),
           AtomicTreeMapService::nextValues,
           AtomicTreeMapService::closeValues);
     }
