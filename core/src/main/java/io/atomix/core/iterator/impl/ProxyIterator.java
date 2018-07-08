@@ -19,6 +19,7 @@ import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.OrderedFuture;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -48,7 +49,7 @@ public class ProxyIterator<S, T> implements AsyncIterator<T> {
     this.partitionId = partitionId;
     this.nextFunction = nextFunction;
     this.closeFunction = closeFunction;
-    this.openFuture = client.applyOn(partitionId, openFunction::open);
+    this.openFuture = OrderedFuture.wrap(client.applyOn(partitionId, openFunction::open));
     this.batch = CompletableFuture.completedFuture(
         new IteratorBatch<T>(0, Collections.emptyList()));
   }
