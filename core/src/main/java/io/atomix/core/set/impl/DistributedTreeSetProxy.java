@@ -217,74 +217,34 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
 
     @Override
     public CompletableFuture<E> first() {
-      if (fromElement == null) {
-        return DistributedTreeSetProxy.this.first()
-            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
-      } else if (fromInclusive) {
-        return DistributedTreeSetProxy.this.ceiling(fromElement)
-            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
-      } else {
-        return DistributedTreeSetProxy.this.higher(fromElement)
-            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
-      }
+      return getProxyClient().applyBy(name(), service -> service.subSetFirst(fromElement, fromInclusive, toElement, toInclusive))
+          .thenCompose(result -> result != null ? Futures.completedFuture(result) : Futures.exceptionalFuture(new NoSuchElementException()));
     }
 
     @Override
     public CompletableFuture<E> last() {
-      if (toElement == null) {
-        return DistributedTreeSetProxy.this.last()
-            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
-      } else if (toInclusive) {
-        return DistributedTreeSetProxy.this.floor(toElement)
-            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
-      } else {
-        return DistributedTreeSetProxy.this.lower(toElement)
-            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
-      }
+      return getProxyClient().applyBy(name(), service -> service.subSetLast(fromElement, fromInclusive, toElement, toInclusive))
+          .thenCompose(result -> result != null ? Futures.completedFuture(result) : Futures.exceptionalFuture(new NoSuchElementException()));
     }
 
     @Override
     public CompletableFuture<E> lower(E e) {
-      if (toElement == null) {
-        return DistributedTreeSetProxy.this.lower(e);
-      } else if (toInclusive && toElement.compareTo(e) < 0) {
-        return DistributedTreeSetProxy.this.floor(toElement).thenApply(result -> isInBounds(result) ? result : null);
-      } else {
-        return DistributedTreeSetProxy.this.lower(min(toElement, e)).thenApply(result -> isInBounds(result) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subSetLower(e, fromElement, fromInclusive, toElement, toInclusive));
     }
 
     @Override
     public CompletableFuture<E> floor(E e) {
-      if (toElement == null) {
-        return DistributedTreeSetProxy.this.floor(e);
-      } else if (!toInclusive && toElement.compareTo(e) <= 0) {
-        return DistributedTreeSetProxy.this.lower(toElement).thenApply(result -> isInBounds(result) ? result : null);
-      } else {
-        return DistributedTreeSetProxy.this.floor(min(toElement, e)).thenApply(result -> isInBounds(result) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subSetFloor(e, fromElement, fromInclusive, toElement, toInclusive));
     }
 
     @Override
     public CompletableFuture<E> ceiling(E e) {
-      if (fromElement == null) {
-        return DistributedTreeSetProxy.this.ceiling(e);
-      } else if (!fromInclusive && fromElement.compareTo(e) >= 0) {
-        return DistributedTreeSetProxy.this.higher(fromElement).thenApply(result -> isInBounds(result) ? result : null);
-      } else {
-        return DistributedTreeSetProxy.this.ceiling(max(fromElement, e)).thenApply(result -> isInBounds(result) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subSetCeiling(e, fromElement, fromInclusive, toElement, toInclusive));
     }
 
     @Override
     public CompletableFuture<E> higher(E e) {
-      if (fromElement == null) {
-        return DistributedTreeSetProxy.this.higher(e);
-      } else if (fromInclusive && fromElement.compareTo(e) > 0) {
-        return DistributedTreeSetProxy.this.ceiling(fromElement).thenApply(result -> isInBounds(result) ? result : null);
-      } else {
-        return DistributedTreeSetProxy.this.higher(max(fromElement, e)).thenApply(result -> isInBounds(result) ? result : null);
-      }
+      return getProxyClient().applyBy(name(), service -> service.subSetHigher(e, fromElement, fromInclusive, toElement, toInclusive));
     }
 
     @Override
@@ -368,17 +328,17 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
 
     @Override
     public CompletableFuture<Boolean> add(E element) {
-      return DistributedTreeSetProxy.this.add(element);
+      return isInBounds(element) ? DistributedTreeSetProxy.this.add(element) : Futures.completedFuture(false);
     }
 
     @Override
     public CompletableFuture<Boolean> remove(E element) {
-      return DistributedTreeSetProxy.this.remove(element);
+      return isInBounds(element) ? DistributedTreeSetProxy.this.remove(element) : Futures.completedFuture(false);
     }
 
     @Override
     public CompletableFuture<Integer> size() {
-      return getProxyClient().applyBy(name(), service -> service.size(fromElement, fromInclusive, toElement, toInclusive));
+      return getProxyClient().applyBy(name(), service -> service.subSetSize(fromElement, fromInclusive, toElement, toInclusive));
     }
 
     @Override
@@ -388,7 +348,7 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
 
     @Override
     public CompletableFuture<Void> clear() {
-      return getProxyClient().acceptBy(name(), service -> service.clear(fromElement, fromInclusive, toElement, toInclusive));
+      return getProxyClient().acceptBy(name(), service -> service.subSetClear(fromElement, fromInclusive, toElement, toInclusive));
     }
 
     @Override
@@ -434,7 +394,7 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.iterate(fromElement, fromInclusive, toElement, toInclusive),
+          service -> service.subSetIterate(fromElement, fromInclusive, toElement, toInclusive),
           DistributedTreeSetService::next,
           DistributedTreeSetService::close);
     }
@@ -444,7 +404,7 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.iterateDescending(fromElement, fromInclusive, toElement, toInclusive),
+          service -> service.subSetIterateDescending(fromElement, fromInclusive, toElement, toInclusive),
           DistributedTreeSetService::next,
           DistributedTreeSetService::close);
     }
@@ -472,24 +432,6 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
     @Override
     public DistributedNavigableSet<E> sync(Duration operationTimeout) {
       return new BlockingDistributedNavigableSet<>(this, operationTimeout.toMillis());
-    }
-
-    private E min(E a, E b) {
-      if (a == null) {
-        return b;
-      } else if (b == null) {
-        return a;
-      }
-      return a.compareTo(b) < 0 ? a : b;
-    }
-
-    private E max(E a, E b) {
-      if (a == null) {
-        return b;
-      } else if (b == null) {
-        return a;
-      }
-      return a.compareTo(b) > 0 ? a : b;
     }
   }
 }

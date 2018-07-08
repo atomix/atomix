@@ -1040,22 +1040,4 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
       return new BlockingDistributedCollection<>(this, operationTimeout.toMillis());
     }
   }
-
-  private K min(K a, K b) {
-    if (a == null) {
-      return b;
-    } else if (b == null) {
-      return a;
-    }
-    return a.compareTo(b) < 0 ? a : b;
-  }
-
-  private K max(K a, K b) {
-    if (a == null) {
-      return b;
-    } else if (b == null) {
-      return a;
-    }
-    return a.compareTo(b) > 0 ? a : b;
-  }
 }
