@@ -15,6 +15,7 @@
  */
 package io.atomix.core.set.impl;
 
+import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
 
 /**
@@ -88,7 +89,7 @@ public interface DistributedNavigableSetService<E extends Comparable<E>> extends
    *
    * @return the first element, or {@code null} if this set is empty
    */
-  @Query
+  @Command
   E pollFirst();
 
   /**
@@ -97,7 +98,7 @@ public interface DistributedNavigableSetService<E extends Comparable<E>> extends
    *
    * @return the last element, or {@code null} if this set is empty
    */
-  @Query
+  @Command
   E pollLast();
 
 }

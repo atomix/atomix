@@ -22,7 +22,10 @@ import io.atomix.utils.serializer.Serializer;
 
 import java.util.Iterator;
 import java.util.NavigableSet;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Default distributed tree set service.
@@ -36,41 +39,15 @@ public class DefaultDistributedTreeSetService<E extends Comparable<E>> extends A
         .register(DistributedTreeSetType.instance().namespace())
         .register(SessionId.class)
         .register(IteratorContext.class)
-        .register(SubMapIteratorContext.class)
+        .register(SubSetIteratorContext.class)
         .register(DescendingIteratorContext.class)
-        .register(DescendingSubMapIteratorContext.class)
+        .register(DescendingSubSetIteratorContext.class)
         .build());
   }
 
   @Override
   public Serializer serializer() {
     return serializer;
-  }
-
-  @Override
-  public int size(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
-    if (fromElement != null && toElement != null) {
-      return set().subSet(fromElement, fromInclusive, toElement, toInclusive).size();
-    } else if (fromElement != null) {
-      return set().tailSet(fromElement, fromInclusive).size();
-    } else if (toElement != null) {
-      return set().headSet(toElement, toInclusive).size();
-    } else {
-      throw new AssertionError();
-    }
-  }
-
-  @Override
-  public void clear(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
-    if (fromElement != null && toElement != null) {
-      set().subSet(fromElement, fromInclusive, toElement, toInclusive).clear();
-    } else if (fromElement != null) {
-      set().tailSet(fromElement, fromInclusive).clear();
-    } else if (toElement != null) {
-      set().headSet(toElement, toInclusive).clear();
-    } else {
-      throw new AssertionError();
-    }
   }
 
   @Override
@@ -114,14 +91,64 @@ public class DefaultDistributedTreeSetService<E extends Comparable<E>> extends A
   }
 
   @Override
-  public long iterate(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
-    iterators.put(getCurrentIndex(), new SubMapIteratorContext(getCurrentSession().sessionId().id(), fromElement, fromInclusive, toElement, toInclusive));
+  public E subSetFirst(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    return subSetApply(set -> !set.isEmpty() ? set.first() : null, fromElement, fromInclusive, toElement, toInclusive);
+  }
+
+  @Override
+  public E subSetLast(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    return subSetApply(set -> !set.isEmpty() ? set.last() : null, fromElement, fromInclusive, toElement, toInclusive);
+  }
+
+  @Override
+  public E subSetLower(E e, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    return subSetApply(set -> set.lower(e), fromElement, fromInclusive, toElement, toInclusive);
+  }
+
+  @Override
+  public E subSetFloor(E e, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    return subSetApply(set -> set.floor(e), fromElement, fromInclusive, toElement, toInclusive);
+  }
+
+  @Override
+  public E subSetCeiling(E e, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    return subSetApply(set -> set.ceiling(e), fromElement, fromInclusive, toElement, toInclusive);
+  }
+
+  @Override
+  public E subSetHigher(E e, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    return subSetApply(set -> set.higher(e), fromElement, fromInclusive, toElement, toInclusive);
+  }
+
+  @Override
+  public E subSetPollFirst(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    return subSetApply(set -> set.pollFirst(), fromElement, fromInclusive, toElement, toInclusive);
+  }
+
+  @Override
+  public E subSetPollLast(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    return subSetApply(set -> set.pollLast(), fromElement, fromInclusive, toElement, toInclusive);
+  }
+
+  @Override
+  public int subSetSize(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    return subSetApply(set -> set.size(), fromElement, fromInclusive, toElement, toInclusive);
+  }
+
+  @Override
+  public void subSetClear(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    subSetAccept(set -> set.clear(), fromElement, fromInclusive, toElement, toInclusive);
+  }
+
+  @Override
+  public long subSetIterate(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    iterators.put(getCurrentIndex(), new SubSetIteratorContext(getCurrentSession().sessionId().id(), fromElement, fromInclusive, toElement, toInclusive));
     return getCurrentIndex();
   }
 
   @Override
-  public long iterateDescending(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
-    iterators.put(getCurrentIndex(), new DescendingSubMapIteratorContext(getCurrentSession().sessionId().id(), fromElement, fromInclusive, toElement, toInclusive));
+  public long subSetIterateDescending(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    iterators.put(getCurrentIndex(), new DescendingSubSetIteratorContext(getCurrentSession().sessionId().id(), fromElement, fromInclusive, toElement, toInclusive));
     return getCurrentIndex();
   }
 
@@ -129,6 +156,30 @@ public class DefaultDistributedTreeSetService<E extends Comparable<E>> extends A
   public long iterateDescending() {
     iterators.put(getCurrentIndex(), new DescendingIteratorContext(getCurrentSession().sessionId().id()));
     return getCurrentIndex();
+  }
+
+  private void subSetAccept(Consumer<NavigableSet<E>> function, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    if (fromElement != null && toElement != null) {
+      function.accept(set().subSet(fromElement, fromInclusive, toElement, toInclusive));
+    } else if (fromElement != null) {
+      function.accept(set().tailSet(fromElement, fromInclusive));
+    } else if (toElement != null) {
+      function.accept(set().headSet(toElement, toInclusive));
+    } else {
+      function.accept(set());
+    }
+  }
+
+  private <T> T subSetApply(Function<NavigableSet<E>, T> function, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    if (fromElement != null && toElement != null) {
+      return function.apply(set().subSet(fromElement, fromInclusive, toElement, toInclusive));
+    } else if (fromElement != null) {
+      return function.apply(set().tailSet(fromElement, fromInclusive));
+    } else if (toElement != null) {
+      return function.apply(set().headSet(toElement, toInclusive));
+    } else {
+      return function.apply(set());
+    }
   }
 
   protected class DescendingIteratorContext extends AbstractIteratorContext {
@@ -142,13 +193,13 @@ public class DefaultDistributedTreeSetService<E extends Comparable<E>> extends A
     }
   }
 
-  protected class SubMapIteratorContext extends AbstractIteratorContext {
+  protected class SubSetIteratorContext extends AbstractIteratorContext {
     private final E fromElement;
     private final boolean fromInclusive;
     private final E toElement;
     private final boolean toInclusive;
 
-    SubMapIteratorContext(long sessionId, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    SubSetIteratorContext(long sessionId, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
       super(sessionId);
       this.fromElement = fromElement;
       this.fromInclusive = fromInclusive;
@@ -158,25 +209,17 @@ public class DefaultDistributedTreeSetService<E extends Comparable<E>> extends A
 
     @Override
     protected Iterator<E> create() {
-      if (fromElement != null && toElement != null) {
-        return set().subSet(fromElement, fromInclusive, toElement, toInclusive).iterator();
-      } else if (fromElement != null) {
-        return set().tailSet(fromElement, fromInclusive).iterator();
-      } else if (toElement != null) {
-        return set().headSet(toElement, toInclusive).iterator();
-      } else {
-        throw new AssertionError();
-      }
+      return subSetApply(set -> set.iterator(), fromElement, fromInclusive, toElement, toInclusive);
     }
   }
 
-  protected class DescendingSubMapIteratorContext extends AbstractIteratorContext {
+  protected class DescendingSubSetIteratorContext extends AbstractIteratorContext {
     private final E fromElement;
     private final boolean fromInclusive;
     private final E toElement;
     private final boolean toInclusive;
 
-    DescendingSubMapIteratorContext(long sessionId, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    DescendingSubSetIteratorContext(long sessionId, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
       super(sessionId);
       this.fromElement = fromElement;
       this.fromInclusive = fromInclusive;
@@ -186,15 +229,7 @@ public class DefaultDistributedTreeSetService<E extends Comparable<E>> extends A
 
     @Override
     protected Iterator<E> create() {
-      if (fromElement != null && toElement != null) {
-        return set().subSet(fromElement, fromInclusive, toElement, toInclusive).descendingIterator();
-      } else if (fromElement != null) {
-        return set().tailSet(fromElement, fromInclusive).descendingIterator();
-      } else if (toElement != null) {
-        return set().headSet(toElement, toInclusive).descendingIterator();
-      } else {
-        throw new AssertionError();
-      }
+      return subSetApply(set -> set.descendingIterator(), fromElement, fromInclusive, toElement, toInclusive);
     }
   }
 }
