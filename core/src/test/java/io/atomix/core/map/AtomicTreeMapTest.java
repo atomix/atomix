@@ -17,11 +17,8 @@ package io.atomix.core.map;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.core.map.AsyncAtomicTreeMap;
-import io.atomix.core.map.AtomicMapEvent;
-import io.atomix.core.map.AtomicMapEventListener;
-import io.atomix.core.map.AtomicTreeMap;
 import io.atomix.core.map.impl.AtomicTreeMapProxy;
 import io.atomix.utils.time.Versioned;
 import org.junit.Test;
@@ -31,6 +28,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -42,6 +40,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Unit tests for {@link AtomicTreeMapProxy}.
@@ -483,6 +482,243 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
       map.put(String.valueOf(26 + i), String.valueOf(26 + i));
     }
     assertEquals(String.valueOf(27), map.get(String.valueOf(27)).value());
+  }
+
+  @Test
+  public void testKeySetOperations() throws Throwable {
+    AtomicTreeMap<String, String> map = createResource("testKeySetOperations").sync();
+
+    try {
+      map.navigableKeySet().first();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    try {
+      map.navigableKeySet().last();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    try {
+      map.navigableKeySet().subSet("a", false, "z", false).first();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    try {
+      map.navigableKeySet().subSet("a", false, "z", false).last();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    assertEquals(0, map.navigableKeySet().size());
+    assertTrue(map.navigableKeySet().isEmpty());
+    assertEquals(0, map.navigableKeySet().subSet("a", true, "b", true).size());
+    assertTrue(map.navigableKeySet().subSet("a", true, "b", true).isEmpty());
+    assertEquals(0, map.navigableKeySet().headSet("a").size());
+    assertTrue(map.navigableKeySet().headSet("a").isEmpty());
+    assertEquals(0, map.navigableKeySet().tailSet("b").size());
+    assertTrue(map.navigableKeySet().tailSet("b").isEmpty());
+
+    for (char letter = 'a'; letter <= 'z'; letter++) {
+      map.put(String.valueOf(letter), String.valueOf(letter));
+    }
+
+    assertEquals("a", map.navigableKeySet().first());
+    assertEquals("z", map.navigableKeySet().last());
+    assertTrue(map.navigableKeySet().remove("a"));
+    assertTrue(map.navigableKeySet().remove("z"));
+    assertEquals("b", map.navigableKeySet().first());
+    assertEquals("y", map.navigableKeySet().last());
+
+    try {
+      map.navigableKeySet().subSet("A", false, "Z", false).first();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    try {
+      map.navigableKeySet().subSet("A", false, "Z", false).last();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    try {
+      map.navigableKeySet().subSet("a", true, "b", false).first();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    try {
+      map.navigableKeySet().subSet("a", true, "b", false).last();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    assertEquals("d", map.navigableKeySet().subSet("c", false, "x", false)
+        .subSet("c", true, "x", true).first());
+    assertEquals("w", map.navigableKeySet().subSet("c", false, "x", false)
+        .subSet("c", true, "x", true).last());
+
+    assertEquals("y", map.navigableKeySet().headSet("y", true).last());
+    assertEquals("x", map.navigableKeySet().headSet("y", false).last());
+    assertEquals("y", map.navigableKeySet().headSet("y", true)
+        .subSet("a", true, "z", false).last());
+
+    assertEquals("b", map.navigableKeySet().tailSet("b", true).first());
+    assertEquals("c", map.navigableKeySet().tailSet("b", false).first());
+    assertEquals("b", map.navigableKeySet().tailSet("b", true)
+        .subSet("a", false, "z", true).first());
+
+    assertEquals("b", map.navigableKeySet().higher("a"));
+    assertEquals("c", map.navigableKeySet().higher("b"));
+    assertEquals("y", map.navigableKeySet().lower("z"));
+    assertEquals("x", map.navigableKeySet().lower("y"));
+
+    assertEquals("b", map.navigableKeySet().ceiling("a"));
+    assertEquals("b", map.navigableKeySet().ceiling("b"));
+    assertEquals("y", map.navigableKeySet().floor("z"));
+    assertEquals("y", map.navigableKeySet().floor("y"));
+
+    assertEquals("c", map.navigableKeySet().subSet("c", true, "x", true).higher("b"));
+    assertEquals("d", map.navigableKeySet().subSet("c", true, "x", true).higher("c"));
+    assertEquals("x", map.navigableKeySet().subSet("c", true, "x", true).lower("y"));
+    assertEquals("w", map.navigableKeySet().subSet("c", true, "x", true).lower("x"));
+
+    assertEquals("d", map.navigableKeySet().subSet("c", false, "x", false).higher("b"));
+    assertEquals("d", map.navigableKeySet().subSet("c", false, "x", false).higher("c"));
+    assertEquals("e", map.navigableKeySet().subSet("c", false, "x", false).higher("d"));
+    assertEquals("w", map.navigableKeySet().subSet("c", false, "x", false).lower("y"));
+    assertEquals("w", map.navigableKeySet().subSet("c", false, "x", false).lower("x"));
+    assertEquals("v", map.navigableKeySet().subSet("c", false, "x", false).lower("w"));
+
+    assertEquals("c", map.navigableKeySet().subSet("c", true, "x", true).ceiling("b"));
+    assertEquals("c", map.navigableKeySet().subSet("c", true, "x", true).ceiling("c"));
+    assertEquals("x", map.navigableKeySet().subSet("c", true, "x", true).floor("y"));
+    assertEquals("x", map.navigableKeySet().subSet("c", true, "x", true).floor("x"));
+
+    assertEquals("d", map.navigableKeySet().subSet("c", false, "x", false).ceiling("b"));
+    assertEquals("d", map.navigableKeySet().subSet("c", false, "x", false).ceiling("c"));
+    assertEquals("d", map.navigableKeySet().subSet("c", false, "x", false).ceiling("d"));
+    assertEquals("w", map.navigableKeySet().subSet("c", false, "x", false).floor("y"));
+    assertEquals("w", map.navigableKeySet().subSet("c", false, "x", false).floor("x"));
+    assertEquals("w", map.navigableKeySet().subSet("c", false, "x", false).floor("w"));
+  }
+
+  @Test
+  public void testKeySetSubSets() throws Throwable {
+    AtomicTreeMap<String, String> map = createResource("testKeySetSubSets").sync();
+
+    for (char letter = 'a'; letter <= 'z'; letter++) {
+      map.put(String.valueOf(letter), String.valueOf(letter));
+    }
+
+    assertEquals("a", map.navigableKeySet().first());
+    assertTrue(map.navigableKeySet().remove("a"));
+    assertEquals("b", map.navigableKeySet().descendingSet().last());
+    assertTrue("b", map.navigableKeySet().descendingSet().remove("b"));
+
+    assertEquals("z", map.navigableKeySet().last());
+    assertTrue(map.navigableKeySet().remove("z"));
+    assertEquals("y", map.navigableKeySet().descendingSet().first());
+    assertTrue(map.navigableKeySet().descendingSet().remove("y"));
+
+    assertEquals("d", map.navigableKeySet().subSet("d", true, "w", false).first());
+    assertEquals("e", map.navigableKeySet().subSet("d", false, "w", false).first());
+    assertEquals("d", map.navigableKeySet().tailSet("d", true).first());
+    assertEquals("e", map.navigableKeySet().tailSet("d", false).first());
+    assertEquals("w", map.navigableKeySet().headSet("w", true).descendingSet().first());
+    assertEquals("v", map.navigableKeySet().headSet("w", false).descendingSet().first());
+
+    assertEquals("w", map.navigableKeySet().subSet("d", false, "w", true).last());
+    assertEquals("v", map.navigableKeySet().subSet("d", false, "w", false).last());
+    assertEquals("w", map.navigableKeySet().headSet("w", true).last());
+    assertEquals("v", map.navigableKeySet().headSet("w", false).last());
+    assertEquals("d", map.navigableKeySet().tailSet("d", true).descendingSet().last());
+    assertEquals("e", map.navigableKeySet().tailSet("d", false).descendingSet().last());
+
+    assertEquals("w", map.navigableKeySet().subSet("d", false, "w", true).descendingSet().first());
+    assertEquals("v", map.navigableKeySet().subSet("d", false, "w", false).descendingSet().first());
+
+    assertEquals(20, map.navigableKeySet().subSet("d", true, "w", true).size());
+    assertEquals(19, map.navigableKeySet().subSet("d", true, "w", false).size());
+    assertEquals(19, map.navigableKeySet().subSet("d", false, "w", true).size());
+    assertEquals(18, map.navigableKeySet().subSet("d", false, "w", false).size());
+
+    assertEquals(20, map.navigableKeySet().subSet("d", true, "w", true).stream().count());
+    assertEquals(19, map.navigableKeySet().subSet("d", true, "w", false).stream().count());
+    assertEquals(19, map.navigableKeySet().subSet("d", false, "w", true).stream().count());
+    assertEquals(18, map.navigableKeySet().subSet("d", false, "w", false).stream().count());
+
+    assertEquals("d", map.navigableKeySet().subSet("d", true, "w", true).stream().findFirst().get());
+    assertEquals("d", map.navigableKeySet().subSet("d", true, "w", false).stream().findFirst().get());
+    assertEquals("e", map.navigableKeySet().subSet("d", false, "w", true).stream().findFirst().get());
+    assertEquals("e", map.navigableKeySet().subSet("d", false, "w", false).stream().findFirst().get());
+
+    assertEquals("w", map.navigableKeySet().subSet("d", true, "w", true).descendingSet().stream().findFirst().get());
+    assertEquals("v", map.navigableKeySet().subSet("d", true, "w", false).descendingSet().stream().findFirst().get());
+    assertEquals("w", map.navigableKeySet().subSet("d", false, "w", true).descendingSet().stream().findFirst().get());
+    assertEquals("v", map.navigableKeySet().subSet("d", false, "w", false).descendingSet().stream().findFirst().get());
+
+    assertEquals("d", map.navigableKeySet().subSet("d", true, "w", true).iterator().next());
+    assertEquals("w", map.navigableKeySet().subSet("d", true, "w", true).descendingIterator().next());
+    assertEquals("w", map.navigableKeySet().subSet("d", true, "w", true).descendingSet().iterator().next());
+
+    assertEquals("e", map.navigableKeySet().subSet("d", false, "w", true).iterator().next());
+    assertEquals("e", map.navigableKeySet().subSet("d", false, "w", true).descendingSet().descendingIterator().next());
+    assertEquals("w", map.navigableKeySet().subSet("d", false, "w", true).descendingIterator().next());
+    assertEquals("w", map.navigableKeySet().subSet("d", false, "w", true).descendingSet().iterator().next());
+
+    assertEquals("d", map.navigableKeySet().subSet("d", true, "w", false).iterator().next());
+    assertEquals("d", map.navigableKeySet().subSet("d", true, "w", false).descendingSet().descendingIterator().next());
+    assertEquals("v", map.navigableKeySet().subSet("d", true, "w", false).descendingIterator().next());
+    assertEquals("v", map.navigableKeySet().subSet("d", true, "w", false).descendingSet().iterator().next());
+
+    assertEquals("e", map.navigableKeySet().subSet("d", false, "w", false).iterator().next());
+    assertEquals("e", map.navigableKeySet().subSet("d", false, "w", false).descendingSet().descendingIterator().next());
+    assertEquals("v", map.navigableKeySet().subSet("d", false, "w", false).descendingIterator().next());
+    assertEquals("v", map.navigableKeySet().subSet("d", false, "w", false).descendingSet().iterator().next());
+
+    assertEquals("d", map.navigableKeySet().subSet("d", true, "w", true).headSet("m", true).iterator().next());
+    assertEquals("m", map.navigableKeySet().subSet("d", true, "w", true).headSet("m", true).descendingIterator().next());
+    assertEquals("d", map.navigableKeySet().subSet("d", true, "w", true).headSet("m", false).iterator().next());
+    assertEquals("l", map.navigableKeySet().subSet("d", true, "w", true).headSet("m", false).descendingIterator().next());
+
+    assertEquals("m", map.navigableKeySet().subSet("d", true, "w", true).tailSet("m", true).iterator().next());
+    assertEquals("w", map.navigableKeySet().subSet("d", true, "w", true).tailSet("m", true).descendingIterator().next());
+    assertEquals("n", map.navigableKeySet().subSet("d", true, "w", true).tailSet("m", false).iterator().next());
+    assertEquals("w", map.navigableKeySet().subSet("d", true, "w", true).tailSet("m", false).descendingIterator().next());
+
+    assertEquals(18, map.navigableKeySet().subSet("d", true, "w", true)
+        .subSet("e", true, "v", true)
+        .subSet("d", true, "w", true)
+        .size());
+
+    assertEquals("x", map.navigableKeySet().tailSet("d", true).descendingIterator().next());
+    assertEquals("x", map.navigableKeySet().tailSet("d", true).descendingSet().iterator().next());
+    assertEquals("c", map.navigableKeySet().headSet("w", true).iterator().next());
+    assertEquals("c", map.navigableKeySet().headSet("w", true).descendingSet().descendingSet().iterator().next());
+
+    map.navigableKeySet().headSet("e", false).clear();
+    assertEquals("e", map.navigableKeySet().first());
+    assertEquals(20, map.navigableKeySet().size());
+
+    map.navigableKeySet().headSet("g", true).clear();
+    assertEquals("h", map.navigableKeySet().first());
+    assertEquals(17, map.navigableKeySet().size());
+
+    map.navigableKeySet().tailSet("t", false).clear();
+    assertEquals("t", map.navigableKeySet().last());
+    assertEquals(13, map.navigableKeySet().size());
+
+    map.navigableKeySet().tailSet("o", true).clear();
+    assertEquals("n", map.navigableKeySet().last());
+    assertEquals(7, map.navigableKeySet().size());
+
+    map.navigableKeySet().subSet("k", false, "n", false).clear();
+    assertEquals(5, map.navigableKeySet().size());
+    assertEquals(Sets.newHashSet(map.navigableKeySet()), Sets.newHashSet("h", "i", "j", "k", "n"));
   }
 
   private AsyncAtomicTreeMap<String, String> createResource(String mapName) {

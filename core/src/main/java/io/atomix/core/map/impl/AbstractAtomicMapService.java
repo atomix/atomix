@@ -543,7 +543,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
     IteratorBatch<Map.Entry<K, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
     return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries().stream()
         .map(Map.Entry::getKey)
-        .collect(Collectors.toSet()));
+        .collect(Collectors.toList()));
   }
 
   @Override
@@ -561,7 +561,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
     IteratorBatch<Map.Entry<K, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
     return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries().stream()
         .map(Map.Entry::getValue)
-        .collect(Collectors.toSet()));
+        .collect(Collectors.toList()));
   }
 
   @Override
