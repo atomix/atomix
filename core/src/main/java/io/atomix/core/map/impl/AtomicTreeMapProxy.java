@@ -570,20 +570,20 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
       if (toKey == null) {
         return AtomicTreeMapProxy.this.lowerEntry(key);
       } else if (toInclusive && toKey.compareTo(key) < 0) {
-        return AtomicTreeMapProxy.this.floorEntry(toKey).thenApply(result -> isInLowerBounds(result.getKey()) ? result : null);
+        return AtomicTreeMapProxy.this.floorEntry(toKey).thenApply(result -> isInBounds(result.getKey()) ? result : null);
       } else {
-        return AtomicTreeMapProxy.this.lowerEntry(min(toKey, key)).thenApply(result -> isInLowerBounds(result.getKey()) ? result : null);
+        return AtomicTreeMapProxy.this.lowerEntry(min(toKey, key)).thenApply(result -> isInBounds(result.getKey()) ? result : null);
       }
     }
 
     @Override
     public CompletableFuture<K> lowerKey(K key) {
       if (toKey == null) {
-        return AtomicTreeMapProxy.this.lowerKey(key);
+        return lowerKey(key);
       } else if (toInclusive && toKey.compareTo(key) < 0) {
-        return AtomicTreeMapProxy.this.floorKey(toKey).thenApply(result -> isInLowerBounds(result) ? result : null);
+        return floorKey(toKey).thenApply(result -> isInBounds(result) ? result : null);
       } else {
-        return AtomicTreeMapProxy.this.lowerKey(min(toKey, key)).thenApply(result -> isInLowerBounds(result) ? result : null);
+        return lowerKey(min(toKey, key)).thenApply(result -> isInBounds(result) ? result : null);
       }
     }
 
@@ -591,21 +591,21 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
     public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> floorEntry(K key) {
       if (toKey == null) {
         return AtomicTreeMapProxy.this.floorEntry(key);
-      } else if (!toInclusive && toKey.compareTo(key) < 0) {
-        return AtomicTreeMapProxy.this.lowerEntry(toKey).thenApply(result -> isInLowerBounds(result.getKey()) ? result : null);
+      } else if (!toInclusive && toKey.compareTo(key) <= 0) {
+        return AtomicTreeMapProxy.this.lowerEntry(toKey).thenApply(result -> isInBounds(result.getKey()) ? result : null);
       } else {
-        return AtomicTreeMapProxy.this.floorEntry(min(toKey, key)).thenApply(result -> isInLowerBounds(result.getKey()) ? result : null);
+        return AtomicTreeMapProxy.this.floorEntry(min(toKey, key)).thenApply(result -> isInBounds(result.getKey()) ? result : null);
       }
     }
 
     @Override
     public CompletableFuture<K> floorKey(K key) {
       if (toKey == null) {
-        return AtomicTreeMapProxy.this.floorKey(key);
-      } else if (!toInclusive && toKey.compareTo(key) < 0) {
-        return AtomicTreeMapProxy.this.floorKey(toKey).thenApply(result -> isInLowerBounds(result) ? result : null);
+        return floorKey(key);
+      } else if (!toInclusive && toKey.compareTo(key) <= 0) {
+        return lowerKey(toKey).thenApply(result -> isInBounds(result) ? result : null);
       } else {
-        return AtomicTreeMapProxy.this.floorKey(min(toKey, key)).thenApply(result -> isInLowerBounds(result) ? result : null);
+        return floorKey(min(toKey, key)).thenApply(result -> isInBounds(result) ? result : null);
       }
     }
 
@@ -613,21 +613,21 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
     public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> ceilingEntry(K key) {
       if (fromKey == null) {
         return AtomicTreeMapProxy.this.ceilingEntry(key);
-      } else if (!fromInclusive && fromKey.compareTo(key) > 0) {
-        return AtomicTreeMapProxy.this.ceilingEntry(fromKey).thenApply(result -> isInUpperBounds(result.getKey()) ? result : null);
+      } else if (!fromInclusive && fromKey.compareTo(key) >= 0) {
+        return AtomicTreeMapProxy.this.higherEntry(fromKey).thenApply(result -> isInBounds(result.getKey()) ? result : null);
       } else {
-        return AtomicTreeMapProxy.this.ceilingEntry(max(fromKey, key)).thenApply(result -> isInUpperBounds(result.getKey()) ? result : null);
+        return AtomicTreeMapProxy.this.ceilingEntry(max(fromKey, key)).thenApply(result -> isInBounds(result.getKey()) ? result : null);
       }
     }
 
     @Override
     public CompletableFuture<K> ceilingKey(K key) {
       if (fromKey == null) {
-        return AtomicTreeMapProxy.this.ceilingKey(key);
-      } else if (!fromInclusive && fromKey.compareTo(key) > 0) {
-        return AtomicTreeMapProxy.this.ceilingKey(fromKey).thenApply(result -> isInUpperBounds(result) ? result : null);
+        return ceilingKey(key);
+      } else if (!fromInclusive && fromKey.compareTo(key) >= 0) {
+        return higherKey(fromKey).thenApply(result -> isInBounds(result) ? result : null);
       } else {
-        return AtomicTreeMapProxy.this.ceilingKey(max(fromKey, key)).thenApply(result -> isInUpperBounds(result) ? result : null);
+        return ceilingKey(max(fromKey, key)).thenApply(result -> isInBounds(result) ? result : null);
       }
     }
 
@@ -636,42 +636,48 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
       if (fromKey == null) {
         return AtomicTreeMapProxy.this.higherEntry(key);
       } else if (fromInclusive && fromKey.compareTo(key) > 0) {
-        return AtomicTreeMapProxy.this.ceilingEntry(fromKey).thenApply(result -> isInUpperBounds(result.getKey()) ? result : null);
+        return AtomicTreeMapProxy.this.ceilingEntry(fromKey).thenApply(result -> isInBounds(result.getKey()) ? result : null);
       } else {
-        return AtomicTreeMapProxy.this.higherEntry(max(fromKey, key)).thenApply(result -> isInUpperBounds(result.getKey()) ? result : null);
+        return AtomicTreeMapProxy.this.higherEntry(max(fromKey, key)).thenApply(result -> isInBounds(result.getKey()) ? result : null);
       }
     }
 
     @Override
     public CompletableFuture<K> higherKey(K key) {
       if (fromKey == null) {
-        return AtomicTreeMapProxy.this.higherKey(key);
+        return higherKey(key);
       } else if (fromInclusive && fromKey.compareTo(key) > 0) {
-        return AtomicTreeMapProxy.this.ceilingKey(fromKey).thenApply(result -> isInUpperBounds(result) ? result : null);
+        return ceilingKey(fromKey).thenApply(result -> isInBounds(result) ? result : null);
       } else {
-        return AtomicTreeMapProxy.this.higherKey(max(fromKey, key)).thenApply(result -> isInUpperBounds(result) ? result : null);
+        return higherKey(max(fromKey, key)).thenApply(result -> isInBounds(result) ? result : null);
       }
     }
 
     @Override
     public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> firstEntry() {
       if (fromKey == null) {
-        return AtomicTreeMapProxy.this.firstEntry();
+        return AtomicTreeMapProxy.this.firstEntry()
+            .thenApply(result -> isInBounds(result.getKey()) ? result : null);
       } else if (fromInclusive) {
-        return AtomicTreeMapProxy.this.ceilingEntry(fromKey);
+        return AtomicTreeMapProxy.this.ceilingEntry(fromKey)
+            .thenApply(result -> isInBounds(result.getKey()) ? result : null);
       } else {
-        return AtomicTreeMapProxy.this.higherEntry(fromKey);
+        return AtomicTreeMapProxy.this.higherEntry(fromKey)
+            .thenApply(result -> isInBounds(result.getKey()) ? result : null);
       }
     }
 
     @Override
     public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> lastEntry() {
       if (toKey == null) {
-        return AtomicTreeMapProxy.this.lastEntry();
-      } else if (fromInclusive) {
-        return AtomicTreeMapProxy.this.floorEntry(toKey);
+        return AtomicTreeMapProxy.this.lastEntry()
+            .thenApply(result -> isInBounds(result.getKey()) ? result : null);
+      } else if (toInclusive) {
+        return AtomicTreeMapProxy.this.floorEntry(toKey)
+            .thenApply(result -> isInBounds(result.getKey()) ? result : null);
       } else {
-        return AtomicTreeMapProxy.this.lowerEntry(toKey);
+        return AtomicTreeMapProxy.this.lowerEntry(toKey)
+            .thenApply(result -> isInBounds(result.getKey()) ? result : null);
       }
     }
 
@@ -687,17 +693,59 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public AsyncAtomicNavigableMap<K, byte[]> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
-      return new SubMap(max(this.fromKey, fromKey), fromInclusive, min(this.toKey, toKey), toInclusive);
+      checkNotNull(fromKey);
+      checkNotNull(toKey);
+
+      if (this.fromKey != null) {
+        int order = this.fromKey.compareTo(fromKey);
+        if (order == 0) {
+          fromInclusive = this.fromInclusive && fromInclusive;
+        } else if (order > 0) {
+          fromKey = this.fromKey;
+          fromInclusive = this.fromInclusive;
+        }
+      }
+
+      if (this.toKey != null) {
+        int order = this.toKey.compareTo(toKey);
+        if (order == 0) {
+          toInclusive = this.toInclusive && toInclusive;
+        } else if (order < 0) {
+          toKey = this.toKey;
+          toInclusive = this.toInclusive;
+        }
+      }
+      return new SubMap(fromKey, fromInclusive, toKey, toInclusive);
     }
 
     @Override
     public AsyncAtomicNavigableMap<K, byte[]> headMap(K toKey, boolean inclusive) {
-      return new SubMap(fromKey, fromInclusive, min(this.toKey, toKey), inclusive);
+      checkNotNull(toKey);
+      if (this.toKey != null) {
+        int order = this.toKey.compareTo(toKey);
+        if (order == 0) {
+          inclusive = this.toInclusive && inclusive;
+        } else if (order < 0) {
+          toKey = this.toKey;
+          inclusive = this.toInclusive;
+        }
+      }
+      return new SubMap(fromKey, fromInclusive, toKey, inclusive);
     }
 
     @Override
     public AsyncAtomicNavigableMap<K, byte[]> tailMap(K fromKey, boolean inclusive) {
-      return new SubMap(max(this.fromKey, fromKey), inclusive, toKey, toInclusive);
+      checkNotNull(fromKey);
+      if (this.fromKey != null) {
+        int order = this.fromKey.compareTo(fromKey);
+        if (order == 0) {
+          inclusive = this.fromInclusive && inclusive;
+        } else if (order > 0) {
+          fromKey = this.fromKey;
+          inclusive = this.fromInclusive;
+        }
+      }
+      return new SubMap(fromKey, inclusive, toKey, toInclusive);
     }
 
     @Override
