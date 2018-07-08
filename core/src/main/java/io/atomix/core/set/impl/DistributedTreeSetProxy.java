@@ -187,6 +187,9 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
     }
 
     private boolean isInBounds(E element) {
+      if (element == null) {
+        return false;
+      }
       if (fromElement != null) {
         int lower = element.compareTo(fromElement);
         if (!fromInclusive && lower <= 0 || fromInclusive && lower < 0) {
@@ -215,22 +218,28 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
     @Override
     public CompletableFuture<E> first() {
       if (fromElement == null) {
-        return DistributedTreeSetProxy.this.first();
+        return DistributedTreeSetProxy.this.first()
+            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
       } else if (fromInclusive) {
-        return DistributedTreeSetProxy.this.ceiling(fromElement);
+        return DistributedTreeSetProxy.this.ceiling(fromElement)
+            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
       } else {
-        return DistributedTreeSetProxy.this.higher(fromElement);
+        return DistributedTreeSetProxy.this.higher(fromElement)
+            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
       }
     }
 
     @Override
     public CompletableFuture<E> last() {
       if (toElement == null) {
-        return DistributedTreeSetProxy.this.last();
+        return DistributedTreeSetProxy.this.last()
+            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
       } else if (toInclusive) {
-        return DistributedTreeSetProxy.this.floor(toElement);
+        return DistributedTreeSetProxy.this.floor(toElement)
+            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
       } else {
-        return DistributedTreeSetProxy.this.lower(toElement);
+        return DistributedTreeSetProxy.this.lower(toElement)
+            .thenCompose(result -> !isInBounds(result) ? Futures.exceptionalFuture(new NoSuchElementException()) : CompletableFuture.completedFuture(result));
       }
     }
 

@@ -118,6 +118,18 @@ public abstract class DistributedTreeSetTest extends AbstractPrimitiveTest {
     } catch (NoSuchElementException e) {
     }
 
+    try {
+      set.subSet("a", false, "z", false).first();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    try {
+      set.subSet("a", false, "z", false).last();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
     assertNull(set.pollFirst());
     assertNull(set.pollLast());
 
@@ -140,6 +152,30 @@ public abstract class DistributedTreeSetTest extends AbstractPrimitiveTest {
     assertEquals("z", set.pollLast());
     assertEquals("b", set.first());
     assertEquals("y", set.last());
+
+    try {
+      set.subSet("A", false, "Z", false).first();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    try {
+      set.subSet("A", false, "Z", false).last();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    try {
+      set.subSet("a", true, "b", false).first();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
+
+    try {
+      set.subSet("a", true, "b", false).last();
+      fail();
+    } catch (NoSuchElementException e) {
+    }
 
     assertEquals("d", set.subSet("c", false, "x", false)
         .subSet("c", true, "x", true).first());
