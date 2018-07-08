@@ -40,18 +40,18 @@ import java.util.stream.Collectors;
 /**
  * Partitioned distributed collection proxy.
  */
-public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistributedCollection<E>, S extends DistributedCollectionService<E>, E>
+public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistributedCollection<String>, S extends DistributedCollectionService<String>>
     extends AbstractAsyncPrimitive<A, S>
-    implements AsyncDistributedCollection<E>, DistributedCollectionClient<E> {
+    implements AsyncDistributedCollection<String>, DistributedCollectionClient<String> {
 
-  private final Set<CollectionEventListener<E>> eventListeners = Sets.newIdentityHashSet();
+  private final Set<CollectionEventListener<String>> eventListeners = Sets.newIdentityHashSet();
 
   public PartitionedDistributedCollectionProxy(ProxyClient<S> client, PrimitiveRegistry registry) {
     super(client, registry);
   }
 
   @Override
-  public void onEvent(CollectionEvent<E> event) {
+  public void onEvent(CollectionEvent<String> event) {
     eventListeners.forEach(l -> l.event(event));
   }
 
@@ -68,25 +68,25 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
   }
 
   @Override
-  public CompletableFuture<Boolean> add(E element) {
+  public CompletableFuture<Boolean> add(String element) {
     return getProxyClient().applyBy(element, service -> service.add(element))
         .thenCompose(result -> checkLocked(result));
   }
 
   @Override
-  public CompletableFuture<Boolean> remove(E element) {
+  public CompletableFuture<Boolean> remove(String element) {
     return getProxyClient().applyBy(element, service -> service.remove(element))
         .thenCompose(result -> checkLocked(result));
   }
 
   @Override
-  public CompletableFuture<Boolean> contains(E element) {
+  public CompletableFuture<Boolean> contains(String element) {
     return getProxyClient().applyBy(element, service -> service.contains(element));
   }
 
   @Override
-  public CompletableFuture<Boolean> addAll(Collection<? extends E> c) {
-    Map<PartitionId, Collection<E>> partitions = Maps.newHashMap();
+  public CompletableFuture<Boolean> addAll(Collection<? extends String> c) {
+    Map<PartitionId, Collection<String>> partitions = Maps.newHashMap();
     c.forEach(key -> partitions.computeIfAbsent(getProxyClient().getPartitionId(key), k -> Lists.newArrayList()).add(key));
     return Futures.allOf(partitions.entrySet().stream()
         .map(entry -> getProxyClient()
@@ -97,8 +97,8 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
   }
 
   @Override
-  public CompletableFuture<Boolean> containsAll(Collection<? extends E> c) {
-    Map<PartitionId, Collection<E>> partitions = Maps.newHashMap();
+  public CompletableFuture<Boolean> containsAll(Collection<? extends String> c) {
+    Map<PartitionId, Collection<String>> partitions = Maps.newHashMap();
     c.forEach(key -> partitions.computeIfAbsent(getProxyClient().getPartitionId(key), k -> Lists.newArrayList()).add(key));
     return Futures.allOf(partitions.entrySet().stream()
         .map(entry -> getProxyClient()
@@ -108,8 +108,8 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
   }
 
   @Override
-  public CompletableFuture<Boolean> retainAll(Collection<? extends E> c) {
-    Map<PartitionId, Collection<E>> partitions = Maps.newHashMap();
+  public CompletableFuture<Boolean> retainAll(Collection<? extends String> c) {
+    Map<PartitionId, Collection<String>> partitions = Maps.newHashMap();
     c.forEach(key -> partitions.computeIfAbsent(getProxyClient().getPartitionId(key), k -> Lists.newArrayList()).add(key));
     return Futures.allOf(partitions.entrySet().stream()
         .map(entry -> getProxyClient()
@@ -120,8 +120,8 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
   }
 
   @Override
-  public CompletableFuture<Boolean> removeAll(Collection<? extends E> c) {
-    Map<PartitionId, Collection<E>> partitions = Maps.newHashMap();
+  public CompletableFuture<Boolean> removeAll(Collection<? extends String> c) {
+    Map<PartitionId, Collection<String>> partitions = Maps.newHashMap();
     c.forEach(key -> partitions.computeIfAbsent(getProxyClient().getPartitionId(key), k -> Lists.newArrayList()).add(key));
     return Futures.allOf(partitions.entrySet().stream()
         .map(entry -> getProxyClient()
@@ -139,7 +139,7 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
   }
 
   @Override
-  public synchronized CompletableFuture<Void> addListener(CollectionEventListener<E> listener) {
+  public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener) {
     if (eventListeners.isEmpty()) {
       eventListeners.add(listener);
       return getProxyClient().acceptAll(service -> service.listen()).thenApply(v -> null);
@@ -150,7 +150,7 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
   }
 
   @Override
-  public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<E> listener) {
+  public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<String> listener) {
     if (eventListeners.remove(listener) && eventListeners.isEmpty()) {
       return getProxyClient().acceptAll(service -> service.unlisten()).thenApply(v -> null);
     }
@@ -162,7 +162,7 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
   }
 
   @Override
-  public AsyncIterator<E> iterator() {
+  public AsyncIterator<String> iterator() {
     return new PartitionedProxyIterator<>(
         getProxyClient(),
         DistributedCollectionService::iterate,
