@@ -38,6 +38,8 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Distributed tree set proxy.
  */
@@ -187,13 +189,13 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
     private boolean isInBounds(E element) {
       if (fromElement != null) {
         int lower = element.compareTo(fromElement);
-        if (!fromInclusive && lower < 0 || fromInclusive && lower <= 0) {
+        if (!fromInclusive && lower <= 0 || fromInclusive && lower < 0) {
           return false;
         }
       }
       if (toElement != null) {
         int upper = element.compareTo(toElement);
-        if (!toInclusive && upper > 0 || toInclusive && upper >= 0) {
+        if (!toInclusive && upper >= 0 || toInclusive && upper > 0) {
           return false;
         }
       }
@@ -247,7 +249,7 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
     public CompletableFuture<E> floor(E e) {
       if (toElement == null) {
         return DistributedTreeSetProxy.this.floor(e);
-      } else if (!toInclusive && toElement.compareTo(e) < 0) {
+      } else if (!toInclusive && toElement.compareTo(e) <= 0) {
         return DistributedTreeSetProxy.this.lower(toElement).thenApply(result -> isInBounds(result) ? result : null);
       } else {
         return DistributedTreeSetProxy.this.floor(min(toElement, e)).thenApply(result -> isInBounds(result) ? result : null);
@@ -258,8 +260,8 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
     public CompletableFuture<E> ceiling(E e) {
       if (fromElement == null) {
         return DistributedTreeSetProxy.this.ceiling(e);
-      } else if (!fromInclusive && fromElement.compareTo(e) > 0) {
-        return DistributedTreeSetProxy.this.higher(toElement).thenApply(result -> isInBounds(result) ? result : null);
+      } else if (!fromInclusive && fromElement.compareTo(e) >= 0) {
+        return DistributedTreeSetProxy.this.higher(fromElement).thenApply(result -> isInBounds(result) ? result : null);
       } else {
         return DistributedTreeSetProxy.this.ceiling(max(fromElement, e)).thenApply(result -> isInBounds(result) ? result : null);
       }
@@ -298,17 +300,57 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
 
     @Override
     public AsyncDistributedNavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
-      return DistributedTreeSetProxy.this.subSet(max(this.fromElement, fromElement), fromInclusive, min(this.toElement, toElement), toInclusive);
+      checkNotNull(fromElement);
+      checkNotNull(toElement);
+
+      if (this.fromElement != null) {
+        int order = this.fromElement.compareTo(fromElement);
+        if (order == 0) {
+          fromInclusive = this.fromInclusive && fromInclusive;
+        } else if (order > 0) {
+          fromInclusive = this.fromInclusive;
+        }
+      }
+
+      if (this.toElement != null) {
+        int order = this.toElement.compareTo(toElement);
+        if (order == 0) {
+          toInclusive = this.toInclusive && toInclusive;
+        } else if (order > 0) {
+          toInclusive = this.toInclusive;
+        }
+      }
+      return DistributedTreeSetProxy.this.subSet(fromElement, fromInclusive, toElement, toInclusive);
     }
 
     @Override
     public AsyncDistributedNavigableSet<E> headSet(E toElement, boolean inclusive) {
-      return DistributedTreeSetProxy.this.subSet(fromElement, fromInclusive, min(this.toElement, toElement), inclusive);
+      checkNotNull(toElement);
+
+      if (this.toElement != null) {
+        int order = this.toElement.compareTo(toElement);
+        if (order == 0) {
+          inclusive = this.toInclusive && inclusive;
+        } else if (order > 0) {
+          inclusive = this.toInclusive;
+        }
+      }
+      return DistributedTreeSetProxy.this.subSet(fromElement, fromInclusive, toElement, inclusive);
     }
 
     @Override
     public AsyncDistributedNavigableSet<E> tailSet(E fromElement, boolean inclusive) {
-      return DistributedTreeSetProxy.this.subSet(max(this.fromElement, fromElement), inclusive, toElement, toInclusive);
+      checkNotNull(fromElement);
+
+      if (this.fromElement != null) {
+        int order = this.fromElement.compareTo(fromElement);
+        if (order == 0) {
+          inclusive = this.fromInclusive && inclusive;
+        } else if (order > 0) {
+          inclusive = this.fromInclusive;
+        }
+      }
+      return DistributedTreeSetProxy.this.subSet(fromElement, inclusive, toElement, toInclusive);
     }
 
     @Override
