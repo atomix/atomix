@@ -37,6 +37,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Gossip-based distributed map.
@@ -46,7 +47,7 @@ public class GossipDistributedMap<K, V> implements AsyncDistributedMap<K, V> {
   private final PrimitiveProtocol protocol;
   private final MapProtocol<K, V> map;
 
-  private final Map<MapEventListener<K, V>, MapProtocolEventListener> listenerMap = Maps.newConcurrentMap();
+  private final Map<MapEventListener<K, V>, MapProtocolEventListener<K, V>> listenerMap = Maps.newConcurrentMap();
 
   public GossipDistributedMap(String name, PrimitiveProtocol protocol, MapProtocol<K, V> map) {
     this.name = name;
@@ -71,49 +72,47 @@ public class GossipDistributedMap<K, V> implements AsyncDistributedMap<K, V> {
 
   @Override
   public CompletableFuture<Integer> size() {
-    return CompletableFuture.completedFuture(map.size());
+    return complete(() -> map.size());
   }
 
   @Override
   public CompletableFuture<Boolean> isEmpty() {
-    return CompletableFuture.completedFuture(map.isEmpty());
+    return complete(() -> map.isEmpty());
   }
 
   @Override
   public CompletableFuture<Boolean> containsKey(K key) {
-    return CompletableFuture.completedFuture(map.containsKey(key));
+    return complete(() -> map.containsKey(key));
   }
 
   @Override
   public CompletableFuture<Boolean> containsValue(V value) {
-    return CompletableFuture.completedFuture(map.containsValue(value));
+    return complete(() -> map.containsValue(value));
   }
 
   @Override
   public CompletableFuture<V> get(K key) {
-    return CompletableFuture.completedFuture(map.get(key));
+    return complete(() -> map.get(key));
   }
 
   @Override
   public CompletableFuture<V> put(K key, V value) {
-    return CompletableFuture.completedFuture(map.put(key, value));
+    return complete(() -> map.put(key, value));
   }
 
   @Override
   public CompletableFuture<V> remove(K key) {
-    return CompletableFuture.completedFuture(map.remove(key));
+    return complete(() -> map.remove(key));
   }
 
   @Override
   public CompletableFuture<Void> putAll(Map<? extends K, ? extends V> m) {
-    map.putAll(m);
-    return CompletableFuture.completedFuture(null);
+    return complete(() -> map.putAll(m));
   }
 
   @Override
   public CompletableFuture<Void> clear() {
-    map.clear();
-    return CompletableFuture.completedFuture(null);
+    return complete(() -> map.clear());
   }
 
   @Override
@@ -133,27 +132,27 @@ public class GossipDistributedMap<K, V> implements AsyncDistributedMap<K, V> {
 
   @Override
   public CompletableFuture<V> getOrDefault(K key, V defaultValue) {
-    return Futures.exceptionalFuture(new UnsupportedOperationException());
+    return complete(() -> map.getOrDefault(key, defaultValue));
   }
 
   @Override
   public CompletableFuture<V> putIfAbsent(K key, V value) {
-    return Futures.exceptionalFuture(new UnsupportedOperationException());
+    return complete(() -> map.putIfAbsent(key, value));
   }
 
   @Override
   public CompletableFuture<Boolean> remove(K key, V value) {
-    return CompletableFuture.completedFuture(map.remove(key, value));
+    return complete(() -> map.remove(key, value));
   }
 
   @Override
   public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
-    return Futures.exceptionalFuture(new UnsupportedOperationException());
+    return complete(() -> map.replace(key, oldValue, newValue));
   }
 
   @Override
   public CompletableFuture<V> replace(K key, V value) {
-    return Futures.exceptionalFuture(new UnsupportedOperationException());
+    return complete(() -> map.replace(key, value));
   }
 
   @Override
@@ -207,7 +206,7 @@ public class GossipDistributedMap<K, V> implements AsyncDistributedMap<K, V> {
 
   @Override
   public CompletableFuture<Void> removeListener(MapEventListener<K, V> listener) {
-    MapProtocolEventListener eventListener = listenerMap.remove(listener);
+    MapProtocolEventListener<K, V> eventListener = listenerMap.remove(listener);
     if (eventListener != null) {
       map.removeListener(eventListener);
     }
@@ -216,8 +215,24 @@ public class GossipDistributedMap<K, V> implements AsyncDistributedMap<K, V> {
 
   @Override
   public CompletableFuture<Void> close() {
-    map.close();
-    return CompletableFuture.completedFuture(null);
+    return complete(() -> map.close());
+  }
+
+  private CompletableFuture<Void> complete(Runnable runnable) {
+    try {
+      runnable.run();
+      return CompletableFuture.completedFuture(null);
+    } catch (Exception e) {
+      return Futures.exceptionalFuture(e);
+    }
+  }
+
+  private <T> CompletableFuture<T> complete(Supplier<T> supplier) {
+    try {
+      return CompletableFuture.completedFuture(supplier.get());
+    } catch (Exception e) {
+      return Futures.exceptionalFuture(e);
+    }
   }
 
   @Override
