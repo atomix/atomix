@@ -20,6 +20,7 @@ import io.atomix.core.barrier.DistributedCyclicBarrier;
 import io.atomix.core.barrier.DistributedCyclicBarrierBuilder;
 import io.atomix.core.barrier.DistributedCyclicBarrierConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 
@@ -36,9 +37,10 @@ public class DefaultDistributedCyclicBarrierBuilder extends DistributedCyclicBar
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedCyclicBarrier> buildAsync() {
-    ProxyClient<DistributedCyclicBarrierService> proxy = protocol().newProxy(
-        name(),
-        primitiveType(),
+    PrimitiveProtocol protocol = protocol();
+    ProxyClient<DistributedCyclicBarrierService> proxy = protocol.newProxy(
+        name,
+        type,
         DistributedCyclicBarrierService.class,
         new ServiceConfig(),
         managementService.getPartitionService());

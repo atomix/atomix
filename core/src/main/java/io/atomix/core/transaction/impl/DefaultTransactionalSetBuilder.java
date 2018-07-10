@@ -23,7 +23,6 @@ import io.atomix.core.transaction.TransactionalSetBuilder;
 import io.atomix.core.transaction.TransactionalSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -38,12 +37,6 @@ public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E
     super(name, config, managementService);
     this.setBuilder = DistributedSetType.<E>instance().newBuilder(name, new DistributedSetConfig(), managementService);
     this.transaction = transaction;
-  }
-
-  @Override
-  public TransactionalSetBuilder<E> withSerializer(Serializer serializer) {
-    setBuilder.withSerializer(serializer);
-    return this;
   }
 
   @Override

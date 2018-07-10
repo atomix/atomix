@@ -21,6 +21,7 @@ import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapBuilder;
 import io.atomix.core.map.DistributedMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -37,16 +38,17 @@ public class DefaultDistributedMapBuilder<K, V> extends DistributedMapBuilder<K,
 
   @Override
   public CompletableFuture<DistributedMap<K, V>> buildAsync() {
+    PrimitiveProtocol protocol = protocol();
     ProxyClient proxy = protocol().newProxy(
-        name(),
-        primitiveType(),
+        name,
+        type,
         AtomicMapService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
     return new AtomicMapProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(rawMap -> {
-          Serializer serializer = serializer();
+          Serializer serializer = protocol.serializer();
           AsyncAtomicMap<K, V> map = new TranscodingAsyncAtomicMap<K, V, String, byte[]>(
               rawMap,
               key -> BaseEncoding.base16().encode(serializer.encode(key)),

@@ -21,6 +21,7 @@ import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetBuilder;
 import io.atomix.core.set.DistributedSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -40,16 +41,17 @@ public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedSet<E>> buildAsync() {
-    ProxyClient proxy = protocol().newProxy(
-        name(),
-        primitiveType(),
+    PrimitiveProtocol protocol = protocol();
+    ProxyClient proxy = protocol.newProxy(
+        name,
+        type,
         DistributedSetService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
     return new DistributedSetProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(rawSet -> {
-          Serializer serializer = serializer();
+          Serializer serializer = protocol.serializer();
           AsyncDistributedSet<E> set = new TranscodingAsyncDistributedSet<>(
               rawSet,
               element -> BaseEncoding.base16().encode(serializer.encode(element)),

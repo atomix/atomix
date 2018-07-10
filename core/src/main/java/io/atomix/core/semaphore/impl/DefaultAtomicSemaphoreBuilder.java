@@ -33,8 +33,8 @@ public class DefaultAtomicSemaphoreBuilder extends AtomicSemaphoreBuilder {
   @Override
   public CompletableFuture<AtomicSemaphore> buildAsync() {
     ProxyClient<AtomicSemaphoreService> proxy = protocol().newProxy(
-        name(),
-        primitiveType(),
+        name,
+        type,
         AtomicSemaphoreService.class,
         new AtomicSemaphoreServiceConfig().setInitialCapacity(config.initialCapacity()),
         managementService.getPartitionService());

@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Multi-primary protocol builder.
  */
-public class MultiPrimaryProtocolBuilder extends PrimitiveProtocolBuilder<MultiPrimaryProtocolConfig, MultiPrimaryProtocol> {
+public class MultiPrimaryProtocolBuilder extends PrimitiveProtocolBuilder<MultiPrimaryProtocolBuilder, MultiPrimaryProtocolConfig, MultiPrimaryProtocol> {
   protected MultiPrimaryProtocolBuilder(MultiPrimaryProtocolConfig config) {
     super(config);
   }

@@ -22,10 +22,6 @@ import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.utils.Builder;
 import io.atomix.utils.config.ConfigurationException;
-import io.atomix.utils.serializer.Namespace;
-import io.atomix.utils.serializer.NamespaceConfig;
-import io.atomix.utils.serializer.Namespaces;
-import io.atomix.utils.serializer.Serializer;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +39,6 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
   protected final PrimitiveType type;
   protected final String name;
   protected final C config;
-  protected Serializer serializer;
   protected PrimitiveProtocol protocol;
   protected final PrimitiveManagementService managementService;
 
@@ -52,18 +47,6 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
     this.name = checkNotNull(name, "name cannot be null");
     this.config = checkNotNull(config, "config cannot be null");
     this.managementService = checkNotNull(managementService, "managementService cannot be null");
-  }
-
-  /**
-   * Sets the serializer to use for transcoding info held in the primitive.
-   *
-   * @param serializer serializer
-   * @return this builder
-   */
-  @SuppressWarnings("unchecked")
-  public B withSerializer(Serializer serializer) {
-    this.serializer = serializer;
-    return (B) this;
   }
 
   /**
@@ -102,29 +85,11 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
   }
 
   /**
-   * Returns the name of the primitive.
-   *
-   * @return primitive name
-   */
-  public String name() {
-    return name;
-  }
-
-  /**
-   * Returns the primitive type.
-   *
-   * @return primitive type
-   */
-  public PrimitiveType primitiveType() {
-    return type;
-  }
-
-  /**
    * Returns the primitive protocol.
    *
    * @return the primitive protocol
    */
-  public PrimitiveProtocol protocol() {
+  protected PrimitiveProtocol protocol() {
     PrimitiveProtocol protocol = this.protocol;
     if (protocol == null) {
       PrimitiveProtocolConfig<?> protocolConfig = config.getProtocolConfig();
@@ -143,27 +108,6 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
       }
     }
     return protocol;
-  }
-
-  /**
-   * Returns the serializer.
-   *
-   * @return serializer
-   */
-  public Serializer serializer() {
-    Serializer serializer = this.serializer;
-    if (serializer == null) {
-      NamespaceConfig config = this.config.getNamespaceConfig();
-      if (config == null) {
-        serializer = Serializer.using(Namespaces.BASIC);
-      } else {
-        serializer = Serializer.using(Namespace.builder()
-            .register(Namespaces.BASIC)
-            .register(new Namespace(config))
-            .build());
-      }
-    }
-    return serializer;
   }
 
   /**

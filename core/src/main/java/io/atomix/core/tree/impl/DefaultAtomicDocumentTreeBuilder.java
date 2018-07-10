@@ -20,6 +20,7 @@ import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.tree.AtomicDocumentTreeBuilder;
 import io.atomix.core.tree.AtomicDocumentTreeConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -39,16 +40,17 @@ public class DefaultAtomicDocumentTreeBuilder<V> extends AtomicDocumentTreeBuild
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicDocumentTree<V>> buildAsync() {
-    ProxyClient<DocumentTreeService> proxy = protocol().newProxy(
-        name(),
-        primitiveType(),
+    PrimitiveProtocol protocol = protocol();
+    ProxyClient<DocumentTreeService> proxy = protocol.newProxy(
+        name,
+        type,
         DocumentTreeService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
     return new AtomicDocumentTreeProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(tree -> {
-          Serializer serializer = serializer();
+          Serializer serializer = protocol.serializer();
           return new TranscodingAsyncAtomicDocumentTree<V, byte[]>(
               tree,
               key -> serializer.encode(key),

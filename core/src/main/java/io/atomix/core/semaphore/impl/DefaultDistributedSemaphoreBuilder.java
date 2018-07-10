@@ -35,8 +35,8 @@ public class DefaultDistributedSemaphoreBuilder extends DistributedSemaphoreBuil
   @Override
   public CompletableFuture<DistributedSemaphore> buildAsync() {
     ProxyClient<AtomicSemaphoreService> proxy = protocol().newProxy(
-        name(),
-        primitiveType(),
+        name,
+        type,
         AtomicSemaphoreService.class,
         new AtomicSemaphoreServiceConfig().setInitialCapacity(config.initialCapacity()),
         managementService.getPartitionService());

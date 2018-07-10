@@ -38,8 +38,8 @@ public class DefaultDistributedTreeSetBuilder<E extends Comparable<E>> extends D
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedTreeSet<E>> buildAsync() {
     ProxyClient proxy = protocol().newProxy(
-        name(),
-        primitiveType(),
+        name,
+        type,
         DistributedTreeSetService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
