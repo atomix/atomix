@@ -21,6 +21,7 @@ import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetBuilder;
 import io.atomix.core.set.DistributedSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
@@ -42,23 +43,30 @@ public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedSet<E>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return newProxy(DistributedSetService.class, new ServiceConfig())
-        .thenCompose(proxy -> new DistributedSetProxy((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
-        .thenApply(rawSet -> {
-          Serializer serializer = protocol.serializer();
-          AsyncDistributedSet<E> set = new TranscodingAsyncDistributedSet<>(
-              rawSet,
-              element -> BaseEncoding.base16().encode(serializer.encode(element)),
-              string -> serializer.decode(BaseEncoding.base16().decode(string)));
+    if (protocol instanceof GossipProtocol) {
+      return managementService.getPrimitiveCache().getPrimitive(name, () ->
+          CompletableFuture.completedFuture(((GossipProtocol) protocol).<E>newSetProtocol(name, managementService))
+              .thenApply(set -> new GossipDistributedSet<>(name, protocol, set)))
+          .thenApply(AsyncDistributedSet::sync);
+    } else {
+      return newProxy(DistributedSetService.class, new ServiceConfig())
+          .thenCompose(proxy -> new DistributedSetProxy((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
+          .thenApply(rawSet -> {
+            Serializer serializer = protocol.serializer();
+            AsyncDistributedSet<E> set = new TranscodingAsyncDistributedSet<>(
+                rawSet,
+                element -> BaseEncoding.base16().encode(serializer.encode(element)),
+                string -> serializer.decode(BaseEncoding.base16().decode(string)));
 
-          if (config.getCacheConfig().isEnabled()) {
-            set = new CachingAsyncDistributedSet<>(set, config.getCacheConfig());
-          }
+            if (config.getCacheConfig().isEnabled()) {
+              set = new CachingAsyncDistributedSet<>(set, config.getCacheConfig());
+            }
 
-          if (config.isReadOnly()) {
-            set = new UnmodifiableAsyncDistributedSet<>(set);
-          }
-          return set.sync();
-        });
+            if (config.isReadOnly()) {
+              set = new UnmodifiableAsyncDistributedSet<>(set);
+            }
+            return set.sync();
+          });
+    }
   }
 }

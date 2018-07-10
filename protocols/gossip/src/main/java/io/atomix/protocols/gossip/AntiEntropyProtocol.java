@@ -20,8 +20,10 @@ import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.counter.CounterProtocol;
 import io.atomix.primitive.protocol.map.MapProtocol;
+import io.atomix.primitive.protocol.set.SetProtocol;
 import io.atomix.protocols.gossip.counter.GossipCounter;
 import io.atomix.protocols.gossip.map.AntiEntropyMap;
+import io.atomix.protocols.gossip.set.AntiEntropySet;
 import io.atomix.utils.serializer.Serializer;
 
 /**
@@ -85,5 +87,10 @@ public class AntiEntropyProtocol implements GossipProtocol {
   @Override
   public <K, V> MapProtocol<K, V> newMapProtocol(String name, PrimitiveManagementService managementService) {
     return new AntiEntropyMap<>(name, config, managementService);
+  }
+
+  @Override
+  public <E> SetProtocol<E> newSetProtocol(String name, PrimitiveManagementService managementService) {
+    return new AntiEntropySet<>(name, config, managementService);
   }
 }

@@ -13,38 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol.map;
+package io.atomix.primitive.protocol.set;
 
-import java.util.Map;
+import java.util.Set;
 
 /**
- * Gossip map protocol.
+ * Set protocol.
  */
-public interface MapProtocol<K, V> extends Map<K, V> {
+public interface SetProtocol<E> extends Set<E> {
 
   /**
-   * Returns the map name.
+   * Returns the set name.
    *
-   * @return the map name
+   * @return the set name
    */
   String name();
 
   /**
-   * Adds the specified listener to the map which will be notified whenever the mappings in the map are changed.
+   * Adds the specified listener to the set which will be notified whenever the entries in the set are changed.
    *
    * @param listener listener to register for events
    */
-  void addListener(MapProtocolEventListener<K, V> listener);
+  void addListener(SetProtocolEventListener<E> listener);
 
   /**
-   * Removes the specified listener from the map such that it will no longer receive change notifications.
+   * Removes the specified listener from the set such that it will no longer receive change notifications.
    *
    * @param listener listener to deregister for events
    */
-  void removeListener(MapProtocolEventListener<K, V> listener);
+  void removeListener(SetProtocolEventListener<E> listener);
 
   /**
-   * Closes the map.
+   * Closes the set.
    */
   void close();
+
 }

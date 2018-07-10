@@ -116,7 +116,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
   private final Supplier<List<MemberId>> bootstrapPeersSupplier;
   private final MemberId localMemberId;
   private long previousTombstonePurgeTime;
-  private volatile boolean destroyed = false;
+  private volatile boolean closed = false;
   private SlidingWindowCounter counter = new SlidingWindowCounter(WINDOW_SIZE);
 
   public AntiEntropyMap(String name, AntiEntropyProtocolConfig config, PrimitiveManagementService managementService) {
@@ -240,7 +240,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
     return mapName;
   }
 
-  private String encodeKey(K key) {
+  private String encodeKey(Object key) {
     return BaseEncoding.base16().encode(entrySerializer.encode(key));
   }
 
@@ -258,27 +258,27 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
 
   @Override
   public int size() {
-    checkState(!destroyed, destroyedMessage);
+    checkState(!closed, destroyedMessage);
     // TODO: Maintain a separate counter for tracking live elements in map.
     return Maps.filterValues(items, MapValue::isAlive).size();
   }
 
   @Override
   public boolean isEmpty() {
-    checkState(!destroyed, destroyedMessage);
+    checkState(!closed, destroyedMessage);
     return size() == 0;
   }
 
   @Override
-  public boolean containsKey(K key) {
-    checkState(!destroyed, destroyedMessage);
+  public boolean containsKey(Object key) {
+    checkState(!closed, destroyedMessage);
     checkNotNull(key, ERROR_NULL_KEY);
     return get(key) != null;
   }
 
   @Override
-  public boolean containsValue(V value) {
-    checkState(!destroyed, destroyedMessage);
+  public boolean containsValue(Object value) {
+    checkState(!closed, destroyedMessage);
     checkNotNull(value, ERROR_NULL_VALUE);
     return items.values()
         .stream()
@@ -287,8 +287,8 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
   }
 
   @Override
-  public V get(K key) {
-    checkState(!destroyed, destroyedMessage);
+  public V get(Object key) {
+    checkState(!closed, destroyedMessage);
     checkNotNull(key, ERROR_NULL_KEY);
 
     MapValue value = items.get(encodeKey(key));
@@ -297,7 +297,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
 
   @Override
   public V put(K key, V value) {
-    checkState(!destroyed, destroyedMessage);
+    checkState(!closed, destroyedMessage);
     checkNotNull(key, ERROR_NULL_KEY);
     checkNotNull(value, ERROR_NULL_VALUE);
 
@@ -331,18 +331,18 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
   }
 
   @Override
-  public V remove(K key) {
-    checkState(!destroyed, destroyedMessage);
+  public V remove(Object key) {
+    checkState(!closed, destroyedMessage);
     checkNotNull(key, ERROR_NULL_KEY);
-    return removeAndNotify(key, null);
+    return removeAndNotify((K) key, null);
   }
 
   @Override
-  public boolean remove(K key, V value) {
-    checkState(!destroyed, destroyedMessage);
+  public boolean remove(Object key, Object value) {
+    checkState(!closed, destroyedMessage);
     checkNotNull(key, ERROR_NULL_KEY);
     checkNotNull(value, ERROR_NULL_VALUE);
-    return removeAndNotify(key, value) != null;
+    return removeAndNotify((K) key, (V) value) != null;
   }
 
   private V removeAndNotify(K key, V value) {
@@ -365,7 +365,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
   }
 
   private MapValue removeInternal(String key, Optional<byte[]> value, Optional<MapValue> tombstone) {
-    checkState(!destroyed, destroyedMessage);
+    checkState(!closed, destroyedMessage);
     checkNotNull(key, ERROR_NULL_KEY);
     checkNotNull(value, ERROR_NULL_VALUE);
     tombstone.ifPresent(v -> checkState(v.isTombstone()));
@@ -399,8 +399,8 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
   }
 
   @Override
-  public V compute(K key, BiFunction<K, V, V> recomputeFunction) {
-    checkState(!destroyed, destroyedMessage);
+  public V compute(K key, BiFunction<? super K, ? super V, ? extends V> recomputeFunction) {
+    checkState(!closed, destroyedMessage);
     checkNotNull(key, ERROR_NULL_KEY);
     checkNotNull(recomputeFunction, "Recompute function cannot be null");
 
@@ -442,20 +442,20 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
 
   @Override
   public void putAll(Map<? extends K, ? extends V> m) {
-    checkState(!destroyed, destroyedMessage);
+    checkState(!closed, destroyedMessage);
     m.forEach(this::put);
   }
 
   @Override
   public void clear() {
-    checkState(!destroyed, destroyedMessage);
+    checkState(!closed, destroyedMessage);
     Maps.filterValues(items, MapValue::isAlive)
         .forEach((k, v) -> remove(decodeKey(k)));
   }
 
   @Override
   public Set<K> keySet() {
-    checkState(!destroyed, destroyedMessage);
+    checkState(!closed, destroyedMessage);
     return Maps.filterValues(items, MapValue::isAlive).keySet()
         .stream()
         .map(this::decodeKey)
@@ -464,13 +464,13 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
 
   @Override
   public Collection<V> values() {
-    checkState(!destroyed, destroyedMessage);
+    checkState(!closed, destroyedMessage);
     return Collections2.transform(Maps.filterValues(items, MapValue::isAlive).values(), value -> value.get(this::decodeValue));
   }
 
   @Override
   public Set<Map.Entry<K, V>> entrySet() {
-    checkState(!destroyed, destroyedMessage);
+    checkState(!closed, destroyedMessage);
     return Maps.filterValues(items, MapValue::isAlive)
         .entrySet()
         .stream()
@@ -480,7 +480,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
 
   @Override
   public void addListener(MapProtocolEventListener<K, V> listener) {
-    checkState(!destroyed, destroyedMessage);
+    checkState(!closed, destroyedMessage);
 
     listeners.add(checkNotNull(listener));
     items.forEach((k, v) -> {
@@ -492,14 +492,14 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
 
   @Override
   public void removeListener(MapProtocolEventListener<K, V> listener) {
-    checkState(!destroyed, destroyedMessage);
+    checkState(!closed, destroyedMessage);
 
     listeners.remove(checkNotNull(listener));
   }
 
   @Override
-  public CompletableFuture<Void> close() {
-    destroyed = true;
+  public void close() {
+    closed = true;
 
     executor.shutdown();
     backgroundExecutor.shutdown();
@@ -512,7 +512,6 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
     clusterCommunicator.unsubscribe(updateMessageSubject);
     clusterCommunicator.unsubscribe(updateRequestSubject);
     clusterCommunicator.unsubscribe(antiEntropyAdvertisementSubject);
-    return CompletableFuture.completedFuture(null);
   }
 
   private void notifyListeners(MapProtocolEvent<K, V> event) {
@@ -539,7 +538,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
 
   private void sendAdvertisement() {
     try {
-      if (underHighLoad() || destroyed) {
+      if (underHighLoad() || closed) {
         return;
       }
       pickRandomActivePeer().ifPresent(this::sendAdvertisementToPeer);
@@ -595,7 +594,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
   }
 
   private AntiEntropyResponse handleAntiEntropyAdvertisement(AntiEntropyAdvertisement ad) {
-    if (destroyed || underHighLoad()) {
+    if (closed || underHighLoad()) {
       return AntiEntropyResponse.IGNORED;
     }
     try {
@@ -684,7 +683,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
   }
 
   private void processUpdates(Collection<UpdateEntry> updates) {
-    if (destroyed) {
+    if (closed) {
       return;
     }
     updates.forEach(update -> {
