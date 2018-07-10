@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Multi-Raft protocol builder.
  */
-public class MultiRaftProtocolBuilder extends PrimitiveProtocolBuilder<MultiRaftProtocolConfig, MultiRaftProtocol> {
+public class MultiRaftProtocolBuilder extends PrimitiveProtocolBuilder<MultiRaftProtocolBuilder, MultiRaftProtocolConfig, MultiRaftProtocol> {
   protected MultiRaftProtocolBuilder(MultiRaftProtocolConfig config) {
     super(config);
   }

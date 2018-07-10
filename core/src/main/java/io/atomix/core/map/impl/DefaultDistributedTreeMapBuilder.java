@@ -19,6 +19,7 @@ import io.atomix.core.map.DistributedTreeMap;
 import io.atomix.core.map.DistributedTreeMapBuilder;
 import io.atomix.core.map.DistributedTreeMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -36,16 +37,17 @@ public class DefaultDistributedTreeMapBuilder<K extends Comparable<K>, V> extend
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedTreeMap<K, V>> buildAsync() {
-    ProxyClient proxy = protocol().newProxy(
-        name(),
-        primitiveType(),
+    PrimitiveProtocol protocol = protocol();
+    ProxyClient proxy = protocol.newProxy(
+        name,
+        type,
         AtomicTreeMapService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
     return new AtomicTreeMapProxy<K>(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(map -> {
-          Serializer serializer = serializer();
+          Serializer serializer = protocol.serializer();
           return new TranscodingAsyncAtomicTreeMap<K, V, byte[]>(
               map,
               value -> serializer.encode(value),

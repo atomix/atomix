@@ -21,6 +21,7 @@ import io.atomix.core.multiset.DistributedMultiset;
 import io.atomix.core.multiset.DistributedMultisetBuilder;
 import io.atomix.core.multiset.DistributedMultisetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -40,16 +41,17 @@ public class DefaultDistributedMultisetBuilder<E> extends DistributedMultisetBui
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedMultiset<E>> buildAsync() {
+    PrimitiveProtocol protocol = protocol();
     ProxyClient<DistributedMultisetService> proxy = protocol().newProxy(
-        name(),
-        primitiveType(),
+        name,
+        type,
         DistributedMultisetService.class,
         new ServiceConfig(),
         managementService.getPartitionService());
     return new DistributedMultisetProxy(proxy, managementService.getPrimitiveRegistry())
         .connect()
         .thenApply(rawList -> {
-          Serializer serializer = serializer();
+          Serializer serializer = protocol.serializer();
           AsyncDistributedMultiset<E> list = new TranscodingAsyncDistributedMultiset<>(
               rawList,
               element -> BaseEncoding.base16().encode(serializer.encode(element)),

@@ -15,10 +15,11 @@
  */
 package io.atomix.core.counter.impl;
 
-import io.atomix.core.counter.AtomicCounterConfig;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterBuilder;
+import io.atomix.core.counter.AtomicCounterConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 
@@ -35,9 +36,10 @@ public class DefaultAtomicCounterBuilder extends AtomicCounterBuilder {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicCounter> buildAsync() {
-    ProxyClient<AtomicCounterService> proxy = protocol().newProxy(
-        name(),
-        primitiveType(),
+    PrimitiveProtocol protocol = protocol();
+    ProxyClient<AtomicCounterService> proxy = protocol.newProxy(
+        name,
+        type,
         AtomicCounterService.class,
         new ServiceConfig(),
         managementService.getPartitionService());

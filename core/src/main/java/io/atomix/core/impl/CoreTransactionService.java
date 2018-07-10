@@ -35,6 +35,7 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
@@ -355,10 +356,16 @@ public class CoreTransactionService implements ManagedTransactionService {
   @SuppressWarnings("unchecked")
   public CompletableFuture<TransactionService> start() {
     managementService.getMembershipService().addListener(clusterEventListener);
+    PrimitiveProtocol.Type protocolType = managementService.getPartitionService().getSystemPartitionGroup().protocol();
+    PrimitiveProtocol protocol = protocolType.newProtocol(new PrimitiveProtocolConfig() {
+      @Override
+      public Object getType() {
+        return protocolType;
+      }
+    }.setSerializer(SERIALIZER));
     return AtomicMapType.<TransactionId, TransactionInfo>instance()
         .newBuilder("atomix-transactions", new AtomicMapConfig(), managementService)
-        .withProtocol(managementService.getPartitionService().getSystemPartitionGroup().newProtocol())
-        .withSerializer(SERIALIZER)
+        .withProtocol(protocol)
         .withCacheEnabled()
         .buildAsync()
         .thenApply(transactions -> {

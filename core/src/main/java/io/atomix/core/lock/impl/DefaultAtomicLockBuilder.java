@@ -37,8 +37,8 @@ public class DefaultAtomicLockBuilder extends AtomicLockBuilder {
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicLock> buildAsync() {
     ProxyClient<AtomicLockService> proxy = protocol().newProxy(
-        name(),
-        primitiveType(),
+        name,
+        type,
         AtomicLockService.class,
         new ServiceConfig(),
         managementService.getPartitionService());

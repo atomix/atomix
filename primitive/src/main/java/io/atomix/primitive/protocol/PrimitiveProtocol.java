@@ -20,6 +20,7 @@ import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.ConfiguredType;
+import io.atomix.utils.serializer.Serializer;
 
 /**
  * Primitive protocol.
@@ -58,6 +59,13 @@ public interface PrimitiveProtocol {
    * @return the protocol group name
    */
   String group();
+
+  /**
+   * Returns the protocol serializer.
+   *
+   * @return the protocol serializer
+   */
+  Serializer serializer();
 
   /**
    * Returns a new primitive proxy for the given partition group.
