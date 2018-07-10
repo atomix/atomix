@@ -15,11 +15,11 @@
  */
 package io.atomix.core.semaphore.impl;
 
+import io.atomix.core.semaphore.AsyncDistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphoreBuilder;
 import io.atomix.core.semaphore.DistributedSemaphoreConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.proxy.ProxyClient;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -34,18 +34,13 @@ public class DefaultDistributedSemaphoreBuilder extends DistributedSemaphoreBuil
   @SuppressWarnings("unchecked")
   @Override
   public CompletableFuture<DistributedSemaphore> buildAsync() {
-    ProxyClient<AtomicSemaphoreService> proxy = protocol().newProxy(
-        name,
-        type,
-        AtomicSemaphoreService.class,
-        new AtomicSemaphoreServiceConfig().setInitialCapacity(config.initialCapacity()),
-        managementService.getPartitionService());
-
-    return new AtomicSemaphoreProxy(
-        proxy,
-        managementService.getPrimitiveRegistry(),
-        managementService.getExecutorService())
-        .connect()
-        .thenApply(semaphore -> new DelegatingAsyncDistributedSemaphore(semaphore).sync());
+    return newProxy(AtomicSemaphoreService.class, new AtomicSemaphoreServiceConfig().setInitialCapacity(config.initialCapacity()))
+        .thenCompose(proxy -> new AtomicSemaphoreProxy(
+            proxy,
+            managementService.getPrimitiveRegistry(),
+            managementService.getExecutorService())
+            .connect())
+        .thenApply(DelegatingAsyncDistributedSemaphore::new)
+        .thenApply(AsyncDistributedSemaphore::sync);
   }
 }

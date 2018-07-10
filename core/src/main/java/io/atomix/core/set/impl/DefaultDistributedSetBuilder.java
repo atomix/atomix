@@ -42,14 +42,8 @@ public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedSet<E>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    ProxyClient proxy = protocol.newProxy(
-        name,
-        type,
-        DistributedSetService.class,
-        new ServiceConfig(),
-        managementService.getPartitionService());
-    return new DistributedSetProxy(proxy, managementService.getPrimitiveRegistry())
-        .connect()
+    return newProxy(DistributedSetService.class, new ServiceConfig())
+        .thenCompose(proxy -> new DistributedSetProxy((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(rawSet -> {
           Serializer serializer = protocol.serializer();
           AsyncDistributedSet<E> set = new TranscodingAsyncDistributedSet<>(

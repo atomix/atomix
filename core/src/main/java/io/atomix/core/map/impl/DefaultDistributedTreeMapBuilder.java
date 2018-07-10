@@ -38,14 +38,8 @@ public class DefaultDistributedTreeMapBuilder<K extends Comparable<K>, V> extend
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedTreeMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    ProxyClient proxy = protocol.newProxy(
-        name,
-        type,
-        AtomicTreeMapService.class,
-        new ServiceConfig(),
-        managementService.getPartitionService());
-    return new AtomicTreeMapProxy<K>(proxy, managementService.getPrimitiveRegistry())
-        .connect()
+    return newProxy(AtomicTreeMapService.class, new ServiceConfig())
+        .thenCompose(proxy -> new AtomicTreeMapProxy<K>((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(map -> {
           Serializer serializer = protocol.serializer();
           return new TranscodingAsyncAtomicTreeMap<K, V, byte[]>(

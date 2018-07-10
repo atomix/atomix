@@ -20,7 +20,6 @@ import io.atomix.core.lock.AtomicLock;
 import io.atomix.core.lock.AtomicLockBuilder;
 import io.atomix.core.lock.AtomicLockConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 
 import java.util.concurrent.CompletableFuture;
@@ -36,14 +35,8 @@ public class DefaultAtomicLockBuilder extends AtomicLockBuilder {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicLock> buildAsync() {
-    ProxyClient<AtomicLockService> proxy = protocol().newProxy(
-        name,
-        type,
-        AtomicLockService.class,
-        new ServiceConfig(),
-        managementService.getPartitionService());
-    return new AtomicLockProxy(proxy, managementService.getPrimitiveRegistry())
-        .connect()
+    return newProxy(AtomicLockService.class, new ServiceConfig())
+        .thenCompose(proxy -> new AtomicLockProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(AsyncAtomicLock::sync);
   }
 }

@@ -23,15 +23,18 @@ import io.atomix.cluster.discovery.NodeDiscoveryProvider;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.barrier.DistributedCyclicBarrier;
 import io.atomix.core.counter.AtomicCounter;
-import io.atomix.core.lock.DistributedLock;
-import io.atomix.core.map.AtomicCounterMap;
-import io.atomix.core.idgenerator.AtomicIdGenerator;
-import io.atomix.core.impl.CorePrimitivesService;
+import io.atomix.core.counter.DistributedCounter;
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElector;
+import io.atomix.core.idgenerator.AtomicIdGenerator;
+import io.atomix.core.impl.CorePrimitiveCache;
+import io.atomix.core.impl.CorePrimitivesService;
 import io.atomix.core.list.DistributedList;
 import io.atomix.core.lock.AtomicLock;
+import io.atomix.core.lock.DistributedLock;
+import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.AtomicMap;
+import io.atomix.core.map.AtomicTreeMap;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedTreeMap;
 import io.atomix.core.multimap.AtomicMultimap;
@@ -47,7 +50,6 @@ import io.atomix.core.set.DistributedTreeSet;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.tree.AtomicDocumentTree;
-import io.atomix.core.map.AtomicTreeMap;
 import io.atomix.core.utils.config.PolymorphicConfigMapper;
 import io.atomix.core.utils.config.PolymorphicTypeMapper;
 import io.atomix.core.value.AtomicValue;
@@ -56,6 +58,7 @@ import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.SyncPrimitive;
 import io.atomix.primitive.config.ConfigService;
 import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.config.impl.DefaultConfigService;
@@ -274,6 +277,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         getCommunicationService(),
         getEventService(),
         getPartitionService(),
+        new CorePrimitiveCache(),
         registry,
         getConfigService());
     this.enableShutdownHook = config.isEnableShutdownHook();
@@ -339,7 +343,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @Override
-  public <B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
+  public <B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends SyncPrimitive> B primitiveBuilder(
       String name,
       PrimitiveType<B, C, P> primitiveType) {
     return primitives.primitiveBuilder(name, primitiveType);
@@ -411,6 +415,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @Override
+  public DistributedCounter getCounter(String name) {
+    return primitives.getCounter(name);
+  }
+
+  @Override
   public AtomicCounter getAtomicCounter(String name) {
     return primitives.getAtomicCounter(name);
   }
@@ -466,13 +475,19 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @Override
-  public <P extends DistributedPrimitive> P getPrimitive(String name, PrimitiveType<?, ?, P> primitiveType) {
-    return primitives.getPrimitive(name, primitiveType);
+  public <P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(String name) {
+    return primitives.getPrimitiveAsync(name);
   }
 
   @Override
-  public <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig) {
-    return primitives.getPrimitive(name, primitiveType, primitiveConfig);
+  public <P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(String name, PrimitiveType<?, ?, P> primitiveType) {
+    return primitives.getPrimitiveAsync(name, primitiveType);
+  }
+
+  @Override
+  public <C extends PrimitiveConfig<C>, P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(
+      String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig) {
+    return primitives.getPrimitiveAsync(name, primitiveType, primitiveConfig);
   }
 
   @Override
@@ -483,11 +498,6 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   public Collection<PrimitiveInfo> getPrimitives(PrimitiveType primitiveType) {
     return primitives.getPrimitives(primitiveType);
-  }
-
-  @Override
-  public <P extends DistributedPrimitive> P getPrimitive(String name) {
-    return primitives.getPrimitive(name);
   }
 
   /**

@@ -20,7 +20,11 @@ import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
+import io.atomix.primitive.protocol.StateMachineReplicationProtocol;
+import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.Builder;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.config.ConfigurationException;
 
 import java.util.Collection;
@@ -35,7 +39,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @param <B> builder type
  * @param <P> primitive type
  */
-public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig, P extends DistributedPrimitive> implements Builder<P> {
+public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig, P extends SyncPrimitive> implements Builder<P> {
   protected final PrimitiveType type;
   protected final String name;
   protected final C config;
@@ -108,6 +112,15 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
       }
     }
     return protocol;
+  }
+
+  protected <S> CompletableFuture<ProxyClient<S>> newProxy(Class<S> serviceType, ServiceConfig config) {
+    PrimitiveProtocol protocol = protocol();
+    if (protocol instanceof StateMachineReplicationProtocol) {
+      return CompletableFuture.completedFuture(((StateMachineReplicationProtocol) protocol)
+          .newProxy(name, type, serviceType, config, managementService.getPartitionService()));
+    }
+    return Futures.exceptionalFuture(new UnsupportedOperationException());
   }
 
   /**

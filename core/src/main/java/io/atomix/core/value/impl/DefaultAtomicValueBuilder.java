@@ -20,7 +20,6 @@ import io.atomix.core.value.AtomicValueBuilder;
 import io.atomix.core.value.AtomicValueConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -40,14 +39,8 @@ public class DefaultAtomicValueBuilder<V> extends AtomicValueBuilder<V> {
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicValue<V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    ProxyClient<AtomicValueService> proxy = protocol.newProxy(
-        name,
-        type,
-        AtomicValueService.class,
-        new ServiceConfig(),
-        managementService.getPartitionService());
-    return new AtomicValueProxy(proxy, managementService.getPrimitiveRegistry())
-        .connect()
+    return newProxy(AtomicValueService.class, new ServiceConfig())
+        .thenCompose(proxy -> new AtomicValueProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(elector -> {
           Serializer serializer = protocol.serializer();
           return new TranscodingAsyncAtomicValue<V, byte[]>(

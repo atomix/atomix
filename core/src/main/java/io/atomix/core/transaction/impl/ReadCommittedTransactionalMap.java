@@ -24,6 +24,7 @@ import io.atomix.core.map.impl.MapUpdate.Type;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.StateMachineReplicationProtocol;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Map;
@@ -41,8 +42,8 @@ public class ReadCommittedTransactionalMap<K, V> extends TransactionalMapPartici
   }
 
   @Override
-  public PrimitiveProtocol protocol() {
-    return consistentMap.protocol();
+  public StateMachineReplicationProtocol protocol() {
+    return (StateMachineReplicationProtocol) consistentMap.protocol();
   }
 
   @Override

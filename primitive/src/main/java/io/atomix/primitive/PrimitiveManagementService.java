@@ -65,6 +65,13 @@ public interface PrimitiveManagementService {
   PartitionService getPartitionService();
 
   /**
+   * Returns the local primitive cache.
+   *
+   * @return the local primitive cache
+   */
+  PrimitiveCache getPrimitiveCache();
+
+  /**
    * Returns the primitive registry.
    *
    * @return the primitive registry

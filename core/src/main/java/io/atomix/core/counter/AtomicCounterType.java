@@ -30,7 +30,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Atomic counter primitive type.
  */
 public class AtomicCounterType implements PrimitiveType<AtomicCounterBuilder, AtomicCounterConfig, AtomicCounter> {
-  private static final String NAME = "counter";
+  private static final String NAME = "atomic-counter";
   private static final AtomicCounterType INSTANCE = new AtomicCounterType();
 
   /**
