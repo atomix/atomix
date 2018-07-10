@@ -13,20 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.gossip;
+package io.atomix.core.iterator.impl;
 
-import io.atomix.primitive.protocol.PrimitiveProtocolBuilder;
+import io.atomix.core.iterator.AsyncIterator;
+
+import java.util.Iterator;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Dissemination protocol builder.
+ * Asynchronous Java iterator.
  */
-public class DisseminationProtocolBuilder extends PrimitiveProtocolBuilder<DisseminationProtocolBuilder, DisseminationProtocolConfig, DisseminationProtocol> {
-  public DisseminationProtocolBuilder(DisseminationProtocolConfig config) {
-    super(config);
+public class AsyncJavaIterator<E> implements AsyncIterator<E> {
+  private final Iterator<E> iterator;
+
+  public AsyncJavaIterator(Iterator<E> iterator) {
+    this.iterator = iterator;
   }
 
   @Override
-  public DisseminationProtocol build() {
-    return new DisseminationProtocol(config);
+  public CompletableFuture<Boolean> hasNext() {
+    return CompletableFuture.completedFuture(iterator.hasNext());
+  }
+
+  @Override
+  public CompletableFuture<E> next() {
+    return CompletableFuture.completedFuture(iterator.next());
   }
 }

@@ -15,8 +15,6 @@
  */
 package io.atomix.primitive.protocol.counter;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Counter protocol.
  */
@@ -27,19 +25,17 @@ public interface CounterProtocol {
    *
    * @return the counter value
    */
-  CompletableFuture<Long> increment();
+  long increment();
 
   /**
    * Returns the counter value.
    *
    * @return the counter value
    */
-  CompletableFuture<Long> get();
+  long get();
 
   /**
    * Closes the counter.
-   *
-   * @return a future to be completed once the counter has been closed
    */
-  CompletableFuture<Void> close();
+  void close();
 }

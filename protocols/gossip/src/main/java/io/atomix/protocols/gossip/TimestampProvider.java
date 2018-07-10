@@ -13,17 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.counter;
+package io.atomix.protocols.gossip;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.gossip.AntiEntropyProtocol;
+import io.atomix.utils.time.Timestamp;
 
 /**
- * Gossip counter test.
+ * Timestamp provider.
  */
-public class GossipCounterTest extends DistributedCounterTest {
-  @Override
-  protected PrimitiveProtocol protocol() {
-    return AntiEntropyProtocol.builder().build();
-  }
+@FunctionalInterface
+public interface TimestampProvider<E> {
+
+  /**
+   * Returns the timestamp for the given entry.
+   *
+   * @param entry the entry for which to return the timestamp
+   * @return the timestamp for the given entry
+   */
+  Timestamp get(E entry);
+
 }

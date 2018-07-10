@@ -21,12 +21,12 @@ import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.counter.CounterProtocol;
+import io.atomix.protocols.gossip.AntiEntropyProtocolConfig;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -49,22 +49,23 @@ public class GossipCounter implements CounterProtocol {
   private volatile ScheduledFuture<?> broadcastFuture;
   private final Map<MemberId, Integer> counters = Maps.newConcurrentMap();
 
-  public GossipCounter(String name, PrimitiveManagementService managementService) {
+  public GossipCounter(String name, AntiEntropyProtocolConfig config, PrimitiveManagementService managementService) {
     this.clusterMembershipService = managementService.getMembershipService();
     this.clusterCommunicator = managementService.getCommunicationService();
     this.executorService = managementService.getExecutorService();
     this.subject = String.format("atomix-counter-%s", name);
     clusterCommunicator.subscribe(subject, SERIALIZER::decode, this::updateCounters, executorService);
-    broadcastFuture = executorService.scheduleAtFixedRate(this::broadcastCounters, BROADCAST_INTERVAL, BROADCAST_INTERVAL, TimeUnit.MILLISECONDS);
+    broadcastFuture = executorService.scheduleAtFixedRate(
+        this::broadcastCounters, config.getGossipInterval().toMillis(), config.getGossipInterval().toMillis(), TimeUnit.MILLISECONDS);
   }
 
   @Override
-  public CompletableFuture<Long> get() {
-    return CompletableFuture.completedFuture(counters.values().stream().mapToLong(v -> v).sum());
+  public long get() {
+    return counters.values().stream().mapToLong(v -> v).sum();
   }
 
   @Override
-  public CompletableFuture<Long> increment() {
+  public long increment() {
     counters.compute(clusterMembershipService.getLocalMember().id(), (id, value) -> value != null ? value + 1 : 1);
     broadcastCounters();
     return get();
@@ -86,9 +87,8 @@ public class GossipCounter implements CounterProtocol {
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public void close() {
     broadcastFuture.cancel(false);
     clusterCommunicator.unsubscribe(subject);
-    return CompletableFuture.completedFuture(null);
   }
 }

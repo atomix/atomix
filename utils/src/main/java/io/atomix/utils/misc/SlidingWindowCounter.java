@@ -16,6 +16,7 @@
 package io.atomix.utils.misc;
 
 import io.atomix.utils.concurrent.Scheduled;
+import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,10 @@ public final class SlidingWindowCounter {
   private final Scheduled schedule;
 
   private static final int SLIDE_WINDOW_PERIOD_SECONDS = 1;
+
+  public SlidingWindowCounter(int windowSlots) {
+    this(windowSlots, new SingleThreadContext("sliding-window-counter-%d"));
+  }
 
   /**
    * Creates a new sliding window counter with the given total number of

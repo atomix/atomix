@@ -19,13 +19,15 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.counter.CounterProtocol;
+import io.atomix.primitive.protocol.map.MapProtocol;
 import io.atomix.protocols.gossip.counter.GossipCounter;
+import io.atomix.protocols.gossip.map.AntiEntropyMap;
 import io.atomix.utils.serializer.Serializer;
 
 /**
- * Dissemination protocol.
+ * Anti-entropy protocol.
  */
-public class DisseminationProtocol implements GossipProtocol {
+public class AntiEntropyProtocol implements GossipProtocol {
   public static final Type TYPE = new Type();
 
   /**
@@ -33,14 +35,14 @@ public class DisseminationProtocol implements GossipProtocol {
    *
    * @return a new gossip protocol builder
    */
-  public static DisseminationProtocolBuilder builder() {
-    return new DisseminationProtocolBuilder(new DisseminationProtocolConfig());
+  public static AntiEntropyProtocolBuilder builder() {
+    return new AntiEntropyProtocolBuilder(new AntiEntropyProtocolConfig());
   }
 
   /**
    * Gossip protocol type.
    */
-  public static final class Type implements PrimitiveProtocol.Type<DisseminationProtocolConfig> {
+  public static final class Type implements PrimitiveProtocol.Type<AntiEntropyProtocolConfig> {
     private static final String NAME = "gossip";
 
     @Override
@@ -49,19 +51,19 @@ public class DisseminationProtocol implements GossipProtocol {
     }
 
     @Override
-    public DisseminationProtocolConfig newConfig() {
-      return new DisseminationProtocolConfig();
+    public AntiEntropyProtocolConfig newConfig() {
+      return new AntiEntropyProtocolConfig();
     }
 
     @Override
-    public PrimitiveProtocol newProtocol(DisseminationProtocolConfig config) {
-      return new DisseminationProtocol(config);
+    public PrimitiveProtocol newProtocol(AntiEntropyProtocolConfig config) {
+      return new AntiEntropyProtocol(config);
     }
   }
 
-  protected final DisseminationProtocolConfig config;
+  protected final AntiEntropyProtocolConfig config;
 
-  protected DisseminationProtocol(DisseminationProtocolConfig config) {
+  protected AntiEntropyProtocol(AntiEntropyProtocolConfig config) {
     this.config = config;
   }
 
@@ -77,6 +79,11 @@ public class DisseminationProtocol implements GossipProtocol {
 
   @Override
   public CounterProtocol newCounterProtocol(String name, PrimitiveManagementService managementService) {
-    return new GossipCounter(name, managementService);
+    return new GossipCounter(name, config, managementService);
+  }
+
+  @Override
+  public <K, V> MapProtocol<K, V> newMapProtocol(String name, PrimitiveManagementService managementService) {
+    return new AntiEntropyMap<>(name, config, managementService);
   }
 }

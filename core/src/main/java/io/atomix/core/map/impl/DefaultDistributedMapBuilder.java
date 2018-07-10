@@ -17,10 +17,12 @@ package io.atomix.core.map.impl;
 
 import com.google.common.io.BaseEncoding;
 import io.atomix.core.map.AsyncAtomicMap;
+import io.atomix.core.map.AsyncDistributedMap;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapBuilder;
 import io.atomix.core.map.DistributedMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
@@ -39,29 +41,36 @@ public class DefaultDistributedMapBuilder<K, V> extends DistributedMapBuilder<K,
   @Override
   public CompletableFuture<DistributedMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return newProxy(AtomicMapService.class, new ServiceConfig())
-        .thenCompose(proxy -> new AtomicMapProxy((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
-        .thenApply(rawMap -> {
-          Serializer serializer = protocol.serializer();
-          AsyncAtomicMap<K, V> map = new TranscodingAsyncAtomicMap<K, V, String, byte[]>(
-              rawMap,
-              key -> BaseEncoding.base16().encode(serializer.encode(key)),
-              string -> serializer.decode(BaseEncoding.base16().decode(string)),
-              value -> serializer.encode(value),
-              bytes -> serializer.decode(bytes));
+    if (protocol instanceof GossipProtocol) {
+      return managementService.getPrimitiveCache().getPrimitive(name, () ->
+          CompletableFuture.completedFuture(((GossipProtocol) protocol).<K, V>newMapProtocol(name, managementService))
+              .thenApply(map -> new GossipDistributedMap<>(name, protocol, map)))
+          .thenApply(AsyncDistributedMap::sync);
+    } else {
+      return newProxy(AtomicMapService.class, new ServiceConfig())
+          .thenCompose(proxy -> new AtomicMapProxy((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
+          .thenApply(rawMap -> {
+            Serializer serializer = protocol.serializer();
+            AsyncAtomicMap<K, V> map = new TranscodingAsyncAtomicMap<K, V, String, byte[]>(
+                rawMap,
+                key -> BaseEncoding.base16().encode(serializer.encode(key)),
+                string -> serializer.decode(BaseEncoding.base16().decode(string)),
+                value -> serializer.encode(value),
+                bytes -> serializer.decode(bytes));
 
-          if (!config.isNullValues()) {
-            map = new NotNullAsyncAtomicMap<>(map);
-          }
+            if (!config.isNullValues()) {
+              map = new NotNullAsyncAtomicMap<>(map);
+            }
 
-          if (config.getCacheConfig().isEnabled()) {
-            map = new CachingAsyncAtomicMap<>(map, config.getCacheConfig());
-          }
+            if (config.getCacheConfig().isEnabled()) {
+              map = new CachingAsyncAtomicMap<>(map, config.getCacheConfig());
+            }
 
-          if (config.isReadOnly()) {
-            map = new UnmodifiableAsyncAtomicMap<>(map);
-          }
-          return map;
-        }).thenApply(atomicMap -> new DelegatingAsyncDistributedMap<>(atomicMap).sync());
+            if (config.isReadOnly()) {
+              map = new UnmodifiableAsyncAtomicMap<>(map);
+            }
+            return map;
+          }).thenApply(atomicMap -> new DelegatingAsyncDistributedMap<>(atomicMap).sync());
+    }
   }
 }

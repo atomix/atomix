@@ -13,17 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.counter;
+package io.atomix.protocols.gossip;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.gossip.AntiEntropyProtocol;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.MemberId;
+
+import java.util.Collection;
 
 /**
- * Gossip counter test.
+ * Peer selector.
  */
-public class GossipCounterTest extends DistributedCounterTest {
-  @Override
-  protected PrimitiveProtocol protocol() {
-    return AntiEntropyProtocol.builder().build();
-  }
+@FunctionalInterface
+public interface PeerSelector<E> {
+
+  /**
+   * Selects the peers to update for the given entry.
+   *
+   * @param entry the entry for which to select peers
+   * @param membership the cluster membership service
+   * @return a collection of peers to update
+   */
+  Collection<MemberId> select(E entry, ClusterMembershipService membership);
+
 }
