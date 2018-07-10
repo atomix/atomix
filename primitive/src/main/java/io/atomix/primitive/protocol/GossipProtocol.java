@@ -17,6 +17,7 @@ package io.atomix.primitive.protocol;
 
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.counter.CounterProtocol;
+import io.atomix.primitive.protocol.map.MapProtocol;
 
 /**
  * Dissemination protocol.
@@ -31,5 +32,14 @@ public interface GossipProtocol extends PrimitiveProtocol {
    * @return a new counter protocol instance
    */
   CounterProtocol newCounterProtocol(String name, PrimitiveManagementService managementService);
+
+  /**
+   * Returns a new map protocol instance.
+   *
+   * @param name the map name
+   * @param managementService the primitive management service
+   * @return a new map protocol instance
+   */
+  <K, V> MapProtocol<K, V> newMapProtocol(String name, PrimitiveManagementService managementService);
 
 }

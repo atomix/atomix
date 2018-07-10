@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.counter;
+package io.atomix.primitive.protocol.map;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.gossip.AntiEntropyProtocol;
+import io.atomix.utils.event.EventListener;
 
 /**
- * Gossip counter test.
+ * Map protocol event listener.
  */
-public class GossipCounterTest extends DistributedCounterTest {
-  @Override
-  protected PrimitiveProtocol protocol() {
-    return AntiEntropyProtocol.builder().build();
-  }
+public interface MapProtocolEventListener<K, V> extends EventListener<MapProtocolEvent<K, V>> {
 }

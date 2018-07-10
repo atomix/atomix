@@ -15,15 +15,17 @@
  */
 package io.atomix.protocols.gossip;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
+import io.atomix.utils.time.Timestamp;
+import io.atomix.utils.time.WallClockTimestamp;
 
 /**
- * Gossip protocol configuration.
+ * Configurable timestamp provider implementations.
  */
-public class DisseminationProtocolConfig extends PrimitiveProtocolConfig<DisseminationProtocolConfig> {
-  @Override
-  public PrimitiveProtocol.Type getType() {
-    return DisseminationProtocol.TYPE;
+public enum TimestampProviders implements TimestampProvider {
+  WALL_CLOCK {
+    @Override
+    public Timestamp get(Object entry) {
+      return new WallClockTimestamp();
+    }
   }
 }

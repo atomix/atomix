@@ -57,12 +57,12 @@ public class GossipDistributedCounter implements AsyncDistributedCounter {
 
   @Override
   public CompletableFuture<Long> incrementAndGet() {
-    return counter.increment();
+    return CompletableFuture.completedFuture(counter.increment());
   }
 
   @Override
   public CompletableFuture<Long> get() {
-    return counter.get();
+    return CompletableFuture.completedFuture(counter.get());
   }
 
   @Override
@@ -72,6 +72,7 @@ public class GossipDistributedCounter implements AsyncDistributedCounter {
 
   @Override
   public CompletableFuture<Void> close() {
-    return counter.close();
+    counter.close();
+    return CompletableFuture.completedFuture(null);
   }
 }
