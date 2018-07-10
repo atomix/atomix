@@ -21,7 +21,6 @@ import io.atomix.core.map.AtomicTreeMapBuilder;
 import io.atomix.core.map.AtomicTreeMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -41,14 +40,8 @@ public class DefaultAtomicTreeMapBuilder<K extends Comparable<K>, V> extends Ato
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicTreeMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    ProxyClient<AtomicTreeMapService> proxy = protocol().newProxy(
-        name,
-        type,
-        AtomicTreeMapService.class,
-        new ServiceConfig(),
-        managementService.getPartitionService());
-    return new AtomicTreeMapProxy(proxy, managementService.getPrimitiveRegistry())
-        .connect()
+    return newProxy(AtomicTreeMapService.class, new ServiceConfig())
+        .thenCompose(proxy -> new AtomicTreeMapProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(map -> {
           Serializer serializer = protocol.serializer();
           return new TranscodingAsyncAtomicTreeMap<K, V, byte[]>(

@@ -20,7 +20,6 @@ import io.atomix.core.semaphore.AtomicSemaphore;
 import io.atomix.core.semaphore.AtomicSemaphoreBuilder;
 import io.atomix.core.semaphore.AtomicSemaphoreConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.proxy.ProxyClient;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -32,18 +31,12 @@ public class DefaultAtomicSemaphoreBuilder extends AtomicSemaphoreBuilder {
   @SuppressWarnings("unchecked")
   @Override
   public CompletableFuture<AtomicSemaphore> buildAsync() {
-    ProxyClient<AtomicSemaphoreService> proxy = protocol().newProxy(
-        name,
-        type,
-        AtomicSemaphoreService.class,
-        new AtomicSemaphoreServiceConfig().setInitialCapacity(config.initialCapacity()),
-        managementService.getPartitionService());
-
-    return new AtomicSemaphoreProxy(
-        proxy,
-        managementService.getPrimitiveRegistry(),
-        managementService.getExecutorService())
-        .connect()
+    return newProxy(AtomicSemaphoreService.class, new AtomicSemaphoreServiceConfig().setInitialCapacity(config.initialCapacity()))
+        .thenCompose(proxy -> new AtomicSemaphoreProxy(
+            proxy,
+            managementService.getPrimitiveRegistry(),
+            managementService.getExecutorService())
+            .connect())
         .thenApply(AsyncAtomicSemaphore::sync);
   }
 }

@@ -25,30 +25,8 @@ import io.atomix.utils.serializer.Serializer;
  * Primitive protocol configuration.
  */
 public abstract class PrimitiveProtocolConfig<C extends PrimitiveProtocolConfig<C>> implements TypedConfig<PrimitiveProtocol.Type> {
-  private String group;
   private volatile Serializer serializer;
   private NamespaceConfig namespaceConfig;
-
-  /**
-   * Returns the protocol group.
-   *
-   * @return the protocol group
-   */
-  public String getGroup() {
-    return group;
-  }
-
-  /**
-   * Sets the protocol group.
-   *
-   * @param group the protocol group
-   * @return the protocol configuration
-   */
-  @SuppressWarnings("unchecked")
-  public C setGroup(String group) {
-    this.group = group;
-    return (C) this;
-  }
 
   /**
    * Sets the protocol serializer.

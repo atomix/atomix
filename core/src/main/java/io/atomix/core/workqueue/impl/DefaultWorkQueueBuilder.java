@@ -20,7 +20,6 @@ import io.atomix.core.workqueue.WorkQueueBuilder;
 import io.atomix.core.workqueue.WorkQueueConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -38,14 +37,8 @@ public class DefaultWorkQueueBuilder<E> extends WorkQueueBuilder<E> {
   @SuppressWarnings("unchecked")
   public CompletableFuture<WorkQueue<E>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    ProxyClient<WorkQueueService> proxy = protocol.newProxy(
-        name,
-        type,
-        WorkQueueService.class,
-        new ServiceConfig(),
-        managementService.getPartitionService());
-    return new WorkQueueProxy(proxy, managementService.getPrimitiveRegistry())
-        .connect()
+    return newProxy(WorkQueueService.class, new ServiceConfig())
+        .thenCompose(proxy -> new WorkQueueProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(queue -> {
           Serializer serializer = protocol.serializer();
           return new TranscodingAsyncWorkQueue<E, byte[]>(

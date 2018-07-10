@@ -18,6 +18,7 @@ package io.atomix.core.impl;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventService;
+import io.atomix.primitive.PrimitiveCache;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveTypeRegistry;
@@ -36,6 +37,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   private final ClusterCommunicationService communicationService;
   private final ClusterEventService eventService;
   private final PartitionService partitionService;
+  private final PrimitiveCache primitiveCache;
   private final PrimitiveRegistry primitiveRegistry;
   private final PrimitiveTypeRegistry primitiveTypeRegistry;
   private final PrimitiveProtocolTypeRegistry protocolTypeRegistry;
@@ -47,6 +49,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
       ClusterCommunicationService communicationService,
       ClusterEventService eventService,
       PartitionService partitionService,
+      PrimitiveCache primitiveCache,
       PrimitiveRegistry primitiveRegistry,
       PrimitiveTypeRegistry primitiveTypeRegistry,
       PrimitiveProtocolTypeRegistry protocolTypeRegistry,
@@ -56,6 +59,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
     this.communicationService = communicationService;
     this.eventService = eventService;
     this.partitionService = partitionService;
+    this.primitiveCache = primitiveCache;
     this.primitiveRegistry = primitiveRegistry;
     this.primitiveTypeRegistry = primitiveTypeRegistry;
     this.protocolTypeRegistry = protocolTypeRegistry;
@@ -85,6 +89,11 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   @Override
   public PartitionService getPartitionService() {
     return partitionService;
+  }
+
+  @Override
+  public PrimitiveCache getPrimitiveCache() {
+    return primitiveCache;
   }
 
   @Override

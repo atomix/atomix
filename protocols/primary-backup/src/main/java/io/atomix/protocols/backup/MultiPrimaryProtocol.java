@@ -17,6 +17,7 @@ package io.atomix.protocols.backup;
 
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionService;
+import io.atomix.primitive.protocol.StateMachineReplicationProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.impl.DefaultProxyClient;
@@ -33,7 +34,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Multi-primary protocol.
  */
-public class MultiPrimaryProtocol implements PrimitiveProtocol {
+public class MultiPrimaryProtocol implements StateMachineReplicationProtocol {
   public static final Type TYPE = new Type();
 
   /**

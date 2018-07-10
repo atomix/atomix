@@ -43,17 +43,11 @@ public class DefaultAtomicMapBuilder<K, V> extends AtomicMapBuilder<K, V> {
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    ProxyClient proxy = protocol().newProxy(
-        name,
-        type,
-        AtomicMapService.class,
-        new ServiceConfig(),
-        managementService.getPartitionService());
-    return new AtomicMapProxy(proxy, managementService.getPrimitiveRegistry())
-        .connect()
+    return newProxy(AtomicMapService.class, new ServiceConfig())
+        .thenCompose(proxy -> new AtomicMapProxy((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(rawMap -> {
           Serializer serializer = protocol.serializer();
-          AsyncAtomicMap<K, V> map = new TranscodingAsyncAtomicMap<K, V, String, byte[]>(
+          AsyncAtomicMap<K, V> map = new TranscodingAsyncAtomicMap<>(
               rawMap,
               key -> BaseEncoding.base16().encode(serializer.encode(key)),
               string -> serializer.decode(BaseEncoding.base16().decode(string)),

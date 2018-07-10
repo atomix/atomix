@@ -27,6 +27,7 @@ import java.time.Duration;
  * Raft protocol configuration.
  */
 public class MultiRaftProtocolConfig extends PrimitiveProtocolConfig<MultiRaftProtocolConfig> {
+  private String group;
   private Partitioner<String> partitioner = Partitioner.MURMUR3;
   private Duration minTimeout = Duration.ofMillis(250);
   private Duration maxTimeout = Duration.ofSeconds(30);
@@ -39,6 +40,26 @@ public class MultiRaftProtocolConfig extends PrimitiveProtocolConfig<MultiRaftPr
   @Override
   public PrimitiveProtocol.Type getType() {
     return MultiRaftProtocol.TYPE;
+  }
+
+  /**
+   * Returns the partition group.
+   *
+   * @return the partition group
+   */
+  public String getGroup() {
+    return group;
+  }
+
+  /**
+   * Sets the partition group.
+   *
+   * @param group the partition group
+   * @return the protocol configuration
+   */
+  public MultiRaftProtocolConfig setGroup(String group) {
+    this.group = group;
+    return this;
   }
 
   /**

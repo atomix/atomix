@@ -15,6 +15,7 @@
  */
 package io.atomix.primitive.partition;
 
+import io.atomix.primitive.protocol.StateMachineReplicationProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.util.Collection;
@@ -60,7 +61,7 @@ public interface PartitionService {
    * @return the first partition group that matches the given primitive protocol
    */
   @SuppressWarnings("unchecked")
-  default PartitionGroup getPartitionGroup(PrimitiveProtocol protocol) {
+  default PartitionGroup getPartitionGroup(StateMachineReplicationProtocol protocol) {
     if (protocol.group() != null) {
       PartitionGroup group = getPartitionGroup(protocol.group());
       if (group != null) {

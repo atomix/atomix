@@ -19,7 +19,6 @@ import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.lock.DistributedLockBuilder;
 import io.atomix.core.lock.DistributedLockConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 
 import java.util.concurrent.CompletableFuture;
@@ -35,14 +34,8 @@ public class DefaultDistributedLockBuilder extends DistributedLockBuilder {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedLock> buildAsync() {
-    ProxyClient<AtomicLockService> proxy = protocol().newProxy(
-        name,
-        type,
-        AtomicLockService.class,
-        new ServiceConfig(),
-        managementService.getPartitionService());
-    return new AtomicLockProxy(proxy, managementService.getPrimitiveRegistry())
-        .connect()
+    return newProxy(AtomicLockService.class, new ServiceConfig())
+        .thenCompose(proxy -> new AtomicLockProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(lock -> new DelegatingAsyncDistributedLock(lock).sync());
   }
 }

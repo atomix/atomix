@@ -37,13 +37,8 @@ public class DefaultDistributedTreeSetBuilder<E extends Comparable<E>> extends D
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedTreeSet<E>> buildAsync() {
-    ProxyClient proxy = protocol().newProxy(
-        name,
-        type,
-        DistributedTreeSetService.class,
-        new ServiceConfig(),
-        managementService.getPartitionService());
-    return new DistributedTreeSetProxy<E>(proxy, managementService.getPrimitiveRegistry()).connect()
+    return newProxy(DistributedTreeSetService.class, new ServiceConfig())
+        .thenCompose(proxy -> new DistributedTreeSetProxy<E>((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(set -> {
           if (config.getCacheConfig().isEnabled()) {
             set = new CachingAsyncDistributedTreeSet<>(set, config.getCacheConfig());

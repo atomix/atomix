@@ -15,8 +15,6 @@
  */
 package io.atomix.core.impl;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventService;
@@ -27,6 +25,8 @@ import io.atomix.core.barrier.DistributedCyclicBarrier;
 import io.atomix.core.barrier.DistributedCyclicBarrierType;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterType;
+import io.atomix.core.counter.DistributedCounter;
+import io.atomix.core.counter.DistributedCounterType;
 import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElectionType;
 import io.atomix.core.election.LeaderElector;
@@ -76,12 +76,13 @@ import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueType;
 import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.core.workqueue.WorkQueueType;
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
 import io.atomix.primitive.PrimitiveBuilder;
+import io.atomix.primitive.PrimitiveCache;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.SyncPrimitive;
 import io.atomix.primitive.config.ConfigService;
 import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.impl.DefaultPrimitiveTypeRegistry;
@@ -90,13 +91,11 @@ import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionGroupTypeRegistry;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.impl.DefaultPrimitiveProtocolTypeRegistry;
-import io.atomix.utils.AtomixRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -107,15 +106,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class CorePrimitivesService implements ManagedPrimitivesService {
   private static final Logger LOGGER = LoggerFactory.getLogger(CorePrimitivesService.class);
-  private static final int CACHE_SIZE = 1000;
 
   private final PrimitiveManagementService managementService;
   private final ManagedPrimitiveRegistry primitiveRegistry;
   private final ManagedTransactionService transactionService;
   private final ConfigService configService;
-  private final Cache<String, DistributedPrimitive> cache = CacheBuilder.newBuilder()
-      .maximumSize(CACHE_SIZE)
-      .build();
+  private final PrimitiveCache cache;
   private final AtomicBoolean started = new AtomicBoolean();
 
   public CorePrimitivesService(
@@ -124,8 +120,10 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       ClusterCommunicationService communicationService,
       ClusterEventService eventService,
       PartitionService partitionService,
+      PrimitiveCache primitiveCache,
       AtomixRegistry registry,
       ConfigService configService) {
+    this.cache = primitiveCache;
     this.primitiveRegistry = new CorePrimitiveRegistry(partitionService, new DefaultPrimitiveTypeRegistry(registry.getTypes(PrimitiveType.class)));
     this.managementService = new CorePrimitiveManagementService(
         executorService,
@@ -133,6 +131,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
         communicationService,
         eventService,
         partitionService,
+        primitiveCache,
         primitiveRegistry,
         new DefaultPrimitiveTypeRegistry(registry.getTypes(PrimitiveType.class)),
         new DefaultPrimitiveProtocolTypeRegistry(registry.getTypes(PrimitiveProtocol.Type.class)),
@@ -221,6 +220,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
+  public DistributedCounter getCounter(String name) {
+    return getPrimitive(name, DistributedCounterType.instance(), configService.getConfig(name));
+  }
+
+  @Override
   public AtomicCounter getAtomicCounter(String name) {
     return getPrimitive(name, AtomicCounterType.instance(), configService.getConfig(name));
   }
@@ -276,56 +280,52 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public <B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends DistributedPrimitive> B primitiveBuilder(
+  public <B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends SyncPrimitive> B primitiveBuilder(
       String name, PrimitiveType<B, C, P> primitiveType) {
     return primitiveType.newBuilder(name, primitiveType.newConfig(), managementService);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <P extends DistributedPrimitive> P getPrimitive(String name) {
-    try {
-      return (P) cache.get(name, () -> {
-        PrimitiveInfo info = primitiveRegistry.getPrimitive(name);
-        if (info == null) {
-          return null;
-        }
+  public <P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(String name) {
+    return cache.getPrimitive(name, () -> {
+      PrimitiveInfo info = primitiveRegistry.getPrimitive(name);
+      if (info == null) {
+        return CompletableFuture.completedFuture(null);
+      }
 
-        PrimitiveConfig primitiveConfig = configService.getConfig(name);
-        if (primitiveConfig == null) {
-          primitiveConfig = info.type().newConfig();
-        }
-        return info.type().newBuilder(name, primitiveConfig, managementService).build();
-      });
-    } catch (ExecutionException e) {
-      throw new AtomixRuntimeException(e);
-    }
+      PrimitiveConfig primitiveConfig = configService.getConfig(name);
+      if (primitiveConfig == null) {
+        primitiveConfig = info.type().newConfig();
+      }
+      return info.type().newBuilder(name, primitiveConfig, managementService)
+          .buildAsync()
+          .thenApply(primitive -> ((SyncPrimitive) primitive).async());
+    });
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <P extends DistributedPrimitive> P getPrimitive(String name, PrimitiveType<?, ?, P> primitiveType) {
-    return (P) getPrimitive(name, (PrimitiveType) primitiveType, (PrimitiveConfig) configService.getConfig(name));
+  public <P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(String name, PrimitiveType<?, ?, P> primitiveType) {
+    return getPrimitiveAsync(name, (PrimitiveType) primitiveType, (PrimitiveConfig) configService.getConfig(name));
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <C extends PrimitiveConfig<C>, P extends DistributedPrimitive> P getPrimitive(
+  public <C extends PrimitiveConfig<C>, P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(
       String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig) {
-    try {
-      return (P) cache.get(name, () -> {
-        C config = primitiveConfig;
+    return cache.getPrimitive(name, () -> {
+      C config = primitiveConfig;
+      if (config == null) {
+        config = configService.getConfig(name);
         if (config == null) {
-          config = configService.getConfig(name);
-          if (config == null) {
-            config = primitiveType.newConfig();
-          }
+          config = primitiveType.newConfig();
         }
-        return primitiveType.newBuilder(name, config, managementService).build();
-      });
-    } catch (ExecutionException e) {
-      throw new AtomixRuntimeException(e);
-    }
+      }
+      return primitiveType.newBuilder(name, config, managementService)
+          .buildAsync()
+          .thenApply(primitive -> ((SyncPrimitive) primitive).async());
+    });
   }
 
   @Override

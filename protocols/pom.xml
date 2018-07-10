@@ -27,6 +27,7 @@
   <name>Atomix Protocols Parent</name>
 
   <modules>
+    <module>gossip</module>
     <module>primary-backup</module>
     <module>raft</module>
   </modules>

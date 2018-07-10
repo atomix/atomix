@@ -18,15 +18,11 @@ package io.atomix.core.multimap.impl;
 
 import com.google.common.io.BaseEncoding;
 import io.atomix.core.multimap.AsyncAtomicMultimap;
-import io.atomix.core.multimap.AtomicMultimap;
-import io.atomix.core.multimap.AtomicMultimapBuilder;
-import io.atomix.core.multimap.AtomicMultimapConfig;
 import io.atomix.core.multimap.DistributedMultimap;
 import io.atomix.core.multimap.DistributedMultimapBuilder;
 import io.atomix.core.multimap.DistributedMultimapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -44,14 +40,8 @@ public class DefaultDistributedMultimapBuilder<K, V> extends DistributedMultimap
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedMultimap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    ProxyClient<AtomicMultimapService> proxy = protocol.newProxy(
-        name,
-        type,
-        AtomicMultimapService.class,
-        new ServiceConfig(),
-        managementService.getPartitionService());
-    return new AtomicMultimapProxy(proxy, managementService.getPrimitiveRegistry())
-        .connect()
+    return newProxy(AtomicMultimapService.class, new ServiceConfig())
+        .thenCompose(proxy -> new AtomicMultimapProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(rawMultimap -> {
           Serializer serializer = protocol.serializer();
           AsyncAtomicMultimap<K, V> multimap = new TranscodingAsyncAtomicMultimap<>(
