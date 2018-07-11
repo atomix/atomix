@@ -45,10 +45,14 @@ import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapType;
 import io.atomix.core.map.AtomicNavigableMap;
 import io.atomix.core.map.AtomicNavigableMapType;
+import io.atomix.core.map.AtomicSortedMap;
+import io.atomix.core.map.AtomicSortedMapType;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapType;
 import io.atomix.core.map.DistributedNavigableMap;
 import io.atomix.core.map.DistributedNavigableMapType;
+import io.atomix.core.map.DistributedSortedMap;
+import io.atomix.core.map.DistributedSortedMapType;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapType;
 import io.atomix.core.multimap.DistributedMultimap;
@@ -162,6 +166,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
+  public <K extends Comparable<K>, V> DistributedSortedMap<K, V> getSortedMap(String name) {
+    return getPrimitive(name, DistributedSortedMapType.instance(), configService.getConfig(name));
+  }
+
+  @Override
   public <K extends Comparable<K>, V> DistributedNavigableMap<K, V> getNavigableMap(String name) {
     return getPrimitive(name, DistributedNavigableMapType.instance(), configService.getConfig(name));
   }
@@ -179,6 +188,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public <V> AtomicDocumentTree<V> getAtomicDocumentTree(String name) {
     return getPrimitive(name, AtomicDocumentTreeType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public <K extends Comparable<K>, V> AtomicSortedMap<K, V> getAtomicSortedMap(String name) {
+    return getPrimitive(name, AtomicSortedMapType.instance(), configService.getConfig(name));
   }
 
   @Override

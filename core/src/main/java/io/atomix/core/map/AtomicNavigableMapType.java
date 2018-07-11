@@ -30,7 +30,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class AtomicNavigableMapType<K extends Comparable<K>, V>
     implements PrimitiveType<AtomicNavigableMapBuilder<K, V>, AtomicNavigableMapConfig, AtomicNavigableMap<K, V>> {
-  private static final String NAME = "atomic-tree-map";
+  private static final String NAME = "atomic-navigable-map";
   private static final AtomicNavigableMapType INSTANCE = new AtomicNavigableMapType();
 
   /**

@@ -35,8 +35,10 @@ import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicNavigableMap;
+import io.atomix.core.map.AtomicSortedMap;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedNavigableMap;
+import io.atomix.core.map.DistributedSortedMap;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.DistributedMultimap;
 import io.atomix.core.multiset.DistributedMultiset;
@@ -355,6 +357,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @Override
+  public <K extends Comparable<K>, V> DistributedSortedMap<K, V> getSortedMap(String name) {
+    return primitives.getSortedMap(name);
+  }
+
+  @Override
   public <K extends Comparable<K>, V> DistributedNavigableMap<K, V> getNavigableMap(String name) {
     return primitives.getNavigableMap(name);
   }
@@ -372,6 +379,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   public <V> AtomicDocumentTree<V> getAtomicDocumentTree(String name) {
     return primitives.getAtomicDocumentTree(name);
+  }
+
+  @Override
+  public <K extends Comparable<K>, V> AtomicSortedMap<K, V> getAtomicSortedMap(String name) {
+    return primitives.getAtomicSortedMap(name);
   }
 
   @Override

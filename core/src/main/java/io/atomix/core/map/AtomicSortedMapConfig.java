@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol.map;
+package io.atomix.core.map;
 
-import java.util.NavigableMap;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
- * Navigable map protocol.
+ * Consistent sorted map configuration.
  */
-public interface NavigableMapProtocol<K, V> extends SortedMapProtocol<K, V>, NavigableMap<K, V> {
+public class AtomicSortedMapConfig extends PrimitiveConfig<AtomicSortedMapConfig> {
+  @Override
+  public PrimitiveType getType() {
+    return AtomicSortedMapType.instance();
+  }
 }

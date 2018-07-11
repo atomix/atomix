@@ -15,10 +15,21 @@
  */
 package io.atomix.primitive.protocol.map;
 
-import java.util.NavigableMap;
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
- * Navigable map protocol.
+ * Sorted map protocol provider.
  */
-public interface NavigableMapProtocol<K, V> extends SortedMapProtocol<K, V>, NavigableMap<K, V> {
+public interface SortedMapProtocolProvider extends GossipProtocol {
+
+  /**
+   * Returns a new sorted map protocol.
+   *
+   * @param name the map name
+   * @param managementService the primitive management service
+   * @return a new map protocol
+   */
+  <K, V> NavigableMapProtocol<K, V> newSortedMapProtocol(String name, PrimitiveManagementService managementService);
+
 }

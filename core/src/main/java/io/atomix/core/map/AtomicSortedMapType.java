@@ -15,8 +15,8 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.map.impl.DefaultDistributedNavigableMapBuilder;
-import io.atomix.core.map.impl.DefaultDistributedNavigableMapService;
+import io.atomix.core.map.impl.DefaultAtomicNavigableMapService;
+import io.atomix.core.map.impl.DefaultAtomicSortedMapBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -26,22 +26,22 @@ import io.atomix.utils.serializer.Namespace;
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Distributed tree map primitive type.
+ * Consistent sorted map primitive type.
  */
-public class DistributedNavigableMapType<K extends Comparable<K>, V> implements PrimitiveType<DistributedNavigableMapBuilder<K, V>, DistributedNavigableMapConfig, DistributedNavigableMap<K, V>> {
-  private static final String NAME = "navigable-map";
-
-  private static final DistributedNavigableMapType INSTANCE = new DistributedNavigableMapType();
+public class AtomicSortedMapType<K extends Comparable<K>, V>
+    implements PrimitiveType<AtomicSortedMapBuilder<K, V>, AtomicSortedMapConfig, AtomicSortedMap<K, V>> {
+  private static final String NAME = "atomic-sortedf-map";
+  private static final AtomicSortedMapType INSTANCE = new AtomicSortedMapType();
 
   /**
-   * Returns a new distributed tree map type.
+   * Returns a new consistent tree map type.
    *
    * @param <K> the key type
    * @param <V> the value type
-   * @return a new distributed tree map type
+   * @return a new consistent tree map type
    */
   @SuppressWarnings("unchecked")
-  public static <K extends Comparable<K>, V> DistributedNavigableMapType<K, V> instance() {
+  public static <K extends Comparable<K>, V> AtomicSortedMapType<K, V> instance() {
     return INSTANCE;
   }
 
@@ -52,22 +52,22 @@ public class DistributedNavigableMapType<K extends Comparable<K>, V> implements 
 
   @Override
   public Namespace namespace() {
-    return AtomicNavigableMapType.instance().namespace();
+    return AtomicMapType.instance().namespace();
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultDistributedNavigableMapService();
+    return new DefaultAtomicNavigableMapService<>();
   }
 
   @Override
-  public DistributedNavigableMapConfig newConfig() {
-    return new DistributedNavigableMapConfig();
+  public AtomicSortedMapConfig newConfig() {
+    return new AtomicSortedMapConfig();
   }
 
   @Override
-  public DistributedNavigableMapBuilder<K, V> newBuilder(String name, DistributedNavigableMapConfig config, PrimitiveManagementService managementService) {
-    return new DefaultDistributedNavigableMapBuilder<>(name, config, managementService);
+  public AtomicSortedMapBuilder<K, V> newBuilder(String name, AtomicSortedMapConfig config, PrimitiveManagementService managementService) {
+    return new DefaultAtomicSortedMapBuilder<>(name, config, managementService);
   }
 
   @Override

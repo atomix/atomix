@@ -51,12 +51,18 @@ import io.atomix.core.map.AtomicMapType;
 import io.atomix.core.map.AtomicNavigableMap;
 import io.atomix.core.map.AtomicNavigableMapBuilder;
 import io.atomix.core.map.AtomicNavigableMapType;
+import io.atomix.core.map.AtomicSortedMap;
+import io.atomix.core.map.AtomicSortedMapBuilder;
+import io.atomix.core.map.AtomicSortedMapType;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapBuilder;
 import io.atomix.core.map.DistributedMapType;
 import io.atomix.core.map.DistributedNavigableMap;
 import io.atomix.core.map.DistributedNavigableMapBuilder;
 import io.atomix.core.map.DistributedNavigableMapType;
+import io.atomix.core.map.DistributedSortedMap;
+import io.atomix.core.map.DistributedSortedMapBuilder;
+import io.atomix.core.map.DistributedSortedMapType;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapBuilder;
 import io.atomix.core.multimap.AtomicMultimapType;
@@ -136,6 +142,31 @@ public interface PrimitivesService {
    */
   default <K, V> DistributedMapBuilder<K, V> mapBuilder(String name, PrimitiveProtocol protocol) {
     return primitiveBuilder(name, DistributedMapType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new AtomicMapBuilder.
+   *
+   * @param name the primitive name
+   * @param <K> key type
+   * @param <V> value type
+   * @return builder for a tree map
+   */
+  default <K extends Comparable<K>, V> DistributedSortedMapBuilder<K, V> sortedMapBuilder(String name) {
+    return primitiveBuilder(name, DistributedSortedMapType.instance());
+  }
+
+  /**
+   * Creates a new AtomicMapBuilder.
+   *
+   * @param name the primitive name
+   * @param protocol the primitive protocol
+   * @param <K> key type
+   * @param <V> value type
+   * @return builder for a tree map
+   */
+  default <K extends Comparable<K>, V> DistributedSortedMapBuilder<K, V> sortedMapBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedSortedMapType.instance(), protocol);
   }
 
   /**
@@ -234,6 +265,31 @@ public interface PrimitivesService {
    */
   default <V> AtomicDocumentTreeBuilder<V> atomicDocumentTreeBuilder(String name, PrimitiveProtocol protocol) {
     return primitiveBuilder(name, AtomicDocumentTreeType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new {@code AtomicSortedMapBuilder}.
+   *
+   * @param name the primitive name
+   * @param <K> key type
+   * @param <V> value type
+   * @return builder for a async atomic tree map
+   */
+  default <K extends Comparable<K>, V> AtomicSortedMapBuilder<K, V> atomicSortedMapBuilder(String name) {
+    return primitiveBuilder(name, AtomicSortedMapType.instance());
+  }
+
+  /**
+   * Creates a new {@code AtomicSortedMapBuilder}.
+   *
+   * @param name the primitive name
+   * @param protocol the primitive protocol
+   * @param <K> key type
+   * @param <V> value type
+   * @return builder for a async atomic tree map
+   */
+  default <K extends Comparable<K>, V> AtomicSortedMapBuilder<K, V> atomicSortedMapBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, AtomicSortedMapType.instance(), protocol);
   }
 
   /**
@@ -731,6 +787,16 @@ public interface PrimitivesService {
   <K, V> DistributedMap<K, V> getMap(String name);
 
   /**
+   * Creates a new DistributedSortedMap.
+   *
+   * @param name the primitive name
+   * @param <K> key type
+   * @param <V> value type
+   * @return a new distributed map
+   */
+  <K extends Comparable<K>, V> DistributedSortedMap<K, V> getSortedMap(String name);
+
+  /**
    * Creates a new DistributedNavigableMap.
    *
    * @param name the primitive name
@@ -770,7 +836,17 @@ public interface PrimitivesService {
   <V> AtomicDocumentTree<V> getAtomicDocumentTree(String name);
 
   /**
-   * Creates a new {@code AtomicTreeMap}.
+   * Creates a new {@code AtomicSortedMap}.
+   *
+   * @param name the primitive name
+   * @param <K> key type
+   * @param <V> value type
+   * @return a new atomic tree map
+   */
+  <K extends Comparable<K>, V> AtomicSortedMap<K, V> getAtomicSortedMap(String name);
+
+  /**
+   * Creates a new {@code AtomicNavigableMap}.
    *
    * @param name the primitive name
    * @param <K> key type
