@@ -71,7 +71,7 @@ public class CoreTransactionService implements ManagedTransactionService {
   private final PrimitiveManagementService managementService;
   private final MemberId localMemberId;
   private final ClusterMembershipEventListener clusterEventListener = this::onMembershipChange;
-  private AsyncAtomicMap<TransactionId, TransactionInfo> transactions;
+  private volatile AsyncAtomicMap<TransactionId, TransactionInfo> transactions;
   private final AtomicBoolean started = new AtomicBoolean();
 
   public CoreTransactionService(PrimitiveManagementService managementService) {
@@ -355,14 +355,8 @@ public class CoreTransactionService implements ManagedTransactionService {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<TransactionService> start() {
-    managementService.getMembershipService().addListener(clusterEventListener);
     PrimitiveProtocol.Type protocolType = managementService.getPartitionService().getSystemPartitionGroup().protocol();
-    PrimitiveProtocol protocol = protocolType.newProtocol(new PrimitiveProtocolConfig() {
-      @Override
-      public Object getType() {
-        return protocolType;
-      }
-    }.setSerializer(SERIALIZER));
+    PrimitiveProtocol protocol = protocolType.newProtocol(((PrimitiveProtocolConfig) protocolType.newConfig()).setSerializer(SERIALIZER));
     return AtomicMapType.<TransactionId, TransactionInfo>instance()
         .newBuilder("atomix-transactions", new AtomicMapConfig(), managementService)
         .withProtocol(protocol)
@@ -370,6 +364,7 @@ public class CoreTransactionService implements ManagedTransactionService {
         .buildAsync()
         .thenApply(transactions -> {
           this.transactions = transactions.async();
+          managementService.getMembershipService().addListener(clusterEventListener);
           LOGGER.info("Started");
           started.set(true);
           return this;
