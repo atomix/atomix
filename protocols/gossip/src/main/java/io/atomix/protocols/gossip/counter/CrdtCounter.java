@@ -16,6 +16,7 @@
 package io.atomix.protocols.gossip.counter;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.AtomicLongMap;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
@@ -124,7 +125,8 @@ public class CrdtCounter implements CounterProtocol {
   }
 
   private void broadcastCounters() {
-    clusterCommunicator.broadcast(subject, Lists.newArrayList(increments.asMap(), decrements.asMap()), SERIALIZER::encode);
+    List<Map<MemberId, Long>> changes = Lists.newArrayList(Maps.newHashMap(increments.asMap()), Maps.newHashMap(decrements.asMap()));
+    clusterCommunicator.broadcast(subject, changes, SERIALIZER::encode);
   }
 
   @Override

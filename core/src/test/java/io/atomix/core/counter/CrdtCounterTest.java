@@ -16,7 +16,7 @@
 package io.atomix.core.counter;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.gossip.AntiEntropyProtocol;
+import io.atomix.protocols.gossip.CrdtProtocol;
 
 /**
  * Gossip counter test.
@@ -24,6 +24,6 @@ import io.atomix.protocols.gossip.AntiEntropyProtocol;
 public class CrdtCounterTest extends DistributedCounterTest {
   @Override
   protected PrimitiveProtocol protocol() {
-    return AntiEntropyProtocol.builder().build();
+    return CrdtProtocol.builder().build();
   }
 }
