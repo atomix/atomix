@@ -15,14 +15,14 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.AsyncDistributedTreeMap;
-import io.atomix.core.map.DistributedTreeMap;
-import io.atomix.core.map.DistributedTreeMapBuilder;
-import io.atomix.core.map.DistributedTreeMapConfig;
+import io.atomix.core.map.AsyncDistributedNavigableMap;
+import io.atomix.core.map.DistributedNavigableMap;
+import io.atomix.core.map.DistributedNavigableMapBuilder;
+import io.atomix.core.map.DistributedNavigableMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.map.TreeMapProtocolProvider;
+import io.atomix.primitive.protocol.map.NavigableMapProtocolProvider;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.concurrent.Futures;
@@ -33,34 +33,34 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Default distributed tree map builder.
  */
-public class DefaultDistributedTreeMapBuilder<K extends Comparable<K>, V> extends DistributedTreeMapBuilder<K, V> {
-  public DefaultDistributedTreeMapBuilder(String name, DistributedTreeMapConfig config, PrimitiveManagementService managementService) {
+public class DefaultDistributedNavigableMapBuilder<K extends Comparable<K>, V> extends DistributedNavigableMapBuilder<K, V> {
+  public DefaultDistributedNavigableMapBuilder(String name, DistributedNavigableMapConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<DistributedTreeMap<K, V>> buildAsync() {
+  public CompletableFuture<DistributedNavigableMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     if (protocol instanceof GossipProtocol) {
-      if (protocol instanceof TreeMapProtocolProvider) {
+      if (protocol instanceof NavigableMapProtocolProvider) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((TreeMapProtocolProvider) protocol).<K, V>newTreeMapProtocol(name, managementService))
-                .thenApply(set -> new GossipDistributedTreeMap<>(name, protocol, set)))
-            .thenApply(AsyncDistributedTreeMap::sync);
+            CompletableFuture.completedFuture(((NavigableMapProtocolProvider) protocol).<K, V>newNavigableMapProtocol(name, managementService))
+                .thenApply(set -> new GossipDistributedNavigableMap<>(name, protocol, set)))
+            .thenApply(AsyncDistributedNavigableMap::sync);
       } else {
         return Futures.exceptionalFuture(new UnsupportedOperationException("Sets are not supported by the provided gossip protocol"));
       }
     } else {
       return newProxy(AtomicTreeMapService.class, new ServiceConfig())
-          .thenCompose(proxy -> new AtomicTreeMapProxy<K>((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
+          .thenCompose(proxy -> new AtomicNavigableMapProxy<K>((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
           .thenApply(map -> {
             Serializer serializer = protocol.serializer();
-            return new TranscodingAsyncAtomicTreeMap<K, V, byte[]>(
+            return new TranscodingAsyncAtomicNavigableMap<K, V, byte[]>(
                 map,
                 value -> serializer.encode(value),
                 bytes -> serializer.decode(bytes));
-          }).thenApply(atomicTreeMap -> new DelegatingAsyncDistributedTreeMap<>(atomicTreeMap).sync());
+          }).thenApply(atomicMap -> new DelegatingAsyncDistributedNavigableMap<>(atomicMap).sync());
     }
   }
 }

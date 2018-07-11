@@ -20,20 +20,20 @@ import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.map.MapProtocolEventListener;
-import io.atomix.primitive.protocol.map.TreeMapProtocol;
+import io.atomix.primitive.protocol.map.NavigableMapProtocol;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 /**
- * Gossip-based distributed tree map.
+ * Gossip-based distributed navigable map.
  */
-public class GossipDistributedTreeMap<K extends Comparable<K>, V> extends AsyncDistributedJavaTreeMap<K, V> {
-  private final TreeMapProtocol<K, V> map;
+public class GossipDistributedNavigableMap<K extends Comparable<K>, V> extends AsyncDistributedNavigableJavaMap<K, V> {
+  private final NavigableMapProtocol<K, V> map;
   private final Map<MapEventListener<K, V>, MapProtocolEventListener<K, V>> listenerMap = Maps.newConcurrentMap();
 
-  public GossipDistributedTreeMap(String name, PrimitiveProtocol protocol, TreeMapProtocol<K, V> map) {
+  public GossipDistributedNavigableMap(String name, PrimitiveProtocol protocol, NavigableMapProtocol<K, V> map) {
     super(name, protocol, map);
     this.map = map;
   }

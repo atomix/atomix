@@ -20,11 +20,11 @@ import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
 /**
- * Builder for {@link AtomicTreeMap}.
+ * Builder for {@link AtomicNavigableMap}.
  */
-public abstract class AtomicTreeMapBuilder<K extends Comparable<K>, V>
-    extends PrimitiveBuilder<AtomicTreeMapBuilder<K, V>, AtomicTreeMapConfig, AtomicTreeMap<K, V>> {
-  public AtomicTreeMapBuilder(String name, AtomicTreeMapConfig config, PrimitiveManagementService managementService) {
-    super(AtomicTreeMapType.instance(), name, config, managementService);
+public abstract class AtomicNavigableMapBuilder<K extends Comparable<K>, V>
+    extends PrimitiveBuilder<AtomicNavigableMapBuilder<K, V>, AtomicNavigableMapConfig, AtomicNavigableMap<K, V>> {
+  public AtomicNavigableMapBuilder(String name, AtomicNavigableMapConfig config, PrimitiveManagementService managementService) {
+    super(AtomicNavigableMapType.instance(), name, config, managementService);
   }
 }

@@ -16,15 +16,16 @@
 package io.atomix.core.map;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.raft.MultiRaftProtocol;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**
- * Raft distributed tree map test.
+ * Primary-backup consistent tree map test.
  */
-public class RaftDistributedTreeMapTest extends DistributedTreeMapTest {
+public class PrimaryBackupAtomicNavigableMapTest extends AtomicNavigableMapTest {
   @Override
   protected PrimitiveProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiPrimaryProtocol.builder()
+        .withBackups(2)
         .withMaxRetries(5)
         .build();
   }

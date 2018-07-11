@@ -15,17 +15,18 @@
  */
 package io.atomix.core.map;
 
-import java.time.Duration;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**
- * Asynchronous distributed tree map.
+ * Primary-backup distributed tree map test.
  */
-public interface AsyncDistributedTreeMap<K extends Comparable<K>, V> extends AsyncDistributedNavigableMap<K, V> {
+public class PrimaryBackupDistributedNavigableMapTest extends DistributedNavigableMapTest {
   @Override
-  default DistributedTreeMap<K, V> sync() {
-    return sync(Duration.ofMillis(DEFAULT_OPERATION_TIMEOUT_MILLIS));
+  protected PrimitiveProtocol protocol() {
+    return MultiPrimaryProtocol.builder()
+        .withBackups(2)
+        .withMaxRetries(5)
+        .build();
   }
-
-  @Override
-  DistributedTreeMap<K, V> sync(Duration operationTimeout);
 }

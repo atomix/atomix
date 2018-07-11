@@ -17,7 +17,7 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.map.AtomicTreeMapType;
+import io.atomix.core.map.AtomicNavigableMapType;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.session.SessionId;
@@ -37,13 +37,13 @@ import java.util.function.Function;
 /**
  * Base class for tree map services.
  */
-public abstract class AbstractAtomicTreeMapService<K extends Comparable<K>> extends AbstractAtomicMapService<K> implements AtomicTreeMapService<K> {
+public abstract class AbstractAtomicNavigableMapService<K extends Comparable<K>> extends AbstractAtomicMapService<K> implements AtomicTreeMapService<K> {
   private final Serializer serializer;
 
-  public AbstractAtomicTreeMapService(PrimitiveType primitiveType) {
+  public AbstractAtomicNavigableMapService(PrimitiveType primitiveType) {
     super(primitiveType);
     serializer = Serializer.using(Namespace.builder()
-        .register(AtomicTreeMapType.instance().namespace())
+        .register(AtomicNavigableMapType.instance().namespace())
         .register(SessionId.class)
         .register(TransactionId.class)
         .register(TransactionScope.class)

@@ -21,7 +21,7 @@ import io.atomix.primitive.PrimitiveType;
 /**
  * Distributed tree map configuration.
  */
-public class DistributedTreeMapConfig extends CachedPrimitiveConfig<DistributedTreeMapConfig> {
+public class DistributedNavigableMapConfig extends CachedPrimitiveConfig<DistributedNavigableMapConfig> {
   private boolean nullValues = false;
 
   @Override
@@ -34,7 +34,7 @@ public class DistributedTreeMapConfig extends CachedPrimitiveConfig<DistributedT
    *
    * @return the map configuration
    */
-  public DistributedTreeMapConfig setNullValues() {
+  public DistributedNavigableMapConfig setNullValues() {
     return setNullValues(true);
   }
 
@@ -44,7 +44,7 @@ public class DistributedTreeMapConfig extends CachedPrimitiveConfig<DistributedT
    * @param nullValues whether null values are allowed
    * @return the map configuration
    */
-  public DistributedTreeMapConfig setNullValues(boolean nullValues) {
+  public DistributedNavigableMapConfig setNullValues(boolean nullValues) {
     this.nullValues = nullValues;
     return this;
   }

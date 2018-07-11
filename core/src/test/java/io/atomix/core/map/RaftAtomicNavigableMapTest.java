@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.map.impl;
+package io.atomix.core.map;
 
-import io.atomix.core.map.AtomicTreeMapType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 
 /**
- * Default atomic tree map service.
+ * Raft consistent tree map test.
  */
-public class DefaultAtomicTreeMapService<K extends Comparable<K>> extends AbstractAtomicTreeMapService<K> {
-  public DefaultAtomicTreeMapService() {
-    super(AtomicTreeMapType.instance());
+public class RaftAtomicNavigableMapTest extends AtomicNavigableMapTest {
+  @Override
+  protected PrimitiveProtocol protocol() {
+    return MultiRaftProtocol.builder()
+        .withMaxRetries(5)
+        .build();
   }
 }

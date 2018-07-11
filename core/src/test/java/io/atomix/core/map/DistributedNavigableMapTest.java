@@ -18,7 +18,7 @@ package io.atomix.core.map;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.core.map.impl.AtomicTreeMapProxy;
+import io.atomix.core.map.impl.AtomicNavigableMapProxy;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -37,9 +37,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Unit tests for {@link AtomicTreeMapProxy}.
+ * Unit tests for {@link AtomicNavigableMapProxy}.
  */
-public abstract class DistributedTreeMapTest extends AbstractPrimitiveTest {
+public abstract class DistributedNavigableMapTest extends AbstractPrimitiveTest {
   private final String four = "hello";
   private final String three = "goodbye";
   private final String two = "foo";
@@ -48,7 +48,7 @@ public abstract class DistributedTreeMapTest extends AbstractPrimitiveTest {
   private final List<String> all = Lists.newArrayList(one, two, three, four);
 
   /**
-   * Tests of the functionality associated with the {@link DistributedTreeMap} interface except transactions and
+   * Tests of the functionality associated with the {@link DistributedNavigableMap} interface except transactions and
    * listeners.
    */
   @Test
@@ -57,7 +57,7 @@ public abstract class DistributedTreeMapTest extends AbstractPrimitiveTest {
     //make sure that the previous section has been cleaned up, they serve
     //the secondary purpose of testing isEmpty but that is not their
     //primary purpose.
-    DistributedTreeMap<String, String> map = atomix().<String, String>treeMapBuilder("basicTestMap", protocol()).build();
+    DistributedNavigableMap<String, String> map = atomix().<String, String>navigableMapBuilder("basicTestMap", protocol()).build();
 
     assertEquals(0, map.size());
     assertTrue(map.isEmpty());
@@ -115,7 +115,7 @@ public abstract class DistributedTreeMapTest extends AbstractPrimitiveTest {
     final String value2 = "value2";
     final String value3 = "value3";
 
-    DistributedTreeMap<String, String> map = atomix().<String, String>treeMapBuilder("treeMapListenerTestMap", protocol()).build();
+    DistributedNavigableMap<String, String> map = atomix().<String, String>navigableMapBuilder("treeMapListenerTestMap", protocol()).build();
     TestMapEventListener listener = new TestMapEventListener();
 
     // add listener; insert new value into map and verify an INSERT event
@@ -166,7 +166,7 @@ public abstract class DistributedTreeMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void treeMapFunctionsTest() throws Throwable {
-    DistributedTreeMap<String, String> map = atomix().<String, String>treeMapBuilder("treeMapFunctionTestMap", protocol()).build();
+    DistributedNavigableMap<String, String> map = atomix().<String, String>navigableMapBuilder("treeMapFunctionTestMap", protocol()).build();
     //Tests on empty map
 
     assertNull(map.firstKey());
@@ -224,7 +224,7 @@ public abstract class DistributedTreeMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testTreeMapViews() throws Throwable {
-    DistributedTreeMap<String, String> map = atomix().<String, String>treeMapBuilder("testTreeMapViews", protocol()).build();
+    DistributedNavigableMap<String, String> map = atomix().<String, String>navigableMapBuilder("testTreeMapViews", protocol()).build();
 
     assertTrue(map.isEmpty());
     assertTrue(map.keySet().isEmpty());

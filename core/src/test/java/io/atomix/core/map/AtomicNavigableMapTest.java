@@ -19,7 +19,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.core.map.impl.AtomicTreeMapProxy;
+import io.atomix.core.map.impl.AtomicNavigableMapProxy;
 import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
@@ -43,9 +43,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Unit tests for {@link AtomicTreeMapProxy}.
+ * Unit tests for {@link AtomicNavigableMapProxy}.
  */
-public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
+public abstract class AtomicNavigableMapTest extends AbstractPrimitiveTest {
   private final String four = "hello";
   private final String three = "goodbye";
   private final String two = "foo";
@@ -55,7 +55,7 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
 
   /**
    * Tests of the functionality associated with the
-   * {@link AsyncAtomicTreeMap} interface
+   * {@link AsyncAtomicNavigableMap} interface
    * except transactions and listeners.
    */
   @Test
@@ -64,7 +64,7 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
     //make sure that the previous section has been cleaned up, they serve
     //the secondary purpose of testing isEmpty but that is not their
     //primary purpose.
-    AsyncAtomicTreeMap<String, String> map = createResource("basicTestMap");
+    AsyncAtomicNavigableMap<String, String> map = createResource("basicTestMap");
     //test size
     map.size().thenAccept(result -> assertEquals(0, (int) result)).join();
     map.isEmpty().thenAccept(result -> assertTrue(result)).join();
@@ -244,7 +244,7 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AsyncAtomicTreeMap<String, String> map = createResource("treeMapListenerTestMap");
+    AsyncAtomicNavigableMap<String, String> map = createResource("treeMapListenerTestMap");
     TestAtomicMapEventListener listener = new TestAtomicMapEventListener();
 
     // add listener; insert new value into map and verify an INSERT event
@@ -307,7 +307,7 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void treeMapFunctionsTest() {
-    AsyncAtomicTreeMap<String, String> map = createResource("treeMapFunctionTestMap");
+    AsyncAtomicNavigableMap<String, String> map = createResource("treeMapFunctionTestMap");
     //Tests on empty map
     map.firstKey().thenAccept(result -> assertNull(result)).join();
     map.lastKey().thenAccept(result -> assertNull(result)).join();
@@ -411,7 +411,7 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testTreeMapViews() {
-    AtomicTreeMap<String, String> map = createResource("testTreeMapViews").sync();
+    AtomicNavigableMap<String, String> map = createResource("testTreeMapViews").sync();
 
     assertTrue(map.isEmpty());
     assertTrue(map.keySet().isEmpty());
@@ -486,7 +486,7 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testSubMaps() throws Throwable {
-    AtomicTreeMap<String, String> map = createResource("testSubMaps").sync();
+    AtomicNavigableMap<String, String> map = createResource("testSubMaps").sync();
 
     for (char letter = 'a'; letter <= 'z'; letter++) {
       map.put(String.valueOf(letter), String.valueOf(letter));
@@ -615,7 +615,7 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testKeySetOperations() throws Throwable {
-    AtomicTreeMap<String, String> map = createResource("testKeySetOperations").sync();
+    AtomicNavigableMap<String, String> map = createResource("testKeySetOperations").sync();
 
     try {
       map.navigableKeySet().first();
@@ -737,7 +737,7 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testKeySetSubSets() throws Throwable {
-    AtomicTreeMap<String, String> map = createResource("testKeySetSubSets").sync();
+    AtomicNavigableMap<String, String> map = createResource("testKeySetSubSets").sync();
 
     for (char letter = 'a'; letter <= 'z'; letter++) {
       map.put(String.valueOf(letter), String.valueOf(letter));
@@ -850,9 +850,9 @@ public abstract class AtomicTreeMapTest extends AbstractPrimitiveTest {
     assertEquals(Sets.newHashSet(map.navigableKeySet()), Sets.newHashSet("h", "i", "j", "k", "n"));
   }
 
-  private AsyncAtomicTreeMap<String, String> createResource(String mapName) {
+  private AsyncAtomicNavigableMap<String, String> createResource(String mapName) {
     try {
-      return atomix().<String, String>atomicTreeMapBuilder(mapName, protocol()).build().async();
+      return atomix().<String, String>atomicNavigableMapBuilder(mapName, protocol()).build().async();
     } catch (Throwable e) {
       throw new RuntimeException(e.toString());
     }

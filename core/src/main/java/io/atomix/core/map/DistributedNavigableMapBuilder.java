@@ -19,16 +19,16 @@ import io.atomix.core.cache.CachedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
 /**
- * Builder for {@link DistributedTreeMap} instances.
+ * Builder for {@link DistributedNavigableMap} instances.
  *
  * @param <K> type for map key
  * @param <V> type for map value
  */
-public abstract class DistributedTreeMapBuilder<K extends Comparable<K>, V>
-    extends CachedPrimitiveBuilder<DistributedTreeMapBuilder<K, V>, DistributedTreeMapConfig, DistributedTreeMap<K, V>> {
+public abstract class DistributedNavigableMapBuilder<K extends Comparable<K>, V>
+    extends CachedPrimitiveBuilder<DistributedNavigableMapBuilder<K, V>, DistributedNavigableMapConfig, DistributedNavigableMap<K, V>> {
 
-  public DistributedTreeMapBuilder(String name, DistributedTreeMapConfig config, PrimitiveManagementService managementService) {
-    super(DistributedTreeMapType.instance(), name, config, managementService);
+  public DistributedNavigableMapBuilder(String name, DistributedNavigableMapConfig config, PrimitiveManagementService managementService) {
+    super(DistributedNavigableMapType.instance(), name, config, managementService);
   }
 
   /**
@@ -36,7 +36,7 @@ public abstract class DistributedTreeMapBuilder<K extends Comparable<K>, V>
    *
    * @return this builder
    */
-  public DistributedTreeMapBuilder<K, V> withNullValues() {
+  public DistributedNavigableMapBuilder<K, V> withNullValues() {
     config.setNullValues();
     return this;
   }
@@ -47,7 +47,7 @@ public abstract class DistributedTreeMapBuilder<K extends Comparable<K>, V>
    * @param nullValues whether null values are allowed
    * @return this builder
    */
-  public DistributedTreeMapBuilder<K, V> withNullValues(boolean nullValues) {
+  public DistributedNavigableMapBuilder<K, V> withNullValues(boolean nullValues) {
     config.setNullValues(nullValues);
     return this;
   }
