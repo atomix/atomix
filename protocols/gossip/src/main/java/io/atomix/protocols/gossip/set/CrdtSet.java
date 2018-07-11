@@ -223,8 +223,8 @@ public class CrdtSet<E> implements SetProtocol<E> {
    *
    * @param elements the elements to update
    */
-  private void updateElements(Set<SetElement> elements) {
-    for (SetElement element : elements) {
+  private void updateElements(Map<String, SetElement> elements) {
+    for (SetElement element : elements.values()) {
       if (element.isTombstone()) {
         if (remove(element)) {
           eventListeners.forEach(listener -> listener.event(new SetProtocolEvent<>(SetProtocolEvent.Type.REMOVE, decode(element.value()))));
