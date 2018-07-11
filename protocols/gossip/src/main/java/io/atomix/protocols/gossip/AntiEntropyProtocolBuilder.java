@@ -34,7 +34,7 @@ public class AntiEntropyProtocolBuilder extends PrimitiveProtocolBuilder<AntiEnt
    * @param timestampProvider the timestamp provider
    * @return the anti-entropy protocol configuration
    */
-  public AntiEntropyProtocolBuilder setTimestampProvider(TimestampProvider timestampProvider) {
+  public <E> AntiEntropyProtocolBuilder withTimestampProvider(TimestampProvider<E> timestampProvider) {
     config.setTimestampProvider(timestampProvider);
     return this;
   }
@@ -45,7 +45,7 @@ public class AntiEntropyProtocolBuilder extends PrimitiveProtocolBuilder<AntiEnt
    * @param peers the set of peers with which to gossip
    * @return the anti-entropy protocol configuration
    */
-  public AntiEntropyProtocolBuilder setPeers(Set<String> peers) {
+  public AntiEntropyProtocolBuilder withPeers(Set<String> peers) {
     config.setPeers(peers);
     return this;
   }
@@ -56,7 +56,7 @@ public class AntiEntropyProtocolBuilder extends PrimitiveProtocolBuilder<AntiEnt
    * @param peerSelector the gossip peer selector
    * @return the anti-entropy protocol configuration
    */
-  public AntiEntropyProtocolBuilder setPeerSelector(PeerSelector peerSelector) {
+  public <E> AntiEntropyProtocolBuilder withPeerSelector(PeerSelector<E> peerSelector) {
     config.setPeerSelector(peerSelector);
     return this;
   }
@@ -67,7 +67,7 @@ public class AntiEntropyProtocolBuilder extends PrimitiveProtocolBuilder<AntiEnt
    * @param tombstonesDisabled whether tombstones are enabled
    * @return the anti-entropy protocol configuration
    */
-  public AntiEntropyProtocolBuilder setTombstonesDisabled(boolean tombstonesDisabled) {
+  public AntiEntropyProtocolBuilder withTombstonesDisabled(boolean tombstonesDisabled) {
     config.setTombstonesDisabled(tombstonesDisabled);
     return this;
   }
@@ -78,7 +78,7 @@ public class AntiEntropyProtocolBuilder extends PrimitiveProtocolBuilder<AntiEnt
    * @param gossipInterval the gossip interval
    * @return the anti-entropy protocol configuration
    */
-  public AntiEntropyProtocolBuilder setGossipInterval(Duration gossipInterval) {
+  public AntiEntropyProtocolBuilder withGossipInterval(Duration gossipInterval) {
     config.setGossipInterval(gossipInterval);
     return this;
   }
@@ -89,7 +89,7 @@ public class AntiEntropyProtocolBuilder extends PrimitiveProtocolBuilder<AntiEnt
    * @param antiEntropyInterval the anti-entropy advertisement interval
    * @return the anti-entropy protocol configuration
    */
-  public AntiEntropyProtocolBuilder setAntiEntropyInterval(Duration antiEntropyInterval) {
+  public AntiEntropyProtocolBuilder withAntiEntropyInterval(Duration antiEntropyInterval) {
     config.setAntiEntropyInterval(antiEntropyInterval);
     return this;
   }
