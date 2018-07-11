@@ -16,15 +16,15 @@
 package io.atomix.core.set;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.gossip.AntiEntropyProtocol;
+import io.atomix.protocols.gossip.CrdtProtocol;
 
 /**
- * Anti-entropy distributed set test.
+ * CRDT based distributed set test.
  */
-public class AntiEntropyDistributedSetTest extends GossipDistributedSetTest {
+public class CrdtDistributedSetTest extends GossipDistributedSetTest {
   @Override
   protected PrimitiveProtocol protocol() {
-    return AntiEntropyProtocol.builder()
+    return CrdtProtocol.builder()
         .withTimestampProvider(timestampProvider)
         .build();
   }
