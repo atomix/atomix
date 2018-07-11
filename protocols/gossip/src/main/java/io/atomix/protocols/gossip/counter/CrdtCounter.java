@@ -51,7 +51,7 @@ public class CrdtCounter implements CounterProtocol {
     this.clusterMembershipService = managementService.getMembershipService();
     this.clusterCommunicator = managementService.getCommunicationService();
     this.executorService = managementService.getExecutorService();
-    this.subject = String.format("atomix-counter-%s", name);
+    this.subject = String.format("atomix-crdt-counter-%s", name);
     clusterCommunicator.subscribe(subject, SERIALIZER::decode, this::updateCounters, executorService);
     broadcastFuture = executorService.scheduleAtFixedRate(
         this::broadcastCounters, config.getGossipInterval().toMillis(), config.getGossipInterval().toMillis(), TimeUnit.MILLISECONDS);

@@ -15,29 +15,21 @@
  */
 package io.atomix.primitive.protocol.map;
 
-import java.util.Map;
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
- * Gossip-based map service.
+ * Tree map protocol provider.
  */
-public interface MapProtocol<K, V> extends Map<K, V> {
+public interface TreeMapProtocolProvider extends GossipProtocol {
 
   /**
-   * Adds the specified listener to the map which will be notified whenever the mappings in the map are changed.
+   * Returns a new tree map protocol.
    *
-   * @param listener listener to register for events
+   * @param name the map name
+   * @param managementService the primitive management service
+   * @return a new map protocol
    */
-  void addListener(MapProtocolEventListener<K, V> listener);
+  <K, V> TreeMapProtocol<K, V> newTreeMapProtocol(String name, PrimitiveManagementService managementService);
 
-  /**
-   * Removes the specified listener from the map such that it will no longer receive change notifications.
-   *
-   * @param listener listener to deregister for events
-   */
-  void removeListener(MapProtocolEventListener<K, V> listener);
-
-  /**
-   * Closes the map.
-   */
-  void close();
 }

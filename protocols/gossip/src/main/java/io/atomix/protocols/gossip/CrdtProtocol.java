@@ -23,10 +23,11 @@ import io.atomix.primitive.protocol.counter.CounterProtocolProvider;
 import io.atomix.primitive.protocol.set.SetProtocol;
 import io.atomix.primitive.protocol.set.SetProtocolProvider;
 import io.atomix.protocols.gossip.counter.CrdtCounter;
+import io.atomix.protocols.gossip.set.CrdtSet;
 import io.atomix.utils.serializer.Serializer;
 
 /**
- * Commutative Replicated Data Types (CRDT) protocol.
+ * Conflict-free Replicated Data Types (CRDT) protocol.
  */
 public class CrdtProtocol implements GossipProtocol, CounterProtocolProvider, SetProtocolProvider {
   public static final Type TYPE = new Type();
@@ -85,6 +86,6 @@ public class CrdtProtocol implements GossipProtocol, CounterProtocolProvider, Se
 
   @Override
   public <E> SetProtocol<E> newSetProtocol(String name, PrimitiveManagementService managementService) {
-    return null;
+    return new CrdtSet<>(name, config, managementService);
   }
 }
