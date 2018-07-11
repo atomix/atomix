@@ -13,10 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol;
+package io.atomix.primitive.protocol.map;
+
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
- * Dissemination protocol.
+ * Map protocol provider.
  */
-public interface GossipProtocol extends PrimitiveProtocol {
+public interface MapProtocolProvider extends GossipProtocol {
+
+  /**
+   * Returns a new map protocol.
+   *
+   * @param name the map name
+   * @param managementService the primitive management service
+   * @return a new map protocol
+   */
+  <K, V> MapProtocol<K, V> newMapProtocol(String name, PrimitiveManagementService managementService);
+
 }

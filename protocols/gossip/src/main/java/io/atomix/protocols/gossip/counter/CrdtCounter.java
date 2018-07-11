@@ -21,7 +21,7 @@ import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.counter.CounterProtocol;
-import io.atomix.protocols.gossip.AntiEntropyProtocolConfig;
+import io.atomix.protocols.gossip.CrdtProtocolConfig;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -32,11 +32,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Default distributed counter implementation.
+ * CRDT based counter implementation.
  */
-public class GossipCounter implements CounterProtocol {
-  private static final long BROADCAST_INTERVAL = 5000;
-
+public class CrdtCounter implements CounterProtocol {
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .register(MemberId.class)
@@ -49,7 +47,7 @@ public class GossipCounter implements CounterProtocol {
   private volatile ScheduledFuture<?> broadcastFuture;
   private final Map<MemberId, Integer> counters = Maps.newConcurrentMap();
 
-  public GossipCounter(String name, AntiEntropyProtocolConfig config, PrimitiveManagementService managementService) {
+  public CrdtCounter(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
     this.clusterMembershipService = managementService.getMembershipService();
     this.clusterCommunicator = managementService.getCommunicationService();
     this.executorService = managementService.getExecutorService();

@@ -23,8 +23,10 @@ import io.atomix.core.set.DistributedSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.set.SetProtocolProvider;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -44,10 +46,14 @@ public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
   public CompletableFuture<DistributedSet<E>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     if (protocol instanceof GossipProtocol) {
-      return managementService.getPrimitiveCache().getPrimitive(name, () ->
-          CompletableFuture.completedFuture(((GossipProtocol) protocol).<E>newSetProtocol(name, managementService))
-              .thenApply(set -> new GossipDistributedSet<>(name, protocol, set)))
-          .thenApply(AsyncDistributedSet::sync);
+      if (protocol instanceof SetProtocolProvider) {
+        return managementService.getPrimitiveCache().getPrimitive(name, () ->
+            CompletableFuture.completedFuture(((SetProtocolProvider) protocol).<E>newSetProtocol(name, managementService))
+                .thenApply(set -> new GossipDistributedSet<>(name, protocol, set)))
+            .thenApply(AsyncDistributedSet::sync);
+      } else {
+        return Futures.exceptionalFuture(new UnsupportedOperationException("Sets are not supported by the provided gossip protocol"));
+      }
     } else {
       return newProxy(DistributedSetService.class, new ServiceConfig())
           .thenCompose(proxy -> new DistributedSetProxy((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())

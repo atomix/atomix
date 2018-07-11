@@ -23,6 +23,7 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.StateMachineReplicationProtocol;
+import io.atomix.primitive.protocol.counter.CounterProtocolProvider;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.config.ConfigurationException;
@@ -41,9 +42,14 @@ public class DefaultDistributedCounterBuilder extends DistributedCounterBuilder 
   public CompletableFuture<DistributedCounter> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     if (protocol instanceof GossipProtocol) {
-      return managementService.getPrimitiveCache().getPrimitive(name, () -> CompletableFuture.completedFuture(
-          new GossipDistributedCounter(name, (GossipProtocol) protocol, ((GossipProtocol) protocol).newCounterProtocol(name, managementService))))
-          .thenApply(AsyncDistributedCounter::sync);
+      if (protocol instanceof CounterProtocolProvider) {
+        return managementService.getPrimitiveCache().getPrimitive(name, () -> CompletableFuture.completedFuture(
+            new GossipDistributedCounter(name, (GossipProtocol) protocol, ((CounterProtocolProvider) protocol)
+                .newCounterProtocol(name, managementService))))
+            .thenApply(AsyncDistributedCounter::sync);
+      } else {
+        return Futures.exceptionalFuture(new UnsupportedOperationException("Counter is not supported by the provided gossip protocol"));
+      }
     } else if (protocol instanceof StateMachineReplicationProtocol) {
       return newProxy(AtomicCounterService.class, new ServiceConfig())
           .thenCompose(proxy -> new AtomicCounterProxy(proxy, managementService.getPrimitiveRegistry()).connect())

@@ -18,7 +18,7 @@ package io.atomix.primitive.protocol.set;
 import java.util.Set;
 
 /**
- * Set protocol.
+ * Gossip-based set service.
  */
 public interface SetProtocol<E> extends Set<E> {
 

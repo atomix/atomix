@@ -24,8 +24,10 @@ import io.atomix.core.map.DistributedMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.map.MapProtocolProvider;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -42,10 +44,14 @@ public class DefaultDistributedMapBuilder<K, V> extends DistributedMapBuilder<K,
   public CompletableFuture<DistributedMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     if (protocol instanceof GossipProtocol) {
-      return managementService.getPrimitiveCache().getPrimitive(name, () ->
-          CompletableFuture.completedFuture(((GossipProtocol) protocol).<K, V>newMapProtocol(name, managementService))
-              .thenApply(map -> new GossipDistributedMap<>(name, protocol, map)))
-          .thenApply(AsyncDistributedMap::sync);
+      if (protocol instanceof MapProtocolProvider) {
+        return managementService.getPrimitiveCache().getPrimitive(name, () ->
+            CompletableFuture.completedFuture(((MapProtocolProvider) protocol).<K, V>newMapProtocol(name, managementService))
+                .thenApply(map -> new GossipDistributedMap<>(name, protocol, map)))
+            .thenApply(AsyncDistributedMap::sync);
+      } else {
+        return Futures.exceptionalFuture(new UnsupportedOperationException("Maps are not supported by the provided gossip protocol"));
+      }
     } else {
       return newProxy(AtomicMapService.class, new ServiceConfig())
           .thenCompose(proxy -> new AtomicMapProxy((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
