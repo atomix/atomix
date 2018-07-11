@@ -293,6 +293,10 @@
               <packages>io.atomix.protocols.backup*</packages>
             </group>
             <group>
+              <title>Gossip Protocol</title>
+              <packages>io.atomix.protocols.gossip*</packages>
+            </group>
+            <group>
               <title>Storage</title>
               <packages>io.atomix.storage*</packages>
             </group>
