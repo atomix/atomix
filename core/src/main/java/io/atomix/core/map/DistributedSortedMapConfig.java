@@ -19,14 +19,14 @@ import io.atomix.core.cache.CachedPrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
 
 /**
- * Distributed tree map configuration.
+ * Distributed sorted map configuration.
  */
-public class DistributedNavigableMapConfig extends CachedPrimitiveConfig<DistributedNavigableMapConfig> {
+public class DistributedSortedMapConfig extends CachedPrimitiveConfig<DistributedSortedMapConfig> {
   private boolean nullValues = false;
 
   @Override
   public PrimitiveType getType() {
-    return DistributedNavigableMapType.instance();
+    return DistributedSortedMapType.instance();
   }
 
   /**
@@ -34,7 +34,7 @@ public class DistributedNavigableMapConfig extends CachedPrimitiveConfig<Distrib
    *
    * @return the map configuration
    */
-  public DistributedNavigableMapConfig setNullValues() {
+  public DistributedSortedMapConfig setNullValues() {
     return setNullValues(true);
   }
 
@@ -44,7 +44,7 @@ public class DistributedNavigableMapConfig extends CachedPrimitiveConfig<Distrib
    * @param nullValues whether null values are allowed
    * @return the map configuration
    */
-  public DistributedNavigableMapConfig setNullValues(boolean nullValues) {
+  public DistributedSortedMapConfig setNullValues(boolean nullValues) {
     this.nullValues = nullValues;
     return this;
   }

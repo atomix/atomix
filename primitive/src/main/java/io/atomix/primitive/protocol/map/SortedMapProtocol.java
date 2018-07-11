@@ -15,10 +15,10 @@
  */
 package io.atomix.primitive.protocol.map;
 
-import java.util.NavigableMap;
+import java.util.SortedMap;
 
 /**
- * Navigable map protocol.
+ * Sorted map protocol.
  */
-public interface NavigableMapProtocol<K, V> extends SortedMapProtocol<K, V>, NavigableMap<K, V> {
+public interface SortedMapProtocol<K, V> extends MapProtocol<K, V>, SortedMap<K, V> {
 }

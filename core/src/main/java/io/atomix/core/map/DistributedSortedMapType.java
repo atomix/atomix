@@ -15,8 +15,8 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.map.impl.DefaultDistributedNavigableMapBuilder;
 import io.atomix.core.map.impl.DefaultDistributedNavigableMapService;
+import io.atomix.core.map.impl.DefaultDistributedSortedMapBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -26,12 +26,12 @@ import io.atomix.utils.serializer.Namespace;
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Distributed tree map primitive type.
+ * Distributed sorted map primitive type.
  */
-public class DistributedNavigableMapType<K extends Comparable<K>, V> implements PrimitiveType<DistributedNavigableMapBuilder<K, V>, DistributedNavigableMapConfig, DistributedNavigableMap<K, V>> {
-  private static final String NAME = "navigable-map";
+public class DistributedSortedMapType<K extends Comparable<K>, V> implements PrimitiveType<DistributedSortedMapBuilder<K, V>, DistributedSortedMapConfig, DistributedSortedMap<K, V>> {
+  private static final String NAME = "sorted-map";
 
-  private static final DistributedNavigableMapType INSTANCE = new DistributedNavigableMapType();
+  private static final DistributedSortedMapType INSTANCE = new DistributedSortedMapType();
 
   /**
    * Returns a new distributed tree map type.
@@ -41,7 +41,7 @@ public class DistributedNavigableMapType<K extends Comparable<K>, V> implements 
    * @return a new distributed tree map type
    */
   @SuppressWarnings("unchecked")
-  public static <K extends Comparable<K>, V> DistributedNavigableMapType<K, V> instance() {
+  public static <K extends Comparable<K>, V> DistributedSortedMapType<K, V> instance() {
     return INSTANCE;
   }
 
@@ -57,17 +57,17 @@ public class DistributedNavigableMapType<K extends Comparable<K>, V> implements 
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultDistributedNavigableMapService();
+    return new DefaultDistributedNavigableMapService<>();
   }
 
   @Override
-  public DistributedNavigableMapConfig newConfig() {
-    return new DistributedNavigableMapConfig();
+  public DistributedSortedMapConfig newConfig() {
+    return new DistributedSortedMapConfig();
   }
 
   @Override
-  public DistributedNavigableMapBuilder<K, V> newBuilder(String name, DistributedNavigableMapConfig config, PrimitiveManagementService managementService) {
-    return new DefaultDistributedNavigableMapBuilder<>(name, config, managementService);
+  public DistributedSortedMapBuilder<K, V> newBuilder(String name, DistributedSortedMapConfig config, PrimitiveManagementService managementService) {
+    return new DefaultDistributedSortedMapBuilder<>(name, config, managementService);
   }
 
   @Override
