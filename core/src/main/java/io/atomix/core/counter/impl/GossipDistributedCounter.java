@@ -57,7 +57,32 @@ public class GossipDistributedCounter implements AsyncDistributedCounter {
 
   @Override
   public CompletableFuture<Long> incrementAndGet() {
-    return CompletableFuture.completedFuture(counter.increment());
+    return CompletableFuture.completedFuture(counter.incrementAndGet());
+  }
+
+  @Override
+  public CompletableFuture<Long> decrementAndGet() {
+    return CompletableFuture.completedFuture(counter.decrementAndGet());
+  }
+
+  @Override
+  public CompletableFuture<Long> getAndIncrement() {
+    return CompletableFuture.completedFuture(counter.getAndIncrement());
+  }
+
+  @Override
+  public CompletableFuture<Long> getAndDecrement() {
+    return CompletableFuture.completedFuture(counter.getAndDecrement());
+  }
+
+  @Override
+  public CompletableFuture<Long> getAndAdd(long delta) {
+    return CompletableFuture.completedFuture(counter.getAndAdd(delta));
+  }
+
+  @Override
+  public CompletableFuture<Long> addAndGet(long delta) {
+    return CompletableFuture.completedFuture(counter.addAndGet(delta));
   }
 
   @Override

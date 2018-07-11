@@ -45,6 +45,31 @@ public class BlockingDistributedCounter extends Synchronous<AsyncDistributedCoun
   }
 
   @Override
+  public long decrementAndGet() {
+    return complete(asyncCounter.decrementAndGet());
+  }
+
+  @Override
+  public long getAndIncrement() {
+    return complete(asyncCounter.getAndIncrement());
+  }
+
+  @Override
+  public long getAndDecrement() {
+    return complete(asyncCounter.getAndDecrement());
+  }
+
+  @Override
+  public long getAndAdd(long delta) {
+    return complete(asyncCounter.getAndAdd(delta));
+  }
+
+  @Override
+  public long addAndGet(long delta) {
+    return complete(asyncCounter.addAndGet(delta));
+  }
+
+  @Override
   public long get() {
     return complete(asyncCounter.get());
   }

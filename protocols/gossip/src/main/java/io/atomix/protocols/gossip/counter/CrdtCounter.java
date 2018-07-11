@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.gossip.counter;
 
-import com.google.common.collect.Maps;
-import io.atomix.cluster.ClusterMembershipService;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.AtomicLongMap;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -26,6 +26,7 @@ import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -40,15 +41,16 @@ public class CrdtCounter implements CounterProtocol {
       .register(MemberId.class)
       .build());
 
-  private final ClusterMembershipService clusterMembershipService;
+  private final MemberId localMemberId;
   private final ClusterCommunicationService clusterCommunicator;
   private final ScheduledExecutorService executorService;
   private final String subject;
   private volatile ScheduledFuture<?> broadcastFuture;
-  private final Map<MemberId, Integer> counters = Maps.newConcurrentMap();
+  private final AtomicLongMap<MemberId> increments = AtomicLongMap.create();
+  private final AtomicLongMap<MemberId> decrements = AtomicLongMap.create();
 
   public CrdtCounter(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
-    this.clusterMembershipService = managementService.getMembershipService();
+    this.localMemberId = managementService.getMembershipService().getLocalMember().id();
     this.clusterCommunicator = managementService.getCommunicationService();
     this.executorService = managementService.getExecutorService();
     this.subject = String.format("atomix-crdt-counter-%s", name);
@@ -59,29 +61,70 @@ public class CrdtCounter implements CounterProtocol {
 
   @Override
   public long get() {
-    return counters.values().stream().mapToLong(v -> v).sum();
+    return increments.sum() - decrements.sum();
   }
 
   @Override
-  public long increment() {
-    counters.compute(clusterMembershipService.getLocalMember().id(), (id, value) -> value != null ? value + 1 : 1);
-    broadcastCounters();
-    return get();
+  public long incrementAndGet() {
+    return getIncrement(increments.incrementAndGet(localMemberId));
   }
 
-  private void updateCounters(Map<MemberId, Integer> counters) {
-    for (Map.Entry<MemberId, Integer> entry : counters.entrySet()) {
-      this.counters.compute(entry.getKey(), (key, value) -> {
-        if (value == null || value < entry.getValue()) {
-          return entry.getValue();
-        }
-        return value;
-      });
+  @Override
+  public long decrementAndGet() {
+    return getDecrement(decrements.incrementAndGet(localMemberId));
+  }
+
+  @Override
+  public long getAndIncrement() {
+    return getIncrement(increments.getAndIncrement(localMemberId));
+  }
+
+  @Override
+  public long getAndDecrement() {
+    return getDecrement(decrements.getAndIncrement(localMemberId));
+  }
+
+  @Override
+  public long getAndAdd(long delta) {
+    return getIncrement(increments.getAndAdd(localMemberId, delta));
+  }
+
+  @Override
+  public long addAndGet(long delta) {
+    return getIncrement(increments.addAndGet(localMemberId, delta));
+  }
+
+  private long getIncrement(long local) {
+    return (increments.asMap().entrySet()
+        .stream()
+        .filter(e -> !e.getKey().equals(localMemberId))
+        .mapToLong(e -> e.getValue())
+        .sum() + local) - decrements.sum();
+  }
+
+  private long getDecrement(long local) {
+    return increments.sum() -
+        (decrements.asMap().entrySet()
+            .stream()
+            .filter(e -> !e.getKey().equals(localMemberId))
+            .mapToLong(e -> e.getValue())
+            .sum() + local);
+  }
+
+  private void updateCounters(List<Map<MemberId, Long>> counters) {
+    Map<MemberId, Long> increments = counters.get(0);
+    for (Map.Entry<MemberId, Long> entry : increments.entrySet()) {
+      this.increments.accumulateAndGet(entry.getKey(), entry.getValue(), Math::max);
+    }
+
+    Map<MemberId, Long> decrements = counters.get(1);
+    for (Map.Entry<MemberId, Long> entry : decrements.entrySet()) {
+      this.decrements.accumulateAndGet(entry.getKey(), entry.getValue(), Math::max);
     }
   }
 
   private void broadcastCounters() {
-    clusterCommunicator.broadcast(subject, counters, SERIALIZER::encode);
+    clusterCommunicator.broadcast(subject, Lists.newArrayList(increments.asMap(), decrements.asMap()), SERIALIZER::encode);
   }
 
   @Override
