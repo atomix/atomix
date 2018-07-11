@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set;
+package io.atomix.primitive.protocol.set;
+
+import java.util.NavigableSet;
 
 /**
- * Distributed tree set.
+ * Navigable set protocol.
  */
-public interface DistributedTreeSet<E extends Comparable<E>> extends DistributedNavigableSet<E> {
-  @Override
-  AsyncDistributedTreeSet<E> async();
+public interface NavigableSetProtocol<E> extends SortedSetProtocol<E>, NavigableSet<E> {
 }

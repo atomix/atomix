@@ -19,9 +19,9 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
- * Tree set protocol provider.
+ * Navigable set protocol provider.
  */
-public interface TreeSetProtocolProvider extends GossipProtocol {
+public interface NavigableSetProtocolProvider extends GossipProtocol {
 
   /**
    * Returns a new set protocol.
@@ -31,6 +31,6 @@ public interface TreeSetProtocolProvider extends GossipProtocol {
    * @param <E> the set element type
    * @return a new set protocol
    */
-  <E> TreeSetProtocol<E> newTreeSetProtocol(String name, PrimitiveManagementService managementService);
+  <E> NavigableSetProtocol<E> newNavigableSetProtocol(String name, PrimitiveManagementService managementService);
 
 }

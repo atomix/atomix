@@ -21,9 +21,7 @@ import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.iterator.impl.ProxyIterator;
 import io.atomix.core.set.AsyncDistributedNavigableSet;
 import io.atomix.core.set.AsyncDistributedSortedSet;
-import io.atomix.core.set.AsyncDistributedTreeSet;
 import io.atomix.core.set.DistributedNavigableSet;
-import io.atomix.core.set.DistributedTreeSet;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.PrimitiveRegistry;
@@ -43,11 +41,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Distributed tree set proxy.
  */
-public class DistributedTreeSetProxy<E extends Comparable<E>>
-    extends DistributedCollectionProxy<AsyncDistributedTreeSet<E>, DistributedTreeSetService<E>, E>
-    implements AsyncDistributedTreeSet<E> {
+public class DistributedNavigableSetProxy<E extends Comparable<E>>
+    extends DistributedCollectionProxy<AsyncDistributedNavigableSet<E>, DistributedTreeSetService<E>, E>
+    implements AsyncDistributedNavigableSet<E> {
 
-  public DistributedTreeSetProxy(ProxyClient<DistributedTreeSetService<E>> client, PrimitiveRegistry registry) {
+  public DistributedNavigableSetProxy(ProxyClient<DistributedTreeSetService<E>> client, PrimitiveRegistry registry) {
     super(client, registry);
   }
 
@@ -154,8 +152,8 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
   }
 
   @Override
-  public DistributedTreeSet<E> sync(Duration operationTimeout) {
-    return new BlockingDistributedTreeSet<>(this, operationTimeout.toMillis());
+  public DistributedNavigableSet<E> sync(Duration operationTimeout) {
+    return new BlockingDistributedNavigableSet<>(this, operationTimeout.toMillis());
   }
 
   private class SubSet implements AsyncDistributedNavigableSet<E> {
@@ -173,17 +171,17 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
 
     @Override
     public String name() {
-      return DistributedTreeSetProxy.this.name();
+      return DistributedNavigableSetProxy.this.name();
     }
 
     @Override
     public PrimitiveType type() {
-      return DistributedTreeSetProxy.this.type();
+      return DistributedNavigableSetProxy.this.type();
     }
 
     @Override
     public PrimitiveProtocol protocol() {
-      return DistributedTreeSetProxy.this.protocol();
+      return DistributedNavigableSetProxy.this.protocol();
     }
 
     private boolean isInBounds(E element) {
@@ -291,7 +289,7 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
           toInclusive = this.toInclusive;
         }
       }
-      return DistributedTreeSetProxy.this.subSet(fromElement, fromInclusive, toElement, toInclusive);
+      return DistributedNavigableSetProxy.this.subSet(fromElement, fromInclusive, toElement, toInclusive);
     }
 
     @Override
@@ -307,7 +305,7 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
           inclusive = this.toInclusive;
         }
       }
-      return DistributedTreeSetProxy.this.subSet(fromElement, fromInclusive, toElement, inclusive);
+      return DistributedNavigableSetProxy.this.subSet(fromElement, fromInclusive, toElement, inclusive);
     }
 
     @Override
@@ -323,17 +321,17 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
           inclusive = this.fromInclusive;
         }
       }
-      return DistributedTreeSetProxy.this.subSet(fromElement, inclusive, toElement, toInclusive);
+      return DistributedNavigableSetProxy.this.subSet(fromElement, inclusive, toElement, toInclusive);
     }
 
     @Override
     public CompletableFuture<Boolean> add(E element) {
-      return isInBounds(element) ? DistributedTreeSetProxy.this.add(element) : Futures.completedFuture(false);
+      return isInBounds(element) ? DistributedNavigableSetProxy.this.add(element) : Futures.completedFuture(false);
     }
 
     @Override
     public CompletableFuture<Boolean> remove(E element) {
-      return isInBounds(element) ? DistributedTreeSetProxy.this.remove(element) : Futures.completedFuture(false);
+      return isInBounds(element) ? DistributedNavigableSetProxy.this.remove(element) : Futures.completedFuture(false);
     }
 
     @Override
@@ -353,40 +351,40 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
 
     @Override
     public CompletableFuture<Boolean> contains(E element) {
-      return isInBounds(element) ? DistributedTreeSetProxy.this.contains(element) : CompletableFuture.completedFuture(false);
+      return isInBounds(element) ? DistributedNavigableSetProxy.this.contains(element) : CompletableFuture.completedFuture(false);
     }
 
     @Override
     public CompletableFuture<Boolean> addAll(Collection<? extends E> c) {
-      return DistributedTreeSetProxy.this.addAll(c.stream().filter(this::isInBounds).collect(Collectors.toList()));
+      return DistributedNavigableSetProxy.this.addAll(c.stream().filter(this::isInBounds).collect(Collectors.toList()));
     }
 
     @Override
     public CompletableFuture<Boolean> containsAll(Collection<? extends E> c) {
       if (c.stream().map(this::isInBounds).reduce(Boolean::logicalAnd).orElse(true)) {
-        return DistributedTreeSetProxy.this.containsAll(c);
+        return DistributedNavigableSetProxy.this.containsAll(c);
       }
       return CompletableFuture.completedFuture(false);
     }
 
     @Override
     public CompletableFuture<Boolean> retainAll(Collection<? extends E> c) {
-      return DistributedTreeSetProxy.this.retainAll(c.stream().filter(this::isInBounds).collect(Collectors.toList()));
+      return DistributedNavigableSetProxy.this.retainAll(c.stream().filter(this::isInBounds).collect(Collectors.toList()));
     }
 
     @Override
     public CompletableFuture<Boolean> removeAll(Collection<? extends E> c) {
-      return DistributedTreeSetProxy.this.removeAll(c.stream().filter(this::isInBounds).collect(Collectors.toList()));
+      return DistributedNavigableSetProxy.this.removeAll(c.stream().filter(this::isInBounds).collect(Collectors.toList()));
     }
 
     @Override
     public CompletableFuture<Void> addListener(CollectionEventListener<E> listener) {
-      return DistributedTreeSetProxy.this.addListener(listener);
+      return DistributedNavigableSetProxy.this.addListener(listener);
     }
 
     @Override
     public CompletableFuture<Void> removeListener(CollectionEventListener<E> listener) {
-      return DistributedTreeSetProxy.this.removeListener(listener);
+      return DistributedNavigableSetProxy.this.removeListener(listener);
     }
 
     @Override
@@ -426,7 +424,7 @@ public class DistributedTreeSetProxy<E extends Comparable<E>>
 
     @Override
     public CompletableFuture<Void> close() {
-      return DistributedTreeSetProxy.this.close();
+      return DistributedNavigableSetProxy.this.close();
     }
 
     @Override

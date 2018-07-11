@@ -19,13 +19,13 @@ import io.atomix.core.collection.DistributedCollectionBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 
 /**
- * Builder for distributed tree set.
+ * Builder for distributed sorted set.
  *
  * @param <E> type set elements.
  */
-public abstract class DistributedTreeSetBuilder<E extends Comparable<E>>
-    extends DistributedCollectionBuilder<DistributedTreeSetBuilder<E>, DistributedTreeSetConfig, DistributedTreeSet<E>, E> {
-  public DistributedTreeSetBuilder(String name, DistributedTreeSetConfig config, PrimitiveManagementService managementService) {
-    super(DistributedTreeSetType.instance(), name, config, managementService);
+public abstract class DistributedSortedSetBuilder<E extends Comparable<E>>
+    extends DistributedCollectionBuilder<DistributedSortedSetBuilder<E>, DistributedSortedSetConfig, DistributedSortedSet<E>, E> {
+  public DistributedSortedSetBuilder(String name, DistributedSortedSetConfig config, PrimitiveManagementService managementService) {
+    super(DistributedSortedSetType.instance(), name, config, managementService);
   }
 }

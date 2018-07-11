@@ -13,19 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set;
+package io.atomix.primitive.protocol.set;
 
-import java.time.Duration;
+import java.util.SortedSet;
 
 /**
- * Asynchronous distributed tree set.
+ * Sorted set protocol.
  */
-public interface AsyncDistributedTreeSet<E extends Comparable<E>> extends AsyncDistributedNavigableSet<E> {
-  @Override
-  default DistributedTreeSet<E> sync() {
-    return sync(Duration.ofMillis(DEFAULT_OPERATION_TIMEOUT_MILLIS));
-  }
-
-  @Override
-  DistributedTreeSet<E> sync(Duration operationTimeout);
+public interface SortedSetProtocol<E> extends SetProtocol<E>, SortedSet<E> {
 }

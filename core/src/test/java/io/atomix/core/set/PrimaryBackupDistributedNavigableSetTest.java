@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.set;
 
-import io.atomix.core.set.AsyncDistributedTreeSet;
-import io.atomix.core.set.DistributedTreeSet;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-
-import java.time.Duration;
-import java.util.NavigableSet;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**
- * Asynchronous distributed Java-backed tree set.
+ * Primary-backup distributed tree set test.
  */
-public class AsyncDistributedJavaTreeSet<E extends Comparable<E>> extends AsyncDistributedNavigableJavaSet<E> implements AsyncDistributedTreeSet<E> {
-  public AsyncDistributedJavaTreeSet(String name, PrimitiveProtocol protocol, NavigableSet<E> set) {
-    super(name, protocol, set);
-  }
-
+public class PrimaryBackupDistributedNavigableSetTest extends DistributedNavigableSetTest {
   @Override
-  public DistributedTreeSet<E> sync(Duration operationTimeout) {
-    return new BlockingDistributedTreeSet<>(this, operationTimeout.toMillis());
+  protected PrimitiveProtocol protocol() {
+    return MultiPrimaryProtocol.builder()
+        .withBackups(2)
+        .withMaxRetries(5)
+        .build();
   }
 }

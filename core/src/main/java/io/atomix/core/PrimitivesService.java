@@ -75,12 +75,15 @@ import io.atomix.core.semaphore.AtomicSemaphoreType;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphoreBuilder;
 import io.atomix.core.semaphore.DistributedSemaphoreType;
+import io.atomix.core.set.DistributedNavigableSet;
+import io.atomix.core.set.DistributedNavigableSetBuilder;
+import io.atomix.core.set.DistributedNavigableSetType;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetBuilder;
 import io.atomix.core.set.DistributedSetType;
-import io.atomix.core.set.DistributedTreeSet;
-import io.atomix.core.set.DistributedTreeSetBuilder;
-import io.atomix.core.set.DistributedTreeSetType;
+import io.atomix.core.set.DistributedSortedSet;
+import io.atomix.core.set.DistributedSortedSetBuilder;
+import io.atomix.core.set.DistributedSortedSetType;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.tree.AtomicDocumentTreeBuilder;
@@ -330,26 +333,49 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedTreeSetBuilder.
+   * Creates a new DistributedSortedSetBuilder.
    *
    * @param name the primitive name
    * @param <E> set element type
-   * @return builder for an distributed set
+   * @return builder for a distributed set
    */
-  default <E extends Comparable<E>> DistributedTreeSetBuilder<E> treeSetBuilder(String name) {
-    return primitiveBuilder(name, DistributedTreeSetType.instance());
+  default <E extends Comparable<E>> DistributedSortedSetBuilder<E> sortedSetBuilder(String name) {
+    return primitiveBuilder(name, DistributedSortedSetType.instance());
   }
 
   /**
-   * Creates a new DistributedTreeSetBuilder.
+   * Creates a new DistributedSortedSetBuilder.
    *
    * @param name the primitive name
    * @param protocol the primitive protocol
    * @param <E> set element type
-   * @return builder for an distributed set
+   * @return builder for a distributed set
    */
-  default <E extends Comparable<E>> DistributedTreeSetBuilder<E> treeSetBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, DistributedTreeSetType.instance(), protocol);
+  default <E extends Comparable<E>> DistributedSortedSetBuilder<E> sortedSetBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedSortedSetType.instance(), protocol);
+  }
+
+  /**
+   * Creates a new DistributedNavigableSetBuilder.
+   *
+   * @param name the primitive name
+   * @param <E> set element type
+   * @return builder for a distributed set
+   */
+  default <E extends Comparable<E>> DistributedNavigableSetBuilder<E> navigableSetBuilder(String name) {
+    return primitiveBuilder(name, DistributedNavigableSetType.instance());
+  }
+
+  /**
+   * Creates a new DistributedNavigableSetBuilder.
+   *
+   * @param name the primitive name
+   * @param protocol the primitive protocol
+   * @param <E> set element type
+   * @return builder for a distributed set
+   */
+  default <E extends Comparable<E>> DistributedNavigableSetBuilder<E> navigableSetBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedNavigableSetType.instance(), protocol);
   }
 
   /**
@@ -782,13 +808,22 @@ public interface PrimitivesService {
   <E> DistributedSet<E> getSet(String name);
 
   /**
-   * Creates a new DistributedTreeSet.
+   * Creates a new DistributedSortedSet.
    *
    * @param name the primitive name
    * @param <E> set element type
-   * @return a multiton instance of a distributed tree set
+   * @return a multiton instance of a distributed sorted set
    */
-  <E extends Comparable<E>> DistributedTreeSet<E> getTreeSet(String name);
+  <E extends Comparable<E>> DistributedSortedSet<E> getSortedSet(String name);
+
+  /**
+   * Creates a new DistributedNavigableSet.
+   *
+   * @param name the primitive name
+   * @param <E> set element type
+   * @return a multiton instance of a distributed navigable set
+   */
+  <E extends Comparable<E>> DistributedNavigableSet<E> getNavigableSet(String name);
 
   /**
    * Creates a new DistributedQueue.

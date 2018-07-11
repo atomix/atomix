@@ -61,10 +61,12 @@ import io.atomix.core.semaphore.AtomicSemaphore;
 import io.atomix.core.semaphore.AtomicSemaphoreType;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphoreType;
+import io.atomix.core.set.DistributedNavigableSet;
+import io.atomix.core.set.DistributedNavigableSetType;
 import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetType;
-import io.atomix.core.set.DistributedTreeSet;
-import io.atomix.core.set.DistributedTreeSetType;
+import io.atomix.core.set.DistributedSortedSet;
+import io.atomix.core.set.DistributedSortedSetType;
 import io.atomix.core.transaction.ManagedTransactionService;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionConfig;
@@ -200,8 +202,13 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public <E extends Comparable<E>> DistributedTreeSet<E> getTreeSet(String name) {
-    return getPrimitive(name, DistributedTreeSetType.instance(), configService.getConfig(name));
+  public <E extends Comparable<E>> DistributedSortedSet<E> getSortedSet(String name) {
+    return getPrimitive(name, DistributedSortedSetType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public <E extends Comparable<E>> DistributedNavigableSet<E> getNavigableSet(String name) {
+    return getPrimitive(name, DistributedNavigableSetType.instance(), configService.getConfig(name));
   }
 
   @Override
