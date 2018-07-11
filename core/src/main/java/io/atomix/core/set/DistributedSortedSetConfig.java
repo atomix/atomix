@@ -15,19 +15,15 @@
  */
 package io.atomix.core.set;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.raft.MultiRaftProtocol;
-import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.core.collection.DistributedCollectionConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
- * Raft distributed tree set test.
+ * Distributed sorted set configuration.
  */
-public class RaftDistributedTreeSetTest extends DistributedTreeSetTest {
+public class DistributedSortedSetConfig extends DistributedCollectionConfig<DistributedSortedSetConfig> {
   @Override
-  protected PrimitiveProtocol protocol() {
-    return MultiRaftProtocol.builder()
-        .withReadConsistency(ReadConsistency.LINEARIZABLE)
-        .withMaxRetries(5)
-        .build();
+  public PrimitiveType getType() {
+    return DistributedNavigableSetType.instance();
   }
 }

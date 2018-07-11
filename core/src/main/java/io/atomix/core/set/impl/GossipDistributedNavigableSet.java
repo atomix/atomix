@@ -21,7 +21,7 @@ import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.set.SetProtocol;
 import io.atomix.primitive.protocol.set.SetProtocolEventListener;
-import io.atomix.primitive.protocol.set.TreeSetProtocol;
+import io.atomix.primitive.protocol.set.NavigableSetProtocol;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -29,11 +29,11 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Gossip-based distributed set.
  */
-public class GossipDistributedTreeSet<E extends Comparable<E>> extends AsyncDistributedJavaTreeSet<E> {
+public class GossipDistributedNavigableSet<E extends Comparable<E>> extends AsyncDistributedNavigableJavaSet<E> {
   private final SetProtocol<E> set;
   private final Map<CollectionEventListener<E>, SetProtocolEventListener<E>> listenerMap = Maps.newConcurrentMap();
 
-  public GossipDistributedTreeSet(String name, PrimitiveProtocol protocol, TreeSetProtocol<E> set) {
+  public GossipDistributedNavigableSet(String name, PrimitiveProtocol protocol, NavigableSetProtocol<E> set) {
     super(name, protocol, set);
     this.set = set;
   }

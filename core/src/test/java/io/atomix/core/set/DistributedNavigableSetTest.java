@@ -36,10 +36,10 @@ import static org.junit.Assert.fail;
 /**
  * Distributed tree set test.
  */
-public abstract class DistributedTreeSetTest extends AbstractPrimitiveTest {
+public abstract class DistributedNavigableSetTest extends AbstractPrimitiveTest {
   @Test
   public void testSetOperations() throws Exception {
-    DistributedTreeSet<String> set = atomix().<String>treeSetBuilder("test-set")
+    DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("test-set")
         .withProtocol(protocol())
         .build();
 
@@ -62,7 +62,7 @@ public abstract class DistributedTreeSetTest extends AbstractPrimitiveTest {
 
   @Test
   public void testEventListeners() throws Exception {
-    DistributedTreeSet<String> set = atomix().<String>treeSetBuilder("test-set-listeners")
+    DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("test-set-listeners")
         .withProtocol(protocol())
         .build();
 
@@ -102,7 +102,7 @@ public abstract class DistributedTreeSetTest extends AbstractPrimitiveTest {
 
   @Test
   public void testTreeSetOperations() throws Throwable {
-    DistributedTreeSet<String> set = atomix().<String>treeSetBuilder("testTreeSetOperations")
+    DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("testTreeSetOperations")
         .withProtocol(protocol())
         .build();
 
@@ -229,7 +229,7 @@ public abstract class DistributedTreeSetTest extends AbstractPrimitiveTest {
 
   @Test
   public void testSubSets() throws Throwable {
-    DistributedTreeSet<String> set = atomix().<String>treeSetBuilder("testSubSets")
+    DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("testSubSets")
         .withProtocol(protocol())
         .build();
     for (char letter = 'a'; letter <= 'z'; letter++) {

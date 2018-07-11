@@ -13,17 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set;
+package io.atomix.primitive.protocol.set;
 
-import io.atomix.core.collection.DistributedCollectionConfig;
-import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
- * Distributed tree set configuration.
+ * Sorted set protocol provider.
  */
-public class DistributedTreeSetConfig extends DistributedCollectionConfig<DistributedTreeSetConfig> {
-  @Override
-  public PrimitiveType getType() {
-    return DistributedTreeSetType.instance();
-  }
+public interface SortedSetProtocolProvider extends GossipProtocol {
+
+  /**
+   * Returns a new set protocol.
+   *
+   * @param name the set name
+   * @param managementService the primitive management service
+   * @param <E> the set element type
+   * @return a new set protocol
+   */
+  <E> SortedSetProtocol<E> newSortedSetProtocol(String name, PrimitiveManagementService managementService);
+
 }

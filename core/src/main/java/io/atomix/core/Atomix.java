@@ -45,8 +45,9 @@ import io.atomix.core.profile.ProfileConfig;
 import io.atomix.core.queue.DistributedQueue;
 import io.atomix.core.semaphore.AtomicSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.set.DistributedNavigableSet;
 import io.atomix.core.set.DistributedSet;
-import io.atomix.core.set.DistributedTreeSet;
+import io.atomix.core.set.DistributedSortedSet;
 import io.atomix.core.transaction.TransactionBuilder;
 import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.tree.AtomicDocumentTree;
@@ -54,7 +55,6 @@ import io.atomix.core.utils.config.PolymorphicConfigMapper;
 import io.atomix.core.utils.config.PolymorphicTypeMapper;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.workqueue.WorkQueue;
-import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveType;
@@ -395,8 +395,13 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @Override
-  public <E extends Comparable<E>> DistributedTreeSet<E> getTreeSet(String name) {
-    return primitives.getTreeSet(name);
+  public <E extends Comparable<E>> DistributedSortedSet<E> getSortedSet(String name) {
+    return primitives.getSortedSet(name);
+  }
+
+  @Override
+  public <E extends Comparable<E>> DistributedNavigableSet<E> getNavigableSet(String name) {
+    return primitives.getNavigableSet(name);
   }
 
   @Override

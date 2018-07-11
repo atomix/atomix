@@ -15,14 +15,13 @@
  */
 package io.atomix.core.set.impl;
 
-import io.atomix.core.set.DistributedTreeSetType;
+import io.atomix.core.set.DistributedNavigableSetType;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.Iterator;
 import java.util.NavigableSet;
-import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -30,13 +29,13 @@ import java.util.function.Function;
 /**
  * Default distributed tree set service.
  */
-public class DefaultDistributedTreeSetService<E extends Comparable<E>> extends AbstractDistributedSetService<NavigableSet<E>, E> implements DistributedTreeSetService<E> {
+public class DefaultDistributedNavigableSetService<E extends Comparable<E>> extends AbstractDistributedSetService<NavigableSet<E>, E> implements DistributedTreeSetService<E> {
   private final Serializer serializer;
 
-  public DefaultDistributedTreeSetService() {
-    super(DistributedTreeSetType.instance(), new ConcurrentSkipListSet<>());
+  public DefaultDistributedNavigableSetService() {
+    super(DistributedNavigableSetType.instance(), new ConcurrentSkipListSet<>());
     this.serializer = Serializer.using(Namespace.builder()
-        .register(DistributedTreeSetType.instance().namespace())
+        .register(DistributedNavigableSetType.instance().namespace())
         .register(SessionId.class)
         .register(IteratorContext.class)
         .register(SubSetIteratorContext.class)

@@ -18,8 +18,8 @@ package io.atomix.core.set;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.iterator.impl.IteratorBatch;
-import io.atomix.core.set.impl.DefaultDistributedTreeSetBuilder;
-import io.atomix.core.set.impl.DefaultDistributedTreeSetService;
+import io.atomix.core.set.impl.DefaultDistributedNavigableSetService;
+import io.atomix.core.set.impl.DefaultDistributedSortedSetBuilder;
 import io.atomix.core.set.impl.DistributedSetResource;
 import io.atomix.core.set.impl.SetUpdate;
 import io.atomix.core.transaction.TransactionId;
@@ -38,11 +38,11 @@ import io.atomix.utils.serializer.Namespaces;
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Distributed tree set primitive type.
+ * Distributed sorted set primitive type.
  */
-public class DistributedTreeSetType<E extends Comparable<E>> implements PrimitiveType<DistributedTreeSetBuilder<E>, DistributedTreeSetConfig, DistributedTreeSet<E>> {
-  private static final String NAME = "tree-set";
-  private static final DistributedTreeSetType INSTANCE = new DistributedTreeSetType();
+public class DistributedSortedSetType<E extends Comparable<E>> implements PrimitiveType<DistributedSortedSetBuilder<E>, DistributedSortedSetConfig, DistributedSortedSet<E>> {
+  private static final String NAME = "sorted-set";
+  private static final DistributedSortedSetType INSTANCE = new DistributedSortedSetType();
 
   /**
    * Returns a new distributed set type.
@@ -51,7 +51,7 @@ public class DistributedTreeSetType<E extends Comparable<E>> implements Primitiv
    * @return a new distributed set type
    */
   @SuppressWarnings("unchecked")
-  public static <E extends Comparable<E>> DistributedTreeSetType<E> instance() {
+  public static <E extends Comparable<E>> DistributedSortedSetType<E> instance() {
     return INSTANCE;
   }
 
@@ -83,23 +83,23 @@ public class DistributedTreeSetType<E extends Comparable<E>> implements Primitiv
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultDistributedTreeSetService<>();
+    return new DefaultDistributedNavigableSetService<>();
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(DistributedTreeSet<E> primitive) {
+  public PrimitiveResource newResource(DistributedSortedSet<E> primitive) {
     return new DistributedSetResource((AsyncDistributedSet<String>) primitive.async());
   }
 
   @Override
-  public DistributedTreeSetConfig newConfig() {
-    return new DistributedTreeSetConfig();
+  public DistributedSortedSetConfig newConfig() {
+    return new DistributedSortedSetConfig();
   }
 
   @Override
-  public DistributedTreeSetBuilder<E> newBuilder(String name, DistributedTreeSetConfig config, PrimitiveManagementService managementService) {
-    return new DefaultDistributedTreeSetBuilder<>(name, config, managementService);
+  public DistributedSortedSetBuilder<E> newBuilder(String name, DistributedSortedSetConfig config, PrimitiveManagementService managementService) {
+    return new DefaultDistributedSortedSetBuilder<>(name, config, managementService);
   }
 
   @Override

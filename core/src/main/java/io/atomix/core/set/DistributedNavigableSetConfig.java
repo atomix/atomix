@@ -13,25 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.set.impl;
+package io.atomix.core.set;
 
-import io.atomix.core.set.AsyncDistributedTreeSet;
-import io.atomix.core.set.DistributedTreeSet;
-
-import java.time.Duration;
+import io.atomix.core.collection.DistributedCollectionConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
- * Unmodifiable tree set.
+ * Distributed navigable set configuration.
  */
-public class UnmodifiableAsyncDistributedTreeSet<E extends Comparable<E>>
-    extends UnmodifiableAsyncDistributedNavigableSet<E>
-    implements AsyncDistributedTreeSet<E> {
-  public UnmodifiableAsyncDistributedTreeSet(AsyncDistributedTreeSet<E> set) {
-    super(set);
-  }
-
+public class DistributedNavigableSetConfig extends DistributedCollectionConfig<DistributedNavigableSetConfig> {
   @Override
-  public DistributedTreeSet<E> sync(Duration timeout) {
-    return new BlockingDistributedTreeSet<>(this, timeout.toMillis());
+  public PrimitiveType getType() {
+    return DistributedNavigableSetType.instance();
   }
 }

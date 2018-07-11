@@ -16,16 +16,17 @@
 package io.atomix.core.set;
 
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.backup.MultiPrimaryProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
+import io.atomix.protocols.raft.ReadConsistency;
 
 /**
- * Primary-backup distributed tree set test.
+ * Raft distributed tree set test.
  */
-public class PrimaryBackupDistributedTreeSetTest extends DistributedTreeSetTest {
+public class RaftDistributedNavigableSetTest extends DistributedNavigableSetTest {
   @Override
   protected PrimitiveProtocol protocol() {
-    return MultiPrimaryProtocol.builder()
-        .withBackups(2)
+    return MultiRaftProtocol.builder()
+        .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .withMaxRetries(5)
         .build();
   }
