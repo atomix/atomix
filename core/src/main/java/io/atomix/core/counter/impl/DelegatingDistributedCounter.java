@@ -37,6 +37,31 @@ public class DelegatingDistributedCounter extends DelegatingAsyncPrimitive<Async
   }
 
   @Override
+  public CompletableFuture<Long> decrementAndGet() {
+    return delegate().decrementAndGet();
+  }
+
+  @Override
+  public CompletableFuture<Long> getAndIncrement() {
+    return delegate().getAndIncrement();
+  }
+
+  @Override
+  public CompletableFuture<Long> getAndDecrement() {
+    return delegate().getAndDecrement();
+  }
+
+  @Override
+  public CompletableFuture<Long> getAndAdd(long delta) {
+    return delegate().getAndAdd(delta);
+  }
+
+  @Override
+  public CompletableFuture<Long> addAndGet(long delta) {
+    return delegate().addAndGet(delta);
+  }
+
+  @Override
   public CompletableFuture<Long> get() {
     return delegate().get();
   }

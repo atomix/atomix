@@ -26,11 +26,48 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncDistributedCounter extends AsyncPrimitive {
 
   /**
-   * Increments the distributed counter.
+   * Atomically increment by one and return the updated value.
    *
-   * @return the counter value
+   * @return updated value
    */
   CompletableFuture<Long> incrementAndGet();
+
+  /**
+   * Atomically decrement by one and return the updated value.
+   *
+   * @return updated value
+   */
+  CompletableFuture<Long> decrementAndGet();
+
+  /**
+   * Atomically increment by one and return the previous value.
+   *
+   * @return previous value
+   */
+  CompletableFuture<Long> getAndIncrement();
+
+  /**
+   * Atomically decrement by one and return the previous value.
+   *
+   * @return previous value
+   */
+  CompletableFuture<Long> getAndDecrement();
+
+  /**
+   * Atomically adds the given value to the current value.
+   *
+   * @param delta the value to add
+   * @return previous value
+   */
+  CompletableFuture<Long> getAndAdd(long delta);
+
+  /**
+   * Atomically adds the given value to the current value.
+   *
+   * @param delta the value to add
+   * @return updated value
+   */
+  CompletableFuture<Long> addAndGet(long delta);
 
   /**
    * Returns the current value of the counter without modifying it.

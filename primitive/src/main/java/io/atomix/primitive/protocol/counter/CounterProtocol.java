@@ -21,11 +21,48 @@ package io.atomix.primitive.protocol.counter;
 public interface CounterProtocol {
 
   /**
-   * Increments the counter.
+   * Atomically increment by one and return the updated value.
    *
-   * @return the counter value
+   * @return updated value
    */
-  long increment();
+  long incrementAndGet();
+
+  /**
+   * Atomically decrement by one and return the updated value.
+   *
+   * @return updated value
+   */
+  long decrementAndGet();
+
+  /**
+   * Atomically increment by one and return the previous value.
+   *
+   * @return previous value
+   */
+  long getAndIncrement();
+
+  /**
+   * Atomically decrement by one and return the previous value.
+   *
+   * @return previous value
+   */
+  long getAndDecrement();
+
+  /**
+   * Atomically adds the given value to the current value.
+   *
+   * @param delta the value to add
+   * @return previous value
+   */
+  long getAndAdd(long delta);
+
+  /**
+   * Atomically adds the given value to the current value.
+   *
+   * @param delta the value to add
+   * @return updated value
+   */
+  long addAndGet(long delta);
 
   /**
    * Returns the counter value.
