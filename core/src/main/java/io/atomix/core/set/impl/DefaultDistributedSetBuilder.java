@@ -49,7 +49,7 @@ public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
       if (protocol instanceof SetProtocolProvider) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
             CompletableFuture.completedFuture(((SetProtocolProvider) protocol).<E>newSetProtocol(name, managementService))
-                .thenApply(set -> new AsyncDistributedJavaSet<>(name, protocol, set)))
+                .thenApply(set -> new GossipDistributedSet<>(name, protocol, set)))
             .thenApply(AsyncDistributedSet::sync);
       } else {
         return Futures.exceptionalFuture(new UnsupportedOperationException("Sets are not supported by the provided gossip protocol"));

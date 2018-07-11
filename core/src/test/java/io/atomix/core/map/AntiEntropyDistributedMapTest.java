@@ -18,6 +18,7 @@ package io.atomix.core.map;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.protocols.gossip.AntiEntropyProtocol;
+import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.junit.Test;
 
@@ -29,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertEquals;
@@ -41,6 +43,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
 
+  private final AtomicLong timestamp = new AtomicLong();
+
   private static final String KEY1 = "one";
   private static final String KEY2 = "two";
   private static final String VALUE1 = "oneValue";
@@ -49,7 +53,7 @@ public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
   @Override
   protected PrimitiveProtocol protocol() {
     return AntiEntropyProtocol.builder()
-        .<Map.Entry<String, String>>withTimestampProvider(entry -> new WallClockTimestamp())
+        .withTimestampProvider(e -> new LogicalTimestamp(timestamp.incrementAndGet()))
         .build();
   }
 
@@ -135,7 +139,7 @@ public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testIsEmpty() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapSize", protocol()).build();
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapIsEmpty", protocol()).build();
 
     assertTrue(map.isEmpty());
     map.put(KEY1, VALUE1);
@@ -146,7 +150,7 @@ public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testContainsKey() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapSize", protocol()).build();
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapContainsKey", protocol()).build();
 
     assertFalse(map.containsKey(KEY1));
     map.put(KEY1, VALUE1);
@@ -158,7 +162,7 @@ public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testContainsValue() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapSize", protocol()).build();
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapContainsValue", protocol()).build();
 
     assertFalse(map.containsValue(VALUE1));
     map.put(KEY1, VALUE1);
@@ -173,66 +177,80 @@ public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testGet() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapSize", protocol()).build();
-
-    // Local put
-    assertNull(map.get(KEY1));
-    map.put(KEY1, VALUE1);
-    assertEquals(VALUE1, map.get(KEY1));
+    DistributedMap<String, String> map1 = atomix().<String, String>mapBuilder("testAntiEntropyMapGet", protocol()).build();
+    DistributedMap<String, String> map2 = atomix().<String, String>mapBuilder("testAntiEntropyMapGet", protocol()).build();
 
     // Create a latch so we know when the put operation has finished
     TestMapEventListener listener = new TestMapEventListener();
-    map.addListener(listener);
+    map1.addListener(listener);
 
-    assertNull(map.get(KEY2));
+    // Local put
+    assertNull(map1.get(KEY1));
+    map1.put(KEY1, VALUE1);
+    assertEquals(VALUE1, map1.get(KEY1));
     assertNotNull(listener.event());
-    assertEquals(VALUE2, map.get(KEY2));
 
-    // Local remove
-    map.remove(KEY2);
-    assertNull(map.get(KEY2));
+    map2.put(KEY2, VALUE2);
+
+    assertNull(map1.get(KEY2));
+    assertNotNull(listener.event());
+    assertEquals(VALUE2, map1.get(KEY2));
+
+    map1.remove(KEY2);
+    assertNull(map1.get(KEY2));
+    assertNotNull(listener.event());
+
+    map2.remove(KEY1);
+    assertNull(map2.get(KEY1));
 
     assertNotNull(listener.event());
-    assertNull(map.get(KEY1));
+    assertNull(map1.get(KEY1));
   }
 
   @Test
   public void testPut() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapSize", protocol()).build();
+    DistributedMap<String, String> map1 = atomix().<String, String>mapBuilder("testAntiEntropyMapPut", protocol()).build();
+    DistributedMap<String, String> map2 = atomix().<String, String>mapBuilder("testAntiEntropyMapPut", protocol()).build();
 
     TestMapEventListener listener = new TestMapEventListener();
-    map.addListener(listener);
+    MapEvent event;
+    map2.addListener(listener);
 
     // Put first value
-    assertNull(map.get(KEY1));
-    map.put(KEY1, VALUE1);
-    assertEquals(VALUE1, map.get(KEY1));
+    assertNull(map1.get(KEY1));
+    map1.put(KEY1, VALUE1);
+    assertEquals(VALUE1, map1.get(KEY1));
 
-    MapEvent<String, String> event = listener.event();
-    assertNotNull(event);
+    event = listener.event();
     assertEquals(MapEvent.Type.INSERT, event.type());
     assertEquals(KEY1, event.key());
     assertEquals(VALUE1, event.newValue());
 
     // Update same key to a new value
-    map.put(KEY1, VALUE2);
-    assertEquals(VALUE2, map.get(KEY1));
+    map1.put(KEY1, VALUE2);
+    assertEquals(VALUE2, map1.get(KEY1));
 
-    map.put(KEY1, VALUE1);
+    assertFalse(listener.eventReceived());
+
+    // Reverse the logical clock
+    timestamp.set(0);
+
+    map1.put(KEY1, VALUE1);
     // Value should not have changed.
-    assertEquals(VALUE2, map.get(KEY1));
+    assertEquals(VALUE2, map1.get(KEY1));
   }
 
   @Test
   public void testRemove() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapSize", protocol()).build();
+    DistributedMap<String, String> map1 = atomix().<String, String>mapBuilder("testAntiEntropyMapRemove", protocol()).build();
+    DistributedMap<String, String> map2 = atomix().<String, String>mapBuilder("testAntiEntropyMapRemove", protocol()).build();
 
     TestMapEventListener listener = new TestMapEventListener();
-    map.addListener(listener);
+    map2.addListener(listener);
 
     // Put in an initial value
-    map.put(KEY1, VALUE1);
-    assertEquals(VALUE1, map.get(KEY1));
+    map1.put(KEY1, VALUE1);
+    assertEquals(VALUE1, map1.get(KEY1));
 
     MapEvent<String, String> event = listener.event();
     assertNotNull(event);
@@ -240,8 +258,8 @@ public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
     assertEquals(KEY1, event.key());
     assertEquals(VALUE1, event.newValue());
 
-    map.remove(KEY1);
-    assertNull(map.get(KEY1));
+    map1.remove(KEY1);
+    assertNull(map1.get(KEY1));
 
     event = listener.event();
     assertNotNull(event);
@@ -249,26 +267,32 @@ public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
     assertEquals(KEY1, event.key());
     assertEquals(VALUE1, event.oldValue());
 
-    map.remove(KEY1);
-    assertNull(map.get(KEY1));
+    map1.remove(KEY1);
+    assertNull(map1.get(KEY1));
 
     assertFalse(listener.eventReceived());
 
-    map.put(KEY2, VALUE2);
+    map1.put(KEY2, VALUE2);
 
-    map.remove(KEY2);
+    // Set the logical clock back to zero
+    timestamp.set(0);
+
+    map1.remove(KEY2);
+    assertEquals(VALUE2, map1.get(KEY2));
+    assertFalse(listener.eventReceived());
   }
 
   @Test
   public void testCompute() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapSize", protocol()).build();
+    DistributedMap<String, String> map1 = atomix().<String, String>mapBuilder("testAntiEntropyMapCompute", protocol()).build();
+    DistributedMap<String, String> map2 = atomix().<String, String>mapBuilder("testAntiEntropyMapCompute", protocol()).build();
 
     TestMapEventListener listener = new TestMapEventListener();
-    map.addListener(listener);
+    map2.addListener(listener);
 
     // Put in an initial value
-    map.compute(KEY1, (k, v) -> VALUE1);
-    assertEquals(VALUE1, map.get(KEY1));
+    map1.compute(KEY1, (k, v) -> VALUE1);
+    assertEquals(VALUE1, map1.get(KEY1));
 
     MapEvent<String, String> event = listener.event();
     assertNotNull(event);
@@ -276,8 +300,8 @@ public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
     assertEquals(KEY1, event.key());
     assertEquals(VALUE1, event.newValue());
 
-    map.compute(KEY1, (k, v) -> null);
-    assertNull(map.get(KEY1));
+    map1.compute(KEY1, (k, v) -> null);
+    assertNull(map1.get(KEY1));
 
     event = listener.event();
     assertNotNull(event);
@@ -285,12 +309,12 @@ public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
     assertEquals(KEY1, event.key());
     assertEquals(VALUE1, event.oldValue());
 
-    map.compute(KEY1, (k, v) -> null);
-    assertNull(map.get(KEY1));
+    map1.compute(KEY1, (k, v) -> null);
+    assertNull(map1.get(KEY1));
 
     assertFalse(listener.eventReceived());
 
-    map.compute(KEY2, (k, v) -> VALUE2);
+    map1.compute(KEY2, (k, v) -> VALUE2);
 
     event = listener.event();
     assertNotNull(event);
@@ -298,80 +322,83 @@ public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
     assertEquals(KEY2, event.key());
     assertEquals(VALUE2, event.newValue());
 
-    map.compute(KEY2, (k, v) -> null);
+    // Set the logical clock back to zero
+    timestamp.set(0);
 
-    event = listener.event();
-    assertNotNull(event);
-    assertEquals(MapEvent.Type.REMOVE, event.type());
-    assertEquals(KEY2, event.key());
-    assertEquals(VALUE2, event.oldValue());
+    map1.compute(KEY2, (k, v) -> null);
+
+    assertEquals(VALUE2, map1.get(KEY2));
+    assertFalse(listener.eventReceived());
   }
 
   @Test
   public void testPutAll() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapSize", protocol()).build();
+    DistributedMap<String, String> map1 = atomix().<String, String>mapBuilder("testAntiEntropyMapPutAll", protocol()).build();
+    DistributedMap<String, String> map2 = atomix().<String, String>mapBuilder("testAntiEntropyMapPutAll", protocol()).build();
 
-    map.putAll(new HashMap<>());
+    map1.putAll(new HashMap<>());
 
     TestMapEventListener listener = new TestMapEventListener();
-    map.addListener(listener);
+    map2.addListener(listener);
 
     Map<String, String> putAllValues = new HashMap<>();
     putAllValues.put(KEY1, VALUE1);
     putAllValues.put(KEY2, VALUE2);
 
+    // Put the values in the map
+    map1.putAll(putAllValues);
+
     MapEvent<String, String> event;
 
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.INSERT, event.type());
-    assertEquals(KEY1, event.key());
-    assertEquals(VALUE1, event.newValue());
 
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.INSERT, event.type());
-    assertEquals(KEY2, event.key());
-    assertEquals(VALUE2, event.newValue());
 
-    // Put the values in the map
-    map.putAll(putAllValues);
+    assertEquals(VALUE1, map2.get(KEY1));
+    assertEquals(VALUE2, map2.get(KEY2));
   }
 
   @Test
   public void testClear() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapSize", protocol()).build();
+    DistributedMap<String, String> map1 = atomix().<String, String>mapBuilder("testAntiEntropyMapClear", protocol()).build();
+    DistributedMap<String, String> map2 = atomix().<String, String>mapBuilder("testAntiEntropyMapClear", protocol()).build();
 
-    assertTrue(map.isEmpty());
-    map.clear();
-
-    // Put some items in the map
-    map.put(KEY1, VALUE1);
-    map.put(KEY2, VALUE2);
+    assertTrue(map1.isEmpty());
+    map1.clear();
 
     TestMapEventListener listener = new TestMapEventListener();
-    map.addListener(listener);
+    map2.addListener(listener);
 
-    map.clear();
+    // Put some items in the map
+    map1.put(KEY1, VALUE1);
+    map1.put(KEY2, VALUE2);
+
+    assertNotNull(listener.event());
+    assertNotNull(listener.event());
+
+    map1.clear();
 
     MapEvent<String, String> event;
 
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.REMOVE, event.type());
-    assertEquals(KEY1, event.key());
-    assertEquals(VALUE1, event.oldValue());
 
     event = listener.event();
     assertNotNull(event);
     assertEquals(MapEvent.Type.REMOVE, event.type());
-    assertEquals(KEY2, event.key());
-    assertEquals(VALUE2, event.oldValue());
+
+    assertTrue(map1.isEmpty());
+    assertTrue(map2.isEmpty());
   }
 
   @Test
   public void testKeySet() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapSize", protocol()).build();
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapKeySet", protocol()).build();
 
     assertTrue(map.keySet().isEmpty());
 
@@ -404,7 +431,7 @@ public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testValues() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapSize", protocol()).build();
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapValues", protocol()).build();
 
     assertTrue(map.values().isEmpty());
 
@@ -442,7 +469,7 @@ public class AntiEntropyDistributedMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testEntrySet() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapSize", protocol()).build();
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testAntiEntropyMapEntrySet", protocol()).build();
 
     assertTrue(map.entrySet().isEmpty());
 
