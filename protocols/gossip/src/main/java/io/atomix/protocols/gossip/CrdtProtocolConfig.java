@@ -26,11 +26,42 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * CRDT protocol configuration.
  */
 public class CrdtProtocolConfig extends PrimitiveProtocolConfig<CrdtProtocolConfig> {
+  private TimestampProvider timestampProvider = TimestampProviders.WALL_CLOCK;
   private Duration gossipInterval = Duration.ofMillis(50);
 
   @Override
   public PrimitiveProtocol.Type getType() {
     return AntiEntropyProtocol.TYPE;
+  }
+
+  /**
+   * Returns the configured timestamp provider.
+   *
+   * @return the configured timestamp provider
+   */
+  public TimestampProvider getTimestampProvider() {
+    return timestampProvider;
+  }
+
+  /**
+   * Sets the timestamp provider.
+   *
+   * @param timestampProvider the timestamp provider
+   * @return the CRDT protocol configuration
+   */
+  public CrdtProtocolConfig setTimestampProvider(TimestampProvider timestampProvider) {
+    this.timestampProvider = checkNotNull(timestampProvider);
+    return this;
+  }
+
+  /**
+   * Sets the timestamp provider.
+   *
+   * @param timestampProvider the timestamp provider
+   * @return the CRDT protocol configuration
+   */
+  public CrdtProtocolConfig setTimestampProvider(TimestampProviders timestampProvider) {
+    return setTimestampProvider((TimestampProvider) timestampProvider);
   }
 
   /**

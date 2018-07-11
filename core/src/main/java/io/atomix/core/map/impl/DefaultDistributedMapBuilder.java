@@ -47,7 +47,7 @@ public class DefaultDistributedMapBuilder<K, V> extends DistributedMapBuilder<K,
       if (protocol instanceof MapProtocolProvider) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
             CompletableFuture.completedFuture(((MapProtocolProvider) protocol).<K, V>newMapProtocol(name, managementService))
-                .thenApply(map -> new GossipDistributedMap<>(name, protocol, map)))
+                .thenApply(map -> new AsyncDistributedJavaMap<>(name, protocol, map)))
             .thenApply(AsyncDistributedMap::sync);
       } else {
         return Futures.exceptionalFuture(new UnsupportedOperationException("Maps are not supported by the provided gossip protocol"));

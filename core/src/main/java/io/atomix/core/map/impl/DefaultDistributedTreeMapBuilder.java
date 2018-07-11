@@ -15,13 +15,17 @@
  */
 package io.atomix.core.map.impl;
 
+import io.atomix.core.map.AsyncDistributedTreeMap;
 import io.atomix.core.map.DistributedTreeMap;
 import io.atomix.core.map.DistributedTreeMapBuilder;
 import io.atomix.core.map.DistributedTreeMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.map.TreeMapProtocolProvider;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -38,14 +42,25 @@ public class DefaultDistributedTreeMapBuilder<K extends Comparable<K>, V> extend
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedTreeMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
-    return newProxy(AtomicTreeMapService.class, new ServiceConfig())
-        .thenCompose(proxy -> new AtomicTreeMapProxy<K>((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
-        .thenApply(map -> {
-          Serializer serializer = protocol.serializer();
-          return new TranscodingAsyncAtomicTreeMap<K, V, byte[]>(
-              map,
-              value -> serializer.encode(value),
-              bytes -> serializer.decode(bytes));
-        }).thenApply(atomicTreeMap -> new DelegatingAsyncDistributedTreeMap<>(atomicTreeMap).sync());
+    if (protocol instanceof GossipProtocol) {
+      if (protocol instanceof TreeMapProtocolProvider) {
+        return managementService.getPrimitiveCache().getPrimitive(name, () ->
+            CompletableFuture.completedFuture(((TreeMapProtocolProvider) protocol).<K, V>newTreeMapProtocol(name, managementService))
+                .thenApply(set -> new AsyncDistributedJavaTreeMap<>(name, protocol, set)))
+            .thenApply(AsyncDistributedTreeMap::sync);
+      } else {
+        return Futures.exceptionalFuture(new UnsupportedOperationException("Sets are not supported by the provided gossip protocol"));
+      }
+    } else {
+      return newProxy(AtomicTreeMapService.class, new ServiceConfig())
+          .thenCompose(proxy -> new AtomicTreeMapProxy<K>((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
+          .thenApply(map -> {
+            Serializer serializer = protocol.serializer();
+            return new TranscodingAsyncAtomicTreeMap<K, V, byte[]>(
+                map,
+                value -> serializer.encode(value),
+                bytes -> serializer.decode(bytes));
+          }).thenApply(atomicTreeMap -> new DelegatingAsyncDistributedTreeMap<>(atomicTreeMap).sync());
+    }
   }
 }

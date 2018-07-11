@@ -28,12 +28,23 @@ public class CrdtProtocolBuilder extends PrimitiveProtocolBuilder<CrdtProtocolBu
   }
 
   /**
+   * Sets the timestamp provider.
+   *
+   * @param timestampProvider the timestamp provider
+   * @return the CRDT protocol builder
+   */
+  public CrdtProtocolBuilder withTimestampProvider(TimestampProvider timestampProvider) {
+    config.setTimestampProvider(timestampProvider);
+    return this;
+  }
+
+  /**
    * Sets the gossip interval.
    *
    * @param gossipInterval the gossip interval
-   * @return the anti-entropy protocol configuration
+   * @return the CRDT protocol builder
    */
-  public CrdtProtocolBuilder setGossipInterval(Duration gossipInterval) {
+  public CrdtProtocolBuilder withGossipInterval(Duration gossipInterval) {
     config.setGossipInterval(gossipInterval);
     return this;
   }

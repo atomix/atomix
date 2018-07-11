@@ -134,7 +134,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
         .register(MapValue.class)
         .register(MapValue.Digest.class)
         .register(UpdateRequest.class)
-        .build(name() + "-anti-entropy-map"));
+        .build(name + "-anti-entropy-map"));
     this.items = Maps.newConcurrentMap();
     senderPending = Maps.newConcurrentMap();
     destroyedMessage = mapName + ERROR_DESTROYED;
@@ -233,11 +233,6 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
 
     // Initiate first round of Gossip
     this.bootstrap();
-  }
-
-  @Override
-  public String name() {
-    return mapName;
   }
 
   private String encodeKey(Object key) {

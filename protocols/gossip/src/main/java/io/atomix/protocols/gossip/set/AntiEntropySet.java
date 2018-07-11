@@ -41,11 +41,6 @@ public class AntiEntropySet<E> implements SetProtocol<E> {
   }
 
   @Override
-  public String name() {
-    return map.name();
-  }
-
-  @Override
   public int size() {
     return map.size();
   }

@@ -15,12 +15,17 @@
  */
 package io.atomix.core.set.impl;
 
+import io.atomix.core.set.AsyncDistributedTreeSet;
 import io.atomix.core.set.DistributedTreeSet;
 import io.atomix.core.set.DistributedTreeSetBuilder;
 import io.atomix.core.set.DistributedTreeSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.set.TreeSetProtocolProvider;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.concurrent.Futures;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -37,17 +42,29 @@ public class DefaultDistributedTreeSetBuilder<E extends Comparable<E>> extends D
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedTreeSet<E>> buildAsync() {
-    return newProxy(DistributedTreeSetService.class, new ServiceConfig())
-        .thenCompose(proxy -> new DistributedTreeSetProxy<E>((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
-        .thenApply(set -> {
-          if (config.getCacheConfig().isEnabled()) {
-            set = new CachingAsyncDistributedTreeSet<>(set, config.getCacheConfig());
-          }
+    PrimitiveProtocol protocol = protocol();
+    if (protocol instanceof GossipProtocol) {
+      if (protocol instanceof TreeSetProtocolProvider) {
+        return managementService.getPrimitiveCache().getPrimitive(name, () ->
+            CompletableFuture.completedFuture(((TreeSetProtocolProvider) protocol).<E>newTreeSetProtocol(name, managementService))
+                .thenApply(set -> new AsyncDistributedJavaTreeSet<>(name, protocol, set)))
+            .thenApply(AsyncDistributedTreeSet::sync);
+      } else {
+        return Futures.exceptionalFuture(new UnsupportedOperationException("Sets are not supported by the provided gossip protocol"));
+      }
+    } else {
+      return newProxy(DistributedTreeSetService.class, new ServiceConfig())
+          .thenCompose(proxy -> new DistributedTreeSetProxy<E>((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
+          .thenApply(set -> {
+            if (config.getCacheConfig().isEnabled()) {
+              set = new CachingAsyncDistributedTreeSet<>(set, config.getCacheConfig());
+            }
 
-          if (config.isReadOnly()) {
-            set = new UnmodifiableAsyncDistributedTreeSet<>(set);
-          }
-          return set.sync();
-        });
+            if (config.isReadOnly()) {
+              set = new UnmodifiableAsyncDistributedTreeSet<>(set);
+            }
+            return set.sync();
+          });
+    }
   }
 }

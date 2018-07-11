@@ -15,20 +15,16 @@
  */
 package io.atomix.core.map.impl;
 
-import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.impl.AsyncDistributedJavaCollection;
 import io.atomix.core.map.AsyncDistributedMap;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapType;
-import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.set.impl.AsyncDistributedJavaSet;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.map.MapProtocol;
-import io.atomix.primitive.protocol.map.MapProtocolEventListener;
 import io.atomix.utils.concurrent.Futures;
 
 import java.time.Duration;
@@ -40,16 +36,14 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Gossip-based distributed map.
+ * Asynchronous distributed Java map.
  */
-public class GossipDistributedMap<K, V> implements AsyncDistributedMap<K, V> {
+public class AsyncDistributedJavaMap<K, V> implements AsyncDistributedMap<K, V> {
   private final String name;
   private final PrimitiveProtocol protocol;
-  private final MapProtocol<K, V> map;
+  private final Map<K, V> map;
 
-  private final Map<MapEventListener<K, V>, MapProtocolEventListener<K, V>> listenerMap = Maps.newConcurrentMap();
-
-  public GossipDistributedMap(String name, PrimitiveProtocol protocol, MapProtocol<K, V> map) {
+  public AsyncDistributedJavaMap(String name, PrimitiveProtocol protocol, Map<K, V> map) {
     this.name = name;
     this.protocol = protocol;
     this.map = map;
@@ -117,17 +111,17 @@ public class GossipDistributedMap<K, V> implements AsyncDistributedMap<K, V> {
 
   @Override
   public AsyncDistributedSet<K> keySet() {
-    return new AsyncDistributedJavaSet<>(map.keySet());
+    return new AsyncDistributedJavaSet<>(name(), protocol(), map.keySet());
   }
 
   @Override
   public AsyncDistributedCollection<V> values() {
-    return new AsyncDistributedJavaCollection<>(map.values());
+    return new AsyncDistributedJavaCollection<>(name(), protocol(), map.values());
   }
 
   @Override
   public AsyncDistributedSet<Map.Entry<K, V>> entrySet() {
-    return new AsyncDistributedJavaSet<>(map.entrySet());
+    return new AsyncDistributedJavaSet<>(name(), protocol(), map.entrySet());
   }
 
   @Override
@@ -157,68 +151,40 @@ public class GossipDistributedMap<K, V> implements AsyncDistributedMap<K, V> {
 
   @Override
   public CompletableFuture<V> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
-    return CompletableFuture.completedFuture(map.compute(key, (k, v) -> {
-      if (v == null) {
-        return mappingFunction.apply(key);
-      }
-      return v;
-    }));
+    return complete(() -> map.computeIfAbsent(key, mappingFunction));
   }
 
   @Override
   public CompletableFuture<V> computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-    return CompletableFuture.completedFuture(map.compute(key, (k, v) -> {
-      if (v != null) {
-        return remappingFunction.apply(k, v);
-      }
-      return v;
-    }));
+    return complete(() -> map.computeIfPresent(key, remappingFunction));
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<V> compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-    return CompletableFuture.completedFuture((V) map.compute(key, (BiFunction) remappingFunction));
+    return complete(() -> map.compute(key, remappingFunction));
   }
 
   @Override
   public CompletableFuture<Void> addListener(MapEventListener<K, V> listener, Executor executor) {
-    MapProtocolEventListener<K, V> eventListener = event -> executor.execute(() -> {
-      switch (event.type()) {
-        case INSERT:
-          listener.event(new MapEvent<>(MapEvent.Type.INSERT, event.key(), event.value(), null));
-          break;
-        case UPDATE:
-          listener.event(new MapEvent<>(MapEvent.Type.UPDATE, event.key(), event.value(), null));
-          break;
-        case REMOVE:
-          listener.event(new MapEvent<>(MapEvent.Type.REMOVE, event.key(), null, event.value()));
-          break;
-        default:
-          throw new AssertionError();
-      }
-    });
-    if (listenerMap.putIfAbsent(listener, eventListener) == null) {
-      map.addListener(eventListener);
-    }
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public CompletableFuture<Void> removeListener(MapEventListener<K, V> listener) {
-    MapProtocolEventListener<K, V> eventListener = listenerMap.remove(listener);
-    if (eventListener != null) {
-      map.removeListener(eventListener);
-    }
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return complete(() -> map.close());
+    return CompletableFuture.completedFuture(null);
   }
 
-  private CompletableFuture<Void> complete(Runnable runnable) {
+  @Override
+  public DistributedMap<K, V> sync(Duration operationTimeout) {
+    return new BlockingDistributedMap<>(this, operationTimeout.toMillis());
+  }
+
+  protected CompletableFuture<Void> complete(Runnable runnable) {
     try {
       runnable.run();
       return CompletableFuture.completedFuture(null);
@@ -227,16 +193,11 @@ public class GossipDistributedMap<K, V> implements AsyncDistributedMap<K, V> {
     }
   }
 
-  private <T> CompletableFuture<T> complete(Supplier<T> supplier) {
+  protected <T> CompletableFuture<T> complete(Supplier<T> supplier) {
     try {
       return CompletableFuture.completedFuture(supplier.get());
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
-  }
-
-  @Override
-  public DistributedMap<K, V> sync(Duration operationTimeout) {
-    return new BlockingDistributedMap<>(this, operationTimeout.toMillis());
   }
 }

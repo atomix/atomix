@@ -15,29 +15,10 @@
  */
 package io.atomix.primitive.protocol.map;
 
-import java.util.Map;
+import java.util.NavigableMap;
 
 /**
- * Gossip-based map service.
+ * Tree map protocol.
  */
-public interface MapProtocol<K, V> extends Map<K, V> {
-
-  /**
-   * Adds the specified listener to the map which will be notified whenever the mappings in the map are changed.
-   *
-   * @param listener listener to register for events
-   */
-  void addListener(MapProtocolEventListener<K, V> listener);
-
-  /**
-   * Removes the specified listener from the map such that it will no longer receive change notifications.
-   *
-   * @param listener listener to deregister for events
-   */
-  void removeListener(MapProtocolEventListener<K, V> listener);
-
-  /**
-   * Closes the map.
-   */
-  void close();
+public interface TreeMapProtocol<K, V> extends MapProtocol<K, V>, NavigableMap<K, V> {
 }
