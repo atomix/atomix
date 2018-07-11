@@ -19,17 +19,17 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
- * Tree map protocol provider.
+ * Navigable map protocol provider.
  */
-public interface TreeMapProtocolProvider extends GossipProtocol {
+public interface NavigableMapProtocolProvider extends GossipProtocol {
 
   /**
-   * Returns a new tree map protocol.
+   * Returns a new navigable map protocol.
    *
    * @param name the map name
    * @param managementService the primitive management service
    * @return a new map protocol
    */
-  <K, V> TreeMapProtocol<K, V> newTreeMapProtocol(String name, PrimitiveManagementService managementService);
+  <K, V> NavigableMapProtocol<K, V> newNavigableMapProtocol(String name, PrimitiveManagementService managementService);
 
 }

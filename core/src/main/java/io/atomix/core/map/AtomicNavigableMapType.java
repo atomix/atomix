@@ -15,8 +15,8 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.map.impl.DefaultAtomicTreeMapBuilder;
-import io.atomix.core.map.impl.DefaultAtomicTreeMapService;
+import io.atomix.core.map.impl.DefaultAtomicNavigableMapBuilder;
+import io.atomix.core.map.impl.DefaultAtomicNavigableMapService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -28,10 +28,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Consistent tree map primitive type.
  */
-public class AtomicTreeMapType<K extends Comparable<K>, V>
-    implements PrimitiveType<AtomicTreeMapBuilder<K, V>, AtomicTreeMapConfig, AtomicTreeMap<K, V>> {
+public class AtomicNavigableMapType<K extends Comparable<K>, V>
+    implements PrimitiveType<AtomicNavigableMapBuilder<K, V>, AtomicNavigableMapConfig, AtomicNavigableMap<K, V>> {
   private static final String NAME = "atomic-tree-map";
-  private static final AtomicTreeMapType INSTANCE = new AtomicTreeMapType();
+  private static final AtomicNavigableMapType INSTANCE = new AtomicNavigableMapType();
 
   /**
    * Returns a new consistent tree map type.
@@ -41,7 +41,7 @@ public class AtomicTreeMapType<K extends Comparable<K>, V>
    * @return a new consistent tree map type
    */
   @SuppressWarnings("unchecked")
-  public static <K extends Comparable<K>, V> AtomicTreeMapType<K, V> instance() {
+  public static <K extends Comparable<K>, V> AtomicNavigableMapType<K, V> instance() {
     return INSTANCE;
   }
 
@@ -57,17 +57,17 @@ public class AtomicTreeMapType<K extends Comparable<K>, V>
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultAtomicTreeMapService();
+    return new DefaultAtomicNavigableMapService();
   }
 
   @Override
-  public AtomicTreeMapConfig newConfig() {
-    return new AtomicTreeMapConfig();
+  public AtomicNavigableMapConfig newConfig() {
+    return new AtomicNavigableMapConfig();
   }
 
   @Override
-  public AtomicTreeMapBuilder<K, V> newBuilder(String name, AtomicTreeMapConfig config, PrimitiveManagementService managementService) {
-    return new DefaultAtomicTreeMapBuilder<>(name, config, managementService);
+  public AtomicNavigableMapBuilder<K, V> newBuilder(String name, AtomicNavigableMapConfig config, PrimitiveManagementService managementService) {
+    return new DefaultAtomicNavigableMapBuilder<>(name, config, managementService);
   }
 
   @Override

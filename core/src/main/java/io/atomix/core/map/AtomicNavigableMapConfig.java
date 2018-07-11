@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.map.impl;
+package io.atomix.core.map;
 
-import io.atomix.core.map.DistributedTreeMapType;
+import io.atomix.primitive.config.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
- * Default distributed tree map service.
+ * Consistent tree-map configuration.
  */
-public class DefaultDistributedTreeMapService<K extends Comparable<K>> extends AbstractAtomicTreeMapService<K> {
-  public DefaultDistributedTreeMapService() {
-    super(DistributedTreeMapType.instance());
+public class AtomicNavigableMapConfig extends PrimitiveConfig<AtomicNavigableMapConfig> {
+  @Override
+  public PrimitiveType getType() {
+    return AtomicNavigableMapType.instance();
   }
 }

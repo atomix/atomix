@@ -26,10 +26,8 @@ import io.atomix.core.collection.impl.BlockingDistributedCollection;
 import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.iterator.impl.ProxyIterator;
 import io.atomix.core.map.AsyncAtomicNavigableMap;
-import io.atomix.core.map.AsyncAtomicTreeMap;
 import io.atomix.core.map.AtomicMapEventListener;
 import io.atomix.core.map.AtomicNavigableMap;
-import io.atomix.core.map.AtomicTreeMap;
 import io.atomix.core.set.AsyncDistributedNavigableSet;
 import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.set.AsyncDistributedSortedSet;
@@ -63,10 +61,10 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Implementation of {@link AsyncAtomicTreeMap}.
+ * Implementation of {@link AsyncAtomicNavigableMap}.
  */
-public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicMapProxy<AsyncAtomicTreeMap<K, byte[]>, AtomicTreeMapService<K>, K> implements AsyncAtomicTreeMap<K, byte[]> {
-  public AtomicTreeMapProxy(ProxyClient<AtomicTreeMapService<K>> proxy, PrimitiveRegistry registry) {
+public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAtomicMapProxy<AsyncAtomicNavigableMap<K, byte[]>, AtomicTreeMapService<K>, K> implements AsyncAtomicNavigableMap<K, byte[]> {
+  public AtomicNavigableMapProxy(ProxyClient<AtomicTreeMapService<K>> proxy, PrimitiveRegistry registry) {
     super(proxy, registry);
   }
 
@@ -199,8 +197,8 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
   }
 
   @Override
-  public AtomicTreeMap<K, byte[]> sync(Duration operationTimeout) {
-    return new BlockingAtomicTreeMap<>(this, operationTimeout.toMillis());
+  public AtomicNavigableMap<K, byte[]> sync(Duration operationTimeout) {
+    return new BlockingAtomicNavigableMap<>(this, operationTimeout.toMillis());
   }
 
   protected abstract class SubSet implements AsyncPrimitive {
@@ -218,17 +216,17 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public String name() {
-      return AtomicTreeMapProxy.this.name();
+      return AtomicNavigableMapProxy.this.name();
     }
 
     @Override
     public PrimitiveType type() {
-      return AtomicTreeMapProxy.this.type();
+      return AtomicNavigableMapProxy.this.type();
     }
 
     @Override
     public PrimitiveProtocol protocol() {
-      return AtomicTreeMapProxy.this.protocol();
+      return AtomicNavigableMapProxy.this.protocol();
     }
 
     protected boolean isInBounds(K key) {
@@ -257,7 +255,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Void> close() {
-      return AtomicTreeMapProxy.this.close();
+      return AtomicNavigableMapProxy.this.close();
     }
   }
 
@@ -419,7 +417,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
       if (!isInBounds(element)) {
         return CompletableFuture.completedFuture(false);
       }
-      return AtomicTreeMapProxy.this.remove(element).thenApply(Objects::nonNull);
+      return AtomicNavigableMapProxy.this.remove(element).thenApply(Objects::nonNull);
     }
 
     @Override
@@ -480,14 +478,14 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
         }
       };
       listenerMap.put(listener, mapListener);
-      return AtomicTreeMapProxy.this.addListener(mapListener);
+      return AtomicNavigableMapProxy.this.addListener(mapListener);
     }
 
     @Override
     public CompletableFuture<Void> removeListener(CollectionEventListener<K> listener) {
       AtomicMapEventListener<K, byte[]> mapListener = listenerMap.remove(listener);
       if (mapListener != null) {
-        return AtomicTreeMapProxy.this.removeListener(mapListener);
+        return AtomicNavigableMapProxy.this.removeListener(mapListener);
       }
       return CompletableFuture.completedFuture(null);
     }
@@ -509,7 +507,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Void> close() {
-      return AtomicTreeMapProxy.this.close();
+      return AtomicNavigableMapProxy.this.close();
     }
 
     @Override
@@ -676,7 +674,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Boolean> containsKey(K key) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(false) : AtomicTreeMapProxy.this.containsKey(key);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(false) : AtomicNavigableMapProxy.this.containsKey(key);
     }
 
     @Override
@@ -686,38 +684,38 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Versioned<byte[]>> get(K key) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicTreeMapProxy.this.get(key);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicNavigableMapProxy.this.get(key);
     }
 
     @Override
     public CompletableFuture<Map<K, Versioned<byte[]>>> getAllPresent(Iterable<K> keys) {
-      return AtomicTreeMapProxy.this.getAllPresent(Lists.newArrayList(keys).stream().filter(this::isInBounds).collect(Collectors.toList()));
+      return AtomicNavigableMapProxy.this.getAllPresent(Lists.newArrayList(keys).stream().filter(this::isInBounds).collect(Collectors.toList()));
     }
 
     @Override
     public CompletableFuture<Versioned<byte[]>> getOrDefault(K key, byte[] defaultValue) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicTreeMapProxy.this.getOrDefault(key, defaultValue);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicNavigableMapProxy.this.getOrDefault(key, defaultValue);
     }
 
     @Override
     public CompletableFuture<Versioned<byte[]>> computeIf(
         K key, Predicate<? super byte[]> condition, BiFunction<? super K, ? super byte[], ? extends byte[]> remappingFunction) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicTreeMapProxy.this.computeIf(key, condition, remappingFunction);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicNavigableMapProxy.this.computeIf(key, condition, remappingFunction);
     }
 
     @Override
     public CompletableFuture<Versioned<byte[]>> put(K key, byte[] value, Duration ttl) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicTreeMapProxy.this.put(key, value, ttl);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicNavigableMapProxy.this.put(key, value, ttl);
     }
 
     @Override
     public CompletableFuture<Versioned<byte[]>> putAndGet(K key, byte[] value, Duration ttl) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicTreeMapProxy.this.putAndGet(key, value, ttl);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicNavigableMapProxy.this.putAndGet(key, value, ttl);
     }
 
     @Override
     public CompletableFuture<Versioned<byte[]>> remove(K key) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicTreeMapProxy.this.remove(key);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicNavigableMapProxy.this.remove(key);
     }
 
     @Override
@@ -742,32 +740,32 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Versioned<byte[]>> putIfAbsent(K key, byte[] value, Duration ttl) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicTreeMapProxy.this.putIfAbsent(key, value, ttl);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicNavigableMapProxy.this.putIfAbsent(key, value, ttl);
     }
 
     @Override
     public CompletableFuture<Boolean> remove(K key, byte[] value) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(false) : AtomicTreeMapProxy.this.remove(key, value);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(false) : AtomicNavigableMapProxy.this.remove(key, value);
     }
 
     @Override
     public CompletableFuture<Boolean> remove(K key, long version) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(false) : AtomicTreeMapProxy.this.remove(key, version);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(false) : AtomicNavigableMapProxy.this.remove(key, version);
     }
 
     @Override
     public CompletableFuture<Versioned<byte[]>> replace(K key, byte[] value) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicTreeMapProxy.this.replace(key, value);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(null) : AtomicNavigableMapProxy.this.replace(key, value);
     }
 
     @Override
     public CompletableFuture<Boolean> replace(K key, byte[] oldValue, byte[] newValue) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(false) : AtomicTreeMapProxy.this.replace(key, oldValue, newValue);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(false) : AtomicNavigableMapProxy.this.replace(key, oldValue, newValue);
     }
 
     @Override
     public CompletableFuture<Boolean> replace(K key, long oldVersion, byte[] newValue) {
-      return !isInBounds(key) ? CompletableFuture.completedFuture(false) : AtomicTreeMapProxy.this.replace(key, oldVersion, newValue);
+      return !isInBounds(key) ? CompletableFuture.completedFuture(false) : AtomicNavigableMapProxy.this.replace(key, oldVersion, newValue);
     }
 
     @Override
@@ -778,7 +776,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
         }
       };
       if (listenerMap.putIfAbsent(listener, boundedListener) == null) {
-        return AtomicTreeMapProxy.this.addListener(boundedListener, executor);
+        return AtomicNavigableMapProxy.this.addListener(boundedListener, executor);
       }
       return CompletableFuture.completedFuture(null);
     }
@@ -787,24 +785,24 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
     public synchronized CompletableFuture<Void> removeListener(AtomicMapEventListener<K, byte[]> listener) {
       AtomicMapEventListener<K, byte[]> boundedListener = listenerMap.remove(listener);
       if (boundedListener != null) {
-        return AtomicTreeMapProxy.this.removeListener(boundedListener);
+        return AtomicNavigableMapProxy.this.removeListener(boundedListener);
       }
       return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public CompletableFuture<Boolean> prepare(TransactionLog<MapUpdate<K, byte[]>> transactionLog) {
-      return AtomicTreeMapProxy.this.prepare(transactionLog);
+      return AtomicNavigableMapProxy.this.prepare(transactionLog);
     }
 
     @Override
     public CompletableFuture<Void> commit(TransactionId transactionId) {
-      return AtomicTreeMapProxy.this.commit(transactionId);
+      return AtomicNavigableMapProxy.this.commit(transactionId);
     }
 
     @Override
     public CompletableFuture<Void> rollback(TransactionId transactionId) {
-      return AtomicTreeMapProxy.this.rollback(transactionId);
+      return AtomicNavigableMapProxy.this.rollback(transactionId);
     }
 
     @Override
@@ -887,7 +885,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
         }
       };
       if (listenerMap.putIfAbsent(listener, boundedListener) == null) {
-        return AtomicTreeMapProxy.this.addListener(boundedListener);
+        return AtomicNavigableMapProxy.this.addListener(boundedListener);
       }
       return CompletableFuture.completedFuture(null);
     }
@@ -896,7 +894,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
     public CompletableFuture<Void> removeListener(CollectionEventListener<Map.Entry<K, Versioned<byte[]>>> listener) {
       AtomicMapEventListener<K, byte[]> boundedListener = listenerMap.remove(listener);
       if (boundedListener != null) {
-        return AtomicTreeMapProxy.this.removeListener(boundedListener);
+        return AtomicNavigableMapProxy.this.removeListener(boundedListener);
       }
       return CompletableFuture.completedFuture(null);
     }
@@ -928,7 +926,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
 
     @Override
     public CompletableFuture<Void> close() {
-      return AtomicTreeMapProxy.this.close();
+      return AtomicNavigableMapProxy.this.close();
     }
 
     @Override
@@ -1011,7 +1009,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
         }
       };
       if (listenerMap.putIfAbsent(listener, boundedListener) == null) {
-        return AtomicTreeMapProxy.this.addListener(boundedListener);
+        return AtomicNavigableMapProxy.this.addListener(boundedListener);
       }
       return CompletableFuture.completedFuture(null);
     }
@@ -1020,7 +1018,7 @@ public class AtomicTreeMapProxy<K extends Comparable<K>> extends AbstractAtomicM
     public CompletableFuture<Void> removeListener(CollectionEventListener<Versioned<byte[]>> listener) {
       AtomicMapEventListener<K, byte[]> boundedListener = listenerMap.remove(listener);
       if (boundedListener != null) {
-        return AtomicTreeMapProxy.this.removeListener(boundedListener);
+        return AtomicNavigableMapProxy.this.removeListener(boundedListener);
       }
       return CompletableFuture.completedFuture(null);
     }

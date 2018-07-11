@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.map;
+package io.atomix.core.map.impl;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.backup.MultiPrimaryProtocol;
+import io.atomix.core.map.DistributedNavigableMapType;
 
 /**
- * Primary-backup consistent tree map test.
+ * Default distributed tree map service.
  */
-public class PrimaryBackupAtomicTreeMapTest extends AtomicTreeMapTest {
-  @Override
-  protected PrimitiveProtocol protocol() {
-    return MultiPrimaryProtocol.builder()
-        .withBackups(2)
-        .withMaxRetries(5)
-        .build();
+public class DefaultDistributedNavigableMapService<K extends Comparable<K>> extends AbstractAtomicNavigableMapService<K> {
+  public DefaultDistributedNavigableMapService() {
+    super(DistributedNavigableMapType.instance());
   }
 }

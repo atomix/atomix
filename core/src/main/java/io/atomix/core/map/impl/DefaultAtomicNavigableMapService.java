@@ -15,22 +15,13 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.AsyncAtomicTreeMap;
-import io.atomix.core.map.AsyncDistributedTreeMap;
-import io.atomix.core.map.DistributedTreeMap;
-
-import java.time.Duration;
+import io.atomix.core.map.AtomicNavigableMapType;
 
 /**
- * Delegating asynchronous distributed tree map.
+ * Default atomic tree map service.
  */
-public class DelegatingAsyncDistributedTreeMap<K extends Comparable<K>, V> extends DelegatingAsyncDistributedNavigableMap<K, V> implements AsyncDistributedTreeMap<K, V> {
-  public DelegatingAsyncDistributedTreeMap(AsyncAtomicTreeMap<K, V> atomicTreeMap) {
-    super(atomicTreeMap);
-  }
-
-  @Override
-  public DistributedTreeMap<K, V> sync(Duration timeout) {
-    return new BlockingDistributedTreeMap<>(this, timeout.toMillis());
+public class DefaultAtomicNavigableMapService<K extends Comparable<K>> extends AbstractAtomicNavigableMapService<K> {
+  public DefaultAtomicNavigableMapService() {
+    super(AtomicNavigableMapType.instance());
   }
 }

@@ -18,7 +18,7 @@ package io.atomix.primitive.protocol.map;
 import java.util.NavigableMap;
 
 /**
- * Tree map protocol.
+ * Navigable map protocol.
  */
-public interface TreeMapProtocol<K, V> extends MapProtocol<K, V>, NavigableMap<K, V> {
+public interface NavigableMapProtocol<K, V> extends MapProtocol<K, V>, NavigableMap<K, V> {
 }

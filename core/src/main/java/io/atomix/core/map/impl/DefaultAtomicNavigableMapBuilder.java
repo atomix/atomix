@@ -15,10 +15,10 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.AsyncAtomicTreeMap;
-import io.atomix.core.map.AtomicTreeMap;
-import io.atomix.core.map.AtomicTreeMapBuilder;
-import io.atomix.core.map.AtomicTreeMapConfig;
+import io.atomix.core.map.AsyncAtomicNavigableMap;
+import io.atomix.core.map.AtomicNavigableMap;
+import io.atomix.core.map.AtomicNavigableMapBuilder;
+import io.atomix.core.map.AtomicNavigableMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.service.ServiceConfig;
@@ -27,25 +27,25 @@ import io.atomix.utils.serializer.Serializer;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Default {@link AsyncAtomicTreeMap} builder.
+ * Default {@link io.atomix.core.map.AsyncAtomicNavigableMap} builder.
  *
  * @param <V> type for map value
  */
-public class DefaultAtomicTreeMapBuilder<K extends Comparable<K>, V> extends AtomicTreeMapBuilder<K, V> {
-  public DefaultAtomicTreeMapBuilder(String name, AtomicTreeMapConfig config, PrimitiveManagementService managementService) {
+public class DefaultAtomicNavigableMapBuilder<K extends Comparable<K>, V> extends AtomicNavigableMapBuilder<K, V> {
+  public DefaultAtomicNavigableMapBuilder(String name, AtomicNavigableMapConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<AtomicTreeMap<K, V>> buildAsync() {
+  public CompletableFuture<AtomicNavigableMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     return newProxy(AtomicTreeMapService.class, new ServiceConfig())
-        .thenCompose(proxy -> new AtomicTreeMapProxy(proxy, managementService.getPrimitiveRegistry()).connect())
+        .thenCompose(proxy -> new AtomicNavigableMapProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(map -> {
           Serializer serializer = protocol.serializer();
-          return new TranscodingAsyncAtomicTreeMap<K, V, byte[]>(
-              (AsyncAtomicTreeMap) map,
+          return new TranscodingAsyncAtomicNavigableMap<K, V, byte[]>(
+              (AsyncAtomicNavigableMap) map,
               value -> serializer.encode(value),
               bytes -> serializer.decode(bytes))
               .sync();

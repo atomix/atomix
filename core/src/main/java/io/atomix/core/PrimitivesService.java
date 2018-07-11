@@ -48,15 +48,15 @@ import io.atomix.core.map.AtomicCounterMapType;
 import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapBuilder;
 import io.atomix.core.map.AtomicMapType;
-import io.atomix.core.map.AtomicTreeMap;
-import io.atomix.core.map.AtomicTreeMapBuilder;
-import io.atomix.core.map.AtomicTreeMapType;
+import io.atomix.core.map.AtomicNavigableMap;
+import io.atomix.core.map.AtomicNavigableMapBuilder;
+import io.atomix.core.map.AtomicNavigableMapType;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapBuilder;
 import io.atomix.core.map.DistributedMapType;
-import io.atomix.core.map.DistributedTreeMap;
-import io.atomix.core.map.DistributedTreeMapBuilder;
-import io.atomix.core.map.DistributedTreeMapType;
+import io.atomix.core.map.DistributedNavigableMap;
+import io.atomix.core.map.DistributedNavigableMapBuilder;
+import io.atomix.core.map.DistributedNavigableMapType;
 import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapBuilder;
 import io.atomix.core.multimap.AtomicMultimapType;
@@ -146,8 +146,8 @@ public interface PrimitivesService {
    * @param <V> value type
    * @return builder for a tree map
    */
-  default <K extends Comparable<K>, V> DistributedTreeMapBuilder<K, V> treeMapBuilder(String name) {
-    return primitiveBuilder(name, DistributedTreeMapType.instance());
+  default <K extends Comparable<K>, V> DistributedNavigableMapBuilder<K, V> navigableMapBuilder(String name) {
+    return primitiveBuilder(name, DistributedNavigableMapType.instance());
   }
 
   /**
@@ -159,8 +159,8 @@ public interface PrimitivesService {
    * @param <V> value type
    * @return builder for a tree map
    */
-  default <K extends Comparable<K>, V> DistributedTreeMapBuilder<K, V> treeMapBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, DistributedTreeMapType.instance(), protocol);
+  default <K extends Comparable<K>, V> DistributedNavigableMapBuilder<K, V> navigableMapBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, DistributedNavigableMapType.instance(), protocol);
   }
 
   /**
@@ -237,19 +237,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new {@code AtomicTreeMapBuilder}.
+   * Creates a new {@code AtomicNavigableMapBuilder}.
    *
    * @param name the primitive name
    * @param <K> key type
    * @param <V> value type
    * @return builder for a async atomic tree map
    */
-  default <K extends Comparable<K>, V> AtomicTreeMapBuilder<K, V> atomicTreeMapBuilder(String name) {
-    return primitiveBuilder(name, AtomicTreeMapType.instance());
+  default <K extends Comparable<K>, V> AtomicNavigableMapBuilder<K, V> atomicNavigableMapBuilder(String name) {
+    return primitiveBuilder(name, AtomicNavigableMapType.instance());
   }
 
   /**
-   * Creates a new {@code AtomicTreeMapBuilder}.
+   * Creates a new {@code AtomicNavigableMapBuilder}.
    *
    * @param name the primitive name
    * @param protocol the primitive protocol
@@ -257,8 +257,8 @@ public interface PrimitivesService {
    * @param <V> value type
    * @return builder for a async atomic tree map
    */
-  default <K extends Comparable<K>, V> AtomicTreeMapBuilder<K, V> atomicTreeMapBuilder(String name, PrimitiveProtocol protocol) {
-    return primitiveBuilder(name, AtomicTreeMapType.instance(), protocol);
+  default <K extends Comparable<K>, V> AtomicNavigableMapBuilder<K, V> atomicNavigableMapBuilder(String name, PrimitiveProtocol protocol) {
+    return primitiveBuilder(name, AtomicNavigableMapType.instance(), protocol);
   }
 
   /**
@@ -731,14 +731,14 @@ public interface PrimitivesService {
   <K, V> DistributedMap<K, V> getMap(String name);
 
   /**
-   * Creates a new DistributedTreeMap.
+   * Creates a new DistributedNavigableMap.
    *
    * @param name the primitive name
    * @param <K> key type
    * @param <V> value type
    * @return a new distributed map
    */
-  <K extends Comparable<K>, V> DistributedTreeMap<K, V> getTreeMap(String name);
+  <K extends Comparable<K>, V> DistributedNavigableMap<K, V> getNavigableMap(String name);
 
   /**
    * Creates a new DistributedMultimap.
@@ -777,7 +777,7 @@ public interface PrimitivesService {
    * @param <V> value type
    * @return a new atomic tree map
    */
-  <K extends Comparable<K>, V> AtomicTreeMap<K, V> getAtomicTreeMap(String name);
+  <K extends Comparable<K>, V> AtomicNavigableMap<K, V> getAtomicNavigableMap(String name);
 
   /**
    * Creates a new {@code AtomicTreeMap}.
