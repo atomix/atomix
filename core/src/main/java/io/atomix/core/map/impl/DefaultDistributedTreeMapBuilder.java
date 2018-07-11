@@ -46,7 +46,7 @@ public class DefaultDistributedTreeMapBuilder<K extends Comparable<K>, V> extend
       if (protocol instanceof TreeMapProtocolProvider) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
             CompletableFuture.completedFuture(((TreeMapProtocolProvider) protocol).<K, V>newTreeMapProtocol(name, managementService))
-                .thenApply(set -> new AsyncDistributedJavaTreeMap<>(name, protocol, set)))
+                .thenApply(set -> new GossipDistributedTreeMap<>(name, protocol, set)))
             .thenApply(AsyncDistributedTreeMap::sync);
       } else {
         return Futures.exceptionalFuture(new UnsupportedOperationException("Sets are not supported by the provided gossip protocol"));

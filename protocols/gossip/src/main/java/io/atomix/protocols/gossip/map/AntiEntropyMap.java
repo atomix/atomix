@@ -134,6 +134,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
         .register(MapValue.class)
         .register(MapValue.Digest.class)
         .register(UpdateRequest.class)
+        .register(MemberId.class)
         .build(name + "-anti-entropy-map"));
     this.items = Maps.newConcurrentMap();
     senderPending = Maps.newConcurrentMap();
@@ -239,7 +240,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
     return BaseEncoding.base16().encode(entrySerializer.encode(key));
   }
 
-  private byte[] encodeValue(V value) {
+  private byte[] encodeValue(Object value) {
     return value != null ? entrySerializer.encode(value) : null;
   }
 
@@ -278,7 +279,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
     return items.values()
         .stream()
         .filter(MapValue::isAlive)
-        .anyMatch(v -> Arrays.equals(entrySerializer.encode(value), v.get()));
+        .anyMatch(v -> Arrays.equals(encodeValue(value), v.get()));
   }
 
   @Override
@@ -320,7 +321,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
       } else {
         notifyListeners(new MapProtocolEvent<>(UPDATE, key, value));
       }
-      return entrySerializer.decode(oldValue.get());
+      return decodeValue(oldValue.get());
     }
     return value;
   }
@@ -349,7 +350,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
     MapValue previousValue = removeInternal(encodedKey, Optional.ofNullable(encodedValue), tombstone);
     V decodedPreviousValue = null;
     if (previousValue != null) {
-      decodedPreviousValue = previousValue.get(entrySerializer::decode);
+      decodedPreviousValue = previousValue.get(this::decodeValue);
       notifyPeers(new UpdateEntry(encodedKey, tombstone.orElse(null)),
           peerUpdateFunction.select(Maps.immutableEntry(key, decodedPreviousValue), membershipService));
       if (previousValue.isAlive()) {
@@ -704,9 +705,9 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
 
         if (updated.get()) {
           if (oldValue.get() == null) {
-            notifyListeners(new MapProtocolEvent(INSERT, key, value.get()));
+            notifyListeners(new MapProtocolEvent<>(INSERT, decodeKey(key), decodeValue(value.get())));
           } else {
-            notifyListeners(new MapProtocolEvent(UPDATE, key, value.get()));
+            notifyListeners(new MapProtocolEvent<>(UPDATE, decodeKey(key), decodeValue(value.get())));
           }
         }
       }

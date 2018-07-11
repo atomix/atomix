@@ -47,7 +47,7 @@ public class DefaultDistributedTreeSetBuilder<E extends Comparable<E>> extends D
       if (protocol instanceof TreeSetProtocolProvider) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
             CompletableFuture.completedFuture(((TreeSetProtocolProvider) protocol).<E>newTreeSetProtocol(name, managementService))
-                .thenApply(set -> new AsyncDistributedJavaTreeSet<>(name, protocol, set)))
+                .thenApply(set -> new GossipDistributedTreeSet<>(name, protocol, set)))
             .thenApply(AsyncDistributedTreeSet::sync);
       } else {
         return Futures.exceptionalFuture(new UnsupportedOperationException("Sets are not supported by the provided gossip protocol"));
