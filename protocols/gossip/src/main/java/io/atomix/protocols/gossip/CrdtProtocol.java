@@ -18,34 +18,33 @@ package io.atomix.protocols.gossip;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.map.MapProtocol;
-import io.atomix.primitive.protocol.map.MapProtocolProvider;
+import io.atomix.primitive.protocol.counter.CounterProtocol;
+import io.atomix.primitive.protocol.counter.CounterProtocolProvider;
 import io.atomix.primitive.protocol.set.SetProtocol;
 import io.atomix.primitive.protocol.set.SetProtocolProvider;
-import io.atomix.protocols.gossip.map.AntiEntropyMap;
-import io.atomix.protocols.gossip.set.AntiEntropySet;
+import io.atomix.protocols.gossip.counter.CrdtCounter;
 import io.atomix.utils.serializer.Serializer;
 
 /**
- * Anti-entropy protocol.
+ * Commutative Replicated Data Types (CRDT) protocol.
  */
-public class AntiEntropyProtocol implements GossipProtocol, MapProtocolProvider, SetProtocolProvider {
+public class CrdtProtocol implements GossipProtocol, CounterProtocolProvider, SetProtocolProvider {
   public static final Type TYPE = new Type();
 
   /**
-   * Returns a new gossip protocol builder.
+   * Returns a new CRDT protocol builder.
    *
-   * @return a new gossip protocol builder
+   * @return a new CRDT protocol builder
    */
-  public static AntiEntropyProtocolBuilder builder() {
-    return new AntiEntropyProtocolBuilder(new AntiEntropyProtocolConfig());
+  public static CrdtProtocolBuilder builder() {
+    return new CrdtProtocolBuilder(new CrdtProtocolConfig());
   }
 
   /**
-   * Gossip protocol type.
+   * CRDT protocol type.
    */
-  public static final class Type implements PrimitiveProtocol.Type<AntiEntropyProtocolConfig> {
-    private static final String NAME = "gossip";
+  public static final class Type implements PrimitiveProtocol.Type<CrdtProtocolConfig> {
+    private static final String NAME = "crdt";
 
     @Override
     public String name() {
@@ -53,19 +52,19 @@ public class AntiEntropyProtocol implements GossipProtocol, MapProtocolProvider,
     }
 
     @Override
-    public AntiEntropyProtocolConfig newConfig() {
-      return new AntiEntropyProtocolConfig();
+    public CrdtProtocolConfig newConfig() {
+      return new CrdtProtocolConfig();
     }
 
     @Override
-    public PrimitiveProtocol newProtocol(AntiEntropyProtocolConfig config) {
-      return new AntiEntropyProtocol(config);
+    public PrimitiveProtocol newProtocol(CrdtProtocolConfig config) {
+      return new CrdtProtocol(config);
     }
   }
 
-  protected final AntiEntropyProtocolConfig config;
+  protected final CrdtProtocolConfig config;
 
-  protected AntiEntropyProtocol(AntiEntropyProtocolConfig config) {
+  protected CrdtProtocol(CrdtProtocolConfig config) {
     this.config = config;
   }
 
@@ -80,12 +79,12 @@ public class AntiEntropyProtocol implements GossipProtocol, MapProtocolProvider,
   }
 
   @Override
-  public <K, V> MapProtocol<K, V> newMapProtocol(String name, PrimitiveManagementService managementService) {
-    return new AntiEntropyMap<>(name, config, managementService);
+  public CounterProtocol newCounterProtocol(String name, PrimitiveManagementService managementService) {
+    return new CrdtCounter(name, config, managementService);
   }
 
   @Override
   public <E> SetProtocol<E> newSetProtocol(String name, PrimitiveManagementService managementService) {
-    return new AntiEntropySet<>(name, config, managementService);
+    return null;
   }
 }

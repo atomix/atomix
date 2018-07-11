@@ -13,10 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol;
+package io.atomix.core.counter;
+
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.protocols.gossip.AntiEntropyProtocol;
 
 /**
- * Dissemination protocol.
+ * Gossip counter test.
  */
-public interface GossipProtocol extends PrimitiveProtocol {
+public class CrdtCounterTest extends DistributedCounterTest {
+  @Override
+  protected PrimitiveProtocol protocol() {
+    return AntiEntropyProtocol.builder().build();
+  }
 }

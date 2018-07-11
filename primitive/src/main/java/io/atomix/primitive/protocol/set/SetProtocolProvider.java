@@ -13,10 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol;
+package io.atomix.primitive.protocol.set;
+
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
- * Dissemination protocol.
+ * Set protocol provider.
  */
-public interface GossipProtocol extends PrimitiveProtocol {
+public interface SetProtocolProvider extends GossipProtocol {
+
+  /**
+   * Returns a new set protocol.
+   *
+   * @param name the set name
+   * @param managementService the primitive management service
+   * @param <E> the set element type
+   * @return a new set protocol
+   */
+  <E> SetProtocol<E> newSetProtocol(String name, PrimitiveManagementService managementService);
+
 }

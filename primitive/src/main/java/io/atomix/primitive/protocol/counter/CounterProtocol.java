@@ -16,7 +16,7 @@
 package io.atomix.primitive.protocol.counter;
 
 /**
- * Counter protocol.
+ * Gossip-based counter service.
  */
 public interface CounterProtocol {
 

@@ -18,7 +18,7 @@ package io.atomix.primitive.protocol.map;
 import java.util.Map;
 
 /**
- * Gossip map protocol.
+ * Gossip-based map service.
  */
 public interface MapProtocol<K, V> extends Map<K, V> {
 

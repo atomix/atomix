@@ -13,17 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.counter;
+package io.atomix.primitive.protocol.counter;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.gossip.AntiEntropyProtocol;
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
- * Gossip counter test.
+ * Counter protocol provider.
  */
-public class GossipCounterTest extends DistributedCounterTest {
-  @Override
-  protected PrimitiveProtocol protocol() {
-    return AntiEntropyProtocol.builder().build();
-  }
+public interface CounterProtocolProvider extends GossipProtocol {
+
+  /**
+   * Returns a new counter protocol.
+   *
+   * @param name the counter name
+   * @param managementService the primitive management service
+   * @return a new counter protocol
+   */
+  CounterProtocol newCounterProtocol(String name, PrimitiveManagementService managementService);
+
 }
