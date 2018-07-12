@@ -25,6 +25,7 @@ public class PrimaryBackupLeaderElectorTest extends LeaderElectorTest {
   @Override
   protected ProxyProtocol protocol() {
     return MultiPrimaryProtocol.builder()
+        .withSerializer(SERIALIZER)
         .withBackups(2)
         .withMaxRetries(5)
         .build();

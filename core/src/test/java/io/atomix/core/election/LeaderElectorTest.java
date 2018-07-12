@@ -18,6 +18,9 @@ package io.atomix.core.election;
 import io.atomix.cluster.MemberId;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.primitive.protocol.ProxyProtocol;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
+import io.atomix.utils.serializer.Serializer;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -35,6 +38,11 @@ import static org.junit.Assert.assertTrue;
  * Leader elector test.
  */
 public abstract class LeaderElectorTest extends AbstractPrimitiveTest<ProxyProtocol> {
+  protected static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
+      .register(Namespaces.BASIC)
+      .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
+      .register(MemberId.class)
+      .build());
 
   MemberId node1 = MemberId.from("4");
   MemberId node2 = MemberId.from("5");
