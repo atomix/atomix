@@ -15,9 +15,9 @@
  */
 package io.atomix.core.value;
 
-import io.atomix.core.value.impl.DefaultAtomicValueBuilder;
 import io.atomix.core.value.impl.AtomicValueResource;
-import io.atomix.core.value.impl.AbstractAtomicValueService;
+import io.atomix.core.value.impl.DefaultAtomicValueBuilder;
+import io.atomix.core.value.impl.DefaultAtomicValueService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
@@ -51,7 +51,7 @@ public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, 
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new AbstractAtomicValueService();
+    return new DefaultAtomicValueService();
   }
 
   @Override
