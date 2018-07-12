@@ -45,12 +45,12 @@ public class DefaultDistributedValueBuilder<V> extends DistributedValueBuilder<V
     PrimitiveProtocol protocol = protocol();
     if (protocol instanceof GossipProtocol) {
       if (protocol instanceof ValueProtocol) {
-        return managementService.getPrimitiveCache().getPrimitive(name, () ->
+        CompletableFuture<AsyncDistributedValue<V>> future = managementService.getPrimitiveCache().getPrimitive(name, () ->
             CompletableFuture.completedFuture(((ValueProtocol) protocol).<V>newValueDelegate(name, managementService))
-                .thenApply(value -> new GossipDistributedValue<V>(name, protocol, value)))
-            .thenApply(AsyncDistributedValue::sync);
+                .thenApply(map -> new GossipDistributedValue<>(name, protocol, map)));
+        return future.thenApply(AsyncDistributedValue::sync);
       } else {
-        return Futures.exceptionalFuture(new UnsupportedOperationException("Maps are not supported by the provided gossip protocol"));
+        return Futures.exceptionalFuture(new UnsupportedOperationException("Values are not supported by the provided gossip protocol"));
       }
     } else {
       return newProxy(AtomicValueService.class, new ServiceConfig())
