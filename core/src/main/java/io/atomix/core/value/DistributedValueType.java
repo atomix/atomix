@@ -15,23 +15,21 @@
  */
 package io.atomix.core.value;
 
-import io.atomix.core.value.impl.DefaultAtomicValueBuilder;
-import io.atomix.core.value.impl.AtomicValueResource;
-import io.atomix.core.value.impl.AbstractAtomicValueService;
+import io.atomix.core.value.impl.DefaultDistributedValueBuilder;
+import io.atomix.core.value.impl.DefaultDistributedValueService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Atomic value primitive type.
+ * Distributed value primitive type.
  */
-public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, AtomicValueConfig, AtomicValue<V>> {
-  private static final String NAME = "atomic-value";
-  private static final AtomicValueType INSTANCE = new AtomicValueType();
+public class DistributedValueType<V> implements PrimitiveType<DistributedValueBuilder<V>, DistributedValueConfig, DistributedValue<V>> {
+  private static final String NAME = "value";
+  private static final DistributedValueType INSTANCE = new DistributedValueType();
 
   /**
    * Returns a new value type.
@@ -40,7 +38,7 @@ public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, 
    * @return the value type
    */
   @SuppressWarnings("unchecked")
-  public static <V> AtomicValueType<V> instance() {
+  public static <V> DistributedValueType<V> instance() {
     return INSTANCE;
   }
 
@@ -51,23 +49,17 @@ public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, 
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new AbstractAtomicValueService();
+    return new DefaultDistributedValueService();
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(AtomicValue<V> primitive) {
-    return new AtomicValueResource((AsyncAtomicValue<String>) primitive.async());
+  public DistributedValueConfig newConfig() {
+    return new DistributedValueConfig();
   }
 
   @Override
-  public AtomicValueConfig newConfig() {
-    return new AtomicValueConfig();
-  }
-
-  @Override
-  public AtomicValueBuilder<V> newBuilder(String name, AtomicValueConfig config, PrimitiveManagementService managementService) {
-    return new DefaultAtomicValueBuilder<>(name, config, managementService);
+  public DistributedValueBuilder<V> newBuilder(String name, DistributedValueConfig config, PrimitiveManagementService managementService) {
+    return new DefaultDistributedValueBuilder<>(name, config, managementService);
   }
 
   @Override
