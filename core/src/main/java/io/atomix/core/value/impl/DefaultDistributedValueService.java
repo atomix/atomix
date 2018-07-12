@@ -15,13 +15,13 @@
  */
 package io.atomix.core.value.impl;
 
-import io.atomix.core.value.AtomicValueType;
+import io.atomix.core.value.DistributedValueType;
 
 /**
- * Default atomic value service.
+ * Distributed value service implementation.
  */
-public class DefaultAtomicValueService extends AbstractAtomicValueService {
-  public DefaultAtomicValueService() {
-    super(AtomicValueType.instance());
+public class DefaultDistributedValueService extends AbstractAtomicValueService {
+  public DefaultDistributedValueService() {
+    super(DistributedValueType.instance());
   }
 }

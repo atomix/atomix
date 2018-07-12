@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.value.impl;
+package io.atomix.core.value;
 
-import io.atomix.core.value.AtomicValueType;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
- * Default atomic value service.
+ * Distributed value configuration.
  */
-public class DefaultAtomicValueService extends AbstractAtomicValueService {
-  public DefaultAtomicValueService() {
-    super(AtomicValueType.instance());
+public class DistributedValueConfig extends PrimitiveConfig<DistributedValueConfig> {
+  @Override
+  public PrimitiveType getType() {
+    return DistributedValueType.instance();
   }
 }
