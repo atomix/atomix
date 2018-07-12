@@ -43,7 +43,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Document tree primitive type.
  */
 public class AtomicDocumentTreeType<V> implements PrimitiveType<AtomicDocumentTreeBuilder<V>, AtomicDocumentTreeConfig, AtomicDocumentTree<V>> {
-  private static final String NAME = "document-tree";
+  private static final String NAME = "atomic-document-tree";
   private static final AtomicDocumentTreeType INSTANCE = new AtomicDocumentTreeType();
 
   /**

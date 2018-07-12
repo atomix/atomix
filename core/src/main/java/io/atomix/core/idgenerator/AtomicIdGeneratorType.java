@@ -30,7 +30,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Atomic ID generator primitive type.
  */
 public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBuilder, AtomicIdGeneratorConfig, AtomicIdGenerator> {
-  private static final String NAME = "id-generator";
+  private static final String NAME = "atomic-id-generator";
   private static final AtomicIdGeneratorType INSTANCE = new AtomicIdGeneratorType();
 
   /**
