@@ -20,10 +20,8 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
 import io.atomix.primitive.protocol.ProxyProtocol;
-import io.atomix.primitive.protocol.set.NavigableSetProtocol;
-import io.atomix.primitive.protocol.set.NavigableSetCompatibleBuilder;
-import io.atomix.primitive.protocol.set.SortedSetProtocol;
 import io.atomix.primitive.protocol.set.SortedSetCompatibleBuilder;
+import io.atomix.primitive.protocol.set.SortedSetProtocol;
 
 /**
  * Builder for distributed sorted set.
@@ -33,8 +31,7 @@ import io.atomix.primitive.protocol.set.SortedSetCompatibleBuilder;
 public abstract class DistributedSortedSetBuilder<E extends Comparable<E>>
     extends DistributedCollectionBuilder<DistributedSortedSetBuilder<E>, DistributedSortedSetConfig, DistributedSortedSet<E>, E>
     implements ProxyCompatibleBuilder<DistributedSortedSetBuilder<E>>,
-    SortedSetCompatibleBuilder<DistributedSortedSetBuilder<E>>,
-    NavigableSetCompatibleBuilder<DistributedSortedSetBuilder<E>> {
+    SortedSetCompatibleBuilder<DistributedSortedSetBuilder<E>> {
 
   protected DistributedSortedSetBuilder(String name, DistributedSortedSetConfig config, PrimitiveManagementService managementService) {
     super(DistributedSortedSetType.instance(), name, config, managementService);
@@ -47,11 +44,6 @@ public abstract class DistributedSortedSetBuilder<E extends Comparable<E>>
 
   @Override
   public DistributedSortedSetBuilder<E> withProtocol(SortedSetProtocol protocol) {
-    return withProtocol((PrimitiveProtocol) protocol);
-  }
-
-  @Override
-  public DistributedSortedSetBuilder<E> withProtocol(NavigableSetProtocol protocol) {
     return withProtocol((PrimitiveProtocol) protocol);
   }
 }

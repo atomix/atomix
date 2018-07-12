@@ -20,12 +20,8 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
 import io.atomix.primitive.protocol.ProxyProtocol;
-import io.atomix.primitive.protocol.set.NavigableSetProtocol;
-import io.atomix.primitive.protocol.set.NavigableSetCompatibleBuilder;
-import io.atomix.primitive.protocol.set.SetProtocol;
 import io.atomix.primitive.protocol.set.SetCompatibleBuilder;
-import io.atomix.primitive.protocol.set.SortedSetProtocol;
-import io.atomix.primitive.protocol.set.SortedSetCompatibleBuilder;
+import io.atomix.primitive.protocol.set.SetProtocol;
 
 /**
  * Builder for distributed set.
@@ -34,10 +30,7 @@ import io.atomix.primitive.protocol.set.SortedSetCompatibleBuilder;
  */
 public abstract class DistributedSetBuilder<E>
     extends DistributedCollectionBuilder<DistributedSetBuilder<E>, DistributedSetConfig, DistributedSet<E>, E>
-    implements ProxyCompatibleBuilder<DistributedSetBuilder<E>>,
-    SetCompatibleBuilder<DistributedSetBuilder<E>>,
-    SortedSetCompatibleBuilder<DistributedSetBuilder<E>>,
-    NavigableSetCompatibleBuilder<DistributedSetBuilder<E>> {
+    implements ProxyCompatibleBuilder<DistributedSetBuilder<E>>, SetCompatibleBuilder<DistributedSetBuilder<E>> {
 
   protected DistributedSetBuilder(String name, DistributedSetConfig config, PrimitiveManagementService managementService) {
     super(DistributedSetType.instance(), name, config, managementService);
@@ -50,16 +43,6 @@ public abstract class DistributedSetBuilder<E>
 
   @Override
   public DistributedSetBuilder<E> withProtocol(SetProtocol protocol) {
-    return withProtocol((PrimitiveProtocol) protocol);
-  }
-
-  @Override
-  public DistributedSetBuilder<E> withProtocol(SortedSetProtocol protocol) {
-    return withProtocol((PrimitiveProtocol) protocol);
-  }
-
-  @Override
-  public DistributedSetBuilder<E> withProtocol(NavigableSetProtocol protocol) {
     return withProtocol((PrimitiveProtocol) protocol);
   }
 }

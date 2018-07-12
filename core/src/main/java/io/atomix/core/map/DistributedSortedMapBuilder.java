@@ -20,10 +20,8 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
 import io.atomix.primitive.protocol.ProxyProtocol;
-import io.atomix.primitive.protocol.map.NavigableMapProtocol;
-import io.atomix.primitive.protocol.map.NavigableMapCompatibleBuilder;
-import io.atomix.primitive.protocol.map.SortedMapProtocol;
 import io.atomix.primitive.protocol.map.SortedMapCompatibleBuilder;
+import io.atomix.primitive.protocol.map.SortedMapProtocol;
 
 /**
  * Builder for {@link DistributedSortedMap} instances.
@@ -33,9 +31,7 @@ import io.atomix.primitive.protocol.map.SortedMapCompatibleBuilder;
  */
 public abstract class DistributedSortedMapBuilder<K extends Comparable<K>, V>
     extends CachedPrimitiveBuilder<DistributedSortedMapBuilder<K, V>, DistributedSortedMapConfig, DistributedSortedMap<K, V>>
-    implements ProxyCompatibleBuilder<DistributedSortedMapBuilder<K, V>>,
-    SortedMapCompatibleBuilder<DistributedSortedMapBuilder<K, V>>,
-    NavigableMapCompatibleBuilder<DistributedSortedMapBuilder<K, V>> {
+    implements ProxyCompatibleBuilder<DistributedSortedMapBuilder<K, V>>, SortedMapCompatibleBuilder<DistributedSortedMapBuilder<K, V>>{
 
   public DistributedSortedMapBuilder(String name, DistributedSortedMapConfig config, PrimitiveManagementService managementService) {
     super(DistributedSortedMapType.instance(), name, config, managementService);
@@ -69,11 +65,6 @@ public abstract class DistributedSortedMapBuilder<K extends Comparable<K>, V>
 
   @Override
   public DistributedSortedMapBuilder<K, V> withProtocol(SortedMapProtocol protocol) {
-    return withProtocol((PrimitiveProtocol) protocol);
-  }
-
-  @Override
-  public DistributedSortedMapBuilder<K, V> withProtocol(NavigableMapProtocol protocol) {
     return withProtocol((PrimitiveProtocol) protocol);
   }
 }

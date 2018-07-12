@@ -30,16 +30,13 @@ import java.util.stream.Collectors;
  * CRDT tree set.
  */
 public class CrdtNavigableSetDelegate<E> extends CrdtSetDelegate<E> implements NavigableSetDelegate<E> {
-  private final Comparator<? super E> comparator;
-
-  public CrdtNavigableSetDelegate(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService, Comparator<? super E> comparator) {
+  public CrdtNavigableSetDelegate(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
     super(name, config, managementService);
-    this.comparator = comparator;
   }
 
   @Override
   public Comparator<? super E> comparator() {
-    return comparator;
+    return null;
   }
 
   @Override
@@ -128,7 +125,7 @@ public class CrdtNavigableSetDelegate<E> extends CrdtSetDelegate<E> implements N
         .stream()
         .filter(entry -> !entry.getValue().isTombstone())
         .map(entry -> decode(entry.getKey()))
-        .sorted(comparator)
-        .collect(Collectors.toCollection(() -> new TreeSet<>()));
+        .sorted()
+        .collect(Collectors.toCollection(TreeSet::new));
   }
 }

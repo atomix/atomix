@@ -20,8 +20,8 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
 import io.atomix.primitive.protocol.ProxyProtocol;
-import io.atomix.primitive.protocol.set.NavigableSetProtocol;
 import io.atomix.primitive.protocol.set.NavigableSetCompatibleBuilder;
+import io.atomix.primitive.protocol.set.NavigableSetProtocol;
 
 /**
  * Builder for distributed navigable set.
@@ -30,8 +30,7 @@ import io.atomix.primitive.protocol.set.NavigableSetCompatibleBuilder;
  */
 public abstract class DistributedNavigableSetBuilder<E extends Comparable<E>>
     extends DistributedCollectionBuilder<DistributedNavigableSetBuilder<E>, DistributedNavigableSetConfig, DistributedNavigableSet<E>, E>
-    implements ProxyCompatibleBuilder<DistributedNavigableSetBuilder<E>>,
-    NavigableSetCompatibleBuilder<DistributedNavigableSetBuilder<E>> {
+    implements ProxyCompatibleBuilder<DistributedNavigableSetBuilder<E>>, NavigableSetCompatibleBuilder<DistributedNavigableSetBuilder<E>> {
 
   protected DistributedNavigableSetBuilder(String name, DistributedNavigableSetConfig config, PrimitiveManagementService managementService) {
     super(DistributedNavigableSetType.instance(), name, config, managementService);
