@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * CRDT based counter implementation.
  */
-public class CrdtCounter implements CounterDelegate {
+public class CrdtCounterDelegate implements CounterDelegate {
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .register(MemberId.class)
@@ -50,7 +50,7 @@ public class CrdtCounter implements CounterDelegate {
   private final AtomicLongMap<MemberId> increments = AtomicLongMap.create();
   private final AtomicLongMap<MemberId> decrements = AtomicLongMap.create();
 
-  public CrdtCounter(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
+  public CrdtCounterDelegate(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
     this.localMemberId = managementService.getMembershipService().getLocalMember().id();
     this.clusterCommunicator = managementService.getCommunicationService();
     this.executorService = managementService.getExecutorService();

@@ -22,8 +22,8 @@ import io.atomix.primitive.protocol.counter.CounterDelegate;
 import io.atomix.primitive.protocol.counter.CounterProtocol;
 import io.atomix.primitive.protocol.set.SetDelegate;
 import io.atomix.primitive.protocol.set.SetProtocol;
-import io.atomix.protocols.gossip.counter.CrdtCounter;
-import io.atomix.protocols.gossip.set.CrdtSet;
+import io.atomix.protocols.gossip.counter.CrdtCounterDelegate;
+import io.atomix.protocols.gossip.set.CrdtSetDelegate;
 import io.atomix.utils.serializer.Serializer;
 
 /**
@@ -31,6 +31,15 @@ import io.atomix.utils.serializer.Serializer;
  */
 public class CrdtProtocol implements GossipProtocol, CounterProtocol, SetProtocol {
   public static final Type TYPE = new Type();
+
+  /**
+   * Returns an instance of the CRDT protocol with the default configuration.
+   *
+   * @return an instance of the CRDT protocol with the default configuration
+   */
+  public CrdtProtocol instance() {
+    return new CrdtProtocol(new CrdtProtocolConfig());
+  }
 
   /**
    * Returns a new CRDT protocol builder.
@@ -81,11 +90,11 @@ public class CrdtProtocol implements GossipProtocol, CounterProtocol, SetProtoco
 
   @Override
   public CounterDelegate newCounterDelegate(String name, PrimitiveManagementService managementService) {
-    return new CrdtCounter(name, config, managementService);
+    return new CrdtCounterDelegate(name, config, managementService);
   }
 
   @Override
   public <E> SetDelegate<E> newSetDelegate(String name, PrimitiveManagementService managementService) {
-    return new CrdtSet<>(name, config, managementService);
+    return new CrdtSetDelegate<>(name, config, managementService);
   }
 }

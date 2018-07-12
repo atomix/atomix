@@ -17,8 +17,8 @@ package io.atomix.protocols.raft;
 
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionService;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.impl.DefaultProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
@@ -36,6 +36,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class MultiRaftProtocol implements ProxyProtocol {
   public static final Type TYPE = new Type();
+
+  /**
+   * Returns an instance of the multi-Raft protocol with the default configuration.
+   *
+   * @return an instance of the multi-Raft protocol with the default configuration
+   */
+  public MultiRaftProtocol instance() {
+    return new MultiRaftProtocol(new MultiRaftProtocolConfig());
+  }
 
   /**
    * Returns a new multi-Raft protocol builder.

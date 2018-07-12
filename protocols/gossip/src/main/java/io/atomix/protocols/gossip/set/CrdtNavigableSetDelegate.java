@@ -29,10 +29,10 @@ import java.util.stream.Collectors;
 /**
  * CRDT tree set.
  */
-public class CrdtNavigableSet<E> extends CrdtSet<E> implements NavigableSetDelegate<E> {
+public class CrdtNavigableSetDelegate<E> extends CrdtSetDelegate<E> implements NavigableSetDelegate<E> {
   private final Comparator<? super E> comparator;
 
-  public CrdtNavigableSet(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService, Comparator<? super E> comparator) {
+  public CrdtNavigableSetDelegate(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService, Comparator<? super E> comparator) {
     super(name, config, managementService);
     this.comparator = comparator;
   }

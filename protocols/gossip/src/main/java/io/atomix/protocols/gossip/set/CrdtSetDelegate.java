@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 /**
  * Last-write wins set.
  */
-public class CrdtSet<E> implements SetDelegate<E> {
+public class CrdtSetDelegate<E> implements SetDelegate<E> {
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .register(SetElement.class)
@@ -57,7 +57,7 @@ public class CrdtSet<E> implements SetDelegate<E> {
   protected final Map<String, SetElement> elements = Maps.newConcurrentMap();
   private final Set<SetDelegateEventListener<E>> eventListeners = Sets.newCopyOnWriteArraySet();
 
-  public CrdtSet(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
+  public CrdtSetDelegate(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
     this.clusterCommunicator = managementService.getCommunicationService();
     this.executorService = managementService.getExecutorService();
     this.elementSerializer = config.getSerializer();

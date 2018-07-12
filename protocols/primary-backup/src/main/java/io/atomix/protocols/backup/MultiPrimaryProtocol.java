@@ -17,8 +17,8 @@ package io.atomix.protocols.backup;
 
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionService;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.proxy.impl.DefaultProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
@@ -36,6 +36,15 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class MultiPrimaryProtocol implements ProxyProtocol {
   public static final Type TYPE = new Type();
+
+  /**
+   * Returns an instance of the multi-primary protocol with the default configuration.
+   *
+   * @return an instance of the multi-primary protocol with the default configuration
+   */
+  public MultiPrimaryProtocol instance() {
+    return new MultiPrimaryProtocol(new MultiPrimaryProtocolConfig());
+  }
 
   /**
    * Returns a new multi-primary protocol builder.
