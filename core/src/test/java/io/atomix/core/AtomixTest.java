@@ -34,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -313,8 +314,12 @@ public class AtomixTest extends AbstractAtomixTest {
       return !queue.isEmpty();
     }
 
-    public ClusterMembershipEvent event() throws InterruptedException {
-      return queue.poll(10, TimeUnit.SECONDS);
+    public ClusterMembershipEvent event() throws InterruptedException, TimeoutException {
+      ClusterMembershipEvent event = queue.poll(10, TimeUnit.SECONDS);
+      if (event == null) {
+        throw new TimeoutException();
+      }
+      return event;
     }
   }
 }
