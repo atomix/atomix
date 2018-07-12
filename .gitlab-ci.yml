@@ -12,6 +12,7 @@ cache:
   stage: test
   script:
     - export repoToken=$COVERALLS_TOKEN
+    - export CI_BRANCH=$CI_COMMIT_REF_NAME
     - mvn $MAVEN_CLI_OPTS clean install verify jacoco:report coveralls:report -Dmaven.javadoc.skip=true
 
 # Verify merge requests using JDK8
