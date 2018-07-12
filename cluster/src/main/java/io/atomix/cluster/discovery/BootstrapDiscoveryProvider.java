@@ -172,7 +172,7 @@ public class BootstrapDiscoveryProvider
    * Sends a heartbeat to the given peer.
    */
   private CompletableFuture<Void> sendHeartbeat(Node localNode, Address address) {
-    return bootstrap.getMessagingService().sendAndReceive(address, HEARTBEAT_MESSAGE, SERIALIZER.encode(localNode)).whenComplete((response, error) -> {
+    return bootstrap.getMessagingService().sendAndReceive(address, HEARTBEAT_MESSAGE, SERIALIZER.encode(localNode)).whenCompleteAsync((response, error) -> {
       if (error == null) {
         Collection<Node> nodes = SERIALIZER.decode(response);
         for (Node node : nodes) {
@@ -202,7 +202,7 @@ public class BootstrapDiscoveryProvider
           }
         }
       }
-    }).exceptionally(e -> null)
+    }, heartbeatExecutor).exceptionally(e -> null)
         .thenApply(v -> null);
   }
 
