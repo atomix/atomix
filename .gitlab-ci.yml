@@ -20,6 +20,11 @@ cache:
 verify:jdk8:
   <<: *verify
   image: maven:3-jdk-8
+  artifacts:
+    paths:
+      - */target/surefire-reports/
+    expire_in: 2 days
+    when: always
 
 # Verify merge requests using JDK11
 verify:jdk11:
