@@ -20,16 +20,19 @@ import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.counter.CounterDelegate;
 import io.atomix.primitive.protocol.counter.CounterProtocol;
+import io.atomix.primitive.protocol.set.NavigableSetDelegate;
+import io.atomix.primitive.protocol.set.NavigableSetProtocol;
 import io.atomix.primitive.protocol.set.SetDelegate;
-import io.atomix.primitive.protocol.set.SetProtocol;
+import io.atomix.primitive.protocol.set.SortedSetDelegate;
 import io.atomix.protocols.gossip.counter.CrdtCounterDelegate;
+import io.atomix.protocols.gossip.set.CrdtNavigableSetDelegate;
 import io.atomix.protocols.gossip.set.CrdtSetDelegate;
 import io.atomix.utils.serializer.Serializer;
 
 /**
  * Conflict-free Replicated Data Types (CRDT) protocol.
  */
-public class CrdtProtocol implements GossipProtocol, CounterProtocol, SetProtocol {
+public class CrdtProtocol implements GossipProtocol, CounterProtocol, NavigableSetProtocol {
   public static final Type TYPE = new Type();
 
   /**
@@ -96,5 +99,15 @@ public class CrdtProtocol implements GossipProtocol, CounterProtocol, SetProtoco
   @Override
   public <E> SetDelegate<E> newSetDelegate(String name, PrimitiveManagementService managementService) {
     return new CrdtSetDelegate<>(name, config, managementService);
+  }
+
+  @Override
+  public <E> SortedSetDelegate<E> newSortedSetDelegate(String name, PrimitiveManagementService managementService) {
+    return new CrdtNavigableSetDelegate<>(name, config, managementService);
+  }
+
+  @Override
+  public <E> NavigableSetDelegate<E> newNavigableSetDelegate(String name, PrimitiveManagementService managementService) {
+    return new CrdtNavigableSetDelegate<>(name, config, managementService);
   }
 }
