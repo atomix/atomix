@@ -105,7 +105,7 @@ public class MulticastDiscoveryProvider
   private final ScheduledExecutorService broadcastScheduler = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-cluster-broadcast", LOGGER));
   private volatile ScheduledFuture<?> broadcastFuture;
-  private final Consumer<byte[]> broadcastListener = this::handleBroadcastMessage;
+  private final Consumer<byte[]> broadcastListener = message -> broadcastScheduler.execute(() -> handleBroadcastMessage(message));
 
   private final Map<Address, Node> nodes = Maps.newConcurrentMap();
 
