@@ -15,14 +15,16 @@
  */
 package io.atomix.core.transaction;
 
-import io.atomix.core.map.ConsistentMapType;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.core.map.AtomicMapType;
+import io.atomix.primitive.config.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Transactional map configuration.
  */
 public class TransactionalMapConfig extends PrimitiveConfig {
-  public TransactionalMapConfig() {
-    super(ConsistentMapType.instance());
+  @Override
+  public PrimitiveType getType() {
+    return AtomicMapType.instance();
   }
 }

@@ -72,6 +72,23 @@ public interface ThreadContext extends AutoCloseable, Executor, Scheduler {
   }
 
   /**
+   * Returns whether the thread context is currently marked blocked.
+   *
+   * @return whether the thread context is currently marked blocked
+   */
+  boolean isBlocked();
+
+  /**
+   * Marks the thread context as blocked.
+   */
+  void block();
+
+  /**
+   * Marks the thread context as unblocked.
+   */
+  void unblock();
+
+  /**
    * Closes the context.
    */
   @Override

@@ -15,134 +15,59 @@
  */
 package io.atomix.core.value.impl;
 
-import com.google.common.collect.Sets;
-import io.atomix.core.value.AtomicValueEvent;
-import io.atomix.core.value.impl.AtomicValueOperations.CompareAndSet;
-import io.atomix.core.value.impl.AtomicValueOperations.GetAndSet;
-import io.atomix.core.value.impl.AtomicValueOperations.Set;
-import io.atomix.primitive.service.AbstractPrimitiveService;
-import io.atomix.primitive.service.BackupInput;
-import io.atomix.primitive.service.BackupOutput;
-import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.PrimitiveSession;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.utils.serializer.Serializer;
-
-import java.util.Arrays;
-import java.util.HashSet;
-
-import static io.atomix.core.value.impl.AtomicValueEvents.CHANGE;
-import static io.atomix.core.value.impl.AtomicValueOperations.ADD_LISTENER;
-import static io.atomix.core.value.impl.AtomicValueOperations.COMPARE_AND_SET;
-import static io.atomix.core.value.impl.AtomicValueOperations.GET;
-import static io.atomix.core.value.impl.AtomicValueOperations.GET_AND_SET;
-import static io.atomix.core.value.impl.AtomicValueOperations.REMOVE_LISTENER;
-import static io.atomix.core.value.impl.AtomicValueOperations.SET;
+import io.atomix.primitive.operation.Command;
+import io.atomix.primitive.operation.Query;
 
 /**
- * Raft atomic value service.
+ * Atomic value service.
  */
-public class AtomicValueService extends AbstractPrimitiveService {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
-      .register(AtomicValueOperations.NAMESPACE)
-      .register(AtomicValueEvents.NAMESPACE)
-      .build());
-
-  private byte[] value;
-  private java.util.Set<PrimitiveSession> listeners = Sets.newHashSet();
-
-  public AtomicValueService(ServiceConfig config) {
-    super(config);
-  }
-
-  @Override
-  public Serializer serializer() {
-    return SERIALIZER;
-  }
-
-  @Override
-  protected void configure(ServiceExecutor executor) {
-    executor.register(SET, this::set);
-    executor.register(GET, this::get);
-    executor.register(COMPARE_AND_SET, this::compareAndSet);
-    executor.register(GET_AND_SET, this::getAndSet);
-    executor.register(ADD_LISTENER, (Commit<Void> c) -> listeners.add(c.session()));
-    executor.register(REMOVE_LISTENER, (Commit<Void> c) -> listeners.remove(c.session()));
-  }
-
-  @Override
-  public void backup(BackupOutput writer) {
-    writer.writeInt(value.length).writeBytes(value);
-    java.util.Set<Long> sessionIds = new HashSet<>();
-    for (PrimitiveSession session : listeners) {
-      sessionIds.add(session.sessionId().id());
-    }
-    writer.writeObject(sessionIds);
-  }
-
-  @Override
-  public void restore(BackupInput reader) {
-    value = reader.readBytes(reader.readInt());
-    listeners = new HashSet<>();
-    for (Long sessionId : reader.<java.util.Set<Long>>readObject()) {
-      listeners.add(getSession(sessionId));
-    }
-  }
-
-  private byte[] updateAndNotify(byte[] value) {
-    byte[] oldValue = this.value;
-    this.value = value;
-    AtomicValueEvent<byte[]> event = new AtomicValueEvent<>(oldValue, value);
-    listeners.forEach(s -> s.publish(CHANGE, event));
-    return oldValue;
-  }
+public interface AtomicValueService {
 
   /**
-   * Handles a set commit.
+   * Sets the value.
    *
-   * @param commit the commit to handle
+   * @param value the value
    */
-  protected void set(Commit<Set> commit) {
-    if (!Arrays.equals(this.value, commit.value().value())) {
-      updateAndNotify(commit.value().value());
-    }
-  }
+  @Command
+  void set(byte[] value);
 
   /**
-   * Handles a get commit.
+   * Gets the current value
    *
-   * @param commit the commit to handle
-   * @return value
+   * @return the current value
    */
-  protected byte[] get(Commit<Void> commit) {
-    return value;
-  }
+  @Query
+  byte[] get();
 
   /**
-   * Handles a compare and set commit.
+   * Updates the value if is matches the given expected value.
    *
-   * @param commit the commit to handle
-   * @return indicates whether the value was updated
+   * @param expect the expected value
+   * @param update the updated value
+   * @return indicates whether the update was successful
    */
-  protected boolean compareAndSet(Commit<CompareAndSet> commit) {
-    if (Arrays.equals(value, commit.value().expect())) {
-      updateAndNotify(commit.value().update());
-      return true;
-    }
-    return false;
-  }
+  @Command
+  boolean compareAndSet(byte[] expect, byte[] update);
 
   /**
-   * Handles a get and set commit.
+   * Updates the value and returns the previous value.
    *
-   * @param commit the commit to handle
-   * @return value
+   * @param value the updated value
+   * @return the previous value
    */
-  protected byte[] getAndSet(Commit<GetAndSet> commit) {
-    return updateAndNotify(commit.value().value());
-  }
+  @Command
+  byte[] getAndSet(byte[] value);
+
+  /**
+   * Adds a listener to the service.
+   */
+  @Command
+  void addListener();
+
+  /**
+   * Removes a listener from the service.
+   */
+  @Command
+  void removeListener();
+
 }

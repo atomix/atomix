@@ -15,11 +15,14 @@
  */
 package io.atomix.core.transaction.impl;
 
-import io.atomix.core.transaction.TransactionalMapConfig;
+import io.atomix.core.set.DistributedSetBuilder;
+import io.atomix.core.set.DistributedSetConfig;
+import io.atomix.core.set.DistributedSetType;
 import io.atomix.core.transaction.TransactionalSet;
 import io.atomix.core.transaction.TransactionalSetBuilder;
 import io.atomix.core.transaction.TransactionalSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.ProxyProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -27,17 +30,38 @@ import java.util.concurrent.CompletableFuture;
  * Default transactional set builder.
  */
 public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E> {
+  private final DistributedSetBuilder<E> setBuilder;
   private final DefaultTransaction transaction;
 
   public DefaultTransactionalSetBuilder(String name, TransactionalSetConfig config, PrimitiveManagementService managementService, DefaultTransaction transaction) {
     super(name, config, managementService);
+    this.setBuilder = DistributedSetType.<E>instance().newBuilder(name, new DistributedSetConfig(), managementService);
     this.transaction = transaction;
   }
 
   @Override
+  public TransactionalSetBuilder<E> withProtocol(ProxyProtocol protocol) {
+    setBuilder.withProtocol(protocol);
+    return this;
+  }
+
+  @Override
   public CompletableFuture<TransactionalSet<E>> buildAsync() {
-    return new DefaultTransactionalMapBuilder<E, Boolean>(name(), new TransactionalMapConfig(), managementService, transaction)
-        .buildAsync()
-        .thenApply(map -> new DefaultTransactionalSet<>(map.async()).sync());
+    return setBuilder.buildAsync()
+        .thenApply(set -> {
+          TransactionalSetParticipant<E> transactionalSet;
+          switch (transaction.isolation()) {
+            case READ_COMMITTED:
+              transactionalSet = new ReadCommittedTransactionalSet<>(transaction.transactionId(), set.async());
+              break;
+            case REPEATABLE_READS:
+              transactionalSet = new RepeatableReadsTransactionalSet<>(transaction.transactionId(), set.async());
+              break;
+            default:
+              throw new AssertionError();
+          }
+          transaction.addParticipants(transactionalSet);
+          return transactionalSet.sync();
+        });
   }
 }

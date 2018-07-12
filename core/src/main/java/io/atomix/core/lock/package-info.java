@@ -15,6 +15,6 @@
  */
 
 /**
- * Distributed lock primitive interfaces.
+ * Distributed lock primitive.
  */
 package io.atomix.core.lock;

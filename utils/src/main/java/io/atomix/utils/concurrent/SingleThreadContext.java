@@ -41,7 +41,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SingleThreadContext implements ThreadContext {
+public class SingleThreadContext extends AbstractThreadContext {
   protected static final Logger LOGGER = LoggerFactory.getLogger(SingleThreadContext.class);
   private final ScheduledExecutorService executor;
   private final Executor wrappedExecutor = new Executor() {
@@ -80,7 +80,7 @@ public class SingleThreadContext implements ThreadContext {
    *
    * @param executor The executor on which to schedule events. This must be a single thread scheduled executor.
    */
-  private SingleThreadContext(ScheduledExecutorService executor) {
+  protected SingleThreadContext(ScheduledExecutorService executor) {
     this(getThread(executor), executor);
   }
 

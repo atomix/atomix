@@ -17,7 +17,6 @@ package io.atomix.protocols.raft;
 
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.MemberId;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -552,18 +551,17 @@ public interface RaftServer {
     private static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(250);
     private static final Duration DEFAULT_SESSION_TIMEOUT = Duration.ofMillis(5000);
     private static final ThreadModel DEFAULT_THREAD_MODEL = ThreadModel.SHARED_THREAD_POOL;
-    private static final int DEFAULT_THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
+    private static final int DEFAULT_THREAD_POOL_SIZE = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 8), 4);
 
     protected String name;
     protected MemberId localMemberId;
-    protected ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     protected ClusterMembershipService membershipService;
     protected RaftServerProtocol protocol;
     protected RaftStorage storage;
     protected Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
     protected Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     protected Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
-    protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry(classLoader);
+    protected PrimitiveTypeRegistry primitiveTypes;
     protected ThreadModel threadModel = DEFAULT_THREAD_MODEL;
     protected int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
@@ -585,18 +583,6 @@ public interface RaftServer {
     }
 
     /**
-     * Sets the class loader.
-     *
-     * @param classLoader the class loader
-     * @return the server builder
-     */
-    public Builder withClassLoader(ClassLoader classLoader) {
-      this.classLoader = checkNotNull(classLoader, "classLoader cannot be null");
-      this.primitiveTypes = new PrimitiveTypeRegistry(classLoader);
-      return this;
-    }
-
-    /**
      * Sets the cluster membership service.
      *
      * @param membershipService the cluster membership service
@@ -604,17 +590,6 @@ public interface RaftServer {
      */
     public Builder withMembershipService(ClusterMembershipService membershipService) {
       this.membershipService = checkNotNull(membershipService, "membershipService cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the initial server member type.
-     *
-     * @param type The initial server member type.
-     * @return The server builder.
-     */
-    @Deprecated
-    public Builder withType(RaftMember.Type type) {
       return this;
     }
 
@@ -661,18 +636,6 @@ public interface RaftServer {
      */
     public Builder withPrimitiveTypes(PrimitiveTypeRegistry primitiveTypes) {
       this.primitiveTypes = checkNotNull(primitiveTypes, "primitiveTypes cannot be null");
-      return this;
-    }
-
-    /**
-     * Adds a primitive type to the registry.
-     *
-     * @param primitiveType the primitive type to add
-     * @return the Raft server builder
-     * @throws NullPointerException if the {@code primitiveType} is {@code null}
-     */
-    public Builder addPrimitiveType(PrimitiveType primitiveType) {
-      primitiveTypes.register(primitiveType);
       return this;
     }
 

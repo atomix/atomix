@@ -16,7 +16,6 @@
 package io.atomix.primitive.partition;
 
 import io.atomix.cluster.MemberId;
-import io.atomix.primitive.proxy.ProxyClient;
 
 import java.util.Collection;
 
@@ -61,10 +60,10 @@ public interface Partition {
   Collection<MemberId> backups();
 
   /**
-   * Returns the primitive client for the partition.
+   * Returns the partition client.
    *
-   * @return the primitive client for the partition
+   * @return the partition client
    */
-  ProxyClient getProxyClient();
+  PartitionClient getClient();
 
 }

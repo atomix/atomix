@@ -50,6 +50,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class DefaultServiceExecutor implements ServiceExecutor {
   private final Serializer serializer;
+  private final ServiceContext context;
   private final Logger log;
   private final Queue<Runnable> tasks = new LinkedList<>();
   private final List<ScheduledTask> scheduledTasks = new ArrayList<>();
@@ -60,6 +61,7 @@ public class DefaultServiceExecutor implements ServiceExecutor {
 
   public DefaultServiceExecutor(ServiceContext context, Serializer serializer) {
     this.serializer = checkNotNull(serializer);
+    this.context = checkNotNull(context);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(PrimitiveService.class)
         .addValue(context.serviceId())
         .add("type", context.serviceType())

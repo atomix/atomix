@@ -15,13 +15,15 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
 
 /**
  * Atomic counter map configuration.
  */
 public class AtomicCounterMapConfig extends PrimitiveConfig<AtomicCounterMapConfig> {
-  public AtomicCounterMapConfig() {
-    super(AtomicCounterMapType.instance());
+  @Override
+  public PrimitiveType getType() {
+    return AtomicCounterMapType.instance();
   }
 }

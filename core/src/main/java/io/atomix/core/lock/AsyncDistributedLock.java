@@ -17,36 +17,40 @@ package io.atomix.core.lock;
 
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.utils.time.Version;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Asynchronous lock primitive.
  */
 public interface AsyncDistributedLock extends AsyncPrimitive {
 
-  @Override
-  default PrimitiveType primitiveType() {
-    return DistributedLockType.instance();
-  }
-
   /**
    * Acquires the lock, blocking until it's available.
    *
    * @return future to be completed once the lock has been acquired
    */
-  CompletableFuture<Version> lock();
+  CompletableFuture<Void> lock();
 
   /**
    * Attempts to acquire the lock.
    *
    * @return future to be completed with a boolean indicating whether the lock was acquired
    */
-  CompletableFuture<Optional<Version>> tryLock();
+  CompletableFuture<Boolean> tryLock();
+
+  /**
+   * Attempts to acquire the lock.
+   *
+   * @param timeout the timeout after which to give up attempting to acquire the lock
+   * @param unit the timeout time unit
+   * @return future to be completed with a boolean indicating whether the lock was acquired
+   */
+  default CompletableFuture<Boolean> tryLock(long timeout, TimeUnit unit) {
+    return tryLock(Duration.ofMillis(unit.toMillis(timeout)));
+  }
 
   /**
    * Attempts to acquire the lock for a specified amount of time.
@@ -54,7 +58,7 @@ public interface AsyncDistributedLock extends AsyncPrimitive {
    * @param timeout the timeout after which to give up attempting to acquire the lock
    * @return future to be completed with a boolean indicating whether the lock was acquired
    */
-  CompletableFuture<Optional<Version>> tryLock(Duration timeout);
+  CompletableFuture<Boolean> tryLock(Duration timeout);
 
   /**
    * Unlocks the lock.

@@ -17,18 +17,17 @@ package io.atomix.protocols.backup;
 
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.TestClusterMembershipService;
-import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Replication;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.TestPrimaryElection;
-import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
@@ -36,10 +35,12 @@ import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.protocol.TestPrimaryBackupProtocolFactory;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.serializer.serializers.DefaultSerializers;
 import net.jodah.concurrentunit.ConcurrentTestCase;
@@ -52,9 +53,12 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static io.atomix.primitive.operation.PrimitiveOperation.operation;
 import static org.junit.Assert.assertEquals;
@@ -94,7 +98,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     createServers(nodes);
 
     PrimaryBackupClient client = createClient();
-    PartitionProxy session = createProxy(client, backups, replication);
+    SessionClient session = createProxy(client, backups, replication);
     session.execute(operation(WRITE)).thenRun(this::resume);
 
     await(5000);
@@ -122,7 +126,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     createServers(nodes);
 
     PrimaryBackupClient client = createClient();
-    PartitionProxy session = createProxy(client, backups, replication);
+    SessionClient session = createProxy(client, backups, replication);
     session.execute(operation(READ)).thenRun(this::resume);
 
     await(5000);
@@ -153,7 +157,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     AtomicLong index = new AtomicLong();
 
     PrimaryBackupClient client = createClient();
-    PartitionProxy session = createProxy(client, backups, replication);
+    SessionClient session = createProxy(client, backups, replication);
     session.<Long>addEventListener(CHANGE_EVENT, event -> {
       threadAssertEquals(count.incrementAndGet(), 2L);
       threadAssertEquals(index.get(), SERIALIZER.decode(event.value()));
@@ -194,14 +198,14 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     createServers(nodes);
 
     PrimaryBackupClient client1 = createClient();
-    PartitionProxy session1 = createProxy(client1, backups, replication);
+    SessionClient session1 = createProxy(client1, backups, replication);
     session1.addEventListener(CHANGE_EVENT, event -> {
       threadAssertNotNull(event);
       resume();
     });
 
     PrimaryBackupClient client2 = createClient();
-    PartitionProxy session2 = createProxy(client2, backups, replication);
+    SessionClient session2 = createProxy(client2, backups, replication);
     session2.addEventListener(CHANGE_EVENT, event -> {
       threadAssertNotNull(event);
       resume();
@@ -237,7 +241,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     createServers(nodes);
 
     PrimaryBackupClient client = createClient();
-    PartitionProxy session = createProxy(client, backups, replication);
+    SessionClient session = createProxy(client, backups, replication);
     session.addEventListener(CHANGE_EVENT, message -> {
       threadAssertNotNull(message);
       resume();
@@ -269,7 +273,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     List<PrimaryBackupServer> servers = createServers(5);
 
     PrimaryBackupClient client = createClient();
-    PartitionProxy session = createProxy(client, 3, replication);
+    SessionClient session = createProxy(client, 3, replication);
     session.addEventListener(CHANGE_EVENT, event -> {
       threadAssertNotNull(event);
       resume();
@@ -314,20 +318,20 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     createServers(3);
 
     PrimaryBackupClient client = createClient();
-    PartitionProxy session = createProxy(client, 2, replication);
+    SessionClient session = createProxy(client, 2, replication);
     session.addEventListener(CHANGE_EVENT, event -> {
       threadAssertNotNull(event);
       resume();
     });
 
-    PartitionProxy session1 = createProxy(createClient(), 2, replication);
+    SessionClient session1 = createProxy(createClient(), 2, replication);
     session1.execute(operation(READ)).thenRun(this::resume);
     session1.addEventListener(CHANGE_EVENT, event -> {
       threadAssertNotNull(event);
       resume();
     });
 
-    PartitionProxy session2 = createProxy(createClient(), 2, replication);
+    SessionClient session2 = createProxy(createClient(), 2, replication);
     session2.execute(operation(READ)).thenRun(this::resume);
     session2.addEventListener(CHANGE_EVENT, event -> {
       threadAssertNotNull(event);
@@ -360,12 +364,12 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     createServers(3);
 
     PrimaryBackupClient client1 = createClient();
-    PartitionProxy session1 = createProxy(client1, 2, replication);
+    SessionClient session1 = createProxy(client1, 2, replication);
     PrimaryBackupClient client2 = createClient();
     session1.execute(operation(CLOSE)).thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 1);
     session1.addEventListener(CLOSE_EVENT, e -> resume());
-    PartitionProxy session2 = createProxy(client2, 2, replication);
+    SessionClient session2 = createProxy(client2, 2, replication);
     session2.execute(operation(READ)).thenRun(this::resume);
     await(5000);
     session2.close().thenRun(this::resume);
@@ -416,7 +420,6 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
         .withMembershipService(new TestClusterMembershipService(memberId, nodes))
         .withMemberGroupProvider(MemberGroupStrategy.NODE_AWARE)
         .withPrimaryElection(election)
-        .addPrimitiveType(TestPrimitiveType.INSTANCE)
         .build();
     servers.add(server);
     return server;
@@ -442,18 +445,30 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   /**
    * Creates a new primary-backup proxy.
    */
-  private PartitionProxy createProxy(PrimaryBackupClient client, int backups, Replication replication) {
-    return client.proxyBuilder("test", TestPrimitiveType.INSTANCE, new ServiceConfig())
-        .withNumBackups(backups)
-        .withReplication(replication)
-        .build()
-        .connect()
-        .join();
+  private SessionClient createProxy(PrimaryBackupClient client, int backups, Replication replication) {
+    try {
+      return client.sessionBuilder("primary-backup-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
+          .withNumBackups(backups)
+          .withReplication(replication)
+          .build()
+          .connect()
+          .get(30, TimeUnit.SECONDS);
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Before
   @After
   public void clearTests() throws Exception {
+    Futures.allOf(servers.stream()
+        .map(s -> s.stop().exceptionally(v -> null))
+        .collect(Collectors.toList()))
+        .get(30, TimeUnit.SECONDS);
+    Futures.allOf(clients.stream()
+        .map(c -> c.close().exceptionally(v -> null))
+        .collect(Collectors.toList()))
+        .get(30, TimeUnit.SECONDS);
     nodes = new ArrayList<>();
     memberId = 0;
     sessionId = 0;
@@ -474,42 +489,39 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
   private static final EventType EXPIRE_EVENT = EventType.from("expire");
   private static final EventType CLOSE_EVENT = EventType.from("close");
 
-  /**
-   * Test primitive type.
-   */
-  private static class TestPrimitiveType implements PrimitiveType {
-    static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
+  public static class TestPrimitiveType implements PrimitiveType {
+    private static final TestPrimitiveType INSTANCE = new TestPrimitiveType();
 
     @Override
-    public String id() {
-      return "test";
+    public String name() {
+      return "primary-backup-test";
+    }
+
+    @Override
+    public PrimitiveConfig newConfig() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public PrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
+      throw new UnsupportedOperationException();
     }
 
     @Override
     public PrimitiveService newService(ServiceConfig config) {
-      return new TestPrimitiveService(config);
-    }
-
-    @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
-      throw new UnsupportedOperationException();
+      return new TestPrimitiveService();
     }
   }
 
   /**
    * Test state machine.
    */
-  public static class TestPrimitiveService extends AbstractPrimitiveService<Object, ServiceConfig> {
+  public static class TestPrimitiveService extends AbstractPrimitiveService<Object> {
     private Commit<Void> expire;
     private Commit<Void> close;
 
-    public TestPrimitiveService(ServiceConfig config) {
-      super(config);
+    public TestPrimitiveService() {
+      super(TestPrimitiveType.INSTANCE);
     }
 
     @Override
@@ -527,14 +539,14 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
     }
 
     @Override
-    public void onExpire(PrimitiveSession session) {
+    public void onExpire(Session session) {
       if (expire != null) {
         expire.session().publish(EXPIRE_EVENT);
       }
     }
 
     @Override
-    public void onClose(PrimitiveSession session) {
+    public void onClose(Session session) {
       if (close != null && !session.equals(close.session())) {
         close.session().publish(CLOSE_EVENT);
       }
@@ -562,7 +574,7 @@ public class PrimaryBackupTest extends ConcurrentTestCase {
       if (commit.value()) {
         commit.session().publish(CHANGE_EVENT, commit.index());
       } else {
-        for (PrimitiveSession session : getSessions()) {
+        for (Session session : getSessions()) {
           session.publish(CHANGE_EVENT, commit.index());
         }
       }

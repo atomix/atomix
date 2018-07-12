@@ -16,10 +16,11 @@
 package io.atomix.core.transaction.impl;
 
 import com.google.common.base.Throwables;
-
-import io.atomix.core.map.ConsistentMapException;
 import io.atomix.core.transaction.AsyncTransactionalMap;
 import io.atomix.core.transaction.TransactionalMap;
+import io.atomix.primitive.PrimitiveException;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -41,6 +42,16 @@ public class BlockingTransactionalMap<K, V> implements TransactionalMap<K, V> {
   @Override
   public String name() {
     return asyncMap.name();
+  }
+
+  @Override
+  public PrimitiveType type() {
+    return asyncMap.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return asyncMap.protocol();
   }
 
   @Override
@@ -93,12 +104,12 @@ public class BlockingTransactionalMap<K, V> implements TransactionalMap<K, V> {
       return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      throw new ConsistentMapException.Interrupted();
+      throw new PrimitiveException.Interrupted();
     } catch (TimeoutException e) {
-      throw new ConsistentMapException.Timeout(name());
+      throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
       Throwables.propagateIfPossible(e.getCause());
-      throw new ConsistentMapException(e.getCause());
+      throw new PrimitiveException(e.getCause());
     }
   }
 }

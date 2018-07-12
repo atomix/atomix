@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2015-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,177 +15,89 @@
  */
 package io.atomix.core.counter.impl;
 
-import io.atomix.core.counter.impl.AtomicCounterOperations.AddAndGet;
-import io.atomix.core.counter.impl.AtomicCounterOperations.CompareAndSet;
-import io.atomix.core.counter.impl.AtomicCounterOperations.GetAndAdd;
-import io.atomix.core.counter.impl.AtomicCounterOperations.Set;
-import io.atomix.primitive.service.AbstractPrimitiveService;
-import io.atomix.primitive.service.BackupInput;
-import io.atomix.primitive.service.BackupOutput;
-import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.utils.serializer.Serializer;
-
-import java.util.Objects;
-
-import static io.atomix.core.counter.impl.AtomicCounterOperations.ADD_AND_GET;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.COMPARE_AND_SET;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.DECREMENT_AND_GET;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.GET;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_ADD;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_DECREMENT;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.GET_AND_INCREMENT;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.INCREMENT_AND_GET;
-import static io.atomix.core.counter.impl.AtomicCounterOperations.SET;
+import io.atomix.primitive.operation.Command;
+import io.atomix.primitive.operation.Query;
 
 /**
- * Atomix long state.
+ * Atomic counter service.
  */
-public class AtomicCounterService extends AbstractPrimitiveService {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
-      .register(AtomicCounterOperations.NAMESPACE)
-      .build());
-
-  private Long value = 0L;
-
-  public AtomicCounterService(ServiceConfig config) {
-    super(config);
-  }
-
-  @Override
-  public Serializer serializer() {
-    return SERIALIZER;
-  }
-
-  @Override
-  protected void configure(ServiceExecutor executor) {
-    executor.register(SET, this::set);
-    executor.register(GET, this::get);
-    executor.register(COMPARE_AND_SET, this::compareAndSet);
-    executor.register(INCREMENT_AND_GET, this::incrementAndGet);
-    executor.register(GET_AND_INCREMENT, this::getAndIncrement);
-    executor.register(DECREMENT_AND_GET, this::decrementAndGet);
-    executor.register(GET_AND_DECREMENT, this::getAndDecrement);
-    executor.register(ADD_AND_GET, this::addAndGet);
-    executor.register(GET_AND_ADD, this::getAndAdd);
-  }
-
-  @Override
-  public void backup(BackupOutput writer) {
-    writer.writeLong(value);
-  }
-
-  @Override
-  public void restore(BackupInput reader) {
-    value = reader.readLong();
-  }
+public interface AtomicCounterService {
 
   /**
-   * Handles a set commit.
+   * Atomically increment by one and return the updated value.
    *
-   * @param commit the commit to handle
+   * @return updated value
    */
-  protected void set(Commit<Set> commit) {
-    value = commit.value().value();
-  }
+  @Command
+  long incrementAndGet();
 
   /**
-   * Handles a get commit.
+   * Atomically decrement by one and return the updated value.
    *
-   * @param commit the commit to handle
-   * @return counter value
+   * @return updated value
    */
-  protected Long get(Commit<Void> commit) {
-    return value;
-  }
+  @Command
+  long decrementAndGet();
 
   /**
-   * Handles a compare and set commit.
+   * Atomically increment by one and return the previous value.
    *
-   * @param commit the commit to handle
-   * @return counter value
+   * @return previous value
    */
-  protected boolean compareAndSet(Commit<CompareAndSet> commit) {
-    if (Objects.equals(value, commit.value().expect())) {
-      value = commit.value().update();
-      return true;
-    }
-    return false;
-  }
+  @Command
+  long getAndIncrement();
 
   /**
-   * Handles an increment and get commit.
+   * Atomically decrement by one and return the previous value.
    *
-   * @param commit the commit to handle
-   * @return counter value
+   * @return previous value
    */
-  protected long incrementAndGet(Commit<Void> commit) {
-    Long oldValue = value;
-    value = oldValue + 1;
-    return value;
-  }
+  @Command
+  long getAndDecrement();
 
   /**
-   * Handles a get and increment commit.
+   * Atomically adds the given value to the current value.
    *
-   * @param commit the commit to handle
-   * @return counter value
+   * @param delta the value to add
+   * @return previous value
    */
-  protected long getAndIncrement(Commit<Void> commit) {
-    Long oldValue = value;
-    value = oldValue + 1;
-    return oldValue;
-  }
+  @Command
+  long getAndAdd(long delta);
 
   /**
-   * Handles a decrement and get commit.
+   * Atomically adds the given value to the current value.
    *
-   * @param commit the commit to handle
-   * @return counter value
+   * @param delta the value to add
+   * @return updated value
    */
-  protected long decrementAndGet(Commit<Void> commit) {
-    Long oldValue = value;
-    value = oldValue - 1;
-    return value;
-  }
+  @Command
+  long addAndGet(long delta);
 
   /**
-   * Handles a get and decrement commit.
+   * Atomically sets the given value to the current value.
    *
-   * @param commit the commit to handle
-   * @return counter value
+   * @param value the value to set
    */
-  protected long getAndDecrement(Commit<Void> commit) {
-    Long oldValue = value;
-    value = oldValue - 1;
-    return oldValue;
-  }
+  @Command
+  void set(long value);
 
   /**
-   * Handles an add and get commit.
+   * Atomically sets the given counter to the updated value if the current value is the expected value, otherwise
+   * no change occurs.
    *
-   * @param commit the commit to handle
-   * @return counter value
+   * @param expectedValue the expected current value of the counter
+   * @param updateValue   the new value to be set
+   * @return true if the update occurred and the expected value was equal to the current value, false otherwise
    */
-  protected long addAndGet(Commit<AddAndGet> commit) {
-    Long oldValue = value;
-    value = oldValue + commit.value().delta();
-    return value;
-  }
+  @Command
+  boolean compareAndSet(long expectedValue, long updateValue);
 
   /**
-   * Handles a get and add commit.
+   * Returns the current value of the counter without modifying it.
    *
-   * @param commit the commit to handle
-   * @return counter value
+   * @return current value
    */
-  protected long getAndAdd(Commit<GetAndAdd> commit) {
-    Long oldValue = value;
-    value = oldValue + commit.value().delta();
-    return oldValue;
-  }
+  @Query
+  long get();
+
 }

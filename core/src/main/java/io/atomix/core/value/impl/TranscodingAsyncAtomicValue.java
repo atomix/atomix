@@ -16,11 +16,11 @@
 package io.atomix.core.value.impl;
 
 import com.google.common.collect.Maps;
-
 import io.atomix.core.value.AsyncAtomicValue;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueEvent;
 import io.atomix.core.value.AtomicValueEventListener;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 
 import java.time.Duration;
 import java.util.Map;
@@ -32,7 +32,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Transcoding async atomic value.
  */
-public class TranscodingAsyncAtomicValue<V1, V2> implements AsyncAtomicValue<V1> {
+public class TranscodingAsyncAtomicValue<V1, V2> extends DelegatingAsyncPrimitive implements AsyncAtomicValue<V1> {
 
   private final AsyncAtomicValue<V2> backingValue;
   private final Function<V1, V2> valueEncoder;
@@ -40,14 +40,10 @@ public class TranscodingAsyncAtomicValue<V1, V2> implements AsyncAtomicValue<V1>
   private final Map<AtomicValueEventListener<V1>, InternalAtomicValueEventListener> listeners = Maps.newIdentityHashMap();
 
   public TranscodingAsyncAtomicValue(AsyncAtomicValue<V2> backingValue, Function<V1, V2> valueEncoder, Function<V2, V1> valueDecoder) {
+    super(backingValue);
     this.backingValue = backingValue;
     this.valueEncoder = v -> v != null ? valueEncoder.apply(v) : null;
     this.valueDecoder = v -> v != null ? valueDecoder.apply(v) : null;
-  }
-
-  @Override
-  public String name() {
-    return backingValue.name();
   }
 
   @Override
@@ -97,11 +93,6 @@ public class TranscodingAsyncAtomicValue<V1, V2> implements AsyncAtomicValue<V1>
   }
 
   @Override
-  public CompletableFuture<Void> close() {
-    return backingValue.close();
-  }
-
-  @Override
   public String toString() {
     return toStringHelper(this)
         .add("backingValue", backingValue)
@@ -118,6 +109,7 @@ public class TranscodingAsyncAtomicValue<V1, V2> implements AsyncAtomicValue<V1>
     @Override
     public void event(AtomicValueEvent<V2> event) {
       listener.event(new AtomicValueEvent<>(
+          AtomicValueEvent.Type.UPDATE,
           valueDecoder.apply(event.newValue()),
           valueDecoder.apply(event.oldValue())));
     }

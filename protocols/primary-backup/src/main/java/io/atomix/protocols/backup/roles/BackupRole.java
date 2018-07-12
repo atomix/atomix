@@ -18,7 +18,7 @@ package io.atomix.protocols.backup.roles;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultCommit;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.impl.PrimaryBackupSession;
 import io.atomix.protocols.backup.protocol.BackupOperation;
@@ -108,7 +108,7 @@ public class BackupRole extends PrimaryBackupRole {
    * Applies an execute operation to the service.
    */
   private void applyExecute(ExecuteOperation operation) {
-    PrimitiveSession session = context.getOrCreateSession(operation.session(), operation.node());
+    Session session = context.getOrCreateSession(operation.session(), operation.node());
     if (operation.operation() != null) {
       try {
         context.service().apply(new DefaultCommit<>(

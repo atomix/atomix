@@ -15,8 +15,8 @@
  */
 package io.atomix.primitive.session.impl;
 
-import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveBuilder;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -41,29 +41,29 @@ public class SessionIdGeneratorType implements PrimitiveType {
   }
 
   @Override
-  public String id() {
+  public String name() {
     return NAME;
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new SessionIdGeneratorService(config);
+    return new SessionIdGeneratorService();
   }
 
   @Override
-  public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
+  public PrimitiveConfig newConfig() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public DistributedPrimitiveBuilder newPrimitiveBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
+  public PrimitiveBuilder newBuilder(String name, PrimitiveConfig config, PrimitiveManagementService managementService) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id())
+        .add("name", name())
         .toString();
   }
 }

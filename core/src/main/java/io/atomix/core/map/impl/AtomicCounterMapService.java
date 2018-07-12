@@ -1,11 +1,11 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,299 +15,158 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.impl.AtomicCounterMapOperations.AddAndGet;
-import io.atomix.core.map.impl.AtomicCounterMapOperations.DecrementAndGet;
-import io.atomix.core.map.impl.AtomicCounterMapOperations.Get;
-import io.atomix.core.map.impl.AtomicCounterMapOperations.GetAndAdd;
-import io.atomix.core.map.impl.AtomicCounterMapOperations.GetAndDecrement;
-import io.atomix.core.map.impl.AtomicCounterMapOperations.GetAndIncrement;
-import io.atomix.core.map.impl.AtomicCounterMapOperations.IncrementAndGet;
-import io.atomix.core.map.impl.AtomicCounterMapOperations.Put;
-import io.atomix.core.map.impl.AtomicCounterMapOperations.PutIfAbsent;
-import io.atomix.core.map.impl.AtomicCounterMapOperations.Remove;
-import io.atomix.core.map.impl.AtomicCounterMapOperations.RemoveValue;
-import io.atomix.core.map.impl.AtomicCounterMapOperations.Replace;
-import io.atomix.primitive.service.AbstractPrimitiveService;
-import io.atomix.primitive.service.BackupInput;
-import io.atomix.primitive.service.BackupOutput;
-import io.atomix.primitive.service.Commit;
-import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.primitive.service.ServiceExecutor;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.utils.serializer.Serializer;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.ADD_AND_GET;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.CLEAR;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.DECREMENT_AND_GET;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.GET;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.GET_AND_ADD;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.GET_AND_DECREMENT;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.GET_AND_INCREMENT;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.INCREMENT_AND_GET;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.IS_EMPTY;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.PUT;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.PUT_IF_ABSENT;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.REMOVE;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.REMOVE_VALUE;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.REPLACE;
-import static io.atomix.core.map.impl.AtomicCounterMapOperations.SIZE;
+import io.atomix.primitive.operation.Command;
+import io.atomix.primitive.operation.Query;
 
 /**
- * Atomic counter map state for Atomix.
- * <p>
- * The counter map state is implemented as a snapshottable state machine. Snapshots are necessary
- * since incremental compaction is impractical for counters where the value of a counter is the sum
- * of all its increments. Note that this snapshotting large state machines may risk blocking of the
- * Raft cluster with the current implementation of snapshotting in Copycat.
+ * Atomic counter map service.
  */
-public class AtomicCounterMapService extends AbstractPrimitiveService {
-
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
-      .register(AtomicCounterMapOperations.NAMESPACE)
-      .build());
-
-  private Map<String, Long> map = new HashMap<>();
-
-  public AtomicCounterMapService(ServiceConfig config) {
-    super(config);
-  }
-
-  @Override
-  public Serializer serializer() {
-    return SERIALIZER;
-  }
-
-  @Override
-  protected void configure(ServiceExecutor executor) {
-    executor.register(PUT, this::put);
-    executor.register(PUT_IF_ABSENT, this::putIfAbsent);
-    executor.register(GET, this::get);
-    executor.register(REPLACE, this::replace);
-    executor.register(REMOVE, this::remove);
-    executor.register(REMOVE_VALUE, this::removeValue);
-    executor.register(GET_AND_INCREMENT, this::getAndIncrement);
-    executor.register(GET_AND_DECREMENT, this::getAndDecrement);
-    executor.register(INCREMENT_AND_GET, this::incrementAndGet);
-    executor.register(DECREMENT_AND_GET, this::decrementAndGet);
-    executor.register(ADD_AND_GET, this::addAndGet);
-    executor.register(GET_AND_ADD, this::getAndAdd);
-    executor.register(SIZE, this::size);
-    executor.register(IS_EMPTY, this::isEmpty);
-    executor.register(CLEAR, this::clear);
-  }
-
-  @Override
-  public void backup(BackupOutput writer) {
-    writer.writeObject(map);
-  }
-
-  @Override
-  public void restore(BackupInput reader) {
-    map = reader.readObject();
-  }
+public interface AtomicCounterMapService {
 
   /**
-   * Returns the primitive value for the given primitive wrapper.
-   */
-  private long primitive(Long value) {
-    if (value != null) {
-      return value;
-    } else {
-      return 0;
-    }
-  }
-
-  /**
-   * Handles a {@link Put} command which implements {@link AtomicCounterMapProxy#put(String, long)}.
+   * Increments by one the value currently associated with key, and returns the new value.
    *
-   * @param commit put commit
-   * @return put result
+   * @param key key with which the specified value is to be associated
+   * @return incremented value
    */
-  protected long put(Commit<Put> commit) {
-    return primitive(map.put(commit.value().key(), commit.value().value()));
-  }
+  @Command
+  long incrementAndGet(String key);
 
   /**
-   * Handles a {@link PutIfAbsent} command which implements {@link AtomicCounterMapProxy#putIfAbsent(String, long)}.
+   * Decrements by one the value currently associated with key, and returns the new value.
    *
-   * @param commit putIfAbsent commit
-   * @return putIfAbsent result
+   * @param key key with which the specified value is to be associated
+   * @return updated value
    */
-  protected long putIfAbsent(Commit<PutIfAbsent> commit) {
-    return primitive(map.putIfAbsent(commit.value().key(), commit.value().value()));
-  }
+  @Command
+  long decrementAndGet(String key);
 
   /**
-   * Handles a {@link Get} query which implements {@link AtomicCounterMapProxy#get(String)}}.
+   * Increments by one the value currently associated with key, and returns the old value.
    *
-   * @param commit get commit
-   * @return get result
+   * @param key key with which the specified value is to be associated
+   * @return previous value
    */
-  protected long get(Commit<Get> commit) {
-    return primitive(map.get(commit.value().key()));
-  }
+  @Command
+  long getAndIncrement(String key);
 
   /**
-   * Handles a {@link Replace} command which implements {@link AtomicCounterMapProxy#replace(String, long, long)}.
+   * Decrements by one the value currently associated with key, and returns the old value.
    *
-   * @param commit replace commit
-   * @return replace result
+   * @param key key with which the specified value is to be associated
+   * @return previous value
    */
-  protected boolean replace(Commit<Replace> commit) {
-    Long value = map.get(commit.value().key());
-    if (value == null) {
-      if (commit.value().replace() == 0) {
-        map.put(commit.value().key(), commit.value().value());
-        return true;
-      } else {
-        return false;
-      }
-    } else if (value == commit.value().replace()) {
-      map.put(commit.value().key(), commit.value().value());
-      return true;
-    }
-    return false;
-  }
+  @Command
+  long getAndDecrement(String key);
 
   /**
-   * Handles a {@link Remove} command which implements {@link AtomicCounterMapProxy#remove(String)}.
+   * Adds delta to the value currently associated with key, and returns the new value.
    *
-   * @param commit remove commit
-   * @return remove result
+   * @param key   key with which the specified value is to be associated
+   * @param delta the value to add
+   * @return updated value
    */
-  protected long remove(Commit<Remove> commit) {
-    return primitive(map.remove(commit.value().key()));
-  }
+  @Command
+  long addAndGet(String key, long delta);
 
   /**
-   * Handles a {@link RemoveValue} command which implements {@link AtomicCounterMapProxy#remove(String, long)}.
+   * Adds delta to the value currently associated with key, and returns the old value.
    *
-   * @param commit removeValue commit
-   * @return removeValue result
+   * @param key   key with which the specified value is to be associated
+   * @param delta the value to add
+   * @return previous value
    */
-  protected boolean removeValue(Commit<RemoveValue> commit) {
-    Long value = map.get(commit.value().key());
-    if (value == null) {
-      if (commit.value().value() == 0) {
-        map.remove(commit.value().key());
-        return true;
-      }
-      return false;
-    } else if (value == commit.value().value()) {
-      map.remove(commit.value().key());
-      return true;
-    }
-    return false;
-  }
+  @Command
+  long getAndAdd(String key, long delta);
 
   /**
-   * Handles a {@link GetAndIncrement} command which implements
-   * {@link AtomicCounterMapProxy#getAndIncrement(String)}.
+   * Returns the value associated with key, or zero if there is no value associated with key.
    *
-   * @param commit getAndIncrement commit
-   * @return getAndIncrement result
+   * @param key key with which the specified value is to be associated
+   * @return current value
    */
-  protected long getAndIncrement(Commit<GetAndIncrement> commit) {
-    long value = primitive(map.get(commit.value().key()));
-    map.put(commit.value().key(), value + 1);
-    return value;
-  }
+  @Query
+  long get(String key);
 
   /**
-   * Handles a {@link GetAndDecrement} command which implements
-   * {@link AtomicCounterMapProxy#getAndDecrement(String)}.
+   * Associates ewValue with key in this map, and returns the value previously
+   * associated with key, or zero if there was no such value.
    *
-   * @param commit getAndDecrement commit
-   * @return getAndDecrement result
+   * @param key      key with which the specified value is to be associated
+   * @param newValue the value to put
+   * @return previous value or zero
    */
-  protected long getAndDecrement(Commit<GetAndDecrement> commit) {
-    long value = primitive(map.get(commit.value().key()));
-    map.put(commit.value().key(), value - 1);
-    return value;
-  }
+  @Command
+  long put(String key, long newValue);
 
   /**
-   * Handles a {@link IncrementAndGet} command which implements
-   * {@link AtomicCounterMapProxy#incrementAndGet(String)}.
+   * If key is not already associated with a value or if key is associated with
+   * zero, associate it with newValue. Returns the previous value associated with
+   * key, or zero if there was no mapping for key.
    *
-   * @param commit incrementAndGet commit
-   * @return incrementAndGet result
+   * @param key      key with which the specified value is to be associated
+   * @param newValue the value to put
+   * @return previous value or zero
    */
-  protected long incrementAndGet(Commit<IncrementAndGet> commit) {
-    long value = primitive(map.get(commit.value().key()));
-    map.put(commit.value().key(), ++value);
-    return value;
-  }
+  @Command
+  long putIfAbsent(String key, long newValue);
 
   /**
-   * Handles a {@link DecrementAndGet} command which implements
-   * {@link AtomicCounterMapProxy#decrementAndGet(String)}.
+   * If (key, expectedOldValue) is currently in the map, this method replaces
+   * expectedOldValue with newValue and returns true; otherwise, this method return false.
+   * <p>
+   * If expectedOldValue is zero, this method will succeed if (key, zero)
+   * is currently in the map, or if key is not in the map at all.
    *
-   * @param commit decrementAndGet commit
-   * @return decrementAndGet result
+   * @param key              key with which the specified value is to be associated
+   * @param expectedOldValue the expected value
+   * @param newValue         the value to replace
+   * @return true if the value was replaced, false otherwise
    */
-  protected long decrementAndGet(Commit<DecrementAndGet> commit) {
-    long value = primitive(map.get(commit.value().key()));
-    map.put(commit.value().key(), --value);
-    return value;
-  }
+  @Command
+  boolean replace(String key, long expectedOldValue, long newValue);
 
   /**
-   * Handles a {@link AddAndGet} command which implements {@link AtomicCounterMapProxy#addAndGet(String, long)}.
+   * Removes and returns the value associated with key. If key is not
+   * in the map, this method has no effect and returns zero.
    *
-   * @param commit addAndGet commit
-   * @return addAndGet result
+   * @param key key with which the specified value is to be associated
+   * @return the previous value associated with the specified key or null
    */
-  protected long addAndGet(Commit<AddAndGet> commit) {
-    long value = primitive(map.get(commit.value().key()));
-    value += commit.value().delta();
-    map.put(commit.value().key(), value);
-    return value;
-  }
+  @Command
+  long remove(String key);
 
   /**
-   * Handles a {@link GetAndAdd} command which implements {@link AtomicCounterMapProxy#getAndAdd(String, long)}.
+   * If (key, value) is currently in the map, this method removes it and returns
+   * true; otherwise, this method returns false.
    *
-   * @param commit getAndAdd commit
-   * @return getAndAdd result
+   * @param key   key with which the specified value is to be associated
+   * @param value the value to remove
+   * @return true if the value was removed, false otherwise
    */
-  protected long getAndAdd(Commit<GetAndAdd> commit) {
-    long value = primitive(map.get(commit.value().key()));
-    map.put(commit.value().key(), value + commit.value().delta());
-    return value;
-  }
+  @Command("removeValue")
+  boolean remove(String key, long value);
 
   /**
-   * Handles a {@code Size} query which implements {@link AtomicCounterMapProxy#size()}.
+   * Returns the number of entries in the map.
    *
-   * @param commit size commit
-   * @return size result
+   * @return the number of entries in the map, including {@code 0} values
    */
-  protected int size(Commit<Void> commit) {
-    return map.size();
-  }
+  @Query
+  int size();
 
   /**
-   * Handles an {@code IsEmpty} query which implements {@link AtomicCounterMapProxy#isEmpty()}.
+   * If the map is empty, returns true, otherwise false.
    *
-   * @param commit isEmpty commit
-   * @return isEmpty result
+   * @return true if the map is empty.
    */
-  protected boolean isEmpty(Commit<Void> commit) {
-    return map.isEmpty();
-  }
+  @Query
+  boolean isEmpty();
 
   /**
-   * Handles a {@code Clear} command which implements {@link AtomicCounterMapProxy#clear()}.
-   *
-   * @param commit clear commit
+   * Clears all entries from the map.
    */
-  protected void clear(Commit<Void> commit) {
-    map.clear();
-  }
+  @Command
+  void clear();
+
 }

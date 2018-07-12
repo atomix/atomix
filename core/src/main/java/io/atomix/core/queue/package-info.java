@@ -15,6 +15,6 @@
  */
 
 /**
- * Distributed queueing primitive interfaces.
+ * Distributed queue primitive.
  */
 package io.atomix.core.queue;

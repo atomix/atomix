@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,51 +15,34 @@
  */
 package io.atomix.core.lock;
 
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.utils.time.Version;
 
 import java.time.Duration;
-import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 /**
- * Asynchronous lock primitive.
+ * Distributed lock primitive.
  */
-public interface DistributedLock extends SyncPrimitive {
+public interface DistributedLock extends SyncPrimitive, Lock {
 
   @Override
-  default PrimitiveType primitiveType() {
-    return DistributedLockType.instance();
+  default boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+    return tryLock(Duration.ofMillis(unit.toMillis(time)));
   }
 
   /**
-   * Acquires the lock, blocking until it's available.
+   * Acquires the lock if it is free within the given waiting time and the
+   * current thread has not been {@linkplain Thread#interrupt interrupted}.
    *
-   * @return the acquired lock version
-   */
-  Version lock();
-
-  /**
-   * Attempts to acquire the lock.
+   * @param timeout the timeout to wait to acquire the lock
    *
-   * @return indicates whether the lock was acquired
+   * @throws InterruptedException if the current thread is interrupted
+   *         while acquiring the lock (and interruption of lock
+   *         acquisition is supported)
    */
-  Optional<Version> tryLock();
-
-  /**
-   * Attempts to acquire the lock for a specified amount of time.
-   *
-   * @param timeout the timeout after which to give up attempting to acquire the lock
-   * @return indicates whether the lock was acquired
-   */
-  Optional<Version> tryLock(Duration timeout);
-
-  /**
-   * Unlocks the lock.
-   */
-  void unlock();
+  boolean tryLock(Duration timeout) throws InterruptedException;
 
   @Override
   AsyncDistributedLock async();
-
 }

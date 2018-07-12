@@ -17,7 +17,6 @@
 package io.atomix.core.tree.impl;
 
 import com.google.common.base.MoreObjects;
-
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.utils.misc.ArraySizeHashPrinter;
 

@@ -17,9 +17,10 @@ package io.atomix.primitive.impl;
 
 import com.google.common.base.MoreObjects;
 import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
-import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -29,11 +30,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Base class for primitive delegates.
  */
-public abstract class DelegatingAsyncPrimitive implements AsyncPrimitive {
-  private final AsyncPrimitive primitive;
+public abstract class DelegatingAsyncPrimitive<T extends AsyncPrimitive> implements AsyncPrimitive {
+  private final T primitive;
 
-  public DelegatingAsyncPrimitive(AsyncPrimitive primitive) {
+  public DelegatingAsyncPrimitive(T primitive) {
     this.primitive = checkNotNull(primitive);
+  }
+
+  /**
+   * Returns the delegate primitive.
+   *
+   * @return the underlying primitive
+   */
+  protected T delegate() {
+    return primitive;
   }
 
   @Override
@@ -42,8 +52,13 @@ public abstract class DelegatingAsyncPrimitive implements AsyncPrimitive {
   }
 
   @Override
-  public PrimitiveType primitiveType() {
-    return primitive.primitiveType();
+  public PrimitiveType type() {
+    return primitive.type();
+  }
+
+  @Override
+  public PrimitiveProtocol protocol() {
+    return primitive.protocol();
   }
 
   @Override
@@ -52,18 +67,13 @@ public abstract class DelegatingAsyncPrimitive implements AsyncPrimitive {
   }
 
   @Override
-  public void addStatusChangeListener(Consumer<Status> listener) {
-    primitive.addStatusChangeListener(listener);
+  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
+    primitive.addStateChangeListener(listener);
   }
 
   @Override
-  public void removeStatusChangeListener(Consumer<Status> listener) {
-    primitive.removeStatusChangeListener(listener);
-  }
-
-  @Override
-  public Collection<Consumer<Status>> statusChangeListeners() {
-    return primitive.statusChangeListeners();
+  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
+    primitive.removeStateChangeListener(listener);
   }
 
   @Override

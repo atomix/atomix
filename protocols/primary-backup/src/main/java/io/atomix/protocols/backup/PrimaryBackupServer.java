@@ -16,8 +16,8 @@
 package io.atomix.protocols.backup;
 
 import io.atomix.cluster.ClusterMembershipService;
-import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.primitive.impl.ClasspathScanningPrimitiveTypeRegistry;
 import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.impl.DefaultMemberGroupService;
@@ -72,7 +72,7 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
 
   private final PrimaryBackupServerContext context;
 
-  public PrimaryBackupServer(PrimaryBackupServerContext context) {
+  private PrimaryBackupServer(PrimaryBackupServerContext context) {
     this.context = checkNotNull(context, "context cannot be null");
   }
 
@@ -105,14 +105,13 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
    */
   public static class Builder implements io.atomix.utils.Builder<PrimaryBackupServer> {
     protected String serverName = "atomix";
-    protected ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     protected ClusterMembershipService membershipService;
     protected PrimaryBackupServerProtocol protocol;
     protected PrimaryElection primaryElection;
-    protected PrimitiveTypeRegistry primitiveTypes = new PrimitiveTypeRegistry(classLoader);
+    protected PrimitiveTypeRegistry primitiveTypes;
     protected MemberGroupProvider memberGroupProvider;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
-    protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
+    protected int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 16), 4);
     protected ThreadContextFactory threadContextFactory;
 
     /**
@@ -124,18 +123,6 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
      */
     public Builder withServerName(String serverName) {
       this.serverName = checkNotNull(serverName, "server cannot be null");
-      return this;
-    }
-
-    /**
-     * Sets the class loader.
-     *
-     * @param classLoader the class loader
-     * @return the server builder
-     */
-    public Builder withClassLoader(ClassLoader classLoader) {
-      this.classLoader = checkNotNull(classLoader, "classLoader cannot be null");
-      primitiveTypes = new PrimitiveTypeRegistry(classLoader);
       return this;
     }
 
@@ -181,18 +168,6 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
      */
     public Builder withPrimitiveTypes(PrimitiveTypeRegistry primitiveTypes) {
       this.primitiveTypes = checkNotNull(primitiveTypes, "primitiveTypes cannot be null");
-      return this;
-    }
-
-    /**
-     * Adds a primitive type to the registry.
-     *
-     * @param primitiveType the primitive type to add
-     * @return the server builder
-     * @throws NullPointerException if the {@code primitiveType} is {@code null}
-     */
-    public Builder addPrimitiveType(PrimitiveType primitiveType) {
-      primitiveTypes.register(primitiveType);
       return this;
     }
 
@@ -249,17 +224,28 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
       Logger log = ContextualLoggerFactory.getLogger(PrimaryBackupServer.class, LoggerContext.builder(PrimaryBackupServer.class)
           .addValue(serverName)
           .build());
-      ThreadContextFactory threadContextFactory = this.threadContextFactory != null
-          ? this.threadContextFactory
-          : threadModel.factory("backup-server-" + serverName + "-%d", threadPoolSize, log);
+
+      // If a ThreadContextFactory was not provided, create one and ensure it's closed when the server is stopped.
+      boolean closeOnStop;
+      ThreadContextFactory threadContextFactory;
+      if (this.threadContextFactory == null) {
+        threadContextFactory = threadModel.factory("backup-server-" + serverName + "-%d", threadPoolSize, log);
+        closeOnStop = true;
+      } else {
+        threadContextFactory = this.threadContextFactory;
+        closeOnStop = false;
+      }
+
       return new PrimaryBackupServer(new PrimaryBackupServerContext(
           serverName,
           membershipService,
           new DefaultMemberGroupService(membershipService, memberGroupProvider),
           protocol,
+          primitiveTypes != null ? primitiveTypes :
+                  new ClasspathScanningPrimitiveTypeRegistry(Thread.currentThread().getContextClassLoader()),
+          primaryElection,
           threadContextFactory,
-          primitiveTypes,
-          primaryElection));
+          closeOnStop));
     }
   }
 }

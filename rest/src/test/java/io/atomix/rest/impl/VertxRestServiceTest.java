@@ -17,7 +17,8 @@ package io.atomix.rest.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import io.atomix.cluster.Member;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
 import io.atomix.core.Atomix;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.rest.ManagedRestService;
@@ -41,12 +42,9 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -86,8 +84,8 @@ public class VertxRestServiceTest {
         .statusCode(200)
         .assertThat()
         .body("id", equalTo("1"))
-        .body("host", equalTo(instances.get(0).membershipService().getLocalMember().address().host()))
-        .body("port", equalTo(instances.get(0).membershipService().getLocalMember().address().port()));
+        .body("host", equalTo(instances.get(0).getMembershipService().getLocalMember().address().host()))
+        .body("port", equalTo(instances.get(0).getMembershipService().getLocalMember().address().port()));
 
     given()
         .spec(specs.get(0))
@@ -160,7 +158,7 @@ public class VertxRestServiceTest {
         .spec(specs.get(1))
         .body("Hello world again!")
         .when()
-        .post("messages/test/" + instances.get(0).membershipService().getLocalMember().id())
+        .post("messages/test/" + instances.get(0).getMembershipService().getLocalMember().id())
         .then()
         .statusCode(200);
 
@@ -175,15 +173,166 @@ public class VertxRestServiceTest {
   }
 
   @Test
-  public void testMap() throws Exception {
+  public void testLock() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     JsonNode json = jsonFactory.objectNode()
-        .put("type", "consistent-map")
-        .put("cache-enabled", true)
-        .put("null-values", false)
+        .put("type", "lock")
         .set("protocol", jsonFactory.objectNode()
             .put("type", "multi-primary")
             .put("backups", 2));
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .body(json)
+        .when()
+        .post("primitives/test-lock")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .post("primitives/test-lock/lock")
+        .then()
+        .statusCode(200)
+        .body(equalTo("1"));
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .delete("primitives/test-lock/lock")
+        .then()
+        .statusCode(200);
+  }
+
+  @Test
+  public void testSemaphore() throws Exception {
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    JsonNode json = jsonFactory.objectNode()
+        .put("type", "semaphore")
+        .put("initial-capacity", 2)
+        .set("protocol", jsonFactory.objectNode()
+            .put("type", "multi-primary")
+            .put("backups", 2));
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .body(json)
+        .when()
+        .post("primitives/test-semaphore")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .get("primitives/test-semaphore/permits")
+        .then()
+        .statusCode(200)
+        .body(equalTo("2"));
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .when()
+        .post("primitives/test-semaphore/acquire")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .contentType(ContentType.JSON)
+        .when()
+        .post("primitives/test-semaphore/acquire")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(2))
+        .when()
+        .get("primitives/test-semaphore/permits")
+        .then()
+        .body(equalTo("0"));
+
+    given()
+        .spec(specs.get(1))
+        .contentType(ContentType.JSON)
+        .when()
+        .post("primitives/test-semaphore/release")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .get("primitives/test-semaphore/permits")
+        .then()
+        .body(equalTo("1"));
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("primitives/test-semaphore/permits")
+        .then()
+        .body(equalTo("1"));
+  }
+
+  @Test
+  public void testValue() throws Exception {
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    JsonNode json = jsonFactory.objectNode()
+        .put("type", "value")
+        .set("protocol", jsonFactory.objectNode()
+            .put("type", "multi-primary")
+            .put("backups", 2));
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .body(json)
+        .when()
+        .post("primitives/test-value")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("primitives/test-value/value")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .contentType(ContentType.TEXT)
+        .body("Hello world!")
+        .when()
+        .post("primitives/test-value/value")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("primitives/test-value/value")
+        .then()
+        .statusCode(200)
+        .body(equalTo("Hello world!"));
+  }
+
+  @Test
+  public void testMap() throws Exception {
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    ObjectNode json = jsonFactory.objectNode()
+            .put("type", "atomic-map")
+            .put("null-values", false);
+    json.set("protocol", jsonFactory.objectNode()
+            .put("type", "multi-primary")
+            .put("backups", 2));
+    json.set("cache", jsonFactory.objectNode()
+            .put("enabled", true));
 
     given()
         .spec(specs.get(0))
@@ -270,17 +419,12 @@ public class VertxRestServiceTest {
   }
 
   protected Atomix buildAtomix(int memberId) {
-    Member localMember = Member.builder(String.valueOf(memberId))
-        .withAddress("localhost", findAvailablePort(BASE_PORT))
-        .build();
-
-    Collection<Member> members = Stream.concat(Stream.of(localMember), instances.stream().map(instance -> instance.membershipService().getLocalMember()))
-        .collect(Collectors.toList());
-
     return Atomix.builder()
-        .withClusterName("test")
-        .withLocalMember(localMember)
-        .withMembers(members)
+        .withClusterId("test")
+        .withMemberId(String.valueOf(memberId))
+        .withAddress(Address.from("localhost", findAvailablePort(BASE_PORT)))
+        .withMulticastEnabled()
+        .withMembershipProvider(new MulticastDiscoveryProvider())
         .withManagementGroup(PrimaryBackupPartitionGroup.builder("system")
             .withNumPartitions(1)
             .build())

@@ -23,12 +23,12 @@ import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
 import java.time.Duration;
-import java.util.concurrent.Executor;
 
 /**
  * Multi-primary protocol configuration.
  */
 public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPrimaryProtocolConfig> {
+  private String group;
   private Partitioner<String> partitioner = Partitioner.MURMUR3;
   private Consistency consistency = Consistency.SEQUENTIAL;
   private Replication replication = Replication.ASYNCHRONOUS;
@@ -36,11 +36,30 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
   private int backups = 1;
   private int maxRetries = 0;
   private Duration retryDelay = Duration.ofMillis(100);
-  private Executor executor;
 
   @Override
   public PrimitiveProtocol.Type getType() {
     return MultiPrimaryProtocol.TYPE;
+  }
+
+  /**
+   * Returns the partition group.
+   *
+   * @return the partition group
+   */
+  public String getGroup() {
+    return group;
+  }
+
+  /**
+   * Sets the partition group.
+   *
+   * @param group the partition group
+   * @return the protocol configuration
+   */
+  public MultiPrimaryProtocolConfig setGroup(String group) {
+    this.group = group;
+    return this;
   }
 
   /**
@@ -190,26 +209,6 @@ public class MultiPrimaryProtocolConfig extends PrimitiveProtocolConfig<MultiPri
    */
   public MultiPrimaryProtocolConfig setRetryDelay(Duration retryDelay) {
     this.retryDelay = retryDelay;
-    return this;
-  }
-
-  /**
-   * Returns the executor.
-   *
-   * @return the executor
-   */
-  public Executor getExecutor() {
-    return executor;
-  }
-
-  /**
-   * Sets the executor.
-   *
-   * @param executor the executor
-   * @return the protocol configuration
-   */
-  public MultiPrimaryProtocolConfig setExecutor(Executor executor) {
-    this.executor = executor;
     return this;
   }
 }

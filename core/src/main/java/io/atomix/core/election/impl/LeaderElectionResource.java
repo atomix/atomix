@@ -15,10 +15,10 @@
  */
 package io.atomix.core.election.impl;
 
-import io.atomix.core.election.AsyncLeaderElection;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
+import io.atomix.core.election.AsyncLeaderElection;
 import io.atomix.core.utils.EventLog;
 import io.atomix.core.utils.EventManager;
 import io.atomix.primitive.resource.PrimitiveResource;

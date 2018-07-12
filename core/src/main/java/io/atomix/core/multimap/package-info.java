@@ -15,6 +15,6 @@
  */
 
 /**
- * Distributed multimap primitive interfaces.
+ * Atomic multimap primitive.
  */
 package io.atomix.core.multimap;

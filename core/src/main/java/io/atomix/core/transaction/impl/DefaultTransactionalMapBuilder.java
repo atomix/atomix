@@ -15,13 +15,14 @@
  */
 package io.atomix.core.transaction.impl;
 
-import io.atomix.core.map.ConsistentMapBuilder;
-import io.atomix.core.map.ConsistentMapType;
+import io.atomix.core.map.AtomicMapBuilder;
+import io.atomix.core.map.AtomicMapConfig;
+import io.atomix.core.map.AtomicMapType;
 import io.atomix.core.transaction.TransactionalMap;
 import io.atomix.core.transaction.TransactionalMapBuilder;
 import io.atomix.core.transaction.TransactionalMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -29,17 +30,17 @@ import java.util.concurrent.CompletableFuture;
  * Transactional map builder.
  */
 public class DefaultTransactionalMapBuilder<K, V> extends TransactionalMapBuilder<K, V> {
-  private final ConsistentMapBuilder<K, V> mapBuilder;
+  private final AtomicMapBuilder<K, V> mapBuilder;
   private final DefaultTransaction transaction;
 
   public DefaultTransactionalMapBuilder(String name, TransactionalMapConfig config, PrimitiveManagementService managementService, DefaultTransaction transaction) {
     super(name, config, managementService);
-    this.mapBuilder = ConsistentMapType.<K, V>instance().newPrimitiveBuilder(name, managementService);
+    this.mapBuilder = AtomicMapType.<K, V>instance().newBuilder(name, new AtomicMapConfig(), managementService);
     this.transaction = transaction;
   }
 
   @Override
-  public TransactionalMapBuilder<K, V> withProtocol(PrimitiveProtocol protocol) {
+  public TransactionalMapBuilder<K, V> withProtocol(ProxyProtocol protocol) {
     mapBuilder.withProtocol(protocol);
     return this;
   }

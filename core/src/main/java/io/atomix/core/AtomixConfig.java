@@ -16,19 +16,15 @@
 package io.atomix.core;
 
 import io.atomix.cluster.ClusterConfig;
-import io.atomix.core.profile.Profile;
-import io.atomix.core.profile.Profiles;
-import io.atomix.primitive.PrimitiveConfig;
-import io.atomix.primitive.PrimitiveType;
+import io.atomix.core.profile.ProfileConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.utils.config.Config;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -41,10 +37,9 @@ public class AtomixConfig implements Config {
   private ClusterConfig cluster = new ClusterConfig();
   private boolean enableShutdownHook;
   private PartitionGroupConfig managementGroup;
-  private Map<String, PartitionGroupConfig> partitionGroups = new HashMap<>();
-  private Collection<Class<? extends PrimitiveType>> types = new ArrayList<>();
+  private Map<String, PartitionGroupConfig<?>> partitionGroups = new HashMap<>();
   private Map<String, PrimitiveConfig> primitives = new HashMap<>();
-  private List<Profile> profiles = new ArrayList<>();
+  private List<ProfileConfig> profiles = new ArrayList<>();
 
   /**
    * Returns the cluster configuration.
@@ -91,7 +86,7 @@ public class AtomixConfig implements Config {
    *
    * @return the system management partition group
    */
-  public PartitionGroupConfig getManagementGroup() {
+  public PartitionGroupConfig<?> getManagementGroup() {
     return managementGroup;
   }
 
@@ -101,7 +96,7 @@ public class AtomixConfig implements Config {
    * @param managementGroup the system management partition group
    * @return the Atomix configuration
    */
-  public AtomixConfig setManagementGroup(PartitionGroupConfig managementGroup) {
+  public AtomixConfig setManagementGroup(PartitionGroupConfig<?> managementGroup) {
     managementGroup.setName(MANAGEMENT_GROUP_NAME);
     this.managementGroup = managementGroup;
     return this;
@@ -112,7 +107,7 @@ public class AtomixConfig implements Config {
    *
    * @return the partition group configurations
    */
-  public Map<String, PartitionGroupConfig> getPartitionGroups() {
+  public Map<String, PartitionGroupConfig<?>> getPartitionGroups() {
     return partitionGroups;
   }
 
@@ -122,7 +117,7 @@ public class AtomixConfig implements Config {
    * @param partitionGroups the partition group configurations
    * @return the Atomix configuration
    */
-  public AtomixConfig setPartitionGroups(Map<String, PartitionGroupConfig> partitionGroups) {
+  public AtomixConfig setPartitionGroups(Map<String, PartitionGroupConfig<?>> partitionGroups) {
     partitionGroups.forEach((name, group) -> group.setName(name));
     this.partitionGroups = partitionGroups;
     return this;
@@ -136,37 +131,6 @@ public class AtomixConfig implements Config {
    */
   public AtomixConfig addPartitionGroup(PartitionGroupConfig partitionGroup) {
     partitionGroups.put(partitionGroup.getName(), partitionGroup);
-    return this;
-  }
-
-  /**
-   * Returns the primitive types.
-   *
-   * @return the primitive types
-   */
-  public Collection<Class<? extends PrimitiveType>> getPrimitiveTypes() {
-    return types;
-  }
-
-  /**
-   * Sets the primitive types.
-   *
-   * @param types the primitive types
-   * @return the primitive type configuration
-   */
-  public AtomixConfig setPrimitiveTypes(Collection<Class<? extends PrimitiveType>> types) {
-    this.types = types;
-    return this;
-  }
-
-  /**
-   * Adds a primitive type.
-   *
-   * @param type the type class
-   * @return the primitive type configuration
-   */
-  public AtomixConfig addType(Class<? extends PrimitiveType> type) {
-    types.add(type);
     return this;
   }
 
@@ -219,7 +183,7 @@ public class AtomixConfig implements Config {
    *
    * @return the Atomix profile
    */
-  public List<Profile> getProfiles() {
+  public List<ProfileConfig> getProfiles() {
     return profiles;
   }
 
@@ -229,10 +193,8 @@ public class AtomixConfig implements Config {
    * @param profiles the profiles
    * @return the Atomix configuration
    */
-  public AtomixConfig setProfiles(List<String> profiles) {
-    this.profiles = profiles.stream()
-        .map(name -> Profiles.getNamedProfile(name))
-        .collect(Collectors.toList());
+  public AtomixConfig setProfiles(List<ProfileConfig> profiles) {
+    this.profiles = profiles;
     return this;
   }
 
@@ -242,7 +204,7 @@ public class AtomixConfig implements Config {
    * @param profile the profile to add
    * @return the Atomix configuration
    */
-  public AtomixConfig addProfile(Profile profile) {
+  public AtomixConfig addProfile(ProfileConfig profile) {
     profiles.add(checkNotNull(profile, "profile cannot be null"));
     return this;
   }

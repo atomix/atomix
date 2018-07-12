@@ -25,23 +25,26 @@ public interface BroadcastService {
   /**
    * Broadcasts the given message.
    *
+   * @param subject the message subject
    * @param message the message to broadcast
    */
-  void broadcast(byte[] message);
+  void broadcast(String subject, byte[] message);
 
   /**
    * Adds a broadcast listener.
    *
+   * @param subject the message subject
    * @param listener the broadcast listener to add
    */
-  void addListener(Consumer<byte[]> listener);
+  void addListener(String subject, Consumer<byte[]> listener);
 
   /**
    * Removes a broadcast listener.
    *
+   * @param subject the message subject
    * @param listener the broadcast listener to remove
    */
-  void removeListener(Consumer<byte[]> listener);
+  void removeListener(String subject, Consumer<byte[]> listener);
 
   /**
    * Broadcast service builder.

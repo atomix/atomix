@@ -15,11 +15,9 @@
  */
 package io.atomix.protocols.backup.partition;
 
-import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.MemberGroupStrategy;
+import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**
  * Primary-backup partition group configuration.
@@ -27,11 +25,11 @@ import io.atomix.protocols.backup.MultiPrimaryProtocol;
 public class PrimaryBackupPartitionGroupConfig extends PartitionGroupConfig<PrimaryBackupPartitionGroupConfig> {
   private static final int DEFAULT_PARTITIONS = 71;
 
-  private MemberGroupProvider memberGroupProvider = MemberGroupStrategy.NODE_AWARE;
+  private String memberGroupStrategy = MemberGroupStrategy.NODE_AWARE.name();
 
   @Override
-  public PrimitiveProtocol.Type getType() {
-    return MultiPrimaryProtocol.TYPE;
+  public PartitionGroup.Type getType() {
+    return PrimaryBackupPartitionGroup.TYPE;
   }
 
   @Override
@@ -44,19 +42,8 @@ public class PrimaryBackupPartitionGroupConfig extends PartitionGroupConfig<Prim
    *
    * @return the member group provider
    */
-  public MemberGroupProvider getMemberGroupProvider() {
-    return memberGroupProvider;
-  }
-
-  /**
-   * Sets the member group provider.
-   *
-   * @param memberGroupProvider the member group provider
-   * @return the partition group configuration
-   */
-  public PrimaryBackupPartitionGroupConfig setMemberGroupProvider(MemberGroupProvider memberGroupProvider) {
-    this.memberGroupProvider = memberGroupProvider;
-    return this;
+  public MemberGroupStrategy getMemberGroupProvider() {
+    return MemberGroupStrategy.valueOf(memberGroupStrategy);
   }
 
   /**
@@ -66,6 +53,7 @@ public class PrimaryBackupPartitionGroupConfig extends PartitionGroupConfig<Prim
    * @return the partition group configuration
    */
   public PrimaryBackupPartitionGroupConfig setMemberGroupStrategy(MemberGroupStrategy memberGroupStrategy) {
-    return setMemberGroupProvider(memberGroupStrategy);
+    this.memberGroupStrategy = memberGroupStrategy.name();
+    return this;
   }
 }

@@ -15,39 +15,76 @@
  */
 package io.atomix.primitive.protocol;
 
-import io.atomix.utils.config.Config;
+import io.atomix.utils.config.TypedConfig;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.NamespaceConfig;
+import io.atomix.utils.serializer.Namespaces;
+import io.atomix.utils.serializer.Serializer;
 
 /**
  * Primitive protocol configuration.
  */
-public abstract class PrimitiveProtocolConfig<C extends PrimitiveProtocolConfig<C>> implements Config {
-  private String group;
+public abstract class PrimitiveProtocolConfig<C extends PrimitiveProtocolConfig<C>> implements TypedConfig<PrimitiveProtocol.Type> {
+  private volatile Serializer serializer;
+  private NamespaceConfig namespaceConfig;
 
   /**
-   * Returns the primitive protocol type.
+   * Sets the protocol serializer.
    *
-   * @return the primitive protocol type
-   */
-  public abstract PrimitiveProtocol.Type getType();
-
-  /**
-   * Returns the protocol group.
-   *
-   * @return the protocol group
-   */
-  public String getGroup() {
-    return group;
-  }
-
-  /**
-   * Sets the protocol group.
-   *
-   * @param group the protocol group
+   * @param serializer the protocol serializer
    * @return the protocol configuration
    */
   @SuppressWarnings("unchecked")
-  public C setGroup(String group) {
-    this.group = group;
+  public C setSerializer(Serializer serializer) {
+    this.serializer = serializer;
+    return (C) this;
+  }
+
+  /**
+   * Returns the protocol serializer.
+   *
+   * @return the protocol serializer
+   */
+  public Serializer getSerializer() {
+    Serializer serializer = this.serializer;
+    if (serializer == null) {
+      synchronized (this) {
+        serializer = this.serializer;
+        if (serializer == null) {
+          NamespaceConfig config = getNamespaceConfig();
+          if (config == null) {
+            serializer = Serializer.using(Namespaces.BASIC);
+          } else {
+            serializer = Serializer.using(Namespace.builder()
+                .register(Namespaces.BASIC)
+                .register(new Namespace(config))
+                .build());
+          }
+          this.serializer = serializer;
+        }
+      }
+    }
+    return serializer;
+  }
+
+  /**
+   * Returns the namespace configuration.
+   *
+   * @return the namespace configuration
+   */
+  public NamespaceConfig getNamespaceConfig() {
+    return namespaceConfig;
+  }
+
+  /**
+   * Sets the namespace configuration.
+   *
+   * @param namespaceConfig the namespace configuration
+   * @return the protocol serializer
+   */
+  @SuppressWarnings("unchecked")
+  public C setNamespaceConfig(NamespaceConfig namespaceConfig) {
+    this.namespaceConfig = namespaceConfig;
     return (C) this;
   }
 }

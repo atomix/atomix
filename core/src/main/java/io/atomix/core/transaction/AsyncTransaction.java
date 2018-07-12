@@ -17,8 +17,7 @@ package io.atomix.core.transaction;
 
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.ProxyProtocol;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -27,11 +26,6 @@ import java.util.concurrent.CompletableFuture;
  * Asynchronous transaction.
  */
 public interface AsyncTransaction extends AsyncPrimitive {
-
-  @Override
-  default PrimitiveType primitiveType() {
-    return TransactionType.instance();
-  }
 
   /**
    * Returns the transaction identifier.
@@ -95,7 +89,7 @@ public interface AsyncTransaction extends AsyncPrimitive {
    * @param <V>  the value type
    * @return the transactional map builder
    */
-  default <K, V> TransactionalMapBuilder<K, V> mapBuilder(String name, PrimitiveProtocol protocol) {
+  default <K, V> TransactionalMapBuilder<K, V> mapBuilder(String name, ProxyProtocol protocol) {
     return this.<K, V>mapBuilder(name).withProtocol(protocol);
   }
 
@@ -116,7 +110,7 @@ public interface AsyncTransaction extends AsyncPrimitive {
    * @param <E>  the set element type
    * @return the transactional set builder
    */
-  default <E> TransactionalSetBuilder<E> setBuilder(String name, PrimitiveProtocol protocol) {
+  default <E> TransactionalSetBuilder<E> setBuilder(String name, ProxyProtocol protocol) {
     return this.<E>setBuilder(name).withProtocol(protocol);
   }
 

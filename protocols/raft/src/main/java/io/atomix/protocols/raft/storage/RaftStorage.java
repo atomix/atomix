@@ -20,11 +20,11 @@ import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotFile;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.system.MetaStore;
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.JournalSegmentDescriptor;
 import io.atomix.storage.journal.JournalSegmentFile;
 import io.atomix.storage.statistics.StorageStatistics;
+import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,14 +61,6 @@ public class RaftStorage {
    */
   public static Builder builder() {
     return new Builder();
-  }
-
-  /**
-   * @deprecated since 2.1
-   */
-  @Deprecated
-  public static Builder newBuilder() {
-    return builder();
   }
 
   private final String prefix;

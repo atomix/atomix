@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 /**
  * Base Atomix test.
  */
-public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
+public abstract class AbstractPrimitiveTest<P extends PrimitiveProtocol> extends AbstractAtomixTest {
   private static List<Atomix> servers;
   private static List<Atomix> clients;
   private static int id = 10;
@@ -44,7 +44,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
    *
    * @return the protocol with which to test
    */
-  protected abstract PrimitiveProtocol protocol();
+  protected abstract P protocol();
 
   /**
    * Returns a new Atomix instance.
@@ -61,7 +61,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
   @BeforeClass
   public static void setupCluster() throws Exception {
     AbstractAtomixTest.setupAtomix();
-    Function<Atomix.Builder, Atomix> build = builder ->
+    Function<AtomixBuilder, Atomix> build = builder ->
         builder.withManagementGroup(RaftPartitionGroup.builder("system")
             .withNumPartitions(1)
             .withMembers("1", "2", "3")
@@ -86,7 +86,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
   public static void teardownCluster() throws Exception {
     List<CompletableFuture<Void>> futures = servers.stream().map(Atomix::stop).collect(Collectors.toList());
     try {
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
     } catch (Exception e) {
       // Do nothing
     }
@@ -103,7 +103,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
   public void teardownTest() throws Exception {
     List<CompletableFuture<Void>> futures = clients.stream().map(Atomix::stop).collect(Collectors.toList());
     try {
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
     } catch (Exception e) {
       // Do nothing
     }

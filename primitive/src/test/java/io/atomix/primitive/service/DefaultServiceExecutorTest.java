@@ -21,8 +21,8 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.impl.DefaultCommit;
 import io.atomix.primitive.service.impl.DefaultServiceExecutor;
-import io.atomix.primitive.session.PrimitiveSession;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.primitive.session.Session;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.junit.Test;
@@ -95,14 +95,14 @@ public class DefaultServiceExecutorTest {
   private ServiceExecutor executor() {
     ServiceContext context = mock(ServiceContext.class);
     when(context.serviceId()).thenReturn(PrimitiveId.from(1));
-    when(context.serviceType()).thenReturn(new TestPrimitiveType());
+    when(context.serviceType()).thenReturn(TestPrimitiveType.instance());
     when(context.serviceName()).thenReturn("test");
     when(context.currentOperation()).thenReturn(OperationType.COMMAND);
-    return new DefaultServiceExecutor(context, Serializer.using(KryoNamespaces.BASIC));
+    return new DefaultServiceExecutor(context, Serializer.using(Namespaces.BASIC));
   }
 
   @SuppressWarnings("unchecked")
   private <T> Commit<T> commit(OperationId operation, long index, T value, long timestamp) {
-    return new DefaultCommit<T>(index, operation, value, mock(PrimitiveSession.class), timestamp);
+    return new DefaultCommit<T>(index, operation, value, mock(Session.class), timestamp);
   }
 }

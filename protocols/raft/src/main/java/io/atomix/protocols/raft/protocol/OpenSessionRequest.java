@@ -195,7 +195,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
      * @throws NullPointerException if {@code serviceType} is {@code null}
      */
     public Builder withServiceType(PrimitiveType primitiveType) {
-      this.serviceType = checkNotNull(primitiveType, "serviceType cannot be null").id();
+      this.serviceType = checkNotNull(primitiveType, "serviceType cannot be null").name();
       return this;
     }
 

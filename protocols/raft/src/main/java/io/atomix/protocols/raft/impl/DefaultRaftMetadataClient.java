@@ -24,9 +24,9 @@ import io.atomix.protocols.raft.protocol.MetadataRequest;
 import io.atomix.protocols.raft.protocol.MetadataResponse;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
-import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
-import io.atomix.protocols.raft.proxy.impl.RaftProxyConnection;
+import io.atomix.protocols.raft.session.CommunicationStrategy;
+import io.atomix.protocols.raft.session.impl.MemberSelectorManager;
+import io.atomix.protocols.raft.session.impl.RaftSessionConnection;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.LoggerContext;
 
@@ -42,11 +42,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class DefaultRaftMetadataClient implements RaftMetadataClient {
   private final MemberSelectorManager selectorManager;
-  private final RaftProxyConnection connection;
+  private final RaftSessionConnection connection;
 
   public DefaultRaftMetadataClient(String clientId, RaftClientProtocol protocol, MemberSelectorManager selectorManager, ThreadContext context) {
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
-    this.connection = new RaftProxyConnection(
+    this.connection = new RaftSessionConnection(
         protocol,
         selectorManager.createSelector(CommunicationStrategy.LEADER),
         context,
@@ -95,7 +95,7 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
   public CompletableFuture<Set<SessionMetadata>> getSessions(PrimitiveType primitiveType) {
     return getMetadata().thenApply(response -> response.sessions()
         .stream()
-        .filter(s -> s.primitiveType().equals(primitiveType.id()))
+        .filter(s -> s.primitiveType().equals(primitiveType.name()))
         .collect(Collectors.toSet()));
   }
 
@@ -103,7 +103,7 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
   public CompletableFuture<Set<SessionMetadata>> getSessions(PrimitiveType primitiveType, String serviceName) {
     return getMetadata().thenApply(response -> response.sessions()
         .stream()
-        .filter(s -> s.primitiveType().equals(primitiveType.id()) && s.primitiveName().equals(serviceName))
+        .filter(s -> s.primitiveType().equals(primitiveType.name()) && s.primitiveName().equals(serviceName))
         .collect(Collectors.toSet()));
   }
 }

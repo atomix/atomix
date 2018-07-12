@@ -35,6 +35,7 @@ import java.util.UUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * File snapshot store test.
@@ -93,6 +94,8 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     }
 
     snapshot = snapshot.persist();
+
+    assertTrue(snapshot.isPersisted());
 
     assertNull(store.getSnapshot(2));
 

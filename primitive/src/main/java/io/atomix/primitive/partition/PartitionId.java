@@ -32,6 +32,7 @@ public class PartitionId extends AbstractIdentifier<Integer> implements Comparab
   /**
    * Creates a partition identifier from an integer.
    *
+   * @param group the group identifier
    * @param id input integer
    */
   public PartitionId(String group, int id) {

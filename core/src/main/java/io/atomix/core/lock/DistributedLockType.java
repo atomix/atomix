@@ -15,8 +15,8 @@
  */
 package io.atomix.core.lock;
 
+import io.atomix.core.lock.impl.DefaultDistributedLockBuilder;
 import io.atomix.core.lock.impl.DefaultDistributedLockService;
-import io.atomix.core.lock.impl.DistributedLockProxyBuilder;
 import io.atomix.core.lock.impl.DistributedLockResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
@@ -29,8 +29,9 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Distributed lock primitive type.
  */
-public class DistributedLockType implements PrimitiveType<DistributedLockBuilder, DistributedLockConfig, DistributedLock, ServiceConfig> {
+public class DistributedLockType implements PrimitiveType<DistributedLockBuilder, DistributedLockConfig, DistributedLock> {
   private static final String NAME = "lock";
+  private static final DistributedLockType INSTANCE = new DistributedLockType();
 
   /**
    * Returns a new distributed lock type.
@@ -38,17 +39,17 @@ public class DistributedLockType implements PrimitiveType<DistributedLockBuilder
    * @return a new distributed lock type
    */
   public static DistributedLockType instance() {
-    return new DistributedLockType();
+    return INSTANCE;
   }
 
   @Override
-  public String id() {
+  public String name() {
     return NAME;
   }
 
   @Override
   public PrimitiveService newService(ServiceConfig config) {
-    return new DefaultDistributedLockService(config);
+    return new DefaultDistributedLockService();
   }
 
   @Override
@@ -58,19 +59,19 @@ public class DistributedLockType implements PrimitiveType<DistributedLockBuilder
   }
 
   @Override
-  public DistributedLockBuilder newPrimitiveBuilder(String name, PrimitiveManagementService managementService) {
-    return newPrimitiveBuilder(name, new DistributedLockConfig(), managementService);
+  public DistributedLockConfig newConfig() {
+    return new DistributedLockConfig();
   }
 
   @Override
-  public DistributedLockBuilder newPrimitiveBuilder(String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
-    return new DistributedLockProxyBuilder(name, config, managementService);
+  public DistributedLockBuilder newBuilder(String name, DistributedLockConfig config, PrimitiveManagementService managementService) {
+    return new DefaultDistributedLockBuilder(name, config, managementService);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("id", id())
+        .add("name", name())
         .toString();
   }
 }

@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
@@ -44,6 +43,7 @@ public class AtomicValueResource implements PrimitiveResource {
   }
 
   @GET
+  @Path("/value")
   @Produces(MediaType.APPLICATION_JSON)
   public void get(@Suspended AsyncResponse response) {
     value.get().whenComplete((result, error) -> {
@@ -56,7 +56,8 @@ public class AtomicValueResource implements PrimitiveResource {
     });
   }
 
-  @PUT
+  @POST
+  @Path("/value")
   @Consumes(MediaType.TEXT_PLAIN)
   public void set(String body, @Suspended AsyncResponse response) {
     value.set(body).whenComplete((result, error) -> {

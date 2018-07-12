@@ -15,10 +15,12 @@
  */
 package io.atomix.cluster.messaging.impl;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.messaging.BroadcastService;
 import io.atomix.cluster.messaging.ManagedBroadcastService;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,7 +31,7 @@ import java.util.function.Consumer;
  */
 public class TestBroadcastService implements ManagedBroadcastService {
   private final Set<TestBroadcastService> services;
-  private final Set<Consumer<byte[]>> listeners = Sets.newCopyOnWriteArraySet();
+  private final Map<String, Set<Consumer<byte[]>>> listeners = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
 
   public TestBroadcastService(Set<TestBroadcastService> services) {
@@ -37,22 +39,31 @@ public class TestBroadcastService implements ManagedBroadcastService {
   }
 
   @Override
-  public void broadcast(byte[] message) {
+  public void broadcast(String subject, byte[] message) {
     services.forEach(service -> {
-      service.listeners.forEach(listener -> {
-        listener.accept(message);
-      });
+      Set<Consumer<byte[]>> listeners = service.listeners.get(subject);
+      if (listeners != null) {
+        listeners.forEach(listener -> {
+          listener.accept(message);
+        });
+      }
     });
   }
 
   @Override
-  public void addListener(Consumer<byte[]> listener) {
-    listeners.add(listener);
+  public synchronized void addListener(String subject, Consumer<byte[]> listener) {
+    listeners.computeIfAbsent(subject, s -> Sets.newCopyOnWriteArraySet()).add(listener);
   }
 
   @Override
-  public void removeListener(Consumer<byte[]> listener) {
-    listeners.remove(listener);
+  public synchronized void removeListener(String subject, Consumer<byte[]> listener) {
+    Set<Consumer<byte[]>> listeners = this.listeners.get(subject);
+    if (listeners != null) {
+      listeners.remove(listener);
+      if (listeners.isEmpty()) {
+        this.listeners.remove(subject);
+      }
+    }
   }
 
   @Override

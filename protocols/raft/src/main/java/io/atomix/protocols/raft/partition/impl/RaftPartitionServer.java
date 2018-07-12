@@ -87,9 +87,9 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
     }
     return serverOpenFuture.whenComplete((r, e) -> {
       if (e == null) {
-        log.info("Successfully started server for partition {}", partition.id());
+        log.debug("Successfully started server for partition {}", partition.id());
       } else {
-        log.info("Failed to start server for partition {}", partition.id(), e);
+        log.warn("Failed to start server for partition {}", partition.id(), e);
       }
     }).thenApply(v -> this);
   }
@@ -145,6 +145,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
         .withStorage(RaftStorage.builder()
             .withPrefix(partition.name())
             .withStorageLevel(partition.storageLevel())
+            .withMaxSegmentSize((int) partition.segmentSize())
             .withFlushOnCommit(partition.flushOnCommit())
             .withSerializer(Serializer.using(RaftNamespaces.RAFT_STORAGE))
             .withDirectory(partition.dataDirectory())
@@ -158,9 +159,9 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
     server = buildServer();
     return server.join(otherMembers).whenComplete((r, e) -> {
       if (e == null) {
-        log.info("Successfully joined partition {} ({})", partition.id(), partition.name());
+        log.debug("Successfully joined partition {} ({})", partition.id(), partition.name());
       } else {
-        log.info("Failed to join partition {} ({})", partition.id(), partition.name(), e);
+        log.warn("Failed to join partition {} ({})", partition.id(), partition.name(), e);
       }
     }).thenApply(v -> null);
   }

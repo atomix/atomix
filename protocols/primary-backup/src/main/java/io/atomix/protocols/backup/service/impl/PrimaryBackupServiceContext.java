@@ -33,7 +33,7 @@ import io.atomix.primitive.partition.PrimaryTerm;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceContext;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.backup.PrimaryBackupServer.Role;
 import io.atomix.protocols.backup.impl.PrimaryBackupSession;
@@ -93,7 +93,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   private List<MemberId> backups;
   private long currentTerm;
   private long currentIndex;
-  private PrimitiveSession currentSession;
+  private Session currentSession;
   private long currentTimestamp;
   private long operationIndex;
   private long commitIndex;
@@ -220,7 +220,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   }
 
   @Override
-  public PrimitiveSession currentSession() {
+  public Session currentSession() {
     return currentSession;
   }
 
@@ -333,7 +333,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * @param session the current session
    * @return the updated session
    */
-  public PrimitiveSession setSession(PrimitiveSession session) {
+  public Session setSession(Session session) {
     this.currentSession = session;
     return session;
   }
@@ -542,6 +542,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public void expireSession(long sessionId) {
     PrimaryBackupSession session = sessions.remove(sessionId);
     if (session != null) {
+      log.debug("Expiring session {}", session.sessionId());
       session.expire();
       service.expire(session.sessionId());
     }
@@ -555,6 +556,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public void closeSession(long sessionId) {
     PrimaryBackupSession session = sessions.remove(sessionId);
     if (session != null) {
+      log.debug("Closing session {}", session.sessionId());
       session.close();
       service.close(session.sessionId());
     }
@@ -565,7 +567,7 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    */
   private void handleClusterEvent(ClusterMembershipEvent event) {
     if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
-      for (PrimitiveSession session : sessions.values()) {
+      for (Session session : sessions.values()) {
         if (session.memberId().equals(event.subject().id())) {
           role.expire((PrimaryBackupSession) session);
         }
@@ -621,9 +623,16 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * Closes the service.
    */
   public CompletableFuture<Void> close() {
-    clusterMembershipService.removeListener(membershipEventListener);
-    primaryElection.removeListener(primaryElectionListener);
-    role.close();
-    return CompletableFuture.completedFuture(null);
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    threadContext.execute(() -> {
+      try {
+        clusterMembershipService.removeListener(membershipEventListener);
+        primaryElection.removeListener(primaryElectionListener);
+        role.close();
+      } finally {
+        future.complete(null);
+      }
+    });
+    return future.thenRunAsync(() -> threadContext.close());
   }
 }

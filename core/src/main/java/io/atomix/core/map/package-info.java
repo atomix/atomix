@@ -15,6 +15,6 @@
  */
 
 /**
- * Distributed map primitive interfaces.
+ * Atomic map primitive.
  */
 package io.atomix.core.map;

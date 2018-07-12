@@ -15,7 +15,6 @@
  */
 package io.atomix.core.transaction;
 
-import io.atomix.core.map.ConsistentMapType;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
 
@@ -26,10 +25,6 @@ import java.util.concurrent.CompletableFuture;
  * Asynchronous transactional map.
  */
 public interface AsyncTransactionalMap<K, V> extends AsyncPrimitive {
-  @Override
-  default ConsistentMapType<K, V> primitiveType() {
-    return ConsistentMapType.instance();
-  }
 
   /**
    * Returns the value to which the specified key is mapped, or null if this

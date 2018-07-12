@@ -15,13 +15,15 @@
  */
 package io.atomix.core.lock;
 
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
  * Distributed lock configuration.
  */
 public class DistributedLockConfig extends PrimitiveConfig<DistributedLockConfig> {
-  public DistributedLockConfig() {
-    super(DistributedLockType.instance());
+  @Override
+  public PrimitiveType getType() {
+    return DistributedLockType.instance();
   }
 }

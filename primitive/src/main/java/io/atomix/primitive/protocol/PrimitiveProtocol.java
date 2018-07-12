@@ -15,10 +15,8 @@
  */
 package io.atomix.primitive.protocol;
 
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.partition.PartitionService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.utils.ConfiguredType;
+import io.atomix.utils.serializer.Serializer;
 
 /**
  * Primitive protocol.
@@ -26,15 +24,22 @@ import io.atomix.primitive.service.ServiceConfig;
 public interface PrimitiveProtocol {
 
   /**
-   * Primitive protocol type.
+   * Distributed primitive protocol type.
    */
-  interface Type {
+  interface Type<C extends PrimitiveProtocolConfig<C>> extends ConfiguredType<C>, Comparable<Type<C>> {
+
     /**
-     * Returns the protocol type name.
+     * Creates a new protocol instance.
      *
-     * @return the protocol type name
+     * @param config the protocol configuration
+     * @return the protocol instance
      */
-    String name();
+    PrimitiveProtocol newProtocol(C config);
+
+    @Override
+    default int compareTo(Type<C> o) {
+      return name().compareTo(o.name());
+    }
   }
 
   /**
@@ -45,31 +50,10 @@ public interface PrimitiveProtocol {
   Type type();
 
   /**
-   * Returns the protocol group name.
+   * Returns the protocol serializer.
    *
-   * @return the protocol group name
+   * @return the protocol serializer
    */
-  String group();
+  Serializer serializer();
 
-  /**
-   * Returns a new primitive proxy for the given partition group.
-   *
-   * @param primitiveName    the primitive name
-   * @param primitiveType    the primitive type
-   * @param serviceConfig    the service configuration
-   * @param partitionService the partition service
-   * @return the proxy for the given partition group
-   */
-  PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig, PartitionService partitionService);
-
-  /**
-   * Primitive protocol.
-   */
-  abstract class Builder<C extends PrimitiveProtocolConfig<C>, P extends PrimitiveProtocol> implements io.atomix.utils.Builder<P> {
-    protected final C config;
-
-    protected Builder(C config) {
-      this.config = config;
-    }
-  }
 }

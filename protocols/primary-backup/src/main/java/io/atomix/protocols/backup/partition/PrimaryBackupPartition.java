@@ -22,9 +22,9 @@ import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PrimaryElection;
-import io.atomix.protocols.backup.PrimaryBackupClient;
 import io.atomix.protocols.backup.partition.impl.PrimaryBackupPartitionClient;
 import io.atomix.protocols.backup.partition.impl.PrimaryBackupPartitionServer;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 
 import java.util.Collection;
@@ -57,13 +57,12 @@ public class PrimaryBackupPartition implements Partition {
 
   @Override
   public long term() {
-    return election.getTerm().join().term();
+    return Futures.get(election.getTerm()).term();
   }
 
   @Override
   public Collection<MemberId> members() {
-    return election.getTerm()
-        .join()
+    return Futures.get(election.getTerm())
         .candidates()
         .stream()
         .map(GroupMember::memberId)
@@ -72,16 +71,14 @@ public class PrimaryBackupPartition implements Partition {
 
   @Override
   public MemberId primary() {
-    return election.getTerm()
-        .join()
+    return Futures.get(election.getTerm())
         .primary()
         .memberId();
   }
 
   @Override
   public Collection<MemberId> backups() {
-    return election.getTerm()
-        .join()
+    return Futures.get(election.getTerm())
         .candidates()
         .stream()
         .map(GroupMember::memberId)
@@ -98,8 +95,8 @@ public class PrimaryBackupPartition implements Partition {
   }
 
   @Override
-  public PrimaryBackupClient getProxyClient() {
-    return client.getProxyClient();
+  public PrimaryBackupPartitionClient getClient() {
+    return client;
   }
 
   /**

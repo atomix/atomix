@@ -16,8 +16,8 @@
 package io.atomix.rest.resources;
 
 import io.atomix.core.PrimitivesService;
-import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.SyncPrimitive;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.resource.PrimitiveResource;
 
 import javax.ws.rs.Consumes;
@@ -40,8 +40,8 @@ public class PrimitivesResource extends AbstractRestResource {
   @Path("/{name}")
   @SuppressWarnings("unchecked")
   public PrimitiveResource getPrimitive(@PathParam("name") String name, @Context PrimitivesService primitives) {
-    DistributedPrimitive primitive = primitives.getPrimitive(name);
-    return primitive.primitiveType().newResource(primitive);
+    SyncPrimitive primitive = primitives.getPrimitive(name);
+    return primitive.type().newResource(primitive);
   }
 
   /**
@@ -51,9 +51,9 @@ public class PrimitivesResource extends AbstractRestResource {
   @Path("/{name}")
   @Consumes(MediaType.APPLICATION_JSON)
   @SuppressWarnings("unchecked")
-  public Response createPrimitive(@PathParam("name") String name, PrimitiveConfig config, @Context PrimitivesService primitives) {
+  public Response createPrimitive(@PathParam("name") String name, PrimitiveConfig<?> config, @Context PrimitivesService primitives) {
     try {
-      primitives.getPrimitive(name, config.getType(), config);
+      primitives.getPrimitive(name, config.getType(), (PrimitiveConfig) config);
       return Response.ok().build();
     } catch (Exception e) {
       return Response.status(Response.Status.NOT_ACCEPTABLE).build();
