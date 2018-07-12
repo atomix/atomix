@@ -80,6 +80,8 @@ import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.tree.AtomicDocumentTreeType;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueType;
+import io.atomix.core.value.DistributedValue;
+import io.atomix.core.value.DistributedValueType;
 import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.core.workqueue.WorkQueueType;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
@@ -253,6 +255,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   @Override
   public AtomicIdGenerator getAtomicIdGenerator(String name) {
     return getPrimitive(name, AtomicIdGeneratorType.instance(), configService.getConfig(name));
+  }
+
+  @Override
+  public <V> DistributedValue<V> getValue(String name) {
+    return getPrimitive(name, DistributedValueType.instance(), configService.getConfig(name));
   }
 
   @Override

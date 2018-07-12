@@ -42,7 +42,7 @@ public class MultiRaftProtocol implements ProxyProtocol {
    *
    * @return an instance of the multi-Raft protocol with the default configuration
    */
-  public MultiRaftProtocol instance() {
+  public static MultiRaftProtocol instance() {
     return new MultiRaftProtocol(new MultiRaftProtocolConfig());
   }
 

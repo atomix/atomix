@@ -37,7 +37,7 @@ public class AntiEntropyProtocol implements GossipProtocol, MapProtocol, SetProt
    *
    * @return an instance of the anti-entropy protocol with the default configuration
    */
-  public AntiEntropyProtocol instance() {
+  public static AntiEntropyProtocol instance() {
     return new AntiEntropyProtocol(new AntiEntropyProtocolConfig());
   }
 
