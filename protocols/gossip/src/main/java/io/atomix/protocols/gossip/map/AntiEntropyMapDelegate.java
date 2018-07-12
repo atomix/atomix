@@ -80,9 +80,9 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 
-public class AntiEntropyMap<K, V> implements MapDelegate<K, V> {
+public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
 
-  private static final Logger log = LoggerFactory.getLogger(AntiEntropyMap.class);
+  private static final Logger log = LoggerFactory.getLogger(AntiEntropyMapDelegate.class);
   private static final String ERROR_DESTROYED = " map is already destroyed";
   private static final String ERROR_NULL_KEY = "Key cannot be null";
   private static final String ERROR_NULL_VALUE = "Null values are not allowed";
@@ -119,7 +119,7 @@ public class AntiEntropyMap<K, V> implements MapDelegate<K, V> {
   private volatile boolean closed = false;
   private SlidingWindowCounter counter = new SlidingWindowCounter(WINDOW_SIZE);
 
-  public AntiEntropyMap(String name, AntiEntropyProtocolConfig config, PrimitiveManagementService managementService) {
+  public AntiEntropyMapDelegate(String name, AntiEntropyProtocolConfig config, PrimitiveManagementService managementService) {
     this.localMemberId = managementService.getMembershipService().getLocalMember().id();
     this.mapName = name;
     this.entrySerializer = config.getSerializer();

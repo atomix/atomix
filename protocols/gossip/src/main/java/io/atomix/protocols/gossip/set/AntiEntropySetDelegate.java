@@ -23,7 +23,7 @@ import io.atomix.primitive.protocol.set.SetDelegate;
 import io.atomix.primitive.protocol.set.SetDelegateEvent;
 import io.atomix.primitive.protocol.set.SetDelegateEventListener;
 import io.atomix.protocols.gossip.AntiEntropyProtocolConfig;
-import io.atomix.protocols.gossip.map.AntiEntropyMap;
+import io.atomix.protocols.gossip.map.AntiEntropyMapDelegate;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -32,12 +32,12 @@ import java.util.Map;
 /**
  * Anti entropy set.
  */
-public class AntiEntropySet<E> implements SetDelegate<E> {
+public class AntiEntropySetDelegate<E> implements SetDelegate<E> {
   private final MapDelegate<E, Boolean> map;
   private final Map<SetDelegateEventListener<E>, MapDelegateEventListener<E, Boolean>> listenerMap = Maps.newConcurrentMap();
 
-  public AntiEntropySet(String name, AntiEntropyProtocolConfig config, PrimitiveManagementService managementService) {
-    this.map = new AntiEntropyMap<>(name, config, managementService);
+  public AntiEntropySetDelegate(String name, AntiEntropyProtocolConfig config, PrimitiveManagementService managementService) {
+    this.map = new AntiEntropyMapDelegate<>(name, config, managementService);
   }
 
   @Override

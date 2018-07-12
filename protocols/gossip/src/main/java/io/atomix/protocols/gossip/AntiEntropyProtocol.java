@@ -22,8 +22,8 @@ import io.atomix.primitive.protocol.map.MapDelegate;
 import io.atomix.primitive.protocol.map.MapProtocol;
 import io.atomix.primitive.protocol.set.SetDelegate;
 import io.atomix.primitive.protocol.set.SetProtocol;
-import io.atomix.protocols.gossip.map.AntiEntropyMap;
-import io.atomix.protocols.gossip.set.AntiEntropySet;
+import io.atomix.protocols.gossip.map.AntiEntropyMapDelegate;
+import io.atomix.protocols.gossip.set.AntiEntropySetDelegate;
 import io.atomix.utils.serializer.Serializer;
 
 /**
@@ -31,6 +31,15 @@ import io.atomix.utils.serializer.Serializer;
  */
 public class AntiEntropyProtocol implements GossipProtocol, MapProtocol, SetProtocol {
   public static final Type TYPE = new Type();
+
+  /**
+   * Returns an instance of the anti-entropy protocol with the default configuration.
+   *
+   * @return an instance of the anti-entropy protocol with the default configuration
+   */
+  public AntiEntropyProtocol instance() {
+    return new AntiEntropyProtocol(new AntiEntropyProtocolConfig());
+  }
 
   /**
    * Returns a new gossip protocol builder.
@@ -81,11 +90,11 @@ public class AntiEntropyProtocol implements GossipProtocol, MapProtocol, SetProt
 
   @Override
   public <K, V> MapDelegate<K, V> newMapDelegate(String name, PrimitiveManagementService managementService) {
-    return new AntiEntropyMap<>(name, config, managementService);
+    return new AntiEntropyMapDelegate<>(name, config, managementService);
   }
 
   @Override
   public <E> SetDelegate<E> newSetDelegate(String name, PrimitiveManagementService managementService) {
-    return new AntiEntropySet<>(name, config, managementService);
+    return new AntiEntropySetDelegate<>(name, config, managementService);
   }
 }
