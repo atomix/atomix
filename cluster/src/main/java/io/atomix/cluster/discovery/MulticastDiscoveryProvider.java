@@ -140,7 +140,7 @@ public class MulticastDiscoveryProvider
     } else if (oldNode == null) {
       post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, node));
     }
-    failureDetectors.computeIfAbsent(node.id(), id -> new PhiAccrualFailureDetector()).report();
+    failureDetectors.computeIfAbsent(node.id(), id -> PhiAccrualFailureDetector.builder().build()).report();
   }
 
   private void broadcastNode(Node localNode) {
@@ -152,7 +152,7 @@ public class MulticastDiscoveryProvider
   }
 
   private void detectFailure(Node node) {
-    PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
+    PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> PhiAccrualFailureDetector.builder().build());
     double phi = failureDetector.phi();
     if (phi >= config.getFailureThreshold()
         || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout().toMillis())) {

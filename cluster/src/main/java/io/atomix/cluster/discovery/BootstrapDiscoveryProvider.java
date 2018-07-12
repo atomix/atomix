@@ -191,7 +191,7 @@ public class BootstrapDiscoveryProvider
         }
       } else {
         LOGGER.debug("{} - Sending heartbeat to {} failed", localNode, address, error);
-        PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(address, n -> new PhiAccrualFailureDetector());
+        PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(address, n -> PhiAccrualFailureDetector.builder().build());
         double phi = failureDetector.phi();
         if (phi >= config.getFailureThreshold()
             || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout().toMillis())) {
@@ -211,7 +211,7 @@ public class BootstrapDiscoveryProvider
    */
   private byte[] handleHeartbeat(Node localNode, Node node) {
     LOGGER.trace("{} - Received heartbeat: {}", localNode.address(), localNode.address());
-    failureDetectors.computeIfAbsent(localNode.address(), n -> new PhiAccrualFailureDetector()).report();
+    failureDetectors.computeIfAbsent(localNode.address(), n -> PhiAccrualFailureDetector.builder().build()).report();
     Node oldNode = nodes.put(node.address(), node);
     if (oldNode != null && !oldNode.id().equals(node.id())) {
       failureDetectors.remove(oldNode.address());
