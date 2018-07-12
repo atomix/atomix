@@ -17,6 +17,9 @@ package io.atomix.core.barrier;
 
 import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
+import io.atomix.primitive.protocol.ProxyProtocol;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -24,12 +27,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Distributed cyclic barrier builder.
  */
 public abstract class DistributedCyclicBarrierBuilder
-    extends PrimitiveBuilder<DistributedCyclicBarrierBuilder, DistributedCyclicBarrierConfig, DistributedCyclicBarrier> {
+    extends PrimitiveBuilder<DistributedCyclicBarrierBuilder, DistributedCyclicBarrierConfig, DistributedCyclicBarrier>
+    implements ProxyCompatibleBuilder<DistributedCyclicBarrierBuilder> {
 
   protected Runnable barrierAction = () -> {};
 
-  public DistributedCyclicBarrierBuilder(String name, DistributedCyclicBarrierConfig config, PrimitiveManagementService managementService) {
+  protected DistributedCyclicBarrierBuilder(String name, DistributedCyclicBarrierConfig config, PrimitiveManagementService managementService) {
     super(DistributedCyclicBarrierType.instance(), name, config, managementService);
+  }
+
+  @Override
+  public DistributedCyclicBarrierBuilder withProtocol(ProxyProtocol protocol) {
+    return withProtocol((PrimitiveProtocol) protocol);
   }
 
   /**

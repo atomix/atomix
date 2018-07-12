@@ -17,8 +17,8 @@ package io.atomix.core.election;
 
 import io.atomix.cluster.MemberId;
 import io.atomix.core.AbstractPrimitiveTest;
-
 import io.atomix.core.election.impl.LeaderElectionProxy;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link LeaderElectionProxy}.
  */
-public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
+public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProtocol> {
 
   MemberId node1 = MemberId.from("node1");
   MemberId node2 = MemberId.from("node2");
@@ -42,7 +42,10 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
 
   @Test
   public void testRun() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-run", protocol()).build().async();
+    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-run")
+        .withProtocol(protocol())
+        .build()
+        .async();
     election1.run(node1).thenAccept(result -> {
       assertEquals(node1, result.leader().id());
       assertEquals(1, result.leader().term());
@@ -50,7 +53,10 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
       assertEquals(node1, result.candidates().get(0));
     }).get(30, TimeUnit.SECONDS);
 
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-run", protocol()).build().async();
+    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-run")
+        .withProtocol(protocol())
+        .build()
+        .async();
     election2.run(node2).thenAccept(result -> {
       assertEquals(node1, result.leader().id());
       assertEquals(1, result.leader().term());
@@ -62,9 +68,15 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
 
   @Test
   public void testWithdraw() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-withdraw", protocol()).build().async();
+    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-withdraw")
+        .withProtocol(protocol())
+        .build()
+        .async();
     election1.run(node1).get(30, TimeUnit.SECONDS);
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-withdraw", protocol()).build().async();
+    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-withdraw")
+        .withProtocol(protocol())
+        .build()
+        .async();
     election2.run(node2).get(30, TimeUnit.SECONDS);
 
     LeaderEventListener listener1 = new LeaderEventListener();
@@ -100,9 +112,18 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
 
   @Test
   public void testAnoint() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-anoint", protocol()).build().async();
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-anoint", protocol()).build().async();
-    AsyncLeaderElection<MemberId> election3 = atomix().<MemberId>leaderElectionBuilder("test-election-anoint", protocol()).build().async();
+    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-anoint")
+        .withProtocol(protocol())
+        .build()
+        .async();
+    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-anoint")
+        .withProtocol(protocol())
+        .build()
+        .async();
+    AsyncLeaderElection<MemberId> election3 = atomix().<MemberId>leaderElectionBuilder("test-election-anoint")
+        .withProtocol(protocol())
+        .build()
+        .async();
     election1.run(node1).get(30, TimeUnit.SECONDS);
     election2.run(node2).get(30, TimeUnit.SECONDS);
 
@@ -146,9 +167,18 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
 
   @Test
   public void testPromote() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-promote", protocol()).build().async();
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-promote", protocol()).build().async();
-    AsyncLeaderElection<MemberId> election3 = atomix().<MemberId>leaderElectionBuilder("test-election-promote", protocol()).build().async();
+    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-promote")
+        .withProtocol(protocol())
+        .build()
+        .async();
+    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-promote")
+        .withProtocol(protocol())
+        .build()
+        .async();
+    AsyncLeaderElection<MemberId> election3 = atomix().<MemberId>leaderElectionBuilder("test-election-promote")
+        .withProtocol(protocol())
+        .build()
+        .async();
     election1.run(node1).get(30, TimeUnit.SECONDS);
     election2.run(node2).get(30, TimeUnit.SECONDS);
 
@@ -196,9 +226,15 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
 
   @Test
   public void testLeaderSessionClose() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-leader-session-close", protocol()).build().async();
+    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-leader-session-close")
+        .withProtocol(protocol())
+        .build()
+        .async();
     election1.run(node1).get(30, TimeUnit.SECONDS);
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-leader-session-close", protocol()).build().async();
+    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-leader-session-close")
+        .withProtocol(protocol())
+        .build()
+        .async();
     LeaderEventListener listener = new LeaderEventListener();
     election2.run(node2).get(30, TimeUnit.SECONDS);
     election2.addListener(listener).get(30, TimeUnit.SECONDS);
@@ -212,9 +248,15 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
 
   @Test
   public void testNonLeaderSessionClose() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-non-leader-session-close", protocol()).build().async();
+    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-non-leader-session-close")
+        .withProtocol(protocol())
+        .build()
+        .async();
     election1.run(node1).get(30, TimeUnit.SECONDS);
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-non-leader-session-close", protocol()).build().async();
+    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-non-leader-session-close")
+        .withProtocol(protocol())
+        .build()
+        .async();
     LeaderEventListener listener = new LeaderEventListener();
     election2.run(node2).get(30, TimeUnit.SECONDS);
     election1.addListener(listener).get(30, TimeUnit.SECONDS);
@@ -228,8 +270,14 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest {
 
   @Test
   public void testQueries() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-query", protocol()).build().async();
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-query", protocol()).build().async();
+    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-query")
+        .withProtocol(protocol())
+        .build()
+        .async();
+    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-query")
+        .withProtocol(protocol())
+        .build()
+        .async();
     election1.run(node1).get(30, TimeUnit.SECONDS);
     election2.run(node2).get(30, TimeUnit.SECONDS);
     election2.run(node2).get(30, TimeUnit.SECONDS);

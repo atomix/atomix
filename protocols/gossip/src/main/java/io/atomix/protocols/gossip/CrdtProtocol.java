@@ -18,10 +18,10 @@ package io.atomix.protocols.gossip;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.counter.CounterDelegate;
 import io.atomix.primitive.protocol.counter.CounterProtocol;
-import io.atomix.primitive.protocol.counter.CounterProtocolProvider;
+import io.atomix.primitive.protocol.set.SetDelegate;
 import io.atomix.primitive.protocol.set.SetProtocol;
-import io.atomix.primitive.protocol.set.SetProtocolProvider;
 import io.atomix.protocols.gossip.counter.CrdtCounter;
 import io.atomix.protocols.gossip.set.CrdtSet;
 import io.atomix.utils.serializer.Serializer;
@@ -29,7 +29,7 @@ import io.atomix.utils.serializer.Serializer;
 /**
  * Conflict-free Replicated Data Types (CRDT) protocol.
  */
-public class CrdtProtocol implements GossipProtocol, CounterProtocolProvider, SetProtocolProvider {
+public class CrdtProtocol implements GossipProtocol, CounterProtocol, SetProtocol {
   public static final Type TYPE = new Type();
 
   /**
@@ -80,12 +80,12 @@ public class CrdtProtocol implements GossipProtocol, CounterProtocolProvider, Se
   }
 
   @Override
-  public CounterProtocol newCounterProtocol(String name, PrimitiveManagementService managementService) {
+  public CounterDelegate newCounterDelegate(String name, PrimitiveManagementService managementService) {
     return new CrdtCounter(name, config, managementService);
   }
 
   @Override
-  public <E> SetProtocol<E> newSetProtocol(String name, PrimitiveManagementService managementService) {
+  public <E> SetDelegate<E> newSetDelegate(String name, PrimitiveManagementService managementService) {
     return new CrdtSet<>(name, config, managementService);
   }
 }

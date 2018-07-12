@@ -15,21 +15,10 @@
  */
 package io.atomix.primitive.protocol.map;
 
-import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.GossipProtocol;
+import io.atomix.utils.event.EventListener;
 
 /**
- * Map protocol provider.
+ * Map protocol event listener.
  */
-public interface MapProtocolProvider extends GossipProtocol {
-
-  /**
-   * Returns a new map protocol.
-   *
-   * @param name the map name
-   * @param managementService the primitive management service
-   * @return a new map protocol
-   */
-  <K, V> MapProtocol<K, V> newMapProtocol(String name, PrimitiveManagementService managementService);
-
+public interface MapDelegateEventListener<K, V> extends EventListener<MapDelegateEvent<K, V>> {
 }

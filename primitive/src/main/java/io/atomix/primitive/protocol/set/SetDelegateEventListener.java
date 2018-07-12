@@ -13,23 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol.map;
+package io.atomix.primitive.protocol.set;
 
-import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.GossipProtocol;
+import io.atomix.utils.event.EventListener;
 
 /**
- * Navigable map protocol provider.
+ * Set protocol event listener.
  */
-public interface NavigableMapProtocolProvider extends GossipProtocol {
-
-  /**
-   * Returns a new navigable map protocol.
-   *
-   * @param name the map name
-   * @param managementService the primitive management service
-   * @return a new map protocol
-   */
-  <K, V> NavigableMapProtocol<K, V> newNavigableMapProtocol(String name, PrimitiveManagementService managementService);
-
+public interface SetDelegateEventListener<E> extends EventListener<SetDelegateEvent<E>> {
 }

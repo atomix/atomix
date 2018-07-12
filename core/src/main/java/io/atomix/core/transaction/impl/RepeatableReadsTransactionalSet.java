@@ -21,7 +21,7 @@ import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.set.impl.SetUpdate;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.protocol.StateMachineReplicationProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -38,8 +38,8 @@ public class RepeatableReadsTransactionalSet<E> extends TransactionalSetParticip
   }
 
   @Override
-  public StateMachineReplicationProtocol protocol() {
-    return (StateMachineReplicationProtocol) set.protocol();
+  public ProxyProtocol protocol() {
+    return (ProxyProtocol) set.protocol();
   }
 
   private CompletableFuture<Boolean> read(E element) {

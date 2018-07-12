@@ -22,7 +22,7 @@ import io.atomix.core.set.DistributedSortedSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.set.SortedSetProtocolProvider;
+import io.atomix.primitive.protocol.set.SortedSetProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.concurrent.Futures;
@@ -44,9 +44,9 @@ public class DefaultDistributedSortedSetBuilder<E extends Comparable<E>> extends
   public CompletableFuture<DistributedSortedSet<E>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     if (protocol instanceof GossipProtocol) {
-      if (protocol instanceof SortedSetProtocolProvider) {
+      if (protocol instanceof SortedSetProtocol) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((SortedSetProtocolProvider) protocol).<E>newSortedSetProtocol(name, managementService))
+            CompletableFuture.completedFuture(((SortedSetProtocol) protocol).<E>newSortedSetDelegate(name, managementService))
                 .thenApply(set -> new GossipDistributedSortedSet<>(name, protocol, set)))
             .thenApply(AsyncDistributedSortedSet::sync);
       } else {

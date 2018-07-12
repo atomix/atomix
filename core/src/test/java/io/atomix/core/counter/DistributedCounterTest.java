@@ -16,23 +16,24 @@
 package io.atomix.core.counter;
 
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.core.counter.impl.AtomicCounterProxy;
+import io.atomix.primitive.protocol.counter.CounterProtocol;
 import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for {@link DistributedCounter}.
  */
-public abstract class DistributedCounterTest extends AbstractPrimitiveTest {
+public abstract class DistributedCounterTest extends AbstractPrimitiveTest<CounterProtocol> {
   @Test
   public void testBasicOperations() throws Throwable {
-    DistributedCounter counter1 = atomix().counterBuilder("testBasicOperations", protocol()).build();
-    DistributedCounter counter2 = atomix().counterBuilder("testBasicOperations", protocol()).build();
+    DistributedCounter counter1 = atomix().counterBuilder("testBasicOperations")
+        .withProtocol(protocol())
+        .build();
+    DistributedCounter counter2 = atomix().counterBuilder("testBasicOperations")
+        .withProtocol(protocol())
+        .build();
 
     assertEquals(1, counter1.incrementAndGet());
     assertEquals(2, counter1.incrementAndGet());

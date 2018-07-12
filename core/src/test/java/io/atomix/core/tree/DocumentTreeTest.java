@@ -18,6 +18,7 @@ package io.atomix.core.tree;
 
 import com.google.common.base.Throwables;
 import io.atomix.core.AbstractPrimitiveTest;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.time.Versioned;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -35,12 +36,13 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Unit tests for {@link AtomicDocumentTreeProxy}.
+ * Unit tests for {@link io.atomix.core.tree.impl.AtomicDocumentTreeProxy}.
  */
-public abstract class DocumentTreeTest extends AbstractPrimitiveTest {
+public abstract class DocumentTreeTest extends AbstractPrimitiveTest<ProxyProtocol> {
 
   protected AsyncAtomicDocumentTree<String> newTree(String name) throws Exception {
-    return atomix().<String>atomicDocumentTreeBuilder(name, protocol())
+    return atomix().<String>atomicDocumentTreeBuilder(name)
+        .withProtocol(protocol())
         .build()
         .async();
   }

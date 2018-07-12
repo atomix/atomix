@@ -13,23 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol.map;
-
-import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
- * Sorted map protocol provider.
+ * Interfaces for map-compatible gossip protocols and delegates.
  */
-public interface SortedMapProtocolProvider extends GossipProtocol {
-
-  /**
-   * Returns a new sorted map protocol.
-   *
-   * @param name the map name
-   * @param managementService the primitive management service
-   * @return a new map protocol
-   */
-  <K, V> NavigableMapProtocol<K, V> newSortedMapProtocol(String name, PrimitiveManagementService managementService);
-
-}
+package io.atomix.primitive.protocol.map;

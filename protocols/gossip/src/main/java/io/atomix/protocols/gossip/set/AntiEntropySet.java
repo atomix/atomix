@@ -17,11 +17,11 @@ package io.atomix.protocols.gossip.set;
 
 import com.google.common.collect.Maps;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.map.MapProtocol;
-import io.atomix.primitive.protocol.map.MapProtocolEventListener;
-import io.atomix.primitive.protocol.set.SetProtocol;
-import io.atomix.primitive.protocol.set.SetProtocolEvent;
-import io.atomix.primitive.protocol.set.SetProtocolEventListener;
+import io.atomix.primitive.protocol.map.MapDelegate;
+import io.atomix.primitive.protocol.map.MapDelegateEventListener;
+import io.atomix.primitive.protocol.set.SetDelegate;
+import io.atomix.primitive.protocol.set.SetDelegateEvent;
+import io.atomix.primitive.protocol.set.SetDelegateEventListener;
 import io.atomix.protocols.gossip.AntiEntropyProtocolConfig;
 import io.atomix.protocols.gossip.map.AntiEntropyMap;
 
@@ -32,9 +32,9 @@ import java.util.Map;
 /**
  * Anti entropy set.
  */
-public class AntiEntropySet<E> implements SetProtocol<E> {
-  private final MapProtocol<E, Boolean> map;
-  private final Map<SetProtocolEventListener<E>, MapProtocolEventListener<E, Boolean>> listenerMap = Maps.newConcurrentMap();
+public class AntiEntropySet<E> implements SetDelegate<E> {
+  private final MapDelegate<E, Boolean> map;
+  private final Map<SetDelegateEventListener<E>, MapDelegateEventListener<E, Boolean>> listenerMap = Maps.newConcurrentMap();
 
   public AntiEntropySet(String name, AntiEntropyProtocolConfig config, PrimitiveManagementService managementService) {
     this.map = new AntiEntropyMap<>(name, config, managementService);
@@ -115,14 +115,14 @@ public class AntiEntropySet<E> implements SetProtocol<E> {
   }
 
   @Override
-  public void addListener(SetProtocolEventListener<E> listener) {
-    MapProtocolEventListener<E, Boolean> eventListener = event -> {
+  public void addListener(SetDelegateEventListener<E> listener) {
+    MapDelegateEventListener<E, Boolean> eventListener = event -> {
       switch (event.type()) {
         case INSERT:
-          listener.event(new SetProtocolEvent<>(SetProtocolEvent.Type.ADD, event.key()));
+          listener.event(new SetDelegateEvent<>(SetDelegateEvent.Type.ADD, event.key()));
           break;
         case REMOVE:
-          listener.event(new SetProtocolEvent<>(SetProtocolEvent.Type.REMOVE, event.key()));
+          listener.event(new SetDelegateEvent<>(SetDelegateEvent.Type.REMOVE, event.key()));
           break;
         default:
           break;
@@ -134,8 +134,8 @@ public class AntiEntropySet<E> implements SetProtocol<E> {
   }
 
   @Override
-  public void removeListener(SetProtocolEventListener<E> listener) {
-    MapProtocolEventListener<E, Boolean> eventListener = listenerMap.remove(listener);
+  public void removeListener(SetDelegateEventListener<E> listener) {
+    MapDelegateEventListener<E, Boolean> eventListener = listenerMap.remove(listener);
     if (eventListener != null) {
       map.removeListener(eventListener);
     }

@@ -16,7 +16,7 @@
 package io.atomix.core.semaphore;
 
 import io.atomix.core.Atomix;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.utils.time.Version;
@@ -29,21 +29,22 @@ import static org.junit.Assert.assertEquals;
 
 public class RaftSemaphoreTest extends SemaphoreTest {
   @Override
-  protected PrimitiveProtocol protocol() {
+  protected ProxyProtocol protocol() {
     return MultiRaftProtocol.builder()
-            .withReadConsistency(ReadConsistency.LINEARIZABLE)
-            .withMaxRetries(5)
-            .build();
+        .withReadConsistency(ReadConsistency.LINEARIZABLE)
+        .withMaxRetries(5)
+        .build();
   }
 
   // Needs linearizable read consistency
   @Test(timeout = 10000)
   public void testQueueStatus() throws Exception {
     Atomix atomix = atomix();
-    AsyncAtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-status", protocol())
-            .withInitialCapacity(10)
-            .build()
-            .async();
+    AsyncAtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-status")
+        .withProtocol(protocol())
+        .withInitialCapacity(10)
+        .build()
+        .async();
 
     semaphore.acquire(5).get(30, TimeUnit.SECONDS);
 

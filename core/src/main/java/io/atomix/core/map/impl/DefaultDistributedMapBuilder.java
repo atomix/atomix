@@ -24,7 +24,7 @@ import io.atomix.core.map.DistributedMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.map.MapProtocolProvider;
+import io.atomix.primitive.protocol.map.MapProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.concurrent.Futures;
@@ -45,9 +45,9 @@ public class DefaultDistributedMapBuilder<K, V> extends DistributedMapBuilder<K,
   public CompletableFuture<DistributedMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     if (protocol instanceof GossipProtocol) {
-      if (protocol instanceof MapProtocolProvider) {
+      if (protocol instanceof MapProtocol) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((MapProtocolProvider) protocol).<K, V>newMapProtocol(name, managementService))
+            CompletableFuture.completedFuture(((MapProtocol) protocol).<K, V>newMapDelegate(name, managementService))
                 .thenApply(map -> new GossipDistributedMap<>(name, protocol, map)))
             .thenApply(AsyncDistributedMap::sync);
       } else {

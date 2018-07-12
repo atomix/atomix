@@ -13,12 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol.set;
-
-import io.atomix.utils.event.EventListener;
+package io.atomix.primitive.protocol.counter;
 
 /**
- * Set protocol event listener.
+ * Counter builder.
  */
-public interface SetProtocolEventListener<E> extends EventListener<SetProtocolEvent<E>> {
+public interface CounterCompatibleBuilder<B extends CounterCompatibleBuilder<B>> {
+
+  /**
+   * Configures the builder with a counter compatible gossip protocol.
+   *
+   * @param protocol the counter protocol
+   * @return the primitive builder
+   */
+  B withProtocol(CounterProtocol protocol);
+
 }

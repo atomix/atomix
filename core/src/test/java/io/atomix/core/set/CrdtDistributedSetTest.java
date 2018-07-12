@@ -15,7 +15,7 @@
  */
 package io.atomix.core.set;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.set.SetProtocol;
 import io.atomix.protocols.gossip.CrdtProtocol;
 
 /**
@@ -23,7 +23,7 @@ import io.atomix.protocols.gossip.CrdtProtocol;
  */
 public class CrdtDistributedSetTest extends GossipDistributedSetTest {
   @Override
-  protected PrimitiveProtocol protocol() {
+  protected SetProtocol protocol() {
     return CrdtProtocol.builder()
         .withTimestampProvider(timestampProvider)
         .build();

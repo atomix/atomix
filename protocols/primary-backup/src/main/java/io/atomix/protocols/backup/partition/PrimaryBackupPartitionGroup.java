@@ -27,7 +27,7 @@ import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.StateMachineReplicationProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.utils.concurrent.BlockingAwareThreadPoolContextFactory;
 import io.atomix.utils.concurrent.ThreadContextFactory;
@@ -130,7 +130,7 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
   }
 
   @Override
-  public StateMachineReplicationProtocol newProtocol() {
+  public ProxyProtocol newProtocol() {
     return MultiPrimaryProtocol.builder(name)
         .withRecovery(Recovery.RECOVER)
         .withBackups(2)

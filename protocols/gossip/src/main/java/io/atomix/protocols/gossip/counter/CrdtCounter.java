@@ -21,7 +21,7 @@ import com.google.common.util.concurrent.AtomicLongMap;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.counter.CounterProtocol;
+import io.atomix.primitive.protocol.counter.CounterDelegate;
 import io.atomix.protocols.gossip.CrdtProtocolConfig;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * CRDT based counter implementation.
  */
-public class CrdtCounter implements CounterProtocol {
+public class CrdtCounter implements CounterDelegate {
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .register(MemberId.class)

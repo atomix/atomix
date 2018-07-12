@@ -16,8 +16,8 @@
 package io.atomix.core.counter;
 
 import io.atomix.core.AbstractPrimitiveTest;
-
 import io.atomix.core.counter.impl.AtomicCounterProxy;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
@@ -29,10 +29,13 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link AtomicCounterProxy}.
  */
-public abstract class AtomicCounterTest extends AbstractPrimitiveTest {
+public abstract class AtomicCounterTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testBasicOperations() throws Throwable {
-    AsyncAtomicCounter along = atomix().atomicCounterBuilder("test-counter-basic-operations", protocol()).build().async();
+    AsyncAtomicCounter along = atomix().atomicCounterBuilder("test-counter-basic-operations")
+        .withProtocol(protocol())
+        .build()
+        .async();
     assertEquals(0, along.get().get(30, TimeUnit.SECONDS).longValue());
     assertEquals(1, along.incrementAndGet().get(30, TimeUnit.SECONDS).longValue());
     along.set(100).get(30, TimeUnit.SECONDS);

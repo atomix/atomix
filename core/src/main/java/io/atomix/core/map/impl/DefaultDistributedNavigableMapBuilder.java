@@ -22,7 +22,7 @@ import io.atomix.core.map.DistributedNavigableMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.map.NavigableMapProtocolProvider;
+import io.atomix.primitive.protocol.map.NavigableMapProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.concurrent.Futures;
@@ -43,9 +43,9 @@ public class DefaultDistributedNavigableMapBuilder<K extends Comparable<K>, V> e
   public CompletableFuture<DistributedNavigableMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     if (protocol instanceof GossipProtocol) {
-      if (protocol instanceof NavigableMapProtocolProvider) {
+      if (protocol instanceof NavigableMapProtocol) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((NavigableMapProtocolProvider) protocol).<K, V>newNavigableMapProtocol(name, managementService))
+            CompletableFuture.completedFuture(((NavigableMapProtocol) protocol).<K, V>newNavigableMapDelegate(name, managementService))
                 .thenApply(set -> new GossipDistributedNavigableMap<>(name, protocol, set)))
             .thenApply(AsyncDistributedNavigableMap::sync);
       } else {

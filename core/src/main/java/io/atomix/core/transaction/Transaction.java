@@ -16,7 +16,6 @@
 package io.atomix.core.transaction;
 
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 /**
  * Transaction primitive.
@@ -73,19 +72,6 @@ public interface Transaction extends SyncPrimitive {
   <K, V> TransactionalMapBuilder<K, V> mapBuilder(String name);
 
   /**
-   * Returns a new transactional map builder.
-   *
-   * @param name     the map name
-   * @param protocol the primitive protocol
-   * @param <K>      the key type
-   * @param <V>      the value type
-   * @return the transactional map builder
-   */
-  default <K, V> TransactionalMapBuilder<K, V> mapBuilder(String name, PrimitiveProtocol protocol) {
-    return this.<K, V>mapBuilder(name).withProtocol(protocol);
-  }
-
-  /**
    * Returns a new transactional set builder.
    *
    * @param name the set name
@@ -93,18 +79,6 @@ public interface Transaction extends SyncPrimitive {
    * @return the transactional set builder
    */
   <E> TransactionalSetBuilder<E> setBuilder(String name);
-
-  /**
-   * Returns a new transactional set builder.
-   *
-   * @param name     the set name
-   * @param protocol the primitive protocol
-   * @param <E>      the set element type
-   * @return the transactional set builder
-   */
-  default <E> TransactionalSetBuilder<E> setBuilder(String name, PrimitiveProtocol protocol) {
-    return this.<E>setBuilder(name).withProtocol(protocol);
-  }
 
   @Override
   AsyncTransaction async();

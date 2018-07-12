@@ -19,8 +19,8 @@ import com.google.common.collect.Maps;
 import io.atomix.core.map.MapEvent;
 import io.atomix.core.map.MapEventListener;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.map.MapProtocolEventListener;
-import io.atomix.primitive.protocol.map.NavigableMapProtocol;
+import io.atomix.primitive.protocol.map.MapDelegateEventListener;
+import io.atomix.primitive.protocol.map.NavigableMapDelegate;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -30,17 +30,17 @@ import java.util.concurrent.Executor;
  * Gossip-based distributed navigable map.
  */
 public class GossipDistributedNavigableMap<K extends Comparable<K>, V> extends AsyncDistributedNavigableJavaMap<K, V> {
-  private final NavigableMapProtocol<K, V> map;
-  private final Map<MapEventListener<K, V>, MapProtocolEventListener<K, V>> listenerMap = Maps.newConcurrentMap();
+  private final NavigableMapDelegate<K, V> map;
+  private final Map<MapEventListener<K, V>, MapDelegateEventListener<K, V>> listenerMap = Maps.newConcurrentMap();
 
-  public GossipDistributedNavigableMap(String name, PrimitiveProtocol protocol, NavigableMapProtocol<K, V> map) {
+  public GossipDistributedNavigableMap(String name, PrimitiveProtocol protocol, NavigableMapDelegate<K, V> map) {
     super(name, protocol, map);
     this.map = map;
   }
 
   @Override
   public CompletableFuture<Void> addListener(MapEventListener<K, V> listener, Executor executor) {
-    MapProtocolEventListener<K, V> eventListener = event -> executor.execute(() -> {
+    MapDelegateEventListener<K, V> eventListener = event -> executor.execute(() -> {
       switch (event.type()) {
         case INSERT:
           listener.event(new MapEvent<>(MapEvent.Type.INSERT, event.key(), event.value(), null));
@@ -63,7 +63,7 @@ public class GossipDistributedNavigableMap<K extends Comparable<K>, V> extends A
 
   @Override
   public CompletableFuture<Void> removeListener(MapEventListener<K, V> listener) {
-    MapProtocolEventListener<K, V> eventListener = listenerMap.remove(listener);
+    MapDelegateEventListener<K, V> eventListener = listenerMap.remove(listener);
     if (eventListener != null) {
       return complete(() -> map.removeListener(eventListener));
     }

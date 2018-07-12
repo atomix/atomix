@@ -22,7 +22,7 @@ import io.atomix.core.transaction.TransactionalSet;
 import io.atomix.core.transaction.TransactionalSetBuilder;
 import io.atomix.core.transaction.TransactionalSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -40,7 +40,7 @@ public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E
   }
 
   @Override
-  public TransactionalSetBuilder<E> withProtocol(PrimitiveProtocol protocol) {
+  public TransactionalSetBuilder<E> withProtocol(ProxyProtocol protocol) {
     setBuilder.withProtocol(protocol);
     return this;
   }

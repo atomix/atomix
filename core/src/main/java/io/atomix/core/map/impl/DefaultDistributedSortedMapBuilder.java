@@ -22,7 +22,7 @@ import io.atomix.core.map.DistributedSortedMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.map.SortedMapProtocolProvider;
+import io.atomix.primitive.protocol.map.SortedMapProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.concurrent.Futures;
@@ -43,9 +43,9 @@ public class DefaultDistributedSortedMapBuilder<K extends Comparable<K>, V> exte
   public CompletableFuture<DistributedSortedMap<K, V>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     if (protocol instanceof GossipProtocol) {
-      if (protocol instanceof SortedMapProtocolProvider) {
+      if (protocol instanceof SortedMapProtocol) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((SortedMapProtocolProvider) protocol).<K, V>newSortedMapProtocol(name, managementService))
+            CompletableFuture.completedFuture(((SortedMapProtocol) protocol).<K, V>newSortedMapDelegate(name, managementService))
                 .thenApply(set -> new GossipDistributedSortedMap<>(name, protocol, set)))
             .thenApply(AsyncDistributedSortedMap::sync);
       } else {

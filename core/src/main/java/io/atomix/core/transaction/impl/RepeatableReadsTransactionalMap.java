@@ -22,7 +22,7 @@ import io.atomix.core.map.impl.MapUpdate;
 import io.atomix.core.map.impl.MapUpdate.Type;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.protocol.StateMachineReplicationProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Map;
@@ -41,8 +41,8 @@ public class RepeatableReadsTransactionalMap<K, V> extends TransactionalMapParti
   }
 
   @Override
-  public StateMachineReplicationProtocol protocol() {
-    return (StateMachineReplicationProtocol) consistentMap.protocol();
+  public ProxyProtocol protocol() {
+    return (ProxyProtocol) consistentMap.protocol();
   }
 
   private CompletableFuture<Versioned<V>> read(K key) {

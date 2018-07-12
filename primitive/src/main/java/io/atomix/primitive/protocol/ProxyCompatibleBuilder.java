@@ -13,12 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol.map;
-
-import io.atomix.utils.event.EventListener;
+package io.atomix.primitive.protocol;
 
 /**
- * Map protocol event listener.
+ * State machine replication compatible primitive.
  */
-public interface MapProtocolEventListener<K, V> extends EventListener<MapProtocolEvent<K, V>> {
+public interface ProxyCompatibleBuilder<B extends ProxyCompatibleBuilder<B>> {
+
+  /**
+   * Configures the builder with a state machine replication protocol.
+   *
+   * @param protocol the state machine replication protocol
+   * @return the primitive builder
+   */
+  B withProtocol(ProxyProtocol protocol);
+
 }

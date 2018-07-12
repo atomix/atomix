@@ -17,21 +17,17 @@ package io.atomix.core.transaction;
 
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.set.DistributedSet;
-import io.atomix.core.transaction.CommitStatus;
-import io.atomix.core.transaction.Isolation;
-import io.atomix.core.transaction.Transaction;
-import io.atomix.core.transaction.TransactionalSet;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Transactional set test.
  */
-public abstract class TransactionalSetTest extends AbstractPrimitiveTest {
+public abstract class TransactionalSetTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testTransactionalSet() throws Throwable {
     Transaction transaction1 = atomix().transactionBuilder()

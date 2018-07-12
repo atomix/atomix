@@ -13,44 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol.set;
+package io.atomix.primitive.protocol.map;
 
-import io.atomix.utils.event.AbstractEvent;
+import java.util.Map;
 
 /**
- * Set protocol event.
+ * Gossip-based map service.
  */
-public class SetProtocolEvent<E> extends AbstractEvent<SetProtocolEvent.Type, E> {
+public interface MapDelegate<K, V> extends Map<K, V> {
 
   /**
-   * Set protocol event type.
-   */
-  public enum Type {
-    /**
-     * Element added to set.
-     */
-    ADD,
-
-    /**
-     * Element removed from the set.
-     */
-    REMOVE,
-  }
-
-  public SetProtocolEvent(Type type, E element) {
-    super(type, element);
-  }
-
-  public SetProtocolEvent(Type type, E element, long time) {
-    super(type, element, time);
-  }
-
-  /**
-   * Returns the set element.
+   * Adds the specified listener to the map which will be notified whenever the mappings in the map are changed.
    *
-   * @return the set element
+   * @param listener listener to register for events
    */
-  public E element() {
-    return subject();
-  }
+  void addListener(MapDelegateEventListener<K, V> listener);
+
+  /**
+   * Removes the specified listener from the map such that it will no longer receive change notifications.
+   *
+   * @param listener listener to deregister for events
+   */
+  void removeListener(MapDelegateEventListener<K, V> listener);
+
+  /**
+   * Closes the map.
+   */
+  void close();
 }

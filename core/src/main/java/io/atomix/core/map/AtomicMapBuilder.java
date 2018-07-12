@@ -17,6 +17,9 @@ package io.atomix.core.map;
 
 import io.atomix.core.cache.CachedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
+import io.atomix.primitive.protocol.ProxyProtocol;
 
 /**
  * Builder for {@link AtomicMap} instances.
@@ -25,9 +28,10 @@ import io.atomix.primitive.PrimitiveManagementService;
  * @param <V> type for map value
  */
 public abstract class AtomicMapBuilder<K, V>
-    extends CachedPrimitiveBuilder<AtomicMapBuilder<K, V>, AtomicMapConfig, AtomicMap<K, V>> {
+    extends CachedPrimitiveBuilder<AtomicMapBuilder<K, V>, AtomicMapConfig, AtomicMap<K, V>>
+    implements ProxyCompatibleBuilder<AtomicMapBuilder<K, V>> {
 
-  public AtomicMapBuilder(String name, AtomicMapConfig config, PrimitiveManagementService managementService) {
+  protected AtomicMapBuilder(String name, AtomicMapConfig config, PrimitiveManagementService managementService) {
     super(AtomicMapType.instance(), name, config, managementService);
   }
 
@@ -50,5 +54,10 @@ public abstract class AtomicMapBuilder<K, V>
   public AtomicMapBuilder<K, V> withNullValues(boolean nullValues) {
     config.setNullValues(nullValues);
     return this;
+  }
+
+  @Override
+  public AtomicMapBuilder<K, V> withProtocol(ProxyProtocol protocol) {
+    return withProtocol((PrimitiveProtocol) protocol);
   }
 }

@@ -23,7 +23,7 @@ import io.atomix.primitive.service.ServiceConfig;
 /**
  * State machine replication-based primitive protocol.
  */
-public interface StateMachineReplicationProtocol extends PrimitiveProtocol {
+public interface ProxyProtocol extends PrimitiveProtocol {
 
   /**
    * Returns the protocol partition group name.

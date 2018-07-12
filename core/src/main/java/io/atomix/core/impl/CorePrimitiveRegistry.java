@@ -28,7 +28,7 @@ import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.PartitionService;
-import io.atomix.primitive.protocol.StateMachineReplicationProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Namespaces;
@@ -110,7 +110,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<PrimitiveRegistry> start() {
-    StateMachineReplicationProtocol protocol = partitionService.getSystemPartitionGroup().newProtocol();
+    ProxyProtocol protocol = partitionService.getSystemPartitionGroup().newProtocol();
     ProxyClient proxy = protocol.newProxy(
         "primitives",
         AtomicMapType.instance(),

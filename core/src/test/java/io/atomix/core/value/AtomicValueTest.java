@@ -16,6 +16,7 @@
 package io.atomix.core.value;
 
 import io.atomix.core.AbstractPrimitiveTest;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.concurrent.BlockingQueue;
@@ -30,10 +31,13 @@ import static org.junit.Assert.assertTrue;
 /**
  * Raft atomic value test.
  */
-public abstract class AtomicValueTest extends AbstractPrimitiveTest {
+public abstract class AtomicValueTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testValue() throws Exception {
-    AsyncAtomicValue<String> value = atomix().<String>atomicValueBuilder("test-value", protocol()).build().async();
+    AsyncAtomicValue<String> value = atomix().<String>atomicValueBuilder("test-value")
+        .withProtocol(protocol())
+        .build()
+        .async();
     assertNull(value.get().get(30, TimeUnit.SECONDS));
     value.set("a").get(30, TimeUnit.SECONDS);
     assertEquals("a", value.get().get(30, TimeUnit.SECONDS));
@@ -46,8 +50,12 @@ public abstract class AtomicValueTest extends AbstractPrimitiveTest {
 
   @Test
   public void testEvents() throws Exception {
-    AtomicValue<String> value1 = atomix().<String>atomicValueBuilder("test-value-events", protocol()).build();
-    AtomicValue<String> value2 = atomix().<String>atomicValueBuilder("test-value-events", protocol()).build();
+    AtomicValue<String> value1 = atomix().<String>atomicValueBuilder("test-value-events")
+        .withProtocol(protocol())
+        .build();
+    AtomicValue<String> value2 = atomix().<String>atomicValueBuilder("test-value-events")
+        .withProtocol(protocol())
+        .build();
 
     BlockingAtomicValueListener<String> listener1 = new BlockingAtomicValueListener<>();
     BlockingAtomicValueListener<String> listener2 = new BlockingAtomicValueListener<>();

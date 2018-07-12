@@ -18,6 +18,7 @@ package io.atomix.core.map;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.core.AbstractPrimitiveTest;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -38,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link DistributedMap}.
  */
-public abstract class DistributedMapTest extends AbstractPrimitiveTest {
+public abstract class DistributedMapTest extends AbstractPrimitiveTest<ProxyProtocol> {
 
   /**
    * Tests null values.
@@ -49,7 +50,8 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest {
     final String barValue = "Hello bar!";
 
     DistributedMap<String, String> map = atomix()
-        .<String, String>mapBuilder("testNullValues", protocol())
+        .<String, String>mapBuilder("testNullValues")
+        .withProtocol(protocol())
         .withNullValues()
         .build();
 
@@ -69,7 +71,9 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest {
     final String fooValue = "Hello foo!";
     final String barValue = "Hello bar!";
 
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testBasicMapOperationMap", protocol()).build();
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testBasicMapOperationMap")
+        .withProtocol(protocol())
+        .build();
 
     assertTrue(map.isEmpty());
     assertNull(map.put("foo", fooValue));
@@ -115,7 +119,9 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest {
     final String value2 = "value2";
     final String value3 = "value3";
 
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testMapComputeOperationsMap", protocol()).build();
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testMapComputeOperationsMap")
+        .withProtocol(protocol())
+        .build();
     assertEquals(value1, map.computeIfAbsent("foo", k -> value1));
     assertEquals(value1, map.computeIfAbsent("foo", k -> value2));
     assertNull(map.computeIfPresent("bar", (k, v) -> value2));
@@ -130,7 +136,9 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest {
     final String value2 = "value2";
     final String value3 = "value3";
 
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testMapListenerMap", protocol()).build();
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testMapListenerMap")
+        .withProtocol(protocol())
+        .build();
     TestMapEventListener listener = new TestMapEventListener();
 
     // add listener; insert new value into map and verify an INSERT event is received.
@@ -190,7 +198,9 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testMapViews() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testMapViews", protocol()).build();
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testMapViews")
+        .withProtocol(protocol())
+        .build();
 
     assertTrue(map.isEmpty());
     assertTrue(map.keySet().isEmpty());

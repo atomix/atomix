@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol.counter;
-
-import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.GossipProtocol;
+package io.atomix.primitive.protocol.set;
 
 /**
- * Counter protocol provider.
+ * Set builder.
  */
-public interface CounterProtocolProvider extends GossipProtocol {
+public interface SetCompatibleBuilder<B extends SetCompatibleBuilder<B>> {
 
   /**
-   * Returns a new counter protocol.
+   * Configures the builder with a set compatible gossip protocol.
    *
-   * @param name the counter name
-   * @param managementService the primitive management service
-   * @return a new counter protocol
+   * @param protocol the set protocol
+   * @return the primitive builder
    */
-  CounterProtocol newCounterProtocol(String name, PrimitiveManagementService managementService);
+  B withProtocol(SetProtocol protocol);
 
 }

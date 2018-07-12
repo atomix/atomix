@@ -21,8 +21,7 @@ import io.atomix.core.set.AsyncDistributedSet;
 import io.atomix.core.set.impl.SetUpdate;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.StateMachineReplicationProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -38,8 +37,8 @@ public class ReadCommittedTransactionalSet<E> extends TransactionalSetParticipan
   }
 
   @Override
-  public StateMachineReplicationProtocol protocol() {
-    return (StateMachineReplicationProtocol) set.protocol();
+  public ProxyProtocol protocol() {
+    return (ProxyProtocol) set.protocol();
   }
 
   @Override
