@@ -15,7 +15,7 @@
  */
 package io.atomix.core.barrier;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 
 import java.time.Duration;
@@ -25,7 +25,7 @@ import java.time.Duration;
  */
 public class RaftDistributedCyclicBarrierTest extends DistributedCyclicBarrierTest {
   @Override
-  protected PrimitiveProtocol protocol() {
+  protected ProxyProtocol protocol() {
     return MultiRaftProtocol.builder()
         .withMinTimeout(Duration.ofSeconds(1))
         .withMaxTimeout(Duration.ofSeconds(1))

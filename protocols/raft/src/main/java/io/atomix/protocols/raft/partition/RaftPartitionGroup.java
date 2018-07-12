@@ -29,7 +29,7 @@ import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionMetadata;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.StateMachineReplicationProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.storage.StorageLevel;
 import org.slf4j.Logger;
@@ -144,7 +144,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   }
 
   @Override
-  public StateMachineReplicationProtocol newProtocol() {
+  public ProxyProtocol newProtocol() {
     return MultiRaftProtocol.builder(name)
         .withRecoveryStrategy(Recovery.RECOVER)
         .withMaxRetries(5)

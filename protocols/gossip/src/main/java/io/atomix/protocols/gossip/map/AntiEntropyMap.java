@@ -28,9 +28,9 @@ import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.map.MapProtocol;
-import io.atomix.primitive.protocol.map.MapProtocolEvent;
-import io.atomix.primitive.protocol.map.MapProtocolEventListener;
+import io.atomix.primitive.protocol.map.MapDelegate;
+import io.atomix.primitive.protocol.map.MapDelegateEvent;
+import io.atomix.primitive.protocol.map.MapDelegateEventListener;
 import io.atomix.protocols.gossip.AntiEntropyProtocolConfig;
 import io.atomix.protocols.gossip.PeerSelector;
 import io.atomix.protocols.gossip.TimestampProvider;
@@ -73,14 +73,14 @@ import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static io.atomix.primitive.protocol.map.MapProtocolEvent.Type.INSERT;
-import static io.atomix.primitive.protocol.map.MapProtocolEvent.Type.REMOVE;
-import static io.atomix.primitive.protocol.map.MapProtocolEvent.Type.UPDATE;
+import static io.atomix.primitive.protocol.map.MapDelegateEvent.Type.INSERT;
+import static io.atomix.primitive.protocol.map.MapDelegateEvent.Type.REMOVE;
+import static io.atomix.primitive.protocol.map.MapDelegateEvent.Type.UPDATE;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 
-public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
+public class AntiEntropyMap<K, V> implements MapDelegate<K, V> {
 
   private static final Logger log = LoggerFactory.getLogger(AntiEntropyMap.class);
   private static final String ERROR_DESTROYED = " map is already destroyed";
@@ -101,7 +101,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
   private final String updateMessageSubject;
   private final String antiEntropyAdvertisementSubject;
   private final String updateRequestSubject;
-  private final Set<MapProtocolEventListener<K, V>> listeners = Sets.newCopyOnWriteArraySet();
+  private final Set<MapDelegateEventListener<K, V>> listeners = Sets.newCopyOnWriteArraySet();
   private final ExecutorService executor;
   private final ScheduledExecutorService backgroundExecutor;
   private final PeerSelector<Map.Entry<K, V>> peerUpdateFunction;
@@ -317,9 +317,9 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
     if (updated.get()) {
       notifyPeers(new UpdateEntry(encodedKey, newValue), peerUpdateFunction.select(Maps.immutableEntry(key, value), membershipService));
       if (oldValue.get() == null) {
-        notifyListeners(new MapProtocolEvent<>(INSERT, key, value));
+        notifyListeners(new MapDelegateEvent<>(INSERT, key, value));
       } else {
-        notifyListeners(new MapProtocolEvent<>(UPDATE, key, value));
+        notifyListeners(new MapDelegateEvent<>(UPDATE, key, value));
       }
       return decodeValue(oldValue.get());
     }
@@ -354,7 +354,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
       notifyPeers(new UpdateEntry(encodedKey, tombstone.orElse(null)),
           peerUpdateFunction.select(Maps.immutableEntry(key, decodedPreviousValue), membershipService));
       if (previousValue.isAlive()) {
-        notifyListeners(new MapProtocolEvent<>(REMOVE, key, decodedPreviousValue));
+        notifyListeners(new MapDelegateEvent<>(REMOVE, key, decodedPreviousValue));
       }
     }
     return decodedPreviousValue;
@@ -401,7 +401,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
     checkNotNull(recomputeFunction, "Recompute function cannot be null");
 
     String encodedKey = encodeKey(key);
-    AtomicReference<MapProtocolEvent.Type> update = new AtomicReference<>();
+    AtomicReference<MapDelegateEvent.Type> update = new AtomicReference<>();
     AtomicReference<MapValue> previousValue = new AtomicReference<>();
     MapValue computedValue = items.compute(encodedKey, (k, mv) -> {
       previousValue.set(mv);
@@ -424,12 +424,12 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
     });
     if (update.get() != null) {
       notifyPeers(new UpdateEntry(encodedKey, computedValue), peerUpdateFunction.select(Maps.immutableEntry(key, computedValue.get(this::decodeValue)), membershipService));
-      MapProtocolEvent.Type updateType = computedValue.isTombstone() ? REMOVE : update.get();
+      MapDelegateEvent.Type updateType = computedValue.isTombstone() ? REMOVE : update.get();
       V value = computedValue.isTombstone()
           ? previousValue.get() == null ? null : previousValue.get().get(this::decodeValue)
           : computedValue.get(this::decodeValue);
       if (value != null) {
-        notifyListeners(new MapProtocolEvent<>(updateType, key, value));
+        notifyListeners(new MapDelegateEvent<>(updateType, key, value));
       }
       return value;
     }
@@ -475,19 +475,19 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
   }
 
   @Override
-  public void addListener(MapProtocolEventListener<K, V> listener) {
+  public void addListener(MapDelegateEventListener<K, V> listener) {
     checkState(!closed, destroyedMessage);
 
     listeners.add(checkNotNull(listener));
     items.forEach((k, v) -> {
       if (v.isAlive()) {
-        listener.event(new MapProtocolEvent<>(INSERT, decodeKey(k), v.get(this::decodeValue)));
+        listener.event(new MapDelegateEvent<>(INSERT, decodeKey(k), v.get(this::decodeValue)));
       }
     });
   }
 
   @Override
-  public void removeListener(MapProtocolEventListener<K, V> listener) {
+  public void removeListener(MapDelegateEventListener<K, V> listener) {
     checkState(!closed, destroyedMessage);
 
     listeners.remove(checkNotNull(listener));
@@ -510,7 +510,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
     clusterCommunicator.unsubscribe(antiEntropyAdvertisementSubject);
   }
 
-  private void notifyListeners(MapProtocolEvent<K, V> event) {
+  private void notifyListeners(MapDelegateEvent<K, V> event) {
     listeners.forEach(listener -> listener.event(event));
   }
 
@@ -610,8 +610,8 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
    * Processes anti-entropy ad from peer by taking following actions: 1. If peer has an old entry, updates peer. 2. If
    * peer indicates an entry is removed and has a more recent timestamp than the local entry, update local state.
    */
-  private List<MapProtocolEvent<K, V>> antiEntropyCheckLocalItems(AntiEntropyAdvertisement ad) {
-    final List<MapProtocolEvent<K, V>> externalEvents = Lists.newLinkedList();
+  private List<MapDelegateEvent<K, V>> antiEntropyCheckLocalItems(AntiEntropyAdvertisement ad) {
+    final List<MapDelegateEvent<K, V>> externalEvents = Lists.newLinkedList();
     final MemberId sender = ad.sender();
     final List<MemberId> peers = ImmutableList.of(sender);
     Set<String> staleOrMissing = new HashSet<>();
@@ -630,7 +630,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
             Optional.empty(),
             Optional.of(tombstone));
         if (previousValue != null && previousValue.isAlive()) {
-          externalEvents.add(new MapProtocolEvent<>(REMOVE, decodeKey(key), previousValue.get(this::decodeValue)));
+          externalEvents.add(new MapDelegateEvent<>(REMOVE, decodeKey(key), previousValue.get(this::decodeValue)));
         }
       } else if (remoteValueDigest.isNewerThan(localValue.digest())) {
         // Not a tombstone and remote is newer
@@ -688,7 +688,7 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
       if (value == null || value.isTombstone()) {
         MapValue previousValue = removeInternal(key, Optional.empty(), Optional.ofNullable(value));
         if (previousValue != null && previousValue.isAlive()) {
-          notifyListeners(new MapProtocolEvent<>(REMOVE, decodeKey(key), previousValue.get(this::decodeValue)));
+          notifyListeners(new MapDelegateEvent<>(REMOVE, decodeKey(key), previousValue.get(this::decodeValue)));
         }
       } else {
         counter.incrementCount();
@@ -705,9 +705,9 @@ public class AntiEntropyMap<K, V> implements MapProtocol<K, V> {
 
         if (updated.get()) {
           if (oldValue.get() == null) {
-            notifyListeners(new MapProtocolEvent<>(INSERT, decodeKey(key), decodeValue(value.get())));
+            notifyListeners(new MapDelegateEvent<>(INSERT, decodeKey(key), decodeValue(value.get())));
           } else {
-            notifyListeners(new MapProtocolEvent<>(UPDATE, decodeKey(key), decodeValue(value.get())));
+            notifyListeners(new MapDelegateEvent<>(UPDATE, decodeKey(key), decodeValue(value.get())));
           }
         }
       }

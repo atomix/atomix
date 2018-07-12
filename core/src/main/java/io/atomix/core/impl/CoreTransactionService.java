@@ -31,11 +31,14 @@ import io.atomix.core.transaction.TransactionService;
 import io.atomix.core.transaction.TransactionState;
 import io.atomix.core.transaction.Transactional;
 import io.atomix.primitive.DistributedPrimitive;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
+import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
@@ -346,9 +349,9 @@ public class CoreTransactionService implements ManagedTransactionService {
       return Futures.exceptionalFuture(new TransactionException("Failed to locate partition group for participant " + participantInfo.name()));
     }
 
-    DistributedPrimitive primitive = primitiveType.newBuilder(participantInfo.name(), primitiveType.newConfig(), managementService)
-        .withProtocol(partitionGroup.newProtocol())
-        .build();
+    PrimitiveBuilder builder = primitiveType.newBuilder(participantInfo.name(), primitiveType.newConfig(), managementService);
+    ((ProxyCompatibleBuilder) builder).withProtocol(partitionGroup.newProtocol());
+    DistributedPrimitive primitive = builder.build();
     return completionFunction.apply((Transactional<?>) primitive);
   }
 
@@ -359,7 +362,7 @@ public class CoreTransactionService implements ManagedTransactionService {
     PrimitiveProtocol protocol = protocolType.newProtocol(((PrimitiveProtocolConfig) protocolType.newConfig()).setSerializer(SERIALIZER));
     return AtomicMapType.<TransactionId, TransactionInfo>instance()
         .newBuilder("atomix-transactions", new AtomicMapConfig(), managementService)
-        .withProtocol(protocol)
+        .withProtocol((ProxyProtocol) protocol)
         .withCacheEnabled()
         .buildAsync()
         .thenApply(transactions -> {

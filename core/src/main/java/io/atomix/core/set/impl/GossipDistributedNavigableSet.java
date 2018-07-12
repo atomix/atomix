@@ -19,9 +19,9 @@ import com.google.common.collect.Maps;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.set.SetProtocol;
-import io.atomix.primitive.protocol.set.SetProtocolEventListener;
-import io.atomix.primitive.protocol.set.NavigableSetProtocol;
+import io.atomix.primitive.protocol.set.SetDelegate;
+import io.atomix.primitive.protocol.set.SetDelegateEventListener;
+import io.atomix.primitive.protocol.set.NavigableSetDelegate;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -30,17 +30,17 @@ import java.util.concurrent.CompletableFuture;
  * Gossip-based distributed set.
  */
 public class GossipDistributedNavigableSet<E extends Comparable<E>> extends AsyncDistributedNavigableJavaSet<E> {
-  private final SetProtocol<E> set;
-  private final Map<CollectionEventListener<E>, SetProtocolEventListener<E>> listenerMap = Maps.newConcurrentMap();
+  private final SetDelegate<E> set;
+  private final Map<CollectionEventListener<E>, SetDelegateEventListener<E>> listenerMap = Maps.newConcurrentMap();
 
-  public GossipDistributedNavigableSet(String name, PrimitiveProtocol protocol, NavigableSetProtocol<E> set) {
+  public GossipDistributedNavigableSet(String name, PrimitiveProtocol protocol, NavigableSetDelegate<E> set) {
     super(name, protocol, set);
     this.set = set;
   }
 
   @Override
   public CompletableFuture<Void> addListener(CollectionEventListener<E> listener) {
-    SetProtocolEventListener<E> eventListener = event -> {
+    SetDelegateEventListener<E> eventListener = event -> {
       switch (event.type()) {
         case ADD:
           listener.event(new CollectionEvent<>(CollectionEvent.Type.ADD, event.element()));
@@ -60,7 +60,7 @@ public class GossipDistributedNavigableSet<E extends Comparable<E>> extends Asyn
 
   @Override
   public CompletableFuture<Void> removeListener(CollectionEventListener<E> listener) {
-    SetProtocolEventListener<E> eventListener = listenerMap.remove(listener);
+    SetDelegateEventListener<E> eventListener = listenerMap.remove(listener);
     if (eventListener != null) {
       set.removeListener(eventListener);
     }

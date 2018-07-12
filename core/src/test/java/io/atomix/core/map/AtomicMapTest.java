@@ -22,6 +22,7 @@ import io.atomix.core.transaction.CommitStatus;
 import io.atomix.core.transaction.Isolation;
 import io.atomix.core.transaction.Transaction;
 import io.atomix.core.transaction.TransactionalMap;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
@@ -46,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link AtomicMap}.
  */
-public abstract class AtomicMapTest extends AbstractPrimitiveTest {
+public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol> {
 
   /**
    * Tests null values.
@@ -57,7 +58,8 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest {
     final String barValue = "Hello bar!";
 
     AsyncAtomicMap<String, String> map = atomix()
-        .<String, String>atomicMapBuilder("testNullValues", protocol())
+        .<String, String>atomicMapBuilder("testNullValues")
+        .withProtocol(protocol())
         .withNullValues()
         .build().async();
 
@@ -94,7 +96,10 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest {
     final String fooValue = "Hello foo!";
     final String barValue = "Hello bar!";
 
-    AsyncAtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testBasicMapOperationMap", protocol()).build().async();
+    AsyncAtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testBasicMapOperationMap")
+        .withProtocol(protocol())
+        .build()
+        .async();
 
     map.isEmpty().thenAccept(result -> {
       assertTrue(result);
@@ -270,7 +275,10 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest {
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AsyncAtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapComputeOperationsMap", protocol()).build().async();
+    AsyncAtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapComputeOperationsMap")
+        .withProtocol(protocol())
+        .build()
+        .async();
 
     map.computeIfAbsent("foo", k -> value1).thenAccept(result -> {
       assertEquals(Versioned.valueOrElse(result, null), value1);
@@ -307,7 +315,10 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest {
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AsyncAtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapListenerMap", protocol()).build().async();
+    AsyncAtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapListenerMap")
+        .withProtocol(protocol())
+        .build()
+        .async();
     TestAtomicMapEventListener listener = new TestAtomicMapEventListener();
 
     // add listener; insert new value into map and verify an INSERT event is received.
@@ -374,7 +385,9 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testMapViews() throws Exception {
-    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapViews", protocol()).build();
+    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapViews")
+        .withProtocol(protocol())
+        .build();
 
     assertTrue(map.isEmpty());
     assertTrue(map.keySet().isEmpty());
@@ -449,13 +462,17 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest {
         .withIsolation(Isolation.READ_COMMITTED)
         .build();
     transaction1.begin();
-    TransactionalMap<String, String> map1 = transaction1.<String, String>mapBuilder("test-transactional-map", protocol()).build();
+    TransactionalMap<String, String> map1 = transaction1.<String, String>mapBuilder("test-transactional-map")
+        .withProtocol(protocol())
+        .build();
 
     Transaction transaction2 = atomix().transactionBuilder()
         .withIsolation(Isolation.REPEATABLE_READS)
         .build();
     transaction2.begin();
-    TransactionalMap<String, String> map2 = transaction2.<String, String>mapBuilder("test-transactional-map", protocol()).build();
+    TransactionalMap<String, String> map2 = transaction2.<String, String>mapBuilder("test-transactional-map")
+        .withProtocol(protocol())
+        .build();
 
     assertNull(map1.get("foo"));
     assertFalse(map1.containsKey("foo"));
@@ -480,13 +497,17 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest {
         .withIsolation(Isolation.REPEATABLE_READS)
         .build();
     transaction3.begin();
-    TransactionalMap<String, String> map3 = transaction3.<String, String>mapBuilder("test-transactional-map", protocol()).build();
+    TransactionalMap<String, String> map3 = transaction3.<String, String>mapBuilder("test-transactional-map")
+        .withProtocol(protocol())
+        .build();
     assertEquals(map3.get("foo"), "bar");
     map3.put("foo", "baz");
     assertEquals(map3.get("foo"), "baz");
     assertEquals(transaction3.commit(), CommitStatus.SUCCESS);
 
-    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("test-transactional-map", protocol()).build();
+    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("test-transactional-map")
+        .withProtocol(protocol())
+        .build();
     assertEquals(map.get("foo").value(), "baz");
     assertEquals(map.get("bar").value(), "baz");
 

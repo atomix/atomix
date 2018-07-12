@@ -19,6 +19,7 @@ import com.google.common.collect.Sets;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -36,7 +37,7 @@ import static org.junit.Assert.fail;
 /**
  * Distributed tree set test.
  */
-public abstract class DistributedNavigableSetTest extends AbstractPrimitiveTest {
+public abstract class DistributedNavigableSetTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testSetOperations() throws Exception {
     DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("test-set")

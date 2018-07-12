@@ -15,10 +15,21 @@
  */
 package io.atomix.primitive.protocol.set;
 
-import java.util.NavigableSet;
+import io.atomix.primitive.PrimitiveManagementService;
 
 /**
  * Navigable set protocol.
  */
-public interface NavigableSetProtocol<E> extends SortedSetProtocol<E>, NavigableSet<E> {
+public interface NavigableSetProtocol extends SortedSetProtocol {
+
+  /**
+   * Returns a new set delegate.
+   *
+   * @param name the set name
+   * @param managementService the primitive management service
+   * @param <E> the set element type
+   * @return a new set delegate
+   */
+  <E> NavigableSetDelegate<E> newNavigableSetDelegate(String name, PrimitiveManagementService managementService);
+
 }

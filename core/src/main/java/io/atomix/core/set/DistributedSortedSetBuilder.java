@@ -17,6 +17,13 @@ package io.atomix.core.set;
 
 import io.atomix.core.collection.DistributedCollectionBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
+import io.atomix.primitive.protocol.ProxyProtocol;
+import io.atomix.primitive.protocol.set.NavigableSetProtocol;
+import io.atomix.primitive.protocol.set.NavigableSetCompatibleBuilder;
+import io.atomix.primitive.protocol.set.SortedSetProtocol;
+import io.atomix.primitive.protocol.set.SortedSetCompatibleBuilder;
 
 /**
  * Builder for distributed sorted set.
@@ -24,8 +31,27 @@ import io.atomix.primitive.PrimitiveManagementService;
  * @param <E> type set elements.
  */
 public abstract class DistributedSortedSetBuilder<E extends Comparable<E>>
-    extends DistributedCollectionBuilder<DistributedSortedSetBuilder<E>, DistributedSortedSetConfig, DistributedSortedSet<E>, E> {
-  public DistributedSortedSetBuilder(String name, DistributedSortedSetConfig config, PrimitiveManagementService managementService) {
+    extends DistributedCollectionBuilder<DistributedSortedSetBuilder<E>, DistributedSortedSetConfig, DistributedSortedSet<E>, E>
+    implements ProxyCompatibleBuilder<DistributedSortedSetBuilder<E>>,
+    SortedSetCompatibleBuilder<DistributedSortedSetBuilder<E>>,
+    NavigableSetCompatibleBuilder<DistributedSortedSetBuilder<E>> {
+
+  protected DistributedSortedSetBuilder(String name, DistributedSortedSetConfig config, PrimitiveManagementService managementService) {
     super(DistributedSortedSetType.instance(), name, config, managementService);
+  }
+
+  @Override
+  public DistributedSortedSetBuilder<E> withProtocol(ProxyProtocol protocol) {
+    return withProtocol((PrimitiveProtocol) protocol);
+  }
+
+  @Override
+  public DistributedSortedSetBuilder<E> withProtocol(SortedSetProtocol protocol) {
+    return withProtocol((PrimitiveProtocol) protocol);
+  }
+
+  @Override
+  public DistributedSortedSetBuilder<E> withProtocol(NavigableSetProtocol protocol) {
+    return withProtocol((PrimitiveProtocol) protocol);
   }
 }

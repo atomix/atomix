@@ -23,7 +23,7 @@ import io.atomix.core.set.DistributedSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.set.SetProtocolProvider;
+import io.atomix.primitive.protocol.set.SetProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.concurrent.Futures;
@@ -46,9 +46,9 @@ public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
   public CompletableFuture<DistributedSet<E>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     if (protocol instanceof GossipProtocol) {
-      if (protocol instanceof SetProtocolProvider) {
+      if (protocol instanceof SetProtocol) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((SetProtocolProvider) protocol).<E>newSetProtocol(name, managementService))
+            CompletableFuture.completedFuture(((SetProtocol) protocol).<E>newSetDelegate(name, managementService))
                 .thenApply(set -> new GossipDistributedSet<>(name, protocol, set)))
             .thenApply(AsyncDistributedSet::sync);
       } else {

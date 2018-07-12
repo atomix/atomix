@@ -15,7 +15,7 @@
  */
 package io.atomix.core.set;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.set.SetProtocol;
 import io.atomix.protocols.gossip.AntiEntropyProtocol;
 
 /**
@@ -23,7 +23,7 @@ import io.atomix.protocols.gossip.AntiEntropyProtocol;
  */
 public class AntiEntropyDistributedSetTest extends GossipDistributedSetTest {
   @Override
-  protected PrimitiveProtocol protocol() {
+  protected SetProtocol protocol() {
     return AntiEntropyProtocol.builder()
         .withTimestampProvider(timestampProvider)
         .build();

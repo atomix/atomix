@@ -16,8 +16,7 @@
 package io.atomix.core.map;
 
 import io.atomix.core.AbstractPrimitiveTest;
-
-import io.atomix.core.map.AsyncAtomicCounterMap;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
@@ -28,14 +27,17 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit test for {@code AtomixCounterMap}.
  */
-public abstract class AtomicCounterMapTest extends AbstractPrimitiveTest {
+public abstract class AtomicCounterMapTest extends AbstractPrimitiveTest<ProxyProtocol> {
 
   /**
    * Tests basic counter map operations.
    */
   @Test
   public void testBasicCounterMapOperations() throws Throwable {
-    AsyncAtomicCounterMap<String> map = atomix().<String>atomicCounterMapBuilder("testBasicCounterMapOperationMap", protocol()).build().async();
+    AsyncAtomicCounterMap<String> map = atomix().<String>atomicCounterMapBuilder("testBasicCounterMapOperationMap")
+        .withProtocol(protocol())
+        .build()
+        .async();
 
     map.isEmpty().thenAccept(isEmpty -> {
       assertTrue(isEmpty);

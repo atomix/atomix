@@ -18,13 +18,23 @@ package io.atomix.core.tree;
 
 import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
+import io.atomix.primitive.protocol.ProxyProtocol;
 
 /**
  * Builder for {@link AtomicDocumentTree}.
  */
 public abstract class AtomicDocumentTreeBuilder<V>
-    extends PrimitiveBuilder<AtomicDocumentTreeBuilder<V>, AtomicDocumentTreeConfig, AtomicDocumentTree<V>> {
+    extends PrimitiveBuilder<AtomicDocumentTreeBuilder<V>, AtomicDocumentTreeConfig, AtomicDocumentTree<V>>
+    implements ProxyCompatibleBuilder<AtomicDocumentTreeBuilder<V>> {
+
   protected AtomicDocumentTreeBuilder(String name, AtomicDocumentTreeConfig config, PrimitiveManagementService managementService) {
     super(AtomicDocumentTreeType.instance(), name, config, managementService);
+  }
+
+  @Override
+  public AtomicDocumentTreeBuilder<V> withProtocol(ProxyProtocol protocol) {
+    return withProtocol((PrimitiveProtocol) protocol);
   }
 }

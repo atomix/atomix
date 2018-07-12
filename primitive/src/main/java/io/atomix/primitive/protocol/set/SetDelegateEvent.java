@@ -13,62 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol.map;
+package io.atomix.primitive.protocol.set;
 
 import io.atomix.utils.event.AbstractEvent;
 
 /**
- * Map protocol event.
+ * Set protocol event.
  */
-public class MapProtocolEvent<K, V> extends AbstractEvent<MapProtocolEvent.Type, K> {
+public class SetDelegateEvent<E> extends AbstractEvent<SetDelegateEvent.Type, E> {
 
   /**
-   * Map protocol event type.
+   * Set protocol event type.
    */
   public enum Type {
     /**
-     * Entry added to map.
+     * Element added to set.
      */
-    INSERT,
+    ADD,
 
     /**
-     * Existing entry updated.
+     * Element removed from the set.
      */
-    UPDATE,
-
-    /**
-     * Entry removed from map.
-     */
-    REMOVE
+    REMOVE,
   }
 
-  private final V value;
-
-  public MapProtocolEvent(Type type, K key, V value) {
-    super(type, key);
-    this.value = value;
+  public SetDelegateEvent(Type type, E element) {
+    super(type, element);
   }
 
-  public MapProtocolEvent(Type type, K key, V value, long time) {
-    super(type, key, time);
-    this.value = value;
+  public SetDelegateEvent(Type type, E element, long time) {
+    super(type, element, time);
   }
 
   /**
-   * Returns the map entry key.
+   * Returns the set element.
    *
-   * @return the map entry key
+   * @return the set element
    */
-  public K key() {
+  public E element() {
     return subject();
-  }
-
-  /**
-   * Returns the map entry value.
-   *
-   * @return the map entry value
-   */
-  public V value() {
-    return value;
   }
 }

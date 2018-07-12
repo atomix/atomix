@@ -15,29 +15,21 @@
  */
 package io.atomix.primitive.protocol.map;
 
-import java.util.Map;
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
- * Gossip-based map service.
+ * Map protocol.
  */
-public interface MapProtocol<K, V> extends Map<K, V> {
+public interface MapProtocol extends GossipProtocol {
 
   /**
-   * Adds the specified listener to the map which will be notified whenever the mappings in the map are changed.
+   * Returns a new map delegate.
    *
-   * @param listener listener to register for events
+   * @param name the map name
+   * @param managementService the primitive management service
+   * @return a new map delegate
    */
-  void addListener(MapProtocolEventListener<K, V> listener);
+  <K, V> MapDelegate<K, V> newMapDelegate(String name, PrimitiveManagementService managementService);
 
-  /**
-   * Removes the specified listener from the map such that it will no longer receive change notifications.
-   *
-   * @param listener listener to deregister for events
-   */
-  void removeListener(MapProtocolEventListener<K, V> listener);
-
-  /**
-   * Closes the map.
-   */
-  void close();
 }

@@ -22,7 +22,7 @@ import io.atomix.core.set.DistributedNavigableSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.set.NavigableSetProtocolProvider;
+import io.atomix.primitive.protocol.set.NavigableSetProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.concurrent.Futures;
@@ -44,9 +44,9 @@ public class DefaultDistributedNavigableSetBuilder<E extends Comparable<E>> exte
   public CompletableFuture<DistributedNavigableSet<E>> buildAsync() {
     PrimitiveProtocol protocol = protocol();
     if (protocol instanceof GossipProtocol) {
-      if (protocol instanceof NavigableSetProtocolProvider) {
+      if (protocol instanceof NavigableSetProtocol) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((NavigableSetProtocolProvider) protocol).<E>newNavigableSetProtocol(name, managementService))
+            CompletableFuture.completedFuture(((NavigableSetProtocol) protocol).<E>newNavigableSetDelegate(name, managementService))
                 .thenApply(set -> new GossipDistributedNavigableSet<>(name, protocol, set)))
             .thenApply(AsyncDistributedNavigableSet::sync);
       } else {

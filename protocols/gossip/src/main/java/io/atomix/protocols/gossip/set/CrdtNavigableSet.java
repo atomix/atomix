@@ -16,7 +16,7 @@
 package io.atomix.protocols.gossip.set;
 
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.set.NavigableSetProtocol;
+import io.atomix.primitive.protocol.set.NavigableSetDelegate;
 import io.atomix.protocols.gossip.CrdtProtocolConfig;
 
 import java.util.Comparator;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 /**
  * CRDT tree set.
  */
-public class CrdtNavigableSet<E> extends CrdtSet<E> implements NavigableSetProtocol<E> {
+public class CrdtNavigableSet<E> extends CrdtSet<E> implements NavigableSetDelegate<E> {
   private final Comparator<? super E> comparator;
 
   public CrdtNavigableSet(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService, Comparator<? super E> comparator) {

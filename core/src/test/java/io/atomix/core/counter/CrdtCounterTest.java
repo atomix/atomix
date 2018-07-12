@@ -15,7 +15,7 @@
  */
 package io.atomix.core.counter;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.counter.CounterProtocol;
 import io.atomix.protocols.gossip.CrdtProtocol;
 
 /**
@@ -23,7 +23,7 @@ import io.atomix.protocols.gossip.CrdtProtocol;
  */
 public class CrdtCounterTest extends DistributedCounterTest {
   @Override
-  protected PrimitiveProtocol protocol() {
+  protected CounterProtocol protocol() {
     return CrdtProtocol.builder().build();
   }
 }

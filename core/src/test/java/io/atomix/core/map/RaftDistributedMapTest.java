@@ -15,7 +15,7 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
 
@@ -26,7 +26,7 @@ import java.time.Duration;
  */
 public class RaftDistributedMapTest extends DistributedMapTest {
   @Override
-  protected PrimitiveProtocol protocol() {
+  protected ProxyProtocol protocol() {
     return MultiRaftProtocol.builder()
         .withMaxTimeout(Duration.ofSeconds(1))
         .withMaxRetries(5)

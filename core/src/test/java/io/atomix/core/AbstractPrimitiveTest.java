@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 /**
  * Base Atomix test.
  */
-public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
+public abstract class AbstractPrimitiveTest<P extends PrimitiveProtocol> extends AbstractAtomixTest {
   private static List<Atomix> servers;
   private static List<Atomix> clients;
   private static int id = 10;
@@ -44,7 +44,7 @@ public abstract class AbstractPrimitiveTest extends AbstractAtomixTest {
    *
    * @return the protocol with which to test
    */
-  protected abstract PrimitiveProtocol protocol();
+  protected abstract P protocol();
 
   /**
    * Returns a new Atomix instance.

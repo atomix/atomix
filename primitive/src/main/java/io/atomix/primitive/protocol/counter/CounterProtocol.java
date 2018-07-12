@@ -15,64 +15,21 @@
  */
 package io.atomix.primitive.protocol.counter;
 
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
+
 /**
- * Gossip-based counter service.
+ * Counter protocol.
  */
-public interface CounterProtocol {
+public interface CounterProtocol extends GossipProtocol {
 
   /**
-   * Atomically increment by one and return the updated value.
+   * Returns a new counter delegate.
    *
-   * @return updated value
+   * @param name the counter name
+   * @param managementService the primitive management service
+   * @return a new counter delegate
    */
-  long incrementAndGet();
+  CounterDelegate newCounterDelegate(String name, PrimitiveManagementService managementService);
 
-  /**
-   * Atomically decrement by one and return the updated value.
-   *
-   * @return updated value
-   */
-  long decrementAndGet();
-
-  /**
-   * Atomically increment by one and return the previous value.
-   *
-   * @return previous value
-   */
-  long getAndIncrement();
-
-  /**
-   * Atomically decrement by one and return the previous value.
-   *
-   * @return previous value
-   */
-  long getAndDecrement();
-
-  /**
-   * Atomically adds the given value to the current value.
-   *
-   * @param delta the value to add
-   * @return previous value
-   */
-  long getAndAdd(long delta);
-
-  /**
-   * Atomically adds the given value to the current value.
-   *
-   * @param delta the value to add
-   * @return updated value
-   */
-  long addAndGet(long delta);
-
-  /**
-   * Returns the counter value.
-   *
-   * @return the counter value
-   */
-  long get();
-
-  /**
-   * Closes the counter.
-   */
-  void close();
 }

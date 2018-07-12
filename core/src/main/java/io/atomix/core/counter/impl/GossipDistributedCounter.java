@@ -21,7 +21,7 @@ import io.atomix.core.counter.DistributedCounterType;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.counter.CounterProtocol;
+import io.atomix.primitive.protocol.counter.CounterDelegate;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -32,9 +32,9 @@ import java.util.concurrent.CompletableFuture;
 public class GossipDistributedCounter implements AsyncDistributedCounter {
   private final String name;
   private final GossipProtocol protocol;
-  private final CounterProtocol counter;
+  private final CounterDelegate counter;
 
-  public GossipDistributedCounter(String name, GossipProtocol protocol, CounterProtocol counter) {
+  public GossipDistributedCounter(String name, GossipProtocol protocol, CounterDelegate counter) {
     this.name = name;
     this.protocol = protocol;
     this.counter = counter;

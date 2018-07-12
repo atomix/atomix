@@ -15,7 +15,7 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 /**
@@ -23,7 +23,7 @@ import io.atomix.protocols.backup.MultiPrimaryProtocol;
  */
 public class PrimaryBackupAtomicNavigableMapTest extends AtomicNavigableMapTest {
   @Override
-  protected PrimitiveProtocol protocol() {
+  protected ProxyProtocol protocol() {
     return MultiPrimaryProtocol.builder()
         .withBackups(2)
         .withMaxRetries(5)

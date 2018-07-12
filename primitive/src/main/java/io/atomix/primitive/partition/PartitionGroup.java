@@ -17,7 +17,7 @@ package io.atomix.primitive.partition;
 
 import com.google.common.hash.Hashing;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.StateMachineReplicationProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.ConfiguredType;
 import io.atomix.utils.config.Configured;
 
@@ -70,7 +70,7 @@ public interface PartitionGroup extends Configured<PartitionGroupConfig> {
    *
    * @return a new primitive protocol
    */
-  StateMachineReplicationProtocol newProtocol();
+  ProxyProtocol newProtocol();
 
   /**
    * Returns a partition by ID.

@@ -18,6 +18,7 @@ package io.atomix.core.list;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -27,14 +28,12 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Distributed list test.
  */
-public abstract class DistributedListTest extends AbstractPrimitiveTest {
+public abstract class DistributedListTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testListOperations() throws Exception {
     DistributedList<String> list = atomix().<String>listBuilder("test-list")

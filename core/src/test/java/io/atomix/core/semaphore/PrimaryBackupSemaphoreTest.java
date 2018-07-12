@@ -15,12 +15,12 @@
  */
 package io.atomix.core.semaphore;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
 public class PrimaryBackupSemaphoreTest extends SemaphoreTest {
   @Override
-  protected PrimitiveProtocol protocol() {
+  protected ProxyProtocol protocol() {
     return MultiPrimaryProtocol.builder()
             .withBackups(2)
             .withMaxRetries(5)

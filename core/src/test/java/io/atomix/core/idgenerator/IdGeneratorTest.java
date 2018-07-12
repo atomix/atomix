@@ -16,8 +16,8 @@
 package io.atomix.core.idgenerator;
 
 import io.atomix.core.AbstractPrimitiveTest;
-
 import io.atomix.core.idgenerator.impl.DelegatingAtomicIdGenerator;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -28,15 +28,21 @@ import static org.junit.Assert.assertEquals;
 /**
  * Unit test for {@code AtomixIdGenerator}.
  */
-public abstract class IdGeneratorTest extends AbstractPrimitiveTest {
+public abstract class IdGeneratorTest extends AbstractPrimitiveTest<ProxyProtocol> {
 
   /**
    * Tests generating IDs.
    */
   @Test
   public void testNextId() throws Throwable {
-    AsyncAtomicIdGenerator idGenerator1 = atomix().atomicIdGeneratorBuilder("testNextId", protocol()).build().async();
-    AsyncAtomicIdGenerator idGenerator2 = atomix().atomicIdGeneratorBuilder("testNextId", protocol()).build().async();
+    AsyncAtomicIdGenerator idGenerator1 = atomix().atomicIdGeneratorBuilder("testNextId")
+        .withProtocol(protocol())
+        .build()
+        .async();
+    AsyncAtomicIdGenerator idGenerator2 = atomix().atomicIdGeneratorBuilder("testNextId")
+        .withProtocol(protocol())
+        .build()
+        .async();
 
     CompletableFuture<Long> future11 = idGenerator1.nextId();
     CompletableFuture<Long> future12 = idGenerator1.nextId();
@@ -66,9 +72,15 @@ public abstract class IdGeneratorTest extends AbstractPrimitiveTest {
   @Test
   public void testNextIdBatchRollover() throws Throwable {
     DelegatingAtomicIdGenerator idGenerator1 = new DelegatingAtomicIdGenerator(
-        atomix().atomicCounterBuilder("testNextIdBatchRollover", protocol()).build().async(), 2);
+        atomix().atomicCounterBuilder("testNextIdBatchRollover")
+            .withProtocol(protocol())
+            .build()
+            .async(), 2);
     DelegatingAtomicIdGenerator idGenerator2 = new DelegatingAtomicIdGenerator(
-        atomix().atomicCounterBuilder("testNextIdBatchRollover", protocol()).build().async(), 2);
+        atomix().atomicCounterBuilder("testNextIdBatchRollover")
+            .withProtocol(protocol())
+            .build()
+            .async(), 2);
 
     CompletableFuture<Long> future11 = idGenerator1.nextId();
     CompletableFuture<Long> future12 = idGenerator1.nextId();

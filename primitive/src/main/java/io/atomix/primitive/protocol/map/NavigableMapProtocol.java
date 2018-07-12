@@ -15,10 +15,20 @@
  */
 package io.atomix.primitive.protocol.map;
 
-import java.util.NavigableMap;
+import io.atomix.primitive.PrimitiveManagementService;
 
 /**
  * Navigable map protocol.
  */
-public interface NavigableMapProtocol<K, V> extends SortedMapProtocol<K, V>, NavigableMap<K, V> {
+public interface NavigableMapProtocol extends SortedMapProtocol {
+
+  /**
+   * Returns a new navigable map delegate.
+   *
+   * @param name the map name
+   * @param managementService the primitive management service
+   * @return a new map delegate
+   */
+  <K, V> NavigableMapDelegate<K, V> newNavigableMapDelegate(String name, PrimitiveManagementService managementService);
+
 }

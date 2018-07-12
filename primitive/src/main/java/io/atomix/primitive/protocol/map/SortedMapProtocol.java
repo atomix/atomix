@@ -15,10 +15,20 @@
  */
 package io.atomix.primitive.protocol.map;
 
-import java.util.SortedMap;
+import io.atomix.primitive.PrimitiveManagementService;
 
 /**
  * Sorted map protocol.
  */
-public interface SortedMapProtocol<K, V> extends MapProtocol<K, V>, SortedMap<K, V> {
+public interface SortedMapProtocol extends MapProtocol {
+
+  /**
+   * Returns a new sorted map delegate.
+   *
+   * @param name the map name
+   * @param managementService the primitive management service
+   * @return a new map delegate
+   */
+  <K, V> NavigableMapDelegate<K, V> newSortedMapDelegate(String name, PrimitiveManagementService managementService);
+
 }

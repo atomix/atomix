@@ -22,7 +22,7 @@ import io.atomix.core.transaction.TransactionalMap;
 import io.atomix.core.transaction.TransactionalMapBuilder;
 import io.atomix.core.transaction.TransactionalMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -40,7 +40,7 @@ public class DefaultTransactionalMapBuilder<K, V> extends TransactionalMapBuilde
   }
 
   @Override
-  public TransactionalMapBuilder<K, V> withProtocol(PrimitiveProtocol protocol) {
+  public TransactionalMapBuilder<K, V> withProtocol(ProxyProtocol protocol) {
     mapBuilder.withProtocol(protocol);
     return this;
   }

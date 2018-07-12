@@ -15,7 +15,7 @@
  */
 package io.atomix.core.idgenerator;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 
 /**
@@ -23,7 +23,7 @@ import io.atomix.protocols.raft.MultiRaftProtocol;
  */
 public class RaftIdGeneratorTest extends IdGeneratorTest {
   @Override
-  protected PrimitiveProtocol protocol() {
+  protected ProxyProtocol protocol() {
     return MultiRaftProtocol.builder()
         .withMaxRetries(5)
         .build();

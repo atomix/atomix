@@ -15,10 +15,21 @@
  */
 package io.atomix.primitive.protocol.set;
 
-import java.util.SortedSet;
+import io.atomix.primitive.PrimitiveManagementService;
 
 /**
  * Sorted set protocol.
  */
-public interface SortedSetProtocol<E> extends SetProtocol<E>, SortedSet<E> {
+public interface SortedSetProtocol extends SetProtocol {
+
+  /**
+   * Returns a new set delegate.
+   *
+   * @param name the set name
+   * @param managementService the primitive management service
+   * @param <E> the set element type
+   * @return a new set delegate
+   */
+  <E> SortedSetDelegate<E> newSortedSetDelegate(String name, PrimitiveManagementService managementService);
+
 }

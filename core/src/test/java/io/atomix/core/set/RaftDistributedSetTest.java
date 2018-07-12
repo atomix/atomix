@@ -15,7 +15,7 @@
  */
 package io.atomix.core.set;
 
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
 
@@ -24,7 +24,7 @@ import io.atomix.protocols.raft.ReadConsistency;
  */
 public class RaftDistributedSetTest extends DistributedSetTest {
   @Override
-  protected PrimitiveProtocol protocol() {
+  protected ProxyProtocol protocol() {
     return MultiRaftProtocol.builder()
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .withMaxRetries(5)

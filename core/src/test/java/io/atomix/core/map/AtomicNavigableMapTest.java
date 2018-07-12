@@ -20,6 +20,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.map.impl.AtomicNavigableMapProxy;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
@@ -45,7 +46,7 @@ import static org.junit.Assert.fail;
 /**
  * Unit tests for {@link AtomicNavigableMapProxy}.
  */
-public abstract class AtomicNavigableMapTest extends AbstractPrimitiveTest {
+public abstract class AtomicNavigableMapTest extends AbstractPrimitiveTest<ProxyProtocol> {
   private final String four = "hello";
   private final String three = "goodbye";
   private final String two = "foo";
@@ -852,7 +853,10 @@ public abstract class AtomicNavigableMapTest extends AbstractPrimitiveTest {
 
   private AsyncAtomicNavigableMap<String, String> createResource(String mapName) {
     try {
-      return atomix().<String, String>atomicNavigableMapBuilder(mapName, protocol()).build().async();
+      return atomix().<String, String>atomicNavigableMapBuilder(mapName)
+          .withProtocol(protocol())
+          .build()
+          .async();
     } catch (Throwable e) {
       throw new RuntimeException(e.toString());
     }

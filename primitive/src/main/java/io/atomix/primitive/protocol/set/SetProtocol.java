@@ -15,30 +15,22 @@
  */
 package io.atomix.primitive.protocol.set;
 
-import java.util.Set;
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
- * Gossip-based set service.
+ * Set protocol.
  */
-public interface SetProtocol<E> extends Set<E> {
+public interface SetProtocol extends GossipProtocol {
 
   /**
-   * Adds the specified listener to the set which will be notified whenever the entries in the set are changed.
+   * Returns a new set delegate.
    *
-   * @param listener listener to register for events
+   * @param name the set name
+   * @param managementService the primitive management service
+   * @param <E> the set element type
+   * @return a new set delegate
    */
-  void addListener(SetProtocolEventListener<E> listener);
-
-  /**
-   * Removes the specified listener from the set such that it will no longer receive change notifications.
-   *
-   * @param listener listener to deregister for events
-   */
-  void removeListener(SetProtocolEventListener<E> listener);
-
-  /**
-   * Closes the set.
-   */
-  void close();
+  <E> SetDelegate<E> newSetDelegate(String name, PrimitiveManagementService managementService);
 
 }

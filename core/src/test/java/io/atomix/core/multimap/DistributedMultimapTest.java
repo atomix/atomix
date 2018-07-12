@@ -19,6 +19,7 @@ package io.atomix.core.multimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.core.AbstractPrimitiveTest;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -36,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests the {@link DistributedMultimap}.
  */
-public abstract class DistributedMultimapTest extends AbstractPrimitiveTest {
+public abstract class DistributedMultimapTest extends AbstractPrimitiveTest<ProxyProtocol> {
   private final String one = "hello";
   private final String two = "goodbye";
   private final String three = "foo";
@@ -48,7 +49,9 @@ public abstract class DistributedMultimapTest extends AbstractPrimitiveTest {
    */
   @Test
   public void testSize() throws Throwable {
-    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("testOneMap", protocol()).build();
+    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("testOneMap")
+        .withProtocol(protocol())
+        .build();
 
     assertTrue(multimap.isEmpty());
     assertEquals(0, multimap.size());
@@ -76,7 +79,9 @@ public abstract class DistributedMultimapTest extends AbstractPrimitiveTest {
    */
   @Test
   public void containsTest() throws Throwable {
-    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("testTwoMap", protocol()).build();
+    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("testTwoMap")
+        .withProtocol(protocol())
+        .build();
 
     all.forEach(key -> assertTrue(multimap.putAll(key, all)));
     assertEquals(16, multimap.size());
@@ -105,7 +110,9 @@ public abstract class DistributedMultimapTest extends AbstractPrimitiveTest {
    */
   @Test
   public void addAndRemoveTest() throws Exception {
-    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("testThreeMap", protocol()).build();
+    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("testThreeMap")
+        .withProtocol(protocol())
+        .build();
 
     all.forEach(key -> all.forEach(value -> {
       assertTrue(multimap.put(key, value));
@@ -163,7 +170,9 @@ public abstract class DistributedMultimapTest extends AbstractPrimitiveTest {
    */
   @Test
   public void testAccessors() throws Exception {
-    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("testFourMap", protocol()).build();
+    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("testFourMap")
+        .withProtocol(protocol())
+        .build();
 
     all.forEach(key -> assertTrue(multimap.putAll(key, all)));
     assertEquals(16, multimap.size());
@@ -177,7 +186,9 @@ public abstract class DistributedMultimapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testMultimapViews() throws Exception {
-    DistributedMultimap<String, String> map = atomix().<String, String>multimapBuilder("testMultimapViews", protocol()).build();
+    DistributedMultimap<String, String> map = atomix().<String, String>multimapBuilder("testMultimapViews")
+        .withProtocol(protocol())
+        .build();
 
     assertTrue(map.isEmpty());
     assertTrue(map.keySet().isEmpty());

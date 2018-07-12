@@ -13,24 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.protocol.set;
-
-import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
- * Navigable set protocol provider.
+ * Interfaces for set-compatible gossip protocols and delegates.
  */
-public interface NavigableSetProtocolProvider extends GossipProtocol {
-
-  /**
-   * Returns a new set protocol.
-   *
-   * @param name the set name
-   * @param managementService the primitive management service
-   * @param <E> the set element type
-   * @return a new set protocol
-   */
-  <E> NavigableSetProtocol<E> newNavigableSetProtocol(String name, PrimitiveManagementService managementService);
-
-}
+package io.atomix.primitive.protocol.set;

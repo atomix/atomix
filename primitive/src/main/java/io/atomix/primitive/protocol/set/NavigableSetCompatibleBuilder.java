@@ -15,22 +15,17 @@
  */
 package io.atomix.primitive.protocol.set;
 
-import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.GossipProtocol;
-
 /**
- * Set protocol provider.
+ * Set builder.
  */
-public interface SetProtocolProvider extends GossipProtocol {
+public interface NavigableSetCompatibleBuilder<B extends NavigableSetCompatibleBuilder<B>> {
 
   /**
-   * Returns a new set protocol.
+   * Configures the builder with a set compatible gossip protocol.
    *
-   * @param name the set name
-   * @param managementService the primitive management service
-   * @param <E> the set element type
-   * @return a new set protocol
+   * @param protocol the set protocol
+   * @return the primitive builder
    */
-  <E> SetProtocol<E> newSetProtocol(String name, PrimitiveManagementService managementService);
+  B withProtocol(NavigableSetProtocol protocol);
 
 }

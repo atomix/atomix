@@ -20,9 +20,9 @@ import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.set.SetProtocol;
-import io.atomix.primitive.protocol.set.SetProtocolEvent;
-import io.atomix.primitive.protocol.set.SetProtocolEventListener;
+import io.atomix.primitive.protocol.set.SetDelegate;
+import io.atomix.primitive.protocol.set.SetDelegateEvent;
+import io.atomix.primitive.protocol.set.SetDelegateEventListener;
 import io.atomix.protocols.gossip.CrdtProtocolConfig;
 import io.atomix.protocols.gossip.TimestampProvider;
 import io.atomix.utils.serializer.Namespace;
@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 /**
  * Last-write wins set.
  */
-public class CrdtSet<E> implements SetProtocol<E> {
+public class CrdtSet<E> implements SetDelegate<E> {
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .register(SetElement.class)
@@ -55,7 +55,7 @@ public class CrdtSet<E> implements SetProtocol<E> {
   private final String subject;
   private volatile ScheduledFuture<?> broadcastFuture;
   protected final Map<String, SetElement> elements = Maps.newConcurrentMap();
-  private final Set<SetProtocolEventListener<E>> eventListeners = Sets.newCopyOnWriteArraySet();
+  private final Set<SetDelegateEventListener<E>> eventListeners = Sets.newCopyOnWriteArraySet();
 
   public CrdtSet(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
     this.clusterCommunicator = managementService.getCommunicationService();
@@ -102,7 +102,7 @@ public class CrdtSet<E> implements SetProtocol<E> {
   public boolean add(E e) {
     SetElement element = new SetElement(encode(e), timestampProvider.get(e), false);
     if (add(element)) {
-      eventListeners.forEach(listener -> listener.event(new SetProtocolEvent<>(SetProtocolEvent.Type.ADD, e)));
+      eventListeners.forEach(listener -> listener.event(new SetDelegateEvent<>(SetDelegateEvent.Type.ADD, e)));
       return true;
     }
     return false;
@@ -113,7 +113,7 @@ public class CrdtSet<E> implements SetProtocol<E> {
   public boolean remove(Object o) {
     SetElement element = new SetElement(encode(o), timestampProvider.get((E) o), true);
     if (remove(element)) {
-      eventListeners.forEach(listener -> listener.event(new SetProtocolEvent<>(SetProtocolEvent.Type.REMOVE, (E) o)));
+      eventListeners.forEach(listener -> listener.event(new SetDelegateEvent<>(SetDelegateEvent.Type.REMOVE, (E) o)));
       return true;
     }
     return false;
@@ -176,12 +176,12 @@ public class CrdtSet<E> implements SetProtocol<E> {
   }
 
   @Override
-  public void addListener(SetProtocolEventListener<E> listener) {
+  public void addListener(SetDelegateEventListener<E> listener) {
     eventListeners.add(listener);
   }
 
   @Override
-  public void removeListener(SetProtocolEventListener<E> listener) {
+  public void removeListener(SetDelegateEventListener<E> listener) {
     eventListeners.remove(listener);
   }
 
@@ -227,11 +227,11 @@ public class CrdtSet<E> implements SetProtocol<E> {
     for (SetElement element : elements.values()) {
       if (element.isTombstone()) {
         if (remove(element)) {
-          eventListeners.forEach(listener -> listener.event(new SetProtocolEvent<>(SetProtocolEvent.Type.REMOVE, decode(element.value()))));
+          eventListeners.forEach(listener -> listener.event(new SetDelegateEvent<>(SetDelegateEvent.Type.REMOVE, decode(element.value()))));
         }
       } else {
         if (add(element)) {
-          eventListeners.forEach(listener -> listener.event(new SetProtocolEvent<>(SetProtocolEvent.Type.ADD, decode(element.value()))));
+          eventListeners.forEach(listener -> listener.event(new SetDelegateEvent<>(SetDelegateEvent.Type.ADD, decode(element.value()))));
         }
       }
     }

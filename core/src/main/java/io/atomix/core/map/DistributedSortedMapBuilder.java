@@ -17,6 +17,13 @@ package io.atomix.core.map;
 
 import io.atomix.core.cache.CachedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
+import io.atomix.primitive.protocol.ProxyProtocol;
+import io.atomix.primitive.protocol.map.NavigableMapProtocol;
+import io.atomix.primitive.protocol.map.NavigableMapCompatibleBuilder;
+import io.atomix.primitive.protocol.map.SortedMapProtocol;
+import io.atomix.primitive.protocol.map.SortedMapCompatibleBuilder;
 
 /**
  * Builder for {@link DistributedSortedMap} instances.
@@ -25,7 +32,10 @@ import io.atomix.primitive.PrimitiveManagementService;
  * @param <V> type for map value
  */
 public abstract class DistributedSortedMapBuilder<K extends Comparable<K>, V>
-    extends CachedPrimitiveBuilder<DistributedSortedMapBuilder<K, V>, DistributedSortedMapConfig, DistributedSortedMap<K, V>> {
+    extends CachedPrimitiveBuilder<DistributedSortedMapBuilder<K, V>, DistributedSortedMapConfig, DistributedSortedMap<K, V>>
+    implements ProxyCompatibleBuilder<DistributedSortedMapBuilder<K, V>>,
+    SortedMapCompatibleBuilder<DistributedSortedMapBuilder<K, V>>,
+    NavigableMapCompatibleBuilder<DistributedSortedMapBuilder<K, V>> {
 
   public DistributedSortedMapBuilder(String name, DistributedSortedMapConfig config, PrimitiveManagementService managementService) {
     super(DistributedSortedMapType.instance(), name, config, managementService);
@@ -50,5 +60,20 @@ public abstract class DistributedSortedMapBuilder<K extends Comparable<K>, V>
   public DistributedSortedMapBuilder<K, V> withNullValues(boolean nullValues) {
     config.setNullValues(nullValues);
     return this;
+  }
+
+  @Override
+  public DistributedSortedMapBuilder<K, V> withProtocol(ProxyProtocol protocol) {
+    return withProtocol((PrimitiveProtocol) protocol);
+  }
+
+  @Override
+  public DistributedSortedMapBuilder<K, V> withProtocol(SortedMapProtocol protocol) {
+    return withProtocol((PrimitiveProtocol) protocol);
+  }
+
+  @Override
+  public DistributedSortedMapBuilder<K, V> withProtocol(NavigableMapProtocol protocol) {
+    return withProtocol((PrimitiveProtocol) protocol);
   }
 }
