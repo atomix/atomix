@@ -119,9 +119,9 @@ public class BootstrapDiscoveryProvider
   private Map<Address, Node> nodes = Maps.newConcurrentMap();
 
   private final ScheduledExecutorService heartbeatScheduler = Executors.newSingleThreadScheduledExecutor(
-      namedThreads("atomix-cluster-heartbeat-sender", LOGGER));
+      namedThreads("atomix-bootstrap-heartbeat-sender", LOGGER));
   private final ExecutorService heartbeatExecutor = Executors.newSingleThreadExecutor(
-      namedThreads("atomix-cluster-heartbeat-receiver", LOGGER));
+      namedThreads("atomix-bootstrap-heartbeat-receiver", LOGGER));
   private ScheduledFuture<?> heartbeatFuture;
 
   private final Map<Address, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
@@ -260,6 +260,7 @@ public class BootstrapDiscoveryProvider
       if (heartbeatFuture != null) {
         heartbeatFuture.cancel(false);
       }
+      heartbeatScheduler.shutdownNow();
       heartbeatExecutor.shutdownNow();
       LOGGER.info("Left");
     }
