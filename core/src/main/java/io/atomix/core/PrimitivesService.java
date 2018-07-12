@@ -97,6 +97,9 @@ import io.atomix.core.tree.AtomicDocumentTreeType;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueBuilder;
 import io.atomix.core.value.AtomicValueType;
+import io.atomix.core.value.DistributedValue;
+import io.atomix.core.value.DistributedValueBuilder;
+import io.atomix.core.value.DistributedValueType;
 import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.core.workqueue.WorkQueueBuilder;
 import io.atomix.core.workqueue.WorkQueueType;
@@ -330,6 +333,17 @@ public interface PrimitivesService {
    */
   default AtomicIdGeneratorBuilder atomicIdGeneratorBuilder(String name) {
     return primitiveBuilder(name, AtomicIdGeneratorType.instance());
+  }
+
+  /**
+   * Creates a new DistributedValueBuilder.
+   *
+   * @param name the primitive name
+   * @param <V> atomic value type
+   * @return atomic value builder
+   */
+  default <V> DistributedValueBuilder<V> valueBuilder(String name) {
+    return primitiveBuilder(name, DistributedValueType.instance());
   }
 
   /**
@@ -616,6 +630,15 @@ public interface PrimitivesService {
    * @return atomic ID generator builder
    */
   AtomicIdGenerator getAtomicIdGenerator(String name);
+
+  /**
+   * Creates a new DistributedValue.
+   *
+   * @param name the primitive name
+   * @param <V> value type
+   * @return distributed value
+   */
+  <V> DistributedValue<V> getValue(String name);
 
   /**
    * Creates a new AtomicValueBuilder.

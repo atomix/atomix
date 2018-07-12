@@ -42,7 +42,7 @@ public class MultiPrimaryProtocol implements ProxyProtocol {
    *
    * @return an instance of the multi-primary protocol with the default configuration
    */
-  public MultiPrimaryProtocol instance() {
+  public static MultiPrimaryProtocol instance() {
     return new MultiPrimaryProtocol(new MultiPrimaryProtocolConfig());
   }
 

@@ -56,6 +56,7 @@ import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.utils.config.PolymorphicConfigMapper;
 import io.atomix.core.utils.config.PolymorphicTypeMapper;
 import io.atomix.core.value.AtomicValue;
+import io.atomix.core.value.DistributedValue;
 import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveInfo;
@@ -444,6 +445,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   public AtomicIdGenerator getAtomicIdGenerator(String name) {
     return primitives.getAtomicIdGenerator(name);
+  }
+
+  @Override
+  public <V> DistributedValue<V> getValue(String name) {
+    return primitives.getValue(name);
   }
 
   @Override
