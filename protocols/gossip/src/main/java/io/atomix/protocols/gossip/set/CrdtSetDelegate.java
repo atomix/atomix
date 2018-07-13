@@ -57,10 +57,10 @@ public class CrdtSetDelegate<E> implements SetDelegate<E> {
   protected final Map<String, SetElement> elements = Maps.newConcurrentMap();
   private final Set<SetDelegateEventListener<E>> eventListeners = Sets.newCopyOnWriteArraySet();
 
-  public CrdtSetDelegate(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
+  public CrdtSetDelegate(String name, Serializer serializer, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
     this.clusterCommunicator = managementService.getCommunicationService();
     this.executorService = managementService.getExecutorService();
-    this.elementSerializer = config.getSerializer();
+    this.elementSerializer = serializer;
     this.timestampProvider = config.getTimestampProvider();
     this.subject = String.format("atomix-crdt-set-%s", name);
     clusterCommunicator.subscribe(subject, SERIALIZER::decode, this::updateElements, executorService);
