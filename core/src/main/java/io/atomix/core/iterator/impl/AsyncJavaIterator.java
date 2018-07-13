@@ -39,4 +39,9 @@ public class AsyncJavaIterator<E> implements AsyncIterator<E> {
   public CompletableFuture<E> next() {
     return CompletableFuture.completedFuture(iterator.next());
   }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return CompletableFuture.completedFuture(null);
+  }
 }

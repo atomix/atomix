@@ -18,9 +18,11 @@ package io.atomix.core.iterator.impl;
 import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.utils.concurrent.Futures;
 
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Partitioned proxy iterator iterator.
@@ -32,6 +34,7 @@ public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
   private final NextFunction<S, T> nextFunction;
   private final CloseFunction<S> closeFunction;
   private volatile AsyncIterator<T> iterator;
+  private AtomicBoolean closed = new AtomicBoolean();
 
   public PartitionedProxyIterator(
       ProxyClient<S> client,
@@ -52,6 +55,9 @@ public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
         .thenCompose(hasNext -> {
           if (!hasNext) {
             if (partitions.hasNext()) {
+              if (closed.get()) {
+                return Futures.exceptionalFuture(new IllegalStateException("Iterator closed"));
+              }
               iterator = new ProxyIterator<>(client, partitions.next(), openFunction, nextFunction, closeFunction);
               return hasNext();
             }
@@ -64,5 +70,11 @@ public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
   @Override
   public CompletableFuture<T> next() {
     return iterator.next();
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    closed.set(true);
+    return iterator.close();
   }
 }
