@@ -47,8 +47,8 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
   protected final PrimitiveType type;
   protected final String name;
   protected final C config;
-  private PrimitiveProtocol protocol;
-  private Serializer serializer;
+  protected PrimitiveProtocol protocol;
+  protected Serializer serializer;
   protected final PrimitiveManagementService managementService;
 
   public PrimitiveBuilder(PrimitiveType type, String name, C config, PrimitiveManagementService managementService) {
@@ -148,6 +148,7 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
           } else {
             serializer = Serializer.using(Namespace.builder()
                 .register(Namespaces.BASIC)
+                .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
                 .register(new Namespace(config))
                 .build());
           }
