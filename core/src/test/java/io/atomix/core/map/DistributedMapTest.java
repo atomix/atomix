@@ -19,6 +19,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.primitive.protocol.ProxyProtocol;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -267,6 +269,47 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest<ProxyProt
       map.put(String.valueOf(100 * i), String.valueOf(100 * i));
     }
     assertEquals(String.valueOf(100), map.get(String.valueOf(100)));
+  }
+
+  /**
+   * Tests a map with complex types.
+   */
+  @Test
+  public void testComplexTypes() throws Throwable {
+    DistributedMap<Key, Pair<String, Integer>> map = atomix()
+        .<Key, Pair<String, Integer>>mapBuilder("testComplexTypes")
+        .withProtocol(protocol())
+        .build();
+
+    map.put(new Key("foo"), Pair.of("foo", 1));
+    assertEquals("foo", map.get(new Key("foo")).getLeft());
+    assertEquals(Integer.valueOf(1), map.get(new Key("foo")).getRight());
+  }
+
+  /**
+   * Tests a map with complex types.
+   */
+  @Test
+  public void testRequiredComplexTypes() throws Throwable {
+    DistributedMap<Key, Pair<String, Integer>> map = atomix()
+        .<Key, Pair<String, Integer>>mapBuilder("testComplexTypes")
+        .withProtocol(protocol())
+        .withRegistrationRequired()
+        .withKeyType(Key.class)
+        .withValueType(ImmutablePair.class)
+        .build();
+
+    map.put(new Key("foo"), Pair.of("foo", 1));
+    assertEquals("foo", map.get(new Key("foo")).getLeft());
+    assertEquals(Integer.valueOf(1), map.get(new Key("foo")).getRight());
+  }
+
+  private static class Key {
+    String value;
+
+    Key(String value) {
+      this.value = value;
+    }
   }
 
   private static class TestMapEventListener implements MapEventListener<String, String> {

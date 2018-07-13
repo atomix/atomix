@@ -15,13 +15,12 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.cache.CachedPrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
 
 /**
  * Consistent map configuration.
  */
-public class AtomicMapConfig extends CachedPrimitiveConfig<AtomicMapConfig> {
+public class AtomicMapConfig extends MapConfig<AtomicMapConfig> {
   private boolean nullValues = false;
 
   @Override
