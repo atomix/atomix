@@ -48,7 +48,7 @@ public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
     if (protocol instanceof GossipProtocol) {
       if (protocol instanceof SetProtocol) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((SetProtocol) protocol).<E>newSetDelegate(name, managementService))
+            CompletableFuture.completedFuture(((SetProtocol) protocol).<E>newSetDelegate(name, serializer(), managementService))
                 .thenApply(set -> new GossipDistributedSet<>(name, protocol, set)))
             .thenApply(AsyncDistributedSet::sync);
       } else {
@@ -58,7 +58,7 @@ public class DefaultDistributedSetBuilder<E> extends DistributedSetBuilder<E> {
       return newProxy(DistributedSetService.class, new ServiceConfig())
           .thenCompose(proxy -> new DistributedSetProxy((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
           .thenApply(rawSet -> {
-            Serializer serializer = protocol.serializer();
+            Serializer serializer = serializer();
             AsyncDistributedSet<E> set = new TranscodingAsyncDistributedSet<>(
                 rawSet,
                 element -> BaseEncoding.base16().encode(serializer.encode(element)),

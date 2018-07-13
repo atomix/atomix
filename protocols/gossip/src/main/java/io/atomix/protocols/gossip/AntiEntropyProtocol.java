@@ -84,17 +84,12 @@ public class AntiEntropyProtocol implements GossipProtocol, MapProtocol, SetProt
   }
 
   @Override
-  public Serializer serializer() {
-    return config.getSerializer();
+  public <K, V> MapDelegate<K, V> newMapDelegate(String name, Serializer serializer, PrimitiveManagementService managementService) {
+    return new AntiEntropyMapDelegate<>(name, serializer, config, managementService);
   }
 
   @Override
-  public <K, V> MapDelegate<K, V> newMapDelegate(String name, PrimitiveManagementService managementService) {
-    return new AntiEntropyMapDelegate<>(name, config, managementService);
-  }
-
-  @Override
-  public <E> SetDelegate<E> newSetDelegate(String name, PrimitiveManagementService managementService) {
-    return new AntiEntropySetDelegate<>(name, config, managementService);
+  public <E> SetDelegate<E> newSetDelegate(String name, Serializer serializer, PrimitiveManagementService managementService) {
+    return new AntiEntropySetDelegate<>(name, serializer, config, managementService);
   }
 }

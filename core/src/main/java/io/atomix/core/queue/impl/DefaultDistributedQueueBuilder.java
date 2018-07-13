@@ -21,7 +21,6 @@ import io.atomix.core.queue.DistributedQueue;
 import io.atomix.core.queue.DistributedQueueBuilder;
 import io.atomix.core.queue.DistributedQueueConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -40,11 +39,10 @@ public class DefaultDistributedQueueBuilder<E> extends DistributedQueueBuilder<E
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedQueue<E>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
     return newProxy(DistributedQueueService.class, new ServiceConfig())
         .thenCompose(proxy -> new DistributedQueueProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(rawQueue -> {
-          Serializer serializer = protocol.serializer();
+          Serializer serializer = serializer();
           AsyncDistributedQueue<E> queue = new TranscodingAsyncDistributedQueue<>(
               rawQueue,
               element -> BaseEncoding.base16().encode(serializer.encode(element)),

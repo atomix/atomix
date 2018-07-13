@@ -25,7 +25,6 @@ public class RaftLeaderElectionTest extends LeaderElectionTest {
   @Override
   protected ProxyProtocol protocol() {
     return MultiRaftProtocol.builder()
-        .withSerializer(SERIALIZER)
         .withMaxRetries(5)
         .build();
   }

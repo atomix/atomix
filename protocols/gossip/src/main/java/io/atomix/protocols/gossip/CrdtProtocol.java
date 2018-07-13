@@ -90,32 +90,27 @@ public class CrdtProtocol implements GossipProtocol, CounterProtocol, NavigableS
   }
 
   @Override
-  public Serializer serializer() {
-    return config.getSerializer();
-  }
-
-  @Override
   public CounterDelegate newCounterDelegate(String name, PrimitiveManagementService managementService) {
     return new CrdtCounterDelegate(name, config, managementService);
   }
 
   @Override
-  public <E> SetDelegate<E> newSetDelegate(String name, PrimitiveManagementService managementService) {
-    return new CrdtSetDelegate<>(name, config, managementService);
+  public <E> SetDelegate<E> newSetDelegate(String name, Serializer serializer, PrimitiveManagementService managementService) {
+    return new CrdtSetDelegate<>(name, serializer, config, managementService);
   }
 
   @Override
-  public <E> SortedSetDelegate<E> newSortedSetDelegate(String name, PrimitiveManagementService managementService) {
-    return new CrdtNavigableSetDelegate<>(name, config, managementService);
+  public <E> SortedSetDelegate<E> newSortedSetDelegate(String name, Serializer serializer, PrimitiveManagementService managementService) {
+    return new CrdtNavigableSetDelegate<>(name, serializer, config, managementService);
   }
 
   @Override
-  public <E> NavigableSetDelegate<E> newNavigableSetDelegate(String name, PrimitiveManagementService managementService) {
-    return new CrdtNavigableSetDelegate<>(name, config, managementService);
+  public <E> NavigableSetDelegate<E> newNavigableSetDelegate(String name, Serializer serializer, PrimitiveManagementService managementService) {
+    return new CrdtNavigableSetDelegate<>(name, serializer, config, managementService);
   }
 
   @Override
-  public ValueDelegate newValueDelegate(String name, PrimitiveManagementService managementService) {
-    return new CrdtValueDelegate(name, config, managementService);
+  public ValueDelegate newValueDelegate(String name, Serializer serializer, PrimitiveManagementService managementService) {
+    return new CrdtValueDelegate(name, serializer, config, managementService);
   }
 }
