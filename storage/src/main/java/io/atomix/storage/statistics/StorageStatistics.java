@@ -18,13 +18,8 @@ package io.atomix.storage.statistics;
 import java.io.File;
 import java.lang.management.ManagementFactory;
 
-import javax.management.AttributeNotFoundException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanException;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
 
 /**
  * Atomix storage statistics.
@@ -68,28 +63,26 @@ public class StorageStatistics {
   /**
    * Returns the amount of free memory remaining.
    *
-   * @return the amount of free memory remaining
- * @throws MBeanException
- * @throws ReflectionException
- * @throws MalformedObjectNameException
- * @throws AttributeNotFoundException
- * @throws InstanceNotFoundException
+   * @return the amount of free memory remaining if successful, -1 return indicates failure.
    */
-  public long getFreeMemory() throws InstanceNotFoundException, AttributeNotFoundException, MalformedObjectNameException, ReflectionException, MBeanException {
-    return (long) mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "FreePhysicalMemorySize");
+  public long getFreeMemory() {
+    try {
+        return (long) mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "FreePhysicalMemorySize");
+    } catch (Exception e) {
+        return -1;
+    }
   }
 
   /**
    * Returns the total amount of memory.
    *
-   * @return the total amount of memory
- * @throws MBeanException
- * @throws ReflectionException
- * @throws MalformedObjectNameException
- * @throws AttributeNotFoundException
- * @throws InstanceNotFoundException
+   * @return the total amount of memory if successful, -1 return indicates failure.
    */
-  public long getTotalMemory() throws InstanceNotFoundException, AttributeNotFoundException, MalformedObjectNameException, ReflectionException, MBeanException {
-    return (long) mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "TotalPhysicalMemorySize");
+  public long getTotalMemory() {
+    try {
+        return (long) mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "TotalPhysicalMemorySize");
+    } catch (Exception e) {
+        return -1;
+    }
   }
 }

@@ -137,7 +137,11 @@ public class RaftServiceManager implements AutoCloseable {
     StorageLevel level = raft.getStorage().storageLevel();
     if (level == StorageLevel.MEMORY || level == StorageLevel.MAPPED) {
         try {
-            return raft.getStorage().statistics().getFreeMemory() / (double) raft.getStorage().statistics().getTotalMemory() < raft.getStorage().freeMemoryBuffer();
+            long freeMemory = raft.getStorage().statistics().getFreeMemory();
+            long totalMemory = raft.getStorage().statistics().getTotalMemory();
+            if (freeMemory > 0 && totalMemory > 0) {
+                return freeMemory / (double) totalMemory < raft.getStorage().freeMemoryBuffer();
+            }
         } catch (Exception e) {
             logger.error("An exception occurred during memory check: {}", e);
         }
