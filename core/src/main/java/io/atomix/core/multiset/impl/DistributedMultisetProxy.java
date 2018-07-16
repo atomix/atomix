@@ -16,9 +16,9 @@
 package io.atomix.core.multiset.impl;
 
 import com.google.common.collect.Multiset;
-import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.impl.PartitionedDistributedCollectionProxy;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.iterator.impl.PartitionedProxyIterator;
 import io.atomix.core.multiset.AsyncDistributedMultiset;
 import io.atomix.core.multiset.DistributedMultiset;
@@ -37,6 +37,7 @@ import io.atomix.primitive.proxy.ProxyClient;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Distributed multiset proxy.
@@ -158,7 +159,7 @@ public class DistributedMultisetProxy
     }
 
     @Override
-    public CompletableFuture<Void> addListener(CollectionEventListener<String> listener) {
+    public CompletableFuture<Void> addListener(CollectionEventListener<String> listener, Executor executor) {
       throw new UnsupportedOperationException();
     }
 
@@ -274,7 +275,7 @@ public class DistributedMultisetProxy
     }
 
     @Override
-    public CompletableFuture<Void> addListener(CollectionEventListener<Multiset.Entry<String>> listener) {
+    public CompletableFuture<Void> addListener(CollectionEventListener<Multiset.Entry<String>> listener, Executor executor) {
       throw new UnsupportedOperationException();
     }
 
