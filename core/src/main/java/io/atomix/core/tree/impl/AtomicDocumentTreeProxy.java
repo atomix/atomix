@@ -17,10 +17,9 @@
 package io.atomix.core.tree.impl;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
-import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.AtomicDocumentTree;
+import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTreeEvent;
 import io.atomix.core.tree.DocumentTreeEventListener;
 import io.atomix.core.tree.IllegalDocumentModificationException;
@@ -156,10 +155,10 @@ public class AtomicDocumentTreeProxy
   }
 
   @Override
-  public CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<byte[]> listener) {
+  public CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<byte[]> listener, Executor executor) {
     checkNotNull(path);
     checkNotNull(listener);
-    InternalListener internalListener = new InternalListener(path, listener, MoreExecutors.directExecutor());
+    InternalListener internalListener = new InternalListener(path, listener, executor);
     // TODO: Support API that takes an executor
     if (!eventListeners.containsKey(listener)) {
       return getProxyClient().acceptBy(name(), service -> service.listen(path))
