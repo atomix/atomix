@@ -15,11 +15,10 @@
  */
 package io.atomix.agent;
 
-import io.atomix.cluster.discovery.BootstrapDiscoveryConfig;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.discovery.MulticastDiscoveryConfig;
-import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeConfig;
+import io.atomix.cluster.discovery.BootstrapDiscoveryConfig;
+import io.atomix.cluster.discovery.MulticastDiscoveryConfig;
 import io.atomix.core.Atomix;
 import io.atomix.core.AtomixConfig;
 import io.atomix.rest.ManagedRestService;
@@ -124,7 +123,7 @@ public class AtomixAgent {
     final String host = namespace.getString("host");
     final String rack = namespace.getString("rack");
     final String zone = namespace.getString("zone");
-    final List<Node> bootstrap = namespace.getList("bootstrap");
+    final List<NodeConfig> bootstrap = namespace.getList("bootstrap");
     final boolean multicastEnabled = namespace.getBoolean("multicast");
     final String multicastGroup = namespace.get("multicast_group");
     final Integer multicastPort = namespace.get("multicast_port");

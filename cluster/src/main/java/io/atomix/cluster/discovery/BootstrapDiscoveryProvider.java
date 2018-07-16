@@ -131,12 +131,13 @@ public class BootstrapDiscoveryProvider
   }
 
   public BootstrapDiscoveryProvider(Collection<Node> bootstrapNodes) {
-    this(new BootstrapDiscoveryConfig().setNodes(bootstrapNodes));
+    this.config = new BootstrapDiscoveryConfig();
+    this.bootstrapNodes = ImmutableSet.copyOf(bootstrapNodes);
   }
 
   BootstrapDiscoveryProvider(BootstrapDiscoveryConfig config) {
     this.config = checkNotNull(config);
-    this.bootstrapNodes = ImmutableSet.copyOf(config.getNodes());
+    this.bootstrapNodes = ImmutableSet.copyOf(config.getNodes().stream().map(Node::new).collect(Collectors.toList()));
   }
 
   @Override
