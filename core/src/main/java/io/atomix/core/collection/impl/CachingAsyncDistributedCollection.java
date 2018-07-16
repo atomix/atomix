@@ -18,6 +18,7 @@ package io.atomix.core.collection.impl;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.core.cache.CacheConfig;
 import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.CollectionEventListener;
@@ -26,7 +27,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 /**
@@ -43,6 +47,7 @@ public class CachingAsyncDistributedCollection<E> extends DelegatingAsyncDistrib
   protected final LoadingCache<E, CompletableFuture<Boolean>> cache;
   private final CollectionEventListener<E> cacheUpdater;
   private final Consumer<PrimitiveState> statusListener;
+  private final Map<CollectionEventListener<E>, Executor> eventListeners = new ConcurrentHashMap<>();
 
   /**
    * Constructor to configure cache size.
@@ -55,7 +60,10 @@ public class CachingAsyncDistributedCollection<E> extends DelegatingAsyncDistrib
     cache = CacheBuilder.newBuilder()
         .maximumSize(cacheConfig.getSize())
         .build(CacheLoader.from(CachingAsyncDistributedCollection.super::contains));
-    cacheUpdater = event -> cache.invalidate(event.element());
+    cacheUpdater = event -> {
+      cache.invalidate(event.element());
+      eventListeners.forEach((listener, executor) -> executor.execute(() -> listener.event(event)));
+    };
     statusListener = status -> {
       log.debug("{} status changed to {}", this.name(), status);
       // If the status of the underlying map is SUSPENDED or INACTIVE
@@ -64,7 +72,7 @@ public class CachingAsyncDistributedCollection<E> extends DelegatingAsyncDistrib
         cache.invalidateAll();
       }
     };
-    super.addListener(cacheUpdater);
+    super.addListener(cacheUpdater, MoreExecutors.directExecutor());
     super.addStateChangeListener(statusListener);
   }
 
@@ -109,5 +117,17 @@ public class CachingAsyncDistributedCollection<E> extends DelegatingAsyncDistrib
     return super.clear().whenComplete((r, e) -> {
       cache.invalidateAll();
     });
+  }
+
+  @Override
+  public CompletableFuture<Void> addListener(CollectionEventListener<E> listener, Executor executor) {
+    eventListeners.put(listener, executor);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<Void> removeListener(CollectionEventListener<E> listener) {
+    eventListeners.remove(listener);
+    return CompletableFuture.completedFuture(null);
   }
 }
