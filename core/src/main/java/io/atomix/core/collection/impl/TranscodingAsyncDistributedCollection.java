@@ -29,6 +29,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -112,11 +113,11 @@ public class TranscodingAsyncDistributedCollection<E1, E2> extends DelegatingAsy
   }
 
   @Override
-  public CompletableFuture<Void> addListener(CollectionEventListener<E1> listener) {
+  public CompletableFuture<Void> addListener(CollectionEventListener<E1> listener, Executor executor) {
     synchronized (listeners) {
       InternalCollectionEventListener collectionListener =
           listeners.computeIfAbsent(listener, k -> new InternalCollectionEventListener(listener));
-      return backingCollection.addListener(collectionListener);
+      return backingCollection.addListener(collectionListener, executor);
     }
   }
 

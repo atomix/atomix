@@ -20,12 +20,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.DistributedCollectionType;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.iterator.impl.PartitionedProxyIterator;
 import io.atomix.core.map.AsyncDistributedMap;
 import io.atomix.core.map.DistributedMap;
@@ -463,7 +463,7 @@ public class AtomicMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener, Executor executor) {
       AtomicMultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
@@ -476,8 +476,10 @@ public class AtomicMultimapProxy
             break;
         }
       };
-      eventListeners.put(listener, mapListener);
-      return AtomicMultimapProxy.this.addListener(mapListener);
+      if (eventListeners.putIfAbsent(listener, mapListener) == null) {
+        return AtomicMultimapProxy.this.addListener(mapListener, executor);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -634,7 +636,7 @@ public class AtomicMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener, Executor executor) {
       AtomicMultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
@@ -647,8 +649,10 @@ public class AtomicMultimapProxy
             break;
         }
       };
-      eventListeners.put(listener, mapListener);
-      return AtomicMultimapProxy.this.addListener(mapListener);
+      if (eventListeners.putIfAbsent(listener, mapListener) == null) {
+        return AtomicMultimapProxy.this.addListener(mapListener, executor);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -786,7 +790,7 @@ public class AtomicMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<byte[]> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<byte[]> listener, Executor executor) {
       AtomicMultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
@@ -799,8 +803,10 @@ public class AtomicMultimapProxy
             break;
         }
       };
-      eventListeners.put(listener, mapListener);
-      return AtomicMultimapProxy.this.addListener(mapListener);
+      if (eventListeners.putIfAbsent(listener, mapListener) == null) {
+        return AtomicMultimapProxy.this.addListener(mapListener, executor);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -903,7 +909,7 @@ public class AtomicMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<String, byte[]>> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<String, byte[]>> listener, Executor executor) {
       AtomicMultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
@@ -916,8 +922,10 @@ public class AtomicMultimapProxy
             break;
         }
       };
-      eventListeners.put(listener, mapListener);
-      return AtomicMultimapProxy.this.addListener(mapListener);
+      if (eventListeners.putIfAbsent(listener, mapListener) == null) {
+        return AtomicMultimapProxy.this.addListener(mapListener, executor);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override

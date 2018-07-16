@@ -24,6 +24,7 @@ import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Delegating distributed collection.
@@ -82,8 +83,8 @@ public class DelegatingAsyncDistributedCollection<E> extends DelegatingAsyncPrim
   }
 
   @Override
-  public CompletableFuture<Void> addListener(CollectionEventListener<E> listener) {
-    return delegateCollection.addListener(listener);
+  public CompletableFuture<Void> addListener(CollectionEventListener<E> listener, Executor executor) {
+    return delegateCollection.addListener(listener, executor);
   }
 
   @Override
