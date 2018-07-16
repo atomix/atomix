@@ -16,6 +16,7 @@
 
 package io.atomix.core.tree;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.utils.time.Versioned;
@@ -23,6 +24,7 @@ import io.atomix.utils.time.Versioned;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * A hierarchical <a href="https://en.wikipedia.org/wiki/Document_Object_Model">document tree</a> data structure.
@@ -131,7 +133,20 @@ public interface AsyncAtomicDocumentTree<V> extends AsyncPrimitive {
    * @param listener listener to be notified
    * @return a future that is completed when the operation completes
    */
-  CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<V> listener);
+  default CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<V> listener) {
+    return addListener(path, listener, MoreExecutors.directExecutor());
+  }
+
+  /**
+   * Registers a listener to be notified when the subtree rooted at the specified path
+   * is modified.
+   *
+   * @param path     path to the node
+   * @param listener listener to be notified
+   * @param executor the executor with which to notify the event listener
+   * @return a future that is completed when the operation completes
+   */
+  CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<V> listener, Executor executor);
 
   /**
    * Unregisters a previously added listener.
@@ -148,7 +163,18 @@ public interface AsyncAtomicDocumentTree<V> extends AsyncPrimitive {
    * @return a future that is completed when the operation completes
    */
   default CompletableFuture<Void> addListener(DocumentTreeEventListener<V> listener) {
-    return addListener(root(), listener);
+    return addListener(root(), listener, MoreExecutors.directExecutor());
+  }
+
+  /**
+   * Registers a listener to be notified when the tree is modified.
+   *
+   * @param listener listener to be notified
+   * @param executor the executor with which to notify the event listener
+   * @return a future that is completed when the operation completes
+   */
+  default CompletableFuture<Void> addListener(DocumentTreeEventListener<V> listener, Executor executor) {
+    return addListener(root(), listener, executor);
   }
 
   @Override
