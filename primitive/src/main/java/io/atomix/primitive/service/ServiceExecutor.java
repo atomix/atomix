@@ -16,12 +16,14 @@
 
 package io.atomix.primitive.service;
 
+import io.atomix.primitive.Consistency;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.time.WallClockTimestamp;
 
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -36,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * {@link OperationType#COMMAND commands} are guaranteed to be applied to the state machine in the order in which
  * they appear in the Raft log and always in the same thread, so state machines don't have to be thread safe.
  * {@link OperationType#QUERY queries} are not generally written to the Raft log and will instead be applied according
- * to their {@link ReadConsistency}.
+ * to their {@link Consistency}.
  * <p>
  * State machines can use the executor to provide deterministic scheduling during the execution of command callbacks.
  * <pre>
@@ -65,7 +67,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @see PrimitiveService
  * @see ServiceContext
  */
-public interface ServiceExecutor extends ThreadContext {
+public interface ServiceExecutor extends Executor, Scheduler {
 
   /**
    * Increments the service clock.
@@ -86,7 +88,7 @@ public interface ServiceExecutor extends ThreadContext {
    * Registers a operation callback.
    *
    * @param operationId the operation identifier
-   * @param callback the operation callback
+   * @param callback    the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   void handle(OperationId operationId, Function<Commit<byte[]>, byte[]> callback);
@@ -95,7 +97,7 @@ public interface ServiceExecutor extends ThreadContext {
    * Registers a operation callback.
    *
    * @param operationId the operation identifier
-   * @param callback the operation callback
+   * @param callback    the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   default void register(OperationId operationId, Runnable callback) {
@@ -111,7 +113,7 @@ public interface ServiceExecutor extends ThreadContext {
    * Registers a no argument operation callback.
    *
    * @param operationId the operation identifier
-   * @param callback the operation callback
+   * @param callback    the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   <R> void register(OperationId operationId, Supplier<R> callback);
@@ -120,7 +122,7 @@ public interface ServiceExecutor extends ThreadContext {
    * Registers a operation callback.
    *
    * @param operationId the operation identifier
-   * @param callback the operation callback
+   * @param callback    the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   <T> void register(OperationId operationId, Consumer<Commit<T>> callback);
@@ -129,12 +131,9 @@ public interface ServiceExecutor extends ThreadContext {
    * Registers an operation callback.
    *
    * @param operationId the operation identifier
-   * @param callback the operation callback
+   * @param callback    the operation callback
    * @throws NullPointerException if the {@code operationId} or {@code callback} is null
    */
   <T, R> void register(OperationId operationId, Function<Commit<T>, R> callback);
 
-  @Override
-  default void close() {
-  }
 }

@@ -35,8 +35,8 @@ import io.atomix.primitive.partition.PrimaryElectionEvent;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryTerm;
 import io.atomix.utils.event.AbstractListenerManager;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,10 +61,9 @@ public class HashBasedPrimaryElection
   private static final Logger LOGGER = LoggerFactory.getLogger(HashBasedPrimaryElection.class);
   private static final long BROADCAST_INTERVAL = 5000;
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
+  private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
+      .register(Namespaces.BASIC)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .build());
 
   private final PartitionId partitionId;
@@ -79,7 +78,7 @@ public class HashBasedPrimaryElection
 
   private final PartitionGroupMembershipEventListener groupMembershipEventListener = new PartitionGroupMembershipEventListener() {
     @Override
-    public void onEvent(PartitionGroupMembershipEvent event) {
+    public void event(PartitionGroupMembershipEvent event) {
       recomputeTerm(event.membership());
     }
 
@@ -180,7 +179,7 @@ public class HashBasedPrimaryElection
     List<GroupMember> candidates = new ArrayList<>();
     for (MemberId memberId : membership.members()) {
       Member member = clusterMembershipService.getMember(memberId);
-      if (member != null && member.getState() == Member.State.ACTIVE) {
+      if (member != null && member.isReachable()) {
         candidates.add(new GroupMember(memberId, MemberGroupId.from(memberId.id())));
       }
     }

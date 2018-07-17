@@ -72,7 +72,7 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
 
   private final PrimaryBackupServerContext context;
 
-  public PrimaryBackupServer(PrimaryBackupServerContext context) {
+  private PrimaryBackupServer(PrimaryBackupServerContext context) {
     this.context = checkNotNull(context, "context cannot be null");
   }
 
@@ -111,7 +111,7 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
     protected PrimitiveTypeRegistry primitiveTypes;
     protected MemberGroupProvider memberGroupProvider;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
-    protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
+    protected int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 16), 4);
     protected ThreadContextFactory threadContextFactory;
 
     /**
@@ -224,18 +224,28 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
       Logger log = ContextualLoggerFactory.getLogger(PrimaryBackupServer.class, LoggerContext.builder(PrimaryBackupServer.class)
           .addValue(serverName)
           .build());
-      ThreadContextFactory threadContextFactory = this.threadContextFactory != null
-          ? this.threadContextFactory
-          : threadModel.factory("backup-server-" + serverName + "-%d", threadPoolSize, log);
+
+      // If a ThreadContextFactory was not provided, create one and ensure it's closed when the server is stopped.
+      boolean closeOnStop;
+      ThreadContextFactory threadContextFactory;
+      if (this.threadContextFactory == null) {
+        threadContextFactory = threadModel.factory("backup-server-" + serverName + "-%d", threadPoolSize, log);
+        closeOnStop = true;
+      } else {
+        threadContextFactory = this.threadContextFactory;
+        closeOnStop = false;
+      }
+
       return new PrimaryBackupServer(new PrimaryBackupServerContext(
           serverName,
           membershipService,
           new DefaultMemberGroupService(membershipService, memberGroupProvider),
           protocol,
-          threadContextFactory,
           primitiveTypes != null ? primitiveTypes :
                   new ClasspathScanningPrimitiveTypeRegistry(Thread.currentThread().getContextClassLoader()),
-          primaryElection));
+          primaryElection,
+          threadContextFactory,
+          closeOnStop));
     }
   }
 }

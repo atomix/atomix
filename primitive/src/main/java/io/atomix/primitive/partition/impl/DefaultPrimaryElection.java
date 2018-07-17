@@ -23,8 +23,8 @@ import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryElectionService;
 import io.atomix.primitive.partition.PrimaryTerm;
-import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.primitive.session.SessionClient;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.Set;
@@ -42,25 +42,25 @@ import static io.atomix.primitive.partition.impl.PrimaryElectorOperations.GetTer
  * Leader elector based primary election.
  */
 public class DefaultPrimaryElection implements ManagedPrimaryElection {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
+  private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(PrimaryElectorOperations.NAMESPACE)
       .register(PrimaryElectorEvents.NAMESPACE)
       .build());
 
   private final PartitionId partitionId;
-  private final PartitionProxy proxy;
+  private final SessionClient proxy;
   private final PrimaryElectionService service;
   private final Set<PrimaryElectionEventListener> listeners = Sets.newCopyOnWriteArraySet();
   private final PrimaryElectionEventListener eventListener;
   private final AtomicBoolean started = new AtomicBoolean();
 
-  public DefaultPrimaryElection(PartitionId partitionId, PartitionProxy proxy, PrimaryElectionService service) {
+  public DefaultPrimaryElection(PartitionId partitionId, SessionClient proxy, PrimaryElectionService service) {
     this.partitionId = checkNotNull(partitionId);
     this.proxy = proxy;
     this.service = service;
     this.eventListener = event -> {
       if (event.partitionId().equals(partitionId)) {
-        listeners.forEach(l -> l.onEvent(event));
+        listeners.forEach(l -> l.event(event));
       }
     };
   }

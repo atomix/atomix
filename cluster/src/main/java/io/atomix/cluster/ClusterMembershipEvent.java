@@ -30,17 +30,22 @@ public class ClusterMembershipEvent extends AbstractEvent<ClusterMembershipEvent
    */
   public enum Type {
     /**
-     * Signifies that a new member has been added.
+     * Indicates that a new member has been added.
      */
     MEMBER_ADDED,
 
     /**
-     * Signifies that a member's state has changed.
+     * Indicates that a member's metadata has changed.
      */
-    MEMBER_UPDATED,
+    METADATA_CHANGED,
 
     /**
-     * Signifies that a member has been removed.
+     * Indicates that a member's reachability has changed.
+     */
+    REACHABILITY_CHANGED,
+
+    /**
+     * Indicates that a member has been removed.
      */
     MEMBER_REMOVED,
   }

@@ -20,7 +20,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTreeNode;
 import io.atomix.primitive.Ordering;

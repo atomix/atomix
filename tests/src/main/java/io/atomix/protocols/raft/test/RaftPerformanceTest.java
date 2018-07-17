@@ -15,24 +15,28 @@
  */
 package io.atomix.protocols.raft.test;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.atomix.cluster.GroupMembershipConfig;
+import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
+import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
+import io.atomix.cluster.MembershipConfig;
+import io.atomix.cluster.Node;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
+import io.atomix.cluster.impl.DefaultNodeDiscoveryService;
 import io.atomix.cluster.messaging.BroadcastService;
 import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
-import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
-import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
@@ -40,6 +44,7 @@ import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftError;
@@ -82,7 +87,7 @@ import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.ResetRequest;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
+import io.atomix.protocols.raft.session.CommunicationStrategy;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
@@ -99,12 +104,11 @@ import io.atomix.protocols.raft.test.protocol.RaftServerMessagingProtocol;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.utils.net.Address;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -155,7 +159,7 @@ public class RaftPerformanceTest implements Runnable {
     new RaftPerformanceTest().run();
   }
 
-  private static final Serializer protocolSerializer = Serializer.using(KryoNamespace.builder()
+  private static final Serializer protocolSerializer = Serializer.using(Namespace.builder()
       .register(HeartbeatRequest.class)
       .register(HeartbeatResponse.class)
       .register(OpenSessionRequest.class)
@@ -212,14 +216,13 @@ public class RaftPerformanceTest implements Runnable {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .register(SessionId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
       .build());
 
-  private static final Serializer storageSerializer = Serializer.using(KryoNamespace.builder()
+  private static final Serializer storageSerializer = Serializer.using(Namespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -236,7 +239,6 @@ public class RaftPerformanceTest implements Runnable {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
@@ -244,7 +246,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(long[].class)
       .build());
 
-  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.builder()
+  private static final Serializer clientSerializer = Serializer.using(Namespace.builder()
       .register(ReadConsistency.class)
       .register(Maps.immutableEntry("", "").getClass())
       .build());
@@ -303,7 +305,7 @@ public class RaftPerformanceTest implements Runnable {
 
     CompletableFuture<Void>[] futures = new CompletableFuture[NUM_CLIENTS];
     RaftClient[] clients = new RaftClient[NUM_CLIENTS];
-    PartitionProxy[] proxies = new PartitionProxy[NUM_CLIENTS];
+    SessionClient[] proxies = new SessionClient[NUM_CLIENTS];
     for (int i = 0; i < NUM_CLIENTS; i++) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       clients[i] = createClient();
@@ -330,7 +332,7 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Runs operations for a single Raft proxy.
    */
-  private void runProxy(PartitionProxy proxy, CompletableFuture<Void> future) {
+  private void runProxy(SessionClient proxy, CompletableFuture<Void> future) {
     int count = totalOperations.incrementAndGet();
     if (count > TOTAL_OPERATIONS) {
       future.complete(null);
@@ -455,7 +457,7 @@ public class RaftPerformanceTest implements Runnable {
 
     CountDownLatch latch = new CountDownLatch(nodes);
     for (int i = 0; i < nodes; i++) {
-      RaftServer server = createServer(members.get(i), members);
+      RaftServer server = createServer(members.get(i), Lists.newArrayList(members));
       server.bootstrap(members.stream().map(Member::id).collect(Collectors.toList())).thenRun(latch::countDown);
       servers.add(server);
     }
@@ -468,7 +470,7 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Creates a Raft server.
    */
-  private RaftServer createServer(Member member, List<Member> members) throws UnknownHostException {
+  private RaftServer createServer(Member member, List<Node> members) {
     RaftServerProtocol protocol;
     ManagedMessagingService messagingService;
     if (USE_NETTY) {
@@ -483,15 +485,26 @@ public class RaftPerformanceTest implements Runnable {
       protocol = protocolFactory.newServerProtocol(member.id());
     }
 
+    BootstrapService bootstrapService = new BootstrapService() {
+      @Override
+      public MessagingService getMessagingService() {
+        return messagingService;
+      }
+
+      @Override
+      public BroadcastService getBroadcastService() {
+        return new BroadcastServiceAdapter();
+      }
+    };
+
     RaftServer.Builder builder = RaftServer.builder(member.id())
         .withProtocol(protocol)
         .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
         .withMembershipService(new DefaultClusterMembershipService(
             member,
-            members,
-            messagingService,
-            new BroadcastServiceAdapter(),
-            new GroupMembershipConfig()))
+            new DefaultNodeDiscoveryService(bootstrapService, member, new BootstrapDiscoveryProvider(members)),
+            bootstrapService,
+            new MembershipConfig()))
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.MAPPED)
             .withDirectory(new File(String.format("target/perf-logs/%s", member.id())))
@@ -533,8 +546,8 @@ public class RaftPerformanceTest implements Runnable {
   /**
    * Creates a test session.
    */
-  private PartitionProxy createProxy(RaftClient client) {
-    return client.proxyBuilder("raft-performance-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
+  private SessionClient createProxy(RaftClient client) {
+    return client.sessionBuilder("raft-performance-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withReadConsistency(READ_CONSISTENCY)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build();
@@ -559,7 +572,7 @@ public class RaftPerformanceTest implements Runnable {
     }
 
     @Override
-    public DistributedPrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
+    public PrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
       throw new UnsupportedOperationException();
     }
 
@@ -701,17 +714,17 @@ public class RaftPerformanceTest implements Runnable {
 
   private static class BroadcastServiceAdapter implements BroadcastService {
     @Override
-    public void broadcast(byte[] message) {
+    public void broadcast(String subject, byte[] message) {
 
     }
 
     @Override
-    public void addListener(Consumer<byte[]> listener) {
+    public void addListener(String subject, Consumer<byte[]> listener) {
 
     }
 
     @Override
-    public void removeListener(Consumer<byte[]> listener) {
+    public void removeListener(String subject, Consumer<byte[]> listener) {
 
     }
   }

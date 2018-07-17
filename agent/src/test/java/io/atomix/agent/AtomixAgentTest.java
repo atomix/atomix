@@ -15,11 +15,8 @@
  */
 package io.atomix.agent;
 
-import com.google.common.base.Joiner;
-import io.atomix.cluster.Member;
-import io.atomix.cluster.MemberId;
 import io.atomix.core.Atomix;
-import io.atomix.core.map.ConsistentMap;
+import io.atomix.core.map.AtomicMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -32,11 +29,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 /**
  * Atomix agent runner test.
@@ -45,29 +39,13 @@ public class AtomixAgentTest {
   private static final Path PATH = Paths.get("target/test-logs/");
 
   @Test
-  public void testParseMemberId() throws Exception {
-    assertNull(AtomixAgent.parseMemberId("127.0.0.1"));
-    assertNull(AtomixAgent.parseMemberId("foo"));
-    assertNull(AtomixAgent.parseMemberId("127.0.0.1:1234"));
-    assertEquals(MemberId.from("foo"), AtomixAgent.parseMemberId("foo@127.0.0.1:1234"));
-    assertEquals(MemberId.from("foo"), AtomixAgent.parseMemberId("foo@127.0.0.1"));
-  }
-
-  @Test
-  public void testParseAddress() throws Exception {
-    assertEquals(5679, AtomixAgent.parseAddress("foo").port());
-    assertEquals("127.0.0.1:5679", AtomixAgent.parseAddress("127.0.0.1").toString());
-    assertEquals("127.0.0.1:5679", AtomixAgent.parseAddress("foo@127.0.0.1").toString());
-    assertEquals("127.0.0.1:1234", AtomixAgent.parseAddress("127.0.0.1:1234").toString());
-    assertEquals("127.0.0.1:1234", AtomixAgent.parseAddress("foo@127.0.0.1:1234").toString());
-  }
-
-  @Test
   @Ignore
   public void testFormCluster() throws Exception {
+    String path = getClass().getClassLoader().getResource("test.conf").getPath();
+
     Thread thread1 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"node1@localhost:5000"});
+        AtomixAgent.main(new String[]{"-m", "node1", "-a", "localhost:5000", "-c", path, "-p", "6000"});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();
@@ -76,7 +54,8 @@ public class AtomixAgentTest {
 
     Thread thread2 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"node2@localhost:5001"});
+        AtomixAgent.main(new String[]{"-m", "node2", "-a", "localhost:5001", "-c", path, "-p", "6001"});
+        AtomixAgent.main(new String[]{"node2@localhost:5001", "-c", path});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();
@@ -85,7 +64,7 @@ public class AtomixAgentTest {
 
     Thread thread3 = new Thread(() -> {
       try {
-        AtomixAgent.main(new String[]{"node3@localhost:5002"});
+        AtomixAgent.main(new String[]{"-m", "node3", "-a", "localhost:5002", "-c", path, "-p", "6002"});
       } catch (Exception e) {
         e.printStackTrace();
         Thread.currentThread().interrupt();
@@ -98,100 +77,20 @@ public class AtomixAgentTest {
 
     Thread.sleep(5000);
 
-    Atomix client1 = Atomix.builder()
-        .withLocalMember(Member.builder("client1")
-            .withAddress("localhost:5003")
-            .build())
+    Atomix client1 = Atomix.builder(path)
+        .withMemberId("client1")
+        .withAddress("localhost:5003")
         .build();
     client1.start().join();
 
-    Atomix client2 = Atomix.builder()
-        .withLocalMember(Member.builder("client2")
-            .withAddress("localhost:5004")
-            .build())
+    Atomix client2 = Atomix.builder(path)
+        .withMemberId("client2")
+        .withAddress("localhost:5004")
         .build();
     client2.start().join();
 
-    ConsistentMap<String, String> map1 = client1.getConsistentMap("test");
-    ConsistentMap<String, String> map2 = client2.getConsistentMap("test");
-
-    map1.put("foo", "bar");
-    assertEquals("bar", map2.get("foo").value());
-
-    thread1.interrupt();
-    thread2.interrupt();
-    thread3.interrupt();
-  }
-
-  @Test
-  @Ignore
-  public void testFormDataCluster() throws Exception {
-    List<String> config = new ArrayList<>();
-    config.add("cluster:");
-    config.add("  name: test");
-    config.add("  nodes:");
-    config.add("    - id: node1");
-    config.add("      type: data");
-    config.add("      address: localhost:5001");
-    config.add("    - id: node2");
-    config.add("      type: data");
-    config.add("      address: localhost:5002");
-    config.add("    - id: node3");
-    config.add("      type: data");
-    config.add("      address: localhost:5003");
-    config.add("partition-groups:");
-    config.add("  - type: multi-primary");
-    config.add("    name: data");
-
-    Thread thread1 = new Thread(() -> {
-      try {
-        AtomixAgent.main(new String[]{"node1", "-c", Joiner.on('\n').join(config), "-p", "6001"});
-      } catch (Exception e) {
-        e.printStackTrace();
-        Thread.currentThread().interrupt();
-      }
-    });
-
-    Thread thread2 = new Thread(() -> {
-      try {
-        AtomixAgent.main(new String[]{"node2", "-c", Joiner.on('\n').join(config), "-p", "6002"});
-      } catch (Exception e) {
-        e.printStackTrace();
-        Thread.currentThread().interrupt();
-      }
-    });
-
-    Thread thread3 = new Thread(() -> {
-      try {
-        AtomixAgent.main(new String[]{"node3", "-c", Joiner.on('\n').join(config), "-p", "6003"});
-      } catch (Exception e) {
-        e.printStackTrace();
-        Thread.currentThread().interrupt();
-      }
-    });
-
-    thread1.start();
-    thread2.start();
-    thread3.start();
-
-    Thread.sleep(10000);
-
-    Atomix client1 = Atomix.builder(Joiner.on('\n').join(config))
-        .withLocalMember(Member.builder("client1")
-            .withAddress("localhost:5003")
-            .build())
-        .build();
-    client1.start().join();
-
-    Atomix client2 = Atomix.builder(Joiner.on('\n').join(config))
-        .withLocalMember(Member.builder("client2")
-            .withAddress("localhost:5004")
-            .build())
-        .build();
-    client2.start().join();
-
-    ConsistentMap<String, String> map1 = client1.getConsistentMap("test");
-    ConsistentMap<String, String> map2 = client2.getConsistentMap("test");
+    AtomicMap<String, String> map1 = client1.getAtomicMap("test");
+    AtomicMap<String, String> map2 = client2.getAtomicMap("test");
 
     map1.put("foo", "bar");
     assertEquals("bar", map2.get("foo").value());

@@ -19,13 +19,18 @@ import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.utils.net.Address;
 
-import java.util.Map;
+import java.util.Properties;
 
 /**
  * Default cluster node.
  */
 public class StatefulMember extends Member {
-  private State state = State.INACTIVE;
+  private volatile boolean active;
+  private volatile boolean reachable;
+
+  public StatefulMember(MemberId id, Address address) {
+    super(id, address);
+  }
 
   public StatefulMember(
       MemberId id,
@@ -33,21 +38,35 @@ public class StatefulMember extends Member {
       String zone,
       String rack,
       String host,
-      Map<String, String> metadata) {
-    super(id, address, zone, rack, host, metadata);
+      Properties properties) {
+    super(id, address, zone, rack, host, properties);
   }
 
   /**
-   * Updates the node state.
+   * Sets whether this member is an active member of the cluster.
    *
-   * @param state the node state
+   * @param active whether this member is an active member of the cluster
    */
-  void setState(State state) {
-    this.state = state;
+  void setActive(boolean active) {
+    this.active = active;
+  }
+
+  /**
+   * Sets whether this member is reachable.
+   *
+   * @param reachable whether this member is reachable
+   */
+  void setReachable(boolean reachable) {
+    this.reachable = reachable;
   }
 
   @Override
-  public State getState() {
-    return state;
+  public boolean isActive() {
+    return active;
+  }
+
+  @Override
+  public boolean isReachable() {
+    return reachable;
   }
 }

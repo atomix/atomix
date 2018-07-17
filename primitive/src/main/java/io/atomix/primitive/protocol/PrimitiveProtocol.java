@@ -15,11 +15,7 @@
  */
 package io.atomix.primitive.protocol;
 
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.partition.PartitionService;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.NamedType;
+import io.atomix.utils.ConfiguredType;
 
 /**
  * Primitive protocol.
@@ -29,14 +25,7 @@ public interface PrimitiveProtocol {
   /**
    * Distributed primitive protocol type.
    */
-  interface Type<C extends PrimitiveProtocolConfig<C>> extends NamedType {
-
-    /**
-     * Returns a new protocol configuration.
-     *
-     * @return a new protocol configuration
-     */
-    C newConfig();
+  interface Type<C extends PrimitiveProtocolConfig<C>> extends ConfiguredType<C>, Comparable<Type<C>> {
 
     /**
      * Creates a new protocol instance.
@@ -45,6 +34,11 @@ public interface PrimitiveProtocol {
      * @return the protocol instance
      */
     PrimitiveProtocol newProtocol(C config);
+
+    @Override
+    default int compareTo(Type<C> o) {
+      return name().compareTo(o.name());
+    }
   }
 
   /**
@@ -54,32 +48,4 @@ public interface PrimitiveProtocol {
    */
   Type type();
 
-  /**
-   * Returns the protocol group name.
-   *
-   * @return the protocol group name
-   */
-  String group();
-
-  /**
-   * Returns a new primitive proxy for the given partition group.
-   *
-   * @param primitiveName    the primitive name
-   * @param primitiveType    the primitive type
-   * @param serviceConfig    the service configuration
-   * @param partitionService the partition service
-   * @return the proxy for the given partition group
-   */
-  PrimitiveProxy newProxy(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig, PartitionService partitionService);
-
-  /**
-   * Primitive protocol.
-   */
-  abstract class Builder<C extends PrimitiveProtocolConfig<C>, P extends PrimitiveProtocol> implements io.atomix.utils.Builder<P> {
-    protected final C config;
-
-    protected Builder(C config) {
-      this.config = config;
-    }
-  }
 }

@@ -47,7 +47,7 @@ public class DistributedLockResource implements PrimitiveResource {
   public void lock(@Suspended AsyncResponse response) {
     lock.lock().whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.ok(result.value()).build());
+        response.resume(Response.ok().build());
       } else {
         LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());

@@ -16,6 +16,7 @@
 package io.atomix.core.tree;
 
 import com.google.common.base.MoreObjects;
+import io.atomix.utils.event.AbstractEvent;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Optional;
@@ -25,7 +26,7 @@ import java.util.Optional;
  *
  * @param <V> tree node value type
  */
-public class DocumentTreeEvent<V> {
+public class DocumentTreeEvent<V> extends AbstractEvent<DocumentTreeEvent.Type, DocumentPath> {
 
   /**
    * Nature of document tree node change.
@@ -48,15 +49,12 @@ public class DocumentTreeEvent<V> {
     DELETED
   }
 
-  private final DocumentPath path;
-  private final Type type;
   private final Optional<Versioned<V>> newValue;
   private final Optional<Versioned<V>> oldValue;
 
   @SuppressWarnings("unused")
   private DocumentTreeEvent() {
-    this.path = null;
-    this.type = null;
+    super(null, null);
     this.newValue = null;
     this.oldValue = null;
   }
@@ -64,17 +62,13 @@ public class DocumentTreeEvent<V> {
   /**
    * Constructs a new {@code DocumentTreeEvent}.
    *
-   * @param path     path to the node
-   * @param type     type of change
+   * @param type type of change
+   * @param path path to the node
    * @param newValue optional new value; will be empty if node was deleted
    * @param oldValue optional old value; will be empty if node was created
    */
-  public DocumentTreeEvent(DocumentPath path,
-                           Type type,
-                           Optional<Versioned<V>> newValue,
-                           Optional<Versioned<V>> oldValue) {
-    this.path = path;
-    this.type = type;
+  public DocumentTreeEvent(Type type, DocumentPath path, Optional<Versioned<V>> newValue, Optional<Versioned<V>> oldValue) {
+    super(type, path);
     this.newValue = newValue;
     this.oldValue = oldValue;
   }
@@ -85,16 +79,7 @@ public class DocumentTreeEvent<V> {
    * @return node path
    */
   public DocumentPath path() {
-    return path;
-  }
-
-  /**
-   * Returns the change type.
-   *
-   * @return change type
-   */
-  public Type type() {
-    return type;
+    return subject();
   }
 
   /**
@@ -118,8 +103,8 @@ public class DocumentTreeEvent<V> {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(getClass())
-        .add("path", path)
-        .add("type", type)
+        .add("type", type())
+        .add("path", path())
         .add("newValue", newValue)
         .add("oldValue", oldValue)
         .toString();

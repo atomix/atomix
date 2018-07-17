@@ -17,10 +17,8 @@ package io.atomix.core.semaphore;
 
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.DistributedPrimitive;
-import io.atomix.utils.time.Version;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -34,21 +32,21 @@ public interface AsyncDistributedSemaphore extends AsyncPrimitive {
    *
    * @return future to be completed once the permit has been acquired
    */
-  CompletableFuture<Version> acquire();
+  CompletableFuture<Void> acquire();
 
   /**
    * Acquires the given number of permits from this semaphore.
    *
    * @return future to be completed once the permits has been acquired
    */
-  CompletableFuture<Version> acquire(int permits);
+  CompletableFuture<Void> acquire(int permits);
 
   /**
    * Acquires a permit, if one is available and returns immediately.
    *
    * @return future to be completed with a boolean indicating whether the permit was acquired
    */
-  CompletableFuture<Optional<Version>> tryAcquire();
+  CompletableFuture<Boolean> tryAcquire();
 
   /**
    * Acquires the given number of permits, if they are available and returns immediately.
@@ -56,7 +54,7 @@ public interface AsyncDistributedSemaphore extends AsyncPrimitive {
    * @param permits permits to acquire
    * @return future to be completed with a boolean indicating whether the permits was acquired
    */
-  CompletableFuture<Optional<Version>> tryAcquire(int permits);
+  CompletableFuture<Boolean> tryAcquire(int permits);
 
   /**
    * Acquires a permit from this semaphore if one becomes available within the given waiting time.
@@ -64,7 +62,7 @@ public interface AsyncDistributedSemaphore extends AsyncPrimitive {
    * @param timeout the maximum time to wait for a permit
    * @return future to be completed with a boolean indicating whether the permit was acquired
    */
-  CompletableFuture<Optional<Version>> tryAcquire(Duration timeout);
+  CompletableFuture<Boolean> tryAcquire(Duration timeout);
 
   /**
    * Acquires the given number of permits, if they are available within the given waiting time.
@@ -73,7 +71,7 @@ public interface AsyncDistributedSemaphore extends AsyncPrimitive {
    * @param timeout the maximum time to wait for a permit
    * @return future to be completed with a boolean indicating whether the permits was acquired
    */
-  CompletableFuture<Optional<Version>> tryAcquire(int permits, Duration timeout);
+  CompletableFuture<Boolean> tryAcquire(int permits, Duration timeout);
 
   /**
    * Releases a permit.
@@ -116,7 +114,7 @@ public interface AsyncDistributedSemaphore extends AsyncPrimitive {
    * @param permits the number of permits to add
    * @return the future complete with available permits after increase
    */
-  CompletableFuture<Integer> increase(int permits);
+  CompletableFuture<Integer> increasePermits(int permits);
 
   /**
    * Shrinks the number of available permits by the indicated reduction.
@@ -126,7 +124,7 @@ public interface AsyncDistributedSemaphore extends AsyncPrimitive {
    * @param permits the number of permits to remove
    * @return the future complete with available permits after increase
    */
-  CompletableFuture<Integer> reduce(int permits);
+  CompletableFuture<Integer> reducePermits(int permits);
 
   /**
    * Query the waiting queue status.

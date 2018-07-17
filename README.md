@@ -2,7 +2,9 @@
 
 ![Atomix](http://atomix.io/assets/img/logos/atomix-medium.png)
 
-[![Build Status](https://travis-ci.org/atomix/atomix.svg)](https://travis-ci.org/atomix/atomix)
+## [Website][Website] | [Javadoc][Javadoc] | [Google Group][Google group]
+
+[![Build Status](https://gitlab.com/atomix-io/atomix/badges/master/build.svg)](https://gitlab.com/atomix-io/atomix)
 [![Coverage Status](https://coveralls.io/repos/github/atomix/atomix/badge.svg?branch=master)](https://coveralls.io/github/atomix/atomix?branch=master)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix)
 [![Gitter](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/atomix/atomix)
@@ -19,13 +21,14 @@ Atomix 2.1 is a fully featured framework for building fault-tolerant distributed
 * Synchronous and asynchronous Java APIs
 * Standalone agent
 * REST API
-* Interactive CLI
 
-### Acknowledgements
+## Acknowledgements
 
-Atomix is developed as part of the [ONOS][ONOS] project at the [Open Networking Foundation][ONF]. Atomix project thanks ONF for its ongoing support of this project.
+Atomix is developed as part of the [ONOS][ONOS] project at the [Open Networking Foundation][ONF]. Atomix project thanks ONF for its ongoing support!
 
 ![ONF](https://3vf60mmveq1g8vzn48q2o71a-wpengine.netdna-ssl.com/wp-content/uploads/2017/06/onf-logo.jpg)
+
+----
 
 YourKit supports open source projects with its full-featured Java Profiler.
 YourKit, LLC is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/)
@@ -34,23 +37,9 @@ innovative and intelligent tools for profiling Java and .NET applications.
 
 ![YourKit](https://www.yourkit.com/images/yklogo.png)
 
-[Website]: http://atomix.io
-[Getting started]: http://atomix.io/docs/latest/getting-started/
-[User manual]: http://atomix.io/docs/latest/user-manual/introduction/
+[Website]: https://atomix.io
 [Google group]: https://groups.google.com/forum/#!forum/atomixio
-[Javadoc]: http://atomix.io/atomix/api/latest/
+[Javadoc]: http://atomix.io/docs/latest/api/
 [Raft]: https://raft.github.io/
 [ONF]: https://www.opennetworking.org/
 [ONOS]: http://onosproject.org/
-[Copycat]: https://github.com/atomix/copycat
-[Cluster management]: https://github.com/atomix/atomix/tree/master/core/src/main/java/io/atomix/cluster
-[Messaging]: https://github.com/atomix/atomix/tree/master/core/src/main/java/io/atomix/cluster/messaging
-[Partitioning]: https://github.com/atomix/atomix/tree/master/core/src/main/java/io/atomix/partition
-[Distributed systems primitives]: https://github.com/atomix/atomix/tree/master/core/src/main/java/io/atomix/primitives
-[Transactions]: https://github.com/atomix/atomix/tree/master/core/src/main/java/io/atomix/transaction
-[Raft protocol]: https://github.com/atomix/atomix/tree/master/protocols/raft
-[Gossip protocol]: https://github.com/atomix/atomix/tree/master/protocols/gossip
-[Failure detection protocol]: https://github.com/atomix/atomix/tree/master/protocols/failure-detection
-[Primary-backup protocol]: https://github.com/atomix/atomix/tree/master/protocols/backup
-[Time protocols]: https://github.com/atomix/atomix/tree/master/time
-[Protocols]: https://github.com/atomix/atomix/tree/master/protocols

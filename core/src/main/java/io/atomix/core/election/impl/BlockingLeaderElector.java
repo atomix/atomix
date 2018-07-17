@@ -15,15 +15,15 @@
  */
 package io.atomix.core.election.impl;
 
-import io.atomix.core.election.AsyncLeaderElection;
 import io.atomix.core.election.AsyncLeaderElector;
-import io.atomix.core.election.LeaderElector;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEventListener;
+import io.atomix.core.election.AsyncLeaderElection;
+import io.atomix.core.election.LeaderElector;
 import io.atomix.primitive.PrimitiveException;
+import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.Synchronous;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -101,18 +101,13 @@ public class BlockingLeaderElector<T> extends Synchronous<AsyncLeaderElector<T>>
   }
 
   @Override
-  public void addStatusChangeListener(Consumer<Status> listener) {
-    asyncElector.addStatusChangeListener(listener);
+  public void addStateChangeListener(Consumer<PrimitiveState> listener) {
+    asyncElector.addStateChangeListener(listener);
   }
 
   @Override
-  public void removeStatusChangeListener(Consumer<Status> listener) {
-    asyncElector.removeStatusChangeListener(listener);
-  }
-
-  @Override
-  public Collection<Consumer<Status>> statusChangeListeners() {
-    return asyncElector.statusChangeListeners();
+  public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
+    asyncElector.removeStateChangeListener(listener);
   }
 
   @Override

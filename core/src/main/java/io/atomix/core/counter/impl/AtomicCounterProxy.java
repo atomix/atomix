@@ -17,12 +17,9 @@ package io.atomix.core.counter.impl;
 
 import io.atomix.core.counter.AsyncAtomicCounter;
 import io.atomix.core.counter.AtomicCounter;
-import io.atomix.primitive.AbstractAsyncPrimitiveProxy;
+import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
-import io.atomix.primitive.proxy.PrimitiveProxy;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
-import io.atomix.utils.serializer.Serializer;
+import io.atomix.primitive.proxy.ProxyClient;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -30,58 +27,54 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Atomix counter implementation.
  */
-public class AtomicCounterProxy extends AbstractAsyncPrimitiveProxy<AsyncAtomicCounter, AtomicCounterService> implements AsyncAtomicCounter {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
-      .build());
-
-  public AtomicCounterProxy(PrimitiveProxy proxy, PrimitiveRegistry registry) {
-    super(AtomicCounterService.class, proxy, registry);
+public class AtomicCounterProxy extends AbstractAsyncPrimitive<AsyncAtomicCounter, AtomicCounterService> implements AsyncAtomicCounter {
+  public AtomicCounterProxy(ProxyClient<AtomicCounterService> client, PrimitiveRegistry registry) {
+    super(client, registry);
   }
 
   @Override
   public CompletableFuture<Long> get() {
-    return applyBy(getPartitionKey(), service -> service.get());
+    return getProxyClient().applyBy(name(), service -> service.get());
   }
 
   @Override
   public CompletableFuture<Void> set(long value) {
-    return acceptBy(getPartitionKey(), service -> service.set(value));
+    return getProxyClient().acceptBy(name(), service -> service.set(value));
   }
 
   @Override
   public CompletableFuture<Boolean> compareAndSet(long expectedValue, long updateValue) {
-    return applyBy(getPartitionKey(), service -> service.compareAndSet(expectedValue, updateValue));
+    return getProxyClient().applyBy(name(), service -> service.compareAndSet(expectedValue, updateValue));
   }
 
   @Override
   public CompletableFuture<Long> addAndGet(long delta) {
-    return applyBy(getPartitionKey(), service -> service.addAndGet(delta));
+    return getProxyClient().applyBy(name(), service -> service.addAndGet(delta));
   }
 
   @Override
   public CompletableFuture<Long> getAndAdd(long delta) {
-    return applyBy(getPartitionKey(), service -> service.getAndAdd(delta));
+    return getProxyClient().applyBy(name(), service -> service.getAndAdd(delta));
   }
 
   @Override
   public CompletableFuture<Long> incrementAndGet() {
-    return applyBy(getPartitionKey(), service -> service.incrementAndGet());
+    return getProxyClient().applyBy(name(), service -> service.incrementAndGet());
   }
 
   @Override
   public CompletableFuture<Long> getAndIncrement() {
-    return applyBy(getPartitionKey(), service -> service.getAndIncrement());
+    return getProxyClient().applyBy(name(), service -> service.getAndIncrement());
   }
 
   @Override
   public CompletableFuture<Long> decrementAndGet() {
-    return applyBy(getPartitionKey(), service -> service.decrementAndGet());
+    return getProxyClient().applyBy(name(), service -> service.decrementAndGet());
   }
 
   @Override
   public CompletableFuture<Long> getAndDecrement() {
-    return applyBy(getPartitionKey(), service -> service.getAndDecrement());
+    return getProxyClient().applyBy(name(), service -> service.getAndDecrement());
   }
 
   @Override

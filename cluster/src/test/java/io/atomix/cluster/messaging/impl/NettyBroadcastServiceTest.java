@@ -44,19 +44,19 @@ public class NettyBroadcastServiceTest extends ConcurrentTestCase {
 
   @Test
   public void testBroadcast() throws Exception {
-    netty1.addListener(bytes -> {
+    netty1.addListener("test", bytes -> {
       threadAssertEquals(0, bytes.length);
       resume();
     });
 
-    netty2.broadcast(new byte[0]);
+    netty2.broadcast("test", new byte[0]);
     await(5000);
   }
 
   @Before
   public void setUp() throws Exception {
     localAddress1 = Address.from("127.0.0.1", findAvailablePort(5001));
-    localAddress2 = Address.from("127.0.0.1", findAvailablePort(5001));
+    localAddress2 = Address.from("127.0.0.1", findAvailablePort(5002));
     groupAddress = Address.from("230.0.0.1", findAvailablePort(1234));
 
     netty1 = (ManagedBroadcastService) NettyBroadcastService.builder()

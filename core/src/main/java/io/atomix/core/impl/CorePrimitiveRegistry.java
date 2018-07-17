@@ -15,10 +15,11 @@
  */
 package io.atomix.core.impl;
 
-import io.atomix.core.map.AsyncConsistentMap;
-import io.atomix.core.map.ConsistentMapType;
-import io.atomix.core.map.impl.ConsistentMapProxy;
-import io.atomix.core.map.impl.TranscodingAsyncConsistentMap;
+import io.atomix.core.map.AsyncAtomicMap;
+import io.atomix.core.map.AtomicMapType;
+import io.atomix.core.map.impl.AtomicMapProxy;
+import io.atomix.core.map.impl.AtomicMapService;
+import io.atomix.core.map.impl.TranscodingAsyncAtomicMap;
 import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.ManagedPrimitiveRegistry;
 import io.atomix.primitive.PrimitiveException;
@@ -27,10 +28,10 @@ import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.PartitionService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.proxy.PrimitiveProxy;
+import io.atomix.primitive.protocol.ProxyProtocol;
+import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.Collection;
@@ -47,12 +48,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Core primitive registry.
  */
 public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.BASIC);
+  private static final Serializer SERIALIZER = Serializer.using(Namespaces.BASIC);
 
   private final PartitionService partitionService;
   private final PrimitiveTypeRegistry primitiveTypeRegistry;
   private final AtomicBoolean started = new AtomicBoolean();
-  private AsyncConsistentMap<String, String> primitives;
+  private AsyncAtomicMap<String, String> primitives;
 
   public CorePrimitiveRegistry(PartitionService partitionService, PrimitiveTypeRegistry primitiveTypeRegistry) {
     this.partitionService = checkNotNull(partitionService);
@@ -77,20 +78,9 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
 
   @Override
   public Collection<PrimitiveInfo> getPrimitives() {
-    try {
-      return primitives.entrySet()
-          .get(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
-          .stream()
-          .map(entry -> new PrimitiveInfo(entry.getKey(), primitiveTypeRegistry.getPrimitiveType(entry.getValue().value())))
-          .collect(Collectors.toList());
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new PrimitiveException.Interrupted();
-    } catch (TimeoutException e) {
-      throw new PrimitiveException.Timeout();
-    } catch (ExecutionException e) {
-      throw new PrimitiveException(e.getCause());
-    }
+    return primitives.sync().entrySet().stream()
+        .map(entry -> new PrimitiveInfo(entry.getKey(), primitiveTypeRegistry.getPrimitiveType(entry.getValue().value())))
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -120,16 +110,17 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<PrimitiveRegistry> start() {
-    PrimitiveProtocol protocol = partitionService.getSystemPartitionGroup().newProtocol();
-    PrimitiveProxy proxy = protocol.newProxy(
+    ProxyProtocol protocol = partitionService.getSystemPartitionGroup().newProtocol();
+    ProxyClient proxy = protocol.newProxy(
         "primitives",
-        ConsistentMapType.instance(),
+        AtomicMapType.instance(),
+        AtomicMapService.class,
         new ServiceConfig(),
         partitionService);
     return proxy.connect()
         .thenApply(v -> {
-          ConsistentMapProxy mapProxy = new ConsistentMapProxy(proxy, this);
-          primitives = new TranscodingAsyncConsistentMap<>(
+          AtomicMapProxy mapProxy = new AtomicMapProxy(proxy, this);
+          primitives = new TranscodingAsyncAtomicMap<>(
               mapProxy,
               key -> key,
               key -> key,
@@ -147,9 +138,8 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
 
   @Override
   public CompletableFuture<Void> stop() {
-    if (started.get()) {
-      primitives.close();
-      started.set(false);
+    if (started.compareAndSet(true, false)) {
+      return primitives.close().exceptionally(e -> null);
     }
     return CompletableFuture.completedFuture(null);
   }

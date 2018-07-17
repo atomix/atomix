@@ -25,6 +25,6 @@ import io.atomix.primitive.partition.PartitionGroupConfig;
 public class PartitionGroupDeserializer extends PolymorphicTypeDeserializer<PartitionGroupConfig> {
   @SuppressWarnings("unchecked")
   public PartitionGroupDeserializer(AtomixRegistry registry) {
-    super(PartitionGroup.class, type -> registry.partitionGroupTypes().getGroupType(type).newConfig().getClass());
+    super(PartitionGroup.class, type -> (Class<? extends PartitionGroupConfig<?>>) registry.getType(PartitionGroup.Type.class, type).newConfig().getClass());
   }
 }

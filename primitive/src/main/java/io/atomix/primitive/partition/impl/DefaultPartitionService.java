@@ -213,12 +213,18 @@ public class DefaultPartitionService implements ManagedPartitionService {
     Stream<CompletableFuture<Void>> groupStream = groups.values().stream().map(ManagedPartitionGroup::close);
     List<CompletableFuture<Void>> futures = Stream.concat(systemStream, groupStream).collect(Collectors.toList());
 
-    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]))
-        .thenCompose(v -> electionService != null ? electionService.stop() : CompletableFuture.completedFuture(null))
-        .thenCompose(v -> groupMembershipService.stop())
-        .thenRun(() -> {
-          LOGGER.info("Stopped");
-          started.set(false);
-        });
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).exceptionally(throwable -> {
+      LOGGER.error("Failed closing partition group(s)", throwable);
+      return null;
+    }).thenCompose(v -> electionService != null ? electionService.stop() : CompletableFuture.completedFuture(null)).exceptionally(throwable -> {
+      LOGGER.error("Failed stopping election service", throwable);
+      return null;
+    }).thenCompose(v -> groupMembershipService.stop()).exceptionally(throwable -> {
+      LOGGER.error("Failed stopping group membership service", throwable);
+      return null;
+    }).thenRun(() -> {
+      LOGGER.info("Stopped");
+      started.set(false);
+    });
   }
 }

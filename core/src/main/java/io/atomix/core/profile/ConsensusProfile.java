@@ -15,52 +15,81 @@
  */
 package io.atomix.core.profile;
 
-import io.atomix.cluster.MemberId;
+import com.google.common.collect.Sets;
 import io.atomix.core.AtomixConfig;
 import io.atomix.protocols.raft.partition.RaftPartitionGroupConfig;
 
-import java.util.stream.Collectors;
+import java.util.Collection;
 
 /**
  * Consensus profile.
  */
 public class ConsensusProfile implements Profile {
-  private static final String NAME = "consensus";
-  private static final String DATA_PATH = ".data";
-  private static final String SYSTEM_GROUP_NAME = "system";
-  private static final String GROUP_NAME = "raft";
-  private static final int PARTITION_SIZE = 3;
-  private static final int NUM_PARTITIONS = 7;
+  public static final Type TYPE = new Type();
+
+  /**
+   * Creates a new consensus profile builder.
+   *
+   * @return a new consensus profile builder
+   */
+  public static ConsensusProfileBuilder builder() {
+    return new ConsensusProfileBuilder();
+  }
+
+  /**
+   * Consensus profile type.
+   */
+  public static class Type implements Profile.Type<ConsensusProfileConfig> {
+    private static final String NAME = "consensus";
+
+    @Override
+    public String name() {
+      return NAME;
+    }
+
+    @Override
+    public ConsensusProfileConfig newConfig() {
+      return new ConsensusProfileConfig();
+    }
+
+    @Override
+    public Profile newProfile(ConsensusProfileConfig config) {
+      return new ConsensusProfile(config);
+    }
+  }
+
+  private final ConsensusProfileConfig config;
+
+  ConsensusProfile(String... members) {
+    this(Sets.newHashSet(members));
+  }
+
+  ConsensusProfile(Collection<String> members) {
+    this(new ConsensusProfileConfig().setMembers(Sets.newHashSet(members)));
+  }
+
+  ConsensusProfile(ConsensusProfileConfig config) {
+    this.config = config;
+  }
 
   @Override
-  public String name() {
-    return NAME;
+  public ConsensusProfileConfig config() {
+    return config;
   }
 
   @Override
   public void configure(AtomixConfig config) {
     config.setManagementGroup(new RaftPartitionGroupConfig()
-        .setName(SYSTEM_GROUP_NAME)
-        .setPartitionSize((int) config.getClusterConfig().getMembers()
-            .stream()
-            .filter(member -> member.getId().type() == MemberId.Type.IDENTIFIED)
-            .count())
+        .setName(this.config.getManagementGroup())
+        .setPartitionSize(this.config.getMembers().size())
         .setPartitions(1)
-        .setMembers(config.getClusterConfig().getMembers()
-            .stream()
-            .filter(member -> member.getId().type() == MemberId.Type.IDENTIFIED)
-            .map(node -> node.getId().id())
-            .collect(Collectors.toSet()))
-        .setDataDirectory(String.format("%s/%s", DATA_PATH, SYSTEM_GROUP_NAME)));
+        .setMembers(this.config.getMembers())
+        .setDataDirectory(String.format("%s/%s", this.config.getDataPath(), this.config.getManagementGroup())));
     config.addPartitionGroup(new RaftPartitionGroupConfig()
-        .setName(GROUP_NAME)
-        .setPartitionSize(PARTITION_SIZE)
-        .setPartitions(NUM_PARTITIONS)
-        .setMembers(config.getClusterConfig().getMembers()
-            .stream()
-            .filter(member -> member.getId().type() == MemberId.Type.IDENTIFIED)
-            .map(node -> node.getId().id())
-            .collect(Collectors.toSet()))
-        .setDataDirectory(String.format("%s/%s", DATA_PATH, GROUP_NAME)));
+        .setName(this.config.getDataGroup())
+        .setPartitionSize(this.config.getPartitionSize())
+        .setPartitions(this.config.getPartitions())
+        .setMembers(this.config.getMembers())
+        .setDataDirectory(String.format("%s/%s", this.config.getDataPath(), this.config.getDataGroup())));
   }
 }

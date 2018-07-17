@@ -16,12 +16,11 @@
 package io.atomix.core.election;
 
 import io.atomix.core.election.impl.DefaultLeaderElectorService;
-import io.atomix.core.election.impl.LeaderElectorProxyBuilder;
+import io.atomix.core.election.impl.DefaultLeaderElectorBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
-import io.atomix.utils.serializer.KryoNamespace;
 import io.atomix.utils.serializer.Namespace;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -51,8 +50,8 @@ public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<
 
   @Override
   public Namespace namespace() {
-    return KryoNamespace.builder()
-        .register((KryoNamespace) PrimitiveType.super.namespace())
+    return Namespace.builder()
+        .register(PrimitiveType.super.namespace())
         .register(Leadership.class)
         .register(Leader.class)
         .build();
@@ -70,7 +69,7 @@ public class LeaderElectorType<T> implements PrimitiveType<LeaderElectorBuilder<
 
   @Override
   public LeaderElectorBuilder<T> newBuilder(String name, LeaderElectorConfig config, PrimitiveManagementService managementService) {
-    return new LeaderElectorProxyBuilder<>(name, config, managementService);
+    return new DefaultLeaderElectorBuilder<>(name, config, managementService);
   }
 
   @Override

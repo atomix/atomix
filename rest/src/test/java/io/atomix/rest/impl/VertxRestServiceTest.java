@@ -17,7 +17,8 @@ package io.atomix.rest.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import io.atomix.cluster.Member;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
 import io.atomix.core.Atomix;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.rest.ManagedRestService;
@@ -41,12 +42,9 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -327,13 +325,14 @@ public class VertxRestServiceTest {
   @Test
   public void testMap() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
-    JsonNode json = jsonFactory.objectNode()
-        .put("type", "consistent-map")
-        .put("cache-enabled", true)
-        .put("null-values", false)
-        .set("protocol", jsonFactory.objectNode()
+    ObjectNode json = jsonFactory.objectNode()
+            .put("type", "atomic-map")
+            .put("null-values", false);
+    json.set("protocol", jsonFactory.objectNode()
             .put("type", "multi-primary")
             .put("backups", 2));
+    json.set("cache", jsonFactory.objectNode()
+            .put("enabled", true));
 
     given()
         .spec(specs.get(0))
@@ -420,17 +419,12 @@ public class VertxRestServiceTest {
   }
 
   protected Atomix buildAtomix(int memberId) {
-    Member localMember = Member.builder(String.valueOf(memberId))
-        .withAddress("localhost", findAvailablePort(BASE_PORT))
-        .build();
-
-    Collection<Member> members = Stream.concat(Stream.of(localMember), instances.stream().map(instance -> instance.getMembershipService().getLocalMember()))
-        .collect(Collectors.toList());
-
     return Atomix.builder()
-        .withClusterName("test")
-        .withLocalMember(localMember)
-        .withMembers(members)
+        .withClusterId("test")
+        .withMemberId(String.valueOf(memberId))
+        .withAddress(Address.from("localhost", findAvailablePort(BASE_PORT)))
+        .withMulticastEnabled()
+        .withMembershipProvider(new MulticastDiscoveryProvider())
         .withManagementGroup(PrimaryBackupPartitionGroup.builder("system")
             .withNumPartitions(1)
             .build())

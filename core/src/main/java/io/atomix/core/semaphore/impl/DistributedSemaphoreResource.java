@@ -48,7 +48,7 @@ public class DistributedSemaphoreResource implements PrimitiveResource {
   public void acquire(Integer permits, @Suspended AsyncResponse response) {
     semaphore.acquire(permits != null ? permits : 1).whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.ok(result.value()).build());
+        response.resume(Response.ok().build());
       } else {
         LOGGER.warn("An error occurred", error);
         response.resume(Response.serverError());
@@ -76,7 +76,7 @@ public class DistributedSemaphoreResource implements PrimitiveResource {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public void increase(Integer permits, @Suspended AsyncResponse response) {
-    semaphore.increase(permits != null ? permits : 1).whenComplete((result, error) -> {
+    semaphore.increasePermits(permits != null ? permits : 1).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -91,7 +91,7 @@ public class DistributedSemaphoreResource implements PrimitiveResource {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public void reduce(Integer permits, @Suspended AsyncResponse response) {
-    semaphore.reduce(permits != null ? permits : 1).whenComplete((result, error) -> {
+    semaphore.reducePermits(permits != null ? permits : 1).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {

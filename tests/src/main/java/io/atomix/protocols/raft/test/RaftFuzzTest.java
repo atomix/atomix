@@ -19,15 +19,14 @@ import com.google.common.collect.Maps;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
-import io.atomix.primitive.DistributedPrimitiveBuilder;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
-import io.atomix.primitive.proxy.PartitionProxy;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
@@ -35,6 +34,7 @@ import io.atomix.primitive.service.Commit;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftError;
@@ -75,7 +75,7 @@ import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.ResetRequest;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
+import io.atomix.protocols.raft.session.CommunicationStrategy;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
@@ -95,7 +95,7 @@ import io.atomix.utils.concurrent.Scheduler;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.net.Address;
-import io.atomix.utils.serializer.KryoNamespace;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
@@ -145,7 +145,7 @@ public class RaftFuzzTest implements Runnable {
     new RaftFuzzTest().run();
   }
 
-  private static final Serializer protocolSerializer = Serializer.using(KryoNamespace.builder()
+  private static final Serializer protocolSerializer = Serializer.using(Namespace.builder()
       .register(OpenSessionRequest.class)
       .register(OpenSessionResponse.class)
       .register(CloseSessionRequest.class)
@@ -200,14 +200,13 @@ public class RaftFuzzTest implements Runnable {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .register(SessionId.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
       .build());
 
-  private static final Serializer storageSerializer = Serializer.using(KryoNamespace.builder()
+  private static final Serializer storageSerializer = Serializer.using(Namespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -224,7 +223,6 @@ public class RaftFuzzTest implements Runnable {
       .register(HashSet.class)
       .register(DefaultRaftMember.class)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
@@ -232,7 +230,7 @@ public class RaftFuzzTest implements Runnable {
       .register(long[].class)
       .build());
 
-  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.builder()
+  private static final Serializer clientSerializer = Serializer.using(Namespace.builder()
       .register(ReadConsistency.class)
       .register(Maps.immutableEntry("", "").getClass())
       .build());
@@ -326,7 +324,7 @@ public class RaftFuzzTest implements Runnable {
     for (int i = 0; i < clients; i++) {
       ReadConsistency consistency = randomConsistency();
       RaftClient client = createClient();
-      PartitionProxy proxy = createProxy(client, consistency);
+      SessionClient proxy = createProxy(client, consistency);
       Scheduler scheduler = new SingleThreadContext("fuzz-test-" + i);
 
       final int clientId = i;
@@ -623,8 +621,8 @@ public class RaftFuzzTest implements Runnable {
   /**
    * Creates a test session.
    */
-  private PartitionProxy createProxy(RaftClient client, ReadConsistency consistency) {
-    return client.proxyBuilder("raft-fuzz-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
+  private SessionClient createProxy(RaftClient client, ReadConsistency consistency) {
+    return client.sessionBuilder("raft-fuzz-test", TestPrimitiveType.INSTANCE, new ServiceConfig())
         .withReadConsistency(consistency)
         .withCommunicationStrategy(COMMUNICATION_STRATEGY)
         .build()
@@ -651,7 +649,7 @@ public class RaftFuzzTest implements Runnable {
     }
 
     @Override
-    public DistributedPrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
+    public PrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
       throw new UnsupportedOperationException();
     }
 

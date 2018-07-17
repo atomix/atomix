@@ -18,7 +18,7 @@ package io.atomix.primitive.service;
 import io.atomix.primitive.event.PrimitiveEvent;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.PrimitiveOperation;
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.WallClockTimestamp;
 
@@ -47,13 +47,13 @@ public interface Commit<T> {
   /**
    * Returns the session that submitted the operation.
    * <p>
-   * The returned {@link PrimitiveSession} is representative of the session that submitted the operation
-   * that resulted in this {@link Commit}. The session can be used to {@link PrimitiveSession#publish(PrimitiveEvent)}
+   * The returned {@link Session} is representative of the session that submitted the operation
+   * that resulted in this {@link Commit}. The session can be used to {@link Session#publish(PrimitiveEvent)}
    * event messages to the client.
    *
    * @return The session that created the commit.
    */
-  PrimitiveSession session();
+  Session session();
 
   /**
    * Returns the logical time at which the operation was committed.

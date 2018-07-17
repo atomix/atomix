@@ -400,7 +400,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
 
         if (error == null) {
           if (response.status() == RaftResponse.Status.OK) {
-            log.info("Successfully joined via {}", member.getMember().memberId());
+            log.debug("Successfully joined via {}", member.getMember().memberId());
 
             Configuration configuration = new Configuration(response.index(), response.term(), response.timestamp(), response.members());
 
@@ -598,7 +598,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
           this.members.add(state.getMember());
           this.remoteMembers.add(state);
           membersMap.put(member.memberId(), state);
-          listeners.forEach(l -> l.onEvent(new RaftClusterEvent(RaftClusterEvent.Type.JOIN, defaultMember, time.toEpochMilli())));
+          listeners.forEach(l -> l.event(new RaftClusterEvent(RaftClusterEvent.Type.JOIN, defaultMember, time.toEpochMilli())));
         }
 
         // If the member type has changed, update the member type and reset its state.
@@ -640,7 +640,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
           memberType.remove(member);
         }
         membersMap.remove(member.getMember().memberId());
-        listeners.forEach(l -> l.onEvent(new RaftClusterEvent(RaftClusterEvent.Type.LEAVE, member.getMember(), time.toEpochMilli())));
+        listeners.forEach(l -> l.event(new RaftClusterEvent(RaftClusterEvent.Type.LEAVE, member.getMember(), time.toEpochMilli())));
       } else {
         i++;
       }

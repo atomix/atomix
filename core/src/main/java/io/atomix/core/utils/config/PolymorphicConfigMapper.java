@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -43,14 +44,14 @@ public class PolymorphicConfigMapper extends ConfigMapper {
     this(classLoader, registry, Collections.emptyList());
   }
 
-  public PolymorphicConfigMapper(ClassLoader classLoader, AtomixRegistry registry, PolymorphicTypeMapper... polymorphicTypeMappers) {
-    this(classLoader, registry, Arrays.asList(polymorphicTypeMappers));
+  public PolymorphicConfigMapper(ClassLoader classLoader, AtomixRegistry registry, PolymorphicTypeMapper... mappers) {
+    this(classLoader, registry, Arrays.asList(mappers));
   }
 
-  public PolymorphicConfigMapper(ClassLoader classLoader, AtomixRegistry registry, Collection<PolymorphicTypeMapper> polymorphicTypeMappers) {
+  public PolymorphicConfigMapper(ClassLoader classLoader, AtomixRegistry registry, Collection<PolymorphicTypeMapper> mappers) {
     super(classLoader);
     this.registry = checkNotNull(registry);
-    polymorphicTypeMappers.forEach(mapper -> this.polymorphicTypes.put(mapper.getTypedClass(), mapper));
+    mappers.forEach(mapper -> this.polymorphicTypes.put(mapper.getConfigClass(), mapper));
   }
 
   @Override
@@ -66,7 +67,7 @@ public class PolymorphicConfigMapper extends ConfigMapper {
       }
 
       String typeName = config.getString(typeMapper.getTypePath());
-      Class<? extends TypedConfig<?, ?>> concreteClass = typeMapper.getConcreteClass(registry, typeName);
+      Class<? extends TypedConfig<?>> concreteClass = typeMapper.getConcreteClass(registry, typeName);
       try {
         instance = (T) concreteClass.newInstance();
       } catch (InstantiationException | IllegalAccessException e) {
@@ -84,10 +85,13 @@ public class PolymorphicConfigMapper extends ConfigMapper {
 
   @Override
   protected void checkRemainingProperties(Set<String> propertyNames, String path, Class<?> clazz) {
+    Properties properties = System.getProperties();
     Set<String> cleanNames = propertyNames
         .stream()
         .filter(propertyName -> !isPolymorphicType(clazz) || !propertyName.equals(polymorphicTypes.get(clazz).getTypePath()))
         .map(propertyName -> toPath(path, propertyName))
+        .filter(propertyName -> !properties.containsKey(propertyName))
+        .filter(propertyName -> properties.entrySet().stream().noneMatch(entry -> entry.getKey().toString().startsWith(propertyName + ".")))
         .collect(Collectors.toSet());
     if (!cleanNames.isEmpty()) {
       throw new ConfigurationException("Unknown properties present in configuration: " + Joiner.on(", ").join(cleanNames));

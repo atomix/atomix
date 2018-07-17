@@ -15,15 +15,25 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.primitive.DistributedPrimitiveBuilder;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
+import io.atomix.primitive.protocol.ProxyProtocol;
 
 /**
  * Builder for AtomicCounterMap.
  */
 public abstract class AtomicCounterMapBuilder<K>
-    extends DistributedPrimitiveBuilder<AtomicCounterMapBuilder<K>, AtomicCounterMapConfig, AtomicCounterMap<K>> {
-  public AtomicCounterMapBuilder(String name, AtomicCounterMapConfig config, PrimitiveManagementService managementService) {
+    extends PrimitiveBuilder<AtomicCounterMapBuilder<K>, AtomicCounterMapConfig, AtomicCounterMap<K>>
+    implements ProxyCompatibleBuilder<AtomicCounterMapBuilder<K>> {
+
+  protected AtomicCounterMapBuilder(String name, AtomicCounterMapConfig config, PrimitiveManagementService managementService) {
     super(AtomicCounterMapType.instance(), name, config, managementService);
+  }
+
+  @Override
+  public AtomicCounterMapBuilder<K> withProtocol(ProxyProtocol protocol) {
+    return withProtocol((PrimitiveProtocol) protocol);
   }
 }

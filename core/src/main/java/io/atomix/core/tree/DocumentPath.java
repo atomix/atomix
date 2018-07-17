@@ -32,7 +32,7 @@ import java.util.Objects;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Unique key for nodes in the {@link DocumentTree}.
+ * Unique key for nodes in the {@link AtomicDocumentTree}.
  */
 public class DocumentPath implements Comparable<DocumentPath> {
 

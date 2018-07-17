@@ -16,7 +16,7 @@
 package io.atomix.core.tree.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.core.tree.AsyncDocumentTree;
+import io.atomix.core.tree.AsyncAtomicDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
@@ -50,9 +50,9 @@ import java.util.stream.Collectors;
 public class DocumentTreeResource implements PrimitiveResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(DocumentTreeResource.class);
 
-  private final AsyncDocumentTree<String> tree;
+  private final AsyncAtomicDocumentTree<String> tree;
 
-  public DocumentTreeResource(AsyncDocumentTree<String> tree) {
+  public DocumentTreeResource(AsyncAtomicDocumentTree<String> tree) {
     this.tree = tree;
   }
 

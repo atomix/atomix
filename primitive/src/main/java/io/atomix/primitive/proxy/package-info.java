@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides interfaces for operating on distributed primitive services.
+ * Provides interfaces for operating on primitive services via Java proxies.
  */
 package io.atomix.primitive.proxy;

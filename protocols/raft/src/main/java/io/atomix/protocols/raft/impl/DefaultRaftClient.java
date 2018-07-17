@@ -18,19 +18,19 @@ package io.atomix.protocols.raft.impl;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
+import io.atomix.primitive.session.SessionClient;
+import io.atomix.primitive.session.impl.BlockingAwareSessionClient;
+import io.atomix.primitive.session.impl.RecoveringSessionClient;
+import io.atomix.primitive.session.impl.RetryingSessionClient;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.impl.BlockingAwarePartitionProxy;
-import io.atomix.primitive.proxy.impl.RecoveringPartitionProxy;
-import io.atomix.primitive.proxy.impl.RetryingPartitionProxy;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
-import io.atomix.protocols.raft.proxy.RaftProxy;
-import io.atomix.protocols.raft.proxy.impl.DefaultRaftProxy;
-import io.atomix.protocols.raft.proxy.impl.MemberSelectorManager;
-import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
+import io.atomix.protocols.raft.session.RaftSessionClient;
+import io.atomix.protocols.raft.session.impl.DefaultRaftSessionClient;
+import io.atomix.protocols.raft.session.impl.MemberSelectorManager;
+import io.atomix.protocols.raft.session.impl.RaftSessionManager;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
@@ -39,7 +39,6 @@ import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -57,7 +56,7 @@ public class DefaultRaftClient implements RaftClient {
   private final ThreadContext threadContext;
   private final RaftMetadataClient metadata;
   private final MemberSelectorManager selectorManager = new MemberSelectorManager();
-  private final RaftProxyManager sessionManager;
+  private final RaftSessionManager sessionManager;
 
   public DefaultRaftClient(
       String clientId,
@@ -73,7 +72,7 @@ public class DefaultRaftClient implements RaftClient {
     this.threadContextFactory = checkNotNull(threadContextFactory, "threadContextFactory cannot be null");
     this.threadContext = threadContextFactory.createContext();
     this.metadata = new DefaultRaftMetadataClient(clientId, protocol, selectorManager, threadContextFactory.createContext());
-    this.sessionManager = new RaftProxyManager(clientId, memberId, protocol, selectorManager, threadContextFactory);
+    this.sessionManager = new RaftSessionManager(clientId, memberId, protocol, selectorManager, threadContextFactory);
   }
 
   @Override
@@ -125,52 +124,52 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public RaftProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
-    return new RaftProxy.Builder() {
+  public RaftSessionClient.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
+    return new RaftSessionClient.Builder() {
       @Override
-      public PartitionProxy build() {
+      public SessionClient build() {
         // Create a proxy builder that uses the session manager to open a session.
-        Supplier<PartitionProxy> proxyFactory = () -> new DefaultRaftProxy(
-            primitiveName,
-            primitiveType,
-            serviceConfig,
-            partitionId,
-            DefaultRaftClient.this.protocol,
-            selectorManager,
-            sessionManager,
-            readConsistency,
-            communicationStrategy,
-            threadContextFactory.createContext(),
-            minTimeout,
-            maxTimeout);
+        Supplier<CompletableFuture<SessionClient>> proxyFactory = () -> CompletableFuture.completedFuture(
+            new DefaultRaftSessionClient(
+                primitiveName,
+                primitiveType,
+                serviceConfig,
+                partitionId,
+                DefaultRaftClient.this.protocol,
+                selectorManager,
+                sessionManager,
+                readConsistency,
+                communicationStrategy,
+                threadContextFactory.createContext(),
+                minTimeout,
+                maxTimeout));
 
-        PartitionProxy proxy;
+        SessionClient proxy;
+
+        ThreadContext context = threadContextFactory.createContext();
 
         // If the recovery strategy is set to RECOVER, wrap the builder in a recovering proxy client.
         if (recoveryStrategy == Recovery.RECOVER) {
-          proxy = new RecoveringPartitionProxy(
+          proxy = new RecoveringSessionClient(
               clientId,
               partitionId,
               primitiveName,
               primitiveType,
               proxyFactory,
-              threadContextFactory.createContext());
+              context);
         } else {
-          proxy = proxyFactory.get();
+          proxy = proxyFactory.get().join();
         }
 
         // If max retries is set, wrap the client in a retrying proxy client.
         if (maxRetries > 0) {
-          proxy = new RetryingPartitionProxy(
+          proxy = new RetryingSessionClient(
               proxy,
-              threadContextFactory.createContext(),
+              context,
               maxRetries,
               retryDelay);
         }
-
-        // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
-        Executor executor = this.executor != null ? this.executor : threadContextFactory.createContext();
-        return new BlockingAwarePartitionProxy(proxy, executor);
+        return new BlockingAwareSessionClient(proxy, context);
       }
     };
   }

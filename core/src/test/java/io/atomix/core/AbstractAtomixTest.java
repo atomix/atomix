@@ -15,8 +15,11 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.Member;
+import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
+import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
+import io.atomix.cluster.Node;
 import io.atomix.core.profile.Profile;
+import io.atomix.utils.net.Address;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -29,9 +32,8 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Properties;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -49,57 +51,62 @@ public abstract class AbstractAtomixTest {
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix.Builder buildAtomix(int id, List<Integer> members) {
-    return buildAtomix(id, members, Collections.emptyMap());
+  protected static AtomixBuilder buildAtomix(int id, Properties properties) {
+    return Atomix.builder()
+        .withClusterId("test")
+        .withMemberId(String.valueOf(id))
+        .withAddress("localhost", BASE_PORT + id)
+        .withProperties(properties)
+        .withMulticastEnabled()
+        .withMembershipProvider(new MulticastDiscoveryProvider());
   }
 
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix.Builder buildAtomix(int id, List<Integer> memberIds, Map<String, String> metadata) {
-    Member localMember = Member.builder(String.valueOf(id))
-        .withAddress("localhost", BASE_PORT + id)
-        .withMetadata(metadata)
-        .build();
-
-    Collection<Member> members = memberIds.stream()
-        .map(memberId -> Member.builder(String.valueOf(memberId))
-            .withAddress("localhost", BASE_PORT + memberId)
+  protected static AtomixBuilder buildAtomix(int id, List<Integer> memberIds, Properties properties) {
+    Collection<Node> nodes = memberIds.stream()
+        .map(memberId -> Node.builder()
+            .withId(String.valueOf(id))
+            .withAddress(Address.from("localhost", BASE_PORT + memberId))
             .build())
         .collect(Collectors.toList());
 
     return Atomix.builder()
-        .withClusterName("test")
-        .withLocalMember(localMember)
-        .withMembers(members);
+        .withClusterId("test")
+        .withMemberId(String.valueOf(id))
+        .withAddress("localhost", BASE_PORT + id)
+        .withProperties(properties)
+        .withMulticastEnabled()
+        .withMembershipProvider(!nodes.isEmpty() ? new BootstrapDiscoveryProvider(nodes) : new MulticastDiscoveryProvider());
   }
 
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix createAtomix(int id, List<Integer> persistentIds, Profile... profiles) {
-    return createAtomix(id, persistentIds, Collections.emptyMap(), profiles);
+  protected static Atomix createAtomix(int id, List<Integer> bootstrapIds, Profile... profiles) {
+    return createAtomix(id, bootstrapIds, new Properties(), profiles);
   }
 
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix createAtomix(int id, List<Integer> persistentIds, Map<String, String> metadata, Profile... profiles) {
-    return createAtomix(id, persistentIds, metadata, b -> b.withProfiles(profiles).build());
+  protected static Atomix createAtomix(int id, List<Integer> bootstrapIds, Properties properties, Profile... profiles) {
+    return createAtomix(id, bootstrapIds, properties, b -> b.withProfiles(profiles).build());
   }
 
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix createAtomix(int id, List<Integer> persistentIds, Function<Atomix.Builder, Atomix> builderFunction) {
-    return createAtomix(id, persistentIds, Collections.emptyMap(), builderFunction);
+  protected static Atomix createAtomix(int id, List<Integer> bootstrapIds, Function<AtomixBuilder, Atomix> builderFunction) {
+    return createAtomix(id, bootstrapIds, new Properties(), builderFunction);
   }
 
   /**
    * Creates an Atomix instance.
    */
-  protected static Atomix createAtomix(int id, List<Integer> persistentIds, Map<String, String> metadata, Function<Atomix.Builder, Atomix> builderFunction) {
-    return builderFunction.apply(buildAtomix(id, persistentIds, metadata));
+  protected static Atomix createAtomix(int id, List<Integer> bootstrapIds, Properties properties, Function<AtomixBuilder, Atomix> builderFunction) {
+    return builderFunction.apply(buildAtomix(id, bootstrapIds, properties));
   }
 
   @AfterClass

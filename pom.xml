@@ -24,7 +24,7 @@
 
   <groupId>io.atomix</groupId>
   <artifactId>atomix-parent</artifactId>
-  <version>2.1.0-SNAPSHOT</version>
+  <version>3.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Atomix Parent Pom</name>
   <description>Distributed systems framework.</description>
@@ -52,10 +52,10 @@
     <kryo.version>4.0.2</kryo.version>
     <commons.lang3.version>3.7</commons.lang3.version>
     <commons.math3.version>3.6.1</commons.math3.version>
-    <netty.version>4.1.24.Final</netty.version>
+    <netty.version>4.1.27.Final</netty.version>
     <vertx.version>3.5.0</vertx.version>
     <jaxrs.version>2.0</jaxrs.version>
-    <jackson.version>2.9.5</jackson.version>
+    <jackson.version>2.9.6</jackson.version>
     <config.version>1.3.2</config.version>
     <fast-classpath-scanner.version>2.21</fast-classpath-scanner.version>
     <resteasy.version>3.1.4.Final</resteasy.version>
@@ -64,17 +64,48 @@
 
     <!-- Maven plugins -->
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
-    <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
-    <maven.failsafe.plugin.version>2.14</maven.failsafe.plugin.version>
-    <maven.surefire.plugin.version>2.14</maven.surefire.plugin.version>
+    <maven.compiler.plugin.version>3.7.0</maven.compiler.plugin.version>
+    <maven.failsafe.plugin.version>2.21.0</maven.failsafe.plugin.version>
+    <maven.surefire.plugin.version>2.21.0</maven.surefire.plugin.version>
     <maven.clean.plugin.version>2.5</maven.clean.plugin.version>
     <maven.resources.plugin.version>2.6</maven.resources.plugin.version>
     <maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>
     <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
-    <maven.javadoc.plugin.version>2.10.1</maven.javadoc.plugin.version>
+    <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
     <maven.bundle.plugin.version>2.5.3</maven.bundle.plugin.version>
     <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
+
+    <argLine.common>-Xss256k -Xms2G -Xmx4G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.scanSpec=io.atomix</argLine.common>
+    <argLine.extras /> <!-- Overridden in some profiles -->
   </properties>
+
+  <profiles>
+    <!-- JDK9+ -->
+    <profile>
+      <id>java9</id>
+      <properties>
+        <argLine.common>-Xss256k -Xms2G -Xmx4G -Dio.atomix.scanSpec=io.atomix</argLine.common>
+        <argLine.extras>--add-modules jdk.unsupported --add-opens=java.base/java.nio=ALL-UNNAMED</argLine.extras>
+        <!-- coverall version 4.3.0 does not work with java 9, see https://github.com/trautonen/coveralls-maven-plugin/issues/112 -->
+        <coveralls.skip>true</coveralls.skip>
+      </properties>
+      <activation>
+        <jdk>[1.9,)</jdk>
+      </activation>
+    </profile>
+    <!-- JDK11+ -->
+    <profile>
+        <id>java11</id>
+        <properties>
+          <!--argLine.common>-Xss256k -Xms2G -Xmx4G -XX:+UseShenandoahGC -XX:+UseStringDeduplication -XX:-OmitStackTraceInFastThrow -Dio.atomix.scanSpec=io.atomix</argLine.common-->
+          <!-- jacoco version 0.8.1 does not work with java 11, see https://github.com/jacoco/jacoco/issues/663 -->
+          <jacoco.skip>true</jacoco.skip>
+        </properties>
+        <activation>
+            <jdk>[11,)</jdk>
+        </activation>
+    </profile>
+  </profiles>
 
   <licenses>
     <license>
@@ -183,7 +214,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven.surefire.plugin.version}</version>
         <configuration>
-          <argLine>-Xms4G -Xmx4G -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode</argLine>
+          <skipTests>${env.SKIP_TESTS}</skipTests>
+          <shutdown>kill</shutdown>
+          <argLine>${argLine} ${argLine.extras} ${argLine.common}</argLine>
         </configuration>
       </plugin>
 
@@ -227,7 +260,7 @@
           <execution>
             <id>attach-javadocs</id>
             <goals>
-              <goal>jar</goal>
+              <goal>aggregate-jar</goal>
             </goals>
           </execution>
         </executions>
@@ -235,23 +268,51 @@
           <show>public</show>
           <doctitle>Atomix API Reference (${jv})</doctitle>
           <windowtitle>Atomix API Reference (${jv})</windowtitle>
-          <aggregate>true</aggregate>
+          <groups>
+            <group>
+              <title>Core</title>
+              <packages>io.atomix.core*</packages>
+            </group>
+            <group>
+              <title>Primitives</title>
+              <packages>io.atomix.core.barrier:io.atomix.core.collection:io.atomix.core.counter:io.atomix.core.idgenerator:io.atomix.core.election:io.atomix.core.iterator:io.atomix.core.list:io.atomix.core.lock:io.atomix.core.map:io.atomix.core.multimap:io.atomix.core.multiset:io.atomix.core.queue:io.atomix.core.semaphore:io.atomix.core.set:io.atomix.core.transaction:io.atomix.core.tree:io.atomix.core.value:io.atomix.core.workqueue</packages>
+            </group>
+            <group>
+              <title>Cluster Management</title>
+              <packages>io.atomix.cluster*:io.atomix.cluster.discovery*:io.atomix.cluster.messaging*</packages>
+            </group>
+            <group>
+              <title>Primitive API</title>
+              <packages>io.atomix.primitive:io.atomix.primitive.config:io.atomix.primitive.event:io.atomix.primitive.operation:io.atomix.primitive.proxy:io.atomix.primitive.resource:io.atomix.primitive.service:io.atomix.primitive.session</packages>
+            </group>
+            <group>
+              <title>Protocol API</title>
+              <packages>io.atomix.primitive.protocol*</packages>
+            </group>
+            <group>
+              <title>Raft Protocol</title>
+              <packages>io.atomix.protocols.raft*</packages>
+            </group>
+            <group>
+              <title>Primary-Backup Protocol</title>
+              <packages>io.atomix.protocols.backup*</packages>
+            </group>
+            <group>
+              <title>Gossip Protocol</title>
+              <packages>io.atomix.protocols.gossip*</packages>
+            </group>
+            <group>
+              <title>Storage</title>
+              <packages>io.atomix.storage*</packages>
+            </group>
+            <group>
+              <title>Utilities</title>
+              <packages>io.atomix.utils*</packages>
+            </group>
+          </groups>
           <stylesheetfile>${basedir}/docs/style.css</stylesheetfile>
           <excludePackageNames>*.impl*:io.atomix.core.config.jackson:io.atomix.core.utils:io.atomix.rest*:io.atomix.agent*:io.atomix.storage.buffer:io.atomix.storage.journal*:io.atomix.storage.statistics:io.atomix.protocols.raft.utils:io.atomix.utils.serializer.serializers:io.atomix.utils.concurrent:io.atomix.utils.logging:io.atomix.utils.misc:io.atomix.utils.memory:io.atomix.protocols.raft.roles:io.atomix.protocols.raft.protocol:io.atomix.protocols.raft.storage:io.atomix.protocols.raft.cluster:io.atomix.protocols.raft.test:io.atomix.protocols.backup.roles:io.atomix.protocols.backup.protocol
           </excludePackageNames>
-          <additionalparam>
-            -Xdoclint:none
-            -notimestamp
-            -link http://docs.oracle.com/javase/8/docs/api/
-            -group "Core" io.atomix.core*
-            -group "Primitives" io.atomix.core.counter:io.atomix.core.election:io.atomix.core.generator:io.atomix.core.lock:io.atomix.core.map:io.atomix.core.multimap:io.atomix.core.queue:io.atomix.core.set:io.atomix.core.transaction:io.atomix.core.tree:io.atomix.core.value
-            -group "Cluster Management" io.atomix.cluster*:io.atomix.messaging*:io.atomix.cluster.messaging*
-            -group "Primitive API" io.atomix.primitive*
-            -group "Raft Protocol" io.atomix.protocols.raft*
-            -group "Primary-Backup Protocol" io.atomix.protocols.backup*
-            -group "Storage" io.atomix.storage*
-            -group "Utilities" io.atomix.utils*
-          </additionalparam>
         </configuration>
       </plugin>
 
@@ -279,6 +340,11 @@
         <groupId>org.eluder.coveralls</groupId>
         <artifactId>coveralls-maven-plugin</artifactId>
         <version>4.3.0</version>
+        <configuration>
+          <repoToken>${env.repoToken}</repoToken>
+          <serviceBuildUrl>${env.CI_BUILD_URL}</serviceBuildUrl>
+          <branch>${env.CI_BRANCH}</branch>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>

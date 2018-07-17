@@ -15,8 +15,10 @@
  */
 package io.atomix.agent;
 
-import io.atomix.cluster.MemberConfig;
 import io.atomix.cluster.MemberId;
+import io.atomix.cluster.NodeConfig;
+import io.atomix.cluster.discovery.BootstrapDiscoveryConfig;
+import io.atomix.cluster.discovery.MulticastDiscoveryConfig;
 import io.atomix.core.Atomix;
 import io.atomix.core.AtomixConfig;
 import io.atomix.rest.ManagedRestService;
@@ -42,7 +44,7 @@ public class AtomixAgent {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixAgent.class);
 
   public static void main(String[] args) throws Exception {
-    ArgumentType<MemberConfig> memberArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> new MemberConfig()
+    ArgumentType<NodeConfig> nodeArgumentType = (ArgumentParser argumentParser, Argument argument, String value) -> new NodeConfig()
         .setId(parseMemberId(value))
         .setAddress(parseAddress(value));
 
@@ -51,33 +53,55 @@ public class AtomixAgent {
     ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
         .defaultHelp(true)
         .description("Atomix server");
-    parser.addArgument("member")
+    parser.addArgument("--member", "-m")
         .type(String.class)
         .nargs("?")
-        .metavar("NAME@HOST:PORT")
         .required(false)
-        .help("The member info for the local member. This should be in the format [NAME@]HOST[:PORT]. " +
-            "If no name is provided, the member name will default to the host. " +
-            "If no port is provided, the port will default to 5679.");
+        .help("The local member identifier, used in intra-cluster communication.");
+    parser.addArgument("--address", "-a")
+        .type(addressArgumentType)
+        .metavar("HOST:PORT")
+        .nargs("?")
+        .required(false)
+        .help("The address for the local member. If no address is specified, the first public interface will be used.");
+    parser.addArgument("--host")
+        .type(String.class)
+        .nargs("?")
+        .required(false)
+        .help("The host on which this member runs, used for host-aware partition management.");
+    parser.addArgument("--rack")
+        .type(String.class)
+        .nargs("?")
+        .required(false)
+        .help("The rack on which this member runs, used for rack-aware partition management.");
+    parser.addArgument("--zone")
+        .type(String.class)
+        .nargs("?")
+        .required(false)
+        .help("The zone in which this member runs, used for zone-aware partition management.");
     parser.addArgument("--config", "-c")
         .metavar("FILE|JSON|YAML")
         .required(false)
         .help("The Atomix configuration. Can be specified as a file path or JSON/YAML string.");
     parser.addArgument("--bootstrap", "-b")
         .nargs("*")
-        .type(memberArgumentType)
+        .type(nodeArgumentType)
         .metavar("NAME@HOST:PORT")
         .required(false)
         .help("The set of core members, if any. When bootstrapping a new cluster, if the local member is a core member " +
             "then it should be present in the core configuration as well.");
-    parser.addArgument("--multicast", "-m")
+    parser.addArgument("--multicast")
         .action(new StoreTrueArgumentAction())
         .setDefault(false)
         .help("Enables multicast discovery. Note that the network must support multicast for this feature to work.");
-    parser.addArgument("--multicast-address", "-a")
-        .type(addressArgumentType)
-        .metavar("HOST:PORT")
-        .help("Sets the multicast discovery address. Defaults to 230.0.0.1:54321");
+    parser.addArgument("--multicast-group")
+        .type(String.class)
+        .metavar("IP")
+        .help("Sets the multicast group. Defaults to 230.0.0.1");
+    parser.addArgument("--multicast-port")
+        .type(Integer.class)
+        .metavar("PORT")
+        .help("Sets the multicast port. Defaults to 54321");
     parser.addArgument("--http-port", "-p")
         .type(Integer.class)
         .metavar("PORT")
@@ -94,10 +118,15 @@ public class AtomixAgent {
     }
 
     final String configString = namespace.get("config");
-    final String localMemberInfo = namespace.get("member");
-    final List<MemberConfig> bootstrapMembers = namespace.getList("bootstrap");
+    final String memberId = namespace.getString("member");
+    final Address address = namespace.get("address");
+    final String host = namespace.getString("host");
+    final String rack = namespace.getString("rack");
+    final String zone = namespace.getString("zone");
+    final List<NodeConfig> bootstrap = namespace.getList("bootstrap");
     final boolean multicastEnabled = namespace.getBoolean("multicast");
-    final Address multicastAddress = namespace.get("multicast_address");
+    final String multicastGroup = namespace.get("multicast_group");
+    final Integer multicastPort = namespace.get("multicast_port");
     final Integer httpPort = namespace.getInt("http_port");
 
     // If a configuration was provided, merge the configuration's member information with the provided command line arguments.
@@ -108,54 +137,39 @@ public class AtomixAgent {
       config = Atomix.config();
     }
 
-    // If the local member info is specified, attempt to look up the member in the members list.
-    // Otherwise, create a new member.
-    MemberConfig localMember = null;
-    if (localMemberInfo != null) {
-      MemberId localMemberId = parseMemberId(localMemberInfo);
-      if (localMemberId != null) {
-        localMember = config.getClusterConfig().getMembers().stream()
-            .filter(member -> member.getId().equals(localMemberId))
-            .findFirst()
-            .orElse(null);
-        if (localMember == null && bootstrapMembers != null) {
-          localMember = bootstrapMembers.stream()
-              .filter(member -> member.getId().equals(localMemberId))
-              .findFirst()
-              .orElse(null);
-        }
-      } else {
-        Address localMemberAddress = parseAddress(localMemberInfo);
-        localMember = config.getClusterConfig().getMembers().stream()
-            .filter(member -> member.getAddress().equals(localMemberAddress))
-            .findFirst()
-            .orElse(null);
-        if (localMember == null && bootstrapMembers != null) {
-          localMember = bootstrapMembers.stream()
-              .filter(member -> member.getAddress().equals(localMemberAddress))
-              .findFirst()
-              .orElse(null);
-        }
-      }
-
-      if (localMember == null) {
-        localMember = new MemberConfig()
-            .setId(parseMemberId(localMemberInfo))
-            .setAddress(parseAddress(localMemberInfo));
-      }
+    if (memberId != null) {
+      config.getClusterConfig().getNodeConfig().setId(memberId);
     }
 
-    if (localMember != null) {
-      config.getClusterConfig().setLocalMember(localMember);
+    if (address != null) {
+      config.getClusterConfig().getNodeConfig().setAddress(address);
     }
 
-    if (bootstrapMembers != null) {
-      config.getClusterConfig().setMembers(bootstrapMembers);
+    if (host != null) {
+      config.getClusterConfig().getNodeConfig().setHost(host);
+    }
+    if (rack != null) {
+      config.getClusterConfig().getNodeConfig().setRack(rack);
+    }
+    if (zone != null) {
+      config.getClusterConfig().getNodeConfig().setZone(zone);
+    }
+
+    if (bootstrap != null && !bootstrap.isEmpty()) {
+      config.getClusterConfig().setDiscoveryConfig(new BootstrapDiscoveryConfig().setNodes(bootstrap));
     }
 
     if (multicastEnabled) {
-      config.getClusterConfig().setMulticastEnabled(true);
-      config.getClusterConfig().setMulticastAddress(multicastAddress);
+      config.getClusterConfig().getMulticastConfig().setEnabled(true);
+      if (multicastGroup != null) {
+        config.getClusterConfig().getMulticastConfig().setGroup(multicastGroup);
+      }
+      if (multicastPort != null) {
+        config.getClusterConfig().getMulticastConfig().setPort(multicastPort);
+      }
+      if (bootstrap == null || bootstrap.isEmpty()) {
+        config.getClusterConfig().setDiscoveryConfig(new MulticastDiscoveryConfig());
+      }
     }
 
     Atomix atomix = Atomix.builder(config).withShutdownHookEnabled().build();

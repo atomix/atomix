@@ -27,6 +27,7 @@ import com.typesafe.config.ConfigValue;
 import io.atomix.utils.Named;
 import io.atomix.utils.memory.MemorySize;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -40,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,6 +54,27 @@ public class ConfigMapper {
 
   public ConfigMapper(ClassLoader classLoader) {
     this.classLoader = classLoader;
+  }
+
+  /**
+   * Loads the given configuration file using the mapper, falling back to the given resources.
+   *
+   * @param type      the type to load
+   * @param file      the file to load
+   * @param resources the resources to which to fall back
+   * @param <T>       the resulting type
+   * @return the loaded configuration
+   */
+  public <T> T loadFile(Class<T> type, File file, String... resources) {
+    if (file == null) {
+      return loadResources(type, resources);
+    }
+
+    Config config = ConfigFactory.parseFile(file);
+    for (String resource : resources) {
+      config = config.withFallback(ConfigFactory.load(classLoader, resource));
+    }
+    return map(config, type);
   }
 
   /**
@@ -95,8 +118,8 @@ public class ConfigMapper {
   /**
    * Applies the given configuration to the given type.
    *
-   * @param config     the configuration to apply
-   * @param clazz      the class to which to apply the configuration
+   * @param config the configuration to apply
+   * @param clazz  the class to which to apply the configuration
    */
   @SuppressWarnings("unchecked")
   protected <T> T map(Config config, String path, String name, Class<T> clazz) {
@@ -122,16 +145,19 @@ public class ConfigMapper {
     mapFields(instance, clazz, path, name, propertyNames, config);
 
     // If any properties present in the configuration were not found on config beans, throw an exception.
-    if (path != null && !propertyNames.isEmpty()) {
+    if (!propertyNames.isEmpty()) {
       checkRemainingProperties(propertyNames.keySet(), toPath(path, name), clazz);
     }
     return instance;
   }
 
   protected void checkRemainingProperties(Set<String> propertyNames, String path, Class<?> clazz) {
+    Properties properties = System.getProperties();
     Set<String> cleanNames = propertyNames
         .stream()
         .map(propertyName -> toPath(path, propertyName))
+        .filter(propertyName -> !properties.containsKey(propertyName))
+        .filter(propertyName -> properties.entrySet().stream().noneMatch(entry -> entry.getKey().toString().startsWith(propertyName + ".")))
         .collect(Collectors.toSet());
     if (!cleanNames.isEmpty()) {
       throw new ConfigurationException("Unknown properties present in configuration: " + Joiner.on(", ").join(cleanNames));
@@ -233,8 +259,9 @@ public class ConfigMapper {
         throw new ConfigurationException("Failed to load class: " + className);
       }
     } else if (parameterClass.isEnum()) {
+      String value = config.getString(configPropName);
       @SuppressWarnings("unchecked")
-      Enum enumValue = config.getEnum((Class<Enum>) parameterClass, configPropName);
+      Enum enumValue = Enum.valueOf((Class<Enum>) parameterClass, value.replace("-", "_").toUpperCase());
       return enumValue;
     } else {
       return map(config.getConfig(configPropName), configPath, configPropName, parameterClass);

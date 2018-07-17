@@ -27,14 +27,14 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -80,7 +80,7 @@ public class AtomixTest extends AbstractAtomixTest {
   /**
    * Creates and starts a new test Atomix instance.
    */
-  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Function<Atomix.Builder, Atomix> builderFunction) {
+  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Function<AtomixBuilder, Atomix> builderFunction) {
     Atomix atomix = createAtomix(id, persistentIds, builderFunction);
     instances.add(atomix);
     return atomix.start().thenApply(v -> atomix);
@@ -89,8 +89,8 @@ public class AtomixTest extends AbstractAtomixTest {
   /**
    * Creates and starts a new test Atomix instance.
    */
-  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Map<String, String> metadata, Profile... profiles) {
-    Atomix atomix = createAtomix(id, persistentIds, metadata, builder -> builder.withProfiles(profiles).build());
+  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Properties properties, Profile... profiles) {
+    Atomix atomix = createAtomix(id, persistentIds, properties, builder -> builder.withProfiles(profiles).build());
     instances.add(atomix);
     return atomix.start().thenApply(v -> atomix);
   }
@@ -98,8 +98,8 @@ public class AtomixTest extends AbstractAtomixTest {
   /**
    * Creates and starts a new test Atomix instance.
    */
-  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Map<String, String> metadata, Function<Atomix.Builder, Atomix> builderFunction) {
-    Atomix atomix = createAtomix(id, persistentIds, metadata, builderFunction);
+  protected CompletableFuture<Atomix> startAtomix(int id, List<Integer> persistentIds, Properties properties, Function<AtomixBuilder, Atomix> builderFunction) {
+    Atomix atomix = createAtomix(id, persistentIds, properties, builderFunction);
     instances.add(atomix);
     return atomix.start().thenApply(v -> atomix);
   }
@@ -109,9 +109,9 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testScaleUpPersistent() throws Exception {
-    Atomix atomix1 = startAtomix(1, Arrays.asList(1), Profile.CONSENSUS).get(30, TimeUnit.SECONDS);
-    Atomix atomix2 = startAtomix(2, Arrays.asList(1, 2), Profile.CLIENT).get(30, TimeUnit.SECONDS);
-    Atomix atomix3 = startAtomix(3, Arrays.asList(1, 2, 3), Profile.CLIENT).get(30, TimeUnit.SECONDS);
+    Atomix atomix1 = startAtomix(1, Arrays.asList(1), Profile.consensus("1")).get(30, TimeUnit.SECONDS);
+    Atomix atomix2 = startAtomix(2, Arrays.asList(1, 2), Profile.client()).get(30, TimeUnit.SECONDS);
+    Atomix atomix3 = startAtomix(3, Arrays.asList(1, 2, 3), Profile.client()).get(30, TimeUnit.SECONDS);
   }
 
   /**
@@ -120,9 +120,9 @@ public class AtomixTest extends AbstractAtomixTest {
   @Test
   public void testBootstrapDataGrid() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>(3);
-    futures.add(startAtomix(1, Arrays.asList(), Profile.DATA_GRID));
-    futures.add(startAtomix(2, Arrays.asList(1), Profile.DATA_GRID));
-    futures.add(startAtomix(3, Arrays.asList(1), Profile.DATA_GRID));
+    futures.add(startAtomix(1, Arrays.asList(2), Profile.dataGrid()));
+    futures.add(startAtomix(2, Arrays.asList(1), Profile.dataGrid()));
+    futures.add(startAtomix(3, Arrays.asList(1), Profile.dataGrid()));
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
   }
 
@@ -131,34 +131,34 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testScaleUpEphemeral() throws Exception {
-    Atomix atomix1 = startAtomix(1, Arrays.asList(), Profile.DATA_GRID).get(30, TimeUnit.SECONDS);
-    Atomix atomix2 = startAtomix(2, Arrays.asList(1), Profile.DATA_GRID).get(30, TimeUnit.SECONDS);
-    Atomix atomix3 = startAtomix(3, Arrays.asList(1), Profile.DATA_GRID).get(30, TimeUnit.SECONDS);
+    Atomix atomix1 = startAtomix(1, Arrays.asList(2), Profile.dataGrid()).get(30, TimeUnit.SECONDS);
+    Atomix atomix2 = startAtomix(2, Arrays.asList(1), Profile.dataGrid()).get(30, TimeUnit.SECONDS);
+    Atomix atomix3 = startAtomix(3, Arrays.asList(1), Profile.dataGrid()).get(30, TimeUnit.SECONDS);
   }
 
   @Test
   public void testDiscoverData() throws Exception {
     Address multicastAddress = Address.from("230.0.0.1", findAvailablePort(1234));
     Atomix atomix1 = startAtomix(1, Arrays.asList(), builder ->
-        builder.withProfiles(Profile.DATA_GRID)
+        builder.withProfiles(Profile.dataGrid())
             .withMulticastEnabled()
             .withMulticastAddress(multicastAddress)
             .build())
         .get(30, TimeUnit.SECONDS);
     Atomix atomix2 = startAtomix(2, Arrays.asList(), builder ->
-        builder.withProfiles(Profile.DATA_GRID)
+        builder.withProfiles(Profile.dataGrid())
             .withMulticastEnabled()
             .withMulticastAddress(multicastAddress)
             .build())
         .get(30, TimeUnit.SECONDS);
     Atomix atomix3 = startAtomix(3, Arrays.asList(), builder ->
-        builder.withProfiles(Profile.DATA_GRID)
+        builder.withProfiles(Profile.dataGrid())
             .withMulticastEnabled()
             .withMulticastAddress(multicastAddress)
             .build())
         .get(30, TimeUnit.SECONDS);
 
-    Thread.sleep(1000);
+    Thread.sleep(5000);
 
     assertEquals(3, atomix1.getMembershipService().getMembers().size());
     assertEquals(3, atomix2.getMembershipService().getMembers().size());
@@ -167,12 +167,12 @@ public class AtomixTest extends AbstractAtomixTest {
 
   @Test
   public void testStopStartConsensus() throws Exception {
-    Atomix atomix1 = startAtomix(1, Arrays.asList(1), Profile.CONSENSUS).get(30, TimeUnit.SECONDS);
+    Atomix atomix1 = startAtomix(1, Arrays.asList(1), Profile.consensus("1")).get(30, TimeUnit.SECONDS);
     atomix1.stop().get(30, TimeUnit.SECONDS);
     try {
-      atomix1.start().join();
-      fail("Expected CompletionException");
-    } catch (CompletionException ex) {
+      atomix1.start().get(30, TimeUnit.SECONDS);
+      fail("Expected ExecutionException");
+    } catch (ExecutionException ex) {
       assertTrue(ex.getCause() instanceof IllegalStateException);
       assertEquals("Atomix instance shutdown", ex.getCause().getMessage());
     }
@@ -184,9 +184,9 @@ public class AtomixTest extends AbstractAtomixTest {
   @Test
   public void testScaleDownPersistent() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.DATA_GRID));
-    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.DATA_GRID));
-    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), Profile.DATA_GRID));
+    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.dataGrid()));
+    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.dataGrid()));
+    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), Profile.dataGrid()));
     Futures.allOf(futures).get(30, TimeUnit.SECONDS);
     TestClusterMembershipEventListener eventListener1 = new TestClusterMembershipEventListener();
     instances.get(0).getMembershipService().addListener(eventListener1);
@@ -195,11 +195,14 @@ public class AtomixTest extends AbstractAtomixTest {
     TestClusterMembershipEventListener eventListener3 = new TestClusterMembershipEventListener();
     instances.get(2).getMembershipService().addListener(eventListener3);
     instances.get(0).stop().get(30, TimeUnit.SECONDS);
+    assertEquals(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, eventListener2.event().type());
     assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, eventListener2.event().type());
     assertEquals(2, instances.get(1).getMembershipService().getMembers().size());
+    assertEquals(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, eventListener3.event().type());
     assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, eventListener3.event().type());
     assertEquals(2, instances.get(2).getMembershipService().getMembers().size());
     instances.get(1).stop().get(30, TimeUnit.SECONDS);
+    assertEquals(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, eventListener3.event().type());
     assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, eventListener3.event().type());
     assertEquals(1, instances.get(2).getMembershipService().getMembers().size());
     instances.get(2).stop().get(30, TimeUnit.SECONDS);
@@ -210,7 +213,7 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testClientJoinLeaveDataGrid() throws Exception {
-    testClientJoinLeave(Profile.DATA_GRID);
+    testClientJoinLeave(Profile.dataGrid());
   }
 
   /**
@@ -218,7 +221,7 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testClientJoinLeaveConsensus() throws Exception {
-    testClientJoinLeave(Profile.CONSENSUS);
+    testClientJoinLeave(Profile.consensus("1", "2", "3"));
   }
 
   private void testClientJoinLeave(Profile profile) throws Exception {
@@ -231,7 +234,7 @@ public class AtomixTest extends AbstractAtomixTest {
     TestClusterMembershipEventListener dataListener = new TestClusterMembershipEventListener();
     instances.get(0).getMembershipService().addListener(dataListener);
 
-    Atomix client1 = startAtomix(4, Arrays.asList(1, 2, 3), Profile.CLIENT).get(30, TimeUnit.SECONDS);
+    Atomix client1 = startAtomix(4, Arrays.asList(1, 2, 3), Profile.client()).get(30, TimeUnit.SECONDS);
     assertEquals(1, client1.getPartitionService().getPartitionGroups().size());
 
     // client1 added to data node
@@ -243,61 +246,63 @@ public class AtomixTest extends AbstractAtomixTest {
     TestClusterMembershipEventListener clientListener = new TestClusterMembershipEventListener();
     client1.getMembershipService().addListener(clientListener);
 
-    Atomix client2 = startAtomix(5, Arrays.asList(1, 2, 3), Profile.CLIENT).get(30, TimeUnit.SECONDS);
+    Atomix client2 = startAtomix(5, Arrays.asList(1, 2, 3), Profile.client()).get(30, TimeUnit.SECONDS);
     assertEquals(1, client2.getPartitionService().getPartitionGroups().size());
 
     // client2 added to data node
-    ClusterMembershipEvent event2 = dataListener.event();
-    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, event2.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, dataListener.event().type());
 
     // client2 added to client node
-    event1 = clientListener.event();
-    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, clientListener.event().type());
 
     client2.stop().get(30, TimeUnit.SECONDS);
 
     // client2 removed from data node
-    event1 = dataListener.event();
-    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, dataListener.event().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, dataListener.event().type());
 
     // client2 removed from client node
-    event1 = clientListener.event();
-    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, event1.type());
+    assertEquals(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, clientListener.event().type());
+    assertEquals(ClusterMembershipEvent.Type.MEMBER_REMOVED, clientListener.event().type());
   }
 
   /**
-   * Tests a client metadata.
+   * Tests a client properties.
    */
   @Test
-  public void testClientMetadata() throws Exception {
+  public void testClientProperties() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
-    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
-    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), Profile.CONSENSUS));
+    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
+    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
+    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
     Futures.allOf(futures).get(30, TimeUnit.SECONDS);
 
     TestClusterMembershipEventListener dataListener = new TestClusterMembershipEventListener();
     instances.get(0).getMembershipService().addListener(dataListener);
 
-    Atomix client1 = startAtomix(4, Arrays.asList(1, 2, 3), Collections.singletonMap("a-key", "a-value"), Profile.CLIENT).get(30, TimeUnit.SECONDS);
+    Properties properties = new Properties();
+    properties.setProperty("a-key", "a-value");
+    Atomix client1 = startAtomix(4, Arrays.asList(1, 2, 3), properties, Profile.client()).get(30, TimeUnit.SECONDS);
     assertEquals(1, client1.getPartitionService().getPartitionGroups().size());
 
     // client1 added to data node
     ClusterMembershipEvent event1 = dataListener.event();
     assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, event1.type());
+    event1 = dataListener.event();
+    assertEquals(ClusterMembershipEvent.Type.METADATA_CHANGED, event1.type());
 
     Member member = event1.subject();
 
-    assertNotNull(member.metadata());
-    assertEquals(1, member.metadata().size());
-    assertEquals("a-value", member.metadata().get("a-key"));
+    assertNotNull(member.properties());
+    assertEquals(1, member.properties().size());
+    assertEquals("a-value", member.properties().get("a-key"));
   }
 
   private static class TestClusterMembershipEventListener implements ClusterMembershipEventListener {
     private final BlockingQueue<ClusterMembershipEvent> queue = new LinkedBlockingQueue<>();
 
     @Override
-    public void onEvent(ClusterMembershipEvent event) {
+    public void event(ClusterMembershipEvent event) {
       try {
         queue.put(event);
       } catch (InterruptedException e) {
@@ -309,8 +314,12 @@ public class AtomixTest extends AbstractAtomixTest {
       return !queue.isEmpty();
     }
 
-    public ClusterMembershipEvent event() throws InterruptedException {
-      return queue.take();
+    public ClusterMembershipEvent event() throws InterruptedException, TimeoutException {
+      ClusterMembershipEvent event = queue.poll(10, TimeUnit.SECONDS);
+      if (event == null) {
+        throw new TimeoutException();
+      }
+      return event;
     }
   }
 }

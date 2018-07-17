@@ -15,6 +15,6 @@
  */
 
 /**
- * Distributed leader election primitive interfaces.
+ * Distributed leader election primitives.
  */
 package io.atomix.core.election;

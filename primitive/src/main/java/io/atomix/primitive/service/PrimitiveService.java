@@ -15,7 +15,7 @@
  */
 package io.atomix.primitive.service;
 
-import io.atomix.primitive.session.PrimitiveSession;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.WallClockTimestamp;
@@ -78,7 +78,7 @@ public interface PrimitiveService {
    *
    * @param session the session to register
    */
-  void register(PrimitiveSession session);
+  void register(Session session);
 
   /**
    * Expires the session with the given identifier.

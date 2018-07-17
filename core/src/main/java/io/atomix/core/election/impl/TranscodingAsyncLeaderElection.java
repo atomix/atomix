@@ -21,7 +21,7 @@ import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
-import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 
 import java.time.Duration;
 import java.util.Map;
@@ -33,7 +33,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Transcoding document tree.
  */
-public class TranscodingAsyncLeaderElection<V1, V2> implements AsyncLeaderElection<V1> {
+public class TranscodingAsyncLeaderElection<V1, V2> extends DelegatingAsyncPrimitive implements AsyncLeaderElection<V1> {
 
   private final AsyncLeaderElection<V2> backingElection;
   private final Function<V1, V2> valueEncoder;
@@ -41,19 +41,10 @@ public class TranscodingAsyncLeaderElection<V1, V2> implements AsyncLeaderElecti
   private final Map<LeadershipEventListener<V1>, InternalLeadershipEventListener> listeners = Maps.newIdentityHashMap();
 
   public TranscodingAsyncLeaderElection(AsyncLeaderElection<V2> backingElection, Function<V1, V2> valueEncoder, Function<V2, V1> valueDecoder) {
+    super(backingElection);
     this.backingElection = backingElection;
     this.valueEncoder = valueEncoder;
     this.valueDecoder = valueDecoder;
-  }
-
-  @Override
-  public String name() {
-    return backingElection.name();
-  }
-
-  @Override
-  public PrimitiveType primitiveType() {
-    return backingElection.primitiveType();
   }
 
   @Override
@@ -108,11 +99,6 @@ public class TranscodingAsyncLeaderElection<V1, V2> implements AsyncLeaderElecti
   }
 
   @Override
-  public CompletableFuture<Void> close() {
-    return backingElection.close();
-  }
-
-  @Override
   public LeaderElection<V1> sync(Duration operationTimeout) {
     return new BlockingLeaderElection<>(this, operationTimeout.toMillis());
   }
@@ -132,8 +118,8 @@ public class TranscodingAsyncLeaderElection<V1, V2> implements AsyncLeaderElecti
     }
 
     @Override
-    public void onEvent(LeadershipEvent<V2> event) {
-      listener.onEvent(new LeadershipEvent<>(
+    public void event(LeadershipEvent<V2> event) {
+      listener.event(new LeadershipEvent<>(
           event.type(),
           event.topic(),
           event.oldLeadership() != null ? event.oldLeadership().map(valueDecoder) : null,

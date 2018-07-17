@@ -16,24 +16,16 @@
 package io.atomix.core.impl;
 
 import io.atomix.core.AtomixRegistry;
-import io.atomix.core.profile.Profile;
-import io.atomix.core.profile.ProfileRegistry;
-import io.atomix.core.profile.impl.DefaultProfileRegistry;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.PrimitiveTypeRegistry;
-import io.atomix.primitive.impl.DefaultPrimitiveTypeRegistry;
-import io.atomix.primitive.partition.PartitionGroup;
-import io.atomix.primitive.partition.PartitionGroupTypeRegistry;
-import io.atomix.primitive.partition.impl.DefaultPartitionGroupTypeRegistry;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.PrimitiveProtocolTypeRegistry;
-import io.atomix.primitive.protocol.impl.DefaultPrimitiveProtocolTypeRegistry;
+import io.atomix.utils.NamedType;
 import io.atomix.utils.ServiceException;
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -43,64 +35,33 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathScanningAtomixRegistry.class);
 
-  private final PartitionGroupTypeRegistry partitionGroupTypes;
-  private final PrimitiveTypeRegistry primitiveTypes;
-  private final PrimitiveProtocolTypeRegistry protocolTypes;
-  private final ProfileRegistry profileTypes;
+  private final Map<Class<? extends NamedType>, Map<String, NamedType>> registrations = new ConcurrentHashMap<>();
 
-  public ClasspathScanningAtomixRegistry(ClassLoader classLoader) {
-    final FastClasspathScanner classpathScanner = new FastClasspathScanner().addClassLoader(classLoader);
+  public ClasspathScanningAtomixRegistry(ClassLoader classLoader, Class<? extends NamedType>... types) {
+    this(classLoader, Arrays.asList(types));
+  }
 
-    final Map<String, PartitionGroup.Type> partitionGroupTypes = new ConcurrentHashMap<>();
-    classpathScanner.matchClassesImplementing(PartitionGroup.Type.class, type -> {
-      if (!Modifier.isAbstract(type.getModifiers()) && !Modifier.isPrivate(type.getModifiers())) {
-        PartitionGroup.Type partitionGroupType = newInstance(type);
-        PartitionGroup.Type oldPartitionGroupType = partitionGroupTypes.put(partitionGroupType.name(), partitionGroupType);
-        if (oldPartitionGroupType != null) {
-          LOGGER.warn("Found multiple partition group types with name={}, classes=[{}, {}]", partitionGroupType.name(),
-                  oldPartitionGroupType.getClass().getName(), partitionGroupType.getClass().getName());
+  public ClasspathScanningAtomixRegistry(ClassLoader classLoader, Collection<Class<? extends NamedType>> types) {
+    final String scanSpec = System.getProperty("io.atomix.scanSpec");
+    final FastClasspathScanner classpathScanner = scanSpec != null ?
+        new FastClasspathScanner(scanSpec).addClassLoader(classLoader) :
+        new FastClasspathScanner().addClassLoader(classLoader);
+
+    for (Class<? extends NamedType> type : types) {
+      Map<String, NamedType> registrations = new ConcurrentHashMap<>();
+      classpathScanner.matchClassesImplementing(type, clazz -> {
+        if (!Modifier.isAbstract(clazz.getModifiers()) && !Modifier.isPrivate(clazz.getModifiers())) {
+          NamedType instance = newInstance(clazz);
+          NamedType oldInstance = registrations.put(instance.name(), instance);
+          if (oldInstance != null) {
+            LOGGER.warn("Found multiple types with name={}, classes=[{}, {}]", instance.name(),
+                oldInstance.getClass().getName(), instance.getClass().getName());
+          }
         }
-      }
-    });
-    final Map<String, PrimitiveType> primitiveTypes = new ConcurrentHashMap<>();
-    classpathScanner.matchClassesImplementing(PrimitiveType.class, type -> {
-      if (!Modifier.isAbstract(type.getModifiers()) && !Modifier.isPrivate(type.getModifiers())) {
-        PrimitiveType primitiveType = newInstance(type);
-        PrimitiveType oldPrimitiveType = primitiveTypes.put(primitiveType.name(), primitiveType);
-        if (oldPrimitiveType != null) {
-          LOGGER.warn("Found multiple primitive types with name={}, classes=[{}, {}]", primitiveType.name(),
-                  oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
-        }
-      }
-    });
-    final Map<String, PrimitiveProtocol.Type> protocolTypes = new ConcurrentHashMap<>();
-    classpathScanner.matchClassesImplementing(PrimitiveProtocol.Type.class, type -> {
-      if (!Modifier.isAbstract(type.getModifiers()) && !Modifier.isPrivate(type.getModifiers())) {
-        PrimitiveProtocol.Type protocolType = newInstance(type);
-        PrimitiveProtocol.Type oldProtocolType = protocolTypes.put(protocolType.name(), protocolType);
-        if (oldProtocolType != null) {
-          LOGGER.warn("Found multiple protocol types with name={}, classes=[{}, {}]", protocolType.name(),
-                  oldProtocolType.getClass().getName(), protocolType.getClass().getName());
-        }
-      }
-    });
-    final Map<String, Profile> profileTypes = new ConcurrentHashMap<>();
-    classpathScanner.matchClassesImplementing(Profile.class, profile -> {
-      if (!Modifier.isAbstract(profile.getModifiers()) && !Modifier.isPrivate(profile.getModifiers())) {
-        Profile profileType = newInstance(profile);
-        Profile oldProfileType = profileTypes.put(profileType.name(), profileType);
-        if (oldProfileType != null) {
-          LOGGER.warn("Found multiple profile types with name={}, classes=[{}, {}]", profileType.name(),
-                  oldProfileType.getClass().getName(), profileType.getClass().getName());
-        }
-      }
-    });
+      });
+      this.registrations.put(type, registrations);
+    }
     classpathScanner.scan();
-
-    this.partitionGroupTypes = new DefaultPartitionGroupTypeRegistry(partitionGroupTypes);
-    this.primitiveTypes = new DefaultPrimitiveTypeRegistry(primitiveTypes);
-    this.protocolTypes = new DefaultPrimitiveProtocolTypeRegistry(protocolTypes);
-    this.profileTypes = new DefaultProfileRegistry(profileTypes);
   }
 
   /**
@@ -121,22 +82,16 @@ public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
   }
 
   @Override
-  public PartitionGroupTypeRegistry partitionGroupTypes() {
-    return partitionGroupTypes;
+  @SuppressWarnings("unchecked")
+  public <T extends NamedType> Collection<T> getTypes(Class<T> type) {
+    Map<String, NamedType> types = registrations.get(type);
+    return types != null ? (Collection<T>) types.values() : Collections.emptyList();
   }
 
   @Override
-  public PrimitiveTypeRegistry primitiveTypes() {
-    return primitiveTypes;
-  }
-
-  @Override
-  public PrimitiveProtocolTypeRegistry protocolTypes() {
-    return protocolTypes;
-  }
-
-  @Override
-  public ProfileRegistry profiles() {
-    return profileTypes;
+  @SuppressWarnings("unchecked")
+  public <T extends NamedType> T getType(Class<T> type, String name) {
+    Map<String, NamedType> types = registrations.get(type);
+    return types != null ? (T) types.get(name) : null;
   }
 }

@@ -22,8 +22,8 @@ import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.partition.GroupMember;
 import io.atomix.primitive.partition.MemberGroupId;
 import io.atomix.primitive.partition.PartitionId;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -53,14 +53,13 @@ public enum PrimaryElectorOperations implements OperationId {
     return type;
   }
 
-  public static final KryoNamespace NAMESPACE = KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
-      .nextId(KryoNamespaces.BEGIN_USER_CUSTOM_ID)
+  public static final Namespace NAMESPACE = Namespace.builder()
+      .register(Namespaces.BASIC)
+      .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
       .register(Enter.class)
       .register(GetTerm.class)
       .register(GroupMember.class)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .register(MemberGroupId.class)
       .register(PartitionId.class)
       .build(PrimaryElectorOperations.class.getSimpleName());

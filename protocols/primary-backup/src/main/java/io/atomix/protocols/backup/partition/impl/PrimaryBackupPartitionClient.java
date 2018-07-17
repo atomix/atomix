@@ -15,10 +15,14 @@
  */
 package io.atomix.protocols.backup.partition.impl;
 
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.partition.PartitionClient;
 import io.atomix.primitive.partition.PartitionManagementService;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.protocols.backup.PrimaryBackupClient;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
 import io.atomix.protocols.backup.serializer.impl.PrimaryBackupNamespaces;
+import io.atomix.protocols.backup.session.PrimaryBackupSessionClient;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.serializer.Serializer;
@@ -30,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Primary-backup partition client.
  */
-public class PrimaryBackupPartitionClient implements Managed<PrimaryBackupPartitionClient> {
+public class PrimaryBackupPartitionClient implements PartitionClient, Managed<PrimaryBackupPartitionClient> {
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final PrimaryBackupPartition partition;
   private final PartitionManagementService managementService;
@@ -46,20 +50,16 @@ public class PrimaryBackupPartitionClient implements Managed<PrimaryBackupPartit
     this.threadFactory = threadFactory;
   }
 
-  /**
-   * Returns the proxy client.
-   *
-   * @return the proxy client
-   */
-  public PrimaryBackupClient getProxyClient() {
-    return client;
+  @Override
+  public PrimaryBackupSessionClient.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
+    return client.sessionBuilder(primitiveName, primitiveType, serviceConfig);
   }
 
   @Override
   public CompletableFuture<PrimaryBackupPartitionClient> start() {
     synchronized (PrimaryBackupPartitionClient.this) {
       client = newClient();
-      log.info("Successfully started client for {}", partition.id());
+      log.debug("Successfully started client for {}", partition.id());
     }
     return CompletableFuture.completedFuture(this);
   }

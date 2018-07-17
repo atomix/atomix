@@ -25,7 +25,7 @@ import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.core.Atomix;
 import io.atomix.core.PrimitivesService;
 import io.atomix.core.utils.EventManager;
-import io.atomix.primitive.PrimitiveConfig;
+import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.rest.ManagedRestService;

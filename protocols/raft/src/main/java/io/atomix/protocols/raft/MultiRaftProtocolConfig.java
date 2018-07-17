@@ -19,15 +19,15 @@ import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
-import io.atomix.protocols.raft.proxy.CommunicationStrategy;
+import io.atomix.protocols.raft.session.CommunicationStrategy;
 
 import java.time.Duration;
-import java.util.concurrent.Executor;
 
 /**
  * Raft protocol configuration.
  */
 public class MultiRaftProtocolConfig extends PrimitiveProtocolConfig<MultiRaftProtocolConfig> {
+  private String group;
   private Partitioner<String> partitioner = Partitioner.MURMUR3;
   private Duration minTimeout = Duration.ofMillis(250);
   private Duration maxTimeout = Duration.ofSeconds(30);
@@ -36,11 +36,30 @@ public class MultiRaftProtocolConfig extends PrimitiveProtocolConfig<MultiRaftPr
   private Recovery recoveryStrategy = Recovery.RECOVER;
   private int maxRetries = 0;
   private Duration retryDelay = Duration.ofMillis(100);
-  private Executor executor;
 
   @Override
   public PrimitiveProtocol.Type getType() {
     return MultiRaftProtocol.TYPE;
+  }
+
+  /**
+   * Returns the partition group.
+   *
+   * @return the partition group
+   */
+  public String getGroup() {
+    return group;
+  }
+
+  /**
+   * Sets the partition group.
+   *
+   * @param group the partition group
+   * @return the protocol configuration
+   */
+  public MultiRaftProtocolConfig setGroup(String group) {
+    this.group = group;
+    return this;
   }
 
   /**
@@ -210,26 +229,6 @@ public class MultiRaftProtocolConfig extends PrimitiveProtocolConfig<MultiRaftPr
    */
   public MultiRaftProtocolConfig setRetryDelay(Duration retryDelay) {
     this.retryDelay = retryDelay;
-    return this;
-  }
-
-  /**
-   * Returns the executor.
-   *
-   * @return the executor
-   */
-  public Executor getExecutor() {
-    return executor;
-  }
-
-  /**
-   * Sets the executor.
-   *
-   * @param executor the executor
-   * @return the protocol configuration
-   */
-  public MultiRaftProtocolConfig setExecutor(Executor executor) {
-    this.executor = executor;
     return this;
   }
 }

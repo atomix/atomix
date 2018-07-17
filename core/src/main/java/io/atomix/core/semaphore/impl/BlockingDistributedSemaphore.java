@@ -17,58 +17,75 @@ package io.atomix.core.semaphore.impl;
 
 import io.atomix.core.semaphore.AsyncDistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphore;
-import io.atomix.core.semaphore.QueueStatus;
 import io.atomix.primitive.PrimitiveException;
-import io.atomix.primitive.Synchronous;
-import io.atomix.utils.time.Version;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class BlockingDistributedSemaphore extends Synchronous<AsyncDistributedSemaphore> implements DistributedSemaphore {
+public class BlockingDistributedSemaphore extends DistributedSemaphore {
 
   private final AsyncDistributedSemaphore asyncSemaphore;
   private final Duration timeout;
 
-  public BlockingDistributedSemaphore(AsyncDistributedSemaphore asyncDistributedSemaphore, Duration timeout) {
-    super(asyncDistributedSemaphore);
-    this.asyncSemaphore = asyncDistributedSemaphore;
+  public BlockingDistributedSemaphore(AsyncDistributedSemaphore asyncSemaphore, Duration timeout) {
+    this.asyncSemaphore = asyncSemaphore;
     this.timeout = timeout;
   }
 
   @Override
-  public Version acquire() {
-    return complete(asyncSemaphore.acquire(), 1);
+  public String name() {
+    return asyncSemaphore.name();
   }
 
   @Override
-  public Version acquire(int permits) {
-    return complete(asyncSemaphore.acquire(permits), permits);
+  public PrimitiveType type() {
+    return asyncSemaphore.type();
   }
 
   @Override
-  public Optional<Version> tryAcquire() {
-    return complete(asyncSemaphore.tryAcquire(), 1);
+  public PrimitiveProtocol protocol() {
+    return asyncSemaphore.protocol();
   }
 
   @Override
-  public Optional<Version> tryAcquire(int permits) {
-    return complete(asyncSemaphore.tryAcquire(permits), permits);
+  public void acquireUninterruptibly() {
+    complete(asyncSemaphore.acquire());
   }
 
   @Override
-  public Optional<Version> tryAcquire(Duration timeout) {
-    return complete(asyncSemaphore.tryAcquire(timeout), 1);
+  public void acquire(int permits) throws InterruptedException {
+    complete(asyncSemaphore.acquire(permits));
   }
 
   @Override
-  public Optional<Version> tryAcquire(int permits, Duration timeout) {
-    return complete(asyncSemaphore.tryAcquire(permits, timeout), permits);
+  public void acquireUninterruptibly(int permits) {
+    complete(asyncSemaphore.acquire(permits));
+  }
+
+  @Override
+  public boolean tryAcquire(int permits) {
+    return complete(asyncSemaphore.tryAcquire(permits));
+  }
+
+  @Override
+  public boolean tryAcquire(int permits, Duration timeout) throws InterruptedException {
+    return complete(asyncSemaphore.tryAcquire(permits, timeout));
+  }
+
+  @Override
+  public boolean tryAcquire() {
+    return complete(asyncSemaphore.tryAcquire());
+  }
+
+  @Override
+  public boolean tryAcquire(Duration timeout) throws InterruptedException {
+    return complete(asyncSemaphore.tryAcquire(timeout));
   }
 
   @Override
@@ -92,23 +109,23 @@ public class BlockingDistributedSemaphore extends Synchronous<AsyncDistributedSe
   }
 
   @Override
-  public int increase(int permits) {
-    return complete(asyncSemaphore.increase(permits));
+  protected void reducePermits(int reduction) {
+    complete(asyncSemaphore.reducePermits(reduction));
   }
 
   @Override
-  public int reduce(int permits) {
-    return complete(asyncSemaphore.reduce(permits));
-  }
-
-  @Override
-  public QueueStatus queueStatus() {
-    return complete(asyncSemaphore.queueStatus());
+  public boolean isFair() {
+    return true;
   }
 
   @Override
   public AsyncDistributedSemaphore async() {
     return asyncSemaphore;
+  }
+
+  @Override
+  public void close() {
+    complete(asyncSemaphore.close());
   }
 
   private <T> T complete(CompletableFuture<T> future) {

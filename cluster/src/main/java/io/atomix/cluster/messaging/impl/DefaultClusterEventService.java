@@ -23,13 +23,13 @@ import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
-import io.atomix.cluster.messaging.Subscription;
 import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.cluster.messaging.Subscription;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.net.Address;
-import io.atomix.utils.serializer.KryoNamespace;
-import io.atomix.utils.serializer.KryoNamespaces;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.LogicalTimestamp;
 import io.atomix.utils.time.WallClockTimestamp;
@@ -66,10 +66,9 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 public class DefaultClusterEventService implements ManagedClusterEventService {
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClusterEventService.class);
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.builder()
-      .register(KryoNamespaces.BASIC)
+  private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
+      .register(Namespaces.BASIC)
       .register(MemberId.class)
-      .register(MemberId.Type.class)
       .register(LogicalTimestamp.class)
       .register(WallClockTimestamp.class)
       .register(InternalSubscriptionInfo.class)
@@ -102,7 +101,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
     byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.ALL, encoder.apply(message)));
     getSubscriberNodes(topic).forEach(memberId -> {
       Member member = membershipService.getMember(memberId);
-      if (member != null && member.getState() == Member.State.ACTIVE) {
+      if (member != null && member.isReachable()) {
         messagingService.sendAsync(member.address(), topic, payload);
       }
     });
@@ -113,7 +112,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
     MemberId memberId = getNextMemberId(topic);
     if (memberId != null) {
       Member member = membershipService.getMember(memberId);
-      if (member != null && member.getState() == Member.State.ACTIVE) {
+      if (member != null && member.isReachable()) {
         byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.DIRECT, encoder.apply(message)));
         return messagingService.sendAsync(member.address(), topic, payload);
       }
@@ -126,7 +125,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
     MemberId memberId = getNextMemberId(topic);
     if (memberId != null) {
       Member member = membershipService.getMember(memberId);
-      if (member != null && member.getState() == Member.State.ACTIVE) {
+      if (member != null && member.isReachable()) {
         byte[] payload = SERIALIZER.encode(new InternalMessage(InternalMessage.Type.DIRECT, encoder.apply(message)));
         return messagingService.sendAndReceive(member.address(), topic, payload, timeout).thenApply(decoder);
       }
@@ -227,7 +226,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
     List<Member> members = membershipService.getMembers()
         .stream()
         .filter(node -> !localMemberId.equals(node.id()))
-        .filter(node -> node.getState() == Member.State.ACTIVE)
+        .filter(node -> node.isReachable())
         .collect(Collectors.toList());
 
     if (!members.isEmpty()) {

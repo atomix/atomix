@@ -20,7 +20,6 @@ import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionMetadata;
-import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.partition.impl.RaftClientCommunicator;
 import io.atomix.protocols.raft.partition.impl.RaftNamespaces;
 import io.atomix.protocols.raft.partition.impl.RaftPartitionClient;
@@ -134,8 +133,8 @@ public class RaftPartition implements Partition {
   }
 
   @Override
-  public RaftClient getProxyClient() {
-    return client.getProxyClient();
+  public RaftPartitionClient getClient() {
+    return client;
   }
 
   /**
@@ -171,7 +170,10 @@ public class RaftPartition implements Partition {
    * Closes the partition.
    */
   CompletableFuture<Void> close() {
-    return closeClient().thenCompose(v -> closeServer());
+    return closeClient()
+        .exceptionally(v -> null)
+        .thenCompose(v -> closeServer())
+        .exceptionally(v -> null);
   }
 
   private CompletableFuture<Void> closeClient() {

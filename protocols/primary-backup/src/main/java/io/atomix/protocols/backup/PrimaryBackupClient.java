@@ -20,16 +20,16 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
-import io.atomix.primitive.proxy.PartitionProxy;
-import io.atomix.primitive.proxy.ProxyClient;
-import io.atomix.primitive.proxy.impl.BlockingAwarePartitionProxy;
-import io.atomix.primitive.proxy.impl.RecoveringPartitionProxy;
-import io.atomix.primitive.proxy.impl.RetryingPartitionProxy;
 import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionIdService;
+import io.atomix.primitive.session.impl.BlockingAwareSessionClient;
+import io.atomix.primitive.session.impl.RecoveringSessionClient;
+import io.atomix.primitive.session.impl.RetryingSessionClient;
 import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
-import io.atomix.protocols.backup.proxy.PrimaryBackupProxy;
+import io.atomix.protocols.backup.session.PrimaryBackupSessionClient;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadModel;
@@ -39,7 +39,6 @@ import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -48,7 +47,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Primary-backup client.
  */
-public class PrimaryBackupClient implements ProxyClient {
+public class PrimaryBackupClient {
 
   /**
    * Returns a new primary-backup client builder.
@@ -67,6 +66,7 @@ public class PrimaryBackupClient implements ProxyClient {
   private final SessionIdService sessionIdService;
   private final ThreadContextFactory threadContextFactory;
   private final ThreadContext threadContext;
+  private final boolean closeOnStop;
 
   public PrimaryBackupClient(
       String clientName,
@@ -75,7 +75,8 @@ public class PrimaryBackupClient implements ProxyClient {
       PrimaryBackupClientProtocol protocol,
       PrimaryElection primaryElection,
       SessionIdService sessionIdService,
-      ThreadContextFactory threadContextFactory) {
+      ThreadContextFactory threadContextFactory,
+      boolean closeOnStop) {
     this.clientName = clientName;
     this.partitionId = partitionId;
     this.clusterMembershipService = clusterMembershipService;
@@ -84,55 +85,62 @@ public class PrimaryBackupClient implements ProxyClient {
     this.sessionIdService = sessionIdService;
     this.threadContextFactory = threadContextFactory;
     this.threadContext = threadContextFactory.createContext();
+    this.closeOnStop = closeOnStop;
   }
 
-  @Override
-  public PrimaryBackupProxy.Builder proxyBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
+  /**
+   * Creates a new primary backup proxy session builder.
+   *
+   * @param primitiveName the primitive name
+   * @param primitiveType the primitive type
+   * @param serviceConfig the service configuration
+   * @return a new primary-backup proxy session builder
+   */
+  public PrimaryBackupSessionClient.Builder sessionBuilder(String primitiveName, PrimitiveType primitiveType, ServiceConfig serviceConfig) {
     byte[] configBytes = Serializer.using(primitiveType.namespace()).encode(serviceConfig);
-    return new PrimaryBackupProxy.Builder() {
+    return new PrimaryBackupSessionClient.Builder() {
       @Override
-      public PartitionProxy build() {
-        Supplier<PartitionProxy> proxyBuilder = () -> new PrimaryBackupProxy(
-            clientName,
-            partitionId,
-            sessionIdService.nextSessionId().join(),
-            primitiveType,
-            new PrimitiveDescriptor(
-                primitiveName,
-                primitiveType.name(),
-                configBytes,
-                numBackups,
-                replication),
-            clusterMembershipService,
-            PrimaryBackupClient.this.protocol,
-            primaryElection,
-            threadContextFactory.createContext());
+      public SessionClient build() {
+        Supplier<CompletableFuture<SessionClient>> proxyBuilder = () -> sessionIdService.nextSessionId()
+            .thenApply(sessionId -> new PrimaryBackupSessionClient(
+                clientName,
+                partitionId,
+                sessionId,
+                primitiveType,
+                new PrimitiveDescriptor(
+                    primitiveName,
+                    primitiveType.name(),
+                    configBytes,
+                    numBackups,
+                    replication),
+                clusterMembershipService,
+                PrimaryBackupClient.this.protocol,
+                primaryElection,
+                threadContextFactory.createContext()));
 
-        PartitionProxy proxy;
+        SessionClient proxy;
+        ThreadContext context = threadContextFactory.createContext();
         if (recovery == Recovery.RECOVER) {
-          proxy = new RecoveringPartitionProxy(
+          proxy = new RecoveringSessionClient(
               clientName,
               partitionId,
               primitiveName,
               primitiveType,
               proxyBuilder,
-              threadContextFactory.createContext());
+              context);
         } else {
-          proxy = proxyBuilder.get();
+          proxy = Futures.get(proxyBuilder.get());
         }
 
         // If max retries is set, wrap the client in a retrying proxy client.
         if (maxRetries > 0) {
-          proxy = new RetryingPartitionProxy(
+          proxy = new RetryingSessionClient(
               proxy,
-              threadContextFactory.createContext(),
+              context,
               maxRetries,
               retryDelay);
         }
-
-        // Default the executor to use the configured thread pool executor and create a blocking aware proxy client.
-        Executor executor = this.executor != null ? this.executor : threadContextFactory.createContext();
-        return new BlockingAwarePartitionProxy(proxy, executor);
+        return new BlockingAwareSessionClient(proxy, context);
       }
     };
   }
@@ -143,9 +151,10 @@ public class PrimaryBackupClient implements ProxyClient {
    * @return future to be completed once the client is closed
    */
   public CompletableFuture<Void> close() {
-    // TODO: Close client proxies
     threadContext.close();
-    threadContextFactory.close();
+    if (closeOnStop) {
+      threadContextFactory.close();
+    }
     return CompletableFuture.completedFuture(null);
   }
 
@@ -160,7 +169,7 @@ public class PrimaryBackupClient implements ProxyClient {
     protected PrimaryElection primaryElection;
     protected SessionIdService sessionIdService;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
-    protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
+    protected int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 16), 4);
     protected ThreadContextFactory threadContextFactory;
 
     /**
@@ -272,9 +281,18 @@ public class PrimaryBackupClient implements ProxyClient {
       Logger log = ContextualLoggerFactory.getLogger(PrimaryBackupClient.class, LoggerContext.builder(PrimaryBackupClient.class)
           .addValue(clientName)
           .build());
-      ThreadContextFactory threadContextFactory = this.threadContextFactory != null
-          ? this.threadContextFactory
-          : threadModel.factory("backup-client-" + clientName + "-%d", threadPoolSize, log);
+
+      // If a ThreadContextFactory was not provided, create one and ensure it's closed when the client is stopped.
+      boolean closeOnStop;
+      ThreadContextFactory threadContextFactory;
+      if (this.threadContextFactory == null) {
+        threadContextFactory = threadModel.factory("backup-client-" + clientName + "-%d", threadPoolSize, log);
+        closeOnStop = true;
+      } else {
+        threadContextFactory = this.threadContextFactory;
+        closeOnStop = false;
+      }
+
       return new PrimaryBackupClient(
           clientName,
           partitionId,
@@ -282,7 +300,8 @@ public class PrimaryBackupClient implements ProxyClient {
           protocol,
           primaryElection,
           sessionIdService,
-          threadContextFactory);
+          threadContextFactory,
+          closeOnStop);
     }
   }
 }
