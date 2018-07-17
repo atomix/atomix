@@ -64,12 +64,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import javax.management.AttributeNotFoundException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanException;
-import javax.management.MalformedObjectNameException;
-import javax.management.ReflectionException;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -136,17 +130,12 @@ public class RaftServiceManager implements AutoCloseable {
   private boolean isRunningOutOfMemory() {
     StorageLevel level = raft.getStorage().storageLevel();
     if (level == StorageLevel.MEMORY || level == StorageLevel.MAPPED) {
-        try {
-            long freeMemory = raft.getStorage().statistics().getFreeMemory();
-            long totalMemory = raft.getStorage().statistics().getTotalMemory();
-            if (freeMemory > 0 && totalMemory > 0) {
-                return freeMemory / (double) totalMemory < raft.getStorage().freeMemoryBuffer();
-            }
-        } catch (Exception e) {
-            logger.error("An exception occurred during memory check: {}", e);
-        }
+      long freeMemory = raft.getStorage().statistics().getFreeMemory();
+      long totalMemory = raft.getStorage().statistics().getTotalMemory();
+      if (freeMemory > 0 && totalMemory > 0) {
+        return freeMemory / (double) totalMemory < raft.getStorage().freeMemoryBuffer();
+      }
     }
-
     return false;
   }
 
@@ -186,7 +175,7 @@ public class RaftServiceManager implements AutoCloseable {
       // Determine whether the node is running out of disk space.
       boolean runningOutOfDiskSpace = isRunningOutOfDiskSpace();
 
-      // Determine whether the node is running out of disk space.
+      // Determine whether the node is running out of memory.
       boolean runningOutOfMemory = isRunningOutOfMemory();
 
       // If compaction is not already being forced...

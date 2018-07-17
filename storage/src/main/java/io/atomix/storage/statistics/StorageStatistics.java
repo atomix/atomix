@@ -15,6 +15,9 @@
  */
 package io.atomix.storage.statistics;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.lang.management.ManagementFactory;
 
@@ -25,6 +28,8 @@ import javax.management.ObjectName;
  * Atomix storage statistics.
  */
 public class StorageStatistics {
+  private static final Logger LOGGER = LoggerFactory.getLogger(StorageStatistics.class);
+
   private final File file;
   private final MBeanServer mBeanServer;
 
@@ -69,8 +74,11 @@ public class StorageStatistics {
     try {
         return (long) mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "FreePhysicalMemorySize");
     } catch (Exception e) {
-        return -1;
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("An exception occurred during memory check", e);
+      }
     }
+    return -1;
   }
 
   /**
@@ -82,7 +90,10 @@ public class StorageStatistics {
     try {
         return (long) mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "TotalPhysicalMemorySize");
     } catch (Exception e) {
-        return -1;
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("An exception occurred during memory check", e);
+      }
     }
+    return -1;
   }
 }

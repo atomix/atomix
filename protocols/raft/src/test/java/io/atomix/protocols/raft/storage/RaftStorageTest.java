@@ -39,6 +39,7 @@ public class RaftStorageTest {
     assertEquals(.2, storage.freeDiskBuffer(), .01);
     assertTrue(storage.isFlushOnCommit());
     assertFalse(storage.isRetainStaleSnapshots());
+    assertTrue(storage.statistics().getFreeMemory() > 0);
   }
 
   @Test
