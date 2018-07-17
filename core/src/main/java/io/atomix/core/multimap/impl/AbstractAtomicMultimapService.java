@@ -19,9 +19,10 @@ package io.atomix.core.multimap.impl;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Multisets;
 import com.google.common.collect.Sets;
 import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.multimap.AtomicMultimapType;
@@ -42,7 +43,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -51,11 +51,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -357,6 +352,48 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   }
 
   @Override
+  public long iterateValuesSet() {
+    return iterateEntries();
+  }
+
+  @Override
+  public IteratorBatch<Multiset.Entry<byte[]>> nextValuesSet(long iteratorId, int position) {
+    IteratorContext context = entryIterators.get(iteratorId);
+    if (context == null) {
+      return null;
+    }
+
+    List<Multiset.Entry<byte[]>> entries = new ArrayList<>();
+    int size = 0;
+    while (context.iterator.hasNext()) {
+      context.position++;
+      if (context.position > position) {
+        Map.Entry<String, MapEntryValues> entry = context.iterator.next();
+        if (!entry.getValue().values().isEmpty()) {
+          byte[] value = entry.getValue().values().iterator().next();
+          int count = entry.getValue().values().size();
+          size += value.length + 4;
+          entries.add(Multisets.immutableEntry(value, count));
+        }
+
+        if (size >= MAX_ITERATOR_BATCH_SIZE) {
+          break;
+        }
+      }
+    }
+
+    if (entries.isEmpty()) {
+      return null;
+    }
+    return new IteratorBatch<>(context.position, entries);
+  }
+
+  @Override
+  public void closeValuesSet(long iteratorId) {
+    closeEntries(iteratorId);
+  }
+
+  @Override
   public long iterateEntries() {
     entryIterators.put(getCurrentIndex(), new IteratorContext(getCurrentSession().sessionId().id()));
     return getCurrentIndex();
@@ -533,100 +570,6 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
         return new Versioned<>(removedValues, version = getCurrentIndex());
       }
       return null;
-    }
-  }
-
-  /**
-   * A collector that creates MapEntryValues and creates a multiset of all
-   * values in the map an equal number of times to the number of sets in
-   * which they participate.
-   */
-  private static class HashMultisetValueCollector implements
-      Collector<MapEntryValues,
-          HashMultiset<byte[]>,
-          HashMultiset<byte[]>> {
-
-    @Override
-    public Supplier<HashMultiset<byte[]>> supplier() {
-      return HashMultiset::create;
-    }
-
-    @Override
-    public BiConsumer<HashMultiset<byte[]>, MapEntryValues> accumulator() {
-      return (multiset, mapEntryValues) ->
-          multiset.addAll(mapEntryValues.values());
-    }
-
-    @Override
-    public BinaryOperator<HashMultiset<byte[]>> combiner() {
-      return (setOne, setTwo) -> {
-        setOne.addAll(setTwo);
-        return setOne;
-      };
-    }
-
-    @Override
-    public Function<HashMultiset<byte[]>,
-        HashMultiset<byte[]>> finisher() {
-      return Function.identity();
-    }
-
-    @Override
-    public Set<Characteristics> characteristics() {
-      return EnumSet.of(Characteristics.UNORDERED);
-    }
-  }
-
-  /**
-   * A collector that creates Entries of {@code <String, MapEntryValue>} and
-   * creates a set of entries all key value pairs in the map.
-   */
-  private static class EntrySetCollector implements
-      Collector<Map.Entry<String, MapEntryValues>,
-          Set<Map.Entry<String, byte[]>>,
-          Set<Map.Entry<String, byte[]>>> {
-    private Set<Map.Entry<String, byte[]>> set = null;
-
-    @Override
-    public Supplier<Set<Map.Entry<String, byte[]>>> supplier() {
-      return () -> {
-        if (set == null) {
-          set = Sets.newHashSet();
-        }
-        return set;
-      };
-    }
-
-    @Override
-    public BiConsumer<Set<Map.Entry<String, byte[]>>,
-        Map.Entry<String, MapEntryValues>> accumulator() {
-      return (set, entry) -> {
-        entry
-            .getValue()
-            .values()
-            .forEach(byteValue ->
-                set.add(Maps.immutableEntry(entry.getKey(),
-                    byteValue)));
-      };
-    }
-
-    @Override
-    public BinaryOperator<Set<Map.Entry<String, byte[]>>> combiner() {
-      return (setOne, setTwo) -> {
-        setOne.addAll(setTwo);
-        return setOne;
-      };
-    }
-
-    @Override
-    public Function<Set<Map.Entry<String, byte[]>>,
-        Set<Map.Entry<String, byte[]>>> finisher() {
-      return (unused) -> set;
-    }
-
-    @Override
-    public Set<Characteristics> characteristics() {
-      return EnumSet.of(Characteristics.UNORDERED);
     }
   }
 

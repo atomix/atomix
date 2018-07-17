@@ -15,6 +15,7 @@
  */
 package io.atomix.core.multimap.impl;
 
+import com.google.common.collect.Multiset;
 import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
@@ -318,5 +319,31 @@ public interface AtomicMultimapService {
    */
   @Command
   void closeEntries(long iteratorId);
+
+  /**
+   * Returns a values entry iterator.
+   *
+   * @return the values entry iterator ID
+   */
+  @Command
+  long iterateValuesSet();
+
+  /**
+   * Returns the next batch of values entries for the given iterator.
+   *
+   * @param iteratorId the iterator identifier
+   * @param position   the iterator position
+   * @return the next batch of entries for the iterator or {@code null} if the iterator is complete
+   */
+  @Query
+  IteratorBatch<Multiset.Entry<byte[]>> nextValuesSet(long iteratorId, int position);
+
+  /**
+   * Closes a values entry iterator.
+   *
+   * @param iteratorId the iterator identifier
+   */
+  @Command
+  void closeValuesSet(long iteratorId);
 
 }
