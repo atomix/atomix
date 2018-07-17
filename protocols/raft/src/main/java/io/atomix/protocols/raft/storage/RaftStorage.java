@@ -71,6 +71,7 @@ public class RaftStorage {
   private final int maxEntriesPerSegment;
   private final boolean dynamicCompaction;
   private final double freeDiskBuffer;
+  private final double freeMemoryBuffer;
   private final boolean flushOnCommit;
   private final boolean retainStaleSnapshots;
   private final StorageStatistics statistics;
@@ -84,6 +85,7 @@ public class RaftStorage {
       int maxEntriesPerSegment,
       boolean dynamicCompaction,
       double freeDiskBuffer,
+      double freeMemoryBuffer,
       boolean flushOnCommit,
       boolean retainStaleSnapshots) {
     this.prefix = prefix;
@@ -94,6 +96,7 @@ public class RaftStorage {
     this.maxEntriesPerSegment = maxEntriesPerSegment;
     this.dynamicCompaction = dynamicCompaction;
     this.freeDiskBuffer = freeDiskBuffer;
+    this.freeMemoryBuffer = freeMemoryBuffer;
     this.flushOnCommit = flushOnCommit;
     this.retainStaleSnapshots = retainStaleSnapshots;
     this.statistics = new StorageStatistics(directory);
@@ -182,6 +185,15 @@ public class RaftStorage {
    */
   public double freeDiskBuffer() {
     return freeDiskBuffer;
+  }
+
+  /**
+   * Returns the percentage of memory space that must be available before log compaction is forced.
+   *
+   * @return the percentage of memory space that must be available before log compaction is forced
+   */
+  public double freeMemoryBuffer() {
+    return freeMemoryBuffer;
   }
 
   /**
@@ -339,6 +351,7 @@ public class RaftStorage {
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
     private static final boolean DEFAULT_DYNAMIC_COMPACTION = true;
     private static final double DEFAULT_FREE_DISK_BUFFER = .2;
+    private static final double DEFAULT_FREE_MEMORY_BUFFER = .2;
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = true;
     private static final boolean DEFAULT_RETAIN_STALE_SNAPSHOTS = false;
 
@@ -350,6 +363,7 @@ public class RaftStorage {
     private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
     private boolean dynamicCompaction = DEFAULT_DYNAMIC_COMPACTION;
     private double freeDiskBuffer = DEFAULT_FREE_DISK_BUFFER;
+    private double freeMemoryBuffer = DEFAULT_FREE_MEMORY_BUFFER;
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
     private boolean retainStaleSnapshots = DEFAULT_RETAIN_STALE_SNAPSHOTS;
 
@@ -503,6 +517,19 @@ public class RaftStorage {
     }
 
     /**
+     * Sets the percentage of free memory space that must be preserved before log compaction is forced.
+     *
+     * @param freeMemoryBuffer the free disk percentage
+     * @return the Raft log builder
+     */
+    public Builder withFreeMemoryBuffer(double freeMemoryBuffer) {
+      checkArgument(freeMemoryBuffer > 0, "freeMemoryBuffer must be positive");
+      checkArgument(freeMemoryBuffer < 1, "freeMemoryBuffer must be less than 1");
+      this.freeMemoryBuffer = freeMemoryBuffer;
+      return this;
+    }
+
+    /**
      * Enables flushing buffers to disk when entries are committed to a segment, returning the builder
      * for method chaining.
      * <p>
@@ -578,6 +605,7 @@ public class RaftStorage {
           maxEntriesPerSegment,
           dynamicCompaction,
           freeDiskBuffer,
+          freeMemoryBuffer,
           flushOnCommit,
           retainStaleSnapshots);
     }
