@@ -15,7 +15,6 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.cache.CachedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
@@ -28,7 +27,7 @@ import io.atomix.primitive.protocol.ProxyProtocol;
  * @param <V> type for map value
  */
 public abstract class AtomicMapBuilder<K, V>
-    extends CachedPrimitiveBuilder<AtomicMapBuilder<K, V>, AtomicMapConfig, AtomicMap<K, V>>
+    extends MapBuilder<AtomicMapBuilder<K, V>, AtomicMapConfig, AtomicMap<K, V>, K, V>
     implements ProxyCompatibleBuilder<AtomicMapBuilder<K, V>> {
 
   protected AtomicMapBuilder(String name, AtomicMapConfig config, PrimitiveManagementService managementService) {

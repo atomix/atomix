@@ -13,38 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.collection;
+package io.atomix.core.map;
 
 import com.google.common.collect.Lists;
-import io.atomix.primitive.PrimitiveBuilder;
+import io.atomix.core.cache.CachedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.SyncPrimitive;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.NamespaceConfig;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 
 /**
- * Distributed collection builder.
+ * Base map builder.
  */
-public abstract class DistributedCollectionBuilder<
-    B extends DistributedCollectionBuilder<B, C, P, E>,
-    C extends DistributedCollectionConfig<C>,
-    P extends DistributedCollection<E>, E>
-    extends PrimitiveBuilder<B, C, P> {
-  protected DistributedCollectionBuilder(PrimitiveType type, String name, C config, PrimitiveManagementService managementService) {
+public abstract class MapBuilder<B extends MapBuilder<B, C, P, K, V>, C extends MapConfig<C>, P extends SyncPrimitive, K, V> extends CachedPrimitiveBuilder<B, C, P> {
+  protected MapBuilder(PrimitiveType type, String name, C config, PrimitiveManagementService managementService) {
     super(type, name, config, managementService);
   }
 
   /**
-   * Sets the element type.
+   * Sets the key type.
    *
-   * @param elementType the element type
-   * @return the collection builder
+   * @param keyType the key type
+   * @return the map builder
    */
   @SuppressWarnings("unchecked")
-  public B withElementType(Class<?> elementType) {
-    config.setElementType(elementType);
+  public B withKeyType(Class<?> keyType) {
+    config.setKeyType(keyType);
+    return (B) this;
+  }
+
+  /**
+   * Sets the value type.
+   *
+   * @param valueType the value type
+   * @return the map builder
+   */
+  @SuppressWarnings("unchecked")
+  public B withValueType(Class<?> valueType) {
+    config.setValueType(valueType);
     return (B) this;
   }
 
@@ -52,7 +61,7 @@ public abstract class DistributedCollectionBuilder<
    * Sets extra serializable types on the map.
    *
    * @param extraTypes the types to set
-   * @return the collection builder
+   * @return the map builder
    */
   @SuppressWarnings("unchecked")
   public B withExtraTypes(Class<?>... extraTypes) {
@@ -64,7 +73,7 @@ public abstract class DistributedCollectionBuilder<
    * Adds an extra serializable type to the map.
    *
    * @param extraType the type to add
-   * @return the collection builder
+   * @return the map builder
    */
   @SuppressWarnings("unchecked")
   public B addExtraType(Class<?> extraType) {
@@ -75,7 +84,7 @@ public abstract class DistributedCollectionBuilder<
   /**
    * Sets whether registration is required for serializable types.
    *
-   * @return the collection configuration
+   * @return the map configuration
    */
   @SuppressWarnings("unchecked")
   public B withRegistrationRequired() {
@@ -86,7 +95,7 @@ public abstract class DistributedCollectionBuilder<
    * Sets whether registration is required for serializable types.
    *
    * @param registrationRequired whether registration is required for serializable types
-   * @return the collection builder
+   * @return the map configuration
    */
   @SuppressWarnings("unchecked")
   public B withRegistrationRequired(boolean registrationRequired) {
@@ -97,7 +106,7 @@ public abstract class DistributedCollectionBuilder<
   /**
    * Sets whether compatible serialization is enabled.
    *
-   * @return the collection builder
+   * @return the map configuration
    */
   @SuppressWarnings("unchecked")
   public B withCompatibleSerialization() {
@@ -108,7 +117,7 @@ public abstract class DistributedCollectionBuilder<
    * Sets whether compatible serialization is enabled.
    *
    * @param compatibleSerialization whether compatible serialization is enabled
-   * @return the collection builder
+   * @return the map configuration
    */
   @SuppressWarnings("unchecked")
   public B withCompatibleSerialization(boolean compatibleSerialization) {
@@ -137,8 +146,11 @@ public abstract class DistributedCollectionBuilder<
       namespaceBuilder.setRegistrationRequired(config.isRegistrationRequired());
       namespaceBuilder.setCompatible(config.isCompatibleSerialization());
 
-      if (config.getElementType() != null) {
-        namespaceBuilder.registerSubTypes(config.getElementType());
+      if (config.getKeyType() != null) {
+        namespaceBuilder.registerSubTypes(config.getKeyType());
+      }
+      if (config.getValueType() != null) {
+        namespaceBuilder.registerSubTypes(config.getValueType());
       }
       if (!config.getExtraTypes().isEmpty()) {
         namespaceBuilder.register(config.getExtraTypes().toArray(new Class<?>[config.getExtraTypes().size()]));

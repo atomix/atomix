@@ -17,11 +17,10 @@ package io.atomix.core.collection.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.iterator.impl.PartitionedProxyIterator;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveException;
@@ -33,8 +32,8 @@ import io.atomix.utils.concurrent.Futures;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
@@ -44,7 +43,7 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
     extends AbstractAsyncPrimitive<A, S>
     implements AsyncDistributedCollection<String>, DistributedCollectionClient<String> {
 
-  private final Set<CollectionEventListener<String>> eventListeners = Sets.newIdentityHashSet();
+  private final Map<CollectionEventListener<String>, Executor> eventListeners = Maps.newConcurrentMap();
 
   public PartitionedDistributedCollectionProxy(ProxyClient<S> client, PrimitiveRegistry registry) {
     super(client, registry);
@@ -52,7 +51,7 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
 
   @Override
   public void onEvent(CollectionEvent<String> event) {
-    eventListeners.forEach(l -> l.event(event));
+    eventListeners.forEach((listener, executor) -> executor.execute(() -> listener.event(event)));
   }
 
   @Override
@@ -139,19 +138,18 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
   }
 
   @Override
-  public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener) {
-    if (eventListeners.isEmpty()) {
-      eventListeners.add(listener);
+  public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener, Executor executor) {
+    if (eventListeners.putIfAbsent(listener, executor) == null) {
       return getProxyClient().acceptAll(service -> service.listen()).thenApply(v -> null);
     } else {
-      eventListeners.add(listener);
       return CompletableFuture.completedFuture(null);
     }
   }
 
   @Override
   public synchronized CompletableFuture<Void> removeListener(CollectionEventListener<String> listener) {
-    if (eventListeners.remove(listener) && eventListeners.isEmpty()) {
+    eventListeners.remove(listener);
+    if (eventListeners.isEmpty()) {
       return getProxyClient().acceptAll(service -> service.unlisten()).thenApply(v -> null);
     }
     return CompletableFuture.completedFuture(null);

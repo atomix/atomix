@@ -20,13 +20,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multiset;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.DistributedCollectionType;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.iterator.impl.PartitionedProxyIterator;
+import io.atomix.core.iterator.impl.TranscodingIterator;
 import io.atomix.core.map.AsyncDistributedMap;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapType;
@@ -463,7 +464,7 @@ public class AtomicMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener, Executor executor) {
       AtomicMultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
@@ -476,8 +477,10 @@ public class AtomicMultimapProxy
             break;
         }
       };
-      eventListeners.put(listener, mapListener);
-      return AtomicMultimapProxy.this.addListener(mapListener);
+      if (eventListeners.putIfAbsent(listener, mapListener) == null) {
+        return AtomicMultimapProxy.this.addListener(mapListener, executor);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -634,7 +637,7 @@ public class AtomicMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<String> listener, Executor executor) {
       AtomicMultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
@@ -647,8 +650,10 @@ public class AtomicMultimapProxy
             break;
         }
       };
-      eventListeners.put(listener, mapListener);
-      return AtomicMultimapProxy.this.addListener(mapListener);
+      if (eventListeners.putIfAbsent(listener, mapListener) == null) {
+        return AtomicMultimapProxy.this.addListener(mapListener, executor);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -746,12 +751,12 @@ public class AtomicMultimapProxy
 
     @Override
     public AsyncDistributedSet<byte[]> elementSet() {
-      throw new UnsupportedOperationException();
+      return new ElementSet();
     }
 
     @Override
     public AsyncDistributedSet<Multiset.Entry<byte[]>> entrySet() {
-      throw new UnsupportedOperationException();
+      return new EntrySet();
     }
 
     @Override
@@ -786,7 +791,7 @@ public class AtomicMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<byte[]> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<byte[]> listener, Executor executor) {
       AtomicMultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
@@ -799,8 +804,10 @@ public class AtomicMultimapProxy
             break;
         }
       };
-      eventListeners.put(listener, mapListener);
-      return AtomicMultimapProxy.this.addListener(mapListener);
+      if (eventListeners.putIfAbsent(listener, mapListener) == null) {
+        return AtomicMultimapProxy.this.addListener(mapListener, executor);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -820,6 +827,228 @@ public class AtomicMultimapProxy
     @Override
     public DistributedMultiset<byte[]> sync(Duration operationTimeout) {
       return new BlockingDistributedMultiset<>(this, operationTimeout.toMillis());
+    }
+
+    private class ElementSet implements AsyncDistributedSet<byte[]> {
+      @Override
+      public String name() {
+        return AtomicMultimapProxy.this.name();
+      }
+
+      @Override
+      public PrimitiveType type() {
+        return DistributedSetType.instance();
+      }
+
+      @Override
+      public PrimitiveProtocol protocol() {
+        return AtomicMultimapProxy.this.protocol();
+      }
+
+      @Override
+      public CompletableFuture<Boolean> add(byte[] element) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Boolean> remove(byte[] element) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Integer> size() {
+        return Values.this.size();
+      }
+
+      @Override
+      public CompletableFuture<Boolean> isEmpty() {
+        return AtomicMultimapProxy.this.isEmpty();
+      }
+
+      @Override
+      public CompletableFuture<Void> clear() {
+        return AtomicMultimapProxy.this.clear();
+      }
+
+      @Override
+      public CompletableFuture<Boolean> contains(byte[] element) {
+        return Values.this.contains(element);
+      }
+
+      @Override
+      public CompletableFuture<Boolean> addAll(Collection<? extends byte[]> c) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Boolean> containsAll(Collection<? extends byte[]> c) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Boolean> retainAll(Collection<? extends byte[]> c) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Boolean> removeAll(Collection<? extends byte[]> c) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Void> addListener(CollectionEventListener<byte[]> listener, Executor executor) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Void> removeListener(CollectionEventListener<byte[]> listener) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public AsyncIterator<byte[]> iterator() {
+        return new TranscodingIterator<>(new PartitionedProxyIterator<>(
+            getProxyClient(),
+            AtomicMultimapService::iterateValuesSet,
+            AtomicMultimapService::nextValuesSet,
+            AtomicMultimapService::closeValuesSet), e -> e.getElement());
+      }
+
+      @Override
+      public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<byte[]>> transactionLog) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Void> commit(TransactionId transactionId) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Void> rollback(TransactionId transactionId) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Void> close() {
+        return AtomicMultimapProxy.this.close();
+      }
+
+      @Override
+      public DistributedSet<byte[]> sync(Duration operationTimeout) {
+        return new BlockingDistributedSet<>(this, operationTimeout.toMillis());
+      }
+    }
+
+    private class EntrySet implements AsyncDistributedSet<Multiset.Entry<byte[]>> {
+      @Override
+      public String name() {
+        return AtomicMultimapProxy.this.name();
+      }
+
+      @Override
+      public PrimitiveType type() {
+        return DistributedSetType.instance();
+      }
+
+      @Override
+      public PrimitiveProtocol protocol() {
+        return AtomicMultimapProxy.this.protocol();
+      }
+
+      @Override
+      public CompletableFuture<Boolean> add(Multiset.Entry<byte[]> element) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Boolean> remove(Multiset.Entry<byte[]> element) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Integer> size() {
+        return AtomicMultimapProxy.this.size();
+      }
+
+      @Override
+      public CompletableFuture<Boolean> isEmpty() {
+        return AtomicMultimapProxy.this.isEmpty();
+      }
+
+      @Override
+      public CompletableFuture<Void> clear() {
+        return AtomicMultimapProxy.this.clear();
+      }
+
+      @Override
+      public CompletableFuture<Boolean> contains(Multiset.Entry<byte[]> element) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Boolean> addAll(Collection<? extends Multiset.Entry<byte[]>> c) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Boolean> containsAll(Collection<? extends Multiset.Entry<byte[]>> c) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Boolean> retainAll(Collection<? extends Multiset.Entry<byte[]>> c) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Boolean> removeAll(Collection<? extends Multiset.Entry<byte[]>> c) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Void> addListener(CollectionEventListener<Multiset.Entry<byte[]>> listener, Executor executor) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Void> removeListener(CollectionEventListener<Multiset.Entry<byte[]>> listener) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public AsyncIterator<Multiset.Entry<byte[]>> iterator() {
+        return new PartitionedProxyIterator<>(
+            getProxyClient(),
+            AtomicMultimapService::iterateValuesSet,
+            AtomicMultimapService::nextValuesSet,
+            AtomicMultimapService::closeValuesSet);
+      }
+
+      @Override
+      public CompletableFuture<Boolean> prepare(TransactionLog<SetUpdate<Multiset.Entry<byte[]>>> transactionLog) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Void> commit(TransactionId transactionId) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Void> rollback(TransactionId transactionId) {
+        return Futures.exceptionalFuture(new UnsupportedOperationException());
+      }
+
+      @Override
+      public CompletableFuture<Void> close() {
+        return AtomicMultimapProxy.this.close();
+      }
+
+      @Override
+      public DistributedSet<Multiset.Entry<byte[]>> sync(Duration operationTimeout) {
+        return new BlockingDistributedSet<>(this, operationTimeout.toMillis());
+      }
     }
   }
 
@@ -903,7 +1132,7 @@ public class AtomicMultimapProxy
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<String, byte[]>> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<String, byte[]>> listener, Executor executor) {
       AtomicMultimapEventListener<String, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
@@ -916,8 +1145,10 @@ public class AtomicMultimapProxy
             break;
         }
       };
-      eventListeners.put(listener, mapListener);
-      return AtomicMultimapProxy.this.addListener(mapListener);
+      if (eventListeners.putIfAbsent(listener, mapListener) == null) {
+        return AtomicMultimapProxy.this.addListener(mapListener, executor);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override

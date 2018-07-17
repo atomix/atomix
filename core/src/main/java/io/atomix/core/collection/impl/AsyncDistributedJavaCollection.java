@@ -27,6 +27,7 @@ import io.atomix.primitive.protocol.PrimitiveProtocol;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Asynchronous distributed Java-backed collection.
@@ -109,7 +110,7 @@ public class AsyncDistributedJavaCollection<E> implements AsyncDistributedCollec
   }
 
   @Override
-  public CompletableFuture<Void> addListener(CollectionEventListener<E> listener) {
+  public CompletableFuture<Void> addListener(CollectionEventListener<E> listener, Executor executor) {
     return CompletableFuture.completedFuture(null);
   }
 

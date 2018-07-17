@@ -19,6 +19,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.core.cache.CacheConfig;
 import io.atomix.core.multimap.AsyncAtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapEventListener;
@@ -27,8 +28,11 @@ import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -42,6 +46,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class CachingAsyncAtomicMultimap<K, V> extends DelegatingAsyncAtomicMultimap<K, V> {
   private final Logger log = getLogger(getClass());
 
+  private final Map<AtomicMultimapEventListener<K, V>, Executor> mapEventListeners = new ConcurrentHashMap<>();
   private final LoadingCache<K, CompletableFuture<Versioned<Collection<V>>>> cache;
   private final AtomicMultimapEventListener<K, V> cacheUpdater;
   private final Consumer<PrimitiveState> stateListener;
@@ -49,7 +54,7 @@ public class CachingAsyncAtomicMultimap<K, V> extends DelegatingAsyncAtomicMulti
   /**
    * Constructor to configure cache size.
    *
-   * @param backingMap  a distributed, strongly consistent map for backing
+   * @param backingMap a distributed, strongly consistent map for backing
    * @param cacheConfig the cache configuration
    */
   public CachingAsyncAtomicMultimap(AsyncAtomicMultimap<K, V> backingMap, CacheConfig cacheConfig) {
@@ -94,6 +99,7 @@ public class CachingAsyncAtomicMultimap<K, V> extends DelegatingAsyncAtomicMulti
         default:
           break;
       }
+      mapEventListeners.forEach((listener, executor) -> executor.execute(() -> listener.event(event)));
     };
     stateListener = status -> {
       log.debug("{} status changed to {}", this.name(), status);
@@ -103,7 +109,7 @@ public class CachingAsyncAtomicMultimap<K, V> extends DelegatingAsyncAtomicMulti
         cache.invalidateAll();
       }
     };
-    super.addListener(cacheUpdater);
+    super.addListener(cacheUpdater, MoreExecutors.directExecutor());
     super.addStateChangeListener(stateListener);
   }
 
@@ -162,6 +168,18 @@ public class CachingAsyncAtomicMultimap<K, V> extends DelegatingAsyncAtomicMulti
             cache.invalidate(key);
           }
         });
+  }
+
+  @Override
+  public CompletableFuture<Void> addListener(AtomicMultimapEventListener<K, V> listener, Executor executor) {
+    mapEventListeners.put(listener, executor);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<Void> removeListener(AtomicMultimapEventListener<K, V> listener) {
+    mapEventListeners.remove(listener);
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override

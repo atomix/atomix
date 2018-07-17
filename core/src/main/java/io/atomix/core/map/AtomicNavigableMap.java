@@ -125,6 +125,11 @@ public interface AtomicNavigableMap<K extends Comparable<K>, V> extends AtomicSo
    */
   DistributedNavigableSet<K> navigableKeySet();
 
+  @Override
+  default AtomicSortedMap<K, V> subMap(K fromKey, K toKey) {
+    return subMap(fromKey, true, toKey, false);
+  }
+
   /**
    * Returns a view of the portion of this map whose keys range from
    * {@code fromKey} to {@code toKey}.  If {@code fromKey} and
@@ -161,6 +166,11 @@ public interface AtomicNavigableMap<K extends Comparable<K>, V> extends AtomicSo
    */
   AtomicNavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey,   boolean toInclusive);
 
+  @Override
+  default AtomicSortedMap<K, V> headMap(K toKey) {
+    return headMap(toKey, false);
+  }
+
   /**
    * Returns a view of the portion of this map whose keys are less than (or
    * equal to, if {@code inclusive} is true) {@code toKey}.  The returned
@@ -189,6 +199,11 @@ public interface AtomicNavigableMap<K extends Comparable<K>, V> extends AtomicSo
    *         bounds of the range
    */
   AtomicNavigableMap<K, V> headMap(K toKey, boolean inclusive);
+
+  @Override
+  default AtomicSortedMap<K, V> tailMap(K fromKey) {
+    return tailMap(fromKey, true);
+  }
 
   /**
    * Returns a view of the portion of this map whose keys are greater than (or

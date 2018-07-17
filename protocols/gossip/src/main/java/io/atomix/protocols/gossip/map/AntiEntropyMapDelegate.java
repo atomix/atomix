@@ -119,10 +119,10 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
   private volatile boolean closed = false;
   private SlidingWindowCounter counter = new SlidingWindowCounter(WINDOW_SIZE);
 
-  public AntiEntropyMapDelegate(String name, AntiEntropyProtocolConfig config, PrimitiveManagementService managementService) {
+  public AntiEntropyMapDelegate(String name, Serializer entrySerializer, AntiEntropyProtocolConfig config, PrimitiveManagementService managementService) {
     this.localMemberId = managementService.getMembershipService().getLocalMember().id();
     this.mapName = name;
-    this.entrySerializer = config.getSerializer();
+    this.entrySerializer = entrySerializer;
     this.serializer = Serializer.using(Namespace.builder()
         .nextId(Namespaces.BEGIN_USER_CUSTOM_ID + 100)
         .register(Namespaces.BASIC)

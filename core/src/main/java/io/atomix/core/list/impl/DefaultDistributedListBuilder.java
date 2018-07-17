@@ -21,7 +21,6 @@ import io.atomix.core.list.DistributedList;
 import io.atomix.core.list.DistributedListBuilder;
 import io.atomix.core.list.DistributedListConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -40,11 +39,10 @@ public class DefaultDistributedListBuilder<E> extends DistributedListBuilder<E> 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<DistributedList<E>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
     return newProxy(DistributedListService.class, new ServiceConfig())
         .thenCompose(proxy -> new DistributedListProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(rawList -> {
-          Serializer serializer = protocol.serializer();
+          Serializer serializer = serializer();
           AsyncDistributedList<E> list = new TranscodingAsyncDistributedList<>(
               rawList,
               element -> BaseEncoding.base16().encode(serializer.encode(element)),

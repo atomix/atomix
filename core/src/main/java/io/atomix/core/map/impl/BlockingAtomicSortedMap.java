@@ -27,10 +27,12 @@ import io.atomix.core.map.AtomicSortedMap;
 public class BlockingAtomicSortedMap<K extends Comparable<K>, V> extends BlockingAtomicMap<K, V> implements AtomicSortedMap<K, V> {
 
   private final AsyncAtomicSortedMap<K, V> asyncMap;
+  private final long operationTimeoutMillis;
 
   public BlockingAtomicSortedMap(AsyncAtomicSortedMap<K, V> asyncMap, long operationTimeoutMillis) {
     super(asyncMap, operationTimeoutMillis);
     this.asyncMap = asyncMap;
+    this.operationTimeoutMillis = operationTimeoutMillis;
   }
 
   @Override
@@ -41,6 +43,21 @@ public class BlockingAtomicSortedMap<K extends Comparable<K>, V> extends Blockin
   @Override
   public K lastKey() {
     return complete(asyncMap.lastKey());
+  }
+
+  @Override
+  public AtomicSortedMap<K, V> subMap(K fromKey, K toKey) {
+    return new BlockingAtomicSortedMap<>(asyncMap.subMap(fromKey, toKey), operationTimeoutMillis);
+  }
+
+  @Override
+  public AtomicSortedMap<K, V> headMap(K toKey) {
+    return new BlockingAtomicSortedMap<>(asyncMap.headMap(toKey), operationTimeoutMillis);
+  }
+
+  @Override
+  public AtomicSortedMap<K, V> tailMap(K fromKey) {
+    return new BlockingAtomicSortedMap<>(asyncMap.tailMap(fromKey), operationTimeoutMillis);
   }
 
   @Override

@@ -26,6 +26,7 @@ import io.atomix.utils.time.Versioned;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Document tree that delegates to an underlying instance.
@@ -84,8 +85,8 @@ public class DelegatingAsyncAtomicDocumentTree<V> extends DelegatingAsyncPrimiti
   }
 
   @Override
-  public CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<V> listener) {
-    return delegateTree.addListener(path, listener);
+  public CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<V> listener, Executor executor) {
+    return delegateTree.addListener(path, listener, executor);
   }
 
   @Override

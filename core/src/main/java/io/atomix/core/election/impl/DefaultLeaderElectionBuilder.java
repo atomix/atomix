@@ -19,7 +19,6 @@ import io.atomix.core.election.LeaderElection;
 import io.atomix.core.election.LeaderElectionBuilder;
 import io.atomix.core.election.LeaderElectionConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -36,11 +35,10 @@ public class DefaultLeaderElectionBuilder<T> extends LeaderElectionBuilder<T> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<LeaderElection<T>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
     return newProxy(LeaderElectionService.class, new ServiceConfig())
         .thenCompose(proxy -> new LeaderElectionProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(election -> {
-          Serializer serializer = protocol.serializer();
+          Serializer serializer = serializer();
           return new TranscodingAsyncLeaderElection<T, byte[]>(
               election,
               key -> serializer.encode(key),

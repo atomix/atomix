@@ -214,6 +214,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven.surefire.plugin.version}</version>
         <configuration>
+          <skipTests>${env.SKIP_TESTS}</skipTests>
           <shutdown>kill</shutdown>
           <argLine>${argLine} ${argLine.extras} ${argLine.common}</argLine>
         </configuration>

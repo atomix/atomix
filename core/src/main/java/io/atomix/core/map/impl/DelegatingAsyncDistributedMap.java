@@ -269,10 +269,10 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
     }
 
     @Override
-    public CompletableFuture<Void> addListener(CollectionEventListener<V> listener) {
+    public CompletableFuture<Void> addListener(CollectionEventListener<V> listener, Executor executor) {
       CollectionEventListener<Versioned<V>> atomicListener = new VersionedCollectionEventListener(listener);
       if (listenerMap.putIfAbsent(listener, atomicListener) == null) {
-        return values.addListener(atomicListener);
+        return values.addListener(atomicListener, executor);
       }
       return CompletableFuture.completedFuture(null);
     }
@@ -389,10 +389,10 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
     }
 
     @Override
-    public CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<K, V>> listener) {
+    public CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<K, V>> listener, Executor executor) {
       CollectionEventListener<Map.Entry<K, Versioned<V>>> atomicListener = new VersionedCollectionEventListener(listener);
       if (listenerMap.putIfAbsent(listener, atomicListener) == null) {
-        return entries.addListener(atomicListener);
+        return entries.addListener(atomicListener, executor);
       }
       return CompletableFuture.completedFuture(null);
     }

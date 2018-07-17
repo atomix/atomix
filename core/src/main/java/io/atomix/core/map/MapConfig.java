@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.collection;
+package io.atomix.core.map;
 
 import io.atomix.core.cache.CachedPrimitiveConfig;
 
@@ -21,32 +21,54 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Distributed collection configuration.
+ * Map configuration.
  */
-public abstract class DistributedCollectionConfig<C extends DistributedCollectionConfig<C>> extends CachedPrimitiveConfig<C> {
-  private Class<?> elementType;
+public abstract class MapConfig<C extends MapConfig<C>> extends CachedPrimitiveConfig<C> {
+  private Class<?> keyType;
+  private Class<?> valueType;
   private List<Class<?>> extraTypes = new ArrayList<>();
   private boolean registrationRequired = false;
   private boolean compatibleSerialization = false;
 
   /**
-   * Returns the element type.
+   * Returns the key type.
    *
-   * @return the collection element type
+   * @return the map key type
    */
-  public Class<?> getElementType() {
-    return elementType;
+  public Class<?> getKeyType() {
+    return keyType;
   }
 
   /**
-   * Sets the collection element type.
+   * Sets the map key type.
    *
-   * @param elementType the collection element type
-   * @return the collection configuration
+   * @param keyType the map key type
+   * @return the map configuration
    */
   @SuppressWarnings("unchecked")
-  public C setElementType(Class<?> elementType) {
-    this.elementType = elementType;
+  public C setKeyType(Class<?> keyType) {
+    this.keyType = keyType;
+    return (C) this;
+  }
+
+  /**
+   * Returns the value type.
+   *
+   * @return the map value type
+   */
+  public Class<?> getValueType() {
+    return valueType;
+  }
+
+  /**
+   * Sets the map value type.
+   *
+   * @param valueType the map value type
+   * @return the map configuration
+   */
+  @SuppressWarnings("unchecked")
+  public C setValueType(Class<?> valueType) {
+    this.valueType = valueType;
     return (C) this;
   }
 
@@ -63,7 +85,7 @@ public abstract class DistributedCollectionConfig<C extends DistributedCollectio
    * Sets the extra serializable types.
    *
    * @param extraTypes the extra serializable types
-   * @return the collection configuration
+   * @return the map configuration
    */
   @SuppressWarnings("unchecked")
   public C setExtraTypes(List<Class<?>> extraTypes) {
@@ -75,7 +97,7 @@ public abstract class DistributedCollectionConfig<C extends DistributedCollectio
    * Adds an extra serializable type.
    *
    * @param extraType the extra type to add
-   * @return the collection configuration
+   * @return the map configuration
    */
   @SuppressWarnings("unchecked")
   public C addExtraType(Class<?> extraType) {
@@ -96,7 +118,7 @@ public abstract class DistributedCollectionConfig<C extends DistributedCollectio
    * Sets whether registration is required for serializable types.
    *
    * @param registrationRequired whether registration is required for serializable types
-   * @return the collection configuration
+   * @return the map configuration
    */
   @SuppressWarnings("unchecked")
   public C setRegistrationRequired(boolean registrationRequired) {
@@ -117,7 +139,7 @@ public abstract class DistributedCollectionConfig<C extends DistributedCollectio
    * Sets whether compatible serialization is enabled.
    *
    * @param compatibleSerialization whether compatible serialization is enabled
-   * @return the collection configuration
+   * @return the map configuration
    */
   @SuppressWarnings("unchecked")
   public C setCompatibleSerialization(boolean compatibleSerialization) {
