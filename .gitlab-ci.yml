@@ -1,6 +1,6 @@
 variables:
   MAVEN_OPTS: "-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository"
-  MAVEN_CLI_OPTS: "-s bin/settings.xml --batch-mode -U --errors --fail-at-end --show-version -Droot.logging.level=INFO"
+  MAVEN_CLI_OPTS: "-s bin/settings.xml --batch-mode -U --errors --show-version -Droot.logging.level=INFO"
 
 cache:
   paths:
@@ -14,7 +14,7 @@ cache:
     - export repoToken=$COVERALLS_TOKEN
     - export CI_BRANCH=$CI_COMMIT_REF_NAME
     - export CI_BUILD_URL=$CI_JOB_URL
-    - mvn $MAVEN_CLI_OPTS clean install verify jacoco:report coveralls:report -Dmaven.javadoc.skip=true
+    - mvn $MAVEN_CLI_OPTS clean install verify jacoco:report coveralls:report -DCI_NAME=gitlab -DCI_BRANCH=$CI_COMMIT_REF_NAME -Dmaven.javadoc.skip=true
 
 # Verify merge requests using JDK8
 verify:jdk8:
