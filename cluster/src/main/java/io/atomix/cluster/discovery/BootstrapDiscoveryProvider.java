@@ -21,6 +21,7 @@ import com.google.common.collect.Maps;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.Node;
+import io.atomix.cluster.NodeConfig;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.impl.AddressSerializer;
 import io.atomix.cluster.impl.PhiAccrualFailureDetector;
@@ -131,8 +132,10 @@ public class BootstrapDiscoveryProvider
   }
 
   public BootstrapDiscoveryProvider(Collection<Node> bootstrapNodes) {
-    this.config = new BootstrapDiscoveryConfig();
-    this.bootstrapNodes = ImmutableSet.copyOf(bootstrapNodes);
+    this(new BootstrapDiscoveryConfig().setNodes(bootstrapNodes.stream()
+        .map(node -> new NodeConfig().setId(node.id())
+            .setAddress(node.address()))
+        .collect(Collectors.toList())));
   }
 
   BootstrapDiscoveryProvider(BootstrapDiscoveryConfig config) {
