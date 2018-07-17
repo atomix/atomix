@@ -6,7 +6,7 @@ cache:
   paths:
     - ./.m2/repository
   # keep cache across branch
-  key: "$CI_BUILD_REF_NAME"
+  key: "$CI_COMMIT_REF_NAME"
 
 .verify: &verify
   stage: test

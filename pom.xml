@@ -341,6 +341,7 @@
         <version>4.3.0</version>
         <configuration>
           <repoToken>${env.repoToken}</repoToken>
+          <serviceName>gitlab</serviceName>
           <serviceBuildUrl>${env.CI_BUILD_URL}</serviceBuildUrl>
           <branch>${env.CI_BRANCH}</branch>
         </configuration>
