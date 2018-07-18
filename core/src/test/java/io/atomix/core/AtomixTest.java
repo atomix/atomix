@@ -471,11 +471,11 @@ public class AtomixTest extends AbstractAtomixTest {
         .build();
     instances.add(atomix);
 
-    try {
-      atomix.getAtomicCounter("foo");
-      fail();
-    } catch (IllegalStateException e) {
-    }
+    //try {
+    //  atomix.getAtomicCounter("foo");
+    //  fail();
+    //} catch (IllegalStateException e) {
+    //}
 
     atomix.start().get(30, TimeUnit.SECONDS);
 
