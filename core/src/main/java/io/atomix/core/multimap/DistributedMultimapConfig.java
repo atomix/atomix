@@ -24,6 +24,6 @@ import io.atomix.primitive.PrimitiveType;
 public class DistributedMultimapConfig extends CachedPrimitiveConfig<DistributedMultimapConfig> {
   @Override
   public PrimitiveType getType() {
-    return AtomicMultimapType.instance();
+    return DistributedMultimapType.instance();
   }
 }
