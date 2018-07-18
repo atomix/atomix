@@ -19,7 +19,9 @@ import com.google.common.collect.Maps;
 import io.atomix.core.map.AsyncAtomicNavigableMap;
 import io.atomix.core.map.AsyncDistributedNavigableMap;
 import io.atomix.core.map.DistributedNavigableMap;
+import io.atomix.core.map.DistributedNavigableMapType;
 import io.atomix.core.set.AsyncDistributedNavigableSet;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
@@ -29,7 +31,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Delegating asynchronous distributed navigable map.
  */
-public class DelegatingAsyncDistributedNavigableMap<K extends Comparable<K>, V> extends DelegatingAsyncDistributedSortedMap<K, V> implements AsyncDistributedNavigableMap<K, V> {
+public class DelegatingAsyncDistributedNavigableMap<K extends Comparable<K>, V>
+    extends DelegatingAsyncDistributedSortedMap<K, V> implements AsyncDistributedNavigableMap<K, V> {
   private final AsyncAtomicNavigableMap<K, V> atomicMap;
 
   public DelegatingAsyncDistributedNavigableMap(AsyncAtomicNavigableMap<K, V> atomicMap) {
@@ -39,6 +42,11 @@ public class DelegatingAsyncDistributedNavigableMap<K extends Comparable<K>, V> 
 
   private Map.Entry<K, V> convertEntry(Map.Entry<K, Versioned<V>> entry) {
     return entry == null ? null : Maps.immutableEntry(entry.getKey(), Versioned.valueOrNull(entry.getValue()));
+  }
+
+  @Override
+  public PrimitiveType type() {
+    return DistributedNavigableMapType.instance();
   }
 
   @Override
