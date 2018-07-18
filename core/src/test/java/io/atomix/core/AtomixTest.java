@@ -48,6 +48,7 @@ import io.atomix.core.tree.AtomicDocumentTreeType;
 import io.atomix.core.value.AtomicValueType;
 import io.atomix.core.value.DistributedValueType;
 import io.atomix.core.workqueue.WorkQueueType;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.net.Address;
 import org.junit.After;
@@ -66,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -453,6 +455,116 @@ public class AtomixTest extends AbstractAtomixTest {
     assertEquals("cc", atomix.getWorkQueue("cc").name());
     assertEquals(WorkQueueType.instance(), atomix.getWorkQueue("cc").type());
     assertSame(atomix.getWorkQueue("cc"), atomix.getWorkQueue("cc"));
+  }
+
+  @Test
+  public void testPrimitiveConfigurations() throws Exception {
+    IntStream.range(1, 4).forEach(i ->
+        instances.add(Atomix.builder(getClass().getResource("/primitives.conf").getFile())
+            .withMemberId(String.valueOf(i))
+            .withAddress("localhost", 5000 + i)
+            .build()));
+    Futures.allOf(instances.stream().map(Atomix::start)).get(30, TimeUnit.SECONDS);
+
+    Atomix atomix = Atomix.builder(getClass().getResource("/primitives.conf").getFile())
+        .withAddress("localhost:5000")
+        .build();
+    instances.add(atomix);
+
+    try {
+      atomix.getAtomicCounter("foo");
+      fail();
+    } catch (IllegalStateException e) {
+    }
+
+    atomix.start().get(30, TimeUnit.SECONDS);
+
+    assertEquals("atomic-counter", atomix.getAtomicCounter("atomic-counter").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getAtomicCounter("atomic-counter").protocol()).group());
+
+    assertEquals("atomic-map", atomix.getAtomicMap("atomic-map").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getAtomicMap("atomic-map").protocol()).group());
+
+    assertEquals("atomic-counter-map", atomix.getAtomicCounterMap("atomic-counter-map").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getAtomicCounterMap("atomic-counter-map").protocol()).group());
+
+    assertEquals("atomic-document-tree", atomix.getAtomicDocumentTree("atomic-document-tree").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getAtomicDocumentTree("atomic-document-tree").protocol()).group());
+
+    assertEquals("atomic-id-generator", atomix.getAtomicIdGenerator("atomic-id-generator").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getAtomicIdGenerator("atomic-id-generator").protocol()).group());
+
+    assertEquals("atomic-lock", atomix.getAtomicLock("atomic-lock").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getAtomicLock("atomic-lock").protocol()).group());
+
+    assertEquals("atomic-multimap", atomix.getAtomicMultimap("atomic-multimap").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getAtomicMultimap("atomic-multimap").protocol()).group());
+
+    assertEquals("atomic-navigable-map", atomix.getAtomicNavigableMap("atomic-navigable-map").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getAtomicNavigableMap("atomic-navigable-map").protocol()).group());
+
+    assertEquals("atomic-semaphore", atomix.getAtomicSemaphore("atomic-semaphore").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getAtomicSemaphore("atomic-semaphore").protocol()).group());
+
+    assertEquals("atomic-sorted-map", atomix.getAtomicSortedMap("atomic-sorted-map").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getAtomicSortedMap("atomic-sorted-map").protocol()).group());
+
+    assertEquals("atomic-value", atomix.getAtomicValue("atomic-value").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getAtomicValue("atomic-value").protocol()).group());
+
+    assertEquals("counter", atomix.getCounter("counter").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getCounter("counter").protocol()).group());
+
+    assertEquals("cyclic-barrier", atomix.getCyclicBarrier("cyclic-barrier").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getCyclicBarrier("cyclic-barrier").protocol()).group());
+
+    assertEquals("leader-election", atomix.getLeaderElection("leader-election").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getLeaderElection("leader-election").protocol()).group());
+
+    assertEquals("leader-elector", atomix.getLeaderElector("leader-elector").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getLeaderElector("leader-elector").protocol()).group());
+
+    assertEquals("list", atomix.getList("list").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getList("list").protocol()).group());
+
+    assertEquals("lock", atomix.getLock("lock").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getLock("lock").protocol()).group());
+
+    assertEquals("map", atomix.getMap("map").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getMap("map").protocol()).group());
+
+    assertEquals("multimap", atomix.getMultimap("multimap").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getMultimap("multimap").protocol()).group());
+
+    assertEquals("multiset", atomix.getMultiset("multiset").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getMultiset("multiset").protocol()).group());
+
+    assertEquals("navigable-map", atomix.getNavigableMap("navigable-map").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getNavigableMap("navigable-map").protocol()).group());
+
+    assertEquals("navigable-set", atomix.getNavigableSet("navigable-set").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getNavigableSet("navigable-set").protocol()).group());
+
+    assertEquals("queue", atomix.getQueue("queue").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getQueue("queue").protocol()).group());
+
+    assertEquals("semaphore", atomix.getSemaphore("semaphore").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getSemaphore("semaphore").protocol()).group());
+
+    assertEquals("set", atomix.getSet("set").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getSet("set").protocol()).group());
+
+    assertEquals("sorted-map", atomix.getSortedMap("sorted-map").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getSortedMap("sorted-map").protocol()).group());
+
+    assertEquals("sorted-set", atomix.getSortedSet("sorted-set").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getSortedSet("sorted-set").protocol()).group());
+
+    assertEquals("value", atomix.getValue("value").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getValue("value").protocol()).group());
+
+    assertEquals("work-queue", atomix.getWorkQueue("work-queue").name());
+    assertEquals("two", ((ProxyProtocol) atomix.getWorkQueue("work-queue").protocol()).group());
   }
 
   @Test

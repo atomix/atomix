@@ -93,6 +93,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Atomix!
@@ -342,6 +343,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   @Override
   public TransactionBuilder transactionBuilder(String name) {
+    checkRunning();
     return primitives.transactionBuilder(name);
   }
 
@@ -349,178 +351,220 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   public <B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends SyncPrimitive> B primitiveBuilder(
       String name,
       PrimitiveType<B, C, P> primitiveType) {
+    checkRunning();
     return primitives.primitiveBuilder(name, primitiveType);
   }
 
   @Override
   public <K, V> DistributedMap<K, V> getMap(String name) {
+    checkRunning();
     return primitives.getMap(name);
   }
 
   @Override
   public <K extends Comparable<K>, V> DistributedSortedMap<K, V> getSortedMap(String name) {
+    checkRunning();
     return primitives.getSortedMap(name);
   }
 
   @Override
   public <K extends Comparable<K>, V> DistributedNavigableMap<K, V> getNavigableMap(String name) {
+    checkRunning();
     return primitives.getNavigableMap(name);
   }
 
   @Override
   public <K, V> DistributedMultimap<K, V> getMultimap(String name) {
+    checkRunning();
     return primitives.getMultimap(name);
   }
 
   @Override
   public <K, V> AtomicMap<K, V> getAtomicMap(String name) {
+    checkRunning();
     return primitives.getAtomicMap(name);
   }
 
   @Override
   public <V> AtomicDocumentTree<V> getAtomicDocumentTree(String name) {
+    checkRunning();
     return primitives.getAtomicDocumentTree(name);
   }
 
   @Override
   public <K extends Comparable<K>, V> AtomicSortedMap<K, V> getAtomicSortedMap(String name) {
+    checkRunning();
     return primitives.getAtomicSortedMap(name);
   }
 
   @Override
   public <K extends Comparable<K>, V> AtomicNavigableMap<K, V> getAtomicNavigableMap(String name) {
+    checkRunning();
     return primitives.getAtomicNavigableMap(name);
   }
 
   @Override
   public <K, V> AtomicMultimap<K, V> getAtomicMultimap(String name) {
+    checkRunning();
     return primitives.getAtomicMultimap(name);
   }
 
   @Override
   public <K> AtomicCounterMap<K> getAtomicCounterMap(String name) {
+    checkRunning();
     return primitives.getAtomicCounterMap(name);
   }
 
   @Override
   public <E> DistributedSet<E> getSet(String name) {
+    checkRunning();
     return primitives.getSet(name);
   }
 
   @Override
   public <E extends Comparable<E>> DistributedSortedSet<E> getSortedSet(String name) {
+    checkRunning();
     return primitives.getSortedSet(name);
   }
 
   @Override
   public <E extends Comparable<E>> DistributedNavigableSet<E> getNavigableSet(String name) {
+    checkRunning();
     return primitives.getNavigableSet(name);
   }
 
   @Override
   public <E> DistributedQueue<E> getQueue(String name) {
+    checkRunning();
     return primitives.getQueue(name);
   }
 
   @Override
   public <E> DistributedList<E> getList(String name) {
+    checkRunning();
     return primitives.getList(name);
   }
 
   @Override
   public <E> DistributedMultiset<E> getMultiset(String name) {
+    checkRunning();
     return primitives.getMultiset(name);
   }
 
   @Override
   public DistributedCounter getCounter(String name) {
+    checkRunning();
     return primitives.getCounter(name);
   }
 
   @Override
   public AtomicCounter getAtomicCounter(String name) {
+    checkRunning();
     return primitives.getAtomicCounter(name);
   }
 
   @Override
   public AtomicIdGenerator getAtomicIdGenerator(String name) {
+    checkRunning();
     return primitives.getAtomicIdGenerator(name);
   }
 
   @Override
   public <V> DistributedValue<V> getValue(String name) {
+    checkRunning();
     return primitives.getValue(name);
   }
 
   @Override
   public <V> AtomicValue<V> getAtomicValue(String name) {
+    checkRunning();
     return primitives.getAtomicValue(name);
   }
 
   @Override
   public <T> LeaderElection<T> getLeaderElection(String name) {
+    checkRunning();
     return primitives.getLeaderElection(name);
   }
 
   @Override
   public <T> LeaderElector<T> getLeaderElector(String name) {
+    checkRunning();
     return primitives.getLeaderElector(name);
   }
 
   @Override
   public DistributedLock getLock(String name) {
+    checkRunning();
     return primitives.getLock(name);
   }
 
   @Override
   public AtomicLock getAtomicLock(String name) {
+    checkRunning();
     return primitives.getAtomicLock(name);
   }
 
   @Override
   public DistributedCyclicBarrier getCyclicBarrier(String name) {
+    checkRunning();
     return primitives.getCyclicBarrier(name);
   }
 
   @Override
   public DistributedSemaphore getSemaphore(String name) {
+    checkRunning();
     return primitives.getSemaphore(name);
   }
 
   @Override
   public AtomicSemaphore getAtomicSemaphore(String name) {
+    checkRunning();
     return primitives.getAtomicSemaphore(name);
   }
 
   @Override
   public <E> WorkQueue<E> getWorkQueue(String name) {
+    checkRunning();
     return primitives.getWorkQueue(name);
   }
 
   @Override
   public <P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(String name) {
+    checkRunning();
     return primitives.getPrimitiveAsync(name);
   }
 
   @Override
   public <P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(String name, PrimitiveType<?, ?, P> primitiveType) {
+    checkRunning();
     return primitives.getPrimitiveAsync(name, primitiveType);
   }
 
   @Override
   public <C extends PrimitiveConfig<C>, P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(
       String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig) {
+    checkRunning();
     return primitives.getPrimitiveAsync(name, primitiveType, primitiveConfig);
   }
 
   @Override
   public Collection<PrimitiveInfo> getPrimitives() {
+    checkRunning();
     return primitives.getPrimitives();
   }
 
   @Override
   public Collection<PrimitiveInfo> getPrimitives(PrimitiveType primitiveType) {
+    checkRunning();
     return primitives.getPrimitives(primitiveType);
+  }
+
+  /**
+   * Checks that the instance is running.
+   */
+  private void checkRunning() {
+    checkState(isRunning(), "Atomix instance is not running");
   }
 
   /**
