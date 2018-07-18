@@ -455,6 +455,104 @@ public class AtomixTest extends AbstractAtomixTest {
     assertSame(atomix.getWorkQueue("cc"), atomix.getWorkQueue("cc"));
   }
 
+  @Test
+  public void testPrimitiveBuilders() throws Exception {
+    List<CompletableFuture<Atomix>> futures = new ArrayList<>();
+    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
+    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
+    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
+    Futures.allOf(futures).get(30, TimeUnit.SECONDS);
+
+    Atomix atomix = startAtomix(4, Arrays.asList(1, 2, 3), Profile.client()).get(30, TimeUnit.SECONDS);
+
+    assertEquals("a", atomix.atomicCounterBuilder("a").build().name());
+    assertEquals(AtomicCounterType.instance(), atomix.atomicCounterBuilder("a").build().type());
+
+    assertEquals("b", atomix.atomicMapBuilder("b").build().name());
+    assertEquals(AtomicMapType.instance(), atomix.atomicMapBuilder("b").build().type());
+
+    assertEquals("c", atomix.atomicCounterMapBuilder("c").build().name());
+    assertEquals(AtomicCounterMapType.instance(), atomix.atomicCounterMapBuilder("c").build().type());
+
+    assertEquals("d", atomix.atomicDocumentTreeBuilder("d").build().name());
+    assertEquals(AtomicDocumentTreeType.instance(), atomix.atomicDocumentTreeBuilder("d").build().type());
+
+    assertEquals("e", atomix.atomicIdGeneratorBuilder("e").build().name());
+    assertEquals(AtomicIdGeneratorType.instance(), atomix.atomicIdGeneratorBuilder("e").build().type());
+
+    assertEquals("f", atomix.atomicLockBuilder("f").build().name());
+    assertEquals(AtomicLockType.instance(), atomix.atomicLockBuilder("f").build().type());
+
+    assertEquals("g", atomix.atomicMultimapBuilder("g").build().name());
+    assertEquals(AtomicMultimapType.instance(), atomix.atomicMultimapBuilder("g").build().type());
+
+    assertEquals("h", atomix.atomicNavigableMapBuilder("h").build().name());
+    assertEquals(AtomicNavigableMapType.instance(), atomix.atomicNavigableMapBuilder("h").build().type());
+
+    assertEquals("i", atomix.atomicSemaphoreBuilder("i").build().name());
+    assertEquals(AtomicSemaphoreType.instance(), atomix.atomicSemaphoreBuilder("i").build().type());
+
+    assertEquals("j", atomix.atomicSortedMapBuilder("j").build().name());
+    assertEquals(AtomicSortedMapType.instance(), atomix.atomicSortedMapBuilder("j").build().type());
+
+    assertEquals("k", atomix.atomicValueBuilder("k").build().name());
+    assertEquals(AtomicValueType.instance(), atomix.atomicValueBuilder("k").build().type());
+
+    assertEquals("l", atomix.counterBuilder("l").build().name());
+    assertEquals(DistributedCounterType.instance(), atomix.counterBuilder("l").build().type());
+
+    assertEquals("m", atomix.cyclicBarrierBuilder("m").build().name());
+    assertEquals(DistributedCyclicBarrierType.instance(), atomix.cyclicBarrierBuilder("m").build().type());
+
+    assertEquals("n", atomix.leaderElectionBuilder("n").build().name());
+    assertEquals(LeaderElectionType.instance(), atomix.leaderElectionBuilder("n").build().type());
+
+    assertEquals("o", atomix.leaderElectorBuilder("o").build().name());
+    assertEquals(LeaderElectorType.instance(), atomix.leaderElectorBuilder("o").build().type());
+
+    assertEquals("p", atomix.listBuilder("p").build().name());
+    assertEquals(DistributedListType.instance(), atomix.listBuilder("p").build().type());
+
+    assertEquals("q", atomix.lockBuilder("q").build().name());
+    assertEquals(DistributedLockType.instance(), atomix.lockBuilder("q").build().type());
+
+    assertEquals("r", atomix.mapBuilder("r").build().name());
+    assertEquals(DistributedMapType.instance(), atomix.mapBuilder("r").build().type());
+
+    assertEquals("s", atomix.multimapBuilder("s").build().name());
+    assertEquals(DistributedMultimapType.instance(), atomix.multimapBuilder("s").build().type());
+
+    assertEquals("t", atomix.multisetBuilder("t").build().name());
+    assertEquals(DistributedMultisetType.instance(), atomix.multisetBuilder("t").build().type());
+
+    assertEquals("u", atomix.navigableMapBuilder("u").build().name());
+    assertEquals(DistributedNavigableMapType.instance(), atomix.navigableMapBuilder("u").build().type());
+
+    assertEquals("v", atomix.navigableSetBuilder("v").build().name());
+    assertEquals(DistributedNavigableSetType.instance(), atomix.navigableSetBuilder("v").build().type());
+
+    assertEquals("w", atomix.queueBuilder("w").build().name());
+    assertEquals(DistributedQueueType.instance(), atomix.queueBuilder("w").build().type());
+
+    assertEquals("x", atomix.semaphoreBuilder("x").build().name());
+    assertEquals(DistributedSemaphoreType.instance(), atomix.semaphoreBuilder("x").build().type());
+
+    assertEquals("y", atomix.setBuilder("y").build().name());
+    assertEquals(DistributedSetType.instance(), atomix.setBuilder("y").build().type());
+
+    assertEquals("z", atomix.sortedMapBuilder("z").build().name());
+    assertEquals(DistributedSortedMapType.instance(), atomix.sortedMapBuilder("z").build().type());
+
+    assertEquals("aa", atomix.sortedSetBuilder("aa").build().name());
+    assertEquals(DistributedSortedSetType.instance(), atomix.sortedSetBuilder("aa").build().type());
+
+    assertEquals("bb", atomix.valueBuilder("bb").build().name());
+    assertEquals(DistributedValueType.instance(), atomix.valueBuilder("bb").build().type());
+
+    assertEquals("cc", atomix.workQueueBuilder("cc").build().name());
+    assertEquals(WorkQueueType.instance(), atomix.workQueueBuilder("cc").build().type());
+  }
+
   private static class TestClusterMembershipEventListener implements ClusterMembershipEventListener {
     private final BlockingQueue<ClusterMembershipEvent> queue = new LinkedBlockingQueue<>();
 
