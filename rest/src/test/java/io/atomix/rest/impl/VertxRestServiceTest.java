@@ -18,7 +18,8 @@ package io.atomix.rest.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
+import io.atomix.cluster.Node;
+import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.core.Atomix;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.rest.ManagedRestService;
@@ -176,7 +177,7 @@ public class VertxRestServiceTest {
   public void testLock() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     JsonNode json = jsonFactory.objectNode()
-        .put("type", "lock")
+        .put("type", "atomic-lock")
         .set("protocol", jsonFactory.objectNode()
             .put("type", "multi-primary")
             .put("backups", 2));
@@ -283,7 +284,7 @@ public class VertxRestServiceTest {
   public void testValue() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     JsonNode json = jsonFactory.objectNode()
-        .put("type", "value")
+        .put("type", "atomic-value")
         .set("protocol", jsonFactory.objectNode()
             .put("type", "multi-primary")
             .put("backups", 2));
@@ -422,9 +423,21 @@ public class VertxRestServiceTest {
     return Atomix.builder()
         .withClusterId("test")
         .withMemberId(String.valueOf(memberId))
-        .withAddress(Address.from("localhost", findAvailablePort(BASE_PORT)))
+        .withAddress(Address.from("localhost", 5000 + memberId))
         .withMulticastEnabled()
-        .withMembershipProvider(new MulticastDiscoveryProvider())
+        .withMembershipProvider(new BootstrapDiscoveryProvider(
+            Node.builder()
+                .withId("1")
+                .withAddress("localhost", 5001)
+                .build(),
+            Node.builder()
+                .withId("2")
+                .withAddress("localhost", 5002)
+                .build(),
+            Node.builder()
+                .withId("3")
+                .withAddress("localhost", 5003)
+                .build()))
         .withManagementGroup(PrimaryBackupPartitionGroup.builder("system")
             .withNumPartitions(1)
             .build())
