@@ -195,8 +195,7 @@ public class VertxRestServiceTest {
         .when()
         .post("primitives/test-lock/lock")
         .then()
-        .statusCode(200)
-        .body(equalTo("1"));
+        .statusCode(200);
 
     given()
         .spec(specs.get(0))
@@ -283,7 +282,7 @@ public class VertxRestServiceTest {
   public void testValue() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     JsonNode json = jsonFactory.objectNode()
-        .put("type", "value")
+        .put("type", "atomic-value")
         .set("protocol", jsonFactory.objectNode()
             .put("type", "multi-primary")
             .put("backups", 2));
@@ -408,14 +407,16 @@ public class VertxRestServiceTest {
     for (RestService service : services) {
       serviceFutures.add(((ManagedRestService) service).stop());
     }
-    CompletableFuture.allOf(serviceFutures.toArray(new CompletableFuture[serviceFutures.size()])).get(30, TimeUnit.SECONDS);
-
-    List<CompletableFuture<Void>> instanceFutures = new ArrayList<>(3);
-    for (Atomix instance : instances) {
-      instanceFutures.add(instance.stop());
+    try {
+        CompletableFuture.allOf(serviceFutures.toArray(new CompletableFuture[serviceFutures.size()])).get(30, TimeUnit.SECONDS);
+    } finally {
+        List<CompletableFuture<Void>> instanceFutures = new ArrayList<>(3);
+        for (Atomix instance : instances) {
+            instanceFutures.add(instance.stop());
+        }
+        CompletableFuture.allOf(instanceFutures.toArray(new CompletableFuture[instanceFutures.size()])).get(30, TimeUnit.SECONDS);
+        deleteData();
     }
-    CompletableFuture.allOf(instanceFutures.toArray(new CompletableFuture[instanceFutures.size()])).get(30, TimeUnit.SECONDS);
-    deleteData();
   }
 
   protected Atomix buildAtomix(int memberId) {
