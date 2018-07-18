@@ -319,7 +319,11 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
     return cache.getPrimitive(name, () -> {
       PrimitiveInfo info = primitiveRegistry.getPrimitive(name);
       if (info == null) {
-        return CompletableFuture.completedFuture(null);
+        PrimitiveConfig<?> primitiveConfig = configService.getConfig(name);
+        if (primitiveConfig == null) {
+          return CompletableFuture.completedFuture(null);
+        }
+        return primitiveConfig.getType().newBuilder(name, primitiveConfig, managementService).buildAsync();
       }
 
       PrimitiveConfig primitiveConfig = configService.getConfig(name);

@@ -18,7 +18,9 @@ package io.atomix.core.semaphore.impl;
 import io.atomix.core.semaphore.AsyncAtomicSemaphore;
 import io.atomix.core.semaphore.AsyncDistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphore;
+import io.atomix.core.semaphore.DistributedSemaphoreType;
 import io.atomix.core.semaphore.QueueStatus;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 
 import java.time.Duration;
@@ -31,6 +33,11 @@ import java.util.concurrent.CompletableFuture;
 public class DelegatingAsyncDistributedSemaphore extends DelegatingAsyncPrimitive<AsyncAtomicSemaphore> implements AsyncDistributedSemaphore {
   public DelegatingAsyncDistributedSemaphore(AsyncAtomicSemaphore primitive) {
     super(primitive);
+  }
+
+  @Override
+  public PrimitiveType type() {
+    return DistributedSemaphoreType.instance();
   }
 
   @Override
