@@ -326,9 +326,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       if (primitiveConfig == null) {
         primitiveConfig = info.type().newConfig();
       }
-      return info.type().newBuilder(name, primitiveConfig, managementService)
-          .buildAsync()
-          .thenApply(primitive -> ((SyncPrimitive) primitive).async());
+      return info.type().newBuilder(name, primitiveConfig, managementService).buildAsync();
     });
   }
 
@@ -350,9 +348,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
           config = primitiveType.newConfig();
         }
       }
-      return primitiveType.newBuilder(name, config, managementService)
-          .buildAsync()
-          .thenApply(primitive -> ((SyncPrimitive) primitive).async());
+      return primitiveType.newBuilder(name, config, managementService).buildAsync();
     });
   }
 
