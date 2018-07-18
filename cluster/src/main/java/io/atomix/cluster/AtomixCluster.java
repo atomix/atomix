@@ -324,7 +324,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     return NettyBroadcastService.builder()
         .withLocalAddress(config.getNodeConfig().getAddress())
         .withGroupAddress(new Address(
-            config.getMulticastConfig().getGroup().getHostName(),
+            config.getMulticastConfig().getGroup().getHostAddress(),
             config.getMulticastConfig().getPort(),
             config.getMulticastConfig().getGroup()))
         .withEnabled(config.getMulticastConfig().isEnabled())
