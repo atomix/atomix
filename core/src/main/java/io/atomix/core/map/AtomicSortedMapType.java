@@ -30,7 +30,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class AtomicSortedMapType<K extends Comparable<K>, V>
     implements PrimitiveType<AtomicSortedMapBuilder<K, V>, AtomicSortedMapConfig, AtomicSortedMap<K, V>> {
-  private static final String NAME = "atomic-sortedf-map";
+  private static final String NAME = "atomic-sorted-map";
   private static final AtomicSortedMapType INSTANCE = new AtomicSortedMapType();
 
   /**
