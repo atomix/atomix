@@ -16,6 +16,7 @@
 package io.atomix.core.lock.impl;
 
 import io.atomix.primitive.operation.Command;
+import io.atomix.primitive.operation.Query;
 
 /**
  * Distributed lock service.
@@ -49,4 +50,11 @@ public interface AtomicLockService {
   @Command("unlock")
   void unlock(int lockId);
 
+  /**
+   * Query whether the lock state.
+   *
+   * @return {@code true} if this lock is locked, {@code false} otherwise
+   */
+  @Query
+  boolean isLocked();
 }

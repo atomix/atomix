@@ -72,6 +72,11 @@ public class BlockingDistributedLock extends Synchronous<AsyncDistributedLock> i
   }
 
   @Override
+  public boolean isLocked() {
+    return complete(asyncLock.isLocked());
+  }
+
+  @Override
   public AsyncDistributedLock async() {
     return asyncLock;
   }

@@ -43,6 +43,13 @@ public interface DistributedLock extends SyncPrimitive, Lock {
    */
   boolean tryLock(Duration timeout) throws InterruptedException;
 
+  /**
+   * Query whether this lock is locked or not.
+   *
+   * @return {@code true} if this lock is locked, {@code false} otherwise
+   */
+  boolean isLocked();
+
   @Override
   AsyncDistributedLock async();
 }

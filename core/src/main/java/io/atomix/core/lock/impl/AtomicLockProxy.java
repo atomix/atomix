@@ -148,6 +148,11 @@ public class AtomicLockProxy
   }
 
   @Override
+  public CompletableFuture<Boolean> isLocked() {
+    return getProxyClient().applyBy(name(), service -> service.isLocked());
+  }
+
+  @Override
   public CompletableFuture<AsyncAtomicLock> connect() {
     return super.connect()
         .thenCompose(v -> getProxyClient().getPartition(name()).connect())
