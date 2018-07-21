@@ -119,23 +119,23 @@
                   <mainClass>io.atomix.agent.AtomixAgent</mainClass>
                 </transformer>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-									<resource>META-INF/services/javax.ws.rs.ext.MessageBodyWriter</resource>
-								</transformer>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-									<resource>META-INF/services/javax.ws.rs.ext.MessageBodyReader</resource>
-								</transformer>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-									<resource>META-INF/services/javax.enterprise.inject.spi.Extension</resource>
-								</transformer>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-									<resource>META-INF/services/javax.servlet.ServletContainerInitializer</resource>
-								</transformer>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-									<resource>META-INF/services/javax.ws.rs.ext.RuntimeDelegate</resource>
-								</transformer>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-									<resource>META-INF/services/javax.ws.rs.ext.Providers</resource>
-								</transformer>
+                  <resource>META-INF/services/javax.ws.rs.ext.MessageBodyWriter</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/javax.ws.rs.ext.MessageBodyReader</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/javax.enterprise.inject.spi.Extension</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/javax.servlet.ServletContainerInitializer</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/javax.ws.rs.ext.RuntimeDelegate</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/javax.ws.rs.ext.Providers</resource>
+                </transformer>
               </transformers>
             </configuration>
           </execution>
