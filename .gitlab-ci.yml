@@ -38,4 +38,4 @@ deploy:jdk8:
     - mvn $MAVEN_CLI_OPTS deploy -DskipTests=true -Dmaven.javadoc.skip=true
   only:
     - master
-  image: maven:3-jdk-8
+  image: maven:3.5.0-jdk-8
