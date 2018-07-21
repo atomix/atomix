@@ -19,7 +19,7 @@ cache:
 # Verify merge requests using JDK8
 verify:jdk8:
   <<: *verify
-  image: maven:3-jdk-8
+  image: maven:3.5.2-jdk-8
   artifacts:
     paths:
       - "*/target/surefire-reports"
