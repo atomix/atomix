@@ -15,6 +15,8 @@
  */
 package io.atomix.utils.memory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sun.nio.ch.DirectBuffer;
 
 import java.io.File;
@@ -33,6 +35,8 @@ import java.nio.channels.FileChannel;
  */
 public class MappedMemory extends NativeMemory {
   public static final long MAX_SIZE = Integer.MAX_VALUE;
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(MappedMemory.class);
 
   /**
    * Allocates memory mapped to a file on disk.
@@ -77,63 +81,18 @@ public class MappedMemory extends NativeMemory {
 
   @Override
   public void free() {
-    Util.CLEANER.freeDirectBuffer(buffer);
+    try {
+      BufferCleaner.freeBuffer(buffer);
+    } catch (Exception e) {
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Failed to unmap direct buffer", e);
+      }
+    }
     ((MappedMemoryAllocator) allocator).release();
   }
 
   public void close() {
     free();
     ((MappedMemoryAllocator) allocator).close();
-  }
-
-  /*
-   * Copyright 2013 The Netty Project
-   *
-   * The Netty Project licenses this file to you under the Apache License,
-   * version 2.0 (the "License"); you may not use this file except in compliance
-   * with the License. You may obtain a copy of the License at:
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-   * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-   * License for the specific language governing permissions and limitations
-   * under the License.
-   */
-  static class Util {
-
-    static final Cleaner CLEANER;
-
-    private static final Cleaner NOOP = buffer -> {
-      // NOOP
-    };
-
-    static {
-      if (majorVersionFromJavaSpecificationVersion() >= 9) {
-        CLEANER = CleanerJava9.isSupported() ? new CleanerJava9() : NOOP;
-      } else {
-        CLEANER = CleanerJava8.isSupported() ? new CleanerJava8() : NOOP;
-      }
-    }
-
-    private static int majorVersionFromJavaSpecificationVersion() {
-      return majorVersion(System.getProperty("java.specification.version", "1.8"));
-    }
-
-    private static int majorVersion(final String javaSpecVersion) {
-      final String[] components = javaSpecVersion.split("\\.");
-      final int[] version = new int[components.length];
-      for (int i = 0; i < components.length; i++) {
-        version[i] = Integer.parseInt(components[i]);
-      }
-
-      if (version[0] == 1) {
-        assert version[1] >= 8;
-        return version[1];
-      } else {
-        return version[0];
-      }
-    }
   }
 }
