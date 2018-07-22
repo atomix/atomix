@@ -25,12 +25,38 @@ import java.util.function.Function;
 import static io.atomix.utils.serializer.serializers.DefaultSerializers.BASIC;
 
 /**
- * Cluster event service.
+ * Publish-subscribe based messaging service.
+ * <p>
+ * This service is an abstraction for publish-subscribe based cluster communication. Messages are published and received
+ * based on arbitrary {@link String} topics. It supports several types of messaging:
+ * <ul>
+ *   <li>{@link #broadcast(String, Object)} broadcasts a message to all subscribers registered for the topic</li>
+ *   <li>{@link #unicast(String, Object)} sends a unicast message directly to one of the subscribers registered
+ *   for the topic; unicast messages are generally delivered in round-robin fashion</li>
+ *   <li>{@link #send(String, Object)} sends a message directly to one of the subscribers registered for the topic
+ *   and awaits a reply; direct messages are generally delivered in round-robin fashion</li>
+ * </ul>
+ * To register to listen for messages, use one of the {@link #subscribe(String, Consumer, Executor)} methods:
+ * <pre>
+ *   {@code
+ *   Subscription subscription = atomix.getEventService().subscribe("test", message -> {
+ *     System.out.println("Received message");
+ *   }, executor).join();
+ *   }
+ * </pre>
+ * To cancel the subscription for a topic, call {@link Subscription#close()} on the returned {@link Subscription}
+ * object:
+ * <pre>
+ *   {@code
+ *   subscription.close().join();
+ *   }
+ * </pre>
+ * This API relies on {@link CompletableFuture} for asynchronous completion of all method calls.
  */
 public interface ClusterEventService {
 
   /**
-   * Broadcasts a message to all controller nodes.
+   * Broadcasts a message to all subscribers registered for the given {@code topic}.
    *
    * @param topic   message topic
    * @param message message to send
@@ -43,7 +69,7 @@ public interface ClusterEventService {
   }
 
   /**
-   * Broadcasts a message to all controller nodes.
+   * Broadcasts a message to all subscribers registered for the given {@code topic}.
    *
    * @param topic   message topic
    * @param message message to send
@@ -56,7 +82,7 @@ public interface ClusterEventService {
       Function<M, byte[]> encoder);
 
   /**
-   * Sends a message to the specified controller node.
+   * Unicasts a message to the next registered subscriber for {@code topic}.
    *
    * @param topic   message topic
    * @param message message to send
@@ -70,7 +96,7 @@ public interface ClusterEventService {
   }
 
   /**
-   * Sends a message to the specified controller node.
+   * Unicasts a message to the next registered subscriber for {@code topic}.
    *
    * @param message message to send
    * @param topic   message topic
@@ -84,7 +110,7 @@ public interface ClusterEventService {
       Function<M, byte[]> encoder);
 
   /**
-   * Sends a message and expects a reply.
+   * Sends a direct message to the next registered subscriber for {@code topic} and awaits a reply.
    *
    * @param topic   message topic
    * @param message message to send
@@ -99,7 +125,7 @@ public interface ClusterEventService {
   }
 
   /**
-   * Sends a message and expects a reply.
+   * Sends a direct message to the next registered subscriber for {@code topic} and awaits a reply.
    *
    * @param topic   message topic
    * @param message message to send
@@ -116,7 +142,7 @@ public interface ClusterEventService {
   }
 
   /**
-   * Sends a message and expects a reply.
+   * Sends a direct message to the next registered subscriber for {@code topic} and awaits a reply.
    *
    * @param topic   message topic
    * @param message message to send
@@ -135,7 +161,7 @@ public interface ClusterEventService {
   }
 
   /**
-   * Sends a message and expects a reply.
+   * Sends a direct message to the next registered subscriber for {@code topic} and awaits a reply.
    *
    * @param topic   message topic
    * @param message message to send
