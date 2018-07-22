@@ -23,6 +23,7 @@ import io.atomix.core.transaction.TransactionalMapBuilder;
 import io.atomix.core.transaction.TransactionalMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.ProxyProtocol;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -42,6 +43,12 @@ public class DefaultTransactionalMapBuilder<K, V> extends TransactionalMapBuilde
   @Override
   public TransactionalMapBuilder<K, V> withProtocol(ProxyProtocol protocol) {
     mapBuilder.withProtocol(protocol);
+    return this;
+  }
+
+  @Override
+  public TransactionalMapBuilder<K, V> withSerializer(Serializer serializer) {
+    mapBuilder.withSerializer(serializer);
     return this;
   }
 
