@@ -394,6 +394,10 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     assertTrue(map.entrySet().isEmpty());
     assertTrue(map.values().isEmpty());
 
+    assertEquals(0, map.keySet().stream().count());
+    assertEquals(0, map.entrySet().stream().count());
+    assertEquals(0, map.values().stream().count());
+
     for (int i = 0; i < 100; i++) {
       map.put(String.valueOf(i), String.valueOf(i));
     }
