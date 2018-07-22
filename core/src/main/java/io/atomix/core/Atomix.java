@@ -15,7 +15,6 @@
  */
 package io.atomix.core;
 
-import com.google.common.collect.Streams;
 import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.discovery.NodeDiscoveryConfig;
@@ -90,23 +89,67 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Atomix!
+ * Primary interface for managing Atomix clusters and operating on distributed primitives.
+ * <p>
+ * The {@code Atomix} class is the primary interface to all Atomix features. To construct an {@code Atomix} instance,
+ * either configure the instance with a configuration file or construct a new instance from an {@link AtomixBuilder}.
+ * Builders can be created via various {@link #builder()} methods:
+ * <pre>
+ *   {@code
+ *   Atomix atomix = Atomix.builder()
+ *     .withMemberId("member-1")
+ *     .withAddress("localhost:5000")
+ *     .build();
+ *   }
+ * </pre>
+ * Once an {@code Atomix} instance has been constructed, start the instance by calling {@link #start()}:
+ * <pre>
+ *   {@code
+ *   atomix.start().join();
+ *   }
+ * </pre>
+ * The returned {@link CompletableFuture} will be completed once the node has been bootstrapped and all services are
+ * available.
+ * <p>
+ * The instance can be used to access services for managing the cluster or communicating with other nodes. Additionally,
+ * it provides various methods for creating and operating on distributed primitives. Generally, the primitive methods
+ * are separated into two types. Primitive getters return multiton instances of a primitive. Primitives created via
+ * getters must be pre-configured in the Atomix instance configuration. Alternatively, primitive builders can be used
+ * to create and configure primitives in code:
+ * <pre>
+ *   {@code
+ *   AtomicMap<String, String> map = atomix.mapBuilder("my-map")
+ *     .withProtocol(MultiRaftProtocol.builder("raft")
+ *       .withReadConsistency(ReadConsistency.SEQUENTIAL)
+ *       .build())
+ *     .build();
+ *   }
+ * </pre>
+ * Custom primitives can be constructed by providing a custom {@link PrimitiveType} and using the
+ * {@link #primitiveBuilder(String, PrimitiveType)} method:
+ * <pre>
+ *   {@code
+ *   MyPrimitive myPrimitive = atomix.primitiveBuilder("my-primitive, MyPrimitiveType.instance())
+ *     .withProtocol(MultiRaftProtocol.builder("raft")
+ *       .withReadConsistency(ReadConsistency.SEQUENTIAL)
+ *       .build())
+ *     .build();
+ *   }
+ * </pre>
  */
 public class Atomix extends AtomixCluster implements PrimitivesService {
   private static final String[] RESOURCES = new String[]{"atomix", "defaults"};
 
-  private static String[] withDefaultResources(String config) {
-    return Streams.concat(Stream.of(config), Stream.of(RESOURCES)).toArray(String[]::new);
-  }
-
   /**
    * Returns a new Atomix configuration.
+   * <p>
+   * The configuration will be loaded from {@code atomix.conf}, {@code atomix.json}, or {@code atomix.properties}
+   * if located on the classpath.
    *
    * @return a new Atomix configuration
    */
@@ -116,6 +159,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns a new Atomix configuration.
+   * <p>
+   * The configuration will be loaded from the given file and will fall back to {@code atomix.conf}, {@code atomix.json},
+   * or {@code atomix.properties} if located on the classpath.
    *
    * @param configFile the Atomix configuration file
    * @return a new Atomix configuration
@@ -126,6 +172,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns a new Atomix configuration.
+   * <p>
+   * The configuration will be loaded from {@code atomix.conf}, {@code atomix.json}, or {@code atomix.properties}
+   * if located on the classpath.
    *
    * @param classLoader the class loader
    * @return a new Atomix configuration
@@ -136,6 +185,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns a new Atomix configuration from the given file.
+   * <p>
+   * The configuration will be loaded from the given file and will fall back to {@code atomix.conf}, {@code atomix.json},
+   * or {@code atomix.properties} if located on the classpath.
    *
    * @param file the file from which to return a new Atomix configuration
    * @return a new Atomix configuration from the given file
@@ -146,6 +198,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns a new Atomix configuration from the given file.
+   * <p>
+   * The configuration will be loaded from the given file and will fall back to {@code atomix.conf}, {@code atomix.json},
+   * or {@code atomix.properties} if located on the classpath.
    *
    * @param file        the file from which to return a new Atomix configuration
    * @param classLoader the class loader
@@ -177,6 +232,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns a new Atomix builder.
+   * <p>
+   * The builder will be initialized with the configuration in {@code atomix.conf}, {@code atomix.json},
+   * or {@code atomix.properties} if located on the classpath.
    *
    * @return a new Atomix builder
    */
@@ -186,6 +244,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns a new Atomix builder.
+   * <p>
+   * The builder will be initialized with the configuration in {@code atomix.conf}, {@code atomix.json},
+   * or {@code atomix.properties} if located on the classpath.
    *
    * @param classLoader the class loader
    * @return a new Atomix builder
@@ -197,6 +258,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns a new Atomix builder.
+   * <p>
+   * The builder will be initialized with the configuration in the given file and will fall back to {@code atomix.conf},
+   * {@code atomix.json}, or {@code atomix.properties} if located on the classpath.
    *
    * @param config the Atomix configuration
    * @return a new Atomix builder
@@ -207,6 +271,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns a new Atomix builder.
+   * <p>
+   * The builder will be initialized with the configuration in the given file and will fall back to {@code atomix.conf},
+   * {@code atomix.json}, or {@code atomix.properties} if located on the classpath.
    *
    * @param configFile  the Atomix configuration file
    * @param classLoader the class loader
@@ -219,6 +286,8 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns a new Atomix builder.
+   * <p>
+   * The returned builder will be initialized with the provided configuration.
    *
    * @param config the Atomix configuration
    * @return the Atomix builder
@@ -229,6 +298,8 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns a new Atomix builder.
+   * <p>
+   * The returned builder will be initialized with the provided configuration.
    *
    * @param config      the Atomix configuration
    * @param classLoader the class loader with which to load the Atomix registry
@@ -288,9 +359,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   /**
-   * Returns the type registry service.
+   * Returns the Atomix registry service.
+   * <p>
+   * The registry contains references to all registered Atomix extensions.
    *
-   * @return the type registry service
+   * @return the Atomix registry service
    */
   public AtomixRegistry getRegistry() {
     return registry;
@@ -307,6 +380,8 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns the primitive configuration service.
+   * <p>
+   * The primitive configuration service provides all pre-defined named primitive configurations.
    *
    * @return the primitive configuration service
    */
@@ -316,6 +391,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns the partition service.
+   * <p>
+   * The partition service is responsible for managing the lifecycle of primitive partitions and can provide information
+   * about active partition groups and partitions in the cluster.
    *
    * @return the partition service
    */
@@ -325,6 +403,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns the primitives service.
+   * <p>
+   * The primitives service is responsible for managing the lifecycle of local primitive instances and can provide
+   * information about all primitives registered in the cluster.
    *
    * @return the primitives service
    */
@@ -334,6 +415,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   /**
    * Returns the transaction service.
+   * <p>
+   * The transaction service is responsible for managing the lifecycle of all transactions in the cluster and can provide
+   * information about currently active transactions.
    *
    * @return the transaction service
    */
