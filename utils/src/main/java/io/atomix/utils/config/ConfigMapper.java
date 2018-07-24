@@ -36,6 +36,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,19 +61,31 @@ public class ConfigMapper {
    * Loads the given configuration file using the mapper, falling back to the given resources.
    *
    * @param type      the type to load
-   * @param file      the file to load
+   * @param files     the files to load
    * @param resources the resources to which to fall back
    * @param <T>       the resulting type
    * @return the loaded configuration
    */
-  public <T> T loadFile(Class<T> type, File file, String... resources) {
-    if (file == null) {
+  public <T> T loadFiles(Class<T> type, List<File> files, List<String> resources) {
+    if (files == null) {
       return loadResources(type, resources);
     }
 
-    Config config = ConfigFactory.parseFile(file);
+    Config config = null;
+    for (File file : files) {
+      if (config == null) {
+        config = ConfigFactory.parseFile(file);
+      } else {
+        config = config.withFallback(ConfigFactory.parseFile(file));
+      }
+    }
+
     for (String resource : resources) {
-      config = config.withFallback(ConfigFactory.load(classLoader, resource));
+      if (config == null) {
+        config = ConfigFactory.load(classLoader, resource);
+      } else {
+        config = config.withFallback(ConfigFactory.load(classLoader, resource));
+      }
     }
     return map(config, type);
   }
@@ -86,6 +99,18 @@ public class ConfigMapper {
    * @return the loaded configuration
    */
   public <T> T loadResources(Class<T> type, String... resources) {
+    return loadResources(type, Arrays.asList(resources));
+  }
+
+  /**
+   * Loads the given resources using the configuration mapper.
+   *
+   * @param type      the type to load
+   * @param resources the resources to load
+   * @param <T>       the resulting type
+   * @return the loaded configuration
+   */
+  public <T> T loadResources(Class<T> type, List<String> resources) {
     Config config = null;
     for (String resource : resources) {
       if (config == null) {
