@@ -84,11 +84,15 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
@@ -143,7 +147,7 @@ import static com.google.common.base.Preconditions.checkState;
  * </pre>
  */
 public class Atomix extends AtomixCluster implements PrimitivesService {
-  private static final String[] RESOURCES = new String[]{"atomix", "defaults"};
+  private static final List<String> RESOURCES = Arrays.asList("atomix", "defaults");
 
   /**
    * Returns a new Atomix configuration.
@@ -160,19 +164,6 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   /**
    * Returns a new Atomix configuration.
    * <p>
-   * The configuration will be loaded from the given file and will fall back to {@code atomix.conf}, {@code atomix.json},
-   * or {@code atomix.properties} if located on the classpath.
-   *
-   * @param configFile the Atomix configuration file
-   * @return a new Atomix configuration
-   */
-  public static AtomixConfig config(File configFile) {
-    return config(configFile, Thread.currentThread().getContextClassLoader(), AtomixRegistry.registry());
-  }
-
-  /**
-   * Returns a new Atomix configuration.
-   * <p>
    * The configuration will be loaded from {@code atomix.conf}, {@code atomix.json}, or {@code atomix.properties}
    * if located on the classpath.
    *
@@ -180,7 +171,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * @return a new Atomix configuration
    */
   public static AtomixConfig config(ClassLoader classLoader) {
-    return config(null, classLoader, AtomixRegistry.registry(classLoader));
+    return config(classLoader, null, AtomixRegistry.registry(classLoader));
   }
 
   /**
@@ -189,11 +180,11 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * The configuration will be loaded from the given file and will fall back to {@code atomix.conf}, {@code atomix.json},
    * or {@code atomix.properties} if located on the classpath.
    *
-   * @param file the file from which to return a new Atomix configuration
+   * @param files the file from which to return a new Atomix configuration
    * @return a new Atomix configuration from the given file
    */
-  public static AtomixConfig config(String file) {
-    return config(file, Thread.currentThread().getContextClassLoader());
+  public static AtomixConfig config(String... files) {
+    return config(Thread.currentThread().getContextClassLoader(), Stream.of(files).map(File::new).collect(Collectors.toList()));
   }
 
   /**
@@ -202,23 +193,63 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * The configuration will be loaded from the given file and will fall back to {@code atomix.conf}, {@code atomix.json},
    * or {@code atomix.properties} if located on the classpath.
    *
-   * @param file        the file from which to return a new Atomix configuration
    * @param classLoader the class loader
+   * @param files       the file from which to return a new Atomix configuration
    * @return a new Atomix configuration from the given file
    */
-  public static AtomixConfig config(String file, ClassLoader classLoader) {
-    return config(new File(file), classLoader, AtomixRegistry.registry(classLoader));
+  public static AtomixConfig config(ClassLoader classLoader, String... files) {
+    return config(classLoader, Stream.of(files).map(File::new).collect(Collectors.toList()), AtomixRegistry.registry(classLoader));
+  }
+
+  /**
+   * Returns a new Atomix configuration.
+   * <p>
+   * The configuration will be loaded from the given file and will fall back to {@code atomix.conf}, {@code atomix.json},
+   * or {@code atomix.properties} if located on the classpath.
+   *
+   * @param configFiles the Atomix configuration files
+   * @return a new Atomix configuration
+   */
+  public static AtomixConfig config(File... configFiles) {
+    return config(Thread.currentThread().getContextClassLoader(), Arrays.asList(configFiles), AtomixRegistry.registry());
+  }
+
+  /**
+   * Returns a new Atomix configuration from the given file.
+   * <p>
+   * The configuration will be loaded from the given file and will fall back to {@code atomix.conf}, {@code atomix.json},
+   * or {@code atomix.properties} if located on the classpath.
+   *
+   * @param files the file from which to return a new Atomix configuration
+   * @return a new Atomix configuration from the given file
+   */
+  public static AtomixConfig config(List<File> files) {
+    return config(Thread.currentThread().getContextClassLoader(), files);
+  }
+
+  /**
+   * Returns a new Atomix configuration from the given file.
+   * <p>
+   * The configuration will be loaded from the given file and will fall back to {@code atomix.conf}, {@code atomix.json},
+   * or {@code atomix.properties} if located on the classpath.
+   *
+   * @param classLoader the class loader
+   * @param files       the file from which to return a new Atomix configuration
+   * @return a new Atomix configuration from the given file
+   */
+  public static AtomixConfig config(ClassLoader classLoader, List<File> files) {
+    return config(classLoader, files, AtomixRegistry.registry(classLoader));
   }
 
   /**
    * Returns a new Atomix configuration from the given resources.
    *
-   * @param file        the file to load
    * @param classLoader the class loader
+   * @param files       the files to load
    * @param registry    the Atomix registry from which to map types
    * @return a new Atomix configuration from the given resource
    */
-  private static AtomixConfig config(File file, ClassLoader classLoader, AtomixRegistry registry) {
+  private static AtomixConfig config(ClassLoader classLoader, List<File> files, AtomixRegistry registry) {
     ConfigMapper mapper = new PolymorphicConfigMapper(
         classLoader,
         registry,
@@ -227,7 +258,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         new PolymorphicTypeMapper(PrimitiveProtocolConfig.class, PrimitiveProtocol.Type.class),
         new PolymorphicTypeMapper(ProfileConfig.class, Profile.Type.class),
         new PolymorphicTypeMapper(NodeDiscoveryConfig.class, NodeDiscoveryProvider.Type.class));
-    return mapper.loadFile(AtomixConfig.class, file, RESOURCES);
+    return mapper.loadFiles(AtomixConfig.class, files, RESOURCES);
   }
 
   /**
@@ -253,7 +284,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    */
   public static AtomixBuilder builder(ClassLoader classLoader) {
     AtomixRegistry registry = AtomixRegistry.registry(classLoader);
-    return new AtomixBuilder(config(null, classLoader, registry), registry);
+    return new AtomixBuilder(config(classLoader, null, registry), registry);
   }
 
   /**
@@ -281,7 +312,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    */
   public static AtomixBuilder builder(String configFile, ClassLoader classLoader) {
     AtomixRegistry registry = AtomixRegistry.registry(classLoader);
-    return new AtomixBuilder(config(new File(configFile), classLoader, registry), registry);
+    return new AtomixBuilder(config(classLoader, Collections.singletonList(new File(configFile)), registry), registry);
   }
 
   /**
@@ -320,20 +351,24 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   private final ThreadContext threadContext = new SingleThreadContext("atomix-%d");
   private Thread shutdownHook = null;
 
-  public Atomix(String configFile) {
-    this(configFile, Thread.currentThread().getContextClassLoader());
+  public Atomix(String... configFiles) {
+    this(Thread.currentThread().getContextClassLoader(), configFiles);
   }
 
-  public Atomix(String configFile, ClassLoader classLoader) {
-    this(new File(configFile), classLoader);
+  public Atomix(ClassLoader classLoader, String... configFiles) {
+    this(classLoader, Stream.of(configFiles).map(File::new).collect(Collectors.toList()));
   }
 
-  public Atomix(File configFile) {
-    this(configFile, Thread.currentThread().getContextClassLoader());
+  public Atomix(File... configFiles) {
+    this(Thread.currentThread().getContextClassLoader(), configFiles);
   }
 
-  public Atomix(File configFile, ClassLoader classLoader) {
-    this(config(configFile, classLoader, AtomixRegistry.registry(classLoader)), AtomixRegistry.registry(classLoader));
+  public Atomix(ClassLoader classLoader, File... configFiles) {
+    this(classLoader, Arrays.asList(configFiles));
+  }
+
+  public Atomix(ClassLoader classLoader, List<File> configFiles) {
+    this(config(classLoader, configFiles, AtomixRegistry.registry(classLoader)), AtomixRegistry.registry(classLoader));
   }
 
   @SuppressWarnings("unchecked")
