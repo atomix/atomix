@@ -135,6 +135,12 @@ public class AtomixAgent {
     // If a configuration was provided, merge the configuration's member information with the provided command line arguments.
     AtomixConfig config;
     if (configFiles != null) {
+      for (File configFile : configFiles) {
+        if (!configFile.exists()) {
+          LOGGER.error("Failed to locate configuration file '{}'", configFile.getAbsolutePath());
+          System.exit(1);
+        }
+      }
       config = Atomix.config(configFiles);
     } else {
       config = Atomix.config();
