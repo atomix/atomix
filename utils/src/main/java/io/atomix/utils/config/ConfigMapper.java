@@ -87,7 +87,7 @@ public class ConfigMapper {
         config = config.withFallback(ConfigFactory.load(classLoader, resource));
       }
     }
-    return map(config, type);
+    return map(config.resolve(), type);
   }
 
   /**
@@ -119,7 +119,7 @@ public class ConfigMapper {
         config = config.withFallback(ConfigFactory.load(classLoader, resource));
       }
     }
-    return map(config, type);
+    return map(config.resolve(), type);
   }
 
   /**
