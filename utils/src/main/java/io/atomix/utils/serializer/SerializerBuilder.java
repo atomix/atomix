@@ -121,6 +121,6 @@ public class SerializerBuilder implements Builder<Serializer> {
 
   @Override
   public Serializer build() {
-    return Serializer.using(namespaceBuilder.build(name));
+    return Serializer.using(name != null ? namespaceBuilder.build(name) : namespaceBuilder.build());
   }
 }
