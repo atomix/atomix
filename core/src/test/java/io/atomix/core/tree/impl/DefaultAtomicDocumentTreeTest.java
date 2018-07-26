@@ -171,7 +171,7 @@ public class DefaultAtomicDocumentTreeTest {
   @Test(expected = IllegalDocumentModificationException.class)
   public void testRemoveRoot() {
     AtomicDocumentTree<String> tree = new DefaultAtomicDocumentTree<>();
-    tree.removeNode(tree.root());
+    tree.remove(tree.root());
   }
 
   @Test
@@ -179,14 +179,14 @@ public class DefaultAtomicDocumentTreeTest {
     AtomicDocumentTree<String> tree = new DefaultAtomicDocumentTree<>();
     tree.create(path("root.a"), "bar");
     tree.create(path("root.a.b"), "alpha");
-    Assert.assertEquals("alpha", tree.removeNode(path("root.a.b")).value());
+    Assert.assertEquals("alpha", tree.remove(path("root.a.b")).value());
     Assert.assertEquals(0, tree.getChildren(path("root.a")).size());
   }
 
   @Test(expected = NoSuchDocumentPathException.class)
   public void testRemoveInvalidNode() {
     AtomicDocumentTree<String> tree = new DefaultAtomicDocumentTree<>();
-    tree.removeNode(path("root.a"));
+    tree.remove(path("root.a"));
   }
 
   private static DocumentPath path(String path) {
