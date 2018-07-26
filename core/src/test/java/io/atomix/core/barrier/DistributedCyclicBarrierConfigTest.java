@@ -15,6 +15,8 @@
  */
 package io.atomix.core.barrier;
 
+import io.atomix.core.Atomix;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocolConfig;
 import io.atomix.utils.serializer.NamespaceConfig;
 import org.junit.Test;
@@ -46,5 +48,14 @@ public class DistributedCyclicBarrierConfigTest {
     assertEquals("test", config.getNamespaceConfig().getName());
     assertEquals("test-group", ((MultiRaftProtocolConfig) config.getProtocolConfig()).getGroup());
     assertTrue(config.isReadOnly());
+  }
+
+  @Test
+  public void testLoadConfig() throws Exception {
+    DistributedCyclicBarrierConfig config = Atomix.config(getClass().getClassLoader().getResource("primitives.conf").getPath())
+        .getPrimitive("cyclic-barrier");
+    assertEquals("cyclic-barrier", config.getName());
+    assertEquals(MultiPrimaryProtocol.TYPE, config.getProtocolConfig().getType());
+    assertFalse(config.isReadOnly());
   }
 }
