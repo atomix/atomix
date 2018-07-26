@@ -66,7 +66,7 @@
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.7.0</maven.compiler.plugin.version>
     <maven.failsafe.plugin.version>2.21.0</maven.failsafe.plugin.version>
-    <maven.surefire.plugin.version>2.21.0</maven.surefire.plugin.version>
+    <maven.surefire.plugin.version>2.22.0</maven.surefire.plugin.version>
     <maven.clean.plugin.version>2.5</maven.clean.plugin.version>
     <maven.resources.plugin.version>2.6</maven.resources.plugin.version>
     <maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>
@@ -345,10 +345,7 @@
         <artifactId>coveralls-maven-plugin</artifactId>
         <version>4.3.0</version>
         <configuration>
-          <repoToken>${env.repoToken}</repoToken>
-          <serviceName>gitlab</serviceName>
-          <serviceBuildUrl>${env.CI_BUILD_URL}</serviceBuildUrl>
-          <branch>${env.CI_BRANCH}</branch>
+          <serviceName>travis-pro</serviceName>
         </configuration>
       </plugin>
       <plugin>
