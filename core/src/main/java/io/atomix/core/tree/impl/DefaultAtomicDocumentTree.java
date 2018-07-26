@@ -20,8 +20,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Maps;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
-import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.AtomicDocumentTree;
+import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTreeEventListener;
 import io.atomix.core.tree.DocumentTreeNode;
 import io.atomix.core.tree.IllegalDocumentModificationException;
@@ -34,6 +34,7 @@ import io.atomix.utils.time.Versioned;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -43,18 +44,17 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DefaultAtomicDocumentTree<V> implements AtomicDocumentTree<V> {
 
-  private static final DocumentPath ROOT_PATH = DocumentPath.from("root");
   final DefaultDocumentTreeNode<V> root;
   private final Supplier<Long> versionSupplier;
 
   public DefaultAtomicDocumentTree() {
     AtomicLong versionCounter = new AtomicLong(0);
     versionSupplier = versionCounter::incrementAndGet;
-    root = new DefaultDocumentTreeNode<V>(ROOT_PATH, null, versionSupplier.get(), Ordering.NATURAL, null);
+    root = new DefaultDocumentTreeNode<V>(DocumentPath.ROOT, null, versionSupplier.get(), Ordering.NATURAL, null);
   }
 
   public DefaultAtomicDocumentTree(Supplier<Long> versionSupplier, Ordering ordering) {
-    root = new DefaultDocumentTreeNode<V>(ROOT_PATH, null, versionSupplier.get(), ordering, null);
+    root = new DefaultDocumentTreeNode<V>(DocumentPath.ROOT, null, versionSupplier.get(), ordering, null);
     this.versionSupplier = versionSupplier;
   }
 
@@ -80,7 +80,7 @@ public class DefaultAtomicDocumentTree<V> implements AtomicDocumentTree<V> {
 
   @Override
   public DocumentPath root() {
-    return ROOT_PATH;
+    return DocumentPath.ROOT;
   }
 
   @Override
@@ -188,7 +188,7 @@ public class DefaultAtomicDocumentTree<V> implements AtomicDocumentTree<V> {
   }
 
   @Override
-  public void addListener(DocumentPath path, DocumentTreeEventListener<V> listener) {
+  public void addListener(DocumentPath path, DocumentTreeEventListener<V> listener, Executor executor) {
     // TODO Auto-generated method stub
   }
 
@@ -210,7 +210,7 @@ public class DefaultAtomicDocumentTree<V> implements AtomicDocumentTree<V> {
   private DefaultDocumentTreeNode<V> getNode(DocumentPath path) {
     Iterator<String> pathElements = path.pathElements().iterator();
     DefaultDocumentTreeNode<V> currentNode = root;
-    Preconditions.checkState("root".equals(pathElements.next()), "Path should start with root");
+    Preconditions.checkState("".equals(pathElements.next()), "Path should start with root");
     while (pathElements.hasNext() && currentNode != null) {
       currentNode = (DefaultDocumentTreeNode<V>) currentNode.child(pathElements.next());
     }
@@ -222,7 +222,7 @@ public class DefaultAtomicDocumentTree<V> implements AtomicDocumentTree<V> {
   }
 
   private void checkRootModification(DocumentPath path) {
-    if (ROOT_PATH.equals(path)) {
+    if (DocumentPath.ROOT.equals(path)) {
       throw new IllegalDocumentModificationException();
     }
   }

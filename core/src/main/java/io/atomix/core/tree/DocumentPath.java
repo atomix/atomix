@@ -39,21 +39,26 @@ public class DocumentPath implements Comparable<DocumentPath> {
   /**
    * Default path separator.
    */
-  public static final String DEFAULT_SEPARATOR = "|";
+  public static final String DEFAULT_SEPARATOR = "/";
 
   /**
    * Default path separator regex.
    */
-  public static final String DEFAULT_SEPARATOR_RE = "\\|";
+  public static final String DEFAULT_SEPARATOR_RE = "/";
 
   // TODO: Add means to set the path separator and separator ERE.
   private static String pathSeparator = DEFAULT_SEPARATOR;
   private static String pathSeparatorRE = DEFAULT_SEPARATOR_RE;
 
   /**
+   * Root document path.
+   */
+  private static final String ROOT_PATH = "/";
+
+  /**
    * Root document tree path.
    */
-  public static final DocumentPath ROOT = DocumentPath.from("root");
+  public static final DocumentPath ROOT = DocumentPath.from(new String[]{""});
 
   private final List<String> pathElements = Lists.newArrayList();
 
@@ -102,6 +107,9 @@ public class DocumentPath implements Comparable<DocumentPath> {
    * @return {@code DocumentPath} instance
    */
   public static DocumentPath from(String path) {
+    if (path.equals(ROOT_PATH)) {
+      return ROOT;
+    }
     return new DocumentPath(Arrays.asList(path.split(pathSeparatorRE)));
   }
 
@@ -229,6 +237,10 @@ public class DocumentPath implements Comparable<DocumentPath> {
 
   @Override
   public String toString() {
+    if (pathElements.equals(ROOT.pathElements)) {
+      return ROOT_PATH;
+    }
+
     StringBuilder stringBuilder = new StringBuilder();
     Iterator<String> iter = pathElements.iterator();
     while (iter.hasNext()) {

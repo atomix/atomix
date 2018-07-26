@@ -16,10 +16,12 @@
 
 package io.atomix.core.tree;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  * A hierarchical <a href="https://en.wikipedia.org/wiki/Document_Object_Model">document tree</a> data structure.
@@ -116,13 +118,44 @@ public interface AtomicDocumentTree<V> extends SyncPrimitive {
   Versioned<V> removeNode(DocumentPath path);
 
   /**
+   * Registers a listener to be notified when the tree is modified.
+   *
+   * @param listener listener to be notified
+   */
+  default void addListener(DocumentTreeEventListener<V> listener) {
+    addListener(null, listener, MoreExecutors.directExecutor());
+  }
+
+  /**
    * Registers a listener to be notified when a subtree rooted at the specified path
    * is modified.
    *
    * @param path     path to root of subtree to monitor for updates
    * @param listener listener to be notified
    */
-  void addListener(DocumentPath path, DocumentTreeEventListener<V> listener);
+  default void addListener(DocumentPath path, DocumentTreeEventListener<V> listener) {
+    addListener(path, listener, MoreExecutors.directExecutor());
+  }
+
+  /**
+   * Registers a listener to be notified when the tree is modified.
+   *
+   * @param listener listener to be notified
+   * @param executor the executor on which to notify the event listener
+   */
+  default void addListener(DocumentTreeEventListener<V> listener, Executor executor) {
+    addListener(null, listener, executor);
+  }
+
+  /**
+   * Registers a listener to be notified when a subtree rooted at the specified path
+   * is modified.
+   *
+   * @param path     path to root of subtree to monitor for updates
+   * @param listener listener to be notified
+   * @param executor the executor on which to notify the event listener
+   */
+  void addListener(DocumentPath path, DocumentTreeEventListener<V> listener, Executor executor);
 
   /**
    * Unregisters a previously added listener.
@@ -130,15 +163,6 @@ public interface AtomicDocumentTree<V> extends SyncPrimitive {
    * @param listener listener to unregister
    */
   void removeListener(DocumentTreeEventListener<V> listener);
-
-  /**
-   * Registers a listener to be notified when the tree is modified.
-   *
-   * @param listener listener to be notified
-   */
-  default void addListener(DocumentTreeEventListener<V> listener) {
-    addListener(root(), listener);
-  }
 
   @Override
   AsyncAtomicDocumentTree<V> async();
