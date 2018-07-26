@@ -15,13 +15,12 @@
  */
 package io.atomix.core.value;
 
-import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
 
 /**
  * Atomic value configuration.
  */
-public class AtomicValueConfig extends PrimitiveConfig<AtomicValueConfig> {
+public class AtomicValueConfig extends ValueConfig<AtomicValueConfig> {
   @Override
   public PrimitiveType getType() {
     return AtomicValueType.instance();
