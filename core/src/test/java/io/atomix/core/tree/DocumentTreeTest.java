@@ -65,10 +65,33 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest<ProxyProtoc
   public void testException() throws Throwable {
     AsyncAtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
     try {
-      tree.create(path("a"), "a").get(30, TimeUnit.SECONDS);
+      tree.get(path("a")).get(30, TimeUnit.SECONDS);
       fail();
-    } catch (Exception e) {
-      e.printStackTrace();
+    } catch (IllegalArgumentException e) {
+    }
+
+    try {
+      tree.getChildren(path("a/b")).get(30, TimeUnit.SECONDS);
+      fail();
+    } catch (IllegalArgumentException e) {
+    }
+
+    try {
+      tree.set(path("a"), "a").get(30, TimeUnit.SECONDS);
+      fail();
+    } catch (IllegalArgumentException e) {
+    }
+
+    try {
+      tree.create(path("a/b"), "a").get(30, TimeUnit.SECONDS);
+      fail();
+    } catch (IllegalArgumentException e) {
+    }
+
+    try {
+      tree.createRecursive(path("a"), "a").get(30, TimeUnit.SECONDS);
+      fail();
+    } catch (IllegalArgumentException e) {
     }
   }
 
