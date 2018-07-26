@@ -99,6 +99,7 @@ import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionGroupTypeRegistry;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.impl.DefaultPrimitiveProtocolTypeRegistry;
+import io.atomix.primitive.serialization.SerializationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,6 +128,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       ClusterMembershipService membershipService,
       ClusterCommunicationService communicationService,
       ClusterEventService eventService,
+      SerializationService serializationService,
       PartitionService partitionService,
       PrimitiveCache primitiveCache,
       AtomixRegistry registry,
@@ -138,6 +140,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
         membershipService,
         communicationService,
         eventService,
+        serializationService,
         partitionService,
         primitiveCache,
         primitiveRegistry,

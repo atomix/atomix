@@ -251,6 +251,46 @@ public class AtomixBuilder extends AtomixClusterBuilder {
     return this;
   }
 
+  /**
+   * Requires explicit serializable type registration for user types.
+   *
+   * @return the Atomix builder
+   */
+  public AtomixBuilder withTypeRegistrationRequired() {
+    return withTypeRegistrationRequired(true);
+  }
+
+  /**
+   * Sets whether serializable type registration is required for user types.
+   *
+   * @param required whether serializable type registration is required for user types
+   * @return the Atomix builder
+   */
+  public AtomixBuilder withTypeRegistrationRequired(boolean required) {
+    config.setTypeRegistrationRequired(required);
+    return this;
+  }
+
+  /**
+   * Enables compatible serialization for user types.
+   *
+   * @return the Atomix builder
+   */
+  public AtomixBuilder withCompatibleSerialization() {
+    return withCompatibleSerialization(true);
+  }
+
+  /**
+   * Sets whether compatible serialization is enabled for user types.
+   *
+   * @param enabled whether compatible serialization is enabled for user types
+   * @return the Atomix builder
+   */
+  public AtomixBuilder withCompatibleSerialization(boolean enabled) {
+    config.setCompatibleSerialization(enabled);
+    return this;
+  }
+
   @Override
   public AtomixBuilder withClusterId(String clusterId) {
     super.withClusterId(clusterId);

@@ -40,6 +40,8 @@ public class AtomixConfig implements Config {
   private Map<String, PartitionGroupConfig<?>> partitionGroups = new HashMap<>();
   private Map<String, PrimitiveConfig> primitives = new HashMap<>();
   private List<ProfileConfig> profiles = new ArrayList<>();
+  private boolean typeRegistrationRequired = false;
+  private boolean compatibleSerialization = false;
 
   /**
    * Returns the cluster configuration.
@@ -206,6 +208,46 @@ public class AtomixConfig implements Config {
    */
   public AtomixConfig addProfile(ProfileConfig profile) {
     profiles.add(checkNotNull(profile, "profile cannot be null"));
+    return this;
+  }
+
+  /**
+   * Returns whether serializable type registration is required for user types.
+   *
+   * @return whether serializable type registration is required for user types
+   */
+  public boolean isTypeRegistrationRequired() {
+    return typeRegistrationRequired;
+  }
+
+  /**
+   * Sets whether serializable type registration is required for user types.
+   *
+   * @param typeRegistrationRequired whether serializable type registration is required for user types
+   * @return the Atomix configuration
+   */
+  public AtomixConfig setTypeRegistrationRequired(boolean typeRegistrationRequired) {
+    this.typeRegistrationRequired = typeRegistrationRequired;
+    return this;
+  }
+
+  /**
+   * Returns whether compatible serialization is enabled for user types.
+   *
+   * @return whether compatible serialization is enabled for user types
+   */
+  public boolean isCompatibleSerialization() {
+    return compatibleSerialization;
+  }
+
+  /**
+   * Sets whether compatible serialization is enabled for user types.
+   *
+   * @param compatibleSerialization whether compatible serialization is enabled for user types
+   * @return the Atomix configuration
+   */
+  public AtomixConfig setCompatibleSerialization(boolean compatibleSerialization) {
+    this.compatibleSerialization = compatibleSerialization;
     return this;
   }
 }

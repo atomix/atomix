@@ -34,16 +34,12 @@ import org.slf4j.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -183,43 +179,6 @@ public final class Namespace implements KryoFactory, KryoPool {
     public Builder register(Serializer<?> serializer, final Class<?>... classes) {
       types.add(Pair.of(classes, checkNotNull(serializer)));
       return this;
-    }
-
-    /**
-     * Registers all given types and their subtypes.
-     *
-     * @param classes the types to register
-     * @return this
-     */
-    public Builder registerSubTypes(final Class<?>... classes) {
-      for (Class<?> type : classes) {
-        register(type);
-        registerSubTypes(type);
-      }
-      return this;
-    }
-
-    /**
-     * Registers all subtypes of the given type.
-     *
-     * @param type the type for which to register subtypes
-     */
-    private void registerSubTypes(Class<?> type) {
-      getFields(type).forEach((fieldName, fieldType) -> register(fieldType));
-    }
-
-    private SortedMap<String, Class<?>> getFields(Class<?> type) {
-      if (type == Object.class) {
-        return new TreeMap<>();
-      }
-
-      SortedMap<String, Class<?>> fields = getFields(type.getSuperclass());
-      for (Field field : type.getDeclaredFields()) {
-        if (!Modifier.isTransient(field.getModifiers()) && field.getType() != Object.class) {
-          fields.put(field.getName(), field.getType());
-        }
-      }
-      return fields;
     }
 
     private Builder register(RegistrationBlock block) {

@@ -21,8 +21,8 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.NamespaceConfig;
-import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.SerializerBuilder;
 
 /**
  * Distributed collection builder.
@@ -128,23 +128,24 @@ public abstract class DistributedCollectionBuilder<
         namespaceConfig = new NamespaceConfig();
       }
 
-      Namespace.Builder namespaceBuilder = Namespace.builder()
-          .register(Namespaces.BASIC)
-          .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
-          .register(new Namespace(namespaceConfig))
-          .nextId(Namespaces.BEGIN_USER_CUSTOM_ID + 100);
+      SerializerBuilder serializerBuilder = managementService.getSerializationService().newBuilder(name);
+      serializerBuilder.withNamespace(new Namespace(namespaceConfig));
 
-      namespaceBuilder.setRegistrationRequired(config.isRegistrationRequired());
-      namespaceBuilder.setCompatible(config.isCompatibleSerialization());
+      if (config.isRegistrationRequired()) {
+        serializerBuilder.withRegistrationRequired();
+      }
+      if (config.isCompatibleSerialization()) {
+        serializerBuilder.withCompatibleSerialization();
+      }
 
       if (config.getElementType() != null) {
-        namespaceBuilder.registerSubTypes(config.getElementType());
+        serializerBuilder.addType(config.getElementType());
       }
       if (!config.getExtraTypes().isEmpty()) {
-        namespaceBuilder.register(config.getExtraTypes().toArray(new Class<?>[config.getExtraTypes().size()]));
+        serializerBuilder.withTypes(config.getExtraTypes().toArray(new Class<?>[config.getExtraTypes().size()]));
       }
 
-      serializer = Serializer.using(namespaceBuilder.build());
+      serializer = serializerBuilder.build();
     }
     return serializer;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.utils.serializer.serializers;
+package io.atomix.primitive.serialization;
 
-import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.SerializerBuilder;
 
 /**
- * Default serializers.
+ * Primitive serialization service.
  */
-public class DefaultSerializers {
+public interface SerializationService {
 
   /**
-   * Basic serializer.
+   * Returns a new serializer builder.
+   *
+   * @return a new serializer builder
    */
-  public static Serializer BASIC = Serializer.builder().build();
+  SerializerBuilder newBuilder();
 
-  private DefaultSerializers() {
-  }
+  /**
+   * Returns a new serializer builder.
+   *
+   * @param name the serializer builder name
+   * @return the serializer builder
+   */
+  SerializerBuilder newBuilder(String name);
+
 }
