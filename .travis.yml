@@ -11,11 +11,12 @@ branches:
     - master
 
 install:
-  - ./mvnw clean install -DskipTests=true -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -B -V
+  - ./mvnw clean install -B -V -DskipTests=true -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+
 script:
   - ./mvnw verify -Droot.logging.level=INFO
 
 after_success:
-  - ./mvnw jacoco:report coveralls:report -Droot.logging.level=INFO
+  - ./mvnw jacoco:report coveralls:report
   - bin/ci-push-javadoc.sh
   - bin/ci-deploy-snapshot.sh
