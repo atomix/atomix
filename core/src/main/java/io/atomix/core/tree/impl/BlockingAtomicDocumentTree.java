@@ -18,9 +18,9 @@ package io.atomix.core.tree.impl;
 
 import com.google.common.base.Throwables;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
+import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.tree.DocumentException;
 import io.atomix.core.tree.DocumentPath;
-import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.tree.DocumentTreeEventListener;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
@@ -29,6 +29,7 @@ import io.atomix.utils.time.Versioned;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -96,18 +97,13 @@ public class BlockingAtomicDocumentTree<V> extends Synchronous<AsyncAtomicDocume
   }
 
   @Override
-  public void addListener(DocumentPath path, DocumentTreeEventListener<V> listener) {
-    complete(backingTree.addListener(path, listener));
+  public void addListener(DocumentPath path, DocumentTreeEventListener<V> listener, Executor executor) {
+    complete(backingTree.addListener(path, listener, executor));
   }
 
   @Override
   public void removeListener(DocumentTreeEventListener<V> listener) {
     complete(backingTree.removeListener(listener));
-  }
-
-  @Override
-  public void addListener(DocumentTreeEventListener<V> listener) {
-    complete(backingTree.addListener(listener));
   }
 
   @Override
