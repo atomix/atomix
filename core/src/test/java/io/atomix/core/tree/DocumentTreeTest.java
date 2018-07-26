@@ -59,6 +59,20 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest<ProxyProtoc
   }
 
   /**
+   * Tests exception.
+   */
+  @Test
+  public void testException() throws Throwable {
+    AsyncAtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    try {
+      tree.create(path("a"), "a").get(30, TimeUnit.SECONDS);
+      fail();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  /**
    * Tests create.
    */
   @Test
