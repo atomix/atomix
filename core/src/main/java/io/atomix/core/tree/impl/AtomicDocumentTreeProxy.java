@@ -151,7 +151,7 @@ public class AtomicDocumentTreeProxy
   }
 
   @Override
-  public CompletableFuture<Versioned<byte[]>> removeNode(DocumentPath path) {
+  public CompletableFuture<Versioned<byte[]>> remove(DocumentPath path) {
     if (path.equals(root())) {
       return Futures.exceptionalFuture(new IllegalDocumentModificationException());
     }

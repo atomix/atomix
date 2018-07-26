@@ -92,8 +92,8 @@ public class BlockingAtomicDocumentTree<V> extends Synchronous<AsyncAtomicDocume
   }
 
   @Override
-  public Versioned<V> removeNode(DocumentPath path) {
-    return complete(backingTree.removeNode(path));
+  public Versioned<V> remove(DocumentPath path) {
+    return complete(backingTree.remove(path));
   }
 
   @Override

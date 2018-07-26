@@ -173,7 +173,7 @@ public class DefaultAtomicDocumentTree<V> implements AtomicDocumentTree<V> {
   }
 
   @Override
-  public Versioned<V> removeNode(DocumentPath path) {
+  public Versioned<V> remove(DocumentPath path) {
     checkRootModification(path);
     DefaultDocumentTreeNode<V> nodeToRemove = getNode(path);
     if (nodeToRemove == null) {

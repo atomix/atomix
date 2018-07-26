@@ -96,6 +96,24 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest<ProxyProtoc
   }
 
   /**
+   * Tests string based methods.
+   */
+  @Test
+  public void testStringPaths() throws Exception {
+    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString()).sync();
+    assertNull(tree.set("/foo", "Hello world!"));
+    assertEquals("Hello world!", tree.get("/foo").value());
+    assertTrue(tree.create("/bar", "Hello world again!"));
+    assertFalse(tree.create("/bar", "nope"));
+    assertEquals("Hello world again!", tree.get("/bar").value());
+    assertTrue(tree.createRecursive("/baz/foo/bar", null));
+    assertNull(tree.get("/baz/foo/bar").value());
+    assertEquals("Hello world!", tree.remove("/foo").value());
+    assertNull(tree.get("/foo"));
+    assertEquals("Hello world again!", tree.getChildren("/").get("bar").value());
+  }
+
+  /**
    * Tests create.
    */
   @Test
@@ -214,20 +232,20 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest<ProxyProtoc
     tree.create(path("/a/b"), "ab").get(30, TimeUnit.SECONDS);
     tree.create(path("/a/c"), "ac").get(30, TimeUnit.SECONDS);
 
-    Versioned<String> ab = tree.removeNode(path("/a/b")).get(30, TimeUnit.SECONDS);
+    Versioned<String> ab = tree.remove(path("/a/b")).get(30, TimeUnit.SECONDS);
     assertEquals("ab", ab.value());
     assertNull(tree.get(path("/a/b")).get(30, TimeUnit.SECONDS));
 
-    Versioned<String> ac = tree.removeNode(path("/a/c")).get(30, TimeUnit.SECONDS);
+    Versioned<String> ac = tree.remove(path("/a/c")).get(30, TimeUnit.SECONDS);
     assertEquals("ac", ac.value());
     assertNull(tree.get(path("/a/c")).get(30, TimeUnit.SECONDS));
 
-    Versioned<String> a = tree.removeNode(path("/a")).get(30, TimeUnit.SECONDS);
+    Versioned<String> a = tree.remove(path("/a")).get(30, TimeUnit.SECONDS);
     assertEquals("a", a.value());
     assertNull(tree.get(path("/a")).get(30, TimeUnit.SECONDS));
 
     tree.create(path("/x"), null).get(30, TimeUnit.SECONDS);
-    Versioned<String> x = tree.removeNode(path("/x")).get(30, TimeUnit.SECONDS);
+    Versioned<String> x = tree.remove(path("/x")).get(30, TimeUnit.SECONDS);
     assertNull(x.value());
     assertNull(tree.get(path("/a/x")).get(30, TimeUnit.SECONDS));
   }
@@ -243,21 +261,21 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest<ProxyProtoc
     tree.create(path("/a/c"), "ac").get(30, TimeUnit.SECONDS);
 
     try {
-      tree.removeNode(path("/")).get(30, TimeUnit.SECONDS);
+      tree.remove(path("/")).get(30, TimeUnit.SECONDS);
       fail();
     } catch (Exception e) {
       assertTrue(Throwables.getRootCause(e) instanceof IllegalDocumentModificationException);
     }
 
     try {
-      tree.removeNode(path("/a")).get(30, TimeUnit.SECONDS);
+      tree.remove(path("/a")).get(30, TimeUnit.SECONDS);
       fail();
     } catch (Exception e) {
       assertTrue(Throwables.getRootCause(e) instanceof IllegalDocumentModificationException);
     }
 
     try {
-      tree.removeNode(path("/d")).get(30, TimeUnit.SECONDS);
+      tree.remove(path("/d")).get(30, TimeUnit.SECONDS);
       fail();
     } catch (Exception e) {
       assertTrue(Throwables.getRootCause(e) instanceof NoSuchDocumentPathException);
@@ -353,7 +371,7 @@ public abstract class DocumentTreeTest extends AbstractPrimitiveTest<ProxyProtoc
     assertEquals("newA", event.newValue().get().value());
     assertEquals("a", event.oldValue().get().value());
     // remove a node in the tree and verify an REMOVED event is received.
-    tree.removeNode(path("/a")).get(30, TimeUnit.SECONDS);
+    tree.remove(path("/a")).get(30, TimeUnit.SECONDS);
     event = listener.event();
     assertEquals(DocumentTreeEvent.Type.DELETED, event.type());
     assertFalse(event.newValue().isPresent());
