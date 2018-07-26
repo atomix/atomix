@@ -28,6 +28,7 @@ import io.atomix.core.election.LeaderElector;
 import io.atomix.core.idgenerator.AtomicIdGenerator;
 import io.atomix.core.impl.CorePrimitiveCache;
 import io.atomix.core.impl.CorePrimitivesService;
+import io.atomix.core.impl.CoreSerializationService;
 import io.atomix.core.list.DistributedList;
 import io.atomix.core.lock.AtomicLock;
 import io.atomix.core.lock.DistributedLock;
@@ -74,6 +75,7 @@ import io.atomix.primitive.partition.impl.DefaultPartitionGroupTypeRegistry;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
+import io.atomix.primitive.serialization.SerializationService;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -345,6 +347,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   private final ScheduledExecutorService executorService;
   private final AtomixRegistry registry;
   private final ConfigService config;
+  private final SerializationService serializationService;
   private final ManagedPartitionService partitions;
   private final CorePrimitivesService primitives;
   private final boolean enableShutdownHook;
@@ -380,12 +383,14 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
     this.registry = registry;
     this.config = new DefaultConfigService(config.getPrimitives().values());
+    this.serializationService = new CoreSerializationService(config.isTypeRegistrationRequired(), config.isCompatibleSerialization());
     this.partitions = buildPartitionService(config, getMembershipService(), getCommunicationService(), registry);
     this.primitives = new CorePrimitivesService(
         getExecutorService(),
         getMembershipService(),
         getCommunicationService(),
         getEventService(),
+        getSerializationService(),
         getPartitionService(),
         new CorePrimitiveCache(),
         registry,
@@ -422,6 +427,15 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    */
   public ConfigService getConfigService() {
     return config;
+  }
+
+  /**
+   * Returns the primitive serialization service.
+   *
+   * @return the primitive serialization service
+   */
+  public SerializationService getSerializationService() {
+    return serializationService;
   }
 
   /**

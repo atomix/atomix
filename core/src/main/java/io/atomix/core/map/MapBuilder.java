@@ -22,13 +22,14 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.NamespaceConfig;
-import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.SerializerBuilder;
 
 /**
  * Base map builder.
  */
-public abstract class MapBuilder<B extends MapBuilder<B, C, P, K, V>, C extends MapConfig<C>, P extends SyncPrimitive, K, V> extends CachedPrimitiveBuilder<B, C, P> {
+public abstract class MapBuilder<B extends MapBuilder<B, C, P, K, V>, C extends MapConfig<C>, P extends SyncPrimitive, K, V>
+    extends CachedPrimitiveBuilder<B, C, P> {
   protected MapBuilder(PrimitiveType type, String name, C config, PrimitiveManagementService managementService) {
     super(type, name, config, managementService);
   }
@@ -137,26 +138,27 @@ public abstract class MapBuilder<B extends MapBuilder<B, C, P, K, V>, C extends 
         namespaceConfig = new NamespaceConfig();
       }
 
-      Namespace.Builder namespaceBuilder = Namespace.builder()
-          .register(Namespaces.BASIC)
-          .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
-          .register(new Namespace(namespaceConfig))
-          .nextId(Namespaces.BEGIN_USER_CUSTOM_ID + 100);
+      SerializerBuilder serializerBuilder = managementService.getSerializationService().newBuilder(name);
+      serializerBuilder.withNamespace(new Namespace(namespaceConfig));
 
-      namespaceBuilder.setRegistrationRequired(config.isRegistrationRequired());
-      namespaceBuilder.setCompatible(config.isCompatibleSerialization());
+      if (config.isRegistrationRequired()) {
+        serializerBuilder.withRegistrationRequired();
+      }
+      if (config.isCompatibleSerialization()) {
+        serializerBuilder.withCompatibleSerialization();
+      }
 
       if (config.getKeyType() != null) {
-        namespaceBuilder.registerSubTypes(config.getKeyType());
+        serializerBuilder.addType(config.getKeyType());
       }
       if (config.getValueType() != null) {
-        namespaceBuilder.registerSubTypes(config.getValueType());
+        serializerBuilder.addType(config.getValueType());
       }
       if (!config.getExtraTypes().isEmpty()) {
-        namespaceBuilder.register(config.getExtraTypes().toArray(new Class<?>[config.getExtraTypes().size()]));
+        serializerBuilder.withTypes(config.getExtraTypes().toArray(new Class<?>[config.getExtraTypes().size()]));
       }
 
-      serializer = Serializer.using(namespaceBuilder.build());
+      serializer = serializerBuilder.build();
     }
     return serializer;
   }
