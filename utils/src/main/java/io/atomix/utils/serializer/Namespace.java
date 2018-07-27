@@ -279,7 +279,7 @@ public final class Namespace implements KryoFactory, KryoPool {
         throw new ConfigurationException("Failed to instantiate serializer from configuration", e);
       }
     }
-    blocks.add(new RegistrationBlock(Namespaces.BEGIN_USER_CUSTOM_ID, types));
+    blocks.add(new RegistrationBlock(FLOATING_ID, types));
     return blocks;
   }
 
