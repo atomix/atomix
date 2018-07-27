@@ -63,7 +63,7 @@ public class ConfigMapper {
    * @param type      the type to load
    * @param files     the files to load
    * @param resources the resources to which to fall back
-   * @param <T>       the resulting type
+   * @param <T> the resulting type
    * @return the loaded configuration
    */
   public <T> T loadFiles(Class<T> type, List<File> files, List<String> resources) {
@@ -93,9 +93,9 @@ public class ConfigMapper {
   /**
    * Loads the given resources using the configuration mapper.
    *
-   * @param type      the type to load
+   * @param type the type to load
    * @param resources the resources to load
-   * @param <T>       the resulting type
+   * @param <T> the resulting type
    * @return the loaded configuration
    */
   public <T> T loadResources(Class<T> type, String... resources) {
@@ -126,7 +126,7 @@ public class ConfigMapper {
    * Applies the given configuration to the given type.
    *
    * @param config the configuration to apply
-   * @param clazz  the class to which to apply the configuration
+   * @param clazz the class to which to apply the configuration
    */
   protected <T> T map(Config config, Class<T> clazz) {
     return map(config, null, null, clazz);
@@ -144,7 +144,7 @@ public class ConfigMapper {
    * Applies the given configuration to the given type.
    *
    * @param config the configuration to apply
-   * @param clazz  the class to which to apply the configuration
+   * @param clazz the class to which to apply the configuration
    */
   @SuppressWarnings("unchecked")
   protected <T> T map(Config config, String path, String name, Class<T> clazz) {
@@ -330,6 +330,9 @@ public class ConfigMapper {
 
   protected Object getListValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName) {
     Type elementType = ((ParameterizedType) parameterType).getActualTypeArguments()[0];
+    if (elementType instanceof ParameterizedType) {
+      elementType = ((ParameterizedType) elementType).getRawType();
+    }
 
     if (elementType == Boolean.class) {
       return config.getBooleanList(configPropName);
@@ -347,6 +350,17 @@ public class ConfigMapper {
       List<ConfigMemorySize> sizes = config.getMemorySizeList(configPropName);
       return sizes.stream()
           .map(size -> new MemorySize(size.toBytes()))
+          .collect(Collectors.toList());
+    } else if (elementType == Class.class) {
+      return config.getStringList(configPropName)
+          .stream()
+          .map(className -> {
+            try {
+              return classLoader.loadClass(className);
+            } catch (ClassNotFoundException e) {
+              throw new ConfigurationException("Failed to load class: " + className);
+            }
+          })
           .collect(Collectors.toList());
     } else if (elementType == Object.class) {
       return config.getAnyRefList(configPropName);

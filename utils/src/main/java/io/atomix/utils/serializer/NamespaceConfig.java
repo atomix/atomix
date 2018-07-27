@@ -18,7 +18,7 @@ package io.atomix.utils.serializer;
 import io.atomix.utils.config.Config;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 
 /**
  * Namespace configuration.
@@ -27,7 +27,7 @@ public class NamespaceConfig implements Config {
   private String name = Namespace.NO_NAME;
   private boolean registrationRequired = true;
   private boolean compatible = false;
-  private Collection<NamespaceTypeConfig> types = new ArrayList<>();
+  private List<NamespaceTypeConfig> types = new ArrayList<>();
 
   /**
    * Returns the serializer name.
@@ -93,7 +93,7 @@ public class NamespaceConfig implements Config {
    *
    * @return the serializable types
    */
-  public Collection<NamespaceTypeConfig> getTypes() {
+  public List<NamespaceTypeConfig> getTypes() {
     return types;
   }
 
@@ -103,7 +103,7 @@ public class NamespaceConfig implements Config {
    * @param types the serializable types
    * @return the serializer configuration
    */
-  public NamespaceConfig setTypes(Collection<NamespaceTypeConfig> types) {
+  public NamespaceConfig setTypes(List<NamespaceTypeConfig> types) {
     this.types = types;
     return this;
   }
