@@ -159,7 +159,7 @@ public class DocumentTreeResource implements PrimitiveResource {
   @Path("/{path: .*}")
   @Produces(MediaType.APPLICATION_JSON)
   public void removeNode(@PathParam("path") List<PathSegment> path, @Suspended AsyncResponse response) {
-    tree.removeNode(getDocumentPath(path)).whenComplete((result, error) -> {
+    tree.remove(getDocumentPath(path)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(new VersionedResult(result)).build());
       } else {

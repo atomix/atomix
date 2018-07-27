@@ -32,4 +32,4 @@ Steps to reproduce the behavior.
 The documentation is currently work-in-progress and is not yet complete.</sup>
 
 -----------------------------------------------------------------------------------------
-*Have you searched the CLOSED issues already? How about checking in with the Atomix [google group](https://groups.google.com/forum/#!forum/atomixio)?*
+*Have you searched the CLOSED issues already? How about checking in with the [Atomix Google Group](https://groups.google.com/forum/#!forum/atomixio)?*

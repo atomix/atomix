@@ -77,6 +77,7 @@
 
     <argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.scanSpec=io.atomix</argLine.common>
     <argLine.extras /> <!-- Overridden in some profiles -->
+    <argLine.javadocs />
   </properties>
 
   <profiles>
@@ -86,6 +87,7 @@
       <properties>
         <argLine.common>-Xss256k -Xms512m -Xmx2G -Dio.atomix.scanSpec=io.atomix</argLine.common>
         <argLine.extras>--add-modules jdk.unsupported --add-opens=java.base/java.nio=ALL-UNNAMED</argLine.extras>
+        <argLine.javadocs>-html5</argLine.javadocs>
         <!-- coverall version 4.3.0 does not work with java 9, see https://github.com/trautonen/coveralls-maven-plugin/issues/112 -->
         <coveralls.skip>true</coveralls.skip>
       </properties>
@@ -266,6 +268,7 @@
           </execution>
         </executions>
         <configuration>
+          <additionalparam>${argLine.javadocs}</additionalparam>
           <show>public</show>
           <doctitle>Atomix API Reference (${jv})</doctitle>
           <windowtitle>Atomix API Reference (${jv})</windowtitle>
@@ -284,7 +287,7 @@
             </group>
             <group>
               <title>Primitive API</title>
-              <packages>io.atomix.primitive:io.atomix.primitive.config:io.atomix.primitive.event:io.atomix.primitive.operation:io.atomix.primitive.proxy:io.atomix.primitive.resource:io.atomix.primitive.service:io.atomix.primitive.session</packages>
+              <packages>io.atomix.primitive:io.atomix.primitive.config:io.atomix.primitive.event:io.atomix.primitive.operation:io.atomix.primitive.partition:io.atomix.primitive.proxy:io.atomix.primitive.resource:io.atomix.primitive.service:io.atomix.primitive.session</packages>
             </group>
             <group>
               <title>Protocol API</title>
@@ -300,7 +303,7 @@
             </group>
             <group>
               <title>Gossip Protocol</title>
-              <packages>io.atomix.protocols.gossip*</packages>
+              <packages>io.atomix.protocols.gossip</packages>
             </group>
             <group>
               <title>Storage</title>
@@ -312,7 +315,7 @@
             </group>
           </groups>
           <stylesheetfile>${basedir}/docs/style.css</stylesheetfile>
-          <excludePackageNames>*.impl*:io.atomix.core.config.jackson:io.atomix.core.utils:io.atomix.rest*:io.atomix.agent*:io.atomix.storage.buffer:io.atomix.storage.journal*:io.atomix.storage.statistics:io.atomix.protocols.raft.utils:io.atomix.utils.serializer.serializers:io.atomix.utils.concurrent:io.atomix.utils.logging:io.atomix.utils.misc:io.atomix.utils.memory:io.atomix.protocols.raft.roles:io.atomix.protocols.raft.protocol:io.atomix.protocols.raft.storage:io.atomix.protocols.raft.cluster:io.atomix.protocols.raft.test:io.atomix.protocols.backup.roles:io.atomix.protocols.backup.protocol
+          <excludePackageNames>*.impl*:io.atomix.core.config.jackson:io.atomix.core.utils:io.atomix.rest*:io.atomix.agent*:io.atomix.storage.buffer:io.atomix.storage.journal*:io.atomix.storage.statistics:io.atomix.protocols.raft.utils:io.atomix.utils.serializer.serializers:io.atomix.utils.concurrent:io.atomix.utils.logging:io.atomix.utils.misc:io.atomix.utils.memory:io.atomix.protocols.raft.roles:io.atomix.protocols.raft.protocol:io.atomix.protocols.raft.storage:io.atomix.protocols.raft.cluster:io.atomix.protocols.raft.test:io.atomix.protocols.backup.roles:io.atomix.protocols.backup.protocol:io.atomix.protocols.gossip.*
           </excludePackageNames>
         </configuration>
       </plugin>

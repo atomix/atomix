@@ -91,8 +91,8 @@ public class TranscodingAsyncAtomicDocumentTree<V1, V2> extends DelegatingAsyncP
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> removeNode(DocumentPath path) {
-    return backingTree.removeNode(path).thenApply(v -> v != null ? v.map(valueDecoder) : null);
+  public CompletableFuture<Versioned<V1>> remove(DocumentPath path) {
+    return backingTree.remove(path).thenApply(v -> v != null ? v.map(valueDecoder) : null);
   }
 
   @Override

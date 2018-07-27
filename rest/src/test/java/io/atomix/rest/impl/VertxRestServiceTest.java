@@ -404,19 +404,19 @@ public class VertxRestServiceTest {
 
   @After
   public void afterTest() throws Exception {
-    List<CompletableFuture<Void>> serviceFutures = new ArrayList<>(3);
-    for (RestService service : services) {
-      serviceFutures.add(((ManagedRestService) service).stop());
-    }
     try {
-        CompletableFuture.allOf(serviceFutures.toArray(new CompletableFuture[serviceFutures.size()])).get(30, TimeUnit.SECONDS);
+      List<CompletableFuture<Void>> serviceFutures = new ArrayList<>(3);
+      for (RestService service: services) {
+        serviceFutures.add(((ManagedRestService) service).stop());
+      }
+      CompletableFuture.allOf(serviceFutures.toArray(new CompletableFuture[serviceFutures.size()])).get(30, TimeUnit.SECONDS);
     } finally {
-        List<CompletableFuture<Void>> instanceFutures = new ArrayList<>(3);
-        for (Atomix instance : instances) {
-            instanceFutures.add(instance.stop());
-        }
-        CompletableFuture.allOf(instanceFutures.toArray(new CompletableFuture[instanceFutures.size()])).get(30, TimeUnit.SECONDS);
-        deleteData();
+      List<CompletableFuture<Void>> instanceFutures = new ArrayList<>(3);
+      for (Atomix instance: instances) {
+        instanceFutures.add(instance.stop());
+      }
+      CompletableFuture.allOf(instanceFutures.toArray(new CompletableFuture[instanceFutures.size()])).get(30, TimeUnit.SECONDS);
+      deleteData();
     }
   }
 

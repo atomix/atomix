@@ -16,6 +16,7 @@
 
 package io.atomix.core.tree.impl;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
 import io.atomix.core.tree.AtomicDocumentTree;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -56,19 +58,26 @@ public class AtomicDocumentTreeProxy
     return DocumentPath.ROOT;
   }
 
+  private void checkPath(DocumentPath path) {
+    checkArgument(!path.pathElements().isEmpty() && "".equals(path.pathElements().get(0)), "Path should start with root");
+  }
+
   @Override
   public CompletableFuture<Map<String, Versioned<byte[]>>> getChildren(DocumentPath path) {
+    checkPath(path);
     return getProxyClient().applyBy(name(), service -> service.getChildren(path))
         .thenApply(result -> result.status() == DocumentTreeResult.Status.OK ? result.result() : ImmutableMap.of());
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> get(DocumentPath path) {
+    checkPath(path);;
     return getProxyClient().applyBy(name(), service -> service.get(path));
   }
 
   @Override
   public CompletableFuture<Versioned<byte[]>> set(DocumentPath path, byte[] value) {
+    checkPath(path);
     return getProxyClient().applyBy(name(), service -> service.set(path, value))
         .thenCompose(result -> {
           if (result.status() == DocumentTreeResult.Status.INVALID_PATH) {
@@ -83,6 +92,7 @@ public class AtomicDocumentTreeProxy
 
   @Override
   public CompletableFuture<Boolean> create(DocumentPath path, byte[] value) {
+    checkPath(path);
     return getProxyClient().applyBy(name(), service -> service.create(path, value))
         .thenCompose(result -> {
           if (result.status() == DocumentTreeResult.Status.INVALID_PATH) {
@@ -97,6 +107,7 @@ public class AtomicDocumentTreeProxy
 
   @Override
   public CompletableFuture<Boolean> createRecursive(DocumentPath path, byte[] value) {
+    checkPath(path);
     return getProxyClient().applyBy(name(), service -> service.createRecursive(path, value))
         .thenCompose(result -> {
           if (result.status() == DocumentTreeResult.Status.INVALID_PATH) {
@@ -111,6 +122,7 @@ public class AtomicDocumentTreeProxy
 
   @Override
   public CompletableFuture<Boolean> replace(DocumentPath path, byte[] newValue, long version) {
+    checkPath(path);
     return getProxyClient().applyBy(name(), service -> service.replace(path, newValue, version))
         .thenCompose(result -> {
           if (result.status() == DocumentTreeResult.Status.INVALID_PATH) {
@@ -125,6 +137,7 @@ public class AtomicDocumentTreeProxy
 
   @Override
   public CompletableFuture<Boolean> replace(DocumentPath path, byte[] newValue, byte[] currentValue) {
+    checkPath(path);
     return getProxyClient().applyBy(name(), service -> service.replace(path, newValue, currentValue))
         .thenCompose(result -> {
           if (result.status() == DocumentTreeResult.Status.INVALID_PATH) {
@@ -138,10 +151,12 @@ public class AtomicDocumentTreeProxy
   }
 
   @Override
-  public CompletableFuture<Versioned<byte[]>> removeNode(DocumentPath path) {
+  public CompletableFuture<Versioned<byte[]>> remove(DocumentPath path) {
     if (path.equals(root())) {
       return Futures.exceptionalFuture(new IllegalDocumentModificationException());
     }
+
+    checkPath(path);
     return getProxyClient().applyBy(name(), service -> service.removeNode(path))
         .thenCompose(result -> {
           if (result.status() == DocumentTreeResult.Status.INVALID_PATH) {
@@ -158,6 +173,8 @@ public class AtomicDocumentTreeProxy
   public CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<byte[]> listener, Executor executor) {
     checkNotNull(path);
     checkNotNull(listener);
+    checkPath(path);
+
     InternalListener internalListener = new InternalListener(path, listener, executor);
     // TODO: Support API that takes an executor
     if (!eventListeners.containsKey(listener)) {
