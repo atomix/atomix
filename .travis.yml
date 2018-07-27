@@ -1,8 +1,4 @@
 language: java
-sudo: false
-os: linux
-dist: trusty
-
 jdk:
   - oraclejdk8
   - openjdk8
@@ -14,10 +10,13 @@ branches:
   only:
     - master
 
+install:
+  - ./mvnw clean install -B -V -DskipTests=true -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+
 script:
-  - mvn test -Droot.logging.level=INFO
+  - ./mvnw verify -Droot.logging.level=INFO
 
 after_success:
-  - mvn clean test jacoco:report coveralls:report -Droot.logging.level=INFO
+  - ./mvnw jacoco:report coveralls:report
   - bin/ci-push-javadoc.sh
   - bin/ci-deploy-snapshot.sh
