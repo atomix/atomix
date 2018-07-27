@@ -271,7 +271,7 @@ public final class Namespace implements KryoFactory, KryoPool {
     for (NamespaceTypeConfig type : config.getTypes()) {
       try {
         if (type.getId() == null) {
-          types.add(Pair.of(new Class[]{type.getType()}, type.getSerializer().newInstance()));
+          types.add(Pair.of(new Class[]{type.getType()}, type.getSerializer() != null ? type.getSerializer().newInstance() : null));
         } else {
           blocks.add(new RegistrationBlock(type.getId(), Collections.singletonList(Pair.of(new Class[]{type.getType()}, type.getSerializer().newInstance()))));
         }

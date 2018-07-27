@@ -16,7 +16,6 @@
 package io.atomix.core.idgenerator;
 
 import io.atomix.core.Atomix;
-import io.atomix.core.election.LeaderElectionConfig;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import org.junit.Test;
 
@@ -29,7 +28,7 @@ import static org.junit.Assert.assertFalse;
 public class IdGeneratorConfigTest {
   @Test
   public void testLoadConfig() throws Exception {
-    LeaderElectionConfig config = Atomix.config(getClass().getClassLoader().getResource("primitives.conf").getPath())
+    AtomicIdGeneratorConfig config = Atomix.config(getClass().getClassLoader().getResource("primitives.conf").getPath())
         .getPrimitive("atomic-id-generator");
     assertEquals("atomic-id-generator", config.getName());
     assertEquals(MultiPrimaryProtocol.TYPE, config.getProtocolConfig().getType());
