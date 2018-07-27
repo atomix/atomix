@@ -2,7 +2,7 @@
 
 ![Atomix](http://atomix.io/assets/img/logos/atomix-medium.png)
 
-## [Website][Website] | [Javadoc][Javadoc] | [Google Group][Google group]
+## [Website][Website] | [Javadoc][Javadoc] | [Google Group][Google Group]
 
 [![Build Status](https://travis-ci.org/atomix/atomix.svg?branch=master)](https://travis-ci.org/atomix/atomix)
 [![Coverage Status](https://coveralls.io/repos/github/atomix/atomix/badge.svg?branch=master)](https://coveralls.io/github/atomix/atomix?branch=master)
