@@ -18,6 +18,7 @@ package io.atomix.core.tree;
 import io.atomix.core.Atomix;
 import io.atomix.core.types.Type1;
 import io.atomix.core.types.Type2;
+import io.atomix.core.types.Type3;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import org.junit.Test;
 
@@ -38,6 +39,9 @@ public class DocumentTreeConfigTest {
     assertEquals(MultiPrimaryProtocol.TYPE, config.getProtocolConfig().getType());
     assertFalse(config.isReadOnly());
     assertTrue(config.getNamespaceConfig().isRegistrationRequired());
+    assertSame(Type1.class, config.getNodeType());
+    assertSame(Type2.class, config.getExtraTypes().get(0));
+    assertSame(Type3.class, config.getExtraTypes().get(1));
     assertSame(Type1.class, config.getNamespaceConfig().getTypes().get(0).getType());
     assertSame(Type2.class, config.getNamespaceConfig().getTypes().get(1).getType());
   }

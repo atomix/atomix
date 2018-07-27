@@ -330,6 +330,9 @@ public class ConfigMapper {
 
   protected Object getListValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName) {
     Type elementType = ((ParameterizedType) parameterType).getActualTypeArguments()[0];
+    if (elementType instanceof ParameterizedType) {
+      elementType = ((ParameterizedType) elementType).getRawType();
+    }
 
     if (elementType == Boolean.class) {
       return config.getBooleanList(configPropName);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.list;
+package io.atomix.core.value;
 
 import io.atomix.core.Atomix;
 import io.atomix.core.types.Type1;
@@ -28,19 +28,19 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Distributed list configuration test.
+ * Atomic value configuration test.
  */
-public class DistributedListConfigTest {
+public class AtomicValueConfigTest {
   @Test
   public void testLoadConfig() throws Exception {
-    DistributedListConfig config = Atomix.config(getClass().getClassLoader().getResource("primitives.conf").getPath())
-        .getPrimitive("list");
-    assertEquals("list", config.getName());
+    AtomicValueConfig config = Atomix.config(getClass().getClassLoader().getResource("primitives.conf").getPath())
+        .getPrimitive("atomic-value");
+    assertEquals("atomic-value", config.getName());
     assertEquals(MultiPrimaryProtocol.TYPE, config.getProtocolConfig().getType());
     assertFalse(config.isReadOnly());
-    assertSame(Type1.class, config.getElementType());
-    assertSame(Type3.class, config.getExtraTypes().get(0));
     assertTrue(config.getNamespaceConfig().isRegistrationRequired());
+    assertSame(Type1.class, config.getValueType());
+    assertSame(Type3.class, config.getExtraTypes().get(0));
     assertSame(Type1.class, config.getNamespaceConfig().getTypes().get(0).getType());
     assertSame(Type2.class, config.getNamespaceConfig().getTypes().get(1).getType());
   }
