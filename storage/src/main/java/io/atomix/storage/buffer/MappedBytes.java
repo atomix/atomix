@@ -16,6 +16,7 @@
 package io.atomix.storage.buffer;
 
 import io.atomix.utils.AtomixIOException;
+import io.atomix.utils.memory.MappedMemory;
 
 import java.io.File;
 import java.io.IOException;
@@ -106,6 +107,7 @@ public class MappedBytes extends ByteBufferBytes {
   public void close() {
     try {
       randomAccessFile.close();
+      MappedMemory.Util.CLEANER.freeDirectBuffer(buffer);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -118,7 +120,7 @@ public class MappedBytes extends ByteBufferBytes {
   public void delete() {
     try {
       close();
-      Files.delete(file.toPath());
+      Files.deleteIfExists(file.toPath());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
