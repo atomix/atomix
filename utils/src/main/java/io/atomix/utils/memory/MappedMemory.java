@@ -101,9 +101,9 @@ public class MappedMemory extends NativeMemory {
    * License for the specific language governing permissions and limitations
    * under the License.
    */
-  static class Util {
+  public static class Util {
 
-    static final Cleaner CLEANER;
+    public static final Cleaner CLEANER;
 
     private static final Cleaner NOOP = buffer -> {
       // NOOP

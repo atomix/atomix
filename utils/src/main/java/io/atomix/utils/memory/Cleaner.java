@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
 /**
  * Allows to free direct {@link ByteBuffer}s.
  */
-interface Cleaner {
+public interface Cleaner {
 
     /**
      * Free a direct {@link ByteBuffer} if possible.
