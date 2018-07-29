@@ -74,6 +74,10 @@ public class PrimitiveException extends AtomixRuntimeException {
     public ServiceException(String message) {
       super(message);
     }
+
+    public ServiceException(Throwable cause) {
+      super(cause);
+    }
   }
 
   /**

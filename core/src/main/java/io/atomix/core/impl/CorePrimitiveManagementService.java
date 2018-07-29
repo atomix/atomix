@@ -25,6 +25,7 @@ import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.PartitionGroupTypeRegistry;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.protocol.PrimitiveProtocolTypeRegistry;
+import io.atomix.primitive.serialization.SerializationService;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -36,6 +37,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   private final ClusterMembershipService membershipService;
   private final ClusterCommunicationService communicationService;
   private final ClusterEventService eventService;
+  private final SerializationService serializationService;
   private final PartitionService partitionService;
   private final PrimitiveCache primitiveCache;
   private final PrimitiveRegistry primitiveRegistry;
@@ -48,6 +50,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
       ClusterMembershipService membershipService,
       ClusterCommunicationService communicationService,
       ClusterEventService eventService,
+      SerializationService serializationService,
       PartitionService partitionService,
       PrimitiveCache primitiveCache,
       PrimitiveRegistry primitiveRegistry,
@@ -58,6 +61,7 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
     this.membershipService = membershipService;
     this.communicationService = communicationService;
     this.eventService = eventService;
+    this.serializationService = serializationService;
     this.partitionService = partitionService;
     this.primitiveCache = primitiveCache;
     this.primitiveRegistry = primitiveRegistry;
@@ -84,6 +88,11 @@ public class CorePrimitiveManagementService implements PrimitiveManagementServic
   @Override
   public ClusterEventService getEventService() {
     return eventService;
+  }
+
+  @Override
+  public SerializationService getSerializationService() {
+    return serializationService;
   }
 
   @Override

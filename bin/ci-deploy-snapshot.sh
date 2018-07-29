@@ -8,7 +8,7 @@ if [ "$TRAVIS_REPO_SLUG" == "$REPO" ] && \
    [ "$TRAVIS_BRANCH" == "master" ]; then
   echo -e "Publishing maven snapshot...\n"
 
-  mvn clean source:jar deploy --settings="bin/settings.xml" -DskipTests=true -Dmaven.javadoc.skip=true
+  $TRAVIS_BUILD_DIR/mvnw clean source:jar deploy --settings="bin/settings.xml" -Dmaven.test.skip=true
 
   echo -e "Published maven snapshot"
 fi

@@ -80,8 +80,8 @@ public class DelegatingAsyncAtomicDocumentTree<V> extends DelegatingAsyncPrimiti
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> removeNode(DocumentPath path) {
-    return delegateTree.removeNode(path);
+  public CompletableFuture<Versioned<V>> remove(DocumentPath path) {
+    return delegateTree.remove(path);
   }
 
   @Override

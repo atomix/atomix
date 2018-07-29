@@ -35,6 +35,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -81,6 +82,8 @@ public class AtomixAgent {
         .help("The zone in which this member runs, used for zone-aware partition management.");
     parser.addArgument("--config", "-c")
         .metavar("FILE|JSON|YAML")
+        .type(File.class)
+        .nargs("*")
         .required(false)
         .help("The Atomix configuration. Can be specified as a file path or JSON/YAML string.");
     parser.addArgument("--bootstrap", "-b")
@@ -117,7 +120,7 @@ public class AtomixAgent {
       System.exit(1);
     }
 
-    final String configString = namespace.get("config");
+    final List<File> configFiles = namespace.getList("config");
     final String memberId = namespace.getString("member");
     final Address address = namespace.get("address");
     final String host = namespace.getString("host");
@@ -131,8 +134,14 @@ public class AtomixAgent {
 
     // If a configuration was provided, merge the configuration's member information with the provided command line arguments.
     AtomixConfig config;
-    if (configString != null) {
-      config = Atomix.config(configString);
+    if (configFiles != null) {
+      for (File configFile : configFiles) {
+        if (!configFile.exists()) {
+          LOGGER.error("Failed to locate configuration file '{}'", configFile.getAbsolutePath());
+          System.exit(1);
+        }
+      }
+      config = Atomix.config(configFiles);
     } else {
       config = Atomix.config();
     }

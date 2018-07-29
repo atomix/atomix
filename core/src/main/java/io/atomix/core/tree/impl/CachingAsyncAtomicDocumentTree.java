@@ -135,8 +135,8 @@ public class CachingAsyncAtomicDocumentTree<V> extends DelegatingAsyncAtomicDocu
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> removeNode(DocumentPath path) {
-    return super.removeNode(path)
+  public CompletableFuture<Versioned<V>> remove(DocumentPath path) {
+    return super.remove(path)
         .whenComplete((r, e) -> cache.invalidate(path));
   }
 

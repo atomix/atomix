@@ -232,7 +232,7 @@ public class DefaultDocumentTreeService extends AbstractPrimitiveService<Documen
   @Override
   public DocumentTreeResult<Versioned<byte[]>> removeNode(DocumentPath path) {
     try {
-      Versioned<byte[]> result = docTree.removeNode(path);
+      Versioned<byte[]> result = docTree.remove(path);
       notifyListeners(new DocumentTreeEvent<>(DocumentTreeEvent.Type.DELETED, path, Optional.empty(), Optional.of(result)));
       return DocumentTreeResult.ok(result);
     } catch (IllegalDocumentModificationException e) {
@@ -245,16 +245,16 @@ public class DefaultDocumentTreeService extends AbstractPrimitiveService<Documen
   @Override
   public void clear() {
     Queue<DocumentPath> toClearQueue = Queues.newArrayDeque();
-    Map<String, Versioned<byte[]>> topLevelChildren = docTree.getChildren(DocumentPath.from("root"));
+    Map<String, Versioned<byte[]>> topLevelChildren = docTree.getChildren(DocumentPath.ROOT);
     toClearQueue.addAll(topLevelChildren.keySet()
         .stream()
-        .map(name -> new DocumentPath(name, DocumentPath.from("root")))
+        .map(name -> new DocumentPath(name, DocumentPath.ROOT))
         .collect(Collectors.toList()));
     while (!toClearQueue.isEmpty()) {
       DocumentPath path = toClearQueue.remove();
       Map<String, Versioned<byte[]>> children = docTree.getChildren(path);
       if (children.size() == 0) {
-        docTree.removeNode(path);
+        docTree.remove(path);
       } else {
         children.keySet().forEach(name -> toClearQueue.add(new DocumentPath(name, path)));
         toClearQueue.add(path);

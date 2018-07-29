@@ -2,11 +2,11 @@
 
 ![Atomix](http://atomix.io/assets/img/logos/atomix-medium.png)
 
-## [Website][Website] | [Javadoc][Javadoc] | [Google Group][Google group]
+## [Website][Website] | [Javadoc][Javadoc] | [Google Group][Google Group]
 
-[![Build Status](https://gitlab.com/atomix-io/atomix/badges/master/build.svg)](https://gitlab.com/atomix-io/atomix)
+[![Build Status](https://travis-ci.org/atomix/atomix.svg?branch=master)](https://travis-ci.org/atomix/atomix)
 [![Coverage Status](https://coveralls.io/repos/github/atomix/atomix/badge.svg?branch=master)](https://coveralls.io/github/atomix/atomix?branch=master)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix/badge.svg?maxAge=43200)](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix)
 [![Javadocs](http://www.javadoc.io/badge/io.atomix/atomix.svg)](https://atomix.io/docs/latest/api/)
 [![Gitter](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/atomix/atomix)
 
@@ -39,7 +39,7 @@ innovative and intelligent tools for profiling Java and .NET applications.
 ![YourKit](https://www.yourkit.com/images/yklogo.png)
 
 [Website]: https://atomix.io
-[Google group]: https://groups.google.com/forum/#!forum/atomixio
+[Google Group]: https://groups.google.com/forum/#!forum/atomixio
 [Javadoc]: http://atomix.io/docs/latest/api/
 [Raft]: https://raft.github.io/
 [ONF]: https://www.opennetworking.org/

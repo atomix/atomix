@@ -15,13 +15,12 @@
  */
 package io.atomix.core.multimap;
 
-import io.atomix.core.cache.CachedPrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
 
 /**
  * Consistent multimap configuration.
  */
-public class AtomicMultimapConfig extends CachedPrimitiveConfig<AtomicMultimapConfig> {
+public class AtomicMultimapConfig extends MultimapConfig<AtomicMultimapConfig> {
   @Override
   public PrimitiveType getType() {
     return AtomicMultimapType.instance();
