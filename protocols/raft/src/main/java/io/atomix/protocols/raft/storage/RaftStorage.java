@@ -240,12 +240,13 @@ public class RaftStorage {
     try {
       if (file.createNewFile()) {
         try (FileBuffer buffer = FileBuffer.allocate(file)) {
-          buffer.writeString(id);
+          buffer.writeString(id).flush();
         }
         return true;
       } else {
         try (FileBuffer buffer = FileBuffer.allocate(file)) {
-          return buffer.readString().equals(id);
+          String lock = buffer.readString();
+          return lock != null && lock.equals(id);
         }
       }
     } catch (IOException e) {
