@@ -135,6 +135,9 @@ public class BufferCleaner {
         };
     }
 
+    /**
+     * Free {@link ByteBuffer} if possible.
+     */
     public static void freeBuffer(ByteBuffer buffer) {
         CLEANER.freeBuffer(buffer);
     }
