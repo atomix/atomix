@@ -45,7 +45,7 @@ public class MappedBytes extends ByteBufferBytes {
    * @param size The count of the buffer to allocate (in bytes).
    * @return The mapped buffer.
    * @throws NullPointerException     If {@code file} is {@code null}
-   * @throws IllegalArgumentException If {@code count} is greater than {@link io.atomix.utils.memory.MappedMemory#MAX_SIZE}
+   * @throws IllegalArgumentException If {@code count} is greater than {@link MappedBytes#MAX_SIZE}
    * @see #allocate(File, FileChannel.MapMode, int)
    */
   public static MappedBytes allocate(File file, int size) {

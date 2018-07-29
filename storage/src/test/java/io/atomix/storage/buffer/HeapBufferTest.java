@@ -46,10 +46,6 @@ public class HeapBufferTest extends BufferTest {
 
     HeapBuffer directBuffer = HeapBuffer.wrap(byteBuffer.array());
     assertEquals(directBuffer.readLong(), byteBuffer.getLong());
-
-    byteBuffer.rewind();
-    UnsafeHeapBuffer heapBuffer = UnsafeHeapBuffer.wrap(byteBuffer.array());
-    assertEquals(heapBuffer.readLong(), byteBuffer.getLong());
   }
 
   @Test
@@ -64,19 +60,22 @@ public class HeapBufferTest extends BufferTest {
 
     HeapBuffer heapBuffer = HeapBuffer.wrap(bytes);
     assertEquals(directBuffer.readLong(), heapBuffer.readLong());
+
+    directBuffer.release();
   }
 
   @Test
   public void testHeapToDirectBuffer() {
-    UnsafeHeapBuffer heapBuffer = UnsafeHeapBuffer.allocate(8);
+    HeapBuffer heapBuffer = HeapBuffer.allocate(8);
     heapBuffer.writeLong(10);
     heapBuffer.flip();
 
-    UnsafeDirectBuffer directBuffer = UnsafeDirectBuffer.allocate(8);
+    DirectBuffer directBuffer = DirectBuffer.allocate(8);
     directBuffer.write(heapBuffer.array());
     directBuffer.flip();
 
     assertEquals(directBuffer.readLong(), heapBuffer.readLong());
-  }
 
+    directBuffer.release();
+  }
 }

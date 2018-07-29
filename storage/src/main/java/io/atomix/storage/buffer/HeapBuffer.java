@@ -15,7 +15,6 @@
  */
 package io.atomix.storage.buffer;
 
-import io.atomix.utils.memory.HeapMemory;
 import io.atomix.utils.memory.Memory;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -29,26 +28,17 @@ public class HeapBuffer extends ByteBufferBuffer {
 
   /**
    * Allocates a direct buffer with an initial capacity of {@code 4096} and a maximum capacity of {@link Long#MAX_VALUE}.
-   * <p>
-   * When the buffer is constructed, {@link io.atomix.utils.memory.DirectMemoryAllocator} will be used to allocate
-   * {@code capacity} bytes of off-heap memory. The resulting buffer will be initialized with a capacity of {@code 4096}
-   * and have a maximum capacity of {@link Long#MAX_VALUE}. The buffer's {@code capacity} will dynamically expand as
-   * bytes are written to the buffer. The underlying {@link UnsafeDirectBytes} will be initialized to the next power of {@code 2}.
    *
    * @return The direct buffer.
    * @see HeapBuffer#allocate(int)
    * @see HeapBuffer#allocate(int, int)
    */
   public static HeapBuffer allocate() {
-    return allocate(DEFAULT_INITIAL_CAPACITY, HeapMemory.MAX_SIZE);
+    return allocate(DEFAULT_INITIAL_CAPACITY, MAX_SIZE);
   }
 
   /**
    * Allocates a direct buffer with the given initial capacity.
-   * <p>
-   * When the buffer is constructed, {@link io.atomix.utils.memory.DirectMemoryAllocator} will be used to allocate
-   * {@code capacity} bytes of off-heap memory. The resulting buffer will have an initial capacity of {@code capacity}.
-   * The underlying {@link UnsafeDirectBytes} will be initialized to the next power of {@code 2}.
    *
    * @param initialCapacity The initial capacity of the buffer to allocate (in bytes).
    * @return The direct buffer.
@@ -58,16 +48,11 @@ public class HeapBuffer extends ByteBufferBuffer {
    * @see HeapBuffer#allocate(int, int)
    */
   public static HeapBuffer allocate(int initialCapacity) {
-    return allocate(initialCapacity, HeapMemory.MAX_SIZE);
+    return allocate(initialCapacity, MAX_SIZE);
   }
 
   /**
    * Allocates a new direct buffer.
-   * <p>
-   * When the buffer is constructed, {@link io.atomix.utils.memory.DirectMemoryAllocator} will be used to allocate
-   * {@code capacity} bytes of off-heap memory. The resulting buffer will have an initial capacity of {@code initialCapacity}
-   * and will be doubled up to {@code maxCapacity} as bytes are written to the buffer. The underlying {@link UnsafeDirectBytes}
-   * will be initialized to the next power of {@code 2}.
    *
    * @param initialCapacity The initial capacity of the buffer to allocate (in bytes).
    * @param maxCapacity     The maximum capacity of the buffer.
@@ -79,7 +64,7 @@ public class HeapBuffer extends ByteBufferBuffer {
    */
   public static HeapBuffer allocate(int initialCapacity, int maxCapacity) {
     checkArgument(initialCapacity <= maxCapacity, "initial capacity cannot be greater than maximum capacity");
-    return new HeapBuffer(HeapBytes.allocate((int) Math.min(Memory.Util.toPow2(initialCapacity), HeapMemory.MAX_SIZE)), 0, initialCapacity, maxCapacity);
+    return new HeapBuffer(HeapBytes.allocate((int) Math.min(Memory.Util.toPow2(initialCapacity), MAX_SIZE)), 0, initialCapacity, maxCapacity);
   }
 
   /**

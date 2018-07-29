@@ -15,6 +15,7 @@
  */
 package io.atomix.utils.memory;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 @FunctionalInterface
@@ -23,5 +24,5 @@ interface Cleaner {
     /**
      * Free {@link ByteBuffer} if possible.
      */
-    void freeBuffer(ByteBuffer buffer);
+    void freeBuffer(ByteBuffer buffer) throws IOException;
 }

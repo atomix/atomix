@@ -130,7 +130,7 @@ public class BufferCleaner {
                 }
             });
             if (error != null) {
-                NativeMemory.UNSAFE.throwException(new IOException("Unable to unmap the mapped buffer", error));
+                throw new IOException("Unable to unmap the mapped buffer", error);
             }
         };
     }
@@ -138,7 +138,7 @@ public class BufferCleaner {
     /**
      * Free {@link ByteBuffer} if possible.
      */
-    public static void freeBuffer(ByteBuffer buffer) {
+    public static void freeBuffer(ByteBuffer buffer) throws IOException {
         CLEANER.freeBuffer(buffer);
     }
 }
