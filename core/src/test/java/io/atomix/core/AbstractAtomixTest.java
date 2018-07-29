@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractAtomixTest {
   private static final int BASE_PORT = 5000;
+  protected static final File DATA_DIR = new File(System.getProperty("user.dir"), ".data");
 
   @BeforeClass
   public static void setupAtomix() throws Exception {
@@ -130,7 +131,7 @@ public abstract class AbstractAtomixTest {
    * Deletes data from the test data directory.
    */
   protected static void deleteData() throws Exception {
-    Path directory = new File(System.getProperty("user.dir"), ".data").toPath();
+    Path directory = DATA_DIR.toPath();
     if (Files.exists(directory)) {
       Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
         @Override
