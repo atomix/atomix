@@ -37,6 +37,7 @@ import io.atomix.core.map.DistributedSortedMapType;
 import io.atomix.core.multimap.AtomicMultimapType;
 import io.atomix.core.multimap.DistributedMultimapType;
 import io.atomix.core.multiset.DistributedMultisetType;
+import io.atomix.core.profile.ConsensusProfile;
 import io.atomix.core.profile.Profile;
 import io.atomix.core.queue.DistributedQueueType;
 import io.atomix.core.semaphore.AtomicSemaphoreType;
@@ -55,6 +56,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -141,7 +143,11 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testScaleUpPersistent() throws Exception {
-    Atomix atomix1 = startAtomix(1, Arrays.asList(1), Profile.consensus("1")).get(30, TimeUnit.SECONDS);
+    Atomix atomix1 = startAtomix(1, Arrays.asList(1), ConsensusProfile.builder()
+        .withMembers("1")
+        .withDataPath(new File(DATA_DIR, "scale-up"))
+        .build())
+        .get(30, TimeUnit.SECONDS);
     Atomix atomix2 = startAtomix(2, Arrays.asList(1, 2), Profile.client()).get(30, TimeUnit.SECONDS);
     Atomix atomix3 = startAtomix(3, Arrays.asList(1, 2, 3), Profile.client()).get(30, TimeUnit.SECONDS);
   }
@@ -199,7 +205,10 @@ public class AtomixTest extends AbstractAtomixTest {
 
   @Test
   public void testStopStartConsensus() throws Exception {
-    Atomix atomix1 = startAtomix(1, Arrays.asList(1), Profile.consensus("1")).get(30, TimeUnit.SECONDS);
+    Atomix atomix1 = startAtomix(1, Arrays.asList(1), ConsensusProfile.builder()
+        .withMembers("1")
+        .withDataPath(new File(DATA_DIR, "start-stop-consensus"))
+        .build()).get(30, TimeUnit.SECONDS);
     atomix1.stop().get(30, TimeUnit.SECONDS);
     try {
       atomix1.start().get(30, TimeUnit.SECONDS);
@@ -245,7 +254,7 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testClientJoinLeaveDataGrid() throws Exception {
-    testClientJoinLeave(Profile.dataGrid());
+    testClientJoinLeave(Profile.dataGrid(), Profile.dataGrid(), Profile.dataGrid());
   }
 
   /**
@@ -253,14 +262,26 @@ public class AtomixTest extends AbstractAtomixTest {
    */
   @Test
   public void testClientJoinLeaveConsensus() throws Exception {
-    testClientJoinLeave(Profile.consensus("1", "2", "3"));
+    testClientJoinLeave(
+        ConsensusProfile.builder()
+            .withMembers("1", "2", "3")
+            .withDataPath(new File(new File(DATA_DIR, "join-leave"), "1"))
+            .build(),
+        ConsensusProfile.builder()
+            .withMembers("1", "2", "3")
+            .withDataPath(new File(new File(DATA_DIR, "join-leave"), "2"))
+            .build(),
+        ConsensusProfile.builder()
+            .withMembers("1", "2", "3")
+            .withDataPath(new File(new File(DATA_DIR, "join-leave"), "3"))
+            .build());
   }
 
-  private void testClientJoinLeave(Profile profile) throws Exception {
+  private void testClientJoinLeave(Profile... profiles) throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), profile));
-    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), profile));
-    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), profile));
+    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), profiles[0]));
+    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), profiles[1]));
+    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), profiles[2]));
     Futures.allOf(futures).get(30, TimeUnit.SECONDS);
 
     TestClusterMembershipEventListener dataListener = new TestClusterMembershipEventListener();
@@ -304,9 +325,18 @@ public class AtomixTest extends AbstractAtomixTest {
   @Test
   public void testClientProperties() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
-    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
-    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
+    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), ConsensusProfile.builder()
+        .withMembers("1", "2", "3")
+        .withDataPath(new File(new File(DATA_DIR, "client-properties"), "1"))
+        .build()));
+    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), ConsensusProfile.builder()
+        .withMembers("1", "2", "3")
+        .withDataPath(new File(new File(DATA_DIR, "client-properties"), "2"))
+        .build()));
+    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), ConsensusProfile.builder()
+        .withMembers("1", "2", "3")
+        .withDataPath(new File(new File(DATA_DIR, "client-properties"), "3"))
+        .build()));
     Futures.allOf(futures).get(30, TimeUnit.SECONDS);
 
     TestClusterMembershipEventListener dataListener = new TestClusterMembershipEventListener();
@@ -333,9 +363,18 @@ public class AtomixTest extends AbstractAtomixTest {
   @Test
   public void testPrimitiveGetters() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
-    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
-    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
+    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), ConsensusProfile.builder()
+        .withMembers("1", "2", "3")
+        .withDataPath(new File(new File(DATA_DIR, "primitive-getters"), "1"))
+        .build()));
+    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), ConsensusProfile.builder()
+        .withMembers("1", "2", "3")
+        .withDataPath(new File(new File(DATA_DIR, "primitive-getters"), "2"))
+        .build()));
+    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), ConsensusProfile.builder()
+        .withMembers("1", "2", "3")
+        .withDataPath(new File(new File(DATA_DIR, "primitive-getters"), "3"))
+        .build()));
     Futures.allOf(futures).get(30, TimeUnit.SECONDS);
 
     Atomix atomix = startAtomix(4, Arrays.asList(1, 2, 3), Profile.client()).get(30, TimeUnit.SECONDS);
@@ -463,6 +502,10 @@ public class AtomixTest extends AbstractAtomixTest {
         instances.add(Atomix.builder(getClass().getResource("/primitives.conf").getFile())
             .withMemberId(String.valueOf(i))
             .withAddress("localhost", 5000 + i)
+            .withProfiles(ConsensusProfile.builder()
+                .withMembers("1", "2", "3")
+                .withDataPath(new File(new File(DATA_DIR, "primitive-getters"), String.valueOf(i)))
+                .build())
             .build()));
     Futures.allOf(instances.stream().map(Atomix::start)).get(30, TimeUnit.SECONDS);
 
@@ -599,9 +642,18 @@ public class AtomixTest extends AbstractAtomixTest {
   @Test
   public void testPrimitiveBuilders() throws Exception {
     List<CompletableFuture<Atomix>> futures = new ArrayList<>();
-    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
-    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
-    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), Profile.consensus("1", "2", "3")));
+    futures.add(startAtomix(1, Arrays.asList(1, 2, 3), ConsensusProfile.builder()
+        .withMembers("1", "2", "3")
+        .withDataPath(new File(new File(DATA_DIR, "primitive-builders"), "1"))
+        .build()));
+    futures.add(startAtomix(2, Arrays.asList(1, 2, 3), ConsensusProfile.builder()
+        .withMembers("1", "2", "3")
+        .withDataPath(new File(new File(DATA_DIR, "primitive-builders"), "2"))
+        .build()));
+    futures.add(startAtomix(3, Arrays.asList(1, 2, 3), ConsensusProfile.builder()
+        .withMembers("1", "2", "3")
+        .withDataPath(new File(new File(DATA_DIR, "primitive-builders"), "3"))
+        .build()));
     Futures.allOf(futures).get(30, TimeUnit.SECONDS);
 
     Atomix atomix = startAtomix(4, Arrays.asList(1, 2, 3), Profile.client()).get(30, TimeUnit.SECONDS);
