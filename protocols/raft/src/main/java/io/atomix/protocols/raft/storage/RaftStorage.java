@@ -20,7 +20,9 @@ import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotFile;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.system.MetaStore;
+import io.atomix.storage.StorageException;
 import io.atomix.storage.StorageLevel;
+import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.journal.JournalSegmentDescriptor;
 import io.atomix.storage.journal.JournalSegmentFile;
 import io.atomix.storage.statistics.StorageStatistics;
@@ -225,6 +227,37 @@ public class RaftStorage {
    */
   public StorageStatistics statistics() {
     return statistics;
+  }
+
+  /**
+   * Attempts to acquire a lock on the storage directory.
+   *
+   * @param id the ID with which to lock the directory
+   * @return indicates whether the lock was successfully acquired
+   */
+  public boolean lock(String id) {
+    File file = new File(directory, String.format(".%s.lock", prefix));
+    try {
+      if (file.createNewFile()) {
+        try (FileBuffer buffer = FileBuffer.allocate(file)) {
+          buffer.writeString(id);
+        }
+        return true;
+      } else {
+        try (FileBuffer buffer = FileBuffer.allocate(file)) {
+          return buffer.readString().equals(id);
+        }
+      }
+    } catch (IOException e) {
+      throw new StorageException("Failed to acquire storage lock");
+    }
+  }
+
+  /**
+   * Unlocks the storage directory.
+   */
+  public void unlock() {
+    deleteFiles(f -> f.getName().equals(String.format(".%s.lock", prefix)));
   }
 
   /**
