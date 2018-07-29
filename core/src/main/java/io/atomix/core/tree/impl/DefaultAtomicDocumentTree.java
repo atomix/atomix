@@ -165,7 +165,8 @@ public class DefaultAtomicDocumentTree<V> implements AtomicDocumentTree<V> {
       return false;
     }
     DocumentTreeNode<V> node = getNode(path);
-    if (node != null && Objects.equals(Versioned.valueOrNull(node.value()), currentValue)) {
+    if ((currentValue == null && node == null)
+        || node != null && Objects.equals(Versioned.valueOrNull(node.value()), currentValue)) {
       set(path, newValue);
       return true;
     }

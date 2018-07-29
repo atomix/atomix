@@ -28,7 +28,7 @@ import static org.junit.Assert.assertFalse;
 public class LeaderElectorConfigTest {
   @Test
   public void testLoadConfig() throws Exception {
-    LeaderElectionConfig config = Atomix.config(getClass().getClassLoader().getResource("primitives.conf").getPath())
+    LeaderElectorConfig config = Atomix.config(getClass().getClassLoader().getResource("primitives.conf").getPath())
         .getPrimitive("leader-elector");
     assertEquals("leader-elector", config.getName());
     assertEquals(MultiPrimaryProtocol.TYPE, config.getProtocolConfig().getType());
