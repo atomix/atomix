@@ -341,6 +341,16 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
       return this;
     }
 
+    /**
+     * Sets the segment size.
+     * @param segmentSizeBytes the segment size in bytes
+     * @return the Raft partition group builder
+     */
+    public Builder withSegmentSize(long segmentSizeBytes) {
+      config.setSegmentSize(new MemorySize(segmentSizeBytes));
+      return this;
+    }
+
     @Override
     public RaftPartitionGroup build() {
       return new RaftPartitionGroup(config);
