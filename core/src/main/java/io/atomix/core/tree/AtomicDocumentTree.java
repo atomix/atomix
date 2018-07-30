@@ -235,7 +235,7 @@ public interface AtomicDocumentTree<V> extends SyncPrimitive {
    * @param listener listener to be notified
    */
   default void addListener(DocumentTreeEventListener<V> listener) {
-    addListener(null, listener, MoreExecutors.directExecutor());
+    addListener(root(), listener, MoreExecutors.directExecutor());
   }
 
   /**
