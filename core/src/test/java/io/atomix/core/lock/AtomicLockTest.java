@@ -41,10 +41,13 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
     AtomicLock lock = atomix().atomicLockBuilder("test-lock-unlock")
         .withProtocol(protocol())
         .build();
-    lock.lock();
+    Version version = lock.lock();
     assertTrue(lock.isLocked());
+    assertTrue(lock.isLocked(version));
+    assertFalse(lock.isLocked(new Version(version.value() - 1)));
     lock.unlock();
     assertFalse(lock.isLocked());
+    assertFalse(lock.isLocked(version));
   }
 
   /**

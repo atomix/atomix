@@ -53,8 +53,9 @@ public interface AtomicLockService {
   /**
    * Query whether the lock state.
    *
+   * @param version the lock version
    * @return {@code true} if this lock is locked, {@code false} otherwise
    */
   @Query
-  boolean isLocked();
+  boolean isLocked(long version);
 }
