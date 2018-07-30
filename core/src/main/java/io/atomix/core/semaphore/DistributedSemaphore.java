@@ -30,9 +30,7 @@ public abstract class DistributedSemaphore extends Semaphore implements SyncPrim
   }
 
   @Override
-  public void acquire() throws InterruptedException {
-    super.acquire();
-  }
+  public abstract void acquire() throws InterruptedException;
 
   @Override
   public abstract void acquireUninterruptibly();
@@ -74,6 +72,8 @@ public abstract class DistributedSemaphore extends Semaphore implements SyncPrim
 
   @Override
   public abstract int drainPermits();
+
+  protected abstract void increasePermits(int increase);
 
   @Override
   protected abstract void reducePermits(int reduction);
