@@ -58,6 +58,11 @@ public class BlockingAtomicLock extends Synchronous<AsyncAtomicLock> implements 
   }
 
   @Override
+  public boolean isLocked() {
+    return complete(asyncLock.isLocked());
+  }
+
+  @Override
   public void unlock() {
     complete(asyncLock.unlock());
   }
