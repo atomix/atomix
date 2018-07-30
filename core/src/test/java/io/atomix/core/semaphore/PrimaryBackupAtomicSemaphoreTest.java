@@ -18,7 +18,7 @@ package io.atomix.core.semaphore;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
-public class PrimaryBackupSemaphoreTest extends SemaphoreTest {
+public class PrimaryBackupAtomicSemaphoreTest extends AtomicSemaphoreTest {
   @Override
   protected ProxyProtocol protocol() {
     return MultiPrimaryProtocol.builder()
