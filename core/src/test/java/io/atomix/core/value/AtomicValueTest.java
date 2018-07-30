@@ -21,7 +21,6 @@ import org.junit.Test;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -34,18 +33,17 @@ import static org.junit.Assert.assertTrue;
 public abstract class AtomicValueTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testValue() throws Exception {
-    AsyncAtomicValue<String> value = atomix().<String>atomicValueBuilder("test-value")
+    AtomicValue<String> value = atomix().<String>atomicValueBuilder("test-value")
         .withProtocol(protocol())
-        .build()
-        .async();
-    assertNull(value.get().get(30, TimeUnit.SECONDS));
-    value.set("a").get(30, TimeUnit.SECONDS);
-    assertEquals("a", value.get().get(30, TimeUnit.SECONDS));
-    assertFalse(value.compareAndSet("b", "c").get(30, TimeUnit.SECONDS));
-    assertTrue(value.compareAndSet("a", "b").get(30, TimeUnit.SECONDS));
-    assertEquals("b", value.get().get(30, TimeUnit.SECONDS));
-    assertEquals("b", value.getAndSet("c").get(30, TimeUnit.SECONDS));
-    assertEquals("c", value.get().get(30, TimeUnit.SECONDS));
+        .build();
+    assertNull(value.get());
+    value.set("a");
+    assertEquals("a", value.get());
+    assertFalse(value.compareAndSet("b", "c"));
+    assertTrue(value.compareAndSet("a", "b"));
+    assertEquals("b", value.get());
+    assertEquals("b", value.getAndSet("c"));
+    assertEquals("c", value.get());
   }
 
   @Test
