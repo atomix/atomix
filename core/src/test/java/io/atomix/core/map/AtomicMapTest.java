@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -57,38 +56,35 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     final String fooValue = "Hello foo!";
     final String barValue = "Hello bar!";
 
-    AsyncAtomicMap<String, String> map = atomix()
+    AtomicMap<String, String> map = atomix()
         .<String, String>atomicMapBuilder("testNullValues")
         .withProtocol(protocol())
         .withNullValues()
-        .build().async();
+        .build();
 
-    map.get("foo")
-        .thenAccept(v -> assertNull(v)).get(30, TimeUnit.SECONDS);
-    map.put("foo", null)
-        .thenAccept(v -> assertNull(v)).get(30, TimeUnit.SECONDS);
-    map.put("foo", fooValue).thenAccept(v -> {
-      assertNotNull(v);
-      assertNull(v.value());
-    }).get(30, TimeUnit.SECONDS);
-    map.get("foo").thenAccept(v -> {
-      assertNotNull(v);
-      assertEquals(v.value(), fooValue);
-    }).get(30, TimeUnit.SECONDS);
-    map.replace("foo", fooValue, null)
-        .thenAccept(replaced -> assertTrue(replaced)).get(30, TimeUnit.SECONDS);
-    map.get("foo").thenAccept(v -> {
-      assertNotNull(v);
-      assertNull(v.value());
-    }).get(30, TimeUnit.SECONDS);
-    map.replace("foo", fooValue, barValue)
-        .thenAccept(replaced -> assertFalse(replaced)).get(30, TimeUnit.SECONDS);
-    map.replace("foo", null, barValue)
-        .thenAccept(replaced -> assertTrue(replaced)).get(30, TimeUnit.SECONDS);
-    map.get("foo").thenAccept(v -> {
-      assertNotNull(v);
-      assertEquals(v.value(), barValue);
-    }).get(30, TimeUnit.SECONDS);
+    assertNull(map.get("foo"));
+    assertNull(map.put("foo", null));
+
+    Versioned<String> value = map.put("foo", fooValue);
+    assertNotNull(value);
+    assertNull(value.value());
+
+    value = map.get("foo");
+    assertNotNull(value);
+    assertEquals(fooValue, value.value());
+
+    assertTrue(map.replace("foo", fooValue, null));
+
+    value = map.get("foo");
+    assertNotNull(value);
+    assertNull(value.value());
+
+    assertFalse(map.replace("foo", fooValue, barValue));
+    assertTrue(map.replace("foo", null, barValue));
+
+    value = map.get("foo");
+    assertNotNull(value);
+    assertEquals(barValue, value.value());
   }
 
   @Test
@@ -96,177 +92,82 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     final String fooValue = "Hello foo!";
     final String barValue = "Hello bar!";
 
-    AsyncAtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testBasicMapOperationMap")
+    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testBasicMapOperationMap")
         .withProtocol(protocol())
-        .build()
-        .async();
+        .build();
 
-    map.isEmpty().thenAccept(result -> {
-      assertTrue(result);
-    }).get(30, TimeUnit.SECONDS);
+    assertTrue(map.isEmpty());
+    assertNull(map.put("foo", fooValue));
+    assertEquals(1, map.size());
+    assertFalse(map.isEmpty());
 
-    map.put("foo", fooValue).thenAccept(result -> {
-      assertNull(result);
-    }).get(30, TimeUnit.SECONDS);
+    Versioned<String> value = map.putIfAbsent("foo", "Hello foo again!");
+    assertNotNull(value);
+    assertEquals(fooValue, value.value());
 
-    map.size().thenAccept(result -> {
-      assertTrue(result == 1);
-    }).get(30, TimeUnit.SECONDS);
+    Map<String, Versioned<String>> values = map.getAllPresent(Collections.singleton("foo"));
+    assertNotNull(values);
+    assertEquals(1, values.size());
+    assertEquals(fooValue, values.get("foo").value());
 
-    map.isEmpty().thenAccept(result -> {
-      assertFalse(result);
-    }).get(30, TimeUnit.SECONDS);
+    assertNull(map.putIfAbsent("bar", barValue));
+    assertEquals(2, map.size());
 
-    map.putIfAbsent("foo", "Hello foo again!").thenAccept(result -> {
-      assertNotNull(result);
-      assertEquals(Versioned.valueOrElse(result, null), fooValue);
-    }).get(30, TimeUnit.SECONDS);
+    assertEquals(2, map.keySet().size());
+    assertTrue(map.keySet().containsAll(Sets.newHashSet("foo", "bar")));
 
-    map.getAllPresent(Collections.singleton("foo")).thenAccept(result -> {
-      assertNotNull(result);
-      assertTrue(result.size() == 1);
-      assertEquals(result.get("foo").value(), fooValue);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.putIfAbsent("bar", barValue).thenAccept(result -> {
-      assertNull(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.size().thenAccept(result -> {
-      assertTrue(result == 2);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.keySet().size().thenAccept(size -> assertTrue(size == 2)).get(30, TimeUnit.SECONDS);
-    map.keySet().containsAll(Sets.newHashSet("foo", "bar")).thenAccept(containsAll -> assertTrue(containsAll)).get(30, TimeUnit.SECONDS);
-
-    map.values().size().thenAccept(size -> assertTrue(size == 2)).get(30, TimeUnit.SECONDS);
-    List<String> rawValues = map.values().sync().stream().map(v -> new String(v.value())).collect(Collectors.toList());
+    assertEquals(2, map.values().size());
+    List<String> rawValues = map.values().stream().map(v -> v.value()).collect(Collectors.toList());
     assertTrue(rawValues.contains("Hello foo!"));
     assertTrue(rawValues.contains("Hello bar!"));
 
-    map.entrySet().size().thenAccept(size -> assertTrue(size == 2)).get(30, TimeUnit.SECONDS);
+    assertEquals(2, map.entrySet().size());
 
-    map.get("foo").thenAccept(result -> {
-      assertEquals(Versioned.valueOrElse(result, null), fooValue);
-    }).get(30, TimeUnit.SECONDS);
+    assertEquals(fooValue, map.get("foo").value());
+    assertEquals(fooValue, map.remove("foo").value());
+    assertFalse(map.containsKey("foo"));
+    assertNull(map.get("foo"));
 
-    map.remove("foo").thenAccept(result -> {
-      assertEquals(Versioned.valueOrElse(result, null), fooValue);
-    }).get(30, TimeUnit.SECONDS);
+    value = map.get("bar");
+    assertNotNull(value);
+    assertEquals(barValue, value.value());
+    assertTrue(map.containsKey("bar"));
+    assertEquals(1, map.size());
+    assertTrue(map.containsValue(barValue));
+    assertFalse(map.containsValue(fooValue));
 
-    map.containsKey("foo").thenAccept(result -> {
-      assertFalse(result);
-    }).get(30, TimeUnit.SECONDS);
+    value = map.replace("bar", "Goodbye bar!");
+    assertNotNull(value);
+    assertEquals(barValue, value.value());
+    assertNull(map.replace("foo", "Goodbye foo!"));
 
-    map.get("foo").thenAccept(result -> {
-      assertNull(result);
-    }).get(30, TimeUnit.SECONDS);
+    assertFalse(map.replace("foo", "Goodbye foo!", fooValue));
+    assertTrue(map.replace("bar", "Goodbye bar!", barValue));
+    assertFalse(map.replace("bar", "Goodbye bar!", barValue));
 
-    map.get("bar").thenAccept(result -> {
-      assertNotNull(result);
-      assertEquals(Versioned.valueOrElse(result, null), barValue);
-    }).get(30, TimeUnit.SECONDS);
+    value = map.get("bar");
+    assertTrue(map.replace("bar", value.version(), "Goodbye bar!"));
+    assertFalse(map.replace("bar", value.version(), barValue));
 
-    map.containsKey("bar").thenAccept(result -> {
-      assertTrue(result);
-    }).get(30, TimeUnit.SECONDS);
+    map.clear();
+    assertEquals(0, map.size());
 
-    map.size().thenAccept(result -> {
-      assertTrue(result == 1);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.containsValue(barValue).thenAccept(result -> {
-      assertTrue(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.containsValue(fooValue).thenAccept(result -> {
-      assertFalse(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.replace("bar", "Goodbye bar!").thenAccept(result -> {
-      assertNotNull(result);
-      assertEquals(Versioned.valueOrElse(result, null), barValue);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.replace("foo", "Goodbye foo!").thenAccept(result -> {
-      assertNull(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    // try replace_if_value_match for a non-existent key
-    map.replace("foo", "Goodbye foo!", fooValue).thenAccept(result -> {
-      assertFalse(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.replace("bar", "Goodbye bar!", barValue).thenAccept(result -> {
-      assertTrue(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.replace("bar", "Goodbye bar!", barValue).thenAccept(result -> {
-      assertFalse(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    Versioned<String> barVersioned = map.get("bar").get(30, TimeUnit.SECONDS);
-    map.replace("bar", barVersioned.version(), "Goodbye bar!").thenAccept(result -> {
-      assertTrue(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.replace("bar", barVersioned.version(), barValue).thenAccept(result -> {
-      assertFalse(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.clear().get(30, TimeUnit.SECONDS);
-
-    map.size().thenAccept(result -> {
-      assertTrue(result == 0);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.put("foo", "Hello foo!", Duration.ofSeconds(3)).thenAccept(result -> {
-      assertNull(result);
-    }).get(30, TimeUnit.SECONDS);
-
+    assertNull(map.put("foo", "Hello foo!", Duration.ofSeconds(3)));
     Thread.sleep(1000);
-
-    map.get("foo").thenAccept(result -> {
-      assertEquals("Hello foo!", result.value());
-    }).get(30, TimeUnit.SECONDS);
-
+    assertEquals("Hello foo!", map.get("foo").value());
     Thread.sleep(5000);
+    assertNull(map.get("foo"));
 
-    map.get("foo").thenAccept(result -> {
-      assertNull(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.put("bar", "Hello bar!").thenAccept(result -> {
-      assertNull(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.put("bar", "Goodbye bar!", Duration.ofMillis(10)).thenAccept(result -> {
-      assertEquals("Hello bar!", result.value());
-    }).get(30, TimeUnit.SECONDS);
-
-    map.get("bar").thenAccept(result -> {
-      assertEquals("Goodbye bar!", result.value());
-    }).get(30, TimeUnit.SECONDS);
-
+    assertNull(map.put("bar", "Hello bar!"));
+    assertEquals("Hello bar!", map.put("bar", "Goodbye bar!", Duration.ofMillis(100)).value());
+    assertEquals("Goodbye bar!", map.get("bar").value());
     Thread.sleep(5000);
+    assertNull(map.get("bar"));
 
-    map.get("bar").thenAccept(result -> {
-      assertNull(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.putIfAbsent("baz", "Hello baz!", Duration.ofMillis(10)).thenAccept(result -> {
-      assertNull(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.get("baz").thenAccept(result -> {
-      assertNotNull(result);
-    }).get(30, TimeUnit.SECONDS);
-
+    assertNull(map.putIfAbsent("baz", "Hello baz!", Duration.ofMillis(100)));
+    assertNotNull(map.get("baz"));
     Thread.sleep(5000);
-
-    map.get("baz").thenAccept(result -> {
-      assertNull(result);
-    }).get(30, TimeUnit.SECONDS);
+    assertNull(map.get("baz"));
   }
 
   @Test
@@ -275,38 +176,17 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AsyncAtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapComputeOperationsMap")
+    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapComputeOperationsMap")
         .withProtocol(protocol())
-        .build()
-        .async();
+        .build();
 
-    map.computeIfAbsent("foo", k -> value1).thenAccept(result -> {
-      assertEquals(Versioned.valueOrElse(result, null), value1);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.computeIfAbsent("foo", k -> value2).thenAccept(result -> {
-      assertEquals(Versioned.valueOrElse(result, null), value1);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.computeIfPresent("bar", (k, v) -> value2).thenAccept(result -> {
-      assertNull(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.computeIfPresent("foo", (k, v) -> value3).thenAccept(result -> {
-      assertEquals(Versioned.valueOrElse(result, null), value3);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.computeIfPresent("foo", (k, v) -> null).thenAccept(result -> {
-      assertNull(result);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.computeIf("foo", v -> v == null, (k, v) -> value1).thenAccept(result -> {
-      assertEquals(Versioned.valueOrElse(result, null), value1);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.compute("foo", (k, v) -> value2).thenAccept(result -> {
-      assertEquals(Versioned.valueOrElse(result, null), value2);
-    }).get(30, TimeUnit.SECONDS);
+    assertEquals(value1, map.computeIfAbsent("foo", k -> value1).value());
+    assertEquals(value1, map.computeIfAbsent("foo", k -> value2).value());
+    assertNull(map.computeIfPresent("bar", (k, v) -> value2));
+    assertEquals(value3, map.computeIfPresent("foo", (k, v) -> value3).value());
+    assertNull(map.computeIfPresent("foo", (k, v) -> null));
+    assertEquals(value1, map.computeIf("foo", v -> v == null, (k, v) -> value1).value());
+    assertEquals(value2, map.compute("foo", (k, v) -> value2).value());
   }
 
   @Test
@@ -315,61 +195,63 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AsyncAtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapListenerMap")
+    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapListenerMap")
         .withProtocol(protocol())
-        .build()
-        .async();
+        .build();
     TestAtomicMapEventListener listener = new TestAtomicMapEventListener();
 
     // add listener; insert new value into map and verify an INSERT event is received.
-    map.addListener(listener).thenCompose(v -> map.put("foo", value1)).get(30, TimeUnit.SECONDS);
+    map.addListener(listener);
+    map.put("foo", value1);
     AtomicMapEvent<String, String> event = listener.event();
     assertNotNull(event);
     assertEquals(AtomicMapEvent.Type.INSERT, event.type());
     assertEquals(value1, event.newValue().value());
 
     // remove listener and verify listener is not notified.
-    map.removeListener(listener).thenCompose(v -> map.put("foo", value2)).get(30, TimeUnit.SECONDS);
+    map.removeListener(listener);
+    map.put("foo", value2);
     assertFalse(listener.eventReceived());
 
     // add the listener back and verify UPDATE events are received correctly
-    map.addListener(listener).thenCompose(v -> map.put("foo", value3)).get(30, TimeUnit.SECONDS);
+    map.addListener(listener);
+    map.put("foo", value3);
     event = listener.event();
     assertNotNull(event);
     assertEquals(AtomicMapEvent.Type.UPDATE, event.type());
     assertEquals(value3, event.newValue().value());
 
     // perform a non-state changing operation and verify no events are received.
-    map.putIfAbsent("foo", value1).get(30, TimeUnit.SECONDS);
+    map.putIfAbsent("foo", value1);
     assertFalse(listener.eventReceived());
 
     // verify REMOVE events are received correctly.
-    map.remove("foo").get(30, TimeUnit.SECONDS);
+    map.remove("foo");
     event = listener.event();
     assertNotNull(event);
     assertEquals(AtomicMapEvent.Type.REMOVE, event.type());
     assertEquals(value3, event.oldValue().value());
 
     // verify compute methods also generate events.
-    map.computeIf("foo", v -> v == null, (k, v) -> value1).get(30, TimeUnit.SECONDS);
+    map.computeIf("foo", v -> v == null, (k, v) -> value1);
     event = listener.event();
     assertNotNull(event);
     assertEquals(AtomicMapEvent.Type.INSERT, event.type());
     assertEquals(value1, event.newValue().value());
 
-    map.compute("foo", (k, v) -> value2).get(30, TimeUnit.SECONDS);
+    map.compute("foo", (k, v) -> value2);
     event = listener.event();
     assertNotNull(event);
     assertEquals(AtomicMapEvent.Type.UPDATE, event.type());
     assertEquals(value2, event.newValue().value());
 
-    map.computeIf("foo", v -> Objects.equals(v, value2), (k, v) -> null).get(30, TimeUnit.SECONDS);
+    map.computeIf("foo", v -> Objects.equals(v, value2), (k, v) -> null);
     event = listener.event();
     assertNotNull(event);
     assertEquals(AtomicMapEvent.Type.REMOVE, event.type());
     assertEquals(value2, event.oldValue().value());
 
-    map.put("bar", "expire", Duration.ofSeconds(1)).get(30, TimeUnit.SECONDS);
+    map.put("bar", "expire", Duration.ofSeconds(1));
     event = listener.event();
     assertNotNull(event);
     assertEquals(AtomicMapEvent.Type.INSERT, event.type());
@@ -380,7 +262,7 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     assertEquals(AtomicMapEvent.Type.REMOVE, event.type());
     assertEquals("expire", event.oldValue().value());
 
-    map.removeListener(listener).get(30, TimeUnit.SECONDS);
+    map.removeListener(listener);
   }
 
   @Test
