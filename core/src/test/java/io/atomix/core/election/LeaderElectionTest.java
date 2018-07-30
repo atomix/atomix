@@ -15,7 +15,6 @@
  */
 package io.atomix.core.election;
 
-import io.atomix.cluster.MemberId;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.election.impl.LeaderElectionProxy;
 import io.atomix.primitive.protocol.ProxyProtocol;
@@ -35,14 +34,13 @@ import static org.junit.Assert.assertTrue;
  * Unit tests for {@link LeaderElectionProxy}.
  */
 public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProtocol> {
-
-  MemberId node1 = MemberId.from("node1");
-  MemberId node2 = MemberId.from("node2");
-  MemberId node3 = MemberId.from("node3");
+  String node1 = "node1";
+  String node2 = "node2";
+  String node3 = "node3";
 
   @Test
   public void testRun() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-run")
+    AsyncLeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-run")
         .withProtocol(protocol())
         .build()
         .async();
@@ -53,7 +51,7 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
       assertEquals(node1, result.candidates().get(0));
     }).get(30, TimeUnit.SECONDS);
 
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-run")
+    AsyncLeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-run")
         .withProtocol(protocol())
         .build()
         .async();
@@ -68,12 +66,12 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testWithdraw() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-withdraw")
+    AsyncLeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-withdraw")
         .withProtocol(protocol())
         .build()
         .async();
     election1.run(node1).get(30, TimeUnit.SECONDS);
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-withdraw")
+    AsyncLeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-withdraw")
         .withProtocol(protocol())
         .build()
         .async();
@@ -101,26 +99,26 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
       Assert.assertEquals(node2, result.newLeadership().candidates().get(0));
     }).get(30, TimeUnit.SECONDS);
 
-    Leadership<MemberId> leadership1 = election1.getLeadership().get(30, TimeUnit.SECONDS);
+    Leadership<String> leadership1 = election1.getLeadership().get(30, TimeUnit.SECONDS);
     assertEquals(node2, leadership1.leader().id());
     assertEquals(1, leadership1.candidates().size());
 
-    Leadership<MemberId> leadership2 = election2.getLeadership().get(30, TimeUnit.SECONDS);
+    Leadership<String> leadership2 = election2.getLeadership().get(30, TimeUnit.SECONDS);
     assertEquals(node2, leadership2.leader().id());
     assertEquals(1, leadership2.candidates().size());
   }
 
   @Test
   public void testAnoint() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-anoint")
+    AsyncLeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-anoint")
         .withProtocol(protocol())
         .build()
         .async();
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-anoint")
+    AsyncLeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-anoint")
         .withProtocol(protocol())
         .build()
         .async();
-    AsyncLeaderElection<MemberId> election3 = atomix().<MemberId>leaderElectionBuilder("test-election-anoint")
+    AsyncLeaderElection<String> election3 = atomix().<String>leaderElectionBuilder("test-election-anoint")
         .withProtocol(protocol())
         .build()
         .async();
@@ -167,15 +165,15 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testPromote() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-promote")
+    AsyncLeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-promote")
         .withProtocol(protocol())
         .build()
         .async();
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-promote")
+    AsyncLeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-promote")
         .withProtocol(protocol())
         .build()
         .async();
-    AsyncLeaderElection<MemberId> election3 = atomix().<MemberId>leaderElectionBuilder("test-election-promote")
+    AsyncLeaderElection<String> election3 = atomix().<String>leaderElectionBuilder("test-election-promote")
         .withProtocol(protocol())
         .build()
         .async();
@@ -226,12 +224,12 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testLeaderSessionClose() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-leader-session-close")
+    AsyncLeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-leader-session-close")
         .withProtocol(protocol())
         .build()
         .async();
     election1.run(node1).get(30, TimeUnit.SECONDS);
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-leader-session-close")
+    AsyncLeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-leader-session-close")
         .withProtocol(protocol())
         .build()
         .async();
@@ -248,12 +246,12 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testNonLeaderSessionClose() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-non-leader-session-close")
+    AsyncLeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-non-leader-session-close")
         .withProtocol(protocol())
         .build()
         .async();
     election1.run(node1).get(30, TimeUnit.SECONDS);
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-non-leader-session-close")
+    AsyncLeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-non-leader-session-close")
         .withProtocol(protocol())
         .build()
         .async();
@@ -270,11 +268,11 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testQueries() throws Throwable {
-    AsyncLeaderElection<MemberId> election1 = atomix().<MemberId>leaderElectionBuilder("test-election-query")
+    AsyncLeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-query")
         .withProtocol(protocol())
         .build()
         .async();
-    AsyncLeaderElection<MemberId> election2 = atomix().<MemberId>leaderElectionBuilder("test-election-query")
+    AsyncLeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-query")
         .withProtocol(protocol())
         .build()
         .async();
@@ -293,12 +291,12 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
     }).get(30, TimeUnit.SECONDS);
   }
 
-  private static class LeaderEventListener implements LeadershipEventListener<MemberId> {
-    Queue<LeadershipEvent<MemberId>> eventQueue = new LinkedList<>();
-    CompletableFuture<LeadershipEvent<MemberId>> pendingFuture;
+  private static class LeaderEventListener implements LeadershipEventListener<String> {
+    Queue<LeadershipEvent<String>> eventQueue = new LinkedList<>();
+    CompletableFuture<LeadershipEvent<String>> pendingFuture;
 
     @Override
-    public void event(LeadershipEvent<MemberId> event) {
+    public void event(LeadershipEvent<String> event) {
       synchronized (this) {
         if (pendingFuture != null) {
           pendingFuture.complete(event);
@@ -317,7 +315,7 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
       eventQueue.clear();
     }
 
-    public CompletableFuture<LeadershipEvent<MemberId>> nextEvent() {
+    public CompletableFuture<LeadershipEvent<String>> nextEvent() {
       synchronized (this) {
         if (eventQueue.isEmpty()) {
           if (pendingFuture == null) {

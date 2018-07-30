@@ -20,7 +20,6 @@ import io.atomix.core.map.AtomicSortedMap;
 import io.atomix.core.map.AtomicSortedMapBuilder;
 import io.atomix.core.map.AtomicSortedMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -39,11 +38,10 @@ public class DefaultAtomicSortedMapBuilder<K extends Comparable<K>, V> extends A
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicSortedMap<K, V>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
     return newProxy(AtomicTreeMapService.class, new ServiceConfig())
         .thenCompose(proxy -> new AtomicNavigableMapProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(map -> {
-          Serializer serializer = protocol.serializer();
+          Serializer serializer = serializer();
           return new TranscodingAsyncAtomicSortedMap<K, V, byte[]>(
               (AsyncAtomicSortedMap) map,
               value -> serializer.encode(value),

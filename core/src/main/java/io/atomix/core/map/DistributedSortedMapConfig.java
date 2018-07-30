@@ -15,13 +15,12 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.cache.CachedPrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
 
 /**
  * Distributed sorted map configuration.
  */
-public class DistributedSortedMapConfig extends CachedPrimitiveConfig<DistributedSortedMapConfig> {
+public class DistributedSortedMapConfig extends MapConfig<DistributedSortedMapConfig> {
   private boolean nullValues = false;
 
   @Override

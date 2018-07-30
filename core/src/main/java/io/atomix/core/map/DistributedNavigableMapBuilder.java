@@ -15,7 +15,6 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.cache.CachedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
@@ -30,7 +29,7 @@ import io.atomix.primitive.protocol.map.NavigableMapProtocol;
  * @param <V> type for map value
  */
 public abstract class DistributedNavigableMapBuilder<K extends Comparable<K>, V>
-    extends CachedPrimitiveBuilder<DistributedNavigableMapBuilder<K, V>, DistributedNavigableMapConfig, DistributedNavigableMap<K, V>>
+    extends MapBuilder<DistributedNavigableMapBuilder<K, V>, DistributedNavigableMapConfig, DistributedNavigableMap<K, V>, K, V>
     implements ProxyCompatibleBuilder<DistributedNavigableMapBuilder<K, V>>, NavigableMapCompatibleBuilder<DistributedNavigableMapBuilder<K, V>> {
 
   public DistributedNavigableMapBuilder(String name, DistributedNavigableMapConfig config, PrimitiveManagementService managementService) {

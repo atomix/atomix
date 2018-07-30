@@ -87,7 +87,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   public Collection<PrimitiveInfo> getPrimitives(PrimitiveType primitiveType) {
     return getPrimitives()
         .stream()
-        .filter(primitive -> primitive.type().equals(primitiveType))
+        .filter(primitive -> primitive.type().name().equals(primitiveType.name()))
         .collect(Collectors.toList());
   }
 

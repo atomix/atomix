@@ -16,12 +16,11 @@
 package io.atomix.core.value;
 
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
  * Distributed value configuration.
  */
-public class DistributedValueConfig extends PrimitiveConfig<DistributedValueConfig> {
+public class DistributedValueConfig extends ValueConfig<DistributedValueConfig> {
   @Override
   public PrimitiveType getType() {
     return DistributedValueType.instance();

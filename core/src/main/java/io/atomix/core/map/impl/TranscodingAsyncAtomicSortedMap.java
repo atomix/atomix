@@ -55,6 +55,21 @@ public class TranscodingAsyncAtomicSortedMap<K extends Comparable<K>, V1, V2>
   }
 
   @Override
+  public AsyncAtomicSortedMap<K, V1> subMap(K fromKey, K toKey) {
+    return new TranscodingAsyncAtomicSortedMap<>(backingMap.subMap(fromKey, toKey), valueEncoder, valueDecoder);
+  }
+
+  @Override
+  public AsyncAtomicSortedMap<K, V1> headMap(K toKey) {
+    return new TranscodingAsyncAtomicSortedMap<>(backingMap.headMap(toKey), valueEncoder, valueDecoder);
+  }
+
+  @Override
+  public AsyncAtomicSortedMap<K, V1> tailMap(K fromKey) {
+    return new TranscodingAsyncAtomicSortedMap<>(backingMap.tailMap(fromKey), valueEncoder, valueDecoder);
+  }
+
+  @Override
   public AtomicSortedMap<K, V1> sync(Duration timeout) {
     return new BlockingAtomicSortedMap<>(this, timeout.toMillis());
   }

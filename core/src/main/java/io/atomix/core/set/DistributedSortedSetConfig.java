@@ -24,6 +24,6 @@ import io.atomix.primitive.PrimitiveType;
 public class DistributedSortedSetConfig extends DistributedCollectionConfig<DistributedSortedSetConfig> {
   @Override
   public PrimitiveType getType() {
-    return DistributedNavigableSetType.instance();
+    return DistributedSortedSetType.instance();
   }
 }

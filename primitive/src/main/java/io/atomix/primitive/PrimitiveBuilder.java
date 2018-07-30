@@ -26,6 +26,10 @@ import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.Builder;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.config.ConfigurationException;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.NamespaceConfig;
+import io.atomix.utils.serializer.Namespaces;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -44,6 +48,7 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
   protected final String name;
   protected final C config;
   protected PrimitiveProtocol protocol;
+  protected Serializer serializer;
   protected final PrimitiveManagementService managementService;
 
   public PrimitiveBuilder(PrimitiveType type, String name, C config, PrimitiveManagementService managementService) {
@@ -62,6 +67,18 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
   @SuppressWarnings("unchecked")
   protected B withProtocol(PrimitiveProtocol protocol) {
     this.protocol = protocol;
+    return (B) this;
+  }
+
+  /**
+   * Sets the primitive serializer.
+   *
+   * @param serializer the primitive serializer
+   * @return the primitive builder
+   */
+  @SuppressWarnings("unchecked")
+  public B withSerializer(Serializer serializer) {
+    this.serializer = checkNotNull(serializer);
     return (B) this;
   }
 
@@ -112,6 +129,34 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
       }
     }
     return protocol;
+  }
+
+  /**
+   * Returns the protocol serializer.
+   *
+   * @return the protocol serializer
+   */
+  protected Serializer serializer() {
+    Serializer serializer = this.serializer;
+    if (serializer == null) {
+      synchronized (this) {
+        serializer = this.serializer;
+        if (serializer == null) {
+          NamespaceConfig config = this.config.getNamespaceConfig();
+          if (config == null) {
+            serializer = Serializer.using(Namespaces.BASIC);
+          } else {
+            serializer = Serializer.using(Namespace.builder()
+                .register(Namespaces.BASIC)
+                .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
+                .register(new Namespace(config))
+                .build());
+          }
+          this.serializer = serializer;
+        }
+      }
+    }
+    return serializer;
   }
 
   protected <S> CompletableFuture<ProxyClient<S>> newProxy(Class<S> serviceType, ServiceConfig config) {

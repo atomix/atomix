@@ -379,7 +379,7 @@ public abstract class PartitionedAtomicMapProxy<P extends AsyncPrimitive, S exte
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<K, Versioned<byte[]>>> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<K, Versioned<byte[]>>> listener, Executor executor) {
       AtomicMapEventListener<K, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
@@ -392,8 +392,10 @@ public abstract class PartitionedAtomicMapProxy<P extends AsyncPrimitive, S exte
             break;
         }
       };
-      eventListeners.put(listener, mapListener);
-      return PartitionedAtomicMapProxy.this.addListener(mapListener);
+      if (eventListeners.putIfAbsent(listener, mapListener) == null) {
+        return PartitionedAtomicMapProxy.this.addListener(mapListener, executor);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -525,7 +527,7 @@ public abstract class PartitionedAtomicMapProxy<P extends AsyncPrimitive, S exte
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<K> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<K> listener, Executor executor) {
       AtomicMapEventListener<K, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
@@ -538,8 +540,10 @@ public abstract class PartitionedAtomicMapProxy<P extends AsyncPrimitive, S exte
             break;
         }
       };
-      eventListeners.put(listener, mapListener);
-      return PartitionedAtomicMapProxy.this.addListener(mapListener);
+      if (eventListeners.putIfAbsent(listener, mapListener) == null) {
+        return PartitionedAtomicMapProxy.this.addListener(mapListener, executor);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -733,7 +737,7 @@ public abstract class PartitionedAtomicMapProxy<P extends AsyncPrimitive, S exte
     }
 
     @Override
-    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Versioned<byte[]>> listener) {
+    public synchronized CompletableFuture<Void> addListener(CollectionEventListener<Versioned<byte[]>> listener, Executor executor) {
       AtomicMapEventListener<K, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
@@ -746,8 +750,10 @@ public abstract class PartitionedAtomicMapProxy<P extends AsyncPrimitive, S exte
             break;
         }
       };
-      eventListeners.put(listener, mapListener);
-      return PartitionedAtomicMapProxy.this.addListener(mapListener);
+      if (eventListeners.putIfAbsent(listener, mapListener) == null) {
+        return PartitionedAtomicMapProxy.this.addListener(mapListener, executor);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override

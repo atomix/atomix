@@ -23,7 +23,9 @@ import io.atomix.primitive.protocol.set.SetDelegate;
 import io.atomix.primitive.protocol.set.SetDelegateEvent;
 import io.atomix.primitive.protocol.set.SetDelegateEventListener;
 import io.atomix.protocols.gossip.AntiEntropyProtocolConfig;
+import io.atomix.protocols.gossip.TimestampProvider;
 import io.atomix.protocols.gossip.map.AntiEntropyMapDelegate;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -36,8 +38,10 @@ public class AntiEntropySetDelegate<E> implements SetDelegate<E> {
   private final MapDelegate<E, Boolean> map;
   private final Map<SetDelegateEventListener<E>, MapDelegateEventListener<E, Boolean>> listenerMap = Maps.newConcurrentMap();
 
-  public AntiEntropySetDelegate(String name, AntiEntropyProtocolConfig config, PrimitiveManagementService managementService) {
-    this.map = new AntiEntropyMapDelegate<>(name, config, managementService);
+  public AntiEntropySetDelegate(String name, Serializer serializer, AntiEntropyProtocolConfig config, PrimitiveManagementService managementService) {
+    TimestampProvider<E> timestampProvider = config.getTimestampProvider();
+    TimestampProvider<Map.Entry<E, Boolean>> newTimestampProvider = e -> timestampProvider.get(e.getKey());
+    this.map = new AntiEntropyMapDelegate<>(name, serializer, config.setTimestampProvider(newTimestampProvider), managementService);
   }
 
   @Override

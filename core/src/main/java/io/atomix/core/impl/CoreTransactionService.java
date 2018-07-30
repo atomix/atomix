@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.MemberId;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.AtomicMapConfig;
 import io.atomix.core.map.AtomicMapType;
@@ -36,7 +37,6 @@ import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.concurrent.Futures;
@@ -47,6 +47,7 @@ import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -183,11 +184,23 @@ public class CoreTransactionService implements ManagedTransactionService {
    */
   private void onMembershipChange(ClusterMembershipEvent event) {
     if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
-      transactions.entrySet().stream().filter(entry -> entry.getValue().value().coordinator.equals(event.subject().id()))
-          .forEach(entry -> {
-            recoverTransaction(entry.getKey(), entry.getValue().value());
-          });
+      recoverTransactions(transactions.entrySet().iterator(), event.subject().id());
     }
+  }
+
+  /**
+   * Recursively recovers transactions using the given iterator.
+   *
+   * @param iterator the asynchronous iterator from which to recover transactions
+   * @param memberId the transaction member ID
+   */
+  private void recoverTransactions(AsyncIterator<Map.Entry<TransactionId, Versioned<TransactionInfo>>> iterator, MemberId memberId) {
+    iterator.next().thenAccept(entry -> {
+      if (entry.getValue().value().coordinator.equals(memberId)) {
+        recoverTransaction(entry.getKey(), entry.getValue().value());
+      }
+      recoverTransactions(iterator, memberId);
+    });
   }
 
   /**
@@ -358,10 +371,10 @@ public class CoreTransactionService implements ManagedTransactionService {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<TransactionService> start() {
-    PrimitiveProtocol.Type protocolType = managementService.getPartitionService().getSystemPartitionGroup().protocol();
-    PrimitiveProtocol protocol = protocolType.newProtocol(((PrimitiveProtocolConfig) protocolType.newConfig()).setSerializer(SERIALIZER));
+    PrimitiveProtocol protocol = managementService.getPartitionService().getSystemPartitionGroup().newProtocol();
     return AtomicMapType.<TransactionId, TransactionInfo>instance()
         .newBuilder("atomix-transactions", new AtomicMapConfig(), managementService)
+        .withSerializer(SERIALIZER)
         .withProtocol((ProxyProtocol) protocol)
         .withCacheEnabled()
         .buildAsync()

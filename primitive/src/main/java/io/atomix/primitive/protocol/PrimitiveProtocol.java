@@ -16,7 +16,6 @@
 package io.atomix.primitive.protocol;
 
 import io.atomix.utils.ConfiguredType;
-import io.atomix.utils.serializer.Serializer;
 
 /**
  * Primitive protocol.
@@ -48,12 +47,5 @@ public interface PrimitiveProtocol {
    * @return the protocol type
    */
   Type type();
-
-  /**
-   * Returns the protocol serializer.
-   *
-   * @return the protocol serializer
-   */
-  Serializer serializer();
 
 }

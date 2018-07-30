@@ -46,7 +46,7 @@ public class DefaultDistributedNavigableSetBuilder<E extends Comparable<E>> exte
     if (protocol instanceof GossipProtocol) {
       if (protocol instanceof NavigableSetProtocol) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((NavigableSetProtocol) protocol).<E>newNavigableSetDelegate(name, managementService))
+            CompletableFuture.completedFuture(((NavigableSetProtocol) protocol).<E>newNavigableSetDelegate(name, serializer(), managementService))
                 .thenApply(set -> new GossipDistributedNavigableSet<>(name, protocol, set)))
             .thenApply(AsyncDistributedNavigableSet::sync);
       } else {

@@ -139,7 +139,7 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
           try {
             method.invoke(this);
           } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new PrimitiveException.ServiceException(e.getMessage());
+            throw new PrimitiveException.ServiceException(e);
           }
         });
       } else {
@@ -147,7 +147,7 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
           try {
             method.invoke(this, (Object[]) args.value());
           } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new PrimitiveException.ServiceException(e.getMessage());
+            throw new PrimitiveException.ServiceException(e);
           }
         });
       }
@@ -157,7 +157,7 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
           try {
             return method.invoke(this);
           } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new PrimitiveException.ServiceException(e.getMessage());
+            throw new PrimitiveException.ServiceException(e);
           }
         });
       } else {
@@ -165,7 +165,7 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
           try {
             return method.invoke(this, (Object[]) args.value());
           } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new PrimitiveException.ServiceException(e.getMessage());
+            throw new PrimitiveException.ServiceException(e);
           }
         });
       }

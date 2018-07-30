@@ -22,7 +22,6 @@ import io.atomix.core.multimap.AtomicMultimap;
 import io.atomix.core.multimap.AtomicMultimapBuilder;
 import io.atomix.core.multimap.AtomicMultimapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -39,11 +38,10 @@ public class DefaultAtomicMultimapBuilder<K, V> extends AtomicMultimapBuilder<K,
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicMultimap<K, V>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
     return newProxy(AtomicMultimapService.class, new ServiceConfig())
         .thenCompose(proxy -> new AtomicMultimapProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(rawMultimap -> {
-          Serializer serializer = protocol.serializer();
+          Serializer serializer = serializer();
           AsyncAtomicMultimap<K, V> multimap = new TranscodingAsyncAtomicMultimap<>(
               rawMultimap,
               key -> BaseEncoding.base16().encode(serializer.encode(key)),

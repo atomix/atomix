@@ -42,6 +42,7 @@ import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.system.MetaStore;
 import io.atomix.protocols.raft.utils.LoadMonitor;
+import io.atomix.storage.StorageException;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
@@ -128,6 +129,11 @@ public class RaftContext implements AutoCloseable {
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftServer.class)
         .addValue(name)
         .build());
+
+    // Lock the storage directory.
+    if (!storage.lock(localMemberId.id())) {
+      throw new StorageException("Failed to acquire storage lock; ensure each Raft server is configured with a distinct storage directory");
+    }
 
     String baseThreadName = String.format("raft-server-%s", name);
     this.threadContext = new SingleThreadContext(namedThreads(baseThreadName, log));
@@ -875,6 +881,9 @@ public class RaftContext implements AutoCloseable {
 
     // Delete the metadata store.
     storage.deleteMetaStore();
+
+    // Unlock the store.
+    storage.unlock();
   }
 
   @Override

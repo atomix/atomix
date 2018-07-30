@@ -55,7 +55,7 @@ import static org.junit.Assert.assertTrue;
  */
 public abstract class SemaphoreTest extends AbstractPrimitiveTest<ProxyProtocol> {
 
-  @Test
+  @Test(timeout = 30000)
   public void testInit() throws Exception {
     Atomix atomix = atomix();
     AsyncAtomicSemaphore semaphore100 = atomix.atomicSemaphoreBuilder("test-semaphore-init-100")
@@ -77,7 +77,7 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest<ProxyProtocol>
     assertEquals(100, semaphoreNoInit.availablePermits().get().intValue());
   }
 
-  @Test
+  @Test(timeout = 30000)
   public void testAcquireRelease() throws Exception {
     Atomix atomix = atomix();
     AsyncAtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-base")
@@ -98,7 +98,7 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest<ProxyProtocol>
     assertEquals(101, semaphore.availablePermits().get().intValue());
   }
 
-  @Test
+  @Test(timeout = 30000)
   public void testIncreaseReduceDrain() throws Exception {
     Atomix atomix = atomix();
     AsyncAtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-ird")
@@ -114,7 +114,7 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest<ProxyProtocol>
     assertEquals(0, semaphore.availablePermits().get().intValue());
   }
 
-  @Test
+  @Test(timeout = 30000)
   public void testOverflow() throws Exception {
     Atomix atomix = atomix();
     AsyncAtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-overflow")
@@ -162,8 +162,7 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest<ProxyProtocol>
     assertTrue(future.join().isPresent());
   }
 
-
-  @Test
+  @Test(timeout = 30000)
   public void testReleaseSession() throws Exception {
     Atomix atomix = atomix();
     AtomicSemaphoreProxy semaphore =
@@ -194,7 +193,7 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest<ProxyProtocol>
 
   }
 
-  @Test
+  @Test(timeout = 30000)
   public void testHolderStatus() throws Exception {
     Atomix atomix = atomix();
     AtomicSemaphoreProxy semaphore =
@@ -232,7 +231,7 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest<ProxyProtocol>
     assertEquals(0, semaphore.holderStatus().get().size());
   }
 
-  @Test
+  @Test(timeout = 30000)
   public void testBlocking() throws Exception {
     Atomix atomix = atomix();
     AtomicSemaphore semaphore =
@@ -298,7 +297,7 @@ public abstract class SemaphoreTest extends AbstractPrimitiveTest<ProxyProtocol>
     assertFalse(future21.isDone());
   }
 
-  @Test
+  @Test(timeout = 30000)
   public void testExpire() throws Exception {
     Atomix atomix = atomix();
     AsyncAtomicSemaphore semaphore =

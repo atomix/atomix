@@ -17,10 +17,12 @@ package io.atomix.core.barrier;
 
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
+import org.junit.Ignore;
 
 /**
  * Primary-backup distributed cyclic barrier test.
  */
+@Ignore
 public class PrimaryBackupDistributedCyclicBarrierTest extends DistributedCyclicBarrierTest {
   @Override
   protected ProxyProtocol protocol() {

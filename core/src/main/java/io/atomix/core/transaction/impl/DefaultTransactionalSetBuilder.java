@@ -23,6 +23,7 @@ import io.atomix.core.transaction.TransactionalSetBuilder;
 import io.atomix.core.transaction.TransactionalSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.ProxyProtocol;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -42,6 +43,12 @@ public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E
   @Override
   public TransactionalSetBuilder<E> withProtocol(ProxyProtocol protocol) {
     setBuilder.withProtocol(protocol);
+    return this;
+  }
+
+  @Override
+  public TransactionalSetBuilder<E> withSerializer(Serializer serializer) {
+    setBuilder.withSerializer(serializer);
     return this;
   }
 

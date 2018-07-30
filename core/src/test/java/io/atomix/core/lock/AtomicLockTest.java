@@ -44,7 +44,9 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
         .build()
         .async();
     lock.lock().get(30, TimeUnit.SECONDS);
+    assertTrue(lock.isLocked().get(30, TimeUnit.SECONDS));
     lock.unlock().get(30, TimeUnit.SECONDS);
+    assertFalse(lock.isLocked().get(30, TimeUnit.SECONDS));
   }
 
   /**

@@ -19,6 +19,8 @@ import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.primitive.protocol.ProxyProtocol;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -114,6 +116,38 @@ public abstract class DistributedListTest extends AbstractPrimitiveTest<ProxyPro
     list.clear();
     assertTrue(list.isEmpty());
     assertEquals(0, list.size());
+  }
+
+  /**
+   * Tests a map with complex types.
+   */
+  @Test
+  public void testComplexTypes() throws Throwable {
+    DistributedList<Pair<String, Integer>> list = atomix()
+        .<Pair<String, Integer>>listBuilder("testComplexTypes")
+        .withProtocol(protocol())
+        .build();
+
+    list.add(Pair.of("foo", 1));
+    assertEquals("foo", list.iterator().next().getLeft());
+    assertEquals(Integer.valueOf(1), list.iterator().next().getRight());
+  }
+
+  /**
+   * Tests a map with complex types.
+   */
+  @Test
+  public void testRequiredComplexTypes() throws Throwable {
+    DistributedList<Pair<String, Integer>> list = atomix()
+        .<Pair<String, Integer>>listBuilder("testRequiredComplexTypes")
+        .withRegistrationRequired()
+        .withElementType(ImmutablePair.class)
+        .withProtocol(protocol())
+        .build();
+
+    list.add(Pair.of("foo", 1));
+    assertEquals("foo", list.iterator().next().getLeft());
+    assertEquals(Integer.valueOf(1), list.iterator().next().getRight());
   }
 
   private static class TestQueueEventListener implements CollectionEventListener<String> {

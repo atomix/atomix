@@ -566,57 +566,61 @@ public class PrimaryBackupServiceContext implements ServiceContext {
    * Handles a cluster event.
    */
   private void handleClusterEvent(ClusterMembershipEvent event) {
-    if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
-      for (Session session : sessions.values()) {
-        if (session.memberId().equals(event.subject().id())) {
-          role.expire((PrimaryBackupSession) session);
+    threadContext.execute(() -> {
+      if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
+        for (Session session : sessions.values()) {
+          if (session.memberId().equals(event.subject().id())) {
+            role.expire((PrimaryBackupSession) session);
+          }
         }
       }
-    }
+    });
   }
 
   /**
    * Changes the roles.
    */
   private void changeRole(PrimaryTerm term) {
-    if (term.term() > currentTerm) {
-      log.debug("Term changed: {}", term);
-      currentTerm = term.term();
-      primary = term.primary() != null ? term.primary().memberId() : null;
-      backups = term.backups(descriptor.backups())
-          .stream()
-          .map(GroupMember::memberId)
-          .collect(Collectors.toList());
+    threadContext.execute(() -> {
+      if (term.term() > currentTerm) {
+        log.debug("Term changed: {}", term);
+        currentTerm = term.term();
+        primary = term.primary() != null ? term.primary().memberId() : null;
+        backups = term.backups(descriptor.backups())
+            .stream()
+            .map(GroupMember::memberId)
+            .collect(Collectors.toList());
 
-      if (Objects.equals(primary, clusterMembershipService.getLocalMember().id())) {
-        if (this.role == null) {
-          this.role = new PrimaryRole(this);
-          log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.PRIMARY);
-        } else if (this.role.role() != Role.PRIMARY) {
-          this.role.close();
-          this.role = new PrimaryRole(this);
-          log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.PRIMARY);
-        }
-      } else if (backups.contains(clusterMembershipService.getLocalMember().id())) {
-        if (this.role == null) {
-          this.role = new BackupRole(this);
-          log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.BACKUP);
-        } else if (this.role.role() != Role.BACKUP) {
-          this.role.close();
-          this.role = new BackupRole(this);
-          log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.BACKUP);
-        }
-      } else {
-        if (this.role == null) {
-          this.role = new NoneRole(this);
-          log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.NONE);
-        } else if (this.role.role() != Role.NONE) {
-          this.role.close();
-          this.role = new NoneRole(this);
-          log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.NONE);
+        if (Objects.equals(primary, clusterMembershipService.getLocalMember().id())) {
+          if (this.role == null) {
+            this.role = new PrimaryRole(this);
+            log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.PRIMARY);
+          } else if (this.role.role() != Role.PRIMARY) {
+            this.role.close();
+            this.role = new PrimaryRole(this);
+            log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.PRIMARY);
+          }
+        } else if (backups.contains(clusterMembershipService.getLocalMember().id())) {
+          if (this.role == null) {
+            this.role = new BackupRole(this);
+            log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.BACKUP);
+          } else if (this.role.role() != Role.BACKUP) {
+            this.role.close();
+            this.role = new BackupRole(this);
+            log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.BACKUP);
+          }
+        } else {
+          if (this.role == null) {
+            this.role = new NoneRole(this);
+            log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.NONE);
+          } else if (this.role.role() != Role.NONE) {
+            this.role.close();
+            this.role = new NoneRole(this);
+            log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.NONE);
+          }
         }
       }
-    }
+    });
   }
 
   /**

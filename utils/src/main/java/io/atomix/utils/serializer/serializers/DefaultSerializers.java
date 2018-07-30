@@ -15,7 +15,6 @@
  */
 package io.atomix.utils.serializer.serializers;
 
-import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 
 /**
@@ -26,7 +25,7 @@ public class DefaultSerializers {
   /**
    * Basic serializer.
    */
-  public static Serializer BASIC = Serializer.using(Namespaces.BASIC);
+  public static Serializer BASIC = Serializer.builder().build();
 
   private DefaultSerializers() {
   }

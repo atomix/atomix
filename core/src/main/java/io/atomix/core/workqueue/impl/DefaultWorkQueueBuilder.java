@@ -19,7 +19,6 @@ import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.core.workqueue.WorkQueueBuilder;
 import io.atomix.core.workqueue.WorkQueueConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -36,11 +35,10 @@ public class DefaultWorkQueueBuilder<E> extends WorkQueueBuilder<E> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<WorkQueue<E>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
     return newProxy(WorkQueueService.class, new ServiceConfig())
         .thenCompose(proxy -> new WorkQueueProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(queue -> {
-          Serializer serializer = protocol.serializer();
+          Serializer serializer = serializer();
           return new TranscodingAsyncWorkQueue<E, byte[]>(
               queue,
               item -> serializer.encode(item),

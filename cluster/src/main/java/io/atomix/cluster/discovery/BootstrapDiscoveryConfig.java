@@ -15,7 +15,7 @@
  */
 package io.atomix.cluster.discovery;
 
-import io.atomix.cluster.Node;
+import io.atomix.cluster.NodeConfig;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -34,7 +34,7 @@ public class BootstrapDiscoveryConfig extends NodeDiscoveryConfig {
   private Duration heartbeatInterval = Duration.ofMillis(DEFAULT_HEARTBEAT_INTERVAL);
   private int failureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
   private Duration failureTimeout = Duration.ofMillis(DEFAULT_FAILURE_TIMEOUT);
-  private Collection<Node> nodes = Collections.emptySet();
+  private Collection<NodeConfig> nodes = Collections.emptySet();
 
   @Override
   public NodeDiscoveryProvider.Type getType() {
@@ -46,7 +46,7 @@ public class BootstrapDiscoveryConfig extends NodeDiscoveryConfig {
    *
    * @return the configured bootstrap nodes
    */
-  public Collection<Node> getNodes() {
+  public Collection<NodeConfig> getNodes() {
     return nodes;
   }
 
@@ -56,7 +56,7 @@ public class BootstrapDiscoveryConfig extends NodeDiscoveryConfig {
    * @param nodes the bootstrap nodes
    * @return the bootstrap provider configuration
    */
-  public BootstrapDiscoveryConfig setNodes(Collection<Node> nodes) {
+  public BootstrapDiscoveryConfig setNodes(Collection<NodeConfig> nodes) {
     this.nodes = nodes;
     return this;
   }

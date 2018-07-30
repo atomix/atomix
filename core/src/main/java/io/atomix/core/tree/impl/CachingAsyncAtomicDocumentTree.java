@@ -18,16 +18,21 @@ package io.atomix.core.tree.impl;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
-import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.AtomicDocumentTree;
+import io.atomix.core.tree.DocumentPath;
+import io.atomix.core.tree.DocumentTreeEvent;
 import io.atomix.core.tree.DocumentTreeEventListener;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import static io.atomix.primitive.PrimitiveState.CLOSED;
@@ -44,6 +49,7 @@ public class CachingAsyncAtomicDocumentTree<V> extends DelegatingAsyncAtomicDocu
   private final LoadingCache<DocumentPath, CompletableFuture<Versioned<V>>> cache;
   private final DocumentTreeEventListener<V> cacheUpdater;
   private final Consumer<PrimitiveState> stateListener;
+  private final Map<DocumentTreeEventListener<V>, InternalListener<V>> eventListeners = new ConcurrentHashMap<>();
 
   /**
    * Default constructor.
@@ -71,6 +77,7 @@ public class CachingAsyncAtomicDocumentTree<V> extends DelegatingAsyncAtomicDocu
       } else {
         cache.put(event.path(), CompletableFuture.completedFuture(event.newValue().get()));
       }
+      eventListeners.values().forEach(listener -> listener.event(event));
     };
     stateListener = status -> {
       log.debug("{} status changed to {}", this.name(), status);
@@ -80,7 +87,7 @@ public class CachingAsyncAtomicDocumentTree<V> extends DelegatingAsyncAtomicDocu
         cache.invalidateAll();
       }
     };
-    super.addListener(cacheUpdater);
+    super.addListener(cacheUpdater, MoreExecutors.directExecutor());
     super.addStateChangeListener(stateListener);
   }
 
@@ -128,13 +135,38 @@ public class CachingAsyncAtomicDocumentTree<V> extends DelegatingAsyncAtomicDocu
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> removeNode(DocumentPath path) {
-    return super.removeNode(path)
+  public CompletableFuture<Versioned<V>> remove(DocumentPath path) {
+    return super.remove(path)
         .whenComplete((r, e) -> cache.invalidate(path));
+  }
+
+  @Override
+  public CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<V> listener, Executor executor) {
+    eventListeners.put(listener, new InternalListener<>(path, listener, executor));
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public AtomicDocumentTree<V> sync(Duration operationTimeout) {
     return new BlockingAtomicDocumentTree<>(this, operationTimeout.toMillis());
+  }
+
+  private static class InternalListener<V> implements DocumentTreeEventListener<V> {
+    private final DocumentPath path;
+    private final DocumentTreeEventListener<V> listener;
+    private final Executor executor;
+
+    public InternalListener(DocumentPath path, DocumentTreeEventListener<V> listener, Executor executor) {
+      this.path = path;
+      this.listener = listener;
+      this.executor = executor;
+    }
+
+    @Override
+    public void event(DocumentTreeEvent<V> event) {
+      if (event.path().isDescendentOf(path)) {
+        executor.execute(() -> listener.event(event));
+      }
+    }
   }
 }

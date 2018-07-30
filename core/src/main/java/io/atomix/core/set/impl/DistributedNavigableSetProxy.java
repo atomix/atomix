@@ -34,6 +34,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -378,8 +379,8 @@ public class DistributedNavigableSetProxy<E extends Comparable<E>>
     }
 
     @Override
-    public CompletableFuture<Void> addListener(CollectionEventListener<E> listener) {
-      return DistributedNavigableSetProxy.this.addListener(listener);
+    public CompletableFuture<Void> addListener(CollectionEventListener<E> listener, Executor executor) {
+      return DistributedNavigableSetProxy.this.addListener(listener, executor);
     }
 
     @Override

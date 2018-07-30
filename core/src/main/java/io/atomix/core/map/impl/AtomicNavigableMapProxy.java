@@ -464,7 +464,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
     }
 
     @Override
-    public CompletableFuture<Void> addListener(CollectionEventListener<K> listener) {
+    public CompletableFuture<Void> addListener(CollectionEventListener<K> listener, Executor executor) {
       AtomicMapEventListener<K, byte[]> mapListener = event -> {
         switch (event.type()) {
           case INSERT:
@@ -477,8 +477,10 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
             break;
         }
       };
-      listenerMap.put(listener, mapListener);
-      return AtomicNavigableMapProxy.this.addListener(mapListener);
+      if (listenerMap.putIfAbsent(listener, mapListener) == null) {
+        return AtomicNavigableMapProxy.this.addListener(mapListener);
+      }
+      return CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -869,7 +871,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
     }
 
     @Override
-    public CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<K, Versioned<byte[]>>> listener) {
+    public CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<K, Versioned<byte[]>>> listener, Executor executor) {
       AtomicMapEventListener<K, byte[]> boundedListener = event -> {
         if (isInBounds(event.key())) {
           switch (event.type()) {
@@ -885,7 +887,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
         }
       };
       if (listenerMap.putIfAbsent(listener, boundedListener) == null) {
-        return AtomicNavigableMapProxy.this.addListener(boundedListener);
+        return AtomicNavigableMapProxy.this.addListener(boundedListener, executor);
       }
       return CompletableFuture.completedFuture(null);
     }
@@ -993,7 +995,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
     }
 
     @Override
-    public CompletableFuture<Void> addListener(CollectionEventListener<Versioned<byte[]>> listener) {
+    public CompletableFuture<Void> addListener(CollectionEventListener<Versioned<byte[]>> listener, Executor executor) {
       AtomicMapEventListener<K, byte[]> boundedListener = event -> {
         if (isInBounds(event.key())) {
           switch (event.type()) {
@@ -1009,7 +1011,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
         }
       };
       if (listenerMap.putIfAbsent(listener, boundedListener) == null) {
-        return AtomicNavigableMapProxy.this.addListener(boundedListener);
+        return AtomicNavigableMapProxy.this.addListener(boundedListener, executor);
       }
       return CompletableFuture.completedFuture(null);
     }

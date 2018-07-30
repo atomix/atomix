@@ -15,9 +15,8 @@
  */
 package io.atomix.storage.journal;
 
-import io.atomix.utils.serializer.Serializer;
-import io.atomix.utils.serializer.Namespace;
 import io.atomix.storage.StorageLevel;
+import io.atomix.utils.serializer.Serializer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,10 +40,10 @@ import static org.junit.Assert.assertTrue;
  */
 public class JournalTest {
   private static final Path PATH = Paths.get("target/test-logs/");
-  private static final Serializer serializer = Serializer.using(Namespace.builder()
-      .register(TestEntry.class)
-      .register(byte[].class)
-      .build());
+  private static final Serializer serializer = Serializer.builder()
+      .addType(TestEntry.class)
+      .addType(byte[].class)
+      .build();
 
   private SegmentedJournal<TestEntry> createJournal(StorageLevel storageLevel) {
     return SegmentedJournal.<TestEntry>builder()

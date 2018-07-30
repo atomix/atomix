@@ -24,10 +24,12 @@ import io.atomix.core.multimap.AsyncDistributedMultimap;
 import io.atomix.core.multimap.AtomicMultimapEvent;
 import io.atomix.core.multimap.AtomicMultimapEventListener;
 import io.atomix.core.multimap.DistributedMultimap;
+import io.atomix.core.multimap.DistributedMultimapType;
 import io.atomix.core.multimap.MultimapEvent;
 import io.atomix.core.multimap.MultimapEventListener;
 import io.atomix.core.multiset.AsyncDistributedMultiset;
 import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.utils.time.Versioned;
 
@@ -47,6 +49,11 @@ public class DelegatingAsyncDistributedMultimap<K, V> extends DelegatingAsyncPri
   public DelegatingAsyncDistributedMultimap(AsyncAtomicMultimap<K, V> atomicMultimap) {
     super(atomicMultimap);
     this.atomicMultimap = atomicMultimap;
+  }
+
+  @Override
+  public PrimitiveType type() {
+    return DistributedMultimapType.instance();
   }
 
   @Override

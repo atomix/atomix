@@ -23,7 +23,9 @@ import io.atomix.primitive.partition.Partition;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.storage.RaftStorage;
+import io.atomix.storage.StorageException;
 import io.atomix.utils.Managed;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
@@ -79,7 +81,11 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
         return CompletableFuture.completedFuture(null);
       }
       synchronized (this) {
-        server = buildServer();
+        try {
+          server = buildServer();
+        } catch (StorageException e) {
+          return Futures.exceptionalFuture(e);
+        }
       }
       serverOpenFuture = server.bootstrap(partition.members());
     } else {

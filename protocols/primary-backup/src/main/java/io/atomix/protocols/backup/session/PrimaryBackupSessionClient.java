@@ -248,7 +248,8 @@ public class PrimaryBackupSessionClient implements SessionClient {
    * Handles a cluster event.
    */
   private void handleClusterEvent(ClusterMembershipEvent event) {
-    if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED && event.subject().id().equals(term.primary().memberId())) {
+    PrimaryTerm term = this.term;
+    if (term != null && event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED && event.subject().id().equals(term.primary().memberId())) {
       threadContext.execute(() -> {
         state = PrimitiveState.SUSPENDED;
         stateChangeListeners.forEach(l -> l.accept(state));

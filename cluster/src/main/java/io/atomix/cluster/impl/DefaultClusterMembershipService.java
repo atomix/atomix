@@ -22,11 +22,11 @@ import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.ManagedClusterMembershipService;
-import io.atomix.cluster.discovery.ManagedNodeDiscoveryService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.Node;
+import io.atomix.cluster.discovery.ManagedNodeDiscoveryService;
 import io.atomix.cluster.discovery.NodeDiscoveryEvent;
 import io.atomix.cluster.discovery.NodeDiscoveryEventListener;
 import io.atomix.utils.event.AbstractListenerManager;
@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -84,6 +85,8 @@ public class DefaultClusterMembershipService
 
   private final ScheduledExecutorService heartbeatScheduler = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-cluster-heartbeat-sender", LOGGER));
+  private final ExecutorService eventExecutor = Executors.newSingleThreadExecutor(
+      namedThreads("atomix-cluster-events", LOGGER));
   private ScheduledFuture<?> heartbeatFuture;
 
   public DefaultClusterMembershipService(
@@ -116,6 +119,11 @@ public class DefaultClusterMembershipService
   @Override
   public Member getMember(MemberId memberId) {
     return members.get(memberId);
+  }
+
+  @Override
+  protected void post(ClusterMembershipEvent event) {
+    eventExecutor.execute(() -> super.post(event));
   }
 
   /**
@@ -191,7 +199,15 @@ public class DefaultClusterMembershipService
    * @param member the member to which to broadcast the metadata
    */
   private void broadcastMetadata(StatefulMember member) {
-    bootstrapService.getMessagingService().sendAsync(member.address(), METADATA_BROADCAST, SERIALIZER.encode(localMember));
+    LOGGER.trace("{} - Sending heartbeat to {}", localMember.id(), member);
+    bootstrapService.getMessagingService().sendAsync(member.address(), METADATA_BROADCAST, SERIALIZER.encode(localMember))
+        .whenComplete((result, error) -> {
+          if (error != null) {
+            LOGGER.debug("{} - Failed to send heartbeat to {}", localMember.id(), member, error);
+          } else {
+            LOGGER.trace("{} - Successfully sent heartbeat to {}", localMember.id(), member);
+          }
+        });
   }
 
   /**
@@ -202,9 +218,11 @@ public class DefaultClusterMembershipService
    */
   private void handleMetadata(Address address, byte[] message) {
     StatefulMember remoteMember = SERIALIZER.decode(message);
+    LOGGER.trace("{} - Received heartbeat from {}", localMember.id(), remoteMember);
     StatefulMember localMember = members.get(remoteMember.id());
     if (localMember != null) {
       if (!localMember.isReachable()) {
+        LOGGER.info("{} - Member reachable: {}", localMember.id(), localMember);
         localMember.setReachable(true);
         post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, localMember));
       }
@@ -238,6 +256,7 @@ public class DefaultClusterMembershipService
     if (phi >= config.getReachabilityThreshold()
         || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getReachabilityTimeout().toMillis())) {
       if (member.isReachable()) {
+        LOGGER.info("{} - Member unreachable: {}", localMember.id(), member);
         member.setReachable(false);
         post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, member));
       }
@@ -277,6 +296,7 @@ public class DefaultClusterMembershipService
             discoveryService.removeListener(discoveryEventListener);
             heartbeatFuture.cancel(true);
             heartbeatScheduler.shutdownNow();
+            eventExecutor.shutdownNow();
             LOGGER.info("{} - Member deactivated: {}", localMember.id(), localMember);
             localMember.setActive(false);
             localMember.setReachable(false);

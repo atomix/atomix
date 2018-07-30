@@ -21,6 +21,7 @@ import com.google.common.collect.Maps;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.Node;
+import io.atomix.cluster.NodeConfig;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.impl.AddressSerializer;
 import io.atomix.cluster.impl.PhiAccrualFailureDetector;
@@ -119,9 +120,9 @@ public class BootstrapDiscoveryProvider
   private Map<Address, Node> nodes = Maps.newConcurrentMap();
 
   private final ScheduledExecutorService heartbeatScheduler = Executors.newSingleThreadScheduledExecutor(
-      namedThreads("atomix-cluster-heartbeat-sender", LOGGER));
+      namedThreads("atomix-bootstrap-heartbeat-sender", LOGGER));
   private final ExecutorService heartbeatExecutor = Executors.newSingleThreadExecutor(
-      namedThreads("atomix-cluster-heartbeat-receiver", LOGGER));
+      namedThreads("atomix-bootstrap-heartbeat-receiver", LOGGER));
   private ScheduledFuture<?> heartbeatFuture;
 
   private final Map<Address, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
@@ -131,12 +132,15 @@ public class BootstrapDiscoveryProvider
   }
 
   public BootstrapDiscoveryProvider(Collection<Node> bootstrapNodes) {
-    this(new BootstrapDiscoveryConfig().setNodes(bootstrapNodes));
+    this(new BootstrapDiscoveryConfig().setNodes(bootstrapNodes.stream()
+        .map(node -> new NodeConfig().setId(node.id())
+            .setAddress(node.address()))
+        .collect(Collectors.toList())));
   }
 
   BootstrapDiscoveryProvider(BootstrapDiscoveryConfig config) {
     this.config = checkNotNull(config);
-    this.bootstrapNodes = ImmutableSet.copyOf(config.getNodes());
+    this.bootstrapNodes = ImmutableSet.copyOf(config.getNodes().stream().map(Node::new).collect(Collectors.toList()));
   }
 
   @Override
@@ -172,7 +176,7 @@ public class BootstrapDiscoveryProvider
    * Sends a heartbeat to the given peer.
    */
   private CompletableFuture<Void> sendHeartbeat(Node localNode, Address address) {
-    return bootstrap.getMessagingService().sendAndReceive(address, HEARTBEAT_MESSAGE, SERIALIZER.encode(localNode)).whenComplete((response, error) -> {
+    return bootstrap.getMessagingService().sendAndReceive(address, HEARTBEAT_MESSAGE, SERIALIZER.encode(localNode)).whenCompleteAsync((response, error) -> {
       if (error == null) {
         Collection<Node> nodes = SERIALIZER.decode(response);
         for (Node node : nodes) {
@@ -202,7 +206,7 @@ public class BootstrapDiscoveryProvider
           }
         }
       }
-    }).exceptionally(e -> null)
+    }, heartbeatExecutor).exceptionally(e -> null)
         .thenApply(v -> null);
   }
 
@@ -260,6 +264,7 @@ public class BootstrapDiscoveryProvider
       if (heartbeatFuture != null) {
         heartbeatFuture.cancel(false);
       }
+      heartbeatScheduler.shutdownNow();
       heartbeatExecutor.shutdownNow();
       LOGGER.info("Left");
     }

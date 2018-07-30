@@ -99,6 +99,7 @@ import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.partition.impl.DefaultPartitionGroupTypeRegistry;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.impl.DefaultPrimitiveProtocolTypeRegistry;
+import io.atomix.primitive.serialization.SerializationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,6 +128,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       ClusterMembershipService membershipService,
       ClusterCommunicationService communicationService,
       ClusterEventService eventService,
+      SerializationService serializationService,
       PartitionService partitionService,
       PrimitiveCache primitiveCache,
       AtomixRegistry registry,
@@ -138,6 +140,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
         membershipService,
         communicationService,
         eventService,
+        serializationService,
         partitionService,
         primitiveCache,
         primitiveRegistry,
@@ -319,16 +322,18 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
     return cache.getPrimitive(name, () -> {
       PrimitiveInfo info = primitiveRegistry.getPrimitive(name);
       if (info == null) {
-        return CompletableFuture.completedFuture(null);
+        PrimitiveConfig<?> primitiveConfig = configService.getConfig(name);
+        if (primitiveConfig == null) {
+          return CompletableFuture.completedFuture(null);
+        }
+        return primitiveConfig.getType().newBuilder(name, primitiveConfig, managementService).buildAsync();
       }
 
       PrimitiveConfig primitiveConfig = configService.getConfig(name);
       if (primitiveConfig == null) {
         primitiveConfig = info.type().newConfig();
       }
-      return info.type().newBuilder(name, primitiveConfig, managementService)
-          .buildAsync()
-          .thenApply(primitive -> ((SyncPrimitive) primitive).async());
+      return info.type().newBuilder(name, primitiveConfig, managementService).buildAsync();
     });
   }
 
@@ -350,9 +355,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
           config = primitiveType.newConfig();
         }
       }
-      return primitiveType.newBuilder(name, config, managementService)
-          .buildAsync()
-          .thenApply(primitive -> ((SyncPrimitive) primitive).async());
+      return primitiveType.newBuilder(name, config, managementService).buildAsync();
     });
   }
 

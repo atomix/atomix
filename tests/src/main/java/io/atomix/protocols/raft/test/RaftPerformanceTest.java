@@ -37,6 +37,7 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.operation.impl.DefaultOperationId;
+import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
@@ -534,6 +535,7 @@ public class RaftPerformanceTest implements Runnable {
 
     RaftClient client = RaftClient.builder()
         .withMemberId(member.id())
+        .withPartitionId(PartitionId.from("test", 1))
         .withProtocol(protocol)
         .withThreadModel(ThreadModel.SHARED_THREAD_POOL)
         .build();

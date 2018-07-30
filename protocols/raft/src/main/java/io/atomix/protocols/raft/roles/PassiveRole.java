@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.RaftServer;
@@ -452,6 +453,11 @@ public class PassiveRole extends InactiveRole {
     } else if (error instanceof RaftException) {
       future.complete(builder.withStatus(RaftResponse.Status.ERROR)
           .withError(((RaftException) error).getType(), error.getMessage())
+          .build());
+    } else if (error instanceof PrimitiveException.ServiceException) {
+      log.warn("An application error occurred: {}", error.getCause());
+      future.complete(builder.withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.APPLICATION_ERROR)
           .build());
     } else {
       log.warn("An unexpected error occurred: {}", error);

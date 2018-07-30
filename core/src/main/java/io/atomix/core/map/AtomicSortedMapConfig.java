@@ -16,12 +16,11 @@
 package io.atomix.core.map;
 
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.config.PrimitiveConfig;
 
 /**
  * Consistent sorted map configuration.
  */
-public class AtomicSortedMapConfig extends PrimitiveConfig<AtomicSortedMapConfig> {
+public class AtomicSortedMapConfig extends MapConfig<AtomicSortedMapConfig> {
   @Override
   public PrimitiveType getType() {
     return AtomicSortedMapType.instance();

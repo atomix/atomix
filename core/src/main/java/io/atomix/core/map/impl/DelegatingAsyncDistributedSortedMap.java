@@ -18,6 +18,8 @@ package io.atomix.core.map.impl;
 import io.atomix.core.map.AsyncAtomicSortedMap;
 import io.atomix.core.map.AsyncDistributedSortedMap;
 import io.atomix.core.map.DistributedSortedMap;
+import io.atomix.core.map.DistributedSortedMapType;
+import io.atomix.primitive.PrimitiveType;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -31,6 +33,11 @@ public class DelegatingAsyncDistributedSortedMap<K extends Comparable<K>, V> ext
   public DelegatingAsyncDistributedSortedMap(AsyncAtomicSortedMap<K, V> atomicMap) {
     super(atomicMap);
     this.atomicMap = atomicMap;
+  }
+
+  @Override
+  public PrimitiveType type() {
+    return DistributedSortedMapType.instance();
   }
 
   @Override

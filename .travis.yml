@@ -1,8 +1,4 @@
 language: java
-sudo: false
-os: linux
-dist: trusty
-
 jdk:
   - oraclejdk8
   - openjdk8
@@ -14,10 +10,13 @@ branches:
   only:
     - master
 
+install:
+  - ./mvnw clean install --batch-mode -V -DskipTests=true -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+
 script:
-  - mvn test -Droot.logging.level=INFO
+  - ./mvnw verify --batch-mode -Droot.logging.level=INFO -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
 after_success:
-  - mvn clean test jacoco:report coveralls:report -Droot.logging.level=INFO
+  - ./mvnw jacoco:report coveralls:report
   - bin/ci-push-javadoc.sh
   - bin/ci-deploy-snapshot.sh

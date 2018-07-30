@@ -53,14 +53,16 @@ public class ReferencePool<T extends ReferenceCounted<?>> implements ReferenceMa
 
   @Override
   public void release(T reference) {
-    if (!closed)
+    if (!closed) {
       pool.add(reference);
+    }
   }
 
   @Override
   public synchronized void close() {
-    if (closed)
+    if (closed) {
       throw new IllegalStateException("pool closed");
+    }
 
     closed = true;
     for (T reference : pool) {

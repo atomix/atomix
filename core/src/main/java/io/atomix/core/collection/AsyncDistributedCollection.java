@@ -15,12 +15,14 @@
  */
 package io.atomix.core.collection;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.core.iterator.AsyncIterable;
 import io.atomix.primitive.AsyncPrimitive;
 
 import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Asynchronous distributed collection.
@@ -112,7 +114,19 @@ public interface AsyncDistributedCollection<E> extends AsyncPrimitive, AsyncIter
    * @param listener listener to notify about collection update events
    * @return CompletableFuture that is completed when the operation completes
    */
-  CompletableFuture<Void> addListener(CollectionEventListener<E> listener);
+  default CompletableFuture<Void> addListener(CollectionEventListener<E> listener) {
+    return addListener(listener, MoreExecutors.directExecutor());
+  }
+
+  /**
+   * Registers the specified listener to be notified whenever
+   * the collection is updated.
+   *
+   * @param listener listener to notify about collection update events
+   * @param executor executor on which to call event listener
+   * @return CompletableFuture that is completed when the operation completes
+   */
+  CompletableFuture<Void> addListener(CollectionEventListener<E> listener, Executor executor);
 
   /**
    * Unregisters the specified listener.

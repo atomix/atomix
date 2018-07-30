@@ -182,7 +182,7 @@ public class DefaultServiceExecutor implements ServiceExecutor {
         return operation.apply(commit);
       } catch (Exception e) {
         log.warn("State machine operation failed: {}", e.getMessage());
-        throw new PrimitiveException.ServiceException();
+        throw new PrimitiveException.ServiceException(e);
       } finally {
         runTasks();
       }

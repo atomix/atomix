@@ -30,11 +30,10 @@ import static org.junit.Assert.assertNotNull;
  * Document tree service test.
  */
 public class DefaultAtomicDocumentTreeServiceTest {
-
   @Test
   public void testSnapshot() throws Exception {
     DefaultDocumentTreeService service = new DefaultDocumentTreeService();
-    service.set(DocumentPath.from("root|foo"), "Hello world!".getBytes());
+    service.set(DocumentPath.from("/foo"), "Hello world!".getBytes());
 
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
@@ -42,7 +41,7 @@ public class DefaultAtomicDocumentTreeServiceTest {
     service = new DefaultDocumentTreeService();
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
-    Versioned<byte[]> value = service.get(DocumentPath.from("root|foo"));
+    Versioned<byte[]> value = service.get(DocumentPath.from("/foo"));
     assertNotNull(value);
     assertArrayEquals("Hello world!".getBytes(), value.value());
   }

@@ -47,7 +47,7 @@ public class DefaultDistributedMapBuilder<K, V> extends DistributedMapBuilder<K,
     if (protocol instanceof GossipProtocol) {
       if (protocol instanceof MapProtocol) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((MapProtocol) protocol).<K, V>newMapDelegate(name, managementService))
+            CompletableFuture.completedFuture(((MapProtocol) protocol).<K, V>newMapDelegate(name, serializer(), managementService))
                 .thenApply(map -> new GossipDistributedMap<>(name, protocol, map)))
             .thenApply(AsyncDistributedMap::sync);
       } else {
@@ -57,7 +57,7 @@ public class DefaultDistributedMapBuilder<K, V> extends DistributedMapBuilder<K,
       return newProxy(AtomicMapService.class, new ServiceConfig())
           .thenCompose(proxy -> new AtomicMapProxy((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
           .thenApply(rawMap -> {
-            Serializer serializer = protocol.serializer();
+            Serializer serializer = serializer();
             AsyncAtomicMap<K, V> map = new TranscodingAsyncAtomicMap<K, V, String, byte[]>(
                 rawMap,
                 key -> BaseEncoding.base16().encode(serializer.encode(key)),

@@ -15,13 +15,12 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
 
 /**
  * Consistent tree-map configuration.
  */
-public class AtomicNavigableMapConfig extends PrimitiveConfig<AtomicNavigableMapConfig> {
+public class AtomicNavigableMapConfig extends MapConfig<AtomicNavigableMapConfig> {
   @Override
   public PrimitiveType getType() {
     return AtomicNavigableMapType.instance();

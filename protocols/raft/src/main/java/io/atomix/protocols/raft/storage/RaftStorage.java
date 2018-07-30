@@ -20,7 +20,9 @@ import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotFile;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.system.MetaStore;
+import io.atomix.storage.StorageException;
 import io.atomix.storage.StorageLevel;
+import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.journal.JournalSegmentDescriptor;
 import io.atomix.storage.journal.JournalSegmentFile;
 import io.atomix.storage.statistics.StorageStatistics;
@@ -71,6 +73,7 @@ public class RaftStorage {
   private final int maxEntriesPerSegment;
   private final boolean dynamicCompaction;
   private final double freeDiskBuffer;
+  private final double freeMemoryBuffer;
   private final boolean flushOnCommit;
   private final boolean retainStaleSnapshots;
   private final StorageStatistics statistics;
@@ -84,6 +87,7 @@ public class RaftStorage {
       int maxEntriesPerSegment,
       boolean dynamicCompaction,
       double freeDiskBuffer,
+      double freeMemoryBuffer,
       boolean flushOnCommit,
       boolean retainStaleSnapshots) {
     this.prefix = prefix;
@@ -94,6 +98,7 @@ public class RaftStorage {
     this.maxEntriesPerSegment = maxEntriesPerSegment;
     this.dynamicCompaction = dynamicCompaction;
     this.freeDiskBuffer = freeDiskBuffer;
+    this.freeMemoryBuffer = freeMemoryBuffer;
     this.flushOnCommit = flushOnCommit;
     this.retainStaleSnapshots = retainStaleSnapshots;
     this.statistics = new StorageStatistics(directory);
@@ -185,6 +190,15 @@ public class RaftStorage {
   }
 
   /**
+   * Returns the percentage of memory space that must be available before log compaction is forced.
+   *
+   * @return the percentage of memory space that must be available before log compaction is forced
+   */
+  public double freeMemoryBuffer() {
+    return freeMemoryBuffer;
+  }
+
+  /**
    * Returns whether to flush buffers to disk when entries are committed.
    *
    * @return Whether to flush buffers to disk when entries are committed.
@@ -213,6 +227,38 @@ public class RaftStorage {
    */
   public StorageStatistics statistics() {
     return statistics;
+  }
+
+  /**
+   * Attempts to acquire a lock on the storage directory.
+   *
+   * @param id the ID with which to lock the directory
+   * @return indicates whether the lock was successfully acquired
+   */
+  public boolean lock(String id) {
+    File file = new File(directory, String.format(".%s.lock", prefix));
+    try {
+      if (file.createNewFile()) {
+        try (FileBuffer buffer = FileBuffer.allocate(file)) {
+          buffer.writeString(id).flush();
+        }
+        return true;
+      } else {
+        try (FileBuffer buffer = FileBuffer.allocate(file)) {
+          String lock = buffer.readString();
+          return lock != null && lock.equals(id);
+        }
+      }
+    } catch (IOException e) {
+      throw new StorageException("Failed to acquire storage lock");
+    }
+  }
+
+  /**
+   * Unlocks the storage directory.
+   */
+  public void unlock() {
+    deleteFiles(f -> f.getName().equals(String.format(".%s.lock", prefix)));
   }
 
   /**
@@ -339,6 +385,7 @@ public class RaftStorage {
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
     private static final boolean DEFAULT_DYNAMIC_COMPACTION = true;
     private static final double DEFAULT_FREE_DISK_BUFFER = .2;
+    private static final double DEFAULT_FREE_MEMORY_BUFFER = .2;
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = true;
     private static final boolean DEFAULT_RETAIN_STALE_SNAPSHOTS = false;
 
@@ -350,6 +397,7 @@ public class RaftStorage {
     private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
     private boolean dynamicCompaction = DEFAULT_DYNAMIC_COMPACTION;
     private double freeDiskBuffer = DEFAULT_FREE_DISK_BUFFER;
+    private double freeMemoryBuffer = DEFAULT_FREE_MEMORY_BUFFER;
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
     private boolean retainStaleSnapshots = DEFAULT_RETAIN_STALE_SNAPSHOTS;
 
@@ -503,6 +551,19 @@ public class RaftStorage {
     }
 
     /**
+     * Sets the percentage of free memory space that must be preserved before log compaction is forced.
+     *
+     * @param freeMemoryBuffer the free disk percentage
+     * @return the Raft log builder
+     */
+    public Builder withFreeMemoryBuffer(double freeMemoryBuffer) {
+      checkArgument(freeMemoryBuffer > 0, "freeMemoryBuffer must be positive");
+      checkArgument(freeMemoryBuffer < 1, "freeMemoryBuffer must be less than 1");
+      this.freeMemoryBuffer = freeMemoryBuffer;
+      return this;
+    }
+
+    /**
      * Enables flushing buffers to disk when entries are committed to a segment, returning the builder
      * for method chaining.
      * <p>
@@ -578,6 +639,7 @@ public class RaftStorage {
           maxEntriesPerSegment,
           dynamicCompaction,
           freeDiskBuffer,
+          freeMemoryBuffer,
           flushOnCommit,
           retainStaleSnapshots);
     }

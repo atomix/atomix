@@ -18,6 +18,7 @@ package io.atomix.protocols.gossip.set;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.set.NavigableSetDelegate;
 import io.atomix.protocols.gossip.CrdtProtocolConfig;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.Comparator;
 import java.util.Iterator;
@@ -30,8 +31,8 @@ import java.util.stream.Collectors;
  * CRDT tree set.
  */
 public class CrdtNavigableSetDelegate<E> extends CrdtSetDelegate<E> implements NavigableSetDelegate<E> {
-  public CrdtNavigableSetDelegate(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
-    super(name, config, managementService);
+  public CrdtNavigableSetDelegate(String name, Serializer serializer, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
+    super(name, serializer, config, managementService);
   }
 
   @Override

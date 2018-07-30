@@ -46,7 +46,7 @@ public class DefaultDistributedSortedSetBuilder<E extends Comparable<E>> extends
     if (protocol instanceof GossipProtocol) {
       if (protocol instanceof SortedSetProtocol) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((SortedSetProtocol) protocol).<E>newSortedSetDelegate(name, managementService))
+            CompletableFuture.completedFuture(((SortedSetProtocol) protocol).<E>newSortedSetDelegate(name, serializer(), managementService))
                 .thenApply(set -> new GossipDistributedSortedSet<>(name, protocol, set)))
             .thenApply(AsyncDistributedSortedSet::sync);
       } else {

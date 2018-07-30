@@ -15,13 +15,12 @@
  */
 package io.atomix.core.map;
 
-import io.atomix.core.cache.CachedPrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
 
 /**
  * Distributed tree map configuration.
  */
-public class DistributedNavigableMapConfig extends CachedPrimitiveConfig<DistributedNavigableMapConfig> {
+public class DistributedNavigableMapConfig extends MapConfig<DistributedNavigableMapConfig> {
   private boolean nullValues = false;
 
   @Override

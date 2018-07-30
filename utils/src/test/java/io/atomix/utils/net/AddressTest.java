@@ -17,6 +17,8 @@ package io.atomix.utils.net;
 
 import org.junit.Test;
 
+import java.net.InetAddress;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -28,7 +30,7 @@ public class AddressTest {
     Address address = Address.from("127.0.0.1:5000");
     assertEquals("127.0.0.1", address.host());
     assertEquals(5000, address.port());
-    assertEquals("localhost:5000", address.toString());
+    assertEquals( InetAddress.getByName("127.0.0.1").getHostName() + ":5000", address.toString());
   }
 
   @Test

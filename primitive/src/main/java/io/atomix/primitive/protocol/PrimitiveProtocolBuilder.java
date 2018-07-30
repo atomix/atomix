@@ -16,7 +16,6 @@
 package io.atomix.primitive.protocol;
 
 import io.atomix.utils.Builder;
-import io.atomix.utils.serializer.Serializer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -28,17 +27,5 @@ public abstract class PrimitiveProtocolBuilder<B extends PrimitiveProtocolBuilde
 
   protected PrimitiveProtocolBuilder(C config) {
     this.config = checkNotNull(config);
-  }
-
-  /**
-   * Sets the protocol serializer.
-   *
-   * @param serializer the protocol serializer
-   * @return the protocol builder
-   */
-  @SuppressWarnings("unchecked")
-  public B withSerializer(Serializer serializer) {
-    config.setSerializer(serializer);
-    return (B) this;
   }
 }

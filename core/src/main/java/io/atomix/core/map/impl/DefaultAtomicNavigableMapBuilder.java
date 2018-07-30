@@ -20,7 +20,6 @@ import io.atomix.core.map.AtomicNavigableMap;
 import io.atomix.core.map.AtomicNavigableMapBuilder;
 import io.atomix.core.map.AtomicNavigableMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
 
@@ -39,11 +38,10 @@ public class DefaultAtomicNavigableMapBuilder<K extends Comparable<K>, V> extend
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicNavigableMap<K, V>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
     return newProxy(AtomicTreeMapService.class, new ServiceConfig())
         .thenCompose(proxy -> new AtomicNavigableMapProxy(proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(map -> {
-          Serializer serializer = protocol.serializer();
+          Serializer serializer = serializer();
           return new TranscodingAsyncAtomicNavigableMap<K, V, byte[]>(
               (AsyncAtomicNavigableMap) map,
               value -> serializer.encode(value),

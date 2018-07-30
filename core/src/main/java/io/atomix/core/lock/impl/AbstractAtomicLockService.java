@@ -177,6 +177,11 @@ public abstract class AbstractAtomicLockService extends AbstractPrimitiveService
     }
   }
 
+  @Override
+  public boolean isLocked() {
+    return lock != null;
+  }
+
   /**
    * Handles a session that has been closed by a client or expired by the cluster.
    * <p>

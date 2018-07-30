@@ -188,20 +188,40 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     this.eventService = buildClusterEventService(membershipService, messagingService);
   }
 
+  /**
+   * Returns the cluster broadcast service.
+   * <p>
+   * The broadcast service is used to broadcast messages to all nodes in the cluster via multicast.
+   * The broadcast service is disabled by default. To enable broadcast, the cluster must be configured with
+   * {@link AtomixClusterBuilder#withMulticastEnabled() multicast enabled}.
+   *
+   * @return the cluster broadcast service
+   */
   @Override
   public BroadcastService getBroadcastService() {
     return broadcastService;
   }
 
+  /**
+   * Returns the cluster messaging service.
+   * <p>
+   * The messaging service is used for direct point-to-point messaging between nodes by {@link Address}. This is a
+   * low-level cluster communication API. For higher level messaging, use the
+   * {@link #getCommunicationService() communication service} or {@link #getEventService() event service}.
+   *
+   * @return the cluster messaging service
+   */
   @Override
   public MessagingService getMessagingService() {
     return messagingService;
   }
 
   /**
-   * Returns the cluster service.
+   * Returns the cluster membership service.
+   * <p>
+   * The membership service manages cluster membership information and failure detection.
    *
-   * @return the cluster service
+   * @return the cluster membership service
    */
   public ClusterMembershipService getMembershipService() {
     return membershipService;
@@ -209,6 +229,8 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
 
   /**
    * Returns the cluster communication service.
+   * <p>
+   * The cluster communication service is used for high-level unicast, multicast, broadcast, and request-reply messaging.
    *
    * @return the cluster communication service
    */
@@ -218,6 +240,8 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
 
   /**
    * Returns the cluster event service.
+   * <p>
+   * The cluster event service is used for high-level publish-subscribe messaging.
    *
    * @return the cluster event service
    */
@@ -324,7 +348,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     return NettyBroadcastService.builder()
         .withLocalAddress(config.getNodeConfig().getAddress())
         .withGroupAddress(new Address(
-            config.getMulticastConfig().getGroup().getHostName(),
+            config.getMulticastConfig().getGroup().getHostAddress(),
             config.getMulticastConfig().getPort(),
             config.getMulticastConfig().getGroup()))
         .withEnabled(config.getMulticastConfig().isEnabled())

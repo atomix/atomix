@@ -29,6 +29,7 @@ import io.atomix.primitive.protocol.PrimitiveProtocol;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Descending navigable set.
@@ -186,8 +187,8 @@ public class DescendingAsyncDistributedNavigableSet<E extends Comparable<E>>
   }
 
   @Override
-  public CompletableFuture<Void> addListener(CollectionEventListener<E> listener) {
-    return delegate().addListener(listener);
+  public CompletableFuture<Void> addListener(CollectionEventListener<E> listener, Executor executor) {
+    return delegate().addListener(listener, executor);
   }
 
   @Override

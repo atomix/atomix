@@ -85,12 +85,8 @@ public class ProxyIterator<S, T> implements AsyncIterator<T> {
         }));
   }
 
-  /**
-   * Closes the iterator.
-   *
-   * @return future to be completed once the iterator has been closed
-   */
-  private CompletableFuture<Void> close() {
+  @Override
+  public CompletableFuture<Void> close() {
     if (closeFuture == null) {
       synchronized (this) {
         if (closeFuture == null) {

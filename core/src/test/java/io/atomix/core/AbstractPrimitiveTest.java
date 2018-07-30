@@ -23,11 +23,13 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -61,23 +63,25 @@ public abstract class AbstractPrimitiveTest<P extends PrimitiveProtocol> extends
   @BeforeClass
   public static void setupCluster() throws Exception {
     AbstractAtomixTest.setupAtomix();
-    Function<AtomixBuilder, Atomix> build = builder ->
+    BiFunction<AtomixBuilder, Integer, Atomix> build = (builder, id) ->
         builder.withManagementGroup(RaftPartitionGroup.builder("system")
             .withNumPartitions(1)
             .withMembers("1", "2", "3")
+            .withDataDirectory(new File(new File(DATA_DIR, "system"), String.valueOf(id)))
             .build())
             .addPartitionGroup(RaftPartitionGroup.builder("raft")
                 .withNumPartitions(3)
                 .withMembers("1", "2", "3")
+                .withDataDirectory(new File(new File(DATA_DIR, "raft"), String.valueOf(id)))
                 .build())
             .addPartitionGroup(PrimaryBackupPartitionGroup.builder("data")
                 .withNumPartitions(7)
                 .build())
             .build();
     servers = new ArrayList<>();
-    servers.add(createAtomix(1, Arrays.asList(1, 2, 3), build));
-    servers.add(createAtomix(2, Arrays.asList(1, 2, 3), build));
-    servers.add(createAtomix(3, Arrays.asList(1, 2, 3), build));
+    servers.add(createAtomix(1, Arrays.asList(1, 2, 3), builder -> build.apply(builder, 1)));
+    servers.add(createAtomix(2, Arrays.asList(1, 2, 3), builder -> build.apply(builder, 2)));
+    servers.add(createAtomix(3, Arrays.asList(1, 2, 3), builder -> build.apply(builder, 3)));
     List<CompletableFuture<Atomix>> futures = servers.stream().map(a -> a.start().thenApply(v -> a)).collect(Collectors.toList());
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
   }

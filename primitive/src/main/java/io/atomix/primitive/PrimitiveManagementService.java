@@ -21,6 +21,7 @@ import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.primitive.partition.PartitionGroupTypeRegistry;
 import io.atomix.primitive.partition.PartitionService;
 import io.atomix.primitive.protocol.PrimitiveProtocolTypeRegistry;
+import io.atomix.primitive.serialization.SerializationService;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -56,6 +57,13 @@ public interface PrimitiveManagementService {
    * @return the cluster event service
    */
   ClusterEventService getEventService();
+
+  /**
+   * Returns the primitive serialization service.
+   *
+   * @return the primitive serialization service
+   */
+  SerializationService getSerializationService();
 
   /**
    * Returns the partition service.

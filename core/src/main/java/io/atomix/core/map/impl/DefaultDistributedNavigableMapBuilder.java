@@ -45,7 +45,7 @@ public class DefaultDistributedNavigableMapBuilder<K extends Comparable<K>, V> e
     if (protocol instanceof GossipProtocol) {
       if (protocol instanceof NavigableMapProtocol) {
         return managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((NavigableMapProtocol) protocol).<K, V>newNavigableMapDelegate(name, managementService))
+            CompletableFuture.completedFuture(((NavigableMapProtocol) protocol).<K, V>newNavigableMapDelegate(name, serializer(), managementService))
                 .thenApply(set -> new GossipDistributedNavigableMap<>(name, protocol, set)))
             .thenApply(AsyncDistributedNavigableMap::sync);
       } else {
@@ -55,7 +55,7 @@ public class DefaultDistributedNavigableMapBuilder<K extends Comparable<K>, V> e
       return newProxy(AtomicTreeMapService.class, new ServiceConfig())
           .thenCompose(proxy -> new AtomicNavigableMapProxy<K>((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
           .thenApply(map -> {
-            Serializer serializer = protocol.serializer();
+            Serializer serializer = serializer();
             return new TranscodingAsyncAtomicNavigableMap<K, V, byte[]>(
                 map,
                 value -> serializer.encode(value),

@@ -41,4 +41,9 @@ public class TranscodingIterator<T1, T2> implements AsyncIterator<T1> {
   public CompletableFuture<T1> next() {
     return backingIterator.next().thenApply(elementDecoder);
   }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return backingIterator.close();
+  }
 }

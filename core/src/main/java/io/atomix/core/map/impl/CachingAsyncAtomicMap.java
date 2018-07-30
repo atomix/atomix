@@ -18,6 +18,7 @@ package io.atomix.core.map.impl;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.core.cache.CacheConfig;
 import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.AtomicMapEventListener;
@@ -25,8 +26,11 @@ import io.atomix.primitive.PrimitiveState;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -53,6 +57,7 @@ public class CachingAsyncAtomicMap<K, V> extends DelegatingAsyncAtomicMap<K, V> 
   private final AsyncAtomicMap<K, V> backingMap;
   private final AtomicMapEventListener<K, V> cacheUpdater;
   private final Consumer<PrimitiveState> statusListener;
+  private final Map<AtomicMapEventListener<K, V>, Executor> mapEventListeners = new ConcurrentHashMap<>();
 
   /**
    * Constructor to configure cache size.
@@ -73,6 +78,7 @@ public class CachingAsyncAtomicMap<K, V> extends DelegatingAsyncAtomicMap<K, V> 
       } else {
         cache.put(event.key(), CompletableFuture.completedFuture(newValue));
       }
+      mapEventListeners.forEach((listener, executor) -> executor.execute(() -> listener.event(event)));
     };
     statusListener = status -> {
       log.debug("{} status changed to {}", this.name(), status);
@@ -82,7 +88,7 @@ public class CachingAsyncAtomicMap<K, V> extends DelegatingAsyncAtomicMap<K, V> 
         cache.invalidateAll();
       }
     };
-    super.addListener(cacheUpdater);
+    super.addListener(cacheUpdater, MoreExecutors.directExecutor());
     super.addStateChangeListener(statusListener);
   }
 
@@ -211,5 +217,17 @@ public class CachingAsyncAtomicMap<K, V> extends DelegatingAsyncAtomicMap<K, V> 
             cache.invalidate(key);
           }
         });
+  }
+
+  @Override
+  public CompletableFuture<Void> addListener(AtomicMapEventListener<K, V> listener, Executor executor) {
+    mapEventListeners.put(listener, executor);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<Void> removeListener(AtomicMapEventListener<K, V> listener) {
+    mapEventListeners.remove(listener);
+    return CompletableFuture.completedFuture(null);
   }
 }

@@ -39,6 +39,11 @@
     </dependency>
     <dependency>
       <groupId>io.atomix</groupId>
+      <artifactId>atomix-gossip</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.atomix</groupId>
       <artifactId>atomix-primary-backup</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -56,6 +61,11 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>${logback.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.resteasy</groupId>
+      <artifactId>resteasy-jackson2-provider</artifactId>
+      <version>${resteasy.version}</version>
     </dependency>
   </dependencies>
 
@@ -79,22 +89,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>1.6</version>
-        <configuration>
-          <createDependencyReducedPom>true</createDependencyReducedPom>
-          <shadedArtifactAttached>true</shadedArtifactAttached>
-          <finalName>atomix-agent</finalName>
-          <filters>
-            <filter>
-              <artifact>*:*</artifact>
-              <excludes>
-                <exclude>META-INF/*.SF</exclude>
-                <exclude>META-INF/*.DSA</exclude>
-                <exclude>META-INF/*.RSA</exclude>
-              </excludes>
-            </filter>
-          </filters>
-        </configuration>
+        <version>3.1.1</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -102,11 +97,41 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <createDependencyReducedPom>true</createDependencyReducedPom>
               <shadedArtifactAttached>true</shadedArtifactAttached>
               <shadedClassifierName>shaded</shadedClassifierName>
+              <finalName>atomix-agent</finalName>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>io.atomix.agent.AtomixAgent</mainClass>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/javax.ws.rs.ext.MessageBodyWriter</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/javax.ws.rs.ext.MessageBodyReader</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/javax.enterprise.inject.spi.Extension</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/javax.servlet.ServletContainerInitializer</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/javax.ws.rs.ext.RuntimeDelegate</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/javax.ws.rs.ext.Providers</resource>
                 </transformer>
               </transformers>
             </configuration>

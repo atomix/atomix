@@ -47,6 +47,11 @@ public class BlockingIterator<T> implements SyncIterator<T> {
   }
 
   @Override
+  public void close() {
+    complete(asyncIterator.close());
+  }
+
+  @Override
   public AsyncIterator<T> async() {
     return asyncIterator;
   }

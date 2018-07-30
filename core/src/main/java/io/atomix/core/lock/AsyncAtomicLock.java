@@ -57,6 +57,13 @@ public interface AsyncAtomicLock extends AsyncPrimitive {
    */
   CompletableFuture<Void> unlock();
 
+  /**
+   * Query whether this lock is locked or not.
+   *
+   * @return future to be completed with a boolean indicating whether the lock was locked or not
+   */
+  CompletableFuture<Boolean> isLocked();
+
   @Override
   default AtomicLock sync() {
     return sync(Duration.ofMillis(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS));

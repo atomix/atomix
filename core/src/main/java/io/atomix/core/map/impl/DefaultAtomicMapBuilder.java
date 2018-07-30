@@ -21,7 +21,6 @@ import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapBuilder;
 import io.atomix.core.map.AtomicMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Serializer;
@@ -42,11 +41,10 @@ public class DefaultAtomicMapBuilder<K, V> extends AtomicMapBuilder<K, V> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AtomicMap<K, V>> buildAsync() {
-    PrimitiveProtocol protocol = protocol();
     return newProxy(AtomicMapService.class, new ServiceConfig())
         .thenCompose(proxy -> new AtomicMapProxy((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
         .thenApply(rawMap -> {
-          Serializer serializer = protocol.serializer();
+          Serializer serializer = serializer();
           AsyncAtomicMap<K, V> map = new TranscodingAsyncAtomicMap<>(
               rawMap,
               key -> BaseEncoding.base16().encode(serializer.encode(key)),

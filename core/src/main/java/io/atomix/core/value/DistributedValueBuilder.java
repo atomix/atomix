@@ -15,7 +15,6 @@
  */
 package io.atomix.core.value;
 
-import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
@@ -29,7 +28,7 @@ import io.atomix.primitive.protocol.value.ValueProtocol;
  * @param <V> atomic value type
  */
 public abstract class DistributedValueBuilder<V>
-    extends PrimitiveBuilder<DistributedValueBuilder<V>, DistributedValueConfig, DistributedValue<V>>
+    extends ValueBuilder<DistributedValueBuilder<V>, DistributedValueConfig, DistributedValue<V>, V>
     implements ProxyCompatibleBuilder<DistributedValueBuilder<V>>, ValueCompatibleBuilder<DistributedValueBuilder<V>> {
 
   protected DistributedValueBuilder(String name, DistributedValueConfig config, PrimitiveManagementService managementService) {

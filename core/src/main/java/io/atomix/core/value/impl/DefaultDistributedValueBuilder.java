@@ -46,7 +46,7 @@ public class DefaultDistributedValueBuilder<V> extends DistributedValueBuilder<V
     if (protocol instanceof GossipProtocol) {
       if (protocol instanceof ValueProtocol) {
         CompletableFuture<AsyncDistributedValue<V>> future = managementService.getPrimitiveCache().getPrimitive(name, () ->
-            CompletableFuture.completedFuture(((ValueProtocol) protocol).<V>newValueDelegate(name, managementService))
+            CompletableFuture.completedFuture(((ValueProtocol) protocol).<V>newValueDelegate(name, serializer(), managementService))
                 .thenApply(map -> new GossipDistributedValue<>(name, protocol, map)));
         return future.thenApply(AsyncDistributedValue::sync);
       } else {
@@ -56,7 +56,7 @@ public class DefaultDistributedValueBuilder<V> extends DistributedValueBuilder<V
       return newProxy(AtomicValueService.class, new ServiceConfig())
           .thenCompose(proxy -> new AtomicValueProxy(proxy, managementService.getPrimitiveRegistry()).connect())
           .thenApply(elector -> {
-            Serializer serializer = protocol.serializer();
+            Serializer serializer = serializer();
             return new TranscodingAsyncAtomicValue<V, byte[]>(
                 elector,
                 key -> serializer.encode(key),

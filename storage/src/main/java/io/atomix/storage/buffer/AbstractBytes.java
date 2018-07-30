@@ -29,6 +29,8 @@ import java.nio.charset.StandardCharsets;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractBytes implements Bytes {
+  static final int MAX_SIZE = Integer.MAX_VALUE - 5;
+
   private boolean open = true;
   private SwappedBytes swap;
 

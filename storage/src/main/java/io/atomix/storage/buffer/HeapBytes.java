@@ -15,8 +15,6 @@
  */
 package io.atomix.storage.buffer;
 
-import io.atomix.utils.memory.HeapMemory;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -34,15 +32,16 @@ public class HeapBytes extends ByteBufferBytes {
    *                                  an array on the Java heap - {@code Integer.MAX_VALUE - 5}
    */
   public static HeapBytes allocate(int size) {
-    if (size > HeapMemory.MAX_SIZE)
-      throw new IllegalArgumentException("size cannot for HeapBytes cannot be greater than " + HeapMemory.MAX_SIZE);
+    if (size > MAX_SIZE) {
+      throw new IllegalArgumentException("size cannot for HeapBytes cannot be greater than " + MAX_SIZE);
+    }
     return new HeapBytes(ByteBuffer.allocate((int) size));
   }
 
   /**
-   * Wraps the given bytes in a {@link UnsafeHeapBytes} object.
+   * Wraps the given bytes in a {@link HeapBytes} object.
    * <p>
-   * The returned {@link Bytes} object will be backed by a {@link HeapMemory} instance that
+   * The returned {@link Bytes} object will be backed by a {@link ByteBuffer} instance that
    * wraps the given byte array. The {@link Bytes#size()} will be equivalent to the provided
    * by array {@code length}.
    *

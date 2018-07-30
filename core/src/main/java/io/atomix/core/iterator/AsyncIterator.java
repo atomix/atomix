@@ -42,6 +42,13 @@ public interface AsyncIterator<T> {
   CompletableFuture<T> next();
 
   /**
+   * Closes the iterator.
+   *
+   * @return a future to be completed once the iterator has been closed
+   */
+  CompletableFuture<Void> close();
+
+  /**
    * Returns a synchronous iterator.
    *
    * @return the synchronous iterator

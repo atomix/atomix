@@ -17,12 +17,13 @@ package io.atomix.core.map.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.DistributedCollectionType;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
+import io.atomix.core.iterator.AsyncIterator;
+import io.atomix.core.iterator.impl.TranscodingIterator;
 import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.AsyncDistributedMap;
 import io.atomix.core.map.AtomicMapEvent;
@@ -268,10 +269,10 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
     }
 
     @Override
-    public CompletableFuture<Void> addListener(CollectionEventListener<V> listener) {
+    public CompletableFuture<Void> addListener(CollectionEventListener<V> listener, Executor executor) {
       CollectionEventListener<Versioned<V>> atomicListener = new VersionedCollectionEventListener(listener);
       if (listenerMap.putIfAbsent(listener, atomicListener) == null) {
-        return values.addListener(atomicListener);
+        return values.addListener(atomicListener, executor);
       }
       return CompletableFuture.completedFuture(null);
     }
@@ -287,7 +288,7 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
 
     @Override
     public AsyncIterator<V> iterator() {
-      return new UnwrappedIterator(values.iterator());
+      return new TranscodingIterator<>(values.iterator(), Versioned::valueOrNull);
     }
 
     @Override
@@ -310,24 +311,6 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
       @Override
       public void event(CollectionEvent<Versioned<V>> event) {
         listener.event(new CollectionEvent<>(event.type(), Versioned.valueOrNull(event.element())));
-      }
-    }
-
-    private class UnwrappedIterator implements AsyncIterator<V> {
-      private final AsyncIterator<Versioned<V>> versionedIterator;
-
-      UnwrappedIterator(AsyncIterator<Versioned<V>> versionedIterator) {
-        this.versionedIterator = versionedIterator;
-      }
-
-      @Override
-      public CompletableFuture<Boolean> hasNext() {
-        return versionedIterator.hasNext();
-      }
-
-      @Override
-      public CompletableFuture<V> next() {
-        return versionedIterator.next().thenApply(Versioned::valueOrNull);
       }
     }
   }
@@ -406,10 +389,10 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
     }
 
     @Override
-    public CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<K, V>> listener) {
+    public CompletableFuture<Void> addListener(CollectionEventListener<Map.Entry<K, V>> listener, Executor executor) {
       CollectionEventListener<Map.Entry<K, Versioned<V>>> atomicListener = new VersionedCollectionEventListener(listener);
       if (listenerMap.putIfAbsent(listener, atomicListener) == null) {
-        return entries.addListener(atomicListener);
+        return entries.addListener(atomicListener, executor);
       }
       return CompletableFuture.completedFuture(null);
     }
@@ -425,7 +408,7 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
 
     @Override
     public AsyncIterator<Map.Entry<K, V>> iterator() {
-      return new UnwrappedIterator(entries.iterator());
+      return new TranscodingIterator<>(entries.iterator(), entry -> Maps.immutableEntry(entry.getKey(), Versioned.valueOrNull(entry.getValue())));
     }
 
     @Override
@@ -464,24 +447,6 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
       public void event(CollectionEvent<Map.Entry<K, Versioned<V>>> event) {
         listener.event(new CollectionEvent<>(event.type(), event.element() == null ? null
             : Maps.immutableEntry(event.element().getKey(), Versioned.valueOrNull(event.element().getValue()))));
-      }
-    }
-
-    private class UnwrappedIterator implements AsyncIterator<Map.Entry<K, V>> {
-      private final AsyncIterator<Map.Entry<K, Versioned<V>>> versionedIterator;
-
-      UnwrappedIterator(AsyncIterator<Map.Entry<K, Versioned<V>>> versionedIterator) {
-        this.versionedIterator = versionedIterator;
-      }
-
-      @Override
-      public CompletableFuture<Boolean> hasNext() {
-        return versionedIterator.hasNext();
-      }
-
-      @Override
-      public CompletableFuture<Map.Entry<K, V>> next() {
-        return versionedIterator.next().thenApply(entry -> Maps.immutableEntry(entry.getKey(), Versioned.valueOrNull(entry.getValue())));
       }
     }
   }

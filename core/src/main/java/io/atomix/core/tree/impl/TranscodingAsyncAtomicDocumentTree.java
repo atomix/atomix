@@ -27,6 +27,7 @@ import io.atomix.utils.time.Versioned;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -90,16 +91,16 @@ public class TranscodingAsyncAtomicDocumentTree<V1, V2> extends DelegatingAsyncP
   }
 
   @Override
-  public CompletableFuture<Versioned<V1>> removeNode(DocumentPath path) {
-    return backingTree.removeNode(path).thenApply(v -> v != null ? v.map(valueDecoder) : null);
+  public CompletableFuture<Versioned<V1>> remove(DocumentPath path) {
+    return backingTree.remove(path).thenApply(v -> v != null ? v.map(valueDecoder) : null);
   }
 
   @Override
-  public CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<V1> listener) {
+  public CompletableFuture<Void> addListener(DocumentPath path, DocumentTreeEventListener<V1> listener, Executor executor) {
     synchronized (listeners) {
       InternalDocumentTreeListener internalListener =
           listeners.computeIfAbsent(listener, k -> new InternalDocumentTreeListener(listener));
-      return backingTree.addListener(path, internalListener);
+      return backingTree.addListener(path, internalListener, executor);
     }
   }
 

@@ -24,7 +24,6 @@ import io.atomix.primitive.proxy.impl.DefaultProxyClient;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.SessionClient;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartition;
-import io.atomix.utils.serializer.Serializer;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -101,11 +100,6 @@ public class MultiPrimaryProtocol implements ProxyProtocol {
   @Override
   public String group() {
     return config.getGroup();
-  }
-
-  @Override
-  public Serializer serializer() {
-    return config.getSerializer();
   }
 
   @Override

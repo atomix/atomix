@@ -22,6 +22,25 @@ package io.atomix.utils.serializer;
 public interface Serializer {
 
   /**
+   * Creates a new serializer builder.
+   *
+   * @return a new serializer builder
+   */
+  static SerializerBuilder builder() {
+    return new SerializerBuilder();
+  }
+
+  /**
+   * Creates a new serializer builder.
+   *
+   * @param name the serializer name
+   * @return a new serializer builder
+   */
+  static SerializerBuilder builder(String name) {
+    return new SerializerBuilder(name);
+  }
+
+  /**
    * Serialize the specified object.
    *
    * @param object object to serialize.

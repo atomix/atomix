@@ -25,8 +25,6 @@ import io.atomix.cluster.impl.AddressSerializer;
 import io.atomix.cluster.impl.PhiAccrualFailureDetector;
 import io.atomix.utils.event.AbstractListenerManager;
 import io.atomix.utils.net.Address;
-import io.atomix.utils.serializer.Namespace;
-import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,13 +87,11 @@ public class MulticastDiscoveryProvider
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MulticastDiscoveryProvider.class);
-  private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
-      .register(Namespaces.BASIC)
-      .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
-      .register(Node.class)
-      .register(NodeId.class)
-      .register(new AddressSerializer(), Address.class)
-      .build());
+  private static final Serializer SERIALIZER = Serializer.builder()
+      .addType(Node.class)
+      .addType(NodeId.class)
+      .addSerializer(new AddressSerializer(), Address.class)
+      .build();
 
   private static final String DISCOVERY_SUBJECT = "atomix-discovery";
 
@@ -105,7 +101,7 @@ public class MulticastDiscoveryProvider
   private final ScheduledExecutorService broadcastScheduler = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-cluster-broadcast", LOGGER));
   private volatile ScheduledFuture<?> broadcastFuture;
-  private final Consumer<byte[]> broadcastListener = this::handleBroadcastMessage;
+  private final Consumer<byte[]> broadcastListener = message -> broadcastScheduler.execute(() -> handleBroadcastMessage(message));
 
   private final Map<Address, Node> nodes = Maps.newConcurrentMap();
 

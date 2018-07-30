@@ -117,12 +117,50 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Primitives service.
+ * Manages the creation of distributed primitive instances.
+ * <p>
+ * The primitives service provides various methods for constructing core and custom distributed primitives.
+ * The service provides various methods for creating and operating on distributed primitives. Generally, the primitive
+ * methods are separated into two types. Primitive getters return multiton instances of a primitive. Primitives created
+ * via getters must be pre-configured in the Atomix instance configuration. Alternatively, primitive builders can be
+ * used to create and configure primitives in code:
+ * <pre>
+ *   {@code
+ *   AtomicMap<String, String> map = atomix.mapBuilder("my-map")
+ *     .withProtocol(MultiRaftProtocol.builder("raft")
+ *       .withReadConsistency(ReadConsistency.SEQUENTIAL)
+ *       .build())
+ *     .build();
+ *   }
+ * </pre>
+ * Custom primitives can be constructed by providing a custom {@link PrimitiveType} and using the
+ * {@link #primitiveBuilder(String, PrimitiveType)} method:
+ * <pre>
+ *   {@code
+ *   MyPrimitive myPrimitive = atomix.primitiveBuilder("my-primitive, MyPrimitiveType.instance())
+ *     .withProtocol(MultiRaftProtocol.builder("raft")
+ *       .withReadConsistency(ReadConsistency.SEQUENTIAL)
+ *       .build())
+ *     .build();
+ *   }
+ * </pre>
  */
 public interface PrimitivesService {
 
   /**
-   * Creates a new AtomicMapBuilder.
+   * Creates a new named {@link DistributedMap} builder.
+   * <p>
+   * The map name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedMap<String, String> map = atomix.<String, String>mapBuilder("my-map").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -134,7 +172,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new AtomicMapBuilder.
+   * Creates a new named {@link DistributedSortedMap} builder.
+   * <p>
+   * The map name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedSortedMap<String, String> map = atomix.<String, String>sortedMapBuilder("my-map").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -146,7 +196,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new AtomicMapBuilder.
+   * Creates a new named {@link DistributedNavigableMap} builder.
+   * <p>
+   * The map name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedNavigableMap<String, String> map = atomix.<String, String>navigableMapBuilder("my-map").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -158,7 +220,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new AtomicMultimapBuilder.
+   * Creates a new named {@link DistributedMultimap} builder.
+   * <p>
+   * The map name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the multimap, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedMultimap<String, String> multimap = atomix.<String, String>multimapBuilder("my-multimap").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -170,7 +244,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new AtomicMapBuilder.
+   * Creates a new named {@link AtomicMap} builder.
+   * <p>
+   * The map name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicMap<String, String> map = atomix.<String, String>atomicMapBuilder("my-map").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -182,7 +268,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new AtomicDocumentTreeBuilder.
+   * Creates a new named {@link AtomicDocumentTree} builder.
+   * <p>
+   * The tree name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the document tree, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicDocumentTree<String> tree = atomix.<String>atomicDocumentTreeBuilder("my-tree").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <V> value type
@@ -193,7 +291,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new {@code AtomicSortedMapBuilder}.
+   * Creates a new {@link AtomicSortedMap} builder.
+   * <p>
+   * The map name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicSortedMap<String, String> map = atomix.<String, String>atomicSortedMapBuilder("my-map").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -205,7 +315,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new {@code AtomicNavigableMapBuilder}.
+   * Creates a new named {@link AtomicNavigableMap} builder.
+   * <p>
+   * The map name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicNavigableMap<String, String> map = atomix.<String, String>atomicNavigableMapBuilder("my-map").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -217,7 +339,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new {@code AtomicMultimapBuilder}.
+   * Creates a new named {@link AtomicMultimap} builder.
+   * <p>
+   * The map name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the multimap, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicMultimap<String, String> multimap = atomix.<String, String>atomicMultimapBuilder("my-map").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -229,7 +363,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new {@code AtomicCounterMapBuilder}.
+   * Creates a new named {@link AtomicCounterMap} builder.
+   * <p>
+   * The map name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicCounterMap<String> map = atomix.<String>atomicCounterMapBuilder("my-counter-map").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -240,7 +386,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedSetBuilder.
+   * Creates a new named {@link DistributedSet} builder.
+   * <p>
+   * The set name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the set, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedSet<String> set = atomix.<String>setBuilder("my-set").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> set element type
@@ -251,7 +409,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedSortedSetBuilder.
+   * Creates a new named {@link DistributedSortedSet} builder.
+   * <p>
+   * The set name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the set, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedSortedSet<String> set = atomix.<String>sortedSetBuilder("my-set").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> set element type
@@ -262,7 +432,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedNavigableSetBuilder.
+   * Creates a new named {@link DistributedNavigableSet} builder.
+   * <p>
+   * The set name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the set, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedNavigableSet<String> set = atomix.<String>navigableSetBuilder("my-set").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> set element type
@@ -273,7 +455,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedQueueBuilder.
+   * Creates a new named {@link DistributedQueue} builder.
+   * <p>
+   * The queue name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the queue, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedQueue<String> queue = atomix.<String>queueBuilder("my-queue").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> queue element type
@@ -284,7 +478,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedListBuilder.
+   * Creates a new named {@link DistributedList} builder.
+   * <p>
+   * The list name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the list, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedList<String> list = atomix.<String>queueBuilder("my-list").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> list element type
@@ -295,7 +501,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedMultisetBuilder.
+   * Creates a new named {@link DistributedMultiset} builder.
+   * <p>
+   * The multiset name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the multiset, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedMultiset<String> multiset = atomix.<String>multisetBuilder("my-multiset").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> multiset element type
@@ -306,7 +524,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedCounterBuilder.
+   * Creates a new named {@link DistributedCounter} builder.
+   * <p>
+   * The counter name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the counter, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedCounter counter = atomix.counterBuilder("my-counter").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return distributed counter builder
@@ -316,7 +546,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new AtomicCounterBuilder.
+   * Creates a new named {@link AtomicCounter} builder.
+   * <p>
+   * The counter name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the counter, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicCounter counter = atomix.atomicCounterBuilder("my-counter").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return atomic counter builder
@@ -326,7 +568,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new AtomicIdGeneratorBuilder.
+   * Creates a new named {@link AtomicIdGenerator} builder.
+   * <p>
+   * The ID generator name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the ID generator, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicIdGenerator idGenerator = atomix.atomicIdGeneratorBuilder("my-id-generator").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return atomic ID generator builder
@@ -336,7 +590,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedValueBuilder.
+   * Creates a new named {@link DistributedValue} builder.
+   * <p>
+   * The value name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the value, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedValue<String> value = atomix.<String>valueBuilder("my-value").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <V> atomic value type
@@ -347,7 +613,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new AtomicValueBuilder.
+   * Creates a new named {@link AtomicValue} builder.
+   * <p>
+   * The value name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the value, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicValue<String> value = atomix.<String>atomicValueBuilder("my-value").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <V> atomic value type
@@ -358,7 +636,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new LeaderElectionBuilder.
+   * Creates a new named {@link LeaderElection} builder.
+   * <p>
+   * The election name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the election, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncLeaderElection<String> election = atomix.<String>leaderElectionBuilder("my-election").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return leader election builder
@@ -368,7 +658,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new LeaderElectorBuilder.
+   * Creates a new named {@link LeaderElector} builder.
+   * <p>
+   * The elector name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the elector, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncLeaderElector<String> elector = atomix.<String>leaderElectorBuilder("my-elector").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return leader elector builder
@@ -378,7 +680,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedLockBuilder.
+   * Creates a new named {@link DistributedLock} builder.
+   * <p>
+   * The lock name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the lock, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedLock lock = atomix.lockBuilder("my-lock").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return distributed lock builder
@@ -388,7 +702,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedLockBuilder.
+   * Creates a new named {@link AtomicLock} builder.
+   * <p>
+   * The lock name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the lock, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicLock lock = atomix.atomicLockBuilder("my-lock").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return distributed lock builder
@@ -398,7 +724,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedCyclicBarrierBuilder.
+   * Creates a new named {@link DistributedCyclicBarrier} builder.
+   * <p>
+   * The barrier name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the barrier, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedCyclicBarrier barrier = atomix.cyclicBarrierBuilder("my-barrier").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return distributed cyclic barrier builder
@@ -408,7 +746,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedSemaphoreBuilder.
+   * Creates a new named {@link DistributedSemaphore} builder.
+   * <p>
+   * The semaphore name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the semaphore, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedSemaphore semaphore = atomix.semaphoreBuilder("my-semaphore").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return distributed semaphore builder
@@ -418,7 +768,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new DistributedSemaphoreBuilder.
+   * Creates a new named {@link AtomicSemaphore} builder.
+   * <p>
+   * The semaphore name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the semaphore, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("my-semaphore").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return distributed semaphore builder
@@ -428,7 +790,19 @@ public interface PrimitivesService {
   }
 
   /**
-   * Creates a new WorkQueueBuilder.
+   * Creates a new named {@link WorkQueue} builder.
+   * <p>
+   * The work queue name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the work queue, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncWorkQueue<String> workQueue = atomix.workQueueBuilder("my-work-queue").build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> work queue element type
@@ -440,6 +814,13 @@ public interface PrimitivesService {
 
   /**
    * Creates a new transaction builder.
+   * <p>
+   * To get an asynchronous instance of the transaction, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncTransaction transaction = atomix.transactionBuilder().build().async();
+   *   }
+   * </pre>
    *
    * @return transaction builder
    */
@@ -449,6 +830,13 @@ public interface PrimitivesService {
 
   /**
    * Creates a new transaction builder.
+   * <p>
+   * To get an asynchronous instance of the transaction, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncTransaction transaction = atomix.transactionBuilder().build().async();
+   *   }
+   * </pre>
    *
    * @param name the transaction name
    * @return the transaction builder
@@ -456,7 +844,21 @@ public interface PrimitivesService {
   TransactionBuilder transactionBuilder(String name);
 
   /**
-   * Creates a new DistributedMap.
+   * Gets or creates a {@link DistributedMap}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedMap<String, String> map = atomix.getMap("my-map").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -466,7 +868,21 @@ public interface PrimitivesService {
   <K, V> DistributedMap<K, V> getMap(String name);
 
   /**
-   * Creates a new DistributedSortedMap.
+   * Gets or creates a {@link DistributedSortedMap}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedSortedMap<String, String> map = atomix.getSortedMap("my-map").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -476,7 +892,21 @@ public interface PrimitivesService {
   <K extends Comparable<K>, V> DistributedSortedMap<K, V> getSortedMap(String name);
 
   /**
-   * Creates a new DistributedNavigableMap.
+   * Gets or creates a {@link DistributedNavigableMap}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedNavigableMap<String, String> map = atomix.getNavigableMap("my-map").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -486,7 +916,21 @@ public interface PrimitivesService {
   <K extends Comparable<K>, V> DistributedNavigableMap<K, V> getNavigableMap(String name);
 
   /**
-   * Creates a new DistributedMultimap.
+   * Gets or creates a {@link DistributedMultimap}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the multimap, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedMultimap<String, String> multimap = atomix.getMultimap("my-multimap").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -496,7 +940,21 @@ public interface PrimitivesService {
   <K, V> DistributedMultimap<K, V> getMultimap(String name);
 
   /**
-   * Creates a new AtomicMap.
+   * Gets or creates a {@link AtomicMap}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicMap<String, String> map = atomix.getAtomicMap("my-map").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -506,7 +964,21 @@ public interface PrimitivesService {
   <K, V> AtomicMap<K, V> getAtomicMap(String name);
 
   /**
-   * Creates a new AtomicMap.
+   * Gets or creates a {@link AtomicDocumentTree}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the tree, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicDocumentTree<String> map = atomix.getDocumentTree("my-tree").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <V> value type
@@ -515,7 +987,21 @@ public interface PrimitivesService {
   <V> AtomicDocumentTree<V> getAtomicDocumentTree(String name);
 
   /**
-   * Creates a new {@code AtomicSortedMap}.
+   * Gets or creates a {@link AtomicSortedMap}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicSortedMap<String, String> map = atomix.getAtomicSortedMap("my-map").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -525,7 +1011,21 @@ public interface PrimitivesService {
   <K extends Comparable<K>, V> AtomicSortedMap<K, V> getAtomicSortedMap(String name);
 
   /**
-   * Creates a new {@code AtomicNavigableMap}.
+   * Gets or creates a {@link AtomicNavigableMap}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicNavigableMap<String, String> map = atomix.getAtomicNavigableMap("my-map").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -535,7 +1035,21 @@ public interface PrimitivesService {
   <K extends Comparable<K>, V> AtomicNavigableMap<K, V> getAtomicNavigableMap(String name);
 
   /**
-   * Creates a new {@code AtomicTreeMap}.
+   * Gets or creates a {@link AtomicMultimap}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the multimap, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicMultimap<String, String> multimap = atomix.getAtomicMultimap("my-multimap").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -545,7 +1059,21 @@ public interface PrimitivesService {
   <K, V> AtomicMultimap<K, V> getAtomicMultimap(String name);
 
   /**
-   * Creates a new {@code AtomicCounterMap}.
+   * Gets or creates a {@link AtomicCounterMap}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the map, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicCounterMap<String> map = atomix.getAtomicCounterMap("my-counter-map").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <K> key type
@@ -554,7 +1082,21 @@ public interface PrimitivesService {
   <K> AtomicCounterMap<K> getAtomicCounterMap(String name);
 
   /**
-   * Creates a new DistributedSet.
+   * Gets or creates a {@link DistributedSet}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the set, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedSet<String> set = atomix.getSet("my-set").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> set element type
@@ -563,7 +1105,21 @@ public interface PrimitivesService {
   <E> DistributedSet<E> getSet(String name);
 
   /**
-   * Creates a new DistributedSortedSet.
+   * Gets or creates a {@link DistributedSortedSet}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the set, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedSortedSet<String> set = atomix.getSortedSet("my-set").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> set element type
@@ -572,7 +1128,21 @@ public interface PrimitivesService {
   <E extends Comparable<E>> DistributedSortedSet<E> getSortedSet(String name);
 
   /**
-   * Creates a new DistributedNavigableSet.
+   * Gets or creates a {@link DistributedNavigableSet}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the set, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedNavigableSet<String> set = atomix.getNavigableSet("my-set").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> set element type
@@ -581,7 +1151,21 @@ public interface PrimitivesService {
   <E extends Comparable<E>> DistributedNavigableSet<E> getNavigableSet(String name);
 
   /**
-   * Creates a new DistributedQueue.
+   * Gets or creates a {@link DistributedQueue}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the queue, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedQueue<String> queue = atomix.getQueue("my-queue").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> queue element type
@@ -590,7 +1174,21 @@ public interface PrimitivesService {
   <E> DistributedQueue<E> getQueue(String name);
 
   /**
-   * Creates a new DistributedList.
+   * Gets or creates a {@link DistributedList}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the list, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedList<String> list = atomix.getList("my-list").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> list element type
@@ -599,7 +1197,21 @@ public interface PrimitivesService {
   <E> DistributedList<E> getList(String name);
 
   /**
-   * Creates a new DistributedMultiset.
+   * Gets or creates a {@link DistributedMultiset}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the multiset, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedMultiset<String> multiset = atomix.getMultiset("my-multiset").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> multiset element type
@@ -608,7 +1220,21 @@ public interface PrimitivesService {
   <E> DistributedMultiset<E> getMultiset(String name);
 
   /**
-   * Creates a new DistributedCounter.
+   * Gets or creates a {@link DistributedCounter}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the counter, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedCounter counter = atomix.getCounter("my-counter").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return distributed counter
@@ -616,7 +1242,21 @@ public interface PrimitivesService {
   DistributedCounter getCounter(String name);
 
   /**
-   * Creates a new AtomicCounterBuilder.
+   * Gets or creates a {@link AtomicCounter}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the counter, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicCounter counter = atomix.getAtomicCounter("my-counter").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return atomic counter builder
@@ -624,7 +1264,21 @@ public interface PrimitivesService {
   AtomicCounter getAtomicCounter(String name);
 
   /**
-   * Creates a new AtomicIdGeneratorBuilder.
+   * Gets or creates a {@link AtomicIdGenerator}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the ID generator, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicIdGenerator idGenerator = atomix.getAtomicIdGenerator("my-id-generator").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return atomic ID generator builder
@@ -632,7 +1286,21 @@ public interface PrimitivesService {
   AtomicIdGenerator getAtomicIdGenerator(String name);
 
   /**
-   * Creates a new DistributedValue.
+   * Gets or creates a {@link DistributedValue}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the value, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedValue<String> value = atomix.getValue("my-value").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <V> value type
@@ -641,7 +1309,21 @@ public interface PrimitivesService {
   <V> DistributedValue<V> getValue(String name);
 
   /**
-   * Creates a new AtomicValueBuilder.
+   * Gets or creates a {@link AtomicValue}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the value, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicValue<String> value = atomix.getAtomicValue("my-value").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <V> atomic value type
@@ -650,7 +1332,21 @@ public interface PrimitivesService {
   <V> AtomicValue<V> getAtomicValue(String name);
 
   /**
-   * Creates a new LeaderElectionBuilder.
+   * Gets or creates a {@link LeaderElection}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the election, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncLeaderElection<String> election = atomix.getLeaderElection("my-election").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return leader election builder
@@ -658,7 +1354,21 @@ public interface PrimitivesService {
   <T> LeaderElection<T> getLeaderElection(String name);
 
   /**
-   * Creates a new LeaderElectorBuilder.
+   * Gets or creates a {@link LeaderElector}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the elector, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncLeaderElector<String> elector = atomix.getLeaderElector("my-elector").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return leader elector builder
@@ -666,7 +1376,21 @@ public interface PrimitivesService {
   <T> LeaderElector<T> getLeaderElector(String name);
 
   /**
-   * Creates a new DistributedLockBuilder.
+   * Gets or creates a {@link DistributedLock}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the lock, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedLock lock = atomix.getLock("my-lock").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return atomic lock builder
@@ -674,7 +1398,21 @@ public interface PrimitivesService {
   DistributedLock getLock(String name);
 
   /**
-   * Creates a new AtomicLockBuilder.
+   * Gets or creates a {@link AtomicLock}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the lock, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicLock lock = atomix.getAtomicLock("my-lock").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return atomic lock builder
@@ -682,7 +1420,21 @@ public interface PrimitivesService {
   AtomicLock getAtomicLock(String name);
 
   /**
-   * Returns a multiton cyclic barrier.
+   * Gets or creates a {@link DistributedCyclicBarrier}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the barrier, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedCyclicBarrier barrier = atomix.getCyclicBarrier("my-barrier").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return the cyclic barrier
@@ -690,7 +1442,21 @@ public interface PrimitivesService {
   DistributedCyclicBarrier getCyclicBarrier(String name);
 
   /**
-   * Creates a new DistributedSemaphore.
+   * Gets or creates a {@link DistributedSemaphore}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the semaphore, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncDistributedSemaphore semaphore = atomix.getSemaphore("my-semaphore").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return DistributedSemaphore
@@ -698,7 +1464,21 @@ public interface PrimitivesService {
   DistributedSemaphore getSemaphore(String name);
 
   /**
-   * Creates a new DistributedSemaphore.
+   * Gets or creates a {@link AtomicSemaphore}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the semaphore, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncAtomicSemaphore semaphore = atomix.getAtomicSemaphore("my-semaphore").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @return DistributedSemaphore
@@ -706,7 +1486,21 @@ public interface PrimitivesService {
   AtomicSemaphore getAtomicSemaphore(String name);
 
   /**
-   * Creates a new WorkQueueBuilder.
+   * Gets or creates a {@link WorkQueue}.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the work queue, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncWorkQueue<String> workQueue = atomix.getWorkQueue("my-work-queue").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <E> work queue element type
@@ -715,7 +1509,20 @@ public interface PrimitivesService {
   <E> WorkQueue<E> getWorkQueue(String name);
 
   /**
-   * Returns a registered primitive.
+   * Gets or creates a primitive.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * The constructed primitive will be based on any pre-existing primitive configuration for the given {@code name}.
+   * <p>
+   * To get an asynchronous instance of the primitive, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncPrimitive async = atomix.getPrimitive("my-primitive").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param <P> the primitive type
@@ -730,7 +1537,22 @@ public interface PrimitivesService {
   }
 
   /**
-   * Returns a registered primitive.
+   * Gets or creates a distributed primitive.
+   * <p>
+   * A new primitive of the given {@code primitiveType} will be created if no primitive instance with the given
+   * {@code name} exists on this node, otherwise the existing instance will be returned. The name is used to reference
+   * a distinct instance of the primitive within the cluster. The returned primitive will share the same state with
+   * primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the primitive, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncPrimitive async = atomix.getPrimitive("my-primitive").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param primitiveType the primitive type
@@ -746,7 +1568,22 @@ public interface PrimitivesService {
   }
 
   /**
-   * Returns a cached primitive.
+   * Gets or creates a distributed primitive.
+   * <p>
+   * A new primitive of the given {@code primitiveType} will be created if no primitive instance with the given
+   * {@code name} exists on this node, otherwise the existing instance will be returned. The name is used to reference
+   * a distinct instance of the primitive within the cluster. The returned primitive will share the same state with
+   * primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
+   * <p>
+   * To get an asynchronous instance of the primitive, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncPrimitive async = atomix.getPrimitive("my-primitive").async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param primitiveType the primitive type
@@ -767,7 +1604,13 @@ public interface PrimitivesService {
   }
 
   /**
-   * Returns a registered primitive asynchronously.
+   * Gets or creates a primitive asynchronously.
+   * <p>
+   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
+   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
+   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
+   * <p>
+   * The constructed primitive will be based on any pre-existing primitive configuration for the given {@code name}.
    *
    * @param name the primitive name
    * @param <P> the primitive type
@@ -776,7 +1619,15 @@ public interface PrimitivesService {
   <P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(String name);
 
   /**
-   * Returns a cached primitive asynchronously.
+   * Gets or creates a distributed primitive asynchronously.
+   * <p>
+   * A new primitive of the given {@code primitiveType} will be created if no primitive instance with the given
+   * {@code name} exists on this node, otherwise the existing instance will be returned. The name is used to reference
+   * a distinct instance of the primitive within the cluster. The returned primitive will share the same state with
+   * primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
    *
    * @param name the primitive name
    * @param primitiveType the primitive type
@@ -786,7 +1637,15 @@ public interface PrimitivesService {
   <P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(String name, PrimitiveType<?, ?, P> primitiveType);
 
   /**
-   * Returns a cached primitive asynchronously.
+   * Gets or creates a distributed primitive asynchronously.
+   * <p>
+   * A new primitive of the given {@code primitiveType} will be created if no primitive instance with the given
+   * {@code name} exists on this node, otherwise the existing instance will be returned. The name is used to reference
+   * a distinct instance of the primitive within the cluster. The returned primitive will share the same state with
+   * primitives of the same name on other nodes.
+   * <p>
+   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
+   * defined in {@code atomix.conf}.
    *
    * @param name the primitive name
    * @param primitiveType the primitive type
@@ -799,7 +1658,19 @@ public interface PrimitivesService {
       String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig);
 
   /**
-   * Returns a primitive builder of the given type.
+   * Creates a new named primitive builder of the given {@code primitiveType}.
+   * <p>
+   * The primitive name must be provided when constructing the builder. The name is used to reference a distinct instance of
+   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
+   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
+   * local memory (e.g. cache) with any other instance on this node.
+   * <p>
+   * To get an asynchronous instance of the primitive, use the {@link SyncPrimitive#async()} method:
+   * <pre>
+   *   {@code
+   *   AsyncPrimitive async = atomix.primitiveBuilder("my-primitive", MyPrimitiveType.instance()).build().async();
+   *   }
+   * </pre>
    *
    * @param name the primitive name
    * @param primitiveType the primitive type

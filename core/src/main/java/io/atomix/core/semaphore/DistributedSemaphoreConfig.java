@@ -26,7 +26,7 @@ public class DistributedSemaphoreConfig extends PrimitiveConfig<DistributedSemap
 
   @Override
   public PrimitiveType getType() {
-    return AtomicSemaphoreType.instance();
+    return DistributedSemaphoreType.instance();
   }
 
   /**

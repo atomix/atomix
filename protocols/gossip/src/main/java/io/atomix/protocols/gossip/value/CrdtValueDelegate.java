@@ -56,10 +56,10 @@ public class CrdtValueDelegate<V> implements ValueDelegate<V> {
   private final AtomicReference<Value> currentValue = new AtomicReference<>();
   private final Set<ValueDelegateEventListener<V>> eventListeners = Sets.newCopyOnWriteArraySet();
 
-  public CrdtValueDelegate(String name, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
+  public CrdtValueDelegate(String name, Serializer serializer, CrdtProtocolConfig config, PrimitiveManagementService managementService) {
     this.clusterEventService = managementService.getEventService();
     this.executorService = managementService.getExecutorService();
-    this.valueSerializer = config.getSerializer();
+    this.valueSerializer = serializer;
     this.timestampProvider = config.getTimestampProvider();
     this.subject = String.format("atomix-crdt-value-%s", name);
     subscribeFuture = clusterEventService.subscribe(subject, SERIALIZER::decode, this::updateValue, executorService);
