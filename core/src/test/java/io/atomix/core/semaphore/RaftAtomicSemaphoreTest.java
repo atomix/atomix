@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
-public class RaftSemaphoreTest extends SemaphoreTest {
+public class RaftAtomicSemaphoreTest extends AtomicSemaphoreTest {
   @Override
   protected ProxyProtocol protocol() {
     return MultiRaftProtocol.builder()

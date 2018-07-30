@@ -54,7 +54,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Semaphore test.
  */
-public abstract class SemaphoreTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyProtocol> {
 
   @Test(timeout = 30000)
   public void testInit() throws Exception {
