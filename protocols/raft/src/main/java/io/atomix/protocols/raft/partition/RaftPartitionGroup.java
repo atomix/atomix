@@ -289,7 +289,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * Sets the number of partitions.
      *
      * @param numPartitions the number of partitions
-     * @return the cluster metadata builder
+     * @return the Raft partition group builder
      * @throws IllegalArgumentException if the number of partitions is not positive
      */
     public Builder withNumPartitions(int numPartitions) {
@@ -301,7 +301,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * Sets the partition size.
      *
      * @param partitionSize the partition size
-     * @return the cluster metadata builder
+     * @return the Raft partition group builder
      * @throws IllegalArgumentException if the partition size is not positive
      */
     public Builder withPartitionSize(int partitionSize) {
@@ -332,11 +332,11 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     }
 
     /**
-     * Sets the segment size
+     * Sets the segment size.
      * @param segmentSize the segment size
-     * @return the RaftPartitionGroupBuilder
+     * @return the Raft partition group builder
      */
-    public Builder withSegmentSize(MemorySize segmentSize){
+    public Builder withSegmentSize(MemorySize segmentSize) {
       config.setSegmentSize(segmentSize);
       return this;
     }
