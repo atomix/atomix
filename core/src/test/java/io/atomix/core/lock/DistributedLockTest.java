@@ -17,11 +17,9 @@ package io.atomix.core.lock;
 
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.primitive.protocol.ProxyProtocol;
-import io.atomix.utils.time.Version;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -29,25 +27,22 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Raft lock test.
+ * Distributed lock test.
  */
-public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public abstract class DistributedLockTest extends AbstractPrimitiveTest<ProxyProtocol> {
 
   /**
    * Tests locking and unlocking a lock.
    */
   @Test
   public void testLockUnlock() throws Throwable {
-    AtomicLock lock = atomix().atomicLockBuilder("test-lock-unlock")
+    DistributedLock lock = atomix().lockBuilder("test-lock-unlock")
         .withProtocol(protocol())
         .build();
-    Version version = lock.lock();
+    lock.lock();
     assertTrue(lock.isLocked());
-    assertTrue(lock.isLocked(version));
-    assertFalse(lock.isLocked(new Version(version.value() + 1)));
     lock.unlock();
     assertFalse(lock.isLocked());
-    assertFalse(lock.isLocked(version));
   }
 
   /**
@@ -55,14 +50,14 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testReleaseOnClose() throws Throwable {
-    AtomicLock lock1 = atomix().atomicLockBuilder("test-lock-on-close")
+    DistributedLock lock1 = atomix().lockBuilder("test-lock-on-close")
         .withProtocol(protocol())
         .build();
-    AtomicLock lock2 = atomix().atomicLockBuilder("test-lock-on-close")
+    DistributedLock lock2 = atomix().lockBuilder("test-lock-on-close")
         .withProtocol(protocol())
         .build();
     lock1.lock();
-    CompletableFuture<Version> future = lock2.async().lock();
+    CompletableFuture<Void> future = lock2.async().lock();
     lock1.close();
     future.get(10, TimeUnit.SECONDS);
   }
@@ -72,16 +67,16 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testTryLockFail() throws Throwable {
-    AtomicLock lock1 = atomix().atomicLockBuilder("test-try-lock-fail")
+    DistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail")
         .withProtocol(protocol())
         .build();
-    AtomicLock lock2 = atomix().atomicLockBuilder("test-try-lock-fail")
+    DistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail")
         .withProtocol(protocol())
         .build();
 
     lock1.lock();
 
-    assertFalse(lock2.tryLock().isPresent());
+    assertFalse(lock2.tryLock());
   }
 
   /**
@@ -89,10 +84,10 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testTryLockSucceed() throws Throwable {
-    AtomicLock lock = atomix().atomicLockBuilder("test-try-lock-succeed")
+    DistributedLock lock = atomix().lockBuilder("test-try-lock-succeed")
         .withProtocol(protocol())
         .build();
-    assertTrue(lock.tryLock().isPresent());
+    assertTrue(lock.tryLock());
   }
 
   /**
@@ -100,16 +95,16 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testTryLockFailWithTimeout() throws Throwable {
-    AtomicLock lock1 = atomix().atomicLockBuilder("test-try-lock-fail-with-timeout")
+    DistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail-with-timeout")
         .withProtocol(protocol())
         .build();
-    AtomicLock lock2 = atomix().atomicLockBuilder("test-try-lock-fail-with-timeout")
+    DistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail-with-timeout")
         .withProtocol(protocol())
         .build();
 
     lock1.lock();
 
-    assertFalse(lock2.tryLock(Duration.ofSeconds(1)).isPresent());
+    assertFalse(lock2.tryLock(Duration.ofSeconds(1)));
   }
 
   /**
@@ -117,18 +112,18 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testTryLockSucceedWithTimeout() throws Throwable {
-    AtomicLock lock1 = atomix().atomicLockBuilder("test-try-lock-succeed-with-timeout")
+    DistributedLock lock1 = atomix().lockBuilder("test-try-lock-succeed-with-timeout")
         .withProtocol(protocol())
         .build();
-    AtomicLock lock2 = atomix().atomicLockBuilder("test-try-lock-succeed-with-timeout")
+    DistributedLock lock2 = atomix().lockBuilder("test-try-lock-succeed-with-timeout")
         .withProtocol(protocol())
         .build();
 
     lock1.lock();
 
-    CompletableFuture<Optional<Version>> future = lock2.async().tryLock(Duration.ofSeconds(1));
+    CompletableFuture<Boolean> future = lock2.async().tryLock(Duration.ofSeconds(1));
     lock1.unlock();
-    assertTrue(future.get(10, TimeUnit.SECONDS).isPresent());
+    assertTrue(future.get(10, TimeUnit.SECONDS));
   }
 
   /**
@@ -136,10 +131,10 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testBlockingUnlock() throws Throwable {
-    AtomicLock lock1 = atomix().atomicLockBuilder("test-blocking-unlock")
+    DistributedLock lock1 = atomix().lockBuilder("test-blocking-unlock")
         .withProtocol(protocol())
         .build();
-    AtomicLock lock2 = atomix().atomicLockBuilder("test-blocking-unlock")
+    DistributedLock lock2 = atomix().lockBuilder("test-blocking-unlock")
         .withProtocol(protocol())
         .build();
 

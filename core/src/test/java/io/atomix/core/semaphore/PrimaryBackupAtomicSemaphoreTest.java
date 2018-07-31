@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.storage.buffer;
+package io.atomix.core.semaphore;
 
-/**
- * Unpooled direct allocator.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
- */
-public class UnpooledUnsafeDirectAllocator extends UnpooledAllocator {
+import io.atomix.primitive.protocol.ProxyProtocol;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
+public class PrimaryBackupAtomicSemaphoreTest extends AtomicSemaphoreTest {
   @Override
-  public Buffer allocate(int initialCapacity, int maxCapacity) {
-    return UnsafeDirectBuffer.allocate(initialCapacity, maxCapacity);
+  protected ProxyProtocol protocol() {
+    return MultiPrimaryProtocol.builder()
+            .withBackups(2)
+            .withMaxRetries(5)
+            .build();
   }
-
-  @Override
-  protected int maxCapacity() {
-    return Integer.MAX_VALUE;
-  }
-
 }

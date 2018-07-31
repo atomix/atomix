@@ -32,6 +32,7 @@ import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.storage.StorageLevel;
+import io.atomix.utils.memory.MemorySize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -288,7 +289,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * Sets the number of partitions.
      *
      * @param numPartitions the number of partitions
-     * @return the cluster metadata builder
+     * @return the Raft partition group builder
      * @throws IllegalArgumentException if the number of partitions is not positive
      */
     public Builder withNumPartitions(int numPartitions) {
@@ -300,7 +301,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * Sets the partition size.
      *
      * @param partitionSize the partition size
-     * @return the cluster metadata builder
+     * @return the Raft partition group builder
      * @throws IllegalArgumentException if the partition size is not positive
      */
     public Builder withPartitionSize(int partitionSize) {
@@ -327,6 +328,26 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      */
     public Builder withDataDirectory(File dataDir) {
       config.setDataDirectory(new File("user.dir").toURI().relativize(dataDir.toURI()).getPath());
+      return this;
+    }
+
+    /**
+     * Sets the segment size.
+     * @param segmentSize the segment size
+     * @return the Raft partition group builder
+     */
+    public Builder withSegmentSize(MemorySize segmentSize) {
+      config.setSegmentSize(segmentSize);
+      return this;
+    }
+
+    /**
+     * Sets the segment size.
+     * @param segmentSizeBytes the segment size in bytes
+     * @return the Raft partition group builder
+     */
+    public Builder withSegmentSize(long segmentSizeBytes) {
+      config.setSegmentSize(new MemorySize(segmentSizeBytes));
       return this;
     }
 

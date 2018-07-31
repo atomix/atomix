@@ -21,7 +21,7 @@ import io.atomix.protocols.raft.MultiRaftProtocol;
 /**
  * Document tree test using the Raft protocol.
  */
-public class RaftAtomicDocumentTreeTest extends DocumentTreeTest {
+public class RaftAtomicDocumentTreeTest extends AtomicDocumentTreeTest {
   @Override
   protected ProxyProtocol protocol() {
     return MultiRaftProtocol.builder()

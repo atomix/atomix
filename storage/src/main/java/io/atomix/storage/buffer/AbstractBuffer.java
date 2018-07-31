@@ -37,6 +37,7 @@ import static io.atomix.storage.buffer.Bytes.SHORT;
  */
 public abstract class AbstractBuffer implements Buffer {
   static final int DEFAULT_INITIAL_CAPACITY = 4096;
+  static final int MAX_SIZE = Integer.MAX_VALUE - 5;
 
   protected final Bytes bytes;
   private int offset;
@@ -92,10 +93,11 @@ public abstract class AbstractBuffer implements Buffer {
   @Override
   public boolean release() {
     if (references.decrementAndGet() == 0) {
-      if (referenceManager != null)
+      if (referenceManager != null) {
         referenceManager.release(this);
-      else
+      } else {
         bytes.close();
+      }
       return true;
     }
     return false;

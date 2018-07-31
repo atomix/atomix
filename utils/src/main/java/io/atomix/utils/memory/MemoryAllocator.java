@@ -18,8 +18,7 @@ package io.atomix.utils.memory;
 /**
  * Memory allocator.
  * <p>
- * Memory allocators handle allocation of memory for {@link io.atomix.storage.buffer.Bytes} objects, providing descriptors
- * that point to memory addresses.
+ * Memory allocators handle allocation of memory for {@link Memory} objects.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

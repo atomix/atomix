@@ -15,8 +15,6 @@
  */
 package io.atomix.storage.buffer;
 
-import io.atomix.utils.memory.HeapMemory;
-
 /**
  * Unpooled heap allocator.
  *
@@ -26,7 +24,7 @@ public class UnpooledHeapAllocator extends UnpooledAllocator {
 
   @Override
   protected int maxCapacity() {
-    return HeapMemory.MAX_SIZE;
+    return HeapBuffer.MAX_SIZE;
   }
 
   @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.storage.buffer;
+package io.atomix.core.lock;
 
-import io.atomix.utils.memory.HeapMemory;
+import io.atomix.primitive.protocol.ProxyProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 
 /**
- * Unpooled heap allocator.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ * Raft distributed lock test.
  */
-public class UnpooledUnsafeHeapAllocator extends UnpooledAllocator {
-
+public class RaftDistributedLockTest extends DistributedLockTest {
   @Override
-  protected int maxCapacity() {
-    return HeapMemory.MAX_SIZE;
+  protected ProxyProtocol protocol() {
+    return MultiRaftProtocol.builder()
+        .withMaxRetries(5)
+        .build();
   }
-
-  @Override
-  public Buffer allocate(int initialCapacity, int maxCapacity) {
-    return UnsafeHeapBuffer.allocate(initialCapacity, maxCapacity);
-  }
-
 }

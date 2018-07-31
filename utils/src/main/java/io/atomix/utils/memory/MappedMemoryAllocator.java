@@ -89,8 +89,9 @@ public class MappedMemoryAllocator implements MemoryAllocator<MappedMemory> {
   @Override
   public MappedMemory allocate(int size) {
     try {
-      if (file.length() < size)
+      if (file.length() < size) {
         file.setLength(size);
+      }
       referenceCount.incrementAndGet();
       return new MappedMemory(channel.map(mode, offset, size), this);
     } catch (IOException e) {

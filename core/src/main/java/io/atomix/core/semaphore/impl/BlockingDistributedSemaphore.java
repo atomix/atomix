@@ -54,38 +54,43 @@ public class BlockingDistributedSemaphore extends DistributedSemaphore {
   }
 
   @Override
+  public void acquire() throws InterruptedException {
+    completeInterruptibly(asyncSemaphore.acquire(), 1);
+  }
+
+  @Override
   public void acquireUninterruptibly() {
-    complete(asyncSemaphore.acquire());
+    complete(asyncSemaphore.acquire(), 1);
   }
 
   @Override
   public void acquire(int permits) throws InterruptedException {
-    complete(asyncSemaphore.acquire(permits));
+    completeInterruptibly(asyncSemaphore.acquire(permits), permits);
   }
 
   @Override
   public void acquireUninterruptibly(int permits) {
-    complete(asyncSemaphore.acquire(permits));
+    complete(asyncSemaphore.acquire(permits), permits);
   }
 
   @Override
   public boolean tryAcquire(int permits) {
-    return complete(asyncSemaphore.tryAcquire(permits));
+    return complete(asyncSemaphore.tryAcquire(permits), permits);
   }
 
   @Override
   public boolean tryAcquire(int permits, Duration timeout) throws InterruptedException {
-    return complete(asyncSemaphore.tryAcquire(permits, timeout));
+    return complete(asyncSemaphore.tryAcquire(permits, timeout), permits);
   }
 
   @Override
   public boolean tryAcquire() {
-    return complete(asyncSemaphore.tryAcquire());
+    return complete(asyncSemaphore.tryAcquire(), 1);
   }
 
   @Override
   public boolean tryAcquire(Duration timeout) throws InterruptedException {
-    return complete(asyncSemaphore.tryAcquire(timeout));
+    return complete(asyncSemaphore.tryAcquire(timeout), 1);
   }
 
   @Override
@@ -106,6 +111,11 @@ public class BlockingDistributedSemaphore extends DistributedSemaphore {
   @Override
   public int drainPermits() {
     return complete(asyncSemaphore.drainPermits());
+  }
+
+  @Override
+  protected void increasePermits(int increase) {
+    complete(asyncSemaphore.increasePermits(increase));
   }
 
   @Override
@@ -140,19 +150,47 @@ public class BlockingDistributedSemaphore extends DistributedSemaphore {
   private <T> T complete(CompletableFuture<T> future, int acquirePermits) {
     AtomicBoolean needRelease = new AtomicBoolean(false);
     try {
-      return future.thenApply(version -> {
-        if (needRelease.get() && version != null) {
+      return future.thenApply(value -> {
+        if (needRelease.get()) {
           if (acquirePermits > 0) {
             asyncSemaphore.release(acquirePermits);
           }
         }
-        return version;
+        return value;
       }).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    } catch (InterruptedException e) {
+    } catch (InterruptedException | PrimitiveException.Interrupted e) {
       needRelease.set(acquirePermits > 0);
       Thread.currentThread().interrupt();
       throw new PrimitiveException.Interrupted();
-    } catch (TimeoutException e) {
+    } catch (TimeoutException | PrimitiveException.Timeout e) {
+      needRelease.set(acquirePermits > 0);
+      throw new PrimitiveException.Timeout();
+    } catch (ExecutionException e) {
+      needRelease.set(acquirePermits > 0);
+      throw new PrimitiveException(e.getCause());
+    }
+  }
+
+  /**
+   * Use for complete acquire or tryAcquire.
+   * If interrupt or timeout before the future completed, set needRelease to true.
+   * When the future completes, release these permits.
+   */
+  private <T> T completeInterruptibly(CompletableFuture<T> future, int acquirePermits) throws InterruptedException {
+    AtomicBoolean needRelease = new AtomicBoolean(false);
+    try {
+      return future.thenApply(value -> {
+        if (needRelease.get()) {
+          if (acquirePermits > 0) {
+            asyncSemaphore.release(acquirePermits);
+          }
+        }
+        return value;
+      }).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+    } catch (InterruptedException | PrimitiveException.Interrupted e) {
+      needRelease.set(acquirePermits > 0);
+      throw e;
+    } catch (TimeoutException | PrimitiveException.Timeout e) {
       needRelease.set(acquirePermits > 0);
       throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {

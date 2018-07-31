@@ -24,7 +24,6 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -307,25 +306,5 @@ public abstract class DistributedMultimapTest extends AbstractPrimitiveTest<Prox
       }
     }
     return true;
-  }
-
-  /**
-   * Entry comparator, uses both key and value to determine equality, for comparison falls back to the default string
-   * comparator.
-   */
-  private static class EntryComparator implements Comparator<Map.Entry<String, String>> {
-
-    @Override
-    public int compare(Map.Entry<String, String> o1, Map.Entry<String, String> o2) {
-      if (o1 == null || o1.getKey() == null || o2 == null ||
-          o2.getKey() == null) {
-        throw new IllegalArgumentException();
-      }
-      if (o1.getKey().equals(o2.getKey()) && o1.getValue().equals(o2.getValue())) {
-        return 0;
-      } else {
-        return o1.getKey().compareTo(o2.getKey());
-      }
-    }
   }
 }

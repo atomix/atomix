@@ -15,10 +15,10 @@ branches:
     - master
 
 install:
-  - ./mvnw clean install -B -V -DskipTests=true -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+  - ./mvnw clean install --batch-mode -V -DskipTests=true -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
 script:
-  - ./mvnw verify -Droot.logging.level=INFO
+  - ./mvnw verify --batch-mode -Droot.logging.level=INFO -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
 after_success:
   - ./mvnw jacoco:report coveralls:report

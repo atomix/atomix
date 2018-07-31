@@ -77,7 +77,7 @@
 
     <argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.scanSpec=io.atomix</argLine.common>
     <argLine.extras /> <!-- Overridden in some profiles -->
-    <argLine.javadocs />
+    <argLine.javadocs>-quiet</argLine.javadocs>
   </properties>
 
   <profiles>
@@ -87,7 +87,7 @@
       <properties>
         <argLine.common>-Xss256k -Xms512m -Xmx2G -Dio.atomix.scanSpec=io.atomix</argLine.common>
         <argLine.extras>--add-modules jdk.unsupported --add-opens=java.base/java.nio=ALL-UNNAMED</argLine.extras>
-        <argLine.javadocs>-html5</argLine.javadocs>
+        <argLine.javadocs>-html5 -quiet</argLine.javadocs>
         <!-- coverall version 4.3.0 does not work with java 9, see https://github.com/trautonen/coveralls-maven-plugin/issues/112 -->
         <coveralls.skip>true</coveralls.skip>
       </properties>

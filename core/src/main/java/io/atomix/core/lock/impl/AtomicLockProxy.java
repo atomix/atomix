@@ -149,7 +149,12 @@ public class AtomicLockProxy
 
   @Override
   public CompletableFuture<Boolean> isLocked() {
-    return getProxyClient().applyBy(name(), service -> service.isLocked());
+    return isLocked(new Version(0));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isLocked(Version version) {
+    return getProxyClient().applyBy(name(), service -> service.isLocked(version.value()));
   }
 
   @Override

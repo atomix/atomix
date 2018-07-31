@@ -80,7 +80,7 @@ public class MappedBuffer extends ByteBufferBuffer {
    * Memory will be mapped by opening and expanding the given {@link File} to the desired {@code capacity} and mapping the
    * file contents into memory via {@link FileChannel#map(FileChannel.MapMode, long, long)}.
    * <p>
-   * The resulting buffer will have a capacity of {@code capacity}. The underlying {@link UnsafeMappedBytes} will be
+   * The resulting buffer will have a capacity of {@code capacity}. The underlying {@link MappedBytes} will be
    * initialized to the next power of {@code 2}.
    *
    * @param file     The file to map into memory.
@@ -104,7 +104,7 @@ public class MappedBuffer extends ByteBufferBuffer {
    * Memory will be mapped by opening and expanding the given {@link File} to the desired {@code capacity} and mapping the
    * file contents into memory via {@link FileChannel#map(FileChannel.MapMode, long, long)}.
    * <p>
-   * The resulting buffer will have a capacity of {@code capacity}. The underlying {@link UnsafeMappedBytes} will be
+   * The resulting buffer will have a capacity of {@code capacity}. The underlying {@link MappedBytes} will be
    * initialized to the next power of {@code 2}.
    *
    * @param file     The file to map into memory.
@@ -129,7 +129,7 @@ public class MappedBuffer extends ByteBufferBuffer {
    * Memory will be mapped by opening and expanding the given {@link File} to the desired {@code count} and mapping the
    * file contents into memory via {@link FileChannel#map(FileChannel.MapMode, long, long)}.
    * <p>
-   * The resulting buffer will have a capacity of {@code initialCapacity}. The underlying {@link UnsafeMappedBytes} will be
+   * The resulting buffer will have a capacity of {@code initialCapacity}. The underlying {@link MappedBytes} will be
    * initialized to the next power of {@code 2}. As bytes are written to the buffer, the buffer's capacity will double
    * as int as {@code maxCapacity > capacity}.
    *
@@ -156,7 +156,7 @@ public class MappedBuffer extends ByteBufferBuffer {
    * Memory will be mapped by opening and expanding the given {@link File} to the desired {@code count} and mapping the
    * file contents into memory via {@link FileChannel#map(FileChannel.MapMode, long, long)}.
    * <p>
-   * The resulting buffer will have a capacity of {@code initialCapacity}. The underlying {@link UnsafeMappedBytes} will be
+   * The resulting buffer will have a capacity of {@code initialCapacity}. The underlying {@link MappedBytes} will be
    * initialized to the next power of {@code 2}. As bytes are written to the buffer, the buffer's capacity will double
    * as int as {@code maxCapacity > capacity}.
    *

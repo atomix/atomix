@@ -16,6 +16,9 @@
 package io.atomix.storage.buffer;
 
 import io.atomix.utils.AtomixIOException;
+import io.atomix.utils.memory.BufferCleaner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +33,8 @@ import java.nio.file.Files;
  */
 public class MappedBytes extends ByteBufferBytes {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(MappedBytes.class);
+
   /**
    * Allocates a mapped buffer in {@link FileChannel.MapMode#READ_WRITE} mode.
    * <p>
@@ -40,7 +45,7 @@ public class MappedBytes extends ByteBufferBytes {
    * @param size The count of the buffer to allocate (in bytes).
    * @return The mapped buffer.
    * @throws NullPointerException     If {@code file} is {@code null}
-   * @throws IllegalArgumentException If {@code count} is greater than {@link io.atomix.utils.memory.MappedMemory#MAX_SIZE}
+   * @throws IllegalArgumentException If {@code count} is greater than {@link MappedBytes#MAX_SIZE}
    * @see #allocate(File, FileChannel.MapMode, int)
    */
   public static MappedBytes allocate(File file, int size) {
@@ -104,6 +109,13 @@ public class MappedBytes extends ByteBufferBytes {
 
   @Override
   public void close() {
+    try {
+      BufferCleaner.freeBuffer(buffer);
+    } catch (Exception e) {
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Failed to unmap direct buffer", e);
+      }
+    }
     try {
       randomAccessFile.close();
     } catch (IOException e) {
