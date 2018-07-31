@@ -7,6 +7,10 @@ jdk:
 - openjdk8
 - openjdk10
 
+matrix:
+  allow_failures:
+  - jdk: openjdk10
+
 notifications:
   email: false
 
