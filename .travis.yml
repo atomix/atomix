@@ -1,7 +1,15 @@
 language: java
+
+sudo: false
+
 jdk:
-  - oraclejdk8
-  - openjdk8
+- oraclejdk8
+- openjdk8
+- openjdk10
+
+matrix:
+  allow_failures:
+  - jdk: openjdk10
 
 notifications:
   email: false
@@ -17,6 +25,6 @@ script:
   - ./mvnw verify --batch-mode -Droot.logging.level=INFO -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
 after_success:
-  - ./mvnw jacoco:report coveralls:report
+  - ./mvnw jacoco:report coveralls:report --batch-mode -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
   - bin/ci-push-javadoc.sh
   - bin/ci-deploy-snapshot.sh

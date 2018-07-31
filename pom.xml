@@ -263,6 +263,12 @@
           <execution>
             <id>attach-javadocs</id>
             <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>aggregate-javadocs</id>
+            <goals>
               <goal>aggregate-jar</goal>
             </goals>
           </execution>
