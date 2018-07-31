@@ -19,8 +19,7 @@ import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
-
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -34,131 +33,43 @@ public abstract class AtomicCounterMapTest extends AbstractPrimitiveTest<ProxyPr
    */
   @Test
   public void testBasicCounterMapOperations() throws Throwable {
-    AsyncAtomicCounterMap<String> map = atomix().<String>atomicCounterMapBuilder("testBasicCounterMapOperationMap")
+    AtomicCounterMap<String> map = atomix().<String>atomicCounterMapBuilder("testBasicCounterMapOperationMap")
         .withProtocol(protocol())
-        .build()
-        .async();
+        .build();
 
-    map.isEmpty().thenAccept(isEmpty -> {
-      assertTrue(isEmpty);
-    }).get(30, TimeUnit.SECONDS);
+    assertTrue(map.isEmpty());
+    assertEquals(0, map.size());
+    assertEquals(0, map.put("foo", 2));
+    assertEquals(3, map.incrementAndGet("foo"));
+    assertEquals(3, map.getAndIncrement("foo"));
+    assertEquals(4, map.get("foo"));
+    assertEquals(4, map.getAndDecrement("foo"));
+    assertEquals(2, map.decrementAndGet("foo"));
+    assertEquals(1, map.size());
+    assertFalse(map.isEmpty());
 
-    map.size().thenAccept(size -> {
-      assertTrue(size == 0);
-    }).get(30, TimeUnit.SECONDS);
+    map.clear();
+    assertTrue(map.isEmpty());
+    assertEquals(0, map.size());
 
-    map.put("foo", 2).thenAccept(value -> {
-      assertTrue(value == 0);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.incrementAndGet("foo").thenAccept(value -> {
-      assertTrue(value == 3);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.getAndIncrement("foo").thenAccept(value -> {
-      assertTrue(value == 3);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.get("foo").thenAccept(value -> {
-      assertTrue(value == 4);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.getAndDecrement("foo").thenAccept(value -> {
-      assertTrue(value == 4);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.decrementAndGet("foo").thenAccept(value -> {
-      assertTrue(value == 2);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.size().thenAccept(size -> {
-      assertTrue(size == 1);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.isEmpty().thenAccept(isEmpty -> {
-      assertFalse(isEmpty);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.clear().get(30, TimeUnit.SECONDS);
-
-    map.isEmpty().thenAccept(isEmpty -> {
-      assertTrue(isEmpty);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.size().thenAccept(size -> {
-      assertTrue(size == 0);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.get("foo").thenAccept(value -> {
-      assertTrue(value == 0);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.incrementAndGet("bar").thenAccept(value -> {
-      assertTrue(value == 1);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.addAndGet("bar", 2).thenAccept(value -> {
-      assertTrue(value == 3);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.getAndAdd("bar", 3).thenAccept(value -> {
-      assertTrue(value == 3);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.get("bar").thenAccept(value -> {
-      assertTrue(value == 6);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.putIfAbsent("bar", 1).thenAccept(value -> {
-      assertTrue(value == 6);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.replace("bar", 6, 1).thenAccept(succeeded -> {
-      assertTrue(succeeded);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.replace("bar", 6, 1).thenAccept(succeeded -> {
-      assertFalse(succeeded);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.size().thenAccept(size -> {
-      assertTrue(size == 1);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.remove("bar").thenAccept(value -> {
-      assertTrue(value == 1);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.size().thenAccept(size -> {
-      assertTrue(size == 0);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.put("baz", 3).thenAccept(value -> {
-      assertTrue(value == 0);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.remove("baz", 2).thenAccept(removed -> {
-      assertFalse(removed);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.put("baz", 2).thenAccept(value -> {
-      assertTrue(value == 3);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.remove("baz", 2).thenAccept(removed -> {
-      assertTrue(removed);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.isEmpty().thenAccept(isEmpty -> {
-      assertTrue(isEmpty);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.replace("baz", 0, 5).thenAccept(replaced -> {
-      assertTrue(replaced);
-    }).get(30, TimeUnit.SECONDS);
-
-    map.get("baz").thenAccept(value -> {
-      assertTrue(value == 5);
-    }).get(30, TimeUnit.SECONDS);
+    assertEquals(0, map.get("foo"));
+    assertEquals(1, map.incrementAndGet("bar"));
+    assertEquals(3, map.addAndGet("bar", 2));
+    assertEquals(3, map.getAndAdd("bar", 3));
+    assertEquals(6, map.get("bar"));
+    assertEquals(6, map.putIfAbsent("bar", 1));
+    assertTrue(map.replace("bar", 6, 1));
+    assertFalse(map.replace("bar", 6, 1));
+    assertEquals(1, map.size());
+    assertEquals(1, map.remove("bar"));
+    assertEquals(0, map.remove("bar"));
+    assertEquals(0, map.size());
+    assertEquals(0, map.put("baz", 3));
+    assertFalse(map.remove("baz", 2));
+    assertEquals(3, map.put("baz", 2));
+    assertTrue(map.remove("baz", 2));
+    assertTrue(map.isEmpty());
+    assertTrue(map.replace("baz", 0, 5));
+    assertEquals(5, map.get("baz"));
   }
 }

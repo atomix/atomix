@@ -16,14 +16,15 @@
 package io.atomix.core.semaphore;
 
 import io.atomix.primitive.protocol.ProxyProtocol;
-import io.atomix.protocols.backup.MultiPrimaryProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
+import io.atomix.protocols.raft.ReadConsistency;
 
-public class PrimaryBackupSemaphoreTest extends SemaphoreTest {
+public class RaftDistributedSemaphoreTest extends DistributedSemaphoreTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiPrimaryProtocol.builder()
-            .withBackups(2)
-            .withMaxRetries(5)
-            .build();
+    return MultiRaftProtocol.builder()
+        .withReadConsistency(ReadConsistency.LINEARIZABLE)
+        .withMaxRetries(5)
+        .build();
   }
 }

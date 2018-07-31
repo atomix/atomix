@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.tree;
+package io.atomix.core.lock;
 
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 
 /**
- * Document tree test using the Raft protocol.
+ * Raft distributed lock test.
  */
-public class RaftAtomicDocumentTreeTest extends AtomicDocumentTreeTest {
+public class RaftDistributedLockTest extends DistributedLockTest {
   @Override
   protected ProxyProtocol protocol() {
     return MultiRaftProtocol.builder()

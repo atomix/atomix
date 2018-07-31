@@ -178,8 +178,8 @@ public abstract class AbstractAtomicLockService extends AbstractPrimitiveService
   }
 
   @Override
-  public boolean isLocked() {
-    return lock != null;
+  public boolean isLocked(long version) {
+    return lock != null && (version == 0 || lock.index == version);
   }
 
   /**

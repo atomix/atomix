@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.tree;
+package io.atomix.core.semaphore;
 
 import io.atomix.primitive.protocol.ProxyProtocol;
-import io.atomix.protocols.raft.MultiRaftProtocol;
+import io.atomix.protocols.backup.MultiPrimaryProtocol;
 
-/**
- * Document tree test using the Raft protocol.
- */
-public class RaftAtomicDocumentTreeTest extends AtomicDocumentTreeTest {
+public class PrimaryBackupDistributedSemaphoreTest extends DistributedSemaphoreTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiPrimaryProtocol.builder()
+        .withBackups(2)
         .withMaxRetries(5)
         .build();
   }
