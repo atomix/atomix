@@ -18,7 +18,7 @@ package io.atomix.primitive.impl;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.utils.ServiceException;
-import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+import io.github.classgraph.ClassGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,19 +37,20 @@ public class ClasspathScanningPrimitiveTypeRegistry implements PrimitiveTypeRegi
 
   public ClasspathScanningPrimitiveTypeRegistry(ClassLoader classLoader) {
     final String scanSpec = System.getProperty("io.atomix.scanSpec");
-    final FastClasspathScanner classpathScanner = scanSpec != null ?
-            new FastClasspathScanner(scanSpec).addClassLoader(classLoader) :
-            new FastClasspathScanner().addClassLoader(classLoader);
-    classpathScanner.matchClassesImplementing(PrimitiveType.class, type -> {
-      if (!Modifier.isAbstract(type.getModifiers()) && !Modifier.isPrivate(type.getModifiers())) {
-        PrimitiveType primitiveType = newInstance(type);
-        PrimitiveType oldPrimitiveType = primitiveTypes.put(primitiveType.name(), primitiveType);
-        if (oldPrimitiveType != null) {
-          LOGGER.warn("Found multiple primitives types name={}, classes=[{}, {}]", primitiveType.name(),
-                  oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
-        }
+    final ClassGraph classGraph = scanSpec != null ?
+            new ClassGraph().enableClassInfo().whitelistPackages(scanSpec).addClassLoader(classLoader) :
+            new ClassGraph().enableClassInfo().addClassLoader(classLoader);
+    classGraph.scan().getClassesImplementing(PrimitiveType.class.getName()).forEach(classInfo -> {
+      if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {
+        return;
       }
-    }).scan();
+      PrimitiveType primitiveType = newInstance(classInfo.loadClass());
+      PrimitiveType oldPrimitiveType = primitiveTypes.put(primitiveType.name(), primitiveType);
+      if (oldPrimitiveType != null) {
+        LOGGER.warn("Found multiple primitives types name={}, classes=[{}, {}]", primitiveType.name(),
+                oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
+      }
+    });
   }
 
   /**

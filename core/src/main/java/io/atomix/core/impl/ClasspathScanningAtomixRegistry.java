@@ -18,7 +18,8 @@ package io.atomix.core.impl;
 import io.atomix.core.AtomixRegistry;
 import io.atomix.utils.NamedType;
 import io.atomix.utils.ServiceException;
-import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,25 +44,26 @@ public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
 
   public ClasspathScanningAtomixRegistry(ClassLoader classLoader, Collection<Class<? extends NamedType>> types) {
     final String scanSpec = System.getProperty("io.atomix.scanSpec");
-    final FastClasspathScanner classpathScanner = scanSpec != null ?
-        new FastClasspathScanner(scanSpec).addClassLoader(classLoader) :
-        new FastClasspathScanner().addClassLoader(classLoader);
+    final ClassGraph classGraph = scanSpec != null ?
+            new ClassGraph().enableClassInfo().whitelistPackages(scanSpec).addClassLoader(classLoader) :
+            new ClassGraph().enableClassInfo().addClassLoader(classLoader);
 
+    final ScanResult scanResult = classGraph.scan();
     for (Class<? extends NamedType> type : types) {
       Map<String, NamedType> registrations = new ConcurrentHashMap<>();
-      classpathScanner.matchClassesImplementing(type, clazz -> {
-        if (!Modifier.isAbstract(clazz.getModifiers()) && !Modifier.isPrivate(clazz.getModifiers())) {
-          NamedType instance = newInstance(clazz);
-          NamedType oldInstance = registrations.put(instance.name(), instance);
-          if (oldInstance != null) {
-            LOGGER.warn("Found multiple types with name={}, classes=[{}, {}]", instance.name(),
-                oldInstance.getClass().getName(), instance.getClass().getName());
-          }
+      scanResult.getClassesImplementing(type.getName()).forEach(classInfo -> {
+        if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {
+          return;
+        }
+        NamedType instance = newInstance(classInfo.loadClass());
+        NamedType oldInstance = registrations.put(instance.name(), instance);
+        if (oldInstance != null) {
+          LOGGER.warn("Found multiple types with name={}, classes=[{}, {}]", instance.name(),
+                  oldInstance.getClass().getName(), instance.getClass().getName());
         }
       });
       this.registrations.put(type, registrations);
     }
-    classpathScanner.scan();
   }
 
   /**
