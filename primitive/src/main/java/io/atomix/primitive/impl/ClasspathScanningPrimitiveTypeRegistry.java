@@ -24,7 +24,9 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Modifier;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -33,24 +35,32 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ClasspathScanningPrimitiveTypeRegistry implements PrimitiveTypeRegistry {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathScanningPrimitiveTypeRegistry.class);
 
+  private static final Map<ClassLoader, Map<String, PrimitiveType>> CACHE =
+          Collections.synchronizedMap(new WeakHashMap<>());
+
   private final Map<String, PrimitiveType> primitiveTypes = new ConcurrentHashMap<>();
 
   public ClasspathScanningPrimitiveTypeRegistry(ClassLoader classLoader) {
-    final String scanSpec = System.getProperty("io.atomix.scanSpec");
-    final ClassGraph classGraph = scanSpec != null ?
-            new ClassGraph().enableClassInfo().whitelistPackages(scanSpec).addClassLoader(classLoader) :
-            new ClassGraph().enableClassInfo().addClassLoader(classLoader);
-    classGraph.scan().getClassesImplementing(PrimitiveType.class.getName()).forEach(classInfo -> {
-      if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {
-        return;
-      }
-      PrimitiveType primitiveType = newInstance(classInfo.loadClass());
-      PrimitiveType oldPrimitiveType = primitiveTypes.put(primitiveType.name(), primitiveType);
-      if (oldPrimitiveType != null) {
-        LOGGER.warn("Found multiple primitives types name={}, classes=[{}, {}]", primitiveType.name(),
-                oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
-      }
+    Map<String, PrimitiveType> types = CACHE.computeIfAbsent(classLoader, cl -> {
+      final Map<String, PrimitiveType> result = new ConcurrentHashMap<>();
+      final String scanSpec = System.getProperty("io.atomix.scanSpec");
+      final ClassGraph classGraph = scanSpec != null ?
+              new ClassGraph().enableClassInfo().whitelistPackages(scanSpec).addClassLoader(classLoader) :
+              new ClassGraph().enableClassInfo().addClassLoader(classLoader);
+      classGraph.scan().getClassesImplementing(PrimitiveType.class.getName()).forEach(classInfo -> {
+        if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {
+          return;
+        }
+        final PrimitiveType primitiveType = newInstance(classInfo.loadClass());
+        final PrimitiveType oldPrimitiveType = result.put(primitiveType.name(), primitiveType);
+        if (oldPrimitiveType != null) {
+          LOGGER.warn("Found multiple primitives types name={}, classes=[{}, {}]", primitiveType.name(),
+                  oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
+        }
+      });
+      return result;
     });
+    primitiveTypes.putAll(types);
   }
 
   /**
