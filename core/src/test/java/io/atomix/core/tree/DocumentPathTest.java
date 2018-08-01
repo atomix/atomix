@@ -17,6 +17,8 @@ package io.atomix.core.tree;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -39,5 +41,16 @@ public class DocumentPathTest {
     assertEquals("foo/bar", DocumentPath.from("foo/bar").toString());
     assertEquals(1, DocumentPath.from("foo").pathElements().size());
     assertEquals(2, DocumentPath.from("foo/bar").pathElements().size());
+  }
+
+  @Test
+  public void testStaticFactories() throws Exception {
+    assertEquals("/foo", DocumentPath.from("/foo").toString());
+    assertEquals("/foo", DocumentPath.from(new String[]{"foo"}).toString());
+    assertEquals("/foo/bar", DocumentPath.from("foo", "bar").toString());
+    assertEquals("/foo", DocumentPath.from(Arrays.asList("foo")).toString());
+    assertEquals("/foo/bar", DocumentPath.from(Arrays.asList("foo", "bar")).toString());
+    assertEquals("/foo/bar", DocumentPath.from(Arrays.asList("foo"), "bar").toString());
+    assertEquals("/foo/bar/baz", DocumentPath.from(Arrays.asList("foo", "bar"), "baz").toString());
   }
 }
