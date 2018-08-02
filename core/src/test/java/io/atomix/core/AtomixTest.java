@@ -553,119 +553,119 @@ public class AtomixTest extends AbstractAtomixTest {
 
     atomix.start().get(30, TimeUnit.SECONDS);
 
-    assertEquals(AtomicCounterType.instance(), atomix.getPrimitive("atomic-counter").type());
+    assertEquals(AtomicCounterType.instance(), atomix.getPrimitive("atomic-counter", AtomicCounterType.instance()).type());
     assertEquals("atomic-counter", atomix.getAtomicCounter("atomic-counter").name());
     assertEquals("two", ((ProxyProtocol) atomix.getAtomicCounter("atomic-counter").protocol()).group());
 
-    assertEquals(AtomicMapType.instance(), atomix.getPrimitive("atomic-map").type());
+    assertEquals(AtomicMapType.instance(), atomix.getPrimitive("atomic-map", AtomicMapType.instance()).type());
     assertEquals("atomic-map", atomix.getAtomicMap("atomic-map").name());
     assertEquals("two", ((ProxyProtocol) atomix.getAtomicMap("atomic-map").protocol()).group());
 
-    assertEquals(AtomicCounterMapType.instance(), atomix.getPrimitive("atomic-counter-map").type());
+    assertEquals(AtomicCounterMapType.instance(), atomix.getPrimitive("atomic-counter-map", AtomicCounterMapType.instance()).type());
     assertEquals("atomic-counter-map", atomix.getAtomicCounterMap("atomic-counter-map").name());
     assertEquals("two", ((ProxyProtocol) atomix.getAtomicCounterMap("atomic-counter-map").protocol()).group());
 
-    assertEquals(AtomicDocumentTreeType.instance(), atomix.getPrimitive("atomic-document-tree").type());
+    assertEquals(AtomicDocumentTreeType.instance(), atomix.getPrimitive("atomic-document-tree", AtomicDocumentTreeType.instance()).type());
     assertEquals("atomic-document-tree", atomix.getAtomicDocumentTree("atomic-document-tree").name());
     assertEquals("two", ((ProxyProtocol) atomix.getAtomicDocumentTree("atomic-document-tree").protocol()).group());
 
-    assertEquals(AtomicIdGeneratorType.instance(), atomix.getPrimitive("atomic-id-generator").type());
+    assertEquals(AtomicIdGeneratorType.instance(), atomix.getPrimitive("atomic-id-generator", AtomicIdGeneratorType.instance()).type());
     assertEquals("atomic-id-generator", atomix.getAtomicIdGenerator("atomic-id-generator").name());
     assertEquals("two", ((ProxyProtocol) atomix.getAtomicIdGenerator("atomic-id-generator").protocol()).group());
 
-    assertEquals(AtomicLockType.instance(), atomix.getPrimitive("atomic-lock").type());
+    assertEquals(AtomicLockType.instance(), atomix.getPrimitive("atomic-lock", AtomicLockType.instance()).type());
     assertEquals("atomic-lock", atomix.getAtomicLock("atomic-lock").name());
     assertEquals("two", ((ProxyProtocol) atomix.getAtomicLock("atomic-lock").protocol()).group());
 
-    assertEquals(AtomicMultimapType.instance(), atomix.getPrimitive("atomic-multimap").type());
+    assertEquals(AtomicMultimapType.instance(), atomix.getPrimitive("atomic-multimap", AtomicMultimapType.instance()).type());
     assertEquals("atomic-multimap", atomix.getAtomicMultimap("atomic-multimap").name());
     assertEquals("two", ((ProxyProtocol) atomix.getAtomicMultimap("atomic-multimap").protocol()).group());
 
-    assertEquals(AtomicNavigableMapType.instance(), atomix.getPrimitive("atomic-navigable-map").type());
+    assertEquals(AtomicNavigableMapType.instance(), atomix.getPrimitive("atomic-navigable-map", AtomicNavigableMapType.instance()).type());
     assertEquals("atomic-navigable-map", atomix.getAtomicNavigableMap("atomic-navigable-map").name());
     assertEquals("two", ((ProxyProtocol) atomix.getAtomicNavigableMap("atomic-navigable-map").protocol()).group());
 
-    assertEquals(AtomicSemaphoreType.instance(), atomix.getPrimitive("atomic-semaphore").type());
+    assertEquals(AtomicSemaphoreType.instance(), atomix.getPrimitive("atomic-semaphore", AtomicSemaphoreType.instance()).type());
     assertEquals("atomic-semaphore", atomix.getAtomicSemaphore("atomic-semaphore").name());
     assertEquals("two", ((ProxyProtocol) atomix.getAtomicSemaphore("atomic-semaphore").protocol()).group());
 
-    assertEquals(AtomicSortedMapType.instance(), atomix.getPrimitive("atomic-sorted-map").type());
+    assertEquals(AtomicSortedMapType.instance(), atomix.getPrimitive("atomic-sorted-map", AtomicSortedMapType.instance()).type());
     assertEquals("atomic-sorted-map", atomix.getAtomicSortedMap("atomic-sorted-map").name());
     assertEquals("two", ((ProxyProtocol) atomix.getAtomicSortedMap("atomic-sorted-map").protocol()).group());
 
-    assertEquals(AtomicValueType.instance(), atomix.getPrimitive("atomic-value").type());
+    assertEquals(AtomicValueType.instance(), atomix.getPrimitive("atomic-value", AtomicValueType.instance()).type());
     assertEquals("atomic-value", atomix.getAtomicValue("atomic-value").name());
     assertEquals("two", ((ProxyProtocol) atomix.getAtomicValue("atomic-value").protocol()).group());
 
-    assertEquals(DistributedCounterType.instance(), atomix.getPrimitive("counter").type());
+    assertEquals(DistributedCounterType.instance(), atomix.getPrimitive("counter", DistributedCounterType.instance()).type());
     assertEquals("counter", atomix.getCounter("counter").name());
     assertEquals("two", ((ProxyProtocol) atomix.getCounter("counter").protocol()).group());
 
-    assertEquals(DistributedCyclicBarrierType.instance(), atomix.getPrimitive("cyclic-barrier").type());
+    assertEquals(DistributedCyclicBarrierType.instance(), atomix.getPrimitive("cyclic-barrier", DistributedCyclicBarrierType.instance()).type());
     assertEquals("cyclic-barrier", atomix.getCyclicBarrier("cyclic-barrier").name());
     assertEquals("two", ((ProxyProtocol) atomix.getCyclicBarrier("cyclic-barrier").protocol()).group());
 
-    assertEquals(LeaderElectionType.instance(), atomix.getPrimitive("leader-election").type());
+    assertEquals(LeaderElectionType.instance(), atomix.getPrimitive("leader-election", LeaderElectionType.instance()).type());
     assertEquals("leader-election", atomix.getLeaderElection("leader-election").name());
     assertEquals("two", ((ProxyProtocol) atomix.getLeaderElection("leader-election").protocol()).group());
 
-    assertEquals(LeaderElectorType.instance(), atomix.getPrimitive("leader-elector").type());
+    assertEquals(LeaderElectorType.instance(), atomix.getPrimitive("leader-elector", LeaderElectorType.instance()).type());
     assertEquals("leader-elector", atomix.getLeaderElector("leader-elector").name());
     assertEquals("two", ((ProxyProtocol) atomix.getLeaderElector("leader-elector").protocol()).group());
 
-    assertEquals(DistributedListType.instance(), atomix.getPrimitive("list").type());
+    assertEquals(DistributedListType.instance(), atomix.getPrimitive("list", DistributedListType.instance()).type());
     assertEquals("list", atomix.getList("list").name());
     assertEquals("two", ((ProxyProtocol) atomix.getList("list").protocol()).group());
 
-    assertEquals(DistributedLockType.instance(), atomix.getPrimitive("lock").type());
+    assertEquals(DistributedLockType.instance(), atomix.getPrimitive("lock", DistributedLockType.instance()).type());
     assertEquals("lock", atomix.getLock("lock").name());
     assertEquals("two", ((ProxyProtocol) atomix.getLock("lock").protocol()).group());
 
-    assertEquals(DistributedMapType.instance(), atomix.getPrimitive("map").type());
+    assertEquals(DistributedMapType.instance(), atomix.getPrimitive("map", DistributedMapType.instance()).type());
     assertEquals("map", atomix.getMap("map").name());
     assertEquals("two", ((ProxyProtocol) atomix.getMap("map").protocol()).group());
 
-    assertEquals(DistributedMultimapType.instance(), atomix.getPrimitive("multimap").type());
+    assertEquals(DistributedMultimapType.instance(), atomix.getPrimitive("multimap", DistributedMultimapType.instance()).type());
     assertEquals("multimap", atomix.getMultimap("multimap").name());
     assertEquals("two", ((ProxyProtocol) atomix.getMultimap("multimap").protocol()).group());
 
-    assertEquals(DistributedMultisetType.instance(), atomix.getPrimitive("multiset").type());
+    assertEquals(DistributedMultisetType.instance(), atomix.getPrimitive("multiset", DistributedMultisetType.instance()).type());
     assertEquals("multiset", atomix.getMultiset("multiset").name());
     assertEquals("two", ((ProxyProtocol) atomix.getMultiset("multiset").protocol()).group());
 
-    assertEquals(DistributedNavigableMapType.instance(), atomix.getPrimitive("navigable-map").type());
+    assertEquals(DistributedNavigableMapType.instance(), atomix.getPrimitive("navigable-map", DistributedNavigableMapType.instance()).type());
     assertEquals("navigable-map", atomix.getNavigableMap("navigable-map").name());
     assertEquals("two", ((ProxyProtocol) atomix.getNavigableMap("navigable-map").protocol()).group());
 
-    assertEquals(DistributedNavigableSetType.instance(), atomix.getPrimitive("navigable-set").type());
+    assertEquals(DistributedNavigableSetType.instance(), atomix.getPrimitive("navigable-set", DistributedNavigableSetType.instance()).type());
     assertEquals("navigable-set", atomix.getNavigableSet("navigable-set").name());
     assertEquals("two", ((ProxyProtocol) atomix.getNavigableSet("navigable-set").protocol()).group());
 
-    assertEquals(DistributedQueueType.instance(), atomix.getPrimitive("queue").type());
+    assertEquals(DistributedQueueType.instance(), atomix.getPrimitive("queue", DistributedQueueType.instance()).type());
     assertEquals("queue", atomix.getQueue("queue").name());
     assertEquals("two", ((ProxyProtocol) atomix.getQueue("queue").protocol()).group());
 
-    assertEquals(DistributedSemaphoreType.instance(), atomix.getPrimitive("semaphore").type());
+    assertEquals(DistributedSemaphoreType.instance(), atomix.getPrimitive("semaphore", DistributedSemaphoreType.instance()).type());
     assertEquals("semaphore", atomix.getSemaphore("semaphore").name());
     assertEquals("two", ((ProxyProtocol) atomix.getSemaphore("semaphore").protocol()).group());
 
-    assertEquals(DistributedSetType.instance(), atomix.getPrimitive("set").type());
+    assertEquals(DistributedSetType.instance(), atomix.getPrimitive("set", DistributedSetType.instance()).type());
     assertEquals("set", atomix.getSet("set").name());
     assertEquals("two", ((ProxyProtocol) atomix.getSet("set").protocol()).group());
 
-    assertEquals(DistributedSortedMapType.instance(), atomix.getPrimitive("sorted-map").type());
+    assertEquals(DistributedSortedMapType.instance(), atomix.getPrimitive("sorted-map", DistributedSortedMapType.instance()).type());
     assertEquals("sorted-map", atomix.getSortedMap("sorted-map").name());
     assertEquals("two", ((ProxyProtocol) atomix.getSortedMap("sorted-map").protocol()).group());
 
-    assertEquals(DistributedSortedSetType.instance(), atomix.getPrimitive("sorted-set").type());
+    assertEquals(DistributedSortedSetType.instance(), atomix.getPrimitive("sorted-set", DistributedSortedSetType.instance()).type());
     assertEquals("sorted-set", atomix.getSortedSet("sorted-set").name());
     assertEquals("two", ((ProxyProtocol) atomix.getSortedSet("sorted-set").protocol()).group());
 
-    assertEquals(DistributedValueType.instance(), atomix.getPrimitive("value").type());
+    assertEquals(DistributedValueType.instance(), atomix.getPrimitive("value", DistributedValueType.instance()).type());
     assertEquals("value", atomix.getValue("value").name());
     assertEquals("two", ((ProxyProtocol) atomix.getValue("value").protocol()).group());
 
-    assertEquals(WorkQueueType.instance(), atomix.getPrimitive("work-queue").type());
+    assertEquals(WorkQueueType.instance(), atomix.getPrimitive("work-queue", WorkQueueType.instance()).type());
     assertEquals("work-queue", atomix.getWorkQueue("work-queue").name());
     assertEquals("two", ((ProxyProtocol) atomix.getWorkQueue("work-queue").protocol()).group());
   }
