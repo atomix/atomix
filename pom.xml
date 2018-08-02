@@ -74,6 +74,7 @@
     <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
     <maven.bundle.plugin.version>2.5.3</maven.bundle.plugin.version>
     <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
+    <maven.dockerfile.plugin.version>1.4.3</maven.dockerfile.plugin.version>
 
     <argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.scanSpec=io.atomix</argLine.common>
     <argLine.extras /> <!-- Overridden in some profiles -->
@@ -254,6 +255,28 @@
         <artifactId>maven-bundle-plugin</artifactId>
         <version>${maven.bundle.plugin.version}</version>
         <extensions>true</extensions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>dockerfile-maven-plugin</artifactId>
+        <version>${maven.dockerfile.plugin.version}</version>
+        <executions>
+          <execution>
+            <id>default</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <repository>atomix/atomix</repository>
+          <tag>${project.version}</tag>
+          <buildArgs>
+            <VERSION>${project.version}</VERSION>
+          </buildArgs>
+        </configuration>
       </plugin>
 
       <plugin>
