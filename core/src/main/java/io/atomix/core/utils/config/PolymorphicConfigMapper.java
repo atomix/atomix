@@ -16,7 +16,6 @@
 package io.atomix.core.utils.config;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.Maps;
 import com.typesafe.config.Config;
 import io.atomix.core.AtomixRegistry;
 import io.atomix.utils.config.ConfigMapper;
@@ -26,7 +25,6 @@ import io.atomix.utils.config.TypedConfig;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -38,7 +36,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class PolymorphicConfigMapper extends ConfigMapper {
   private final AtomixRegistry registry;
-  private final Map<Class, PolymorphicTypeMapper> polymorphicTypes = Maps.newHashMap();
+  private final Collection<PolymorphicTypeMapper> polymorphicTypes;
 
   public PolymorphicConfigMapper(ClassLoader classLoader, AtomixRegistry registry) {
     this(classLoader, registry, Collections.emptyList());
@@ -51,22 +49,26 @@ public class PolymorphicConfigMapper extends ConfigMapper {
   public PolymorphicConfigMapper(ClassLoader classLoader, AtomixRegistry registry, Collection<PolymorphicTypeMapper> mappers) {
     super(classLoader);
     this.registry = checkNotNull(registry);
-    mappers.forEach(mapper -> this.polymorphicTypes.put(mapper.getConfigClass(), mapper));
+    this.polymorphicTypes = mappers;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  protected <T> T newInstance(Config config, Class<T> clazz) {
+  protected <T> T newInstance(Config config, String key, Class<T> clazz) {
     T instance;
 
     // If the class is a polymorphic type, look up the type mapper and get the concrete type.
     if (isPolymorphicType(clazz)) {
-      PolymorphicTypeMapper typeMapper = polymorphicTypes.get(clazz);
+      PolymorphicTypeMapper typeMapper = polymorphicTypes.stream()
+          .filter(mapper -> mapper.getConfigClass().isAssignableFrom(clazz))
+          .filter(mapper -> (mapper.getTypePath() != null && config.hasPath(mapper.getTypePath())) || mapper.getTypePath() == null)
+          .findFirst()
+          .orElse(null);
       if (typeMapper == null) {
         throw new ConfigurationException("Cannot instantiate abstract type " + clazz.getName());
       }
 
-      String typeName = config.getString(typeMapper.getTypePath());
+      String typeName = typeMapper.getTypePath() != null ? config.getString(typeMapper.getTypePath()) : key;
       Class<? extends TypedConfig<?>> concreteClass = typeMapper.getConcreteClass(registry, typeName);
       try {
         instance = (T) concreteClass.newInstance();
@@ -88,7 +90,7 @@ public class PolymorphicConfigMapper extends ConfigMapper {
     Properties properties = System.getProperties();
     Set<String> cleanNames = propertyNames
         .stream()
-        .filter(propertyName -> !isPolymorphicType(clazz) || !propertyName.equals(polymorphicTypes.get(clazz).getTypePath()))
+        .filter(propertyName -> !isPolymorphicType(clazz) || !polymorphicTypes.stream().anyMatch(type -> type.getTypePath().equals(propertyName)))
         .map(propertyName -> toPath(path, propertyName))
         .filter(propertyName -> !properties.containsKey(propertyName))
         .filter(propertyName -> properties.entrySet().stream().noneMatch(entry -> entry.getKey().toString().startsWith(propertyName + ".")))
@@ -102,6 +104,6 @@ public class PolymorphicConfigMapper extends ConfigMapper {
    * Returns a boolean indicating whether the given class is a polymorphic type.
    */
   private boolean isPolymorphicType(Class<?> clazz) {
-    return polymorphicTypes.containsKey(clazz);
+    return polymorphicTypes.stream().anyMatch(polymorphicType -> polymorphicType.getConfigClass() == clazz);
   }
 }

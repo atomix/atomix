@@ -118,6 +118,10 @@ public class AtomixConfigTest {
     assertEquals("data", dataGridProfile.getDataGroup());
     assertEquals(32, dataGridProfile.getPartitions());
 
+    AtomicMapConfig fooDefaults = config.getPrimitiveDefault("atomic-map");
+    assertEquals("atomic-map", fooDefaults.getType().name());
+    assertEquals("two", ((MultiPrimaryProtocolConfig) fooDefaults.getProtocolConfig()).getGroup());
+
     AtomicMapConfig foo = config.getPrimitive("foo");
     assertEquals("atomic-map", foo.getType().name());
     assertTrue(foo.isNullValues());

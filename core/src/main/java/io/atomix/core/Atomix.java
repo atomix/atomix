@@ -255,11 +255,12 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
     ConfigMapper mapper = new PolymorphicConfigMapper(
         classLoader,
         registry,
-        new PolymorphicTypeMapper(PartitionGroupConfig.class, PartitionGroup.Type.class),
-        new PolymorphicTypeMapper(PrimitiveConfig.class, PrimitiveType.class),
-        new PolymorphicTypeMapper(PrimitiveProtocolConfig.class, PrimitiveProtocol.Type.class),
-        new PolymorphicTypeMapper(ProfileConfig.class, Profile.Type.class),
-        new PolymorphicTypeMapper(NodeDiscoveryConfig.class, NodeDiscoveryProvider.Type.class));
+        new PolymorphicTypeMapper("type", PartitionGroupConfig.class, PartitionGroup.Type.class),
+        new PolymorphicTypeMapper("type", PrimitiveConfig.class, PrimitiveType.class),
+        new PolymorphicTypeMapper(null, PrimitiveConfig.class, PrimitiveType.class),
+        new PolymorphicTypeMapper("type", PrimitiveProtocolConfig.class, PrimitiveProtocol.Type.class),
+        new PolymorphicTypeMapper("type", ProfileConfig.class, Profile.Type.class),
+        new PolymorphicTypeMapper("type", NodeDiscoveryConfig.class, NodeDiscoveryProvider.Type.class));
     return mapper.loadFiles(AtomixConfig.class, files, RESOURCES);
   }
 
@@ -382,7 +383,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 8), 4),
         Threads.namedThreads("atomix-primitive-%d", LOGGER));
     this.registry = registry;
-    this.config = new DefaultConfigService(config.getPrimitives().values());
+    this.config = new DefaultConfigService(config.getPrimitiveDefaults().values(), config.getPrimitives().values());
     this.serializationService = new CoreSerializationService(config.isTypeRegistrationRequired(), config.isCompatibleSerialization());
     this.partitions = buildPartitionService(config, getMembershipService(), getCommunicationService(), registry);
     this.primitives = new CorePrimitivesService(

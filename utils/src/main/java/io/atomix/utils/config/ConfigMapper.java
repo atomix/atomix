@@ -132,7 +132,7 @@ public class ConfigMapper {
     return map(config, null, null, clazz);
   }
 
-  protected <T> T newInstance(Config config, Class<T> clazz) {
+  protected <T> T newInstance(Config config, String key, Class<T> clazz) {
     try {
       return clazz.newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
@@ -148,7 +148,7 @@ public class ConfigMapper {
    */
   @SuppressWarnings("unchecked")
   protected <T> T map(Config config, String path, String name, Class<T> clazz) {
-    T instance = newInstance(config, clazz);
+    T instance = newInstance(config, name, clazz);
 
     // Map config property names to bean properties.
     Map<String, String> propertyNames = new HashMap<>();
