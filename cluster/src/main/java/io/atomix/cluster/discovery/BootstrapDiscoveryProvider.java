@@ -158,11 +158,11 @@ public class BootstrapDiscoveryProvider
    */
   private CompletableFuture<Void> sendHeartbeats(Node localNode) {
     Stream<Address> clusterLocations = this.nodes.values().stream()
-        .filter(node -> !node.address().equals(localNode.address()))
+        .filter(node -> !node.id().equals(localNode.id()))
         .map(node -> node.address());
 
     Stream<Address> bootstrapLocations = this.bootstrapNodes.stream()
-        .filter(node -> !node.address().equals(localNode.address()) && !nodes.containsKey(node.address()))
+        .filter(node -> !node.id().equals(localNode.id()) && !nodes.containsKey(node.address()))
         .map(node -> node.address());
 
     return Futures.allOf(Stream.concat(clusterLocations, bootstrapLocations).map(address -> {
