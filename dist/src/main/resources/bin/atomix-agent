@@ -11,4 +11,16 @@ if [ -z "${JAVA_HOME}" ]; then
     fi
 fi
 
-java -jar ${ATOMIX_ROOT}/agent/target/atomix-agent.jar "$@"
+ATOMIX_ROOT="$(dirname "$(dirname "$0")")"
+
+java \
+  -XX:+UseConcMarkSweepGC \
+  -XX:+CMSIncrementalMode \
+  -Datomix.root="$ATOMIX_ROOT" \
+  -Datomix.data="$ATOMIX_ROOT/data" \
+  -Datomix.log="$ATOMIX_ROOT/log" \
+  -Datomix.config="$ATOMIX_ROOT/conf/atomix.conf" \
+  -Dlogback.configurationFile="$ATOMIX_ROOT/conf/logback.xml" \
+  -cp .:"$ATOMIX_ROOT/lib/*" \
+  io.atomix.agent.AtomixAgent \
+  "$@"

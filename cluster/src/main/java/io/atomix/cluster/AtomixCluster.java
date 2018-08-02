@@ -172,7 +172,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   private final AtomicBoolean started = new AtomicBoolean();
 
   public AtomixCluster(String configFile) {
-    this(loadConfig(new File(System.getProperty("user.dir"), configFile), Thread.currentThread().getContextClassLoader()));
+    this(loadConfig(new File(System.getProperty("atomix.root", System.getProperty("user.dir")), configFile), Thread.currentThread().getContextClassLoader()));
   }
 
   public AtomixCluster(File configFile) {
