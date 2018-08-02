@@ -25,7 +25,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Consensus profile configuration.
  */
 public class ConsensusProfileConfig extends ProfileConfig {
-  private String dataPath = ".data";
+  private String dataPath = System.getProperty("atomix.data", ".data");
   private String managementGroup = "system";
   private String dataGroup = "raft";
   private int partitionSize = 3;

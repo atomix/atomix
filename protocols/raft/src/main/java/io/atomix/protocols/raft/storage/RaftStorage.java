@@ -380,7 +380,7 @@ public class RaftStorage {
    */
   public static class Builder implements io.atomix.utils.Builder<RaftStorage> {
     private static final String DEFAULT_PREFIX = "atomix";
-    private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
+    private static final String DEFAULT_DIRECTORY = System.getProperty("atomix.data", System.getProperty("user.dir"));
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
     private static final boolean DEFAULT_DYNAMIC_COMPACTION = true;

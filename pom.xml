@@ -139,6 +139,7 @@
     <module>agent</module>
     <module>cluster</module>
     <module>core</module>
+    <module>dist</module>
     <module>primitive</module>
     <module>protocols</module>
     <module>rest</module>
@@ -264,12 +265,6 @@
             <id>attach-javadocs</id>
             <goals>
               <goal>jar</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>aggregate-javadocs</id>
-            <goals>
-              <goal>aggregate-jar</goal>
             </goals>
           </execution>
         </executions>
