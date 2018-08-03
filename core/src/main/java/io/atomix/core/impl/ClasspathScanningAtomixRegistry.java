@@ -18,7 +18,9 @@ package io.atomix.core.impl;
 import io.atomix.core.AtomixRegistry;
 import io.atomix.utils.NamedType;
 import io.atomix.utils.ServiceException;
-import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+import io.atomix.utils.misc.StringUtils;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -35,34 +38,64 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathScanningAtomixRegistry.class);
 
+  private static final Map<ClassLoader, Map<CacheKey, Map<Class<? extends NamedType>, Map<String, NamedType>>>> CACHE =
+          Collections.synchronizedMap(new WeakHashMap<>());
+
   private final Map<Class<? extends NamedType>, Map<String, NamedType>> registrations = new ConcurrentHashMap<>();
 
   public ClasspathScanningAtomixRegistry(ClassLoader classLoader, Class<? extends NamedType>... types) {
-    this(classLoader, Arrays.asList(types));
-  }
+    final Map<CacheKey, Map<Class<? extends NamedType>, Map<String, NamedType>>> mappings =
+            CACHE.computeIfAbsent(classLoader, cl -> new ConcurrentHashMap<>());
+    final Map<Class<? extends NamedType>, Map<String, NamedType>> registrations =
+            mappings.computeIfAbsent(new CacheKey(types), cacheKey -> {
+        final String[] whitelistPackages = StringUtils.split(System.getProperty("io.atomix.whitelistPackages"), ",");
+        final ClassGraph classGraph = whitelistPackages != null ?
+                new ClassGraph().enableClassInfo().whitelistPackages(whitelistPackages).addClassLoader(classLoader) :
+                new ClassGraph().enableClassInfo().addClassLoader(classLoader);
 
-  public ClasspathScanningAtomixRegistry(ClassLoader classLoader, Collection<Class<? extends NamedType>> types) {
-    final String scanSpec = System.getProperty("io.atomix.scanSpec");
-    final FastClasspathScanner classpathScanner = scanSpec != null ?
-        new FastClasspathScanner(scanSpec).addClassLoader(classLoader) :
-        new FastClasspathScanner().addClassLoader(classLoader);
-
-    for (Class<? extends NamedType> type : types) {
-      Map<String, NamedType> registrations = new ConcurrentHashMap<>();
-      classpathScanner.matchClassesImplementing(type, clazz -> {
-        if (!Modifier.isAbstract(clazz.getModifiers()) && !Modifier.isPrivate(clazz.getModifiers())) {
-          NamedType instance = newInstance(clazz);
-          NamedType oldInstance = registrations.put(instance.name(), instance);
-          if (oldInstance != null) {
-            LOGGER.warn("Found multiple types with name={}, classes=[{}, {}]", instance.name(),
-                oldInstance.getClass().getName(), instance.getClass().getName());
-          }
+        final ScanResult scanResult = classGraph.scan();
+        final Map<Class<? extends NamedType>, Map<String, NamedType>> result = new ConcurrentHashMap<>();
+        for (Class<? extends NamedType> type : cacheKey.types) {
+          final Map<String, NamedType> tmp = new ConcurrentHashMap<>();
+          scanResult.getClassesImplementing(type.getName()).forEach(classInfo -> {
+            if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {
+              return;
+            }
+            final NamedType instance = newInstance(classInfo.loadClass());
+            final NamedType oldInstance = tmp.put(instance.name(), instance);
+            if (oldInstance != null) {
+              LOGGER.warn("Found multiple types with name={}, classes=[{}, {}]", instance.name(),
+                      oldInstance.getClass().getName(), instance.getClass().getName());
+            }
+          });
+          result.put(type, Collections.unmodifiableMap(tmp));
         }
+        return result;
       });
-      this.registrations.put(type, registrations);
+      this.registrations.putAll(registrations);
     }
-    classpathScanner.scan();
-  }
+
+    private static final class CacheKey {
+      // intentionally no reference to ClassLoader to avoid leaks
+      private final Class<? extends NamedType>[] types;
+
+      CacheKey(Class<? extends NamedType>[] types) {
+        this.types = types;
+      }
+
+      @Override
+      public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CacheKey cacheKey = (CacheKey) o;
+        return Arrays.equals(types, cacheKey.types);
+      }
+
+      @Override
+      public int hashCode() {
+        return Arrays.hashCode(types);
+      }
+    }
 
   /**
    * Instantiates the given type using a no-argument constructor.
