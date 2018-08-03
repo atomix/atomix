@@ -79,6 +79,13 @@
               <goal>push</goal>
             </goals>
           </execution>
+          <execution>
+            <id>push-image</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>push</goal>
+            </goals>
+          </execution>
         </executions>
         <configuration>
           <repository>atomix/atomix</repository>
