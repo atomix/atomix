@@ -241,7 +241,7 @@ public class DistributedMultisetProxy
 
     @Override
     public CompletableFuture<Integer> size() {
-      return DistributedMultisetProxy.this.size();
+      return DistributedMultisetProxy.this.elementSet().size();
     }
 
     @Override

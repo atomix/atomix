@@ -80,6 +80,8 @@ public abstract class DistributedMultisetTest extends AbstractPrimitiveTest<Prox
     multiset.setCount("bar", 2);
     multiset.setCount("baz", 3);
 
+    assertEquals(3, multiset.entrySet().size());
+    assertEquals(3, multiset.elementSet().size());
     assertEquals(3, multiset.entrySet().stream().count());
     assertEquals(3, multiset.elementSet().stream().count());
   }

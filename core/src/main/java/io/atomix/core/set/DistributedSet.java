@@ -18,6 +18,8 @@ package io.atomix.core.set;
 import io.atomix.core.collection.DistributedCollection;
 
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 
 /**
  * A distributed collection designed for holding unique elements.
@@ -27,4 +29,9 @@ import java.util.Set;
 public interface DistributedSet<E> extends DistributedCollection<E>, Set<E> {
   @Override
   AsyncDistributedSet<E> async();
+
+  @Override
+  default Spliterator<E> spliterator() {
+    return Spliterators.spliterator(this, 0);
+  }
 }
