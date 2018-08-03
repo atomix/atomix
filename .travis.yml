@@ -11,6 +11,12 @@ matrix:
   allow_failures:
   - jdk: openjdk10
 
+addons:
+  sonarcloud:
+    organization: "atomix"
+    token:
+      secure: "lGc/yOj/HBugU0jPSx/mu6TnJHkDRJ4PVVP3rDUk9gzvEpa6P/txt/focXtgQ4L5NToEwA85cFQIRLuaxzySFy7+79TxCuhqO9/wj/IjI8i2cQivZCximLiVEl4QEYBKjVIUPcV33PdjE/B2t5YuMB9gBwjBQxAyfT/jum3ny2w="
+
 notifications:
   email: false
 
@@ -25,6 +31,6 @@ script:
   - ./mvnw verify --batch-mode -Droot.logging.level=INFO -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
 after_success:
-  - ./mvnw jacoco:report coveralls:report --batch-mode -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+  - ./mvnw jacoco:report coveralls:report sonar:sonar --batch-mode -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
   - bin/ci-push-javadoc.sh
   - bin/ci-deploy-snapshot.sh
