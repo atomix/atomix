@@ -38,6 +38,13 @@
         <fileSet>
             <directory>src/main/resources</directory>
             <outputDirectory>/</outputDirectory>
+            <excludes>
+                <exclude>**/templates/**</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>target/generated-sources/license</directory>
+            <outputDirectory>/</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>..</directory>
