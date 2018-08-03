@@ -16,6 +16,8 @@
 package io.atomix.core.value.impl;
 
 import io.atomix.core.value.AsyncAtomicValue;
+import io.atomix.core.value.AtomicValueConfig;
+import io.atomix.core.value.AtomicValueType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
@@ -33,20 +36,21 @@ import javax.ws.rs.core.Response;
 /**
  * Atomic value resource.
  */
-public class AtomicValueResource implements PrimitiveResource {
+@Path("/atomic-value")
+public class AtomicValueResource extends PrimitiveResource<AsyncAtomicValue<String>, AtomicValueConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomicValueResource.class);
 
-  private final AsyncAtomicValue<String> value;
-
-  public AtomicValueResource(AsyncAtomicValue<String> value) {
-    this.value = value;
+  public AtomicValueResource() {
+    super(AtomicValueType.instance());
   }
 
   @GET
-  @Path("/value")
+  @Path("/{name}/value")
   @Produces(MediaType.APPLICATION_JSON)
-  public void get(@Suspended AsyncResponse response) {
-    value.get().whenComplete((result, error) -> {
+  public void get(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(value -> value.get()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -57,10 +61,13 @@ public class AtomicValueResource implements PrimitiveResource {
   }
 
   @POST
-  @Path("/value")
+  @Path("/{name}/value")
   @Consumes(MediaType.TEXT_PLAIN)
-  public void set(String body, @Suspended AsyncResponse response) {
-    value.set(body).whenComplete((result, error) -> {
+  public void set(
+      @PathParam("name") String name,
+      String body,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(value -> value.set(body)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
@@ -71,10 +78,13 @@ public class AtomicValueResource implements PrimitiveResource {
   }
 
   @POST
-  @Path("/cas")
+  @Path("/{name}/cas")
   @Produces(MediaType.APPLICATION_JSON)
-  public void compareAndSet(CompareAndSetRequest request, @Suspended AsyncResponse response) {
-    value.compareAndSet(request.getExpect(), request.getUpdate()).whenComplete((result, error) -> {
+  public void compareAndSet(
+      @PathParam("name") String name,
+      CompareAndSetRequest request,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(value -> value.compareAndSet(request.getExpect(), request.getUpdate())).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {

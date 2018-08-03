@@ -664,9 +664,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   @Override
-  public <P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(String name) {
+  public PrimitiveType getPrimitiveType(String typeName) {
     checkRunning();
-    return primitives.getPrimitiveAsync(name);
+    return primitives.getPrimitiveType(typeName);
   }
 
   @Override

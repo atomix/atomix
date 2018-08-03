@@ -17,6 +17,8 @@ package io.atomix.core.map.impl;
 
 import com.google.common.collect.Sets;
 import io.atomix.core.map.AsyncAtomicMap;
+import io.atomix.core.map.AtomicMapConfig;
+import io.atomix.core.map.AtomicMapType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
@@ -36,22 +38,24 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /**
- * Consistent map resource.
+ * Atomic map resource.
  */
-public class AtomicMapResource implements PrimitiveResource {
+@Path("/atomic-map")
+public class AtomicMapResource extends PrimitiveResource<AsyncAtomicMap<String, String>, AtomicMapConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomicMapResource.class);
 
-  private final AsyncAtomicMap<String, String> map;
-
-  public AtomicMapResource(AsyncAtomicMap<String, String> map) {
-    this.map = map;
+  public AtomicMapResource() {
+    super(AtomicMapType.instance());
   }
 
   @GET
-  @Path("/{key}")
+  @Path("/{name}/{key}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void get(@PathParam("key") String key, @Suspended AsyncResponse response) {
-    map.get(key).whenComplete((result, error) -> {
+  public void get(
+      @PathParam("name") String name,
+      @PathParam("key") String key,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(map -> map.get(key)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result != null ? new VersionedResult(result) : null).build());
       } else {
@@ -62,11 +66,15 @@ public class AtomicMapResource implements PrimitiveResource {
   }
 
   @PUT
-  @Path("/{key}")
+  @Path("/{name}/{key}")
   @Consumes(MediaType.TEXT_PLAIN)
   @Produces(MediaType.APPLICATION_JSON)
-  public void put(@PathParam("key") String key, String value, @Suspended AsyncResponse response) {
-    map.put(key, value).whenComplete((result, error) -> {
+  public void put(
+      @PathParam("name") String name,
+      @PathParam("key") String key,
+      String value,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(map -> map.put(key, value)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result != null ? new VersionedResult(result) : null).build());
       } else {
@@ -77,10 +85,13 @@ public class AtomicMapResource implements PrimitiveResource {
   }
 
   @DELETE
-  @Path("/{key}")
+  @Path("/{name}/{key}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void remove(@PathParam("key") String key, @Suspended AsyncResponse response) {
-    map.remove(key).whenComplete((result, error) -> {
+  public void remove(
+      @PathParam("name") String name,
+      @PathParam("key") String key,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(map -> map.remove(key)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result != null ? new VersionedResult(result) : null).build());
       } else {
@@ -91,17 +102,28 @@ public class AtomicMapResource implements PrimitiveResource {
   }
 
   @GET
-  @Path("/keys")
+  @Path("/{name}/keys")
   @Produces(MediaType.APPLICATION_JSON)
-  public void keys(@Suspended AsyncResponse response) {
-    response.resume(Response.ok(Sets.newHashSet(map.keySet().iterator().sync())).build());
+  public void keys(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).whenComplete((map, error) -> {
+      if (error == null) {
+        response.resume(Response.ok(Sets.newHashSet(map.keySet().iterator().sync())).build());
+      } else {
+        LOGGER.warn("{}", error);
+        response.resume(Response.serverError().build());
+      }
+    });
   }
 
   @GET
-  @Path("/size")
+  @Path("/{name}/size")
   @Produces(MediaType.APPLICATION_JSON)
-  public void size(@Suspended AsyncResponse response) {
-    map.size().whenComplete((result, error) -> {
+  public void size(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(map -> map.size()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -112,9 +134,11 @@ public class AtomicMapResource implements PrimitiveResource {
   }
 
   @POST
-  @Path("/clear")
-  public void clear(@Suspended AsyncResponse response) {
-    map.clear().whenComplete((result, error) -> {
+  @Path("/{name}/clear")
+  public void clear(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(map -> map.clear()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.noContent().build());
       } else {

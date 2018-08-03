@@ -28,7 +28,6 @@ import io.atomix.core.transaction.impl.PrepareResult;
 import io.atomix.core.transaction.impl.RollbackResult;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Namespace;
@@ -97,9 +96,8 @@ public class AtomicMapType<K, V> implements PrimitiveType<AtomicMapBuilder<K, V>
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(AtomicMap<K, V> primitive) {
-    return new AtomicMapResource((AsyncAtomicMap<String, String>) primitive.async());
+  public Class<?> getResourceClass() {
+    return AtomicMapResource.class;
   }
 
   @Override

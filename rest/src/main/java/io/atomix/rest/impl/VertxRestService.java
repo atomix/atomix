@@ -25,6 +25,8 @@ import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.core.Atomix;
 import io.atomix.core.PrimitivesService;
 import io.atomix.core.utils.EventManager;
+import io.atomix.primitive.PrimitiveFactory;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
@@ -90,6 +92,8 @@ public class VertxRestService implements ManagedRestService {
     deployment.getDispatcher().getDefaultContextObjects()
         .put(ClusterEventService.class, atomix.getEventService());
     deployment.getDispatcher().getDefaultContextObjects()
+        .put(PrimitiveFactory.class, atomix.getPrimitivesService());
+    deployment.getDispatcher().getDefaultContextObjects()
         .put(PrimitivesService.class, atomix.getPrimitivesService());
     deployment.getDispatcher().getDefaultContextObjects()
         .put(EventManager.class, new EventManager());
@@ -99,6 +103,14 @@ public class VertxRestService implements ManagedRestService {
     deployment.getRegistry().addPerInstanceResource(EventsResource.class);
     deployment.getRegistry().addPerInstanceResource(MessagesResource.class);
     deployment.getRegistry().addPerInstanceResource(PrimitivesResource.class);
+
+    for (PrimitiveType primitiveType : atomix.getRegistry().getTypes(PrimitiveType.class)) {
+      try {
+        Class<?> resourceClass = primitiveType.getResourceClass();
+        deployment.getRegistry().addPerInstanceResource(resourceClass, "/v1");
+      } catch (UnsupportedOperationException e) {
+      }
+    }
 
     deployment.getDispatcher().getProviderFactory().register(new JacksonProvider(createObjectMapper()));
 

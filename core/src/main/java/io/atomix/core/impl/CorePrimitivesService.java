@@ -100,8 +100,6 @@ import io.atomix.primitive.partition.impl.DefaultPartitionGroupTypeRegistry;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.impl.DefaultPrimitiveProtocolTypeRegistry;
 import io.atomix.primitive.serialization.SerializationService;
-import io.atomix.utils.concurrent.Futures;
-import io.atomix.utils.config.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,6 +121,7 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   private final ManagedTransactionService transactionService;
   private final ConfigService configService;
   private final PrimitiveCache cache;
+  private final AtomixRegistry registry;
   private final AtomicBoolean started = new AtomicBoolean();
 
   public CorePrimitivesService(
@@ -135,7 +134,8 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
       PrimitiveCache primitiveCache,
       AtomixRegistry registry,
       ConfigService configService) {
-    this.cache = primitiveCache;
+    this.cache = checkNotNull(primitiveCache);
+    this.registry = checkNotNull(registry);
     this.primitiveRegistry = new CorePrimitiveRegistry(partitionService, new DefaultPrimitiveTypeRegistry(registry.getTypes(PrimitiveType.class)));
     this.managementService = new CorePrimitiveManagementService(
         executorService,
@@ -313,25 +313,14 @@ public class CorePrimitivesService implements ManagedPrimitivesService {
   }
 
   @Override
-  public <B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends SyncPrimitive> B primitiveBuilder(
-      String name, PrimitiveType<B, C, P> primitiveType) {
-    return primitiveType.newBuilder(name, configService.getConfig(name, primitiveType), managementService);
+  public PrimitiveType getPrimitiveType(String typeName) {
+    return registry.getType(PrimitiveType.class, typeName);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public <P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(String name) {
-    return cache.getPrimitive(name, () -> {
-      PrimitiveInfo info = primitiveRegistry.getPrimitive(name);
-      if (info == null) {
-        PrimitiveConfig<?> primitiveConfig = configService.getConfig(name, null);
-        if (primitiveConfig == null) {
-          return Futures.exceptionalFuture(new ConfigurationException("No configuration provided for " + name));
-        }
-        return primitiveConfig.getType().newBuilder(name, primitiveConfig, managementService).buildAsync();
-      }
-      return info.type().newBuilder(name, (PrimitiveConfig) configService.getConfig(name, info.type()), managementService).buildAsync();
-    });
+  public <B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends SyncPrimitive> B primitiveBuilder(
+      String name, PrimitiveType<B, C, P> primitiveType) {
+    return primitiveType.newBuilder(name, configService.getConfig(name, primitiveType), managementService);
   }
 
   @Override
