@@ -21,6 +21,6 @@ java \
   -Datomix.log="$ATOMIX_ROOT/log" \
   -Datomix.config="$ATOMIX_ROOT/conf/atomix.conf" \
   -Dlogback.configurationFile="$ATOMIX_ROOT/conf/logback.xml" \
-  -cp .:"$ATOMIX_ROOT/lib/*" \
+  -cp .:"$ATOMIX_ROOT/lib/system/*":"$ATOMIX_ROOT/lib/ext/*" \
   io.atomix.agent.AtomixAgent \
   "$@"

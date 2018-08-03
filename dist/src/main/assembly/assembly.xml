@@ -29,7 +29,7 @@
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
             <useTransitiveDependencies>true</useTransitiveDependencies>
-            <outputDirectory>lib</outputDirectory>
+            <outputDirectory>lib/system</outputDirectory>
             <unpack>false</unpack>
         </dependencySet>
     </dependencySets>
