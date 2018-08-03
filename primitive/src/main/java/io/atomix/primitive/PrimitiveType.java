@@ -67,12 +67,11 @@ public interface PrimitiveType<B extends PrimitiveBuilder, C extends PrimitiveCo
   PrimitiveService newService(ServiceConfig config);
 
   /**
-   * Creates a new resource for the given primitive.
+   * Returns the primitive resource class.
    *
-   * @param primitive the primitive instance
-   * @return a new resource for the given primitive instance
+   * @return the primitive resource class
    */
-  default PrimitiveResource newResource(P primitive) {
-    return null;
+  default Class<?> getResourceClass() {
+    throw new UnsupportedOperationException();
   }
 }

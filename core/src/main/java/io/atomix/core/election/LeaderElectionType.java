@@ -20,7 +20,6 @@ import io.atomix.core.election.impl.DefaultLeaderElectionService;
 import io.atomix.core.election.impl.LeaderElectionResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Namespace;
@@ -65,9 +64,8 @@ public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilde
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(LeaderElection<T> primitive) {
-    return new LeaderElectionResource((AsyncLeaderElection<String>) primitive.async());
+  public Class<?> getResourceClass() {
+    return LeaderElectionResource.class;
   }
 
   @Override

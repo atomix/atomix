@@ -16,11 +16,15 @@
 package io.atomix.core.idgenerator.impl;
 
 import io.atomix.core.idgenerator.AsyncAtomicIdGenerator;
+import io.atomix.core.idgenerator.AtomicIdGeneratorConfig;
+import io.atomix.core.idgenerator.AtomicIdGeneratorType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
@@ -30,19 +34,21 @@ import javax.ws.rs.core.Response;
 /**
  * Unique ID generator resource.
  */
-public class AtomicIdGeneratorResource implements PrimitiveResource {
+@Path("/atomic-id-generator")
+public class AtomicIdGeneratorResource extends PrimitiveResource<AsyncAtomicIdGenerator, AtomicIdGeneratorConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomicIdGeneratorResource.class);
 
-  private final AsyncAtomicIdGenerator idGenerator;
-
-  public AtomicIdGeneratorResource(AsyncAtomicIdGenerator idGenerator) {
-    this.idGenerator = idGenerator;
+  public AtomicIdGeneratorResource() {
+    super(AtomicIdGeneratorType.instance());
   }
 
   @PUT
+  @Path("/{name}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void next(@Suspended AsyncResponse response) {
-    idGenerator.nextId().whenComplete((result, error) -> {
+  public void next(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(idGenerator -> idGenerator.nextId()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {

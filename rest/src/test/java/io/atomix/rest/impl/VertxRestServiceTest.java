@@ -30,6 +30,7 @@ import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,6 +49,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 
 /**
@@ -174,10 +176,9 @@ public class VertxRestServiceTest {
   }
 
   @Test
-  public void testLock() throws Exception {
+  public void testPrimitives() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     JsonNode json = jsonFactory.objectNode()
-        .put("type", "atomic-lock")
         .set("protocol", jsonFactory.objectNode()
             .put("type", "multi-primary")
             .put("backups", 2));
@@ -187,21 +188,55 @@ public class VertxRestServiceTest {
         .contentType(ContentType.JSON)
         .body(json)
         .when()
-        .post("primitives/test-lock")
+        .post("lock/test-primitive")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("primitives")
+        .then()
+        .statusCode(200)
+        .body("test-primitive.type", equalTo("lock"));
+
+    given()
+        .spec(specs.get(1))
+        .when()
+        .get("lock")
+        .then()
+        .statusCode(200)
+        .body("test-primitive.type", equalTo("lock"));
+  }
+
+  @Test
+  public void testLock() throws Exception {
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    JsonNode json = jsonFactory.objectNode()
+        .set("protocol", jsonFactory.objectNode()
+            .put("type", "multi-primary")
+            .put("backups", 2));
+
+    given()
+        .spec(specs.get(0))
+        .contentType(ContentType.JSON)
+        .body(json)
+        .when()
+        .post("atomic-lock/test-lock")
         .then()
         .statusCode(200);
 
     given()
         .spec(specs.get(0))
         .when()
-        .post("primitives/test-lock/lock")
+        .post("atomic-lock/test-lock/lock")
         .then()
         .statusCode(200);
 
     given()
         .spec(specs.get(0))
         .when()
-        .delete("primitives/test-lock/lock")
+        .delete("atomic-lock/test-lock/lock")
         .then()
         .statusCode(200);
   }
@@ -210,7 +245,6 @@ public class VertxRestServiceTest {
   public void testSemaphore() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     JsonNode json = jsonFactory.objectNode()
-        .put("type", "semaphore")
         .put("initial-capacity", 2)
         .set("protocol", jsonFactory.objectNode()
             .put("type", "multi-primary")
@@ -221,14 +255,14 @@ public class VertxRestServiceTest {
         .contentType(ContentType.JSON)
         .body(json)
         .when()
-        .post("primitives/test-semaphore")
+        .post("semaphore/test-semaphore")
         .then()
         .statusCode(200);
 
     given()
         .spec(specs.get(0))
         .when()
-        .get("primitives/test-semaphore/permits")
+        .get("semaphore/test-semaphore/permits")
         .then()
         .statusCode(200)
         .body(equalTo("2"));
@@ -237,7 +271,7 @@ public class VertxRestServiceTest {
         .spec(specs.get(0))
         .contentType(ContentType.JSON)
         .when()
-        .post("primitives/test-semaphore/acquire")
+        .post("semaphore/test-semaphore/acquire")
         .then()
         .statusCode(200);
 
@@ -245,14 +279,14 @@ public class VertxRestServiceTest {
         .spec(specs.get(1))
         .contentType(ContentType.JSON)
         .when()
-        .post("primitives/test-semaphore/acquire")
+        .post("semaphore/test-semaphore/acquire")
         .then()
         .statusCode(200);
 
     given()
         .spec(specs.get(2))
         .when()
-        .get("primitives/test-semaphore/permits")
+        .get("semaphore/test-semaphore/permits")
         .then()
         .body(equalTo("0"));
 
@@ -260,21 +294,21 @@ public class VertxRestServiceTest {
         .spec(specs.get(1))
         .contentType(ContentType.JSON)
         .when()
-        .post("primitives/test-semaphore/release")
+        .post("semaphore/test-semaphore/release")
         .then()
         .statusCode(200);
 
     given()
         .spec(specs.get(0))
         .when()
-        .get("primitives/test-semaphore/permits")
+        .get("semaphore/test-semaphore/permits")
         .then()
         .body(equalTo("1"));
 
     given()
         .spec(specs.get(1))
         .when()
-        .get("primitives/test-semaphore/permits")
+        .get("semaphore/test-semaphore/permits")
         .then()
         .body(equalTo("1"));
   }
@@ -283,7 +317,6 @@ public class VertxRestServiceTest {
   public void testValue() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     JsonNode json = jsonFactory.objectNode()
-        .put("type", "atomic-value")
         .set("protocol", jsonFactory.objectNode()
             .put("type", "multi-primary")
             .put("backups", 2));
@@ -293,14 +326,14 @@ public class VertxRestServiceTest {
         .contentType(ContentType.JSON)
         .body(json)
         .when()
-        .post("primitives/test-value")
+        .post("atomic-value/test-value")
         .then()
         .statusCode(200);
 
     given()
         .spec(specs.get(1))
         .when()
-        .get("primitives/test-value/value")
+        .get("atomic-value/test-value/value")
         .then()
         .statusCode(200);
 
@@ -309,14 +342,14 @@ public class VertxRestServiceTest {
         .contentType(ContentType.TEXT)
         .body("Hello world!")
         .when()
-        .post("primitives/test-value/value")
+        .post("atomic-value/test-value/value")
         .then()
         .statusCode(200);
 
     given()
         .spec(specs.get(1))
         .when()
-        .get("primitives/test-value/value")
+        .get("atomic-value/test-value/value")
         .then()
         .statusCode(200)
         .body(equalTo("Hello world!"));
@@ -326,27 +359,26 @@ public class VertxRestServiceTest {
   public void testMap() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     ObjectNode json = jsonFactory.objectNode()
-            .put("type", "atomic-map")
-            .put("null-values", false);
+        .put("null-values", false);
     json.set("protocol", jsonFactory.objectNode()
-            .put("type", "multi-primary")
-            .put("backups", 2));
+        .put("type", "multi-primary")
+        .put("backups", 2));
     json.set("cache", jsonFactory.objectNode()
-            .put("enabled", true));
+        .put("enabled", true));
 
     given()
         .spec(specs.get(0))
         .contentType(ContentType.JSON)
         .body(json)
         .when()
-        .post("primitives/test")
+        .post("atomic-map/test")
         .then()
         .statusCode(200);
 
     given()
         .spec(specs.get(1))
         .when()
-        .get("primitives/test/foo")
+        .get("atomic-map/test/foo")
         .then()
         .statusCode(200);
 
@@ -354,14 +386,14 @@ public class VertxRestServiceTest {
         .spec(specs.get(0))
         .body("Hello world!")
         .when()
-        .put("primitives/test/foo")
+        .put("atomic-map/test/foo")
         .then()
         .statusCode(200);
 
     given()
         .spec(specs.get(1))
         .when()
-        .get("primitives/test/foo")
+        .get("atomic-map/test/foo")
         .then()
         .statusCode(200)
         .assertThat()
@@ -406,13 +438,13 @@ public class VertxRestServiceTest {
   public void afterTest() throws Exception {
     try {
       List<CompletableFuture<Void>> serviceFutures = new ArrayList<>(3);
-      for (RestService service: services) {
+      for (RestService service : services) {
         serviceFutures.add(((ManagedRestService) service).stop());
       }
       CompletableFuture.allOf(serviceFutures.toArray(new CompletableFuture[serviceFutures.size()])).get(30, TimeUnit.SECONDS);
     } finally {
       List<CompletableFuture<Void>> instanceFutures = new ArrayList<>(3);
-      for (Atomix instance: instances) {
+      for (Atomix instance : instances) {
         instanceFutures.add(instance.stop());
       }
       CompletableFuture.allOf(instanceFutures.toArray(new CompletableFuture[instanceFutures.size()])).get(30, TimeUnit.SECONDS);

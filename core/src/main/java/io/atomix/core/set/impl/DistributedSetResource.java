@@ -17,12 +17,18 @@ package io.atomix.core.set.impl;
 
 import io.atomix.core.collection.impl.DistributedCollectionResource;
 import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.core.set.DistributedSetConfig;
+import io.atomix.core.set.DistributedSetType;
+import io.atomix.primitive.PrimitiveType;
+
+import javax.ws.rs.Path;
 
 /**
  * Distributed set resource.
  */
-public class DistributedSetResource extends DistributedCollectionResource {
-  public DistributedSetResource(AsyncDistributedSet<String> set) {
-    super(set);
+@Path("/set")
+public class DistributedSetResource extends DistributedCollectionResource<AsyncDistributedSet<String>, DistributedSetConfig> {
+  public DistributedSetResource() {
+    super(DistributedSetType.instance());
   }
 }

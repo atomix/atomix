@@ -20,7 +20,6 @@ import io.atomix.core.value.impl.DefaultAtomicValueBuilder;
 import io.atomix.core.value.impl.DefaultAtomicValueService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 
@@ -55,9 +54,8 @@ public class AtomicValueType<V> implements PrimitiveType<AtomicValueBuilder<V>, 
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(AtomicValue<V> primitive) {
-    return new AtomicValueResource((AsyncAtomicValue<String>) primitive.async());
+  public Class<?> getResourceClass() {
+    return AtomicValueResource.class;
   }
 
   @Override
