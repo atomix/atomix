@@ -154,7 +154,7 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
    * @return the partition data directory
    */
   public String getDataDirectory() {
-    return dataDirectory != null ? dataDirectory : DATA_PREFIX + "/" + getName();
+    return dataDirectory != null ? dataDirectory : System.getProperty("atomix.data", DATA_PREFIX) + "/" + getName();
   }
 
   /**

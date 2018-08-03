@@ -16,6 +16,8 @@
 package io.atomix.core.lock.impl;
 
 import io.atomix.core.lock.AsyncAtomicLock;
+import io.atomix.core.lock.AtomicLockConfig;
+import io.atomix.core.lock.AtomicLockType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
@@ -32,20 +35,19 @@ import javax.ws.rs.core.Response;
 /**
  * Distributed lock resource.
  */
-public class AtomicLockResource implements PrimitiveResource {
+@Path("/atomic-lock")
+public class AtomicLockResource extends PrimitiveResource<AsyncAtomicLock, AtomicLockConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomicLockResource.class);
 
-  private final AsyncAtomicLock lock;
-
-  public AtomicLockResource(AsyncAtomicLock lock) {
-    this.lock = lock;
+  public AtomicLockResource() {
+    super(AtomicLockType.instance());
   }
 
   @POST
-  @Path("/lock")
+  @Path("/{name}/lock")
   @Produces(MediaType.APPLICATION_JSON)
-  public void lock(@Suspended AsyncResponse response) {
-    lock.lock().whenComplete((result, error) -> {
+  public void lock(@PathParam("name") String name, @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(lock -> lock.lock()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result.value()).build());
       } else {
@@ -56,9 +58,9 @@ public class AtomicLockResource implements PrimitiveResource {
   }
 
   @DELETE
-  @Path("/lock")
-  public void unlock(@Suspended AsyncResponse response) {
-    lock.unlock().whenComplete((result, error) -> {
+  @Path("/{name}/lock")
+  public void unlock(@PathParam("name") String name, @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(lock -> lock.unlock()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {

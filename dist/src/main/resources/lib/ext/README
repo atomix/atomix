@@ -1,0 +1,2 @@
+This folder is the default location user libraries to extend the Atomix agent. Place jars here containing additional
+primitive implementations, discovery services, protocols, etc and they will be automatically added to the agent classpath.

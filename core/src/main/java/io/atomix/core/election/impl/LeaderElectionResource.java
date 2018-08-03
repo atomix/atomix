@@ -15,10 +15,12 @@
  */
 package io.atomix.core.election.impl;
 
+import io.atomix.core.election.AsyncLeaderElection;
+import io.atomix.core.election.LeaderElectionConfig;
+import io.atomix.core.election.LeaderElectionType;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
-import io.atomix.core.election.AsyncLeaderElection;
 import io.atomix.core.utils.EventLog;
 import io.atomix.core.utils.EventManager;
 import io.atomix.primitive.resource.PrimitiveResource;
@@ -43,30 +45,33 @@ import java.util.UUID;
 /**
  * Leader election resource.
  */
-public class LeaderElectionResource implements PrimitiveResource {
+@Path("/leader-election")
+public class LeaderElectionResource extends PrimitiveResource<AsyncLeaderElection<String>, LeaderElectionConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(LeaderElectionResource.class);
 
-  private final AsyncLeaderElection<String> election;
-
-  public LeaderElectionResource(AsyncLeaderElection<String> election) {
-    this.election = election;
+  public LeaderElectionResource() {
+    super(LeaderElectionType.instance());
   }
 
   /**
    * Returns an event log name for the given identifier.
    */
-  private String getEventLogName(String id) {
-    return String.format("%s-%s", election.name(), id);
+  private String getEventLogName(String name, String id) {
+    return String.format("%s-%s", name, id);
   }
 
   @POST
+  @Path("/{name}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void run(@Context EventManager events, @Suspended AsyncResponse response) {
+  public void run(
+      @PathParam("name") String name,
+      @Context EventManager events,
+      @Suspended AsyncResponse response) {
     String id = UUID.randomUUID().toString();
     EventLog<LeadershipEventListener<String>, LeadershipEvent<String>> eventLog = events.getOrCreateEventLog(
-        AsyncLeaderElection.class, getEventLogName(id), l -> e -> l.addEvent(e));
+        AsyncLeaderElection.class, getEventLogName(name, id), l -> e -> l.addEvent(e));
 
-    election.addListener(eventLog.listener()).whenComplete((listenResult, listenError) -> {
+    getPrimitive(name).thenAccept(election -> election.addListener(eventLog.listener()).whenComplete((listenResult, listenError) -> {
       if (listenError == null) {
         election.run(id).whenComplete((runResult, runError) -> {
           if (runError == null) {
@@ -80,13 +85,16 @@ public class LeaderElectionResource implements PrimitiveResource {
         LOGGER.warn("{}", listenError);
         response.resume(Response.serverError().build());
       }
-    });
+    }));
   }
 
   @GET
+  @Path("/{name}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void getLeadership(@Suspended AsyncResponse response) {
-    election.getLeadership().whenComplete((result, error) -> {
+  public void getLeadership(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(election -> election.getLeadership()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(new LeadershipResponse(result)).build());
       } else {
@@ -97,23 +105,31 @@ public class LeaderElectionResource implements PrimitiveResource {
   }
 
   @GET
-  @Path("/{id}")
-  public void listen(@PathParam("id") String id, @Context EventManager events, @Suspended AsyncResponse response) {
+  @Path("/{name}/{id}")
+  public void listen(
+      @PathParam("name") String name,
+      @PathParam("id") String id,
+      @Context EventManager events,
+      @Suspended AsyncResponse response) {
     EventLog<LeadershipEventListener<String>, LeadershipEvent<String>> eventLog = events.getEventLog(
-        AsyncLeaderElection.class, getEventLogName(id));
-    consumeNextEvent(eventLog, id, response);
+        AsyncLeaderElection.class, getEventLogName(name, id));
+    consumeNextEvent(eventLog, name, id, response);
   }
 
   /**
    * Recursively consumes events from the given event log until the next event for the given ID is located.
    */
-  private void consumeNextEvent(EventLog<LeadershipEventListener<String>, LeadershipEvent<String>> eventLog, String id, AsyncResponse response) {
+  private void consumeNextEvent(
+      EventLog<LeadershipEventListener<String>, LeadershipEvent<String>> eventLog,
+      String name,
+      String id,
+      AsyncResponse response) {
     eventLog.nextEvent().whenComplete((event, error) -> {
       if (error == null) {
         if (event.newLeadership().leader() != null && event.newLeadership().leader().id().equals(id)) {
           response.resume(Response.ok(new LeadershipResponse(event.newLeadership())).build());
         } else if (event.newLeadership().candidates().stream().noneMatch(c -> c.equals(id))) {
-          election.removeListener(eventLog.listener()).whenComplete((removeResult, removeError) -> {
+          getPrimitive(name).thenCompose(election -> election.removeListener(eventLog.listener())).whenComplete((removeResult, removeError) -> {
             response.resume(Response.status(Status.NOT_FOUND).build());
           });
         }
@@ -124,12 +140,16 @@ public class LeaderElectionResource implements PrimitiveResource {
   }
 
   @DELETE
-  @Path("/{id}")
-  public void withdraw(@PathParam("id") String id, @Context EventManager events, @Suspended AsyncResponse response) {
+  @Path("/{name}/{id}")
+  public void withdraw(
+      @PathParam("name") String name,
+      @PathParam("id") String id,
+      @Context EventManager events,
+      @Suspended AsyncResponse response) {
     EventLog<LeadershipEventListener<String>, LeadershipEvent<String>> eventLog = events.removeEventLog(
-        AsyncLeaderElection.class, getEventLogName(id));
+        AsyncLeaderElection.class, getEventLogName(name, id));
     if (eventLog != null && eventLog.close()) {
-      election.removeListener(eventLog.listener()).whenComplete((removeResult, removeError) -> {
+      getPrimitive(name).thenAccept(election -> election.removeListener(eventLog.listener()).whenComplete((removeResult, removeError) -> {
         election.withdraw(id).whenComplete((withdrawResult, withdrawError) -> {
           if (withdrawError == null) {
             response.resume(Response.ok().build());
@@ -138,16 +158,19 @@ public class LeaderElectionResource implements PrimitiveResource {
             response.resume(Response.serverError().build());
           }
         });
-      });
+      }));
     } else {
       response.resume(Response.ok().build());
     }
   }
 
   @POST
-  @Path("/{id}/anoint")
-  public void anoint(@PathParam("id") String id, @Suspended AsyncResponse response) {
-    election.anoint(id).whenComplete((result, error) -> {
+  @Path("/{name}/{id}/anoint")
+  public void anoint(
+      @PathParam("name") String name,
+      @PathParam("id") String id,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(election -> election.anoint(id)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
@@ -158,9 +181,12 @@ public class LeaderElectionResource implements PrimitiveResource {
   }
 
   @POST
-  @Path("/{id}/promote")
-  public void promote(@PathParam("id") String id, @Suspended AsyncResponse response) {
-    election.promote(id).whenComplete((result, error) -> {
+  @Path("/{name}/{id}/promote")
+  public void promote(
+      @PathParam("name") String name,
+      @PathParam("id") String id,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(election -> election.promote(id)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
@@ -171,9 +197,12 @@ public class LeaderElectionResource implements PrimitiveResource {
   }
 
   @POST
-  @Path("/{id}/evict")
-  public void evict(@PathParam("id") String id, @Suspended AsyncResponse response) {
-    election.evict(id).whenComplete((result, error) -> {
+  @Path("/{name}/{id}/evict")
+  public void evict(
+      @PathParam("name") String name,
+      @PathParam("id") String id,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(election -> election.evict(id)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {

@@ -17,11 +17,14 @@ package io.atomix.core.queue.impl;
 
 import io.atomix.core.collection.impl.DistributedCollectionResource;
 import io.atomix.core.queue.AsyncDistributedQueue;
+import io.atomix.core.queue.DistributedQueueConfig;
+import io.atomix.core.queue.DistributedQueueType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
@@ -31,21 +34,21 @@ import javax.ws.rs.core.Response;
 /**
  * Distributed queue resource.
  */
-public class DistributedQueueResource extends DistributedCollectionResource {
+@Path("/queue")
+public class DistributedQueueResource extends DistributedCollectionResource<AsyncDistributedQueue<String>, DistributedQueueConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(DistributedQueueResource.class);
 
-  private final AsyncDistributedQueue<String> queue;
-
-  public DistributedQueueResource(AsyncDistributedQueue<String> queue) {
-    super(queue);
-    this.queue = queue;
+  public DistributedQueueResource() {
+    super(DistributedQueueType.instance());
   }
 
   @POST
-  @Path("/remove")
+  @Path("/{name}/remove")
   @Produces(MediaType.APPLICATION_JSON)
-  public void remove(@Suspended AsyncResponse response) {
-    queue.remove().whenComplete((result, error) -> {
+  public void remove(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(queue -> queue.remove()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -56,10 +59,12 @@ public class DistributedQueueResource extends DistributedCollectionResource {
   }
 
   @POST
-  @Path("/poll")
+  @Path("/{name}/poll")
   @Produces(MediaType.APPLICATION_JSON)
-  public void poll(@Suspended AsyncResponse response) {
-    queue.poll().whenComplete((result, error) -> {
+  public void poll(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(queue -> queue.poll()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -70,10 +75,12 @@ public class DistributedQueueResource extends DistributedCollectionResource {
   }
 
   @POST
-  @Path("/element")
+  @Path("/{name}/element")
   @Produces(MediaType.APPLICATION_JSON)
-  public void element(@Suspended AsyncResponse response) {
-    queue.element().whenComplete((result, error) -> {
+  public void element(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(queue -> queue.element()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -84,10 +91,12 @@ public class DistributedQueueResource extends DistributedCollectionResource {
   }
 
   @POST
-  @Path("/peek")
+  @Path("/{name}/peek")
   @Produces(MediaType.APPLICATION_JSON)
-  public void peek(@Suspended AsyncResponse response) {
-    queue.peek().whenComplete((result, error) -> {
+  public void peek(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(queue -> queue.peek()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {

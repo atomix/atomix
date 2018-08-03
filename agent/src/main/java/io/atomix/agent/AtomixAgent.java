@@ -143,7 +143,12 @@ public class AtomixAgent {
       }
       config = Atomix.config(configFiles);
     } else {
-      config = Atomix.config();
+      String configFile = System.getProperty("atomix.config");
+      if (configFile != null) {
+        config = Atomix.config(configFile);
+      } else {
+        config = Atomix.config();
+      }
     }
 
     if (memberId != null) {

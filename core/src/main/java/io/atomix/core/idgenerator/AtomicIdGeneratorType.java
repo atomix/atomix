@@ -20,7 +20,6 @@ import io.atomix.core.idgenerator.impl.AtomicIdGeneratorResource;
 import io.atomix.core.idgenerator.impl.DelegatingAtomicIdGeneratorBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 
@@ -53,8 +52,8 @@ public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBui
   }
 
   @Override
-  public PrimitiveResource newResource(AtomicIdGenerator primitive) {
-    return new AtomicIdGeneratorResource(primitive.async());
+  public Class<?> getResourceClass() {
+    return AtomicIdGeneratorResource.class;
   }
 
   @Override

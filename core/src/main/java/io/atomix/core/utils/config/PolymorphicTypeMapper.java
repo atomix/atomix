@@ -23,10 +23,12 @@ import io.atomix.utils.config.TypedConfig;
  * Polymorphic type mapper.
  */
 public class PolymorphicTypeMapper {
+  private final String typePath;
   private final Class<? extends TypedConfig> configClass;
   private final Class<? extends ConfiguredType> typeClass;
 
-  public PolymorphicTypeMapper(Class<? extends TypedConfig> configClass, Class<? extends ConfiguredType> typeClass) {
+  public PolymorphicTypeMapper(String typePath, Class<? extends TypedConfig> configClass, Class<? extends ConfiguredType> typeClass) {
+    this.typePath = typePath;
     this.configClass = configClass;
     this.typeClass = typeClass;
   }
@@ -55,7 +57,7 @@ public class PolymorphicTypeMapper {
    * @return the type path
    */
   public String getTypePath() {
-    return "type";
+    return typePath;
   }
 
   /**

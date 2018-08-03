@@ -103,18 +103,9 @@ import io.atomix.core.value.DistributedValueType;
 import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.core.workqueue.WorkQueueBuilder;
 import io.atomix.core.workqueue.WorkQueueType;
-import io.atomix.primitive.PrimitiveBuilder;
-import io.atomix.primitive.PrimitiveInfo;
+import io.atomix.primitive.PrimitiveFactory;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
-import io.atomix.primitive.config.PrimitiveConfig;
-import io.atomix.utils.AtomixRuntimeException;
-
-import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Manages the creation of distributed primitive instances.
@@ -145,7 +136,7 @@ import java.util.concurrent.TimeoutException;
  *   }
  * </pre>
  */
-public interface PrimitivesService {
+public interface PrimitivesService extends PrimitiveFactory {
 
   /**
    * Creates a new named {@link DistributedMap} builder.
@@ -1507,194 +1498,5 @@ public interface PrimitivesService {
    * @return work queue builder
    */
   <E> WorkQueue<E> getWorkQueue(String name);
-
-  /**
-   * Gets or creates a primitive.
-   * <p>
-   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
-   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
-   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
-   * <p>
-   * The constructed primitive will be based on any pre-existing primitive configuration for the given {@code name}.
-   * <p>
-   * To get an asynchronous instance of the primitive, use the {@link SyncPrimitive#async()} method:
-   * <pre>
-   *   {@code
-   *   AsyncPrimitive async = atomix.getPrimitive("my-primitive").async();
-   *   }
-   * </pre>
-   *
-   * @param name the primitive name
-   * @param <P> the primitive type
-   * @return the primitive instance
-   */
-  default <P extends SyncPrimitive> P getPrimitive(String name) {
-    try {
-      return this.<P>getPrimitiveAsync(name).get(30, TimeUnit.SECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new AtomixRuntimeException(e);
-    }
-  }
-
-  /**
-   * Gets or creates a distributed primitive.
-   * <p>
-   * A new primitive of the given {@code primitiveType} will be created if no primitive instance with the given
-   * {@code name} exists on this node, otherwise the existing instance will be returned. The name is used to reference
-   * a distinct instance of the primitive within the cluster. The returned primitive will share the same state with
-   * primitives of the same name on other nodes.
-   * <p>
-   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
-   * defined in {@code atomix.conf}.
-   * <p>
-   * To get an asynchronous instance of the primitive, use the {@link SyncPrimitive#async()} method:
-   * <pre>
-   *   {@code
-   *   AsyncPrimitive async = atomix.getPrimitive("my-primitive").async();
-   *   }
-   * </pre>
-   *
-   * @param name the primitive name
-   * @param primitiveType the primitive type
-   * @param <P> the primitive type
-   * @return the primitive instance
-   */
-  default <P extends SyncPrimitive> P getPrimitive(String name, PrimitiveType<?, ?, P> primitiveType) {
-    try {
-      return getPrimitiveAsync(name, primitiveType).get(30, TimeUnit.SECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new AtomixRuntimeException(e);
-    }
-  }
-
-  /**
-   * Gets or creates a distributed primitive.
-   * <p>
-   * A new primitive of the given {@code primitiveType} will be created if no primitive instance with the given
-   * {@code name} exists on this node, otherwise the existing instance will be returned. The name is used to reference
-   * a distinct instance of the primitive within the cluster. The returned primitive will share the same state with
-   * primitives of the same name on other nodes.
-   * <p>
-   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
-   * defined in {@code atomix.conf}.
-   * <p>
-   * To get an asynchronous instance of the primitive, use the {@link SyncPrimitive#async()} method:
-   * <pre>
-   *   {@code
-   *   AsyncPrimitive async = atomix.getPrimitive("my-primitive").async();
-   *   }
-   * </pre>
-   *
-   * @param name the primitive name
-   * @param primitiveType the primitive type
-   * @param primitiveConfig the primitive configuration
-   * @param <C> the primitive configuration type
-   * @param <P> the primitive type
-   * @return the primitive instance
-   */
-  default <C extends PrimitiveConfig<C>, P extends SyncPrimitive> P getPrimitive(
-      String name,
-      PrimitiveType<?, C, P> primitiveType,
-      C primitiveConfig) {
-    try {
-      return getPrimitiveAsync(name, primitiveType, primitiveConfig).get(30, TimeUnit.SECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new AtomixRuntimeException(e);
-    }
-  }
-
-  /**
-   * Gets or creates a primitive asynchronously.
-   * <p>
-   * A new primitive will be created if no primitive instance with the given {@code name} exists on this node, otherwise
-   * the existing instance will be returned. The name is used to reference a distinct instance of the primitive within
-   * the cluster. The returned primitive will share the same state with primitives of the same name on other nodes.
-   * <p>
-   * The constructed primitive will be based on any pre-existing primitive configuration for the given {@code name}.
-   *
-   * @param name the primitive name
-   * @param <P> the primitive type
-   * @return the primitive instance
-   */
-  <P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(String name);
-
-  /**
-   * Gets or creates a distributed primitive asynchronously.
-   * <p>
-   * A new primitive of the given {@code primitiveType} will be created if no primitive instance with the given
-   * {@code name} exists on this node, otherwise the existing instance will be returned. The name is used to reference
-   * a distinct instance of the primitive within the cluster. The returned primitive will share the same state with
-   * primitives of the same name on other nodes.
-   * <p>
-   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
-   * defined in {@code atomix.conf}.
-   *
-   * @param name the primitive name
-   * @param primitiveType the primitive type
-   * @param <P> the primitive type
-   * @return the primitive instance
-   */
-  <P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(String name, PrimitiveType<?, ?, P> primitiveType);
-
-  /**
-   * Gets or creates a distributed primitive asynchronously.
-   * <p>
-   * A new primitive of the given {@code primitiveType} will be created if no primitive instance with the given
-   * {@code name} exists on this node, otherwise the existing instance will be returned. The name is used to reference
-   * a distinct instance of the primitive within the cluster. The returned primitive will share the same state with
-   * primitives of the same name on other nodes.
-   * <p>
-   * When the instance is initially constructed, it will be configured with any pre-existing primitive configuration
-   * defined in {@code atomix.conf}.
-   *
-   * @param name the primitive name
-   * @param primitiveType the primitive type
-   * @param primitiveConfig the primitive configuration
-   * @param <C> the primitive configuration type
-   * @param <P> the primitive type
-   * @return a future to be completed with the primitive instance
-   */
-  <C extends PrimitiveConfig<C>, P extends SyncPrimitive> CompletableFuture<P> getPrimitiveAsync(
-      String name, PrimitiveType<?, C, P> primitiveType, C primitiveConfig);
-
-  /**
-   * Creates a new named primitive builder of the given {@code primitiveType}.
-   * <p>
-   * The primitive name must be provided when constructing the builder. The name is used to reference a distinct instance of
-   * the primitive within the cluster. Multiple instances of the primitive with the same name will share the same state.
-   * However, the instance of the primitive constructed by the returned builder will be distinct and will not share
-   * local memory (e.g. cache) with any other instance on this node.
-   * <p>
-   * To get an asynchronous instance of the primitive, use the {@link SyncPrimitive#async()} method:
-   * <pre>
-   *   {@code
-   *   AsyncPrimitive async = atomix.primitiveBuilder("my-primitive", MyPrimitiveType.instance()).build().async();
-   *   }
-   * </pre>
-   *
-   * @param name the primitive name
-   * @param primitiveType the primitive type
-   * @param <B> the primitive builder type
-   * @param <P> the primitive type
-   * @return the primitive builder
-   */
-  <B extends PrimitiveBuilder<B, C, P>, C extends PrimitiveConfig<C>, P extends SyncPrimitive> B primitiveBuilder(
-      String name,
-      PrimitiveType<B, C, P> primitiveType);
-
-  /**
-   * Returns a collection of open primitives.
-   *
-   * @return a collection of open primitives
-   */
-  Collection<PrimitiveInfo> getPrimitives();
-
-  /**
-   * Returns a collection of open primitives of the given type.
-   *
-   * @param primitiveType the primitive type
-   * @return a collection of open primitives of the given type
-   */
-  Collection<PrimitiveInfo> getPrimitives(PrimitiveType primitiveType);
 
 }

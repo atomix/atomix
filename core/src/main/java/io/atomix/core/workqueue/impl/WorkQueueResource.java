@@ -16,9 +16,11 @@
 package io.atomix.core.workqueue.impl;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.core.workqueue.AsyncWorkQueue;
 import io.atomix.core.utils.EventLog;
 import io.atomix.core.utils.EventManager;
+import io.atomix.core.workqueue.AsyncWorkQueue;
+import io.atomix.core.workqueue.WorkQueueConfig;
+import io.atomix.core.workqueue.WorkQueueType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,8 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
@@ -38,19 +42,22 @@ import java.util.function.Consumer;
 /**
  * Work queue resource.
  */
-public class WorkQueueResource implements PrimitiveResource {
+@Path("/work-queue")
+public class WorkQueueResource extends PrimitiveResource<AsyncWorkQueue<String>, WorkQueueConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(WorkQueueResource.class);
 
-  private final AsyncWorkQueue<String> workQueue;
-
-  public WorkQueueResource(AsyncWorkQueue<String> workQueue) {
-    this.workQueue = workQueue;
+  public WorkQueueResource() {
+    super(WorkQueueType.instance());
   }
 
   @POST
+  @Path("/{name}")
   @Consumes(MediaType.TEXT_PLAIN)
-  public void add(String item, @Suspended AsyncResponse response) {
-    workQueue.addOne(item).whenComplete((result, error) -> {
+  public void add(
+      @PathParam("name") String name,
+      String item,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(queue -> queue.addOne(item)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
@@ -61,12 +68,16 @@ public class WorkQueueResource implements PrimitiveResource {
   }
 
   @GET
+  @Path("/{name}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void take(@Context EventManager events, @Suspended AsyncResponse response) {
+  public void take(
+      @PathParam("name") String name,
+      @Context EventManager events,
+      @Suspended AsyncResponse response) {
     EventLog<Consumer<String>, String> eventLog = events.getOrCreateEventLog(
-        AsyncWorkQueue.class, workQueue.name(), l -> e -> l.addEvent(e));
+        AsyncWorkQueue.class, name, l -> e -> l.addEvent(e));
     if (eventLog.open()) {
-      workQueue.registerTaskProcessor(eventLog.listener(), 1, MoreExecutors.directExecutor())
+      getPrimitive(name).thenCompose(queue -> queue.registerTaskProcessor(eventLog.listener(), 1, MoreExecutors.directExecutor()))
           .whenComplete((result, error) -> {
             if (error == null) {
               takeTask(eventLog, response);

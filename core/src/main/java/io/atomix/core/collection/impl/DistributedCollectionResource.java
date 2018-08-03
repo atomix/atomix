@@ -17,6 +17,8 @@ package io.atomix.core.collection.impl;
 
 import com.google.common.collect.Sets;
 import io.atomix.core.collection.AsyncDistributedCollection;
+import io.atomix.core.collection.DistributedCollectionConfig;
+import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,26 +37,36 @@ import javax.ws.rs.core.Response;
 /**
  * Distributed collection resource.
  */
-public abstract class DistributedCollectionResource implements PrimitiveResource {
+public abstract class DistributedCollectionResource<P extends AsyncDistributedCollection<String>, C extends DistributedCollectionConfig<C>> extends PrimitiveResource<P, C> {
   private final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
-  private final AsyncDistributedCollection<String> collection;
-
-  public DistributedCollectionResource(AsyncDistributedCollection<String> collection) {
-    this.collection = collection;
+  protected DistributedCollectionResource(PrimitiveType type) {
+    super(type);
   }
 
   @GET
+  @Path("/{name}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void get(@Suspended AsyncResponse response) {
-    response.resume(Response.ok(Sets.newHashSet(collection.iterator().sync())));
+  public void get(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).whenComplete((collection, error) -> {
+      if (error == null) {
+        response.resume(Response.ok(Sets.newHashSet(collection.iterator().sync())));
+      } else {
+        response.resume(Response.serverError().build());
+      }
+    });
   }
 
   @PUT
-  @Path("/{element}")
+  @Path("/{name}/{element}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void add(@PathParam("element") String element, @Suspended AsyncResponse response) {
-    collection.add(element).whenComplete((result, error) -> {
+  public void add(
+      @PathParam("name") String name,
+      @PathParam("element") String element,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(collection -> collection.add(element)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -65,10 +77,13 @@ public abstract class DistributedCollectionResource implements PrimitiveResource
   }
 
   @GET
-  @Path("/{element}")
+  @Path("/{name}/{element}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void contains(@PathParam("element") String element, @Suspended AsyncResponse response) {
-    collection.contains(element).whenComplete((result, error) -> {
+  public void contains(
+      @PathParam("name") String name,
+      @PathParam("element") String element,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(collection -> collection.contains(element)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -79,10 +94,13 @@ public abstract class DistributedCollectionResource implements PrimitiveResource
   }
 
   @DELETE
-  @Path("/{element}")
+  @Path("/{name}/{element}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void remove(@PathParam("element") String element, @Suspended AsyncResponse response) {
-    collection.remove(element).whenComplete((result, error) -> {
+  public void remove(
+      @PathParam("name") String name,
+      @PathParam("element") String element,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(collection -> collection.remove(element)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -93,10 +111,12 @@ public abstract class DistributedCollectionResource implements PrimitiveResource
   }
 
   @GET
-  @Path("/size")
+  @Path("/{name}/size")
   @Produces(MediaType.APPLICATION_JSON)
-  public void size(@Suspended AsyncResponse response) {
-    collection.size().whenComplete((result, error) -> {
+  public void size(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(collection -> collection.size()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -107,8 +127,11 @@ public abstract class DistributedCollectionResource implements PrimitiveResource
   }
 
   @DELETE
-  public void clear(@Suspended AsyncResponse response) {
-    collection.clear().whenComplete((result, error) -> {
+  @Path("/{name}")
+  public void clear(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(collection -> collection.clear()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {

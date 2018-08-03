@@ -57,7 +57,7 @@
     <jaxrs.version>2.0</jaxrs.version>
     <jackson.version>2.9.6</jackson.version>
     <config.version>1.3.2</config.version>
-    <fast-classpath-scanner.version>2.21</fast-classpath-scanner.version>
+    <classgraph.version>4.0.3</classgraph.version>
     <resteasy.version>3.1.4.Final</resteasy.version>
     <rest-assured.version>3.0.7</rest-assured.version>
     <argparse4j.version>0.7.0</argparse4j.version>
@@ -74,8 +74,9 @@
     <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
     <maven.bundle.plugin.version>2.5.3</maven.bundle.plugin.version>
     <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
+    <maven.dockerfile.plugin.version>1.4.3</maven.dockerfile.plugin.version>
 
-    <argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.scanSpec=io.atomix</argLine.common>
+    <argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.whitelistPackages=io.atomix</argLine.common>
     <argLine.extras /> <!-- Overridden in some profiles -->
     <argLine.javadocs>-quiet</argLine.javadocs>
   </properties>
@@ -85,7 +86,7 @@
     <profile>
       <id>java9</id>
       <properties>
-        <argLine.common>-Xss256k -Xms512m -Xmx2G -Dio.atomix.scanSpec=io.atomix</argLine.common>
+        <argLine.common>-Xss256k -Xms512m -Xmx2G -Dio.atomix.whitelistPackages=io.atomix</argLine.common>
         <argLine.extras>--add-modules jdk.unsupported --add-opens=java.base/java.nio=ALL-UNNAMED</argLine.extras>
         <argLine.javadocs>-html5 -quiet</argLine.javadocs>
         <!-- coverall version 4.3.0 does not work with java 9, see https://github.com/trautonen/coveralls-maven-plugin/issues/112 -->
@@ -99,7 +100,7 @@
     <profile>
         <id>java11</id>
         <properties>
-          <!--argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseShenandoahGC -XX:+UseStringDeduplication -XX:-OmitStackTraceInFastThrow -Dio.atomix.scanSpec=io.atomix</argLine.common-->
+          <!--argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseShenandoahGC -XX:+UseStringDeduplication -XX:-OmitStackTraceInFastThrow -Dio.atomix.whitelistPackages=io.atomix</argLine.common-->
           <!-- jacoco version 0.8.1 does not work with java 11, see https://github.com/jacoco/jacoco/issues/663 -->
           <jacoco.skip>true</jacoco.skip>
         </properties>
@@ -139,6 +140,7 @@
     <module>agent</module>
     <module>cluster</module>
     <module>core</module>
+    <module>dist</module>
     <module>primitive</module>
     <module>protocols</module>
     <module>rest</module>
@@ -263,7 +265,7 @@
           <execution>
             <id>attach-javadocs</id>
             <goals>
-              <goal>aggregate-jar</goal>
+              <goal>jar</goal>
             </goals>
           </execution>
         </executions>

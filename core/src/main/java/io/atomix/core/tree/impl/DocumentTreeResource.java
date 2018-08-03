@@ -17,6 +17,8 @@ package io.atomix.core.tree.impl;
 
 import com.google.common.collect.Maps;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
+import io.atomix.core.tree.AtomicDocumentTreeConfig;
+import io.atomix.core.tree.AtomicDocumentTreeType;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
@@ -39,7 +41,6 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -47,13 +48,12 @@ import java.util.stream.Collectors;
 /**
  * Document tree resource.
  */
-public class DocumentTreeResource implements PrimitiveResource {
+@Path("/atomic-document-tree")
+public class DocumentTreeResource extends PrimitiveResource<AsyncAtomicDocumentTree<String>, AtomicDocumentTreeConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(DocumentTreeResource.class);
 
-  private final AsyncAtomicDocumentTree<String> tree;
-
-  public DocumentTreeResource(AsyncAtomicDocumentTree<String> tree) {
-    this.tree = tree;
+  public DocumentTreeResource() {
+    super(AtomicDocumentTreeType.instance());
   }
 
   /**
@@ -61,19 +61,20 @@ public class DocumentTreeResource implements PrimitiveResource {
    */
   private DocumentPath getDocumentPath(List<PathSegment> params) {
     if (params.isEmpty()) {
-      return tree.root();
+      return DocumentPath.ROOT;
     } else {
-      List<String> path = new ArrayList<>(tree.root().pathElements());
-      path.addAll(params.stream().map(PathSegment::getPath).collect(Collectors.toList()));
-      return DocumentPath.from(path);
+      return DocumentPath.from(params.stream().map(PathSegment::getPath).collect(Collectors.toList()));
     }
   }
 
   @GET
-  @Path("/{path: .*}")
+  @Path("/{name}/{path: .*}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void get(@PathParam("path") List<PathSegment> path, @Suspended AsyncResponse response) {
-    tree.get(getDocumentPath(path)).whenComplete((result, error) -> {
+  public void get(
+      @PathParam("name") String name,
+      @PathParam("path") List<PathSegment> path,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(tree -> tree.get(getDocumentPath(path))).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(new VersionedResult(result)).build());
       } else {
@@ -84,11 +85,15 @@ public class DocumentTreeResource implements PrimitiveResource {
   }
 
   @POST
-  @Path("/{path: .*}")
+  @Path("/{name}/{path: .*}")
   @Consumes(MediaType.TEXT_PLAIN)
   @Produces(MediaType.APPLICATION_JSON)
-  public void create(@PathParam("path") List<PathSegment> path, String value, @Suspended AsyncResponse response) {
-    tree.createRecursive(getDocumentPath(path), value).whenComplete((result, error) -> {
+  public void create(
+      @PathParam("name") String name,
+      @PathParam("path") List<PathSegment> path,
+      String value,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(tree -> tree.createRecursive(getDocumentPath(path), value)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -99,15 +104,20 @@ public class DocumentTreeResource implements PrimitiveResource {
   }
 
   @PUT
-  @Path("/{path: .*}")
+  @Path("/{name}/{path: .*}")
   @Consumes(MediaType.TEXT_PLAIN)
   @Produces(MediaType.APPLICATION_JSON)
-  public void set(@PathParam("path") List<PathSegment> path, String value, @QueryParam("version") Long version, @Suspended AsyncResponse response) {
+  public void set(
+      @PathParam("name") String name,
+      @PathParam("path") List<PathSegment> path,
+      String value,
+      @QueryParam("version") Long version,
+      @Suspended AsyncResponse response) {
     CompletableFuture<Boolean> future;
     if (version != null) {
-      future = tree.replace(getDocumentPath(path), value, version);
+      future = getPrimitive(name).thenCompose(tree -> tree.replace(getDocumentPath(path), value, version));
     } else {
-      future = tree.set(getDocumentPath(path), value).thenApply(v -> Boolean.TRUE);
+      future = getPrimitive(name).thenCompose(tree -> tree.set(getDocumentPath(path), value).thenApply(v -> Boolean.TRUE));
     }
 
     future.whenComplete((result, error) -> {
@@ -128,10 +138,12 @@ public class DocumentTreeResource implements PrimitiveResource {
   }
 
   @GET
-  @Path("/children")
+  @Path("/{name}/children")
   @Produces(MediaType.APPLICATION_JSON)
-  public void getRootChildren(@Suspended AsyncResponse response) {
-    tree.getChildren(tree.root()).whenComplete((result, error) -> {
+  public void getRootChildren(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(tree -> tree.getChildren(tree.root())).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(Maps.transformValues(result, VersionedResult::new)).build());
       } else {
@@ -142,10 +154,13 @@ public class DocumentTreeResource implements PrimitiveResource {
   }
 
   @GET
-  @Path("/children/{path: .*}")
+  @Path("/{name}/children/{path: .*}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void getChildren(@PathParam("path") List<PathSegment> path, @Suspended AsyncResponse response) {
-    tree.getChildren(getDocumentPath(path)).whenComplete((result, error) -> {
+  public void getChildren(
+      @PathParam("name") String name,
+      @PathParam("path") List<PathSegment> path,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(tree -> tree.getChildren(getDocumentPath(path))).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(Maps.transformValues(result, VersionedResult::new)).build());
       } else {
@@ -156,10 +171,13 @@ public class DocumentTreeResource implements PrimitiveResource {
   }
 
   @DELETE
-  @Path("/{path: .*}")
+  @Path("/{name}/{path: .*}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void removeNode(@PathParam("path") List<PathSegment> path, @Suspended AsyncResponse response) {
-    tree.remove(getDocumentPath(path)).whenComplete((result, error) -> {
+  public void removeNode(
+      @PathParam("name") String name,
+      @PathParam("path") List<PathSegment> path,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(tree -> tree.remove(getDocumentPath(path))).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(new VersionedResult(result)).build());
       } else {

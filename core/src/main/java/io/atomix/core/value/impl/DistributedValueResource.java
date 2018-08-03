@@ -16,6 +16,8 @@
 package io.atomix.core.value.impl;
 
 import io.atomix.core.value.AsyncDistributedValue;
+import io.atomix.core.value.DistributedValueConfig;
+import io.atomix.core.value.DistributedValueType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
@@ -33,20 +36,19 @@ import javax.ws.rs.core.Response;
 /**
  * Distributed value resource.
  */
-public class DistributedValueResource implements PrimitiveResource {
+@Path("/value")
+public class DistributedValueResource extends PrimitiveResource<AsyncDistributedValue<String>, DistributedValueConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(DistributedValueResource.class);
 
-  private final AsyncDistributedValue<String> value;
-
-  public DistributedValueResource(AsyncDistributedValue<String> value) {
-    this.value = value;
+  public DistributedValueResource() {
+    super(DistributedValueType.instance());
   }
 
   @GET
-  @Path("/value")
+  @Path("/{name}/value")
   @Produces(MediaType.APPLICATION_JSON)
-  public void get(@Suspended AsyncResponse response) {
-    value.get().whenComplete((result, error) -> {
+  public void get(@PathParam("name") String name, @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(value -> value.get()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -57,10 +59,10 @@ public class DistributedValueResource implements PrimitiveResource {
   }
 
   @POST
-  @Path("/value")
+  @Path("/{name}/value")
   @Consumes(MediaType.TEXT_PLAIN)
-  public void set(String body, @Suspended AsyncResponse response) {
-    value.set(body).whenComplete((result, error) -> {
+  public void set(@PathParam("name") String name, String body, @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(value -> value.set(body)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {

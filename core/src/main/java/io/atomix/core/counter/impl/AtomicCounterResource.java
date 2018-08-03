@@ -15,7 +15,10 @@
  */
 package io.atomix.core.counter.impl;
 
+import io.atomix.core.PrimitivesService;
 import io.atomix.core.counter.AsyncAtomicCounter;
+import io.atomix.core.counter.AtomicCounterConfig;
+import io.atomix.core.counter.AtomicCounterType;
 import io.atomix.primitive.resource.PrimitiveResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,31 +28,32 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Atomic counter resource.
  */
-public class AtomicCounterResource implements PrimitiveResource {
+@Path("/atomic-counter")
+public class AtomicCounterResource extends PrimitiveResource<AsyncAtomicCounter, AtomicCounterConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomicCounterResource.class);
 
-  private final AsyncAtomicCounter counter;
-
-  public AtomicCounterResource(AsyncAtomicCounter counter) {
-    this.counter = checkNotNull(counter);
+  public AtomicCounterResource() {
+    super(AtomicCounterType.instance());
   }
 
   @GET
-  @Path("/")
+  @Path("/{name}")
   @Produces(MediaType.APPLICATION_JSON)
-  public void get(@Suspended AsyncResponse response) {
-    counter.get().whenComplete((result, error) -> {
+  public void get(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(counter -> counter.get()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
@@ -60,10 +64,13 @@ public class AtomicCounterResource implements PrimitiveResource {
   }
 
   @PUT
-  @Path("/")
+  @Path("/{name}")
   @Consumes(MediaType.TEXT_PLAIN)
-  public void set(Long value, @Suspended AsyncResponse response) {
-    counter.set(value).whenComplete((result, error) -> {
+  public void set(
+      @PathParam("name") String name,
+      Long value,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(counter -> counter.set(value)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
@@ -74,10 +81,12 @@ public class AtomicCounterResource implements PrimitiveResource {
   }
 
   @POST
-  @Path("/inc")
+  @Path("/{name}/inc")
   @Produces(MediaType.APPLICATION_JSON)
-  public void incrementAndGet(@Suspended AsyncResponse response) {
-    counter.incrementAndGet().whenComplete((result, error) -> {
+  public void incrementAndGet(
+      @PathParam("name") String name,
+      @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(counter -> counter.incrementAndGet()).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
