@@ -277,7 +277,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   public Versioned<Collection<byte[]>> replaceValues(String key, Collection<byte[]> values) {
     MapEntryValues entry = backingMap.computeIfAbsent(key, k -> new NonTransactionalValues());
 
-    Collection<? extends byte[]> oldValues = entry.values();
+    Collection<byte[]> oldValues = entry.values();
     Versioned<Collection<byte[]>> removedValues = entry.replace(key, values);
     if (entry.values().isEmpty()) {
       backingMap.remove(key);
