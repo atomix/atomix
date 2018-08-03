@@ -66,6 +66,28 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>dockerfile-maven-plugin</artifactId>
+        <version>${maven.dockerfile.plugin.version}</version>
+        <inherited>false</inherited>
+        <executions>
+          <execution>
+            <id>default</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <repository>atomix/atomix</repository>
+          <tag>${project.version}</tag>
+          <buildArgs>
+            <VERSION>${project.version}</VERSION>
+          </buildArgs>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>
