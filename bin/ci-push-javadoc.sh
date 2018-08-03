@@ -9,7 +9,7 @@ if [ "$TRAVIS_REPO_SLUG" == "atomix/$PROJECT" ] && \
    [ "$TRAVIS_BRANCH" == "master" ]; then
   echo -e "Publishing Javadoc...\n"
   
-  $TRAVIS_BUILD_DIR/mvnw javadoc:javadoc -Djv=latest --batch-mode -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+  mvn javadoc:javadoc -Djv=latest --batch-mode -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
   TARGET="$(pwd)/target"
 
   cd $HOME
