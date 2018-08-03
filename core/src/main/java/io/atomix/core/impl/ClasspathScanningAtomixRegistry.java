@@ -18,6 +18,7 @@ package io.atomix.core.impl;
 import io.atomix.core.AtomixRegistry;
 import io.atomix.utils.NamedType;
 import io.atomix.utils.ServiceException;
+import io.atomix.utils.misc.StringUtils;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import org.slf4j.Logger;
@@ -47,9 +48,9 @@ public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
             CACHE.computeIfAbsent(classLoader, cl -> new ConcurrentHashMap<>());
     final Map<Class<? extends NamedType>, Map<String, NamedType>> registrations =
             mappings.computeIfAbsent(new CacheKey(types), cacheKey -> {
-        final String scanSpec = System.getProperty("io.atomix.scanSpec");
-        final ClassGraph classGraph = scanSpec != null ?
-                new ClassGraph().enableClassInfo().whitelistPackages(scanSpec).addClassLoader(classLoader) :
+        final String[] whitelistPackages = StringUtils.split(System.getProperty("io.atomix.whitelistPackages"), ",");
+        final ClassGraph classGraph = whitelistPackages != null ?
+                new ClassGraph().enableClassInfo().whitelistPackages(whitelistPackages).addClassLoader(classLoader) :
                 new ClassGraph().enableClassInfo().addClassLoader(classLoader);
 
         final ScanResult scanResult = classGraph.scan();
@@ -67,7 +68,7 @@ public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
                       oldInstance.getClass().getName(), instance.getClass().getName());
             }
           });
-          result.put(type, tmp);
+          result.put(type, Collections.unmodifiableMap(tmp));
         }
         return result;
       });

@@ -18,6 +18,7 @@ package io.atomix.primitive.impl;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.utils.ServiceException;
+import io.atomix.utils.misc.StringUtils;
 import io.github.classgraph.ClassGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,9 +44,9 @@ public class ClasspathScanningPrimitiveTypeRegistry implements PrimitiveTypeRegi
   public ClasspathScanningPrimitiveTypeRegistry(ClassLoader classLoader) {
     Map<String, PrimitiveType> types = CACHE.computeIfAbsent(classLoader, cl -> {
       final Map<String, PrimitiveType> result = new ConcurrentHashMap<>();
-      final String scanSpec = System.getProperty("io.atomix.scanSpec");
-      final ClassGraph classGraph = scanSpec != null ?
-              new ClassGraph().enableClassInfo().whitelistPackages(scanSpec).addClassLoader(classLoader) :
+      final String[] whitelistPackages = StringUtils.split(System.getProperty("io.atomix.whitelistPackages"), ",");
+      final ClassGraph classGraph = whitelistPackages != null ?
+              new ClassGraph().enableClassInfo().whitelistPackages(whitelistPackages).addClassLoader(classLoader) :
               new ClassGraph().enableClassInfo().addClassLoader(classLoader);
       classGraph.scan().getClassesImplementing(PrimitiveType.class.getName()).forEach(classInfo -> {
         if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {
@@ -58,7 +59,7 @@ public class ClasspathScanningPrimitiveTypeRegistry implements PrimitiveTypeRegi
                   oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
         }
       });
-      return result;
+      return Collections.unmodifiableMap(result);
     });
     primitiveTypes.putAll(types);
   }
