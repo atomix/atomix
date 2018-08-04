@@ -105,6 +105,36 @@
           </buildArgs>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>de.jutzig</groupId>
+        <artifactId>github-release-plugin</artifactId>
+        <version>${maven.github-release.plugin.version}</version>
+        <executions>
+          <execution>
+            <id>github-upload</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>release</goal>
+            </goals>
+            <inherited>false</inherited>
+            <configuration>
+              <releaseName>${project.version}</releaseName>
+              <description>Atomix agent distribution version ${project.version}</description>
+              <tag>${project.version}</tag>
+              <fileSets>
+                <fileSet>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>atomix-agent-${project.version}*.tar.gz</include>
+                    <include>atomix-agent-${project.version}*.zip</include>
+                  </includes>
+                </fileSet>
+              </fileSets>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
