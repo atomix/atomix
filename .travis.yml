@@ -9,10 +9,12 @@ jdk:
 - oraclejdk8
 - openjdk8
 - openjdk10
+- openjdk11
 
 matrix:
   allow_failures:
   - jdk: openjdk10
+  - jdk: openjdk11
 
 addons:
   sonarcloud:
