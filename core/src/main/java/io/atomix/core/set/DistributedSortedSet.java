@@ -16,8 +16,6 @@
 package io.atomix.core.set;
 
 import java.util.SortedSet;
-import java.util.Spliterator;
-import java.util.Spliterators;
 
 /**
  * Distributed sorted set.
@@ -25,9 +23,4 @@ import java.util.Spliterators;
 public interface DistributedSortedSet<E extends Comparable<E>> extends DistributedSet<E>, SortedSet<E> {
   @Override
   AsyncDistributedSortedSet<E> async();
-
-  @Override
-  default Spliterator<E> spliterator() {
-    return Spliterators.spliterator(this, 0);
-  }
 }
