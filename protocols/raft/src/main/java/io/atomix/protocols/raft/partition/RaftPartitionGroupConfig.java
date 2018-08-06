@@ -32,7 +32,7 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
 
   private Set<String> members = new HashSet<>();
   private int partitionSize;
-  private String storageLevel = StorageLevel.MAPPED.name();
+  private String storageLevel = StorageLevel.DISK.name();
   private long segmentSize = 1024 * 1024 * 32;
   private boolean flushOnCommit = true;
   private String dataDirectory;
