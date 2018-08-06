@@ -104,6 +104,19 @@
             <VERSION>${project.version}</VERSION>
           </buildArgs>
         </configuration>
+        <!-- See https://github.com/spotify/dockerfile-maven/issues/200 -->
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-archiver</artifactId>
+            <version>3.6.0</version>
+          </dependency>
+          <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>javax.activation-api</artifactId>
+            <version>1.2.0</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>
