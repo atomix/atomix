@@ -7,7 +7,7 @@
 [![Build Status](https://travis-ci.org/atomix/atomix.svg?branch=master)](https://travis-ci.org/atomix/atomix)
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=io.atomix%3Aatomix-parent&metric=alert_status)](https://sonarcloud.io/dashboard?id=io.atomix%3Aatomix-parent)
 [![Coverage Status](https://coveralls.io/repos/github/atomix/atomix/badge.svg?branch=master)](https://coveralls.io/github/atomix/atomix?branch=master)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix/badge.svg?cache=foo)](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix)
 [![Javadocs](http://www.javadoc.io/badge/io.atomix/atomix.svg)](https://atomix.io/docs/latest/api/)
 [![Gitter](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/atomix/atomix)
 
