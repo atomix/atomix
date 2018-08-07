@@ -65,6 +65,7 @@
     <!-- Maven plugins -->
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.7.0</maven.compiler.plugin.version>
+    <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
     <maven.failsafe.plugin.version>2.21.0</maven.failsafe.plugin.version>
     <maven.surefire.plugin.version>2.22.0</maven.surefire.plugin.version>
     <maven.clean.plugin.version>2.5</maven.clean.plugin.version>
@@ -78,7 +79,7 @@
 
     <argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.whitelistPackages=io.atomix</argLine.common>
     <argLine.extras /> <!-- Overridden in some profiles -->
-    <argLine.javadocs>-quiet</argLine.javadocs>
+    <argLine.javadocs />
   </properties>
 
   <profiles>
@@ -88,7 +89,7 @@
       <properties>
         <argLine.common>-Xss256k -Xms512m -Xmx2G -Dio.atomix.whitelistPackages=io.atomix</argLine.common>
         <argLine.extras>--add-modules jdk.unsupported --add-opens=java.base/java.nio=ALL-UNNAMED</argLine.extras>
-        <argLine.javadocs>-html5 -quiet</argLine.javadocs>
+        <argLine.javadocs>-html5</argLine.javadocs>
         <!-- coverall version 4.3.0 does not work with java 9, see https://github.com/trautonen/coveralls-maven-plugin/issues/112 -->
         <coveralls.skip>true</coveralls.skip>
       </properties>
@@ -270,6 +271,8 @@
           </execution>
         </executions>
         <configuration>
+          <verbose>false</verbose>
+          <quiet>true</quiet>
           <additionalparam>${argLine.javadocs}</additionalparam>
           <show>public</show>
           <doctitle>Atomix API Reference (${jv})</doctitle>

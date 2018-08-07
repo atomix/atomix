@@ -300,7 +300,7 @@ public interface AsyncAtomicNavigableMap<K extends Comparable<K>, V> extends Asy
    * operation), the results of the iteration are undefined.
    *
    * <p>The returned map has an ordering equivalent to
-   * <tt>{@link Collections#reverseOrder(Comparator) Collections.reverseOrder}(comparator())</tt>.
+   * <code>{@link Collections#reverseOrder(Comparator) Collections.reverseOrder}(comparator())</code>.
    * The expression {@code m.descendingMap().descendingMap()} returns a
    * view of {@code m} essentially equivalent to {@code m}.
    *

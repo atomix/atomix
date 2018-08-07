@@ -5,7 +5,7 @@
 echo "Enter the API version to generate docs for: "
 read apiVersion
 
-mvn javadoc:javadoc -Djv=$apiVersion
+mvn javadoc:aggregate -Djv=$apiVersion
 rm -rf target/docs
 git clone git@github.com:atomix/atomix.github.io.git target/docs > /dev/null
 cd target/docs
