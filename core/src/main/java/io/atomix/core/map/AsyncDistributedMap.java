@@ -35,30 +35,30 @@ import java.util.function.Function;
 public interface AsyncDistributedMap<K, V> extends AsyncPrimitive {
 
   /**
-   * Returns the number of key-value mappings in this map.  If the map contains more than <tt>Integer.MAX_VALUE</tt>
+   * Returns the number of key-value mappings in this map.  If the map contains more than <code>Integer.MAX_VALUE</code>
    * elements, returns
-   * <tt>Integer.MAX_VALUE</tt>.
+   * <code>Integer.MAX_VALUE</code>.
    *
    * @return the number of key-value mappings in this map
    */
   CompletableFuture<Integer> size();
 
   /**
-   * Returns <tt>true</tt> if this map contains no key-value mappings.
+   * Returns <code>true</code> if this map contains no key-value mappings.
    *
-   * @return <tt>true</tt> if this map contains no key-value mappings
+   * @return <code>true</code> if this map contains no key-value mappings
    */
   CompletableFuture<Boolean> isEmpty();
 
   /**
-   * Returns <tt>true</tt> if this map contains a mapping for the specified key.  More formally, returns <tt>true</tt>
-   * if and only if this map contains a mapping for a key <tt>k</tt> such that
-   * <tt>(key==null ? k==null : key.equals(k))</tt>.  (There can be
+   * Returns <code>true</code> if this map contains a mapping for the specified key.  More formally, returns <code>true</code>
+   * if and only if this map contains a mapping for a key <code>k</code> such that
+   * <code>(key==null ? k==null : key.equals(k))</code>.  (There can be
    * at most one such mapping.)
    *
    * @param key key whose presence in this map is to be tested
    *
-   * @return <tt>true</tt> if this map contains a mapping for the specified
+   * @return <code>true</code> if this map contains a mapping for the specified
    *     key
    *
    * @throws ClassCastException if the key is of an inappropriate type for this map (<a
@@ -69,14 +69,14 @@ public interface AsyncDistributedMap<K, V> extends AsyncPrimitive {
   CompletableFuture<Boolean> containsKey(K key);
 
   /**
-   * Returns <tt>true</tt> if this map maps one or more keys to the specified value.  More formally, returns
-   * <tt>true</tt> if and only if this map contains at least one mapping to a value <tt>v</tt> such that
-   * <tt>(value==null ? v==null : value.equals(v))</tt>.  This operation
-   * will probably require time linear in the map size for most implementations of the <tt>Map</tt> interface.
+   * Returns <code>true</code> if this map maps one or more keys to the specified value.  More formally, returns
+   * <code>true</code> if and only if this map contains at least one mapping to a value <code>v</code> such that
+   * <code>(value==null ? v==null : value.equals(v))</code>.  This operation
+   * will probably require time linear in the map size for most implementations of the <code>Map</code> interface.
    *
    * @param value value whose presence in this map is to be tested
    *
-   * @return <tt>true</tt> if this map maps one or more keys to the
+   * @return <code>true</code> if this map maps one or more keys to the
    *     specified value
    *
    * @throws ClassCastException if the value is of an inappropriate type for this map (<a
@@ -113,19 +113,19 @@ public interface AsyncDistributedMap<K, V> extends AsyncPrimitive {
   /**
    * Associates the specified value with the specified key in this map (optional operation).  If the map previously
    * contained a mapping for the key, the old value is replaced by the specified value.  (A map
-   * <tt>m</tt> is said to contain a mapping for a key <tt>k</tt> if and only
+   * <code>m</code> is said to contain a mapping for a key <code>k</code> if and only
    * if {@link #containsKey(Object) m.containsKey(k)} would return
-   * <tt>true</tt>.)
+   * <code>true</code>.)
    *
    * @param key key with which the specified value is to be associated
    * @param value value to be associated with the specified key
    *
-   * @return the previous value associated with <tt>key</tt>, or
-   *     <tt>null</tt> if there was no mapping for <tt>key</tt>.
-   *     (A <tt>null</tt> return can also indicate that the map previously associated <tt>null</tt> with <tt>key</tt>,
-   *     if the implementation supports <tt>null</tt> values.)
+   * @return the previous value associated with <code>key</code>, or
+   *     <code>null</code> if there was no mapping for <code>key</code>.
+   *     (A <code>null</code> return can also indicate that the map previously associated <code>null</code> with <code>key</code>,
+   *     if the implementation supports <code>null</code> values.)
    *
-   * @throws UnsupportedOperationException if the <tt>put</tt> operation is not supported by this map
+   * @throws UnsupportedOperationException if the <code>put</code> operation is not supported by this map
    * @throws ClassCastException if the class of the specified key or value prevents it from being stored in this
    *     map
    * @throws NullPointerException if the specified key or value is null and this map does not permit null keys or
@@ -137,26 +137,26 @@ public interface AsyncDistributedMap<K, V> extends AsyncPrimitive {
 
   /**
    * Removes the mapping for a key from this map if it is present (optional operation).   More formally, if this map
-   * contains a mapping from key <tt>k</tt> to value <tt>v</tt> such that
+   * contains a mapping from key <code>k</code> to value <code>v</code> such that
    * <code>(key==null ?  k==null : key.equals(k))</code>, that mapping
    * is removed.  (The map can contain at most one such mapping.)
    *
    * <p>Returns the value to which this map previously associated the key,
-   * or <tt>null</tt> if the map contained no mapping for the key.
+   * or <code>null</code> if the map contained no mapping for the key.
    *
    * <p>If this map permits null values, then a return value of
-   * <tt>null</tt> does not <i>necessarily</i> indicate that the map
-   * contained no mapping for the key; it's also possible that the map explicitly mapped the key to <tt>null</tt>.
+   * <code>null</code> does not <i>necessarily</i> indicate that the map
+   * contained no mapping for the key; it's also possible that the map explicitly mapped the key to <code>null</code>.
    *
    * <p>The map will not contain a mapping for the specified key once the
    * call returns.
    *
    * @param key key whose mapping is to be removed from the map
    *
-   * @return the previous value associated with <tt>key</tt>, or
-   *     <tt>null</tt> if there was no mapping for <tt>key</tt>.
+   * @return the previous value associated with <code>key</code>, or
+   *     <code>null</code> if there was no mapping for <code>key</code>.
    *
-   * @throws UnsupportedOperationException if the <tt>remove</tt> operation is not supported by this map
+   * @throws UnsupportedOperationException if the <code>remove</code> operation is not supported by this map
    * @throws ClassCastException if the key is of an inappropriate type for this map (<a
    *     href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
    * @throws NullPointerException if the specified key is null and this map does not permit null keys (<a
@@ -167,12 +167,12 @@ public interface AsyncDistributedMap<K, V> extends AsyncPrimitive {
   /**
    * Copies all of the mappings from the specified map to this map (optional operation).  The effect of this call is
    * equivalent to that of calling {@link #put(Object, Object) put(k, v)} on this map once for each mapping from key
-   * <tt>k</tt> to value <tt>v</tt> in the specified map.  The behavior of this operation is undefined if the specified
+   * <code>k</code> to value <code>v</code> in the specified map.  The behavior of this operation is undefined if the specified
    * map is modified while the operation is in progress.
    *
    * @param m mappings to be stored in this map
    *
-   * @throws UnsupportedOperationException if the <tt>putAll</tt> operation is not supported by this map
+   * @throws UnsupportedOperationException if the <code>putAll</code> operation is not supported by this map
    * @throws ClassCastException if the class of a key or value in the specified map prevents it from being stored in
    *     this map
    * @throws NullPointerException if the specified map is null, or if this map does not permit null keys or values,
@@ -185,18 +185,18 @@ public interface AsyncDistributedMap<K, V> extends AsyncPrimitive {
   /**
    * Removes all of the mappings from this map (optional operation). The map will be empty after this call returns.
    *
-   * @throws UnsupportedOperationException if the <tt>clear</tt> operation is not supported by this map
+   * @throws UnsupportedOperationException if the <code>clear</code> operation is not supported by this map
    */
   CompletableFuture<Void> clear();
 
   /**
    * Returns a {@link Set} view of the keys contained in this map. The set is backed by the map, so changes to the map
    * are reflected in the set, and vice-versa.  If the map is modified while an iteration over the set is in progress
-   * (except through the iterator's own <tt>remove</tt> operation), the results of the iteration are undefined.  The set
+   * (except through the iterator's own <code>remove</code> operation), the results of the iteration are undefined.  The set
    * supports element removal, which removes the corresponding mapping from the map, via the
-   * <tt>Iterator.remove</tt>, <tt>Set.remove</tt>,
-   * <tt>removeAll</tt>, <tt>retainAll</tt>, and <tt>clear</tt>
-   * operations.  It does not support the <tt>add</tt> or <tt>addAll</tt> operations.
+   * <code>Iterator.remove</code>, <code>Set.remove</code>,
+   * <code>removeAll</code>, <code>retainAll</code>, and <code>clear</code>
+   * operations.  It does not support the <code>add</code> or <code>addAll</code> operations.
    *
    * @return a set view of the keys contained in this map
    */
@@ -205,12 +205,12 @@ public interface AsyncDistributedMap<K, V> extends AsyncPrimitive {
   /**
    * Returns a {@link Collection} view of the values contained in this map. The collection is backed by the map, so
    * changes to the map are reflected in the collection, and vice-versa.  If the map is modified while an iteration over
-   * the collection is in progress (except through the iterator's own <tt>remove</tt> operation), the results of the
+   * the collection is in progress (except through the iterator's own <code>remove</code> operation), the results of the
    * iteration are undefined.  The collection supports element removal, which removes the corresponding mapping from the
-   * map, via the <tt>Iterator.remove</tt>,
-   * <tt>Collection.remove</tt>, <tt>removeAll</tt>,
-   * <tt>retainAll</tt> and <tt>clear</tt> operations.  It does not
-   * support the <tt>add</tt> or <tt>addAll</tt> operations.
+   * map, via the <code>Iterator.remove</code>,
+   * <code>Collection.remove</code>, <code>removeAll</code>,
+   * <code>retainAll</code> and <code>clear</code> operations.  It does not
+   * support the <code>add</code> or <code>addAll</code> operations.
    *
    * @return a collection view of the values contained in this map
    */
@@ -219,13 +219,13 @@ public interface AsyncDistributedMap<K, V> extends AsyncPrimitive {
   /**
    * Returns a {@link Set} view of the mappings contained in this map. The set is backed by the map, so changes to the
    * map are reflected in the set, and vice-versa.  If the map is modified while an iteration over the set is in
-   * progress (except through the iterator's own <tt>remove</tt> operation, or through the
-   * <tt>setValue</tt> operation on a map entry returned by the
+   * progress (except through the iterator's own <code>remove</code> operation, or through the
+   * <code>setValue</code> operation on a map entry returned by the
    * iterator) the results of the iteration are undefined.  The set supports element removal, which removes the
-   * corresponding mapping from the map, via the <tt>Iterator.remove</tt>,
-   * <tt>Set.remove</tt>, <tt>removeAll</tt>, <tt>retainAll</tt> and
-   * <tt>clear</tt> operations.  It does not support the
-   * <tt>add</tt> or <tt>addAll</tt> operations.
+   * corresponding mapping from the map, via the <code>Iterator.remove</code>,
+   * <code>Set.remove</code>, <code>removeAll</code>, <code>retainAll</code> and
+   * <code>clear</code> operations.  It does not support the
+   * <code>add</code> or <code>addAll</code> operations.
    *
    * @return a set view of the mappings contained in this map
    */
