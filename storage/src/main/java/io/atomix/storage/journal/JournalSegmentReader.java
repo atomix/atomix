@@ -139,7 +139,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
       final int length = buffer.readInt();
 
       // If the buffer length is zero then return.
-      if (length == 0) {
+      if (length <= 0) {
         buffer.reset();
         nextEntry = null;
         return;
