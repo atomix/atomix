@@ -40,13 +40,17 @@ public class DefaultAtomicDocumentTreeBuilder<V> extends AtomicDocumentTreeBuild
   public CompletableFuture<AtomicDocumentTree<V>> buildAsync() {
     return newProxy(DocumentTreeService.class, new ServiceConfig())
         .thenCompose(proxy -> new AtomicDocumentTreeProxy(proxy, managementService.getPrimitiveRegistry()).connect())
-        .thenApply(tree -> {
+        .thenApply(treeProxy -> {
           Serializer serializer = serializer();
-          return new TranscodingAsyncAtomicDocumentTree<V, byte[]>(
-              tree,
+          AsyncAtomicDocumentTree<V> tree = new TranscodingAsyncAtomicDocumentTree<>(
+              treeProxy,
               key -> serializer.encode(key),
-              bytes -> serializer.decode(bytes))
-              .sync();
+              bytes -> serializer.decode(bytes));
+
+          if (config.getCacheConfig().isEnabled()) {
+            tree = new CachingAsyncAtomicDocumentTree<V>(tree, config.getCacheConfig());
+          }
+          return tree.sync();
         });
   }
 }
