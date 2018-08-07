@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.net.Address;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -46,6 +47,9 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.util.concurrent.Future;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SynchronizedDescriptiveStatistics;
@@ -53,8 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 import java.io.FileInputStream;
@@ -556,7 +559,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     handlers.remove(type);
   }
 
-  private Bootstrap bootstrapClient(Address address) {
+  private Bootstrap bootstrapClient(Address address) throws SSLException {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     bootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK,
@@ -572,7 +575,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     bootstrap.channel(clientChannelClass);
     bootstrap.remoteAddress(address.address(), address.port());
     if (enableNettyTls) {
-      bootstrap.handler(new SslClientCommunicationChannelInitializer());
+      bootstrap.handler(new SslClientCommunicationChannelInitializer(address));
     } else {
       bootstrap.handler(new BasicChannelInitializer());
     }
@@ -580,7 +583,31 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   private CompletableFuture<Void> startAcceptingConnections() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
+    final ServerBootstrap b;
+    try {
+      b = bootstrapServer();
+    } catch (SSLException e) {
+      return Futures.exceptionalFuture(e);
+    }
+
+    final CompletableFuture<Void> future = new CompletableFuture<>();
+    // Bind and start to accept incoming connections.
+    b.bind(localAddress.port()).addListener((ChannelFutureListener) f -> {
+      if (f.isSuccess()) {
+        log.info("{} accepting incoming connections on port {}",
+            localAddress.address(), localAddress.port());
+        serverChannel = f.channel();
+        future.complete(null);
+      } else {
+        log.warn("{} failed to bind to port {} due to {}",
+            localAddress.address(), localAddress.port(), f.cause());
+        future.completeExceptionally(f.cause());
+      }
+    });
+    return future;
+  }
+
+  private ServerBootstrap bootstrapServer() throws SSLException {
     ServerBootstrap b = new ServerBootstrap();
     b.option(ChannelOption.SO_REUSEADDR, true);
     b.option(ChannelOption.SO_BACKLOG, 128);
@@ -598,25 +625,16 @@ public class NettyMessagingService implements ManagedMessagingService {
     } else {
       b.childHandler(new BasicChannelInitializer());
     }
-
-    // Bind and start to accept incoming connections.
-    b.bind(localAddress.port()).addListener((ChannelFutureListener) f -> {
-      if (f.isSuccess()) {
-        log.info("{} accepting incoming connections on port {}",
-            localAddress.address(), localAddress.port());
-        serverChannel = f.channel();
-        future.complete(null);
-      } else {
-        log.warn("{} failed to bind to port {} due to {}",
-            localAddress.address(), localAddress.port(), f.cause());
-        future.completeExceptionally(f.cause());
-      }
-    });
-    return future;
+    return b;
   }
 
   private CompletableFuture<Channel> openChannel(Address address) {
-    Bootstrap bootstrap = bootstrapClient(address);
+    final Bootstrap bootstrap;
+    try {
+      bootstrap = bootstrapClient(address);
+    } catch (SSLException e) {
+      return Futures.exceptionalFuture(e);
+    }
     CompletableFuture<Channel> retFuture = new CompletableFuture<>();
     ChannelFuture f = bootstrap.connect();
 
@@ -673,21 +691,16 @@ public class NettyMessagingService implements ManagedMessagingService {
    */
   private class SslServerCommunicationChannelInitializer extends ChannelInitializer<SocketChannel> {
     private final ChannelHandler dispatcher = new InboundMessageDispatcher();
+    private final SslContext sslContext;
+
+    private SslServerCommunicationChannelInitializer() throws SSLException {
+      sslContext = SslContextBuilder.forServer(keyManager).clientAuth(ClientAuth.REQUIRE).trustManager(trustManager)
+              .build();
+    }
 
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
-      SSLContext serverContext = SSLContext.getInstance("TLS");
-      serverContext.init(keyManager.getKeyManagers(), trustManager.getTrustManagers(), null);
-
-      SSLEngine serverSslEngine = serverContext.createSSLEngine();
-
-      serverSslEngine.setNeedClientAuth(true);
-      serverSslEngine.setUseClientMode(false);
-      serverSslEngine.setEnabledProtocols(serverSslEngine.getSupportedProtocols());
-      serverSslEngine.setEnabledCipherSuites(serverSslEngine.getSupportedCipherSuites());
-      serverSslEngine.setEnableSessionCreation(true);
-
-      channel.pipeline().addLast("ssl", new io.netty.handler.ssl.SslHandler(serverSslEngine))
+      channel.pipeline().addLast("ssl", sslContext.newHandler(channel.alloc()))
           .addLast("encoder", new MessageEncoder(localAddress, preamble))
           .addLast("decoder", new MessageDecoder())
           .addLast("handler", dispatcher);
@@ -698,21 +711,18 @@ public class NettyMessagingService implements ManagedMessagingService {
    * Channel initializer for TLS clients.
    */
   private class SslClientCommunicationChannelInitializer extends ChannelInitializer<SocketChannel> {
+    private final Address address;
     private final ChannelHandler dispatcher = new InboundMessageDispatcher();
+    private final SslContext sslContext;
+
+    private SslClientCommunicationChannelInitializer(Address address) throws SSLException {
+      this.address = address;
+      this.sslContext = SslContextBuilder.forClient().keyManager(keyManager).trustManager(trustManager).build();
+    }
 
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
-      SSLContext clientContext = SSLContext.getInstance("TLS");
-      clientContext.init(keyManager.getKeyManagers(), trustManager.getTrustManagers(), null);
-
-      SSLEngine clientSslEngine = clientContext.createSSLEngine();
-
-      clientSslEngine.setUseClientMode(true);
-      clientSslEngine.setEnabledProtocols(clientSslEngine.getSupportedProtocols());
-      clientSslEngine.setEnabledCipherSuites(clientSslEngine.getSupportedCipherSuites());
-      clientSslEngine.setEnableSessionCreation(true);
-
-      channel.pipeline().addLast("ssl", new io.netty.handler.ssl.SslHandler(clientSslEngine))
+      channel.pipeline().addLast("ssl", sslContext.newHandler(channel.alloc(), address.host(), address.port()))
           .addLast("encoder", new MessageEncoder(localAddress, preamble))
           .addLast("decoder", new MessageDecoder())
           .addLast("handler", dispatcher);
