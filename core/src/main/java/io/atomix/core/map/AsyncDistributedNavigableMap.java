@@ -189,7 +189,7 @@ public interface AsyncDistributedNavigableMap<K extends Comparable<K>, V> extend
    * operation), the results of the iteration are undefined.
    *
    * <p>The returned map has an ordering equivalent to
-   * <tt>{@link Collections#reverseOrder(Comparator) Collections.reverseOrder}(comparator())</tt>.
+   * <code>{@link Collections#reverseOrder(Comparator) Collections.reverseOrder}(comparator())</code>.
    * The expression {@code m.descendingMap().descendingMap()} returns a
    * view of {@code m} essentially equivalent to {@code m}.
    *

@@ -108,7 +108,7 @@ public interface AsyncDistributedNavigableSet<E extends Comparable<E>> extends A
    * the iteration are undefined.
    *
    * <p>The returned set has an ordering equivalent to
-   * <tt>{@link Collections#reverseOrder(Comparator) Collections.reverseOrder}(comparator())</tt>.
+   * <code>{@link Collections#reverseOrder(Comparator) Collections.reverseOrder}(comparator())</code>.
    * The expression {@code s.descendingSet().descendingSet()} returns a
    * view of {@code s} essentially equivalent to {@code s}.
    *
