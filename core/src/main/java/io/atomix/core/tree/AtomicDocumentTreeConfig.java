@@ -15,8 +15,8 @@
  */
 package io.atomix.core.tree;
 
+import io.atomix.core.cache.CachedPrimitiveConfig;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.config.PrimitiveConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * Document tree configuration.
  */
-public class AtomicDocumentTreeConfig extends PrimitiveConfig<AtomicDocumentTreeConfig> {
+public class AtomicDocumentTreeConfig extends CachedPrimitiveConfig<AtomicDocumentTreeConfig> {
   private Class<?> nodeType;
   private List<Class<?>> extraTypes = new ArrayList<>();
   private boolean registrationRequired = false;

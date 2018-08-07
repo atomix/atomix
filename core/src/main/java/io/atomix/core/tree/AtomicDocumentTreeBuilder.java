@@ -17,7 +17,7 @@
 package io.atomix.core.tree;
 
 import com.google.common.collect.Lists;
-import io.atomix.primitive.PrimitiveBuilder;
+import io.atomix.core.cache.CachedPrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
@@ -31,7 +31,7 @@ import io.atomix.utils.serializer.SerializerBuilder;
  * Builder for {@link AtomicDocumentTree}.
  */
 public abstract class AtomicDocumentTreeBuilder<V>
-    extends PrimitiveBuilder<AtomicDocumentTreeBuilder<V>, AtomicDocumentTreeConfig, AtomicDocumentTree<V>>
+    extends CachedPrimitiveBuilder<AtomicDocumentTreeBuilder<V>, AtomicDocumentTreeConfig, AtomicDocumentTree<V>>
     implements ProxyCompatibleBuilder<AtomicDocumentTreeBuilder<V>> {
 
   protected AtomicDocumentTreeBuilder(String name, AtomicDocumentTreeConfig config, PrimitiveManagementService managementService) {
