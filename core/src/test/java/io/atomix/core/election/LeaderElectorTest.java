@@ -356,6 +356,52 @@ public abstract class LeaderElectorTest extends AbstractPrimitiveTest<ProxyProto
     assertEquals(node2, barLeadership2.candidates().get(0));
   }
 
+  @Test
+  public void testCache() throws Throwable {
+    LeaderElector<String> elector1 = atomix().<String>leaderElectorBuilder("test-cache")
+        .withProtocol(protocol())
+        .withCacheEnabled()
+        .build();
+    LeaderElector<String> elector2 = atomix().<String>leaderElectorBuilder("test-cache")
+        .withProtocol(protocol())
+        .withCacheEnabled()
+        .build();
+
+    elector1.run("foo", node1);
+    elector2.run("foo", node2);
+
+    LeaderEventListener listener1 = new LeaderEventListener();
+    elector1.addListener("foo", listener1);
+    LeaderEventListener listener2 = new LeaderEventListener();
+    elector2.addListener(listener2);
+
+    assertFalse(listener1.hasEvent());
+    assertFalse(listener2.hasEvent());
+
+    elector1.run("foo", node1);
+    elector2.run("foo", node2);
+
+    listener1.nextEvent().thenAccept(result -> {
+      Assert.assertEquals(node2, result.newLeadership().leader().id());
+      Assert.assertEquals(2, result.newLeadership().candidates().size());
+      Assert.assertEquals(node1, result.newLeadership().candidates().get(0));
+      Assert.assertEquals(node2, result.newLeadership().candidates().get(1));
+    });
+    listener2.nextEvent().thenAccept(result -> {
+      Assert.assertEquals(node2, result.newLeadership().leader().id());
+      Assert.assertEquals(2, result.newLeadership().candidates().size());
+      Assert.assertEquals(node1, result.newLeadership().candidates().get(0));
+      Assert.assertEquals(node2, result.newLeadership().candidates().get(1));
+    });
+
+    elector1.withdraw("foo", node1);
+    listener2.nextEvent().thenAccept(result -> {
+      assertEquals(node2, result.newLeadership().leader().id());
+    });
+    assertEquals(node2, elector1.getLeadership("foo").leader().id());
+    assertEquals(node2, elector2.getLeadership("foo").leader().id());
+  }
+
   private static class LeaderEventListener implements LeadershipEventListener<String> {
     Queue<LeadershipEvent<String>> eventQueue = new LinkedList<>();
     CompletableFuture<LeadershipEvent<String>> pendingFuture;
