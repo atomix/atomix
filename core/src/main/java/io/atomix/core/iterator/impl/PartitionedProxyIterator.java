@@ -16,7 +16,6 @@
 package io.atomix.core.iterator.impl;
 
 import io.atomix.core.iterator.AsyncIterator;
-import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.concurrent.Futures;
 
@@ -29,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
   private final ProxyClient<S> client;
-  private final Iterator<PartitionId> partitions;
+  private final Iterator<AsyncIterator<T>> partitions;
   private final OpenFunction<S> openFunction;
   private final NextFunction<S, T> nextFunction;
   private final CloseFunction<S> closeFunction;
@@ -42,11 +41,13 @@ public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
       NextFunction<S, T> nextFunction,
       CloseFunction<S> closeFunction) {
     this.client = client;
-    this.partitions = client.getPartitionIds().iterator();
+    this.partitions = client.getPartitionIds().stream()
+        .<AsyncIterator<T>>map(partitionId -> new ProxyIterator<>(client, partitionId, openFunction, nextFunction, closeFunction))
+        .iterator();
     this.openFunction = openFunction;
     this.nextFunction = nextFunction;
     this.closeFunction = closeFunction;
-    iterator = new ProxyIterator<>(client, partitions.next(), openFunction, nextFunction, closeFunction);
+    iterator = partitions.next();
   }
 
   @Override
@@ -58,7 +59,7 @@ public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
               if (closed.get()) {
                 return Futures.exceptionalFuture(new IllegalStateException("Iterator closed"));
               }
-              iterator = new ProxyIterator<>(client, partitions.next(), openFunction, nextFunction, closeFunction);
+              iterator = partitions.next();
               return hasNext();
             }
             return CompletableFuture.completedFuture(false);
