@@ -113,11 +113,13 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   @Override
   public void onExpire(Session session) {
     listeners.remove(session.sessionId());
+    entryIterators.entrySet().removeIf(entry -> entry.getValue().sessionId == session.sessionId().id());
   }
 
   @Override
   public void onClose(Session session) {
     listeners.remove(session.sessionId());
+    entryIterators.entrySet().removeIf(entry -> entry.getValue().sessionId == session.sessionId().id());
   }
 
   @Override
@@ -298,16 +300,19 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   }
 
   @Override
-  public long iterateKeySet() {
-    return iterateEntries();
+  public IteratorBatch<String> iterateKeySet() {
+    IteratorBatch<Map.Entry<String, byte[]>> batch = iterateEntries();
+    return batch == null ? null : new IteratorBatch<>(batch.id(), batch.position(), batch.entries().stream()
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toSet()), batch.complete());
   }
 
   @Override
   public IteratorBatch<String> nextKeySet(long iteratorId, int position) {
     IteratorBatch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, position);
-    return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries().stream()
+    return batch == null ? null : new IteratorBatch<>(batch.id(), batch.position(), batch.entries().stream()
         .map(Map.Entry::getKey)
-        .collect(Collectors.toSet()));
+        .collect(Collectors.toSet()), batch.complete());
   }
 
   @Override
@@ -316,16 +321,19 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   }
 
   @Override
-  public long iterateKeys() {
-    return iterateEntries();
+  public IteratorBatch<String> iterateKeys() {
+    IteratorBatch<Map.Entry<String, byte[]>> batch = iterateEntries();
+    return batch == null ? null : new IteratorBatch<>(batch.id(), batch.position(), batch.entries().stream()
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toList()), batch.complete());
   }
 
   @Override
   public IteratorBatch<String> nextKeys(long iteratorId, int position) {
     IteratorBatch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, position);
-    return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries().stream()
+    return batch == null ? null : new IteratorBatch<>(batch.id(), batch.position(), batch.entries().stream()
         .map(Map.Entry::getKey)
-        .collect(Collectors.toList()));
+        .collect(Collectors.toList()), batch.complete());
   }
 
   @Override
@@ -334,16 +342,19 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   }
 
   @Override
-  public long iterateValues() {
-    return iterateEntries();
+  public IteratorBatch<byte[]> iterateValues() {
+    IteratorBatch<Map.Entry<String, byte[]>> batch = iterateEntries();
+    return batch == null ? null : new IteratorBatch<>(batch.id(), batch.position(), batch.entries().stream()
+        .map(Map.Entry::getValue)
+        .collect(Collectors.toSet()), batch.complete());
   }
 
   @Override
   public IteratorBatch<byte[]> nextValues(long iteratorId, int position) {
     IteratorBatch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, position);
-    return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries().stream()
+    return batch == null ? null : new IteratorBatch<>(batch.id(), batch.position(), batch.entries().stream()
         .map(Map.Entry::getValue)
-        .collect(Collectors.toSet()));
+        .collect(Collectors.toSet()), batch.complete());
   }
 
   @Override
@@ -352,8 +363,19 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   }
 
   @Override
-  public long iterateValuesSet() {
-    return iterateEntries();
+  public IteratorBatch<Multiset.Entry<byte[]>> iterateValuesSet() {
+    IteratorContext iterator = new IteratorContext(getCurrentSession().sessionId().id());
+    if (!iterator.iterator.hasNext()) {
+      return null;
+    }
+
+    long iteratorId = getCurrentIndex();
+    entryIterators.put(iteratorId, iterator);
+    IteratorBatch<Multiset.Entry<byte[]>> batch = nextValuesSet(iteratorId, 0);
+    if (batch.complete()) {
+      entryIterators.remove(iteratorId);
+    }
+    return batch;
   }
 
   @Override
@@ -385,7 +407,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
     if (entries.isEmpty()) {
       return null;
     }
-    return new IteratorBatch<>(context.position, entries);
+    return new IteratorBatch<>(iteratorId, context.position, entries, !context.iterator.hasNext());
   }
 
   @Override
@@ -394,9 +416,19 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   }
 
   @Override
-  public long iterateEntries() {
-    entryIterators.put(getCurrentIndex(), new IteratorContext(getCurrentSession().sessionId().id()));
-    return getCurrentIndex();
+  public IteratorBatch<Map.Entry<String, byte[]>> iterateEntries() {
+    IteratorContext iterator = new IteratorContext(getCurrentSession().sessionId().id());
+    if (!iterator.iterator.hasNext()) {
+      return null;
+    }
+
+    long iteratorId = getCurrentIndex();
+    entryIterators.put(iteratorId, iterator);
+    IteratorBatch<Map.Entry<String, byte[]>> batch = nextEntries(iteratorId, 0);
+    if (batch.complete()) {
+      entryIterators.remove(iteratorId);
+    }
+    return batch;
   }
 
   @Override
@@ -429,7 +461,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
     if (entries.isEmpty()) {
       return null;
     }
-    return new IteratorBatch<>(context.position, entries);
+    return new IteratorBatch<>(iteratorId, context.position, entries, !context.iterator.hasNext());
   }
 
   @Override

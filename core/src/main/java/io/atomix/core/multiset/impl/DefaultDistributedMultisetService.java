@@ -25,6 +25,7 @@ import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.multiset.DistributedMultisetType;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
@@ -75,6 +76,18 @@ public class DefaultDistributedMultisetService extends DefaultDistributedCollect
   public void restore(BackupInput input) {
     super.restore(input);
     entryIterators = input.readObject();
+  }
+
+  @Override
+  public void onExpire(Session session) {
+    super.onExpire(session);
+    entryIterators.entrySet().removeIf(entry -> entry.getValue().sessionId == session.sessionId().id());
+  }
+
+  @Override
+  public void onClose(Session session) {
+    super.onClose(session);
+    entryIterators.entrySet().removeIf(entry -> entry.getValue().sessionId == session.sessionId().id());
   }
 
   @Override
@@ -138,17 +151,21 @@ public class DefaultDistributedMultisetService extends DefaultDistributedCollect
   }
 
   @Override
-  public long iterateElements() {
-    return iterateEntries();
+  public IteratorBatch<String> iterateElements() {
+    IteratorBatch<Multiset.Entry<String>> batch = iterateEntries();
+    return batch == null ? null : new IteratorBatch<>(batch.id(), batch.position(), batch.entries()
+        .stream()
+        .map(element -> element.getElement())
+        .collect(Collectors.toList()), batch.complete());
   }
 
   @Override
   public IteratorBatch<String> nextElements(long iteratorId, int position) {
     IteratorBatch<Multiset.Entry<String>> batch = nextEntries(iteratorId, position);
-    return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries()
+    return batch == null ? null : new IteratorBatch<>(batch.id(), batch.position(), batch.entries()
         .stream()
         .map(element -> element.getElement())
-        .collect(Collectors.toList()));
+        .collect(Collectors.toList()), batch.complete());
   }
 
   @Override
@@ -157,9 +174,19 @@ public class DefaultDistributedMultisetService extends DefaultDistributedCollect
   }
 
   @Override
-  public long iterateEntries() {
-    entryIterators.put(getCurrentIndex(), new IteratorContext(getCurrentSession().sessionId().id()));
-    return getCurrentIndex();
+  public IteratorBatch<Multiset.Entry<String>> iterateEntries() {
+    IteratorContext iterator = new IteratorContext(getCurrentSession().sessionId().id());
+    if (!iterator.iterator.hasNext()) {
+      return null;
+    }
+
+    long iteratorId = getCurrentIndex();
+    entryIterators.put(iteratorId, iterator);
+    IteratorBatch<Multiset.Entry<String>> batch = nextEntries(iteratorId, 0);
+    if (batch.complete()) {
+      entryIterators.remove(iteratorId);
+    }
+    return batch;
   }
 
   @Override
@@ -187,7 +214,7 @@ public class DefaultDistributedMultisetService extends DefaultDistributedCollect
     if (entries.isEmpty()) {
       return null;
     }
-    return new IteratorBatch<>(context.position, entries);
+    return new IteratorBatch<>(iteratorId, context.position, entries, !context.iterator.hasNext());
   }
 
   @Override

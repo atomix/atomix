@@ -136,7 +136,7 @@ public interface DistributedMultisetService extends DistributedCollectionService
    * @return the iterator ID
    */
   @Command
-  long iterateElements();
+  IteratorBatch<String> iterateElements();
 
   /**
    * Returns the next batch of elements for the given iterator.
@@ -162,7 +162,7 @@ public interface DistributedMultisetService extends DistributedCollectionService
    * @return the iterator ID
    */
   @Command
-  long iterateEntries();
+  IteratorBatch<Multiset.Entry<String>> iterateEntries();
 
   /**
    * Returns the next batch of elements for the given iterator.

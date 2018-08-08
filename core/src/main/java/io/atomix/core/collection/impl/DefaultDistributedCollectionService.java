@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import static io.atomix.core.collection.impl.CollectionUpdateResult.noop;
 import static io.atomix.core.collection.impl.CollectionUpdateResult.ok;
@@ -183,9 +184,23 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<E
   }
 
   @Override
-  public long iterate() {
-    iterators.put(getCurrentIndex(), new IteratorContext(getCurrentSession().sessionId().id()));
-    return getCurrentIndex();
+  public IteratorBatch<E> iterate() {
+    return iterate(IteratorContext::new);
+  }
+
+  protected IteratorBatch<E> iterate(Function<Long, AbstractIteratorContext> contextFactory) {
+    AbstractIteratorContext iterator = contextFactory.apply(getCurrentSession().sessionId().id());
+    if (!iterator.iterator().hasNext()) {
+      return null;
+    }
+
+    long iteratorId = getCurrentIndex();
+    iterators.put(iteratorId, iterator);
+    IteratorBatch<E> batch = next(iteratorId, 0);
+    if (batch.complete()) {
+      iterators.remove(iteratorId);
+    }
+    return batch;
   }
 
   @Override
@@ -211,7 +226,7 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<E
     if (elements.isEmpty()) {
       return null;
     }
-    return new IteratorBatch<>(context.position(), elements);
+    return new IteratorBatch<>(iteratorId, context.position(), elements, !context.iterator().hasNext());
   }
 
   @Override

@@ -15,6 +15,7 @@
  */
 package io.atomix.core.set.impl;
 
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.set.DistributedNavigableSetType;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.serializer.Namespace;
@@ -140,21 +141,18 @@ public class DefaultDistributedNavigableSetService<E extends Comparable<E>> exte
   }
 
   @Override
-  public long subSetIterate(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
-    iterators.put(getCurrentIndex(), new SubSetIteratorContext(getCurrentSession().sessionId().id(), fromElement, fromInclusive, toElement, toInclusive));
-    return getCurrentIndex();
+  public IteratorBatch<E> subSetIterate(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    return iterate(sessionId -> new SubSetIteratorContext(sessionId, fromElement, fromInclusive, toElement, toInclusive));
   }
 
   @Override
-  public long subSetIterateDescending(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
-    iterators.put(getCurrentIndex(), new DescendingSubSetIteratorContext(getCurrentSession().sessionId().id(), fromElement, fromInclusive, toElement, toInclusive));
-    return getCurrentIndex();
+  public IteratorBatch<E> subSetIterateDescending(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+    return iterate(sessionId -> new DescendingSubSetIteratorContext(sessionId, fromElement, fromInclusive, toElement, toInclusive));
   }
 
   @Override
-  public long iterateDescending() {
-    iterators.put(getCurrentIndex(), new DescendingIteratorContext(getCurrentSession().sessionId().id()));
-    return getCurrentIndex();
+  public IteratorBatch<E> iterateDescending() {
+    return iterate(DescendingIteratorContext::new);
   }
 
   private void subSetAccept(Consumer<NavigableSet<E>> function, E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
