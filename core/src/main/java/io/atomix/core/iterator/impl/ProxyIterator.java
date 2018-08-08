@@ -21,7 +21,6 @@ import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.OrderedFuture;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
@@ -35,14 +34,14 @@ public class ProxyIterator<S, T> implements AsyncIterator<T> {
   private final PartitionId partitionId;
   private final NextFunction<S, T> nextFunction;
   private final CloseFunction<S> closeFunction;
-  private final CompletableFuture<Long> openFuture;
+  private final CompletableFuture<IteratorBatch<T>> openFuture;
   private volatile CompletableFuture<IteratorBatch<T>> batch;
   private volatile CompletableFuture<Void> closeFuture;
 
   public ProxyIterator(
       ProxyClient<S> client,
       PartitionId partitionId,
-      OpenFunction<S> openFunction,
+      OpenFunction<S, T> openFunction,
       NextFunction<S, T> nextFunction,
       CloseFunction<S> closeFunction) {
     this.client = client;
@@ -50,8 +49,7 @@ public class ProxyIterator<S, T> implements AsyncIterator<T> {
     this.nextFunction = nextFunction;
     this.closeFunction = closeFunction;
     this.openFuture = OrderedFuture.wrap(client.applyOn(partitionId, openFunction::open));
-    this.batch = CompletableFuture.completedFuture(
-        new IteratorBatch<T>(0, Collections.emptyList()));
+    this.batch = openFuture;
   }
 
   /**
@@ -76,13 +74,18 @@ public class ProxyIterator<S, T> implements AsyncIterator<T> {
    * @return the next batch of entries from the cluster
    */
   private CompletableFuture<IteratorBatch<T>> fetch(int position) {
-    return openFuture.thenCompose(id -> client.applyOn(partitionId, service -> nextFunction.next(service, id, position))
-        .thenCompose(batch -> {
-          if (batch == null) {
-            return close().thenApply(v -> null);
-          }
-          return CompletableFuture.completedFuture(batch);
-        }));
+    return openFuture.thenCompose(initialBatch -> {
+      if (!initialBatch.complete()) {
+        return client.applyOn(partitionId, service -> nextFunction.next(service, initialBatch.id(), position))
+            .thenCompose(nextBatch -> {
+              if (nextBatch == null) {
+                return close().thenApply(v -> null);
+              }
+              return CompletableFuture.completedFuture(nextBatch);
+            });
+      }
+      return CompletableFuture.completedFuture(null);
+    });
   }
 
   @Override
@@ -90,7 +93,12 @@ public class ProxyIterator<S, T> implements AsyncIterator<T> {
     if (closeFuture == null) {
       synchronized (this) {
         if (closeFuture == null) {
-          closeFuture = openFuture.thenCompose(id -> client.acceptOn(partitionId, service -> closeFunction.close(service, id)));
+          closeFuture = openFuture.thenCompose(initialBatch -> {
+            if (initialBatch != null && !initialBatch.complete()) {
+              return client.acceptOn(partitionId, service -> closeFunction.close(service, initialBatch.id()));
+            }
+            return CompletableFuture.completedFuture(null);
+          });
         }
       }
     }

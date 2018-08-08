@@ -15,6 +15,7 @@
  */
 package io.atomix.core.map.impl;
 
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
 import io.atomix.utils.time.Versioned;
@@ -384,7 +385,7 @@ public interface AtomicTreeMapService<K extends Comparable<K>> extends AtomicMap
    * @return the key iterator ID
    */
   @Command
-  long subMapIterate(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
+  IteratorBatch<K> subMapIterateKeys(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
 
   /**
    * Returns a key iterator.
@@ -396,7 +397,43 @@ public interface AtomicTreeMapService<K extends Comparable<K>> extends AtomicMap
    * @return the key iterator ID
    */
   @Command
-  long subMapIterateDescending(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
+  IteratorBatch<Map.Entry<K, Versioned<byte[]>>> subMapIterateEntries(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
+
+  /**
+   * Returns a key iterator.
+   *
+   * @param fromKey the from key
+   * @param fromInclusive whether the from key is inclusive
+   * @param toKey the to key
+   * @param toInclusive whether the to key is inclusive
+   * @return the key iterator ID
+   */
+  @Command
+  IteratorBatch<Versioned<byte[]>> subMapIterateValues(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
+
+  /**
+   * Returns a key iterator.
+   *
+   * @param fromKey the from key
+   * @param fromInclusive whether the from key is inclusive
+   * @param toKey the to key
+   * @param toInclusive whether the to key is inclusive
+   * @return the key iterator ID
+   */
+  @Command
+  IteratorBatch<K> subMapIterateDescendingKeys(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
+
+  /**
+   * Returns a key iterator.
+   *
+   * @param fromKey the from key
+   * @param fromInclusive whether the from key is inclusive
+   * @param toKey the to key
+   * @param toInclusive whether the to key is inclusive
+   * @return the key iterator ID
+   */
+  @Command
+  IteratorBatch<Map.Entry<K, Versioned<byte[]>>> subMapIterateDescendingEntries(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
 
   /**
    * Clears the given view from the set.

@@ -46,6 +46,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -534,61 +536,80 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   }
 
   @Override
-  public long iterateKeys() {
-    return iterateEntries();
+  public IteratorBatch<K> iterateKeys() {
+    return iterate(DefaultIterator::new, (k, v) -> k);
   }
 
   @Override
   public IteratorBatch<K> nextKeys(long iteratorId, int position) {
-    IteratorBatch<Map.Entry<K, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
-    return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries().stream()
-        .map(Map.Entry::getKey)
-        .collect(Collectors.toList()));
+    return next(iteratorId, position, (k, v) -> k);
   }
 
   @Override
   public void closeKeys(long iteratorId) {
-    closeEntries(iteratorId);
+    close(iteratorId);
   }
 
   @Override
-  public long iterateValues() {
-    return iterateEntries();
+  public IteratorBatch<Versioned<byte[]>> iterateValues() {
+    return iterate(DefaultIterator::new, (k, v) -> v);
   }
 
   @Override
   public IteratorBatch<Versioned<byte[]>> nextValues(long iteratorId, int position) {
-    IteratorBatch<Map.Entry<K, Versioned<byte[]>>> batch = nextEntries(iteratorId, position);
-    return batch == null ? null : new IteratorBatch<>(batch.position(), batch.entries().stream()
-        .map(Map.Entry::getValue)
-        .collect(Collectors.toList()));
+    return next(iteratorId, position, (k, v) -> v);
   }
 
   @Override
   public void closeValues(long iteratorId) {
-    closeEntries(iteratorId);
+    close(iteratorId);
   }
 
   @Override
-  public long iterateEntries() {
-    entryIterators.put(getCurrentIndex(), new DefaultIterator(getCurrentSession().sessionId().id()));
-    return getCurrentIndex();
+  public IteratorBatch<Map.Entry<K, Versioned<byte[]>>> iterateEntries() {
+    return iterate(DefaultIterator::new, Maps::immutableEntry);
   }
 
   @Override
   public IteratorBatch<Map.Entry<K, Versioned<byte[]>>> nextEntries(long iteratorId, int position) {
+    return next(iteratorId, position, Maps::immutableEntry);
+  }
+
+  @Override
+  public void closeEntries(long iteratorId) {
+    close(iteratorId);
+  }
+
+  protected <T> IteratorBatch<T> iterate(
+      Function<Long, IteratorContext> contextFactory,
+      BiFunction<K, Versioned<byte[]>, T> function) {
+    IteratorContext iterator = contextFactory.apply(getCurrentSession().sessionId().id());
+    if (!iterator.iterator().hasNext()) {
+      return null;
+    }
+
+    long iteratorId = getCurrentIndex();
+    entryIterators.put(iteratorId, iterator);
+    IteratorBatch<T> batch = next(iteratorId, 0, function);
+    if (batch.complete()) {
+      entryIterators.remove(iteratorId);
+    }
+    return batch;
+  }
+
+  protected <T> IteratorBatch<T> next(long iteratorId, int position, BiFunction<K, Versioned<byte[]>, T> function) {
     IteratorContext context = entryIterators.get(iteratorId);
     if (context == null) {
       return null;
     }
 
-    List<Map.Entry<K, Versioned<byte[]>>> entries = new ArrayList<>();
+    List<T> entries = new ArrayList<>();
     int size = 0;
     while (context.iterator().hasNext()) {
       context.incrementPosition();
       if (context.position() > position) {
         Map.Entry<K, MapEntryValue> entry = context.iterator().next();
-        entries.add(Maps.immutableEntry(entry.getKey(), toVersioned(entry.getValue())));
+        entries.add(function.apply(entry.getKey(), toVersioned(entry.getValue())));
         size += entry.getValue().value().length;
 
         if (size >= MAX_ITERATOR_BATCH_SIZE) {
@@ -600,11 +621,10 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
     if (entries.isEmpty()) {
       return null;
     }
-    return new IteratorBatch<>(context.position, entries);
+    return new IteratorBatch<>(iteratorId, context.position, entries, !context.iterator().hasNext());
   }
 
-  @Override
-  public void closeEntries(long iteratorId) {
+  protected void close(long iteratorId) {
     entryIterators.remove(iteratorId);
   }
 

@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
   private final ProxyClient<S> client;
   private final Iterator<AsyncIterator<T>> partitions;
-  private final OpenFunction<S> openFunction;
+  private final OpenFunction<S, T> openFunction;
   private final NextFunction<S, T> nextFunction;
   private final CloseFunction<S> closeFunction;
   private volatile AsyncIterator<T> iterator;
@@ -37,7 +37,7 @@ public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
 
   public PartitionedProxyIterator(
       ProxyClient<S> client,
-      OpenFunction<S> openFunction,
+      OpenFunction<S, T> openFunction,
       NextFunction<S, T> nextFunction,
       CloseFunction<S> closeFunction) {
     this.client = client;

@@ -306,7 +306,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.subMapIterate(fromKey, fromInclusive, toKey, toInclusive),
+          service -> service.subMapIterateKeys(fromKey, fromInclusive, toKey, toInclusive),
           AtomicTreeMapService::nextKeys,
           AtomicTreeMapService::closeKeys);
     }
@@ -316,7 +316,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.subMapIterateDescending(fromKey, fromInclusive, toKey, toInclusive),
+          service -> service.subMapIterateDescendingKeys(fromKey, fromInclusive, toKey, toInclusive),
           AtomicTreeMapService::nextKeys,
           AtomicTreeMapService::closeKeys);
     }
@@ -906,7 +906,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.subMapIterate(fromKey, fromInclusive, toKey, toInclusive),
+          service -> service.subMapIterateEntries(fromKey, fromInclusive, toKey, toInclusive),
           AtomicTreeMapService::nextEntries,
           AtomicTreeMapService::closeEntries);
     }
@@ -1030,7 +1030,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.subMapIterate(fromKey, fromInclusive, toKey, toInclusive),
+          service -> service.subMapIterateValues(fromKey, fromInclusive, toKey, toInclusive),
           AtomicTreeMapService::nextValues,
           AtomicTreeMapService::closeValues);
     }

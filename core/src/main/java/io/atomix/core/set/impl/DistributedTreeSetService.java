@@ -15,6 +15,7 @@
  */
 package io.atomix.core.set.impl;
 
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.primitive.operation.Command;
 import io.atomix.primitive.operation.Query;
 
@@ -182,7 +183,7 @@ public interface DistributedTreeSetService<E extends Comparable<E>> extends Dist
    * @return the descending iterator ID
    */
   @Command
-  long iterateDescending();
+  IteratorBatch<E> iterateDescending();
 
   /**
    * Returns a descending iterator.
@@ -194,7 +195,7 @@ public interface DistributedTreeSetService<E extends Comparable<E>> extends Dist
    * @return the descending iterator ID
    */
   @Command
-  long subSetIterate(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive);
+  IteratorBatch<E> subSetIterate(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive);
 
   /**
    * Returns a descending iterator.
@@ -206,6 +207,6 @@ public interface DistributedTreeSetService<E extends Comparable<E>> extends Dist
    * @return the descending iterator ID
    */
   @Command
-  long subSetIterateDescending(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive);
+  IteratorBatch<E> subSetIterateDescending(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive);
 
 }
