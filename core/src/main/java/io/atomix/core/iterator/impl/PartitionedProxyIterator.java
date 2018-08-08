@@ -22,16 +22,13 @@ import io.atomix.utils.concurrent.Futures;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Partitioned proxy iterator iterator.
  */
 public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
-  private final ProxyClient<S> client;
   private final Iterator<AsyncIterator<T>> partitions;
-  private final OpenFunction<S, T> openFunction;
-  private final NextFunction<S, T> nextFunction;
-  private final CloseFunction<S> closeFunction;
   private volatile AsyncIterator<T> iterator;
   private AtomicBoolean closed = new AtomicBoolean();
 
@@ -40,13 +37,10 @@ public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
       OpenFunction<S, T> openFunction,
       NextFunction<S, T> nextFunction,
       CloseFunction<S> closeFunction) {
-    this.client = client;
     this.partitions = client.getPartitionIds().stream()
         .<AsyncIterator<T>>map(partitionId -> new ProxyIterator<>(client, partitionId, openFunction, nextFunction, closeFunction))
+        .collect(Collectors.toList())
         .iterator();
-    this.openFunction = openFunction;
-    this.nextFunction = nextFunction;
-    this.closeFunction = closeFunction;
     iterator = partitions.next();
   }
 
