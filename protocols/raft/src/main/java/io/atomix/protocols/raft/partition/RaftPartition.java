@@ -24,7 +24,6 @@ import io.atomix.protocols.raft.partition.impl.RaftClientCommunicator;
 import io.atomix.protocols.raft.partition.impl.RaftNamespaces;
 import io.atomix.protocols.raft.partition.impl.RaftPartitionClient;
 import io.atomix.protocols.raft.partition.impl.RaftPartitionServer;
-import io.atomix.storage.StorageLevel;
 import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
@@ -40,19 +39,15 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class RaftPartition implements Partition {
   private final PartitionId partitionId;
-  private final StorageLevel storageLevel;
-  private final long segmentSize;
-  private final boolean flushOnCommit;
+  private final RaftPartitionGroupConfig config;
   private final File dataDirectory;
   private PartitionMetadata partition;
   private RaftPartitionClient client;
   private RaftPartitionServer server;
 
-  public RaftPartition(PartitionId partitionId, StorageLevel storageLevel, long segmentSize, boolean flushOnCommit, File dataDirectory) {
+  public RaftPartition(PartitionId partitionId, RaftPartitionGroupConfig config, File dataDirectory) {
     this.partitionId = partitionId;
-    this.storageLevel = storageLevel;
-    this.segmentSize = segmentSize;
-    this.flushOnCommit = flushOnCommit;
+    this.config = config;
     this.dataDirectory = dataDirectory;
   }
 
@@ -94,33 +89,6 @@ public class RaftPartition implements Partition {
   @Override
   public Collection<MemberId> members() {
     return partition != null ? partition.members() : Collections.emptyList();
-  }
-
-  /**
-   * Returns the Raft partition storage level.
-   *
-   * @return the Raft partition storage level
-   */
-  public StorageLevel storageLevel() {
-    return storageLevel;
-  }
-
-  /**
-   * Returns the log segment size.
-   *
-   * @return the log segment size
-   */
-  public long segmentSize() {
-    return segmentSize;
-  }
-
-  /**
-   * Returns whether to flush logs to disk on commit.
-   *
-   * @return whether to flush logs to disk on commit
-   */
-  public boolean flushOnCommit() {
-    return flushOnCommit;
   }
 
   /**
@@ -196,6 +164,7 @@ public class RaftPartition implements Partition {
   protected RaftPartitionServer createServer(PartitionManagementService managementService) {
     return new RaftPartitionServer(
         this,
+        config,
         managementService.getMembershipService().getLocalMember().id(),
         managementService.getMembershipService(),
         managementService.getMessagingService(),

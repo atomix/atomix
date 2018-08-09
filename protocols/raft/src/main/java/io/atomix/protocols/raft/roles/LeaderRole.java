@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
@@ -686,13 +687,23 @@ public final class LeaderRole extends ActiveRole {
     final long term = raft.getTerm();
     final long timestamp = System.currentTimeMillis();
 
-    appendAndCompact(new CommandEntry(term, timestamp, request.session(), request.sequenceNumber(), request.operation()))
+    CommandEntry command = new CommandEntry(term, timestamp, request.session(), request.sequenceNumber(), request.operation());
+    appendAndCompact(command)
         .whenCompleteAsync((entry, error) -> {
           if (error != null) {
-            future.complete(CommandResponse.builder()
-                .withStatus(RaftResponse.Status.ERROR)
-                .withError(RaftError.Type.COMMAND_FAILURE)
-                .build());
+            Throwable cause = Throwables.getRootCause(error);
+            if (Throwables.getRootCause(error) instanceof StorageException.TooLarge) {
+              log.warn("Failed to append command {}", command, cause);
+              future.complete(CommandResponse.builder()
+                  .withStatus(RaftResponse.Status.ERROR)
+                  .withError(RaftError.Type.PROTOCOL_ERROR)
+                  .build());
+            } else {
+              future.complete(CommandResponse.builder()
+                  .withStatus(RaftResponse.Status.ERROR)
+                  .withError(RaftError.Type.COMMAND_FAILURE)
+                  .build());
+            }
             return;
           }
 
@@ -1053,6 +1064,8 @@ public final class LeaderRole extends ActiveRole {
               log.trace("Appended {}", indexed);
               return indexed;
             });
+      } catch (StorageException.TooLarge e) {
+        return Futures.exceptionalFuture(e);
       } catch (StorageException.OutOfDiskSpace e) {
         log.warn("Caught OutOfDiskSpace error! Force compacting logs...");
         return raft.getServiceManager().compact().thenCompose(v -> appendAndCompact(entry, attempt + 1));

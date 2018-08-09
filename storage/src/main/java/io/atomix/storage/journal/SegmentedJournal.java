@@ -22,7 +22,6 @@ import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.buffer.MappedBuffer;
-import io.atomix.storage.journal.index.SparseJournalIndex;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +64,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   private final File directory;
   private final Serializer serializer;
   private final int maxSegmentSize;
+  private final int maxEntrySize;
   private final int maxEntriesPerSegment;
   private final double indexDensity;
   private final int cacheSize;
@@ -82,6 +82,7 @@ public class SegmentedJournal<E> implements Journal<E> {
       File directory,
       Serializer serializer,
       int maxSegmentSize,
+      int maxEntrySize,
       int maxEntriesPerSegment,
       double indexDensity,
       int cacheSize) {
@@ -90,6 +91,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     this.directory = checkNotNull(directory, "directory cannot be null");
     this.serializer = checkNotNull(serializer, "serializer cannot be null");
     this.maxSegmentSize = maxSegmentSize;
+    this.maxEntrySize = maxEntrySize;
     this.maxEntriesPerSegment = maxEntriesPerSegment;
     this.indexDensity = indexDensity;
     this.cacheSize = cacheSize;
@@ -140,6 +142,17 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   public int maxSegmentSize() {
     return maxSegmentSize;
+  }
+
+  /**
+   * Returns the maximum journal entry size.
+   * <p>
+   * The maximum entry size dictates the maximum size any entry in the segment may consume in bytes.
+   *
+   * @return the maximum entry size in bytes
+   */
+  public int maxEntrySize() {
+    return maxEntrySize;
   }
 
   /**
@@ -375,7 +388,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * @return The segment instance.
    */
   protected JournalSegment<E> newSegment(JournalSegmentFile segmentFile, JournalSegmentDescriptor descriptor) {
-    return new JournalSegment<>(segmentFile, descriptor, indexDensity, cacheSize, serializer);
+    return new JournalSegment<>(segmentFile, descriptor, maxEntrySize, indexDensity, cacheSize, serializer);
   }
 
   /**
@@ -665,6 +678,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     private static final String DEFAULT_NAME = "atomix";
     private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
+    private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 1024;
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
     private static final double DEFAULT_INDEX_DENSITY = .005;
     private static final int DEFAULT_CACHE_SIZE = 1024;
@@ -674,6 +688,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     protected File directory = new File(DEFAULT_DIRECTORY);
     protected Serializer serializer;
     protected int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
+    protected int maxEntrySize = DEFAULT_MAX_ENTRY_SIZE;
     protected int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
     protected double indexDensity = DEFAULT_INDEX_DENSITY;
     protected int cacheSize = DEFAULT_CACHE_SIZE;
@@ -763,6 +778,19 @@ public class SegmentedJournal<E> implements Journal<E> {
     }
 
     /**
+     * Sets the maximum entry size in bytes, returning the builder for method chaining.
+     *
+     * @param maxEntrySize the maximum entry size in bytes
+     * @return the storage builder
+     * @throws IllegalArgumentException if the {@code maxEntrySize} is not positive
+     */
+    public Builder withMaxEntrySize(int maxEntrySize) {
+      checkArgument(maxEntrySize > 0, "maxEntrySize must be positive");
+      this.maxEntrySize = maxEntrySize;
+      return this;
+    }
+
+    /**
      * Sets the maximum number of allows entries per segment, returning the builder for method chaining.
      * <p>
      * The maximum entry count dictates when logs should roll over to new segments. As entries are written to
@@ -820,7 +848,7 @@ public class SegmentedJournal<E> implements Journal<E> {
      */
     @Override
     public SegmentedJournal<E> build() {
-      return new SegmentedJournal<>(name, storageLevel, directory, serializer, maxSegmentSize, maxEntriesPerSegment, indexDensity, cacheSize);
+      return new SegmentedJournal<>(name, storageLevel, directory, serializer, maxSegmentSize, maxEntrySize, maxEntriesPerSegment, indexDensity, cacheSize);
     }
   }
 }

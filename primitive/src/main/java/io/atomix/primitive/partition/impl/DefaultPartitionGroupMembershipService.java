@@ -30,7 +30,6 @@ import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.ManagedPartitionGroupMembershipService;
 import io.atomix.primitive.partition.MemberGroupStrategy;
-import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.partition.PartitionGroupMembership;
 import io.atomix.primitive.partition.PartitionGroupMembershipEvent;
@@ -50,8 +49,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -105,22 +102,16 @@ public class DefaultPartitionGroupMembershipService
           ImmutableSet.of(membershipService.getLocalMember().id()), false));
     });
 
-    Namespace.Builder namespaceBuilder = Namespace.builder()
+    serializer = Serializer.using(Namespace.builder()
         .register(Namespaces.BASIC)
         .register(MemberId.class)
         .register(PartitionGroupMembership.class)
         .register(PartitionGroupInfo.class)
         .register(PartitionGroupConfig.class)
-        .register(MemberGroupStrategy.class);
-
-    List<PartitionGroup.Type> groupTypes = Lists.newArrayList(groupTypeRegistry.getGroupTypes());
-    groupTypes.sort(Comparator.comparing(PartitionGroup.Type::name));
-    for (PartitionGroup.Type groupType : groupTypes) {
-      namespaceBuilder.register(groupType.getClass());
-      namespaceBuilder.register(groupType.newConfig().getClass());
-    }
-
-    serializer = Serializer.using(namespaceBuilder.build());
+        .register(MemberGroupStrategy.class)
+        .setRegistrationRequired(false)
+        .setClassLoader(getClass().getClassLoader())
+        .build());
   }
 
   @Override

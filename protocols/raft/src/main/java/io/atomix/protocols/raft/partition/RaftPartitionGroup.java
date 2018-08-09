@@ -93,14 +93,12 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftPartitionGroup.class);
 
   private static Collection<RaftPartition> buildPartitions(RaftPartitionGroupConfig config) {
-    File partitionsDir = new File(config.getDataDirectory(), "partitions");
+    File partitionsDir = new File(config.getStorageConfig().getDirectory(config.getName()), "partitions");
     List<RaftPartition> partitions = new ArrayList<>(config.getPartitions());
     for (int i = 0; i < config.getPartitions(); i++) {
       partitions.add(new RaftPartition(
           PartitionId.from(config.getName(), i + 1),
-          StorageLevel.valueOf(config.getStorageLevel().toUpperCase()),
-          config.getSegmentSize().bytes(),
-          config.isFlushOnCommit(),
+          config,
           new File(partitionsDir, String.valueOf(i + 1))));
     }
     return partitions;
@@ -316,7 +314,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @return the Raft partition group builder
      */
     public Builder withStorageLevel(StorageLevel storageLevel) {
-      config.setStorageLevel(storageLevel.name());
+      config.getStorageConfig().setLevel(storageLevel);
       return this;
     }
 
@@ -327,28 +325,50 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
      * @return the replica builder
      */
     public Builder withDataDirectory(File dataDir) {
-      config.setDataDirectory(new File("user.dir").toURI().relativize(dataDir.toURI()).getPath());
+      config.getStorageConfig().setDirectory(new File("user.dir").toURI().relativize(dataDir.toURI()).getPath());
       return this;
     }
 
     /**
      * Sets the segment size.
+     *
      * @param segmentSize the segment size
      * @return the Raft partition group builder
      */
     public Builder withSegmentSize(MemorySize segmentSize) {
-      config.setSegmentSize(segmentSize);
+      config.getStorageConfig().setSegmentSize(segmentSize);
       return this;
     }
 
     /**
      * Sets the segment size.
+     *
      * @param segmentSizeBytes the segment size in bytes
      * @return the Raft partition group builder
      */
     public Builder withSegmentSize(long segmentSizeBytes) {
-      config.setSegmentSize(new MemorySize(segmentSizeBytes));
+      return withSegmentSize(new MemorySize(segmentSizeBytes));
+    }
+
+    /**
+     * Sets the maximum Raft log entry size.
+     *
+     * @param maxEntrySize the maximum Raft log entry size
+     * @return the Raft partition group builder
+     */
+    public Builder withMaxEntrySize(MemorySize maxEntrySize) {
+      config.getStorageConfig().setMaxEntrySize(maxEntrySize);
       return this;
+    }
+
+    /**
+     * Sets the maximum Raft log entry size.
+     *
+     * @param maxEntrySize the maximum Raft log entry size
+     * @return the Raft partition group builder
+     */
+    public Builder withMaxEntrySize(int maxEntrySize) {
+      return withMaxEntrySize(new MemorySize(maxEntrySize));
     }
 
     @Override

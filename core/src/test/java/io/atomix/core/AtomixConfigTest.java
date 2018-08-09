@@ -93,7 +93,7 @@ public class AtomixConfigTest {
     RaftPartitionGroupConfig managementGroup = (RaftPartitionGroupConfig) config.getManagementGroup();
     assertEquals(RaftPartitionGroup.TYPE, managementGroup.getType());
     assertEquals(1, managementGroup.getPartitions());
-    assertEquals(new MemorySize(1024 * 1024 * 16), managementGroup.getSegmentSize());
+    assertEquals(new MemorySize(1024 * 1024 * 16), managementGroup.getStorageConfig().getSegmentSize());
 
     RaftPartitionGroupConfig groupOne = (RaftPartitionGroupConfig) config.getPartitionGroups().get("one");
     assertEquals(RaftPartitionGroup.TYPE, groupOne.getType());

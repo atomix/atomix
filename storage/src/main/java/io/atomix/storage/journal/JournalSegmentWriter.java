@@ -15,6 +15,7 @@
  */
 package io.atomix.storage.journal;
 
+import io.atomix.storage.StorageException;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
@@ -43,6 +44,7 @@ import java.util.zip.Checksum;
  */
 public class JournalSegmentWriter<E> implements JournalWriter<E> {
   private final JournalSegmentDescriptor descriptor;
+  private final int maxEntrySize;
   private final JournalSegmentCache cache;
   private final JournalIndex index;
   private final Buffer buffer;
@@ -51,8 +53,14 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
   private final long firstIndex;
   private Indexed<E> lastEntry;
 
-  public JournalSegmentWriter(JournalSegmentDescriptor descriptor, JournalSegmentCache cache, JournalIndex index, Serializer serializer) {
+  public JournalSegmentWriter(
+      JournalSegmentDescriptor descriptor,
+      int maxEntrySize,
+      JournalSegmentCache cache,
+      JournalIndex index,
+      Serializer serializer) {
     this.descriptor = descriptor;
+    this.maxEntrySize = maxEntrySize;
     this.cache = cache;
     this.index = index;
     this.buffer = descriptor.buffer().slice();
@@ -78,7 +86,7 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     int length = buffer.mark().readInt();
 
     // If the length is non-zero, read the entry.
-    while (length > 0 && (index == 0 || nextIndex <= index)) {
+    while (0 < length && length <= maxEntrySize && (index == 0 || nextIndex <= index)) {
 
       // Read the checksum of the entry.
       final long checksum = buffer.readUnsignedInt();
@@ -190,6 +198,11 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     // Serialize the entry.
     final byte[] bytes = serializer.encode(entry);
     final int length = bytes.length;
+
+    // If the entry length exceeds the maximum entry size then throw an exception.
+    if (length > maxEntrySize) {
+      throw new StorageException.TooLarge("Entry size " + length + " exceeds maximum allowed bytes (" + maxEntrySize + ")");
+    }
 
     // Compute the checksum for the entry.
     final Checksum crc32 = new CRC32();
