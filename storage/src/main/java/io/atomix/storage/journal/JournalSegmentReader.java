@@ -34,6 +34,7 @@ import java.util.zip.Checksum;
  */
 public class JournalSegmentReader<E> implements JournalReader<E> {
   private final Buffer buffer;
+  private final int maxEntrySize;
   private final JournalSegmentCache cache;
   private final JournalIndex index;
   private final Serializer serializer;
@@ -42,8 +43,14 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   private Indexed<E> currentEntry;
   private Indexed<E> nextEntry;
 
-  public JournalSegmentReader(JournalSegmentDescriptor descriptor, JournalSegmentCache cache, JournalIndex index, Serializer serializer) {
+  public JournalSegmentReader(
+      JournalSegmentDescriptor descriptor,
+      int maxEntrySize,
+      JournalSegmentCache cache,
+      JournalIndex index,
+      Serializer serializer) {
     this.buffer = descriptor.buffer().slice().duplicate();
+    this.maxEntrySize = maxEntrySize;
     this.cache = cache;
     this.index = index;
     this.serializer = serializer;
@@ -139,7 +146,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
       final int length = buffer.readInt();
 
       // If the buffer length is zero then return.
-      if (length <= 0) {
+      if (length <= 0 || length > maxEntrySize) {
         buffer.reset();
         nextEntry = null;
         return;

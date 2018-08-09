@@ -18,6 +18,7 @@ package io.atomix.core.profile;
 import com.google.common.collect.Sets;
 import io.atomix.core.AtomixConfig;
 import io.atomix.protocols.raft.partition.RaftPartitionGroupConfig;
+import io.atomix.protocols.raft.partition.RaftStorageConfig;
 
 import java.util.Collection;
 
@@ -84,12 +85,14 @@ public class ConsensusProfile implements Profile {
         .setPartitionSize(this.config.getMembers().size())
         .setPartitions(1)
         .setMembers(this.config.getMembers())
-        .setDataDirectory(String.format("%s/%s", this.config.getDataPath(), this.config.getManagementGroup())));
+        .setStorageConfig(new RaftStorageConfig()
+            .setDirectory(String.format("%s/%s", this.config.getDataPath(), this.config.getManagementGroup()))));
     config.addPartitionGroup(new RaftPartitionGroupConfig()
         .setName(this.config.getDataGroup())
         .setPartitionSize(this.config.getPartitionSize())
         .setPartitions(this.config.getPartitions())
         .setMembers(this.config.getMembers())
-        .setDataDirectory(String.format("%s/%s", this.config.getDataPath(), this.config.getDataGroup())));
+        .setStorageConfig(new RaftStorageConfig()
+            .setDirectory(String.format("%s/%s", this.config.getDataPath(), this.config.getDataGroup()))));
   }
 }

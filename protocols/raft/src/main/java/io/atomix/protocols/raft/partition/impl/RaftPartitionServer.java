@@ -22,6 +22,7 @@ import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.partition.RaftPartition;
+import io.atomix.protocols.raft.partition.RaftPartitionGroupConfig;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageException;
 import io.atomix.utils.Managed;
@@ -48,12 +49,12 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
 
   private final Logger log = getLogger(getClass());
 
-  private static final int MAX_SEGMENT_SIZE = 1024 * 1024 * 64;
   private static final long ELECTION_TIMEOUT_MILLIS = 2500;
   private static final long HEARTBEAT_INTERVAL_MILLIS = 250;
 
   private final MemberId localMemberId;
   private final RaftPartition partition;
+  private final RaftPartitionGroupConfig config;
   private final ClusterMembershipService membershipService;
   private final ClusterCommunicationService clusterCommunicator;
   private final PrimitiveTypeRegistry primitiveTypes;
@@ -61,11 +62,13 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
 
   public RaftPartitionServer(
       RaftPartition partition,
+      RaftPartitionGroupConfig config,
       MemberId localMemberId,
       ClusterMembershipService membershipService,
       ClusterCommunicationService clusterCommunicator,
       PrimitiveTypeRegistry primitiveTypes) {
     this.partition = partition;
+    this.config = config;
     this.localMemberId = localMemberId;
     this.membershipService = membershipService;
     this.clusterCommunicator = clusterCommunicator;
@@ -150,12 +153,15 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
         .withHeartbeatInterval(Duration.ofMillis(HEARTBEAT_INTERVAL_MILLIS))
         .withStorage(RaftStorage.builder()
             .withPrefix(partition.name())
-            .withStorageLevel(partition.storageLevel())
-            .withMaxSegmentSize((int) partition.segmentSize())
-            .withFlushOnCommit(partition.flushOnCommit())
-            .withSerializer(Serializer.using(RaftNamespaces.RAFT_STORAGE))
             .withDirectory(partition.dataDirectory())
-            .withMaxSegmentSize(MAX_SEGMENT_SIZE)
+            .withStorageLevel(config.getStorageConfig().getLevel())
+            .withMaxSegmentSize((int) config.getStorageConfig().getSegmentSize().bytes())
+            .withMaxEntrySize((int) config.getStorageConfig().getMaxEntrySize().bytes())
+            .withFlushOnCommit(config.getStorageConfig().isFlushOnCommit())
+            .withDynamicCompaction(config.getCompactionConfig().isDynamic())
+            .withFreeDiskBuffer(config.getCompactionConfig().getFreeDiskBuffer())
+            .withFreeMemoryBuffer(config.getCompactionConfig().getFreeMemoryBuffer())
+            .withSerializer(Serializer.using(RaftNamespaces.RAFT_STORAGE))
             .build())
         .build();
   }
