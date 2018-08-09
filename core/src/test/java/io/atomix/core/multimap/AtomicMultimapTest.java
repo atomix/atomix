@@ -28,10 +28,15 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -185,6 +190,80 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
   }
 
   @Test
+  public void testMultimapEvents() throws Exception {
+    AtomicMultimap<String, String> multimap1 = atomix().<String, String>atomicMultimapBuilder("testMultimapEvents")
+        .withProtocol(protocol())
+        .build();
+    AtomicMultimap<String, String> multimap2 = atomix().<String, String>atomicMultimapBuilder("testMultimapEvents")
+        .withProtocol(protocol())
+        .build();
+
+    TestAtomicMultimapEventListener listener = new TestAtomicMultimapEventListener();
+    multimap2.addListener(listener);
+
+    assertTrue(multimap1.isEmpty());
+    assertTrue(multimap1.put("foo", "bar"));
+
+    AtomicMultimapEvent event = listener.event();
+    assertEquals(AtomicMultimapEvent.Type.INSERT, event.type());
+    assertNull(event.oldValue());
+    assertNotNull(event.newValue());
+
+    assertFalse(multimap1.put("foo", "bar"));
+    assertFalse(listener.eventReceived());
+
+    assertTrue(multimap1.remove("foo", "bar"));
+    event = listener.event();
+    assertEquals(AtomicMultimapEvent.Type.REMOVE, event.type());
+    assertNotNull(event.oldValue());
+    assertNull(event.newValue());
+
+    assertTrue(multimap1.put("foo", "foo"));
+    assertTrue(multimap1.put("foo", "bar"));
+    assertTrue(multimap1.put("foo", "baz"));
+
+    for (int i = 0; i < 3; i++) {
+      event = listener.event();
+      assertEquals(AtomicMultimapEvent.Type.INSERT, event.type());
+      assertEquals("foo", event.key());
+    }
+
+    assertEquals(3, multimap1.removeAll("foo").value().size());
+
+    for (int i = 0; i < 3; i++) {
+      event = listener.event();
+      assertEquals(AtomicMultimapEvent.Type.REMOVE, event.type());
+      assertEquals("foo", event.key());
+    }
+
+    assertTrue(multimap1.put("bar", "foo"));
+    assertTrue(multimap1.put("bar", "bar"));
+    assertTrue(multimap1.put("bar", "baz"));
+
+    for (int i = 0; i < 3; i++) {
+      event = listener.event();
+      assertEquals(AtomicMultimapEvent.Type.INSERT, event.type());
+      assertEquals("bar", event.key());
+    }
+
+    multimap1.replaceValues("bar", Arrays.asList("foo", "barbaz"));
+
+    event = listener.event();
+    assertEquals(AtomicMultimapEvent.Type.REMOVE, event.type());
+    assertEquals("bar", event.key());
+    assertEquals("bar", event.oldValue());
+    event = listener.event();
+    assertEquals(AtomicMultimapEvent.Type.REMOVE, event.type());
+    assertEquals("bar", event.key());
+    assertEquals("baz", event.oldValue());
+
+    event = listener.event();
+    assertEquals(AtomicMultimapEvent.Type.INSERT, event.type());
+    assertEquals("bar", event.key());
+    assertEquals("barbaz", event.newValue());
+  }
+
+  @Test
   public void testMultimapViews() throws Exception {
     AtomicMultimap<String, String> map = atomix().<String, String>atomicMultimapBuilder("testMultimapViews")
         .withProtocol(protocol())
@@ -283,8 +362,7 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
   }
 
   /**
-   * Compares two collections of strings returns true if they contain the
-   * same strings, false otherwise.
+   * Compares two collections of strings returns true if they contain the same strings, false otherwise.
    *
    * @param s1 string collection one
    * @param s2 string collection two
@@ -308,5 +386,26 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
       }
     }
     return true;
+  }
+
+  private static class TestAtomicMultimapEventListener implements AtomicMultimapEventListener<String, String> {
+    private final BlockingQueue<AtomicMultimapEvent<String, String>> queue = new LinkedBlockingQueue<>();
+
+    @Override
+    public void event(AtomicMultimapEvent<String, String> event) {
+      try {
+        queue.put(event);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+
+    public boolean eventReceived() {
+      return !queue.isEmpty();
+    }
+
+    public AtomicMultimapEvent<String, String> event() throws InterruptedException {
+      return queue.poll(10, TimeUnit.SECONDS);
+    }
   }
 }

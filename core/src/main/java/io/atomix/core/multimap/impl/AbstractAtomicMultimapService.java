@@ -255,7 +255,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   @Override
   public boolean put(String key, byte[] value) {
     if (backingMap.computeIfAbsent(key, k -> new NonTransactionalValues()).put(key, value)) {
-      onChange(key, value, null);
+      onChange(key, null, value);
       return true;
     }
     return false;
@@ -279,21 +279,26 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   public Versioned<Collection<byte[]>> replaceValues(String key, Collection<byte[]> values) {
     MapEntryValues entry = backingMap.computeIfAbsent(key, k -> new NonTransactionalValues());
 
-    Collection<byte[]> oldValues = entry.values();
+    Set<byte[]> oldValues = Sets.newTreeSet(new ByteArrayComparator());
+    oldValues.addAll(entry.values());
+
+    Set<byte[]> newValues = Sets.newTreeSet(new ByteArrayComparator());
+    newValues.addAll(values);
+
     Versioned<Collection<byte[]>> removedValues = entry.replace(key, values);
     if (entry.values().isEmpty()) {
       backingMap.remove(key);
     }
 
-    for (byte[] value : values) {
-      if (!oldValues.contains(value)) {
-        onChange(key, null, value);
+    for (byte[] value : oldValues) {
+      if (!newValues.contains(value)) {
+        onChange(key, value, null);
       }
     }
 
-    for (byte[] value : oldValues) {
-      if (!values.contains(value)) {
-        onChange(key, value, null);
+    for (byte[] value : newValues) {
+      if (!oldValues.contains(value)) {
+        onChange(key, null, value);
       }
     }
     return removedValues;

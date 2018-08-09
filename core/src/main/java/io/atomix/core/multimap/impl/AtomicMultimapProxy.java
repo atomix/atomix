@@ -190,6 +190,7 @@ public class AtomicMultimapProxy
   @Override
   public CompletableFuture<Void> addListener(AtomicMultimapEventListener<String, byte[]> listener, Executor executor) {
     if (mapEventListeners.isEmpty()) {
+      mapEventListeners.put(listener, executor);
       return getProxyClient().acceptAll(service -> service.listen());
     } else {
       mapEventListeners.put(listener, executor);
