@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.queue.impl;
+package io.atomix.rest.resources;
 
-import io.atomix.core.collection.impl.DistributedCollectionResource;
 import io.atomix.core.queue.AsyncDistributedQueue;
 import io.atomix.core.queue.DistributedQueueConfig;
 import io.atomix.core.queue.DistributedQueueType;
+import io.atomix.rest.AtomixResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +34,7 @@ import javax.ws.rs.core.Response;
 /**
  * Distributed queue resource.
  */
+@AtomixResource
 @Path("/queue")
 public class DistributedQueueResource extends DistributedCollectionResource<AsyncDistributedQueue<String>, DistributedQueueConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(DistributedQueueResource.class);

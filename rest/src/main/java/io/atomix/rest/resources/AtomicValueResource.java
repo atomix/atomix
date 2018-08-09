@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.value.impl;
+package io.atomix.rest.resources;
 
 import io.atomix.core.value.AsyncAtomicValue;
 import io.atomix.core.value.AtomicValueConfig;
 import io.atomix.core.value.AtomicValueType;
-import io.atomix.primitive.resource.PrimitiveResource;
+import io.atomix.rest.AtomixResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +36,7 @@ import javax.ws.rs.core.Response;
 /**
  * Atomic value resource.
  */
+@AtomixResource
 @Path("/atomic-value")
 public class AtomicValueResource extends PrimitiveResource<AsyncAtomicValue<String>, AtomicValueConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomicValueResource.class);

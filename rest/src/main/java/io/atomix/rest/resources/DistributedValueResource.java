@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.lock.impl;
+package io.atomix.rest.resources;
 
-import io.atomix.core.lock.AsyncDistributedLock;
-import io.atomix.core.lock.DistributedLockConfig;
-import io.atomix.core.lock.DistributedLockType;
-import io.atomix.primitive.resource.PrimitiveResource;
+import io.atomix.core.value.AsyncDistributedValue;
+import io.atomix.core.value.DistributedValueConfig;
+import io.atomix.core.value.DistributedValueType;
+import io.atomix.rest.AtomixResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.DELETE;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -33,23 +34,24 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /**
- * Distributed lock resource.
+ * Distributed value resource.
  */
-@Path("/lock")
-public class DistributedLockResource extends PrimitiveResource<AsyncDistributedLock, DistributedLockConfig> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(DistributedLockResource.class);
+@AtomixResource
+@Path("/value")
+public class DistributedValueResource extends PrimitiveResource<AsyncDistributedValue<String>, DistributedValueConfig> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DistributedValueResource.class);
 
-  public DistributedLockResource() {
-    super(DistributedLockType.instance());
+  public DistributedValueResource() {
+    super(DistributedValueType.instance());
   }
 
-  @POST
-  @Path("/{name}/lock")
+  @GET
+  @Path("/{name}/value")
   @Produces(MediaType.APPLICATION_JSON)
-  public void lock(@PathParam("name") String name, @Suspended AsyncResponse response) {
-    getPrimitive(name).thenCompose(lock -> lock.lock()).whenComplete((result, error) -> {
+  public void get(@PathParam("name") String name, @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(value -> value.get()).whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.ok().build());
+        response.resume(Response.ok(result).build());
       } else {
         LOGGER.warn("{}", error);
         response.resume(Response.serverError().build());
@@ -57,10 +59,11 @@ public class DistributedLockResource extends PrimitiveResource<AsyncDistributedL
     });
   }
 
-  @DELETE
-  @Path("/{name}/lock")
-  public void unlock(@PathParam("name") String name, @Suspended AsyncResponse response) {
-    getPrimitive(name).thenCompose(lock -> lock.unlock()).whenComplete((result, error) -> {
+  @POST
+  @Path("/{name}/value")
+  @Consumes(MediaType.TEXT_PLAIN)
+  public void set(@PathParam("name") String name, String body, @Suspended AsyncResponse response) {
+    getPrimitive(name).thenCompose(value -> value.set(body)).whenComplete((result, error) -> {
       if (error == null) {
         response.resume(Response.ok().build());
       } else {

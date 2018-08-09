@@ -15,7 +15,6 @@
  */
 package io.atomix.rest.impl;
 
-import io.atomix.core.utils.EventLog;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;

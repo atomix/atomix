@@ -65,12 +65,7 @@ public class VertxRestServiceTest {
   @Test
   public void testStatus() throws Exception {
     given()
-        .spec(new RequestSpecBuilder()
-            .setContentType(ContentType.TEXT)
-            .setBaseUri(String.format("http://%s/", services.get(0).address().toString()))
-            .addFilter(new ResponseLoggingFilter())
-            .addFilter(new RequestLoggingFilter())
-            .build())
+        .spec(specs.get(0))
         .when()
         .get("status")
         .then()

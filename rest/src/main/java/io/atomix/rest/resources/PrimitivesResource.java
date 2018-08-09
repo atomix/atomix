@@ -17,6 +17,7 @@ package io.atomix.rest.resources;
 
 import com.google.common.collect.Maps;
 import io.atomix.core.PrimitivesService;
+import io.atomix.rest.AtomixResource;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -30,8 +31,9 @@ import java.util.stream.Collectors;
 /**
  * Primitives resource.
  */
-@Path("/v1/primitives")
-public class PrimitivesResource extends AbstractRestResource {
+@AtomixResource
+@Path("/primitives")
+public class PrimitivesResource {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)

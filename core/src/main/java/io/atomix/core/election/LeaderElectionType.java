@@ -17,7 +17,6 @@ package io.atomix.core.election;
 
 import io.atomix.core.election.impl.DefaultLeaderElectionBuilder;
 import io.atomix.core.election.impl.DefaultLeaderElectionService;
-import io.atomix.core.election.impl.LeaderElectionResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -61,11 +60,6 @@ public class LeaderElectionType<T> implements PrimitiveType<LeaderElectionBuilde
   @Override
   public PrimitiveService newService(ServiceConfig config) {
     return new DefaultLeaderElectionService();
-  }
-
-  @Override
-  public Class<?> getResourceClass() {
-    return LeaderElectionResource.class;
   }
 
   @Override

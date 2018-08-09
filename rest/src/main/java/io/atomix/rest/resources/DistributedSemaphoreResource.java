@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.semaphore.impl;
+package io.atomix.rest.resources;
 
-import io.atomix.core.semaphore.AsyncAtomicSemaphore;
-import io.atomix.core.semaphore.AtomicSemaphoreConfig;
-import io.atomix.core.semaphore.AtomicSemaphoreType;
-import io.atomix.primitive.resource.PrimitiveResource;
+import io.atomix.core.semaphore.AsyncDistributedSemaphore;
+import io.atomix.core.semaphore.DistributedSemaphoreConfig;
+import io.atomix.core.semaphore.DistributedSemaphoreType;
+import io.atomix.rest.AtomixResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,12 +36,13 @@ import javax.ws.rs.core.Response;
 /**
  * Distributed semaphore resource.
  */
-@Path("/atomic-semaphore")
-public class AtomicSemaphoreResource extends PrimitiveResource<AsyncAtomicSemaphore, AtomicSemaphoreConfig> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(AtomicSemaphoreResource.class);
+@AtomixResource
+@Path("/semaphore")
+public class DistributedSemaphoreResource extends PrimitiveResource<AsyncDistributedSemaphore, DistributedSemaphoreConfig> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DistributedSemaphoreResource.class);
 
-  public AtomicSemaphoreResource() {
-    super(AtomicSemaphoreType.instance());
+  public DistributedSemaphoreResource() {
+    super(DistributedSemaphoreType.instance());
   }
 
   @POST
@@ -54,7 +55,7 @@ public class AtomicSemaphoreResource extends PrimitiveResource<AsyncAtomicSemaph
       @Suspended AsyncResponse response) {
     getPrimitive(name).thenCompose(semaphore -> semaphore.acquire(permits != null ? permits : 1)).whenComplete((result, error) -> {
       if (error == null) {
-        response.resume(Response.ok(result.value()).build());
+        response.resume(Response.ok().build());
       } else {
         LOGGER.warn("An error occurred", error);
         response.resume(Response.serverError());

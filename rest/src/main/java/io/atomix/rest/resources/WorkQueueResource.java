@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.workqueue.impl;
+package io.atomix.rest.resources;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.core.utils.EventLog;
-import io.atomix.core.utils.EventManager;
 import io.atomix.core.workqueue.AsyncWorkQueue;
 import io.atomix.core.workqueue.WorkQueueConfig;
 import io.atomix.core.workqueue.WorkQueueType;
-import io.atomix.primitive.resource.PrimitiveResource;
+import io.atomix.rest.AtomixResource;
+import io.atomix.rest.impl.EventLog;
+import io.atomix.rest.impl.EventManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +42,7 @@ import java.util.function.Consumer;
 /**
  * Work queue resource.
  */
+@AtomixResource
 @Path("/work-queue")
 public class WorkQueueResource extends PrimitiveResource<AsyncWorkQueue<String>, WorkQueueConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(WorkQueueResource.class);

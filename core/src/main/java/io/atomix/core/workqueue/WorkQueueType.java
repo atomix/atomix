@@ -17,7 +17,6 @@ package io.atomix.core.workqueue;
 
 import io.atomix.core.workqueue.impl.DefaultWorkQueueBuilder;
 import io.atomix.core.workqueue.impl.DefaultWorkQueueService;
-import io.atomix.core.workqueue.impl.WorkQueueResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -63,11 +62,6 @@ public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, Work
   @Override
   public PrimitiveService newService(ServiceConfig config) {
     return new DefaultWorkQueueService();
-  }
-
-  @Override
-  public Class<?> getResourceClass() {
-    return WorkQueueResource.class;
   }
 
   @Override

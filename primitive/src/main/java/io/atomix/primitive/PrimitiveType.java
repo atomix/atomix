@@ -16,7 +16,6 @@
 package io.atomix.primitive;
 
 import io.atomix.primitive.config.PrimitiveConfig;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.ConfiguredType;
@@ -65,13 +64,4 @@ public interface PrimitiveType<B extends PrimitiveBuilder, C extends PrimitiveCo
    * @return the service instance
    */
   PrimitiveService newService(ServiceConfig config);
-
-  /**
-   * Returns the primitive resource class.
-   *
-   * @return the primitive resource class
-   */
-  default Class<?> getResourceClass() {
-    throw new UnsupportedOperationException();
-  }
 }

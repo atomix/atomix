@@ -16,7 +16,6 @@
 package io.atomix.core.map;
 
 import io.atomix.core.iterator.impl.IteratorBatch;
-import io.atomix.core.map.impl.AtomicMapResource;
 import io.atomix.core.map.impl.DefaultAtomicMapBuilder;
 import io.atomix.core.map.impl.DefaultAtomicMapService;
 import io.atomix.core.map.impl.MapEntryUpdateResult;
@@ -93,11 +92,6 @@ public class AtomicMapType<K, V> implements PrimitiveType<AtomicMapBuilder<K, V>
   @Override
   public AtomicMapConfig newConfig() {
     return new AtomicMapConfig();
-  }
-
-  @Override
-  public Class<?> getResourceClass() {
-    return AtomicMapResource.class;
   }
 
   @Override

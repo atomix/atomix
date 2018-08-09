@@ -15,7 +15,6 @@
  */
 package io.atomix.core.counter;
 
-import io.atomix.core.counter.impl.AtomicCounterResource;
 import io.atomix.core.counter.impl.DefaultAtomicCounterBuilder;
 import io.atomix.core.counter.impl.DefaultAtomicCounterService;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -49,11 +48,6 @@ public class AtomicCounterType implements PrimitiveType<AtomicCounterBuilder, At
   @Override
   public PrimitiveService newService(ServiceConfig config) {
     return new DefaultAtomicCounterService();
-  }
-
-  @Override
-  public Class<?> getResourceClass() {
-    return AtomicCounterResource.class;
   }
 
   @Override

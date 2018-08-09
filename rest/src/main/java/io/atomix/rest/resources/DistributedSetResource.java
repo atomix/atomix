@@ -15,8 +15,20 @@
  */
 package io.atomix.rest.resources;
 
+import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.core.set.DistributedSetConfig;
+import io.atomix.core.set.DistributedSetType;
+import io.atomix.rest.AtomixResource;
+
+import javax.ws.rs.Path;
+
 /**
- * Vert.x REST resource.
+ * Distributed set resource.
  */
-public abstract class AbstractRestResource {
+@AtomixResource
+@Path("/set")
+public class DistributedSetResource extends DistributedCollectionResource<AsyncDistributedSet<String>, DistributedSetConfig> {
+  public DistributedSetResource() {
+    super(DistributedSetType.instance());
+  }
 }
