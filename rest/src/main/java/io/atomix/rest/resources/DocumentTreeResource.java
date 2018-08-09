@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.tree.impl;
+package io.atomix.rest.resources;
 
 import com.google.common.collect.Maps;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
@@ -22,7 +22,7 @@ import io.atomix.core.tree.AtomicDocumentTreeType;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
-import io.atomix.primitive.resource.PrimitiveResource;
+import io.atomix.rest.AtomixResource;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 /**
  * Document tree resource.
  */
+@AtomixResource
 @Path("/atomic-document-tree")
 public class DocumentTreeResource extends PrimitiveResource<AsyncAtomicDocumentTree<String>, AtomicDocumentTreeConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(DocumentTreeResource.class);

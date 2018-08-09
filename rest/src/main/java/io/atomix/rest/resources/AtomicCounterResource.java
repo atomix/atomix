@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.counter.impl;
+package io.atomix.rest.resources;
 
-import io.atomix.core.PrimitivesService;
 import io.atomix.core.counter.AsyncAtomicCounter;
 import io.atomix.core.counter.AtomicCounterConfig;
 import io.atomix.core.counter.AtomicCounterType;
-import io.atomix.primitive.resource.PrimitiveResource;
+import io.atomix.rest.AtomixResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,13 +31,13 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /**
  * Atomic counter resource.
  */
+@AtomixResource
 @Path("/atomic-counter")
 public class AtomicCounterResource extends PrimitiveResource<AsyncAtomicCounter, AtomicCounterConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomicCounterResource.class);

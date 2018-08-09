@@ -22,7 +22,6 @@ import io.atomix.core.transaction.impl.PrepareResult;
 import io.atomix.core.transaction.impl.RollbackResult;
 import io.atomix.core.tree.impl.DefaultAtomicDocumentTreeBuilder;
 import io.atomix.core.tree.impl.DefaultDocumentTreeService;
-import io.atomix.core.tree.impl.DocumentTreeResource;
 import io.atomix.core.tree.impl.DocumentTreeResult;
 import io.atomix.core.tree.impl.NodeUpdate;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -87,11 +86,6 @@ public class AtomicDocumentTreeType<V> implements PrimitiveType<AtomicDocumentTr
   @Override
   public PrimitiveService newService(ServiceConfig config) {
     return new DefaultDocumentTreeService();
-  }
-
-  @Override
-  public Class<?> getResourceClass() {
-    return DocumentTreeResource.class;
   }
 
   @Override

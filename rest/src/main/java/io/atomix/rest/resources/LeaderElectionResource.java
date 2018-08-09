@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.election.impl;
+package io.atomix.rest.resources;
 
 import io.atomix.core.election.AsyncLeaderElection;
 import io.atomix.core.election.LeaderElectionConfig;
@@ -21,9 +21,9 @@ import io.atomix.core.election.LeaderElectionType;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
-import io.atomix.core.utils.EventLog;
-import io.atomix.core.utils.EventManager;
-import io.atomix.primitive.resource.PrimitiveResource;
+import io.atomix.rest.AtomixResource;
+import io.atomix.rest.impl.EventLog;
+import io.atomix.rest.impl.EventManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +45,7 @@ import java.util.UUID;
 /**
  * Leader election resource.
  */
+@AtomixResource
 @Path("/leader-election")
 public class LeaderElectionResource extends PrimitiveResource<AsyncLeaderElection<String>, LeaderElectionConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(LeaderElectionResource.class);

@@ -21,8 +21,9 @@ import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
-import io.atomix.core.utils.EventLog;
-import io.atomix.core.utils.EventManager;
+import io.atomix.rest.AtomixResource;
+import io.atomix.rest.impl.EventLog;
+import io.atomix.rest.impl.EventManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,8 +45,9 @@ import java.util.stream.Collectors;
 /**
  * Cluster resource.
  */
-@Path("/v1/cluster")
-public class ClusterResource extends AbstractRestResource {
+@AtomixResource
+@Path("/cluster")
+public class ClusterResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClusterResource.class);
 
   @GET

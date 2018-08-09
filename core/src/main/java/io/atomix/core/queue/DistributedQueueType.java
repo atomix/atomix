@@ -20,7 +20,6 @@ import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.queue.impl.DefaultDistributedQueueBuilder;
 import io.atomix.core.queue.impl.DefaultDistributedQueueService;
-import io.atomix.core.queue.impl.DistributedQueueResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -70,11 +69,6 @@ public class DistributedQueueType<E> implements PrimitiveType<DistributedQueueBu
   @Override
   public PrimitiveService newService(ServiceConfig config) {
     return new DefaultDistributedQueueService();
-  }
-
-  @Override
-  public Class<?> getResourceClass() {
-    return DistributedQueueResource.class;
   }
 
   @Override

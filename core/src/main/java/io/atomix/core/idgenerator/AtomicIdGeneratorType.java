@@ -16,7 +16,6 @@
 package io.atomix.core.idgenerator;
 
 import io.atomix.core.counter.impl.DefaultAtomicCounterService;
-import io.atomix.core.idgenerator.impl.AtomicIdGeneratorResource;
 import io.atomix.core.idgenerator.impl.DelegatingAtomicIdGeneratorBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
@@ -49,11 +48,6 @@ public class AtomicIdGeneratorType implements PrimitiveType<AtomicIdGeneratorBui
   @Override
   public PrimitiveService newService(ServiceConfig config) {
     return new DefaultAtomicCounterService();
-  }
-
-  @Override
-  public Class<?> getResourceClass() {
-    return AtomicIdGeneratorResource.class;
   }
 
   @Override

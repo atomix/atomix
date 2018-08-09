@@ -15,7 +15,6 @@
  */
 package io.atomix.core.semaphore;
 
-import io.atomix.core.semaphore.impl.AtomicSemaphoreResource;
 import io.atomix.core.semaphore.impl.AtomicSemaphoreServiceConfig;
 import io.atomix.core.semaphore.impl.DefaultAtomicSemaphoreBuilder;
 import io.atomix.core.semaphore.impl.DefaultAtomicSemaphoreService;
@@ -73,11 +72,6 @@ public class AtomicSemaphoreType implements PrimitiveType<AtomicSemaphoreBuilder
   @Override
   public AtomicSemaphoreBuilder newBuilder(String name, AtomicSemaphoreConfig config, PrimitiveManagementService managementService) {
     return new DefaultAtomicSemaphoreBuilder(name, config, managementService);
-  }
-
-  @Override
-  public Class<?> getResourceClass() {
-    return AtomicSemaphoreResource.class;
   }
 
   @Override

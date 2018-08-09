@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.idgenerator.impl;
+package io.atomix.rest.resources;
 
 import io.atomix.core.idgenerator.AsyncAtomicIdGenerator;
 import io.atomix.core.idgenerator.AtomicIdGeneratorConfig;
 import io.atomix.core.idgenerator.AtomicIdGeneratorType;
-import io.atomix.primitive.resource.PrimitiveResource;
+import io.atomix.rest.AtomixResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +34,7 @@ import javax.ws.rs.core.Response;
 /**
  * Unique ID generator resource.
  */
+@AtomixResource
 @Path("/atomic-id-generator")
 public class AtomicIdGeneratorResource extends PrimitiveResource<AsyncAtomicIdGenerator, AtomicIdGeneratorConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomicIdGeneratorResource.class);

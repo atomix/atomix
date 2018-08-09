@@ -15,7 +15,6 @@
  */
 package io.atomix.core.lock;
 
-import io.atomix.core.lock.impl.AtomicLockResource;
 import io.atomix.core.lock.impl.DefaultAtomicLockBuilder;
 import io.atomix.core.lock.impl.DefaultAtomicLockService;
 import io.atomix.primitive.PrimitiveManagementService;
@@ -49,11 +48,6 @@ public class AtomicLockType implements PrimitiveType<AtomicLockBuilder, AtomicLo
   @Override
   public PrimitiveService newService(ServiceConfig config) {
     return new DefaultAtomicLockService();
-  }
-
-  @Override
-  public Class<?> getResourceClass() {
-    return AtomicLockResource.class;
   }
 
   @Override

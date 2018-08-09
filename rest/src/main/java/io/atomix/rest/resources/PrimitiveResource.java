@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.resource;
+package io.atomix.rest.resources;
 
 import com.google.common.collect.Maps;
 import io.atomix.primitive.AsyncPrimitive;
