@@ -15,12 +15,14 @@
  */
 package io.atomix.primitive.protocol.counter;
 
+import com.google.common.annotations.Beta;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 
 /**
  * Counter protocol.
  */
+@Beta
 public interface CounterProtocol extends GossipProtocol {
 
   /**

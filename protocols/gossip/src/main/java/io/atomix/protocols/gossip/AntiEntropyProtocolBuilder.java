@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.gossip;
 
+import com.google.common.annotations.Beta;
 import io.atomix.primitive.protocol.PrimitiveProtocolBuilder;
 
 import java.time.Duration;
@@ -23,6 +24,7 @@ import java.util.Set;
 /**
  * Anti-entropy protocol builder.
  */
+@Beta
 public class AntiEntropyProtocolBuilder extends PrimitiveProtocolBuilder<AntiEntropyProtocolBuilder, AntiEntropyProtocolConfig, AntiEntropyProtocol> {
   public AntiEntropyProtocolBuilder(AntiEntropyProtocolConfig config) {
     super(config);

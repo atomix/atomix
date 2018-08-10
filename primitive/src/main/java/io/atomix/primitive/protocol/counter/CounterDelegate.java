@@ -15,9 +15,12 @@
  */
 package io.atomix.primitive.protocol.counter;
 
+import com.google.common.annotations.Beta;
+
 /**
  * Gossip-based counter service.
  */
+@Beta
 public interface CounterDelegate {
 
   /**

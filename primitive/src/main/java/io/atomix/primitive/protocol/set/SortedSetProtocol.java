@@ -15,12 +15,14 @@
  */
 package io.atomix.primitive.protocol.set;
 
+import com.google.common.annotations.Beta;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.utils.serializer.Serializer;
 
 /**
  * Sorted set protocol.
  */
+@Beta
 public interface SortedSetProtocol extends SetProtocol {
 
   /**

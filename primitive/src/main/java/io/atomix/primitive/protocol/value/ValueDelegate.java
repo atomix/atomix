@@ -15,9 +15,12 @@
  */
 package io.atomix.primitive.protocol.value;
 
+import com.google.common.annotations.Beta;
+
 /**
  * Gossip-based value service.
  */
+@Beta
 public interface ValueDelegate<V> {
 
   /**

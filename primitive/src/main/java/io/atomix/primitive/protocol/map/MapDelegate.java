@@ -15,11 +15,14 @@
  */
 package io.atomix.primitive.protocol.map;
 
+import com.google.common.annotations.Beta;
+
 import java.util.Map;
 
 /**
  * Gossip-based map service.
  */
+@Beta
 public interface MapDelegate<K, V> extends Map<K, V> {
 
   /**
