@@ -33,6 +33,7 @@ public class MessageEncoder extends MessageToByteEncoder<Object> {
 // Effectively MessageToByteEncoder<InternalMessage>,
 // had to specify <Object> to avoid Class Loader not being able to find some classes.
 
+  private static final int VERSION = 1;
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final Address address;
@@ -60,6 +61,8 @@ public class MessageEncoder extends MessageToByteEncoder<Object> {
   private void encodeMessage(InternalMessage message, ByteBuf out) {
     // If the address hasn't been written to the channel, write it.
     if (!addressWritten) {
+      out.writeShort(VERSION);
+
       final InetAddress senderIp = address.address();
       final byte[] senderIpBytes = senderIp.getAddress();
       out.writeByte(senderIpBytes.length);
