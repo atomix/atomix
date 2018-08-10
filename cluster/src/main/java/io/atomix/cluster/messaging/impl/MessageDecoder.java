@@ -43,11 +43,12 @@ public class MessageDecoder extends ByteToMessageDecoder {
   private static final int INT_SIZE = 4;
   private static final int LONG_SIZE = 8;
 
-  private DecoderState currentState = DecoderState.READ_SENDER_IP;
+  private DecoderState currentState = DecoderState.READ_SENDER_VERSION;
 
   private InetAddress senderIp;
   private int senderPort;
   private Address address;
+  private int version;
 
   private InternalMessage.Type type;
   private int preamble;
@@ -64,6 +65,12 @@ public class MessageDecoder extends ByteToMessageDecoder {
       List<Object> out) throws Exception {
 
     switch (currentState) {
+      case READ_SENDER_VERSION:
+        if (buffer.readableBytes() < SHORT_SIZE) {
+          return;
+        }
+        version = buffer.readShort();
+        currentState = DecoderState.READ_SENDER_IP;
       case READ_SENDER_IP:
         if (buffer.readableBytes() < BYTE_SIZE) {
           return;
