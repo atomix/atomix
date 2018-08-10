@@ -101,10 +101,11 @@ public class VertxRestService implements ManagedRestService {
         new ClassGraph().enableAnnotationInfo().whitelistPackages(whitelistPackages).addClassLoader(classLoader) :
         new ClassGraph().enableAnnotationInfo().addClassLoader(classLoader);
 
-    final ScanResult scanResult = classGraph.scan();
-    scanResult.getClassesWithAnnotation(AtomixResource.class.getName()).forEach(classInfo -> {
-      deployment.getRegistry().addPerInstanceResource(classInfo.loadClass(), "/v1");
-    });
+    try (final ScanResult scanResult = classGraph.scan()) {
+      scanResult.getClassesWithAnnotation(AtomixResource.class.getName()).forEach(classInfo -> {
+        deployment.getRegistry().addPerInstanceResource(classInfo.loadClass(), "/v1");
+      });
+    }
 
     deployment.getDispatcher().getProviderFactory().register(new JacksonProvider(createObjectMapper()));
 
