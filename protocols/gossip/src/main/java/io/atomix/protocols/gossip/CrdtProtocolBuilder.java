@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.gossip;
 
+import com.google.common.annotations.Beta;
 import io.atomix.primitive.protocol.PrimitiveProtocolBuilder;
 
 import java.time.Duration;
@@ -22,6 +23,7 @@ import java.time.Duration;
 /**
  * CRDT protocol builder.
  */
+@Beta
 public class CrdtProtocolBuilder extends PrimitiveProtocolBuilder<CrdtProtocolBuilder, CrdtProtocolConfig, CrdtProtocol> {
   public CrdtProtocolBuilder(CrdtProtocolConfig config) {
     super(config);

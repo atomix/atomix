@@ -15,6 +15,7 @@
  */
 package io.atomix.primitive.protocol.value;
 
+import com.google.common.annotations.Beta;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.utils.serializer.Serializer;
@@ -22,6 +23,7 @@ import io.atomix.utils.serializer.Serializer;
 /**
  * Value protocol.
  */
+@Beta
 public interface ValueProtocol extends GossipProtocol {
 
   /**

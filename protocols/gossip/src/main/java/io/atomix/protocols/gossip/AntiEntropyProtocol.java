@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.gossip;
 
+import com.google.common.annotations.Beta;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.GossipProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
@@ -29,6 +30,7 @@ import io.atomix.utils.serializer.Serializer;
 /**
  * Anti-entropy protocol.
  */
+@Beta
 public class AntiEntropyProtocol implements GossipProtocol, MapProtocol, SetProtocol {
   public static final Type TYPE = new Type();
 

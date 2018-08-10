@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.gossip;
 
+import com.google.common.annotations.Beta;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.MemberId;
 
@@ -23,6 +24,7 @@ import java.util.Collection;
 /**
  * Peer selector.
  */
+@Beta
 @FunctionalInterface
 public interface PeerSelector<E> {
 
