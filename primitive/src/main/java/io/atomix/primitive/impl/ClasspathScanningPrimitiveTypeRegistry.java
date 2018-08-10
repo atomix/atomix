@@ -20,6 +20,7 @@ import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.utils.ServiceException;
 import io.atomix.utils.misc.StringUtils;
 import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,17 +49,19 @@ public class ClasspathScanningPrimitiveTypeRegistry implements PrimitiveTypeRegi
       final ClassGraph classGraph = whitelistPackages != null ?
               new ClassGraph().enableClassInfo().whitelistPackages(whitelistPackages).addClassLoader(classLoader) :
               new ClassGraph().enableClassInfo().addClassLoader(classLoader);
-      classGraph.scan().getClassesImplementing(PrimitiveType.class.getName()).forEach(classInfo -> {
-        if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {
-          return;
-        }
-        final PrimitiveType primitiveType = newInstance(classInfo.loadClass());
-        final PrimitiveType oldPrimitiveType = result.put(primitiveType.name(), primitiveType);
-        if (oldPrimitiveType != null) {
-          LOGGER.warn("Found multiple primitives types name={}, classes=[{}, {}]", primitiveType.name(),
-                  oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
-        }
-      });
+      try (final ScanResult scanResult = classGraph.scan()) {
+        scanResult.getClassesImplementing(PrimitiveType.class.getName()).forEach(classInfo -> {
+          if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {
+            return;
+          }
+          final PrimitiveType primitiveType = newInstance(classInfo.loadClass());
+          final PrimitiveType oldPrimitiveType = result.put(primitiveType.name(), primitiveType);
+          if (oldPrimitiveType != null) {
+            LOGGER.warn("Found multiple primitives types name={}, classes=[{}, {}]", primitiveType.name(),
+                    oldPrimitiveType.getClass().getName(), primitiveType.getClass().getName());
+          }
+        });
+      }
       return Collections.unmodifiableMap(result);
     });
     primitiveTypes.putAll(types);

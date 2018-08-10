@@ -52,25 +52,25 @@ public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
         final ClassGraph classGraph = whitelistPackages != null ?
                 new ClassGraph().enableClassInfo().whitelistPackages(whitelistPackages).addClassLoader(classLoader) :
                 new ClassGraph().enableClassInfo().addClassLoader(classLoader);
-
-        final ScanResult scanResult = classGraph.scan();
-        final Map<Class<? extends NamedType>, Map<String, NamedType>> result = new ConcurrentHashMap<>();
-        for (Class<? extends NamedType> type : cacheKey.types) {
-          final Map<String, NamedType> tmp = new ConcurrentHashMap<>();
-          scanResult.getClassesImplementing(type.getName()).forEach(classInfo -> {
-            if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {
-              return;
-            }
-            final NamedType instance = newInstance(classInfo.loadClass());
-            final NamedType oldInstance = tmp.put(instance.name(), instance);
-            if (oldInstance != null) {
-              LOGGER.warn("Found multiple types with name={}, classes=[{}, {}]", instance.name(),
-                      oldInstance.getClass().getName(), instance.getClass().getName());
-            }
-          });
-          result.put(type, Collections.unmodifiableMap(tmp));
+        try (final ScanResult scanResult = classGraph.scan()) {
+          final Map<Class<? extends NamedType>, Map<String, NamedType>> result = new ConcurrentHashMap<>();
+          for (Class<? extends NamedType> type : cacheKey.types) {
+            final Map<String, NamedType> tmp = new ConcurrentHashMap<>();
+            scanResult.getClassesImplementing(type.getName()).forEach(classInfo -> {
+              if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {
+                return;
+              }
+              final NamedType instance = newInstance(classInfo.loadClass());
+              final NamedType oldInstance = tmp.put(instance.name(), instance);
+              if (oldInstance != null) {
+                LOGGER.warn("Found multiple types with name={}, classes=[{}, {}]", instance.name(),
+                        oldInstance.getClass().getName(), instance.getClass().getName());
+              }
+            });
+            result.put(type, Collections.unmodifiableMap(tmp));
+          }
+          return result;
         }
-        return result;
       });
       this.registrations.putAll(registrations);
     }
