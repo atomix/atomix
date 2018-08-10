@@ -139,14 +139,23 @@ public final class Version implements Comparable<Version> {
 
   @Override
   public String toString() {
-    return String.format(FORMAT, major, minor, patch, build);
+    StringBuilder builder = new StringBuilder()
+        .append(major)
+        .append('.')
+        .append(minor)
+        .append('.')
+        .append(patch);
+    String build = Build.from(this.build).toString();
+    if (build != null) {
+      builder.append('-').append(build);
+    }
+    return builder.toString();
   }
 
   /**
    * Build version.
    */
   private static class Build implements Comparable<Build> {
-    private final String FORMAT = "%s%d";
 
     /**
      * Creates a new build version from the given string.
