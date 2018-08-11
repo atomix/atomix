@@ -199,7 +199,12 @@ public class DistributedMultisetProxy
 
     @Override
     public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
+      return DistributedMultisetProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return DistributedMultisetProxy.this.delete();
     }
 
     @Override
@@ -315,7 +320,12 @@ public class DistributedMultisetProxy
 
     @Override
     public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
+      return DistributedMultisetProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return DistributedMultisetProxy.this.delete();
     }
 
     @Override

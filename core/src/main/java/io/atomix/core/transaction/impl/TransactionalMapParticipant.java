@@ -72,6 +72,11 @@ public abstract class TransactionalMapParticipant<K, V> implements AsyncTransact
   }
 
   @Override
+  public CompletableFuture<Void> delete() {
+    return consistentMap.delete();
+  }
+
+  @Override
   public TransactionalMap<K, V> sync(Duration operationTimeout) {
     return new BlockingTransactionalMap<>(this, operationTimeout.toMillis());
   }
