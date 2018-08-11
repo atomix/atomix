@@ -249,4 +249,11 @@ public interface ProxyClient<S> {
    */
   CompletableFuture<Void> close();
 
+  /**
+   * Deletes the proxy client.
+   *
+   * @return a future to be completed once the service has been deleted
+   */
+  CompletableFuture<Void> delete();
+
 }

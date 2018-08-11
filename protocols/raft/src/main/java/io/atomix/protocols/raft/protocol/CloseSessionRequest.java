@@ -15,6 +15,10 @@
  */
 package io.atomix.protocols.raft.protocol;
 
+import java.util.Objects;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Close session request.
  */
@@ -29,18 +33,69 @@ public class CloseSessionRequest extends SessionRequest {
     return new Builder();
   }
 
-  public CloseSessionRequest(long session) {
+  private final boolean delete;
+
+  public CloseSessionRequest(long session, boolean delete) {
     super(session);
+    this.delete = delete;
   }
 
   /**
-   * Unregister request builder.
+   * Returns whether this request is a delete.
+   *
+   * @return indicates whether this is a delete request
+   */
+  public boolean delete() {
+    return delete;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getClass(), session);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) {
+      return true;
+    }
+    if (object == null || !getClass().isAssignableFrom(object.getClass())) {
+      return false;
+    }
+
+    CloseSessionRequest request = (CloseSessionRequest) object;
+    return request.session == session && request.delete == delete;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("session", session)
+        .add("delete", delete)
+        .toString();
+  }
+
+  /**
+   * Close session request builder.
    */
   public static class Builder extends SessionRequest.Builder<Builder, CloseSessionRequest> {
+    private boolean delete;
+
+    /**
+     * Sets whether the request is a delete.
+     *
+     * @param delete whether the request is a delete
+     * @return the request builder
+     */
+    public Builder withDelete(boolean delete) {
+      this.delete = delete;
+      return this;
+    }
+
     @Override
     public CloseSessionRequest build() {
       validate();
-      return new CloseSessionRequest(session);
+      return new CloseSessionRequest(session, delete);
     }
   }
 }

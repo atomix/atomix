@@ -88,6 +88,11 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive, S> implem
   }
 
   @Override
+  public CompletableFuture<Void> delete() {
+    return client.delete();
+  }
+
+  @Override
   public String toString() {
     return toStringHelper(this)
         .add("proxy", client)

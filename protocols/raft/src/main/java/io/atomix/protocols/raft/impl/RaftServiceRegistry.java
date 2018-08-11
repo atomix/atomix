@@ -39,6 +39,15 @@ public class RaftServiceRegistry implements Iterable<RaftServiceContext> {
   }
 
   /**
+   * Unregisters the given service.
+   *
+   * @param service the service to unregister
+   */
+  public void unregisterService(RaftServiceContext service) {
+    services.remove(service.serviceName());
+  }
+
+  /**
    * Gets a registered service by name.
    *
    * @param name the service name

@@ -69,8 +69,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Internal server state machine.
  * <p>
- * The internal state machine handles application of commands to the user provided {@link PrimitiveService}
- * and keeps track of internal state like sessions and the various indexes relevant to log compaction.
+ * The internal state machine handles application of commands to the user provided {@link PrimitiveService} and keeps
+ * track of internal state like sessions and the various indexes relevant to log compaction.
  */
 public class RaftServiceManager implements AutoCloseable {
   private static final Duration SNAPSHOT_INTERVAL = Duration.ofSeconds(10);
@@ -270,8 +270,8 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Schedules a log compaction.
    *
-   * @param lastApplied the last applied index at the start of snapshotting. This represents the highest index before
-   *                    which segments can be safely removed from disk
+   * @param lastApplied the last applied index at the start of snapshotting. This represents the highest index
+   *     before which segments can be safely removed from disk
    */
   private void scheduleCompaction(long lastApplied) {
     // Schedule compaction after a randomized delay to discourage snapshots on multiple nodes at the same time.
@@ -303,8 +303,8 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Applies all commits up to the given index.
    * <p>
-   * Calls to this method are assumed not to expect a result. This allows some optimizations to be
-   * made internally since linearizable events don't have to be waited to complete the command.
+   * Calls to this method are assumed not to expect a result. This allows some optimizations to be made internally since
+   * linearizable events don't have to be waited to complete the command.
    *
    * @param index The index up to which to apply commits.
    */
@@ -315,9 +315,8 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Applies the entry at the given index to the state machine.
    * <p>
-   * Calls to this method are assumed to expect a result. This means linearizable session events
-   * triggered by the application of the command at the given index will be awaited before completing
-   * the returned future.
+   * Calls to this method are assumed to expect a result. This means linearizable session events triggered by the
+   * application of the command at the given index will be awaited before completing the returned future.
    *
    * @param index The index to apply.
    * @return A completable future to be completed once the commit has been applied.
@@ -392,8 +391,8 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Applies an entry to the state machine.
    * <p>
-   * Calls to this method are assumed to expect a result. This means linearizable session events
-   * triggered by the application of the given entry will be awaited before completing the returned future.
+   * Calls to this method are assumed to expect a result. This means linearizable session events triggered by the
+   * application of the given entry will be awaited before completing the returned future.
    *
    * @param entry The entry to apply.
    * @return A completable future to be completed with the result.
@@ -465,7 +464,7 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Takes a snapshot of the given service.
    *
-   * @param writer  the snapshot writer
+   * @param writer the snapshot writer
    * @param service the service to snapshot
    */
   private void snapshotService(SnapshotWriter writer, RaftServiceContext service) {
@@ -555,9 +554,9 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Applies a configuration entry to the internal state machine.
    * <p>
-   * Configuration entries are applied to internal server state when written to the log. Thus, no significant
-   * logic needs to take place in the handling of configuration entries. We simply release the previous configuration
-   * entry since it was overwritten by a more recent committed configuration entry.
+   * Configuration entries are applied to internal server state when written to the log. Thus, no significant logic
+   * needs to take place in the handling of configuration entries. We simply release the previous configuration entry
+   * since it was overwritten by a more recent committed configuration entry.
    */
   private CompletableFuture<Void> applyConfiguration(Indexed<ConfigurationEntry> entry) {
     for (RaftServiceContext service : raft.getServices()) {
@@ -569,25 +568,24 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Applies a session keep alive entry to the state machine.
    * <p>
-   * Keep alive entries are applied to the internal state machine to reset the timeout for a specific session.
-   * If the session indicated by the KeepAliveEntry is still held in memory, we mark the session as trusted,
-   * indicating that the client has committed a keep alive within the required timeout. Additionally, we check
-   * all other sessions for expiration based on the timestamp provided by this KeepAliveEntry. Note that sessions
-   * are never completely expired via this method. Leaders must explicitly commit an UnregisterEntry to expire
-   * a session.
+   * Keep alive entries are applied to the internal state machine to reset the timeout for a specific session. If the
+   * session indicated by the KeepAliveEntry is still held in memory, we mark the session as trusted, indicating that
+   * the client has committed a keep alive within the required timeout. Additionally, we check all other sessions for
+   * expiration based on the timestamp provided by this KeepAliveEntry. Note that sessions are never completely expired
+   * via this method. Leaders must explicitly commit an UnregisterEntry to expire a session.
    * <p>
-   * When a KeepAliveEntry is committed to the internal state machine, two specific fields provided in the entry
-   * are used to update server-side session state. The {@code commandSequence} indicates the highest command for
-   * which the session has received a successful response in the proper sequence. By applying the {@code commandSequence}
-   * to the server session, we clear command output held in memory up to that point. The {@code eventVersion} indicates
-   * the index up to which the client has received event messages in sequence for the session. Applying the
-   * {@code eventVersion} to the server-side session results in events up to that index being removed from memory
-   * as they were acknowledged by the client. It's essential that both of these fields be applied via entries committed
-   * to the Raft log to ensure they're applied on all servers in sequential order.
+   * When a KeepAliveEntry is committed to the internal state machine, two specific fields provided in the entry are
+   * used to update server-side session state. The {@code commandSequence} indicates the highest command for which the
+   * session has received a successful response in the proper sequence. By applying the {@code commandSequence} to the
+   * server session, we clear command output held in memory up to that point. The {@code eventVersion} indicates the
+   * index up to which the client has received event messages in sequence for the session. Applying the {@code
+   * eventVersion} to the server-side session results in events up to that index being removed from memory as they were
+   * acknowledged by the client. It's essential that both of these fields be applied via entries committed to the Raft
+   * log to ensure they're applied on all servers in sequential order.
    * <p>
    * Keep alive entries are retained in the log until the next time the client sends a keep alive entry or until the
-   * client's session is expired. This ensures for sessions that have long timeouts, keep alive entries cannot be cleaned
-   * from the log before they're replicated to some servers.
+   * client's session is expired. This ensures for sessions that have long timeouts, keep alive entries cannot be
+   * cleaned from the log before they're replicated to some servers.
    */
   private long[] applyKeepAlive(Indexed<KeepAliveEntry> entry) {
 
@@ -618,7 +616,25 @@ public class RaftServiceManager implements AutoCloseable {
       service.completeKeepAlive(entry.index(), entry.entry().timestamp());
     }
 
+    expireOrphanSessions(entry.entry().timestamp());
+
     return Longs.toArray(successfulSessionIds);
+  }
+
+  /**
+   * Expires sessions that have timed out.
+   */
+  private void expireOrphanSessions(long timestamp) {
+    // Iterate through registered sessions.
+    for (RaftSession session : raft.getSessions().getSessions()) {
+      if (session.isTimedOut(timestamp)) {
+        logger.debug("Session expired in {} milliseconds: {}", timestamp - session.getLastUpdated(), session);
+        session = raft.getSessions().removeSession(session.sessionId());
+        if (session != null) {
+          session.expire();
+        }
+      }
+    }
   }
 
   /**
@@ -702,9 +718,14 @@ public class RaftServiceManager implements AutoCloseable {
       throw new RaftException.UnknownSession("Unknown session: " + entry.entry().session());
     }
 
-    // Get the state machine executor associated with the session and unregister the session.
     RaftServiceContext service = session.getService();
     service.closeSession(entry.index(), entry.entry().timestamp(), session, entry.entry().expired());
+
+    // If this is a delete, unregister the service.
+    if (entry.entry().delete()) {
+      raft.getServices().unregisterService(service);
+      service.close();
+    }
   }
 
   /**
@@ -740,17 +761,16 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Applies a command entry to the state machine.
    * <p>
-   * Command entries result in commands being executed on the user provided {@link PrimitiveService} and a
-   * response being sent back to the client by completing the returned future. All command responses are
-   * cached in the command's {@link RaftSession} for fault tolerance. In the event that the same command
-   * is applied to the state machine more than once, the original response will be returned.
+   * Command entries result in commands being executed on the user provided {@link PrimitiveService} and a response
+   * being sent back to the client by completing the returned future. All command responses are cached in the command's
+   * {@link RaftSession} for fault tolerance. In the event that the same command is applied to the state machine more
+   * than once, the original response will be returned.
    * <p>
-   * Command entries are written with a sequence number. The sequence number is used to ensure that
-   * commands are applied to the state machine in sequential order. If a command entry has a sequence
-   * number that is less than the next sequence number for the session, that indicates that it is a
-   * duplicate of a command that was already applied. Otherwise, commands are assumed to have been
-   * received in sequential order. The reason for this assumption is because leaders always sequence
-   * commands as they're written to the log, so no sequence number will be skipped.
+   * Command entries are written with a sequence number. The sequence number is used to ensure that commands are applied
+   * to the state machine in sequential order. If a command entry has a sequence number that is less than the next
+   * sequence number for the session, that indicates that it is a duplicate of a command that was already applied.
+   * Otherwise, commands are assumed to have been received in sequential order. The reason for this assumption is
+   * because leaders always sequence commands as they're written to the log, so no sequence number will be skipped.
    */
   private OperationResult applyCommand(Indexed<CommandEntry> entry) {
     // First check to ensure that the session exists.
@@ -782,20 +802,19 @@ public class RaftServiceManager implements AutoCloseable {
   /**
    * Applies a query entry to the state machine.
    * <p>
-   * Query entries are applied to the user {@link PrimitiveService} for read-only operations.
-   * Because queries are read-only, they may only be applied on a single server in the cluster,
-   * and query entries do not go through the Raft log. Thus, it is critical that measures be taken
-   * to ensure clients see a consistent view of the cluster event when switching servers. To do so,
-   * clients provide a sequence and version number for each query. The sequence number is the order
-   * in which the query was sent by the client. Sequence numbers are shared across both commands and
-   * queries. The version number indicates the last index for which the client saw a command or query
-   * response. In the event that the lastApplied index of this state machine does not meet the provided
-   * version number, we wait for the state machine to catch up before applying the query. This ensures
-   * clients see state progress monotonically even when switching servers.
+   * Query entries are applied to the user {@link PrimitiveService} for read-only operations. Because queries are
+   * read-only, they may only be applied on a single server in the cluster, and query entries do not go through the Raft
+   * log. Thus, it is critical that measures be taken to ensure clients see a consistent view of the cluster event when
+   * switching servers. To do so, clients provide a sequence and version number for each query. The sequence number is
+   * the order in which the query was sent by the client. Sequence numbers are shared across both commands and queries.
+   * The version number indicates the last index for which the client saw a command or query response. In the event that
+   * the lastApplied index of this state machine does not meet the provided version number, we wait for the state
+   * machine to catch up before applying the query. This ensures clients see state progress monotonically even when
+   * switching servers.
    * <p>
-   * Because queries may only be applied on a single server in the cluster they cannot result in the
-   * publishing of session events. Events require commands to be written to the Raft log to ensure
-   * fault-tolerance and consistency across the cluster.
+   * Because queries may only be applied on a single server in the cluster they cannot result in the publishing of
+   * session events. Events require commands to be written to the Raft log to ensure fault-tolerance and consistency
+   * across the cluster.
    */
   private CompletableFuture<OperationResult> applyQuery(Indexed<QueryEntry> entry) {
     RaftSession session = raft.getSessions().getSession(entry.entry().session());

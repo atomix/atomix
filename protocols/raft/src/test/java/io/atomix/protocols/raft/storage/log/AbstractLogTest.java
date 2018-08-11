@@ -120,7 +120,7 @@ public abstract class AbstractLogTest {
     assertEquals(1, indexed.index());
 
     assertEquals(2, writer.getNextIndex());
-    writer.append(new Indexed<>(2, new CloseSessionEntry(1, System.currentTimeMillis(), 1, false), 0));
+    writer.append(new Indexed<>(2, new CloseSessionEntry(1, System.currentTimeMillis(), 1, false, false), 0));
     reader.reset(2);
     indexed = reader.next();
     assertEquals(2, indexed.index());
@@ -202,7 +202,7 @@ public abstract class AbstractLogTest {
     // Truncate the log and write a different entry.
     writer.truncate(1);
     assertEquals(2, writer.getNextIndex());
-    writer.append(new Indexed<>(2, new CloseSessionEntry(2, System.currentTimeMillis(), 1, false), 0));
+    writer.append(new Indexed<>(2, new CloseSessionEntry(2, System.currentTimeMillis(), 1, false, false), 0));
     reader.reset(2);
     indexed = reader.next();
     assertEquals(2, indexed.index());

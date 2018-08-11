@@ -239,7 +239,16 @@ public class DefaultRaftSessionClient implements RaftSessionClient {
   @Override
   public CompletableFuture<Void> close() {
     if (state != null) {
-      return sessionManager.closeSession(state.getSessionId())
+      return sessionManager.closeSession(state.getSessionId(), false)
+          .whenComplete((result, error) -> state.setState(PrimitiveState.CLOSED));
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<Void> delete() {
+    if (state != null) {
+      return sessionManager.closeSession(state.getSessionId(), true)
           .whenComplete((result, error) -> state.setState(PrimitiveState.CLOSED));
     }
     return CompletableFuture.completedFuture(null);

@@ -21,6 +21,7 @@ import io.atomix.cluster.MemberId;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.PrimitiveBuilder;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveRegistry;
@@ -1143,6 +1144,34 @@ public class RaftTest extends ConcurrentTestCase {
     await(Duration.ofSeconds(10).toMillis(), 1);
     createSession(client2).close().thenRun(this::resume);
     await(Duration.ofSeconds(10).toMillis(), 2);
+  }
+
+  @Test
+  public void testSessionDelete() throws Throwable {
+    createServers(3);
+
+    RaftClient client1 = createClient();
+    TestPrimitive primitive1 = createPrimitive(client1);
+
+    RaftClient client2 = createClient();
+    TestPrimitive primitive2 = createPrimitive(client2);
+
+    primitive1.write("foo").thenRun(this::resume);
+    primitive2.write("bar").thenRun(this::resume);
+    await(5000, 2);
+
+    primitive1.delete().thenRun(this::resume);
+    await(5000);
+
+    primitive2.write("baz").whenComplete((result, error) -> {
+      threadAssertTrue(error.getCause() instanceof PrimitiveException.UnknownService);
+      resume();
+    });
+    primitive2.read().whenComplete((result, error) -> {
+      threadAssertTrue(error.getCause() instanceof PrimitiveException.UnknownService);
+      resume();
+    });
+    await(5000, 2);
   }
 
   /**
