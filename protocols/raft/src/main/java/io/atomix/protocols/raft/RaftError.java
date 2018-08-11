@@ -186,7 +186,7 @@ public class RaftError {
     UNKNOWN_SERVICE {
       @Override
       PrimitiveException createException() {
-        return createException("Unknown state machine");
+        return createException("Unknown primitive service");
       }
 
       @Override

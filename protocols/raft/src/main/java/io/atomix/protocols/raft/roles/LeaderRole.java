@@ -203,7 +203,7 @@ public final class LeaderRole extends ActiveRole {
   private void expireSession(RaftSession session) {
     if (expiring.add(session.sessionId())) {
       log.debug("Expiring session due to heartbeat failure: {}", session);
-      appendAndCompact(new CloseSessionEntry(raft.getTerm(), System.currentTimeMillis(), session.sessionId().id(), true))
+      appendAndCompact(new CloseSessionEntry(raft.getTerm(), System.currentTimeMillis(), session.sessionId().id(), true, false))
               .whenCompleteAsync((entry, error) -> {
                 if (error != null) {
                   expiring.remove(session.sessionId());
@@ -970,7 +970,7 @@ public final class LeaderRole extends ActiveRole {
     logRequest(request);
 
     CompletableFuture<CloseSessionResponse> future = new CompletableFuture<>();
-    appendAndCompact(new CloseSessionEntry(term, timestamp, request.session(), false))
+    appendAndCompact(new CloseSessionEntry(term, timestamp, request.session(), false, request.delete()))
         .whenCompleteAsync((entry, error) -> {
           if (error != null) {
             future.complete(logResponse(CloseSessionResponse.builder()

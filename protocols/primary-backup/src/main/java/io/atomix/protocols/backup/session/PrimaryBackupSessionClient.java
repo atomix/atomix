@@ -42,6 +42,7 @@ import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
 import io.atomix.utils.concurrent.ComposableFuture;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
@@ -325,6 +326,11 @@ public class PrimaryBackupSessionClient implements SessionClient {
       future.complete(null);
     }
     return future;
+  }
+
+  @Override
+  public CompletableFuture<Void> delete() {
+    return close().thenCompose(v -> Futures.exceptionalFuture(new UnsupportedOperationException("Delete not supported by primary-backup protocol")));
   }
 
   /**

@@ -191,7 +191,7 @@ public class RaftSessionManager {
           sessions.put(state.getSessionId().id(), state);
 
           state.addStateChangeListener(s -> {
-            if (s == PrimitiveState.CLOSED) {
+            if (s == PrimitiveState.EXPIRED || s == PrimitiveState.CLOSED) {
               sessions.remove(state.getSessionId().id());
             }
           });
@@ -213,10 +213,11 @@ public class RaftSessionManager {
   /**
    * Closes a session.
    *
-   * @param sessionId The session identifier.
+   * @param sessionId the session identifier.
+   * @param delete whether to delete the service
    * @return A completable future to be completed once the session is closed.
    */
-  public CompletableFuture<Void> closeSession(SessionId sessionId) {
+  public CompletableFuture<Void> closeSession(SessionId sessionId, boolean delete) {
     RaftSessionState state = sessions.get(sessionId.id());
     if (state == null) {
       return Futures.exceptionalFuture(new RaftException.UnknownSession("Unknown session: " + sessionId));
@@ -225,6 +226,7 @@ public class RaftSessionManager {
     log.info("Closing session {}", sessionId);
     CloseSessionRequest request = CloseSessionRequest.builder()
         .withSession(sessionId.id())
+        .withDelete(delete)
         .build();
 
     CompletableFuture<Void> future = new CompletableFuture<>();
@@ -359,7 +361,7 @@ public class RaftSessionManager {
               if (keptAliveSessions.contains(session.getSessionId().id())) {
                 session.setState(PrimitiveState.CONNECTED);
               } else {
-                session.setState(PrimitiveState.CLOSED);
+                session.setState(PrimitiveState.EXPIRED);
               }
             }
             scheduleKeepAlive(System.currentTimeMillis(), sessionTimeout, delta);

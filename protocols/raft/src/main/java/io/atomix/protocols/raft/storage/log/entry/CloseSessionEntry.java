@@ -24,10 +24,12 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class CloseSessionEntry extends SessionEntry {
   private final boolean expired;
+  private final boolean delete;
 
-  public CloseSessionEntry(long term, long timestamp, long session, boolean expired) {
+  public CloseSessionEntry(long term, long timestamp, long session, boolean expired, boolean delete) {
     super(term, timestamp, session);
     this.expired = expired;
+    this.delete = delete;
   }
 
   /**
@@ -39,6 +41,15 @@ public class CloseSessionEntry extends SessionEntry {
     return expired;
   }
 
+  /**
+   * Returns whether to delete the service.
+   *
+   * @return whether to delete the service
+   */
+  public boolean delete() {
+    return delete;
+  }
+
   @Override
   public String toString() {
     return toStringHelper(this)
@@ -46,6 +57,7 @@ public class CloseSessionEntry extends SessionEntry {
         .add("timestamp", new TimestampPrinter(timestamp))
         .add("session", session)
         .add("expired", expired)
+        .add("delete", delete)
         .toString();
   }
 }

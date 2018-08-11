@@ -33,7 +33,12 @@ public enum PrimitiveState {
   SUSPENDED,
 
   /**
-   * Signifies a state wherein the primitive has been shutdown and therefore cannot perform its functions.
+   * Signifies a state wherein the primitive's session has been expired and therefore cannot perform its functions.
+   */
+  EXPIRED,
+
+  /**
+   * Signifies a state wherein the primitive session has been closed and therefore cannot perform its functions.
    */
   CLOSED
 }

@@ -53,9 +53,12 @@ final class RaftSessionInvoker {
       e instanceof ConnectException
           || e instanceof TimeoutException
           || e instanceof ClosedChannelException;
+  private static final Predicate<Throwable> EXPIRED_PREDICATE = e ->
+      e instanceof RaftException.UnknownClient
+          || e instanceof RaftException.UnknownSession;
   private static final Predicate<Throwable> CLOSED_PREDICATE = e ->
       e instanceof RaftException.ClosedSession
-          || e instanceof RaftException.UnknownSession;
+          || e instanceof RaftException.UnknownService;
 
   private final RaftSessionConnection leaderConnection;
   private final RaftSessionConnection sessionConnection;
@@ -159,11 +162,11 @@ final class RaftSessionInvoker {
   /**
    * Resubmits commands starting after the given sequence number.
    * <p>
-   * The sequence number from which to resend commands is the <em>request</em> sequence number,
-   * not the client-side sequence number. We resend only commands since queries cannot be reliably
-   * resent without losing linearizable semantics. Commands are resent by iterating through all pending
-   * operation attempts and retrying commands where the sequence number is greater than the given
-   * {@code commandSequence} number and the attempt number is less than or equal to the version.
+   * The sequence number from which to resend commands is the <em>request</em> sequence number, not the client-side
+   * sequence number. We resend only commands since queries cannot be reliably resent without losing linearizable
+   * semantics. Commands are resent by iterating through all pending operation attempts and retrying commands where the
+   * sequence number is greater than the given {@code commandSequence} number and the attempt number is less than or
+   * equal to the version.
    */
   private void resubmit(long commandSequence, OperationAttempt<?, ?> attempt) {
     // If the client's response sequence number is greater than the given command sequence number,
@@ -295,8 +298,10 @@ final class RaftSessionInvoker {
         future.completeExceptionally(t);
       });
 
-      // If the session has been closed, update the client's state.
-      if (CLOSED_PREDICATE.test(t)) {
+      // If the session has been expired or closed, update the client's state.
+      if (EXPIRED_PREDICATE.test(t)) {
+        state.setState(PrimitiveState.EXPIRED);
+      } else if (CLOSED_PREDICATE.test(t)) {
         state.setState(PrimitiveState.CLOSED);
       }
     }
@@ -363,8 +368,12 @@ final class RaftSessionInvoker {
         }
         // If the client is unknown by the cluster, close the session and complete the operation exceptionally.
         else if (response.error().type() == RaftError.Type.UNKNOWN_CLIENT
-            || response.error().type() == RaftError.Type.UNKNOWN_SESSION
-            || response.error().type() == RaftError.Type.UNKNOWN_SERVICE
+            || response.error().type() == RaftError.Type.UNKNOWN_SESSION) {
+          state.setState(PrimitiveState.EXPIRED);
+          complete(response.error().createException());
+        }
+        // If the service is unknown by the cluster or the session was explicitly closed, set the session state to CLOSED.
+        else if (response.error().type() == RaftError.Type.UNKNOWN_SERVICE
             || response.error().type() == RaftError.Type.CLOSED_SESSION) {
           state.setState(PrimitiveState.CLOSED);
           complete(response.error().createException());
@@ -427,8 +436,10 @@ final class RaftSessionInvoker {
         if (response.status() == RaftResponse.Status.OK) {
           complete(response);
         } else if (response.error().type() == RaftError.Type.UNKNOWN_CLIENT
-            || response.error().type() == RaftError.Type.UNKNOWN_SESSION
-            || response.error().type() == RaftError.Type.UNKNOWN_SERVICE
+            || response.error().type() == RaftError.Type.UNKNOWN_SESSION) {
+          state.setState(PrimitiveState.EXPIRED);
+          complete(response.error().createException());
+        } else if (response.error().type() == RaftError.Type.UNKNOWN_SERVICE
             || response.error().type() == RaftError.Type.CLOSED_SESSION) {
           state.setState(PrimitiveState.CLOSED);
           complete(response.error().createException());

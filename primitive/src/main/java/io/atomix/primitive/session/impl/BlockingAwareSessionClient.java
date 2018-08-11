@@ -103,4 +103,16 @@ public class BlockingAwareSessionClient extends DelegatingSessionClient {
     }
     return closeFuture;
   }
+
+  @Override
+  public CompletableFuture<Void> delete() {
+    if (closeFuture == null) {
+      synchronized (this) {
+        if (closeFuture == null) {
+          closeFuture = orderedFuture(asyncFuture(super.delete(), context));
+        }
+      }
+    }
+    return closeFuture;
+  }
 }
