@@ -297,6 +297,11 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
     }
 
     @Override
+    public CompletableFuture<Void> delete() {
+      return values.delete();
+    }
+
+    @Override
     public DistributedCollection<V> sync(Duration operationTimeout) {
       return new BlockingDistributedCollection<>(this, operationTimeout.toMillis());
     }
@@ -429,6 +434,11 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
     @Override
     public CompletableFuture<Void> close() {
       return entries.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return entries.delete();
     }
 
     @Override

@@ -130,6 +130,12 @@ public class AsyncDistributedJavaCollection<E> implements AsyncDistributedCollec
   }
 
   @Override
+  public CompletableFuture<Void> delete() {
+    collection.clear();
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
   public DistributedCollection<E> sync(Duration operationTimeout) {
     return new BlockingDistributedCollection<>(this, operationTimeout.toMillis());
   }

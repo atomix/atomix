@@ -189,6 +189,11 @@ public class DefaultTransaction implements AsyncTransaction {
   }
 
   @Override
+  public CompletableFuture<Void> delete() {
+    return abort();
+  }
+
+  @Override
   public Transaction sync(Duration operationTimeout) {
     return new BlockingTransaction(this, operationTimeout.toMillis());
   }

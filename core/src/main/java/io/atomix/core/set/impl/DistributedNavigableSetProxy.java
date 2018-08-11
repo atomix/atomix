@@ -429,6 +429,11 @@ public class DistributedNavigableSetProxy<E extends Comparable<E>>
     }
 
     @Override
+    public CompletableFuture<Void> delete() {
+      return DistributedNavigableSetProxy.this.delete();
+    }
+
+    @Override
     public DistributedNavigableSet<E> sync(Duration operationTimeout) {
       return new BlockingDistributedNavigableSet<>(this, operationTimeout.toMillis());
     }

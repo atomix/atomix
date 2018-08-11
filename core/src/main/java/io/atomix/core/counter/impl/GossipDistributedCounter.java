@@ -100,4 +100,9 @@ public class GossipDistributedCounter implements AsyncDistributedCounter {
     counter.close();
     return CompletableFuture.completedFuture(null);
   }
+
+  @Override
+  public CompletableFuture<Void> delete() {
+    return CompletableFuture.completedFuture(null);
+  }
 }

@@ -118,6 +118,17 @@ public class GossipDistributedValue<V> implements AsyncDistributedValue<V> {
   }
 
   @Override
+  public CompletableFuture<Void> delete() {
+    try {
+      value.set(null);
+      value.close();
+      return CompletableFuture.completedFuture(null);
+    } catch (Exception e) {
+      return Futures.exceptionalFuture(e);
+    }
+  }
+
+  @Override
   public DistributedValue<V> sync(Duration operationTimeout) {
     return new BlockingDistributedValue<>(this, operationTimeout.toMillis());
   }
