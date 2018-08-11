@@ -1172,6 +1172,12 @@ public class RaftTest extends ConcurrentTestCase {
       resume();
     });
     await(5000, 2);
+
+    primitive2.read().whenComplete((result, error) -> {
+      threadAssertTrue(error.getCause() instanceof PrimitiveException.ClosedSession);
+      resume();
+    });
+    await(5000);
   }
 
   /**
