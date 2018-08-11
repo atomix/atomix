@@ -18,6 +18,7 @@ package io.atomix.primitive.session.impl;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
@@ -26,6 +27,7 @@ import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.OrderedFuture;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -131,6 +133,10 @@ public class RecoveringSessionClient implements SessionClient {
         log.debug("State changed: {}", state);
         this.state = state;
         stateChangeListeners.forEach(l -> l.accept(state));
+        if (state == PrimitiveState.CLOSED) {
+          connectFuture = Futures.exceptionalFuture(new PrimitiveException.ClosedSession());
+          session = null;
+        }
       }
     }
   }
