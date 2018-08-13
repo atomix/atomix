@@ -28,7 +28,7 @@ public abstract class AbstractRaftRequest implements RaftRequest {
    * @param <T> The builder type.
    * @param <U> The request type.
    */
-  protected static abstract class Builder<T extends Builder<T, U>, U extends AbstractRaftRequest> implements RaftRequest.Builder<T, U> {
+  protected abstract static class Builder<T extends Builder<T, U>, U extends AbstractRaftRequest> implements RaftRequest.Builder<T, U> {
 
     /**
      * Validates the builder.

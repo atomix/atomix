@@ -46,16 +46,16 @@ public class JournalSegmentDescriptorTest {
       .withMaxEntries(2048)
       .build();
 
-    assertEquals(descriptor.id(), 2);
-    assertEquals(descriptor.version(), JournalSegmentDescriptor.VERSION);
-    assertEquals(descriptor.index(), 1025);
-    assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
-    assertEquals(descriptor.maxEntries(), 2048);
+    assertEquals(2, descriptor.id());
+    assertEquals(JournalSegmentDescriptor.VERSION, descriptor.version());
+    assertEquals(1025, descriptor.index());
+    assertEquals(1024 * 1024, descriptor.maxSegmentSize());
+    assertEquals(2048, descriptor.maxEntries());
 
-    assertEquals(descriptor.updated(), 0);
+    assertEquals(0, descriptor.updated());
     long time = System.currentTimeMillis();
     descriptor.update(time);
-    assertEquals(descriptor.updated(), time);
+    assertEquals(time, descriptor.updated());
   }
 
   /**
@@ -71,29 +71,29 @@ public class JournalSegmentDescriptorTest {
       .withMaxEntries(2048)
       .build();
 
-    assertEquals(descriptor.id(), 2);
-    assertEquals(descriptor.version(), JournalSegmentDescriptor.VERSION);
-    assertEquals(descriptor.index(), 1025);
-    assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
-    assertEquals(descriptor.maxEntries(), 2048);
+    assertEquals(2, descriptor.id());
+    assertEquals(JournalSegmentDescriptor.VERSION, descriptor.version());
+    assertEquals(1025, descriptor.index());
+    assertEquals(1024 * 1024, descriptor.maxSegmentSize());
+    assertEquals(2048, descriptor.maxEntries());
 
     buffer.close();
 
     descriptor = new JournalSegmentDescriptor(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES));
 
-    assertEquals(descriptor.id(), 2);
-    assertEquals(descriptor.version(), JournalSegmentDescriptor.VERSION);
-    assertEquals(descriptor.index(), 1025);
-    assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
+    assertEquals(2, descriptor.id());
+    assertEquals(JournalSegmentDescriptor.VERSION, descriptor.version());
+    assertEquals(1025, descriptor.index());
+    assertEquals(1024 * 1024, descriptor.maxSegmentSize());
 
     descriptor.close();
 
     descriptor = new JournalSegmentDescriptor(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES));
 
-    assertEquals(descriptor.id(), 2);
-    assertEquals(descriptor.version(), JournalSegmentDescriptor.VERSION);
-    assertEquals(descriptor.index(), 1025);
-    assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
+    assertEquals(2, descriptor.id());
+    assertEquals(JournalSegmentDescriptor.VERSION, descriptor.version());
+    assertEquals(1025, descriptor.index());
+    assertEquals(1024 * 1024, descriptor.maxSegmentSize());
   }
 
   /**
@@ -113,12 +113,12 @@ public class JournalSegmentDescriptorTest {
 
     descriptor = descriptor.copyTo(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES));
 
-    assertEquals(descriptor.id(), 2);
-    assertEquals(descriptor.version(), JournalSegmentDescriptor.VERSION);
-    assertEquals(descriptor.index(), 1025);
-    assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
-    assertEquals(descriptor.maxEntries(), 2048);
-    assertEquals(descriptor.updated(), time);
+    assertEquals(2, descriptor.id());
+    assertEquals(JournalSegmentDescriptor.VERSION, descriptor.version());
+    assertEquals(1025, descriptor.index());
+    assertEquals(1024 * 1024, descriptor.maxSegmentSize());
+    assertEquals(2048, descriptor.maxEntries());
+    assertEquals(time, descriptor.updated());
   }
 
   /**

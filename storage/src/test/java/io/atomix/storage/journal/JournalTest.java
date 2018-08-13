@@ -62,50 +62,50 @@ public class JournalTest {
 
     // Append a couple entries.
     Indexed<TestEntry> indexed;
-    assertEquals(writer.getNextIndex(), 1);
+    assertEquals(1, writer.getNextIndex());
     indexed = writer.append(new TestEntry(32));
-    assertEquals(indexed.index(), 1);
+    assertEquals(1, indexed.index());
 
-    assertEquals(writer.getNextIndex(), 2);
+    assertEquals(2, writer.getNextIndex());
     writer.append(new Indexed<>(2, new TestEntry(32), 32));
     reader.reset(2);
     indexed = reader.next();
-    assertEquals(indexed.index(), 2);
+    assertEquals(2, indexed.index());
     assertFalse(reader.hasNext());
 
     // Test reading the register entry.
     Indexed<TestEntry> openSession;
     reader.reset();
     openSession = reader.next();
-    assertEquals(openSession.index(), 1);
+    assertEquals(1, openSession.index());
     assertEquals(reader.getCurrentEntry(), openSession);
-    assertEquals(reader.getCurrentIndex(), 1);
+    assertEquals(1, reader.getCurrentIndex());
 
     // Test reading the unregister entry.
     Indexed<TestEntry> closeSession;
     assertTrue(reader.hasNext());
-    assertEquals(reader.getNextIndex(), 2);
+    assertEquals(2, reader.getNextIndex());
     closeSession = reader.next();
-    assertEquals(closeSession.index(), 2);
+    assertEquals(2, closeSession.index());
     assertEquals(reader.getCurrentEntry(), closeSession);
-    assertEquals(reader.getCurrentIndex(), 2);
+    assertEquals(2, reader.getCurrentIndex());
     assertFalse(reader.hasNext());
 
     // Test opening a new reader and reading from the log.
     reader = journal.openReader(1);
     assertTrue(reader.hasNext());
     openSession = reader.next();
-    assertEquals(openSession.index(), 1);
+    assertEquals(1, openSession.index());
     assertEquals(reader.getCurrentEntry(), openSession);
-    assertEquals(reader.getCurrentIndex(), 1);
+    assertEquals(1, reader.getCurrentIndex());
     assertTrue(reader.hasNext());
 
     assertTrue(reader.hasNext());
-    assertEquals(reader.getNextIndex(), 2);
+    assertEquals(2, reader.getNextIndex());
     closeSession = reader.next();
-    assertEquals(closeSession.index(), 2);
+    assertEquals(2, closeSession.index());
     assertEquals(reader.getCurrentEntry(), closeSession);
-    assertEquals(reader.getCurrentIndex(), 2);
+    assertEquals(2, reader.getCurrentIndex());
     assertFalse(reader.hasNext());
 
     // Reset the reader.
@@ -115,36 +115,36 @@ public class JournalTest {
     reader = journal.openReader(1);
     assertTrue(reader.hasNext());
     openSession = reader.next();
-    assertEquals(openSession.index(), 1);
+    assertEquals(1, openSession.index());
     assertEquals(reader.getCurrentEntry(), openSession);
-    assertEquals(reader.getCurrentIndex(), 1);
+    assertEquals(1, reader.getCurrentIndex());
     assertTrue(reader.hasNext());
 
     assertTrue(reader.hasNext());
-    assertEquals(reader.getNextIndex(), 2);
+    assertEquals(2, reader.getNextIndex());
     closeSession = reader.next();
-    assertEquals(closeSession.index(), 2);
+    assertEquals(2, closeSession.index());
     assertEquals(reader.getCurrentEntry(), closeSession);
-    assertEquals(reader.getCurrentIndex(), 2);
+    assertEquals(2, reader.getCurrentIndex());
     assertFalse(reader.hasNext());
 
     // Truncate the log and write a different entry.
     writer.truncate(1);
-    assertEquals(writer.getNextIndex(), 2);
+    assertEquals(2, writer.getNextIndex());
     writer.append(new Indexed<>(2, new TestEntry(32), 32));
     reader.reset(2);
     indexed = reader.next();
-    assertEquals(indexed.index(), 2);
+    assertEquals(2, indexed.index());
 
     // Reset the reader to a specific index and read the last entry again.
     reader.reset(2);
 
     assertTrue(reader.hasNext());
-    assertEquals(reader.getNextIndex(), 2);
+    assertEquals(2, reader.getNextIndex());
     closeSession = reader.next();
-    assertEquals(closeSession.index(), 2);
+    assertEquals(2, closeSession.index());
     assertEquals(reader.getCurrentEntry(), closeSession);
-    assertEquals(reader.getCurrentIndex(), 2);
+    assertEquals(2, reader.getCurrentIndex());
     assertFalse(reader.hasNext());
   }
 

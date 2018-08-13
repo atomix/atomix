@@ -119,17 +119,17 @@ public class DefaultClusterEventServiceTest {
     Set<Integer> events = new CopyOnWriteArraySet<>();
 
     eventService1.<String>subscribe("test1", SERIALIZER::decode, message -> {
-      assertEquals(message, "Hello world!");
+      assertEquals("Hello world!", message);
       events.add(1);
     }, MoreExecutors.directExecutor()).join();
 
     eventService2.<String>subscribe("test1", SERIALIZER::decode, message -> {
-      assertEquals(message, "Hello world!");
+      assertEquals("Hello world!", message);
       events.add(2);
     }, MoreExecutors.directExecutor()).join();
 
     eventService2.<String>subscribe("test1", SERIALIZER::decode, message -> {
-      assertEquals(message, "Hello world!");
+      assertEquals("Hello world!", message);
       events.add(3);
     }, MoreExecutors.directExecutor()).join();
 

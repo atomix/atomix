@@ -368,16 +368,16 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     map1.put("foo", "bar");
     map1.put("bar", "baz");
     assertNull(map1.get("foo"));
-    assertEquals(transaction1.commit(), CommitStatus.SUCCESS);
+    assertEquals(CommitStatus.SUCCESS, transaction1.commit());
 
     assertNull(map2.get("foo"));
-    assertEquals(map2.get("bar"), "baz");
+    assertEquals("baz", map2.get("bar"));
     map2.put("foo", "bar");
-    assertEquals(map2.get("foo"), "bar");
+    assertEquals("bar", map2.get("foo"));
     map2.remove("foo");
     assertFalse(map2.containsKey("foo"));
     map2.put("foo", "baz");
-    assertEquals(transaction2.commit(), CommitStatus.FAILURE);
+    assertEquals(CommitStatus.FAILURE, transaction2.commit());
 
     Transaction transaction3 = atomix().transactionBuilder()
         .withIsolation(Isolation.REPEATABLE_READS)
@@ -386,21 +386,21 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     TransactionalMap<String, String> map3 = transaction3.<String, String>mapBuilder("test-transactional-map")
         .withProtocol(protocol())
         .build();
-    assertEquals(map3.get("foo"), "bar");
+    assertEquals("bar", map3.get("foo"));
     map3.put("foo", "baz");
-    assertEquals(map3.get("foo"), "baz");
-    assertEquals(transaction3.commit(), CommitStatus.SUCCESS);
+    assertEquals("baz", map3.get("foo"));
+    assertEquals(CommitStatus.SUCCESS, transaction3.commit());
 
     AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("test-transactional-map")
         .withProtocol(protocol())
         .build();
-    assertEquals(map.get("foo").value(), "baz");
-    assertEquals(map.get("bar").value(), "baz");
+    assertEquals("baz", map.get("foo").value());
+    assertEquals("baz", map.get("bar").value());
 
     Map<String, Versioned<String>> result = map.getAllPresent(Collections.singleton("foo"));
     assertNotNull(result);
     assertTrue(result.size() == 1);
-    assertEquals(result.get("foo").value(), "baz");
+    assertEquals("baz", result.get("foo").value());
   }
 
   private static class TestAtomicMapEventListener implements AtomicMapEventListener<String, String> {

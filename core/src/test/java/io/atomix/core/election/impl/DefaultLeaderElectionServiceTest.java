@@ -66,6 +66,6 @@ public class DefaultLeaderElectionServiceTest {
 
     Leadership<byte[]> value = service.getLeadership();
     assertNotNull(value);
-    assertArrayEquals(value.leader().id(), id);
+    assertArrayEquals(id, value.leader().id());
   }
 }

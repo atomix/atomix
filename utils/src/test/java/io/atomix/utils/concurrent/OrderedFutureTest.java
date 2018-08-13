@@ -39,22 +39,22 @@ public class OrderedFutureTest {
     future.whenComplete((r, e) -> assertEquals(2, order.incrementAndGet()));
     future.handle((r, e) -> {
       assertEquals(3, order.incrementAndGet());
-      assertEquals(r, "foo");
+      assertEquals("foo", r);
       return "bar";
     });
     future.thenRun(() -> assertEquals(3, order.incrementAndGet()));
     future.thenAccept(r -> {
       assertEquals(5, order.incrementAndGet());
-      assertEquals(r, "foo");
+      assertEquals("foo", r);
     });
     future.thenApply(r -> {
       assertEquals(6, order.incrementAndGet());
-      assertEquals(r, "foo");
+      assertEquals("foo", r);
       return "bar";
     });
     future.whenComplete((r, e) -> {
       assertEquals(7, order.incrementAndGet());
-      assertEquals(r, "foo");
+      assertEquals("foo", r);
     });
     future.complete("foo");
   }
@@ -85,17 +85,17 @@ public class OrderedFutureTest {
    */
   public void testAfterComplete() throws Throwable {
     CompletableFuture<String> future = new OrderedFuture<>();
-    future.whenComplete((result, error) -> assertEquals(result, "foo"));
+    future.whenComplete((result, error) -> assertEquals("foo", result));
     future.complete("foo");
     AtomicInteger count = new AtomicInteger();
     future.whenComplete((result, error) -> {
-      assertEquals(result, "foo");
-      assertEquals(count.incrementAndGet(), 1);
+      assertEquals("foo", result);
+      assertEquals(1, count.incrementAndGet());
     });
     future.thenAccept(result -> {
-      assertEquals(result, "foo");
-      assertEquals(count.incrementAndGet(), 2);
+      assertEquals("foo", result);
+      assertEquals(2, count.incrementAndGet());
     });
-    assertEquals(count.get(), 2);
+    assertEquals(2, count.get());
   }
 }
