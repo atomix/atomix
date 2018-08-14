@@ -89,7 +89,7 @@ public abstract class AbstractAsyncPrimitive<A extends AsyncPrimitive, S> implem
 
   @Override
   public CompletableFuture<Void> delete() {
-    return client.delete();
+    return client.delete().thenCompose(v -> registry.deletePrimitive(name()));
   }
 
   @Override
