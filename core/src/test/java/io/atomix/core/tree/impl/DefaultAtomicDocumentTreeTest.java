@@ -53,7 +53,7 @@ public class DefaultAtomicDocumentTreeTest {
   public void testCreateRecursive() {
     AtomicDocumentTree<String> tree = new DefaultAtomicDocumentTree<>();
     tree.createRecursive(path("/a/b/c"), "bar");
-    Assert.assertEquals(tree.get(path("/a/b/c")).value(), "bar");
+    Assert.assertEquals("bar", tree.get(path("/a/b/c")).value());
     Assert.assertNull(tree.get(path("/a/b")).value());
     Assert.assertNull(tree.get(path("/a")).value());
   }

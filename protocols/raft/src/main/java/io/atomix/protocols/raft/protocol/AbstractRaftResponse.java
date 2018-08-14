@@ -78,7 +78,7 @@ public abstract class AbstractRaftResponse implements RaftResponse {
    * @param <T> The builder type.
    * @param <U> The response type.
    */
-  protected static abstract class Builder<T extends Builder<T, U>, U extends AbstractRaftResponse> implements RaftResponse.Builder<T, U> {
+  protected abstract static class Builder<T extends Builder<T, U>, U extends AbstractRaftResponse> implements RaftResponse.Builder<T, U> {
     protected Status status;
     protected RaftError error;
 

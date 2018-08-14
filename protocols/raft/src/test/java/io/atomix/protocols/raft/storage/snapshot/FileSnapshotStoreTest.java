@@ -74,10 +74,10 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
 
     store = createSnapshotStore();
     assertNotNull(store.getSnapshot(2));
-    assertEquals(store.getSnapshot(2).index(), 2);
+    assertEquals(2, store.getSnapshot(2).index());
 
     try (SnapshotReader reader = snapshot.openReader()) {
-      assertEquals(reader.readLong(), 10);
+      assertEquals(10, reader.readLong());
     }
   }
 
@@ -103,18 +103,18 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     assertNotNull(store.getSnapshot(2));
 
     try (SnapshotReader reader = snapshot.openReader()) {
-      assertEquals(reader.readLong(), 10);
+      assertEquals(10, reader.readLong());
     }
 
     store.close();
 
     store = createSnapshotStore();
     assertNotNull(store.getSnapshot(2));
-    assertEquals(store.getSnapshot(2).index(), 2);
+    assertEquals(2, store.getSnapshot(2).index());
 
     snapshot = store.getSnapshot(2);
     try (SnapshotReader reader = snapshot.openReader()) {
-      assertEquals(reader.readLong(), 10);
+      assertEquals(10, reader.readLong());
     }
   }
 

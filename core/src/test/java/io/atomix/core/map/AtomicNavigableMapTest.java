@@ -157,7 +157,7 @@ public abstract class AtomicNavigableMapTest extends AbstractPrimitiveTest<Proxy
 
     map.navigableKeySet().subSet("k", false, "n", false).clear();
     assertEquals(5, map.navigableKeySet().size());
-    assertEquals(Sets.newHashSet(map.navigableKeySet()), Sets.newHashSet("h", "i", "j", "k", "n"));
+    assertEquals(Sets.newHashSet("h", "i", "j", "k", "n"), Sets.newHashSet(map.navigableKeySet()));
   }
 
   @Test
@@ -394,7 +394,7 @@ public abstract class AtomicNavigableMapTest extends AbstractPrimitiveTest<Proxy
 
     map.navigableKeySet().subSet("k", false, "n", false).clear();
     assertEquals(5, map.navigableKeySet().size());
-    assertEquals(Sets.newHashSet(map.navigableKeySet()), Sets.newHashSet("h", "i", "j", "k", "n"));
+    assertEquals(Sets.newHashSet("h", "i", "j", "k", "n"), Sets.newHashSet(map.navigableKeySet()));
   }
 
   private AsyncAtomicNavigableMap<String, String> createResource(String mapName) {

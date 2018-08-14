@@ -123,7 +123,7 @@ public abstract class OperationResponse extends SessionResponse {
   /**
    * Operation response builder.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends OperationResponse> extends SessionResponse.Builder<T, U> {
+  public abstract static class Builder<T extends Builder<T, U>, U extends OperationResponse> extends SessionResponse.Builder<T, U> {
     protected long index;
     protected long eventIndex;
     protected byte[] result;

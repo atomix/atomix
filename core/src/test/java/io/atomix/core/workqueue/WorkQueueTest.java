@@ -56,9 +56,9 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
     queue2.addOne(task2);
 
     WorkQueueStats stats = queue1.stats();
-    assertEquals(stats.totalPending(), 2);
-    assertEquals(stats.totalInProgress(), 0);
-    assertEquals(stats.totalCompleted(), 0);
+    assertEquals(2, stats.totalPending());
+    assertEquals(0, stats.totalInProgress());
+    assertEquals(0, stats.totalCompleted());
   }
 
   @Test
@@ -72,9 +72,9 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
     queue1.addMultiple(Arrays.asList(item1, item2));
 
     WorkQueueStats stats = queue1.stats();
-    assertEquals(stats.totalPending(), 2);
-    assertEquals(stats.totalInProgress(), 0);
-    assertEquals(stats.totalCompleted(), 0);
+    assertEquals(2, stats.totalPending());
+    assertEquals(0, stats.totalInProgress());
+    assertEquals(0, stats.totalCompleted());
   }
 
   @Test
@@ -92,17 +92,17 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
     Task<String> removedTask = queue2.take();
 
     WorkQueueStats stats = queue2.stats();
-    assertEquals(stats.totalPending(), 0);
-    assertEquals(stats.totalInProgress(), 1);
-    assertEquals(stats.totalCompleted(), 0);
+    assertEquals(0, stats.totalPending());
+    assertEquals(1, stats.totalInProgress());
+    assertEquals(0, stats.totalCompleted());
 
     assertEquals(removedTask.payload(), item1);
     queue2.complete(Arrays.asList(removedTask.taskId()));
 
     stats = queue1.stats();
-    assertEquals(stats.totalPending(), 0);
-    assertEquals(stats.totalInProgress(), 0);
-    assertEquals(stats.totalCompleted(), 1);
+    assertEquals(0, stats.totalPending());
+    assertEquals(0, stats.totalInProgress());
+    assertEquals(1, stats.totalCompleted());
 
     // Another take should return null
     assertNull(queue2.take());
@@ -189,16 +189,16 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
     queue2.addOne(task2);
 
     WorkQueueStats stats = queue1.stats();
-    assertEquals(stats.totalPending(), 2);
-    assertEquals(stats.totalInProgress(), 0);
-    assertEquals(stats.totalCompleted(), 0);
+    assertEquals(2, stats.totalPending());
+    assertEquals(0, stats.totalInProgress());
+    assertEquals(0, stats.totalCompleted());
 
     queue2.delete();
 
     stats = queue1.stats();
-    assertEquals(stats.totalPending(), 0);
-    assertEquals(stats.totalInProgress(), 0);
-    assertEquals(stats.totalCompleted(), 0);
+    assertEquals(0, stats.totalPending());
+    assertEquals(0, stats.totalInProgress());
+    assertEquals(0, stats.totalCompleted());
   }
 
   @Test
@@ -222,8 +222,8 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
     queue2.complete(taskId);
 
     WorkQueueStats stats = queue1.stats();
-    assertEquals(stats.totalPending(), 0);
-    assertEquals(stats.totalInProgress(), 1);
-    assertEquals(stats.totalCompleted(), 0);
+    assertEquals(0, stats.totalPending());
+    assertEquals(1, stats.totalInProgress());
+    assertEquals(0, stats.totalCompleted());
   }
 }

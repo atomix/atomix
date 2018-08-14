@@ -117,7 +117,7 @@ public abstract class ConfigurationResponse extends AbstractRaftResponse {
   /**
    * Configuration response builder.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends ConfigurationResponse> extends AbstractRaftResponse.Builder<T, U> {
+  public abstract static class Builder<T extends Builder<T, U>, U extends ConfigurationResponse> extends AbstractRaftResponse.Builder<T, U> {
     protected long index;
     protected long term;
     protected long timestamp;

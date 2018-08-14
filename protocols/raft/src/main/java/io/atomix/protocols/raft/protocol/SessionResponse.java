@@ -28,6 +28,6 @@ public abstract class SessionResponse extends AbstractRaftResponse {
   /**
    * Session response builder.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends SessionResponse> extends AbstractRaftResponse.Builder<T, U> {
+  public abstract static class Builder<T extends Builder<T, U>, U extends SessionResponse> extends AbstractRaftResponse.Builder<T, U> {
   }
 }

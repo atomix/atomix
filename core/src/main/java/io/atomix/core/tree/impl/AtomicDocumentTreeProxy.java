@@ -71,7 +71,7 @@ public class AtomicDocumentTreeProxy
 
   @Override
   public CompletableFuture<Versioned<byte[]>> get(DocumentPath path) {
-    checkPath(path);;
+    checkPath(path);
     return getProxyClient().applyBy(name(), service -> service.get(path));
   }
 

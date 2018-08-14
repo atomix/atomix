@@ -61,9 +61,9 @@ public class RaftSessionSequencerTest {
         .build();
 
     AtomicInteger run = new AtomicInteger();
-    sequencer.sequenceEvent(request, () -> assertEquals(run.getAndIncrement(), 0));
-    sequencer.sequenceResponse(sequence, response, () -> assertEquals(run.getAndIncrement(), 1));
-    assertEquals(run.get(), 2);
+    sequencer.sequenceEvent(request, () -> assertEquals(0, run.getAndIncrement()));
+    sequencer.sequenceResponse(sequence, response, () -> assertEquals(1, run.getAndIncrement()));
+    assertEquals(2, run.get());
   }
 
   /**
@@ -88,9 +88,9 @@ public class RaftSessionSequencerTest {
         .build();
 
     AtomicInteger run = new AtomicInteger();
-    sequencer.sequenceResponse(sequence, response, () -> assertEquals(run.getAndIncrement(), 0));
-    sequencer.sequenceEvent(request, () -> assertEquals(run.getAndIncrement(), 1));
-    assertEquals(run.get(), 2);
+    sequencer.sequenceResponse(sequence, response, () -> assertEquals(0, run.getAndIncrement()));
+    sequencer.sequenceEvent(request, () -> assertEquals(1, run.getAndIncrement()));
+    assertEquals(2, run.get());
   }
 
   /**
@@ -115,9 +115,9 @@ public class RaftSessionSequencerTest {
         .build();
 
     AtomicInteger run = new AtomicInteger();
-    sequencer.sequenceResponse(sequence, response, () -> assertEquals(run.getAndIncrement(), 1));
-    sequencer.sequenceEvent(request, () -> assertEquals(run.getAndIncrement(), 0));
-    assertEquals(run.get(), 2);
+    sequencer.sequenceResponse(sequence, response, () -> assertEquals(1, run.getAndIncrement()));
+    sequencer.sequenceEvent(request, () -> assertEquals(0, run.getAndIncrement()));
+    assertEquals(2, run.get());
   }
 
   /**
@@ -149,10 +149,10 @@ public class RaftSessionSequencerTest {
         .build();
 
     AtomicInteger run = new AtomicInteger();
-    sequencer.sequenceEvent(request1, () -> assertEquals(run.getAndIncrement(), 0));
-    sequencer.sequenceEvent(request2, () -> assertEquals(run.getAndIncrement(), 2));
-    sequencer.sequenceResponse(sequence, response, () -> assertEquals(run.getAndIncrement(), 1));
-    assertEquals(run.get(), 3);
+    sequencer.sequenceEvent(request1, () -> assertEquals(0, run.getAndIncrement()));
+    sequencer.sequenceEvent(request2, () -> assertEquals(2, run.getAndIncrement()));
+    sequencer.sequenceResponse(sequence, response, () -> assertEquals(1, run.getAndIncrement()));
+    assertEquals(3, run.get());
   }
 
   /**
@@ -177,9 +177,9 @@ public class RaftSessionSequencerTest {
         .build();
 
     AtomicInteger run = new AtomicInteger();
-    sequencer.sequenceEvent(request1, () -> assertEquals(run.getAndIncrement(), 0));
-    sequencer.sequenceEvent(request2, () -> assertEquals(run.getAndIncrement(), 1));
-    assertEquals(run.get(), 2);
+    sequencer.sequenceEvent(request1, () -> assertEquals(0, run.getAndIncrement()));
+    sequencer.sequenceEvent(request2, () -> assertEquals(1, run.getAndIncrement()));
+    assertEquals(2, run.get());
   }
 
   /**

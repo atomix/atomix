@@ -16,7 +16,7 @@
     <#return result?substring(2)>
 </#function>
 
-<#-- Aggregate dependencies map for generated license key (support for multi-license) and convert artifacto to string -->
+<#-- Aggregate dependencies map for generated license key (support for multi-license) and convert artifact to string -->
 <#function aggregateLicenses dependencies>
     <#assign aggregate = {}>
     <#list dependencyMap as entry>
@@ -45,7 +45,7 @@ List of third-party dependencies grouped by their license type.
 
         ${licenses}
 
-    <#-- Print sorded projects -->
+    <#-- Print sorted projects -->
         <#list projects?sort as project>
         * ${project}
         </#list>
