@@ -335,20 +335,6 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
   }
 
   /**
-   * Tests destroy.
-   */
-  @Test
-  public void testClear() throws Exception {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
-    tree.create(path("/a"), "a");
-    tree.create(path("/a/b"), "ab");
-    tree.create(path("/a/c"), "ac");
-
-    tree.delete();
-    assertEquals(0, tree.getChildren(path("/")).size());
-  }
-
-  /**
    * Tests listeners.
    */
   @Test(timeout = 45000)

@@ -174,37 +174,6 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
   }
 
   @Test
-  public void testDestroy() throws Exception {
-    String queueName = UUID.randomUUID().toString();
-    WorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName)
-        .withProtocol(protocol())
-        .build();
-    String item = DEFAULT_PAYLOAD;
-    queue1.addOne(item);
-
-    WorkQueue<String> queue2 = atomix().<String>workQueueBuilder(queueName)
-        .withProtocol(protocol())
-        .build();
-    String task2 = DEFAULT_PAYLOAD;
-    queue2.addOne(task2);
-
-    WorkQueueStats stats = queue1.stats();
-    assertEquals(2, stats.totalPending());
-    assertEquals(0, stats.totalInProgress());
-    assertEquals(0, stats.totalCompleted());
-
-    queue2.delete();
-
-    queue1 = atomix().<String>workQueueBuilder(queueName)
-        .withProtocol(protocol())
-        .build();
-    stats = queue1.stats();
-    assertEquals(0, stats.totalPending());
-    assertEquals(0, stats.totalInProgress());
-    assertEquals(0, stats.totalCompleted());
-  }
-
-  @Test
   public void testCompleteAttemptWithIncorrectSession() throws Exception {
     String queueName = UUID.randomUUID().toString();
     WorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName)
