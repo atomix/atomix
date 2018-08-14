@@ -47,12 +47,13 @@ public class RaftAtomicCounterTest extends AtomicCounterTest {
     counter = atomix().atomicCounterBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(counter.type()).isEmpty());
 
     counter.set(1);
     assertEquals(1, counter.get());
+
+    int count = client.getPrimitives(counter.type()).size();
     counter.delete();
-    assertTrue(client.getPrimitives(counter.type()).isEmpty());
+    assertEquals(count - 1, client.getPrimitives(counter.type()).size());
 
     try {
       counter.get();
@@ -67,5 +68,6 @@ public class RaftAtomicCounterTest extends AtomicCounterTest {
     assertEquals(0, counter.get());
     counter.set(1);
     assertEquals(1, counter.get());
+    assertEquals(count, client.getPrimitives(counter.type()).size());
   }
 }

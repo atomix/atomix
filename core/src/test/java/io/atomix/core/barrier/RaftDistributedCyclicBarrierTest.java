@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -48,9 +49,10 @@ public class RaftDistributedCyclicBarrierTest extends DistributedCyclicBarrierTe
     barrier = atomix().cyclicBarrierBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(barrier.type()).isEmpty());
+
+    int count = client.getPrimitives(barrier.type()).size();
     barrier.delete();
-    assertTrue(client.getPrimitives(barrier.type()).isEmpty());
+    assertEquals(count - 1, client.getPrimitives(barrier.type()).size());
 
     try {
       barrier.getParties();
@@ -61,6 +63,6 @@ public class RaftDistributedCyclicBarrierTest extends DistributedCyclicBarrierTe
     barrier = atomix().cyclicBarrierBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(barrier.type()).isEmpty());
+    assertEquals(count, client.getPrimitives(barrier.type()).size());
   }
 }

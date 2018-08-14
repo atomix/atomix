@@ -22,8 +22,7 @@ import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class RaftDistributedSemaphoreTest extends DistributedSemaphoreTest {
@@ -43,9 +42,10 @@ public class RaftDistributedSemaphoreTest extends DistributedSemaphoreTest {
     semaphore = atomix().semaphoreBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(semaphore.type()).isEmpty());
+
+    int count = client.getPrimitives(semaphore.type()).size();
     semaphore.delete();
-    assertTrue(client.getPrimitives(semaphore.type()).isEmpty());
+    assertEquals(count - 1, client.getPrimitives(semaphore.type()).size());
 
     try {
       semaphore.availablePermits();
@@ -56,6 +56,6 @@ public class RaftDistributedSemaphoreTest extends DistributedSemaphoreTest {
     semaphore = atomix().semaphoreBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(semaphore.type()).isEmpty());
+    assertEquals(count, client.getPrimitives(semaphore.type()).size());
   }
 }

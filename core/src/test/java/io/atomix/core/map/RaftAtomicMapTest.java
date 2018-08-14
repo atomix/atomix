@@ -25,8 +25,6 @@ import org.junit.Test;
 import java.time.Duration;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -50,9 +48,10 @@ public class RaftAtomicMapTest extends AtomicMapTest {
     map = atomix().<String, String>atomicMapBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertEquals(2, client.getPrimitives(map.type()).size());
+
+    int count = client.getPrimitives(map.type()).size();
     map.delete();
-    assertEquals(1, client.getPrimitives(map.type()).size());
+    assertEquals(count - 1, client.getPrimitives(map.type()).size());
 
     try {
       map.get("foo");
@@ -63,6 +62,6 @@ public class RaftAtomicMapTest extends AtomicMapTest {
     map = atomix().<String, String>atomicMapBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertEquals(2, client.getPrimitives(map.type()).size());
+    assertEquals(count, client.getPrimitives(map.type()).size());
   }
 }

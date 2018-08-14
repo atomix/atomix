@@ -22,8 +22,7 @@ import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -46,9 +45,10 @@ public class RaftDistributedQueueTest extends DistributedQueueTest {
     queue = atomix().<String>queueBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(queue.type()).isEmpty());
+
+    int count = client.getPrimitives(queue.type()).size();
     queue.delete();
-    assertTrue(client.getPrimitives(queue.type()).isEmpty());
+    assertEquals(count - 1, client.getPrimitives(queue.type()).size());
 
     try {
       queue.poll();
@@ -59,6 +59,6 @@ public class RaftDistributedQueueTest extends DistributedQueueTest {
     queue = atomix().<String>queueBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(queue.type()).isEmpty());
+    assertEquals(count, client.getPrimitives(queue.type()).size());
   }
 }

@@ -21,8 +21,7 @@ import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -44,9 +43,10 @@ public class RaftWorkQueueTest extends WorkQueueTest {
     workQueue = atomix().<String>workQueueBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(workQueue.type()).isEmpty());
+
+    int count = client.getPrimitives(workQueue.type()).size();
     workQueue.delete();
-    assertTrue(client.getPrimitives(workQueue.type()).isEmpty());
+    assertEquals(count - 1, client.getPrimitives(workQueue.type()).size());
 
     try {
       workQueue.stats();
@@ -57,6 +57,6 @@ public class RaftWorkQueueTest extends WorkQueueTest {
     workQueue = atomix().<String>workQueueBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(workQueue.type()).isEmpty());
+    assertEquals(count, client.getPrimitives(workQueue.type()).size());
   }
 }
