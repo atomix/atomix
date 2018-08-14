@@ -33,6 +33,14 @@ public interface PrimitiveRegistry {
   CompletableFuture<PrimitiveInfo> createPrimitive(String name, PrimitiveType type);
 
   /**
+   * Deletes the given distributed primitive.
+   *
+   * @param name the primitive name
+   * @return a future to be completed once the primitive info has been deleted
+   */
+  CompletableFuture<Void> deletePrimitive(String name);
+
+  /**
    * Returns a collection of open primitives.
    *
    * @return a collection of open primitives
