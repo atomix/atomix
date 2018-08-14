@@ -195,6 +195,9 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
 
     queue2.delete();
 
+    queue1 = atomix().<String>workQueueBuilder(queueName)
+        .withProtocol(protocol())
+        .build();
     stats = queue1.stats();
     assertEquals(0, stats.totalPending());
     assertEquals(0, stats.totalInProgress());
