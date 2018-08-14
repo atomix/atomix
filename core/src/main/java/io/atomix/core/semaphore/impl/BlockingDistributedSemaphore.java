@@ -139,6 +139,11 @@ public class BlockingDistributedSemaphore extends DistributedSemaphore {
     complete(asyncSemaphore.close());
   }
 
+  @Override
+  public void delete() {
+    complete(asyncSemaphore.delete());
+  }
+
   private <T> T complete(CompletableFuture<T> future) {
     return complete(future, 0);
   }
@@ -168,7 +173,12 @@ public class BlockingDistributedSemaphore extends DistributedSemaphore {
       throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
       needRelease.set(acquirePermits > 0);
-      throw new PrimitiveException(e.getCause());
+      Throwable cause = Throwables.getRootCause(e);
+      if (cause instanceof PrimitiveException) {
+        throw (PrimitiveException) cause;
+      } else {
+        throw new PrimitiveException(cause);
+      }
     }
   }
 
