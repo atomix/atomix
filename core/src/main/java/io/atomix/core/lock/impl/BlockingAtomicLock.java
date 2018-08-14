@@ -15,6 +15,7 @@
  */
 package io.atomix.core.lock.impl;
 
+import com.google.common.base.Throwables;
 import io.atomix.core.lock.AsyncAtomicLock;
 import io.atomix.core.lock.AtomicLock;
 import io.atomix.primitive.PrimitiveException;
@@ -86,7 +87,12 @@ public class BlockingAtomicLock extends Synchronous<AsyncAtomicLock> implements 
     } catch (TimeoutException e) {
       throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
-      throw new PrimitiveException(e.getCause());
+      Throwable cause = Throwables.getRootCause(e);
+      if (cause instanceof PrimitiveException) {
+        throw (PrimitiveException) cause;
+      } else {
+        throw new PrimitiveException(cause);
+      }
     }
   }
 }

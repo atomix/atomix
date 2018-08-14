@@ -15,9 +15,16 @@
  */
 package io.atomix.core.multiset;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
+import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Raft distributed multiset test.
@@ -29,5 +36,29 @@ public class RaftDistributedMultisetTest extends DistributedMultisetTest {
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .withMaxRetries(5)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    DistributedMultiset<String> multiset;
+    multiset = atomix().<String>multisetBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(multiset.type()).isEmpty());
+    multiset.delete();
+    assertTrue(client.getPrimitives(multiset.type()).isEmpty());
+
+    try {
+      multiset.contains("foo");
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    multiset = atomix().<String>multisetBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(multiset.type()).isEmpty());
   }
 }

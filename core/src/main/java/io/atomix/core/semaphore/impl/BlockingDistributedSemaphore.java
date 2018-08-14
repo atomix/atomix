@@ -15,6 +15,7 @@
  */
 package io.atomix.core.semaphore.impl;
 
+import com.google.common.base.Throwables;
 import io.atomix.core.semaphore.AsyncDistributedSemaphore;
 import io.atomix.core.semaphore.DistributedSemaphore;
 import io.atomix.primitive.PrimitiveException;
@@ -195,7 +196,12 @@ public class BlockingDistributedSemaphore extends DistributedSemaphore {
       throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
       needRelease.set(acquirePermits > 0);
-      throw new PrimitiveException(e.getCause());
+      Throwable cause = Throwables.getRootCause(e);
+      if (cause instanceof PrimitiveException) {
+        throw (PrimitiveException) cause;
+      } else {
+        throw new PrimitiveException(cause);
+      }
     }
   }
 }

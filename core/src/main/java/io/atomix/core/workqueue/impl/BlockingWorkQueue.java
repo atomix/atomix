@@ -15,6 +15,7 @@
  */
 package io.atomix.core.workqueue.impl;
 
+import com.google.common.base.Throwables;
 import io.atomix.core.workqueue.AsyncWorkQueue;
 import io.atomix.core.workqueue.Task;
 import io.atomix.core.workqueue.WorkQueue;
@@ -88,7 +89,12 @@ public class BlockingWorkQueue<E> extends Synchronous<AsyncWorkQueue<E>> impleme
     } catch (TimeoutException e) {
       throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
-      throw new PrimitiveException(e.getCause());
+      Throwable cause = Throwables.getRootCause(e);
+      if (cause instanceof PrimitiveException) {
+        throw (PrimitiveException) cause;
+      } else {
+        throw new PrimitiveException(cause);
+      }
     }
   }
 }

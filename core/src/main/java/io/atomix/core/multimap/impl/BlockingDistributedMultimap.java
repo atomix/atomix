@@ -43,8 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Implementation of {@link DistributedMultimap} providing synchronous access to
- * {@link AsyncDistributedMultimap}.
+ * Implementation of {@link DistributedMultimap} providing synchronous access to {@link AsyncDistributedMultimap}.
  */
 public class BlockingDistributedMultimap<K, V>
     extends Synchronous<AsyncDistributedMultimap<K, V>>
@@ -175,8 +174,12 @@ public class BlockingDistributedMultimap<K, V>
     } catch (TimeoutException e) {
       throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
-      Throwables.propagateIfPossible(e.getCause());
-      throw new PrimitiveException(e.getCause());
+      Throwable cause = Throwables.getRootCause(e);
+      if (cause instanceof PrimitiveException) {
+        throw (PrimitiveException) cause;
+      } else {
+        throw new PrimitiveException(cause);
+      }
     }
   }
 }

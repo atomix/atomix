@@ -15,9 +15,16 @@
  */
 package io.atomix.core.list;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
+import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Raft distributed list test.
@@ -29,5 +36,29 @@ public class RaftDistributedListTest extends DistributedListTest {
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .withMaxRetries(5)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    DistributedList<String> list;
+    list = atomix().<String>listBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(list.type()).isEmpty());
+    list.delete();
+    assertTrue(client.getPrimitives(list.type()).isEmpty());
+
+    try {
+      list.get(0);
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    list = atomix().<String>listBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(list.type()).isEmpty());
   }
 }

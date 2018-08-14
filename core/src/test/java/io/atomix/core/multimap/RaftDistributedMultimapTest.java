@@ -15,8 +15,15 @@
  */
 package io.atomix.core.multimap;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
+import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Raft multimap test.
@@ -27,5 +34,29 @@ public class RaftDistributedMultimapTest extends DistributedMultimapTest {
     return MultiRaftProtocol.builder()
         .withMaxRetries(5)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    DistributedMultimap<String, String> multimap;
+    multimap = atomix().<String, String>multimapBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(multimap.type()).isEmpty());
+    multimap.delete();
+    assertTrue(client.getPrimitives(multimap.type()).isEmpty());
+
+    try {
+      multimap.get("foo");
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    multimap = atomix().<String, String>multimapBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(multimap.type()).isEmpty());
   }
 }

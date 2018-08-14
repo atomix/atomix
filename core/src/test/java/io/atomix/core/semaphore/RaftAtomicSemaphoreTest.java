@@ -16,6 +16,7 @@
 package io.atomix.core.semaphore;
 
 import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
@@ -26,6 +27,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class RaftAtomicSemaphoreTest extends AtomicSemaphoreTest {
   @Override
@@ -76,5 +80,29 @@ public class RaftAtomicSemaphoreTest extends AtomicSemaphoreTest {
     QueueStatus status5 = semaphore.queueStatus().get();
     assertEquals(0, status5.queueLength());
     assertEquals(0, status5.totalPermits());
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    AtomicSemaphore semaphore;
+    semaphore = atomix().atomicSemaphoreBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(semaphore.type()).isEmpty());
+    semaphore.delete();
+    assertTrue(client.getPrimitives(semaphore.type()).isEmpty());
+
+    try {
+      semaphore.availablePermits();
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    semaphore = atomix().atomicSemaphoreBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(semaphore.type()).isEmpty());
   }
 }
