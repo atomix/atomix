@@ -1332,6 +1332,7 @@ public class RaftTest extends ConcurrentTestCase {
         (key, partitions) -> partitions.get(0));
     PrimitiveRegistry registry = mock(PrimitiveRegistry.class);
     when(registry.createPrimitive(any(String.class), any(PrimitiveType.class))).thenReturn(CompletableFuture.completedFuture(new PrimitiveInfo("raft-test", TestPrimitiveType.INSTANCE)));
+    when(registry.deletePrimitive(any(String.class))).thenReturn(CompletableFuture.completedFuture(null));
     return new TestPrimitiveImpl(proxy, registry);
   }
 
