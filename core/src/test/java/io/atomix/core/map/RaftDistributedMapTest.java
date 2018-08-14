@@ -15,11 +15,18 @@
  */
 package io.atomix.core.map;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
+import org.junit.Test;
 
 import java.time.Duration;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Raft distributed map test.
@@ -32,5 +39,29 @@ public class RaftDistributedMapTest extends DistributedMapTest {
         .withMaxRetries(5)
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    DistributedMap<String, String> map;
+    map = atomix().<String, String>mapBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(map.type()).isEmpty());
+    map.delete();
+    assertTrue(client.getPrimitives(map.type()).isEmpty());
+
+    try {
+      map.get("foo");
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    map = atomix().<String, String>mapBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(map.type()).isEmpty());
   }
 }

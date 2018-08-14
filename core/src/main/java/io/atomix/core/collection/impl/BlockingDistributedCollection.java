@@ -15,6 +15,7 @@
  */
 package io.atomix.core.collection.impl;
 
+import com.google.common.base.Throwables;
 import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
@@ -31,8 +32,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Implementation of {@link DistributedCollection} that merely delegates to a {@link AsyncDistributedCollection}
- * and waits for the operation to complete.
+ * Implementation of {@link DistributedCollection} that merely delegates to a {@link AsyncDistributedCollection} and
+ * waits for the operation to complete.
  *
  * @param <E> collection element type
  */
@@ -144,12 +145,13 @@ public class BlockingDistributedCollection<E> extends Synchronous<AsyncDistribut
     } catch (TimeoutException e) {
       throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
-      if (e.getCause() instanceof PrimitiveException) {
-        throw (PrimitiveException) e.getCause();
-      } else if (e.getCause() instanceof NoSuchElementException) {
-        throw (NoSuchElementException) e.getCause();
+      Throwable cause = Throwables.getRootCause(e);
+      if (cause instanceof PrimitiveException) {
+        throw (PrimitiveException) cause;
+      } else if (cause instanceof NoSuchElementException) {
+        throw (NoSuchElementException) cause;
       } else {
-        throw new PrimitiveException(e.getCause());
+        throw new PrimitiveException(cause);
       }
     }
   }

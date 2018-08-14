@@ -15,9 +15,16 @@
  */
 package io.atomix.core.queue;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
+import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Raft distributed queue test.
@@ -29,5 +36,29 @@ public class RaftDistributedQueueTest extends DistributedQueueTest {
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .withMaxRetries(5)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    DistributedQueue<String> queue;
+    queue = atomix().<String>queueBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(queue.type()).isEmpty());
+    queue.delete();
+    assertTrue(client.getPrimitives(queue.type()).isEmpty());
+
+    try {
+      queue.poll();
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    queue = atomix().<String>queueBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(queue.type()).isEmpty());
   }
 }

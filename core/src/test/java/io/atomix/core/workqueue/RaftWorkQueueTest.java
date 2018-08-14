@@ -15,8 +15,15 @@
  */
 package io.atomix.core.workqueue;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
+import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Raft work queue test.
@@ -27,5 +34,29 @@ public class RaftWorkQueueTest extends WorkQueueTest {
     return MultiRaftProtocol.builder()
         .withMaxRetries(5)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    WorkQueue<String> workQueue;
+    workQueue = atomix().<String>workQueueBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(workQueue.type()).isEmpty());
+    workQueue.delete();
+    assertTrue(client.getPrimitives(workQueue.type()).isEmpty());
+
+    try {
+      workQueue.stats();
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    workQueue = atomix().<String>workQueueBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(workQueue.type()).isEmpty());
   }
 }

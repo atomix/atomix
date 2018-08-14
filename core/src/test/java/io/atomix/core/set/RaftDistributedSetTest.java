@@ -15,9 +15,16 @@
  */
 package io.atomix.core.set;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
+import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Raft distributed set test.
@@ -29,5 +36,29 @@ public class RaftDistributedSetTest extends DistributedSetTest {
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .withMaxRetries(5)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    DistributedSet<String> set;
+    set = atomix().<String>setBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(set.type()).isEmpty());
+    set.delete();
+    assertTrue(client.getPrimitives(set.type()).isEmpty());
+
+    try {
+      set.contains("foo");
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    set = atomix().<String>setBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertFalse(client.getPrimitives(set.type()).isEmpty());
   }
 }

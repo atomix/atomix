@@ -1178,6 +1178,12 @@ public class RaftTest extends ConcurrentTestCase {
       resume();
     });
     await(5000);
+
+    RaftClient client3 = createClient();
+    TestPrimitive primitive3 = createPrimitive(client3);
+
+    primitive3.write("foo").thenCompose(v -> primitive3.read()).thenRun(this::resume);
+    await(5000);
   }
 
   /**
