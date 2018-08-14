@@ -71,7 +71,7 @@ public class WorkQueueProxy
   public CompletableFuture<Void> delete() {
     executor.shutdown();
     timer.cancel();
-    return getProxyClient().acceptBy(name(), service -> service.clear());
+    return super.delete();
   }
 
   @Override

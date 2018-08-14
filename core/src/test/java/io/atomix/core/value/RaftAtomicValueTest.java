@@ -22,9 +22,7 @@ import io.atomix.protocols.raft.MultiRaftProtocol;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -46,12 +44,13 @@ public class RaftAtomicValueTest extends AtomicValueTest {
     value = atomix().<String>atomicValueBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(value.type()).isEmpty());
 
     value.set("Hello world!");
     assertEquals("Hello world!", value.get());
+
+    int count = client.getPrimitives(value.type()).size();
     value.delete();
-    assertTrue(client.getPrimitives(value.type()).isEmpty());
+    assertEquals(count - 1, client.getPrimitives(value.type()).size());
 
     try {
       value.get();
@@ -62,7 +61,7 @@ public class RaftAtomicValueTest extends AtomicValueTest {
     value = atomix().<String>atomicValueBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(value.type()).isEmpty());
+    assertEquals(count, client.getPrimitives(value.type()).size());
     assertNull(value.get());
     value.set("Hello world again!");
     assertEquals("Hello world again!", value.get());

@@ -21,8 +21,7 @@ import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -44,9 +43,10 @@ public class RaftLeaderElectionTest extends LeaderElectionTest {
     election = atomix().<String>leaderElectionBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(election.type()).isEmpty());
+
+    int count = client.getPrimitives(election.type()).size();
     election.delete();
-    assertTrue(client.getPrimitives(election.type()).isEmpty());
+    assertEquals(count - 1, client.getPrimitives(election.type()).size());
 
     try {
       election.getLeadership();
@@ -57,6 +57,6 @@ public class RaftLeaderElectionTest extends LeaderElectionTest {
     election = atomix().<String>leaderElectionBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(election.type()).isEmpty());
+    assertEquals(count, client.getPrimitives(election.type()).size());
   }
 }

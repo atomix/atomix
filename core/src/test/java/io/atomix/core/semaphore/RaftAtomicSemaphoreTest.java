@@ -90,9 +90,10 @@ public class RaftAtomicSemaphoreTest extends AtomicSemaphoreTest {
     semaphore = atomix().atomicSemaphoreBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(semaphore.type()).isEmpty());
+
+    int count = client.getPrimitives(semaphore.type()).size();
     semaphore.delete();
-    assertTrue(client.getPrimitives(semaphore.type()).isEmpty());
+    assertEquals(count - 1, client.getPrimitives(semaphore.type()).size());
 
     try {
       semaphore.availablePermits();
@@ -103,6 +104,6 @@ public class RaftAtomicSemaphoreTest extends AtomicSemaphoreTest {
     semaphore = atomix().atomicSemaphoreBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(semaphore.type()).isEmpty());
+    assertEquals(count, client.getPrimitives(semaphore.type()).size());
   }
 }

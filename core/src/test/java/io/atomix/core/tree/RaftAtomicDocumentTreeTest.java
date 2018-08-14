@@ -21,8 +21,7 @@ import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -44,9 +43,10 @@ public class RaftAtomicDocumentTreeTest extends AtomicDocumentTreeTest {
     tree = atomix().<String>atomicDocumentTreeBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(tree.type()).isEmpty());
+
+    int count = client.getPrimitives(tree.type()).size();
     tree.delete();
-    assertTrue(client.getPrimitives(tree.type()).isEmpty());
+    assertEquals(count - 1, client.getPrimitives(tree.type()).size());
 
     try {
       tree.get("/foo");
@@ -57,6 +57,6 @@ public class RaftAtomicDocumentTreeTest extends AtomicDocumentTreeTest {
     tree = atomix().<String>atomicDocumentTreeBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(tree.type()).isEmpty());
+    assertEquals(count, client.getPrimitives(tree.type()).size());
   }
 }

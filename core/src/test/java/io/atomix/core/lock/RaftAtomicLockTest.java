@@ -21,8 +21,7 @@ import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -44,9 +43,10 @@ public class RaftAtomicLockTest extends AtomicLockTest {
     lock = atomix().atomicLockBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(lock.type()).isEmpty());
+
+    int count = client.getPrimitives(lock.type()).size();
     lock.delete();
-    assertTrue(client.getPrimitives(lock.type()).isEmpty());
+    assertEquals(count - 1, client.getPrimitives(lock.type()).size());
 
     try {
       lock.isLocked();
@@ -57,6 +57,6 @@ public class RaftAtomicLockTest extends AtomicLockTest {
     lock = atomix().atomicLockBuilder("test-delete")
         .withProtocol(protocol())
         .build();
-    assertFalse(client.getPrimitives(lock.type()).isEmpty());
+    assertEquals(count, client.getPrimitives(lock.type()).size());
   }
 }
