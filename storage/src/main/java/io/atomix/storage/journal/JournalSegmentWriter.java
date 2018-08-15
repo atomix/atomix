@@ -212,10 +212,12 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     // Record the current buffer position;
     int position = buffer.position();
 
-    // Write the entry length and entry to the segment.
-    buffer.writeInt(length)
+    // Create a single byte[] in memory for the entire entry and write it as a batch to the underlying buffer.
+    buffer.write(memory.clear()
+        .writeInt(length)
         .writeUnsignedInt(checksum)
-        .write(bytes);
+        .write(bytes)
+        .flip());
 
     // Update the last entry with the correct index/term/length.
     Indexed<E> indexedEntry = new Indexed<>(index, entry, length);

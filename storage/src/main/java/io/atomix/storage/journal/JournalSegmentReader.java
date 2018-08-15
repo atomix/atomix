@@ -38,7 +38,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   private final JournalSegmentCache cache;
   private final JournalIndex index;
   private final Serializer serializer;
-  private final HeapBuffer memory = HeapBuffer.allocate();
+  private final Buffer memory;
   private final long firstIndex;
   private Indexed<E> currentEntry;
   private Indexed<E> nextEntry;
@@ -55,6 +55,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     this.index = index;
     this.serializer = serializer;
     this.firstIndex = descriptor.index();
+    this.memory = HeapBuffer.allocate(maxEntrySize * 2, maxEntrySize * 2).flip();
     readNext();
   }
 
@@ -138,41 +139,48 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
       return;
     }
 
+    // Read more bytes from the segment if necessary.
+    if (memory.remaining() < maxEntrySize) {
+      buffer.skip(memory.position())
+          .read(memory.clear());
+      memory.flip();
+    }
+
     // Mark the buffer so it can be reset if necessary.
-    buffer.mark();
+    memory.mark();
 
     try {
       // Read the length of the entry.
-      final int length = buffer.readInt();
+      final int length = memory.readInt();
 
       // If the buffer length is zero then return.
       if (length <= 0 || length > maxEntrySize) {
-        buffer.reset();
+        memory.reset();
         nextEntry = null;
         return;
       }
 
       // Read the checksum of the entry.
-      long checksum = buffer.readUnsignedInt();
+      long checksum = memory.readUnsignedInt();
 
       // Read the entry into memory.
-      buffer.read(memory.clear().limit(length));
-      memory.flip();
+      byte[] bytes = new byte[length];
+      memory.read(bytes);
 
       // Compute the checksum for the entry bytes.
       final Checksum crc32 = new CRC32();
-      crc32.update(memory.array(), 0, length);
+      crc32.update(bytes, 0, length);
 
       // If the stored checksum equals the computed checksum, return the entry.
       if (checksum == crc32.getValue()) {
-        E entry = serializer.decode(memory.array());
+        E entry = serializer.decode(bytes);
         nextEntry = new Indexed<>(index, entry, length);
       } else {
-        buffer.reset();
+        memory.reset();
         nextEntry = null;
       }
     } catch (BufferUnderflowException e) {
-      buffer.reset();
+      memory.reset();
       nextEntry = null;
     }
   }
