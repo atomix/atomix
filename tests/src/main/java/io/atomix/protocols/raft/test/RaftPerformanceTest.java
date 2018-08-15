@@ -501,7 +501,7 @@ public class RaftPerformanceTest implements Runnable {
 
     RaftServer.Builder builder = RaftServer.builder(member.id())
         .withProtocol(protocol)
-        .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
+        .withThreadModel(ThreadModel.SHARED_THREAD_POOL)
         .withMembershipService(new DefaultClusterMembershipService(
             member,
             Version.from("1.0.0"),
@@ -509,11 +509,12 @@ public class RaftPerformanceTest implements Runnable {
             bootstrapService,
             new MembershipConfig()))
         .withStorage(RaftStorage.builder()
-            .withStorageLevel(StorageLevel.MAPPED)
+            .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/perf-logs/%s", member.id())))
             .withSerializer(storageSerializer)
-            .withMaxEntriesPerSegment(32768)
-            .withMaxSegmentSize(1024 * 1024)
+            .withMaxSegmentSize(1024 * 1024 * 64)
+            .withDynamicCompaction()
+            .withFlushOnCommit(false)
             .build());
 
     RaftServer server = builder.build();
