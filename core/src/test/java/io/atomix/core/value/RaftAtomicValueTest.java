@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
 public class RaftAtomicValueTest extends AtomicValueTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withMaxRetries(5)
         .build();
   }
@@ -41,7 +41,7 @@ public class RaftAtomicValueTest extends AtomicValueTest {
     Atomix client = atomix();
 
     AtomicValue<String> value;
-    value = atomix().<String>atomicValueBuilder("test-delete")
+    value = atomix().<String>atomicValueBuilder("test-" + protocol().group() + "-atomic-value-delete")
         .withProtocol(protocol())
         .build();
 
@@ -58,7 +58,7 @@ public class RaftAtomicValueTest extends AtomicValueTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    value = atomix().<String>atomicValueBuilder("test-delete")
+    value = atomix().<String>atomicValueBuilder("test-" + protocol().group() + "-atomic-value-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(value.type()).size());

@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 public abstract class AtomicCounterTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testBasicOperations() throws Throwable {
-    AtomicCounter along = atomix().atomicCounterBuilder("test-counter-basic-operations")
+    AtomicCounter along = atomix().atomicCounterBuilder("test-" + protocol().group() + "-atomic-counter-basic-operations")
         .withProtocol(protocol())
         .build();
     assertEquals(0, along.get());

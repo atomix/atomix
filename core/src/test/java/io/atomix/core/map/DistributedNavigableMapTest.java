@@ -58,7 +58,7 @@ public abstract class DistributedNavigableMapTest extends AbstractPrimitiveTest<
     //make sure that the previous section has been cleaned up, they serve
     //the secondary purpose of testing isEmpty but that is not their
     //primary purpose.
-    DistributedNavigableMap<String, String> map = atomix().<String, String>navigableMapBuilder("basicTestMap")
+    DistributedNavigableMap<String, String> map = atomix().<String, String>navigableMapBuilder("test-" + protocol().group() + "-navigable-map-basic-operations")
         .withProtocol(protocol())
         .build();
 
@@ -118,7 +118,7 @@ public abstract class DistributedNavigableMapTest extends AbstractPrimitiveTest<
     final String value2 = "value2";
     final String value3 = "value3";
 
-    DistributedNavigableMap<String, String> map = atomix().<String, String>navigableMapBuilder("treeMapListenerTestMap")
+    DistributedNavigableMap<String, String> map = atomix().<String, String>navigableMapBuilder("test-" + protocol().group() + "-navigable-map-listeners")
         .withProtocol(protocol())
         .build();
     TestMapEventListener listener = new TestMapEventListener();
@@ -171,7 +171,7 @@ public abstract class DistributedNavigableMapTest extends AbstractPrimitiveTest<
 
   @Test
   public void treeMapFunctionsTest() throws Throwable {
-    DistributedNavigableMap<String, String> map = atomix().<String, String>navigableMapBuilder("treeMapFunctionTestMap")
+    DistributedNavigableMap<String, String> map = atomix().<String, String>navigableMapBuilder("test-" + protocol().group() + "-navigable-map-operations")
         .withProtocol(protocol())
         .build();
     //Tests on empty map
@@ -231,7 +231,7 @@ public abstract class DistributedNavigableMapTest extends AbstractPrimitiveTest<
 
   @Test
   public void testTreeMapViews() throws Throwable {
-    DistributedNavigableMap<String, String> map = atomix().<String, String>navigableMapBuilder("testTreeMapViews")
+    DistributedNavigableMap<String, String> map = atomix().<String, String>navigableMapBuilder("test-" + protocol().group() + "-navigable-map-views")
         .withProtocol(protocol())
         .build();
 

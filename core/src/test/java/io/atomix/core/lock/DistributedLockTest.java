@@ -36,7 +36,7 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest<ProxyPro
    */
   @Test
   public void testLockUnlock() throws Throwable {
-    DistributedLock lock = atomix().lockBuilder("test-lock-unlock")
+    DistributedLock lock = atomix().lockBuilder("test-" + protocol().group() + "-lock-unlock")
         .withProtocol(protocol())
         .build();
     lock.lock();
@@ -50,10 +50,10 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest<ProxyPro
    */
   @Test
   public void testReleaseOnClose() throws Throwable {
-    DistributedLock lock1 = atomix().lockBuilder("test-lock-on-close")
+    DistributedLock lock1 = atomix().lockBuilder("test-" + protocol().group() + "-lock-on-close")
         .withProtocol(protocol())
         .build();
-    DistributedLock lock2 = atomix().lockBuilder("test-lock-on-close")
+    DistributedLock lock2 = atomix().lockBuilder("test-" + protocol().group() + "-lock-on-close")
         .withProtocol(protocol())
         .build();
     lock1.lock();
@@ -67,10 +67,10 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest<ProxyPro
    */
   @Test
   public void testTryLockFail() throws Throwable {
-    DistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail")
+    DistributedLock lock1 = atomix().lockBuilder("test-" + protocol().group() + "-lock-try-lock-fail")
         .withProtocol(protocol())
         .build();
-    DistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail")
+    DistributedLock lock2 = atomix().lockBuilder("test-" + protocol().group() + "-lock-try-lock-fail")
         .withProtocol(protocol())
         .build();
 
@@ -84,7 +84,7 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest<ProxyPro
    */
   @Test
   public void testTryLockSucceed() throws Throwable {
-    DistributedLock lock = atomix().lockBuilder("test-try-lock-succeed")
+    DistributedLock lock = atomix().lockBuilder("test-" + protocol().group() + "-lock-try-lock-succeed")
         .withProtocol(protocol())
         .build();
     assertTrue(lock.tryLock());
@@ -95,10 +95,10 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest<ProxyPro
    */
   @Test
   public void testTryLockFailWithTimeout() throws Throwable {
-    DistributedLock lock1 = atomix().lockBuilder("test-try-lock-fail-with-timeout")
+    DistributedLock lock1 = atomix().lockBuilder("test-" + protocol().group() + "-lock-try-lock-fail-with-timeout")
         .withProtocol(protocol())
         .build();
-    DistributedLock lock2 = atomix().lockBuilder("test-try-lock-fail-with-timeout")
+    DistributedLock lock2 = atomix().lockBuilder("test-" + protocol().group() + "-lock-try-lock-fail-with-timeout")
         .withProtocol(protocol())
         .build();
 
@@ -112,10 +112,10 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest<ProxyPro
    */
   @Test
   public void testTryLockSucceedWithTimeout() throws Throwable {
-    DistributedLock lock1 = atomix().lockBuilder("test-try-lock-succeed-with-timeout")
+    DistributedLock lock1 = atomix().lockBuilder("test-" + protocol().group() + "-lock-try-lock-succeed-with-timeout")
         .withProtocol(protocol())
         .build();
-    DistributedLock lock2 = atomix().lockBuilder("test-try-lock-succeed-with-timeout")
+    DistributedLock lock2 = atomix().lockBuilder("test-" + protocol().group() + "-lock-try-lock-succeed-with-timeout")
         .withProtocol(protocol())
         .build();
 
@@ -131,10 +131,10 @@ public abstract class DistributedLockTest extends AbstractPrimitiveTest<ProxyPro
    */
   @Test
   public void testBlockingUnlock() throws Throwable {
-    DistributedLock lock1 = atomix().lockBuilder("test-blocking-unlock")
+    DistributedLock lock1 = atomix().lockBuilder("test-" + protocol().group() + "-lock-blocking-unlock")
         .withProtocol(protocol())
         .build();
-    DistributedLock lock2 = atomix().lockBuilder("test-blocking-unlock")
+    DistributedLock lock2 = atomix().lockBuilder("test-" + protocol().group() + "-lock-blocking-unlock")
         .withProtocol(protocol())
         .build();
 

@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
 public class RaftDistributedQueueTest extends DistributedQueueTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .withMaxRetries(5)
         .build();
@@ -42,7 +42,7 @@ public class RaftDistributedQueueTest extends DistributedQueueTest {
     Atomix client = atomix();
 
     DistributedQueue<String> queue;
-    queue = atomix().<String>queueBuilder("test-delete")
+    queue = atomix().<String>queueBuilder("test-" + protocol().group() + "-queue-delete")
         .withProtocol(protocol())
         .build();
 
@@ -56,7 +56,7 @@ public class RaftDistributedQueueTest extends DistributedQueueTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    queue = atomix().<String>queueBuilder("test-delete")
+    queue = atomix().<String>queueBuilder("test-" + protocol().group() + "-queue-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(queue.type()).size());

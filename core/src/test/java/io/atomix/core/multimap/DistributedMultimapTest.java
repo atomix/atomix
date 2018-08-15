@@ -48,7 +48,7 @@ public abstract class DistributedMultimapTest extends AbstractPrimitiveTest<Prox
    */
   @Test
   public void testSize() throws Throwable {
-    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("testOneMap")
+    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("test-" + protocol().group() + "-multimap-size")
         .withProtocol(protocol())
         .build();
 
@@ -78,7 +78,7 @@ public abstract class DistributedMultimapTest extends AbstractPrimitiveTest<Prox
    */
   @Test
   public void containsTest() throws Throwable {
-    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("testTwoMap")
+    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("test-" + protocol().group() + "-multimap-contains")
         .withProtocol(protocol())
         .build();
 
@@ -109,7 +109,7 @@ public abstract class DistributedMultimapTest extends AbstractPrimitiveTest<Prox
    */
   @Test
   public void addAndRemoveTest() throws Exception {
-    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("testThreeMap")
+    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("test-" + protocol().group() + "-multimap-add-remove")
         .withProtocol(protocol())
         .build();
 
@@ -169,7 +169,7 @@ public abstract class DistributedMultimapTest extends AbstractPrimitiveTest<Prox
    */
   @Test
   public void testAccessors() throws Exception {
-    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("testFourMap")
+    DistributedMultimap<String, String> multimap = atomix().<String, String>multimapBuilder("test-" + protocol().group() + "-multimap-accessors")
         .withProtocol(protocol())
         .build();
 
@@ -185,7 +185,7 @@ public abstract class DistributedMultimapTest extends AbstractPrimitiveTest<Prox
 
   @Test
   public void testMultimapViews() throws Exception {
-    DistributedMultimap<String, String> map = atomix().<String, String>multimapBuilder("testMultimapViews")
+    DistributedMultimap<String, String> map = atomix().<String, String>multimapBuilder("test-" + protocol().group() + "-multimap-views")
         .withProtocol(protocol())
         .build();
 

@@ -18,7 +18,6 @@ package io.atomix.core;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -30,7 +29,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -38,7 +36,8 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractPrimitiveTest<P extends PrimitiveProtocol> extends AbstractAtomixTest {
   private static List<Atomix> servers;
-  private static List<Atomix> clients;
+  private static List<Atomix> clients = new ArrayList<>();
+  private int usedClients;
   private static int id = 10;
 
   /**
@@ -54,62 +53,52 @@ public abstract class AbstractPrimitiveTest<P extends PrimitiveProtocol> extends
    * @return a new Atomix instance.
    */
   protected Atomix atomix() throws Exception {
-    Atomix instance = createAtomix(id++, Arrays.asList(1, 2, 3));
-    clients.add(instance);
-    instance.start().get(30, TimeUnit.SECONDS);
+    Atomix instance;
+    if (clients.size() > usedClients) {
+      instance = clients.get(usedClients);
+    } else {
+      instance = createAtomix(id++, Arrays.asList(1, 2, 3));
+      clients.add(instance);
+      instance.start().get(30, TimeUnit.SECONDS);
+    }
+    usedClients++;
     return instance;
   }
 
   @BeforeClass
   public static void setupCluster() throws Exception {
-    AbstractAtomixTest.setupAtomix();
-    BiFunction<AtomixBuilder, Integer, Atomix> build = (builder, id) ->
-        builder.withManagementGroup(RaftPartitionGroup.builder("system")
-            .withNumPartitions(1)
-            .withMembers("1", "2", "3")
-            .withDataDirectory(new File(new File(DATA_DIR, "system"), String.valueOf(id)))
-            .build())
-            .addPartitionGroup(RaftPartitionGroup.builder("raft")
-                .withNumPartitions(3)
-                .withMembers("1", "2", "3")
-                .withDataDirectory(new File(new File(DATA_DIR, "raft"), String.valueOf(id)))
-                .build())
-            .addPartitionGroup(PrimaryBackupPartitionGroup.builder("data")
-                .withNumPartitions(7)
-                .build())
-            .build();
-    servers = new ArrayList<>();
-    servers.add(createAtomix(1, Arrays.asList(1, 2, 3), builder -> build.apply(builder, 1)));
-    servers.add(createAtomix(2, Arrays.asList(1, 2, 3), builder -> build.apply(builder, 2)));
-    servers.add(createAtomix(3, Arrays.asList(1, 2, 3), builder -> build.apply(builder, 3)));
-    List<CompletableFuture<Atomix>> futures = servers.stream().map(a -> a.start().thenApply(v -> a)).collect(Collectors.toList());
-    CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
+    if (servers == null) {
+      AbstractAtomixTest.setupAtomix();
+      BiFunction<AtomixBuilder, Integer, Atomix> build = (builder, id) ->
+          builder.withManagementGroup(RaftPartitionGroup.builder("system")
+              .withNumPartitions(1)
+              .withMembers("1", "2", "3")
+              .withDataDirectory(new File(new File(DATA_DIR, "system"), String.valueOf(id)))
+              .build())
+              .addPartitionGroup(RaftPartitionGroup.builder("raft")
+                  .withNumPartitions(3)
+                  .withMembers("1", "2", "3")
+                  .withDataDirectory(new File(new File(DATA_DIR, "raft"), String.valueOf(id)))
+                  .build())
+              .addPartitionGroup(PrimaryBackupPartitionGroup.builder("primary-backup")
+                  .withNumPartitions(7)
+                  .build())
+              .build();
+      servers = new ArrayList<>();
+      servers.add(createAtomix(1, Arrays.asList(1, 2, 3), builder -> build.apply(builder, 1)));
+      servers.add(createAtomix(2, Arrays.asList(1, 2, 3), builder -> build.apply(builder, 2)));
+      servers.add(createAtomix(3, Arrays.asList(1, 2, 3), builder -> build.apply(builder, 3)));
+      List<CompletableFuture<Atomix>> futures = servers.stream().map(a -> a.start().thenApply(v -> a)).collect(Collectors.toList());
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
+    }
   }
 
   @AfterClass
   public static void teardownCluster() throws Exception {
-    List<CompletableFuture<Void>> futures = servers.stream().map(Atomix::stop).collect(Collectors.toList());
-    try {
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
-    } catch (Exception e) {
-      // Do nothing
-    }
-    AbstractAtomixTest.teardownAtomix();
   }
 
   @Before
   public void setupTest() throws Exception {
-    clients = new ArrayList<>();
-    id = 10;
-  }
-
-  @After
-  public void teardownTest() throws Exception {
-    List<CompletableFuture<Void>> futures = clients.stream().map(Atomix::stop).collect(Collectors.toList());
-    try {
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
-    } catch (Exception e) {
-      // Do nothing
-    }
+    usedClients = 0;
   }
 }

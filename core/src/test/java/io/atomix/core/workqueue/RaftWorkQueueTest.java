@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
 public class RaftWorkQueueTest extends WorkQueueTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withMaxRetries(5)
         .build();
   }
@@ -40,7 +40,7 @@ public class RaftWorkQueueTest extends WorkQueueTest {
     Atomix client = atomix();
 
     WorkQueue<String> workQueue;
-    workQueue = atomix().<String>workQueueBuilder("test-delete")
+    workQueue = atomix().<String>workQueueBuilder("test-" + protocol().group() + "-work-queue-delete")
         .withProtocol(protocol())
         .build();
 
@@ -54,7 +54,7 @@ public class RaftWorkQueueTest extends WorkQueueTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    workQueue = atomix().<String>workQueueBuilder("test-delete")
+    workQueue = atomix().<String>workQueueBuilder("test-" + protocol().group() + "-work-queue-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(workQueue.type()).size());

@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 public abstract class DistributedMultisetTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testMultisetOperations() throws Exception {
-    DistributedMultiset<String> multiset = atomix().<String>multisetBuilder("test-multiset")
+    DistributedMultiset<String> multiset = atomix().<String>multisetBuilder("test-" + protocol().group() + "-multiset")
         .withProtocol(protocol())
         .build();
 
@@ -72,7 +72,7 @@ public abstract class DistributedMultisetTest extends AbstractPrimitiveTest<Prox
 
   @Test
   public void testMultisetViews() throws Exception {
-    DistributedMultiset<String> multiset = atomix().<String>multisetBuilder("test-multiset-views")
+    DistributedMultiset<String> multiset = atomix().<String>multisetBuilder("test-" + protocol().group() + "-multiset-views")
         .withProtocol(protocol())
         .build();
 
@@ -88,7 +88,7 @@ public abstract class DistributedMultisetTest extends AbstractPrimitiveTest<Prox
 
   @Test
   public void testEventListeners() throws Exception {
-    DistributedMultiset<String> multiset = atomix().<String>multisetBuilder("test-multiset-listeners")
+    DistributedMultiset<String> multiset = atomix().<String>multisetBuilder("test-" + protocol().group() + "-multiset-listeners")
         .withProtocol(protocol())
         .build();
 

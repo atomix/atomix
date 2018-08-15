@@ -48,10 +48,10 @@ public abstract class GossipDistributedSetTest extends AbstractPrimitiveTest<Set
 
   @Test
   public void testReplication() throws Exception {
-    DistributedSet<String> set1 = atomix().<String>setBuilder("testAntiEntropySetReplication")
+    DistributedSet<String> set1 = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-replication")
         .withProtocol(protocol())
         .build();
-    DistributedSet<String> set2 = atomix().<String>setBuilder("testAntiEntropySetReplication")
+    DistributedSet<String> set2 = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-replication")
         .withProtocol(protocol())
         .build();
 
@@ -107,7 +107,7 @@ public abstract class GossipDistributedSetTest extends AbstractPrimitiveTest<Set
 
   @Test
   public void testSize() throws Exception {
-    DistributedSet<String> set = atomix().<String>setBuilder("testAntiEntropySetSize")
+    DistributedSet<String> set = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-size")
         .withProtocol(protocol())
         .build();
 
@@ -130,7 +130,7 @@ public abstract class GossipDistributedSetTest extends AbstractPrimitiveTest<Set
 
   @Test
   public void testIsEmpty() throws Exception {
-    DistributedSet<String> set = atomix().<String>setBuilder("testAntiEntropySetIsEmpty")
+    DistributedSet<String> set = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-is-empty")
         .withProtocol(protocol())
         .build();
 
@@ -143,7 +143,7 @@ public abstract class GossipDistributedSetTest extends AbstractPrimitiveTest<Set
 
   @Test
   public void testContains() throws Exception {
-    DistributedSet<String> set = atomix().<String>setBuilder("testAntiEntropySetContains")
+    DistributedSet<String> set = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-contains")
         .withProtocol(protocol())
         .build();
 
@@ -157,10 +157,10 @@ public abstract class GossipDistributedSetTest extends AbstractPrimitiveTest<Set
 
   @Test
   public void testGet() throws Exception {
-    DistributedSet<String> set1 = atomix().<String>setBuilder("testAntiEntropySetGet")
+    DistributedSet<String> set1 = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-get")
         .withProtocol(protocol())
         .build();
-    DistributedSet<String> set2 = atomix().<String>setBuilder("testAntiEntropySetGet")
+    DistributedSet<String> set2 = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-get")
         .withProtocol(protocol())
         .build();
 
@@ -193,10 +193,10 @@ public abstract class GossipDistributedSetTest extends AbstractPrimitiveTest<Set
 
   @Test
   public void testAdd() throws Exception {
-    DistributedSet<String> set1 = atomix().<String>setBuilder("testAntiEntropySetPut")
+    DistributedSet<String> set1 = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-put")
         .withProtocol(protocol())
         .build();
-    DistributedSet<String> set2 = atomix().<String>setBuilder("testAntiEntropySetPut")
+    DistributedSet<String> set2 = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-put")
         .withProtocol(protocol())
         .build();
 
@@ -231,10 +231,10 @@ public abstract class GossipDistributedSetTest extends AbstractPrimitiveTest<Set
 
   @Test
   public void testRemove() throws Exception {
-    DistributedSet<String> set1 = atomix().<String>setBuilder("testAntiEntropySetRemove")
+    DistributedSet<String> set1 = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-remove")
         .withProtocol(protocol())
         .build();
-    DistributedSet<String> set2 = atomix().<String>setBuilder("testAntiEntropySetRemove")
+    DistributedSet<String> set2 = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-remove")
         .withProtocol(protocol())
         .build();
 
@@ -275,10 +275,10 @@ public abstract class GossipDistributedSetTest extends AbstractPrimitiveTest<Set
 
   @Test
   public void testPutAll() throws Exception {
-    DistributedSet<String> set1 = atomix().<String>setBuilder("testAntiEntropySetPutAll")
+    DistributedSet<String> set1 = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-put-all")
         .withProtocol(protocol())
         .build();
-    DistributedSet<String> set2 = atomix().<String>setBuilder("testAntiEntropySetPutAll")
+    DistributedSet<String> set2 = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-put-all")
         .withProtocol(protocol())
         .build();
 
@@ -305,10 +305,10 @@ public abstract class GossipDistributedSetTest extends AbstractPrimitiveTest<Set
 
   @Test
   public void testClear() throws Exception {
-    DistributedSet<String> set1 = atomix().<String>setBuilder("testAntiEntropySetClear")
+    DistributedSet<String> set1 = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-clear")
         .withProtocol(protocol())
         .build();
-    DistributedSet<String> set2 = atomix().<String>setBuilder("testAntiEntropySetClear")
+    DistributedSet<String> set2 = atomix().<String>setBuilder("test-gossip-" + protocol().type().name() + "-set-clear")
         .withProtocol(protocol())
         .build();
 

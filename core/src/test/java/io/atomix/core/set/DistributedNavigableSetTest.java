@@ -40,7 +40,7 @@ import static org.junit.Assert.fail;
 public abstract class DistributedNavigableSetTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testSetOperations() throws Exception {
-    DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("test-set")
+    DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("test-" + protocol().group() + "-nav-set")
         .withProtocol(protocol())
         .build();
 
@@ -63,7 +63,7 @@ public abstract class DistributedNavigableSetTest extends AbstractPrimitiveTest<
 
   @Test
   public void testEventListeners() throws Exception {
-    DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("test-set-listeners")
+    DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("test-" + protocol().group() + "-nav-set-listeners")
         .withProtocol(protocol())
         .build();
 
@@ -103,7 +103,7 @@ public abstract class DistributedNavigableSetTest extends AbstractPrimitiveTest<
 
   @Test
   public void testTreeSetOperations() throws Throwable {
-    DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("testTreeSetOperations")
+    DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("test-" + protocol().group() + "-nav-set-operations")
         .withProtocol(protocol())
         .build();
 
@@ -230,7 +230,7 @@ public abstract class DistributedNavigableSetTest extends AbstractPrimitiveTest<
 
   @Test
   public void testSubSets() throws Throwable {
-    DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("testSubSets")
+    DistributedNavigableSet<String> set = atomix().<String>navigableSetBuilder("test-" + protocol().group() + "-nav-set-subsets")
         .withProtocol(protocol())
         .build();
     for (char letter = 'a'; letter <= 'z'; letter++) {

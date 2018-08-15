@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
 public class RaftDistributedMultimapTest extends DistributedMultimapTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withMaxRetries(5)
         .build();
   }
@@ -40,7 +40,7 @@ public class RaftDistributedMultimapTest extends DistributedMultimapTest {
     Atomix client = atomix();
 
     DistributedMultimap<String, String> multimap;
-    multimap = atomix().<String, String>multimapBuilder("test-delete")
+    multimap = atomix().<String, String>multimapBuilder("test-" + protocol().group() + "-multimap-delete")
         .withProtocol(protocol())
         .build();
 
@@ -54,7 +54,7 @@ public class RaftDistributedMultimapTest extends DistributedMultimapTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    multimap = atomix().<String, String>multimapBuilder("test-delete")
+    multimap = atomix().<String, String>multimapBuilder("test-" + protocol().group() + "-multimap-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(multimap.type()).size());

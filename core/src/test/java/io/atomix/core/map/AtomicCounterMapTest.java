@@ -33,7 +33,7 @@ public abstract class AtomicCounterMapTest extends AbstractPrimitiveTest<ProxyPr
    */
   @Test
   public void testBasicCounterMapOperations() throws Throwable {
-    AtomicCounterMap<String> map = atomix().<String>atomicCounterMapBuilder("testBasicCounterMapOperationMap")
+    AtomicCounterMap<String> map = atomix().<String>atomicCounterMapBuilder("test-" + protocol().group() + "-atomic-counter-map-basic-operations")
         .withProtocol(protocol())
         .build();
 

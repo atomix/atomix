@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 public abstract class DistributedSetTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testSetOperations() throws Exception {
-    DistributedSet<String> set = atomix().<String>setBuilder("test-set")
+    DistributedSet<String> set = atomix().<String>setBuilder("test-" + protocol().group() + "-set")
         .withProtocol(protocol())
         .build();
 
@@ -59,7 +59,7 @@ public abstract class DistributedSetTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testEventListeners() throws Exception {
-    DistributedSet<String> set = atomix().<String>setBuilder("test-set-listeners")
+    DistributedSet<String> set = atomix().<String>setBuilder("test-" + protocol().group() + "-set-listeners")
         .withProtocol(protocol())
         .build();
 

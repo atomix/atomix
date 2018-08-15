@@ -33,7 +33,7 @@ import static org.junit.Assert.fail;
 public abstract class AtomicNavigableMapTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testSubMaps() throws Throwable {
-    AtomicNavigableMap<String, String> map = createResource("testSubMaps").sync();
+    AtomicNavigableMap<String, String> map = createResource("test-" + protocol().group() + "-atomic-navigable-map-submaps").sync();
 
     for (char letter = 'a'; letter <= 'z'; letter++) {
       map.put(String.valueOf(letter), String.valueOf(letter));
@@ -162,7 +162,7 @@ public abstract class AtomicNavigableMapTest extends AbstractPrimitiveTest<Proxy
 
   @Test
   public void testKeySetOperations() throws Throwable {
-    AtomicNavigableMap<String, String> map = createResource("testKeySetOperations").sync();
+    AtomicNavigableMap<String, String> map = createResource("test-" + protocol().group() + "-atomic-navigable-map-key-set").sync();
 
     try {
       map.navigableKeySet().first();
@@ -284,7 +284,7 @@ public abstract class AtomicNavigableMapTest extends AbstractPrimitiveTest<Proxy
 
   @Test
   public void testKeySetSubSets() throws Throwable {
-    AtomicNavigableMap<String, String> map = createResource("testKeySetSubSets").sync();
+    AtomicNavigableMap<String, String> map = createResource("test-" + protocol().group() + "-atomic-navigable-map-key-set-subsets").sync();
 
     for (char letter = 'a'; letter <= 'z'; letter++) {
       map.put(String.valueOf(letter), String.valueOf(letter));

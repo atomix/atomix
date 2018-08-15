@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
 public class RaftDistributedMultisetTest extends DistributedMultisetTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .withMaxRetries(5)
         .build();
@@ -42,7 +42,7 @@ public class RaftDistributedMultisetTest extends DistributedMultisetTest {
     Atomix client = atomix();
 
     DistributedMultiset<String> multiset;
-    multiset = atomix().<String>multisetBuilder("test-delete")
+    multiset = atomix().<String>multisetBuilder("test-" + protocol().group() + "-multiset-delete")
         .withProtocol(protocol())
         .build();
 
@@ -56,7 +56,7 @@ public class RaftDistributedMultisetTest extends DistributedMultisetTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    multiset = atomix().<String>multisetBuilder("test-delete")
+    multiset = atomix().<String>multisetBuilder("test-" + protocol().group() + "-multiset-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(multiset.type()).size());

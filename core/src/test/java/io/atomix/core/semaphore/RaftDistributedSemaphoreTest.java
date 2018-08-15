@@ -28,7 +28,7 @@ import static org.junit.Assert.fail;
 public class RaftDistributedSemaphoreTest extends DistributedSemaphoreTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .withMaxRetries(5)
         .build();
@@ -39,7 +39,7 @@ public class RaftDistributedSemaphoreTest extends DistributedSemaphoreTest {
     Atomix client = atomix();
 
     DistributedSemaphore semaphore;
-    semaphore = atomix().semaphoreBuilder("test-delete")
+    semaphore = atomix().semaphoreBuilder("test-" + protocol().group() + "-semaphore-delete")
         .withProtocol(protocol())
         .build();
 
@@ -53,7 +53,7 @@ public class RaftDistributedSemaphoreTest extends DistributedSemaphoreTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    semaphore = atomix().semaphoreBuilder("test-delete")
+    semaphore = atomix().semaphoreBuilder("test-" + protocol().group() + "-semaphore-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(semaphore.type()).size());

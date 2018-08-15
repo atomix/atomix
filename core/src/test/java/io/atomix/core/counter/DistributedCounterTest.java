@@ -28,10 +28,10 @@ import static org.junit.Assert.assertTrue;
 public abstract class DistributedCounterTest extends AbstractPrimitiveTest<CounterProtocol> {
   @Test
   public void testBasicOperations() throws Throwable {
-    DistributedCounter counter1 = atomix().counterBuilder("testBasicOperations")
+    DistributedCounter counter1 = atomix().counterBuilder("test-counter-basic-operations")
         .withProtocol(protocol())
         .build();
-    DistributedCounter counter2 = atomix().counterBuilder("testBasicOperations")
+    DistributedCounter counter2 = atomix().counterBuilder("test-counter-basic-operations")
         .withProtocol(protocol())
         .build();
 

@@ -39,7 +39,7 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testRun() throws Throwable {
-    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-run")
+    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-run")
         .withProtocol(protocol())
         .build();
     Leadership<String> result1 = election1.run(node1);
@@ -48,7 +48,7 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
     assertEquals(1, result1.candidates().size());
     assertEquals(node1, result1.candidates().get(0));
 
-    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-run")
+    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-run")
         .withProtocol(protocol())
         .build();
     Leadership<String> result2 = election2.run(node2);
@@ -61,11 +61,11 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testWithdraw() throws Throwable {
-    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-withdraw")
+    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-withdraw")
         .withProtocol(protocol())
         .build();
     election1.run(node1);
-    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-withdraw")
+    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-withdraw")
         .withProtocol(protocol())
         .build();
     election2.run(node2);
@@ -103,13 +103,13 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testAnoint() throws Throwable {
-    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-anoint")
+    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-anoint")
         .withProtocol(protocol())
         .build();
-    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-anoint")
+    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-anoint")
         .withProtocol(protocol())
         .build();
-    LeaderElection<String> election3 = atomix().<String>leaderElectionBuilder("test-election-anoint")
+    LeaderElection<String> election3 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-anoint")
         .withProtocol(protocol())
         .build();
     election1.run(node1);
@@ -151,13 +151,13 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testPromote() throws Throwable {
-    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-promote")
+    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-promote")
         .withProtocol(protocol())
         .build();
-    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-promote")
+    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-promote")
         .withProtocol(protocol())
         .build();
-    LeaderElection<String> election3 = atomix().<String>leaderElectionBuilder("test-election-promote")
+    LeaderElection<String> election3 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-promote")
         .withProtocol(protocol())
         .build();
     election1.run(node1);
@@ -203,11 +203,11 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testLeaderSessionClose() throws Throwable {
-    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-leader-session-close")
+    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-leader-session-close")
         .withProtocol(protocol())
         .build();
     election1.run(node1);
-    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-leader-session-close")
+    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-leader-session-close")
         .withProtocol(protocol())
         .build();
     LeaderEventListener listener = new LeaderEventListener();
@@ -223,11 +223,11 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testNonLeaderSessionClose() throws Throwable {
-    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-non-leader-session-close")
+    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-non-leader-session-close")
         .withProtocol(protocol())
         .build();
     election1.run(node1);
-    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-non-leader-session-close")
+    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-non-leader-session-close")
         .withProtocol(protocol())
         .build();
     LeaderEventListener listener = new LeaderEventListener();
@@ -243,10 +243,10 @@ public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testQueries() throws Throwable {
-    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-election-query")
+    LeaderElection<String> election1 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-query")
         .withProtocol(protocol())
         .build();
-    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-election-query")
+    LeaderElection<String> election2 = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-query")
         .withProtocol(protocol())
         .build();
     election1.run(node1);

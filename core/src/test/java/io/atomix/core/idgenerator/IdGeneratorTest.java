@@ -35,10 +35,10 @@ public abstract class IdGeneratorTest extends AbstractPrimitiveTest<ProxyProtoco
    */
   @Test
   public void testNextId() throws Throwable {
-    AtomicIdGenerator idGenerator1 = atomix().atomicIdGeneratorBuilder("testNextId")
+    AtomicIdGenerator idGenerator1 = atomix().atomicIdGeneratorBuilder("test-" + protocol().group() + "-id-generator-next-id")
         .withProtocol(protocol())
         .build();
-    AtomicIdGenerator idGenerator2 = atomix().atomicIdGeneratorBuilder("testNextId")
+    AtomicIdGenerator idGenerator2 = atomix().atomicIdGeneratorBuilder("test-" + protocol().group() + "-id-generator-next-id")
         .withProtocol(protocol())
         .build();
 
@@ -64,12 +64,12 @@ public abstract class IdGeneratorTest extends AbstractPrimitiveTest<ProxyProtoco
   @Test
   public void testNextIdBatchRollover() throws Throwable {
     DelegatingAtomicIdGenerator idGenerator1 = new DelegatingAtomicIdGenerator(
-        atomix().atomicCounterBuilder("testNextIdBatchRollover")
+        atomix().atomicCounterBuilder("test-" + protocol().group() + "-id-generator-next-id-batch-rollover")
             .withProtocol(protocol())
             .build()
             .async(), 2);
     DelegatingAtomicIdGenerator idGenerator2 = new DelegatingAtomicIdGenerator(
-        atomix().atomicCounterBuilder("testNextIdBatchRollover")
+        atomix().atomicCounterBuilder("test-" + protocol().group() + "-id-generator-next-id-batch-rollover")
             .withProtocol(protocol())
             .build()
             .async(), 2);

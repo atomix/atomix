@@ -59,17 +59,17 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
   @Test(timeout = 30000)
   public void testInit() throws Exception {
     Atomix atomix = atomix();
-    AtomicSemaphore semaphore100 = atomix.atomicSemaphoreBuilder("test-semaphore-init-100")
+    AtomicSemaphore semaphore100 = atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-init-100")
         .withProtocol(protocol())
         .withInitialCapacity(100)
         .build();
-    AtomicSemaphore semaphore0 = atomix.atomicSemaphoreBuilder("test-semaphore-init-0")
+    AtomicSemaphore semaphore0 = atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-init-0")
         .withProtocol(protocol())
         .build();
     assertEquals(100, semaphore100.availablePermits());
     assertEquals(0, semaphore0.availablePermits());
 
-    AtomicSemaphore semaphoreNoInit = atomix.atomicSemaphoreBuilder("test-semaphore-init-100")
+    AtomicSemaphore semaphoreNoInit = atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-init-100")
         .withProtocol(protocol())
         .build();
     assertEquals(100, semaphoreNoInit.availablePermits());
@@ -78,7 +78,7 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
   @Test(timeout = 30000)
   public void testAcquireRelease() throws Exception {
     Atomix atomix = atomix();
-    AtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-base")
+    AtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-base")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build();
@@ -98,7 +98,7 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
   @Test(timeout = 30000)
   public void testIncreaseReduceDrain() throws Exception {
     Atomix atomix = atomix();
-    AtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-ird")
+    AtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-ird")
         .withProtocol(protocol())
         .withInitialCapacity(-10)
         .build();
@@ -113,7 +113,7 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
   @Test(timeout = 30000)
   public void testOverflow() throws Exception {
     Atomix atomix = atomix();
-    AtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-overflow")
+    AtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-overflow")
         .withProtocol(protocol())
         .withInitialCapacity(Integer.MAX_VALUE)
         .build();
@@ -131,7 +131,7 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
   @Test(timeout = 10000)
   public void testTimeout() throws Exception {
     Atomix atomix = atomix();
-    AtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-timeout")
+    AtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-timeout")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build();
@@ -160,14 +160,14 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
   public void testReleaseSession() throws Exception {
     Atomix atomix = atomix();
     AtomicSemaphoreProxy semaphore =
-        (AtomicSemaphoreProxy) (atomix.atomicSemaphoreBuilder("test-semaphore-releaseSession")
+        (AtomicSemaphoreProxy) (atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-releaseSession")
             .withProtocol(protocol())
             .withInitialCapacity(10)
             .build()
             .async());
 
     AtomicSemaphoreProxy semaphore2 =
-        (AtomicSemaphoreProxy) (atomix.atomicSemaphoreBuilder("test-semaphore-releaseSession")
+        (AtomicSemaphoreProxy) (atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-releaseSession")
             .withProtocol(protocol())
             .withInitialCapacity(10)
             .build()
@@ -190,14 +190,14 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
   public void testHolderStatus() throws Exception {
     Atomix atomix = atomix();
     AtomicSemaphoreProxy semaphore =
-        (AtomicSemaphoreProxy) (atomix.atomicSemaphoreBuilder("test-semaphore-holders")
+        (AtomicSemaphoreProxy) (atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-holders")
             .withProtocol(protocol())
             .withInitialCapacity(10)
             .build()
             .async());
 
     AtomicSemaphoreProxy semaphore2 =
-        (AtomicSemaphoreProxy) (atomix.atomicSemaphoreBuilder("test-semaphore-holders")
+        (AtomicSemaphoreProxy) (atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-holders")
             .withProtocol(protocol())
             .withInitialCapacity(10)
             .build()
@@ -228,7 +228,7 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
   public void testBlocking() throws Exception {
     Atomix atomix = atomix();
     AtomicSemaphore semaphore =
-        atomix.atomicSemaphoreBuilder("test-semaphore-blocking")
+        atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-blocking")
             .withProtocol(protocol())
             .withInitialCapacity(10)
             .build();
@@ -252,7 +252,7 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
     assertEquals(5, semaphore.drainPermits());
 
     AtomicSemaphore semaphore2 =
-        atomix.atomicSemaphoreBuilder("test-semaphore-blocking")
+        atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-blocking")
             .withProtocol(protocol())
             .withInitialCapacity(10)
             .build();
@@ -266,7 +266,7 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
   public void testQueue() throws Exception {
     Atomix atomix = atomix();
     AtomicSemaphore semaphore =
-        atomix.atomicSemaphoreBuilder("test-semaphore-queue")
+        atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-queue")
             .withProtocol(protocol())
             .withInitialCapacity(10)
             .build();
@@ -293,7 +293,7 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
   public void testExpire() throws Exception {
     Atomix atomix = atomix();
     AtomicSemaphore semaphore =
-        atomix.atomicSemaphoreBuilder("test-semaphore-expire")
+        atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-expire")
             .withProtocol(protocol())
             .withInitialCapacity(10)
             .build();
@@ -309,12 +309,12 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
   @Test(timeout = 10000)
   public void testInterrupt() throws Exception {
     Atomix atomix = atomix();
-    AtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-interrupt")
+    AtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-interrupt")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build();
 
-    AtomicSemaphore semaphore2 = atomix.atomicSemaphoreBuilder("test-semaphore-interrupt")
+    AtomicSemaphore semaphore2 = atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-interrupt")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build();
@@ -348,12 +348,12 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
   @Test(timeout = 30000)
   public void testBlockTimeout() throws Exception {
     Atomix atomix = atomix();
-    AtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-block-timeout")
+    AtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-block-timeout")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build();
 
-    AtomicSemaphore semaphore2 = atomix.atomicSemaphoreBuilder("test-semaphore-block-timeout")
+    AtomicSemaphore semaphore2 = atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-block-timeout")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build();
@@ -398,7 +398,7 @@ public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyPro
     for (int i = 0; i < threads; i++) {
       taskFuture.add(executorService.submit(() -> {
         AtomicSemaphore semaphore =
-            atomix.atomicSemaphoreBuilder("test-semaphore-race")
+            atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-race")
                 .withProtocol(protocol())
                 .withInitialCapacity(TEST_COUNT)
                 .build();

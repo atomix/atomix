@@ -47,17 +47,17 @@ public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<Pro
   @Test(timeout = 30000)
   public void testInit() throws Exception {
     Atomix atomix = atomix();
-    DistributedSemaphore semaphore100 = atomix.semaphoreBuilder("test-semaphore-init-100")
+    DistributedSemaphore semaphore100 = atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-init-100")
         .withProtocol(protocol())
         .withInitialCapacity(100)
         .build();
-    DistributedSemaphore semaphore0 = atomix.semaphoreBuilder("test-semaphore-init-0")
+    DistributedSemaphore semaphore0 = atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-init-0")
         .withProtocol(protocol())
         .build();
     assertEquals(100, semaphore100.availablePermits());
     assertEquals(0, semaphore0.availablePermits());
 
-    DistributedSemaphore semaphoreNoInit = atomix.semaphoreBuilder("test-semaphore-init-100")
+    DistributedSemaphore semaphoreNoInit = atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-init-100")
         .withProtocol(protocol())
         .build();
     assertEquals(100, semaphoreNoInit.availablePermits());
@@ -66,7 +66,7 @@ public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<Pro
   @Test(timeout = 30000)
   public void testAcquireRelease() throws Exception {
     Atomix atomix = atomix();
-    DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-base")
+    DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-base")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build();
@@ -86,7 +86,7 @@ public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<Pro
   @Test(timeout = 30000)
   public void testIncreaseReduceDrain() throws Exception {
     Atomix atomix = atomix();
-    DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-ird")
+    DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-ird")
         .withProtocol(protocol())
         .withInitialCapacity(-10)
         .build();
@@ -103,7 +103,7 @@ public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<Pro
   @Test(timeout = 30000)
   public void testOverflow() throws Exception {
     Atomix atomix = atomix();
-    DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-overflow")
+    DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-overflow")
         .withProtocol(protocol())
         .withInitialCapacity(Integer.MAX_VALUE)
         .build();
@@ -121,7 +121,7 @@ public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<Pro
   @Test(timeout = 10000)
   public void testTimeout() throws Exception {
     Atomix atomix = atomix();
-    DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-timeout")
+    DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-timeout")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build();
@@ -150,7 +150,7 @@ public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<Pro
   public void testBlocking() throws Exception {
     Atomix atomix = atomix();
     DistributedSemaphore semaphore =
-        atomix.semaphoreBuilder("test-semaphore-blocking")
+        atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-blocking")
             .withProtocol(protocol())
             .withInitialCapacity(10)
             .build();
@@ -174,7 +174,7 @@ public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<Pro
     assertEquals(5, semaphore.drainPermits());
 
     DistributedSemaphore semaphore2 =
-        atomix.semaphoreBuilder("test-semaphore-blocking")
+        atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-blocking")
             .withProtocol(protocol())
             .withInitialCapacity(10)
             .build();
@@ -188,7 +188,7 @@ public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<Pro
   public void testQueue() throws Exception {
     Atomix atomix = atomix();
     DistributedSemaphore semaphore =
-        atomix.semaphoreBuilder("test-semaphore-queue")
+        atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-queue")
             .withProtocol(protocol())
             .withInitialCapacity(10)
             .build();
@@ -215,7 +215,7 @@ public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<Pro
   public void testExpire() throws Exception {
     Atomix atomix = atomix();
     DistributedSemaphore semaphore =
-        atomix.semaphoreBuilder("test-semaphore-expire")
+        atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-expire")
             .withProtocol(protocol())
             .withInitialCapacity(10)
             .build();
@@ -231,12 +231,12 @@ public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<Pro
   @Test(timeout = 10000)
   public void testInterrupt() throws Exception {
     Atomix atomix = atomix();
-    DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-interrupt")
+    DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-interrupt")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build();
 
-    DistributedSemaphore semaphore2 = atomix.semaphoreBuilder("test-semaphore-interrupt")
+    DistributedSemaphore semaphore2 = atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-interrupt")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build();
@@ -270,12 +270,12 @@ public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<Pro
   @Test(timeout = 30000)
   public void testBlockTimeout() throws Exception {
     Atomix atomix = atomix();
-    DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-semaphore-block-timeout")
+    DistributedSemaphore semaphore = atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-block-timeout")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build();
 
-    DistributedSemaphore semaphore2 = atomix.semaphoreBuilder("test-semaphore-block-timeout")
+    DistributedSemaphore semaphore2 = atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-block-timeout")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build();
@@ -320,7 +320,7 @@ public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<Pro
     for (int i = 0; i < threads; i++) {
       taskFuture.add(executorService.submit(() -> {
         DistributedSemaphore semaphore =
-            atomix.semaphoreBuilder("test-semaphore-race")
+            atomix.semaphoreBuilder("test-" + protocol().group() + "-semaphore-race")
                 .withProtocol(protocol())
                 .withInitialCapacity(TEST_COUNT)
                 .build();

@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
 public class RaftLeaderElectionTest extends LeaderElectionTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withMaxRetries(5)
         .build();
   }
@@ -40,7 +40,7 @@ public class RaftLeaderElectionTest extends LeaderElectionTest {
     Atomix client = atomix();
 
     LeaderElection<String> election;
-    election = atomix().<String>leaderElectionBuilder("test-delete")
+    election = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-delete")
         .withProtocol(protocol())
         .build();
 
@@ -54,7 +54,7 @@ public class RaftLeaderElectionTest extends LeaderElectionTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    election = atomix().<String>leaderElectionBuilder("test-delete")
+    election = atomix().<String>leaderElectionBuilder("test-" + protocol().group() + "-election-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(election.type()).size());

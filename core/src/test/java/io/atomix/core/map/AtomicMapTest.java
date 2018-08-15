@@ -57,7 +57,7 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     final String barValue = "Hello bar!";
 
     AtomicMap<String, String> map = atomix()
-        .<String, String>atomicMapBuilder("testNullValues")
+        .<String, String>atomicMapBuilder("test-" + protocol().group() + "-atomic-map-null-values")
         .withProtocol(protocol())
         .withNullValues()
         .build();
@@ -92,7 +92,7 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     final String fooValue = "Hello foo!";
     final String barValue = "Hello bar!";
 
-    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testBasicMapOperationMap")
+    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("test-" + protocol().group() + "-atomic-map-basic-operations")
         .withProtocol(protocol())
         .build();
 
@@ -176,7 +176,7 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapComputeOperationsMap")
+    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("test-" + protocol().group() + "-atomic-map-compute-operations")
         .withProtocol(protocol())
         .build();
 
@@ -195,7 +195,7 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     final String value2 = "value2";
     final String value3 = "value3";
 
-    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapListenerMap")
+    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("test-" + protocol().group() + "-atomic-map-listeners")
         .withProtocol(protocol())
         .build();
     TestAtomicMapEventListener listener = new TestAtomicMapEventListener();
@@ -267,7 +267,7 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
 
   @Test
   public void testMapViews() throws Exception {
-    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testMapViews")
+    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("test-" + protocol().group() + "-atomic-map-views")
         .withProtocol(protocol())
         .build();
 
@@ -348,7 +348,7 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
         .withIsolation(Isolation.READ_COMMITTED)
         .build();
     transaction1.begin();
-    TransactionalMap<String, String> map1 = transaction1.<String, String>mapBuilder("test-transactional-map")
+    TransactionalMap<String, String> map1 = transaction1.<String, String>mapBuilder("test-" + protocol().group() + "-atomic-map-transactions")
         .withProtocol(protocol())
         .build();
 
@@ -356,7 +356,7 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
         .withIsolation(Isolation.REPEATABLE_READS)
         .build();
     transaction2.begin();
-    TransactionalMap<String, String> map2 = transaction2.<String, String>mapBuilder("test-transactional-map")
+    TransactionalMap<String, String> map2 = transaction2.<String, String>mapBuilder("test-" + protocol().group() + "-atomic-map-transactions")
         .withProtocol(protocol())
         .build();
 
@@ -383,7 +383,7 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
         .withIsolation(Isolation.REPEATABLE_READS)
         .build();
     transaction3.begin();
-    TransactionalMap<String, String> map3 = transaction3.<String, String>mapBuilder("test-transactional-map")
+    TransactionalMap<String, String> map3 = transaction3.<String, String>mapBuilder("test-" + protocol().group() + "-atomic-map-transactions")
         .withProtocol(protocol())
         .build();
     assertEquals("bar", map3.get("foo"));
@@ -391,7 +391,7 @@ public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol>
     assertEquals("baz", map3.get("foo"));
     assertEquals(CommitStatus.SUCCESS, transaction3.commit());
 
-    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("test-transactional-map")
+    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("test-" + protocol().group() + "-atomic-map-transactions")
         .withProtocol(protocol())
         .build();
     assertEquals("baz", map.get("foo").value());

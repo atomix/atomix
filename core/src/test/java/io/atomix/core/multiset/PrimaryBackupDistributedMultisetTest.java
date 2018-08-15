@@ -24,7 +24,7 @@ import io.atomix.protocols.backup.MultiPrimaryProtocol;
 public class PrimaryBackupDistributedMultisetTest extends DistributedMultisetTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiPrimaryProtocol.builder()
+    return MultiPrimaryProtocol.builder("primary-backup")
         .withBackups(2)
         .withMaxRetries(5)
         .build();

@@ -54,7 +54,7 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
    */
   @Test
   public void testSize() throws Throwable {
-    AtomicMultimap<String, String> multimap = atomix().<String, String>atomicMultimapBuilder("testOneMap")
+    AtomicMultimap<String, String> multimap = atomix().<String, String>atomicMultimapBuilder("test-" + protocol().group() + "-atomic-multimap-size")
         .withProtocol(protocol())
         .build();
 
@@ -84,7 +84,7 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
    */
   @Test
   public void containsTest() throws Throwable {
-    AtomicMultimap<String, String> multimap = atomix().<String, String>atomicMultimapBuilder("testTwoMap")
+    AtomicMultimap<String, String> multimap = atomix().<String, String>atomicMultimapBuilder("test-" + protocol().group() + "-atomic-multimap-contains")
         .withProtocol(protocol())
         .build();
 
@@ -115,7 +115,7 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
    */
   @Test
   public void addAndRemoveTest() throws Exception {
-    AtomicMultimap<String, String> multimap = atomix().<String, String>atomicMultimapBuilder("testThreeMap")
+    AtomicMultimap<String, String> multimap = atomix().<String, String>atomicMultimapBuilder("test-" + protocol().group() + "-atomic-multimap-add-remove")
         .withProtocol(protocol())
         .build();
 
@@ -175,7 +175,7 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
    */
   @Test
   public void testAccessors() throws Exception {
-    AtomicMultimap<String, String> multimap = atomix().<String, String>atomicMultimapBuilder("testFourMap")
+    AtomicMultimap<String, String> multimap = atomix().<String, String>atomicMultimapBuilder("test-" + protocol().group() + "-atomic-multimap-accessors")
         .withProtocol(protocol())
         .build();
 
@@ -191,10 +191,10 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testMultimapEvents() throws Exception {
-    AtomicMultimap<String, String> multimap1 = atomix().<String, String>atomicMultimapBuilder("testMultimapEvents")
+    AtomicMultimap<String, String> multimap1 = atomix().<String, String>atomicMultimapBuilder("test-" + protocol().group() + "-atomic-multimap-events")
         .withProtocol(protocol())
         .build();
-    AtomicMultimap<String, String> multimap2 = atomix().<String, String>atomicMultimapBuilder("testMultimapEvents")
+    AtomicMultimap<String, String> multimap2 = atomix().<String, String>atomicMultimapBuilder("test-" + protocol().group() + "-atomic-multimap-events")
         .withProtocol(protocol())
         .build();
 
@@ -265,7 +265,7 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testMultimapViews() throws Exception {
-    AtomicMultimap<String, String> map = atomix().<String, String>atomicMultimapBuilder("testMultimapViews")
+    AtomicMultimap<String, String> map = atomix().<String, String>atomicMultimapBuilder("test-" + protocol().group() + "-atomic-multimap-views")
         .withProtocol(protocol())
         .build();
 

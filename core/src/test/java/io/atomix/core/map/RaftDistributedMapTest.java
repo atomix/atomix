@@ -33,7 +33,7 @@ import static org.junit.Assert.fail;
 public class RaftDistributedMapTest extends DistributedMapTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withMaxTimeout(Duration.ofSeconds(1))
         .withMaxRetries(5)
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
@@ -45,7 +45,7 @@ public class RaftDistributedMapTest extends DistributedMapTest {
     Atomix client = atomix();
 
     DistributedMap<String, String> map;
-    map = atomix().<String, String>mapBuilder("test-delete")
+    map = atomix().<String, String>mapBuilder("test-" + protocol().group() + "-map-delete")
         .withProtocol(protocol())
         .build();
 
@@ -59,7 +59,7 @@ public class RaftDistributedMapTest extends DistributedMapTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    map = atomix().<String, String>mapBuilder("test-delete")
+    map = atomix().<String, String>mapBuilder("test-" + protocol().group() + "-map-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(map.type()).size());

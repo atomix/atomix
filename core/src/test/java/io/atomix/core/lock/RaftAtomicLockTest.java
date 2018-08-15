@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
 public class RaftAtomicLockTest extends AtomicLockTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withMaxRetries(5)
         .build();
   }
@@ -40,7 +40,7 @@ public class RaftAtomicLockTest extends AtomicLockTest {
     Atomix client = atomix();
 
     AtomicLock lock;
-    lock = atomix().atomicLockBuilder("test-delete")
+    lock = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-delete")
         .withProtocol(protocol())
         .build();
 
@@ -54,7 +54,7 @@ public class RaftAtomicLockTest extends AtomicLockTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    lock = atomix().atomicLockBuilder("test-delete")
+    lock = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(lock.type()).size());

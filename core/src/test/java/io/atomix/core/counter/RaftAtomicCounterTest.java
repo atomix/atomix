@@ -16,7 +16,6 @@
 package io.atomix.core.counter;
 
 import io.atomix.core.Atomix;
-import io.atomix.core.value.AtomicValue;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
@@ -24,8 +23,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -34,7 +31,7 @@ import static org.junit.Assert.fail;
 public class RaftAtomicCounterTest extends AtomicCounterTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withMaxRetries(5)
         .build();
   }
@@ -44,7 +41,7 @@ public class RaftAtomicCounterTest extends AtomicCounterTest {
     Atomix client = atomix();
 
     AtomicCounter counter;
-    counter = atomix().atomicCounterBuilder("test-delete")
+    counter = atomix().atomicCounterBuilder("test-" + protocol().group() + "-atomic-counter-delete")
         .withProtocol(protocol())
         .build();
 
@@ -61,7 +58,7 @@ public class RaftAtomicCounterTest extends AtomicCounterTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    counter = atomix().atomicCounterBuilder("test-delete")
+    counter = atomix().atomicCounterBuilder("test-" + protocol().group() + "-atomic-counter-delete")
         .withProtocol(protocol())
         .build();
     assertFalse(client.getPrimitives(counter.type()).isEmpty());

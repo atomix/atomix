@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 public abstract class AtomicValueTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testValue() throws Exception {
-    AtomicValue<String> value = atomix().<String>atomicValueBuilder("test-value")
+    AtomicValue<String> value = atomix().<String>atomicValueBuilder("test-" + protocol().group() + "-atomic-value")
         .withProtocol(protocol())
         .build();
     assertNull(value.get());
@@ -48,10 +48,10 @@ public abstract class AtomicValueTest extends AbstractPrimitiveTest<ProxyProtoco
 
   @Test
   public void testEvents() throws Exception {
-    AtomicValue<String> value1 = atomix().<String>atomicValueBuilder("test-value-events")
+    AtomicValue<String> value1 = atomix().<String>atomicValueBuilder("test-" + protocol().group() + "-atomic-value-events")
         .withProtocol(protocol())
         .build();
-    AtomicValue<String> value2 = atomix().<String>atomicValueBuilder("test-value-events")
+    AtomicValue<String> value2 = atomix().<String>atomicValueBuilder("test-" + protocol().group() + "-atomic-value-events")
         .withProtocol(protocol())
         .build();
 

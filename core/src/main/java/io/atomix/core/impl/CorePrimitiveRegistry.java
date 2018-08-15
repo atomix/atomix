@@ -70,7 +70,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
       } else if (result == null || result.value().equals(type.name())) {
         future.complete(info);
       } else {
-        future.completeExceptionally(new PrimitiveException("A different primitive with the same name already exists"));
+        future.completeExceptionally(new PrimitiveException("Another primitive with the name '" + name + "' already exists"));
       }
     });
     return future;

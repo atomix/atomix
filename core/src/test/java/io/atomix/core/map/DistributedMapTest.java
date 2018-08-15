@@ -52,7 +52,7 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest<ProxyProt
     final String barValue = "Hello bar!";
 
     DistributedMap<String, String> map = atomix()
-        .<String, String>mapBuilder("testNullValues")
+        .<String, String>mapBuilder("test-" + protocol().group() + "-map-null-values")
         .withProtocol(protocol())
         .withNullValues()
         .build();
@@ -73,7 +73,7 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest<ProxyProt
     final String fooValue = "Hello foo!";
     final String barValue = "Hello bar!";
 
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testBasicMapOperationMap")
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("test-" + protocol().group() + "-map-basic-operations")
         .withProtocol(protocol())
         .build();
 
@@ -121,7 +121,7 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest<ProxyProt
     final String value2 = "value2";
     final String value3 = "value3";
 
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testMapComputeOperationsMap")
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("test-" + protocol().group() + "-map-compute-operations")
         .withProtocol(protocol())
         .build();
     assertEquals(value1, map.computeIfAbsent("foo", k -> value1));
@@ -138,7 +138,7 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest<ProxyProt
     final String value2 = "value2";
     final String value3 = "value3";
 
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testMapListenerMap")
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("test-" + protocol().group() + "-map-listeners")
         .withProtocol(protocol())
         .build();
     TestMapEventListener listener = new TestMapEventListener();
@@ -200,7 +200,7 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest<ProxyProt
 
   @Test
   public void testMapViews() throws Exception {
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testMapViews")
+    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("test-" + protocol().group() + "-map-views")
         .withProtocol(protocol())
         .build();
 
@@ -277,7 +277,7 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest<ProxyProt
   @Test
   public void testComplexTypes() throws Throwable {
     DistributedMap<Key, Pair<String, Integer>> map = atomix()
-        .<Key, Pair<String, Integer>>mapBuilder("testComplexTypes")
+        .<Key, Pair<String, Integer>>mapBuilder("test-" + protocol().group() + "-map-complex-types")
         .withProtocol(protocol())
         .build();
 
@@ -292,7 +292,7 @@ public abstract class DistributedMapTest extends AbstractPrimitiveTest<ProxyProt
   @Test
   public void testRequiredComplexTypes() throws Throwable {
     DistributedMap<Key, Pair<String, Integer>> map = atomix()
-        .<Key, Pair<String, Integer>>mapBuilder("testComplexTypes")
+        .<Key, Pair<String, Integer>>mapBuilder("test-" + protocol().group() + "-map-required-complex-types")
         .withProtocol(protocol())
         .withRegistrationRequired()
         .withKeyType(Key.class)

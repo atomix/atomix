@@ -38,15 +38,15 @@ public abstract class DistributedCyclicBarrierTest extends AbstractPrimitiveTest
   public void testBarrier() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
 
-    AsyncDistributedCyclicBarrier barrier1 = atomix().cyclicBarrierBuilder("test-barrier")
+    AsyncDistributedCyclicBarrier barrier1 = atomix().cyclicBarrierBuilder("test-" + protocol().group() + "-barrier")
         .withProtocol(protocol())
         .build()
         .async();
-    AsyncDistributedCyclicBarrier barrier2 = atomix().cyclicBarrierBuilder("test-barrier")
+    AsyncDistributedCyclicBarrier barrier2 = atomix().cyclicBarrierBuilder("test-" + protocol().group() + "-barrier")
         .withProtocol(protocol())
         .build()
         .async();
-    AsyncDistributedCyclicBarrier barrier3 = atomix().cyclicBarrierBuilder("test-barrier")
+    AsyncDistributedCyclicBarrier barrier3 = atomix().cyclicBarrierBuilder("test-" + protocol().group() + "-barrier")
         .withProtocol(protocol())
         .withBarrierAction(() -> latch.countDown())
         .build()
@@ -97,15 +97,15 @@ public abstract class DistributedCyclicBarrierTest extends AbstractPrimitiveTest
 
   @Test
   public void testBrokenBarrierReset() throws Exception {
-    AsyncDistributedCyclicBarrier barrier1 = atomix().cyclicBarrierBuilder("test-barrier-reset")
+    AsyncDistributedCyclicBarrier barrier1 = atomix().cyclicBarrierBuilder("test-" + protocol().group() + "-barrier-reset")
         .withProtocol(protocol())
         .build()
         .async();
-    AsyncDistributedCyclicBarrier barrier2 = atomix().cyclicBarrierBuilder("test-barrier-reset")
+    AsyncDistributedCyclicBarrier barrier2 = atomix().cyclicBarrierBuilder("test-" + protocol().group() + "-barrier-reset")
         .withProtocol(protocol())
         .build()
         .async();
-    AsyncDistributedCyclicBarrier barrier3 = atomix().cyclicBarrierBuilder("test-barrier-reset")
+    AsyncDistributedCyclicBarrier barrier3 = atomix().cyclicBarrierBuilder("test-" + protocol().group() + "-barrier-reset")
         .withProtocol(protocol())
         .build()
         .async();

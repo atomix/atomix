@@ -34,7 +34,7 @@ import static org.junit.Assert.fail;
 public class RaftDistributedCyclicBarrierTest extends DistributedCyclicBarrierTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withMinTimeout(Duration.ofSeconds(1))
         .withMaxTimeout(Duration.ofSeconds(1))
         .withMaxRetries(5)
@@ -46,7 +46,7 @@ public class RaftDistributedCyclicBarrierTest extends DistributedCyclicBarrierTe
     Atomix client = atomix();
 
     DistributedCyclicBarrier barrier;
-    barrier = atomix().cyclicBarrierBuilder("test-delete")
+    barrier = atomix().cyclicBarrierBuilder("test-" + protocol().group() + "-barrier-delete")
         .withProtocol(protocol())
         .build();
 

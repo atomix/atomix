@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
 public class RaftDistributedLockTest extends DistributedLockTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withMaxRetries(5)
         .build();
   }
@@ -40,7 +40,7 @@ public class RaftDistributedLockTest extends DistributedLockTest {
     Atomix client = atomix();
 
     DistributedLock lock;
-    lock = atomix().lockBuilder("test-delete")
+    lock = atomix().lockBuilder("test-" + protocol().group() + "-lock-delete")
         .withProtocol(protocol())
         .build();
 
@@ -54,7 +54,7 @@ public class RaftDistributedLockTest extends DistributedLockTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    lock = atomix().lockBuilder("test-delete")
+    lock = atomix().lockBuilder("test-" + protocol().group() + "-lock-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(lock.type()).size());

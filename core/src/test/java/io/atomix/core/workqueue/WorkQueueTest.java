@@ -23,7 +23,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -42,7 +41,7 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
 
   @Test
   public void testAdd() throws Throwable {
-    String queueName = UUID.randomUUID().toString();
+    String queueName = "test-" + protocol().group() + "-work-queue-add";
     WorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName)
         .withProtocol(protocol())
         .build();
@@ -63,7 +62,7 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
 
   @Test
   public void testAddMultiple() throws Throwable {
-    String queueName = UUID.randomUUID().toString();
+    String queueName = "test-" + protocol().group() + "-work-queue-add-multiple";
     WorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName)
         .withProtocol(protocol())
         .build();
@@ -79,7 +78,7 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
 
   @Test
   public void testTakeAndComplete() throws Throwable {
-    String queueName = UUID.randomUUID().toString();
+    String queueName = "test-" + protocol().group() + "-work-queue-take-and-complete";
     WorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName)
         .withProtocol(protocol())
         .build();
@@ -110,7 +109,7 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
 
   @Test
   public void testUnexpectedClientClose() throws Throwable {
-    String queueName = UUID.randomUUID().toString();
+    String queueName = "test-" + protocol().group() + "-work-queue-client-close";
     WorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName)
         .withProtocol(protocol())
         .build();
@@ -137,7 +136,7 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
 
   @Test
   public void testAutomaticTaskProcessing() throws Throwable {
-    String queueName = UUID.randomUUID().toString();
+    String queueName = "test-" + protocol().group() + "-work-queue-task-processing";
     WorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName)
         .withProtocol(protocol())
         .build();
@@ -175,7 +174,7 @@ public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol>
 
   @Test
   public void testCompleteAttemptWithIncorrectSession() throws Exception {
-    String queueName = UUID.randomUUID().toString();
+    String queueName = "test-" + protocol().group() + "-work-queue-complete-failure";
     WorkQueue<String> queue1 = atomix().<String>workQueueBuilder(queueName)
         .withProtocol(protocol())
         .build();

@@ -34,7 +34,7 @@ import static org.junit.Assert.fail;
 public class RaftAtomicSemaphoreTest extends AtomicSemaphoreTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .withMaxRetries(5)
         .build();
@@ -44,7 +44,7 @@ public class RaftAtomicSemaphoreTest extends AtomicSemaphoreTest {
   @Test(timeout = 10000)
   public void testQueueStatus() throws Exception {
     Atomix atomix = atomix();
-    AsyncAtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-semaphore-status")
+    AsyncAtomicSemaphore semaphore = atomix.atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-status")
         .withProtocol(protocol())
         .withInitialCapacity(10)
         .build()
@@ -87,7 +87,7 @@ public class RaftAtomicSemaphoreTest extends AtomicSemaphoreTest {
     Atomix client = atomix();
 
     AtomicSemaphore semaphore;
-    semaphore = atomix().atomicSemaphoreBuilder("test-delete")
+    semaphore = atomix().atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-delete")
         .withProtocol(protocol())
         .build();
 
@@ -101,7 +101,7 @@ public class RaftAtomicSemaphoreTest extends AtomicSemaphoreTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    semaphore = atomix().atomicSemaphoreBuilder("test-delete")
+    semaphore = atomix().atomicSemaphoreBuilder("test-" + protocol().group() + "-atomic-semaphore-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(semaphore.type()).size());

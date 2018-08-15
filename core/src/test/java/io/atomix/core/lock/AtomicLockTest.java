@@ -38,7 +38,7 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testLockUnlock() throws Throwable {
-    AtomicLock lock = atomix().atomicLockBuilder("test-lock-unlock")
+    AtomicLock lock = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-unlock")
         .withProtocol(protocol())
         .build();
     Version version = lock.lock();
@@ -55,10 +55,10 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testReleaseOnClose() throws Throwable {
-    AtomicLock lock1 = atomix().atomicLockBuilder("test-lock-on-close")
+    AtomicLock lock1 = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-on-close")
         .withProtocol(protocol())
         .build();
-    AtomicLock lock2 = atomix().atomicLockBuilder("test-lock-on-close")
+    AtomicLock lock2 = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-on-close")
         .withProtocol(protocol())
         .build();
     lock1.lock();
@@ -72,10 +72,10 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testTryLockFail() throws Throwable {
-    AtomicLock lock1 = atomix().atomicLockBuilder("test-try-lock-fail")
+    AtomicLock lock1 = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-try-lock-fail")
         .withProtocol(protocol())
         .build();
-    AtomicLock lock2 = atomix().atomicLockBuilder("test-try-lock-fail")
+    AtomicLock lock2 = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-try-lock-fail")
         .withProtocol(protocol())
         .build();
 
@@ -89,7 +89,7 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testTryLockSucceed() throws Throwable {
-    AtomicLock lock = atomix().atomicLockBuilder("test-try-lock-succeed")
+    AtomicLock lock = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-try-lock-succeed")
         .withProtocol(protocol())
         .build();
     assertTrue(lock.tryLock().isPresent());
@@ -100,10 +100,10 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testTryLockFailWithTimeout() throws Throwable {
-    AtomicLock lock1 = atomix().atomicLockBuilder("test-try-lock-fail-with-timeout")
+    AtomicLock lock1 = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-try-lock-fail-with-timeout")
         .withProtocol(protocol())
         .build();
-    AtomicLock lock2 = atomix().atomicLockBuilder("test-try-lock-fail-with-timeout")
+    AtomicLock lock2 = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-try-lock-fail-with-timeout")
         .withProtocol(protocol())
         .build();
 
@@ -117,10 +117,10 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testTryLockSucceedWithTimeout() throws Throwable {
-    AtomicLock lock1 = atomix().atomicLockBuilder("test-try-lock-succeed-with-timeout")
+    AtomicLock lock1 = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-try-lock-succeed-with-timeout")
         .withProtocol(protocol())
         .build();
-    AtomicLock lock2 = atomix().atomicLockBuilder("test-try-lock-succeed-with-timeout")
+    AtomicLock lock2 = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-try-lock-succeed-with-timeout")
         .withProtocol(protocol())
         .build();
 
@@ -136,10 +136,10 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testBlockingUnlock() throws Throwable {
-    AtomicLock lock1 = atomix().atomicLockBuilder("test-blocking-unlock")
+    AtomicLock lock1 = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-blocking-unlock")
         .withProtocol(protocol())
         .build();
-    AtomicLock lock2 = atomix().atomicLockBuilder("test-blocking-unlock")
+    AtomicLock lock2 = atomix().atomicLockBuilder("test-" + protocol().group() + "-atomic-lock-blocking-unlock")
         .withProtocol(protocol())
         .build();
 

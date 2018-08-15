@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
 public class RaftAtomicDocumentTreeTest extends AtomicDocumentTreeTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withMaxRetries(5)
         .build();
   }
@@ -40,7 +40,7 @@ public class RaftAtomicDocumentTreeTest extends AtomicDocumentTreeTest {
     Atomix client = atomix();
 
     AtomicDocumentTree<String> tree;
-    tree = atomix().<String>atomicDocumentTreeBuilder("test-delete")
+    tree = atomix().<String>atomicDocumentTreeBuilder("test-" + protocol().group() + "-doc-tree-delete")
         .withProtocol(protocol())
         .build();
 
@@ -54,7 +54,7 @@ public class RaftAtomicDocumentTreeTest extends AtomicDocumentTreeTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    tree = atomix().<String>atomicDocumentTreeBuilder("test-delete")
+    tree = atomix().<String>atomicDocumentTreeBuilder("test-" + protocol().group() + "-doc-tree-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(tree.type()).size());

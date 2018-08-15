@@ -40,7 +40,7 @@ public class RaftDistributedNavigableMapTest extends DistributedNavigableMapTest
     Atomix client = atomix();
 
     DistributedNavigableMap<String, String> map;
-    map = atomix().<String, String>navigableMapBuilder("test-delete")
+    map = atomix().<String, String>navigableMapBuilder("test-" + protocol().group() + "-navigable-map-delete")
         .withProtocol(protocol())
         .build();
 
@@ -54,7 +54,7 @@ public class RaftDistributedNavigableMapTest extends DistributedNavigableMapTest
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    map = atomix().<String, String>navigableMapBuilder("test-delete")
+    map = atomix().<String, String>navigableMapBuilder("test-" + protocol().group() + "-navigable-map-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(map.type()).size());

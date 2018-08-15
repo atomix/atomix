@@ -50,7 +50,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testQueries() throws Throwable {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-queries");
     Versioned<String> root = tree.get(path("/"));
     assertEquals(1, root.version());
     assertNull(root.value());
@@ -61,7 +61,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testException() throws Throwable {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-exceptions");
     try {
       tree.get(path("a"));
       fail();
@@ -98,7 +98,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testStringPaths() throws Exception {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-paths");
     assertNull(tree.set("/foo", "Hello world!"));
     assertEquals("Hello world!", tree.get("/foo").value());
     assertTrue(tree.create("/bar", "Hello world again!"));
@@ -116,7 +116,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testCreate() throws Throwable {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-create");
     tree.create(path("/a"), "a");
     tree.create(path("/a/b"), "ab");
     tree.create(path("/a/c"), "ac");
@@ -139,7 +139,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testRecursiveCreate() throws Throwable {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-recursive-create");
     tree.createRecursive(path("/a/b/c"), "abc");
     Versioned<String> a = tree.get(path("/a"));
     assertEquals(null, a.value());
@@ -156,7 +156,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testSet() throws Throwable {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-set");
     tree.create(path("/a"), "a");
     tree.create(path("/a/b"), "ab");
     tree.create(path("/a/c"), "ac");
@@ -183,7 +183,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testReplaceVersion() throws Throwable {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-replace-version");
     tree.create(path("/a"), "a");
     tree.create(path("/a/b"), "ab");
     tree.create(path("/a/c"), "ac");
@@ -204,7 +204,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testReplaceValue() throws Throwable {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-replace-value");
     tree.create(path("/a"), "a");
     tree.create(path("/a/b"), "ab");
     tree.create(path("/a/c"), "ac");
@@ -225,7 +225,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testRemove() throws Throwable {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-remove");
     tree.create(path("/a"), "a");
     tree.create(path("/a/b"), "ab");
     tree.create(path("/a/c"), "ac");
@@ -253,7 +253,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testRemoveFailures() throws Throwable {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-remove-failures");
     tree.create(path("/a"), "a");
     tree.create(path("/a/b"), "ab");
     tree.create(path("/a/c"), "ac");
@@ -285,7 +285,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testCreateFailures() throws Throwable {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-create-failures");
     try {
       tree.create(path("/a/c"), "ac");
       fail();
@@ -299,7 +299,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testSetFailures() throws Throwable {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-set-failures");
     try {
       tree.set(path("/a/c"), "ac");
       fail();
@@ -313,7 +313,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test
   public void testGetChildren() throws Throwable {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-get-children");
     tree.create(path("/a"), "a");
     tree.create(path("/a/b"), "ab");
     tree.create(path("/a/c"), "ac");
@@ -339,7 +339,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
    */
   @Test(timeout = 45000)
   public void testNotifications() throws Exception {
-    AtomicDocumentTree<String> tree = newTree(UUID.randomUUID().toString());
+    AtomicDocumentTree<String> tree = newTree("test-" + protocol().group() + "-doc-tree-notifications");
     TestEventListener listener = new TestEventListener();
 
     // add listener; create a node in the tree and verify an CREATED event is received.
@@ -375,7 +375,7 @@ public abstract class AtomicDocumentTreeTest extends AbstractPrimitiveTest<Proxy
   @Ignore
   @Test(timeout = 45000)
   public void testFilteredNotifications() throws Throwable {
-    String treeName = UUID.randomUUID().toString();
+    String treeName = "test-" + protocol().group() + "-doc-tree-filtered-notifications";
     AtomicDocumentTree<String> tree1 = newTree(treeName);
     AtomicDocumentTree<String> tree2 = newTree(treeName);
 

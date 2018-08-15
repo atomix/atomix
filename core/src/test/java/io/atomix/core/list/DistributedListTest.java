@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 public abstract class DistributedListTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testListOperations() throws Exception {
-    DistributedList<String> list = atomix().<String>listBuilder("test-list")
+    DistributedList<String> list = atomix().<String>listBuilder("test-" + protocol().group() + "-list")
         .withProtocol(protocol())
         .build();
 
@@ -63,7 +63,7 @@ public abstract class DistributedListTest extends AbstractPrimitiveTest<ProxyPro
 
   @Test
   public void testEventListeners() throws Exception {
-    DistributedList<String> list = atomix().<String>listBuilder("test-list-listeners")
+    DistributedList<String> list = atomix().<String>listBuilder("test-" + protocol().group() + "-list-listeners")
         .withProtocol(protocol())
         .build();
 
@@ -139,7 +139,7 @@ public abstract class DistributedListTest extends AbstractPrimitiveTest<ProxyPro
   @Test
   public void testComplexTypes() throws Throwable {
     DistributedList<Pair<String, Integer>> list = atomix()
-        .<Pair<String, Integer>>listBuilder("testComplexTypes")
+        .<Pair<String, Integer>>listBuilder("test-" + protocol().group() + "-list-complex-types")
         .withProtocol(protocol())
         .build();
 
@@ -154,7 +154,7 @@ public abstract class DistributedListTest extends AbstractPrimitiveTest<ProxyPro
   @Test
   public void testRequiredComplexTypes() throws Throwable {
     DistributedList<Pair<String, Integer>> list = atomix()
-        .<Pair<String, Integer>>listBuilder("testRequiredComplexTypes")
+        .<Pair<String, Integer>>listBuilder("test-" + protocol().group() + "-list-required-complex-types")
         .withRegistrationRequired()
         .withElementType(ImmutablePair.class)
         .withProtocol(protocol())

@@ -33,7 +33,7 @@ import static org.junit.Assert.fail;
 public class RaftAtomicMapTest extends AtomicMapTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withMaxTimeout(Duration.ofSeconds(1))
         .withMaxRetries(5)
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
@@ -45,7 +45,7 @@ public class RaftAtomicMapTest extends AtomicMapTest {
     Atomix client = atomix();
 
     AtomicMap<String, String> map;
-    map = atomix().<String, String>atomicMapBuilder("test-delete")
+    map = atomix().<String, String>atomicMapBuilder("test-" + protocol().group() + "-atomic-map-delete")
         .withProtocol(protocol())
         .build();
 
@@ -59,7 +59,7 @@ public class RaftAtomicMapTest extends AtomicMapTest {
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    map = atomix().<String, String>atomicMapBuilder("test-delete")
+    map = atomix().<String, String>atomicMapBuilder("test-" + protocol().group() + "-atomic-map-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(map.type()).size());

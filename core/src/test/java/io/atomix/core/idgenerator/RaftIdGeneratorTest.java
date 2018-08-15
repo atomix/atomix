@@ -24,7 +24,7 @@ import io.atomix.protocols.raft.MultiRaftProtocol;
 public class RaftIdGeneratorTest extends IdGeneratorTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withMaxRetries(5)
         .build();
   }

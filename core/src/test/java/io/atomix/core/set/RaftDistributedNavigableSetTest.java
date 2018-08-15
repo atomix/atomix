@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
 public class RaftDistributedNavigableSetTest extends DistributedNavigableSetTest {
   @Override
   protected ProxyProtocol protocol() {
-    return MultiRaftProtocol.builder()
+    return MultiRaftProtocol.builder("raft")
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .withMaxRetries(5)
         .build();
@@ -42,7 +42,7 @@ public class RaftDistributedNavigableSetTest extends DistributedNavigableSetTest
     Atomix client = atomix();
 
     DistributedNavigableSet<String> set;
-    set = atomix().<String>navigableSetBuilder("test-delete")
+    set = atomix().<String>navigableSetBuilder("test-" + protocol().group() + "-nav-set-delete")
         .withProtocol(protocol())
         .build();
 
@@ -56,7 +56,7 @@ public class RaftDistributedNavigableSetTest extends DistributedNavigableSetTest
     } catch (PrimitiveException.ClosedSession e) {
     }
 
-    set = atomix().<String>navigableSetBuilder("test-delete")
+    set = atomix().<String>navigableSetBuilder("test-" + protocol().group() + "-nav-set-delete")
         .withProtocol(protocol())
         .build();
     assertEquals(count, client.getPrimitives(set.type()).size());

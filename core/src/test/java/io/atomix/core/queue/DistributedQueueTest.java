@@ -39,7 +39,7 @@ import static org.junit.Assert.fail;
 public abstract class DistributedQueueTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testQueueOperations() throws Exception {
-    DistributedQueue<String> queue = atomix().<String>queueBuilder("test-queue")
+    DistributedQueue<String> queue = atomix().<String>queueBuilder("test-" + protocol().group() + "-queue")
         .withProtocol(protocol())
         .build();
 
@@ -60,7 +60,7 @@ public abstract class DistributedQueueTest extends AbstractPrimitiveTest<ProxyPr
 
   @Test
   public void testEventListeners() throws Exception {
-    DistributedQueue<String> queue = atomix().<String>queueBuilder("test-queue-listeners")
+    DistributedQueue<String> queue = atomix().<String>queueBuilder("test-" + protocol().group() + "-queue-listeners")
         .withProtocol(protocol())
         .build();
 
