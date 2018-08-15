@@ -223,6 +223,9 @@
           <skipTests>${env.SKIP_TESTS}</skipTests>
           <shutdown>kill</shutdown>
           <argLine>${argLine} ${argLine.extras} ${argLine.common}</argLine>
+          <includes>
+            <include>**/PrimitivesSuite.class</include>
+          </includes>
         </configuration>
       </plugin>
 
