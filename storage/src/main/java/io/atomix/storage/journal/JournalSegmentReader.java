@@ -38,7 +38,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   private final JournalSegmentCache cache;
   private final JournalIndex index;
   private final Serializer serializer;
-  private final Buffer memory;
+  private final Buffer memory = HeapBuffer.allocate().flip();
   private final long firstIndex;
   private Indexed<E> currentEntry;
   private Indexed<E> nextEntry;
@@ -55,7 +55,6 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     this.index = index;
     this.serializer = serializer;
     this.firstIndex = descriptor.index();
-    this.memory = HeapBuffer.allocate(maxEntrySize * 2, maxEntrySize * 2).flip();
     readNext();
   }
 
@@ -81,6 +80,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     if (position != null) {
       currentEntry = new Indexed<>(position.index() - 1, null, 0);
       buffer.position(position.position());
+      memory.clear().flip();
       readNext();
     }
     while (getNextIndex() < index && hasNext()) {
@@ -91,6 +91,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   @Override
   public void reset() {
     buffer.clear();
+    memory.clear().flip();
     currentEntry = null;
     nextEntry = null;
     readNext();
@@ -142,7 +143,9 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     // Read more bytes from the segment if necessary.
     if (memory.remaining() < maxEntrySize) {
       buffer.skip(memory.position())
-          .read(memory.clear());
+          .mark()
+          .read(memory.clear().limit(maxEntrySize * 2))
+          .reset();
       memory.flip();
     }
 
@@ -155,7 +158,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
 
       // If the buffer length is zero then return.
       if (length <= 0 || length > maxEntrySize) {
-        memory.reset();
+        memory.reset().limit(memory.position());
         nextEntry = null;
         return;
       }
@@ -176,11 +179,11 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
         E entry = serializer.decode(bytes);
         nextEntry = new Indexed<>(index, entry, length);
       } else {
-        memory.reset();
+        memory.reset().limit(memory.position());
         nextEntry = null;
       }
     } catch (BufferUnderflowException e) {
-      memory.reset();
+      memory.reset().limit(memory.position());
       nextEntry = null;
     }
   }
