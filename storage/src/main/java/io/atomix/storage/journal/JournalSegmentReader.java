@@ -15,12 +15,12 @@
  */
 package io.atomix.storage.journal;
 
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.Bytes;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.journal.index.JournalIndex;
 import io.atomix.storage.journal.index.Position;
+import io.atomix.utils.serializer.Serializer;
 
 import java.nio.BufferUnderflowException;
 import java.util.NoSuchElementException;
@@ -136,7 +136,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     Indexed cachedEntry = cache.get(index);
     if (cachedEntry != null) {
       this.nextEntry = cachedEntry;
-      buffer.skip(cachedEntry.size() + Bytes.INTEGER + Bytes.INTEGER);
+      buffer.skip(memory.position() + cachedEntry.size() + Bytes.INTEGER + Bytes.INTEGER);
       memory.clear().limit(0);
       return;
     } else if (cache.index() < index) {
@@ -162,7 +162,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
 
       // If the buffer length is zero then return.
       if (length <= 0 || length > maxEntrySize) {
-        memory.clear().limit(0);
+        memory.reset().limit(memory.position());
         nextEntry = null;
         return;
       }
@@ -183,11 +183,11 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
         E entry = serializer.decode(bytes);
         nextEntry = new Indexed<>(index, entry, length);
       } else {
-        memory.clear().limit(0);
+        memory.reset().limit(memory.position());
         nextEntry = null;
       }
     } catch (BufferUnderflowException e) {
-      memory.clear().limit(0);
+      memory.reset().limit(memory.position());
       nextEntry = null;
     }
   }

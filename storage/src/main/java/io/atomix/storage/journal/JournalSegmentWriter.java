@@ -16,14 +16,13 @@
 package io.atomix.storage.journal;
 
 import io.atomix.storage.StorageException;
-import io.atomix.storage.buffer.Bytes;
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.buffer.MappedBuffer;
 import io.atomix.storage.buffer.SlicedBuffer;
 import io.atomix.storage.journal.index.JournalIndex;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
