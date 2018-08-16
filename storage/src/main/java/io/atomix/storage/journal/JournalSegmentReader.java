@@ -139,7 +139,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
       buffer.skip(memory.position() + cachedEntry.size() + Bytes.INTEGER + Bytes.INTEGER);
       memory.clear().limit(0);
       return;
-    } else if (cache.index() < index) {
+    } else if (cache.index() > 0 && cache.index() < index) {
       this.nextEntry = null;
       return;
     }
