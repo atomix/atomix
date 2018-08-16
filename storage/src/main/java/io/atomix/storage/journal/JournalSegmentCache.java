@@ -78,6 +78,7 @@ class JournalSegmentCache {
   public void truncate(long index) {
     if (index < firstIndex) {
       firstIndex = index + 1;
+      lastIndex = 0;
       entries.clear();
     } else {
       int size = entries.size();
