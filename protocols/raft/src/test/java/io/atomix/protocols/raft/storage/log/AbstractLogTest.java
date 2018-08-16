@@ -94,6 +94,7 @@ public abstract class AbstractLogTest {
         .withMaxEntriesPerSegment(MAX_ENTRIES_PER_SEGMENT)
         .withMaxSegmentSize(MAX_SEGMENT_SIZE)
         .withIndexDensity(.2)
+        .withCacheSize(1)
         .build();
   }
 
