@@ -236,6 +236,7 @@ public class FileBytes extends AbstractBytes {
       int length = Math.max(offset, size);
       randomAccessFile.setLength(offset);
       randomAccessFile.setLength(length);
+      seekToOffset(offset);
       for (int i = offset; i < length; i += PAGE_SIZE) {
         randomAccessFile.write(BLANK_PAGE, 0, Math.min(length - i, PAGE_SIZE));
       }
