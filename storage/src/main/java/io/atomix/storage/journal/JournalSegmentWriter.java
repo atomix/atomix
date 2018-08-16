@@ -119,6 +119,9 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
         break;
       }
 
+      // Update the current position for indexing.
+      position = buffer.position() + memory.position();
+
       // Read more bytes from the segment if necessary.
       if (memory.remaining() < maxEntrySize) {
         buffer.skip(memory.position())
@@ -128,7 +131,6 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
         memory.flip();
       }
 
-      position = buffer.position() + memory.position();
       length = memory.mark().readInt();
     }
 
