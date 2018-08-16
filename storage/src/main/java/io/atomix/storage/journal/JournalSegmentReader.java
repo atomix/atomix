@@ -137,6 +137,10 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     if (cachedEntry != null) {
       this.nextEntry = cachedEntry;
       buffer.skip(cachedEntry.size() + Bytes.INTEGER + Bytes.INTEGER);
+      memory.clear().limit(0);
+      return;
+    } else if (cache.index() < index) {
+      this.nextEntry = null;
       return;
     }
 
@@ -158,7 +162,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
 
       // If the buffer length is zero then return.
       if (length <= 0 || length > maxEntrySize) {
-        memory.reset().limit(memory.position());
+        memory.clear().limit(0);
         nextEntry = null;
         return;
       }
@@ -179,11 +183,11 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
         E entry = serializer.decode(bytes);
         nextEntry = new Indexed<>(index, entry, length);
       } else {
-        memory.reset().limit(memory.position());
+        memory.clear().limit(0);
         nextEntry = null;
       }
     } catch (BufferUnderflowException e) {
-      memory.reset().limit(memory.position());
+      memory.clear().limit(0);
       nextEntry = null;
     }
   }
