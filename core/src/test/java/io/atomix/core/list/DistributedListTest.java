@@ -118,6 +118,21 @@ public abstract class DistributedListTest extends AbstractPrimitiveTest<ProxyPro
     assertEquals(0, list.size());
   }
 
+  @Test
+  public void testConcurrentModification() throws Exception {
+    DistributedList<Integer> list = atomix().<Integer>listBuilder("test-list-concurrent-modification")
+        .withProtocol(protocol())
+        .build();
+
+    for (int i = 0; i < 2000; i++) {
+      list.add(i);
+    }
+
+    for (int value : list) {
+      list.remove(0);
+    }
+  }
+
   /**
    * Tests a map with complex types.
    */
