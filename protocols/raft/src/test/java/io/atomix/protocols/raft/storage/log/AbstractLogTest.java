@@ -79,7 +79,6 @@ public abstract class AbstractLogTest {
       .register(MemberId.class)
       .register(RaftMember.Type.class)
       .register(ReadConsistency.class)
-      .register(PropagationStrategy.class)
       .register(Instant.class)
       .register(byte[].class)
       .build());

@@ -668,7 +668,7 @@ public class RaftServiceManager implements AutoCloseable {
   @SuppressWarnings("unchecked")
   private RaftServiceContext initializeService(PrimitiveId primitiveId, PrimitiveType primitiveType, String serviceName, byte[] config) {
     RaftServiceContext oldService = raft.getServices().getService(serviceName);
-    ServiceConfig serviceConfig = Serializer.using(primitiveType.namespace()).decode(config);
+    ServiceConfig serviceConfig = config == null ? new ServiceConfig() : Serializer.using(primitiveType.namespace()).decode(config);
     RaftServiceContext service = new RaftServiceContext(
         primitiveId,
         serviceName,
