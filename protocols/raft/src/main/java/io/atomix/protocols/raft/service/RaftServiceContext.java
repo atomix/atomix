@@ -245,6 +245,7 @@ public class RaftServiceContext implements ServiceContext {
       session.setLastCompleted(reader.readLong());
       session.setLastApplied(reader.snapshot().index());
       session.setLastUpdated(sessionTimestamp);
+      session.open();
       service.register(sessions.addSession(session));
     }
     currentIndex = reader.snapshot().index();

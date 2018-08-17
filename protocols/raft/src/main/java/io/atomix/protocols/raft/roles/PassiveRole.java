@@ -489,7 +489,7 @@ public class PassiveRole extends InactiveRole {
     // If the index has already been applied, we have enough state to populate the state machine up to this index.
     // Skip the snapshot and response successfully.
     if (raft.getLastApplied() > request.snapshotIndex()) {
-      return CompletableFuture.completedFuture(logResponse(InstallResponse.newBuilder()
+      return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
           .withStatus(RaftResponse.Status.OK)
           .build()));
     }

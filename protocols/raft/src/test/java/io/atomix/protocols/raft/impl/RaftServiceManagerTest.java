@@ -15,19 +15,27 @@
  */
 package io.atomix.protocols.raft.impl;
 
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.MemberId;
+import io.atomix.primitive.PrimitiveBuilder;
+import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.PrimitiveTypeRegistry;
+import io.atomix.primitive.config.PrimitiveConfig;
+import io.atomix.primitive.operation.OperationId;
+import io.atomix.primitive.operation.OperationType;
+import io.atomix.primitive.operation.PrimitiveOperation;
+import io.atomix.primitive.operation.impl.DefaultOperationId;
+import io.atomix.primitive.service.AbstractPrimitiveService;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
+import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.ServiceConfig;
+import io.atomix.primitive.service.ServiceExecutor;
 import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.ThreadModel;
-import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
-import io.atomix.protocols.raft.operation.OperationId;
-import io.atomix.protocols.raft.operation.OperationType;
-import io.atomix.protocols.raft.operation.RaftOperation;
-import io.atomix.protocols.raft.operation.impl.DefaultOperationId;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
-import io.atomix.protocols.raft.service.AbstractRaftService;
-import io.atomix.protocols.raft.service.PropagationStrategy;
-import io.atomix.protocols.raft.service.RaftServiceExecutor;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.log.TestEntry;
@@ -40,10 +48,9 @@ import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
-import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
-import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
-import io.atomix.serializer.Serializer;
-import io.atomix.serializer.kryo.KryoNamespace;
+import io.atomix.utils.concurrent.ThreadModel;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Serializer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,6 +64,8 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -70,7 +79,7 @@ import static org.mockito.Mockito.mock;
 public class RaftServiceManagerTest {
   private static final Path PATH = Paths.get("target/test-logs/");
 
-  private static final Serializer SERIALIZER = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -86,8 +95,7 @@ public class RaftServiceManagerTest {
       .register(MemberId.class)
       .register(RaftMember.Type.class)
       .register(ReadConsistency.class)
-      .register(PropagationStrategy.class)
-      .register(RaftOperation.class)
+      .register(PrimitiveOperation.class)
       .register(DefaultOperationId.class)
       .register(OperationType.class)
       .register(Instant.class)
@@ -108,19 +116,15 @@ public class RaftServiceManagerTest {
         "test-1",
         "test",
         "test",
+        null,
         ReadConsistency.LINEARIZABLE,
         100,
-        1000,
-        1,
-        PropagationStrategy.NONE));
+        1000));
     writer.commit(2);
 
     RaftServiceManager manager = raft.getServiceManager();
 
     manager.apply(2).join();
-
-    assertEquals(1, raft.getServices().getCurrentRevision("test").revision().revision());
-    assertEquals(2, (long) raft.getServices().getCurrentRevision("test").sessions().getSession(2).sessionId().id());
 
     Snapshot snapshot = manager.snapshot();
     assertEquals(2, snapshot.index());
@@ -144,19 +148,15 @@ public class RaftServiceManagerTest {
         "test-1",
         "test",
         "test",
+        null,
         ReadConsistency.LINEARIZABLE,
         100,
-        1000,
-        1,
-        PropagationStrategy.NONE));
+        1000));
     writer.commit(2);
 
     RaftServiceManager manager = raft.getServiceManager();
 
     manager.apply(2).join();
-
-    assertEquals(1, raft.getServices().getCurrentRevision("test").revision().revision());
-    assertEquals(2, (long) raft.getServices().getCurrentRevision("test").sessions().getSession(2).sessionId().id());
 
     Snapshot snapshot = manager.snapshot();
     assertEquals(2, snapshot.index());
@@ -166,7 +166,7 @@ public class RaftServiceManagerTest {
 
     assertEquals(2, raft.getSnapshotStore().getCurrentSnapshot().index());
 
-    writer.append(new CommandEntry(1, System.currentTimeMillis(), 2, 1, new RaftOperation(RUN, new byte[0])));
+    writer.append(new CommandEntry(1, System.currentTimeMillis(), 2, 1, new PrimitiveOperation(RUN, new byte[0])));
     writer.commit(3);
 
     manager.apply(3).join();
@@ -175,21 +175,25 @@ public class RaftServiceManagerTest {
 
   private static final OperationId RUN = OperationId.command("run");
 
-  private class TestService extends AbstractRaftService {
+  private class TestService extends AbstractPrimitiveService {
+    protected TestService(PrimitiveType primitiveType) {
+      super(primitiveType);
+    }
+
     @Override
-    protected void configure(RaftServiceExecutor executor) {
+    protected void configure(ServiceExecutor executor) {
       executor.register(RUN, this::run);
     }
 
     @Override
-    public void snapshot(SnapshotWriter writer) {
-      writer.writeLong(10);
+    public void backup(BackupOutput output) {
+      output.writeLong(10);
       snapshotTaken.set(true);
     }
 
     @Override
-    public void install(SnapshotReader reader) {
-      assertEquals(10, reader.readLong());
+    public void restore(BackupInput input) {
+      assertEquals(10, input.readLong());
       snapshotInstalled.set(true);
     }
 
@@ -198,20 +202,52 @@ public class RaftServiceManagerTest {
     }
   }
 
+  private class TestType implements PrimitiveType {
+    @Override
+    public PrimitiveConfig newConfig() {
+      return null;
+    }
+
+    @Override
+    public PrimitiveBuilder newBuilder(String primitiveName, PrimitiveConfig config, PrimitiveManagementService managementService) {
+      return null;
+    }
+
+    @Override
+    public PrimitiveService newService(ServiceConfig config) {
+      return new TestService(this);
+    }
+
+    @Override
+    public String name() {
+      return "test";
+    }
+  }
+
   @Before
   public void setupContext() throws IOException {
     deleteStorage();
 
-    RaftStorage storage = RaftStorage.newBuilder()
+    RaftStorage storage = RaftStorage.builder()
         .withPrefix("test")
         .withDirectory(PATH.toFile())
         .withSerializer(SERIALIZER)
         .build();
-    RaftServiceFactoryRegistry registry = new RaftServiceFactoryRegistry();
-    registry.register("test", TestService::new);
+    PrimitiveTypeRegistry registry = new PrimitiveTypeRegistry() {
+      @Override
+      public Collection<PrimitiveType> getPrimitiveTypes() {
+        return Collections.singleton(new TestType());
+      }
+
+      @Override
+      public PrimitiveType getPrimitiveType(String typeName) {
+        return new TestType();
+      }
+    };
     raft = new RaftContext(
         "test",
         MemberId.from("test-1"),
+        mock(ClusterMembershipService.class),
         mock(RaftServerProtocol.class),
         storage,
         registry,
