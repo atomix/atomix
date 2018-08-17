@@ -1,6 +1,6 @@
 # Dockerfile
 
-FROM openjdk/8-jdk-alpine
+FROM openjdk/8-jre-alpine
 
 ARG VERSION
 RUN mkdir -p /root/atomix
