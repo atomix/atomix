@@ -30,6 +30,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class SnapshotDescriptor implements AutoCloseable {
   public static final int BYTES = 64;
+  public static final int VERSION = 1;
 
   /**
    * Returns a descriptor builder.
@@ -57,6 +58,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
   private final long index;
   private final long timestamp;
   private boolean locked;
+  private int version;
 
   /**
    * @throws NullPointerException if {@code buffer} is null
@@ -65,6 +67,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
     this.buffer = checkNotNull(buffer, "buffer cannot be null");
     this.index = buffer.readLong();
     this.timestamp = buffer.readLong();
+    this.version = buffer.readInt();
     this.locked = buffer.readBoolean();
     buffer.skip(BYTES - buffer.position());
   }
@@ -88,6 +91,15 @@ public final class SnapshotDescriptor implements AutoCloseable {
   }
 
   /**
+   * Returns the snapshot version number.
+   *
+   * @return the snapshot version number
+   */
+  public int version() {
+    return version;
+  }
+
+  /**
    * Returns whether the snapshot has been locked by commitment.
    * <p>
    * A snapshot will be locked once it has been fully written.
@@ -103,7 +115,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    */
   public void lock() {
     buffer.flush()
-        .writeBoolean(16, true)
+        .writeBoolean(20, true)
         .flush();
     locked = true;
   }
@@ -115,6 +127,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
     this.buffer = buffer
         .writeLong(index)
         .writeLong(timestamp)
+        .writeInt(version)
         .writeBoolean(locked)
         .skip(BYTES - buffer.position())
         .flush();
@@ -173,7 +186,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
      * @return The built snapshot descriptor.
      */
     public SnapshotDescriptor build() {
-      return new SnapshotDescriptor(buffer);
+      return new SnapshotDescriptor(buffer.writeInt(16, VERSION));
     }
   }
 }

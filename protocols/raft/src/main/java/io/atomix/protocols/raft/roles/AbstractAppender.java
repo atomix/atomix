@@ -429,6 +429,8 @@ abstract class AbstractAppender implements AutoCloseable {
             .withTerm(raft.getTerm())
             .withLeader(leader != null ? leader.memberId() : null)
             .withIndex(snapshot.index())
+            .withTimestamp(snapshot.timestamp().unixTimestamp())
+            .withVersion(snapshot.version())
             .withOffset(member.getNextSnapshotOffset())
             .withData(data)
             .withComplete(!reader.hasRemaining())

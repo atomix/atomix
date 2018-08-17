@@ -25,7 +25,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Represents a snapshot file on disk.
  */
 public final class SnapshotFile {
-  @VisibleForTesting
   private static final char PART_SEPARATOR = '-';
   private static final char EXTENSION_SEPARATOR = '.';
   private static final String EXTENSION = "snapshot";

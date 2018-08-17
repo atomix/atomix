@@ -50,15 +50,17 @@ public class InstallRequest extends AbstractRaftRequest {
   private final MemberId leader;
   private final long index;
   private final long timestamp;
+  private final int version;
   private final int offset;
   private final byte[] data;
   private final boolean complete;
 
-  public InstallRequest(long term, MemberId leader, long index, long timestamp, int offset, byte[] data, boolean complete) {
+  public InstallRequest(long term, MemberId leader, long index, long timestamp, int version, int offset, byte[] data, boolean complete) {
     this.term = term;
     this.leader = leader;
     this.index = index;
     this.timestamp = timestamp;
+    this.version = version;
     this.offset = offset;
     this.data = data;
     this.complete = complete;
@@ -98,6 +100,15 @@ public class InstallRequest extends AbstractRaftRequest {
    */
   public long snapshotTimestamp() {
     return timestamp;
+  }
+
+  /**
+   * Returns the snapshot version.
+   *
+   * @return the snapshot version
+   */
+  public int snapshotVersion() {
+    return version;
   }
 
   /**
@@ -152,6 +163,8 @@ public class InstallRequest extends AbstractRaftRequest {
         .add("term", term)
         .add("leader", leader)
         .add("index", index)
+        .add("timestamp", timestamp)
+        .add("version", version)
         .add("offset", offset)
         .add("data", ArraySizeHashPrinter.of(data))
         .add("complete", complete)
@@ -166,6 +179,7 @@ public class InstallRequest extends AbstractRaftRequest {
     private MemberId leader;
     private long index;
     private long timestamp;
+    private int version;
     private int offset;
     private byte[] data;
     private boolean complete;
@@ -220,6 +234,18 @@ public class InstallRequest extends AbstractRaftRequest {
     }
 
     /**
+     * Sets the request version.
+     *
+     * @param version the request version
+     * @return the request builder
+     */
+    public Builder withVersion(int version) {
+      checkArgument(version > 0, "version must be positive");
+      this.version = version;
+      return this;
+    }
+
+    /**
      * Sets the request offset.
      *
      * @param offset The request offset.
@@ -270,7 +296,7 @@ public class InstallRequest extends AbstractRaftRequest {
     @Override
     public InstallRequest build() {
       validate();
-      return new InstallRequest(term, leader, index, timestamp, offset, data, complete);
+      return new InstallRequest(term, leader, index, timestamp, version, offset, data, complete);
     }
   }
 

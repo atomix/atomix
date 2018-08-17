@@ -34,6 +34,7 @@ public class SnapshotDescriptorTest {
         .build();
     assertEquals(2, descriptor.index());
     assertEquals(3, descriptor.timestamp());
+    assertEquals(1, descriptor.version());
   }
 
   @Test
@@ -48,6 +49,7 @@ public class SnapshotDescriptorTest {
     descriptor = new SnapshotDescriptor(buffer);
     assertEquals(2, descriptor.index());
     assertEquals(3, descriptor.timestamp());
+    assertEquals(1, descriptor.version());
   }
 
 }
