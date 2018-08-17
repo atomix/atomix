@@ -1,6 +1,6 @@
 # Dockerfile
 
-FROM anapsix/alpine-java:8_server-jre
+FROM openjdk/8-jdk-alpine
 
 ARG VERSION
 RUN mkdir -p /root/atomix
