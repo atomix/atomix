@@ -29,6 +29,7 @@ import io.atomix.utils.serializer.Serializer;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 
@@ -145,15 +146,21 @@ public abstract class AbstractAtomicLockService extends AbstractPrimitiveService
   @Override
   public void unlock(int id) {
     if (lock != null) {
-      // If the commit's session does not match the current lock holder, ignore the request.
-      if (!lock.session.equals(getCurrentSession().sessionId())) {
-        return;
-      }
-
-      // If the current lock ID does not match the requested lock ID, ignore the request. This ensures that
-      // internal releases of locks that were never acquired by the client-side primitive do not cause
-      // legitimate locks to be unlocked.
-      if (lock.id != id) {
+      // If the commit's session does not match the current lock holder, preserve the existing lock.
+      // If the current lock ID does not match the requested lock ID, preserve the existing lock.
+      // However, ensure the associated lock request is removed from the queue.
+      if (!lock.session.equals(getCurrentSession().sessionId()) || lock.id != id) {
+        Iterator<LockHolder> iterator = queue.iterator();
+        while (iterator.hasNext()) {
+          LockHolder lock = iterator.next();
+          if (lock.session.equals(getCurrentSession().sessionId()) && lock.id == id) {
+            iterator.remove();
+            Scheduled timer = timers.remove(lock.index);
+            if (timer != null) {
+              timer.cancel();
+            }
+          }
+        }
         return;
       }
 
