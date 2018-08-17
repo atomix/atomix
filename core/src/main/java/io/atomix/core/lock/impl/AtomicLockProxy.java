@@ -64,6 +64,8 @@ public class AtomicLockProxy
     LockAttempt attempt = attempts.remove(id);
     if (attempt != null) {
       attempt.complete(new Version(version));
+    } else {
+      getProxyClient().acceptBy(name(), service -> service.unlock(id));
     }
   }
 
