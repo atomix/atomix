@@ -31,6 +31,8 @@ import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.utils.concurrent.BlockingAwareThreadPoolContextFactory;
 import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +72,14 @@ public class PrimaryBackupPartitionGroup implements ManagedPartitionGroup {
     @Override
     public String name() {
       return NAME;
+    }
+
+    @Override
+    public Namespace namespace() {
+      return Namespace.builder()
+          .nextId(Namespaces.BEGIN_USER_CUSTOM_ID + 200)
+          .register(PrimaryBackupPartitionGroupConfig.class)
+          .build();
     }
 
     @Override

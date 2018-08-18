@@ -20,6 +20,7 @@ import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.ConfiguredType;
 import io.atomix.utils.config.Configured;
+import io.atomix.utils.serializer.Namespace;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -34,6 +35,13 @@ public interface PartitionGroup extends Configured<PartitionGroupConfig> {
    * Partition group type.
    */
   interface Type<C extends PartitionGroupConfig<C>> extends ConfiguredType<C> {
+
+    /**
+     * Returns the partition group namespace.
+     *
+     * @return the partition group namespace
+     */
+    Namespace namespace();
 
     /**
      * Creates a new partition group instance.
