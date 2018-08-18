@@ -33,6 +33,8 @@ import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.memory.MemorySize;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Namespaces;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +79,17 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     @Override
     public String name() {
       return NAME;
+    }
+
+    @Override
+    public Namespace namespace() {
+      return Namespace.builder()
+          .nextId(Namespaces.BEGIN_USER_CUSTOM_ID + 100)
+          .register(RaftPartitionGroupConfig.class)
+          .register(RaftStorageConfig.class)
+          .register(RaftCompactionConfig.class)
+          .register(StorageLevel.class)
+          .build();
     }
 
     @Override
