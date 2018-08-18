@@ -73,6 +73,7 @@ public final class FollowerRole extends ActiveRole {
     raft.getThreadContext().execute(() -> {
       RaftMember leader = raft.getLeader();
       if (leader != null && event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED && event.subject().id().equals(leader.memberId())) {
+        raft.setLeader(null);
         sendPollRequests();
       }
     });
@@ -131,7 +132,7 @@ public final class FollowerRole extends ActiveRole {
     final Quorum quorum = new Quorum(raft.getCluster().getQuorum(), (elected) -> {
       // If a majority of the cluster indicated they would vote for us then transition to candidate.
       complete.set(true);
-      if (elected) {
+      if (raft.getLeader() == null && elected) {
         raft.transition(RaftServer.Role.CANDIDATE);
       } else {
         resetHeartbeatTimeout();
