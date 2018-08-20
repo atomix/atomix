@@ -160,7 +160,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixCluster.class);
-  private static final Version VERSION = Version.from(3, 0, 0, "SNAPSHOT");
+  private static final Version VERSION = Version.from(3, 0, 0, null);
 
   protected final ManagedMessagingService messagingService;
   protected final ManagedBroadcastService broadcastService;
