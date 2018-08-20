@@ -38,6 +38,7 @@ public class VersionTest {
     assertTrue(Version.from("1.0.0-rc2").compareTo(Version.from("1.0.0-rc1")) > 0);
     assertTrue(Version.from("1.0.0-rc1").compareTo(Version.from("1.0.0-beta1")) > 0);
     assertTrue(Version.from("2.0.0-beta1").compareTo(Version.from("1.0.0")) > 0);
+    assertTrue(Version.from("1.0.0-alpha1").compareTo(Version.from("1.0.0-SNAPSHOT")) > 0);
   }
 
   @Test
@@ -46,6 +47,7 @@ public class VersionTest {
     assertEquals("1.0.0-alpha1", Version.from("1.0.0-alpha1").toString());
     assertEquals("1.0.0-beta1", Version.from("1.0.0-beta1").toString());
     assertEquals("1.0.0-rc1", Version.from("1.0.0-rc1").toString());
+    assertEquals("1.0.0-SNAPSHOT", Version.from("1.0.0-SNAPSHOT").toString());
   }
 
   @Test

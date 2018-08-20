@@ -15,6 +15,7 @@
  */
 package io.atomix.cluster;
 
+import io.atomix.utils.Version;
 import io.atomix.utils.net.Address;
 
 import java.util.Objects;
@@ -192,6 +193,15 @@ public class Member extends Node {
    */
   public Properties properties() {
     return properties;
+  }
+
+  /**
+   * Returns the node version.
+   *
+   * @return the node version
+   */
+  public Version version() {
+    return null;
   }
 
   @Override

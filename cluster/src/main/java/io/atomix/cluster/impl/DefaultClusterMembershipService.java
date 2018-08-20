@@ -29,6 +29,7 @@ import io.atomix.cluster.Node;
 import io.atomix.cluster.discovery.ManagedNodeDiscoveryService;
 import io.atomix.cluster.discovery.NodeDiscoveryEvent;
 import io.atomix.cluster.discovery.NodeDiscoveryEventListener;
+import io.atomix.utils.Version;
 import io.atomix.utils.event.AbstractListenerManager;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.Namespace;
@@ -37,6 +38,7 @@ import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -67,7 +69,6 @@ public class DefaultClusterMembershipService
           .register(Namespaces.BASIC)
           .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
           .register(MemberId.class)
-          .register(ClusterHeartbeat.class)
           .register(StatefulMember.class)
           .register(new AddressSerializer(), Address.class)
           .build("ClusterMembershipService"));
@@ -91,6 +92,7 @@ public class DefaultClusterMembershipService
 
   public DefaultClusterMembershipService(
       Member localMember,
+      Version version,
       ManagedNodeDiscoveryService discoveryService,
       BootstrapService bootstrapService,
       MembershipConfig config) {
@@ -103,7 +105,8 @@ public class DefaultClusterMembershipService
         localMember.zone(),
         localMember.rack(),
         localMember.host(),
-        localMember.properties());
+        localMember.properties(),
+        version);
   }
 
   @Override
@@ -227,7 +230,7 @@ public class DefaultClusterMembershipService
         post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, localMember));
       }
 
-      if (!localMember.properties().equals(remoteMember.properties())) {
+      if (!Objects.equals(localMember.version(), remoteMember.version()) | !localMember.properties().equals(remoteMember.properties())) {
         LOGGER.info("{} - Member updated: {}", remoteMember.id(), remoteMember);
         members.put(remoteMember.id(), remoteMember);
         post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.METADATA_CHANGED, remoteMember));

@@ -103,6 +103,7 @@ import io.atomix.protocols.raft.test.protocol.LocalRaftProtocolFactory;
 import io.atomix.protocols.raft.test.protocol.RaftClientMessagingProtocol;
 import io.atomix.protocols.raft.test.protocol.RaftServerMessagingProtocol;
 import io.atomix.storage.StorageLevel;
+import io.atomix.utils.Version;
 import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.Namespace;
@@ -503,6 +504,7 @@ public class RaftPerformanceTest implements Runnable {
         .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
         .withMembershipService(new DefaultClusterMembershipService(
             member,
+            Version.from("1.0.0"),
             new DefaultNodeDiscoveryService(bootstrapService, member, new BootstrapDiscoveryProvider(members)),
             bootstrapService,
             new MembershipConfig()))
