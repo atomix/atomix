@@ -214,6 +214,36 @@
   </dependencies>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>buildnumber-maven-plugin</artifactId>
+          <version>1.4</version>
+          <configuration>
+            <revisionOnScmFailure>N/A</revisionOnScmFailure>
+            <format>{0} (revision {1} built on {2,date,yyyy-MM-dd HH:mm:ss})</format>
+            <items>
+              <item>${project.version}</item>
+              <item>scmVersion</item>
+              <item>timestamp</item>
+            </items>
+            <shortRevisionLength>6</shortRevisionLength>
+            <doCheck>false</doCheck>
+            <doUpdate>false</doUpdate>
+          </configuration>
+          <executions>
+            <execution>
+              <id>configure-buildnumber</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>create</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

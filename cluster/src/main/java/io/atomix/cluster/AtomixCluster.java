@@ -46,7 +46,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
@@ -282,7 +285,13 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
 
   protected CompletableFuture<Void> completeStartup() {
     started.set(true);
-    LOGGER.info("Started");
+    final Properties properties = new Properties();
+    try (final InputStream stream = getClass().getResourceAsStream("atomix.properties")) {
+      properties.load(stream);
+    } catch (IOException ignore) {
+      // ignore
+    }
+    LOGGER.info("Started " + properties.getProperty("atomixBuildNumber", "SNAPSHOT"));
     return CompletableFuture.completedFuture(null);
   }
 
