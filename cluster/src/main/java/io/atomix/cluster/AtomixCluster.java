@@ -36,6 +36,7 @@ import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
 import io.atomix.cluster.messaging.impl.NettyBroadcastService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.utils.Managed;
+import io.atomix.utils.Version;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -159,6 +160,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixCluster.class);
+  private static final Version VERSION = Version.from(3, 0, 0, "SNAPSHOT");
 
   protected final ManagedMessagingService messagingService;
   protected final ManagedBroadcastService broadcastService;
@@ -172,7 +174,9 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   private final AtomicBoolean started = new AtomicBoolean();
 
   public AtomixCluster(String configFile) {
-    this(loadConfig(new File(System.getProperty("atomix.root", System.getProperty("user.dir")), configFile), Thread.currentThread().getContextClassLoader()));
+    this(loadConfig(
+        new File(System.getProperty("atomix.root", System.getProperty("user.dir")), configFile),
+        Thread.currentThread().getContextClassLoader()));
   }
 
   public AtomixCluster(File configFile) {
@@ -389,6 +393,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
         .build();
     return new DefaultClusterMembershipService(
         localMember,
+        VERSION,
         new DefaultNodeDiscoveryService(bootstrapService, localMember, discoveryProvider),
         bootstrapService,
         config.getMembershipConfig());

@@ -26,7 +26,6 @@ import static java.lang.Integer.parseInt;
  * Atomix software version.
  */
 public final class Version implements Comparable<Version> {
-  private static final String FORMAT = "%d.%d.%d.%s";
 
   /**
    * Returns a new version from the given version string.
@@ -167,6 +166,8 @@ public final class Version implements Comparable<Version> {
     public static Build from(String build) {
       if (build == null) {
         return new Build(Type.FINAL, 0);
+      } else if (build.equalsIgnoreCase(Type.SNAPSHOT.name())) {
+        return new Build(Type.SNAPSHOT, 0);
       }
 
       for (Type type : Type.values()) {
@@ -221,6 +222,7 @@ public final class Version implements Comparable<Version> {
      * Build type.
      */
     private enum Type {
+      SNAPSHOT("snapshot"),
       ALPHA("alpha"),
       BETA("beta"),
       RC("rc"),
@@ -233,7 +235,13 @@ public final class Version implements Comparable<Version> {
       }
 
       String format(int version) {
-        return name != null ? String.format("%s%d", name, version) : null;
+        if (name == null) {
+          return null;
+        } else if (name.equals("snapshot")) {
+          return "SNAPSHOT";
+        } else {
+          return String.format("%s%d", name, version);
+        }
       }
 
       @Override
