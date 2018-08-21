@@ -99,150 +99,148 @@ public abstract class AbstractLogTest {
   @Test
   @SuppressWarnings("unchecked")
   public void testLogWriteRead() throws Exception {
-    RaftLog log = createLog();
-    RaftLogWriter writer = log.writer();
-    RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.ALL);
+    try (RaftLog log = createLog()) {
+      RaftLogWriter writer = log.writer();
+      RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.ALL);
 
-    // Append a couple entries.
-    Indexed<RaftLogEntry> indexed;
-    assertEquals(1, writer.getNextIndex());
-    indexed = writer.append(ENTRY);
-    assertEquals(1, indexed.index());
+      // Append a couple entries.
+      Indexed<RaftLogEntry> indexed;
+      assertEquals(1, writer.getNextIndex());
+      indexed = writer.append(ENTRY);
+      assertEquals(1, indexed.index());
 
-    assertEquals(2, writer.getNextIndex());
-    writer.append(new Indexed<>(2, ENTRY, 0));
-    reader.reset(2);
-    indexed = reader.next();
-    assertEquals(2, indexed.index());
-    assertFalse(reader.hasNext());
+      assertEquals(2, writer.getNextIndex());
+      writer.append(new Indexed<>(2, ENTRY, 0));
+      reader.reset(2);
+      indexed = reader.next();
+      assertEquals(2, indexed.index());
+      assertFalse(reader.hasNext());
 
-    // Test reading an entry
-    Indexed<TestEntry> entry1;
-    reader.reset();
-    entry1 = (Indexed) reader.next();
-    assertEquals(1, entry1.index());
-    assertEquals(1, entry1.entry().term());
-    assertEquals(entry1, reader.getCurrentEntry());
-    assertEquals(1, reader.getCurrentIndex());
+      // Test reading an entry
+      Indexed<TestEntry> entry1;
+      reader.reset();
+      entry1 = (Indexed) reader.next();
+      assertEquals(1, entry1.index());
+      assertEquals(1, entry1.entry().term());
+      assertEquals(entry1, reader.getCurrentEntry());
+      assertEquals(1, reader.getCurrentIndex());
 
-    // Test reading a second entry
-    Indexed<TestEntry> entry2;
-    assertTrue(reader.hasNext());
-    assertEquals(2, reader.getNextIndex());
-    entry2 = (Indexed) reader.next();
-    assertEquals(2, entry2.index());
-    assertEquals(1, entry2.entry().term());
-    assertEquals(entry2, reader.getCurrentEntry());
-    assertEquals(2, reader.getCurrentIndex());
-    assertFalse(reader.hasNext());
+      // Test reading a second entry
+      Indexed<TestEntry> entry2;
+      assertTrue(reader.hasNext());
+      assertEquals(2, reader.getNextIndex());
+      entry2 = (Indexed) reader.next();
+      assertEquals(2, entry2.index());
+      assertEquals(1, entry2.entry().term());
+      assertEquals(entry2, reader.getCurrentEntry());
+      assertEquals(2, reader.getCurrentIndex());
+      assertFalse(reader.hasNext());
 
-    // Test opening a new reader and reading from the log.
-    reader = log.openReader(1, RaftLogReader.Mode.ALL);
-    assertTrue(reader.hasNext());
-    entry1 = (Indexed) reader.next();
-    assertEquals(1, entry1.index());
-    assertEquals(1, entry1.entry().term());
-    assertEquals(entry1, reader.getCurrentEntry());
-    assertEquals(1, reader.getCurrentIndex());
-    assertTrue(reader.hasNext());
+      // Test opening a new reader and reading from the log.
+      reader = log.openReader(1, RaftLogReader.Mode.ALL);
+      assertTrue(reader.hasNext());
+      entry1 = (Indexed) reader.next();
+      assertEquals(1, entry1.index());
+      assertEquals(1, entry1.entry().term());
+      assertEquals(entry1, reader.getCurrentEntry());
+      assertEquals(1, reader.getCurrentIndex());
+      assertTrue(reader.hasNext());
 
-    assertTrue(reader.hasNext());
-    assertEquals(2, reader.getNextIndex());
-    entry2 = (Indexed) reader.next();
-    assertEquals(2, entry2.index());
-    assertEquals(1, entry2.entry().term());
-    assertEquals(entry2, reader.getCurrentEntry());
-    assertEquals(2, reader.getCurrentIndex());
-    assertFalse(reader.hasNext());
+      assertTrue(reader.hasNext());
+      assertEquals(2, reader.getNextIndex());
+      entry2 = (Indexed) reader.next();
+      assertEquals(2, entry2.index());
+      assertEquals(1, entry2.entry().term());
+      assertEquals(entry2, reader.getCurrentEntry());
+      assertEquals(2, reader.getCurrentIndex());
+      assertFalse(reader.hasNext());
 
-    // Reset the reader.
-    reader.reset();
+      // Reset the reader.
+      reader.reset();
 
-    // Test opening a new reader and reading from the log.
-    reader = log.openReader(1, RaftLogReader.Mode.ALL);
-    assertTrue(reader.hasNext());
-    entry1 = (Indexed) reader.next();
-    assertEquals(1, entry1.index());
-    assertEquals(1, entry1.entry().term());
-    assertEquals(entry1, reader.getCurrentEntry());
-    assertEquals(1, reader.getCurrentIndex());
-    assertTrue(reader.hasNext());
+      // Test opening a new reader and reading from the log.
+      reader = log.openReader(1, RaftLogReader.Mode.ALL);
+      assertTrue(reader.hasNext());
+      entry1 = (Indexed) reader.next();
+      assertEquals(1, entry1.index());
+      assertEquals(1, entry1.entry().term());
+      assertEquals(entry1, reader.getCurrentEntry());
+      assertEquals(1, reader.getCurrentIndex());
+      assertTrue(reader.hasNext());
 
-    assertTrue(reader.hasNext());
-    assertEquals(2, reader.getNextIndex());
-    entry2 = (Indexed) reader.next();
-    assertEquals(2, entry2.index());
-    assertEquals(1, entry2.entry().term());
-    assertEquals(entry2, reader.getCurrentEntry());
-    assertEquals(2, reader.getCurrentIndex());
-    assertFalse(reader.hasNext());
+      assertTrue(reader.hasNext());
+      assertEquals(2, reader.getNextIndex());
+      entry2 = (Indexed) reader.next();
+      assertEquals(2, entry2.index());
+      assertEquals(1, entry2.entry().term());
+      assertEquals(entry2, reader.getCurrentEntry());
+      assertEquals(2, reader.getCurrentIndex());
+      assertFalse(reader.hasNext());
 
-    // Truncate the log and write a different entry.
-    writer.truncate(1);
-    assertEquals(2, writer.getNextIndex());
-    writer.append(new Indexed<>(2, ENTRY, 0));
-    reader.reset(2);
-    indexed = reader.next();
-    assertEquals(2, indexed.index());
-    assertEquals(1, indexed.entry().term());
+      // Truncate the log and write a different entry.
+      writer.truncate(1);
+      assertEquals(2, writer.getNextIndex());
+      writer.append(new Indexed<>(2, ENTRY, 0));
+      reader.reset(2);
+      indexed = reader.next();
+      assertEquals(2, indexed.index());
+      assertEquals(1, indexed.entry().term());
 
-    // Reset the reader to a specific index and read the last entry again.
-    reader.reset(2);
+      // Reset the reader to a specific index and read the last entry again.
+      reader.reset(2);
 
-    assertNotNull(reader.getCurrentEntry());
-    assertEquals(1, reader.getCurrentIndex());
-    assertEquals(1, reader.getCurrentEntry().index());
-    assertTrue(reader.hasNext());
-    assertEquals(2, reader.getNextIndex());
-    entry2 = (Indexed) reader.next();
-    assertEquals(2, entry2.index());
-    assertEquals(1, entry2.entry().term());
-    assertEquals(entry2, reader.getCurrentEntry());
-    assertEquals(2, reader.getCurrentIndex());
-    assertFalse(reader.hasNext());
+      assertNotNull(reader.getCurrentEntry());
+      assertEquals(1, reader.getCurrentIndex());
+      assertEquals(1, reader.getCurrentEntry().index());
+      assertTrue(reader.hasNext());
+      assertEquals(2, reader.getNextIndex());
+      entry2 = (Indexed) reader.next();
+      assertEquals(2, entry2.index());
+      assertEquals(1, entry2.entry().term());
+      assertEquals(entry2, reader.getCurrentEntry());
+      assertEquals(2, reader.getCurrentIndex());
+      assertFalse(reader.hasNext());
+    }
   }
 
   @Test
   public void testResetTruncateZero() throws Exception {
-    RaftLog log = createLog();
-    RaftLogWriter writer = log.writer();
-    RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.ALL);
+    try (RaftLog log = createLog()) {
+      RaftLogWriter writer = log.writer();
+      RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.ALL);
 
-    assertEquals(0, writer.getLastIndex());
-    writer.append(ENTRY);
-    writer.append(ENTRY);
-    writer.reset(1);
-    assertEquals(0, writer.getLastIndex());
-    writer.append(ENTRY);
-    assertEquals(1, reader.next().entry().term());
-    writer.reset(1);
-    assertEquals(0, writer.getLastIndex());
-    writer.append(ENTRY);
-    assertEquals(1, writer.getLastIndex());
-    assertEquals(1, writer.getLastEntry().index());
+      assertEquals(0, writer.getLastIndex());
+      writer.append(ENTRY);
+      writer.append(ENTRY);
+      writer.reset(1);
+      assertEquals(0, writer.getLastIndex());
+      writer.append(ENTRY);
+      assertEquals(1, reader.next().entry().term());
+      writer.reset(1);
+      assertEquals(0, writer.getLastIndex());
+      writer.append(ENTRY);
+      assertEquals(1, writer.getLastIndex());
+      assertEquals(1, writer.getLastEntry().index());
 
-    assertTrue(reader.hasNext());
-    assertEquals(1, reader.next().index());
+      assertTrue(reader.hasNext());
+      assertEquals(1, reader.next().index());
 
-    writer.truncate(0);
-    assertEquals(0, writer.getLastIndex());
-    assertNull(writer.getLastEntry());
-    writer.append(ENTRY);
-    assertEquals(1, writer.getLastIndex());
-    assertEquals(1, writer.getLastEntry().index());
+      writer.truncate(0);
+      assertEquals(0, writer.getLastIndex());
+      assertNull(writer.getLastEntry());
+      writer.append(ENTRY);
+      assertEquals(1, writer.getLastIndex());
+      assertEquals(1, writer.getLastEntry().index());
 
-    assertTrue(reader.hasNext());
-    assertEquals(1, reader.next().index());
+      assertTrue(reader.hasNext());
+      assertEquals(1, reader.next().index());
+    }
   }
 
   @Test
   public void testTruncateRead() throws Exception {
-    for (int i = 1; i <= 55; i++) {
-      if (i < 3) {
-        continue;
-      }
-
-      RaftLog log = createLog();
+    int i = 10;
+    try (RaftLog log = createLog()) {
       RaftLogWriter writer = log.writer();
       RaftLogReader reader = log.openReader(1);
 
@@ -271,118 +269,119 @@ public abstract class AbstractLogTest {
       entry = reader.next();
       assertEquals(i, entry.index());
       assertEquals(i + 2, entry.entry().term());
-
-      cleanupStorage();
     }
   }
 
   @Test
   @SuppressWarnings("unchecked")
   public void testWriteReadEntries() throws Exception {
-    RaftLog log = createLog();
-    RaftLogWriter writer = log.writer();
-    RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.ALL);
+    try (RaftLog log = createLog()) {
+      RaftLogWriter writer = log.writer();
+      RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.ALL);
 
-    for (int i = 1; i <= entriesPerSegment * 5; i++) {
-      writer.append(ENTRY);
-      assertTrue(reader.hasNext());
-      Indexed<TestEntry> entry;
-      entry = (Indexed) reader.next();
-      assertEquals(i, entry.index());
-      assertEquals(1, entry.entry().term());
-      assertEquals(32, entry.entry().bytes().length);
-      reader.reset(i);
-      entry = (Indexed) reader.next();
-      assertEquals(i, entry.index());
-      assertEquals(1, entry.entry().term());
-      assertEquals(32, entry.entry().bytes().length);
+      for (int i = 1; i <= entriesPerSegment * 5; i++) {
+        writer.append(ENTRY);
+        assertTrue(reader.hasNext());
+        Indexed<TestEntry> entry;
+        entry = (Indexed) reader.next();
+        assertEquals(i, entry.index());
+        assertEquals(1, entry.entry().term());
+        assertEquals(32, entry.entry().bytes().length);
+        reader.reset(i);
+        entry = (Indexed) reader.next();
+        assertEquals(i, entry.index());
+        assertEquals(1, entry.entry().term());
+        assertEquals(32, entry.entry().bytes().length);
 
-      if (i > 6) {
-        reader.reset(i - 5);
-        assertNotNull(reader.getCurrentEntry());
-        assertEquals(i - 6, reader.getCurrentIndex());
-        assertEquals(i - 6, reader.getCurrentEntry().index());
-        assertEquals(i - 5, reader.getNextIndex());
-        reader.reset(i + 1);
+        if (i > 6) {
+          reader.reset(i - 5);
+          assertNotNull(reader.getCurrentEntry());
+          assertEquals(i - 6, reader.getCurrentIndex());
+          assertEquals(i - 6, reader.getCurrentEntry().index());
+          assertEquals(i - 5, reader.getNextIndex());
+          reader.reset(i + 1);
+        }
+
+        writer.truncate(i - 1);
+        writer.append(ENTRY);
+
+        assertTrue(reader.hasNext());
+        reader.reset(i);
+        assertTrue(reader.hasNext());
+        entry = (Indexed) reader.next();
+        assertEquals(i, entry.index());
+        assertEquals(1, entry.entry().term());
+        assertEquals(32, entry.entry().bytes().length);
       }
-
-      writer.truncate(i - 1);
-      writer.append(ENTRY);
-
-      assertTrue(reader.hasNext());
-      reader.reset(i);
-      assertTrue(reader.hasNext());
-      entry = (Indexed) reader.next();
-      assertEquals(i, entry.index());
-      assertEquals(1, entry.entry().term());
-      assertEquals(32, entry.entry().bytes().length);
     }
   }
 
   @Test
   @SuppressWarnings("unchecked")
   public void testWriteReadCommittedEntries() throws Exception {
-    RaftLog log = createLog();
-    RaftLogWriter writer = log.writer();
-    RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
+    try (RaftLog log = createLog()) {
+      RaftLogWriter writer = log.writer();
+      RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
 
-    for (int i = 1; i <= entriesPerSegment * 5; i++) {
-      writer.append(ENTRY);
-      assertFalse(reader.hasNext());
-      writer.commit(i);
-      assertTrue(reader.hasNext());
-      Indexed<TestEntry> entry;
-      entry = (Indexed) reader.next();
-      assertEquals(i, entry.index());
-      assertEquals(1, entry.entry().term());
-      assertEquals(32, entry.entry().bytes().length);
-      reader.reset(i);
-      entry = (Indexed) reader.next();
-      assertEquals(i, entry.index());
-      assertEquals(1, entry.entry().term());
-      assertEquals(32, entry.entry().bytes().length);
+      for (int i = 1; i <= entriesPerSegment * 5; i++) {
+        writer.append(ENTRY);
+        assertFalse(reader.hasNext());
+        writer.commit(i);
+        assertTrue(reader.hasNext());
+        Indexed<TestEntry> entry;
+        entry = (Indexed) reader.next();
+        assertEquals(i, entry.index());
+        assertEquals(1, entry.entry().term());
+        assertEquals(32, entry.entry().bytes().length);
+        reader.reset(i);
+        entry = (Indexed) reader.next();
+        assertEquals(i, entry.index());
+        assertEquals(1, entry.entry().term());
+        assertEquals(32, entry.entry().bytes().length);
+      }
     }
   }
 
   @Test
   public void testReadAfterCompact() throws Exception {
-    RaftLog log = createLog();
-    RaftLogWriter writer = log.writer();
-    RaftLogReader uncommittedReader = log.openReader(1, RaftLogReader.Mode.ALL);
-    RaftLogReader committedReader = log.openReader(1, RaftLogReader.Mode.COMMITS);
+    try (RaftLog log = createLog()) {
+      RaftLogWriter writer = log.writer();
+      RaftLogReader uncommittedReader = log.openReader(1, RaftLogReader.Mode.ALL);
+      RaftLogReader committedReader = log.openReader(1, RaftLogReader.Mode.COMMITS);
 
-    for (int i = 1; i <= entriesPerSegment * 10; i++) {
-      assertEquals(i, writer.append(ENTRY).index());
+      for (int i = 1; i <= entriesPerSegment * 10; i++) {
+        assertEquals(i, writer.append(ENTRY).index());
+      }
+
+      assertEquals(1, uncommittedReader.getNextIndex());
+      assertTrue(uncommittedReader.hasNext());
+      assertEquals(1, committedReader.getNextIndex());
+      assertFalse(committedReader.hasNext());
+
+      writer.commit(entriesPerSegment * 9);
+
+      assertTrue(uncommittedReader.hasNext());
+      assertTrue(committedReader.hasNext());
+
+      for (int i = 1; i <= entriesPerSegment * 2.5; i++) {
+        assertEquals(i, uncommittedReader.next().index());
+        assertEquals(i, committedReader.next().index());
+      }
+
+      log.compact(entriesPerSegment * 5 + 1);
+
+      assertNull(uncommittedReader.getCurrentEntry());
+      assertEquals(0, uncommittedReader.getCurrentIndex());
+      assertTrue(uncommittedReader.hasNext());
+      assertEquals(entriesPerSegment * 5 + 1, uncommittedReader.getNextIndex());
+      assertEquals(entriesPerSegment * 5 + 1, uncommittedReader.next().index());
+
+      assertNull(committedReader.getCurrentEntry());
+      assertEquals(0, committedReader.getCurrentIndex());
+      assertTrue(committedReader.hasNext());
+      assertEquals(entriesPerSegment * 5 + 1, committedReader.getNextIndex());
+      assertEquals(entriesPerSegment * 5 + 1, committedReader.next().index());
     }
-
-    assertEquals(1, uncommittedReader.getNextIndex());
-    assertTrue(uncommittedReader.hasNext());
-    assertEquals(1, committedReader.getNextIndex());
-    assertFalse(committedReader.hasNext());
-
-    writer.commit(entriesPerSegment * 9);
-
-    assertTrue(uncommittedReader.hasNext());
-    assertTrue(committedReader.hasNext());
-
-    for (int i = 1; i <= entriesPerSegment * 2.5; i++) {
-      assertEquals(i, uncommittedReader.next().index());
-      assertEquals(i, committedReader.next().index());
-    }
-
-    log.compact(entriesPerSegment * 5 + 1);
-
-    assertNull(uncommittedReader.getCurrentEntry());
-    assertEquals(0, uncommittedReader.getCurrentIndex());
-    assertTrue(uncommittedReader.hasNext());
-    assertEquals(entriesPerSegment * 5 + 1, uncommittedReader.getNextIndex());
-    assertEquals(entriesPerSegment * 5 + 1, uncommittedReader.next().index());
-
-    assertNull(committedReader.getCurrentEntry());
-    assertEquals(0, committedReader.getCurrentIndex());
-    assertTrue(committedReader.hasNext());
-    assertEquals(entriesPerSegment * 5 + 1, committedReader.getNextIndex());
-    assertEquals(entriesPerSegment * 5 + 1, committedReader.next().index());
   }
 
   @Before
