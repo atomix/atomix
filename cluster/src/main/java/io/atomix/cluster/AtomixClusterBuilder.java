@@ -331,6 +331,6 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
 
   @Override
   public AtomixCluster build() {
-    return new AtomixCluster(config);
+    return new AtomixCluster(config, null);
   }
 }
