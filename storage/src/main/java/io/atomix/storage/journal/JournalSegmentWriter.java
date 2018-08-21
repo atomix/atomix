@@ -17,6 +17,7 @@ package io.atomix.storage.journal;
 
 import io.atomix.storage.StorageException;
 import io.atomix.storage.buffer.Buffer;
+import io.atomix.storage.buffer.Bytes;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.buffer.MappedBuffer;
@@ -24,6 +25,7 @@ import io.atomix.storage.buffer.SlicedBuffer;
 import io.atomix.storage.journal.index.JournalIndex;
 import io.atomix.utils.serializer.Serializer;
 
+import java.nio.BufferOverflowException;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
@@ -217,6 +219,11 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     // Serialize the entry.
     final byte[] bytes = serializer.encode(entry);
     final int length = bytes.length;
+
+    // Ensure there's enough space left in the buffer to store the entry.
+    if (buffer.remaining() < length + Bytes.INTEGER + Bytes.INTEGER) {
+      throw new BufferOverflowException();
+    }
 
     // If the entry length exceeds the maximum entry size then throw an exception.
     if (length > maxEntrySize) {
