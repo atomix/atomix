@@ -303,10 +303,17 @@ public class AtomixTest extends AbstractAtomixTest {
     assertEquals(1, client2.getPartitionService().getPartitionGroups().size());
 
     // client2 added to data node
+    assertEquals(ClusterMembershipEvent.Type.METADATA_CHANGED, dataListener.event().type());
+
+    // client2 added to data node
     assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, dataListener.event().type());
+    // client2 added to data node
+    assertEquals(ClusterMembershipEvent.Type.METADATA_CHANGED, dataListener.event().type());
 
     // client2 added to client node
     assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, clientListener.event().type());
+    // client2 added to client node
+    assertEquals(ClusterMembershipEvent.Type.METADATA_CHANGED, clientListener.event().type());
 
     client2.stop().get(30, TimeUnit.SECONDS);
 
