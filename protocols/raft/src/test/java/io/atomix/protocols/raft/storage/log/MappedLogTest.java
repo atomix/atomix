@@ -21,6 +21,10 @@ import io.atomix.storage.StorageLevel;
  * Disk log test.
  */
 public class MappedLogTest extends AbstractLogTest {
+  public MappedLogTest(int maxSegmentSize, int cacheSize) {
+    super(maxSegmentSize, cacheSize);
+  }
+
   @Override
   protected StorageLevel storageLevel() {
     return StorageLevel.MAPPED;
