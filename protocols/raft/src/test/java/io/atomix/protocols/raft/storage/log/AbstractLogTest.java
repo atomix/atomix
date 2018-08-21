@@ -15,18 +15,6 @@
  */
 package io.atomix.protocols.raft.storage.log;
 
-import io.atomix.cluster.MemberId;
-import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.cluster.RaftMember;
-import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
-import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
-import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
-import io.atomix.protocols.raft.storage.log.entry.ConfigurationEntry;
-import io.atomix.protocols.raft.storage.log.entry.InitializeEntry;
-import io.atomix.protocols.raft.storage.log.entry.KeepAliveEntry;
-import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
-import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
-import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.Indexed;
@@ -35,6 +23,8 @@ import io.atomix.utils.serializer.Serializer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -43,9 +33,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -58,43 +51,48 @@ import static org.junit.Assert.assertTrue;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@RunWith(Parameterized.class)
 public abstract class AbstractLogTest {
-  protected static final int MAX_ENTRIES_PER_SEGMENT = 10;
-  protected static final int MAX_SEGMENT_SIZE = 1024 * 8;
-  private static final Path PATH = Paths.get("target/test-logs/");
-
-  private static final Serializer serializer = Serializer.using(Namespace.builder()
-      .register(CloseSessionEntry.class)
-      .register(CommandEntry.class)
-      .register(ConfigurationEntry.class)
-      .register(InitializeEntry.class)
-      .register(KeepAliveEntry.class)
-      .register(MetadataEntry.class)
-      .register(OpenSessionEntry.class)
-      .register(QueryEntry.class)
+  private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(TestEntry.class)
-      .register(ArrayList.class)
-      .register(HashSet.class)
-      .register(DefaultRaftMember.class)
-      .register(MemberId.class)
-      .register(RaftMember.Type.class)
-      .register(ReadConsistency.class)
-      .register(Instant.class)
       .register(byte[].class)
       .build());
 
+  protected static final TestEntry ENTRY = new TestEntry(1, 32);
+  private static final Path PATH = Paths.get("target/test-logs/");
+
+  private final int maxSegmentSize;
+  private final int cacheSize;
+  protected final int entriesPerSegment;
+
+  protected AbstractLogTest(int maxSegmentSize, int cacheSize) {
+    this.maxSegmentSize = maxSegmentSize;
+    this.cacheSize = cacheSize;
+    this.entriesPerSegment = (maxSegmentSize - 64) / (SERIALIZER.encode(ENTRY).length + 8);
+  }
+
   protected abstract StorageLevel storageLevel();
+
+  @Parameterized.Parameters
+  public static Collection primeNumbers() {
+    List<Object[]> runs = new ArrayList<>();
+    for (int i = 1; i <= 20; i++) {
+      for (int j = 1; j <= 20; j++) {
+        runs.add(new Object[]{64 + (i * (SERIALIZER.encode(ENTRY).length + 8) + j), j});
+      }
+    }
+    return runs;
+  }
 
   protected RaftLog createLog() {
     return RaftLog.builder()
         .withName("test")
         .withDirectory(PATH.toFile())
-        .withSerializer(serializer)
+        .withSerializer(SERIALIZER)
         .withStorageLevel(storageLevel())
-        .withMaxEntriesPerSegment(MAX_ENTRIES_PER_SEGMENT)
-        .withMaxSegmentSize(MAX_SEGMENT_SIZE)
+        .withMaxSegmentSize(maxSegmentSize)
         .withIndexDensity(.2)
-        .withCacheSize(1)
+        .withCacheSize(cacheSize)
         .build();
   }
 
@@ -108,69 +106,52 @@ public abstract class AbstractLogTest {
     // Append a couple entries.
     Indexed<RaftLogEntry> indexed;
     assertEquals(1, writer.getNextIndex());
-    indexed = writer.append(new OpenSessionEntry(
-        1,
-        System.currentTimeMillis(),
-        "client",
-        "test1",
-        "test",
-        new byte[0],
-        ReadConsistency.LINEARIZABLE,
-        100,
-        1000));
+    indexed = writer.append(ENTRY);
     assertEquals(1, indexed.index());
 
     assertEquals(2, writer.getNextIndex());
-    writer.append(new Indexed<>(2, new CloseSessionEntry(1, System.currentTimeMillis(), 1, false, false), 0));
+    writer.append(new Indexed<>(2, ENTRY, 0));
     reader.reset(2);
     indexed = reader.next();
     assertEquals(2, indexed.index());
     assertFalse(reader.hasNext());
 
-    // Test reading the register entry.
-    Indexed<OpenSessionEntry> openSession;
+    // Test reading an entry
+    Indexed<TestEntry> entry1;
     reader.reset();
-    openSession = (Indexed) reader.next();
-    assertEquals(1, openSession.index());
-    assertEquals(1, openSession.entry().term());
-    assertEquals("test1", openSession.entry().serviceName());
-    assertEquals("test", openSession.entry().serviceType());
-    assertEquals(1000, openSession.entry().maxTimeout());
-    assertEquals(openSession, reader.getCurrentEntry());
+    entry1 = (Indexed) reader.next();
+    assertEquals(1, entry1.index());
+    assertEquals(1, entry1.entry().term());
+    assertEquals(entry1, reader.getCurrentEntry());
     assertEquals(1, reader.getCurrentIndex());
 
-    // Test reading the unregister entry.
-    Indexed<CloseSessionEntry> closeSession;
+    // Test reading a second entry
+    Indexed<TestEntry> entry2;
     assertTrue(reader.hasNext());
     assertEquals(2, reader.getNextIndex());
-    closeSession = (Indexed) reader.next();
-    assertEquals(2, closeSession.index());
-    assertEquals(1, closeSession.entry().term());
-    assertEquals(1, closeSession.entry().session());
-    assertEquals(closeSession, reader.getCurrentEntry());
+    entry2 = (Indexed) reader.next();
+    assertEquals(2, entry2.index());
+    assertEquals(1, entry2.entry().term());
+    assertEquals(entry2, reader.getCurrentEntry());
     assertEquals(2, reader.getCurrentIndex());
     assertFalse(reader.hasNext());
 
     // Test opening a new reader and reading from the log.
     reader = log.openReader(1, RaftLogReader.Mode.ALL);
     assertTrue(reader.hasNext());
-    openSession = (Indexed) reader.next();
-    assertEquals(1, openSession.index());
-    assertEquals(1, openSession.entry().term());
-    assertEquals("test1", openSession.entry().serviceName());
-    assertEquals("test", openSession.entry().serviceType());
-    assertEquals(1000, openSession.entry().maxTimeout());
-    assertEquals(openSession, reader.getCurrentEntry());
+    entry1 = (Indexed) reader.next();
+    assertEquals(1, entry1.index());
+    assertEquals(1, entry1.entry().term());
+    assertEquals(entry1, reader.getCurrentEntry());
     assertEquals(1, reader.getCurrentIndex());
     assertTrue(reader.hasNext());
 
     assertTrue(reader.hasNext());
     assertEquals(2, reader.getNextIndex());
-    closeSession = (Indexed) reader.next();
-    assertEquals(2, closeSession.index());
-    assertEquals(1, closeSession.entry().term());
-    assertEquals(1, closeSession.entry().session());
-    assertEquals(closeSession, reader.getCurrentEntry());
+    entry2 = (Indexed) reader.next();
+    assertEquals(2, entry2.index());
+    assertEquals(1, entry2.entry().term());
+    assertEquals(entry2, reader.getCurrentEntry());
     assertEquals(2, reader.getCurrentIndex());
     assertFalse(reader.hasNext());
 
@@ -180,34 +161,30 @@ public abstract class AbstractLogTest {
     // Test opening a new reader and reading from the log.
     reader = log.openReader(1, RaftLogReader.Mode.ALL);
     assertTrue(reader.hasNext());
-    openSession = (Indexed) reader.next();
-    assertEquals(1, openSession.index());
-    assertEquals(1, openSession.entry().term());
-    assertEquals("test1", openSession.entry().serviceName());
-    assertEquals("test", openSession.entry().serviceType());
-    assertEquals(1000, openSession.entry().maxTimeout());
-    assertEquals(openSession, reader.getCurrentEntry());
+    entry1 = (Indexed) reader.next();
+    assertEquals(1, entry1.index());
+    assertEquals(1, entry1.entry().term());
+    assertEquals(entry1, reader.getCurrentEntry());
     assertEquals(1, reader.getCurrentIndex());
     assertTrue(reader.hasNext());
 
     assertTrue(reader.hasNext());
     assertEquals(2, reader.getNextIndex());
-    closeSession = (Indexed) reader.next();
-    assertEquals(2, closeSession.index());
-    assertEquals(1, closeSession.entry().term());
-    assertEquals(1, closeSession.entry().session());
-    assertEquals(closeSession, reader.getCurrentEntry());
+    entry2 = (Indexed) reader.next();
+    assertEquals(2, entry2.index());
+    assertEquals(1, entry2.entry().term());
+    assertEquals(entry2, reader.getCurrentEntry());
     assertEquals(2, reader.getCurrentIndex());
     assertFalse(reader.hasNext());
 
     // Truncate the log and write a different entry.
     writer.truncate(1);
     assertEquals(2, writer.getNextIndex());
-    writer.append(new Indexed<>(2, new CloseSessionEntry(2, System.currentTimeMillis(), 1, false, false), 0));
+    writer.append(new Indexed<>(2, ENTRY, 0));
     reader.reset(2);
     indexed = reader.next();
     assertEquals(2, indexed.index());
-    assertEquals(2, indexed.entry().term());
+    assertEquals(1, indexed.entry().term());
 
     // Reset the reader to a specific index and read the last entry again.
     reader.reset(2);
@@ -217,11 +194,10 @@ public abstract class AbstractLogTest {
     assertEquals(1, reader.getCurrentEntry().index());
     assertTrue(reader.hasNext());
     assertEquals(2, reader.getNextIndex());
-    closeSession = (Indexed) reader.next();
-    assertEquals(2, closeSession.index());
-    assertEquals(2, closeSession.entry().term());
-    assertEquals(1, closeSession.entry().session());
-    assertEquals(closeSession, reader.getCurrentEntry());
+    entry2 = (Indexed) reader.next();
+    assertEquals(2, entry2.index());
+    assertEquals(1, entry2.entry().term());
+    assertEquals(entry2, reader.getCurrentEntry());
     assertEquals(2, reader.getCurrentIndex());
     assertFalse(reader.hasNext());
   }
@@ -233,15 +209,15 @@ public abstract class AbstractLogTest {
     RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.ALL);
 
     assertEquals(0, writer.getLastIndex());
-    writer.append(new InitializeEntry(1, System.currentTimeMillis()));
-    writer.append(new InitializeEntry(1, System.currentTimeMillis()));
+    writer.append(ENTRY);
+    writer.append(ENTRY);
     writer.reset(1);
     assertEquals(0, writer.getLastIndex());
-    writer.append(new InitializeEntry(2, System.currentTimeMillis()));
-    assertEquals(2, reader.next().entry().term());
+    writer.append(ENTRY);
+    assertEquals(1, reader.next().entry().term());
     writer.reset(1);
     assertEquals(0, writer.getLastIndex());
-    writer.append(new InitializeEntry(1, System.currentTimeMillis()));
+    writer.append(ENTRY);
     assertEquals(1, writer.getLastIndex());
     assertEquals(1, writer.getLastEntry().index());
 
@@ -251,7 +227,7 @@ public abstract class AbstractLogTest {
     writer.truncate(0);
     assertEquals(0, writer.getLastIndex());
     assertNull(writer.getLastEntry());
-    writer.append(new InitializeEntry(1, System.currentTimeMillis()));
+    writer.append(ENTRY);
     assertEquals(1, writer.getLastIndex());
     assertEquals(1, writer.getLastEntry().index());
 
@@ -307,8 +283,8 @@ public abstract class AbstractLogTest {
     RaftLogWriter writer = log.writer();
     RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.ALL);
 
-    for (int i = 1; i <= MAX_ENTRIES_PER_SEGMENT * 5; i++) {
-      writer.append(new TestEntry(1, 32));
+    for (int i = 1; i <= entriesPerSegment * 5; i++) {
+      writer.append(ENTRY);
       assertTrue(reader.hasNext());
       Indexed<TestEntry> entry;
       entry = (Indexed) reader.next();
@@ -331,7 +307,7 @@ public abstract class AbstractLogTest {
       }
 
       writer.truncate(i - 1);
-      writer.append(new TestEntry(1, 32));
+      writer.append(ENTRY);
 
       assertTrue(reader.hasNext());
       reader.reset(i);
@@ -350,8 +326,8 @@ public abstract class AbstractLogTest {
     RaftLogWriter writer = log.writer();
     RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
 
-    for (int i = 1; i <= MAX_ENTRIES_PER_SEGMENT * 5; i++) {
-      writer.append(new TestEntry(1, 32));
+    for (int i = 1; i <= entriesPerSegment * 5; i++) {
+      writer.append(ENTRY);
       assertFalse(reader.hasNext());
       writer.commit(i);
       assertTrue(reader.hasNext());
@@ -375,8 +351,8 @@ public abstract class AbstractLogTest {
     RaftLogReader uncommittedReader = log.openReader(1, RaftLogReader.Mode.ALL);
     RaftLogReader committedReader = log.openReader(1, RaftLogReader.Mode.COMMITS);
 
-    for (int i = 1; i <= MAX_ENTRIES_PER_SEGMENT * 10; i++) {
-      assertEquals(i, writer.append(new TestEntry(1, 32)).index());
+    for (int i = 1; i <= entriesPerSegment * 10; i++) {
+      assertEquals(i, writer.append(ENTRY).index());
     }
 
     assertEquals(1, uncommittedReader.getNextIndex());
@@ -384,29 +360,29 @@ public abstract class AbstractLogTest {
     assertEquals(1, committedReader.getNextIndex());
     assertFalse(committedReader.hasNext());
 
-    writer.commit(MAX_ENTRIES_PER_SEGMENT * 9);
+    writer.commit(entriesPerSegment * 9);
 
     assertTrue(uncommittedReader.hasNext());
     assertTrue(committedReader.hasNext());
 
-    for (int i = 1; i <= MAX_ENTRIES_PER_SEGMENT * 2.5; i++) {
+    for (int i = 1; i <= entriesPerSegment * 2.5; i++) {
       assertEquals(i, uncommittedReader.next().index());
       assertEquals(i, committedReader.next().index());
     }
 
-    log.compact(MAX_ENTRIES_PER_SEGMENT * 5 + 1);
+    log.compact(entriesPerSegment * 5 + 1);
 
     assertNull(uncommittedReader.getCurrentEntry());
     assertEquals(0, uncommittedReader.getCurrentIndex());
     assertTrue(uncommittedReader.hasNext());
-    assertEquals(MAX_ENTRIES_PER_SEGMENT * 5 + 1, uncommittedReader.getNextIndex());
-    assertEquals(MAX_ENTRIES_PER_SEGMENT * 5 + 1, uncommittedReader.next().index());
+    assertEquals(entriesPerSegment * 5 + 1, uncommittedReader.getNextIndex());
+    assertEquals(entriesPerSegment * 5 + 1, uncommittedReader.next().index());
 
     assertNull(committedReader.getCurrentEntry());
     assertEquals(0, committedReader.getCurrentIndex());
     assertTrue(committedReader.hasNext());
-    assertEquals(MAX_ENTRIES_PER_SEGMENT * 5 + 1, committedReader.getNextIndex());
-    assertEquals(MAX_ENTRIES_PER_SEGMENT * 5 + 1, committedReader.next().index());
+    assertEquals(entriesPerSegment * 5 + 1, committedReader.getNextIndex());
+    assertEquals(entriesPerSegment * 5 + 1, committedReader.next().index());
   }
 
   @Before
