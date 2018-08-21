@@ -46,10 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
@@ -163,7 +160,6 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixCluster.class);
-  private static final Version VERSION = Version.from(3, 0, 1, "SNAPSHOT");
 
   protected final ManagedMessagingService messagingService;
   protected final ManagedBroadcastService broadcastService;
@@ -179,18 +175,18 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   public AtomixCluster(String configFile) {
     this(loadConfig(
         new File(System.getProperty("atomix.root", System.getProperty("user.dir")), configFile),
-        Thread.currentThread().getContextClassLoader()));
+        Thread.currentThread().getContextClassLoader()), null);
   }
 
   public AtomixCluster(File configFile) {
-    this(loadConfig(configFile, Thread.currentThread().getContextClassLoader()));
+    this(loadConfig(configFile, Thread.currentThread().getContextClassLoader()), null);
   }
 
-  public AtomixCluster(ClusterConfig config) {
+  public AtomixCluster(ClusterConfig config, Version version) {
     this.messagingService = buildMessagingService(config);
     this.broadcastService = buildBroadcastService(config);
     this.discoveryProvider = buildLocationProvider(config);
-    this.membershipService = buildClusterMembershipService(config, this, discoveryProvider);
+    this.membershipService = buildClusterMembershipService(config, this, discoveryProvider, version);
     this.communicationService = buildClusterMessagingService(membershipService, messagingService);
     this.eventService = buildClusterEventService(membershipService, messagingService);
   }
@@ -285,13 +281,6 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
 
   protected CompletableFuture<Void> completeStartup() {
     started.set(true);
-    final Properties properties = new Properties();
-    try (final InputStream stream = getClass().getResourceAsStream("atomix.properties")) {
-      properties.load(stream);
-    } catch (IOException ignore) {
-      // ignore
-    }
-    LOGGER.info("Started " + properties.getProperty("atomixBuildNumber", "SNAPSHOT"));
     return CompletableFuture.completedFuture(null);
   }
 
@@ -390,7 +379,8 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   protected static ManagedClusterMembershipService buildClusterMembershipService(
       ClusterConfig config,
       BootstrapService bootstrapService,
-      NodeDiscoveryProvider discoveryProvider) {
+      NodeDiscoveryProvider discoveryProvider,
+      Version version) {
     // If the local node has not be configured, create a default node.
     Member localMember = Member.builder()
         .withId(config.getNodeConfig().getId())
@@ -402,7 +392,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
         .build();
     return new DefaultClusterMembershipService(
         localMember,
-        VERSION,
+        version,
         new DefaultNodeDiscoveryService(bootstrapService, localMember, discoveryProvider),
         bootstrapService,
         config.getMembershipConfig());
