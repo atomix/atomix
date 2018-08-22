@@ -102,6 +102,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -357,8 +358,9 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
 
   static {
     try {
-      BUILD = Resources.toString(Atomix.class.getClassLoader().getResource(VERSION_RESOURCE), StandardCharsets.UTF_8);
-    } catch (IOException e) {
+      BUILD = Resources.toString(checkNotNull(Atomix.class.getClassLoader().getResource(VERSION_RESOURCE),
+              VERSION_RESOURCE + " resource is null"), StandardCharsets.UTF_8);
+    } catch (IOException | NullPointerException e) {
       throw new ConfigurationException("Failed to load Atomix version", e);
     }
     VERSION = BUILD.trim().length() > 0 ? Version.from(BUILD.trim().split("\\s+")[0]) : null;
