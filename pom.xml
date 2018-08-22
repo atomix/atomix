@@ -250,7 +250,6 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven.surefire.plugin.version}</version>
         <configuration>
-          <skipTests>${env.SKIP_TESTS}</skipTests>
           <shutdown>kill</shutdown>
           <argLine>${argLine} ${argLine.extras} ${argLine.common}</argLine>
         </configuration>
@@ -361,6 +360,7 @@
         <version>2.1</version><!--$NO-MVN-MAN-VER$ -->
         <configuration>
           <allowTimestampedSnapshots>true</allowTimestampedSnapshots>
+          <arguments>-Psonatype-oss-release -DskipTests=${env.SKIP_TESTS}</arguments>
         </configuration>
       </plugin>
 
