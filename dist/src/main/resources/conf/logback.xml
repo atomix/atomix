@@ -47,7 +47,7 @@
         </encoder>
     </appender>
 
-    <logger name="io.atomix" level="INFO" />
+    <logger name="io.atomix" level="${atomix.level:-INFO}" />
     <logger name="io.netty.handler.logging.LoggingHandler" level="INFO"/>
 
     <root level="INFO">
