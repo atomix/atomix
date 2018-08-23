@@ -97,18 +97,6 @@
         <jdk>[1.9,)</jdk>
       </activation>
     </profile>
-    <!-- JDK11+ -->
-    <profile>
-        <id>java11</id>
-        <properties>
-          <!--argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseShenandoahGC -XX:+UseStringDeduplication -XX:-OmitStackTraceInFastThrow -Dio.atomix.whitelistPackages=io.atomix</argLine.common-->
-          <!-- jacoco version 0.8.1 does not work with java 11, see https://github.com/jacoco/jacoco/issues/663 -->
-          <jacoco.skip>true</jacoco.skip>
-        </properties>
-        <activation>
-            <jdk>[11,)</jdk>
-        </activation>
-    </profile>
   </profiles>
 
   <licenses>
@@ -383,7 +371,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.1</version>
+        <version>0.8.2</version>
         <executions>
           <execution>
             <id>prepare-agent</id>
