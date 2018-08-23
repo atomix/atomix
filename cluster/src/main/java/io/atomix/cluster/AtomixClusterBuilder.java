@@ -280,8 +280,23 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    *
    * @param interval the reachability broadcast interval
    * @return the cluster builder
+   * @deprecated since 3.0.2
    */
+  @Deprecated
   public AtomixClusterBuilder setBroadcastInterval(Duration interval) {
+    config.getMembershipConfig().setBroadcastInterval(interval);
+    return this;
+  }
+
+  /**
+   * Sets the reachability broadcast interval.
+   * <p>
+   * The broadcast interval is the interval at which heartbeats are sent to peers in the cluster.
+   *
+   * @param interval the reachability broadcast interval
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withBroadcastInterval(Duration interval) {
     config.getMembershipConfig().setBroadcastInterval(interval);
     return this;
   }
@@ -294,8 +309,24 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    *
    * @param threshold the reachability failure detection threshold
    * @return the cluster builder
+   * @deprecated since 3.0.2
    */
+  @Deprecated
   public AtomixClusterBuilder setReachabilityThreshold(int threshold) {
+    config.getMembershipConfig().setReachabilityThreshold(threshold);
+    return this;
+  }
+
+  /**
+   * Sets the reachability failure detection threshold.
+   * <p>
+   * Reachability of cluster members is determined using a phi-accrual failure detector. The reachability threshold
+   * is the phi threshold after which a peer will be determined to be unreachable.
+   *
+   * @param threshold the reachability failure detection threshold
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withReachabilityThreshold(int threshold) {
     config.getMembershipConfig().setReachabilityThreshold(threshold);
     return this;
   }
