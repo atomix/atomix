@@ -384,6 +384,26 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
       return withMaxEntrySize(new MemorySize(maxEntrySize));
     }
 
+    /**
+     * Enables flush on commit.
+     *
+     * @return the Raft partition group builder
+     */
+    public Builder withFlushOnCommit() {
+      return withFlushOnCommit(true);
+    }
+
+    /**
+     * Sets whether to flush logs to disk on commit.
+     *
+     * @param flushOnCommit whether to flush logs to disk on commit
+     * @return the Raft partition group  builder
+     */
+    public Builder withFlushOnCommit(boolean flushOnCommit) {
+      config.getStorageConfig().setFlushOnCommit(flushOnCommit);
+      return this;
+    }
+
     @Override
     public RaftPartitionGroup build() {
       return new RaftPartitionGroup(config);
