@@ -169,7 +169,9 @@ public class RaftStorage {
    * that are allowed to be stored in any segment in a {@link RaftLog}.
    *
    * @return The maximum number of entries per segment.
+   * @deprecated since 3.0.2
    */
+  @Deprecated
   public int maxLogEntriesPerSegment() {
     return maxEntriesPerSegment;
   }
@@ -521,7 +523,9 @@ public class RaftStorage {
      * @return The storage builder.
      * @throws IllegalArgumentException If the {@code maxEntriesPerSegment} not greater than the default max entries per
      *                                  segment
+     * @deprecated since 3.0.2
      */
+    @Deprecated
     public Builder withMaxEntriesPerSegment(int maxEntriesPerSegment) {
       checkArgument(maxEntriesPerSegment > 0, "max entries per segment must be positive");
       checkArgument(maxEntriesPerSegment <= DEFAULT_MAX_ENTRIES_PER_SEGMENT,
