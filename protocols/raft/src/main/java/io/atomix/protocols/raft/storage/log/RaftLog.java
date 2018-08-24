@@ -246,7 +246,9 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
      * @return The storage builder.
      * @throws IllegalArgumentException If the {@code maxEntriesPerSegment} not greater than the default max entries per
      *                                  segment
+     * @deprecated since 3.0.2
      */
+    @Deprecated
     public Builder withMaxEntriesPerSegment(int maxEntriesPerSegment) {
       journalBuilder.withMaxEntriesPerSegment(maxEntriesPerSegment);
       return this;
