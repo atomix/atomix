@@ -24,7 +24,7 @@
 
   <groupId>io.atomix</groupId>
   <artifactId>atomix-parent</artifactId>
-  <version>3.0.1-SNAPSHOT</version>
+  <version>3.0.2-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Atomix Parent Pom</name>
   <description>Distributed systems framework.</description>
@@ -96,18 +96,6 @@
       <activation>
         <jdk>[1.9,)</jdk>
       </activation>
-    </profile>
-    <!-- JDK11+ -->
-    <profile>
-        <id>java11</id>
-        <properties>
-          <!--argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseShenandoahGC -XX:+UseStringDeduplication -XX:-OmitStackTraceInFastThrow -Dio.atomix.whitelistPackages=io.atomix</argLine.common-->
-          <!-- jacoco version 0.8.1 does not work with java 11, see https://github.com/jacoco/jacoco/issues/663 -->
-          <jacoco.skip>true</jacoco.skip>
-        </properties>
-        <activation>
-            <jdk>[11,)</jdk>
-        </activation>
     </profile>
   </profiles>
 
@@ -214,13 +202,42 @@
   </dependencies>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>buildnumber-maven-plugin</artifactId>
+          <version>1.4</version>
+          <configuration>
+            <revisionOnScmFailure>N/A</revisionOnScmFailure>
+            <format>{0} (revision {1} built on {2,date,yyyy-MM-dd HH:mm:ss})</format>
+            <items>
+              <item>${project.version}</item>
+              <item>scmVersion</item>
+              <item>timestamp</item>
+            </items>
+            <shortRevisionLength>6</shortRevisionLength>
+            <doCheck>false</doCheck>
+            <doUpdate>false</doUpdate>
+          </configuration>
+          <executions>
+            <execution>
+              <id>configure-buildnumber</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>create</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven.surefire.plugin.version}</version>
         <configuration>
-          <skipTests>${env.SKIP_TESTS}</skipTests>
           <shutdown>kill</shutdown>
           <argLine>${argLine} ${argLine.extras} ${argLine.common}</argLine>
           <includes>
@@ -334,6 +351,7 @@
         <version>2.1</version><!--$NO-MVN-MAN-VER$ -->
         <configuration>
           <allowTimestampedSnapshots>true</allowTimestampedSnapshots>
+          <arguments>-Psonatype-oss-release -DskipTests=${env.SKIP_TESTS}</arguments>
         </configuration>
       </plugin>
 
@@ -356,7 +374,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.1</version>
+        <version>0.8.2</version>
         <executions>
           <execution>
             <id>prepare-agent</id>

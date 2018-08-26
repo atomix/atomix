@@ -300,7 +300,9 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
      *
      * @param maxEntries The maximum number of entries in the segment.
      * @return The segment descriptor builder.
+     * @deprecated since 3.0.2
      */
+    @Deprecated
     public Builder withMaxEntries(int maxEntries) {
       buffer.writeInt(MAX_ENTRIES_POSITION, maxEntries);
       return this;

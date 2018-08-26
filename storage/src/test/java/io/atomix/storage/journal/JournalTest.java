@@ -15,6 +15,7 @@
  */
 package io.atomix.storage.journal;
 
+import io.atomix.storage.StorageException;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.serializer.Serializer;
 import org.junit.After;
@@ -32,6 +33,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Log test.
@@ -149,7 +151,7 @@ public class JournalTest {
   }
 
   @Test
-  public void testLoadSegments() throws Exception {
+  public void testLoadCorruptSegments() throws Exception {
     SegmentedJournal<TestEntry> journal = createJournal(StorageLevel.DISK);
     JournalSegment<TestEntry> segment1 = journal.createSegment(JournalSegmentDescriptor.builder()
         .withId(1)
@@ -169,12 +171,11 @@ public class JournalTest {
     segment2.close();
     journal.close();
 
-    journal = createJournal(StorageLevel.DISK);
-    JournalReader<TestEntry> reader = journal.openReader(1);
-    assertEquals(1, reader.getNextIndex());
-    assertTrue(reader.hasNext());
-    assertEquals(1, reader.next().index());
-    assertFalse(reader.hasNext());
+    try {
+      createJournal(StorageLevel.DISK);
+      fail();
+    } catch (StorageException e) {
+    }
   }
 
   @Before
