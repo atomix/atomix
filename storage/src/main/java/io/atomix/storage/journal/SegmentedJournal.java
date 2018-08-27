@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.SortedMap;
@@ -512,17 +513,19 @@ public class SegmentedJournal<E> implements Journal<E> {
     // Verify that all the segments in the log align with one another.
     JournalSegment<E> previousSegment = null;
     boolean corrupted = false;
-    for (JournalSegment<E> segment : segments.values()) {
+    Iterator<Map.Entry<Long, JournalSegment<E>>> iterator = segments.entrySet().iterator();
+    while (iterator.hasNext()) {
+      JournalSegment<E> segment = iterator.next().getValue();
       if (previousSegment != null && previousSegment.lastIndex() != segment.index() - 1) {
-        log.error("Journal appears to be corrupted! {} is not aligned with the prior segment {}", segment.file().file(), previousSegment.file().file());
+        log.warn("Journal is inconsistent. {} is not aligned with prior segment {}", segment.file().file(), previousSegment.file().file());
         corrupted = true;
       }
+      if (corrupted) {
+        segment.close();
+        segment.delete();
+        iterator.remove();
+      }
       previousSegment = segment;
-    }
-
-    // If the journal appears to be corrupted, throw an exception.
-    if (corrupted) {
-      throw new StorageException("Cannot load segments due to corrupt journal");
     }
 
     return segments.values();
