@@ -640,8 +640,8 @@ public class RaftServiceManager implements AutoCloseable {
   private void expireOrphanSessions(long timestamp) {
     // Iterate through registered sessions.
     for (RaftSession session : raft.getSessions().getSessions()) {
-      if (session.isTimedOut(timestamp)) {
-        logger.debug("Session expired in {} milliseconds: {}", timestamp - session.getLastUpdated(), session);
+      if (session.getService().deleted() && session.isTimedOut(timestamp)) {
+        logger.debug("Orphaned session expired in {} milliseconds: {}", timestamp - session.getLastUpdated(), session);
         session = raft.getSessions().removeSession(session.sessionId());
         if (session != null) {
           session.expire();
