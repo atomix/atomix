@@ -17,8 +17,6 @@ package io.atomix.protocols.raft.partition;
 
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
-import io.atomix.storage.StorageLevel;
-import io.atomix.utils.memory.MemorySize;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -28,7 +26,6 @@ import java.util.Set;
  */
 public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartitionGroupConfig> {
   private static final int DEFAULT_PARTITIONS = 7;
-  private static final String DATA_PREFIX = ".data";
 
   private Set<String> members = new HashSet<>();
   private int partitionSize;

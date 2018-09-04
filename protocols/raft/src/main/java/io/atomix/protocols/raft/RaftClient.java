@@ -23,6 +23,7 @@ import io.atomix.protocols.raft.impl.DefaultRaftClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.session.CommunicationStrategy;
 import io.atomix.protocols.raft.session.RaftSessionClient;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadModel;
 
 import java.util.Arrays;
@@ -189,6 +190,7 @@ public interface RaftClient {
     protected RaftClientProtocol protocol;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 16), 4);
+    protected ThreadContextFactory threadContextFactory;
 
     protected Builder(Collection<MemberId> cluster) {
       this.cluster = checkNotNull(cluster, "cluster cannot be null");
@@ -267,6 +269,18 @@ public interface RaftClient {
     public Builder withThreadPoolSize(int threadPoolSize) {
       checkArgument(threadPoolSize > 0, "threadPoolSize must be positive");
       this.threadPoolSize = threadPoolSize;
+      return this;
+    }
+
+    /**
+     * Sets the client thread context factory.
+     *
+     * @param threadContextFactory the client thread context factory
+     * @return the client builder
+     * @throws NullPointerException if the factory is null
+     */
+    public Builder withThreadContextFactory(ThreadContextFactory threadContextFactory) {
+      this.threadContextFactory = checkNotNull(threadContextFactory, "threadContextFactory cannot be null");
       return this;
     }
   }

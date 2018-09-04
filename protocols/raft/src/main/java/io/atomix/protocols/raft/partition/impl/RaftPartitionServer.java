@@ -27,6 +27,7 @@ import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageException;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
@@ -58,6 +59,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
   private final ClusterMembershipService membershipService;
   private final ClusterCommunicationService clusterCommunicator;
   private final PrimitiveTypeRegistry primitiveTypes;
+  private final ThreadContextFactory threadContextFactory;
   private RaftServer server;
 
   public RaftPartitionServer(
@@ -66,13 +68,15 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
       MemberId localMemberId,
       ClusterMembershipService membershipService,
       ClusterCommunicationService clusterCommunicator,
-      PrimitiveTypeRegistry primitiveTypes) {
+      PrimitiveTypeRegistry primitiveTypes,
+      ThreadContextFactory threadContextFactory) {
     this.partition = partition;
     this.config = config;
     this.localMemberId = localMemberId;
     this.membershipService = membershipService;
     this.clusterCommunicator = clusterCommunicator;
     this.primitiveTypes = primitiveTypes;
+    this.threadContextFactory = threadContextFactory;
   }
 
   @Override
@@ -163,6 +167,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
             .withFreeMemoryBuffer(config.getCompactionConfig().getFreeMemoryBuffer())
             .withSerializer(Serializer.using(RaftNamespaces.RAFT_STORAGE))
             .build())
+        .withThreadContextFactory(threadContextFactory)
         .build();
   }
 

@@ -31,7 +31,13 @@ import io.atomix.primitive.partition.PartitionMetadata;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
+import io.atomix.protocols.raft.RaftClient;
+import io.atomix.protocols.raft.impl.DefaultRaftClient;
 import io.atomix.storage.StorageLevel;
+import io.atomix.utils.concurrent.BlockingAwareThreadPoolContextFactory;
+import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.logging.ContextualLoggerFactory;
+import io.atomix.utils.logging.LoggerContext;
 import io.atomix.utils.memory.MemorySize;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
@@ -105,14 +111,17 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftPartitionGroup.class);
 
-  private static Collection<RaftPartition> buildPartitions(RaftPartitionGroupConfig config) {
+  private static Collection<RaftPartition> buildPartitions(
+      RaftPartitionGroupConfig config,
+      ThreadContextFactory threadContextFactory) {
     File partitionsDir = new File(config.getStorageConfig().getDirectory(config.getName()), "partitions");
     List<RaftPartition> partitions = new ArrayList<>(config.getPartitions());
     for (int i = 0; i < config.getPartitions(); i++) {
       partitions.add(new RaftPartition(
           PartitionId.from(config.getName(), i + 1),
           config,
-          new File(partitionsDir, String.valueOf(i + 1))));
+          new File(partitionsDir, String.valueOf(i + 1)),
+          threadContextFactory));
     }
     return partitions;
   }
@@ -120,15 +129,24 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   private final String name;
   private final RaftPartitionGroupConfig config;
   private final int partitionSize;
+  private final ThreadContextFactory threadContextFactory;
   private final Map<PartitionId, RaftPartition> partitions = Maps.newConcurrentMap();
   private final List<PartitionId> sortedPartitionIds = Lists.newCopyOnWriteArrayList();
   private Collection<PartitionMetadata> metadata;
 
   public RaftPartitionGroup(RaftPartitionGroupConfig config) {
+    Logger log = ContextualLoggerFactory.getLogger(DefaultRaftClient.class, LoggerContext.builder(RaftClient.class)
+        .addValue(config.getName())
+        .build());
     this.name = config.getName();
     this.config = config;
     this.partitionSize = config.getPartitionSize();
-    buildPartitions(config).forEach(p -> {
+
+    int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 16), 4);
+    this.threadContextFactory = new BlockingAwareThreadPoolContextFactory(
+        "raft-partition-group-" + name + "-%d", threadPoolSize, log);
+
+    buildPartitions(config, threadContextFactory).forEach(p -> {
       this.partitions.put(p.id(), p);
       this.sortedPartitionIds.add(p.id());
     });
@@ -231,6 +249,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
         .map(RaftPartition::close)
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenRun(() -> {
+      threadContextFactory.close();
       LOGGER.info("Stopped");
     });
   }
