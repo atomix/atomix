@@ -24,6 +24,7 @@ import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.session.RaftSessionClient;
 import io.atomix.utils.Managed;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
@@ -40,12 +41,18 @@ public class RaftPartitionClient implements PartitionClient, Managed<RaftPartiti
   private final RaftPartition partition;
   private final MemberId localMemberId;
   private final RaftClientProtocol protocol;
+  private final ThreadContextFactory threadContextFactory;
   private RaftClient client;
 
-  public RaftPartitionClient(RaftPartition partition, MemberId localMemberId, RaftClientProtocol protocol) {
+  public RaftPartitionClient(
+      RaftPartition partition,
+      MemberId localMemberId,
+      RaftClientProtocol protocol,
+      ThreadContextFactory threadContextFactory) {
     this.partition = partition;
     this.localMemberId = localMemberId;
     this.protocol = protocol;
+    this.threadContextFactory = threadContextFactory;
   }
 
   /**
@@ -101,6 +108,7 @@ public class RaftPartitionClient implements PartitionClient, Managed<RaftPartiti
         .withPartitionId(partition.id())
         .withMemberId(localMemberId)
         .withProtocol(protocol)
+        .withThreadContextFactory(threadContextFactory)
         .build();
   }
 }

@@ -27,6 +27,7 @@ import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.storage.StorageLevel;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.concurrent.ThreadModel;
 
 import java.net.InetAddress;
@@ -564,6 +565,7 @@ public interface RaftServer {
     protected PrimitiveTypeRegistry primitiveTypes;
     protected ThreadModel threadModel = DEFAULT_THREAD_MODEL;
     protected int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
+    protected ThreadContextFactory threadContextFactory;
 
     protected Builder(MemberId localMemberId) {
       this.localMemberId = checkNotNull(localMemberId, "localMemberId cannot be null");
@@ -696,6 +698,18 @@ public interface RaftServer {
     public Builder withThreadPoolSize(int threadPoolSize) {
       checkArgument(threadPoolSize > 0, "threadPoolSize must be positive");
       this.threadPoolSize = threadPoolSize;
+      return this;
+    }
+
+    /**
+     * Sets the client thread context factory.
+     *
+     * @param threadContextFactory the client thread context factory
+     * @return the server builder
+     * @throws NullPointerException if the factory is null
+     */
+    public Builder withThreadContextFactory(ThreadContextFactory threadContextFactory) {
+      this.threadContextFactory = checkNotNull(threadContextFactory, "threadContextFactory cannot be null");
       return this;
     }
   }

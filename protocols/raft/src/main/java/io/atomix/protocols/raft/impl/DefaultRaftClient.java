@@ -53,6 +53,7 @@ public class DefaultRaftClient implements RaftClient {
   private final Collection<MemberId> cluster;
   private final RaftClientProtocol protocol;
   private final ThreadContextFactory threadContextFactory;
+  private final boolean closeThreadFactoryOnClose;
   private final ThreadContext threadContext;
   private final RaftMetadataClient metadata;
   private final MemberSelectorManager selectorManager = new MemberSelectorManager();
@@ -64,7 +65,8 @@ public class DefaultRaftClient implements RaftClient {
       MemberId memberId,
       Collection<MemberId> cluster,
       RaftClientProtocol protocol,
-      ThreadContextFactory threadContextFactory) {
+      ThreadContextFactory threadContextFactory,
+      boolean closeThreadFactoryOnClose) {
     this.clientId = checkNotNull(clientId, "clientId cannot be null");
     this.partitionId = checkNotNull(partitionId, "partitionId cannot be null");
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
@@ -73,6 +75,7 @@ public class DefaultRaftClient implements RaftClient {
     this.threadContext = threadContextFactory.createContext();
     this.metadata = new DefaultRaftMetadataClient(clientId, protocol, selectorManager, threadContextFactory.createContext());
     this.sessionManager = new RaftSessionManager(clientId, memberId, protocol, selectorManager, threadContextFactory);
+    this.closeThreadFactoryOnClose = closeThreadFactoryOnClose;
   }
 
   @Override
@@ -176,7 +179,11 @@ public class DefaultRaftClient implements RaftClient {
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    return sessionManager.close().thenRunAsync(threadContextFactory::close);
+    return sessionManager.close().thenRunAsync(() -> {
+      if (closeThreadFactoryOnClose) {
+        threadContextFactory.close();
+      }
+    });
   }
 
   @Override
@@ -200,8 +207,19 @@ public class DefaultRaftClient implements RaftClient {
       Logger log = ContextualLoggerFactory.getLogger(DefaultRaftClient.class, LoggerContext.builder(RaftClient.class)
           .addValue(clientId)
           .build());
-      ThreadContextFactory threadContextFactory = threadModel.factory("raft-client-" + clientId + "-%d", threadPoolSize, log);
-      return new DefaultRaftClient(clientId, partitionId, memberId, cluster, protocol, threadContextFactory);
+
+      // If a ThreadContextFactory was not provided, create one and ensure it's closed when the client is stopped.
+      boolean closeThreadFactoryOnClose;
+      ThreadContextFactory threadContextFactory;
+      if (this.threadContextFactory == null) {
+        threadContextFactory = threadModel.factory("raft-client-" + clientId + "-%d", threadPoolSize, log);
+        closeThreadFactoryOnClose = true;
+      } else {
+        threadContextFactory = this.threadContextFactory;
+        closeThreadFactoryOnClose = false;
+      }
+
+      return new DefaultRaftClient(clientId, partitionId, memberId, cluster, protocol, threadContextFactory, closeThreadFactoryOnClose);
     }
   }
 }
