@@ -99,7 +99,7 @@
         </executions>
         <configuration>
           <repository>atomix/atomix</repository>
-          <tag>${project.version}</tag>
+          <tag>${dockerfile.version}</tag>
           <buildArgs>
             <VERSION>${project.version}</VERSION>
           </buildArgs>
