@@ -49,7 +49,7 @@ public abstract class DefaultDistributedCollectionService<T extends Collection<E
   protected static final int MAX_ITERATOR_BATCH_SIZE = 1000;
 
   private final Serializer serializer;
-  private T collection;
+  protected T collection;
   protected Map<Long, AbstractIteratorContext> iterators = Maps.newHashMap();
   private Set<SessionId> listeners = Sets.newHashSet();
 

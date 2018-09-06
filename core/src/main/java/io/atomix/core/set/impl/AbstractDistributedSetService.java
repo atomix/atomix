@@ -38,8 +38,8 @@ import static io.atomix.core.collection.impl.CollectionUpdateResult.writeLockCon
  * Default distributed set service.
  */
 public abstract class AbstractDistributedSetService<S extends Collection<E>, E> extends DefaultDistributedCollectionService<S, E> implements DistributedSetService<E> {
-  private Set<E> lockedElements = Sets.newHashSet();
-  private Map<TransactionId, TransactionLog<SetUpdate<E>>> transactions = Maps.newHashMap();
+  protected Set<E> lockedElements = Sets.newHashSet();
+  protected Map<TransactionId, TransactionLog<SetUpdate<E>>> transactions = Maps.newHashMap();
 
   public AbstractDistributedSetService(PrimitiveType primitiveType, S collection) {
     super(primitiveType, collection);

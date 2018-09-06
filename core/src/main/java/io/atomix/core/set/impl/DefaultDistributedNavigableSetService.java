@@ -15,14 +15,18 @@
  */
 package io.atomix.core.set.impl;
 
+import com.google.common.collect.Sets;
 import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.set.DistributedNavigableSetType;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 
 import java.util.Iterator;
 import java.util.NavigableSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -48,6 +52,22 @@ public class DefaultDistributedNavigableSetService<E extends Comparable<E>> exte
   @Override
   public Serializer serializer() {
     return serializer;
+  }
+
+  @Override
+  public void backup(BackupOutput output) {
+    output.writeObject(Sets.newHashSet(collection));
+    output.writeObject(lockedElements);
+    output.writeObject(transactions);
+  }
+
+  @Override
+  public void restore(BackupInput input) {
+    Set<E> elements = input.readObject();
+    collection = new ConcurrentSkipListSet<>();
+    collection.addAll(elements);
+    lockedElements = input.readObject();
+    transactions = input.readObject();
   }
 
   @Override
