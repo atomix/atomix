@@ -19,6 +19,8 @@ import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.collection.impl.DefaultDistributedCollectionService;
 import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.list.DistributedListType;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
@@ -55,6 +57,16 @@ public class DefaultDistributedListService extends DefaultDistributedCollectionS
 
   private List<String> list() {
     return collection();
+  }
+
+  @Override
+  public void backup(BackupOutput output) {
+    output.writeObject(new ArrayList<>(list()));
+  }
+
+  @Override
+  public void restore(BackupInput input) {
+    collection = Collections.synchronizedList(input.readObject());
   }
 
   @Override
