@@ -55,22 +55,6 @@ public class DefaultDistributedNavigableSetService<E extends Comparable<E>> exte
   }
 
   @Override
-  public void backup(BackupOutput output) {
-    output.writeObject(Sets.newHashSet(collection));
-    output.writeObject(lockedElements);
-    output.writeObject(transactions);
-  }
-
-  @Override
-  public void restore(BackupInput input) {
-    Set<E> elements = input.readObject();
-    collection = new ConcurrentSkipListSet<>();
-    collection.addAll(elements);
-    lockedElements = input.readObject();
-    transactions = input.readObject();
-  }
-
-  @Override
   public E lower(E e) {
     return set().lower(e);
   }
