@@ -51,14 +51,16 @@ public abstract class AbstractDistributedSetService<S extends Collection<E>, E> 
 
   @Override
   public void backup(BackupOutput output) {
-    super.backup(output);
+    output.writeObject(Sets.newHashSet(collection));
     output.writeObject(lockedElements);
     output.writeObject(transactions);
   }
 
   @Override
   public void restore(BackupInput input) {
-    super.restore(input);
+    Set<E> elements = input.readObject();
+    collection.clear();
+    collection.addAll(elements);
     lockedElements = input.readObject();
     transactions = input.readObject();
   }
