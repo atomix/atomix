@@ -24,7 +24,7 @@
 
   <groupId>io.atomix</groupId>
   <artifactId>atomix-parent</artifactId>
-  <version>3.0.5</version>
+  <version>3.0.6-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Atomix Parent Pom</name>
   <description>Distributed systems framework.</description>
