@@ -4,8 +4,8 @@ FROM java:8
 
 ARG VERSION
 RUN mkdir -p /opt/atomix
-COPY target/atomix-agent-${VERSION}.tar.gz /opt/atomix/atomix-agent-${VERSION}.tar.gz
-RUN tar -xvf /opt/atomix/atomix-agent-${VERSION}.tar.gz -C /opt/atomix && rm /opt/atomix/atomix-agent-${VERSION}.tar.gz
+COPY target/atomix.tar.gz /opt/atomix/atomix.tar.gz
+RUN tar -xvf /opt/atomix/atomix.tar.gz -C /opt/atomix && rm /opt/atomix/atomix.tar.gz
 
 WORKDIR /opt/atomix
 
