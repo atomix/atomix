@@ -74,7 +74,7 @@
             </goals>
             <phase>package</phase>
             <configuration>
-              <finalName>atomix-agent-${project.version}</finalName>
+              <finalName>atomix</finalName>
               <appendAssemblyId>false</appendAssemblyId>
               <descriptors>
                 <descriptor>src/main/assembly/assembly.xml</descriptor>
@@ -100,9 +100,6 @@
         <configuration>
           <repository>atomix/atomix</repository>
           <tag>${dockerfile.version}</tag>
-          <buildArgs>
-            <VERSION>${project.version}</VERSION>
-          </buildArgs>
         </configuration>
         <!-- See https://github.com/spotify/dockerfile-maven/issues/200 -->
         <dependencies>
