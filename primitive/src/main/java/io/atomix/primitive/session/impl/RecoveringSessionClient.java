@@ -177,7 +177,9 @@ public class RecoveringSessionClient implements SessionClient {
               .build());
           this.session = proxy;
           proxy.addStateChangeListener(this::onStateChange);
-          eventListeners.forEach(proxy::addEventListener);
+          if (!eventListeners.isEmpty()) {
+            eventListeners.forEach(proxy::addEventListener);
+          }
           onStateChange(PrimitiveState.CONNECTED);
         }
         future.complete(this);
