@@ -19,6 +19,7 @@ import io.atomix.cluster.ClusterConfig;
 import io.atomix.cluster.MemberConfig;
 import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.MulticastConfig;
+import io.atomix.cluster.NetworkConfig;
 import io.atomix.cluster.discovery.MulticastDiscoveryConfig;
 import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
 import io.atomix.core.map.AtomicMapConfig;
@@ -73,6 +74,12 @@ public class AtomixConfigTest {
     assertEquals("baz", node.getHost());
     assertEquals("bar", node.getProperties().getProperty("foo"));
     assertEquals("baz", node.getProperties().getProperty("bar"));
+
+    NetworkConfig network = cluster.getNetworkConfig();
+    assertEquals(2, network.getInterfaces().size());
+    assertEquals("127.0.0.1", network.getInterfaces().get(0));
+    assertEquals("0.0.0.0", network.getInterfaces().get(1));
+    assertEquals(5000, network.getPort().intValue());
 
     MulticastConfig multicast = cluster.getMulticastConfig();
     assertTrue(multicast.isEnabled());

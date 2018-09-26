@@ -310,6 +310,30 @@ public class AtomixBuilder extends AtomixClusterBuilder {
   }
 
   @Override
+  public AtomixBuilder withBindInterface(String iface) {
+    super.withBindInterface(iface);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withBindInterfaces(String... ifaces) {
+    super.withBindInterfaces(ifaces);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withBindInterfaces(Collection<String> ifaces) {
+    super.withBindInterfaces(ifaces);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withBindPort(int bindPort) {
+    super.withBindPort(bindPort);
+    return this;
+  }
+
+  @Override
   public AtomixBuilder withAddress(String address) {
     super.withAddress(address);
     return this;

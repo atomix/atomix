@@ -477,7 +477,7 @@ public class RaftPerformanceTest implements Runnable {
     ManagedMessagingService messagingService;
     if (USE_NETTY) {
       messagingService = (ManagedMessagingService) NettyMessagingService.builder()
-          .withAddress(member.address())
+          .withReturnAddress(member.address())
           .build()
           .start()
           .join();
@@ -530,7 +530,7 @@ public class RaftPerformanceTest implements Runnable {
 
     RaftClientProtocol protocol;
     if (USE_NETTY) {
-      MessagingService messagingService = NettyMessagingService.builder().withAddress(member.address()).build().start().join();
+      MessagingService messagingService = NettyMessagingService.builder().withReturnAddress(member.address()).build().start().join();
       protocol = new RaftClientMessagingProtocol(messagingService, protocolSerializer, addressMap::get);
     } else {
       protocol = protocolFactory.newClientProtocol(member.id());
