@@ -570,7 +570,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     // TODO: Make this faster:
     // http://normanmaurer.me/presentations/2014-facebook-eng-netty/slides.html#37.0
     bootstrap.channel(clientChannelClass);
-    bootstrap.remoteAddress(address.address(), address.port());
+    bootstrap.remoteAddress(address.address(true), address.port());
     if (enableNettyTls) {
       bootstrap.handler(new SslClientCommunicationChannelInitializer());
     } else {
@@ -603,12 +603,12 @@ public class NettyMessagingService implements ManagedMessagingService {
     b.bind(localAddress.port()).addListener((ChannelFutureListener) f -> {
       if (f.isSuccess()) {
         log.info("{} accepting incoming connections on port {}",
-            localAddress.address(), localAddress.port());
+            localAddress.address(true), localAddress.port());
         serverChannel = f.channel();
         future.complete(null);
       } else {
         log.warn("{} failed to bind to port {} due to {}",
-            localAddress.address(), localAddress.port(), f.cause());
+            localAddress.address(true), localAddress.port(), f.cause());
         future.completeExceptionally(f.cause());
       }
     });

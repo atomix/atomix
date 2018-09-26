@@ -199,7 +199,7 @@ public class AtomixAgent {
 
     rest.start().join();
 
-    LOGGER.info("HTTP server listening at {}:{}", atomix.getMembershipService().getLocalMember().address().address().getHostAddress(), httpPort);
+    LOGGER.info("HTTP server listening at {}:{}", atomix.getMembershipService().getLocalMember().host(), httpPort);
 
     synchronized (Atomix.class) {
       while (atomix.isRunning()) {

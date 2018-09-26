@@ -15,8 +15,6 @@
  */
 package io.atomix.cluster.impl;
 
-import io.atomix.cluster.AtomixCluster;
-import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
@@ -26,6 +24,7 @@ import io.atomix.cluster.MemberId;
 import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.TestBootstrapService;
+import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.messaging.impl.TestBroadcastServiceFactory;
 import io.atomix.cluster.messaging.impl.TestMessagingServiceFactory;
 import io.atomix.utils.Version;
