@@ -26,7 +26,7 @@ import io.atomix.utils.net.Address;
 public class AddressSerializer extends com.esotericsoftware.kryo.Serializer<Address> {
   @Override
   public void write(Kryo kryo, Output output, Address address) {
-    output.writeString(address.address().getHostAddress());
+    output.writeString(address.host());
     output.writeInt(address.port());
   }
 
