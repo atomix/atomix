@@ -15,6 +15,7 @@
  */
 package io.atomix.core;
 
+import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterMembershipService;
@@ -155,7 +156,7 @@ import static com.google.common.base.Preconditions.checkState;
  * </pre>
  */
 public class Atomix extends AtomixCluster implements PrimitivesService {
-  private static final List<String> RESOURCES = Arrays.asList("atomix", "defaults");
+  private static final String[] RESOURCES = System.getProperty("atomix.config.resources", "atomix").split(",");
 
   private static final String VERSION_RESOURCE = "VERSION";
 
@@ -269,7 +270,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         new PolymorphicTypeMapper("type", PrimitiveProtocolConfig.class, PrimitiveProtocol.Type.class),
         new PolymorphicTypeMapper("type", ProfileConfig.class, Profile.Type.class),
         new PolymorphicTypeMapper("type", NodeDiscoveryConfig.class, NodeDiscoveryProvider.Type.class));
-    return mapper.loadFiles(AtomixConfig.class, files, RESOURCES);
+    return mapper.loadFiles(AtomixConfig.class, files, Lists.newArrayList(RESOURCES));
   }
 
   /**

@@ -24,6 +24,7 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigList;
 import com.typesafe.config.ConfigMemorySize;
 import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigParseOptions;
 import com.typesafe.config.ConfigValue;
 import io.atomix.utils.Named;
 import io.atomix.utils.memory.MemorySize;
@@ -75,9 +76,9 @@ public class ConfigMapper {
     Config config = null;
     for (File file : files) {
       if (config == null) {
-        config = ConfigFactory.parseFile(file);
+        config = ConfigFactory.parseFile(file, ConfigParseOptions.defaults().setAllowMissing(false));
       } else {
-        config = config.withFallback(ConfigFactory.parseFile(file));
+        config = config.withFallback(ConfigFactory.parseFile(file, ConfigParseOptions.defaults().setAllowMissing(false)));
       }
     }
 
