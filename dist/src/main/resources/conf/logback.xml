@@ -15,10 +15,10 @@
   -->
 <configuration>
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${atomix.log}/atomix.log</file>
+        <file>${atomix.log.directory}/atomix.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${atomix.log}/atomix.log.%i</fileNamePattern>
+            <fileNamePattern>${atomix.log.directory}/atomix.log.%i</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>10</maxIndex>
         </rollingPolicy>
@@ -28,7 +28,7 @@
         </triggeringPolicy>
 
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>${atomix.log.file.level}</level>
         </filter>
 
         <encoder>
@@ -39,7 +39,7 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
+            <level>${atomix.log.console.level}</level>
         </filter>
 
         <encoder>
@@ -47,7 +47,7 @@
         </encoder>
     </appender>
 
-    <logger name="io.atomix" level="${atomix.level:-INFO}" />
+    <logger name="io.atomix" level="${atomix.log.level:-INFO}" />
     <logger name="io.netty.handler.logging.LoggingHandler" level="INFO"/>
 
     <root level="INFO">
