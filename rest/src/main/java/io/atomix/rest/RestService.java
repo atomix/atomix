@@ -46,7 +46,7 @@ public interface RestService {
    * REST service builder.
    */
   abstract class Builder implements io.atomix.utils.Builder<ManagedRestService> {
-    protected Address address;
+    protected Address address = Address.from("0.0.0.0", 5678);
     protected Atomix atomix;
 
     /**
