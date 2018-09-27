@@ -19,6 +19,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigList;
 import com.typesafe.config.ConfigMemorySize;
@@ -246,13 +247,41 @@ public class ConfigMapper {
 
   protected Object getValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName) {
     if (parameterClass == Boolean.class || parameterClass == boolean.class) {
-      return config.getBoolean(configPropName);
+      try {
+        return config.getBoolean(configPropName);
+      } catch (ConfigException.WrongType e) {
+        return Boolean.parseBoolean(config.getString(configPropName));
+      }
     } else if (parameterClass == Integer.class || parameterClass == int.class) {
-      return config.getInt(configPropName);
+      try {
+        return config.getInt(configPropName);
+      } catch (ConfigException.WrongType e) {
+        try {
+          return Integer.parseInt(config.getString(configPropName));
+        } catch (NumberFormatException e1) {
+          throw e;
+        }
+      }
     } else if (parameterClass == Double.class || parameterClass == double.class) {
-      return config.getDouble(configPropName);
+      try {
+        return config.getDouble(configPropName);
+      } catch (ConfigException.WrongType e) {
+        try {
+          return Double.parseDouble(config.getString(configPropName));
+        } catch (NumberFormatException e1) {
+          throw e;
+        }
+      }
     } else if (parameterClass == Long.class || parameterClass == long.class) {
-      return config.getLong(configPropName);
+      try {
+        return config.getLong(configPropName);
+      } catch (ConfigException.WrongType e) {
+        try {
+          return Long.parseLong(config.getString(configPropName));
+        } catch (NumberFormatException e1) {
+          throw e;
+        }
+      }
     } else if (parameterClass == String.class) {
       return config.getString(configPropName);
     } else if (parameterClass == Duration.class) {
@@ -335,13 +364,56 @@ public class ConfigMapper {
     }
 
     if (elementType == Boolean.class) {
-      return config.getBooleanList(configPropName);
+      try {
+        return config.getBooleanList(configPropName);
+      } catch (ConfigException.WrongType e) {
+        return config.getStringList(configPropName)
+            .stream()
+            .map(Boolean::parseBoolean)
+            .collect(Collectors.toList());
+      }
     } else if (elementType == Integer.class) {
-      return config.getIntList(configPropName);
+      try {
+        return config.getIntList(configPropName);
+      } catch (ConfigException.WrongType e) {
+        return config.getStringList(configPropName)
+            .stream()
+            .map(value -> {
+              try {
+                return Integer.parseInt(value);
+              } catch (NumberFormatException e2) {
+                throw e;
+              }
+            }).collect(Collectors.toList());
+      }
     } else if (elementType == Double.class) {
-      return config.getDoubleList(configPropName);
+      try {
+        return config.getDoubleList(configPropName);
+      } catch (ConfigException.WrongType e) {
+        return config.getStringList(configPropName)
+            .stream()
+            .map(value -> {
+              try {
+                return Double.parseDouble(value);
+              } catch (NumberFormatException e2) {
+                throw e;
+              }
+            }).collect(Collectors.toList());
+      }
     } else if (elementType == Long.class) {
-      return config.getLongList(configPropName);
+      try {
+        return config.getLongList(configPropName);
+      } catch (ConfigException.WrongType e) {
+        return config.getStringList(configPropName)
+            .stream()
+            .map(value -> {
+              try {
+                return Long.parseLong(value);
+              } catch (NumberFormatException e2) {
+                throw e;
+              }
+            }).collect(Collectors.toList());
+      }
     } else if (elementType == String.class) {
       return config.getStringList(configPropName);
     } else if (elementType == Duration.class) {
