@@ -143,7 +143,7 @@ public class AtomixAgent {
         .required(false)
         .help("The zone in which this member runs, used for zone-aware partition management.");
     parser.addArgument("--config", "-c")
-        .metavar("FILE|JSON|YAML")
+        .metavar("CONF|JSON|PROPERTIES")
         .type(File.class)
         .nargs("*")
         .required(false)
