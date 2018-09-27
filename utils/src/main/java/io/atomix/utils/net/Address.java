@@ -211,13 +211,12 @@ public final class Address {
 
   @Override
   public String toString() {
-    switch (type()) {
-      case IPV4:
-        return String.format("%s:%d", address().getHostName(), port());
-      case IPV6:
-        return String.format("[%s]:%d", address().getHostName(), port());
-      default:
-        throw new AssertionError();
+    String host = host();
+    int port = port();
+    if (host.matches("([0-9a-f]{1,4}:){7}([0-9a-f]){1,4}")) {
+      return String.format("[%s]:%d", host, port);
+    } else {
+      return String.format("%s:%d", host, port);
     }
   }
 
