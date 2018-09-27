@@ -151,6 +151,10 @@ public class AtomixAgent {
             ? Lists.newArrayList(System.getProperty("atomix.config.files").split(","))
             : Lists.newArrayList())
         .help("The Atomix configuration. Can be specified as a file path or JSON/YAML string.");
+    parser.addArgument("--ignore-resources")
+        .action(new StoreTrueArgumentAction())
+        .setDefault(false)
+        .help("Ignores classpath resources when loading configuration files. Only valid when configuration file(s) are provided.");
     parser.addArgument("--log-config")
         .metavar("FILE")
         .type(String.class)
@@ -247,6 +251,7 @@ public class AtomixAgent {
    */
   private static AtomixConfig createConfig(Namespace namespace) {
     final List<File> configFiles = namespace.getList("config");
+    final boolean ignoreResources = namespace.getBoolean("ignore_resources");
     final String memberId = namespace.getString("member");
     final Address address = namespace.get("address");
     final String host = namespace.getString("host");
@@ -262,6 +267,9 @@ public class AtomixAgent {
     // If a configuration was provided, merge the configuration's member information with the provided command line arguments.
     AtomixConfig config;
     if (configFiles != null && !configFiles.isEmpty()) {
+      if (ignoreResources) {
+        System.setProperty("atomix.config.resources", "");
+      }
       config = Atomix.config(configFiles);
     } else {
       config = Atomix.config();
