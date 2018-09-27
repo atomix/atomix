@@ -15,11 +15,13 @@ ATOMIX_ROOT="$(dirname "$(dirname "$0")")"
 
 java \
   -XX:+UseConcMarkSweepGC \
+  $JAVA_OPTS \
   -Datomix.root="$ATOMIX_ROOT" \
   -Datomix.data="$ATOMIX_ROOT/data" \
   -Datomix.logback="$ATOMIX_ROOT/conf/logback.xml" \
   -Datomix.log="$ATOMIX_ROOT/log" \
   -Datomix.config.resources="$ATOMIX_ROOT/conf/atomix" \
+  -Dvertx.disableFileCPResolving=true \
   -cp .:"$ATOMIX_ROOT/lib/system/*":"$ATOMIX_ROOT/lib/ext/*" \
   io.atomix.agent.AtomixAgent \
   "$@"
