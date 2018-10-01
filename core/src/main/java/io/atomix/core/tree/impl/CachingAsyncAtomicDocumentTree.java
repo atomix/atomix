@@ -19,6 +19,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.atomix.core.cache.CacheConfig;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
 import io.atomix.core.tree.AtomicDocumentTree;
@@ -26,6 +27,7 @@ import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTreeEvent;
 import io.atomix.core.tree.DocumentTreeEventListener;
 import io.atomix.primitive.PrimitiveState;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 
@@ -78,13 +80,17 @@ public class CachingAsyncAtomicDocumentTree<V> extends DelegatingAsyncAtomicDocu
         cache.invalidateAll();
       }
     };
-    super.addListener(cacheUpdater, MoreExecutors.directExecutor());
+    super.addListener(root(), cacheUpdater, MoreExecutors.directExecutor());
     super.addStateChangeListener(stateListener);
   }
 
   @Override
   public CompletableFuture<Versioned<V>> get(DocumentPath path) {
-    return cache.getUnchecked(path);
+    try {
+      return cache.getUnchecked(path);
+    } catch (UncheckedExecutionException e) {
+      return Futures.exceptionalFuture(e.getCause());
+    }
   }
 
   @Override
