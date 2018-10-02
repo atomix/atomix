@@ -429,6 +429,42 @@ public class AtomixBuilder extends AtomixClusterBuilder {
     return this;
   }
 
+  @Override
+  public AtomixBuilder withTlsEnabled() {
+    super.withTlsEnabled();
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withTlsEnabled(boolean tlsEnabled) {
+    super.withTlsEnabled(tlsEnabled);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withKeyStore(String keyStore) {
+    super.withKeyStore(keyStore);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withKeyStorePassword(String keyStorePassword) {
+    super.withKeyStorePassword(keyStorePassword);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withTrustStore(String trustStore) {
+    super.withTrustStore(trustStore);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withTrustStorePassword(String trustStorePassword) {
+    super.withTrustStorePassword(trustStorePassword);
+    return this;
+  }
+
   /**
    * Builds a new Atomix instance.
    * <p>
