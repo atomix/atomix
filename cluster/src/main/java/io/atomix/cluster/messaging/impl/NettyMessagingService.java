@@ -21,9 +21,12 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
+import io.atomix.cluster.NetworkConfig;
 import io.atomix.cluster.messaging.ManagedMessagingService;
+import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.utils.AtomixRuntimeException;
 import io.atomix.utils.net.Address;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -56,7 +59,6 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -66,7 +68,6 @@ import java.security.MessageDigest;
 import java.security.cert.Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -89,85 +90,12 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Netty based MessagingService.
  */
 public class NettyMessagingService implements ManagedMessagingService {
-  private static final String DEFAULT_NAME = "atomix";
-
-  /**
-   * Returns a new Netty messaging service builder.
-   *
-   * @return a new Netty messaging service builder
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  /**
-   * Netty messaging service builder.
-   */
-  public static class Builder extends MessagingService.Builder {
-    private String name = DEFAULT_NAME;
-    private Collection<String> bindInterfaces = new ArrayList<>();
-    private Integer bindPort;
-    private Address returnAddress;
-
-    /**
-     * Sets the cluster name.
-     *
-     * @param name the cluster name
-     * @return the Netty messaging service builder
-     * @throws NullPointerException if the name is null
-     */
-    public Builder withName(String name) {
-      this.name = checkNotNull(name);
-      return this;
-    }
-
-    /**
-     * Sets the local interfaces to which to bind.
-     *
-     * @param bindInterfaces the interfaces to which to bind
-     * @return the messaging service builder
-     */
-    public Builder withBindInterfaces(Collection<String> bindInterfaces) {
-      this.bindInterfaces = bindInterfaces;
-      return this;
-    }
-
-    /**
-     * Sets the local port to which to bind.
-     *
-     * @param bindPort the port to which to bind
-     * @return the messaging service builders
-     */
-    public Builder withBindPort(Integer bindPort) {
-      this.bindPort = bindPort;
-      return this;
-    }
-
-    /**
-     * Sets the message return address.
-     *
-     * @param returnAddress the messaging address
-     * @return the Netty messaging service builder
-     * @throws NullPointerException if the address is null
-     */
-    public Builder withReturnAddress(Address returnAddress) {
-      this.returnAddress = checkNotNull(returnAddress);
-      return this;
-    }
-
-    @Override
-    public ManagedMessagingService build() {
-      return new NettyMessagingService(name.hashCode(), bindInterfaces, bindPort, returnAddress);
-    }
-  }
-
   private static final long HISTORY_EXPIRE_MILLIS = Duration.ofMinutes(1).toMillis();
   private static final long MIN_TIMEOUT_MILLIS = 100;
   private static final long MAX_TIMEOUT_MILLIS = 5000;
@@ -187,16 +115,10 @@ public class NettyMessagingService implements ManagedMessagingService {
   private final LocalClientConnection localClientConnection = new LocalClientConnection();
   private final LocalServerConnection localServerConnection = new LocalServerConnection(null);
 
-  //TODO CONFIG_DIR is duplicated from ConfigFileBasedClusterMetadataProvider
-  private static final String CONFIG_DIR = "../config";
-  private static final String KS_FILE_NAME = "atomix.jks";
-  private static final File DEFAULT_KS_FILE = new File(CONFIG_DIR, KS_FILE_NAME);
-  private static final String DEFAULT_KS_PASSWORD = "changeit";
-
-  private final int preamble;
-  private final Collection<String> bindInterfaces;
-  private final Integer bindPort;
   private final Address returnAddress;
+  private final int preamble;
+  private final NetworkConfig networkConfig;
+  private final MessagingConfig messagingConfig;
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final Map<String, BiConsumer<InternalRequest, ServerConnection>> handlers = new ConcurrentHashMap<>();
   private final Map<Channel, RemoteClientConnection> clientConnections = Maps.newConcurrentMap();
@@ -214,18 +136,16 @@ public class NettyMessagingService implements ManagedMessagingService {
   private ScheduledExecutorService timeoutExecutor;
   private Channel serverChannel;
 
-  protected static final boolean TLS_ENABLED = true;
-  protected static final boolean TLS_DISABLED = false;
-  protected boolean enableNettyTls = TLS_ENABLED;
+  protected boolean enableNettyTls;
 
   protected TrustManagerFactory trustManager;
   protected KeyManagerFactory keyManager;
 
-  protected NettyMessagingService(int preamble, Collection<String> bindInterfaces, Integer bindPort, Address returnAddress) {
-    this.preamble = preamble;
-    this.bindInterfaces = bindInterfaces;
-    this.bindPort = bindPort;
-    this.returnAddress = returnAddress;
+  public NettyMessagingService(String cluster, Address address, NetworkConfig networkConfig, MessagingConfig messagingConfig) {
+    this.preamble = cluster.hashCode();
+    this.returnAddress = address;
+    this.networkConfig = networkConfig;
+    this.messagingConfig = messagingConfig;
   }
 
   @Override
@@ -235,12 +155,12 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   @Override
   public CompletableFuture<MessagingService> start() {
-    getTlsParameters();
     if (started.get()) {
       log.warn("Already running at local address: {}", returnAddress);
       return CompletableFuture.completedFuture(this);
     }
 
+    enableNettyTls = loadKeyStores();
     initEventLoopGroup();
     return bootstrapServer().thenRun(() -> {
       timeoutExecutor = Executors.newSingleThreadScheduledExecutor(
@@ -252,29 +172,24 @@ public class NettyMessagingService implements ManagedMessagingService {
     }).thenApply(v -> this);
   }
 
-  private void getTlsParameters() {
-    // default is TLS enabled unless key stores cannot be loaded
-    enableNettyTls = Boolean.parseBoolean(System.getProperty("io.atomix.enableNettyTLS", Boolean.toString(TLS_ENABLED)));
-
-    if (enableNettyTls) {
-      enableNettyTls = loadKeyStores();
-    }
-  }
-
   @Override
   public boolean isRunning() {
     return started.get();
   }
 
   private boolean loadKeyStores() {
+    if (!messagingConfig.getTlsConfig().isEnabled()) {
+      return false;
+    }
+
     // Maintain a local copy of the trust and key managers in case anything goes wrong
     TrustManagerFactory tmf;
     KeyManagerFactory kmf;
     try {
-      String ksLocation = System.getProperty("javax.net.ssl.keyStore", DEFAULT_KS_FILE.toString());
-      String tsLocation = System.getProperty("javax.net.ssl.trustStore", DEFAULT_KS_FILE.toString());
-      char[] ksPwd = System.getProperty("javax.net.ssl.keyStorePassword", DEFAULT_KS_PASSWORD).toCharArray();
-      char[] tsPwd = System.getProperty("javax.net.ssl.trustStorePassword", DEFAULT_KS_PASSWORD).toCharArray();
+      String ksLocation = messagingConfig.getTlsConfig().getKeyStore();
+      String tsLocation = messagingConfig.getTlsConfig().getTrustStore();
+      char[] ksPwd = messagingConfig.getTlsConfig().getKeyStorePassword().toCharArray();
+      char[] tsPwd = messagingConfig.getTlsConfig().getTrustStorePassword().toCharArray();
 
       tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
       KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -293,16 +208,13 @@ public class NettyMessagingService implements ManagedMessagingService {
         logKeyStore(ks, ksLocation, ksPwd);
       }
     } catch (FileNotFoundException e) {
-      log.warn("Disabling TLS for intra-cluster messaging; Could not load cluster key store: {}", e.getMessage());
-      return TLS_DISABLED;
+      throw new AtomixRuntimeException("Could not load cluster keystore: {}", e.getMessage());
     } catch (Exception e) {
-      //TODO we might want to catch exceptions more specifically
-      log.error("Error loading key store; disabling TLS for intra-cluster messaging", e);
-      return TLS_DISABLED;
+      throw new AtomixRuntimeException("Error loading cluster keystore", e);
     }
     this.trustManager = tmf;
     this.keyManager = kmf;
-    return TLS_ENABLED;
+    return true;
   }
 
   private void logKeyStore(KeyStore ks, String ksLocation, char[] ksPwd) {
@@ -628,11 +540,11 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   private CompletableFuture<Void> bind(ServerBootstrap bootstrap) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    int port = bindPort != null ? bindPort : returnAddress.port();
-    if (bindInterfaces.isEmpty()) {
+    int port = networkConfig.getPort() != null ? networkConfig.getPort() : returnAddress.port();
+    if (networkConfig.getInterfaces().isEmpty()) {
       bind(bootstrap, Lists.newArrayList("0.0.0.0").iterator(), port, future);
     } else {
-      bind(bootstrap, bindInterfaces.iterator(), port, future);
+      bind(bootstrap, networkConfig.getInterfaces().iterator(), port, future);
     }
     return future;
   }
