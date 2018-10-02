@@ -1061,11 +1061,6 @@ public class NettyMessagingService implements ManagedMessagingService {
      * @param message the message to dispatch
      */
     private void dispatch(InternalReply message) {
-      if (message.preamble() != preamble) {
-        log.debug("Received {} with invalid preamble", message.type());
-        return;
-      }
-
       Callback callback = completeCallback(message.id());
       if (callback != null) {
         if (message.status() == InternalReply.Status.OK) {
@@ -1110,12 +1105,6 @@ public class NettyMessagingService implements ManagedMessagingService {
      * @param message the message to dispatch
      */
     private void dispatch(InternalRequest message) {
-      if (message.preamble() != preamble) {
-        log.debug("Received {} with invalid preamble from {}", message.type(), message.sender());
-        reply(message, InternalReply.Status.PROTOCOL_EXCEPTION, Optional.empty());
-        return;
-      }
-
       BiConsumer<InternalRequest, ServerConnection> handler = handlers.get(message.subject());
       if (handler != null) {
         log.trace("{} - Received message type {} from {}", localAddress, message.subject(), message.sender());
