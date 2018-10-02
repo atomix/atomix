@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.impl;
+package io.atomix.core.registry;
 
 import io.atomix.core.AtomixRegistry;
 import io.atomix.utils.NamedType;
