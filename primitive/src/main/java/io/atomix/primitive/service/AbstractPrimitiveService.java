@@ -16,6 +16,7 @@
 package io.atomix.primitive.service;
 
 import com.google.common.collect.Maps;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.PrimitiveType;
@@ -197,6 +198,20 @@ public abstract class AbstractPrimitiveService<C> implements PrimitiveService {
    */
   protected Scheduler getScheduler() {
     return executor;
+  }
+  
+  /**
+   * Returns the ID of the cluster member this service instance is running on.
+   * Caution: This information should not be used in anyway to modify the machine's state,
+   * as it could be used to violate the invariant that all instances of a partition must 
+   * have the same state.
+   * However, it can be used safely for logging purposes or for generating meaningful
+   * filenames for instance (this can be useful especially in the case where several
+   * cluster members are run on the same host).
+   * @return The local member ID
+   */
+  protected MemberId getLocalMemberId() {
+    return context.localMemberId();
   }
 
   /**

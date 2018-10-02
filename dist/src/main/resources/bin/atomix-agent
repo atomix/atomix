@@ -13,29 +13,15 @@ fi
 
 ATOMIX_ROOT="$(dirname "$(dirname "$0")")"
 
-if [ -n "$ATOMIX_LOG" ]; then
-    LOG="$ATOMIX_LOG"
-else
-    LOG="$ATOMIX_ROOT/log"
-fi
-
-if [ -n "$ATOMIX_TRACE" ]; then
-    LEVEL="TRACE"
-elif [ -n "$ATOMIX_DEBUG" ]; then
-    LEVEL="DEBUG"
-else
-    LEVEL="INFO"
-fi
-
 java \
   -XX:+UseConcMarkSweepGC \
-  -XX:+CMSIncrementalMode \
+  $JAVA_OPTS \
   -Datomix.root="$ATOMIX_ROOT" \
   -Datomix.data="$ATOMIX_ROOT/data" \
-  -Datomix.log="$LOG" \
-  -Datomix.level="$LEVEL" \
-  -Datomix.config="$ATOMIX_ROOT/conf/atomix.conf" \
-  -Dlogback.configurationFile="$ATOMIX_ROOT/conf/logback.xml" \
+  -Datomix.logback="$ATOMIX_ROOT/conf/logback.xml" \
+  -Datomix.log="$ATOMIX_ROOT/log" \
+  -Datomix.config.resources="$ATOMIX_ROOT/conf/atomix" \
+  -Dvertx.disableFileCPResolving=true \
   -cp .:"$ATOMIX_ROOT/lib/system/*":"$ATOMIX_ROOT/lib/ext/*" \
   io.atomix.agent.AtomixAgent \
   "$@"
