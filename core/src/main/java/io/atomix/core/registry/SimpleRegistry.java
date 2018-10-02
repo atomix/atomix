@@ -31,7 +31,7 @@ import java.util.Map;
 /**
  * Static Atomix registry.
  */
-public class StaticAtomixRegistry implements AtomixRegistry {
+public class SimpleRegistry implements AtomixRegistry {
 
   /**
    * Returns a new static registry builder.
@@ -44,7 +44,7 @@ public class StaticAtomixRegistry implements AtomixRegistry {
 
   private final Map<Class<?>, Map<String, NamedType>> registrations;
 
-  private StaticAtomixRegistry(Map<Class<?>, Map<String, NamedType>> registrations) {
+  private SimpleRegistry(Map<Class<?>, Map<String, NamedType>> registrations) {
     this.registrations = registrations;
   }
 
@@ -125,7 +125,7 @@ public class StaticAtomixRegistry implements AtomixRegistry {
 
     @Override
     public AtomixRegistry build() {
-      return new StaticAtomixRegistry(registrations);
+      return new SimpleRegistry(registrations);
     }
   }
 }

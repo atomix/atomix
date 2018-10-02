@@ -33,10 +33,10 @@ import static org.junit.Assert.assertEquals;
 /**
  * Static registry test.
  */
-public class StaticAtomixRegistryTest {
+public class SimpleRegistryTest {
   @Test
   public void testStaticRegistryBuilder() throws Exception {
-    AtomixRegistry registry = StaticAtomixRegistry.builder()
+    AtomixRegistry registry = SimpleRegistry.builder()
         .addProfileType(ConsensusProfile.TYPE)
         .addDiscoveryProviderType(BootstrapDiscoveryProvider.TYPE)
         .addPrimitiveType(AtomicCounterType.instance())

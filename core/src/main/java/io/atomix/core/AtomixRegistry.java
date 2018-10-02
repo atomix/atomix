@@ -16,7 +16,7 @@
 package io.atomix.core;
 
 import io.atomix.cluster.discovery.NodeDiscoveryProvider;
-import io.atomix.core.registry.ClasspathScanningAtomixRegistry;
+import io.atomix.core.registry.ClasspathScanningRegistry;
 import io.atomix.core.profile.Profile;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionGroup;
@@ -46,7 +46,7 @@ public interface AtomixRegistry {
    * @return the registry instance
    */
   static AtomixRegistry registry(ClassLoader classLoader) {
-    return new ClasspathScanningAtomixRegistry(
+    return new ClasspathScanningRegistry(
         classLoader,
         PartitionGroup.Type.class,
         PrimitiveType.class,
