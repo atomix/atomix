@@ -123,6 +123,8 @@ public class BlockingAtomicDocumentTree<V> extends Synchronous<AsyncAtomicDocume
       Throwable cause = Throwables.getRootCause(e);
       if (cause instanceof PrimitiveException) {
         throw (PrimitiveException) cause;
+      } else if (cause instanceof IllegalArgumentException || cause instanceof IllegalStateException) {
+        throw (RuntimeException) cause;
       } else {
         throw new PrimitiveException(cause);
       }
