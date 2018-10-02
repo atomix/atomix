@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.impl;
+package io.atomix.core.registry;
 
 import io.atomix.core.AtomixRegistry;
 import io.atomix.utils.NamedType;
@@ -35,15 +35,15 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Atomix registry that scans the classpath for registered objects.
  */
-public class ClasspathScanningAtomixRegistry implements AtomixRegistry {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathScanningAtomixRegistry.class);
+public class ClasspathScanningRegistry implements AtomixRegistry {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathScanningRegistry.class);
 
   private static final Map<ClassLoader, Map<CacheKey, Map<Class<? extends NamedType>, Map<String, NamedType>>>> CACHE =
           Collections.synchronizedMap(new WeakHashMap<>());
 
   private final Map<Class<? extends NamedType>, Map<String, NamedType>> registrations = new ConcurrentHashMap<>();
 
-  public ClasspathScanningAtomixRegistry(ClassLoader classLoader, Class<? extends NamedType>... types) {
+  public ClasspathScanningRegistry(ClassLoader classLoader, Class<? extends NamedType>... types) {
     final Map<CacheKey, Map<Class<? extends NamedType>, Map<String, NamedType>>> mappings =
             CACHE.computeIfAbsent(classLoader, cl -> new ConcurrentHashMap<>());
     final Map<Class<? extends NamedType>, Map<String, NamedType>> registrations =
