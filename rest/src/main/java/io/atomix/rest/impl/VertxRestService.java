@@ -166,14 +166,8 @@ public class VertxRestService implements ManagedRestService {
    * Vert.x REST service builder.
    */
   public static class Builder extends RestService.Builder {
-    private static final String DEFAULT_HOST = "0.0.0.0";
-    private static final int DEFAULT_PORT = 5678;
-
     @Override
     public ManagedRestService build() {
-      if (address == null) {
-        address = Address.from(DEFAULT_HOST, DEFAULT_PORT);
-      }
       return new VertxRestService(atomix, address);
     }
   }
