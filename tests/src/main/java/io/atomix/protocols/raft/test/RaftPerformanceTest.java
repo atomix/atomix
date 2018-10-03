@@ -20,7 +20,6 @@ import com.google.common.collect.Maps;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.NetworkConfig;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
@@ -479,7 +478,7 @@ public class RaftPerformanceTest implements Runnable {
     RaftServerProtocol protocol;
     ManagedMessagingService messagingService;
     if (USE_NETTY) {
-      messagingService = (ManagedMessagingService) new NettyMessagingService("test", member.address(), new NetworkConfig(), new MessagingConfig())
+      messagingService = (ManagedMessagingService) new NettyMessagingService("test", member.address(), new MessagingConfig())
           .start()
           .join();
       messagingServices.add(messagingService);
@@ -531,7 +530,7 @@ public class RaftPerformanceTest implements Runnable {
 
     RaftClientProtocol protocol;
     if (USE_NETTY) {
-      MessagingService messagingService = new NettyMessagingService("test", member.address(), new NetworkConfig(), new MessagingConfig()).start().join();
+      MessagingService messagingService = new NettyMessagingService("test", member.address(), new MessagingConfig()).start().join();
       protocol = new RaftClientMessagingProtocol(messagingService, protocolSerializer, addressMap::get);
     } else {
       protocol = protocolFactory.newClientProtocol(member.id());

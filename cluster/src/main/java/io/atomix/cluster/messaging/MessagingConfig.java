@@ -18,13 +18,57 @@ package io.atomix.cluster.messaging;
 import io.atomix.utils.config.Config;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Messaging configuration.
  */
 public class MessagingConfig implements Config {
-  private Duration connectTimeout = Duration.ofSeconds(1);
+  private List<String> interfaces = new ArrayList<>();
+  private Integer port;
+  private Duration connectTimeout = Duration.ofSeconds(10);
   private TlsConfig tlsConfig = new TlsConfig();
+
+  /**
+   * Returns the local interfaces to which to bind the node.
+   *
+   * @return the local interfaces to which to bind the node
+   */
+  public List<String> getInterfaces() {
+    return interfaces;
+  }
+
+  /**
+   * Sets the local interfaces to which to bind the node.
+   *
+   * @param interfaces the local interfaces to which to bind the node
+   * @return the local cluster configuration
+   */
+  public MessagingConfig setInterfaces(List<String> interfaces) {
+    this.interfaces = interfaces;
+    return this;
+  }
+
+  /**
+   * Returns the local port to which to bind the node.
+   *
+   * @return the local port to which to bind the node
+   */
+  public Integer getPort() {
+    return port;
+  }
+
+  /**
+   * Sets the local port to which to bind the node.
+   *
+   * @param port the local port to which to bind the node
+   * @return the local cluster configuration
+   */
+  public MessagingConfig setPort(Integer port) {
+    this.port = port;
+    return this;
+  }
 
   /**
    * Returns the Netty connection timeout.
