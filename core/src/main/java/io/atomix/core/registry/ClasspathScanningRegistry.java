@@ -162,7 +162,14 @@ public class ClasspathScanningRegistry implements AtomixRegistry {
    */
   public static class Builder implements io.atomix.utils.Builder<AtomixRegistry> {
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-    private Set<String> whitelistPackages = Sets.newHashSet(StringUtils.split(System.getProperty("io.atomix.whitelistPackages"), ","));
+    private Set<String> whitelistPackages = Sets.newHashSet();
+
+    private Builder() {
+      String whitelistPackages = System.getProperty("io.atomix.whitelistPackages");
+      if (whitelistPackages != null) {
+        this.whitelistPackages = Sets.newHashSet(StringUtils.split(whitelistPackages, ","));
+      }
+    }
 
     /**
      * Sets the classpath scanner class loader.
