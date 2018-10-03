@@ -216,6 +216,12 @@ public class AtomixAgent {
         .type(Integer.class)
         .metavar("PORT")
         .help("Sets the multicast port. Defaults to 54321");
+    parser.addArgument("--http-host", "-h")
+        .type(String.class)
+        .metavar("HOST")
+        .required(false)
+        .setDefault("0.0.0.0")
+        .help("Sets the host to which to bind the HTTP server. Defaults to 0.0.0.0 (all interfaces)");
     parser.addArgument("--http-port", "-p")
         .type(Integer.class)
         .metavar("PORT")
@@ -330,10 +336,11 @@ public class AtomixAgent {
    * @return the managed REST service
    */
   private static ManagedRestService buildRestService(Atomix atomix, Namespace namespace) {
+    final String httpHost = namespace.getString("http_host");
     final Integer httpPort = namespace.getInt("http_port");
     return RestService.builder()
         .withAtomix(atomix)
-        .withAddress(Address.from(atomix.getMembershipService().getLocalMember().address().host(), httpPort))
+        .withAddress(Address.from(httpHost, httpPort))
         .build();
   }
 
