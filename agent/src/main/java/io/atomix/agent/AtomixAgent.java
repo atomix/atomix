@@ -216,7 +216,7 @@ public class AtomixAgent {
         .type(Integer.class)
         .metavar("PORT")
         .help("Sets the multicast port. Defaults to 54321");
-    parser.addArgument("--http-host", "-h")
+    parser.addArgument("--http-host")
         .type(String.class)
         .metavar("HOST")
         .required(false)
