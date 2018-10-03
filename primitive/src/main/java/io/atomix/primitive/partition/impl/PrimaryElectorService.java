@@ -103,6 +103,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
   }
 
   private void notifyTermChange(PartitionId partitionId, PrimaryTerm term) {
+    getLogger().debug("Changed " + term + ", listeners=" + listeners.size());
     listeners.values().forEach(session -> session.publish(CHANGE, new PrimaryElectionEvent(PrimaryElectionEvent.Type.CHANGED, partitionId, term)));
   }
 
@@ -310,10 +311,19 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
                 .collect(Collectors.toList());
         if (primary.sessionId() == session.sessionId().id()) {
           if (!updatedRegistrations.isEmpty()) {
+            // find 1st backup to use as primary
+            Registration newPrimary = updatedRegistrations.get(0);
+            List<GroupMember> backups = term().backups(1);
+            if (!backups.isEmpty())
+            {
+                newPrimary = updatedRegistrations.stream()
+                    .filter(r-> Objects.equals(r.member(), backups.get(0)))
+                    .findFirst().get();
+            }
             return new ElectionState(
                 partitionId,
                 updatedRegistrations,
-                updatedRegistrations.get(0),
+                newPrimary,
                 term + 1,
                 System.currentTimeMillis(),
                 elections);
