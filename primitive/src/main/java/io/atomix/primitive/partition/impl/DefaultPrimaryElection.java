@@ -63,6 +63,7 @@ public class DefaultPrimaryElection implements ManagedPrimaryElection {
         listeners.forEach(l -> l.event(event));
       }
     };
+    start();
   }
 
   @Override
