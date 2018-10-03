@@ -21,7 +21,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.cluster.NetworkConfig;
 import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.cluster.messaging.MessagingException;
@@ -117,8 +116,7 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   private final Address returnAddress;
   private final int preamble;
-  private final NetworkConfig networkConfig;
-  private final MessagingConfig messagingConfig;
+  private final MessagingConfig config;
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final Map<String, BiConsumer<InternalRequest, ServerConnection>> handlers = new ConcurrentHashMap<>();
   private final Map<Channel, RemoteClientConnection> clientConnections = Maps.newConcurrentMap();
@@ -141,11 +139,10 @@ public class NettyMessagingService implements ManagedMessagingService {
   protected TrustManagerFactory trustManager;
   protected KeyManagerFactory keyManager;
 
-  public NettyMessagingService(String cluster, Address address, NetworkConfig networkConfig, MessagingConfig messagingConfig) {
+  public NettyMessagingService(String cluster, Address address, MessagingConfig config) {
     this.preamble = cluster.hashCode();
     this.returnAddress = address;
-    this.networkConfig = networkConfig;
-    this.messagingConfig = messagingConfig;
+    this.config = config;
   }
 
   @Override
@@ -178,7 +175,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   private boolean loadKeyStores() {
-    if (!messagingConfig.getTlsConfig().isEnabled()) {
+    if (!config.getTlsConfig().isEnabled()) {
       return false;
     }
 
@@ -186,10 +183,10 @@ public class NettyMessagingService implements ManagedMessagingService {
     TrustManagerFactory tmf;
     KeyManagerFactory kmf;
     try {
-      String ksLocation = messagingConfig.getTlsConfig().getKeyStore();
-      String tsLocation = messagingConfig.getTlsConfig().getTrustStore();
-      char[] ksPwd = messagingConfig.getTlsConfig().getKeyStorePassword().toCharArray();
-      char[] tsPwd = messagingConfig.getTlsConfig().getTrustStorePassword().toCharArray();
+      String ksLocation = config.getTlsConfig().getKeyStore();
+      String tsLocation = config.getTlsConfig().getTrustStore();
+      char[] ksPwd = config.getTlsConfig().getKeyStorePassword().toCharArray();
+      char[] tsPwd = config.getTlsConfig().getTrustStorePassword().toCharArray();
 
       tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
       KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -540,11 +537,11 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   private CompletableFuture<Void> bind(ServerBootstrap bootstrap) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    int port = networkConfig.getPort() != null ? networkConfig.getPort() : returnAddress.port();
-    if (networkConfig.getInterfaces().isEmpty()) {
+    int port = config.getPort() != null ? config.getPort() : returnAddress.port();
+    if (config.getInterfaces().isEmpty()) {
       bind(bootstrap, Lists.newArrayList("0.0.0.0").iterator(), port, future);
     } else {
-      bind(bootstrap, networkConfig.getInterfaces().iterator(), port, future);
+      bind(bootstrap, config.getInterfaces().iterator(), port, future);
     }
     return future;
   }
