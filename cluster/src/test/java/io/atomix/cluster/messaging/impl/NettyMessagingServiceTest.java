@@ -68,14 +68,14 @@ public class NettyMessagingServiceTest {
   public void setUp() throws Exception {
     ep1 = Address.from(findAvailablePort(5001));
     netty1 = (ManagedMessagingService) NettyMessagingService.builder()
-        .withAddress(ep1)
+        .withReturnAddress(ep1)
         .build()
         .start()
         .join();
 
     ep2 = Address.from(findAvailablePort(5003));
     netty2 = (ManagedMessagingService) NettyMessagingService.builder()
-        .withAddress(ep2)
+        .withReturnAddress(ep2)
         .build()
         .start()
         .join();
