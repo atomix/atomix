@@ -17,7 +17,6 @@ package io.atomix.cluster.messaging.impl;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
-import io.atomix.cluster.NetworkConfig;
 import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.utils.net.Address;
@@ -69,10 +68,10 @@ public class NettyMessagingServiceTest {
   @Before
   public void setUp() throws Exception {
     ep1 = Address.from(findAvailablePort(5001));
-    netty1 = (ManagedMessagingService) new NettyMessagingService("test", ep1, new NetworkConfig(), new MessagingConfig()).start().join();
+    netty1 = (ManagedMessagingService) new NettyMessagingService("test", ep1, new MessagingConfig()).start().join();
 
     ep2 = Address.from(findAvailablePort(5003));
-    netty2 = (ManagedMessagingService) new NettyMessagingService("test", ep2, new NetworkConfig(), new MessagingConfig()).start().join();
+    netty2 = (ManagedMessagingService) new NettyMessagingService("test", ep2, new MessagingConfig()).start().join();
 
     invalidAddress = Address.from(IP_STRING, 5003);
   }

@@ -19,7 +19,6 @@ import io.atomix.cluster.ClusterConfig;
 import io.atomix.cluster.MemberConfig;
 import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.MulticastConfig;
-import io.atomix.cluster.NetworkConfig;
 import io.atomix.cluster.discovery.MulticastDiscoveryConfig;
 import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
 import io.atomix.cluster.messaging.MessagingConfig;
@@ -76,12 +75,6 @@ public class AtomixConfigTest {
     assertEquals("bar", node.getProperties().getProperty("foo"));
     assertEquals("baz", node.getProperties().getProperty("bar"));
 
-    NetworkConfig network = cluster.getNetworkConfig();
-    assertEquals(2, network.getInterfaces().size());
-    assertEquals("127.0.0.1", network.getInterfaces().get(0));
-    assertEquals("0.0.0.0", network.getInterfaces().get(1));
-    assertEquals(5000, network.getPort().intValue());
-
     MulticastConfig multicast = cluster.getMulticastConfig();
     assertTrue(multicast.isEnabled());
     assertEquals("230.0.1.1", multicast.getGroup().getHostAddress());
@@ -99,6 +92,10 @@ public class AtomixConfigTest {
     assertEquals(Duration.ofSeconds(15), discovery.getFailureTimeout());
 
     MessagingConfig messaging = cluster.getMessagingConfig();
+    assertEquals(2, messaging.getInterfaces().size());
+    assertEquals("127.0.0.1", messaging.getInterfaces().get(0));
+    assertEquals("0.0.0.0", messaging.getInterfaces().get(1));
+    assertEquals(5000, messaging.getPort().intValue());
     assertEquals(Duration.ofSeconds(10), messaging.getConnectTimeout());
     assertTrue(messaging.getTlsConfig().isEnabled());
     assertEquals("keystore.jks", messaging.getTlsConfig().getKeyStore());
