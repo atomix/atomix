@@ -111,8 +111,8 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    * @param iface the interface to which to bind the instance
    * @return the cluster builder
    */
-  public AtomixClusterBuilder withBindInterface(String iface) {
-    return withBindInterfaces(Lists.newArrayList(iface));
+  public AtomixClusterBuilder withMessagingInterface(String iface) {
+    return withMessagingInterfaces(Lists.newArrayList(iface));
   }
 
   /**
@@ -121,8 +121,8 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    * @param ifaces the interface(s) to which to bind the instance
    * @return the cluster builder
    */
-  public AtomixClusterBuilder withBindInterfaces(String... ifaces) {
-    return withBindInterfaces(Lists.newArrayList(ifaces));
+  public AtomixClusterBuilder withMessagingInterfaces(String... ifaces) {
+    return withMessagingInterfaces(Lists.newArrayList(ifaces));
   }
 
   /**
@@ -131,8 +131,8 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    * @param ifaces the interface(s) to which to bind the instance
    * @return the cluster builder
    */
-  public AtomixClusterBuilder withBindInterfaces(Collection<String> ifaces) {
-    config.getNetworkConfig().setInterfaces(Lists.newArrayList(ifaces));
+  public AtomixClusterBuilder withMessagingInterfaces(Collection<String> ifaces) {
+    config.getMessagingConfig().setInterfaces(Lists.newArrayList(ifaces));
     return this;
   }
 
@@ -142,8 +142,8 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    * @param bindPort the local port to which to bind the node
    * @return the cluster builder
    */
-  public AtomixClusterBuilder withBindPort(int bindPort) {
-    config.getNetworkConfig().setPort(bindPort);
+  public AtomixClusterBuilder withMessagingPort(int bindPort) {
+    config.getMessagingConfig().setPort(bindPort);
     return this;
   }
 

@@ -343,7 +343,6 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     return new NettyMessagingService(
         config.getClusterId(),
         config.getNodeConfig().getAddress(),
-        config.getNetworkConfig(),
         config.getMessagingConfig());
   }
 
