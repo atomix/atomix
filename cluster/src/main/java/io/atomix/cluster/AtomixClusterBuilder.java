@@ -15,11 +15,13 @@
  */
 package io.atomix.cluster;
 
+import com.google.common.collect.Lists;
 import io.atomix.cluster.discovery.NodeDiscoveryProvider;
 import io.atomix.utils.Builder;
 import io.atomix.utils.net.Address;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Properties;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -98,6 +100,48 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    */
   public AtomixClusterBuilder withMemberId(MemberId localMemberId) {
     config.getNodeConfig().setId(localMemberId);
+    return this;
+  }
+
+  /**
+   * Sets the interface to which to bind the instance.
+   *
+   * @param iface the interface to which to bind the instance
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withBindInterface(String iface) {
+    return withBindInterfaces(Lists.newArrayList(iface));
+  }
+
+  /**
+   * Sets the interface(s) to which to bind the instance.
+   *
+   * @param ifaces the interface(s) to which to bind the instance
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withBindInterfaces(String... ifaces) {
+    return withBindInterfaces(Lists.newArrayList(ifaces));
+  }
+
+  /**
+   * Sets the interface(s) to which to bind the instance.
+   *
+   * @param ifaces the interface(s) to which to bind the instance
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withBindInterfaces(Collection<String> ifaces) {
+    config.getNetworkConfig().setInterfaces(Lists.newArrayList(ifaces));
+    return this;
+  }
+
+  /**
+   * Sets the local port to which to bind the node.
+   *
+   * @param bindPort the local port to which to bind the node
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withBindPort(int bindPort) {
+    config.getNetworkConfig().setPort(bindPort);
     return this;
   }
 
