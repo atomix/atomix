@@ -61,6 +61,7 @@ public class MulticastDiscoveryConfig extends NodeDiscoveryConfig {
    *
    * @return the failure detector threshold
    */
+  @Deprecated
   public int getFailureThreshold() {
     return failureThreshold;
   }
@@ -71,6 +72,7 @@ public class MulticastDiscoveryConfig extends NodeDiscoveryConfig {
    * @param failureThreshold the failure detector threshold
    * @return the group membership configuration
    */
+  @Deprecated
   public MulticastDiscoveryConfig setFailureThreshold(int failureThreshold) {
     this.failureThreshold = failureThreshold;
     return this;

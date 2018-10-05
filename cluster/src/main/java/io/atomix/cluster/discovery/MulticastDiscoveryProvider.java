@@ -17,18 +17,19 @@ package io.atomix.cluster.discovery;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.AtomicLongMap;
 import io.atomix.cluster.AtomixClusterBuilder;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.impl.AddressSerializer;
-import io.atomix.cluster.impl.PhiAccrualFailureDetector;
 import io.atomix.utils.event.AbstractListenerManager;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -44,10 +45,10 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 /**
  * Cluster membership provider that uses multicast for member discovery.
  * <p>
- * This implementation uses the {@link io.atomix.cluster.messaging.BroadcastService} internally and thus requires
- * that multicast is {@link AtomixClusterBuilder#withMulticastEnabled() enabled} on the Atomix instance. Membership
- * is determined by each node broadcasting to a multicast group, and phi accrual failure detectors are used to detect
- * nodes joining and leaving the cluster.
+ * This implementation uses the {@link io.atomix.cluster.messaging.BroadcastService} internally and thus requires that
+ * multicast is {@link AtomixClusterBuilder#withMulticastEnabled() enabled} on the Atomix instance. Membership is
+ * determined by each node broadcasting to a multicast group, and phi accrual failure detectors are used to detect nodes
+ * joining and leaving the cluster.
  */
 public class MulticastDiscoveryProvider
     extends AbstractListenerManager<NodeDiscoveryEvent, NodeDiscoveryEventListener>
@@ -103,11 +104,8 @@ public class MulticastDiscoveryProvider
   private volatile ScheduledFuture<?> broadcastFuture;
   private final Consumer<byte[]> broadcastListener = message -> broadcastScheduler.execute(() -> handleBroadcastMessage(message));
 
-  private final Map<Address, Node> nodes = Maps.newConcurrentMap();
-
-  // A map of failure detectors, one for each active peer.
-  private final Map<NodeId, PhiAccrualFailureDetector> failureDetectors = Maps.newConcurrentMap();
-  private volatile ScheduledFuture<?> failureFuture;
+  private final Map<NodeId, Node> nodes = Maps.newConcurrentMap();
+  private final AtomicLongMap<NodeId> updateTimes = AtomicLongMap.create();
 
   public MulticastDiscoveryProvider() {
     this(new MulticastDiscoveryConfig());
@@ -129,39 +127,35 @@ public class MulticastDiscoveryProvider
 
   private void handleBroadcastMessage(byte[] message) {
     Node node = SERIALIZER.decode(message);
-    Node oldNode = nodes.put(node.address(), node);
+    Node oldNode = nodes.put(node.id(), node);
     if (oldNode != null && !oldNode.id().equals(node.id())) {
       post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.LEAVE, oldNode));
       post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, node));
     } else if (oldNode == null) {
       post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, node));
     }
-    failureDetectors.computeIfAbsent(node.id(), id -> new PhiAccrualFailureDetector()).report();
+    updateTimes.put(node.id(), System.currentTimeMillis());
   }
 
   private void broadcastNode(Node localNode) {
     bootstrap.getBroadcastService().broadcast(DISCOVERY_SUBJECT, SERIALIZER.encode(localNode));
+    expireNodes();
   }
 
-  private void detectFailures(Node localNode) {
-    nodes.values().stream().filter(node -> !node.address().equals(localNode.address())).forEach(this::detectFailure);
-  }
-
-  private void detectFailure(Node node) {
-    PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(node.id(), n -> new PhiAccrualFailureDetector());
-    double phi = failureDetector.phi();
-    if (phi >= config.getFailureThreshold()
-        || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout().toMillis())) {
-      LOGGER.info("Lost contact with {}", node);
-      nodes.remove(node.address());
-      failureDetectors.remove(node.id());
-      post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.LEAVE, node));
+  private void expireNodes() {
+    Iterator<Map.Entry<NodeId, Node>> iterator = nodes.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<NodeId, Node> entry = iterator.next();
+      if (System.currentTimeMillis() - updateTimes.get(entry.getKey()) > config.getFailureTimeout().toMillis()) {
+        iterator.remove();
+        post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.LEAVE, entry.getValue()));
+      }
     }
   }
 
   @Override
   public CompletableFuture<Void> join(BootstrapService bootstrap, Node localNode) {
-    if (nodes.putIfAbsent(localNode.address(), localNode) == null) {
+    if (nodes.putIfAbsent(localNode.id(), localNode) == null) {
       this.bootstrap = bootstrap;
       post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.JOIN, localNode));
       bootstrap.getBroadcastService().addListener(DISCOVERY_SUBJECT, broadcastListener);
@@ -169,11 +163,6 @@ public class MulticastDiscoveryProvider
           () -> broadcastNode(localNode),
           config.getBroadcastInterval().toMillis(),
           config.getBroadcastInterval().toMillis(),
-          TimeUnit.MILLISECONDS);
-      failureFuture = broadcastScheduler.scheduleAtFixedRate(
-          () -> detectFailures(localNode),
-          config.getBroadcastInterval().toMillis() / 2,
-          config.getBroadcastInterval().toMillis() / 2,
           TimeUnit.MILLISECONDS);
       broadcastNode(localNode);
       LOGGER.info("Joined");
@@ -183,18 +172,13 @@ public class MulticastDiscoveryProvider
 
   @Override
   public CompletableFuture<Void> leave(Node localNode) {
-    if (nodes.remove(localNode.address()) != null) {
+    if (nodes.remove(localNode.id()) != null) {
       post(new NodeDiscoveryEvent(NodeDiscoveryEvent.Type.LEAVE, localNode));
       bootstrap.getBroadcastService().removeListener(DISCOVERY_SUBJECT, broadcastListener);
       ScheduledFuture<?> broadcastFuture = this.broadcastFuture;
       if (broadcastFuture != null) {
         broadcastFuture.cancel(false);
       }
-      ScheduledFuture<?> failureFuture = this.failureFuture;
-      if (failureFuture != null) {
-        failureFuture.cancel(false);
-      }
-      broadcastScheduler.shutdownNow();
       LOGGER.info("Left");
     }
     return CompletableFuture.completedFuture(null);

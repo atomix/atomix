@@ -28,6 +28,8 @@ import com.typesafe.config.ConfigParseOptions;
 import com.typesafe.config.ConfigValue;
 import io.atomix.utils.Named;
 import io.atomix.utils.memory.MemorySize;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -53,6 +55,7 @@ import java.util.stream.Stream;
  * Utility for applying Typesafe configurations to Atomix configuration objects.
  */
 public class ConfigMapper {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ConfigMapper.class);
   private final ClassLoader classLoader;
 
   public ConfigMapper(ClassLoader classLoader) {
@@ -202,6 +205,9 @@ public class ConfigMapper {
         if (configPropName == null) {
           if ((Named.class.isAssignableFrom(clazz) || NamedConfig.class.isAssignableFrom(clazz))
               && descriptor.setter.getParameterTypes()[0] == String.class && name != null && descriptor.name.equals("name")) {
+            if (descriptor.deprecated) {
+              LOGGER.warn("{}.{} is deprecated!", path, name);
+            }
             setter.invoke(instance, name);
           }
           continue;
@@ -209,6 +215,9 @@ public class ConfigMapper {
 
         Object value = getValue(instance.getClass(), parameterType, parameterClass, config, toPath(path, name), configPropName);
         if (value != null) {
+          if (descriptor.deprecated) {
+            LOGGER.warn("{}.{} is deprecated!", path, name);
+          }
           setter.invoke(instance, value);
         }
       }
@@ -231,6 +240,9 @@ public class ConfigMapper {
         String configPropName = propertyNames.remove(descriptor.name);
         if (configPropName == null) {
           if (Named.class.isAssignableFrom(clazz) && field.getType() == String.class && name != null && descriptor.name.equals("name")) {
+            if (descriptor.deprecated) {
+              LOGGER.warn("{}.{} is deprecated!", path, name);
+            }
             field.set(instance, name);
           }
           continue;
@@ -238,6 +250,9 @@ public class ConfigMapper {
 
         Object value = getValue(instance.getClass(), genericType, fieldClass, config, toPath(path, name), configPropName);
         if (value != null) {
+          if (descriptor.deprecated) {
+            LOGGER.warn("{}.{} is deprecated!", path, name);
+          }
           field.set(instance, value);
         }
       }
@@ -558,20 +573,24 @@ public class ConfigMapper {
   protected static class SetterDescriptor {
     private final String name;
     private final Method setter;
+    private final boolean deprecated;
 
     SetterDescriptor(String name, Method setter) {
       this.name = name;
       this.setter = setter;
+      this.deprecated = setter.getAnnotation(Deprecated.class) != null;
     }
   }
 
   protected static class FieldDescriptor {
     private final String name;
     private final Field field;
+    private final boolean deprecated;
 
     FieldDescriptor(String name, Field field) {
       this.name = name;
       this.field = field;
+      this.deprecated = field.getAnnotation(Deprecated.class) != null;
     }
   }
 }

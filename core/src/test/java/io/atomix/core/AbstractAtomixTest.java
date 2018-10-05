@@ -68,7 +68,7 @@ public abstract class AbstractAtomixTest {
   protected static AtomixBuilder buildAtomix(int id, List<Integer> memberIds, Properties properties) {
     Collection<Node> nodes = memberIds.stream()
         .map(memberId -> Node.builder()
-            .withId(String.valueOf(id))
+            .withId(String.valueOf(memberId))
             .withAddress(Address.from("localhost", BASE_PORT + memberId))
             .build())
         .collect(Collectors.toList());
