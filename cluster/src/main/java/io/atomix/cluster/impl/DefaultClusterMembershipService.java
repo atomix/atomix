@@ -16,6 +16,7 @@
 package io.atomix.cluster.impl;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.ClusterMembershipEvent;
@@ -30,6 +31,7 @@ import io.atomix.cluster.discovery.ManagedNodeDiscoveryService;
 import io.atomix.cluster.discovery.NodeDiscoveryEvent;
 import io.atomix.cluster.discovery.NodeDiscoveryEventListener;
 import io.atomix.utils.Version;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.event.AbstractListenerManager;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.Namespace;
@@ -37,6 +39,7 @@ import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -48,6 +51,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
@@ -62,7 +67,7 @@ public class DefaultClusterMembershipService
 
   private static final Logger LOGGER = getLogger(DefaultClusterMembershipService.class);
 
-  private static final String METADATA_BROADCAST = "atomix-cluster-metadata";
+  private static final String HEARTBEAT_MESSAGE = "atomix-cluster-metadata";
 
   private static final Serializer SERIALIZER = Serializer.using(
       Namespace.builder()
@@ -152,10 +157,8 @@ public class DefaultClusterMembershipService
    */
   private void handleJoinEvent(Node node) {
     StatefulMember member = new StatefulMember(MemberId.from(node.id().id()), node.address());
-    member.setActive(true);
-    member.setReachable(true);
-    if (members.putIfAbsent(member.id(), member) == null) {
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, member));
+    if (!members.containsKey(member.id())) {
+      sendHeartbeat(member);
     }
   }
 
@@ -163,107 +166,129 @@ public class DefaultClusterMembershipService
    * Handles a node leave event.
    */
   private void handleLeaveEvent(Node node) {
-    StatefulMember member = members.remove(MemberId.from(node.id().id()));
-    if (member != null) {
-      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_REMOVED, member));
-    }
+    members.compute(MemberId.from(node.id().id()), (id, member) -> member == null || !member.isActive() ? null : member);
+  }
+
+  /**
+   * Sends heartbeats to all peers.
+   */
+  private CompletableFuture<Void> sendHeartbeats() {
+    checkMetadata();
+    Stream<StatefulMember> clusterMembers = members.values().stream()
+        .filter(member -> !member.id().equals(localMember.id()));
+
+    Stream<StatefulMember> providerMembers = discoveryService.getNodes().stream()
+        .filter(node -> !members.containsKey(MemberId.from(node.id().id())))
+        .map(node -> new StatefulMember(MemberId.from(node.id().id()), node.address()));
+
+    return Futures.allOf(Stream.concat(clusterMembers, providerMembers)
+        .map(member -> {
+          LOGGER.trace("{} - Sending heartbeat: {}", localMember.id(), member);
+          return sendHeartbeat(member).exceptionally(v -> null);
+        }).collect(Collectors.toList()))
+        .thenApply(v -> null);
   }
 
   /**
    * Checks the local member metadata for changes.
    */
   private void checkMetadata() {
-    Member localMember = getLocalMember();
     if (!localMember.properties().equals(localProperties)) {
       synchronized (this) {
         if (!localMember.properties().equals(localProperties)) {
           localProperties = localMember.properties();
+          localMember.incrementTimestamp();
           post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.METADATA_CHANGED, localMember));
-          broadcastMetadata();
         }
       }
     }
   }
 
   /**
-   * Broadcasts a local member metadata change to all peers.
+   * Sends a heartbeat to the given peer.
    */
-  private void broadcastMetadata() {
-    checkMetadata();
-    members.values().stream()
-        .filter(member -> !member.id().equals(localMember.id()))
-        .forEach(this::broadcastMetadata);
-    detectFailures();
-  }
+  private CompletableFuture<Void> sendHeartbeat(StatefulMember member) {
+    return bootstrapService.getMessagingService().sendAndReceive(member.address(), HEARTBEAT_MESSAGE, SERIALIZER.encode(localMember))
+        .whenCompleteAsync((response, error) -> {
+          if (error == null) {
+            Collection<StatefulMember> remoteMembers = SERIALIZER.decode(response);
+            for (StatefulMember remoteMember : remoteMembers) {
+              if (remoteMember.id().equals(localMember.id()) || !remoteMember.isReachable()) {
+                continue;
+              }
 
-  /**
-   * Broadcast the local member metadata to the given peer.
-   *
-   * @param member the member to which to broadcast the metadata
-   */
-  private void broadcastMetadata(StatefulMember member) {
-    LOGGER.trace("{} - Sending heartbeat to {}", localMember.id(), member);
-    bootstrapService.getMessagingService().sendAsync(member.address(), METADATA_BROADCAST, SERIALIZER.encode(localMember))
-        .whenComplete((result, error) -> {
-          if (error != null) {
-            LOGGER.debug("{} - Failed to send heartbeat to {}", localMember.id(), member, error);
+              StatefulMember localMember = members.get(remoteMember.id());
+              if (localMember == null) {
+                members.put(remoteMember.id(), remoteMember);
+                post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, remoteMember));
+              } else if (localMember.getTimestamp() < remoteMember.getTimestamp()) {
+                members.put(remoteMember.id(), remoteMember);
+                post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.METADATA_CHANGED, localMember));
+              }
+            }
           } else {
-            LOGGER.trace("{} - Successfully sent heartbeat to {}", localMember.id(), member);
+            LOGGER.debug("{} - Sending heartbeat to {} failed", localMember.id(), member, error);
+            if (member.isReachable()) {
+              member.setReachable(false);
+              post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, member));
+            }
+
+            PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(member.id(), n -> new PhiAccrualFailureDetector());
+            double phi = failureDetector.phi();
+            if (phi >= config.getReachabilityThreshold()
+                || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getReachabilityTimeout().toMillis())) {
+              if (members.remove(member.id()) != null) {
+                failureDetectors.remove(member.id());
+                post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_REMOVED, member));
+              }
+            }
           }
-        });
+        }, heartbeatScheduler).exceptionally(e -> null)
+        .thenApply(v -> null);
   }
 
   /**
-   * Handles a metadata broadcast from the given address.
-   *
-   * @param address the address from which the metadata was broadcast
-   * @param message the broadcast message
+   * Handles a heartbeat message.
    */
-  private void handleMetadata(Address address, byte[] message) {
+  private byte[] handleHeartbeat(Address address, byte[] message) {
     StatefulMember remoteMember = SERIALIZER.decode(message);
-    LOGGER.trace("{} - Received heartbeat from {}", localMember.id(), remoteMember);
-    StatefulMember localMember = members.get(remoteMember.id());
-    if (localMember != null) {
-      if (!localMember.isReachable()) {
-        LOGGER.info("{} - Member reachable: {}", localMember.id(), localMember);
-        localMember.setReachable(true);
-        post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, localMember));
-      }
+    LOGGER.trace("{} - Received heartbeat: {}", localMember.id(), remoteMember);
+    failureDetectors.computeIfAbsent(remoteMember.id(), n -> new PhiAccrualFailureDetector()).report();
+    StatefulMember member = members.get(remoteMember.id());
 
-      if (!Objects.equals(localMember.version(), remoteMember.version()) | !localMember.properties().equals(remoteMember.properties())) {
-        LOGGER.info("{} - Member updated: {}", remoteMember.id(), remoteMember);
+    if (member == null) {
+      remoteMember.setActive(true);
+      remoteMember.setReachable(true);
+      members.put(remoteMember.id(), remoteMember);
+      post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, remoteMember));
+    } else {
+      // If the member's metadata changed, overwrite the local member. We do this instead of a version check since
+      // a heartbeat from the source member always takes precedence over a more recent version.
+      if (!Objects.equals(member.version(), remoteMember.version())
+          || !Objects.equals(member.zone(), remoteMember.zone())
+          || !Objects.equals(member.rack(), remoteMember.rack())
+          || !Objects.equals(member.host(), remoteMember.host())
+          || !Objects.equals(member.properties(), remoteMember.properties())) {
         members.put(remoteMember.id(), remoteMember);
-        post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.METADATA_CHANGED, remoteMember));
+        if (member.isActive()) {
+          post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.METADATA_CHANGED, member));
+        }
+        member = remoteMember;
       }
-      failureDetectors.computeIfAbsent(localMember.id(), id -> new PhiAccrualFailureDetector()).report();
-    }
-  }
 
-  /**
-   * Checks for heartbeat failures.
-   */
-  private void detectFailures() {
-    members.values().stream()
-        .filter(member -> !member.id().equals(localMember.id()))
-        .forEach(this::detectFailure);
-  }
-
-  /**
-   * Checks the given member for a heartbeat failure.
-   *
-   * @param member the member to check
-   */
-  private void detectFailure(StatefulMember member) {
-    PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(member.id(), n -> new PhiAccrualFailureDetector());
-    double phi = failureDetector.phi();
-    if (phi >= config.getReachabilityThreshold()
-        || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getReachabilityTimeout().toMillis())) {
-      if (member.isReachable()) {
-        LOGGER.info("{} - Member unreachable: {}", localMember.id(), member);
-        member.setReachable(false);
+      // If the local member is not active, set it to active and trigger a MEMBER_ADDED event.
+      if (!member.isActive()) {
+        member.setActive(true);
+        member.setReachable(true);
+        post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, member));
+      }
+      // If the member has been marked unreachable, mark it as reachable and trigger a REACHABILITY_CHANGED event.
+      else if (!member.isReachable()) {
+        member.setReachable(true);
         post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.REACHABILITY_CHANGED, member));
       }
     }
+    return SERIALIZER.encode(Lists.newArrayList(members.values()));
   }
 
   @Override
@@ -275,9 +300,9 @@ public class DefaultClusterMembershipService
         localMember.setActive(true);
         localMember.setReachable(true);
         members.put(localMember.id(), localMember);
-        bootstrapService.getMessagingService().registerHandler(METADATA_BROADCAST, this::handleMetadata, heartbeatScheduler);
-        heartbeatFuture = heartbeatScheduler.scheduleAtFixedRate(
-            this::broadcastMetadata, 0, config.getBroadcastInterval().toMillis(), TimeUnit.MILLISECONDS);
+        post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.MEMBER_ADDED, localMember));
+        bootstrapService.getMessagingService().registerHandler(HEARTBEAT_MESSAGE, this::handleHeartbeat, heartbeatScheduler);
+        heartbeatFuture = heartbeatScheduler.scheduleAtFixedRate(this::sendHeartbeats, 0, config.getBroadcastInterval().toMillis(), TimeUnit.MILLISECONDS);
       }).thenApply(v -> {
         LOGGER.info("Started");
         return this;
@@ -304,7 +329,7 @@ public class DefaultClusterMembershipService
             localMember.setActive(false);
             localMember.setReachable(false);
             members.clear();
-            bootstrapService.getMessagingService().unregisterHandler(METADATA_BROADCAST);
+            bootstrapService.getMessagingService().unregisterHandler(HEARTBEAT_MESSAGE);
             LOGGER.info("Stopped");
           });
     }

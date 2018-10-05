@@ -357,8 +357,6 @@ public class AtomixTest extends AbstractAtomixTest {
     // client1 added to data node
     ClusterMembershipEvent event1 = dataListener.event();
     assertEquals(ClusterMembershipEvent.Type.MEMBER_ADDED, event1.type());
-    event1 = dataListener.event();
-    assertEquals(ClusterMembershipEvent.Type.METADATA_CHANGED, event1.type());
 
     Member member = event1.subject();
 

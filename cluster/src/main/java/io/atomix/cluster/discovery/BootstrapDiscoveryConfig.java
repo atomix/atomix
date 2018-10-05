@@ -66,6 +66,7 @@ public class BootstrapDiscoveryConfig extends NodeDiscoveryConfig {
    *
    * @return the heartbeat interval
    */
+  @Deprecated
   public Duration getHeartbeatInterval() {
     return heartbeatInterval;
   }
@@ -76,6 +77,7 @@ public class BootstrapDiscoveryConfig extends NodeDiscoveryConfig {
    * @param heartbeatInterval the heartbeat interval
    * @return the group membership configuration
    */
+  @Deprecated
   public BootstrapDiscoveryConfig setHeartbeatInterval(Duration heartbeatInterval) {
     this.heartbeatInterval = checkNotNull(heartbeatInterval);
     return this;
@@ -86,6 +88,7 @@ public class BootstrapDiscoveryConfig extends NodeDiscoveryConfig {
    *
    * @return the failure detector threshold
    */
+  @Deprecated
   public int getFailureThreshold() {
     return failureThreshold;
   }
@@ -96,6 +99,7 @@ public class BootstrapDiscoveryConfig extends NodeDiscoveryConfig {
    * @param failureThreshold the failure detector threshold
    * @return the group membership configuration
    */
+  @Deprecated
   public BootstrapDiscoveryConfig setFailureThreshold(int failureThreshold) {
     this.failureThreshold = failureThreshold;
     return this;
@@ -106,6 +110,7 @@ public class BootstrapDiscoveryConfig extends NodeDiscoveryConfig {
    *
    * @return the base failure timeout
    */
+  @Deprecated
   public Duration getFailureTimeout() {
     return failureTimeout;
   }
@@ -116,6 +121,7 @@ public class BootstrapDiscoveryConfig extends NodeDiscoveryConfig {
    * @param failureTimeout the base failure timeout
    * @return the group membership configuration
    */
+  @Deprecated
   public BootstrapDiscoveryConfig setFailureTimeout(Duration failureTimeout) {
     this.failureTimeout = checkNotNull(failureTimeout);
     return this;
