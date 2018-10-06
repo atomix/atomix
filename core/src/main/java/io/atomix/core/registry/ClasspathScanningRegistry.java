@@ -17,6 +17,7 @@ package io.atomix.core.registry;
 
 import com.google.common.collect.Sets;
 import io.atomix.cluster.discovery.NodeDiscoveryProvider;
+import io.atomix.cluster.protocol.GroupMembershipProtocol;
 import io.atomix.core.AtomixRegistry;
 import io.atomix.core.profile.Profile;
 import io.atomix.primitive.PrimitiveType;
@@ -228,7 +229,8 @@ public class ClasspathScanningRegistry implements AtomixRegistry {
               PrimitiveType.class,
               PrimitiveProtocol.Type.class,
               Profile.Type.class,
-              NodeDiscoveryProvider.Type.class),
+              NodeDiscoveryProvider.Type.class,
+              GroupMembershipProtocol.Type.class),
           whitelistPackages);
     }
   }

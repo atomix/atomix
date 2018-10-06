@@ -35,6 +35,7 @@ import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
 import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
 import io.atomix.cluster.messaging.impl.NettyBroadcastService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
+import io.atomix.cluster.protocol.GroupMembershipProtocol;
 import io.atomix.utils.Managed;
 import io.atomix.utils.Version;
 import io.atomix.utils.concurrent.Futures;
@@ -164,6 +165,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   protected final ManagedMessagingService messagingService;
   protected final ManagedBroadcastService broadcastService;
   protected final NodeDiscoveryProvider discoveryProvider;
+  protected final GroupMembershipProtocol membershipProtocol;
   protected final ManagedClusterMembershipService membershipService;
   protected final ManagedClusterCommunicationService communicationService;
   protected final ManagedClusterEventService eventService;
@@ -186,7 +188,8 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     this.messagingService = buildMessagingService(config);
     this.broadcastService = buildBroadcastService(config);
     this.discoveryProvider = buildLocationProvider(config);
-    this.membershipService = buildClusterMembershipService(config, this, discoveryProvider, version);
+    this.membershipProtocol = buildMembershipProtocol(config);
+    this.membershipService = buildClusterMembershipService(config, this, discoveryProvider, membershipProtocol, version);
     this.communicationService = buildClusterMessagingService(membershipService, messagingService);
     this.eventService = buildClusterEventService(membershipService, messagingService);
   }
@@ -376,12 +379,21 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   }
 
   /**
+   * Builds the group membership protocol.
+   */
+  @SuppressWarnings("unchecked")
+  protected static GroupMembershipProtocol buildMembershipProtocol(ClusterConfig config) {
+    return config.getProtocolConfig().getType().newProtocol(config.getProtocolConfig());
+  }
+
+  /**
    * Builds a cluster service.
    */
   protected static ManagedClusterMembershipService buildClusterMembershipService(
       ClusterConfig config,
       BootstrapService bootstrapService,
       NodeDiscoveryProvider discoveryProvider,
+      GroupMembershipProtocol membershipProtocol,
       Version version) {
     // If the local node has not be configured, create a default node.
     Member localMember = Member.builder()
@@ -397,7 +409,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
         version,
         new DefaultNodeDiscoveryService(bootstrapService, localMember, discoveryProvider),
         bootstrapService,
-        config.getMembershipConfig());
+        membershipProtocol);
   }
 
   /**

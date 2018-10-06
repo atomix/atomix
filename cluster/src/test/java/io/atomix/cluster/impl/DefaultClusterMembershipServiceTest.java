@@ -21,12 +21,13 @@ import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.TestBootstrapService;
 import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.messaging.impl.TestBroadcastServiceFactory;
 import io.atomix.cluster.messaging.impl.TestMessagingServiceFactory;
+import io.atomix.cluster.protocol.PhiMembershipProtocol;
+import io.atomix.cluster.protocol.PhiMembershipProtocolConfig;
 import io.atomix.utils.Version;
 import io.atomix.utils.net.Address;
 import org.junit.Test;
@@ -80,7 +81,7 @@ public class DefaultClusterMembershipServiceTest {
         Version.from("1.0.0"),
         new DefaultNodeDiscoveryService(bootstrapService1, localMember1, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService1,
-        new MembershipConfig());
+        new PhiMembershipProtocol(new PhiMembershipProtocolConfig()));
 
     Member localMember2 = buildMember(2);
     BootstrapService bootstrapService2 = new TestBootstrapService(
@@ -91,7 +92,7 @@ public class DefaultClusterMembershipServiceTest {
         Version.from("1.0.0"),
         new DefaultNodeDiscoveryService(bootstrapService2, localMember2, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService2,
-        new MembershipConfig());
+        new PhiMembershipProtocol(new PhiMembershipProtocolConfig()));
 
     Member localMember3 = buildMember(3);
     BootstrapService bootstrapService3 = new TestBootstrapService(
@@ -102,7 +103,7 @@ public class DefaultClusterMembershipServiceTest {
         Version.from("1.0.1"),
         new DefaultNodeDiscoveryService(bootstrapService3, localMember3, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService3,
-        new MembershipConfig());
+        new PhiMembershipProtocol(new PhiMembershipProtocolConfig()));
 
     assertNull(clusterService1.getMember(MemberId.from("1")));
     assertNull(clusterService1.getMember(MemberId.from("2")));
@@ -135,7 +136,7 @@ public class DefaultClusterMembershipServiceTest {
         Version.from("1.1.0"),
         new DefaultNodeDiscoveryService(ephemeralBootstrapService, anonymousMember, new BootstrapDiscoveryProvider(bootstrapLocations)),
         ephemeralBootstrapService,
-        new MembershipConfig());
+        new PhiMembershipProtocol(new PhiMembershipProtocolConfig()));
 
     assertFalse(ephemeralClusterService.getLocalMember().isActive());
 
