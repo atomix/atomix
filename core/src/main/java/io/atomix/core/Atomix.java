@@ -15,20 +15,6 @@
  */
 package io.atomix.core;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.atomix.cluster.AtomixCluster;
@@ -36,6 +22,8 @@ import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.discovery.NodeDiscoveryConfig;
 import io.atomix.cluster.discovery.NodeDiscoveryProvider;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.cluster.protocol.GroupMembershipProtocol;
+import io.atomix.cluster.protocol.GroupMembershipProtocolConfig;
 import io.atomix.core.barrier.DistributedCyclicBarrier;
 import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.DistributedCounter;
@@ -101,6 +89,20 @@ import io.atomix.utils.config.ConfigMapper;
 import io.atomix.utils.config.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -310,7 +312,8 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         new PolymorphicTypeMapper(null, PrimitiveConfig.class, PrimitiveType.class),
         new PolymorphicTypeMapper("type", PrimitiveProtocolConfig.class, PrimitiveProtocol.Type.class),
         new PolymorphicTypeMapper("type", ProfileConfig.class, Profile.Type.class),
-        new PolymorphicTypeMapper("type", NodeDiscoveryConfig.class, NodeDiscoveryProvider.Type.class));
+        new PolymorphicTypeMapper("type", NodeDiscoveryConfig.class, NodeDiscoveryProvider.Type.class),
+        new PolymorphicTypeMapper("type", GroupMembershipProtocolConfig.class, GroupMembershipProtocol.Type.class));
     return mapper.loadFiles(AtomixConfig.class, files, Lists.newArrayList(RESOURCES));
   }
 

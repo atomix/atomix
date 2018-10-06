@@ -17,6 +17,8 @@ package io.atomix.cluster;
 
 import com.google.common.collect.Lists;
 import io.atomix.cluster.discovery.NodeDiscoveryProvider;
+import io.atomix.cluster.protocol.PhiMembershipProtocolConfig;
+import io.atomix.cluster.protocol.GroupMembershipProtocolConfig;
 import io.atomix.utils.Builder;
 import io.atomix.utils.net.Address;
 
@@ -328,7 +330,10 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    */
   @Deprecated
   public AtomixClusterBuilder setBroadcastInterval(Duration interval) {
-    config.getMembershipConfig().setBroadcastInterval(interval);
+    GroupMembershipProtocolConfig protocolConfig = config.getProtocolConfig();
+    if (protocolConfig instanceof PhiMembershipProtocolConfig) {
+      ((PhiMembershipProtocolConfig) protocolConfig).setHeartbeatInterval(interval);
+    }
     return this;
   }
 
@@ -340,8 +345,12 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    * @param interval the reachability broadcast interval
    * @return the cluster builder
    */
+  @Deprecated
   public AtomixClusterBuilder withBroadcastInterval(Duration interval) {
-    config.getMembershipConfig().setBroadcastInterval(interval);
+    GroupMembershipProtocolConfig protocolConfig = config.getProtocolConfig();
+    if (protocolConfig instanceof PhiMembershipProtocolConfig) {
+      ((PhiMembershipProtocolConfig) protocolConfig).setHeartbeatInterval(interval);
+    }
     return this;
   }
 
@@ -357,7 +366,10 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    */
   @Deprecated
   public AtomixClusterBuilder setReachabilityThreshold(int threshold) {
-    config.getMembershipConfig().setReachabilityThreshold(threshold);
+    GroupMembershipProtocolConfig protocolConfig = config.getProtocolConfig();
+    if (protocolConfig instanceof PhiMembershipProtocolConfig) {
+      ((PhiMembershipProtocolConfig) protocolConfig).setFailureThreshold(threshold);
+    }
     return this;
   }
 
@@ -370,8 +382,12 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    * @param threshold the reachability failure detection threshold
    * @return the cluster builder
    */
+  @Deprecated
   public AtomixClusterBuilder withReachabilityThreshold(int threshold) {
-    config.getMembershipConfig().setReachabilityThreshold(threshold);
+    GroupMembershipProtocolConfig protocolConfig = config.getProtocolConfig();
+    if (protocolConfig instanceof PhiMembershipProtocolConfig) {
+      ((PhiMembershipProtocolConfig) protocolConfig).setFailureThreshold(threshold);
+    }
     return this;
   }
 
@@ -384,8 +400,12 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    * @param timeout the reachability failure timeout
    * @return the cluster builder
    */
+  @Deprecated
   public AtomixClusterBuilder withReachabilityTimeout(Duration timeout) {
-    config.getMembershipConfig().setReachabilityTimeout(timeout);
+    GroupMembershipProtocolConfig protocolConfig = config.getProtocolConfig();
+    if (protocolConfig instanceof PhiMembershipProtocolConfig) {
+      ((PhiMembershipProtocolConfig) protocolConfig).setFailureTimeout(timeout);
+    }
     return this;
   }
 

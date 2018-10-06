@@ -16,19 +16,20 @@
 package io.atomix.cluster.messaging.impl;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.ManagedClusterMembershipService;
 import io.atomix.cluster.Member;
-import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.TestBootstrapService;
+import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.impl.DefaultNodeDiscoveryService;
 import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.cluster.protocol.PhiMembershipProtocol;
+import io.atomix.cluster.protocol.PhiMembershipProtocolConfig;
 import io.atomix.utils.Version;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.Namespaces;
@@ -83,7 +84,7 @@ public class DefaultClusterEventServiceTest {
         Version.from("1.0.0"),
         new DefaultNodeDiscoveryService(bootstrapService1, localMember1, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService1,
-        new MembershipConfig());
+        new PhiMembershipProtocol(new PhiMembershipProtocolConfig()));
     ClusterMembershipService clusterMembershipService1 = clusterService1.start().join();
     ManagedClusterEventService clusterEventingService1 = new DefaultClusterEventService(clusterMembershipService1, messagingService1);
     ClusterEventService eventService1 = clusterEventingService1.start().join();
@@ -98,7 +99,7 @@ public class DefaultClusterEventServiceTest {
         Version.from("1.0.0"),
         new DefaultNodeDiscoveryService(bootstrapService2, localMember2, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService2,
-        new MembershipConfig());
+        new PhiMembershipProtocol(new PhiMembershipProtocolConfig()));
     ClusterMembershipService clusterMembershipService2 = clusterService2.start().join();
     ManagedClusterEventService clusterEventingService2 = new DefaultClusterEventService(clusterMembershipService2, messagingService2);
     ClusterEventService eventService2 = clusterEventingService2.start().join();
@@ -113,7 +114,7 @@ public class DefaultClusterEventServiceTest {
         Version.from("1.0.0"),
         new DefaultNodeDiscoveryService(bootstrapService3, localMember3, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService3,
-        new MembershipConfig());
+        new PhiMembershipProtocol(new PhiMembershipProtocolConfig()));
     ClusterMembershipService clusterMembershipService3 = clusterService3.start().join();
     ManagedClusterEventService clusterEventingService3 = new DefaultClusterEventService(clusterMembershipService3, messagingService3);
     ClusterEventService eventService3 = clusterEventingService3.start().join();
