@@ -31,6 +31,7 @@ import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.cluster.messaging.UnicastService;
 import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
 import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
 import io.atomix.cluster.messaging.impl.NettyBroadcastService;
@@ -192,6 +193,20 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     this.membershipService = buildClusterMembershipService(config, this, discoveryProvider, membershipProtocol, version);
     this.communicationService = buildClusterMessagingService(membershipService, messagingService);
     this.eventService = buildClusterEventService(membershipService, messagingService);
+  }
+
+  /**
+   * Returns the cluster unicast service.
+   * <p>
+   * The unicast service supports unreliable uni-directional messaging via UDP. This is a
+   * low-level cluster communication API. For higher level messaging, use the
+   * {@link #getCommunicationService() communication service} or {@link #getEventService() event service}.
+   *
+   * @return the cluster unicast service
+   */
+  @Override
+  public UnicastService getUnicastService() {
+    return null;
   }
 
   /**
