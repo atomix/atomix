@@ -18,6 +18,8 @@ package io.atomix.cluster.protocol;
 import io.atomix.cluster.Member;
 import io.atomix.utils.event.AbstractEvent;
 
+import java.util.Objects;
+
 /**
  * Group membership protocol event.
  */
@@ -63,5 +65,19 @@ public class GroupMembershipEvent extends AbstractEvent<GroupMembershipEvent.Typ
    */
   public Member member() {
     return subject();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(type(), member());
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof GroupMembershipEvent) {
+      GroupMembershipEvent that = (GroupMembershipEvent) object;
+      return this.type() == that.type() && this.member().equals(that.member());
+    }
+    return false;
   }
 }

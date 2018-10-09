@@ -15,15 +15,18 @@
  */
 package io.atomix.cluster.messaging.impl;
 
-import io.atomix.utils.net.Address;
+import com.google.common.collect.Sets;
 import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingException.NoRemoteHandler;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.net.Address;
 
+import java.net.ConnectException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -42,6 +45,7 @@ public class TestMessagingService implements ManagedMessagingService {
   private final Map<Address, TestMessagingService> services;
   private final Map<String, BiFunction<Address, byte[], CompletableFuture<byte[]>>> handlers = new ConcurrentHashMap<>();
   private final AtomicBoolean started = new AtomicBoolean();
+  private final Set<Address> partitions = Sets.newConcurrentHashSet();
 
   public TestMessagingService(Address address, Map<Address, TestMessagingService> services) {
     this.address = address;
@@ -71,6 +75,30 @@ public class TestMessagingService implements ManagedMessagingService {
     return handler;
   }
 
+  /**
+   * Partitions the node from the given address.
+   */
+  void partition(Address address) {
+    partitions.add(address);
+  }
+
+  /**
+   * Heals the partition from the given address.
+   */
+  void heal(Address address) {
+    partitions.remove(address);
+  }
+
+  /**
+   * Returns a boolean indicating whether this node is partitioned from the given address.
+   *
+   * @param address the address to check
+   * @return whether this node is partitioned from the given address
+   */
+  boolean isPartitioned(Address address) {
+    return partitions.contains(address);
+  }
+
   @Override
   public Address address() {
     return address;
@@ -78,16 +106,25 @@ public class TestMessagingService implements ManagedMessagingService {
 
   @Override
   public CompletableFuture<Void> sendAsync(Address address, String type, byte[] payload) {
+    if (isPartitioned(address)) {
+      return Futures.exceptionalFuture(new ConnectException());
+    }
     return getHandler(address, type).apply(this.address, payload).thenApply(v -> null);
   }
 
   @Override
   public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload) {
+    if (isPartitioned(address)) {
+      return Futures.exceptionalFuture(new ConnectException());
+    }
     return getHandler(address, type).apply(this.address, payload);
   }
 
   @Override
   public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Executor executor) {
+    if (isPartitioned(address)) {
+      return Futures.exceptionalFuture(new ConnectException());
+    }
     ComposableFuture<byte[]> future = new ComposableFuture<>();
     sendAndReceive(address, type, payload).whenCompleteAsync(future, executor);
     return future;
@@ -95,11 +132,17 @@ public class TestMessagingService implements ManagedMessagingService {
 
   @Override
   public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout) {
+    if (isPartitioned(address)) {
+      return Futures.exceptionalFuture(new ConnectException());
+    }
     return getHandler(address, type).apply(this.address, payload);
   }
 
   @Override
   public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout, Executor executor) {
+    if (isPartitioned(address)) {
+      return Futures.exceptionalFuture(new ConnectException());
+    }
     ComposableFuture<byte[]> future = new ComposableFuture<>();
     sendAndReceive(address, type, payload).whenCompleteAsync(future, executor);
     return future;

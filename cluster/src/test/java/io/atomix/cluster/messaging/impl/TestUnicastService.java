@@ -16,11 +16,13 @@
 package io.atomix.cluster.messaging.impl;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import io.atomix.cluster.messaging.ManagedUnicastService;
 import io.atomix.cluster.messaging.UnicastService;
 import io.atomix.utils.net.Address;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,14 +36,52 @@ public class TestUnicastService implements ManagedUnicastService {
   private final Map<Address, TestUnicastService> services;
   private final Map<String, Map<BiConsumer<Address, byte[]>, Executor>> listeners = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
+  private final Set<Address> partitions = Sets.newConcurrentHashSet();
 
   public TestUnicastService(Address address, Map<Address, TestUnicastService> services) {
     this.address = address;
     this.services = services;
   }
 
+  /**
+   * Returns the service address.
+   *
+   * @return the service address
+   */
+  Address address() {
+    return address;
+  }
+
+  /**
+   * Partitions the node from the given address.
+   */
+  void partition(Address address) {
+    partitions.add(address);
+  }
+
+  /**
+   * Heals the partition from the given address.
+   */
+  void heal(Address address) {
+    partitions.remove(address);
+  }
+
+  /**
+   * Returns a boolean indicating whether this node is partitioned from the given address.
+   *
+   * @param address the address to check
+   * @return whether this node is partitioned from the given address
+   */
+  boolean isPartitioned(Address address) {
+    return partitions.contains(address);
+  }
+
   @Override
   public void unicast(Address address, String subject, byte[] message) {
+    if (isPartitioned(address)) {
+      return;
+    }
+
     TestUnicastService service = services.get(address);
     if (service != null) {
       Map<BiConsumer<Address, byte[]>, Executor> listeners = service.listeners.get(subject);
