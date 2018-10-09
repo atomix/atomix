@@ -239,7 +239,7 @@ public class PhiMembershipProtocol
                 post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, remoteMember));
               } else if (localMember.getTimestamp() < remoteMember.getTimestamp()) {
                 members.put(remoteMember.id(), remoteMember);
-                post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, localMember));
+                post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, remoteMember));
               }
             }
           } else {
@@ -287,7 +287,7 @@ public class PhiMembershipProtocol
           || !Objects.equals(member.properties(), remoteMember.properties())) {
         members.put(remoteMember.id(), remoteMember);
         if (member.isActive()) {
-          post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, member));
+          post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, remoteMember));
         }
         member = remoteMember;
       }

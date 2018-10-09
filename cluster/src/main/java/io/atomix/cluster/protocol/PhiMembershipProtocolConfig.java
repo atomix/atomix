@@ -15,11 +15,7 @@
  */
 package io.atomix.cluster.protocol;
 
-import io.atomix.cluster.NodeConfig;
-
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -34,7 +30,6 @@ public class PhiMembershipProtocolConfig extends GroupMembershipProtocolConfig {
   private Duration heartbeatInterval = Duration.ofMillis(DEFAULT_HEARTBEAT_INTERVAL);
   private int failureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
   private Duration failureTimeout = Duration.ofMillis(DEFAULT_FAILURE_TIMEOUT);
-  private Collection<NodeConfig> nodes = Collections.emptySet();
 
   @Override
   public GroupMembershipProtocol.Type getType() {
