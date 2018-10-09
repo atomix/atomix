@@ -55,6 +55,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
@@ -115,7 +116,7 @@ public class SwimMembershipProtocol
 
   private final BiFunction<Address, byte[], byte[]> probeHandler = (address, payload) ->
       SERIALIZER.encode(handleProbe(SERIALIZER.decode(payload)));
-  private final BiConsumer<Address, byte[]> probeRequestHandler = (address, payload) ->
+  private final BiFunction<Address, byte[], CompletableFuture<byte[]>> probeRequestHandler = (address, payload) ->
       handleProbeRequest(SERIALIZER.decode(payload))
           .thenApply(SERIALIZER::encode);
   private final BiConsumer<Address, byte[]> gossipListener = (address, payload) ->
@@ -171,14 +172,12 @@ public class SwimMembershipProtocol
    */
   private void checkMetadata() {
     if (!localMember.properties().equals(localProperties)) {
-      synchronized (this) {
-        if (!localMember.properties().equals(localProperties)) {
-          localProperties = localMember.properties();
-          localMember.setTerm(localMember.getTerm() + 1);
-          post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, localMember));
-          recordUpdate(localMember.copy());
-        }
-      }
+      localProperties = new Properties();
+      localProperties.putAll(localMember.properties());
+      LOGGER.debug("{} - Detected local properties change {}", localMember.id(), localProperties);
+      localMember.setTerm(localMember.getTerm() + 1);
+      post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, localMember));
+      recordUpdate(localMember.copy());
     }
   }
 
@@ -186,106 +185,116 @@ public class SwimMembershipProtocol
    * Updates the state for the given member.
    *
    * @param member the member for which to update the state
+   * @return whether the state for the member was updated
    */
-  private void updateState(ImmutableMember member) {
+  private boolean updateState(ImmutableMember member) {
     // If the member matches the local member, ignore the update.
     if (member.id().equals(localMember.id())) {
-      return;
+      return false;
     }
 
-    SwimMember localMember = members.get(member.id());
+    SwimMember swimMember = members.get(member.id());
 
     // If the local member is not present, add the member in the ALIVE state.
-    if (localMember == null) {
-      localMember = new SwimMember(member);
-      members.put(localMember.id(), localMember);
-      randomMembers.add(localMember);
+    if (swimMember == null) {
+      swimMember = new SwimMember(member);
+      members.put(swimMember.id(), swimMember);
+      randomMembers.add(swimMember);
       Collections.shuffle(randomMembers);
-      LOGGER.debug("{} - Member added {}", this.localMember.id(), localMember);
-      localMember.setState(State.ALIVE);
-      post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, localMember.copy()));
-      recordUpdate(localMember.copy());
+      LOGGER.debug("{} - Member added {}", this.localMember.id(), swimMember);
+      swimMember.setState(State.ALIVE);
+      post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, swimMember.copy()));
+      recordUpdate(swimMember.copy());
+      return true;
     }
     // If the term has been increased, update the member and record a gossip event.
-    else if (member.term() > localMember.getTerm()) {
+    else if (member.term() > swimMember.getTerm()) {
       // If the member's version has changed, remove the old member and add the new member.
-      if (member.version().compareTo(localMember.version()) != 0) {
-        post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_REMOVED, localMember.copy()));
-        randomMembers.remove(localMember);
-        localMember = new SwimMember(member);
-        localMember.setState(State.ALIVE);
-        members.put(member.id(), localMember);
-        randomMembers.add(localMember);
+      if (!Objects.equals(member.version(), swimMember.version())) {
+        members.remove(member.id());
+        randomMembers.remove(swimMember);
+        post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_REMOVED, swimMember.copy()));
+        swimMember = new SwimMember(member);
+        swimMember.setState(State.ALIVE);
+        members.put(member.id(), swimMember);
+        randomMembers.add(swimMember);
         Collections.shuffle(randomMembers);
-        LOGGER.debug("{} - Evicted member for new version {}", localMember);
-        post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, localMember.copy()));
-        recordUpdate(localMember.copy());
+        LOGGER.debug("{} - Evicted member for new version {}", swimMember);
+        post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, swimMember.copy()));
+        recordUpdate(swimMember.copy());
       } else {
         // Update the term for the local member.
-        localMember.setTerm(member.term());
+        swimMember.setTerm(member.term());
 
         // If the state has been changed to ALIVE, trigger a REACHABILITY_CHANGED event and then update metadata.
-        if (member.state() == State.ALIVE && localMember.getState() != State.ALIVE) {
-          localMember.setState(State.ALIVE);
-          LOGGER.debug("{} - Member reachable {}", this.localMember.id(), localMember);
-          post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, localMember.copy()));
-          if (!Objects.equals(member.properties(), localMember.properties())) {
-            localMember.properties().putAll(member.properties());
-            LOGGER.debug("{} - Member metadata changed {}", this.localMember.id(), localMember);
-            post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, localMember.copy()));
+        if (member.state() == State.ALIVE && swimMember.getState() != State.ALIVE) {
+          swimMember.setState(State.ALIVE);
+          LOGGER.debug("{} - Member reachable {}", this.localMember.id(), swimMember);
+          post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, swimMember.copy()));
+          if (!Objects.equals(member.properties(), swimMember.properties())) {
+            swimMember.properties().putAll(member.properties());
+            LOGGER.debug("{} - Member metadata changed {}", this.localMember.id(), swimMember);
+            post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, swimMember.copy()));
           }
         }
         // If the state has been changed to SUSPECT, update metadata and then trigger a REACHABILITY_CHANGED event.
-        else if (member.state() == State.SUSPECT && localMember.getState() != State.SUSPECT) {
-          if (!Objects.equals(member.properties(), localMember.properties())) {
-            localMember.properties().putAll(member.properties());
-            LOGGER.debug("{} - Member metadata changed {}", this.localMember.id(), localMember);
-            post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, localMember.copy()));
+        else if (member.state() == State.SUSPECT && swimMember.getState() != State.SUSPECT) {
+          if (!Objects.equals(member.properties(), swimMember.properties())) {
+            swimMember.properties().putAll(member.properties());
+            LOGGER.debug("{} - Member metadata changed {}", this.localMember.id(), swimMember);
+            post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, swimMember.copy()));
           }
-          localMember.setState(State.SUSPECT);
-          LOGGER.debug("{} - Member unreachable {}", this.localMember.id(), localMember);
-          post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, localMember.copy()));
+          swimMember.setState(State.SUSPECT);
+          LOGGER.debug("{} - Member unreachable {}", this.localMember.id(), swimMember);
+          post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, swimMember.copy()));
         }
         // If the state has been changed to DEAD, trigger a REACHABILITY_CHANGED event if necessary and then remove
         // the member from the members list and trigger a MEMBER_REMOVED event.
-        else if (member.state() == State.DEAD && localMember.getState() != State.DEAD) {
-          if (localMember.getState() == State.ALIVE) {
-            localMember.setState(State.SUSPECT);
-            LOGGER.debug("{} - Member unreachable {}", this.localMember.id(), localMember);
-            post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, localMember.copy()));
+        else if (member.state() == State.DEAD && swimMember.getState() != State.DEAD) {
+          if (swimMember.getState() == State.ALIVE) {
+            swimMember.setState(State.SUSPECT);
+            LOGGER.debug("{} - Member unreachable {}", this.localMember.id(), swimMember);
+            post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, swimMember.copy()));
           }
-          localMember.setState(State.DEAD);
-          members.remove(localMember.id());
-          randomMembers.remove(localMember);
+          swimMember.setState(State.DEAD);
+          members.remove(swimMember.id());
+          randomMembers.remove(swimMember);
           Collections.shuffle(randomMembers);
-          LOGGER.debug("{} - Member removed {}", this.localMember.id(), localMember);
-          post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_REMOVED, localMember.copy()));
+          LOGGER.debug("{} - Member removed {}", this.localMember.id(), swimMember);
+          post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_REMOVED, swimMember.copy()));
+        } else if (!Objects.equals(member.properties(), swimMember.properties())) {
+          swimMember.properties().putAll(member.properties());
+          LOGGER.debug("{} - Member metadata changed {}", this.localMember.id(), swimMember);
+          post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, swimMember.copy()));
         }
 
         // Always enqueue an update for gossip when the term changes.
-        recordUpdate(localMember.copy());
+        recordUpdate(swimMember.copy());
+        return true;
       }
     }
     // If the term remained the same but the state has progressed, update the state and trigger events.
-    else if (member.term() == localMember.getTerm() && member.state().ordinal() > localMember.getState().ordinal()) {
-      localMember.setState(member.state());
+    else if (member.term() == swimMember.getTerm() && member.state().ordinal() > swimMember.getState().ordinal()) {
+      swimMember.setState(member.state());
 
       // If the updated state is SUSPECT, post a REACHABILITY_CHANGED event and record an update.
       if (member.state() == State.SUSPECT) {
-        LOGGER.debug("{} - Member unreachable {}", this.localMember.id(), localMember);
-        post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, localMember.copy()));
+        LOGGER.debug("{} - Member unreachable {}", this.localMember.id(), swimMember);
+        post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, swimMember.copy()));
       }
       // If the updated state is DEAD, post a REACHABILITY_CHANGED event if necessary, then post a MEMBER_REMOVED
       // event and record an update.
       else if (member.state() == State.DEAD) {
-        members.remove(localMember.id());
-        randomMembers.remove(localMember);
+        members.remove(swimMember.id());
+        randomMembers.remove(swimMember);
         Collections.shuffle(randomMembers);
-        LOGGER.debug("{} - Member removed {}", this.localMember.id(), localMember);
-        post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_REMOVED, localMember.copy()));
+        LOGGER.debug("{} - Member removed {}", this.localMember.id(), swimMember);
+        post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_REMOVED, swimMember.copy()));
       }
-      recordUpdate(localMember.copy());
+      recordUpdate(swimMember.copy());
+      return true;
     }
+    return false;
   }
 
   /**
@@ -304,7 +313,11 @@ public class SwimMembershipProtocol
     for (SwimMember member : members.values()) {
       if (member.getState() == State.SUSPECT && System.currentTimeMillis() - member.getTimestamp() > config.getFailureTimeout().toMillis()) {
         member.setState(State.DEAD);
-        updateState(member.copy());
+        members.remove(member.id());
+        randomMembers.remove(member);
+        Collections.shuffle(randomMembers);
+        LOGGER.debug("{} - Member removed {}", this.localMember.id(), member);
+        post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_REMOVED, member.copy()));
       }
     }
   }
@@ -334,6 +347,7 @@ public class SwimMembershipProtocol
     List<SwimMember> probeMembers = Lists.newArrayList(discoveryService.getNodes().stream()
         .map(node -> new SwimMember(MemberId.from(node.id().id()), node.address()))
         .filter(member -> !members.containsKey(member.id()))
+        .filter(member -> !member.id().equals(localMember.id()))
         .sorted(Comparator.comparing(Member::id))
         .collect(Collectors.toList()));
 
@@ -351,9 +365,6 @@ public class SwimMembershipProtocol
         probe(probeMember.copy());
       }
     }
-
-    // Check suspect nodes for failure timeouts.
-    checkFailures();
   }
 
   /**
@@ -369,10 +380,10 @@ public class SwimMembershipProtocol
             updateState(SERIALIZER.decode(response));
           } else {
             // Verify that the local member term has not changed and request probes from peers.
-            SwimMember localMember = members.get(member.id());
-            if (localMember != null && localMember.getTerm() == member.term()) {
-              LOGGER.debug("{} - Failed to probe {}", localMember.id(), member);
-              requestProbes(localMember.copy());
+            SwimMember swimMember = members.get(member.id());
+            if (swimMember != null && swimMember.getTerm() == member.term()) {
+              LOGGER.debug("{} - Failed to probe {}", this.localMember.id(), member);
+              requestProbes(swimMember.copy());
             }
           }
         }, swimScheduler);
@@ -385,7 +396,7 @@ public class SwimMembershipProtocol
    * @return the current term
    */
   private ImmutableMember handleProbe(ImmutableMember member) {
-    LOGGER.trace("{} - Received probe from {}", localMember.id(), member);
+    LOGGER.trace("{} - Received probe {}", localMember.id(), member);
     // If the probe indicates a term greater than the local term, update the local term, increment and respond.
     if (member.term() > localMember.getTerm()) {
       localMember.setTerm(member.term() + 1);
@@ -419,8 +430,11 @@ public class SwimMembershipProtocol
         // If the count is equal to the number of probe peers and no probe has succeeded, the node is unreachable.
         else if (count == members.size() && !succeeded.get()) {
           // Broadcast the unreachable change to all peers if necessary.
-          if (config.isBroadcastUpdates()) {
-            broadcast(suspect);
+          SwimMember swimMember = new SwimMember(suspect);
+          LOGGER.debug("{} - Failed all probes of {}", localMember.id(), swimMember);
+          swimMember.setState(State.SUSPECT);
+          if (updateState(swimMember.copy()) && config.isBroadcastUpdates()) {
+            broadcast(swimMember.copy());
           }
         }
       }, swimScheduler);
@@ -438,7 +452,7 @@ public class SwimMembershipProtocol
     return bootstrapService.getMessagingService().sendAndReceive(member.address(), MEMBERSHIP_PROBE_REQUEST, SERIALIZER.encode(suspect))
         .thenApply(response -> {
           boolean succeeded = SERIALIZER.decode(response);
-          LOGGER.debug("{} - Probe request of {} from {} {}", this.localMember.id(), succeeded, member, succeeded ? "succeeded" : "failed");
+          LOGGER.debug("{} - Probe request of {} from {} {}", localMember.id(), suspect, member, succeeded ? "succeeded" : "failed");
           return succeeded;
         });
   }
@@ -464,17 +478,19 @@ public class SwimMembershipProtocol
    * @param member the member to probe
    */
   private CompletableFuture<Boolean> handleProbeRequest(ImmutableMember member) {
-    LOGGER.trace("{} - Probing {}", localMember.id(), member);
     CompletableFuture<Boolean> future = new CompletableFuture<>();
-    bootstrapService.getMessagingService().sendAndReceive(member.address(), MEMBERSHIP_PROBE, SERIALIZER.encode(member))
-        .whenCompleteAsync((response, error) -> {
-          if (error != null) {
-            LOGGER.debug("{} - Failed to probe {}", localMember.id(), member);
-            future.complete(false);
-          } else {
-            future.complete(true);
-          }
-        }, swimScheduler);
+    swimScheduler.execute(() -> {
+      LOGGER.trace("{} - Probing {}", localMember.id(), member);
+      bootstrapService.getMessagingService().sendAndReceive(member.address(), MEMBERSHIP_PROBE, SERIALIZER.encode(member))
+          .whenCompleteAsync((response, error) -> {
+            if (error != null) {
+              LOGGER.debug("{} - Failed to probe {}", localMember.id(), member);
+              future.complete(false);
+            } else {
+              future.complete(true);
+            }
+          }, swimScheduler);
+    });
     return future;
   }
 
@@ -508,6 +524,9 @@ public class SwimMembershipProtocol
    * Gossips pending updates to the cluster.
    */
   private void gossip() {
+    // Check suspect nodes for failure timeouts.
+    checkFailures();
+
     // Check local metadata for changes.
     checkMetadata();
 
@@ -529,7 +548,7 @@ public class SwimMembershipProtocol
   private void gossip(Collection<ImmutableMember> updates) {
     // Get a list of available peers. If peers are available, randomize the peer list and select a subset of
     // peers with which to gossip updates.
-    List<SwimMember> members = Lists.newArrayList(this.members.values());
+    List<SwimMember> members = Lists.newArrayList(randomMembers);
     if (!members.isEmpty()) {
       Collections.shuffle(members);
       for (int i = 0; i < Math.min(members.size(), config.getGossipFanout()); i++) {
@@ -545,7 +564,7 @@ public class SwimMembershipProtocol
    * @param updates the updated members to gossip
    */
   private void gossip(SwimMember member, Collection<ImmutableMember> updates) {
-    LOGGER.trace("{} - Sending gossip updates {} to {}", localMember.id(), updates, member);
+    LOGGER.trace("{} - Gossipping updates {} to {}", localMember.id(), updates, member);
     bootstrapService.getUnicastService().unicast(
         member.address(),
         MEMBERSHIP_GOSSIP,
@@ -605,7 +624,7 @@ public class SwimMembershipProtocol
   private void registerHandlers() {
     // Register TCP message handlers.
     bootstrapService.getMessagingService().registerHandler(MEMBERSHIP_PROBE, probeHandler, swimScheduler);
-    bootstrapService.getMessagingService().registerHandler(MEMBERSHIP_PROBE_REQUEST, probeRequestHandler, swimScheduler);
+    bootstrapService.getMessagingService().registerHandler(MEMBERSHIP_PROBE_REQUEST, probeRequestHandler);
 
     // Register UDP message listeners.
     bootstrapService.getUnicastService().addListener(MEMBERSHIP_GOSSIP, gossipListener, swimScheduler);
@@ -636,6 +655,7 @@ public class SwimMembershipProtocol
           member.host(),
           member.properties(),
           member.version());
+      this.localProperties.putAll(localMember.properties());
       discoveryService.addListener(discoveryEventListener);
 
       LOGGER.info("{} - Member activated: {}", localMember.id(), localMember);
@@ -699,7 +719,7 @@ public class SwimMembershipProtocol
   /**
    * Immutable member.
    */
-  private static class ImmutableMember extends Member {
+  static class ImmutableMember extends Member {
     private final Version version;
     private final State state;
     private final long term;
@@ -737,12 +757,23 @@ public class SwimMembershipProtocol
     public long term() {
       return term;
     }
+
+    @Override
+    public String toString() {
+      return toStringHelper(Member.class)
+          .add("id", id())
+          .add("address", address())
+          .add("properties", properties())
+          .add("state", state())
+          .add("term", term())
+          .toString();
+    }
   }
 
   /**
    * Swim member.
    */
-  private static class SwimMember extends Member {
+  static class SwimMember extends Member {
     private final Version version;
     private volatile State state;
     private volatile long term;
