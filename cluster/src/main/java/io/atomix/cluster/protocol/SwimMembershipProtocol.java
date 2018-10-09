@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -131,7 +130,6 @@ public class SwimMembershipProtocol
   private volatile Properties localProperties = new Properties();
   private final Map<MemberId, SwimMember> members = Maps.newConcurrentMap();
   private List<SwimMember> randomMembers = Lists.newCopyOnWriteArrayList();
-  private final Map<MemberId, Long> suspectTimestamps = Maps.newConcurrentMap();
   private final NodeDiscoveryEventListener discoveryEventListener = this::handleDiscoveryEvent;
   private final List<ImmutableMember> updates = Lists.newCopyOnWriteArrayList();
 
@@ -303,15 +301,10 @@ public class SwimMembershipProtocol
    * Checks suspect nodes for failures.
    */
   private void checkFailures() {
-    Iterator<Map.Entry<MemberId, Long>> iterator = suspectTimestamps.entrySet().iterator();
-    while (iterator.hasNext()) {
-      Map.Entry<MemberId, Long> entry = iterator.next();
-      SwimMember member = members.get(entry.getKey());
-      if (member != null && !member.isReachable()) {
-        if (System.currentTimeMillis() - entry.getValue() > config.getFailureTimeout().toMillis()) {
-          member.setState(State.DEAD);
-          updateState(member.copy());
-        }
+    for (SwimMember member : members.values()) {
+      if (member.getState() == State.SUSPECT && System.currentTimeMillis() - member.getTimestamp() > config.getFailureTimeout().toMillis()) {
+        member.setState(State.DEAD);
+        updateState(member.copy());
       }
     }
   }
@@ -753,6 +746,7 @@ public class SwimMembershipProtocol
     private final Version version;
     private volatile State state;
     private volatile long term;
+    private volatile long timestamp;
 
     SwimMember(MemberId id, Address address) {
       super(id, address);
@@ -788,14 +782,12 @@ public class SwimMembershipProtocol
      * Changes the member's state.
      *
      * @param state the member's state
-     * @return indicates whether the member's state was changed
      */
-    synchronized boolean setState(State state) {
+    void setState(State state) {
       if (this.state != state) {
         this.state = state;
-        return true;
+        setTimestamp(System.currentTimeMillis());
       }
-      return false;
     }
 
     /**
@@ -822,7 +814,7 @@ public class SwimMembershipProtocol
      *
      * @return the member logical timestamp
      */
-    public long getTerm() {
+    long getTerm() {
       return term;
     }
 
@@ -831,8 +823,26 @@ public class SwimMembershipProtocol
      *
      * @param term the member's logical timestamp
      */
-    public void setTerm(long term) {
+    void setTerm(long term) {
       this.term = term;
+    }
+
+    /**
+     * Returns the wall clock timestamp.
+     *
+     * @return the wall clock timestamp
+     */
+    long getTimestamp() {
+      return timestamp;
+    }
+
+    /**
+     * Sets the wall clock timestamp.
+     *
+     * @param timestamp the wall clock timestamp
+     */
+    void setTimestamp(long timestamp) {
+      this.timestamp = timestamp;
     }
 
     /**
