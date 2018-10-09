@@ -26,6 +26,7 @@ import io.atomix.cluster.TestBootstrapService;
 import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.messaging.impl.TestBroadcastServiceFactory;
 import io.atomix.cluster.messaging.impl.TestMessagingServiceFactory;
+import io.atomix.cluster.messaging.impl.TestUnicastServiceFactory;
 import io.atomix.cluster.protocol.PhiMembershipProtocol;
 import io.atomix.cluster.protocol.PhiMembershipProtocolConfig;
 import io.atomix.utils.Version;
@@ -68,6 +69,7 @@ public class DefaultClusterMembershipServiceTest {
   @Test
   public void testClusterService() throws Exception {
     TestMessagingServiceFactory messagingServiceFactory = new TestMessagingServiceFactory();
+    TestUnicastServiceFactory unicastServiceFactory = new TestUnicastServiceFactory();
     TestBroadcastServiceFactory broadcastServiceFactory = new TestBroadcastServiceFactory();
 
     Collection<Node> bootstrapLocations = buildBootstrapNodes(3);
@@ -75,6 +77,7 @@ public class DefaultClusterMembershipServiceTest {
     Member localMember1 = buildMember(1);
     BootstrapService bootstrapService1 = new TestBootstrapService(
         messagingServiceFactory.newMessagingService(localMember1.address()).start().join(),
+        unicastServiceFactory.newUnicastService(localMember1.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService clusterService1 = new DefaultClusterMembershipService(
         localMember1,
@@ -86,6 +89,7 @@ public class DefaultClusterMembershipServiceTest {
     Member localMember2 = buildMember(2);
     BootstrapService bootstrapService2 = new TestBootstrapService(
         messagingServiceFactory.newMessagingService(localMember2.address()).start().join(),
+        unicastServiceFactory.newUnicastService(localMember2.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService clusterService2 = new DefaultClusterMembershipService(
         localMember2,
@@ -97,6 +101,7 @@ public class DefaultClusterMembershipServiceTest {
     Member localMember3 = buildMember(3);
     BootstrapService bootstrapService3 = new TestBootstrapService(
         messagingServiceFactory.newMessagingService(localMember3.address()).start().join(),
+        unicastServiceFactory.newUnicastService(localMember3.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService clusterService3 = new DefaultClusterMembershipService(
         localMember3,
@@ -130,6 +135,7 @@ public class DefaultClusterMembershipServiceTest {
     Member anonymousMember = buildMember(4);
     BootstrapService ephemeralBootstrapService = new TestBootstrapService(
         messagingServiceFactory.newMessagingService(anonymousMember.address()).start().join(),
+        unicastServiceFactory.newUnicastService(anonymousMember.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService ephemeralClusterService = new DefaultClusterMembershipService(
         anonymousMember,

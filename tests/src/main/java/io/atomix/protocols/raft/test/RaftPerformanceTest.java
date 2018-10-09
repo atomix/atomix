@@ -28,6 +28,7 @@ import io.atomix.cluster.messaging.BroadcastService;
 import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.cluster.messaging.UnicastService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.cluster.protocol.PhiMembershipProtocol;
 import io.atomix.cluster.protocol.PhiMembershipProtocolConfig;
@@ -131,8 +132,10 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -494,6 +497,11 @@ public class RaftPerformanceTest implements Runnable {
       }
 
       @Override
+      public UnicastService getUnicastService() {
+        return new UnicastServiceAdapter();
+      }
+
+      @Override
       public BroadcastService getBroadcastService() {
         return new BroadcastServiceAdapter();
       }
@@ -714,6 +722,23 @@ public class RaftPerformanceTest implements Runnable {
     @Override
     public CompletableFuture<Void> remove() {
       return null;
+    }
+  }
+
+  private static class UnicastServiceAdapter implements UnicastService {
+    @Override
+    public void unicast(Address address, String subject, byte[] message) {
+
+    }
+
+    @Override
+    public void addListener(String subject, BiConsumer<Address, byte[]> listener, Executor executor) {
+
+    }
+
+    @Override
+    public void removeListener(String subject, BiConsumer<Address, byte[]> listener) {
+
     }
   }
 
