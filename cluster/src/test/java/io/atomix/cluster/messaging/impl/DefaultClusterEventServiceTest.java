@@ -70,6 +70,7 @@ public class DefaultClusterEventServiceTest {
   @Test
   public void testClusterEventService() throws Exception {
     TestMessagingServiceFactory messagingServiceFactory = new TestMessagingServiceFactory();
+    TestUnicastServiceFactory unicastServiceFactory = new TestUnicastServiceFactory();
     TestBroadcastServiceFactory broadcastServiceFactory = new TestBroadcastServiceFactory();
 
     Collection<Node> bootstrapLocations = buildBootstrapNodes(3);
@@ -78,6 +79,7 @@ public class DefaultClusterEventServiceTest {
     MessagingService messagingService1 = messagingServiceFactory.newMessagingService(localMember1.address()).start().join();
     BootstrapService bootstrapService1 = new TestBootstrapService(
         messagingService1,
+        unicastServiceFactory.newUnicastService(localMember1.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService clusterService1 = new DefaultClusterMembershipService(
         localMember1,
@@ -93,6 +95,7 @@ public class DefaultClusterEventServiceTest {
     MessagingService messagingService2 = messagingServiceFactory.newMessagingService(localMember2.address()).start().join();
     BootstrapService bootstrapService2 = new TestBootstrapService(
         messagingService2,
+        unicastServiceFactory.newUnicastService(localMember2.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService clusterService2 = new DefaultClusterMembershipService(
         localMember2,
@@ -108,6 +111,7 @@ public class DefaultClusterEventServiceTest {
     MessagingService messagingService3 = messagingServiceFactory.newMessagingService(localMember3.address()).start().join();
     BootstrapService bootstrapService3 = new TestBootstrapService(
         messagingService3,
+        unicastServiceFactory.newUnicastService(localMember1.address()).start().join(),
         broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService clusterService3 = new DefaultClusterMembershipService(
         localMember3,
