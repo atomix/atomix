@@ -20,7 +20,6 @@ package io.atomix.cluster.messaging.impl;
  */
 public enum DecoderState {
   READ_TYPE,
-  READ_PREAMBLE,
   READ_MESSAGE_ID,
   READ_SENDER_VERSION,
   READ_SENDER_IP,

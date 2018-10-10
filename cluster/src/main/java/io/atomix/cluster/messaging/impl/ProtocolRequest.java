@@ -22,11 +22,11 @@ import io.atomix.utils.net.Address;
 /**
  * Internal request message.
  */
-public final class InternalRequest extends InternalMessage {
+public final class ProtocolRequest extends ProtocolMessage {
     private final Address sender;
     private final String subject;
 
-    public InternalRequest(int id, Address sender, String subject, byte[] payload) {
+    public ProtocolRequest(int id, Address sender, String subject, byte[] payload) {
         super(id, payload);
         this.sender = sender;
         this.subject = subject;

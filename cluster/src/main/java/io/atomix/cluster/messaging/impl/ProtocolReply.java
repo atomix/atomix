@@ -21,7 +21,7 @@ import io.atomix.utils.misc.ArraySizeHashPrinter;
 /**
  * Internal reply message.
  */
-public final class InternalReply extends InternalMessage {
+public final class ProtocolReply extends ProtocolMessage {
 
     /**
      * Message status.
@@ -89,11 +89,7 @@ public final class InternalReply extends InternalMessage {
 
     private final Status status;
 
-    public InternalReply(int id, Status status) {
-        this(id, new byte[0], status);
-    }
-
-    public InternalReply(int id, byte[] payload, Status status) {
+    public ProtocolReply(int id, byte[] payload, Status status) {
         super(id, payload);
         this.status = status;
     }
