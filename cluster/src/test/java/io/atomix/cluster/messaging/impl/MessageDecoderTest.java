@@ -33,7 +33,7 @@ public class MessageDecoderTest {
         String payload = "huuhaa";
         ByteBuf byteBuf = Unpooled.wrappedBuffer(payload.getBytes(StandardCharsets.UTF_8));
         try {
-            assertEquals(payload, MessageDecoder.readString(byteBuf, payload.length(), StandardCharsets.UTF_8));
+            assertEquals(payload, MessageDecoderV1.readString(byteBuf, payload.length(), StandardCharsets.UTF_8));
         } finally {
             byteBuf.release();
         }
@@ -43,7 +43,7 @@ public class MessageDecoderTest {
             byteBuf.writeInt(1);
             byteBuf.writeBytes(bytes);
             byteBuf.readInt();
-            assertEquals(payload, MessageDecoder.readString(byteBuf, payload.length(), StandardCharsets.UTF_8));
+            assertEquals(payload, MessageDecoderV1.readString(byteBuf, payload.length(), StandardCharsets.UTF_8));
         } finally {
             byteBuf.release();
         }
@@ -54,7 +54,7 @@ public class MessageDecoderTest {
         String payload = "huuhaa";
         ByteBuf byteBuf = Unpooled.directBuffer(payload.length()).writeBytes(payload.getBytes(StandardCharsets.UTF_8));
         try {
-            assertEquals(payload, MessageDecoder.readString(byteBuf, payload.length(), StandardCharsets.UTF_8));
+            assertEquals(payload, MessageDecoderV1.readString(byteBuf, payload.length(), StandardCharsets.UTF_8));
         } finally {
             byteBuf.release();
         }

@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
-import java.net.ProtocolException;
 import java.nio.charset.Charset;
 import java.util.List;
 
@@ -33,9 +32,23 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Decoder for inbound messages.
  */
-public class MessageDecoder extends ByteToMessageDecoder {
+class MessageDecoderV1 extends ByteToMessageDecoder {
 
-  private static final int VERSION = 1;
+  /**
+   * V1 decoder state.
+   */
+  enum DecoderState {
+    READ_TYPE,
+    READ_MESSAGE_ID,
+    READ_SENDER_IP,
+    READ_SENDER_PORT,
+    READ_SUBJECT_LENGTH,
+    READ_SUBJECT,
+    READ_STATUS,
+    READ_CONTENT_LENGTH,
+    READ_CONTENT
+  }
+
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private static final Escape ESCAPE = new Escape();
@@ -49,25 +62,17 @@ public class MessageDecoder extends ByteToMessageDecoder {
   private static final int INT_SIZE = 4;
   private static final int LONG_SIZE = 8;
 
-  private final int preamble;
+  private DecoderState currentState = DecoderState.READ_SENDER_IP;
 
-  private DecoderState currentState = DecoderState.READ_SENDER_VERSION;
-
-  private int senderVersion;
-  private int senderPreamble;
   private InetAddress senderIp;
   private int senderPort;
   private Address senderAddress;
 
-  private InternalMessage.Type type;
+  private ProtocolMessage.Type type;
   private int messageId;
   private int contentLength;
   private byte[] content;
   private int subjectLength;
-
-  MessageDecoder(int preamble) {
-    this.preamble = preamble;
-  }
 
   @Override
   @SuppressWarnings("squid:S128") // suppress switch fall through warning
@@ -77,24 +82,6 @@ public class MessageDecoder extends ByteToMessageDecoder {
       List<Object> out) throws Exception {
 
     switch (currentState) {
-      case READ_SENDER_VERSION:
-        if (buffer.readableBytes() < SHORT_SIZE) {
-          return;
-        }
-        senderVersion = buffer.readShort();
-        if (senderVersion != VERSION) {
-          throw new ProtocolException("Unsupported protocol version: " + senderVersion);
-        }
-        currentState = DecoderState.READ_SENDER_IP;
-      case READ_PREAMBLE:
-        if (buffer.readableBytes() < INT_SIZE) {
-          return;
-        }
-        senderPreamble = buffer.readInt();
-        if (senderPreamble != preamble) {
-          throw new ProtocolException("Invalid sender preamble " + senderPreamble);
-        }
-        currentState = DecoderState.READ_SENDER_IP;
       case READ_SENDER_IP:
         if (buffer.readableBytes() < BYTE_SIZE) {
           return;
@@ -121,7 +108,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
         if (buffer.readableBytes() < BYTE_SIZE) {
           return;
         }
-        type = InternalMessage.Type.forId(buffer.readByte());
+        type = ProtocolMessage.Type.forId(buffer.readByte());
         currentState = DecoderState.READ_MESSAGE_ID;
       case READ_MESSAGE_ID:
         try {
@@ -178,7 +165,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
               return;
             }
             final String subject = readString(buffer, subjectLength, UTF_8);
-            InternalRequest message = new InternalRequest(messageId, senderAddress, subject, content);
+            ProtocolRequest message = new ProtocolRequest(messageId, senderAddress, subject, content);
             out.add(message);
             currentState = DecoderState.READ_TYPE;
             break;
@@ -192,8 +179,8 @@ public class MessageDecoder extends ByteToMessageDecoder {
             if (buffer.readableBytes() < BYTE_SIZE) {
               return;
             }
-            InternalReply.Status status = InternalReply.Status.forId(buffer.readByte());
-            InternalReply message = new InternalReply(messageId, content, status);
+            ProtocolReply.Status status = ProtocolReply.Status.forId(buffer.readByte());
+            ProtocolReply message = new ProtocolReply(messageId, content, status);
             out.add(message);
             currentState = DecoderState.READ_TYPE;
             break;

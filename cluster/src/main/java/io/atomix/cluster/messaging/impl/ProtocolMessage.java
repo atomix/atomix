@@ -18,7 +18,7 @@ package io.atomix.cluster.messaging.impl;
 /**
  * Base class for internal messages.
  */
-public abstract class InternalMessage {
+public abstract class ProtocolMessage {
 
   /**
    * Internal message type.
@@ -63,7 +63,7 @@ public abstract class InternalMessage {
   private final int id;
   private final byte[] payload;
 
-  protected InternalMessage(int id, byte[] payload) {
+  protected ProtocolMessage(int id, byte[] payload) {
     this.id = id;
     this.payload = payload;
   }

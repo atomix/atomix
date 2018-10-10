@@ -29,12 +29,12 @@ import io.atomix.utils.AtomixRuntimeException;
 import io.atomix.utils.net.Address;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -67,6 +67,7 @@ import java.security.MessageDigest;
 import java.security.cert.Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -89,6 +90,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
@@ -119,7 +121,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   private final int preamble;
   private final MessagingConfig config;
   private final AtomicBoolean started = new AtomicBoolean(false);
-  private final Map<String, BiConsumer<InternalRequest, ServerConnection>> handlers = new ConcurrentHashMap<>();
+  private final Map<String, BiConsumer<ProtocolRequest, ServerConnection>> handlers = new ConcurrentHashMap<>();
   private final Map<Channel, RemoteClientConnection> clientConnections = Maps.newConcurrentMap();
   private final Map<Channel, RemoteServerConnection> serverConnections = Maps.newConcurrentMap();
   private final AtomicInteger messageIdGenerator = new AtomicInteger(0);
@@ -278,7 +280,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   @Override
   public CompletableFuture<Void> sendAsync(Address address, String type, byte[] payload) {
     int messageId = messageIdGenerator.incrementAndGet();
-    InternalRequest message = new InternalRequest(
+    ProtocolRequest message = new ProtocolRequest(
         messageId,
         returnAddress,
         type,
@@ -304,7 +306,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   @Override
   public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout, Executor executor) {
     int messageId = messageIdGenerator.incrementAndGet();
-    InternalRequest message = new InternalRequest(
+    ProtocolRequest message = new ProtocolRequest(
         messageId,
         returnAddress,
         type,
@@ -339,7 +341,15 @@ public class NettyMessagingService implements ManagedMessagingService {
       synchronized (channelPool) {
         channelFuture = channelPool.get(offset);
         if (channelFuture == null || channelFuture.isCompletedExceptionally()) {
+          log.debug("Connecting to {}", address);
           channelFuture = openChannel(address);
+          channelFuture.whenComplete((channel, error) -> {
+            if (error == null) {
+              log.debug("Connected to {}", channel.remoteAddress());
+            } else {
+              log.debug("Failed to connect to {}", channel.remoteAddress(), error);
+            }
+          });
           channelPool.set(offset, channelFuture);
         }
       }
@@ -357,12 +367,20 @@ public class NettyMessagingService implements ManagedMessagingService {
               channelPool.set(offset, null);
             } else if (currentFuture == null) {
               currentFuture = openChannel(address);
+              currentFuture.whenComplete((c, e) -> {
+                if (e == null) {
+                  log.debug("Connected to {}", channel.remoteAddress());
+                } else {
+                  log.debug("Failed to connect to {}", channel.remoteAddress(), e);
+                }
+              });
               channelPool.set(offset, currentFuture);
             }
           }
 
-          final ClientConnection connection = clientConnections.remove(channel);
+          final RemoteClientConnection connection = clientConnections.remove(channel);
           if (connection != null) {
+            log.debug("Closing connection to {}", connection.channel.remoteAddress());
             connection.close();
           }
 
@@ -391,6 +409,10 @@ public class NettyMessagingService implements ManagedMessagingService {
       }
     });
     return future;
+  }
+
+  private CompletableFuture<Channel> openChannel(Address address) {
+    return bootstrapClient(address);
   }
 
   private <T> CompletableFuture<T> executeOnPooledConnection(
@@ -430,6 +452,7 @@ public class NettyMessagingService implements ManagedMessagingService {
             final Throwable cause = Throwables.getRootCause(sendError);
             if (!(cause instanceof TimeoutException) && !(cause instanceof MessagingException)) {
               channel.close().addListener(f -> {
+                log.debug("Closing connection to {}", channel.remoteAddress());
                 connection.close();
                 clientConnections.remove(channel);
               });
@@ -461,12 +484,12 @@ public class NettyMessagingService implements ManagedMessagingService {
   public void registerHandler(String type, BiFunction<Address, byte[], byte[]> handler, Executor executor) {
     handlers.put(type, (message, connection) -> executor.execute(() -> {
       byte[] responsePayload = null;
-      InternalReply.Status status = InternalReply.Status.OK;
+      ProtocolReply.Status status = ProtocolReply.Status.OK;
       try {
         responsePayload = handler.apply(message.sender(), message.payload());
       } catch (Exception e) {
         log.warn("An error occurred in a message handler: {}", e);
-        status = InternalReply.Status.ERROR_HANDLER_EXCEPTION;
+        status = ProtocolReply.Status.ERROR_HANDLER_EXCEPTION;
       }
       connection.reply(message, status, Optional.ofNullable(responsePayload));
     }));
@@ -476,12 +499,12 @@ public class NettyMessagingService implements ManagedMessagingService {
   public void registerHandler(String type, BiFunction<Address, byte[], CompletableFuture<byte[]>> handler) {
     handlers.put(type, (message, connection) -> {
       handler.apply(message.sender(), message.payload()).whenComplete((result, error) -> {
-        InternalReply.Status status;
+        ProtocolReply.Status status;
         if (error == null) {
-          status = InternalReply.Status.OK;
+          status = ProtocolReply.Status.OK;
         } else {
           log.warn("An error occurred in a message handler: {}", error);
-          status = InternalReply.Status.ERROR_HANDLER_EXCEPTION;
+          status = ProtocolReply.Status.ERROR_HANDLER_EXCEPTION;
         }
         connection.reply(message, status, Optional.ofNullable(result));
       });
@@ -493,7 +516,8 @@ public class NettyMessagingService implements ManagedMessagingService {
     handlers.remove(type);
   }
 
-  private Bootstrap bootstrapClient(Address address) {
+  private CompletableFuture<Channel> bootstrapClient(Address address) {
+    CompletableFuture<Channel> future = new CompletableFuture<>();
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     bootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK,
@@ -509,11 +533,16 @@ public class NettyMessagingService implements ManagedMessagingService {
     bootstrap.channel(clientChannelClass);
     bootstrap.remoteAddress(address.address(true), address.port());
     if (enableNettyTls) {
-      bootstrap.handler(new SslClientCommunicationChannelInitializer());
+      bootstrap.handler(new SslClientCommunicationChannelInitializer(future));
     } else {
-      bootstrap.handler(new BasicChannelInitializer());
+      bootstrap.handler(new BasicClientChannelInitializer(future));
     }
-    return bootstrap;
+    bootstrap.connect().addListener(f -> {
+      if (!f.isSuccess()) {
+        future.completeExceptionally(f.cause());
+      }
+    });
+    return future;
   }
 
   private CompletableFuture<Void> bootstrapServer() {
@@ -532,7 +561,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     if (enableNettyTls) {
       b.childHandler(new SslServerCommunicationChannelInitializer());
     } else {
-      b.childHandler(new BasicChannelInitializer());
+      b.childHandler(new BasicServerChannelInitializer());
     }
     return bind(b);
   }
@@ -564,22 +593,6 @@ public class NettyMessagingService implements ManagedMessagingService {
     } else {
       future.complete(null);
     }
-  }
-
-  private CompletableFuture<Channel> openChannel(Address address) {
-    Bootstrap bootstrap = bootstrapClient(address);
-    CompletableFuture<Channel> retFuture = new CompletableFuture<>();
-    ChannelFuture f = bootstrap.connect();
-
-    f.addListener(future -> {
-      if (future.isSuccess()) {
-        retFuture.complete(f.channel());
-      } else {
-        retFuture.completeExceptionally(future.cause());
-      }
-    });
-    log.debug("Established a new connection to {}", address);
-    return retFuture;
   }
 
   @Override
@@ -623,8 +636,6 @@ public class NettyMessagingService implements ManagedMessagingService {
    * Channel initializer for TLS servers.
    */
   private class SslServerCommunicationChannelInitializer extends ChannelInitializer<SocketChannel> {
-    private final ChannelHandler dispatcher = new InboundMessageDispatcher();
-
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
       SSLContext serverContext = SSLContext.getInstance("TLS");
@@ -638,10 +649,9 @@ public class NettyMessagingService implements ManagedMessagingService {
       serverSslEngine.setEnabledCipherSuites(serverSslEngine.getSupportedCipherSuites());
       serverSslEngine.setEnableSessionCreation(true);
 
-      channel.pipeline().addLast("ssl", new io.netty.handler.ssl.SslHandler(serverSslEngine))
-          .addLast("encoder", new MessageEncoder(returnAddress, preamble))
-          .addLast("decoder", new MessageDecoder(preamble))
-          .addLast("handler", dispatcher);
+      channel.pipeline()
+          .addLast("ssl", new io.netty.handler.ssl.SslHandler(serverSslEngine))
+          .addLast("handshake", new ServerHandshakeHandlerAdapter());
     }
   }
 
@@ -649,7 +659,11 @@ public class NettyMessagingService implements ManagedMessagingService {
    * Channel initializer for TLS clients.
    */
   private class SslClientCommunicationChannelInitializer extends ChannelInitializer<SocketChannel> {
-    private final ChannelHandler dispatcher = new InboundMessageDispatcher();
+    private final CompletableFuture<Channel> future;
+
+    SslClientCommunicationChannelInitializer(CompletableFuture<Channel> future) {
+      this.future = future;
+    }
 
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
@@ -663,49 +677,146 @@ public class NettyMessagingService implements ManagedMessagingService {
       clientSslEngine.setEnabledCipherSuites(clientSslEngine.getSupportedCipherSuites());
       clientSslEngine.setEnableSessionCreation(true);
 
-      channel.pipeline().addLast("ssl", new io.netty.handler.ssl.SslHandler(clientSslEngine))
-          .addLast("encoder", new MessageEncoder(returnAddress, preamble))
-          .addLast("decoder", new MessageDecoder(preamble))
-          .addLast("handler", dispatcher);
+      channel.pipeline()
+          .addLast("ssl", new io.netty.handler.ssl.SslHandler(clientSslEngine))
+          .addLast("handshake", new ClientHandshakeHandlerAdapter(future));
     }
   }
 
   /**
    * Channel initializer for basic connections.
    */
-  private class BasicChannelInitializer extends ChannelInitializer<SocketChannel> {
-    private final ChannelHandler dispatcher = new InboundMessageDispatcher();
+  private class BasicClientChannelInitializer extends ChannelInitializer<SocketChannel> {
+    private final CompletableFuture<Channel> future;
+
+    BasicClientChannelInitializer(CompletableFuture<Channel> future) {
+      this.future = future;
+    }
 
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
-      channel.pipeline()
-          .addLast("encoder", new MessageEncoder(returnAddress, preamble))
-          .addLast("decoder", new MessageDecoder(preamble))
-          .addLast("handler", dispatcher);
+      channel.pipeline().addLast("handshake", new ClientHandshakeHandlerAdapter(future));
+    }
+  }
+
+  /**
+   * Channel initializer for basic connections.
+   */
+  private class BasicServerChannelInitializer extends ChannelInitializer<SocketChannel> {
+    @Override
+    protected void initChannel(SocketChannel channel) throws Exception {
+      channel.pipeline().addLast("handshake", new ServerHandshakeHandlerAdapter());
+    }
+  }
+
+  /**
+   * Base class for handshake handlers.
+   */
+  private abstract class HandshakeHandlerAdapter extends ChannelInboundHandlerAdapter {
+    void writeProtocolVersion(ChannelHandlerContext context, ProtocolVersion version) {
+      ByteBuf buffer = context.alloc().buffer(6);
+      buffer.writeInt(preamble);
+      buffer.writeShort(version.version());
+      context.writeAndFlush(buffer);
+    }
+
+    Optional<ProtocolVersion> readProtocolVersion(ChannelHandlerContext context, ByteBuf buffer) {
+      int preamble = buffer.readInt();
+      if (preamble != NettyMessagingService.this.preamble) {
+        log.warn("Received invalid handshake, closing connection");
+        context.close();
+        return Optional.empty();
+      }
+
+      int version = buffer.readShort();
+      ProtocolVersion protocolVersion = ProtocolVersion.valueOf(version);
+      if (protocolVersion == null) {
+        context.close();
+      }
+      return Optional.ofNullable(protocolVersion);
+    }
+
+    void activateProtocolVersion(ChannelHandlerContext context, ProtocolVersion protocolVersion) {
+      MessagingProtocol protocol = protocolVersion.createProtocol(returnAddress);
+      context.pipeline().remove(this);
+      context.pipeline().addLast("encoder", protocol.newEncoder());
+      context.pipeline().addLast("decoder", protocol.newDecoder());
+      context.pipeline().addLast("handler", new InboundMessageDispatcher());
+    }
+  }
+
+  /**
+   * Client-side handshake handler adapter.
+   */
+  private class ClientHandshakeHandlerAdapter extends HandshakeHandlerAdapter {
+    private final CompletableFuture<Channel> future;
+
+    ClientHandshakeHandlerAdapter(CompletableFuture<Channel> future) {
+      this.future = future;
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext context) throws Exception {
+      writeProtocolVersion(context, ProtocolVersion.latest());
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext context, Object message) throws Exception {
+      readProtocolVersion(context, (ByteBuf) message)
+          .ifPresent(version -> activateProtocolVersion(context, version));
+    }
+
+    @Override
+    void activateProtocolVersion(ChannelHandlerContext context, ProtocolVersion protocolVersion) {
+      super.activateProtocolVersion(context, protocolVersion);
+      future.complete(context.channel());
+    }
+  }
+
+  /**
+   * Server-side handshake handler adapter.
+   */
+  private class ServerHandshakeHandlerAdapter extends HandshakeHandlerAdapter {
+    @Override
+    public void channelRead(ChannelHandlerContext context, Object message) throws Exception {
+      readProtocolVersion(context, (ByteBuf) message)
+          .ifPresent(version -> {
+            Optional<ProtocolVersion> negotiatedVersion = Stream.of(ProtocolVersion.values())
+                .filter(v -> v.version() <= version.version())
+                .max(Comparator.comparing(ProtocolVersion::version));
+            if (!negotiatedVersion.isPresent()) {
+              log.warn("Failed to negotiate version, closing connection");
+              context.close();
+              return;
+            }
+
+            ProtocolVersion protocolVersion = negotiatedVersion.get();
+            writeProtocolVersion(context, protocolVersion);
+            activateProtocolVersion(context, protocolVersion);
+          });
     }
   }
 
   /**
    * Channel inbound handler that dispatches messages to the appropriate handler.
    */
-  @ChannelHandler.Sharable
   private class InboundMessageDispatcher extends SimpleChannelInboundHandler<Object> {
     // Effectively SimpleChannelInboundHandler<InternalMessage>,
     // had to specify <Object> to avoid Class Loader not being able to find some classes.
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object rawMessage) throws Exception {
-      InternalMessage message = (InternalMessage) rawMessage;
+      ProtocolMessage message = (ProtocolMessage) rawMessage;
       try {
         if (message.isRequest()) {
           RemoteServerConnection connection = serverConnections.get(ctx.channel());
           if (connection == null) {
             connection = serverConnections.computeIfAbsent(ctx.channel(), RemoteServerConnection::new);
           }
-          connection.dispatch((InternalRequest) message);
+          connection.dispatch((ProtocolRequest) message);
         } else {
           RemoteClientConnection connection = getOrCreateRemoteClientConnection(ctx.channel());
-          connection.dispatch((InternalReply) message);
+          connection.dispatch((ProtocolReply) message);
         }
       } catch (RejectedExecutionException e) {
         log.warn("Unable to dispatch message due to {}", e.getMessage());
@@ -746,12 +857,12 @@ public class NettyMessagingService implements ManagedMessagingService {
      * Returns true if the given message should be handled.
      *
      * @param msg inbound message
-     * @return true if {@code msg} is {@link InternalMessage} instance.
+     * @return true if {@code msg} is {@link ProtocolMessage} instance.
      * @see SimpleChannelInboundHandler#acceptInboundMessage(Object)
      */
     @Override
     public final boolean acceptInboundMessage(Object msg) {
-      return msg instanceof InternalMessage;
+      return msg instanceof ProtocolMessage;
     }
   }
 
@@ -790,7 +901,7 @@ public class NettyMessagingService implements ManagedMessagingService {
      * @param message the message to send
      * @return a completable future to be completed once the message has been sent
      */
-    CompletableFuture<Void> sendAsync(InternalRequest message);
+    CompletableFuture<Void> sendAsync(ProtocolRequest message);
 
     /**
      * Sends a message to the other side of the connection, awaiting a reply.
@@ -799,7 +910,7 @@ public class NettyMessagingService implements ManagedMessagingService {
      * @param timeout the response timeout
      * @return a completable future to be completed once a reply is received or the request times out
      */
-    CompletableFuture<byte[]> sendAndReceive(InternalRequest message, Duration timeout);
+    CompletableFuture<byte[]> sendAndReceive(ProtocolRequest message, Duration timeout);
 
     /**
      * Closes the connection.
@@ -820,7 +931,7 @@ public class NettyMessagingService implements ManagedMessagingService {
      * @param status the reply status
      * @param payload the response payload
      */
-    void reply(InternalRequest message, InternalReply.Status status, Optional<byte[]> payload);
+    void reply(ProtocolRequest message, ProtocolReply.Status status, Optional<byte[]> payload);
 
     /**
      * Closes the connection.
@@ -913,8 +1024,8 @@ public class NettyMessagingService implements ManagedMessagingService {
    */
   private final class LocalClientConnection extends AbstractClientConnection {
     @Override
-    public CompletableFuture<Void> sendAsync(InternalRequest message) {
-      BiConsumer<InternalRequest, ServerConnection> handler = handlers.get(message.subject());
+    public CompletableFuture<Void> sendAsync(ProtocolRequest message) {
+      BiConsumer<ProtocolRequest, ServerConnection> handler = handlers.get(message.subject());
       if (handler != null) {
         log.trace("{} - Received message type {} from {}", returnAddress, message.subject(), message.sender());
         handler.accept(message, localServerConnection);
@@ -925,18 +1036,18 @@ public class NettyMessagingService implements ManagedMessagingService {
     }
 
     @Override
-    public CompletableFuture<byte[]> sendAndReceive(InternalRequest message, Duration timeout) {
+    public CompletableFuture<byte[]> sendAndReceive(ProtocolRequest message, Duration timeout) {
       CompletableFuture<byte[]> future = new CompletableFuture<>();
       future.whenComplete((r, e) -> completeCallback(message.id()));
       registerCallback(message.id(), message.subject(), timeout, future);
-      BiConsumer<InternalRequest, ServerConnection> handler = handlers.get(message.subject());
+      BiConsumer<ProtocolRequest, ServerConnection> handler = handlers.get(message.subject());
       if (handler != null) {
         log.trace("{} - Received message type {} from {}", returnAddress, message.subject(), message.sender());
         handler.accept(message, new LocalServerConnection(future));
       } else {
         log.debug("{} - No handler for message type {} from {}", returnAddress, message.subject(), message.sender());
         new LocalServerConnection(future)
-            .reply(message, InternalReply.Status.ERROR_NO_HANDLER, Optional.empty());
+            .reply(message, ProtocolReply.Status.ERROR_NO_HANDLER, Optional.empty());
       }
       return future;
     }
@@ -953,15 +1064,15 @@ public class NettyMessagingService implements ManagedMessagingService {
     }
 
     @Override
-    public void reply(InternalRequest message, InternalReply.Status status, Optional<byte[]> payload) {
+    public void reply(ProtocolRequest message, ProtocolReply.Status status, Optional<byte[]> payload) {
       if (future != null) {
-        if (status == InternalReply.Status.OK) {
+        if (status == ProtocolReply.Status.OK) {
           future.complete(payload.orElse(EMPTY_PAYLOAD));
-        } else if (status == InternalReply.Status.ERROR_NO_HANDLER) {
+        } else if (status == ProtocolReply.Status.ERROR_NO_HANDLER) {
           future.completeExceptionally(new MessagingException.NoRemoteHandler());
-        } else if (status == InternalReply.Status.ERROR_HANDLER_EXCEPTION) {
+        } else if (status == ProtocolReply.Status.ERROR_HANDLER_EXCEPTION) {
           future.completeExceptionally(new MessagingException.RemoteHandlerFailure());
-        } else if (status == InternalReply.Status.PROTOCOL_EXCEPTION) {
+        } else if (status == ProtocolReply.Status.PROTOCOL_EXCEPTION) {
           future.completeExceptionally(new MessagingException.ProtocolException());
         }
       }
@@ -979,7 +1090,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     }
 
     @Override
-    public CompletableFuture<Void> sendAsync(InternalRequest message) {
+    public CompletableFuture<Void> sendAsync(ProtocolRequest message) {
       CompletableFuture<Void> future = new CompletableFuture<>();
       channel.writeAndFlush(message).addListener(channelFuture -> {
         if (!channelFuture.isSuccess()) {
@@ -992,7 +1103,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     }
 
     @Override
-    public CompletableFuture<byte[]> sendAndReceive(InternalRequest message, Duration timeout) {
+    public CompletableFuture<byte[]> sendAndReceive(ProtocolRequest message, Duration timeout) {
       CompletableFuture<byte[]> future = new CompletableFuture<>();
       registerCallback(message.id(), message.subject(), timeout, future);
       channel.writeAndFlush(message).addListener(channelFuture -> {
@@ -1011,16 +1122,16 @@ public class NettyMessagingService implements ManagedMessagingService {
      *
      * @param message the message to dispatch
      */
-    private void dispatch(InternalReply message) {
+    private void dispatch(ProtocolReply message) {
       Callback callback = completeCallback(message.id());
       if (callback != null) {
-        if (message.status() == InternalReply.Status.OK) {
+        if (message.status() == ProtocolReply.Status.OK) {
           callback.complete(message.payload());
-        } else if (message.status() == InternalReply.Status.ERROR_NO_HANDLER) {
+        } else if (message.status() == ProtocolReply.Status.ERROR_NO_HANDLER) {
           callback.completeExceptionally(new MessagingException.NoRemoteHandler());
-        } else if (message.status() == InternalReply.Status.ERROR_HANDLER_EXCEPTION) {
+        } else if (message.status() == ProtocolReply.Status.ERROR_HANDLER_EXCEPTION) {
           callback.completeExceptionally(new MessagingException.RemoteHandlerFailure());
-        } else if (message.status() == InternalReply.Status.PROTOCOL_EXCEPTION) {
+        } else if (message.status() == ProtocolReply.Status.PROTOCOL_EXCEPTION) {
           callback.completeExceptionally(new MessagingException.ProtocolException());
         }
       } else {
@@ -1055,20 +1166,20 @@ public class NettyMessagingService implements ManagedMessagingService {
      *
      * @param message the message to dispatch
      */
-    private void dispatch(InternalRequest message) {
-      BiConsumer<InternalRequest, ServerConnection> handler = handlers.get(message.subject());
+    private void dispatch(ProtocolRequest message) {
+      BiConsumer<ProtocolRequest, ServerConnection> handler = handlers.get(message.subject());
       if (handler != null) {
         log.trace("{} - Received message type {} from {}", returnAddress, message.subject(), message.sender());
         handler.accept(message, this);
       } else {
         log.debug("{} - No handler for message type {} from {}", returnAddress, message.subject(), message.sender());
-        reply(message, InternalReply.Status.ERROR_NO_HANDLER, Optional.empty());
+        reply(message, ProtocolReply.Status.ERROR_NO_HANDLER, Optional.empty());
       }
     }
 
     @Override
-    public void reply(InternalRequest message, InternalReply.Status status, Optional<byte[]> payload) {
-      InternalReply response = new InternalReply(
+    public void reply(ProtocolRequest message, ProtocolReply.Status status, Optional<byte[]> payload) {
+      ProtocolReply response = new ProtocolReply(
           message.id(),
           payload.orElse(EMPTY_PAYLOAD),
           status);
