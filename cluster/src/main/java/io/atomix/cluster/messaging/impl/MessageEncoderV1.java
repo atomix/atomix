@@ -106,7 +106,7 @@ class MessageEncoderV1 extends MessageToByteEncoder<Object> {
     out.writeByte(reply.status().id());
   }
 
-  private void writeInt(ByteBuf buf, int value) {
+  static void writeInt(ByteBuf buf, int value) {
     if (value >>> 7 == 0) {
       buf.writeByte(value);
     } else if (value >>> 14 == 0) {
@@ -130,7 +130,7 @@ class MessageEncoderV1 extends MessageToByteEncoder<Object> {
     }
   }
 
-  private void writeLong(ByteBuf buf, long value) {
+  static void writeLong(ByteBuf buf, long value) {
     if (value >>> 7 == 0) {
       buf.writeByte((byte) value);
     } else if (value >>> 14 == 0) {
