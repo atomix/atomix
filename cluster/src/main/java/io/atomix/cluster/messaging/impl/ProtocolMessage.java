@@ -60,10 +60,10 @@ public abstract class ProtocolMessage {
     }
   }
 
-  private final int id;
+  private final long id;
   private final byte[] payload;
 
-  protected ProtocolMessage(int id, byte[] payload) {
+  protected ProtocolMessage(long id, byte[] payload) {
     this.id = id;
     this.payload = payload;
   }
@@ -78,7 +78,7 @@ public abstract class ProtocolMessage {
     return type() == Type.REPLY;
   }
 
-  public int id() {
+  public long id() {
     return id;
   }
 

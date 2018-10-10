@@ -73,7 +73,7 @@ class MessageEncoderV1 extends MessageToByteEncoder<Object> {
     buffer.writeByte(message.type().id());
 
     // Write the message ID as a variable length integer
-    writeInt(buffer, message.id());
+    writeLong(buffer, message.id());
 
     final byte[] payload = message.payload();
 
@@ -127,6 +127,64 @@ class MessageEncoderV1 extends MessageToByteEncoder<Object> {
       buf.writeByte(value >>> 14 | 0x80);
       buf.writeByte(value >>> 21 | 0x80);
       buf.writeByte(value >>> 28);
+    }
+  }
+
+  private void writeLong(ByteBuf buf, long value) {
+    if (value >>> 7 == 0) {
+      buf.writeByte((byte) value);
+    } else if (value >>> 14 == 0) {
+      buf.writeByte((byte) ((value & 0x7F) | 0x80));
+      buf.writeByte((byte) (value >>> 7));
+    } else if (value >>> 21 == 0) {
+      buf.writeByte((byte) ((value & 0x7F) | 0x80));
+      buf.writeByte((byte) (value >>> 7 | 0x80));
+      buf.writeByte((byte) (value >>> 14));
+    } else if (value >>> 28 == 0) {
+      buf.writeByte((byte) ((value & 0x7F) | 0x80));
+      buf.writeByte((byte) (value >>> 7 | 0x80));
+      buf.writeByte((byte) (value >>> 14 | 0x80));
+      buf.writeByte((byte) (value >>> 21));
+    } else if (value >>> 35 == 0) {
+      buf.writeByte((byte) ((value & 0x7F) | 0x80));
+      buf.writeByte((byte) (value >>> 7 | 0x80));
+      buf.writeByte((byte) (value >>> 14 | 0x80));
+      buf.writeByte((byte) (value >>> 21 | 0x80));
+      buf.writeByte((byte) (value >>> 28));
+    } else if (value >>> 42 == 0) {
+      buf.writeByte((byte) ((value & 0x7F) | 0x80));
+      buf.writeByte((byte) (value >>> 7 | 0x80));
+      buf.writeByte((byte) (value >>> 14 | 0x80));
+      buf.writeByte((byte) (value >>> 21 | 0x80));
+      buf.writeByte((byte) (value >>> 28 | 0x80));
+      buf.writeByte((byte) (value >>> 35));
+    } else if (value >>> 49 == 0) {
+      buf.writeByte((byte) ((value & 0x7F) | 0x80));
+      buf.writeByte((byte) (value >>> 7 | 0x80));
+      buf.writeByte((byte) (value >>> 14 | 0x80));
+      buf.writeByte((byte) (value >>> 21 | 0x80));
+      buf.writeByte((byte) (value >>> 28 | 0x80));
+      buf.writeByte((byte) (value >>> 35 | 0x80));
+      buf.writeByte((byte) (value >>> 42));
+    } else if (value >>> 56 == 0) {
+      buf.writeByte((byte) ((value & 0x7F) | 0x80));
+      buf.writeByte((byte) (value >>> 7 | 0x80));
+      buf.writeByte((byte) (value >>> 14 | 0x80));
+      buf.writeByte((byte) (value >>> 21 | 0x80));
+      buf.writeByte((byte) (value >>> 28 | 0x80));
+      buf.writeByte((byte) (value >>> 35 | 0x80));
+      buf.writeByte((byte) (value >>> 42 | 0x80));
+      buf.writeByte((byte) (value >>> 49));
+    } else {
+      buf.writeByte((byte) ((value & 0x7F) | 0x80));
+      buf.writeByte((byte) (value >>> 7 | 0x80));
+      buf.writeByte((byte) (value >>> 14 | 0x80));
+      buf.writeByte((byte) (value >>> 21 | 0x80));
+      buf.writeByte((byte) (value >>> 28 | 0x80));
+      buf.writeByte((byte) (value >>> 35 | 0x80));
+      buf.writeByte((byte) (value >>> 42 | 0x80));
+      buf.writeByte((byte) (value >>> 49 | 0x80));
+      buf.writeByte((byte) (value >>> 56));
     }
   }
 

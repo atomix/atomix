@@ -89,7 +89,7 @@ public final class ProtocolReply extends ProtocolMessage {
 
     private final Status status;
 
-    public ProtocolReply(int id, byte[] payload, Status status) {
+    public ProtocolReply(long id, byte[] payload, Status status) {
         super(id, payload);
         this.status = status;
     }
