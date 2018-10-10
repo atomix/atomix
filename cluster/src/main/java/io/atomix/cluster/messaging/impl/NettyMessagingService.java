@@ -84,6 +84,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -121,7 +122,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   private final Map<String, BiConsumer<InternalRequest, ServerConnection>> handlers = new ConcurrentHashMap<>();
   private final Map<Channel, RemoteClientConnection> clientConnections = Maps.newConcurrentMap();
   private final Map<Channel, RemoteServerConnection> serverConnections = Maps.newConcurrentMap();
-  private final AtomicLong messageIdGenerator = new AtomicLong(0);
+  private final AtomicInteger messageIdGenerator = new AtomicInteger(0);
 
   private ScheduledFuture<?> timeoutFuture;
 
@@ -276,8 +277,9 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   @Override
   public CompletableFuture<Void> sendAsync(Address address, String type, byte[] payload) {
-    InternalRequest message = new InternalRequest(preamble,
-        messageIdGenerator.incrementAndGet(),
+    int messageId = messageIdGenerator.incrementAndGet();
+    InternalRequest message = new InternalRequest(
+        messageId,
         returnAddress,
         type,
         payload);
@@ -301,8 +303,8 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   @Override
   public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout, Executor executor) {
-    long messageId = messageIdGenerator.incrementAndGet();
-    InternalRequest message = new InternalRequest(preamble,
+    int messageId = messageIdGenerator.incrementAndGet();
+    InternalRequest message = new InternalRequest(
         messageId,
         returnAddress,
         type,
@@ -638,7 +640,7 @@ public class NettyMessagingService implements ManagedMessagingService {
 
       channel.pipeline().addLast("ssl", new io.netty.handler.ssl.SslHandler(serverSslEngine))
           .addLast("encoder", new MessageEncoder(returnAddress, preamble))
-          .addLast("decoder", new MessageDecoder())
+          .addLast("decoder", new MessageDecoder(preamble))
           .addLast("handler", dispatcher);
     }
   }
@@ -663,7 +665,7 @@ public class NettyMessagingService implements ManagedMessagingService {
 
       channel.pipeline().addLast("ssl", new io.netty.handler.ssl.SslHandler(clientSslEngine))
           .addLast("encoder", new MessageEncoder(returnAddress, preamble))
-          .addLast("decoder", new MessageDecoder())
+          .addLast("decoder", new MessageDecoder(preamble))
           .addLast("handler", dispatcher);
     }
   }
@@ -678,7 +680,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     protected void initChannel(SocketChannel channel) throws Exception {
       channel.pipeline()
           .addLast("encoder", new MessageEncoder(returnAddress, preamble))
-          .addLast("decoder", new MessageDecoder())
+          .addLast("decoder", new MessageDecoder(preamble))
           .addLast("handler", dispatcher);
     }
   }
@@ -1066,7 +1068,7 @@ public class NettyMessagingService implements ManagedMessagingService {
 
     @Override
     public void reply(InternalRequest message, InternalReply.Status status, Optional<byte[]> payload) {
-      InternalReply response = new InternalReply(preamble,
+      InternalReply response = new InternalReply(
           message.id(),
           payload.orElse(EMPTY_PAYLOAD),
           status);
