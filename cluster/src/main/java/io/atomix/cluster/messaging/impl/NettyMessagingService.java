@@ -279,7 +279,7 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   @Override
   public CompletableFuture<Void> sendAsync(Address address, String type, byte[] payload) {
-    int messageId = messageIdGenerator.incrementAndGet();
+    long messageId = messageIdGenerator.incrementAndGet();
     ProtocolRequest message = new ProtocolRequest(
         messageId,
         returnAddress,
@@ -305,7 +305,7 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   @Override
   public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout, Executor executor) {
-    int messageId = messageIdGenerator.incrementAndGet();
+    long messageId = messageIdGenerator.incrementAndGet();
     ProtocolRequest message = new ProtocolRequest(
         messageId,
         returnAddress,

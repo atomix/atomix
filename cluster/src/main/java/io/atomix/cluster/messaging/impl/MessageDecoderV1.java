@@ -69,7 +69,7 @@ class MessageDecoderV1 extends ByteToMessageDecoder {
   private Address senderAddress;
 
   private ProtocolMessage.Type type;
-  private int messageId;
+  private long messageId;
   private int contentLength;
   private byte[] content;
   private int subjectLength;
@@ -112,7 +112,7 @@ class MessageDecoderV1 extends ByteToMessageDecoder {
         currentState = DecoderState.READ_MESSAGE_ID;
       case READ_MESSAGE_ID:
         try {
-          messageId = readInt(buffer);
+          messageId = readLong(buffer);
         } catch (Escape e) {
           return;
         }
@@ -255,6 +255,123 @@ class MessageDecoderV1 extends ByteToMessageDecoder {
             }
             b = buffer.readByte();
             result |= (b & 0x7F) << 28;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  static long readLong(ByteBuf buffer) {
+    if (buffer.readableBytes() < 9) {
+      return readLongSlow(buffer);
+    } else {
+      return readLongFast(buffer);
+    }
+  }
+
+  static long readLongFast(ByteBuf buffer) {
+    int b = buffer.readByte();
+    long result = b & 0x7F;
+    if ((b & 0x80) != 0) {
+      b = buffer.readByte();
+      result |= (b & 0x7F) << 7;
+      if ((b & 0x80) != 0) {
+        b = buffer.readByte();
+        result |= (b & 0x7F) << 14;
+        if ((b & 0x80) != 0) {
+          b = buffer.readByte();
+          result |= (b & 0x7F) << 21;
+          if ((b & 0x80) != 0) {
+            b = buffer.readByte();
+            result |= (long) (b & 0x7F) << 28;
+            if ((b & 0x80) != 0) {
+              b = buffer.readByte();
+              result |= (long) (b & 0x7F) << 35;
+              if ((b & 0x80) != 0) {
+                b = buffer.readByte();
+                result |= (long) (b & 0x7F) << 42;
+                if ((b & 0x80) != 0) {
+                  b = buffer.readByte();
+                  result |= (long) (b & 0x7F) << 49;
+                  if ((b & 0x80) != 0) {
+                    b = buffer.readByte();
+                    result |= (long) b << 56;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  static long readLongSlow(ByteBuf buffer) {
+    buffer.markReaderIndex();
+    int b = buffer.readByte();
+    long result = b & 0x7F;
+    if ((b & 0x80) != 0) {
+      if (buffer.readableBytes() == 0) {
+        buffer.resetReaderIndex();
+        throw ESCAPE;
+      }
+      b = buffer.readByte();
+      result |= (b & 0x7F) << 7;
+      if ((b & 0x80) != 0) {
+        if (buffer.readableBytes() == 0) {
+          buffer.resetReaderIndex();
+          throw ESCAPE;
+        }
+        b = buffer.readByte();
+        result |= (b & 0x7F) << 14;
+        if ((b & 0x80) != 0) {
+          if (buffer.readableBytes() == 0) {
+            buffer.resetReaderIndex();
+            throw ESCAPE;
+          }
+          b = buffer.readByte();
+          result |= (b & 0x7F) << 21;
+          if ((b & 0x80) != 0) {
+            if (buffer.readableBytes() == 0) {
+              buffer.resetReaderIndex();
+              throw ESCAPE;
+            }
+            b = buffer.readByte();
+            result |= (long) (b & 0x7F) << 28;
+            if ((b & 0x80) != 0) {
+              if (buffer.readableBytes() == 0) {
+                buffer.resetReaderIndex();
+                throw ESCAPE;
+              }
+              b = buffer.readByte();
+              result |= (long) (b & 0x7F) << 35;
+              if ((b & 0x80) != 0) {
+                if (buffer.readableBytes() == 0) {
+                  buffer.resetReaderIndex();
+                  throw ESCAPE;
+                }
+                b = buffer.readByte();
+                result |= (long) (b & 0x7F) << 42;
+                if ((b & 0x80) != 0) {
+                  if (buffer.readableBytes() == 0) {
+                    buffer.resetReaderIndex();
+                    throw ESCAPE;
+                  }
+                  b = buffer.readByte();
+                  result |= (long) (b & 0x7F) << 49;
+                  if ((b & 0x80) != 0) {
+                    if (buffer.readableBytes() == 0) {
+                      buffer.resetReaderIndex();
+                      throw ESCAPE;
+                    }
+                    b = buffer.readByte();
+                    result |= (long) b << 56;
+                  }
+                }
+              }
+            }
           }
         }
       }
