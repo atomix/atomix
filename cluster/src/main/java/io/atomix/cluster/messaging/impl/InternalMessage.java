@@ -60,14 +60,10 @@ public abstract class InternalMessage {
     }
   }
 
-  private final int preamble;
-  private final long id;
+  private final int id;
   private final byte[] payload;
 
-  protected InternalMessage(int preamble,
-                            long id,
-                            byte[] payload) {
-    this.preamble = preamble;
+  protected InternalMessage(int id, byte[] payload) {
     this.id = id;
     this.payload = payload;
   }
@@ -82,11 +78,7 @@ public abstract class InternalMessage {
     return type() == Type.REPLY;
   }
 
-  public int preamble() {
-    return preamble;
-  }
-
-  public long id() {
+  public int id() {
     return id;
   }
 

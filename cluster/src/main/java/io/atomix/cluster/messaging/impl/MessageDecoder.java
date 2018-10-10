@@ -38,26 +38,36 @@ public class MessageDecoder extends ByteToMessageDecoder {
   private static final int VERSION = 1;
   private final Logger log = LoggerFactory.getLogger(getClass());
 
+  private static final Escape ESCAPE = new Escape();
   private static final byte[] EMPTY_PAYLOAD = new byte[0];
+
+  private static class Escape extends RuntimeException {
+  }
 
   private static final int BYTE_SIZE = 1;
   private static final int SHORT_SIZE = 2;
   private static final int INT_SIZE = 4;
   private static final int LONG_SIZE = 8;
 
+  private final int preamble;
+
   private DecoderState currentState = DecoderState.READ_SENDER_VERSION;
 
+  private int senderVersion;
+  private int senderPreamble;
   private InetAddress senderIp;
   private int senderPort;
-  private Address address;
-  private int version;
+  private Address senderAddress;
 
   private InternalMessage.Type type;
-  private int preamble;
-  private long messageId;
+  private int messageId;
   private int contentLength;
   private byte[] content;
   private int subjectLength;
+
+  MessageDecoder(int preamble) {
+    this.preamble = preamble;
+  }
 
   @Override
   @SuppressWarnings("squid:S128") // suppress switch fall through warning
@@ -71,9 +81,18 @@ public class MessageDecoder extends ByteToMessageDecoder {
         if (buffer.readableBytes() < SHORT_SIZE) {
           return;
         }
-        version = buffer.readShort();
-        if (version != VERSION) {
-          throw new ProtocolException("Unsupported protocol version: " + version);
+        senderVersion = buffer.readShort();
+        if (senderVersion != VERSION) {
+          throw new ProtocolException("Unsupported protocol version: " + senderVersion);
+        }
+        currentState = DecoderState.READ_SENDER_IP;
+      case READ_PREAMBLE:
+        if (buffer.readableBytes() < INT_SIZE) {
+          return;
+        }
+        senderPreamble = buffer.readInt();
+        if (senderPreamble != preamble) {
+          throw new ProtocolException("Invalid sender preamble " + senderPreamble);
         }
         currentState = DecoderState.READ_SENDER_IP;
       case READ_SENDER_IP:
@@ -96,31 +115,27 @@ public class MessageDecoder extends ByteToMessageDecoder {
           return;
         }
         senderPort = buffer.readInt();
-        address = new Address(senderIp.getHostName(), senderPort, senderIp);
+        senderAddress = new Address(senderIp.getHostName(), senderPort, senderIp);
         currentState = DecoderState.READ_TYPE;
       case READ_TYPE:
         if (buffer.readableBytes() < BYTE_SIZE) {
           return;
         }
         type = InternalMessage.Type.forId(buffer.readByte());
-        currentState = DecoderState.READ_PREAMBLE;
-      case READ_PREAMBLE:
-        if (buffer.readableBytes() < INT_SIZE) {
-          return;
-        }
-        preamble = buffer.readInt();
         currentState = DecoderState.READ_MESSAGE_ID;
       case READ_MESSAGE_ID:
-        if (buffer.readableBytes() < LONG_SIZE) {
+        try {
+          messageId = readInt(buffer);
+        } catch (Escape e) {
           return;
         }
-        messageId = buffer.readLong();
         currentState = DecoderState.READ_CONTENT_LENGTH;
       case READ_CONTENT_LENGTH:
-        if (buffer.readableBytes() < INT_SIZE) {
+        try {
+          contentLength = readInt(buffer);
+        } catch (Escape e) {
           return;
         }
-        contentLength = buffer.readInt();
         currentState = DecoderState.READ_CONTENT;
       case READ_CONTENT:
         if (buffer.readableBytes() < contentLength) {
@@ -163,12 +178,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
               return;
             }
             final String subject = readString(buffer, subjectLength, UTF_8);
-            InternalRequest message = new InternalRequest(
-                preamble,
-                messageId,
-                address,
-                subject,
-                content);
+            InternalRequest message = new InternalRequest(messageId, senderAddress, subject, content);
             out.add(message);
             currentState = DecoderState.READ_TYPE;
             break;
@@ -183,10 +193,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
               return;
             }
             InternalReply.Status status = InternalReply.Status.forId(buffer.readByte());
-            InternalReply message = new InternalReply(preamble,
-                messageId,
-                content,
-                status);
+            InternalReply message = new InternalReply(messageId, content, status);
             out.add(message);
             currentState = DecoderState.READ_TYPE;
             break;
@@ -197,6 +204,75 @@ public class MessageDecoder extends ByteToMessageDecoder {
       default:
         checkState(false, "Must not be here");
     }
+  }
+
+  static int readInt(ByteBuf buffer) {
+    if (buffer.readableBytes() < 5) {
+      return readIntSlow(buffer);
+    } else {
+      return readIntFast(buffer);
+    }
+  }
+
+  static int readIntFast(ByteBuf buffer) {
+    int b = buffer.readByte();
+    int result = b & 0x7F;
+    if ((b & 0x80) != 0) {
+      b = buffer.readByte();
+      result |= (b & 0x7F) << 7;
+      if ((b & 0x80) != 0) {
+        b = buffer.readByte();
+        result |= (b & 0x7F) << 14;
+        if ((b & 0x80) != 0) {
+          b = buffer.readByte();
+          result |= (b & 0x7F) << 21;
+          if ((b & 0x80) != 0) {
+            b = buffer.readByte();
+            result |= (b & 0x7F) << 28;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  static int readIntSlow(ByteBuf buffer) {
+    buffer.markReaderIndex();
+    int b = buffer.readByte();
+    int result = b & 0x7F;
+    if ((b & 0x80) != 0) {
+      if (buffer.readableBytes() == 0) {
+        buffer.resetReaderIndex();
+        throw ESCAPE;
+      }
+      b = buffer.readByte();
+      result |= (b & 0x7F) << 7;
+      if ((b & 0x80) != 0) {
+        if (buffer.readableBytes() == 0) {
+          buffer.resetReaderIndex();
+          throw ESCAPE;
+        }
+        b = buffer.readByte();
+        result |= (b & 0x7F) << 14;
+        if ((b & 0x80) != 0) {
+          if (buffer.readableBytes() == 0) {
+            buffer.resetReaderIndex();
+            throw ESCAPE;
+          }
+          b = buffer.readByte();
+          result |= (b & 0x7F) << 21;
+          if ((b & 0x80) != 0) {
+            if (buffer.readableBytes() == 0) {
+              buffer.resetReaderIndex();
+              throw ESCAPE;
+            }
+            b = buffer.readByte();
+            result |= (b & 0x7F) << 28;
+          }
+        }
+      }
+    }
+    return result;
   }
 
   static String readString(ByteBuf buffer, int length, Charset charset) {

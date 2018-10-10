@@ -58,35 +58,36 @@ public class MessageEncoder extends MessageToByteEncoder<Object> {
     }
   }
 
-  private void encodeMessage(InternalMessage message, ByteBuf out) {
+  private void encodeMessage(InternalMessage message, ByteBuf buffer) {
     // If the address hasn't been written to the channel, write it.
     if (!addressWritten) {
-      out.writeShort(VERSION);
+      buffer.writeShort(VERSION);
+      buffer.writeInt(preamble);
 
       final InetAddress senderIp = address.address();
       final byte[] senderIpBytes = senderIp.getAddress();
-      out.writeByte(senderIpBytes.length);
-      out.writeBytes(senderIpBytes);
+      buffer.writeByte(senderIpBytes.length);
+      buffer.writeBytes(senderIpBytes);
 
       // write sender port
-      out.writeInt(address.port());
+      buffer.writeInt(address.port());
 
       addressWritten = true;
     }
 
-    out.writeByte(message.type().id());
-    out.writeInt(this.preamble);
+    // Write the message type ID
+    buffer.writeByte(message.type().id());
 
-    // write message id
-    out.writeLong(message.id());
+    // Write the message ID as a variable length integer
+    writeInt(buffer, message.id());
 
     final byte[] payload = message.payload();
 
-    // write payload length
-    out.writeInt(payload.length);
+    // Write the payload length as a variable length integer
+    writeInt(buffer, payload.length);
 
-    // write payload.
-    out.writeBytes(payload);
+    // Write the payload bytes
+    buffer.writeBytes(payload);
   }
 
   private void encodeRequest(InternalRequest request, ByteBuf out) {
@@ -109,6 +110,30 @@ public class MessageEncoder extends MessageToByteEncoder<Object> {
 
     // write message status value
     out.writeByte(reply.status().id());
+  }
+
+  private void writeInt(ByteBuf buf, int value) {
+    if (value >>> 7 == 0) {
+      buf.writeByte(value);
+    } else if (value >>> 14 == 0) {
+      buf.writeByte((value & 0x7F) | 0x80);
+      buf.writeByte(value >>> 7);
+    } else if (value >>> 21 == 0) {
+      buf.writeByte((value & 0x7F) | 0x80);
+      buf.writeByte(value >>> 7 | 0x80);
+      buf.writeByte(value >>> 14);
+    } else if (value >>> 28 == 0) {
+      buf.writeByte((value & 0x7F) | 0x80);
+      buf.writeByte(value >>> 7 | 0x80);
+      buf.writeByte(value >>> 14 | 0x80);
+      buf.writeByte(value >>> 21);
+    } else {
+      buf.writeByte((value & 0x7F) | 0x80);
+      buf.writeByte(value >>> 7 | 0x80);
+      buf.writeByte(value >>> 14 | 0x80);
+      buf.writeByte(value >>> 21 | 0x80);
+      buf.writeByte(value >>> 28);
+    }
   }
 
   @Override

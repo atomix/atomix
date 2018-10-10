@@ -89,17 +89,12 @@ public final class InternalReply extends InternalMessage {
 
     private final Status status;
 
-    public InternalReply(int preamble,
-            long id,
-            Status status) {
-        this(preamble, id, new byte[0], status);
+    public InternalReply(int id, Status status) {
+        this(id, new byte[0], status);
     }
 
-    public InternalReply(int preamble,
-            long id,
-            byte[] payload,
-            Status status) {
-        super(preamble, id, payload);
+    public InternalReply(int id, byte[] payload, Status status) {
+        super(id, payload);
         this.status = status;
     }
 
