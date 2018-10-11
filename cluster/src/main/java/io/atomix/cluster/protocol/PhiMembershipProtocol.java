@@ -212,7 +212,8 @@ public class PhiMembershipProtocol
     if (!localMember.properties().equals(localProperties)) {
       synchronized (this) {
         if (!localMember.properties().equals(localProperties)) {
-          localProperties = localMember.properties();
+          localProperties = new Properties();
+          localProperties.putAll(localMember.properties());
           localMember.incrementTimestamp();
           post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, localMember));
         }
