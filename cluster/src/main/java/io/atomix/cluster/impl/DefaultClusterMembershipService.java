@@ -177,7 +177,8 @@ public class DefaultClusterMembershipService
     if (!localMember.properties().equals(localProperties)) {
       synchronized (this) {
         if (!localMember.properties().equals(localProperties)) {
-          localProperties = localMember.properties();
+          localProperties = new Properties();
+          localProperties.putAll(localMember.properties());
           post(new ClusterMembershipEvent(ClusterMembershipEvent.Type.METADATA_CHANGED, localMember));
           broadcastMetadata();
         }
