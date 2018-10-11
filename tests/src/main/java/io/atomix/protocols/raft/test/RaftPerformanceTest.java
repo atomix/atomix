@@ -17,18 +17,19 @@ package io.atomix.protocols.raft.test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
-import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.Node;
+import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.impl.DefaultNodeDiscoveryService;
 import io.atomix.cluster.messaging.BroadcastService;
 import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
+import io.atomix.cluster.protocol.PhiMembershipProtocol;
+import io.atomix.cluster.protocol.PhiMembershipProtocolConfig;
 import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
@@ -507,7 +508,7 @@ public class RaftPerformanceTest implements Runnable {
             Version.from("1.0.0"),
             new DefaultNodeDiscoveryService(bootstrapService, member, new BootstrapDiscoveryProvider(members)),
             bootstrapService,
-            new MembershipConfig()))
+            new PhiMembershipProtocol(new PhiMembershipProtocolConfig())))
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/perf-logs/%s", member.id())))
