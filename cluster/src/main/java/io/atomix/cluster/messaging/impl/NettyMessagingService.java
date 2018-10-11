@@ -85,7 +85,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -124,7 +123,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   private final Map<String, BiConsumer<ProtocolRequest, ServerConnection>> handlers = new ConcurrentHashMap<>();
   private final Map<Channel, RemoteClientConnection> clientConnections = Maps.newConcurrentMap();
   private final Map<Channel, RemoteServerConnection> serverConnections = Maps.newConcurrentMap();
-  private final AtomicInteger messageIdGenerator = new AtomicInteger(0);
+  private final AtomicLong messageIdGenerator = new AtomicLong(0);
 
   private ScheduledFuture<?> timeoutFuture;
 
@@ -764,6 +763,11 @@ public class NettyMessagingService implements ManagedMessagingService {
     public void channelRead(ChannelHandlerContext context, Object message) throws Exception {
       readProtocolVersion(context, (ByteBuf) message)
           .ifPresent(version -> activateProtocolVersion(context, version));
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+      future.completeExceptionally(cause);
     }
 
     @Override
