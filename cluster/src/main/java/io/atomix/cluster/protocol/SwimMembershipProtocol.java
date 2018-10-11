@@ -247,6 +247,9 @@ public class SwimMembershipProtocol
           swimMember.setState(State.SUSPECT);
           LOGGER.debug("{} - Member unreachable {}", this.localMember.id(), swimMember);
           post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, swimMember.copy()));
+          if (config.isNotifySuspect()) {
+            gossip(swimMember, Lists.newArrayList(swimMember.copy()));
+          }
         }
         // If the state has been changed to DEAD, trigger a REACHABILITY_CHANGED event if necessary and then remove
         // the member from the members list and trigger a MEMBER_REMOVED event.
@@ -281,6 +284,9 @@ public class SwimMembershipProtocol
       if (member.state() == State.SUSPECT) {
         LOGGER.debug("{} - Member unreachable {}", this.localMember.id(), swimMember);
         post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, swimMember.copy()));
+        if (config.isNotifySuspect()) {
+          gossip(swimMember, Lists.newArrayList(swimMember.copy()));
+        }
       }
       // If the updated state is DEAD, post a REACHABILITY_CHANGED event if necessary, then post a MEMBER_REMOVED
       // event and record an update.
