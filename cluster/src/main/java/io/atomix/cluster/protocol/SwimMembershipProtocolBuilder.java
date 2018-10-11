@@ -46,6 +46,17 @@ public class SwimMembershipProtocolBuilder extends GroupMembershipProtocolBuilde
   }
 
   /**
+   * Sets whether to notify a suspect node on state changes.
+   *
+   * @param notifySuspect whether to notify a suspect node on state changes
+   * @return the protocol builder
+   */
+  public SwimMembershipProtocolBuilder withNotifySuspect(boolean notifySuspect) {
+    config.setNotifySuspect(notifySuspect);
+    return this;
+  }
+
+  /**
    * Sets the gossip interval.
    *
    * @param gossipInterval the gossip interval

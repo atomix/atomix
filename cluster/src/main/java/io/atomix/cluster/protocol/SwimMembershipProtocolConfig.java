@@ -26,6 +26,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class SwimMembershipProtocolConfig extends GroupMembershipProtocolConfig {
   private static final boolean DEFAULT_BROADCAST_UPDATES = false;
   private static final boolean DEFAULT_BROADCAST_DISPUTES = true;
+  private static final boolean DEFAULT_NOTIFY_SUSPECT = false;
   private static final int DEFAULT_GOSSIP_INTERVAL = 250;
   private static final int DEFAULT_GOSSIP_FANOUT = 2;
   private static final int DEFAULT_PROBE_INTERVAL = 1000;
@@ -34,6 +35,7 @@ public class SwimMembershipProtocolConfig extends GroupMembershipProtocolConfig 
 
   private boolean broadcastUpdates = DEFAULT_BROADCAST_UPDATES;
   private boolean broadcastDisputes = DEFAULT_BROADCAST_DISPUTES;
+  private boolean notifySuspect = DEFAULT_NOTIFY_SUSPECT;
   private Duration gossipInterval = Duration.ofMillis(DEFAULT_GOSSIP_INTERVAL);
   private int gossipFanout = DEFAULT_GOSSIP_FANOUT;
   private Duration probeInterval = Duration.ofMillis(DEFAULT_PROBE_INTERVAL);
@@ -77,6 +79,26 @@ public class SwimMembershipProtocolConfig extends GroupMembershipProtocolConfig 
    */
   public SwimMembershipProtocolConfig setBroadcastDisputes(boolean broadcastDisputes) {
     this.broadcastDisputes = broadcastDisputes;
+    return this;
+  }
+
+  /**
+   * Returns whether to notify a suspect node on state changes.
+   *
+   * @return whether to notify a suspect node on state changes
+   */
+  public boolean isNotifySuspect() {
+    return notifySuspect;
+  }
+
+  /**
+   * Sets whether to notify a suspect node on state changes.
+   *
+   * @param notifySuspect whether to notify a suspect node on state changes
+   * @return the protocol configuration
+   */
+  public SwimMembershipProtocolConfig setNotifySuspect(boolean notifySuspect) {
+    this.notifySuspect = notifySuspect;
     return this;
   }
 
