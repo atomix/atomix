@@ -30,6 +30,7 @@ import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
+import java.time.Duration;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
@@ -51,16 +52,16 @@ public class DnsDiscoveryProvider
   public static final Type TYPE = new Type();
 
   /**
-   * Creates a new bootstrap provider builder.
+   * Creates a new DNS provider builder.
    *
-   * @return a new bootstrap provider builder
+   * @return a new DNS provider builder
    */
-  public static BootstrapDiscoveryBuilder builder() {
-    return new BootstrapDiscoveryBuilder();
+  public static DnsDiscoveryBuilder builder() {
+    return new DnsDiscoveryBuilder();
   }
 
   /**
-   * Bootstrap member location provider type.
+   * DNS node discovery provider type.
    */
   public static class Type implements NodeDiscoveryProvider.Type<DnsDiscoveryConfig> {
     private static final String NAME = "dns";
@@ -89,6 +90,8 @@ public class DnsDiscoveryProvider
   private final ScheduledExecutorService resolverScheduler = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-cluster-dns-resolver", LOGGER));
 
+  private final String service;
+  private final Duration resolutionInterval;
   private final DnsDiscoveryConfig config;
   private final Map<NodeId, Node> nodes = Maps.newConcurrentMap();
 
@@ -97,7 +100,9 @@ public class DnsDiscoveryProvider
   }
 
   DnsDiscoveryProvider(DnsDiscoveryConfig config) {
-    this.config = checkNotNull(config);
+    this.config = checkNotNull(config, "config cannot be null");
+    this.service = checkNotNull(config.getService(), "service cannot be null");
+    this.resolutionInterval = checkNotNull(config.getResolutionInterval(), "resolutionInterval cannot be null");
   }
 
   @Override
@@ -115,7 +120,6 @@ public class DnsDiscoveryProvider
     env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
     env.put("java.naming.provider.url", "dns:");
 
-    final String service = config.getService();
     try {
       final DirContext context = new InitialDirContext(env);
       final NamingEnumeration<?> resolved = context.getAttributes(service, ATTRIBUTES).get(ATTRIBUTE_ID).getAll();
@@ -159,7 +163,7 @@ public class DnsDiscoveryProvider
   public CompletableFuture<Void> join(BootstrapService bootstrap, Node localNode) {
     LOGGER.info("Joined");
     resolverScheduler.scheduleAtFixedRate(
-        this::resolveNodes, 0, config.getResolutionInterval().toMillis(), TimeUnit.MILLISECONDS);
+        this::resolveNodes, 0, resolutionInterval.toMillis(), TimeUnit.MILLISECONDS);
     return CompletableFuture.completedFuture(null);
   }
 

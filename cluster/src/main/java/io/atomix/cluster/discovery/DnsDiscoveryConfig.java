@@ -47,7 +47,7 @@ public class DnsDiscoveryConfig extends NodeDiscoveryConfig {
    * @return the DNS configuration
    */
   public DnsDiscoveryConfig setService(String service) {
-    this.service = service;
+    this.service = checkNotNull(service);
     return this;
   }
 
