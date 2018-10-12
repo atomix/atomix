@@ -80,7 +80,8 @@ public class SwimProtocolTest extends ConcurrentTestCase {
         null,
         null,
         new Properties(),
-        version);
+        version,
+        System.currentTimeMillis());
   }
 
   @Before

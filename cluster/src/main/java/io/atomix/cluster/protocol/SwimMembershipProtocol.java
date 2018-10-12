@@ -317,7 +317,7 @@ public class SwimMembershipProtocol
    */
   private void checkFailures() {
     for (SwimMember member : members.values()) {
-      if (member.getState() == State.SUSPECT && System.currentTimeMillis() - member.getTimestamp() > config.getFailureTimeout().toMillis()) {
+      if (member.getState() == State.SUSPECT && System.currentTimeMillis() - member.getUpdated() > config.getFailureTimeout().toMillis()) {
         member.setState(State.DEAD);
         members.remove(member.id());
         randomMembers.remove(member);
@@ -660,7 +660,8 @@ public class SwimMembershipProtocol
           member.rack(),
           member.host(),
           member.properties(),
-          member.version());
+          member.version(),
+          System.currentTimeMillis());
       this.localProperties.putAll(localMember.properties());
       discoveryService.addListener(discoveryEventListener);
 
@@ -727,6 +728,7 @@ public class SwimMembershipProtocol
    */
   static class ImmutableMember extends Member {
     private final Version version;
+    private final long timestamp;
     private final State state;
     private final long incarnationNumber;
 
@@ -738,10 +740,12 @@ public class SwimMembershipProtocol
         String host,
         Properties properties,
         Version version,
+        long timestamp,
         State state,
         long incarnationNumber) {
       super(id, address, zone, rack, host, properties);
       this.version = version;
+      this.timestamp = timestamp;
       this.state = state;
       this.incarnationNumber = incarnationNumber;
     }
@@ -749,6 +753,11 @@ public class SwimMembershipProtocol
     @Override
     public Version version() {
       return version;
+    }
+
+    @Override
+    public long timestamp() {
+      return timestamp;
     }
 
     /**
@@ -775,6 +784,8 @@ public class SwimMembershipProtocol
           .add("id", id())
           .add("address", address())
           .add("properties", properties())
+          .add("version", version())
+          .add("timestamp", timestamp())
           .add("state", state())
           .add("incarnationNumber", incarnationNumber())
           .toString();
@@ -786,13 +797,15 @@ public class SwimMembershipProtocol
    */
   static class SwimMember extends Member {
     private final Version version;
+    private final long timestamp;
     private volatile State state;
     private volatile long incarnationNumber;
-    private volatile long timestamp;
+    private volatile long updated;
 
     SwimMember(MemberId id, Address address) {
       super(id, address);
       this.version = null;
+      this.timestamp = 0;
     }
 
     SwimMember(
@@ -802,15 +815,18 @@ public class SwimMembershipProtocol
         String rack,
         String host,
         Properties properties,
-        Version version) {
+        Version version,
+        long timestamp) {
       super(id, address, zone, rack, host, properties);
       this.version = version;
+      this.timestamp = timestamp;
       incarnationNumber = System.currentTimeMillis();
     }
 
     SwimMember(ImmutableMember member) {
       super(member.id(), member.address(), member.zone(), member.rack(), member.host(), member.properties());
       this.version = member.version;
+      this.timestamp = member.timestamp;
       this.state = member.state;
       this.incarnationNumber = member.incarnationNumber;
     }
@@ -818,6 +834,11 @@ public class SwimMembershipProtocol
     @Override
     public Version version() {
       return version;
+    }
+
+    @Override
+    public long timestamp() {
+      return timestamp;
     }
 
     /**
@@ -828,7 +849,7 @@ public class SwimMembershipProtocol
     void setState(State state) {
       if (this.state != state) {
         this.state = state;
-        setTimestamp(System.currentTimeMillis());
+        setUpdated(System.currentTimeMillis());
       }
     }
 
@@ -874,17 +895,17 @@ public class SwimMembershipProtocol
      *
      * @return the wall clock timestamp
      */
-    long getTimestamp() {
-      return timestamp;
+    long getUpdated() {
+      return updated;
     }
 
     /**
      * Sets the wall clock timestamp.
      *
-     * @param timestamp the wall clock timestamp
+     * @param updated the wall clock timestamp
      */
-    void setTimestamp(long timestamp) {
-      this.timestamp = timestamp;
+    void setUpdated(long updated) {
+      this.updated = updated;
     }
 
     /**
@@ -901,6 +922,7 @@ public class SwimMembershipProtocol
           host(),
           properties(),
           version(),
+          timestamp(),
           state,
           incarnationNumber);
     }

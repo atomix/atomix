@@ -203,6 +203,15 @@ public class Member extends Node {
     return null;
   }
 
+  /**
+   * Returns the member timestamp.
+   *
+   * @return the member timestamp
+   */
+  public long timestamp() {
+    return 0;
+  }
+
   @Override
   public MemberConfig config() {
     return new MemberConfig()
