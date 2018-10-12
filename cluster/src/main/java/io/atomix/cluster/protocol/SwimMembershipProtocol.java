@@ -175,7 +175,7 @@ public class SwimMembershipProtocol
       localProperties = new Properties();
       localProperties.putAll(localMember.properties());
       LOGGER.debug("{} - Detected local properties change {}", localMember.id(), localProperties);
-      localMember.setTerm(localMember.getTerm() + 1);
+      localMember.setIncarnationNumber(localMember.getIncarnationNumber() + 1);
       post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, localMember));
       recordUpdate(localMember.copy());
     }
@@ -208,7 +208,7 @@ public class SwimMembershipProtocol
       return true;
     }
     // If the term has been increased, update the member and record a gossip event.
-    else if (member.term() > swimMember.getTerm()) {
+    else if (member.incarnationNumber() > swimMember.getIncarnationNumber()) {
       // If the member's version has changed, remove the old member and add the new member.
       if (!Objects.equals(member.version(), swimMember.version())) {
         members.remove(member.id());
@@ -224,7 +224,7 @@ public class SwimMembershipProtocol
         recordUpdate(swimMember.copy());
       } else {
         // Update the term for the local member.
-        swimMember.setTerm(member.term());
+        swimMember.setIncarnationNumber(member.incarnationNumber());
 
         // If the state has been changed to ALIVE, trigger a REACHABILITY_CHANGED event and then update metadata.
         if (member.state() == State.ALIVE && swimMember.getState() != State.ALIVE) {
@@ -277,7 +277,7 @@ public class SwimMembershipProtocol
       }
     }
     // If the term remained the same but the state has progressed, update the state and trigger events.
-    else if (member.term() == swimMember.getTerm() && member.state().ordinal() > swimMember.getState().ordinal()) {
+    else if (member.incarnationNumber() == swimMember.getIncarnationNumber() && member.state().ordinal() > swimMember.getState().ordinal()) {
       swimMember.setState(member.state());
 
       // If the updated state is SUSPECT, post a REACHABILITY_CHANGED event and record an update.
@@ -387,7 +387,7 @@ public class SwimMembershipProtocol
           } else {
             // Verify that the local member term has not changed and request probes from peers.
             SwimMember swimMember = members.get(member.id());
-            if (swimMember != null && swimMember.getTerm() == member.term()) {
+            if (swimMember != null && swimMember.getIncarnationNumber() == member.incarnationNumber()) {
               LOGGER.debug("{} - Failed to probe {}", this.localMember.id(), member);
               requestProbes(swimMember.copy());
             }
@@ -404,15 +404,15 @@ public class SwimMembershipProtocol
   private ImmutableMember handleProbe(ImmutableMember member) {
     LOGGER.trace("{} - Received probe {}", localMember.id(), member);
     // If the probe indicates a term greater than the local term, update the local term, increment and respond.
-    if (member.term() > localMember.getTerm()) {
-      localMember.setTerm(member.term() + 1);
+    if (member.incarnationNumber() > localMember.getIncarnationNumber()) {
+      localMember.setIncarnationNumber(member.incarnationNumber() + 1);
       if (config.isBroadcastDisputes()) {
         broadcast(localMember.copy());
       }
     }
     // If the probe indicates this member is suspect, increment the local term and respond.
     else if (member.state() == State.SUSPECT) {
-      localMember.setTerm(localMember.getTerm() + 1);
+      localMember.setIncarnationNumber(localMember.getIncarnationNumber() + 1);
       if (config.isBroadcastDisputes()) {
         broadcast(localMember.copy());
       }
@@ -728,20 +728,25 @@ public class SwimMembershipProtocol
   static class ImmutableMember extends Member {
     private final Version version;
     private final State state;
-    private final long term;
+    private final long incarnationNumber;
 
-    ImmutableMember(MemberId id, Address address, String zone, String rack, String host, Properties properties, Version version, State state, long term) {
+    ImmutableMember(
+        MemberId id,
+        Address address,
+        String zone,
+        String rack,
+        String host,
+        Properties properties,
+        Version version,
+        State state,
+        long incarnationNumber) {
       super(id, address, zone, rack, host, properties);
       this.version = version;
       this.state = state;
-      this.term = term;
+      this.incarnationNumber = incarnationNumber;
     }
 
-    /**
-     * Returns the member's version.
-     *
-     * @return the member's version
-     */
+    @Override
     public Version version() {
       return version;
     }
@@ -751,17 +756,17 @@ public class SwimMembershipProtocol
      *
      * @return the member's state
      */
-    public State state() {
+    State state() {
       return state;
     }
 
     /**
-     * Returns the member's term.
+     * Returns the member's incarnation number.
      *
-     * @return the member's term
+     * @return the member's incarnation number
      */
-    public long term() {
-      return term;
+    long incarnationNumber() {
+      return incarnationNumber;
     }
 
     @Override
@@ -771,7 +776,7 @@ public class SwimMembershipProtocol
           .add("address", address())
           .add("properties", properties())
           .add("state", state())
-          .add("term", term())
+          .add("incarnationNumber", incarnationNumber())
           .toString();
     }
   }
@@ -782,7 +787,7 @@ public class SwimMembershipProtocol
   static class SwimMember extends Member {
     private final Version version;
     private volatile State state;
-    private volatile long term;
+    private volatile long incarnationNumber;
     private volatile long timestamp;
 
     SwimMember(MemberId id, Address address) {
@@ -800,14 +805,14 @@ public class SwimMembershipProtocol
         Version version) {
       super(id, address, zone, rack, host, properties);
       this.version = version;
-      term = System.currentTimeMillis();
+      incarnationNumber = System.currentTimeMillis();
     }
 
     SwimMember(ImmutableMember member) {
       super(member.id(), member.address(), member.zone(), member.rack(), member.host(), member.properties());
       this.version = member.version;
       this.state = member.state;
-      this.term = member.term;
+      this.incarnationNumber = member.incarnationNumber;
     }
 
     @Override
@@ -847,21 +852,21 @@ public class SwimMembershipProtocol
     }
 
     /**
-     * Returns the member logical timestamp.
+     * Returns the member incarnation number.
      *
-     * @return the member logical timestamp
+     * @return the member incarnation number
      */
-    long getTerm() {
-      return term;
+    long getIncarnationNumber() {
+      return incarnationNumber;
     }
 
     /**
-     * Sets the member's logical timestamp.
+     * Sets the member's incarnation number.
      *
-     * @param term the member's logical timestamp
+     * @param incarnationNumber the member's incarnation number
      */
-    void setTerm(long term) {
-      this.term = term;
+    void setIncarnationNumber(long incarnationNumber) {
+      this.incarnationNumber = incarnationNumber;
     }
 
     /**
@@ -897,7 +902,7 @@ public class SwimMembershipProtocol
           properties(),
           version(),
           state,
-          term);
+          incarnationNumber);
     }
   }
 }
