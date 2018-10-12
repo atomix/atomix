@@ -10,6 +10,8 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix/badge.svg?cache=foo)](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix)
 [![Javadocs](http://www.javadoc.io/badge/io.atomix/atomix.svg)](https://atomix.io/docs/latest/api/)
 [![Gitter](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/atomix/atomix)
+[![Code Quality: Java](https://img.shields.io/lgtm/grade/java/g/atomix/atomix.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/atomix/atomix/context:java)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/atomix/atomix.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/atomix/atomix/alerts)
 
 **A reactive Java framework for building fault-tolerant distributed systems**
 
