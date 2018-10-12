@@ -16,7 +16,6 @@
 package io.atomix.cluster.protocol;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.Member;
@@ -37,7 +36,6 @@ import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -49,7 +47,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -214,7 +211,6 @@ public class PhiMembershipProtocol
         if (!localMember.properties().equals(localProperties)) {
           localProperties = new Properties();
           localProperties.putAll(localMember.properties());
-          localMember.incrementTimestamp();
           post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, localMember));
         }
       }
@@ -227,22 +223,9 @@ public class PhiMembershipProtocol
   private CompletableFuture<Void> sendHeartbeat(GossipMember member) {
     return bootstrapService.getMessagingService().sendAndReceive(member.address(), HEARTBEAT_MESSAGE, SERIALIZER.encode(localMember))
         .whenCompleteAsync((response, error) -> {
-          if (error == null) {
-            Collection<GossipMember> remoteMembers = SERIALIZER.decode(response);
-            for (GossipMember remoteMember : remoteMembers) {
-              if (remoteMember.id().equals(localMember.id()) || !remoteMember.isReachable()) {
-                continue;
-              }
-
-              GossipMember localMember = members.get(remoteMember.id());
-              if (localMember == null) {
-                members.put(remoteMember.id(), remoteMember);
-                post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, remoteMember));
-              } else if (localMember.getTimestamp() < remoteMember.getTimestamp()) {
-                members.put(remoteMember.id(), remoteMember);
-                post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, remoteMember));
-              }
-            }
+          if (error != null) {
+            GossipMember remoteMember = SERIALIZER.decode(response);
+            updateMember(remoteMember);
           } else {
             LOGGER.debug("{} - Sending heartbeat to {} failed", localMember.id(), member, error);
             if (member.isReachable()) {
@@ -271,41 +254,43 @@ public class PhiMembershipProtocol
     GossipMember remoteMember = SERIALIZER.decode(message);
     LOGGER.trace("{} - Received heartbeat: {}", localMember.id(), remoteMember);
     failureDetectors.computeIfAbsent(remoteMember.id(), n -> new PhiAccrualFailureDetector()).report();
-    GossipMember member = members.get(remoteMember.id());
+    updateMember(remoteMember);
+    return SERIALIZER.encode(localMember);
+  }
 
-    if (member == null) {
+  /**
+   * Updates the state of the given member.
+   *
+   * @param remoteMember the member received from a remote node
+   */
+  private void updateMember(GossipMember remoteMember) {
+    GossipMember localMember = members.get(remoteMember.id());
+    if (localMember == null) {
       remoteMember.setActive(true);
       remoteMember.setReachable(true);
       members.put(remoteMember.id(), remoteMember);
       post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, remoteMember));
-    } else {
-      // If the member's metadata changed, overwrite the local member. We do this instead of a version check since
-      // a heartbeat from the source member always takes precedence over a more recent version.
-      if (!Objects.equals(member.version(), remoteMember.version())
-          || !Objects.equals(member.zone(), remoteMember.zone())
-          || !Objects.equals(member.rack(), remoteMember.rack())
-          || !Objects.equals(member.host(), remoteMember.host())
-          || !Objects.equals(member.properties(), remoteMember.properties())) {
-        members.put(remoteMember.id(), remoteMember);
-        if (member.isActive()) {
-          post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, remoteMember));
-        }
-        member = remoteMember;
+    } else if (!Objects.equals(localMember.version(), remoteMember.version())) {
+      members.remove(localMember.id());
+      localMember.setReachable(false);
+      post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, localMember));
+      localMember.setActive(false);
+      post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_REMOVED, localMember));
+      members.put(remoteMember.id(), remoteMember);
+      remoteMember.setActive(true);
+      remoteMember.setReachable(true);
+      post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, remoteMember));
+    } else if (!Objects.equals(localMember.properties(), remoteMember.properties())) {
+      if (!localMember.isReachable()) {
+        localMember.setReachable(true);
+        post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, localMember));
       }
-
-      // If the local member is not active, set it to active and trigger a MEMBER_ADDED event.
-      if (!member.isActive()) {
-        member.setActive(true);
-        member.setReachable(true);
-        post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, member));
-      }
-      // If the member has been marked unreachable, mark it as reachable and trigger a REACHABILITY_CHANGED event.
-      else if (!member.isReachable()) {
-        member.setReachable(true);
-        post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, member));
-      }
+      localMember.properties().putAll(remoteMember.properties());
+      post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, localMember));
+    } else if (!localMember.isReachable()) {
+      localMember.setReachable(true);
+      post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, localMember));
     }
-    return SERIALIZER.encode(Lists.newArrayList(members.values()));
   }
 
   @Override
@@ -320,7 +305,8 @@ public class PhiMembershipProtocol
           member.rack(),
           member.host(),
           member.properties(),
-          member.version());
+          member.version(),
+          System.currentTimeMillis());
       discoveryService.addListener(discoveryEventListener);
 
       LOGGER.info("{} - Member activated: {}", localMember.id(), localMember);
@@ -359,14 +345,14 @@ public class PhiMembershipProtocol
    */
   private static class GossipMember extends Member {
     private final Version version;
-    private final AtomicLong timestamp = new AtomicLong();
+    private final long timestamp;
     private volatile boolean active;
     private volatile boolean reachable;
 
     public GossipMember(MemberId id, Address address) {
       super(id, address);
       this.version = null;
-      timestamp.set(0);
+      this.timestamp = 0;
     }
 
     public GossipMember(
@@ -376,10 +362,11 @@ public class PhiMembershipProtocol
         String rack,
         String host,
         Properties properties,
-        Version version) {
+        Version version,
+        long timestamp) {
       super(id, address, zone, rack, host, properties);
       this.version = version;
-      timestamp.set(1);
+      this.timestamp = timestamp;
     }
 
     @Override
@@ -387,29 +374,9 @@ public class PhiMembershipProtocol
       return version;
     }
 
-    /**
-     * Returns the member logical timestamp.
-     *
-     * @return the member logical timestamp
-     */
-    public long getTimestamp() {
-      return timestamp.get();
-    }
-
-    /**
-     * Sets the member's logical timestamp.
-     *
-     * @param timestamp the member's logical timestamp
-     */
-    void setTimestamp(long timestamp) {
-      this.timestamp.accumulateAndGet(timestamp, Math::max);
-    }
-
-    /**
-     * Increments the member's timestamp.
-     */
-    void incrementTimestamp() {
-      timestamp.incrementAndGet();
+    @Override
+    public long timestamp() {
+      return timestamp;
     }
 
     /**
