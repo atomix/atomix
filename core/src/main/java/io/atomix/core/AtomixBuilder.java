@@ -18,6 +18,7 @@ package io.atomix.core;
 import io.atomix.cluster.AtomixClusterBuilder;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.discovery.NodeDiscoveryProvider;
+import io.atomix.cluster.protocol.GroupMembershipProtocol;
 import io.atomix.core.profile.Profile;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.utils.net.Address;
@@ -402,6 +403,12 @@ public class AtomixBuilder extends AtomixClusterBuilder {
   @Override
   public AtomixBuilder withMulticastAddress(Address address) {
     super.withMulticastAddress(address);
+    return this;
+  }
+
+  @Override
+  public AtomixClusterBuilder withMembershipProtocol(GroupMembershipProtocol protocol) {
+    super.withMembershipProtocol(protocol);
     return this;
   }
 

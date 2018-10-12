@@ -17,6 +17,7 @@ package io.atomix.cluster;
 
 import com.google.common.collect.Lists;
 import io.atomix.cluster.discovery.NodeDiscoveryProvider;
+import io.atomix.cluster.protocol.GroupMembershipProtocol;
 import io.atomix.cluster.protocol.PhiMembershipProtocolConfig;
 import io.atomix.cluster.protocol.GroupMembershipProtocolConfig;
 import io.atomix.utils.Builder;
@@ -406,6 +407,22 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
     if (protocolConfig instanceof PhiMembershipProtocolConfig) {
       ((PhiMembershipProtocolConfig) protocolConfig).setFailureTimeout(timeout);
     }
+    return this;
+  }
+
+  /**
+   * Sets the cluster membership protocol.
+   * <p>
+   * The membership protocol is responsible for determining the active set of members in the cluster, replicating
+   * member metadata, and detecting failures. The default is {@link io.atomix.cluster.protocol.PhiMembershipProtocol}.
+   *
+   * @param protocol the cluster membership protocol
+   * @return the cluster builder
+   * @see io.atomix.cluster.protocol.PhiMembershipProtocol
+   * @see io.atomix.cluster.protocol.SwimMembershipProtocol
+   */
+  public AtomixClusterBuilder withMembershipProtocol(GroupMembershipProtocol protocol) {
+    config.setProtocolConfig(protocol.config());
     return this;
   }
 
