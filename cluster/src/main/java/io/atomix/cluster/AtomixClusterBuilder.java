@@ -15,11 +15,13 @@
  */
 package io.atomix.cluster;
 
+import com.google.common.collect.Lists;
 import io.atomix.cluster.discovery.NodeDiscoveryProvider;
 import io.atomix.utils.Builder;
 import io.atomix.utils.net.Address;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Properties;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -98,6 +100,48 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    */
   public AtomixClusterBuilder withMemberId(MemberId localMemberId) {
     config.getNodeConfig().setId(localMemberId);
+    return this;
+  }
+
+  /**
+   * Sets the interface to which to bind the instance.
+   *
+   * @param iface the interface to which to bind the instance
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withMessagingInterface(String iface) {
+    return withMessagingInterfaces(Lists.newArrayList(iface));
+  }
+
+  /**
+   * Sets the interface(s) to which to bind the instance.
+   *
+   * @param ifaces the interface(s) to which to bind the instance
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withMessagingInterfaces(String... ifaces) {
+    return withMessagingInterfaces(Lists.newArrayList(ifaces));
+  }
+
+  /**
+   * Sets the interface(s) to which to bind the instance.
+   *
+   * @param ifaces the interface(s) to which to bind the instance
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withMessagingInterfaces(Collection<String> ifaces) {
+    config.getMessagingConfig().setInterfaces(Lists.newArrayList(ifaces));
+    return this;
+  }
+
+  /**
+   * Sets the local port to which to bind the node.
+   *
+   * @param bindPort the local port to which to bind the node
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withMessagingPort(int bindPort) {
+    config.getMessagingConfig().setPort(bindPort);
     return this;
   }
 
@@ -357,6 +401,83 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    */
   public AtomixClusterBuilder withMembershipProvider(NodeDiscoveryProvider locationProvider) {
     config.setDiscoveryConfig(locationProvider.config());
+    return this;
+  }
+
+  /**
+   * Enables TLS for the Atomix messaging service.
+   * <p>
+   * The messaging service is the service through which all Atomix protocols communicate with their peers. Enabling
+   * TLS for the messaging service enables TLS for all internal Atomix communication.
+   * When TLS is enabled, Atomix will look for an {@code atomix.jks} file in the {@code /conf} directory unless
+   * a keystore/truststore is provided.
+   *
+   * @return the cluster builder
+   * @see #withKeyStore(String)
+   * @see #withTrustStore(String)
+   */
+  public AtomixClusterBuilder withTlsEnabled() {
+    return withTlsEnabled(true);
+  }
+
+  /**
+   * Sets whether TLS is enabled for the Atomix messaging service.
+   * <p>
+   * The messaging service is the service through which all Atomix protocols communicate with their peers. Enabling
+   * TLS for the messaging service enables TLS for all internal Atomix communication.
+   * When TLS is enabled, Atomix will look for an {@code atomix.jks} file in the {@code /conf} directory unless
+   * a keystore/truststore is provided.
+   *
+   * @return the cluster builder
+   * @see #withKeyStore(String)
+   * @see #withTrustStore(String)
+   */
+  public AtomixClusterBuilder withTlsEnabled(boolean tlsEnabled) {
+    config.getMessagingConfig().getTlsConfig().setEnabled(tlsEnabled);
+    return this;
+  }
+
+  /**
+   * Sets the key store to use for TLS in the Atomix messaging service.
+   *
+   * @param keyStore the key store path
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withKeyStore(String keyStore) {
+    config.getMessagingConfig().getTlsConfig().setKeyStore(keyStore);
+    return this;
+  }
+
+  /**
+   * Sets the key store password for the Atomix messaging service.
+   *
+   * @param keyStorePassword the key store password
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withKeyStorePassword(String keyStorePassword) {
+    config.getMessagingConfig().getTlsConfig().setKeyStorePassword(keyStorePassword);
+    return this;
+  }
+
+  /**
+   * Sets the trust store to use for TLS in the Atomix messaging service.
+   *
+   * @param trustStore the trust store path
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withTrustStore(String trustStore) {
+    config.getMessagingConfig().getTlsConfig().setTrustStore(trustStore);
+    return this;
+  }
+
+  /**
+   * Sets the trust store password for the Atomix messaging service.
+   *
+   * @param trustStorePassword the trust store password
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withTrustStorePassword(String trustStorePassword) {
+    config.getMessagingConfig().getTlsConfig().setTrustStorePassword(trustStorePassword);
     return this;
   }
 

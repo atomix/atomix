@@ -100,7 +100,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   public void backup(BackupOutput writer) {
     writer.writeObject(listeners);
     writer.writeObject(preparedKeys);
-    writer.writeObject(entries());
+    writer.writeObject(Maps.newHashMap(entries()));
     writer.writeObject(activeTransactions);
     writer.writeLong(currentVersion);
     writer.writeObject(entryIterators);
@@ -110,7 +110,9 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   public void restore(BackupInput reader) {
     listeners = reader.readObject();
     preparedKeys = reader.readObject();
-    map = reader.readObject();
+    Map<K, MapEntryValue> map = reader.readObject();
+    this.map = createMap();
+    this.map.putAll(map);
     activeTransactions = reader.readObject();
     currentVersion = reader.readLong();
     entryIterators = reader.readObject();

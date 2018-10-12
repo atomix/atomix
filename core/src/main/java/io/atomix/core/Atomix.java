@@ -15,6 +15,21 @@
  */
 package io.atomix.core;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.atomix.cluster.AtomixCluster;
 import io.atomix.cluster.ClusterMembershipService;
@@ -87,20 +102,6 @@ import io.atomix.utils.config.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -155,7 +156,7 @@ import static com.google.common.base.Preconditions.checkState;
  * </pre>
  */
 public class Atomix extends AtomixCluster implements PrimitivesService {
-  private static final List<String> RESOURCES = Arrays.asList("atomix", "defaults");
+  private static final String[] RESOURCES = System.getProperty("atomix.config.resources", "atomix").split(",");
 
   private static final String VERSION_RESOURCE = "VERSION";
 
@@ -185,6 +186,19 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   /**
+   * Returns a new Atomix configuration.
+   * <p>
+   * The configuration will be loaded from {@code atomix.conf}, {@code atomix.json}, or {@code atomix.properties} if
+   * located on the classpath.
+   *
+   * @param registry the Atomix registry
+   * @return a new Atomix configuration
+   */
+  public static AtomixConfig config(AtomixRegistry registry) {
+    return config(Thread.currentThread().getContextClassLoader(), null, registry);
+  }
+
+  /**
    * Returns a new Atomix configuration from the given file.
    * <p>
    * The configuration will be loaded from the given file and will fall back to {@code atomix.conf}, {@code
@@ -209,6 +223,20 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    */
   public static AtomixConfig config(ClassLoader classLoader, String... files) {
     return config(classLoader, Stream.of(files).map(File::new).collect(Collectors.toList()), AtomixRegistry.registry(classLoader));
+  }
+
+  /**
+   * Returns a new Atomix configuration from the given file.
+   * <p>
+   * The configuration will be loaded from the given file and will fall back to {@code atomix.conf}, {@code
+   * atomix.json}, or {@code atomix.properties} if located on the classpath.
+   *
+   * @param registry the Atomix registry
+   * @param files the file from which to return a new Atomix configuration
+   * @return a new Atomix configuration from the given file
+   */
+  public static AtomixConfig config(AtomixRegistry registry, String... files) {
+    return config(Thread.currentThread().getContextClassLoader(), Stream.of(files).map(File::new).collect(Collectors.toList()), registry);
   }
 
   /**
@@ -252,6 +280,20 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   }
 
   /**
+   * Returns a new Atomix configuration from the given file.
+   * <p>
+   * The configuration will be loaded from the given file and will fall back to {@code atomix.conf}, {@code
+   * atomix.json}, or {@code atomix.properties} if located on the classpath.
+   *
+   * @param registry the Atomix registry
+   * @param files the file from which to return a new Atomix configuration
+   * @return a new Atomix configuration from the given file
+   */
+  public static AtomixConfig config(AtomixRegistry registry, List<File> files) {
+    return config(Thread.currentThread().getContextClassLoader(), files, registry);
+  }
+
+  /**
    * Returns a new Atomix configuration from the given resources.
    *
    * @param classLoader the class loader
@@ -269,7 +311,7 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
         new PolymorphicTypeMapper("type", PrimitiveProtocolConfig.class, PrimitiveProtocol.Type.class),
         new PolymorphicTypeMapper("type", ProfileConfig.class, Profile.Type.class),
         new PolymorphicTypeMapper("type", NodeDiscoveryConfig.class, NodeDiscoveryProvider.Type.class));
-    return mapper.loadFiles(AtomixConfig.class, files, RESOURCES);
+    return mapper.loadFiles(AtomixConfig.class, files, Lists.newArrayList(RESOURCES));
   }
 
   /**
@@ -304,6 +346,20 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    * The builder will be initialized with the configuration in the given file and will fall back to {@code atomix.conf},
    * {@code atomix.json}, or {@code atomix.properties} if located on the classpath.
    *
+   * @param registry the AtomixRegistry
+   * @return a new Atomix builder
+   */
+  public static AtomixBuilder builder(AtomixRegistry registry) {
+    return new AtomixBuilder(config(Thread.currentThread().getContextClassLoader(), null, registry), registry);
+  }
+
+
+  /**
+   * Returns a new Atomix builder.
+   * <p>
+   * The builder will be initialized with the configuration in the given file and will fall back to {@code atomix.conf},
+   * {@code atomix.json}, or {@code atomix.properties} if located on the classpath.
+   *
    * @param config the Atomix configuration
    * @return a new Atomix builder
    */
@@ -329,6 +385,20 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   /**
    * Returns a new Atomix builder.
    * <p>
+   * The builder will be initialized with the configuration in the given file and will fall back to {@code atomix.conf},
+   * {@code atomix.json}, or {@code atomix.properties} if located on the classpath.
+   *
+   * @param configFile the Atomix configuration file
+   * @param registry the Atomix registry
+   * @return a new Atomix builder
+   */
+  public static AtomixBuilder builder(String configFile, AtomixRegistry registry) {
+    return new AtomixBuilder(config(Thread.currentThread().getContextClassLoader(), Collections.singletonList(new File(configFile)), registry), registry);
+  }
+
+  /**
+   * Returns a new Atomix builder.
+   * <p>
    * The returned builder will be initialized with the provided configuration.
    *
    * @param config the Atomix configuration
@@ -349,6 +419,19 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
    */
   public static AtomixBuilder builder(AtomixConfig config, ClassLoader classLoader) {
     return new AtomixBuilder(config, AtomixRegistry.registry(classLoader));
+  }
+
+  /**
+   * Returns a new Atomix builder.
+   * <p>
+   * The returned builder will be initialized with the provided configuration.
+   *
+   * @param config the Atomix configuration
+   * @param registry the Atomix registry
+   * @return the Atomix builder
+   */
+  public static AtomixBuilder builder(AtomixConfig config, AtomixRegistry registry) {
+    return new AtomixBuilder(config, registry);
   }
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);

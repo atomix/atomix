@@ -21,6 +21,7 @@ import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.MulticastConfig;
 import io.atomix.cluster.discovery.MulticastDiscoveryConfig;
 import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
+import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.core.map.AtomicMapConfig;
 import io.atomix.core.profile.ConsensusProfile;
 import io.atomix.core.profile.ConsensusProfileConfig;
@@ -89,6 +90,18 @@ public class AtomixConfigTest {
     assertEquals(Duration.ofSeconds(1), discovery.getBroadcastInterval());
     assertEquals(12, discovery.getFailureThreshold());
     assertEquals(Duration.ofSeconds(15), discovery.getFailureTimeout());
+
+    MessagingConfig messaging = cluster.getMessagingConfig();
+    assertEquals(2, messaging.getInterfaces().size());
+    assertEquals("127.0.0.1", messaging.getInterfaces().get(0));
+    assertEquals("0.0.0.0", messaging.getInterfaces().get(1));
+    assertEquals(5000, messaging.getPort().intValue());
+    assertEquals(Duration.ofSeconds(10), messaging.getConnectTimeout());
+    assertTrue(messaging.getTlsConfig().isEnabled());
+    assertEquals("keystore.jks", messaging.getTlsConfig().getKeyStore());
+    assertEquals("foo", messaging.getTlsConfig().getKeyStorePassword());
+    assertEquals("truststore.jks", messaging.getTlsConfig().getTrustStore());
+    assertEquals("bar", messaging.getTlsConfig().getTrustStorePassword());
 
     RaftPartitionGroupConfig managementGroup = (RaftPartitionGroupConfig) config.getManagementGroup();
     assertEquals(RaftPartitionGroup.TYPE, managementGroup.getType());

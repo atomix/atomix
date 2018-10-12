@@ -106,6 +106,7 @@ public class RaftContext implements AutoCloseable {
   private final ThreadContextFactory threadContextFactory;
   private final ThreadContext loadContext;
   private final ThreadContext stateContext;
+  private final boolean closeOnStop;
   protected RaftRole role = new InactiveRole(this);
   private Duration electionTimeout = Duration.ofMillis(500);
   private Duration heartbeatInterval = Duration.ofMillis(150);
@@ -125,8 +126,8 @@ public class RaftContext implements AutoCloseable {
       RaftServerProtocol protocol,
       RaftStorage storage,
       PrimitiveTypeRegistry primitiveTypes,
-      ThreadModel threadModel,
-      int threadPoolSize) {
+      ThreadContextFactory threadContextFactory,
+      boolean closeOnStop) {
     this.name = checkNotNull(name, "name cannot be null");
     this.membershipService = checkNotNull(membershipService, "membershipService cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
@@ -146,7 +147,8 @@ public class RaftContext implements AutoCloseable {
     this.loadContext = new SingleThreadContext(namedThreads(baseThreadName + "-load", log));
     this.stateContext = new SingleThreadContext(namedThreads(baseThreadName + "-state", log));
 
-    this.threadContextFactory = threadModel.factory(baseThreadName + "-%d", threadPoolSize, log);
+    this.threadContextFactory = checkNotNull(threadContextFactory, "threadContextFactory cannot be null");
+    this.closeOnStop = closeOnStop;
 
     this.loadMonitor = new LoadMonitor(LOAD_WINDOW_SIZE, HIGH_LOAD_THRESHOLD, loadContext);
 
@@ -172,6 +174,10 @@ public class RaftContext implements AutoCloseable {
 
     // Register protocol listeners.
     registerHandlers(protocol);
+  }
+  
+  public MemberId localMemberId() {
+      return membershipService.getLocalMember().id();
   }
 
   /**
@@ -882,7 +888,11 @@ public class RaftContext implements AutoCloseable {
     threadContext.close();
     loadContext.close();
     stateContext.close();
-    threadContextFactory.close();
+
+    // Only close the thread context factory if indicated.
+    if (closeOnStop) {
+      threadContextFactory.close();
+    }
   }
 
   /**

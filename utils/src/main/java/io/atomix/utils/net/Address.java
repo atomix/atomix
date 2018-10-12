@@ -15,24 +15,16 @@
  */
 package io.atomix.utils.net;
 
-import com.google.common.collect.Maps;
-import org.apache.commons.lang3.tuple.Pair;
-
-import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 /**
  * Representation of a network address.
  */
 public final class Address {
   private static final int DEFAULT_PORT = 5679;
-
-  private static final Map<Pair<String, Integer>, Address> addressCache = Maps.newConcurrentMap();
-  private static final Map<Address, String> toStringCache = Maps.newConcurrentMap();
 
   /**
    * Address type.
@@ -52,58 +44,36 @@ public final class Address {
   }
 
   /**
-   * Returns a cached address instance.
-   *
-   * @param addressPair the host/port paid
-   * @param factory the address factory for the given arguments
-   * @return the cached address instance
-   */
-  private static Address cached(Pair<String, Integer> addressPair, Supplier<Address> factory) {
-    Address address = addressCache.get(addressPair);
-    if (address == null) {
-      address = addressCache.computeIfAbsent(addressPair, pair -> factory.get());
-    }
-    return address;
-  }
-
-  /**
    * Returns the address from the given host:port string.
    *
    * @param address the address string
    * @return the address
    */
   public static Address from(String address) {
-    return cached(Pair.of(address, null), () -> {
-      int lastColon = address.lastIndexOf(':');
-      int openBracket = address.indexOf('[');
-      int closeBracket = address.indexOf(']');
+    int lastColon = address.lastIndexOf(':');
+    int openBracket = address.indexOf('[');
+    int closeBracket = address.indexOf(']');
 
-      String host;
-      if (openBracket != -1 && closeBracket != -1) {
-        host = address.substring(openBracket + 1, closeBracket);
-      } else if (lastColon != -1) {
-        host = address.substring(0, lastColon);
-      } else {
-        host = address;
-      }
+    String host;
+    if (openBracket != -1 && closeBracket != -1) {
+      host = address.substring(openBracket + 1, closeBracket);
+    } else if (lastColon != -1) {
+      host = address.substring(0, lastColon);
+    } else {
+      host = address;
+    }
 
-      int port;
-      if (lastColon != -1) {
-        try {
-          port = Integer.parseInt(address.substring(lastColon + 1));
-        } catch (NumberFormatException e) {
-          throw new MalformedAddressException(address, e);
-        }
-      } else {
-        port = DEFAULT_PORT;
-      }
-
+    int port;
+    if (lastColon != -1) {
       try {
-        return new Address(host, port, InetAddress.getByName(host));
-      } catch (UnknownHostException e) {
+        port = Integer.parseInt(address.substring(lastColon + 1));
+      } catch (NumberFormatException e) {
         throw new MalformedAddressException(address, e);
       }
-    });
+    } else {
+      port = DEFAULT_PORT;
+    }
+    return new Address(host, port);
   }
 
   /**
@@ -114,13 +84,7 @@ public final class Address {
    * @return a new address
    */
   public static Address from(String host, int port) {
-    return cached(Pair.of(host, port), () -> {
-      try {
-        return new Address(host, port, InetAddress.getByName(host));
-      } catch (UnknownHostException e) {
-        throw new IllegalArgumentException("Failed to locate host", e);
-      }
-    });
+    return new Address(host, port);
   }
 
   /**
@@ -130,14 +94,12 @@ public final class Address {
    * @return a new address
    */
   public static Address from(int port) {
-    return cached(Pair.of(null, port), () -> {
-      try {
-        InetAddress address = getLocalAddress();
-        return new Address(address.getHostName(), port, address);
-      } catch (UnknownHostException e) {
-        throw new IllegalArgumentException("Failed to locate host", e);
-      }
-    });
+    try {
+      InetAddress address = getLocalAddress();
+      return new Address(address.getHostName(), port);
+    } catch (UnknownHostException e) {
+      throw new IllegalArgumentException("Failed to locate host", e);
+    }
   }
 
   /**
@@ -153,14 +115,20 @@ public final class Address {
 
   private final String host;
   private final int port;
-  private final InetAddress address;
-  private final Type type;
+  private transient volatile Type type;
+  private transient volatile InetAddress address;
+
+  public Address(String host, int port) {
+    this(host, port, null);
+  }
 
   public Address(String host, int port, InetAddress address) {
     this.host = host;
     this.port = port;
     this.address = address;
-    this.type = address instanceof Inet4Address ? Type.IPV4 : Type.IPV6;
+    if (address != null) {
+      this.type = address instanceof Inet6Address ? Type.IPV6 : Type.IPV4;
+    }
   }
 
   /**
@@ -187,7 +155,42 @@ public final class Address {
    * @return the IP address
    */
   public InetAddress address() {
+    return address(false);
+  }
+
+  /**
+   * Returns the IP address.
+   *
+   * @param resolve whether to force resolve the hostname
+   * @return the IP address
+   */
+  public InetAddress address(boolean resolve) {
+    if (resolve) {
+      address = resolveAddress();
+      return address;
+    }
+
+    if (address == null) {
+      synchronized (this) {
+        if (address == null) {
+          address = resolveAddress();
+        }
+      }
+    }
     return address;
+  }
+
+  /**
+   * Resolves the IP address from the hostname.
+   *
+   * @return the resolved IP address or {@code null} if the IP could not be resolved
+   */
+  private InetAddress resolveAddress() {
+    try {
+      return InetAddress.getByName(host);
+    } catch (UnknownHostException e) {
+      return null;
+    }
   }
 
   /**
@@ -196,30 +199,30 @@ public final class Address {
    * @return the address type
    */
   public Type type() {
+    if (type == null) {
+      synchronized (this) {
+        if (type == null) {
+          type = address() instanceof Inet6Address ? Type.IPV6 : Type.IPV4;
+        }
+      }
+    }
     return type;
   }
 
   @Override
   public String toString() {
-    String toString = toStringCache.get(this);
-    if (toString == null) {
-      toString = toStringCache.computeIfAbsent(this, a -> {
-        switch (type) {
-          case IPV4:
-            return String.format("%s:%d", address().getHostName(), port());
-          case IPV6:
-            return String.format("[%s]:%d", address().getHostName(), port());
-          default:
-            throw new AssertionError();
-        }
-      });
+    String host = host();
+    int port = port();
+    if (host.matches("([0-9a-f]{1,4}:){7}([0-9a-f]){1,4}")) {
+      return String.format("[%s]:%d", host, port);
+    } else {
+      return String.format("%s:%d", host, port);
     }
-    return toString;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(address, port);
+    return Objects.hash(host, port);
   }
 
   @Override
@@ -234,7 +237,7 @@ public final class Address {
       return false;
     }
     Address that = (Address) obj;
-    return this.port == that.port &&
-        Objects.equals(this.address, that.address);
+    return this.host.equals(that.host)
+        && this.port == that.port;
   }
 }

@@ -19,7 +19,7 @@
   <parent>
     <groupId>io.atomix</groupId>
     <artifactId>atomix-parent</artifactId>
-    <version>3.0.2-SNAPSHOT</version>
+    <version>3.0.8-SNAPSHOT</version>
   </parent>
 
   <artifactId>atomix-dist</artifactId>
@@ -74,7 +74,7 @@
             </goals>
             <phase>package</phase>
             <configuration>
-              <finalName>atomix-agent-${project.version}</finalName>
+              <finalName>atomix</finalName>
               <appendAssemblyId>false</appendAssemblyId>
               <descriptors>
                 <descriptor>src/main/assembly/assembly.xml</descriptor>
@@ -99,10 +99,7 @@
         </executions>
         <configuration>
           <repository>atomix/atomix</repository>
-          <tag>${project.version}</tag>
-          <buildArgs>
-            <VERSION>${project.version}</VERSION>
-          </buildArgs>
+          <tag>${dockerfile.version}</tag>
         </configuration>
         <!-- See https://github.com/spotify/dockerfile-maven/issues/200 -->
         <dependencies>

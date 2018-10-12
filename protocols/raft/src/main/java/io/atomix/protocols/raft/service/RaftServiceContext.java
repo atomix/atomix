@@ -110,6 +110,20 @@ public class RaftServiceContext implements ServiceContext {
     service.init(this);
   }
 
+  /**
+   * Returns a boolean indicating whether the service has been deleted.
+   *
+   * @return indicates whether the service has been deleted
+   */
+  public boolean deleted() {
+    return deleted;
+  }
+  
+  @Override
+  public MemberId localMemberId() {
+      return raft.localMemberId();
+  }
+
   @Override
   public PrimitiveId serviceId() {
     return primitiveId;
@@ -319,6 +333,12 @@ public class RaftServiceContext implements ServiceContext {
    * @param eventIndex The session event index.
    */
   public boolean keepAlive(long index, long timestamp, RaftSession session, long commandSequence, long eventIndex) {
+    // If the service has been deleted then throw an unknown service exception.
+    if (deleted) {
+      log.warn("Service {} has been deleted by another process", serviceName);
+      throw new RaftException.UnknownService("Service " + serviceName + " has been deleted");
+    }
+
     // Update the state machine index/timestamp.
     tick(index, timestamp);
 

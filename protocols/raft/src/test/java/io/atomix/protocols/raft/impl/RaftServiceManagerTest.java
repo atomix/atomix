@@ -32,6 +32,7 @@ import io.atomix.primitive.service.BackupOutput;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.service.ServiceExecutor;
+import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
@@ -54,6 +55,7 @@ import io.atomix.utils.serializer.Serializer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -251,8 +253,8 @@ public class RaftServiceManagerTest {
         mock(RaftServerProtocol.class),
         storage,
         registry,
-        ThreadModel.SHARED_THREAD_POOL,
-        1);
+        ThreadModel.SHARED_THREAD_POOL.factory("raft-server-test-%d", 1, LoggerFactory.getLogger(RaftServer.class)),
+        true);
 
     snapshotTaken = new AtomicBoolean();
     snapshotInstalled = new AtomicBoolean();

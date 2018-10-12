@@ -15,12 +15,7 @@
  */
 package io.atomix.core;
 
-import io.atomix.cluster.discovery.NodeDiscoveryProvider;
-import io.atomix.core.impl.ClasspathScanningAtomixRegistry;
-import io.atomix.core.profile.Profile;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.partition.PartitionGroup;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.core.registry.ClasspathScanningRegistry;
 import io.atomix.utils.NamedType;
 
 import java.util.Collection;
@@ -46,13 +41,7 @@ public interface AtomixRegistry {
    * @return the registry instance
    */
   static AtomixRegistry registry(ClassLoader classLoader) {
-    return new ClasspathScanningAtomixRegistry(
-        classLoader,
-        PartitionGroup.Type.class,
-        PrimitiveType.class,
-        PrimitiveProtocol.Type.class,
-        Profile.Type.class,
-        NodeDiscoveryProvider.Type.class);
+    return ClasspathScanningRegistry.builder().withClassLoader(classLoader).build();
   }
 
   /**

@@ -112,7 +112,7 @@ public class VertxRestService implements ManagedRestService {
     server.requestHandler(new VertxRequestHandler(vertx, deployment));
 
     CompletableFuture<RestService> future = new CompletableFuture<>();
-    server.listen(address.port(), address.address().getHostAddress(), result -> {
+    server.listen(address.port(), address.address(true).getHostAddress(), result -> {
       if (result.succeeded()) {
         open.set(true);
         LOGGER.info("Started");

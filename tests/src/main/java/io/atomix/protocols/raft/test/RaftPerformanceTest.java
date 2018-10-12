@@ -17,16 +17,17 @@ package io.atomix.protocols.raft.test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.Node;
+import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.impl.DefaultClusterMembershipService;
 import io.atomix.cluster.impl.DefaultNodeDiscoveryService;
 import io.atomix.cluster.messaging.BroadcastService;
 import io.atomix.cluster.messaging.ManagedMessagingService;
+import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.PrimitiveBuilder;
@@ -476,9 +477,7 @@ public class RaftPerformanceTest implements Runnable {
     RaftServerProtocol protocol;
     ManagedMessagingService messagingService;
     if (USE_NETTY) {
-      messagingService = (ManagedMessagingService) NettyMessagingService.builder()
-          .withAddress(member.address())
-          .build()
+      messagingService = (ManagedMessagingService) new NettyMessagingService("test", member.address(), new MessagingConfig())
           .start()
           .join();
       messagingServices.add(messagingService);
@@ -501,7 +500,7 @@ public class RaftPerformanceTest implements Runnable {
 
     RaftServer.Builder builder = RaftServer.builder(member.id())
         .withProtocol(protocol)
-        .withThreadModel(ThreadModel.THREAD_PER_SERVICE)
+        .withThreadModel(ThreadModel.SHARED_THREAD_POOL)
         .withMembershipService(new DefaultClusterMembershipService(
             member,
             Version.from("1.0.0"),
@@ -509,11 +508,12 @@ public class RaftPerformanceTest implements Runnable {
             bootstrapService,
             new MembershipConfig()))
         .withStorage(RaftStorage.builder()
-            .withStorageLevel(StorageLevel.MAPPED)
+            .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/perf-logs/%s", member.id())))
             .withSerializer(storageSerializer)
-            .withMaxEntriesPerSegment(32768)
-            .withMaxSegmentSize(1024 * 1024)
+            .withMaxSegmentSize(1024 * 1024 * 64)
+            .withDynamicCompaction()
+            .withFlushOnCommit(false)
             .build());
 
     RaftServer server = builder.build();
@@ -529,7 +529,7 @@ public class RaftPerformanceTest implements Runnable {
 
     RaftClientProtocol protocol;
     if (USE_NETTY) {
-      MessagingService messagingService = NettyMessagingService.builder().withAddress(member.address()).build().start().join();
+      MessagingService messagingService = new NettyMessagingService("test", member.address(), new MessagingConfig()).start().join();
       protocol = new RaftClientMessagingProtocol(messagingService, protocolSerializer, addressMap::get);
     } else {
       protocol = protocolFactory.newClientProtocol(member.id());

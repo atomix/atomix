@@ -24,6 +24,7 @@ import io.atomix.protocols.raft.partition.impl.RaftClientCommunicator;
 import io.atomix.protocols.raft.partition.impl.RaftNamespaces;
 import io.atomix.protocols.raft.partition.impl.RaftPartitionClient;
 import io.atomix.protocols.raft.partition.impl.RaftPartitionServer;
+import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
@@ -41,14 +42,20 @@ public class RaftPartition implements Partition {
   private final PartitionId partitionId;
   private final RaftPartitionGroupConfig config;
   private final File dataDirectory;
+  private final ThreadContextFactory threadContextFactory;
   private PartitionMetadata partition;
   private RaftPartitionClient client;
   private RaftPartitionServer server;
 
-  public RaftPartition(PartitionId partitionId, RaftPartitionGroupConfig config, File dataDirectory) {
+  public RaftPartition(
+      PartitionId partitionId,
+      RaftPartitionGroupConfig config,
+      File dataDirectory,
+      ThreadContextFactory threadContextFactory) {
     this.partitionId = partitionId;
     this.config = config;
     this.dataDirectory = dataDirectory;
+    this.threadContextFactory = threadContextFactory;
   }
 
   @Override
@@ -168,7 +175,8 @@ public class RaftPartition implements Partition {
         managementService.getMembershipService().getLocalMember().id(),
         managementService.getMembershipService(),
         managementService.getMessagingService(),
-        managementService.getPrimitiveTypes());
+        managementService.getPrimitiveTypes(),
+        threadContextFactory);
   }
 
   /**
@@ -181,7 +189,8 @@ public class RaftPartition implements Partition {
         new RaftClientCommunicator(
             name(),
             Serializer.using(RaftNamespaces.RAFT_PROTOCOL),
-            managementService.getMessagingService()));
+            managementService.getMessagingService()),
+        threadContextFactory);
   }
 
   /**

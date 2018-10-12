@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.test;
 
 import com.google.common.collect.Maps;
 import io.atomix.cluster.MemberId;
+import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.primitive.PrimitiveBuilder;
@@ -570,7 +571,7 @@ public class RaftFuzzTest implements Runnable {
     RaftServerProtocol protocol;
     if (USE_NETTY) {
       Address address = Address.from(++port);
-      MessagingService messagingManager = NettyMessagingService.builder().withAddress(address).build().start().join();
+      MessagingService messagingManager = new NettyMessagingService("test", address, new MessagingConfig()).start().join();
       messagingServices.add(messagingManager);
       addressMap.put(member.memberId(), address);
       protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, addressMap::get);
@@ -601,7 +602,7 @@ public class RaftFuzzTest implements Runnable {
     RaftClientProtocol protocol;
     if (USE_NETTY) {
       Address address = Address.from(++port);
-      MessagingService messagingManager = NettyMessagingService.builder().withAddress(address).build().start().join();
+      MessagingService messagingManager = new NettyMessagingService("test", address, new MessagingConfig()).start().join();
       addressMap.put(memberId, address);
       protocol = new RaftClientMessagingProtocol(messagingManager, protocolSerializer, addressMap::get);
     } else {

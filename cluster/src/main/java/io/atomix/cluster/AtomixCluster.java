@@ -337,10 +337,10 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    * Builds a default messaging service.
    */
   protected static ManagedMessagingService buildMessagingService(ClusterConfig config) {
-    return NettyMessagingService.builder()
-        .withName(config.getClusterId())
-        .withAddress(config.getNodeConfig().getAddress())
-        .build();
+    return new NettyMessagingService(
+        config.getClusterId(),
+        config.getNodeConfig().getAddress(),
+        config.getMessagingConfig());
   }
 
   /**

@@ -15,8 +15,6 @@
  */
 package io.atomix.cluster.impl;
 
-import io.atomix.cluster.AtomixCluster;
-import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
@@ -26,6 +24,7 @@ import io.atomix.cluster.MemberId;
 import io.atomix.cluster.MembershipConfig;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.TestBootstrapService;
+import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.messaging.impl.TestBroadcastServiceFactory;
 import io.atomix.cluster.messaging.impl.TestMessagingServiceFactory;
 import io.atomix.utils.Version;
@@ -198,6 +197,14 @@ public class DefaultClusterMembershipServiceTest {
     ClusterMembershipEvent event = eventListener.nextEvent();
     assertEquals(ClusterMembershipEvent.Type.METADATA_CHANGED, event.type());
     assertEquals("bar", event.subject().properties().get("foo"));
+
+    TestClusterMembershipEventListener eventListener3 = new TestClusterMembershipEventListener();
+    clusterService3.addListener(eventListener3);
+    clusterService3.getLocalMember().properties().put("foo", "baz");
+
+    ClusterMembershipEvent event3 = eventListener3.nextEvent();
+    assertEquals(ClusterMembershipEvent.Type.METADATA_CHANGED, event3.type());
+    assertEquals("baz", event3.subject().properties().get("foo"));
 
     CompletableFuture.allOf(new CompletableFuture[]{clusterService1.stop(), clusterService2.stop(),
         clusterService3.stop()}).join();

@@ -24,7 +24,7 @@
 
   <groupId>io.atomix</groupId>
   <artifactId>atomix-parent</artifactId>
-  <version>3.0.2-SNAPSHOT</version>
+  <version>3.0.8-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Atomix Parent Pom</name>
   <description>Distributed systems framework.</description>
@@ -57,7 +57,7 @@
     <jaxrs.version>2.0</jaxrs.version>
     <jackson.version>2.9.6</jackson.version>
     <config.version>1.3.2</config.version>
-    <classgraph.version>4.0.6</classgraph.version>
+    <classgraph.version>4.2.3</classgraph.version>
     <resteasy.version>3.1.4.Final</resteasy.version>
     <rest-assured.version>3.0.7</rest-assured.version>
     <argparse4j.version>0.7.0</argparse4j.version>
@@ -76,6 +76,8 @@
     <maven.bundle.plugin.version>2.5.3</maven.bundle.plugin.version>
     <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
     <maven.dockerfile.plugin.version>1.4.3</maven.dockerfile.plugin.version>
+
+    <dockerfile.version>latest</dockerfile.version>
 
     <argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.whitelistPackages=io.atomix</argLine.common>
     <argLine.extras /> <!-- Overridden in some profiles -->
@@ -96,6 +98,56 @@
       <activation>
         <jdk>[1.9,)</jdk>
       </activation>
+    </profile>
+    <profile>
+      <id>sonatype-oss-release</id>
+      <properties>
+        <dockerfile.version>${project.version}</dockerfile.version>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.1.2</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.7</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.1</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 
