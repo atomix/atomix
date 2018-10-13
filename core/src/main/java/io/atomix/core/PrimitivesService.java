@@ -103,6 +103,7 @@ import io.atomix.core.value.DistributedValueType;
 import io.atomix.core.workqueue.WorkQueue;
 import io.atomix.core.workqueue.WorkQueueBuilder;
 import io.atomix.core.workqueue.WorkQueueType;
+import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveFactory;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.SyncPrimitive;
@@ -855,7 +856,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param <K> key type
    * @param <V> value type
    * @return a new distributed map
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <K, V> DistributedMap<K, V> getMap(String name);
 
   /**
@@ -879,7 +882,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param <K> key type
    * @param <V> value type
    * @return a new distributed map
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <K extends Comparable<K>, V> DistributedSortedMap<K, V> getSortedMap(String name);
 
   /**
@@ -903,7 +908,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param <K> key type
    * @param <V> value type
    * @return a new distributed map
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <K extends Comparable<K>, V> DistributedNavigableMap<K, V> getNavigableMap(String name);
 
   /**
@@ -927,7 +934,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param <K> key type
    * @param <V> value type
    * @return a new distributed multimap
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <K, V> DistributedMultimap<K, V> getMultimap(String name);
 
   /**
@@ -951,7 +960,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param <K> key type
    * @param <V> value type
    * @return a new atomic map
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <K, V> AtomicMap<K, V> getAtomicMap(String name);
 
   /**
@@ -974,7 +985,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param name the primitive name
    * @param <V> value type
    * @return a new atomic map
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <V> AtomicDocumentTree<V> getAtomicDocumentTree(String name);
 
   /**
@@ -998,7 +1011,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param <K> key type
    * @param <V> value type
    * @return a new atomic tree map
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <K extends Comparable<K>, V> AtomicSortedMap<K, V> getAtomicSortedMap(String name);
 
   /**
@@ -1022,7 +1037,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param <K> key type
    * @param <V> value type
    * @return a new atomic tree map
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <K extends Comparable<K>, V> AtomicNavigableMap<K, V> getAtomicNavigableMap(String name);
 
   /**
@@ -1046,7 +1063,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param <K> key type
    * @param <V> value type
    * @return a new atomic tree map
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <K, V> AtomicMultimap<K, V> getAtomicMultimap(String name);
 
   /**
@@ -1069,7 +1088,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param name the primitive name
    * @param <K> key type
    * @return a new atomic counter map
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <K> AtomicCounterMap<K> getAtomicCounterMap(String name);
 
   /**
@@ -1092,7 +1113,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param name the primitive name
    * @param <E> set element type
    * @return a multiton instance of a distributed set
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <E> DistributedSet<E> getSet(String name);
 
   /**
@@ -1115,7 +1138,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param name the primitive name
    * @param <E> set element type
    * @return a multiton instance of a distributed sorted set
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <E extends Comparable<E>> DistributedSortedSet<E> getSortedSet(String name);
 
   /**
@@ -1138,7 +1163,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param name the primitive name
    * @param <E> set element type
    * @return a multiton instance of a distributed navigable set
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <E extends Comparable<E>> DistributedNavigableSet<E> getNavigableSet(String name);
 
   /**
@@ -1161,7 +1188,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param name the primitive name
    * @param <E> queue element type
    * @return a multiton instance of a distributed queue
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <E> DistributedQueue<E> getQueue(String name);
 
   /**
@@ -1184,7 +1213,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param name the primitive name
    * @param <E> list element type
    * @return a multiton instance of a distributed list
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <E> DistributedList<E> getList(String name);
 
   /**
@@ -1207,7 +1238,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param name the primitive name
    * @param <E> multiset element type
    * @return a multiton instance of a distributed multiset
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <E> DistributedMultiset<E> getMultiset(String name);
 
   /**
@@ -1229,7 +1262,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    *
    * @param name the primitive name
    * @return distributed counter
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   DistributedCounter getCounter(String name);
 
   /**
@@ -1251,7 +1286,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    *
    * @param name the primitive name
    * @return atomic counter builder
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   AtomicCounter getAtomicCounter(String name);
 
   /**
@@ -1273,7 +1310,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    *
    * @param name the primitive name
    * @return atomic ID generator builder
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   AtomicIdGenerator getAtomicIdGenerator(String name);
 
   /**
@@ -1296,7 +1335,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param name the primitive name
    * @param <V> value type
    * @return distributed value
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <V> DistributedValue<V> getValue(String name);
 
   /**
@@ -1319,7 +1360,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    * @param name the primitive name
    * @param <V> atomic value type
    * @return atomic value builder
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <V> AtomicValue<V> getAtomicValue(String name);
 
   /**
@@ -1341,7 +1384,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    *
    * @param name the primitive name
    * @return leader election builder
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <T> LeaderElection<T> getLeaderElection(String name);
 
   /**
@@ -1363,7 +1408,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    *
    * @param name the primitive name
    * @return leader elector builder
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <T> LeaderElector<T> getLeaderElector(String name);
 
   /**
@@ -1385,7 +1432,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    *
    * @param name the primitive name
    * @return atomic lock builder
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   DistributedLock getLock(String name);
 
   /**
@@ -1407,7 +1456,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    *
    * @param name the primitive name
    * @return atomic lock builder
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   AtomicLock getAtomicLock(String name);
 
   /**
@@ -1429,7 +1480,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    *
    * @param name the primitive name
    * @return the cyclic barrier
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   DistributedCyclicBarrier getCyclicBarrier(String name);
 
   /**
@@ -1451,7 +1504,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    *
    * @param name the primitive name
    * @return DistributedSemaphore
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   DistributedSemaphore getSemaphore(String name);
 
   /**
@@ -1473,7 +1528,9 @@ public interface PrimitivesService extends PrimitiveFactory {
    *
    * @param name the primitive name
    * @return DistributedSemaphore
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   AtomicSemaphore getAtomicSemaphore(String name);
 
   /**
@@ -1495,8 +1552,10 @@ public interface PrimitivesService extends PrimitiveFactory {
    *
    * @param name the primitive name
    * @param <E> work queue element type
-   * @return work queue builder
+   * @return work queue
+   * @deprecated since 3.1; use {@link PrimitiveBuilder#get()}
    */
+  @Deprecated
   <E> WorkQueue<E> getWorkQueue(String name);
 
 }

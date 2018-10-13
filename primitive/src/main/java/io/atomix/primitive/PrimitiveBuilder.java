@@ -169,9 +169,12 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
   }
 
   /**
-   * Constructs an instance of the distributed primitive.
+   * Builds a new instance of the primitive.
+   * <p>
+   * The returned instance will be distinct from all other instances of the same primitive on this node, with a
+   * distinct session, ordering guarantees, memory, etc.
    *
-   * @return distributed primitive
+   * @return a new instance of the primitive
    */
   @Override
   public P build() {
@@ -179,9 +182,36 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
   }
 
   /**
-   * Constructs an instance of the asynchronous primitive.
+   * Builds a new instance of the primitive asynchronously.
+   * <p>
+   * The returned instance will be distinct from all other instances of the same primitive on this node, with a
+   * distinct session, ordering guarantees, memory, etc.
    *
    * @return asynchronous distributed primitive
    */
   public abstract CompletableFuture<P> buildAsync();
+
+  /**
+   * Gets or builds a singleton instance of the primitive.
+   * <p>
+   * The returned primitive will be shared by all {@code get()} calls for the named primitive. If no instance has yet
+   * been constructed, the instance will be built from this builder's configuration.
+   *
+   * @return a singleton instance of the primitive
+   */
+  public P get() {
+    return getAsync().join();
+  }
+
+  /**
+   * Gets or builds a singleton instance of the primitive asynchronously.
+   * <p>
+   * The returned primitive will be shared by all {@code get()} calls for the named primitive. If no instance has yet
+   * been constructed, the instance will be built from this builder's configuration.
+   *
+   * @return a singleton instance of the primitive
+   */
+  public CompletableFuture<P> getAsync() {
+    return managementService.getPrimitiveCache().getPrimitive(name, this::buildAsync);
+  }
 }

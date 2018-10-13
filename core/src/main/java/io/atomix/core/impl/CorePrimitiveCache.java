@@ -16,7 +16,7 @@
 package io.atomix.core.impl;
 
 import com.google.common.collect.Maps;
-import io.atomix.primitive.AsyncPrimitive;
+import io.atomix.primitive.DistributedPrimitive;
 import io.atomix.primitive.PrimitiveCache;
 
 import java.util.Map;
@@ -31,7 +31,7 @@ public class CorePrimitiveCache implements PrimitiveCache {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <P extends AsyncPrimitive> CompletableFuture<P> getPrimitive(String name, Supplier<CompletableFuture<P>> supplier) {
+  public <P extends DistributedPrimitive> CompletableFuture<P> getPrimitive(String name, Supplier<CompletableFuture<P>> supplier) {
     return primitives.computeIfAbsent(name, n -> supplier.get());
   }
 }
