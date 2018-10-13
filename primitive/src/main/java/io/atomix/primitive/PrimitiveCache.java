@@ -31,6 +31,6 @@ public interface PrimitiveCache {
    * @param <P> the primitive type
    * @return the primitive instance
    */
-  <P extends AsyncPrimitive> CompletableFuture<P> getPrimitive(String name, Supplier<CompletableFuture<P>> supplier);
+  <P extends DistributedPrimitive> CompletableFuture<P> getPrimitive(String name, Supplier<CompletableFuture<P>> supplier);
 
 }
