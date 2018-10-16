@@ -495,6 +495,13 @@ public interface RaftServer {
   CompletableFuture<RaftServer> promote();
 
   /**
+   * Compacts server logs.
+   *
+   * @return a future to be completed once the server's logs have been compacted
+   */
+  CompletableFuture<Void> compact();
+
+  /**
    * Returns a boolean indicating whether the server is running.
    *
    * @return Indicates whether the server is running.

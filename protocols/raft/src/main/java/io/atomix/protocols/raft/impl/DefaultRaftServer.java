@@ -82,6 +82,11 @@ public class DefaultRaftServer implements RaftServer {
   }
 
   @Override
+  public CompletableFuture<Void> compact() {
+    return context.compact();
+  }
+
+  @Override
   public CompletableFuture<RaftServer> bootstrap(Collection<MemberId> cluster) {
     return start(() -> cluster().bootstrap(cluster));
   }

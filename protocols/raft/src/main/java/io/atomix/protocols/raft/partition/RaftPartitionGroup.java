@@ -20,6 +20,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.partition.ManagedPartitionGroup;
 import io.atomix.primitive.partition.Partition;
@@ -35,6 +36,7 @@ import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.impl.DefaultRaftClient;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.BlockingAwareThreadPoolContextFactory;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
@@ -45,6 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -126,6 +129,8 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     return partitions;
   }
 
+  private static final Duration SNAPSHOT_TIMEOUT = Duration.ofSeconds(15);
+
   private final String name;
   private final RaftPartitionGroupConfig config;
   private final int partitionSize;
@@ -133,6 +138,8 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   private final Map<PartitionId, RaftPartition> partitions = Maps.newConcurrentMap();
   private final List<PartitionId> sortedPartitionIds = Lists.newCopyOnWriteArrayList();
   private Collection<PartitionMetadata> metadata;
+  private ClusterCommunicationService communicationService;
+  private final String snapshotSubject;
 
   public RaftPartitionGroup(RaftPartitionGroupConfig config) {
     Logger log = ContextualLoggerFactory.getLogger(DefaultRaftClient.class, LoggerContext.builder(RaftClient.class)
@@ -145,6 +152,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 16), 4);
     this.threadContextFactory = new BlockingAwareThreadPoolContextFactory(
         "raft-partition-group-" + name + "-%d", threadPoolSize, log);
+    this.snapshotSubject = "raft-partition-group-" + name + "-snapshot";
 
     buildPartitions(config, threadContextFactory).forEach(p -> {
       this.partitions.put(p.id(), p);
@@ -197,9 +205,36 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     return sortedPartitionIds;
   }
 
+  /**
+   * Takes snapshots of all Raft partitions.
+   *
+   * @return a future to be completed once snapshots have been taken
+   */
+  public CompletableFuture<Void> snapshot() {
+    return Futures.allOf(config.getMembers().stream()
+        .map(MemberId::from)
+        .map(id -> communicationService.send(snapshotSubject, null, id, SNAPSHOT_TIMEOUT))
+        .collect(Collectors.toList()))
+        .thenApply(v -> null);
+  }
+
+  /**
+   * Handles a snapshot request from a peer.
+   *
+   * @return a future to be completed once the snapshot is complete
+   */
+  private CompletableFuture<Void> handleSnapshot() {
+    return Futures.allOf(partitions.values().stream()
+        .map(partition -> partition.snapshot())
+        .collect(Collectors.toList()))
+        .thenApply(v -> null);
+  }
+
   @Override
   public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
     this.metadata = buildPartitions();
+    this.communicationService = managementService.getMessagingService();
+    communicationService.<Void, Void>subscribe(snapshotSubject, m -> handleSnapshot());
     List<CompletableFuture<Partition>> futures = metadata.stream()
         .map(metadata -> {
           RaftPartition partition = partitions.get(metadata.id());
@@ -250,6 +285,7 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
         .collect(Collectors.toList());
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenRun(() -> {
       threadContextFactory.close();
+      communicationService.unsubscribe(snapshotSubject);
       LOGGER.info("Stopped");
     });
   }

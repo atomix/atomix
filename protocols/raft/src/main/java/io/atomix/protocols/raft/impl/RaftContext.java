@@ -50,10 +50,10 @@ import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.system.MetaStore;
 import io.atomix.protocols.raft.utils.LoadMonitor;
 import io.atomix.storage.StorageException;
+import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
-import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
@@ -655,6 +655,17 @@ public class RaftContext implements AutoCloseable {
    */
   public SnapshotStore getSnapshotStore() {
     return snapshotStore;
+  }
+
+  /**
+   * Compacts the server logs.
+   *
+   * @return a future to be completed once the logs have been compacted
+   */
+  public CompletableFuture<Void> compact() {
+    ComposableFuture<Void> future = new ComposableFuture<>();
+    threadContext.execute(() -> stateMachine.compact().whenComplete(future));
+    return future;
   }
 
   /**
