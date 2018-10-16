@@ -19,7 +19,7 @@ java \
   -Datomix.root="$ATOMIX_ROOT" \
   -Datomix.data="$ATOMIX_ROOT/data" \
   -Datomix.logback="$ATOMIX_ROOT/conf/logback.xml" \
-  -Datomix.log="$ATOMIX_ROOT/log" \
+  -Datomix.log.directory="$ATOMIX_ROOT/log" \
   -Datomix.config.resources="$ATOMIX_ROOT/conf/atomix" \
   -Dvertx.disableFileCPResolving=true \
   -cp .:"$ATOMIX_ROOT/lib/system/*":"$ATOMIX_ROOT/lib/ext/*" \
