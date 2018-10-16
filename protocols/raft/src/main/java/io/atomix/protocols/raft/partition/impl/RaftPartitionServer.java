@@ -122,6 +122,15 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
   }
 
   /**
+   * Takes a snapshot of the partition server.
+   *
+   * @return a future to be completed once the snapshot has been taken
+   */
+  public CompletableFuture<Void> snapshot() {
+    return server.compact();
+  }
+
+  /**
    * Deletes the server.
    */
   public void delete() {

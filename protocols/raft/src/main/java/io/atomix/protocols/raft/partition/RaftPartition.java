@@ -107,6 +107,19 @@ public class RaftPartition implements Partition {
     return dataDirectory;
   }
 
+  /**
+   * Takes a snapshot of the partition.
+   *
+   * @return a future to be completed once the snapshot is complete
+   */
+  public CompletableFuture<Void> snapshot() {
+    RaftPartitionServer server = this.server;
+    if (server != null) {
+      return server.snapshot();
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
   @Override
   public RaftPartitionClient getClient() {
     return client;
