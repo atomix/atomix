@@ -78,7 +78,7 @@ public class TestProtocol implements ProxyProtocol {
   private static final Logger LOGGER = LoggerFactory.getLogger(TestProtocol.class);
 
   private final ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(
-      Runtime.getRuntime().availableProcessors(), namedThreads("test-protocol-service-%d", LOGGER));
+      4, namedThreads("test-protocol-service-%d", LOGGER));
   private final TestProtocolConfig config;
   private final TestProtocolServiceRegistry registry;
   private final AtomicLong sessionIds = new AtomicLong();

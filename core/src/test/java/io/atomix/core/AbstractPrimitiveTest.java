@@ -82,7 +82,8 @@ public abstract class AbstractPrimitiveTest {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get(30, TimeUnit.SECONDS);
     } catch (Exception e) {
       // Do nothing
+    } finally {
+      protocol.close();
     }
-    protocol.close();
   }
 }
