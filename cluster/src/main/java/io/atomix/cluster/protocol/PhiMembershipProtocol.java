@@ -223,7 +223,7 @@ public class PhiMembershipProtocol
   private CompletableFuture<Void> sendHeartbeat(GossipMember member) {
     return bootstrapService.getMessagingService().sendAndReceive(member.address(), HEARTBEAT_MESSAGE, SERIALIZER.encode(localMember))
         .whenCompleteAsync((response, error) -> {
-          if (error != null) {
+          if (error == null) {
             GossipMember remoteMember = SERIALIZER.decode(response);
             updateMember(remoteMember);
           } else {
