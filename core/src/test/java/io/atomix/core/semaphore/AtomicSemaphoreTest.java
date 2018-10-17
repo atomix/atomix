@@ -27,7 +27,6 @@ import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.utils.time.Version;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -383,7 +382,6 @@ public class AtomicSemaphoreTest extends AbstractPrimitiveTest {
 
 
   @Test(timeout = 60000)
-  @Ignore("depends on performance")
   public void testExpireRace() throws Exception {
     int TEST_COUNT = 10000;
     int threads = Runtime.getRuntime().availableProcessors();
@@ -415,7 +413,6 @@ public class AtomicSemaphoreTest extends AbstractPrimitiveTest {
   }
 
   @Test
-  @Ignore
   public void testSnapshot() throws Exception {
     AbstractAtomicSemaphoreService service = new DefaultAtomicSemaphoreService(
         new AtomicSemaphoreServiceConfig().setInitialCapacity(10));

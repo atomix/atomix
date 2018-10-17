@@ -18,7 +18,6 @@ package io.atomix.core.semaphore;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.Atomix;
 import io.atomix.primitive.PrimitiveException;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -305,7 +304,6 @@ public class DistributedSemaphoreTest extends AbstractPrimitiveTest {
 
 
   @Test(timeout = 60000)
-  @Ignore("depends on performance")
   public void testExpireRace() throws Exception {
     int TEST_COUNT = 10000;
     int threads = Runtime.getRuntime().availableProcessors();
