@@ -30,12 +30,14 @@ import io.atomix.cluster.messaging.ManagedBroadcastService;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.ManagedMessagingService;
+import io.atomix.cluster.messaging.ManagedUnicastService;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.cluster.messaging.UnicastService;
 import io.atomix.cluster.messaging.impl.DefaultClusterCommunicationService;
 import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
 import io.atomix.cluster.messaging.impl.NettyBroadcastService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
+import io.atomix.cluster.messaging.impl.NettyUnicastService;
 import io.atomix.cluster.protocol.GroupMembershipProtocol;
 import io.atomix.utils.Managed;
 import io.atomix.utils.Version;
@@ -164,6 +166,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AtomixCluster.class);
 
   protected final ManagedMessagingService messagingService;
+  protected final ManagedUnicastService unicastService;
   protected final ManagedBroadcastService broadcastService;
   protected final NodeDiscoveryProvider discoveryProvider;
   protected final GroupMembershipProtocol membershipProtocol;
@@ -187,6 +190,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
 
   public AtomixCluster(ClusterConfig config, Version version) {
     this.messagingService = buildMessagingService(config);
+    this.unicastService = buildUnicastService(config);
     this.broadcastService = buildBroadcastService(config);
     this.discoveryProvider = buildLocationProvider(config);
     this.membershipProtocol = buildMembershipProtocol(config);
@@ -206,7 +210,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    */
   @Override
   public UnicastService getUnicastService() {
-    return null;
+    return unicastService;
   }
 
   /**
@@ -359,6 +363,15 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
         config.getClusterId(),
         config.getNodeConfig().getAddress(),
         config.getMessagingConfig());
+  }
+
+  /**
+   * Builds a default unicast service.
+   */
+  protected static ManagedUnicastService buildUnicastService(ClusterConfig config) {
+    return NettyUnicastService.builder()
+        .withAddress(config.getNodeConfig().getAddress())
+        .build();
   }
 
   /**
