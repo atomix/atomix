@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -414,7 +415,7 @@ public class AtomicDocumentTreeTest extends AbstractPrimitiveTest {
     }
 
     public DocumentTreeEvent<String> event() throws InterruptedException {
-      return queue.take();
+      return queue.poll(10, TimeUnit.SECONDS);
     }
   }
 
