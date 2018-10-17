@@ -16,7 +16,6 @@
 package io.atomix.core.election;
 
 import io.atomix.core.Atomix;
-import io.atomix.core.counter.DistributedCounterConfig;
 import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import org.junit.Test;
 

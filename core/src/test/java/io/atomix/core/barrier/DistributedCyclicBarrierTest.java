@@ -16,7 +16,6 @@
 package io.atomix.core.barrier;
 
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -33,7 +32,7 @@ import static org.junit.Assert.fail;
 /**
  * Distributed cyclic barrier test.
  */
-public abstract class DistributedCyclicBarrierTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class DistributedCyclicBarrierTest extends AbstractPrimitiveTest {
   @Test
   public void testBarrier() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);

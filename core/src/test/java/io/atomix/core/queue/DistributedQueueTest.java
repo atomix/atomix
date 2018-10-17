@@ -18,7 +18,6 @@ package io.atomix.core.queue;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -36,7 +35,7 @@ import static org.junit.Assert.fail;
 /**
  * Distributed queue test.
  */
-public abstract class DistributedQueueTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class DistributedQueueTest extends AbstractPrimitiveTest {
   @Test
   public void testQueueOperations() throws Exception {
     DistributedQueue<String> queue = atomix().<String>queueBuilder("test-queue")

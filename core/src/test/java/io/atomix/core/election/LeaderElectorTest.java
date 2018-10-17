@@ -16,7 +16,6 @@
 package io.atomix.core.election;
 
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -33,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Leader elector test.
  */
-public abstract class LeaderElectorTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class LeaderElectorTest extends AbstractPrimitiveTest {
   String node1 = "4";
   String node2 = "5";
   String node3 = "6";
@@ -368,7 +367,6 @@ public abstract class LeaderElectorTest extends AbstractPrimitiveTest<ProxyProto
         .build();
 
     elector1.run("foo", node1);
-    elector2.run("foo", node2);
 
     LeaderEventListener listener1 = new LeaderEventListener();
     elector1.addListener("foo", listener1);
@@ -378,26 +376,25 @@ public abstract class LeaderElectorTest extends AbstractPrimitiveTest<ProxyProto
     assertFalse(listener1.hasEvent());
     assertFalse(listener2.hasEvent());
 
-    elector1.run("foo", node1);
     elector2.run("foo", node2);
 
     listener1.nextEvent().thenAccept(result -> {
-      Assert.assertEquals(node2, result.newLeadership().leader().id());
+      Assert.assertEquals(node1, result.newLeadership().leader().id());
       Assert.assertEquals(2, result.newLeadership().candidates().size());
       Assert.assertEquals(node1, result.newLeadership().candidates().get(0));
       Assert.assertEquals(node2, result.newLeadership().candidates().get(1));
-    });
+    }).join();
     listener2.nextEvent().thenAccept(result -> {
-      Assert.assertEquals(node2, result.newLeadership().leader().id());
+      Assert.assertEquals(node1, result.newLeadership().leader().id());
       Assert.assertEquals(2, result.newLeadership().candidates().size());
       Assert.assertEquals(node1, result.newLeadership().candidates().get(0));
       Assert.assertEquals(node2, result.newLeadership().candidates().get(1));
-    });
+    }).join();
 
     elector1.withdraw("foo", node1);
     listener2.nextEvent().thenAccept(result -> {
       assertEquals(node2, result.newLeadership().leader().id());
-    });
+    }).join();
     assertEquals(node2, elector1.getLeadership("foo").leader().id());
     assertEquals(node2, elector2.getLeadership("foo").leader().id());
   }

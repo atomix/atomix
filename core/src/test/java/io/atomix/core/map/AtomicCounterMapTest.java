@@ -16,7 +16,6 @@
 package io.atomix.core.map;
 
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -26,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit test for {@code AtomixCounterMap}.
  */
-public abstract class AtomicCounterMapTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class AtomicCounterMapTest extends AbstractPrimitiveTest {
 
   /**
    * Tests basic counter map operations.

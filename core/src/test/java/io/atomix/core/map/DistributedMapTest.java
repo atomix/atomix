@@ -18,7 +18,6 @@ package io.atomix.core.map;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
@@ -41,7 +40,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link DistributedMap}.
  */
-public abstract class DistributedMapTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class DistributedMapTest extends AbstractPrimitiveTest {
 
   /**
    * Tests null values.

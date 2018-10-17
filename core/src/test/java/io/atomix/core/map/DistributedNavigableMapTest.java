@@ -19,7 +19,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.map.impl.AtomicNavigableMapProxy;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -40,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link AtomicNavigableMapProxy}.
  */
-public abstract class DistributedNavigableMapTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class DistributedNavigableMapTest extends AbstractPrimitiveTest {
   private final String four = "hello";
   private final String three = "goodbye";
   private final String two = "foo";

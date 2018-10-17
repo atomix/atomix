@@ -20,7 +20,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.multimap.impl.AtomicMultimapProxy;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -42,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests the {@link AtomicMultimapProxy}.
  */
-public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class AtomicMultimapTest extends AbstractPrimitiveTest {
   private final String one = "hello";
   private final String two = "goodbye";
   private final String three = "foo";

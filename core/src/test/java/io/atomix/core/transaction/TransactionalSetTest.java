@@ -17,7 +17,6 @@ package io.atomix.core.transaction;
 
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.set.DistributedSet;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -27,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Transactional set test.
  */
-public abstract class TransactionalSetTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class TransactionalSetTest extends AbstractPrimitiveTest {
   @Test
   public void testTransactionalSet() throws Throwable {
     Transaction transaction1 = atomix().transactionBuilder()

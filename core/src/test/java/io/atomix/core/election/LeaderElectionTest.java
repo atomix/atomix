@@ -17,7 +17,6 @@ package io.atomix.core.election;
 
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.election.impl.LeaderElectionProxy;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -32,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link LeaderElectionProxy}.
  */
-public abstract class LeaderElectionTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class LeaderElectionTest extends AbstractPrimitiveTest {
   String node1 = "node1";
   String node2 = "node2";
   String node3 = "node3";
