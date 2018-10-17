@@ -22,7 +22,6 @@ import io.atomix.core.transaction.CommitStatus;
 import io.atomix.core.transaction.Isolation;
 import io.atomix.core.transaction.Transaction;
 import io.atomix.core.transaction.TransactionalMap;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
@@ -46,7 +45,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link AtomicMap}.
  */
-public abstract class AtomicMapTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class AtomicMapTest extends AbstractPrimitiveTest {
 
   /**
    * Tests null values.

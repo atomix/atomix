@@ -18,7 +18,6 @@ package io.atomix.core.workqueue;
 import com.google.common.util.concurrent.Uninterruptibles;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.workqueue.impl.WorkQueueProxy;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -36,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for {@link WorkQueueProxy}.
  */
-public abstract class WorkQueueTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class WorkQueueTest extends AbstractPrimitiveTest {
   private static final Duration DEFAULT_PROCESSING_TIME = Duration.ofMillis(100);
   private static final String DEFAULT_PAYLOAD = "hello world";
 

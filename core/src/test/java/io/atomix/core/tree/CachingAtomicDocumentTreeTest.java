@@ -18,7 +18,7 @@ package io.atomix.core.tree;
 /**
  * Caching document tree test.
  */
-public abstract class CachingAtomicDocumentTreeTest extends AtomicDocumentTreeTest {
+public class CachingAtomicDocumentTreeTest extends AtomicDocumentTreeTest {
   @Override
   protected AtomicDocumentTree<String> newTree(String name) throws Exception {
     return atomix().<String>atomicDocumentTreeBuilder(name)

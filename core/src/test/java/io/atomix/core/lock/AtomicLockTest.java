@@ -16,7 +16,6 @@
 package io.atomix.core.lock;
 
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.time.Version;
 import org.junit.Test;
 
@@ -31,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Raft lock test.
  */
-public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class AtomicLockTest extends AbstractPrimitiveTest {
 
   /**
    * Tests locking and unlocking a lock.

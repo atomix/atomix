@@ -18,7 +18,6 @@ package io.atomix.core.semaphore;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.Atomix;
 import io.atomix.primitive.PrimitiveException;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -42,7 +41,7 @@ import static org.junit.Assert.fail;
 /**
  * Semaphore test.
  */
-public abstract class DistributedSemaphoreTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class DistributedSemaphoreTest extends AbstractPrimitiveTest {
 
   @Test(timeout = 30000)
   public void testInit() throws Exception {

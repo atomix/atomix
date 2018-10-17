@@ -18,7 +18,6 @@ package io.atomix.core.multiset;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -33,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Distributed multiset test.
  */
-public abstract class DistributedMultisetTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class DistributedMultisetTest extends AbstractPrimitiveTest {
   @Test
   public void testMultisetOperations() throws Exception {
     DistributedMultiset<String> multiset = atomix().<String>multisetBuilder("test-multiset")

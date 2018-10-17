@@ -18,7 +18,6 @@ package io.atomix.core.map;
 import com.google.common.collect.Sets;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.map.impl.AtomicNavigableMapProxy;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.NoSuchElementException;
@@ -30,7 +29,7 @@ import static org.junit.Assert.fail;
 /**
  * Unit tests for {@link AtomicNavigableMapProxy}.
  */
-public abstract class AtomicNavigableMapTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class AtomicNavigableMapTest extends AbstractPrimitiveTest {
   @Test
   public void testSubMaps() throws Throwable {
     AtomicNavigableMap<String, String> map = createResource("testSubMaps").sync();

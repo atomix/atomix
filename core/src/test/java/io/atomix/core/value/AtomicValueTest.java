@@ -16,7 +16,6 @@
 package io.atomix.core.value;
 
 import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.concurrent.BlockingQueue;
@@ -30,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Raft atomic value test.
  */
-public abstract class AtomicValueTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class AtomicValueTest extends AbstractPrimitiveTest {
   @Test
   public void testValue() throws Exception {
     AtomicValue<String> value = atomix().<String>atomicValueBuilder("test-value")

@@ -19,10 +19,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.core.election.AsyncLeaderElector;
+import io.atomix.core.election.LeaderElector;
 import io.atomix.core.election.Leadership;
 import io.atomix.core.election.LeadershipEvent;
 import io.atomix.core.election.LeadershipEventListener;
-import io.atomix.core.election.LeaderElector;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveState;
@@ -99,8 +99,8 @@ public class LeaderElectorProxy
 
   @Override
   public synchronized CompletableFuture<Void> addListener(LeadershipEventListener<byte[]> listener) {
-    leadershipChangeListeners.add(listener);
-    return getProxyClient().acceptAll(service -> service.listen());
+    return getProxyClient().acceptAll(service -> service.listen())
+        .thenRun(() -> leadershipChangeListeners.add(listener));
   }
 
   @Override
@@ -113,17 +113,11 @@ public class LeaderElectorProxy
 
   @Override
   public synchronized CompletableFuture<Void> addListener(String topic, LeadershipEventListener<byte[]> listener) {
-    boolean empty = topicListeners.isEmpty();
-    topicListeners.compute(topic, (t, s) -> {
-      if (s == null) {
-        s = Sets.newCopyOnWriteArraySet();
-      }
-      s.add(listener);
-      return s;
-    });
-
-    if (empty) {
-      return getProxyClient().acceptBy(topic, service -> service.listen());
+    if (topicListeners.isEmpty()) {
+      return getProxyClient().acceptBy(topic, service -> service.listen())
+          .thenRun(() -> topicListeners.computeIfAbsent(topic, t -> Sets.newCopyOnWriteArraySet()).add(listener));
+    } else {
+      topicListeners.computeIfAbsent(topic, t -> Sets.newCopyOnWriteArraySet()).add(listener);
     }
     return CompletableFuture.completedFuture(null);
   }

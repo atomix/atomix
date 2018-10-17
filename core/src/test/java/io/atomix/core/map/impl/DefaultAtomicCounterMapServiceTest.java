@@ -15,7 +15,6 @@
  */
 package io.atomix.core.map.impl;
 
-import io.atomix.core.map.impl.DefaultAtomicCounterMapService;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.storage.buffer.Buffer;

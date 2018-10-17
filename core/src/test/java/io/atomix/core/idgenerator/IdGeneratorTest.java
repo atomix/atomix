@@ -17,7 +17,6 @@ package io.atomix.core.idgenerator;
 
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.idgenerator.impl.DelegatingAtomicIdGenerator;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -28,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Unit test for {@code AtomixIdGenerator}.
  */
-public abstract class IdGeneratorTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class IdGeneratorTest extends AbstractPrimitiveTest {
 
   /**
    * Tests generating IDs.

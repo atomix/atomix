@@ -18,7 +18,6 @@ package io.atomix.core.list;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
@@ -35,7 +34,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Distributed list test.
  */
-public abstract class DistributedListTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class DistributedListTest extends AbstractPrimitiveTest {
   @Test
   public void testListOperations() throws Exception {
     DistributedList<String> list = atomix().<String>listBuilder("test-list")

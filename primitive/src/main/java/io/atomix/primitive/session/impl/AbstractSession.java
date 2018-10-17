@@ -30,7 +30,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Abstract session.
  */
-public abstract class AbstractSession implements Session {
+public abstract class AbstractSession<C> implements Session<C> {
   private final SessionId sessionId;
   private final String primitiveName;
   private final PrimitiveType primitiveType;

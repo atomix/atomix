@@ -18,7 +18,6 @@ package io.atomix.core.set;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -33,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Distributed set test.
  */
-public abstract class DistributedSetTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class DistributedSetTest extends AbstractPrimitiveTest {
   @Test
   public void testSetOperations() throws Exception {
     DistributedSet<String> set = atomix().<String>setBuilder("test-set")

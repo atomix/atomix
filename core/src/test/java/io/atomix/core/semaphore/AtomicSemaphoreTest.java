@@ -22,7 +22,6 @@ import io.atomix.core.semaphore.impl.AtomicSemaphoreProxy;
 import io.atomix.core.semaphore.impl.AtomicSemaphoreServiceConfig;
 import io.atomix.core.semaphore.impl.DefaultAtomicSemaphoreService;
 import io.atomix.primitive.PrimitiveException;
-import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.primitive.service.impl.DefaultBackupInput;
 import io.atomix.primitive.service.impl.DefaultBackupOutput;
 import io.atomix.storage.buffer.Buffer;
@@ -54,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Semaphore test.
  */
-public abstract class AtomicSemaphoreTest extends AbstractPrimitiveTest<ProxyProtocol> {
+public class AtomicSemaphoreTest extends AbstractPrimitiveTest {
 
   @Test(timeout = 30000)
   public void testInit() throws Exception {
