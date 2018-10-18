@@ -16,6 +16,7 @@
 package io.atomix.cluster.protocol;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.cluster.BootstrapService;
 import io.atomix.cluster.Member;
@@ -36,6 +37,7 @@ import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -224,8 +226,10 @@ public class PhiMembershipProtocol
     return bootstrapService.getMessagingService().sendAndReceive(member.address(), HEARTBEAT_MESSAGE, SERIALIZER.encode(localMember))
         .whenCompleteAsync((response, error) -> {
           if (error == null) {
-            GossipMember remoteMember = SERIALIZER.decode(response);
-            updateMember(remoteMember);
+            Collection<GossipMember> remoteMembers = SERIALIZER.decode(response);
+            for (GossipMember remoteMember : remoteMembers) {
+              updateMember(remoteMember, remoteMember.id().equals(member.id()));
+            }
           } else {
             LOGGER.debug("{} - Sending heartbeat to {} failed", localMember.id(), member, error);
             if (member.isReachable()) {
@@ -254,16 +258,22 @@ public class PhiMembershipProtocol
     GossipMember remoteMember = SERIALIZER.decode(message);
     LOGGER.trace("{} - Received heartbeat: {}", localMember.id(), remoteMember);
     failureDetectors.computeIfAbsent(remoteMember.id(), n -> new PhiAccrualFailureDetector()).report();
-    updateMember(remoteMember);
-    return SERIALIZER.encode(localMember);
+    updateMember(remoteMember, true);
+
+    // Return only reachable members to avoid populating removed members on remote nodes from unreachable members.
+    return SERIALIZER.encode(Lists.newArrayList(members.values()
+        .stream()
+        .filter(member -> member.isReachable())
+        .collect(Collectors.toList())));
   }
 
   /**
    * Updates the state of the given member.
    *
    * @param remoteMember the member received from a remote node
+   * @param direct whether this is a direct update
    */
-  private void updateMember(GossipMember remoteMember) {
+  private void updateMember(GossipMember remoteMember, boolean direct) {
     GossipMember localMember = members.get(remoteMember.id());
     if (localMember == null) {
       remoteMember.setActive(true);
@@ -287,8 +297,13 @@ public class PhiMembershipProtocol
       }
       localMember.properties().putAll(remoteMember.properties());
       post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, localMember));
-    } else if (!localMember.isReachable()) {
+    } else if (!localMember.isReachable() && direct) {
       localMember.setReachable(true);
+      localMember.setTerm(localMember.getTerm() + 1);
+      post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, localMember));
+    } else if (!localMember.isReachable() && remoteMember.getTerm() > localMember.getTerm()) {
+      localMember.setReachable(true);
+      localMember.setTerm(remoteMember.getTerm());
       post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, localMember));
     }
   }
@@ -348,8 +363,9 @@ public class PhiMembershipProtocol
     private final long timestamp;
     private volatile boolean active;
     private volatile boolean reachable;
+    private volatile long term;
 
-    public GossipMember(MemberId id, Address address) {
+    GossipMember(MemberId id, Address address) {
       super(id, address);
       this.version = null;
       this.timestamp = 0;
@@ -405,6 +421,24 @@ public class PhiMembershipProtocol
     @Override
     public boolean isReachable() {
       return reachable;
+    }
+
+    /**
+     * Returns the member term.
+     *
+     * @return the member term
+     */
+    long getTerm() {
+      return term;
+    }
+
+    /**
+     * Sets the member term.
+     *
+     * @param term the member term
+     */
+    void setTerm(long term) {
+      this.term = term;
     }
   }
 }
