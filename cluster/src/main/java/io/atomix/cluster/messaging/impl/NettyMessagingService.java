@@ -346,7 +346,7 @@ public class NettyMessagingService implements ManagedMessagingService {
             if (error == null) {
               log.debug("Connected to {}", channel.remoteAddress());
             } else {
-              log.debug("Failed to connect to {}", channel.remoteAddress(), error);
+              log.debug("Failed to connect to {}", address, error);
             }
           });
           channelPool.set(offset, channelFuture);
