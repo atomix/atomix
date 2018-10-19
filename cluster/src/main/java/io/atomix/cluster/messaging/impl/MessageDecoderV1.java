@@ -224,6 +224,9 @@ class MessageDecoderV1 extends ByteToMessageDecoder {
   }
 
   static int readIntSlow(ByteBuf buffer) {
+    if (buffer.readableBytes() == 0) {
+      throw ESCAPE;
+    }
     buffer.markReaderIndex();
     int b = buffer.readByte();
     int result = b & 0x7F;
@@ -309,6 +312,9 @@ class MessageDecoderV1 extends ByteToMessageDecoder {
   }
 
   static long readLongSlow(ByteBuf buffer) {
+    if (buffer.readableBytes() == 0) {
+      throw ESCAPE;
+    }
     buffer.markReaderIndex();
     int b = buffer.readByte();
     long result = b & 0x7F;
