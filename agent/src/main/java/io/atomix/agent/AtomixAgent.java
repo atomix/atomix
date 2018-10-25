@@ -257,7 +257,6 @@ public class AtomixAgent {
    */
   private static AtomixConfig createConfig(Namespace namespace) {
     final List<File> configFiles = namespace.getList("config");
-    final boolean ignoreResources = namespace.getBoolean("ignore_resources");
     final String memberId = namespace.getString("member");
     final Address address = namespace.get("address");
     final String host = namespace.getString("host");
@@ -273,9 +272,7 @@ public class AtomixAgent {
     // If a configuration was provided, merge the configuration's member information with the provided command line arguments.
     AtomixConfig config;
     if (configFiles != null && !configFiles.isEmpty()) {
-      if (ignoreResources) {
-        System.setProperty("atomix.config.resources", "");
-      }
+      System.setProperty("atomix.config.resources", "");
       config = Atomix.config(configFiles);
     } else {
       config = Atomix.config();
