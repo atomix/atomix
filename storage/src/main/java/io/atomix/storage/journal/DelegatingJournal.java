@@ -38,6 +38,11 @@ public class DelegatingJournal<E> implements Journal<E> {
   }
 
   @Override
+  public JournalReader<E> openReader(long index, JournalReader.Mode mode) {
+    return delegate.openReader(index, mode);
+  }
+
+  @Override
   public boolean isOpen() {
     return delegate.isOpen();
   }

@@ -15,9 +15,21 @@
  */
 package io.atomix.storage.journal;
 
+import com.google.common.collect.Sets;
+import io.atomix.storage.StorageException;
+import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.index.JournalIndex;
 import io.atomix.storage.journal.index.SparseJournalIndex;
-import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.Namespace;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
@@ -28,29 +40,39 @@ import static com.google.common.base.Preconditions.checkState;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class JournalSegment<E> implements AutoCloseable {
-  protected final JournalSegmentFile file;
-  protected final JournalSegmentDescriptor descriptor;
+  private final JournalSegmentFile file;
+  private final JournalSegmentDescriptor descriptor;
+  private final StorageLevel storageLevel;
   private final int maxEntrySize;
-  protected final JournalIndex index;
-  protected final Serializer serializer;
-  private final JournalSegmentWriter<E> writer;
-  private final JournalSegmentCache cache;
+  private final JournalIndex index;
+  private final Namespace namespace;
+  private final MappableJournalSegmentWriter<E> writer;
+  private final Set<MappableJournalSegmentReader<E>> readers = Sets.newConcurrentHashSet();
+  private final AtomicInteger references = new AtomicInteger();
   private boolean open = true;
 
   public JournalSegment(
       JournalSegmentFile file,
       JournalSegmentDescriptor descriptor,
+      StorageLevel storageLevel,
       int maxEntrySize,
       double indexDensity,
-      int cacheSize,
-      Serializer serializer) {
+      Namespace namespace) {
     this.file = file;
     this.descriptor = descriptor;
+    this.storageLevel = storageLevel;
     this.maxEntrySize = maxEntrySize;
     this.index = new SparseJournalIndex(indexDensity);
-    this.serializer = serializer;
-    this.cache = new JournalSegmentCache(descriptor.index(), cacheSize);
-    this.writer = new JournalSegmentWriter<>(descriptor, maxEntrySize, cache, index, serializer);
+    this.namespace = namespace;
+    this.writer = new MappableJournalSegmentWriter<>(openChannel(file.file()), this, maxEntrySize, index, namespace);
+  }
+
+  private FileChannel openChannel(File file) {
+    try {
+      return FileChannel.open(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+    } catch (IOException e) {
+      throw new StorageException(e);
+    }
   }
 
   /**
@@ -108,30 +130,12 @@ public class JournalSegment<E> implements AutoCloseable {
   }
 
   /**
-   * Returns the segment size.
-   *
-   * @return The segment size.
-   */
-  public long size() {
-    return writer.size();
-  }
-
-  /**
    * Returns a boolean value indicating whether the segment is empty.
    *
    * @return Indicates whether the segment is empty.
    */
   public boolean isEmpty() {
     return length() == 0;
-  }
-
-  /**
-   * Returns a boolean indicating whether the segment is full.
-   *
-   * @return Indicates whether the segment is full.
-   */
-  public boolean isFull() {
-    return writer.isFull();
   }
 
   /**
@@ -144,11 +148,49 @@ public class JournalSegment<E> implements AutoCloseable {
   }
 
   /**
+   * Acquires a reference to the log segment.
+   */
+  void acquire() {
+    if (references.getAndIncrement() == 0 && open) {
+      map();
+    }
+  }
+
+  /**
+   * Releases a reference to the log segment.
+   */
+  void release() {
+    if (references.decrementAndGet() == 0 && open) {
+      unmap();
+    }
+  }
+
+  /**
+   * Maps the log segment into memory.
+   */
+  private void map() {
+    if (storageLevel == StorageLevel.MAPPED) {
+      MappedByteBuffer buffer = writer.map();
+      readers.forEach(reader -> reader.map(buffer));
+    }
+  }
+
+  /**
+   * Unmaps the log segment from memory.
+   */
+  private void unmap() {
+    if (storageLevel == StorageLevel.MAPPED) {
+      writer.unmap();
+      readers.forEach(reader -> reader.unmap());
+    }
+  }
+
+  /**
    * Returns the segment writer.
    *
    * @return The segment writer.
    */
-  public JournalSegmentWriter<E> writer() {
+  public MappableJournalSegmentWriter<E> writer() {
     checkOpen();
     return writer;
   }
@@ -158,9 +200,25 @@ public class JournalSegment<E> implements AutoCloseable {
    *
    * @return A new segment reader.
    */
-  JournalSegmentReader<E> createReader() {
+  MappableJournalSegmentReader<E> createReader() {
     checkOpen();
-    return new JournalSegmentReader<>(descriptor, maxEntrySize, cache, index, serializer);
+    MappableJournalSegmentReader<E> reader = new MappableJournalSegmentReader<>(
+        openChannel(file.file()), this, maxEntrySize, index, namespace);
+    MappedByteBuffer buffer = writer.buffer();
+    if (buffer != null) {
+      reader.map(buffer);
+    }
+    readers.add(reader);
+    return reader;
+  }
+
+  /**
+   * Closes a segment reader.
+   *
+   * @param reader the closed segment reader
+   */
+  void closeReader(MappableJournalSegmentReader<E> reader) {
+    readers.remove(reader);
   }
 
   /**
@@ -184,8 +242,9 @@ public class JournalSegment<E> implements AutoCloseable {
    */
   @Override
   public void close() {
+    unmap();
     writer.close();
-    descriptor.close();
+    readers.forEach(reader -> reader.close());
     open = false;
   }
 
@@ -193,7 +252,11 @@ public class JournalSegment<E> implements AutoCloseable {
    * Deletes the segment.
    */
   public void delete() {
-    writer.delete();
+    try {
+      Files.deleteIfExists(file.file().toPath());
+    } catch (IOException e) {
+      throw new StorageException(e);
+    }
   }
 
   @Override
@@ -202,7 +265,6 @@ public class JournalSegment<E> implements AutoCloseable {
         .add("id", id())
         .add("version", version())
         .add("index", index())
-        .add("size", size())
         .toString();
   }
 }

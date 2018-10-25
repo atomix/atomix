@@ -53,6 +53,16 @@ public class DelegatingJournalWriter<E> implements JournalWriter<E> {
   }
 
   @Override
+  public void commit(long index) {
+    delegate.commit(index);
+  }
+
+  @Override
+  public void reset(long index) {
+    delegate.reset(index);
+  }
+
+  @Override
   public void truncate(long index) {
     delegate.truncate(index);
   }

@@ -15,47 +15,46 @@
  */
 package io.atomix.storage.journal;
 
-import io.atomix.storage.buffer.Buffer;
-import io.atomix.storage.buffer.Bytes;
-import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.journal.index.JournalIndex;
 import io.atomix.storage.journal.index.Position;
-import io.atomix.utils.serializer.Serializer;
+import io.atomix.utils.serializer.Namespace;
 
 import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 import java.util.zip.CRC32;
-import java.util.zip.Checksum;
 
 /**
  * Log segment reader.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class JournalSegmentReader<E> implements JournalReader<E> {
-  private final Buffer buffer;
+class MappedJournalSegmentReader<E> implements JournalReader<E> {
+  private final ByteBuffer buffer;
   private final int maxEntrySize;
-  private final JournalSegmentCache cache;
   private final JournalIndex index;
-  private final Serializer serializer;
-  private final Buffer memory = HeapBuffer.allocate().flip();
+  private final Namespace namespace;
   private final long firstIndex;
   private Indexed<E> currentEntry;
   private Indexed<E> nextEntry;
 
-  public JournalSegmentReader(
-      JournalSegmentDescriptor descriptor,
+  MappedJournalSegmentReader(
+      ByteBuffer buffer,
+      JournalSegment<E> segment,
       int maxEntrySize,
-      JournalSegmentCache cache,
       JournalIndex index,
-      Serializer serializer) {
-    this.buffer = descriptor.buffer().slice().duplicate();
+      Namespace namespace) {
+    this.buffer = buffer.slice();
     this.maxEntrySize = maxEntrySize;
-    this.cache = cache;
     this.index = index;
-    this.serializer = serializer;
-    this.firstIndex = descriptor.index();
-    readNext();
+    this.namespace = namespace;
+    this.firstIndex = segment.index();
+    reset();
+  }
+
+  @Override
+  public long getFirstIndex() {
+    return firstIndex;
   }
 
   @Override
@@ -80,7 +79,6 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     if (position != null) {
       currentEntry = new Indexed<>(position.index() - 1, null, 0);
       buffer.position(position.position());
-      memory.clear().flip();
       readNext();
     }
     while (getNextIndex() < index && hasNext()) {
@@ -90,8 +88,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
 
   @Override
   public void reset() {
-    buffer.clear();
-    memory.clear().flip();
+    buffer.position(JournalSegmentDescriptor.BYTES);
     currentEntry = null;
     nextEntry = null;
     readNext();
@@ -133,68 +130,47 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     // Compute the index of the next entry in the segment.
     final long index = getNextIndex();
 
-    Indexed cachedEntry = cache.get(index);
-    if (cachedEntry != null) {
-      this.nextEntry = cachedEntry;
-      buffer.skip(memory.position() + cachedEntry.size() + Bytes.INTEGER + Bytes.INTEGER);
-      memory.clear().limit(0);
-      return;
-    } else if (cache.index() > 0 && cache.index() < index) {
-      this.nextEntry = null;
-      return;
-    }
-
-    // Read more bytes from the segment if necessary.
-    if (memory.remaining() < maxEntrySize) {
-      buffer.skip(memory.position())
-          .mark()
-          .read(memory.clear().limit(maxEntrySize * 2))
-          .reset();
-      memory.flip();
-    }
-
     // Mark the buffer so it can be reset if necessary.
-    memory.mark();
+    buffer.mark();
 
     try {
       // Read the length of the entry.
-      final int length = memory.readInt();
+      final int length = buffer.getInt();
 
       // If the buffer length is zero then return.
       if (length <= 0 || length > maxEntrySize) {
-        memory.reset().limit(memory.position());
+        buffer.reset();
         nextEntry = null;
         return;
       }
 
       // Read the checksum of the entry.
-      long checksum = memory.readUnsignedInt();
-
-      // Read the entry into memory.
-      byte[] bytes = new byte[length];
-      memory.read(bytes);
+      long checksum = buffer.getInt() & 0xFFFFFFFFL;
 
       // Compute the checksum for the entry bytes.
-      final Checksum crc32 = new CRC32();
-      crc32.update(bytes, 0, length);
+      final CRC32 crc32 = new CRC32();
+      ByteBuffer slice = buffer.slice();
+      slice.limit(length);
+      crc32.update(slice);
 
       // If the stored checksum equals the computed checksum, return the entry.
       if (checksum == crc32.getValue()) {
-        E entry = serializer.decode(bytes);
+        slice.rewind();
+        E entry = namespace.deserialize(slice);
         nextEntry = new Indexed<>(index, entry, length);
+        buffer.position(buffer.position() + length);
       } else {
-        memory.reset().limit(memory.position());
+        buffer.reset();
         nextEntry = null;
       }
     } catch (BufferUnderflowException e) {
-      memory.reset().limit(memory.position());
+      buffer.reset();
       nextEntry = null;
     }
   }
 
   @Override
   public void close() {
-    memory.close();
-    buffer.close();
+    // Do nothing. The writer is responsible for cleaning the mapped buffer.
   }
 }

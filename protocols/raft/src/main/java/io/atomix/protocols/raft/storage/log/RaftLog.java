@@ -19,6 +19,7 @@ import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.DelegatingJournal;
 import io.atomix.storage.journal.SegmentedJournal;
+import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
@@ -59,13 +60,7 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
     return openReader(index, RaftLogReader.Mode.ALL);
   }
 
-  /**
-   * Opens a new Raft log reader with the given reader mode.
-   *
-   * @param index The index from which to begin reading entries.
-   * @param mode  The mode in which to read entries.
-   * @return The Raft log reader.
-   */
+  @Override
   public RaftLogReader openReader(long index, RaftLogReader.Mode mode) {
     return new RaftLogReader(journal.openReader(index), this, mode);
   }
@@ -193,13 +188,13 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
     }
 
     /**
-     * Sets the journal serializer, returning the builder for method chaining.
+     * Sets the log serialization namespace, returning the builder for method chaining.
      *
-     * @param serializer The journal serializer.
+     * @param namespace The journal namespace.
      * @return The journal builder.
      */
-    public Builder withSerializer(Serializer serializer) {
-      journalBuilder.withSerializer(serializer);
+    public Builder withNamespace(Namespace namespace) {
+      journalBuilder.withNamespace(namespace);
       return this;
     }
 

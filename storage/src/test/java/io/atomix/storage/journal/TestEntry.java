@@ -35,6 +35,10 @@ public class TestEntry {
     this.bytes = bytes;
   }
 
+  public byte[] bytes() {
+    return bytes;
+  }
+
   @Override
   public String toString() {
     return toStringHelper(this)

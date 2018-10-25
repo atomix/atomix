@@ -28,6 +28,11 @@ public class DelegatingJournalReader<E> implements JournalReader<E> {
   }
 
   @Override
+  public long getFirstIndex() {
+    return delegate.getFirstIndex();
+  }
+
+  @Override
   public long getCurrentIndex() {
     return delegate.getCurrentIndex();
   }
