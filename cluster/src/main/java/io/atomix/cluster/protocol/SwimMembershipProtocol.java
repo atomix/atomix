@@ -219,7 +219,7 @@ public class SwimMembershipProtocol
         members.put(member.id(), swimMember);
         randomMembers.add(swimMember);
         Collections.shuffle(randomMembers);
-        LOGGER.debug("{} - Evicted member for new version {}", swimMember);
+        LOGGER.debug("{} - Evicted member for new version {}", this.localMember.id(), swimMember);
         post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, swimMember.copy()));
         recordUpdate(swimMember.copy());
       } else {
