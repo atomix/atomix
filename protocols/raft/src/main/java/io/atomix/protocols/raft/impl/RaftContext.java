@@ -107,7 +107,7 @@ public class RaftContext implements AutoCloseable {
   private final ThreadContext loadContext;
   private final ThreadContext stateContext;
   private final boolean closeOnStop;
-  protected RaftRole role = new InactiveRole(this);
+  private RaftRole role = new InactiveRole(this);
   private Duration electionTimeout = Duration.ofMillis(500);
   private Duration heartbeatInterval = Duration.ofMillis(150);
   private Duration sessionTimeout = Duration.ofMillis(5000);
@@ -824,8 +824,9 @@ public class RaftContext implements AutoCloseable {
    */
   public void transition(RaftServer.Role role) {
     checkThread();
+    checkNotNull(role);
 
-    if (this.role != null && role == this.role.role()) {
+    if (this.role.role() == role) {
       return;
     }
 
