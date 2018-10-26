@@ -26,6 +26,7 @@ import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.utils.AtomixRuntimeException;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.net.Address;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -48,6 +49,9 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.util.concurrent.Future;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SynchronizedDescriptiveStatistics;
@@ -55,8 +59,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -532,7 +535,11 @@ public class NettyMessagingService implements ManagedMessagingService {
     bootstrap.channel(clientChannelClass);
     bootstrap.remoteAddress(address.address(true), address.port());
     if (enableNettyTls) {
-      bootstrap.handler(new SslClientCommunicationChannelInitializer(future));
+      try {
+        bootstrap.handler(new SslClientCommunicationChannelInitializer(future, address));
+      } catch (SSLException e) {
+        return Futures.exceptionalFuture(e);
+      }
     } else {
       bootstrap.handler(new BasicClientChannelInitializer(future));
     }
@@ -558,7 +565,11 @@ public class NettyMessagingService implements ManagedMessagingService {
     b.group(serverGroup, clientGroup);
     b.channel(serverChannelClass);
     if (enableNettyTls) {
-      b.childHandler(new SslServerCommunicationChannelInitializer());
+      try {
+        b.childHandler(new SslServerCommunicationChannelInitializer());
+      } catch (SSLException e) {
+        return Futures.exceptionalFuture(e);
+      }
     } else {
       b.childHandler(new BasicServerChannelInitializer());
     }
@@ -635,22 +646,18 @@ public class NettyMessagingService implements ManagedMessagingService {
    * Channel initializer for TLS servers.
    */
   private class SslServerCommunicationChannelInitializer extends ChannelInitializer<SocketChannel> {
+
+    private final SslContext sslContext;
+
+    private SslServerCommunicationChannelInitializer() throws SSLException {
+      this.sslContext = SslContextBuilder.forServer(keyManager).clientAuth(ClientAuth.REQUIRE).trustManager(trustManager)
+              .build();
+    }
+
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
-      SSLContext serverContext = SSLContext.getInstance("TLS");
-      serverContext.init(keyManager.getKeyManagers(), trustManager.getTrustManagers(), null);
-
-      SSLEngine serverSslEngine = serverContext.createSSLEngine();
-
-      serverSslEngine.setNeedClientAuth(true);
-      serverSslEngine.setUseClientMode(false);
-      serverSslEngine.setEnabledProtocols(serverSslEngine.getSupportedProtocols());
-      serverSslEngine.setEnabledCipherSuites(serverSslEngine.getSupportedCipherSuites());
-      serverSslEngine.setEnableSessionCreation(true);
-
-      channel.pipeline()
-          .addLast("ssl", new io.netty.handler.ssl.SslHandler(serverSslEngine))
-          .addLast("handshake", new ServerHandshakeHandlerAdapter());
+      channel.pipeline().addLast("ssl", sslContext.newHandler(channel.alloc()))
+              .addLast("handshake", new ServerHandshakeHandlerAdapter());
     }
   }
 
@@ -659,26 +666,19 @@ public class NettyMessagingService implements ManagedMessagingService {
    */
   private class SslClientCommunicationChannelInitializer extends ChannelInitializer<SocketChannel> {
     private final CompletableFuture<Channel> future;
+    private final Address address;
+    private final SslContext sslContext;
 
-    SslClientCommunicationChannelInitializer(CompletableFuture<Channel> future) {
+    SslClientCommunicationChannelInitializer(CompletableFuture<Channel> future, Address address) throws SSLException {
       this.future = future;
+      this.address = address;
+      this.sslContext = SslContextBuilder.forClient().keyManager(keyManager).trustManager(trustManager).build();
     }
 
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
-      SSLContext clientContext = SSLContext.getInstance("TLS");
-      clientContext.init(keyManager.getKeyManagers(), trustManager.getTrustManagers(), null);
-
-      SSLEngine clientSslEngine = clientContext.createSSLEngine();
-
-      clientSslEngine.setUseClientMode(true);
-      clientSslEngine.setEnabledProtocols(clientSslEngine.getSupportedProtocols());
-      clientSslEngine.setEnabledCipherSuites(clientSslEngine.getSupportedCipherSuites());
-      clientSslEngine.setEnableSessionCreation(true);
-
-      channel.pipeline()
-          .addLast("ssl", new io.netty.handler.ssl.SslHandler(clientSslEngine))
-          .addLast("handshake", new ClientHandshakeHandlerAdapter(future));
+        channel.pipeline().addLast("ssl", sslContext.newHandler(channel.alloc(), address.host(), address.port()))
+                .addLast("handshake", new ClientHandshakeHandlerAdapter(future));
     }
   }
 
