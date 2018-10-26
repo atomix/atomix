@@ -51,6 +51,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Utility for applying Typesafe configurations to Atomix configuration objects.
  */
@@ -92,7 +94,7 @@ public class ConfigMapper {
         config = config.withFallback(ConfigFactory.load(classLoader, resource));
       }
     }
-    return map(config.resolve(), type);
+    return map(checkNotNull(config, "config cannot be null").resolve(), type);
   }
 
   /**
@@ -116,6 +118,9 @@ public class ConfigMapper {
    * @return the loaded configuration
    */
   public <T> T loadResources(Class<T> type, List<String> resources) {
+    if (resources == null || resources.isEmpty()) {
+      throw new IllegalArgumentException("resources must be defined");
+    }
     Config config = null;
     for (String resource : resources) {
       if (config == null) {
@@ -124,7 +129,7 @@ public class ConfigMapper {
         config = config.withFallback(ConfigFactory.load(classLoader, resource));
       }
     }
-    return map(config.resolve(), type);
+    return map(checkNotNull(config, "config cannot be null").resolve(), type);
   }
 
   /**

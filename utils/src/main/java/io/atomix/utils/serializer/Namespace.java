@@ -79,7 +79,7 @@ public final class Namespace implements KryoFactory, KryoPool {
   /**
    * Default Kryo namespace.
    */
-  public static Namespace DEFAULT = builder().build();
+  public static final Namespace DEFAULT = builder().build();
 
   private final KryoPool kryoPool = new KryoPool.Builder(this)
       .softReferences()
