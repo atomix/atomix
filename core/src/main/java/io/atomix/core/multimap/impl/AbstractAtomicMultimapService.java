@@ -276,6 +276,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   }
 
   @Override
+  @SuppressWarnings("squid:S2175") // ByteArrayComparator passed into {@link Sets#newTreeSet(Comparator)}
   public Versioned<Collection<byte[]>> replaceValues(String key, Collection<byte[]> values) {
     MapEntryValues entry = backingMap.computeIfAbsent(key, k -> new NonTransactionalValues());
 
@@ -579,6 +580,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
     }
 
     @Override
+    @SuppressWarnings("squid:S2175") // ByteArrayComparator passed into {@link Sets#newTreeSet(Comparator)}
     public boolean remove(String key, byte[] value) {
       if (valueSet.remove(value)) {
         version = getCurrentIndex();
@@ -595,6 +597,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
     }
 
     @Override
+    @SuppressWarnings("squid:S2175") // ByteArrayComparator passed into {@link Sets#newTreeSet(Comparator)}
     public Versioned<Collection<byte[]>> removeAll(String key, Collection<? extends byte[]> values) {
       Set<byte[]> removedValues = Sets.newHashSet();
       for (byte[] value : values) {
