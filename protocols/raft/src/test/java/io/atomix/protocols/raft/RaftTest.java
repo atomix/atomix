@@ -108,7 +108,7 @@ import static org.mockito.Mockito.when;
  * Raft test.
  */
 public class RaftTest extends ConcurrentTestCase {
-  private static final Serializer storageSerializer = Serializer.using(Namespace.builder()
+  private static final Namespace NAMESPACE = Namespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -130,9 +130,7 @@ public class RaftTest extends ConcurrentTestCase {
       .register(Configuration.class)
       .register(byte[].class)
       .register(long[].class)
-      .build());
-
-  private static final Serializer clientSerializer = Serializer.using(Namespace.DEFAULT);
+      .build();
 
   protected volatile int nextId;
   protected volatile List<RaftMember> members;
@@ -1265,7 +1263,7 @@ public class RaftTest extends ConcurrentTestCase {
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/test-logs/%s", memberId)))
-            .withSerializer(storageSerializer)
+            .withNamespace(NAMESPACE)
             .withMaxSegmentSize(1024 * 10)
             .withMaxEntriesPerSegment(10)
             .build());

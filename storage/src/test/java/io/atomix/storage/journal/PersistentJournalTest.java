@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.log;
+package io.atomix.storage.journal;
 
 import org.junit.Test;
 
@@ -21,42 +21,42 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Disk log test.
+ * Persistent journal test base.
  */
-public abstract class PersistentLogTest extends AbstractLogTest {
-  protected PersistentLogTest(int maxSegmentSize, int cacheSize) {
+public abstract class PersistentJournalTest extends AbstractJournalTest {
+  protected PersistentJournalTest(int maxSegmentSize, int cacheSize) {
     super(maxSegmentSize, cacheSize);
   }
 
   /**
-   * Tests reading from a compacted log.
+   * Tests reading from a compacted journal.
    */
   @Test
   public void testCompactAndRecover() throws Exception {
-    RaftLog log = createLog();
+    SegmentedJournal<TestEntry> journal = createJournal();
 
-    // Write three segments to the log.
-    RaftLogWriter writer = log.writer();
+    // Write three segments to the journal.
+    JournalWriter<TestEntry> writer = journal.writer();
     for (int i = 0; i < entriesPerSegment * 3; i++) {
       writer.append(ENTRY);
     }
 
     // Commit the entries and compact the first segment.
     writer.commit(entriesPerSegment * 3);
-    log.compact(entriesPerSegment + 1);
+    journal.compact(entriesPerSegment + 1);
 
-    // Close the log.
-    log.close();
+    // Close the journal.
+    journal.close();
 
-    // Reopen the log and create a reader.
-    log = createLog();
-    writer = log.writer();
-    RaftLogReader reader = log.openReader(1, RaftLogReader.Mode.COMMITS);
+    // Reopen the journal and create a reader.
+    journal = createJournal();
+    writer = journal.writer();
+    JournalReader<TestEntry> reader = journal.openReader(1, JournalReader.Mode.COMMITS);
     writer.append(ENTRY);
     writer.append(ENTRY);
     writer.commit(entriesPerSegment * 3);
 
-    // Ensure the reader starts at the first physical index in the log.
+    // Ensure the reader starts at the first physical index in the journal.
     assertEquals(entriesPerSegment + 1, reader.getNextIndex());
     assertEquals(reader.getFirstIndex(), reader.getNextIndex());
     assertTrue(reader.hasNext());

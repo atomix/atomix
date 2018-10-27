@@ -16,11 +16,8 @@
 package io.atomix.storage.journal;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.atomix.storage.buffer.Buffer;
-import io.atomix.storage.buffer.Bytes;
-import io.atomix.storage.buffer.FileBuffer;
-import io.atomix.storage.buffer.HeapBuffer;
-import io.atomix.storage.buffer.MappedBuffer;
+
+import java.nio.ByteBuffer;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -54,7 +51,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public final class JournalSegmentDescriptor implements AutoCloseable {
+public final class JournalSegmentDescriptor {
   public static final int BYTES = 64;
 
   // Current segment version.
@@ -62,12 +59,12 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
   static final int VERSION = 1;
 
   // The lengths of each field in the header.
-  private static final int VERSION_LENGTH = Bytes.INTEGER;     // 32-bit signed integer
-  private static final int ID_LENGTH = Bytes.LONG;             // 64-bit signed integer
-  private static final int INDEX_LENGTH = Bytes.LONG;          // 64-bit signed integer
-  private static final int MAX_SIZE_LENGTH = Bytes.INTEGER;    // 32-bit signed integer
-  private static final int MAX_ENTRIES_LENGTH = Bytes.INTEGER; // 32-bit signed integer
-  private static final int UPDATED_LENGTH = Bytes.LONG;        // 64-bit signed integer
+  private static final int VERSION_LENGTH = Integer.BYTES;     // 32-bit signed integer
+  private static final int ID_LENGTH = Long.BYTES;             // 64-bit signed integer
+  private static final int INDEX_LENGTH = Long.BYTES;          // 64-bit signed integer
+  private static final int MAX_SIZE_LENGTH = Integer.BYTES;    // 32-bit signed integer
+  private static final int MAX_ENTRIES_LENGTH = Integer.BYTES; // 32-bit signed integer
+  private static final int UPDATED_LENGTH = Long.BYTES;        // 64-bit signed integer
 
   // The positions of each field in the header.
   private static final int VERSION_POSITION = 0;                                         // 0
@@ -85,7 +82,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
    * @return The descriptor builder.
    */
   public static Builder builder() {
-    return new Builder(HeapBuffer.allocate(BYTES));
+    return new Builder(ByteBuffer.allocate(BYTES));
   }
 
   /**
@@ -95,11 +92,11 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
    * @return The descriptor builder.
    * @throws NullPointerException if {@code buffer} is null
    */
-  public static Builder builder(Buffer buffer) {
+  public static Builder builder(ByteBuffer buffer) {
     return new Builder(buffer);
   }
 
-  private volatile Buffer buffer;
+  private final ByteBuffer buffer;
   private final int version;
   private final long id;
   private final long index;
@@ -111,25 +108,15 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
   /**
    * @throws NullPointerException if {@code buffer} is null
    */
-  public JournalSegmentDescriptor(Buffer buffer) {
-    this.buffer = checkNotNull(buffer, "buffer cannot be null");
-    this.version = buffer.readInt();
-    this.id = buffer.readLong();
-    this.index = buffer.readLong();
-    this.maxSegmentSize = buffer.readInt();
-    this.maxEntries = buffer.readInt();
-    this.updated = buffer.readLong();
-    this.locked = buffer.readBoolean();
-    buffer.skip(BYTES - buffer.position()); // 64 bytes reserved for the header
-  }
-
-  /**
-   * Returns the segment buffer.
-   *
-   * @return the segment buffer.
-   */
-  Buffer buffer() {
-    return buffer;
+  public JournalSegmentDescriptor(ByteBuffer buffer) {
+    this.buffer = buffer;
+    this.version = buffer.getInt();
+    this.id = buffer.getLong();
+    this.index = buffer.getLong();
+    this.maxSegmentSize = buffer.getInt();
+    this.maxEntries = buffer.getInt();
+    this.updated = buffer.getLong();
+    this.locked = buffer.get() == 1;
   }
 
   /**
@@ -203,7 +190,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
    */
   public void update(long timestamp) {
     if (!locked) {
-      buffer.writeLong(UPDATED_POSITION, timestamp);
+      buffer.putLong(UPDATED_POSITION, timestamp);
       this.updated = timestamp;
     }
   }
@@ -211,34 +198,15 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
   /**
    * Copies the segment to a new buffer.
    */
-  JournalSegmentDescriptor copyTo(Buffer buffer) {
-    this.buffer = buffer
-        .writeInt(version)
-        .writeLong(id)
-        .writeLong(index)
-        .writeInt(maxSegmentSize)
-        .writeInt(maxEntries)
-        .writeLong(updated)
-        .writeBoolean(locked)
-        .skip(BYTES - buffer.position())
-        .flush();
+  JournalSegmentDescriptor copyTo(ByteBuffer buffer) {
+    buffer.putInt(version);
+    buffer.putLong(id);
+    buffer.putLong(index);
+    buffer.putInt(maxSegmentSize);
+    buffer.putInt(maxEntries);
+    buffer.putLong(updated);
+    buffer.put(locked ? (byte) 1 : (byte) 0);
     return this;
-  }
-
-  @Override
-  public void close() {
-    buffer.close();
-  }
-
-  /**
-   * Deletes the descriptor.
-   */
-  public void delete() {
-    if (buffer instanceof FileBuffer) {
-      ((FileBuffer) buffer).delete();
-    } else if (buffer instanceof MappedBuffer) {
-      ((MappedBuffer) buffer).delete();
-    }
   }
 
   @Override
@@ -255,11 +223,11 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
    * Segment descriptor builder.
    */
   public static class Builder {
-    private final Buffer buffer;
+    private final ByteBuffer buffer;
 
-    private Builder(Buffer buffer) {
-      this.buffer = checkNotNull(buffer, "buffer cannot be null")
-          .writeInt(VERSION_POSITION, VERSION);
+    private Builder(ByteBuffer buffer) {
+      this.buffer = checkNotNull(buffer, "buffer cannot be null");
+      buffer.putInt(VERSION_POSITION, VERSION);
     }
 
     /**
@@ -269,7 +237,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
      * @return The segment descriptor builder.
      */
     public Builder withId(long id) {
-      buffer.writeLong(ID_POSITION, id);
+      buffer.putLong(ID_POSITION, id);
       return this;
     }
 
@@ -280,7 +248,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
      * @return The segment descriptor builder.
      */
     public Builder withIndex(long index) {
-      buffer.writeLong(INDEX_POSITION, index);
+      buffer.putLong(INDEX_POSITION, index);
       return this;
     }
 
@@ -291,7 +259,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
      * @return The segment descriptor builder.
      */
     public Builder withMaxSegmentSize(int maxSegmentSize) {
-      buffer.writeInt(MAX_SIZE_POSITION, maxSegmentSize);
+      buffer.putInt(MAX_SIZE_POSITION, maxSegmentSize);
       return this;
     }
 
@@ -304,7 +272,7 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
      */
     @Deprecated
     public Builder withMaxEntries(int maxEntries) {
-      buffer.writeInt(MAX_ENTRIES_POSITION, maxEntries);
+      buffer.putInt(MAX_ENTRIES_POSITION, maxEntries);
       return this;
     }
 
@@ -314,7 +282,8 @@ public final class JournalSegmentDescriptor implements AutoCloseable {
      * @return The built segment descriptor.
      */
     public JournalSegmentDescriptor build() {
-      return new JournalSegmentDescriptor(buffer.rewind());
+      buffer.rewind();
+      return new JournalSegmentDescriptor(buffer);
     }
   }
 }

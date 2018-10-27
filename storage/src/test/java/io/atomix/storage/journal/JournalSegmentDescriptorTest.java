@@ -15,14 +15,9 @@
  */
 package io.atomix.storage.journal;
 
-import io.atomix.storage.buffer.Buffer;
-import io.atomix.storage.buffer.FileBuffer;
-import org.junit.After;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.ByteBuffer;
 
 import static org.junit.Assert.assertEquals;
 
@@ -32,14 +27,13 @@ import static org.junit.Assert.assertEquals;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class JournalSegmentDescriptorTest {
-  private static final File file = new File("descriptor.log");
 
   /**
    * Tests the segment descriptor builder.
    */
   @Test
   public void testDescriptorBuilder() {
-    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES))
+    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder(ByteBuffer.allocate(JournalSegmentDescriptor.BYTES))
       .withId(2)
       .withIndex(1025)
       .withMaxSegmentSize(1024 * 1024)
@@ -59,44 +53,6 @@ public class JournalSegmentDescriptorTest {
   }
 
   /**
-   * Tests persisting the segment descriptor.
-   */
-  @Test
-  public void testDescriptorPersist() {
-    Buffer buffer = FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES);
-    JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder(buffer)
-      .withId(2)
-      .withIndex(1025)
-      .withMaxSegmentSize(1024 * 1024)
-      .withMaxEntries(2048)
-      .build();
-
-    assertEquals(2, descriptor.id());
-    assertEquals(JournalSegmentDescriptor.VERSION, descriptor.version());
-    assertEquals(1025, descriptor.index());
-    assertEquals(1024 * 1024, descriptor.maxSegmentSize());
-    assertEquals(2048, descriptor.maxEntries());
-
-    buffer.close();
-
-    descriptor = new JournalSegmentDescriptor(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES));
-
-    assertEquals(2, descriptor.id());
-    assertEquals(JournalSegmentDescriptor.VERSION, descriptor.version());
-    assertEquals(1025, descriptor.index());
-    assertEquals(1024 * 1024, descriptor.maxSegmentSize());
-
-    descriptor.close();
-
-    descriptor = new JournalSegmentDescriptor(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES));
-
-    assertEquals(2, descriptor.id());
-    assertEquals(JournalSegmentDescriptor.VERSION, descriptor.version());
-    assertEquals(1025, descriptor.index());
-    assertEquals(1024 * 1024, descriptor.maxSegmentSize());
-  }
-
-  /**
    * Tests copying the segment descriptor.
    */
   @Test
@@ -111,7 +67,7 @@ public class JournalSegmentDescriptorTest {
     long time = System.currentTimeMillis();
     descriptor.update(time);
 
-    descriptor = descriptor.copyTo(FileBuffer.allocate(file, JournalSegmentDescriptor.BYTES));
+    descriptor = descriptor.copyTo(ByteBuffer.allocate(JournalSegmentDescriptor.BYTES));
 
     assertEquals(2, descriptor.id());
     assertEquals(JournalSegmentDescriptor.VERSION, descriptor.version());
@@ -119,15 +75,5 @@ public class JournalSegmentDescriptorTest {
     assertEquals(1024 * 1024, descriptor.maxSegmentSize());
     assertEquals(2048, descriptor.maxEntries());
     assertEquals(time, descriptor.updated());
-  }
-
-  /**
-   * Deletes the descriptor file.
-   */
-  @After
-  public void deleteDescriptor() throws IOException {
-    if (Files.exists(file.toPath())) {
-      Files.delete(file.toPath());
-    }
   }
 }

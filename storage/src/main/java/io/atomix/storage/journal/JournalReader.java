@@ -25,6 +25,29 @@ import java.util.Iterator;
 public interface JournalReader<E> extends Iterator<Indexed<E>>, AutoCloseable {
 
   /**
+   * Raft log reader mode.
+   */
+  public enum Mode {
+
+    /**
+     * Reads all entries from the log.
+     */
+    ALL,
+
+    /**
+     * Reads committed entries from the log.
+     */
+    COMMITS,
+  }
+
+  /**
+   * Returns the first index in the journal.
+   *
+   * @return the first index in the journal
+   */
+  long getFirstIndex();
+
+  /**
    * Returns the current reader index.
    *
    * @return The current reader index.

@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.log;
+package io.atomix.storage.journal;
 
 import io.atomix.storage.StorageLevel;
 
 /**
- * Disk log test.
+ * Disk journal test.
  */
-public class MappedLogTest extends AbstractLogTest {
-  public MappedLogTest(int maxSegmentSize, int cacheSize) {
+public class DiskJournalTest extends PersistentJournalTest {
+  public DiskJournalTest(int maxSegmentSize, int cacheSize) {
     super(maxSegmentSize, cacheSize);
   }
 
   @Override
   protected StorageLevel storageLevel() {
-    return StorageLevel.MAPPED;
+    return StorageLevel.DISK;
   }
 }

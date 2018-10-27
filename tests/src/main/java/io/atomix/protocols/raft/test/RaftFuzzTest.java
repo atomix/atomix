@@ -207,7 +207,7 @@ public class RaftFuzzTest implements Runnable {
       .register(Configuration.class)
       .build());
 
-  private static final Serializer storageSerializer = Serializer.using(Namespace.builder()
+  private static final Namespace storageNamespace = Namespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -229,7 +229,7 @@ public class RaftFuzzTest implements Runnable {
       .register(Configuration.class)
       .register(byte[].class)
       .register(long[].class)
-      .build());
+      .build();
 
   private static final Serializer clientSerializer = Serializer.using(Namespace.builder()
       .register(ReadConsistency.class)
@@ -584,7 +584,7 @@ public class RaftFuzzTest implements Runnable {
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/fuzz-logs/%s", member.memberId())))
-            .withSerializer(storageSerializer)
+            .withNamespace(storageNamespace)
             .withMaxSegmentSize(1024 * 1024)
             .build());
 

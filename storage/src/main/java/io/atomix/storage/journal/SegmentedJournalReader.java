@@ -18,18 +18,19 @@ package io.atomix.storage.journal;
 import java.util.NoSuchElementException;
 
 /**
- * Segmented journal reader.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ * Raft log reader.
  */
 public class SegmentedJournalReader<E> implements JournalReader<E> {
+
   private final SegmentedJournal<E> journal;
   private JournalSegment<E> currentSegment;
   private Indexed<E> previousEntry;
-  private JournalSegmentReader<E> currentReader;
+  private MappableJournalSegmentReader<E> currentReader;
+  private final Mode mode;
 
-  public SegmentedJournalReader(SegmentedJournal<E> journal, long index) {
+  public SegmentedJournalReader(SegmentedJournal<E> journal, long index, Mode mode) {
     this.journal = journal;
+    this.mode = mode;
     initialize(index);
   }
 
@@ -38,6 +39,7 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
    */
   private void initialize(long index) {
     currentSegment = journal.getSegment(index);
+    currentSegment.acquire();
     currentReader = currentSegment.createReader();
     long nextIndex = getNextIndex();
     while (index > nextIndex && hasNext()) {
@@ -46,11 +48,7 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
     }
   }
 
-  /**
-   * Returns the first index in the journal.
-   *
-   * @return the first index in the journal
-   */
+  @Override
   public long getFirstIndex() {
     return journal.getFirstSegment().index();
   }
@@ -84,7 +82,9 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
   @Override
   public void reset() {
     currentReader.close();
+    currentSegment.release();
     currentSegment = journal.getFirstSegment();
+    currentSegment.acquire();
     currentReader = currentSegment.createReader();
     previousEntry = null;
   }
@@ -113,7 +113,9 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
       JournalSegment<E> segment = journal.getSegment(index - 1);
       if (segment != null) {
         currentReader.close();
+        currentSegment.release();
         currentSegment = segment;
+        currentSegment.acquire();
         currentReader = currentSegment.createReader();
       }
     }
@@ -133,11 +135,23 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
 
   @Override
   public boolean hasNext() {
+    if (mode == Mode.ALL) {
+      return hasNextEntry();
+    }
+
+    long nextIndex = getNextIndex();
+    long commitIndex = journal.getCommitIndex();
+    return nextIndex <= commitIndex && hasNextEntry();
+  }
+
+  private boolean hasNextEntry() {
     if (!currentReader.hasNext()) {
       JournalSegment<E> nextSegment = journal.getNextSegment(currentSegment.index());
       if (nextSegment != null && nextSegment.index() == getNextIndex()) {
         previousEntry = currentReader.getCurrentEntry();
+        currentSegment.release();
         currentSegment = nextSegment;
+        currentSegment.acquire();
         currentReader = currentSegment.createReader();
         return currentReader.hasNext();
       }
@@ -152,7 +166,9 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
       JournalSegment<E> nextSegment = journal.getNextSegment(currentSegment.index());
       if (nextSegment != null && nextSegment.index() == getNextIndex()) {
         previousEntry = currentReader.getCurrentEntry();
+        currentSegment.release();
         currentSegment = nextSegment;
+        currentSegment.acquire();
         currentReader = currentSegment.createReader();
         return currentReader.next();
       } else {

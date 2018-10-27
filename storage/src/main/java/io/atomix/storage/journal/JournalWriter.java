@@ -59,6 +59,20 @@ public interface JournalWriter<E> extends AutoCloseable {
   void append(Indexed<E> entry);
 
   /**
+   * Commits entries up to the given index.
+   *
+   * @param index The index up to which to commit entries.
+   */
+  void commit(long index);
+
+  /**
+   * Resets the head of the journal to the given index.
+   *
+   * @param index the index to which to reset the head of the journal
+   */
+  void reset(long index);
+
+  /**
    * Truncates the log to the given index.
    *
    * @param index The index to which to truncate the log.
