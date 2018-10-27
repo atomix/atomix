@@ -25,7 +25,7 @@ public class DefaultSerializers {
   /**
    * Basic serializer.
    */
-  public static Serializer BASIC = Serializer.builder().build();
+  public static final Serializer BASIC = Serializer.builder().build();
 
   private DefaultSerializers() {
   }
