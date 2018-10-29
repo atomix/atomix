@@ -209,13 +209,9 @@ public class PhiMembershipProtocol
    */
   private void checkMetadata() {
     if (!localMember.properties().equals(localProperties)) {
-      synchronized (this) {
-        if (!localMember.properties().equals(localProperties)) {
-          localProperties = new Properties();
-          localProperties.putAll(localMember.properties());
-          post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, localMember));
-        }
-      }
+      localProperties = new Properties();
+      localProperties.putAll(localMember.properties());
+      post(new GroupMembershipEvent(GroupMembershipEvent.Type.METADATA_CHANGED, localMember));
     }
   }
 
@@ -228,7 +224,9 @@ public class PhiMembershipProtocol
           if (error == null) {
             Collection<GossipMember> remoteMembers = SERIALIZER.decode(response);
             for (GossipMember remoteMember : remoteMembers) {
-              updateMember(remoteMember, remoteMember.id().equals(member.id()));
+              if (!remoteMember.id().equals(localMember.id())) {
+                updateMember(remoteMember, remoteMember.id().equals(member.id()));
+              }
             }
           } else {
             LOGGER.debug("{} - Sending heartbeat to {} failed", localMember.id(), member, error);

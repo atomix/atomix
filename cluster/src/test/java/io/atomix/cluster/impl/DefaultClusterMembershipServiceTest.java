@@ -33,6 +33,7 @@ import io.atomix.utils.Version;
 import io.atomix.utils.net.Address;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -84,7 +85,7 @@ public class DefaultClusterMembershipServiceTest {
         Version.from("1.0.0"),
         new DefaultNodeDiscoveryService(bootstrapService1, localMember1, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService1,
-        new PhiMembershipProtocol(new PhiMembershipProtocolConfig()));
+        new PhiMembershipProtocol(new PhiMembershipProtocolConfig().setFailureTimeout(Duration.ofSeconds(2))));
 
     Member localMember2 = buildMember(2);
     BootstrapService bootstrapService2 = new TestBootstrapService(
@@ -96,7 +97,7 @@ public class DefaultClusterMembershipServiceTest {
         Version.from("1.0.0"),
         new DefaultNodeDiscoveryService(bootstrapService2, localMember2, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService2,
-        new PhiMembershipProtocol(new PhiMembershipProtocolConfig()));
+        new PhiMembershipProtocol(new PhiMembershipProtocolConfig().setFailureTimeout(Duration.ofSeconds(2))));
 
     Member localMember3 = buildMember(3);
     BootstrapService bootstrapService3 = new TestBootstrapService(
@@ -108,7 +109,7 @@ public class DefaultClusterMembershipServiceTest {
         Version.from("1.0.1"),
         new DefaultNodeDiscoveryService(bootstrapService3, localMember3, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService3,
-        new PhiMembershipProtocol(new PhiMembershipProtocolConfig()));
+        new PhiMembershipProtocol(new PhiMembershipProtocolConfig().setFailureTimeout(Duration.ofSeconds(2))));
 
     assertNull(clusterService1.getMember(MemberId.from("1")));
     assertNull(clusterService1.getMember(MemberId.from("2")));
@@ -142,7 +143,7 @@ public class DefaultClusterMembershipServiceTest {
         Version.from("1.1.0"),
         new DefaultNodeDiscoveryService(ephemeralBootstrapService, anonymousMember, new BootstrapDiscoveryProvider(bootstrapLocations)),
         ephemeralBootstrapService,
-        new PhiMembershipProtocol(new PhiMembershipProtocolConfig()));
+        new PhiMembershipProtocol(new PhiMembershipProtocolConfig().setFailureTimeout(Duration.ofSeconds(2))));
 
     assertFalse(ephemeralClusterService.getLocalMember().isActive());
 
@@ -168,7 +169,7 @@ public class DefaultClusterMembershipServiceTest {
 
     clusterService1.stop().join();
 
-    Thread.sleep(15000);
+    Thread.sleep(5000);
 
     assertEquals(3, clusterService2.getMembers().size());
 
@@ -179,7 +180,7 @@ public class DefaultClusterMembershipServiceTest {
 
     ephemeralClusterService.stop().join();
 
-    Thread.sleep(15000);
+    Thread.sleep(5000);
 
     assertEquals(2, clusterService2.getMembers().size());
     assertNull(clusterService2.getMember(MemberId.from("1")));
@@ -199,17 +200,18 @@ public class DefaultClusterMembershipServiceTest {
     TestClusterMembershipEventListener eventListener = new TestClusterMembershipEventListener();
     clusterService2.addListener(eventListener);
 
+    ClusterMembershipEvent event;
     clusterService3.getLocalMember().properties().put("foo", "bar");
 
-    ClusterMembershipEvent event = eventListener.nextEvent();
+    event = eventListener.nextEvent();
     assertEquals(ClusterMembershipEvent.Type.METADATA_CHANGED, event.type());
     assertEquals("bar", event.subject().properties().get("foo"));
-    TestClusterMembershipEventListener eventListener3 = new TestClusterMembershipEventListener();
-    clusterService3.addListener(eventListener3);
+
     clusterService3.getLocalMember().properties().put("foo", "baz");
-    ClusterMembershipEvent event3 = eventListener3.nextEvent();
-    assertEquals(ClusterMembershipEvent.Type.METADATA_CHANGED, event3.type());
-    assertEquals("baz", event3.subject().properties().get("foo"));
+
+    event = eventListener.nextEvent();
+    assertEquals(ClusterMembershipEvent.Type.METADATA_CHANGED, event.type());
+    assertEquals("baz", event.subject().properties().get("foo"));
 
     CompletableFuture.allOf(new CompletableFuture[]{clusterService1.stop(), clusterService2.stop(),
         clusterService3.stop()}).join();
@@ -225,7 +227,7 @@ public class DefaultClusterMembershipServiceTest {
 
     ClusterMembershipEvent nextEvent() {
       try {
-        return queue.poll(10, TimeUnit.SECONDS);
+        return queue.poll(5, TimeUnit.SECONDS);
       } catch (InterruptedException e) {
         return null;
       }
