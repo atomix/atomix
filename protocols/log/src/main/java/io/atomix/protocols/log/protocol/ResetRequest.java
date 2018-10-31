@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-present Open Networking Foundation
+ * Copyright 2017-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,38 +15,47 @@
  */
 package io.atomix.protocols.log.protocol;
 
+import io.atomix.cluster.MemberId;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Read request.
+ * Reset request.
  */
-public class ReadRequest extends LogRequest {
+public class ResetRequest extends LogRequest {
 
-  public static ReadRequest request(long index, int batchSize) {
-    return new ReadRequest(index, batchSize);
+  public static ResetRequest request(MemberId memberId, String subject, long index) {
+    return new ResetRequest(memberId, subject, index);
   }
 
+  private final MemberId memberId;
+  private final String subject;
   private final long index;
-  private final int batchSize;
 
-  private ReadRequest(long index, int batchSize) {
+  private ResetRequest(MemberId memberId, String subject, long index) {
+    this.memberId = memberId;
+    this.subject = subject;
     this.index = index;
-    this.batchSize = batchSize;
+  }
+
+  public MemberId memberId() {
+    return memberId;
+  }
+
+  public String subject() {
+    return subject;
   }
 
   public long index() {
     return index;
   }
 
-  public int batchSize() {
-    return batchSize;
-  }
-
   @Override
   public String toString() {
     return toStringHelper(this)
+        .add("memberId", memberId())
+        .add("subject", subject())
         .add("index", index())
-        .add("batchSize", batchSize())
         .toString();
   }
 }

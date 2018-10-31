@@ -16,14 +16,17 @@
 package io.atomix.protocols.log.serializer.impl;
 
 import io.atomix.cluster.MemberId;
+import io.atomix.primitive.log.Record;
 import io.atomix.protocols.log.protocol.AppendRequest;
 import io.atomix.protocols.log.protocol.AppendResponse;
 import io.atomix.protocols.log.protocol.BackupRequest;
 import io.atomix.protocols.log.protocol.BackupResponse;
 import io.atomix.protocols.log.protocol.LogEntry;
 import io.atomix.protocols.log.protocol.LogResponse;
-import io.atomix.protocols.log.protocol.ReadRequest;
-import io.atomix.protocols.log.protocol.ReadResponse;
+import io.atomix.protocols.log.protocol.ConsumeRequest;
+import io.atomix.protocols.log.protocol.ConsumeResponse;
+import io.atomix.protocols.log.protocol.RecordsRequest;
+import io.atomix.protocols.log.protocol.ResetRequest;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
 
@@ -42,11 +45,14 @@ public final class LogNamespaces {
       .register(LogResponse.Status.class)
       .register(AppendRequest.class)
       .register(AppendResponse.class)
-      .register(ReadRequest.class)
-      .register(ReadResponse.class)
+      .register(ConsumeRequest.class)
+      .register(ConsumeResponse.class)
+      .register(RecordsRequest.class)
+      .register(ResetRequest.class)
       .register(BackupRequest.class)
       .register(BackupResponse.class)
       .register(LogEntry.class)
+      .register(Record.class)
       .build("PrimaryBackupProtocol");
 
   private LogNamespaces() {

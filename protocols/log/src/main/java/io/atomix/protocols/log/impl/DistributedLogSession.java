@@ -15,10 +15,15 @@
  */
 package io.atomix.protocols.log.impl;
 
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+
 import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.MemberId;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.log.LogConsumer;
@@ -31,18 +36,15 @@ import io.atomix.primitive.partition.PrimaryElectionEventListener;
 import io.atomix.primitive.partition.PrimaryTerm;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.log.protocol.AppendRequest;
+import io.atomix.protocols.log.protocol.ConsumeRequest;
 import io.atomix.protocols.log.protocol.LogClientProtocol;
 import io.atomix.protocols.log.protocol.LogResponse;
-import io.atomix.protocols.log.protocol.ReadRequest;
+import io.atomix.protocols.log.protocol.RecordsRequest;
+import io.atomix.protocols.log.protocol.ResetRequest;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
-
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -57,8 +59,10 @@ public class DistributedLogSession implements LogSession {
   private final Set<Consumer<PrimitiveState>> stateChangeListeners = Sets.newIdentityHashSet();
   private final ClusterMembershipEventListener membershipEventListener = this::handleClusterEvent;
   private final PrimaryElectionEventListener primaryElectionListener = event -> changeReplicas(event.term());
-  private final LogProducer producer = new DistributedLogProducer();
-  private final LogConsumer consumer = new DistributedLogConsumer();
+  private final DistributedLogProducer producer = new DistributedLogProducer();
+  private final DistributedLogConsumer consumer = new DistributedLogConsumer();
+  private final MemberId memberId;
+  private final String subject;
   private volatile PrimaryTerm term;
   private volatile PrimitiveState state = PrimitiveState.CLOSED;
   private final Logger log;
@@ -74,6 +78,8 @@ public class DistributedLogSession implements LogSession {
     this.sessionId = checkNotNull(sessionId, "sessionId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.threadContext = checkNotNull(threadContext, "threadContext cannot be null");
+    this.memberId = clusterMembershipService.getLocalMember().id();
+    this.subject = String.format("%s-%s-%s", partitionId.group(), partitionId.id(), sessionId);
     clusterMembershipService.addListener(membershipEventListener);
     primaryElection.addListener(primaryElectionListener);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(DistributedLogProducer.class)
@@ -132,6 +138,7 @@ public class DistributedLogSession implements LogSession {
     threadContext.execute(() -> {
       if (this.term == null || term.term() > this.term.term()) {
         this.term = term;
+        consumer.register(term.primary().memberId());
       }
     });
   }
@@ -190,23 +197,58 @@ public class DistributedLogSession implements LogSession {
    * Distributed log consumer.
    */
   private class DistributedLogConsumer implements LogConsumer {
+    private MemberId leader;
+    private long index;
+    private volatile Consumer<Record> consumer;
+
+    /**
+     * Registers the consumer with the given leader.
+     *
+     * @param leader the leader with which to register the consumer
+     */
+    private CompletableFuture<Void> register(MemberId leader) {
+      CompletableFuture<Void> future = new CompletableFuture<>();
+      protocol.consume(leader, ConsumeRequest.request(memberId, subject, index + 1))
+          .whenCompleteAsync((response, error) -> {
+            if (error == null) {
+              if (response.status() == LogResponse.Status.OK) {
+                future.complete(null);
+              } else {
+                future.completeExceptionally(new PrimitiveException.Unavailable());
+              }
+            } else {
+              future.completeExceptionally(error);
+            }
+          }, threadContext);
+      return future;
+    }
+
+    /**
+     * Handles a records request.
+     *
+     * @param request the request to handle
+     */
+    private void handleRecords(RecordsRequest request) {
+      if (request.record().index() == index + 1) {
+        Consumer<Record> consumer = this.consumer;
+        if (consumer != null) {
+          consumer.accept(request.record());
+          index = request.record().index();
+        }
+      } else {
+        protocol.reset(leader, ResetRequest.request(memberId, subject, index + 1));
+      }
+    }
+
     @Override
-    public CompletableFuture<List<Record>> read(long index, int batchSize) {
-      CompletableFuture<List<Record>> future = new CompletableFuture<>();
+    public CompletableFuture<Void> consume(long index, Consumer<Record> consumer) {
+      CompletableFuture<Void> future = new CompletableFuture<>();
       PrimaryTerm term = DistributedLogSession.this.term;
       if (term != null && term.primary() != null) {
-        protocol.read(term.primary().memberId(), ReadRequest.request(index, batchSize))
-            .whenCompleteAsync((response, error) -> {
-              if (error == null) {
-                if (response.status() == LogResponse.Status.OK) {
-                  future.complete(response.records());
-                } else {
-                  future.completeExceptionally(new PrimitiveException.Unavailable());
-                }
-              } else {
-                future.completeExceptionally(error);
-              }
-            }, threadContext);
+        protocol.registerRecordsConsumer(subject, this::handleRecords, threadContext);
+        this.consumer = consumer;
+        this.index = index - 1;
+        return register(term.primary().memberId());
       } else {
         future.completeExceptionally(new PrimitiveException.Unavailable());
       }

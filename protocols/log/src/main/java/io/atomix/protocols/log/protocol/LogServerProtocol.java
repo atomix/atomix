@@ -15,15 +15,26 @@
  */
 package io.atomix.protocols.log.protocol;
 
-import io.atomix.cluster.MemberId;
-
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import java.util.function.Function;
+
+import io.atomix.cluster.MemberId;
 
 /**
  * Primary-backup server protocol.
  */
 public interface LogServerProtocol {
+
+  /**
+   * Sends a records request to the given node.
+   *
+   * @param memberId the node to which to send the request
+   * @param subject the subject to which to send the request
+   * @param request the request to send
+   */
+  void produce(MemberId memberId, String subject, RecordsRequest request);
 
   /**
    * Sends a backup request to the given node.
@@ -47,16 +58,29 @@ public interface LogServerProtocol {
   void unregisterAppendHandler();
 
   /**
-   * Registers a read request callback.
+   * Registers a consume request callback.
    *
    * @param handler the read request handler to register
    */
-  void registerReadHandler(Function<ReadRequest, CompletableFuture<ReadResponse>> handler);
+  void registerConsumeHandler(Function<ConsumeRequest, CompletableFuture<ConsumeResponse>> handler);
 
   /**
-   * Unregisters the read request handler.
+   * Unregisters the consume request handler.
    */
-  void unregisterReadHandler();
+  void unregisterConsumeHandler();
+
+  /**
+   * Registers a reset consumer.
+   *
+   * @param consumer the consumer to register
+   * @param executor the consumer executor
+   */
+  void registerResetConsumer(Consumer<ResetRequest> consumer, Executor executor);
+
+  /**
+   * Unregisters the reset request handler.
+   */
+  void unregisterResetConsumer();
 
   /**
    * Registers a backup request callback.

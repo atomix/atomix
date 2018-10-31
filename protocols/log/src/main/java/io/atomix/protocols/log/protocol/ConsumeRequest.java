@@ -13,44 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.log;
+package io.atomix.protocols.log.protocol;
 
-import io.atomix.utils.misc.ArraySizeHashPrinter;
+import io.atomix.cluster.MemberId;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Log entry.
+ * Read request.
  */
-public class Record {
-  private final long offset;
-  private final long timestamp;
-  private final byte[] value;
+public class ConsumeRequest extends LogRequest {
 
-  public Record(long offset, long timestamp, byte[] value) {
-    this.offset = offset;
-    this.timestamp = timestamp;
-    this.value = value;
+  public static ConsumeRequest request(MemberId memberId, String subject, long index) {
+    return new ConsumeRequest(memberId, subject, index);
+  }
+
+  private final MemberId memberId;
+  private final String subject;
+  private final long index;
+
+  private ConsumeRequest(MemberId memberId, String subject, long index) {
+    this.memberId = memberId;
+    this.subject = subject;
+    this.index = index;
+  }
+
+  public MemberId memberId() {
+    return memberId;
+  }
+
+  public String subject() {
+    return subject;
   }
 
   public long index() {
-    return offset;
-  }
-
-  public long timestamp() {
-    return timestamp;
-  }
-
-  public byte[] value() {
-    return value;
+    return index;
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("offset", index())
-        .add("timestamp", timestamp())
-        .add("value", ArraySizeHashPrinter.of(value()))
+        .add("memberId", memberId())
+        .add("subject", subject())
+        .add("index", index())
         .toString();
   }
 }

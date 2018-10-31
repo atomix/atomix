@@ -15,6 +15,10 @@
  */
 package io.atomix.protocols.log.partition.impl;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import io.atomix.cluster.MemberId;
@@ -23,12 +27,12 @@ import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.protocols.log.protocol.AppendRequest;
 import io.atomix.protocols.log.protocol.AppendResponse;
+import io.atomix.protocols.log.protocol.ConsumeRequest;
+import io.atomix.protocols.log.protocol.ConsumeResponse;
 import io.atomix.protocols.log.protocol.LogClientProtocol;
-import io.atomix.protocols.log.protocol.ReadRequest;
-import io.atomix.protocols.log.protocol.ReadResponse;
+import io.atomix.protocols.log.protocol.RecordsRequest;
+import io.atomix.protocols.log.protocol.ResetRequest;
 import io.atomix.utils.serializer.Serializer;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Raft client protocol that uses a cluster communicator.
@@ -44,7 +48,11 @@ public class LogClientCommunicator implements LogClientProtocol {
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
   }
 
-  private <T, U> CompletableFuture<U> sendAndReceive(String subject, T request, MemberId memberId) {
+  private <T> void unicast(String subject, T request, MemberId memberId) {
+    clusterCommunicator.unicast(subject, request, serializer::encode, memberId, false);
+  }
+
+  private <T, U> CompletableFuture<U> send(String subject, T request, MemberId memberId) {
     CompletableFuture<U> future = new CompletableFuture<>();
     clusterCommunicator.<T, U>send(subject, request, serializer::encode, serializer::decode, memberId).whenComplete((result, error) -> {
       if (error == null) {
@@ -63,11 +71,26 @@ public class LogClientCommunicator implements LogClientProtocol {
 
   @Override
   public CompletableFuture<AppendResponse> append(MemberId memberId, AppendRequest request) {
-    return sendAndReceive(context.appendSubject, request, memberId);
+    return send(context.appendSubject, request, memberId);
   }
 
   @Override
-  public CompletableFuture<ReadResponse> read(MemberId memberId, ReadRequest request) {
-    return sendAndReceive(context.readSubject, request, memberId);
+  public CompletableFuture<ConsumeResponse> consume(MemberId memberId, ConsumeRequest request) {
+    return send(context.readSubject, request, memberId);
+  }
+
+  @Override
+  public void reset(MemberId memberId, ResetRequest request) {
+    unicast(context.resetSubject, request, memberId);
+  }
+
+  @Override
+  public void registerRecordsConsumer(String subject, Consumer<RecordsRequest> handler, Executor executor) {
+    clusterCommunicator.subscribe(subject, serializer::decode, handler, executor);
+  }
+
+  @Override
+  public void unregisterRecordsConsumer(String subject) {
+    clusterCommunicator.unsubscribe(subject);
   }
 }
