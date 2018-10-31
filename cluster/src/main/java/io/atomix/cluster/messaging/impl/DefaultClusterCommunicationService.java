@@ -22,6 +22,7 @@ import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ManagedClusterCommunicationService;
 import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.cluster.messaging.UnicastService;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.net.Address;
 import org.slf4j.Logger;
@@ -55,34 +56,43 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
 
   protected final ClusterMembershipService membershipService;
   protected final MessagingService messagingService;
+  protected final UnicastService unicastService;
   private final AtomicBoolean started = new AtomicBoolean();
 
-  public DefaultClusterCommunicationService(ClusterMembershipService membershipService, MessagingService messagingService) {
+  public DefaultClusterCommunicationService(
+      ClusterMembershipService membershipService,
+      MessagingService messagingService,
+      UnicastService unicastService) {
     this.membershipService = checkNotNull(membershipService, "clusterService cannot be null");
     this.messagingService = checkNotNull(messagingService, "messagingService cannot be null");
+    this.unicastService = checkNotNull(unicastService, "unicastService cannot be null");
   }
 
   @Override
   public <M> void broadcast(
       String subject,
       M message,
-      Function<M, byte[]> encoder) {
+      Function<M, byte[]> encoder,
+      boolean reliable) {
     multicast(subject, message, encoder, membershipService.getMembers()
         .stream()
         .filter(node -> !Objects.equal(node, membershipService.getLocalMember()))
         .map(Member::id)
-        .collect(Collectors.toSet()));
+        .collect(Collectors.toSet()),
+        reliable);
   }
 
   @Override
   public <M> void broadcastIncludeSelf(
       String subject,
       M message,
-      Function<M, byte[]> encoder) {
+      Function<M, byte[]> encoder,
+      boolean reliable) {
     multicast(subject, message, encoder, membershipService.getMembers()
         .stream()
         .map(Member::id)
-        .collect(Collectors.toSet()));
+        .collect(Collectors.toSet()),
+        reliable);
   }
 
   @Override
@@ -90,9 +100,10 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
       String subject,
       M message,
       Function<M, byte[]> encoder,
-      MemberId toMemberId) {
+      MemberId toMemberId,
+      boolean reliable) {
     try {
-      return doUnicast(subject, encoder.apply(message), toMemberId);
+      return doUnicast(subject, encoder.apply(message), toMemberId, reliable);
     } catch (Exception e) {
       return Futures.exceptionalFuture(e);
     }
@@ -103,9 +114,10 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
       String subject,
       M message,
       Function<M, byte[]> encoder,
-      Set<MemberId> nodes) {
+      Set<MemberId> nodes,
+      boolean reliable) {
     byte[] payload = encoder.apply(message);
-    nodes.forEach(memberId -> doUnicast(subject, payload, memberId));
+    nodes.forEach(memberId -> doUnicast(subject, payload, memberId, reliable));
   }
 
   @Override
@@ -123,12 +135,17 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
     }
   }
 
-  private CompletableFuture<Void> doUnicast(String subject, byte[] payload, MemberId toMemberId) {
+  private CompletableFuture<Void> doUnicast(String subject, byte[] payload, MemberId toMemberId, boolean reliable) {
     Member member = membershipService.getMember(toMemberId);
     if (member == null) {
       return Futures.exceptionalFuture(CONNECT_EXCEPTION);
     }
-    return messagingService.sendAsync(member.address(), subject, payload);
+    if (reliable) {
+      return messagingService.sendAsync(member.address(), subject, payload);
+    } else {
+      unicastService.unicast(member.address(), subject, payload);
+      return CompletableFuture.completedFuture(null);
+    }
   }
 
   private CompletableFuture<byte[]> sendAndReceive(String subject, byte[] payload, MemberId toMemberId, Duration timeout) {

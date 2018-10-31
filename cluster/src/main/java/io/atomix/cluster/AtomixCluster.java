@@ -199,7 +199,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
     this.discoveryProvider = buildLocationProvider(config);
     this.membershipProtocol = buildMembershipProtocol(config);
     this.membershipService = buildClusterMembershipService(config, this, discoveryProvider, membershipProtocol, version);
-    this.communicationService = buildClusterMessagingService(getMembershipService(), getMessagingService());
+    this.communicationService = buildClusterMessagingService(getMembershipService(), getMessagingService(), getUnicastService());
     this.eventService = buildClusterEventService(getMembershipService(), getMessagingService());
   }
 
@@ -449,8 +449,8 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    * Builds a cluster messaging service.
    */
   protected static ManagedClusterCommunicationService buildClusterMessagingService(
-      ClusterMembershipService membershipService, MessagingService messagingService) {
-    return new DefaultClusterCommunicationService(membershipService, messagingService);
+      ClusterMembershipService membershipService, MessagingService messagingService, UnicastService unicastService) {
+    return new DefaultClusterCommunicationService(membershipService, messagingService, unicastService);
   }
 
   /**

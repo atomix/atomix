@@ -15,9 +15,6 @@
  */
 package io.atomix.cluster.messaging;
 
-import io.atomix.cluster.MemberId;
-import io.atomix.utils.net.Address;
-
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -25,6 +22,9 @@ import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import io.atomix.cluster.MemberId;
+import io.atomix.utils.net.Address;
 
 import static io.atomix.utils.serializer.serializers.DefaultSerializers.BASIC;
 
@@ -59,7 +59,19 @@ public interface ClusterCommunicationService {
    * @param <M>     message type
    */
   default <M> void broadcast(String subject, M message) {
-    broadcast(subject, message, BASIC::encode);
+    broadcast(subject, message, BASIC::encode, true);
+  }
+
+  /**
+   * Broadcasts a message to all members.
+   *
+   * @param subject  message subject
+   * @param message message to send
+   * @param reliable whether to perform a reliable (TCP) unicast
+   * @param <M>     message type
+   */
+  default <M> void broadcast(String subject, M message, boolean reliable) {
+    broadcast(subject, message, BASIC::encode, reliable);
   }
 
   /**
@@ -70,17 +82,54 @@ public interface ClusterCommunicationService {
    * @param encoder function for encoding message to byte[]
    * @param <M>     message type
    */
-  <M> void broadcast(String subject, M message, Function<M, byte[]> encoder);
+  default <M> void broadcast(String subject, M message, Function<M, byte[]> encoder) {
+    broadcast(subject, message, encoder, true);
+  }
 
   /**
-   * Broadcasts a message to all members including self.
+   * Broadcasts a message to all members.
+   *
+   * @param subject  message subject
+   * @param message message to send
+   * @param encoder function for encoding message to byte[]
+   * @param reliable whether to perform a reliable (TCP) unicast
+   * @param <M>     message type
+   */
+  <M> void broadcast(String subject, M message, Function<M, byte[]> encoder, boolean reliable);
+
+  /**
+   * Broadcasts a message to all members over TCP including self.
    *
    * @param subject  message subject
    * @param message message to send
    * @param <M>     message type
    */
   default <M> void broadcastIncludeSelf(String subject, M message) {
-    broadcastIncludeSelf(subject, message, BASIC::encode);
+    broadcastIncludeSelf(subject, message, BASIC::encode, true);
+  }
+
+  /**
+   * Broadcasts a message to all members including self.
+   *
+   * @param subject  message subject
+   * @param message message to send
+   * @param reliable whether to perform a reliable (TCP) unicast
+   * @param <M>     message type
+   */
+  default <M> void broadcastIncludeSelf(String subject, M message, boolean reliable) {
+    broadcastIncludeSelf(subject, message, BASIC::encode, reliable);
+  }
+
+  /**
+   * Broadcasts a message to all members over TCP including self.
+   *
+   * @param subject  message subject
+   * @param message message to send
+   * @param encoder function for encoding message to byte[]
+   * @param <M>     message type
+   */
+  default <M> void broadcastIncludeSelf(String subject, M message, Function<M, byte[]> encoder) {
+    broadcastIncludeSelf(subject, message, encoder, true);
   }
 
   /**
@@ -89,12 +138,13 @@ public interface ClusterCommunicationService {
    * @param subject  message subject
    * @param message message to send
    * @param encoder function for encoding message to byte[]
+   * @param reliable whether to perform a reliable (TCP) unicast
    * @param <M>     message type
    */
-  <M> void broadcastIncludeSelf(String subject, M message, Function<M, byte[]> encoder);
+  <M> void broadcastIncludeSelf(String subject, M message, Function<M, byte[]> encoder, boolean reliable);
 
   /**
-   * Sends a message to the specified member.
+   * Sends a message to the specified member over TCP.
    *
    * @param subject  message subject
    * @param message  message to send
@@ -103,7 +153,35 @@ public interface ClusterCommunicationService {
    * @return future that is completed when the message is sent
    */
   default <M> CompletableFuture<Void> unicast(String subject, M message, MemberId toMemberId) {
-    return unicast(subject, message, BASIC::encode, toMemberId);
+    return unicast(subject, message, BASIC::encode, toMemberId, true);
+  }
+
+  /**
+   * Sends a message to the specified member.
+   *
+   * @param subject  message subject
+   * @param message  message to send
+   * @param toMemberId destination node identifier
+   * @param reliable whether to perform a reliable (TCP) unicast
+   * @param <M>      message type
+   * @return future that is completed when the message is sent
+   */
+  default <M> CompletableFuture<Void> unicast(String subject, M message, MemberId toMemberId, boolean reliable) {
+    return unicast(subject, message, BASIC::encode, toMemberId, reliable);
+  }
+
+  /**
+   * Sends a message to the specified member over TCP.
+   *
+   * @param subject  message subject
+   * @param message  message to send
+   * @param encoder  function for encoding message to byte[]
+   * @param toMemberId destination node identifier
+   * @param <M>      message type
+   * @return future that is completed when the message is sent
+   */
+  default <M> CompletableFuture<Void> unicast(String subject, M message, Function<M, byte[]> encoder, MemberId toMemberId) {
+    return unicast(subject, message, BASIC::encode, toMemberId, true);
   }
 
   /**
@@ -113,13 +191,14 @@ public interface ClusterCommunicationService {
    * @param message  message to send
    * @param encoder  function for encoding message to byte[]
    * @param toMemberId destination node identifier
+   * @param reliable whether to perform a reliable (TCP) unicast
    * @param <M>      message type
    * @return future that is completed when the message is sent
    */
-  <M> CompletableFuture<Void> unicast(String subject, M message, Function<M, byte[]> encoder, MemberId toMemberId);
+  <M> CompletableFuture<Void> unicast(String subject, M message, Function<M, byte[]> encoder, MemberId toMemberId, boolean reliable);
 
   /**
-   * Multicasts a message to a set of members.
+   * Multicasts a message to a set of members over TCP.
    *
    * @param subject  message subject
    * @param message message to send
@@ -127,7 +206,33 @@ public interface ClusterCommunicationService {
    * @param <M>     message type
    */
   default <M> void multicast(String subject, M message, Set<MemberId> memberIds) {
-    multicast(subject, message, BASIC::encode, memberIds);
+    multicast(subject, message, BASIC::encode, memberIds, true);
+  }
+
+  /**
+   * Multicasts a message to a set of members.
+   *
+   * @param subject  message subject
+   * @param message message to send
+   * @param memberIds recipient node identifiers
+   * @param reliable whether to perform a reliable (TCP) unicast
+   * @param <M>     message type
+   */
+  default <M> void multicast(String subject, M message, Set<MemberId> memberIds, boolean reliable) {
+    multicast(subject, message, BASIC::encode, memberIds, reliable);
+  }
+
+  /**
+   * Multicasts a message to a set of members over TCP.
+   *
+   * @param subject  message subject
+   * @param message message to send
+   * @param encoder function for encoding message to byte[]
+   * @param memberIds recipient node identifiers
+   * @param <M>     message type
+   */
+  default <M> void multicast(String subject, M message, Function<M, byte[]> encoder, Set<MemberId> memberIds) {
+    multicast(subject, message, encoder, memberIds, true);
   }
 
   /**
@@ -137,9 +242,10 @@ public interface ClusterCommunicationService {
    * @param message message to send
    * @param encoder function for encoding message to byte[]
    * @param memberIds recipient node identifiers
+   * @param reliable whether to perform a reliable (TCP) unicast
    * @param <M>     message type
    */
-  <M> void multicast(String subject, M message, Function<M, byte[]> encoder, Set<MemberId> memberIds);
+  <M> void multicast(String subject, M message, Function<M, byte[]> encoder, Set<MemberId> memberIds, boolean reliable);
 
   /**
    * Sends a message and expects a reply.
