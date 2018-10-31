@@ -15,20 +15,21 @@
  */
 package io.atomix.protocols.log.roles;
 
+import java.util.concurrent.CompletableFuture;
+
 import io.atomix.protocols.log.impl.DistributedLogServerContext;
 import io.atomix.protocols.log.protocol.AppendRequest;
 import io.atomix.protocols.log.protocol.AppendResponse;
 import io.atomix.protocols.log.protocol.BackupRequest;
 import io.atomix.protocols.log.protocol.BackupResponse;
+import io.atomix.protocols.log.protocol.ConsumeRequest;
+import io.atomix.protocols.log.protocol.ConsumeResponse;
 import io.atomix.protocols.log.protocol.LogRequest;
 import io.atomix.protocols.log.protocol.LogResponse;
-import io.atomix.protocols.log.protocol.ReadRequest;
-import io.atomix.protocols.log.protocol.ReadResponse;
+import io.atomix.protocols.log.protocol.ResetRequest;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
-
-import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static io.atomix.protocols.log.DistributedLogServer.Role;
@@ -87,14 +88,23 @@ public abstract class LogServerRole {
   }
 
   /**
-   * Handles a read request.
+   * Handles a consume request.
    *
-   * @param request the read request
-   * @return future to be completed with the read response
+   * @param request the consume request
+   * @return future to be completed with the consume response
    */
-  public CompletableFuture<ReadResponse> read(ReadRequest request) {
+  public CompletableFuture<ConsumeResponse> consume(ConsumeRequest request) {
     logRequest(request);
-    return CompletableFuture.completedFuture(logResponse(ReadResponse.error()));
+    return CompletableFuture.completedFuture(logResponse(ConsumeResponse.error()));
+  }
+
+  /**
+   * Handles a reset request.
+   *
+   * @param request the reset request
+   */
+  public void reset(ResetRequest request) {
+    logRequest(request);
   }
 
   /**

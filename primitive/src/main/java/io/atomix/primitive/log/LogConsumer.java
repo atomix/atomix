@@ -15,8 +15,8 @@
  */
 package io.atomix.primitive.log;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Log consumer.
@@ -24,12 +24,22 @@ import java.util.concurrent.CompletableFuture;
 public interface LogConsumer {
 
   /**
-   * Reads log entries from the given index.
+   * Adds a new consumer.
    *
-   * @param index the index from which to read log entries
-   * @param batchSize the batch size
-   * @return a future to be completed with a batch of log entries
+   * @param consumer the consumer to add
+   * @return a future to be completed once the consumer has been added
    */
-  CompletableFuture<List<Record>> read(long index, int batchSize);
+  default CompletableFuture<Void> consume(Consumer<Record> consumer) {
+    return consume(1, consumer);
+  }
+
+  /**
+   * Adds a new consumer.
+   *
+   * @param index the index from which to begin consuming
+   * @param consumer the consumer to add
+   * @return a future to be completed once the consumer has been added
+   */
+  CompletableFuture<Void> consume(long index, Consumer<Record> consumer);
 
 }

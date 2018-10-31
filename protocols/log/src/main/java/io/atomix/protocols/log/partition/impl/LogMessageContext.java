@@ -19,33 +19,19 @@ package io.atomix.protocols.log.partition.impl;
  * Protocol message context.
  */
 class LogMessageContext {
-  private final String prefix;
   final String appendSubject;
   final String readSubject;
+  final String resetSubject;
   final String backupSubject;
 
   LogMessageContext(String prefix) {
-    this.prefix = prefix;
     this.appendSubject = getSubject(prefix, "append");
     this.readSubject = getSubject(prefix, "read");
+    this.resetSubject = getSubject(prefix, "reset");
     this.backupSubject = getSubject(prefix, "backup");
   }
 
   private static String getSubject(String prefix, String type) {
     return String.format("%s-%s", prefix, type);
-  }
-
-  /**
-   * Returns the event subject for the given session.
-   *
-   * @param sessionId the session for which to return the event subject
-   * @return the event subject for the given session
-   */
-  String eventSubject(long sessionId) {
-    if (prefix == null) {
-      return String.format("event-%d", sessionId);
-    } else {
-      return String.format("%s-event-%d", prefix, sessionId);
-    }
   }
 }

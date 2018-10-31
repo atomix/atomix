@@ -15,22 +15,24 @@
  */
 package io.atomix.protocols.log.partition.impl;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import com.google.common.base.Preconditions;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
-import io.atomix.primitive.event.PrimitiveEvent;
-import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.log.protocol.AppendRequest;
 import io.atomix.protocols.log.protocol.AppendResponse;
 import io.atomix.protocols.log.protocol.BackupRequest;
 import io.atomix.protocols.log.protocol.BackupResponse;
+import io.atomix.protocols.log.protocol.ConsumeRequest;
+import io.atomix.protocols.log.protocol.ConsumeResponse;
 import io.atomix.protocols.log.protocol.LogServerProtocol;
-import io.atomix.protocols.log.protocol.ReadRequest;
-import io.atomix.protocols.log.protocol.ReadResponse;
+import io.atomix.protocols.log.protocol.RecordsRequest;
+import io.atomix.protocols.log.protocol.ResetRequest;
 import io.atomix.utils.serializer.Serializer;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 /**
  * Raft server protocol that uses a {@link ClusterCommunicationService}.
@@ -46,13 +48,22 @@ public class LogServerCommunicator implements LogServerProtocol {
     this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
   }
 
-  private <T, U> CompletableFuture<U> sendAndReceive(String subject, T request, MemberId memberId) {
-    return clusterCommunicator.send(subject, request, serializer::encode, serializer::decode, MemberId.from(memberId.id()));
+  private <T> void unicast(String subject, T request, MemberId memberId) {
+    clusterCommunicator.unicast(subject, request, serializer::encode, memberId, false);
+  }
+
+  private <T, U> CompletableFuture<U> send(String subject, T request, MemberId memberId) {
+    return clusterCommunicator.send(subject, request, serializer::encode, serializer::decode, memberId);
+  }
+
+  @Override
+  public void produce(MemberId memberId, String subject, RecordsRequest request) {
+    unicast(subject, request, memberId);
   }
 
   @Override
   public CompletableFuture<BackupResponse> backup(MemberId memberId, BackupRequest request) {
-    return sendAndReceive(context.backupSubject, request, memberId);
+    return send(context.backupSubject, request, memberId);
   }
 
   @Override
@@ -76,12 +87,22 @@ public class LogServerCommunicator implements LogServerProtocol {
   }
 
   @Override
-  public void registerReadHandler(Function<ReadRequest, CompletableFuture<ReadResponse>> handler) {
+  public void registerConsumeHandler(Function<ConsumeRequest, CompletableFuture<ConsumeResponse>> handler) {
     clusterCommunicator.subscribe(context.readSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
-  public void unregisterReadHandler() {
+  public void unregisterConsumeHandler() {
     clusterCommunicator.unsubscribe(context.readSubject);
+  }
+
+  @Override
+  public void registerResetConsumer(Consumer<ResetRequest> consumer, Executor executor) {
+    clusterCommunicator.subscribe(context.resetSubject, serializer::decode, consumer, executor);
+  }
+
+  @Override
+  public void unregisterResetConsumer() {
+    clusterCommunicator.unsubscribe(context.resetSubject);
   }
 }

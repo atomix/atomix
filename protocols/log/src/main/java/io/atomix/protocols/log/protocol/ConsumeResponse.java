@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-present Open Networking Foundation
+ * Copyright 2017-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,44 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitive.log;
-
-import io.atomix.utils.misc.ArraySizeHashPrinter;
+package io.atomix.protocols.log.protocol;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Log entry.
+ * Read response.
  */
-public class Record {
-  private final long offset;
-  private final long timestamp;
-  private final byte[] value;
+public class ConsumeResponse extends LogResponse {
 
-  public Record(long offset, long timestamp, byte[] value) {
-    this.offset = offset;
-    this.timestamp = timestamp;
-    this.value = value;
+  public static ConsumeResponse ok() {
+    return new ConsumeResponse(Status.OK);
   }
 
-  public long index() {
-    return offset;
+  public static ConsumeResponse error() {
+    return new ConsumeResponse(Status.ERROR);
   }
 
-  public long timestamp() {
-    return timestamp;
-  }
-
-  public byte[] value() {
-    return value;
+  private ConsumeResponse(Status status) {
+    super(status);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("offset", index())
-        .add("timestamp", timestamp())
-        .add("value", ArraySizeHashPrinter.of(value()))
+        .add("status", status())
         .toString();
   }
 }

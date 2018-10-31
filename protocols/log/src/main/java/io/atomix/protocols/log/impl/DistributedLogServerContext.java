@@ -30,9 +30,11 @@ import io.atomix.protocols.log.protocol.AppendResponse;
 import io.atomix.protocols.log.protocol.BackupRequest;
 import io.atomix.protocols.log.protocol.BackupResponse;
 import io.atomix.protocols.log.protocol.LogEntry;
+import io.atomix.protocols.log.protocol.LogResponse;
 import io.atomix.protocols.log.protocol.LogServerProtocol;
-import io.atomix.protocols.log.protocol.ReadRequest;
-import io.atomix.protocols.log.protocol.ReadResponse;
+import io.atomix.protocols.log.protocol.ConsumeRequest;
+import io.atomix.protocols.log.protocol.ConsumeResponse;
+import io.atomix.protocols.log.protocol.ResetRequest;
 import io.atomix.protocols.log.roles.FollowerRole;
 import io.atomix.protocols.log.roles.LeaderRole;
 import io.atomix.protocols.log.roles.LogServerRole;
@@ -51,6 +53,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.atomix.protocols.log.DistributedLogServer.Role;
@@ -324,31 +327,53 @@ public class DistributedLogServerContext implements Managed<Void> {
   /**
    * Handles an append request.
    */
-  private CompletableFuture<AppendResponse> execute(AppendRequest request) {
-    return role.append(request);
+  private CompletableFuture<AppendResponse> append(AppendRequest request) {
+    return runOnContext(() -> role.append(request));
   }
 
   /**
    * Handles a backup request.
    */
   private CompletableFuture<BackupResponse> backup(BackupRequest request) {
-    return role.backup(request);
+    return runOnContext(() -> role.backup(request));
   }
 
   /**
    * Handles a read request.
    */
-  private CompletableFuture<ReadResponse> read(ReadRequest request) {
-    return role.read(request);
+  private CompletableFuture<ConsumeResponse> consume(ConsumeRequest request) {
+    return runOnContext(() -> role.consume(request));
+  }
+
+  /**
+   * Handles a reset request.
+   */
+  private void reset(ResetRequest request) {
+    role.reset(request);
+  }
+
+  private <R extends LogResponse> CompletableFuture<R> runOnContext(Supplier<CompletableFuture<R>> function) {
+    CompletableFuture<R> future = new CompletableFuture<>();
+    threadContext.execute(() -> {
+      function.get().whenComplete((response, error) -> {
+        if (error == null) {
+          future.complete(response);
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
+    });
+    return future;
   }
 
   /**
    * Registers message listeners.
    */
   private void registerListeners() {
-    protocol.registerAppendHandler(this::execute);
+    protocol.registerAppendHandler(this::append);
     protocol.registerBackupHandler(this::backup);
-    protocol.registerReadHandler(this::read);
+    protocol.registerConsumeHandler(this::consume);
+    protocol.registerResetConsumer(this::reset, threadContext);
   }
 
   /**
@@ -357,7 +382,7 @@ public class DistributedLogServerContext implements Managed<Void> {
   private void unregisterListeners() {
     protocol.unregisterAppendHandler();
     protocol.unregisterBackupHandler();
-    protocol.unregisterReadHandler();
+    protocol.unregisterConsumeHandler();
   }
 
   @Override
