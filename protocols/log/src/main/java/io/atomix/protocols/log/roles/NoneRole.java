@@ -16,13 +16,13 @@
 package io.atomix.protocols.log.roles;
 
 import io.atomix.protocols.log.DistributedLogServer.Role;
-import io.atomix.protocols.log.impl.LogServerContext;
+import io.atomix.protocols.log.impl.DistributedLogServerContext;
 
 /**
  * None role.
  */
 public class NoneRole extends LogServerRole {
-  public NoneRole(LogServerContext service) {
+  public NoneRole(DistributedLogServerContext service) {
     super(Role.NONE, service);
   }
 }

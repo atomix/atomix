@@ -17,7 +17,7 @@ package io.atomix.protocols.log.roles;
 
 import com.google.common.collect.ImmutableList;
 import io.atomix.cluster.MemberId;
-import io.atomix.protocols.log.impl.LogServerContext;
+import io.atomix.protocols.log.impl.DistributedLogServerContext;
 import io.atomix.protocols.log.protocol.BackupOperation;
 import io.atomix.protocols.log.protocol.BackupRequest;
 import io.atomix.utils.concurrent.Scheduled;
@@ -38,11 +38,11 @@ class AsynchronousReplicator implements Replicator {
   private static final int MAX_BATCH_SIZE = 100;
   private static final long MAX_BATCH_TIME = 100;
 
-  private final LogServerContext context;
+  private final DistributedLogServerContext context;
   private final Logger log;
   private final Map<MemberId, BackupQueue> queues = new HashMap<>();
 
-  AsynchronousReplicator(LogServerContext context, Logger log) {
+  AsynchronousReplicator(DistributedLogServerContext context, Logger log) {
     this.context = context;
     this.log = log;
   }

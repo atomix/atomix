@@ -20,7 +20,7 @@ import io.atomix.primitive.Replication;
 import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.impl.DefaultMemberGroupService;
-import io.atomix.protocols.log.impl.LogServerContext;
+import io.atomix.protocols.log.impl.DistributedLogServerContext;
 import io.atomix.protocols.log.protocol.LogEntry;
 import io.atomix.protocols.log.protocol.LogServerProtocol;
 import io.atomix.storage.StorageLevel;
@@ -75,9 +75,9 @@ public class DistributedLogServer implements Managed<DistributedLogServer> {
     NONE,
   }
 
-  private final LogServerContext context;
+  private final DistributedLogServerContext context;
 
-  private DistributedLogServer(LogServerContext context) {
+  private DistributedLogServer(DistributedLogServerContext context) {
     this.context = checkNotNull(context, "context cannot be null");
   }
 
@@ -400,7 +400,7 @@ public class DistributedLogServer implements Managed<DistributedLogServer> {
           .withFlushOnCommit(flushOnCommit)
           .build();
 
-      return new DistributedLogServer(new LogServerContext(
+      return new DistributedLogServer(new DistributedLogServerContext(
           serverName,
           membershipService,
           new DefaultMemberGroupService(membershipService, memberGroupProvider),

@@ -15,12 +15,15 @@
  */
 package io.atomix.protocols.log.roles;
 
-import io.atomix.protocols.log.impl.LogServerContext;
+import java.util.concurrent.CompletableFuture;
+
+import io.atomix.protocols.log.impl.DistributedLogServerContext;
 import io.atomix.protocols.log.protocol.AppendRequest;
 import io.atomix.protocols.log.protocol.AppendResponse;
-import io.atomix.utils.concurrent.Futures;
-
-import java.util.concurrent.CompletableFuture;
+import io.atomix.protocols.log.protocol.BackupOperation;
+import io.atomix.protocols.log.protocol.LogEntry;
+import io.atomix.storage.StorageException;
+import io.atomix.storage.journal.Indexed;
 
 import static io.atomix.protocols.log.DistributedLogServer.Role;
 
@@ -30,7 +33,7 @@ import static io.atomix.protocols.log.DistributedLogServer.Role;
 public class LeaderRole extends LogServerRole {
   private final Replicator replicator;
 
-  public LeaderRole(LogServerContext context) {
+  public LeaderRole(DistributedLogServerContext context) {
     super(Role.LEADER, context);
     switch (context.replicationStrategy()) {
       case SYNCHRONOUS:
@@ -45,10 +48,17 @@ public class LeaderRole extends LogServerRole {
   }
 
   @Override
-  public CompletableFuture<AppendResponse> execute(AppendRequest request) {
+  public CompletableFuture<AppendResponse> append(AppendRequest request) {
     logRequest(request);
-    // TODO: Append entries
-    return Futures.exceptionalFuture(new IllegalArgumentException("Unknown operation type"));
+    try {
+      Indexed<LogEntry> entry = context.journal().writer().append(
+          new LogEntry(context.currentTerm(), System.currentTimeMillis(), request.value()));
+      return replicator.replicate(new BackupOperation(
+          entry.index(), entry.entry().term(), entry.entry().timestamp(), entry.entry().value()))
+          .thenApply(v -> AppendResponse.ok(entry.index()));
+    } catch (StorageException e) {
+      return CompletableFuture.completedFuture(AppendResponse.error());
+    }
   }
 
   @Override

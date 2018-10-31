@@ -23,16 +23,22 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Log entry.
  */
 public class LogEntry {
-  private final long index;
+  private final long term;
+  private final long timestamp;
   private final byte[] value;
 
-  public LogEntry(long index, byte[] value) {
-    this.index = index;
+  public LogEntry(long term, long timestamp, byte[] value) {
+    this.term = term;
+    this.timestamp = timestamp;
     this.value = value;
   }
 
-  public long index() {
-    return index;
+  public long term() {
+    return term;
+  }
+
+  public long timestamp() {
+    return timestamp;
   }
 
   public byte[] value() {
@@ -42,7 +48,8 @@ public class LogEntry {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("index", index())
+        .add("term", term())
+        .add("timestamp", timestamp())
         .add("value", ArraySizeHashPrinter.of(value))
         .toString();
   }

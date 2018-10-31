@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.log.roles;
 
-import io.atomix.protocols.log.impl.LogServerContext;
+import io.atomix.protocols.log.impl.DistributedLogServerContext;
 import io.atomix.protocols.log.protocol.AppendRequest;
 import io.atomix.protocols.log.protocol.AppendResponse;
 import io.atomix.protocols.log.protocol.BackupRequest;
@@ -39,9 +39,9 @@ import static io.atomix.protocols.log.DistributedLogServer.Role;
 public abstract class LogServerRole {
   protected final Logger log;
   private final Role role;
-  protected final LogServerContext context;
+  protected final DistributedLogServerContext context;
 
-  protected LogServerRole(Role role, LogServerContext context) {
+  protected LogServerRole(Role role, DistributedLogServerContext context) {
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(getClass())
         .addValue(context.serverName())
         .add("role", role)
@@ -81,7 +81,7 @@ public abstract class LogServerRole {
    * @param request the append request
    * @return future to be completed with the append response
    */
-  public CompletableFuture<AppendResponse> execute(AppendRequest request) {
+  public CompletableFuture<AppendResponse> append(AppendRequest request) {
     logRequest(request);
     return CompletableFuture.completedFuture(logResponse(AppendResponse.error()));
   }
@@ -92,7 +92,7 @@ public abstract class LogServerRole {
    * @param request the read request
    * @return future to be completed with the read response
    */
-  public CompletableFuture<ReadResponse> restore(ReadRequest request) {
+  public CompletableFuture<ReadResponse> read(ReadRequest request) {
     logRequest(request);
     return CompletableFuture.completedFuture(logResponse(ReadResponse.error()));
   }
