@@ -37,6 +37,8 @@ import io.atomix.protocols.log.roles.FollowerRole;
 import io.atomix.protocols.log.roles.LeaderRole;
 import io.atomix.protocols.log.roles.LogServerRole;
 import io.atomix.protocols.log.roles.NoneRole;
+import io.atomix.storage.journal.JournalReader;
+import io.atomix.storage.journal.JournalWriter;
 import io.atomix.storage.journal.SegmentedJournal;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
@@ -56,7 +58,7 @@ import static io.atomix.protocols.log.DistributedLogServer.Role;
 /**
  * Primary-backup server context.
  */
-public class LogServerContext implements Managed<Void> {
+public class DistributedLogServerContext implements Managed<Void> {
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final String serverName;
   private final MemberId memberId;
@@ -75,10 +77,12 @@ public class LogServerContext implements Managed<Void> {
   private long currentTerm;
   private long commitIndex;
   private final SegmentedJournal<LogEntry> journal;
+  private final JournalWriter<LogEntry> writer;
+  private final JournalReader<LogEntry> reader;
   private final PrimaryElectionEventListener primaryElectionListener = event -> changeRole(event.term());
   private final AtomicBoolean started = new AtomicBoolean();
 
-  public LogServerContext(
+  public DistributedLogServerContext(
       String serverName,
       ClusterMembershipService clusterMembershipService,
       ManagedMemberGroupService memberGroupService,
@@ -100,6 +104,8 @@ public class LogServerContext implements Managed<Void> {
     this.threadContext = threadContextFactory.createContext();
     this.closeOnStop = closeOnStop;
     this.journal = journal;
+    this.writer = journal.writer();
+    this.reader = journal.openReader(1);
     this.primaryElection = primaryElection;
   }
 
@@ -137,6 +143,24 @@ public class LogServerContext implements Managed<Void> {
    */
   public SegmentedJournal<LogEntry> journal() {
     return journal;
+  }
+
+  /**
+   * Returns the log server journal writer.
+   *
+   * @return the log server journal writer
+   */
+  public JournalWriter<LogEntry> writer() {
+    return writer;
+  }
+
+  /**
+   * Returns the log server journal reader.
+   *
+   * @return the log server journal reader
+   */
+  public JournalReader<LogEntry> reader() {
+    return reader;
   }
 
   /**
@@ -301,7 +325,7 @@ public class LogServerContext implements Managed<Void> {
    * Handles an append request.
    */
   private CompletableFuture<AppendResponse> execute(AppendRequest request) {
-    return role.execute(request);
+    return role.append(request);
   }
 
   /**
@@ -315,7 +339,7 @@ public class LogServerContext implements Managed<Void> {
    * Handles a read request.
    */
   private CompletableFuture<ReadResponse> read(ReadRequest request) {
-    return role.restore(request);
+    return role.read(request);
   }
 
   /**
@@ -345,6 +369,9 @@ public class LogServerContext implements Managed<Void> {
   public CompletableFuture<Void> stop() {
     unregisterListeners();
     primaryElection.removeListener(primaryElectionListener);
+    reader.close();
+    writer.close();
+    journal.close();
     started.set(false);
     return memberGroupService.stop().exceptionally(throwable -> {
       log.error("Failed stopping member group service", throwable);

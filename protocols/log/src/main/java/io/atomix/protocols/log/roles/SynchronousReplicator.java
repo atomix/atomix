@@ -16,7 +16,7 @@
 package io.atomix.protocols.log.roles;
 
 import io.atomix.cluster.MemberId;
-import io.atomix.protocols.log.impl.LogServerContext;
+import io.atomix.protocols.log.impl.DistributedLogServerContext;
 import io.atomix.protocols.log.protocol.BackupOperation;
 import io.atomix.protocols.log.protocol.BackupRequest;
 import io.atomix.protocols.log.protocol.LogResponse;
@@ -34,12 +34,12 @@ import java.util.concurrent.CompletableFuture;
  * Synchronous replicator.
  */
 class SynchronousReplicator implements Replicator {
-  private final LogServerContext context;
+  private final DistributedLogServerContext context;
   private final Logger log;
   private final Map<MemberId, BackupQueue> queues = new HashMap<>();
   private final Map<Long, CompletableFuture<Void>> futures = new LinkedHashMap<>();
 
-  SynchronousReplicator(LogServerContext context, Logger log) {
+  SynchronousReplicator(DistributedLogServerContext context, Logger log) {
     this.context = context;
     this.log = log;
   }
