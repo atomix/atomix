@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2017-present Open Networking Laboratory
+  ~ Copyright 2017-present Open Networking Foundation
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -18,18 +18,39 @@
 
   <parent>
     <groupId>io.atomix</groupId>
-    <artifactId>atomix-parent</artifactId>
+    <artifactId>atomix-protocols-parent</artifactId>
     <version>3.1.0-SNAPSHOT</version>
   </parent>
 
-  <packaging>pom</packaging>
-  <artifactId>atomix-protocols-parent</artifactId>
-  <name>Atomix Protocols Parent</name>
+  <packaging>bundle</packaging>
+  <artifactId>atomix-log</artifactId>
+  <name>Atomix Protocols :: Log</name>
 
-  <modules>
-    <module>gossip</module>
-    <module>log</module>
-    <module>primary-backup</module>
-    <module>raft</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>io.atomix</groupId>
+      <artifactId>atomix-primitive</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Export-Package>
+              io.atomix.protocols.log.*
+            </Export-Package>
+            <Import-Package>
+              !sun.nio.ch,!sun.misc,*
+            </Import-Package>
+          </instructions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
