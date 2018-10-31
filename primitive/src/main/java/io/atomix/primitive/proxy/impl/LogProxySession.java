@@ -16,16 +16,19 @@
 package io.atomix.primitive.proxy.impl;
 
 import com.google.common.base.Defaults;
+import com.google.common.collect.Maps;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.event.EventType;
 import io.atomix.primitive.event.Events;
+import io.atomix.primitive.log.LogSession;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.Operations;
-import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.ProxySession;
-import io.atomix.primitive.session.SessionClient;
+import io.atomix.primitive.service.PrimitiveService;
+import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.serializer.Serializer;
@@ -33,29 +36,38 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
- * Lazy partition proxy.
+ * Log proxy session.
  */
-public class DefaultProxySession<S> implements ProxySession<S> {
+public class LogProxySession<S> implements ProxySession<S> {
   private final Logger log = LoggerFactory.getLogger(getClass());
-  private final SessionClient session;
+  private final String name;
+  private final PrimitiveType type;
+  private final PrimitiveService service;
   private final Serializer serializer;
+  private final LogSession session;
   private final ServiceProxy<S> proxy;
-  private volatile CompletableFuture<ProxySession<S>> connectFuture;
-  private volatile boolean closed;
+  private final AtomicLong operationIndex = new AtomicLong();
+  private final Map<EventType, Method> eventMethods = Maps.newConcurrentMap();
+  private final Map<Long, CompletableFuture> futures = Maps.newConcurrentMap();
 
   @SuppressWarnings("unchecked")
-  public DefaultProxySession(SessionClient session, Class<S> serviceType, Serializer serializer) {
-    this.session = session;
-    this.serializer = serializer;
+  public LogProxySession(String name, PrimitiveType type, Class<S> serviceType, ServiceConfig serviceConfig, Serializer serializer, LogSession session) {
+    this.name = checkNotNull(name, "name cannot be null");
+    this.type = checkNotNull(type, "type cannot be null");
+    this.service = type.newService(serviceConfig);
+    this.serializer = checkNotNull(serializer, "serializer cannot be null");
+    this.session = checkNotNull(session, "session cannot be null");
     ServiceProxyHandler serviceProxyHandler = new ServiceProxyHandler(serviceType);
     S serviceProxy = (S) java.lang.reflect.Proxy.newProxyInstance(serviceType.getClassLoader(), new Class[]{serviceType}, serviceProxyHandler);
     proxy = new ServiceProxy<>(serviceProxy, serviceProxyHandler);
@@ -63,12 +75,12 @@ public class DefaultProxySession<S> implements ProxySession<S> {
 
   @Override
   public String name() {
-    return session.name();
+    return name;
   }
 
   @Override
   public PrimitiveType type() {
-    return session.type();
+    return type;
   }
 
   @Override
@@ -88,20 +100,12 @@ public class DefaultProxySession<S> implements ProxySession<S> {
 
   @Override
   public void register(Object client) {
-    Events.getEventMap(client.getClass()).forEach((eventType, method) -> {
-      session.addEventListener(eventType, event -> {
-        try {
-          method.invoke(client, (Object[]) decode(event.value()));
-        } catch (IllegalAccessException | InvocationTargetException e) {
-          log.warn("Failed to handle event", e);
-        }
-      });
-    });
+    Events.getEventMap(client.getClass()).forEach((eventType, method) -> eventMethods.put(eventType, method));
   }
 
   @Override
   public CompletableFuture<Void> accept(Consumer<S> operation) {
-    if (closed) {
+    if (session.getState() == PrimitiveState.CLOSED) {
       return Futures.exceptionalFuture(new PrimitiveException.ClosedSession());
     }
     return proxy.accept(operation);
@@ -109,7 +113,7 @@ public class DefaultProxySession<S> implements ProxySession<S> {
 
   @Override
   public <R> CompletableFuture<R> apply(Function<S, R> operation) {
-    if (closed) {
+    if (session.getState() == PrimitiveState.CLOSED) {
       return Futures.exceptionalFuture(new PrimitiveException.ClosedSession());
     }
     return proxy.apply(operation);
@@ -127,24 +131,17 @@ public class DefaultProxySession<S> implements ProxySession<S> {
 
   @Override
   public CompletableFuture<ProxySession<S>> connect() {
-    if (connectFuture == null) {
-      synchronized (this) {
-        if (connectFuture == null) {
-          connectFuture = session.connect().thenApply(v -> this);
-        }
-      }
-    }
-    return connectFuture;
+    return CompletableFuture.completedFuture(this);
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return session.close().thenRun(() -> closed = true);
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public CompletableFuture<Void> delete() {
-    return session.delete().thenRun(() -> closed = true);
+    return CompletableFuture.completedFuture(null);
   }
 
   /**
@@ -231,9 +228,11 @@ public class DefaultProxySession<S> implements ProxySession<S> {
     public Object invoke(Object object, Method method, Object[] args) throws Throwable {
       OperationId operationId = operations.get(method);
       if (operationId != null) {
-        future.set(connect()
-            .thenCompose(v -> session.execute(PrimitiveOperation.operation(operationId, encode(args))))
-            .thenApply(DefaultProxySession.this::decode));
+        CompletableFuture future = new CompletableFuture();
+        this.future.set(future);
+        long index = operationIndex.incrementAndGet();
+        futures.put(index, future);
+        session.producer().append(encode(new LogOperation(session.sessionId(), index, operationId, encode(args))));
       } else {
         throw new PrimitiveException("Unknown primitive operation: " + method.getName());
       }
