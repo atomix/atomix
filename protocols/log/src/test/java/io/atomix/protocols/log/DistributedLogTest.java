@@ -23,14 +23,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.atomix.cluster.MemberId;
@@ -116,6 +119,51 @@ public class DistributedLogTest extends ConcurrentTestCase {
     await(5000);
   }
 
+  @Test
+  public void testConsumeAfterSizeCompact() throws Throwable {
+    List<DistributedLogServer> servers = createServers(3);
+    DistributedLogClient client1 = createClient();
+    LogSession session1 = createSession(client1);
+    DistributedLogClient client2 = createClient();
+    LogSession session2 = createSession(client2);
+
+    Predicate<List<DistributedLogServer>> predicate = s ->
+        s.stream().map(sr -> sr.context.journal().segments().size() > 2).reduce(Boolean::logicalOr).orElse(false);
+    while (!predicate.test(servers)) {
+      session1.producer().append(UUID.randomUUID().toString().getBytes());
+    }
+    servers.forEach(server -> server.context.compact());
+
+    session2.consumer().consume(1, record -> {
+      threadAssertTrue(record.index() > 1);
+      resume();
+    });
+    await(5000);
+  }
+
+  @Test
+  public void testConsumeAfterAgeCompact() throws Throwable {
+    List<DistributedLogServer> servers = createServers(3);
+    DistributedLogClient client1 = createClient();
+    LogSession session1 = createSession(client1);
+    DistributedLogClient client2 = createClient();
+    LogSession session2 = createSession(client2);
+
+    Predicate<List<DistributedLogServer>> predicate = s ->
+        s.stream().map(sr -> sr.context.journal().segments().size() > 1).reduce(Boolean::logicalOr).orElse(false);
+    while (!predicate.test(servers)) {
+      session1.producer().append(UUID.randomUUID().toString().getBytes());
+    }
+    Thread.sleep(1000);
+    servers.forEach(server -> server.context.compact());
+
+    session2.consumer().consume(1, record -> {
+      threadAssertTrue(record.index() > 1);
+      resume();
+    });
+    await(5000);
+  }
+
   /**
    * Returns the next unique member identifier.
    *
@@ -161,6 +209,9 @@ public class DistributedLogTest extends ConcurrentTestCase {
         .withMemberGroupProvider(MemberGroupStrategy.NODE_AWARE)
         .withPrimaryElection(election)
         .withDirectory(new File("target/test-logs", memberId.id()))
+        .withMaxSegmentSize(1024 * 8)
+        .withMaxLogSize(1024)
+        .withMaxLogAge(Duration.ofMillis(10))
         .build();
     servers.add(server);
     return server;

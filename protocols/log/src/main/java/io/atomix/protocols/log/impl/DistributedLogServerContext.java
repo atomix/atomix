@@ -16,6 +16,7 @@
 package io.atomix.protocols.log.impl;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -295,7 +296,10 @@ public class DistributedLogServerContext implements Managed<Void> {
       JournalSegment<LogEntry> compactSegment = null;
       Long compactIndex = null;
       for (JournalSegment<LogEntry> segment : journal.segments()) {
-        if (journal.segments(segment.lastIndex() + 1).size() > maxLogSize) {
+        Collection<JournalSegment<LogEntry>> remainingSegments = journal.segments(segment.lastIndex() + 1);
+        long remainingSize = remainingSegments.stream().mapToLong(JournalSegment::size).sum();
+        if (remainingSize > maxLogSize) {
+          log.debug("Found outsize journal segment {}", segment.file().file());
           compactSegment = segment;
         } else if (compactSegment != null) {
           compactIndex = segment.index();
@@ -304,7 +308,7 @@ public class DistributedLogServerContext implements Managed<Void> {
       }
 
       if (compactIndex != null) {
-        log.info("Compacting journal up to {}", compactIndex);
+        log.info("Compacting journal by size up to {}", compactIndex);
         journal.compact(compactIndex);
       }
     }
@@ -320,6 +324,7 @@ public class DistributedLogServerContext implements Managed<Void> {
       Long compactIndex = null;
       for (JournalSegment<LogEntry> segment : journal.segments()) {
         if (currentTime - segment.descriptor().updated() > maxLogAge.toMillis()) {
+          log.debug("Found expired journal segment {}", segment.file().file());
           compactSegment = segment;
         } else if (compactSegment != null) {
           compactIndex = segment.index();
@@ -328,7 +333,7 @@ public class DistributedLogServerContext implements Managed<Void> {
       }
 
       if (compactIndex != null) {
-        log.info("Compacting journal up to {}", compactIndex);
+        log.info("Compacting journal by age up to {}", compactIndex);
         journal.compact(compactIndex);
       }
     }

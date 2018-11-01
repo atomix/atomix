@@ -268,6 +268,9 @@ public class DistributedLogSession implements LogSession {
      * @param request the request to handle
      */
     private void handleRecords(RecordsRequest request) {
+      if (request.reset()) {
+        index = request.record().index() - 1;
+      }
       if (request.record().index() == index + 1) {
         Consumer<LogRecord> consumer = this.consumer;
         if (consumer != null) {
