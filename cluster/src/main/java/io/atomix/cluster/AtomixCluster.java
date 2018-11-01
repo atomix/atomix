@@ -298,6 +298,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
 
   protected CompletableFuture<Void> startServices() {
     return messagingService.start()
+        .thenComposeAsync(v -> unicastService.start(), threadContext)
         .thenComposeAsync(v -> broadcastService.start(), threadContext)
         .thenComposeAsync(v -> membershipService.start(), threadContext)
         .thenComposeAsync(v -> communicationService.start(), threadContext)
@@ -334,6 +335,8 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
         .thenComposeAsync(v -> membershipService.stop(), threadContext)
         .exceptionally(e -> null)
         .thenComposeAsync(v -> broadcastService.stop(), threadContext)
+        .exceptionally(e -> null)
+        .thenComposeAsync(v -> unicastService.stop(), threadContext)
         .exceptionally(e -> null)
         .thenComposeAsync(v -> messagingService.stop(), threadContext)
         .exceptionally(e -> null);
