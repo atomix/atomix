@@ -45,9 +45,9 @@ public abstract class AbstractAtomicLockService extends AbstractPrimitiveService
       .register(SessionId.class)
       .build());
 
-  private LockHolder lock;
-  private Queue<LockHolder> queue = new ArrayDeque<>();
-  private final Map<Long, Scheduled> timers = new HashMap<>();
+  LockHolder lock;
+  Queue<LockHolder> queue = new ArrayDeque<>();
+  final Map<Long, Scheduled> timers = new HashMap<>();
 
   public AbstractAtomicLockService(PrimitiveType primitiveType) {
     super(primitiveType, AtomicLockClient.class);
@@ -60,13 +60,20 @@ public abstract class AbstractAtomicLockService extends AbstractPrimitiveService
 
   @Override
   public void backup(BackupOutput output) {
-    output.writeObject(lock);
+    if (lock != null) {
+      output.writeBoolean(true);
+      output.writeObject(lock);
+    } else {
+      output.writeBoolean(false);
+    }
     output.writeObject(queue);
   }
 
   @Override
   public void restore(BackupInput input) {
-    lock = input.readObject();
+    if (input.readBoolean()) {
+      lock = input.readObject();
+    }
     queue = input.readObject();
 
     // After the snapshot is installed, we need to cancel any existing timers and schedule new ones based on the
@@ -224,13 +231,13 @@ public abstract class AbstractAtomicLockService extends AbstractPrimitiveService
     }
   }
 
-  private class LockHolder {
-    private final int id;
-    private final long index;
-    private final SessionId session;
-    private final long expire;
+  class LockHolder {
+    final int id;
+    final long index;
+    final SessionId session;
+    final long expire;
 
-    public LockHolder(int id, long index, SessionId session, long expire) {
+    LockHolder(int id, long index, SessionId session, long expire) {
       this.id = id;
       this.index = index;
       this.session = session;
