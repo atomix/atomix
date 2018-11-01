@@ -49,7 +49,7 @@ class AsynchronousReplicator implements Replicator {
 
   @Override
   public CompletableFuture<Void> replicate(BackupOperation operation) {
-    for (MemberId backup : context.backups()) {
+    for (MemberId backup : context.followers()) {
       queues.computeIfAbsent(backup, BackupQueue::new).add(operation);
     }
     context.setCommitIndex(operation.index());

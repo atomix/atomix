@@ -29,7 +29,7 @@ import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.log.LogConsumer;
 import io.atomix.primitive.log.LogProducer;
 import io.atomix.primitive.log.LogSession;
-import io.atomix.primitive.log.Record;
+import io.atomix.primitive.log.LogRecord;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
@@ -220,7 +220,7 @@ public class DistributedLogSession implements LogSession {
   private class DistributedLogConsumer implements LogConsumer {
     private MemberId leader;
     private long index;
-    private volatile Consumer<Record> consumer;
+    private volatile Consumer<LogRecord> consumer;
 
     /**
      * Registers the consumer with the given leader.
@@ -252,7 +252,7 @@ public class DistributedLogSession implements LogSession {
      */
     private void handleRecords(RecordsRequest request) {
       if (request.record().index() == index + 1) {
-        Consumer<Record> consumer = this.consumer;
+        Consumer<LogRecord> consumer = this.consumer;
         if (consumer != null) {
           consumer.accept(request.record());
           index = request.record().index();
@@ -263,7 +263,7 @@ public class DistributedLogSession implements LogSession {
     }
 
     @Override
-    public CompletableFuture<Void> consume(long index, Consumer<Record> consumer) {
+    public CompletableFuture<Void> consume(long index, Consumer<LogRecord> consumer) {
       return term().thenCompose(term -> {
         protocol.registerRecordsConsumer(subject, this::handleRecords, threadContext);
         this.consumer = consumer;

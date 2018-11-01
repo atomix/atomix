@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
 
 import com.google.common.collect.Maps;
 import io.atomix.cluster.MemberId;
-import io.atomix.primitive.log.Record;
+import io.atomix.primitive.log.LogRecord;
 import io.atomix.protocols.log.impl.DistributedLogServerContext;
 import io.atomix.protocols.log.protocol.AppendRequest;
 import io.atomix.protocols.log.protocol.AppendResponse;
@@ -135,7 +135,7 @@ public class LeaderRole extends LogServerRole {
       context.threadContext().execute(() -> {
         if (reader.hasNext()) {
           Indexed<LogEntry> entry = reader.next();
-          RecordsRequest request = RecordsRequest.request(new Record(entry.index(), entry.entry().timestamp(), entry.entry().value()));
+          RecordsRequest request = RecordsRequest.request(new LogRecord(entry.index(), entry.entry().timestamp(), entry.entry().value()));
           context.protocol().produce(memberId, subject, request);
           next();
         }
