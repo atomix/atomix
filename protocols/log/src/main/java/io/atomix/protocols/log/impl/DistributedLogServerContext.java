@@ -336,7 +336,11 @@ public class DistributedLogServerContext implements Managed<Void> {
       MemberGroup group = memberGroupService.getMemberGroup(clusterMembershipService.getLocalMember());
       primaryElection.addListener(primaryElectionListener);
       if (group != null) {
-        return primaryElection.enter(new GroupMember(clusterMembershipService.getLocalMember().id(), group.id()));
+        return primaryElection.enter(new GroupMember(clusterMembershipService.getLocalMember().id(), group.id()))
+            .thenApplyAsync(term -> {
+              changeRole(term);
+              return null;
+            }, threadContext);
       }
       return CompletableFuture.completedFuture(null);
     }, threadContext).thenApply(v -> {
@@ -450,6 +454,7 @@ public class DistributedLogServerContext implements Managed<Void> {
     protocol.unregisterAppendHandler();
     protocol.unregisterBackupHandler();
     protocol.unregisterConsumeHandler();
+    protocol.unregisterResetConsumer();
   }
 
   @Override
@@ -461,12 +466,10 @@ public class DistributedLogServerContext implements Managed<Void> {
   public CompletableFuture<Void> stop() {
     unregisterListeners();
     primaryElection.removeListener(primaryElectionListener);
-    reader.close();
-    writer.close();
-    journal.close();
     if (compactTimer != null) {
       compactTimer.cancel();
     }
+    journal.close();
     started.set(false);
     return memberGroupService.stop().exceptionally(throwable -> {
       log.error("Failed stopping member group service", throwable);

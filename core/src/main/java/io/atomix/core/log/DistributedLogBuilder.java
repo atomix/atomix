@@ -17,23 +17,23 @@ package io.atomix.core.log;
 
 import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
+import io.atomix.primitive.protocol.LogCompatibleBuilder;
+import io.atomix.primitive.protocol.LogProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
-import io.atomix.primitive.protocol.ProxyCompatibleBuilder;
-import io.atomix.primitive.protocol.ProxyProtocol;
 
 /**
  * Builder for DistributedLog.
  */
 public abstract class DistributedLogBuilder<E>
     extends PrimitiveBuilder<DistributedLogBuilder<E>, DistributedLogConfig, DistributedLog<E>>
-    implements ProxyCompatibleBuilder<DistributedLogBuilder<E>> {
+    implements LogCompatibleBuilder<DistributedLogBuilder<E>> {
 
   protected DistributedLogBuilder(String name, DistributedLogConfig config, PrimitiveManagementService managementService) {
     super(DistributedLogType.instance(), name, config, managementService);
   }
 
   @Override
-  public DistributedLogBuilder<E> withProtocol(ProxyProtocol protocol) {
+  public DistributedLogBuilder<E> withProtocol(LogProtocol protocol) {
     return withProtocol((PrimitiveProtocol) protocol);
   }
 }

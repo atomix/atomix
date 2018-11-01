@@ -244,12 +244,13 @@ public class AtomixTest extends AbstractAtomixTest {
         .build();
 
     CountDownLatch latch = new CountDownLatch(1);
-    log2.addConsumer(value -> {
+    log2.consume(value -> {
       System.out.println("Hello world!");
       latch.countDown();
     });
     log1.produce("Hello world!");
     latch.await(10, TimeUnit.SECONDS);
+    assertEquals(0, latch.getCount());
   }
 
   @Test

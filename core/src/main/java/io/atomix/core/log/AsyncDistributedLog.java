@@ -15,11 +15,11 @@
  */
 package io.atomix.core.log;
 
-import io.atomix.primitive.AsyncPrimitive;
-
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+
+import io.atomix.primitive.AsyncPrimitive;
 
 /**
  * Asynchronous distributed log primitive.
@@ -40,15 +40,18 @@ public interface AsyncDistributedLog<E> extends AsyncPrimitive {
    * @param consumer the log consumer
    * @return a future to be completed once the consumer has been added
    */
-  CompletableFuture<Void> addConsumer(Consumer<E> consumer);
+  default CompletableFuture<Void> consume(Consumer<Record<E>> consumer) {
+    return consume(1, consumer);
+  }
 
   /**
-   * Removes a consumer from the log.
+   * Adds a consumer to the log.
    *
-   * @param consumer the consumer to remove
-   * @return a future to be completed once the consumer has been removed
+   * @param offset the offset from which to begin consuming the log
+   * @param consumer the log consumer
+   * @return a future to be completed once the consumer has been added
    */
-  CompletableFuture<Void> removeConsumer(Consumer<E> consumer);
+  CompletableFuture<Void> consume(long offset, Consumer<Record<E>> consumer);
 
   @Override
   default DistributedLog<E> sync() {

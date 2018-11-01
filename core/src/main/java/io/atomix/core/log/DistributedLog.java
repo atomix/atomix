@@ -15,9 +15,9 @@
  */
 package io.atomix.core.log;
 
-import io.atomix.primitive.SyncPrimitive;
-
 import java.util.function.Consumer;
+
+import io.atomix.primitive.SyncPrimitive;
 
 /**
  * Distributed log primitive.
@@ -36,14 +36,17 @@ public interface DistributedLog<E> extends SyncPrimitive {
    *
    * @param consumer the log consumer
    */
-  void addConsumer(Consumer<E> consumer);
+  default void consume(Consumer<Record<E>> consumer) {
+    consume(1, consumer);
+  }
 
   /**
-   * Removes a consumer from the log.
+   * Adds a consumer to the log.
    *
-   * @param consumer the consumer to remove
+   * @param offset the offset from which to begin consuming the log
+   * @param consumer the log consumer
    */
-  void removeConsumer(Consumer<E> consumer);
+  void consume(long offset, Consumer<Record<E>> consumer);
 
   @Override
   AsyncDistributedLog<E> async();
