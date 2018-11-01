@@ -15,7 +15,21 @@
  */
 package io.atomix.cluster.messaging.impl;
 
+import java.net.ConnectException;
+import java.time.Duration;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import com.google.common.base.Objects;
+import com.google.common.collect.Maps;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
@@ -27,18 +41,6 @@ import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.net.Address;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.ConnectException;
-import java.time.Duration;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -57,6 +59,7 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
   protected final ClusterMembershipService membershipService;
   protected final MessagingService messagingService;
   protected final UnicastService unicastService;
+  private final Map<String, BiConsumer<Address, byte[]>> unicastConsumers = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
 
   public DefaultClusterCommunicationService(
@@ -159,6 +162,10 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
   @Override
   public void unsubscribe(String subject) {
     messagingService.unregisterHandler(subject);
+    BiConsumer<Address, byte[]> consumer = unicastConsumers.get(subject);
+    if (consumer != null) {
+      unicastService.removeListener(subject, consumer);
+    }
   }
 
   @Override
@@ -196,17 +203,19 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
                                                Function<byte[], M> decoder,
                                                Consumer<M> handler,
                                                Executor executor) {
-    messagingService.registerHandler(subject,
-        new InternalMessageConsumer<>(decoder, handler),
-        executor);
+    messagingService.registerHandler(subject, new InternalMessageConsumer<>(decoder, handler), executor);
+    BiConsumer<Address, byte[]> unicastConsumer = new InternalMessageConsumer<>(decoder, handler);
+    unicastConsumers.put(subject, unicastConsumer);
+    unicastService.addListener(subject, unicastConsumer, executor);
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public <M> CompletableFuture<Void> subscribe(String subject, Function<byte[], M> decoder, BiConsumer<Address, M> handler, Executor executor) {
-    messagingService.registerHandler(subject,
-        new InternalMessageBiConsumer<>(decoder, handler),
-        executor);
+    messagingService.registerHandler(subject, new InternalMessageBiConsumer<>(decoder, handler), executor);
+    BiConsumer<Address, byte[]> unicastConsumer = new InternalMessageBiConsumer<>(decoder, handler);
+    unicastConsumers.put(subject, unicastConsumer);
+    unicastService.addListener(subject, unicastConsumer, executor);
     return CompletableFuture.completedFuture(null);
   }
 
