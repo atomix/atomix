@@ -29,10 +29,10 @@ import io.atomix.utils.concurrent.Futures;
  * Test server protocol.
  */
 public class TestLogServerProtocol extends TestLogProtocol implements LogServerProtocol {
-  private Function<AppendRequest, CompletableFuture<AppendResponse>> appendHandler;
-  private Function<BackupRequest, CompletableFuture<BackupResponse>> backupHandler;
-  private Function<ConsumeRequest, CompletableFuture<ConsumeResponse>> consumeHandler;
-  private Consumer<ResetRequest> resetConsumer;
+  private volatile Function<AppendRequest, CompletableFuture<AppendResponse>> appendHandler;
+  private volatile Function<BackupRequest, CompletableFuture<BackupResponse>> backupHandler;
+  private volatile Function<ConsumeRequest, CompletableFuture<ConsumeResponse>> consumeHandler;
+  private volatile Consumer<ResetRequest> resetConsumer;
 
   public TestLogServerProtocol(MemberId memberId, Map<MemberId, TestLogServerProtocol> servers, Map<MemberId, TestLogClientProtocol> clients) {
     super(servers, clients);
@@ -68,6 +68,7 @@ public class TestLogServerProtocol extends TestLogProtocol implements LogServerP
   }
 
   CompletableFuture<AppendResponse> append(AppendRequest request) {
+    Function<AppendRequest, CompletableFuture<AppendResponse>> appendHandler = this.appendHandler;
     if (appendHandler != null) {
       return appendHandler.apply(request);
     } else {
@@ -76,6 +77,7 @@ public class TestLogServerProtocol extends TestLogProtocol implements LogServerP
   }
 
   CompletableFuture<ConsumeResponse> consume(ConsumeRequest request) {
+    Function<ConsumeRequest, CompletableFuture<ConsumeResponse>> consumeHandler = this.consumeHandler;
     if (consumeHandler != null) {
       return consumeHandler.apply(request);
     } else {
@@ -84,12 +86,14 @@ public class TestLogServerProtocol extends TestLogProtocol implements LogServerP
   }
 
   void reset(ResetRequest request) {
+    Consumer<ResetRequest> resetConsumer = this.resetConsumer;
     if (resetConsumer != null) {
       resetConsumer.accept(request);
     }
   }
 
   CompletableFuture<BackupResponse> backup(BackupRequest request) {
+    Function<BackupRequest, CompletableFuture<BackupResponse>> backupHandler = this.backupHandler;
     if (backupHandler != null) {
       return backupHandler.apply(request);
     } else {

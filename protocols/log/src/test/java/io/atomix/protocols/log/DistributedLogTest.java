@@ -95,6 +95,27 @@ public class DistributedLogTest extends ConcurrentTestCase {
     await(5000);
   }
 
+  @Test
+  public void testConsumeIndex() throws Throwable {
+    createServers(3);
+    DistributedLogClient client1 = createClient();
+    LogSession session1 = createSession(client1);
+    DistributedLogClient client2 = createClient();
+    LogSession session2 = createSession(client2);
+
+    for (int i = 1; i <= 10; i++) {
+      session2.producer().append(String.valueOf(i).getBytes()).join();
+    }
+
+    session1.consumer().consume(10, record -> {
+      threadAssertTrue(record.index() == 10);
+      threadAssertTrue(Arrays.equals("10".getBytes(), record.value()));
+      resume();
+    });
+
+    await(5000);
+  }
+
   /**
    * Returns the next unique member identifier.
    *

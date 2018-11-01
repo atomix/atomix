@@ -79,9 +79,9 @@ public class LeaderRole extends LogServerRole {
   public CompletableFuture<ConsumeResponse> consume(ConsumeRequest request) {
     logRequest(request);
     JournalReader<LogEntry> reader = context.journal().openReader(request.index(), JournalReader.Mode.COMMITS);
-    consumers.put(
-        new ConsumerKey(request.memberId(), request.subject()),
-        new ConsumerSender(request.memberId(), request.subject(), reader));
+    ConsumerSender consumer = new ConsumerSender(request.memberId(), request.subject(), reader);
+    consumers.put(new ConsumerKey(request.memberId(), request.subject()), consumer);
+    consumer.next();
     return CompletableFuture.completedFuture(logResponse(ConsumeResponse.ok()));
   }
 
@@ -136,6 +136,7 @@ public class LeaderRole extends LogServerRole {
         if (reader.hasNext()) {
           Indexed<LogEntry> entry = reader.next();
           RecordsRequest request = RecordsRequest.request(new LogRecord(entry.index(), entry.entry().timestamp(), entry.entry().value()));
+          log.trace("Sending {} to {} at {}", request, memberId, subject);
           context.protocol().produce(memberId, subject, request);
           next();
         }
