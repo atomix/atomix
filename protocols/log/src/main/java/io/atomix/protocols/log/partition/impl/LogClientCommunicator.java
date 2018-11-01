@@ -76,7 +76,7 @@ public class LogClientCommunicator implements LogClientProtocol {
 
   @Override
   public CompletableFuture<ConsumeResponse> consume(MemberId memberId, ConsumeRequest request) {
-    return send(context.readSubject, request, memberId);
+    return send(context.consumeSubject, request, memberId);
   }
 
   @Override

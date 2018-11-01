@@ -20,13 +20,13 @@ package io.atomix.protocols.log.partition.impl;
  */
 class LogMessageContext {
   final String appendSubject;
-  final String readSubject;
+  final String consumeSubject;
   final String resetSubject;
   final String backupSubject;
 
   LogMessageContext(String prefix) {
     this.appendSubject = getSubject(prefix, "append");
-    this.readSubject = getSubject(prefix, "read");
+    this.consumeSubject = getSubject(prefix, "read");
     this.resetSubject = getSubject(prefix, "reset");
     this.backupSubject = getSubject(prefix, "backup");
   }

@@ -68,10 +68,10 @@ public class LeaderRole extends LogServerRole {
           entry.index(), entry.entry().term(), entry.entry().timestamp(), entry.entry().value()))
           .thenApply(v -> {
             consumers.values().forEach(consumer -> consumer.next());
-            return AppendResponse.ok(entry.index());
+            return logResponse(AppendResponse.ok(entry.index()));
           });
     } catch (StorageException e) {
-      return CompletableFuture.completedFuture(AppendResponse.error());
+      return CompletableFuture.completedFuture(logResponse(AppendResponse.error()));
     }
   }
 
@@ -133,10 +133,12 @@ public class LeaderRole extends LogServerRole {
         return;
       }
       context.threadContext().execute(() -> {
-        Indexed<LogEntry> entry = reader.next();
-        RecordsRequest request = RecordsRequest.request(new Record(entry.index(), entry.entry().timestamp(), entry.entry().value()));
-        context.protocol().produce(memberId, subject, request);
-        next();
+        if (reader.hasNext()) {
+          Indexed<LogEntry> entry = reader.next();
+          RecordsRequest request = RecordsRequest.request(new Record(entry.index(), entry.entry().timestamp(), entry.entry().value()));
+          context.protocol().produce(memberId, subject, request);
+          next();
+        }
       });
     }
 
