@@ -19,6 +19,7 @@ import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.protocols.log.DistributedLogServer;
 import io.atomix.protocols.log.partition.LogPartition;
+import io.atomix.protocols.log.partition.LogPartitionGroupConfig;
 import io.atomix.protocols.log.serializer.impl.LogNamespaces;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.ThreadContextFactory;
@@ -36,7 +37,7 @@ public class LogPartitionServer implements Managed<LogPartitionServer> {
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final LogPartition partition;
   private final PartitionManagementService managementService;
-  private final MemberGroupProvider memberGroupProvider;
+  private final LogPartitionGroupConfig config;
   private final ThreadContextFactory threadFactory;
   private DistributedLogServer server;
   private final AtomicBoolean started = new AtomicBoolean();
@@ -44,11 +45,11 @@ public class LogPartitionServer implements Managed<LogPartitionServer> {
   public LogPartitionServer(
       LogPartition partition,
       PartitionManagementService managementService,
-      MemberGroupProvider memberGroupProvider,
+      LogPartitionGroupConfig config,
       ThreadContextFactory threadFactory) {
     this.partition = partition;
     this.managementService = managementService;
-    this.memberGroupProvider = memberGroupProvider;
+    this.config = config;
     this.threadFactory = threadFactory;
   }
 
@@ -73,12 +74,19 @@ public class LogPartitionServer implements Managed<LogPartitionServer> {
     return DistributedLogServer.builder()
         .withServerName(partition.name())
         .withMembershipService(managementService.getMembershipService())
-        .withMemberGroupProvider(memberGroupProvider)
+        .withMemberGroupProvider(config.getMemberGroupProvider())
         .withProtocol(new LogServerCommunicator(
             partition.name(),
             Serializer.using(LogNamespaces.PROTOCOL),
             managementService.getMessagingService()))
         .withPrimaryElection(managementService.getElectionService().getElectionFor(partition.id()))
+        .withStorageLevel(config.getStorageConfig().getLevel())
+        .withDirectory(config.getStorageConfig().getDirectory(partition.name()))
+        .withMaxSegmentSize((int) config.getStorageConfig().getSegmentSize().bytes())
+        .withMaxEntrySize((int) config.getStorageConfig().getMaxEntrySize().bytes())
+        .withFlushOnCommit(config.getStorageConfig().isFlushOnCommit())
+        .withMaxLogSize(config.getCompactionConfig().getSize().bytes())
+        .withMaxLogAge(config.getCompactionConfig().getAge())
         .withThreadContextFactory(threadFactory)
         .build();
   }

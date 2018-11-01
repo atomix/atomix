@@ -15,6 +15,11 @@
  */
 package io.atomix.protocols.raft.partition.impl;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import com.google.common.base.Preconditions;
 import io.atomix.cluster.MemberId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
@@ -55,11 +60,6 @@ import io.atomix.protocols.raft.protocol.TransferResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.utils.serializer.Serializer;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * Raft server protocol that uses a {@link ClusterCommunicationService}.
@@ -160,7 +160,7 @@ public class RaftServerCommunicator implements RaftServerProtocol {
 
   @Override
   public void publish(MemberId memberId, PublishRequest request) {
-    clusterCommunicator.unicast(context.publishSubject(request.session()), request, serializer::encode, MemberId.from(memberId.id()));
+    clusterCommunicator.unicast(context.publishSubject(request.session()), request, serializer::encode, memberId);
   }
 
   @Override

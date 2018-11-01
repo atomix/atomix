@@ -25,7 +25,7 @@ import io.atomix.primitive.protocol.ProxyProtocol;
  * Builder for DistributedLog.
  */
 public abstract class DistributedLogBuilder<E>
-    extends PrimitiveBuilder<DistributedLogBuilder<E>, DistributedLogConfig, DistributedLog>
+    extends PrimitiveBuilder<DistributedLogBuilder<E>, DistributedLogConfig, DistributedLog<E>>
     implements ProxyCompatibleBuilder<DistributedLogBuilder<E>> {
 
   protected DistributedLogBuilder(String name, DistributedLogConfig config, PrimitiveManagementService managementService) {

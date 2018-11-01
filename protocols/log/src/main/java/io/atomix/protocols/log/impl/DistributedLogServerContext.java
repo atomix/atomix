@@ -15,6 +15,14 @@
  */
 package io.atomix.protocols.log.impl;
 
+import java.time.Duration;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.Replication;
@@ -29,32 +37,27 @@ import io.atomix.protocols.log.protocol.AppendRequest;
 import io.atomix.protocols.log.protocol.AppendResponse;
 import io.atomix.protocols.log.protocol.BackupRequest;
 import io.atomix.protocols.log.protocol.BackupResponse;
+import io.atomix.protocols.log.protocol.ConsumeRequest;
+import io.atomix.protocols.log.protocol.ConsumeResponse;
 import io.atomix.protocols.log.protocol.LogEntry;
 import io.atomix.protocols.log.protocol.LogResponse;
 import io.atomix.protocols.log.protocol.LogServerProtocol;
-import io.atomix.protocols.log.protocol.ConsumeRequest;
-import io.atomix.protocols.log.protocol.ConsumeResponse;
 import io.atomix.protocols.log.protocol.ResetRequest;
 import io.atomix.protocols.log.roles.FollowerRole;
 import io.atomix.protocols.log.roles.LeaderRole;
 import io.atomix.protocols.log.roles.LogServerRole;
 import io.atomix.protocols.log.roles.NoneRole;
 import io.atomix.storage.journal.JournalReader;
+import io.atomix.storage.journal.JournalSegment;
 import io.atomix.storage.journal.JournalWriter;
 import io.atomix.storage.journal.SegmentedJournal;
 import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static io.atomix.protocols.log.DistributedLogServer.Role;
 
@@ -82,6 +85,9 @@ public class DistributedLogServerContext implements Managed<Void> {
   private final SegmentedJournal<LogEntry> journal;
   private final JournalWriter<LogEntry> writer;
   private final JournalReader<LogEntry> reader;
+  private final long maxLogSize;
+  private final Duration maxLogAge;
+  private Scheduled compactTimer;
   private final PrimaryElectionEventListener primaryElectionListener = event -> changeRole(event.term());
   private final AtomicBoolean started = new AtomicBoolean();
 
@@ -94,6 +100,8 @@ public class DistributedLogServerContext implements Managed<Void> {
       int replicationFactor,
       Replication replicationStrategy,
       SegmentedJournal<LogEntry> journal,
+      long maxLogSize,
+      Duration maxLogAge,
       ThreadContextFactory threadContextFactory,
       boolean closeOnStop) {
     this.serverName = serverName;
@@ -109,6 +117,8 @@ public class DistributedLogServerContext implements Managed<Void> {
     this.journal = journal;
     this.writer = journal.writer();
     this.reader = journal.openReader(1);
+    this.maxLogSize = maxLogSize;
+    this.maxLogAge = maxLogAge;
     this.primaryElection = primaryElection;
   }
 
@@ -250,6 +260,7 @@ public class DistributedLogServerContext implements Managed<Void> {
    */
   public long setCommitIndex(long commitIndex) {
     this.commitIndex = Math.max(this.commitIndex, commitIndex);
+    writer.commit(this.commitIndex);
     return this.commitIndex;
   }
 
@@ -262,17 +273,73 @@ public class DistributedLogServerContext implements Managed<Void> {
     return commitIndex;
   }
 
+  /**
+   * Compacts logs if necessary.
+   */
+  public void compact() {
+    compactBySize();
+    compactByAge();
+  }
+
+  /**
+   * Compacts the log by size.
+   */
+  private void compactBySize() {
+    if (maxLogSize > 0 && journal.size() > maxLogSize) {
+      JournalSegment<LogEntry> compactSegment = null;
+      Long compactIndex = null;
+      for (JournalSegment<LogEntry> segment : journal.segments()) {
+        if (journal.segments(segment.lastIndex() + 1).size() > maxLogSize) {
+          compactSegment = segment;
+        } else if (compactSegment != null) {
+          compactIndex = segment.index();
+          break;
+        }
+      }
+
+      if (compactIndex != null) {
+        log.info("Compacting journal up to {}", compactIndex);
+        journal.compact(compactIndex);
+      }
+    }
+  }
+
+  /**
+   * Compacts the log by age.
+   */
+  private void compactByAge() {
+    if (maxLogAge != null) {
+      long currentTime = System.currentTimeMillis();
+      JournalSegment<LogEntry> compactSegment = null;
+      Long compactIndex = null;
+      for (JournalSegment<LogEntry> segment : journal.segments()) {
+        if (currentTime - segment.descriptor().updated() > maxLogAge.toMillis()) {
+          compactSegment = segment;
+        } else if (compactSegment != null) {
+          compactIndex = segment.index();
+          break;
+        }
+      }
+
+      if (compactIndex != null) {
+        log.info("Compacting journal up to {}", compactIndex);
+        journal.compact(compactIndex);
+      }
+    }
+  }
+
   @Override
   public CompletableFuture<Void> start() {
     registerListeners();
-    return memberGroupService.start().thenCompose(v -> {
+    compactTimer = threadContext.schedule(Duration.ofSeconds(30), this::compact);
+    return memberGroupService.start().thenComposeAsync(v -> {
       MemberGroup group = memberGroupService.getMemberGroup(clusterMembershipService.getLocalMember());
       primaryElection.addListener(primaryElectionListener);
       if (group != null) {
         return primaryElection.enter(new GroupMember(clusterMembershipService.getLocalMember().id(), group.id()));
       }
       return CompletableFuture.completedFuture(null);
-    }).thenApply(v -> {
+    }, threadContext).thenApply(v -> {
       started.set(true);
       return null;
     });
@@ -397,6 +464,9 @@ public class DistributedLogServerContext implements Managed<Void> {
     reader.close();
     writer.close();
     journal.close();
+    if (compactTimer != null) {
+      compactTimer.cancel();
+    }
     started.set(false);
     return memberGroupService.stop().exceptionally(throwable -> {
       log.error("Failed stopping member group service", throwable);

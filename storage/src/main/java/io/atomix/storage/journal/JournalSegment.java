@@ -112,6 +112,15 @@ public class JournalSegment<E> implements AutoCloseable {
   }
 
   /**
+   * Returns the size of the segment.
+   *
+   * @return the size of the segment
+   */
+  public int size() {
+    return writer.size();
+  }
+
+  /**
    * Returns the segment file.
    *
    * @return The segment file.

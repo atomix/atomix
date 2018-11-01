@@ -97,6 +97,19 @@ class MappableJournalSegmentWriter<E> implements JournalWriter<E> {
     return segment.index();
   }
 
+  /**
+   * Returns the size of the segment.
+   *
+   * @return the size of the segment
+   */
+  public int size() {
+    try {
+      return (int) channel.size();
+    } catch (IOException e) {
+      throw new StorageException(e);
+    }
+  }
+
   @Override
   public long getLastIndex() {
     return writer.getLastIndex();

@@ -15,6 +15,16 @@
  */
 package io.atomix.protocols.log.partition;
 
+import java.io.File;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.primitive.Recovery;
@@ -28,20 +38,14 @@ import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.log.DistributedLogProtocol;
+import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.BlockingAwareThreadPoolContextFactory;
 import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.memory.MemorySize;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -76,7 +80,7 @@ public class LogPartitionGroup implements ManagedPartitionGroup {
     @Override
     public Namespace namespace() {
       return Namespace.builder()
-          .nextId(Namespaces.BEGIN_USER_CUSTOM_ID + 200)
+          .nextId(Namespaces.BEGIN_USER_CUSTOM_ID + 300)
           .register(LogPartitionGroupConfig.class)
           .build();
     }
@@ -95,7 +99,7 @@ public class LogPartitionGroup implements ManagedPartitionGroup {
   private static Collection<LogPartition> buildPartitions(LogPartitionGroupConfig config) {
     List<LogPartition> partitions = new ArrayList<>(config.getPartitions());
     for (int i = 0; i < config.getPartitions(); i++) {
-      partitions.add(new LogPartition(PartitionId.from(config.getName(), i + 1), config.getMemberGroupProvider()));
+      partitions.add(new LogPartition(PartitionId.from(config.getName(), i + 1), config));
     }
     return partitions;
   }
@@ -168,7 +172,7 @@ public class LogPartitionGroup implements ManagedPartitionGroup {
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
         .map(p -> p.join(managementService, threadFactory))
         .collect(Collectors.toList());
-    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenApply(v -> {
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).thenApply(v -> {
       LOGGER.info("Started");
       return this;
     });
@@ -181,7 +185,7 @@ public class LogPartitionGroup implements ManagedPartitionGroup {
     List<CompletableFuture<Partition>> futures = partitions.values().stream()
         .map(p -> p.connect(managementService, threadFactory))
         .collect(Collectors.toList());
-    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenApply(v -> {
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).thenApply(v -> {
       LOGGER.info("Started");
       return this;
     });
@@ -238,6 +242,112 @@ public class LogPartitionGroup implements ManagedPartitionGroup {
      */
     public Builder withMemberGroupStrategy(MemberGroupStrategy memberGroupStrategy) {
       config.setMemberGroupStrategy(memberGroupStrategy);
+      return this;
+    }
+
+    /**
+     * Sets the storage level.
+     *
+     * @param storageLevel the storage level
+     * @return the Raft partition group builder
+     */
+    public Builder withStorageLevel(StorageLevel storageLevel) {
+      config.getStorageConfig().setLevel(storageLevel);
+      return this;
+    }
+
+    /**
+     * Sets the path to the data directory.
+     *
+     * @param dataDir the path to the replica's data directory
+     * @return the replica builder
+     */
+    public Builder withDataDirectory(File dataDir) {
+      config.getStorageConfig().setDirectory(new File("user.dir").toURI().relativize(dataDir.toURI()).getPath());
+      return this;
+    }
+
+    /**
+     * Sets the segment size.
+     *
+     * @param segmentSize the segment size
+     * @return the partition group builder
+     */
+    public Builder withSegmentSize(MemorySize segmentSize) {
+      config.getStorageConfig().setSegmentSize(segmentSize);
+      return this;
+    }
+
+    /**
+     * Sets the segment size.
+     *
+     * @param segmentSizeBytes the segment size in bytes
+     * @return the partition group builder
+     */
+    public Builder withSegmentSize(long segmentSizeBytes) {
+      return withSegmentSize(new MemorySize(segmentSizeBytes));
+    }
+
+    /**
+     * Sets the maximum Raft log entry size.
+     *
+     * @param maxEntrySize the maximum Raft log entry size
+     * @return the partition group builder
+     */
+    public Builder withMaxEntrySize(MemorySize maxEntrySize) {
+      config.getStorageConfig().setMaxEntrySize(maxEntrySize);
+      return this;
+    }
+
+    /**
+     * Sets the maximum Raft log entry size.
+     *
+     * @param maxEntrySize the maximum Raft log entry size
+     * @return the partition group builder
+     */
+    public Builder withMaxEntrySize(int maxEntrySize) {
+      return withMaxEntrySize(new MemorySize(maxEntrySize));
+    }
+
+    /**
+     * Enables flush on commit.
+     *
+     * @return the partition group builder
+     */
+    public Builder withFlushOnCommit() {
+      return withFlushOnCommit(true);
+    }
+
+    /**
+     * Sets whether to flush logs to disk on commit.
+     *
+     * @param flushOnCommit whether to flush logs to disk on commit
+     * @return the partition group builder
+     */
+    public Builder withFlushOnCommit(boolean flushOnCommit) {
+      config.getStorageConfig().setFlushOnCommit(flushOnCommit);
+      return this;
+    }
+
+    /**
+     * Sets the maximum size of the log.
+     *
+     * @param maxSize the maximum size of the log
+     * @return the partition group builder
+     */
+    public Builder withMaxSize(long maxSize) {
+      config.getCompactionConfig().setSize(MemorySize.from(maxSize));
+      return this;
+    }
+
+    /**
+     * Sets the maximum age of the log.
+     *
+     * @param maxAge the maximum age of the log
+     * @return the partition group builder
+     */
+    public Builder withMaxAge(Duration maxAge) {
+      config.getCompactionConfig().setAge(maxAge);
       return this;
     }
 

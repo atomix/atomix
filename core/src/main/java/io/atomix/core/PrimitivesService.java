@@ -42,6 +42,8 @@ import io.atomix.core.lock.AtomicLockType;
 import io.atomix.core.lock.DistributedLock;
 import io.atomix.core.lock.DistributedLockBuilder;
 import io.atomix.core.lock.DistributedLockType;
+import io.atomix.core.log.DistributedLogBuilder;
+import io.atomix.core.log.DistributedLogType;
 import io.atomix.core.map.AtomicCounterMap;
 import io.atomix.core.map.AtomicCounterMapBuilder;
 import io.atomix.core.map.AtomicCounterMapType;
@@ -138,6 +140,16 @@ import io.atomix.primitive.SyncPrimitive;
  * </pre>
  */
 public interface PrimitivesService extends PrimitiveFactory {
+
+  /**
+   * Creates a new log primitive builder.
+   *
+   * @param <E> the log entry type
+   * @return the log builder
+   */
+  default <E> DistributedLogBuilder<E> logBuilder() {
+    return primitiveBuilder("log", DistributedLogType.instance());
+  }
 
   /**
    * Creates a new named {@link DistributedMap} builder.

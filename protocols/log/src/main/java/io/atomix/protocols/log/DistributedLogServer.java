@@ -35,6 +35,7 @@ import io.atomix.utils.serializer.Namespaces;
 import org.slf4j.Logger;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -116,6 +117,8 @@ public class DistributedLogServer implements Managed<DistributedLogServer> {
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
     private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 1024;
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
+    private static final long DEFAULT_MAX_LOG_SIZE = 1024 * 1024 * 1024;
+    private static final Duration DEFAULT_MAX_LOG_AGE = null;
     private static final double DEFAULT_INDEX_DENSITY = .005;
 
     protected String serverName = DEFAULT_SERVER_NAME;
@@ -134,6 +137,8 @@ public class DistributedLogServer implements Managed<DistributedLogServer> {
     protected int maxEntrySize = DEFAULT_MAX_ENTRY_SIZE;
     protected double indexDensity = DEFAULT_INDEX_DENSITY;
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
+    protected long maxLogSize = DEFAULT_MAX_LOG_SIZE;
+    protected Duration maxLogAge = DEFAULT_MAX_LOG_AGE;
 
     /**
      * Sets the server name.
@@ -368,6 +373,28 @@ public class DistributedLogServer implements Managed<DistributedLogServer> {
       return this;
     }
 
+    /**
+     * Sets the maximum log size.
+     *
+     * @param maxLogSize the maximum log size
+     * @return the log server builder
+     */
+    public Builder withMaxLogSize(long maxLogSize) {
+      this.maxLogSize = maxLogSize;
+      return this;
+    }
+
+    /**
+     * Sets the maximum log age.
+     *
+     * @param maxLogAge the maximum log age
+     * @return the log server builder
+     */
+    public Builder withMaxLogAge(Duration maxLogAge) {
+      this.maxLogAge = maxLogAge;
+      return this;
+    }
+
     @Override
     public DistributedLogServer build() {
       Logger log = ContextualLoggerFactory.getLogger(DistributedLogServer.class, LoggerContext.builder(DistributedLogServer.class)
@@ -409,6 +436,8 @@ public class DistributedLogServer implements Managed<DistributedLogServer> {
           replicationFactor,
           replicationStrategy,
           journal,
+          maxLogSize,
+          maxLogAge,
           threadContextFactory,
           closeOnStop));
     }

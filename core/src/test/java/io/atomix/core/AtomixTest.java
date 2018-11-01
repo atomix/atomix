@@ -27,6 +27,7 @@ import io.atomix.core.idgenerator.AtomicIdGeneratorType;
 import io.atomix.core.list.DistributedListType;
 import io.atomix.core.lock.AtomicLockType;
 import io.atomix.core.lock.DistributedLockType;
+import io.atomix.core.log.DistributedLog;
 import io.atomix.core.map.AtomicCounterMapType;
 import io.atomix.core.map.AtomicMapType;
 import io.atomix.core.map.AtomicNavigableMapType;
@@ -50,7 +51,10 @@ import io.atomix.core.value.AtomicValueType;
 import io.atomix.core.value.DistributedValueType;
 import io.atomix.core.workqueue.WorkQueueType;
 import io.atomix.primitive.protocol.ProxyProtocol;
+import io.atomix.protocols.log.DistributedLogProtocol;
+import io.atomix.protocols.log.partition.LogPartitionGroup;
 import io.atomix.protocols.raft.MultiRaftProtocol;
+import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.net.Address;
@@ -65,6 +69,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -73,11 +78,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * Atomix test.
@@ -203,6 +204,52 @@ public class AtomixTest extends AbstractAtomixTest {
     assertEquals(3, atomix1.getMembershipService().getMembers().size());
     assertEquals(3, atomix2.getMembershipService().getMembers().size());
     assertEquals(3, atomix3.getMembershipService().getMembers().size());
+  }
+
+  @Test
+  public void testLogPrimitives() throws Exception {
+    CompletableFuture<Atomix> future1 = startAtomix(1, Arrays.asList(1, 2), builder ->
+        builder.withManagementGroup(RaftPartitionGroup.builder("system")
+            .withNumPartitions(1)
+            .withMembers(String.valueOf(1), String.valueOf(2))
+            .withDataDirectory(new File(new File(DATA_DIR, "log"), "1"))
+            .build())
+            .withPartitionGroups(LogPartitionGroup.builder("log")
+                .withNumPartitions(3)
+                .build())
+            .build());
+
+    CompletableFuture<Atomix> future2 = startAtomix(2, Arrays.asList(1, 2), builder ->
+        builder.withManagementGroup(RaftPartitionGroup.builder("system")
+            .withNumPartitions(1)
+            .withMembers(String.valueOf(1), String.valueOf(2))
+            .withDataDirectory(new File(new File(DATA_DIR, "log"), "2"))
+            .build())
+            .withPartitionGroups(LogPartitionGroup.builder("test")
+                .withNumPartitions(3)
+                .build())
+            .build());
+
+    Atomix atomix1 = future1.get();
+    Atomix atomix2 = future2.get();
+
+    DistributedLog<String> log1 = atomix1.<String>logBuilder()
+        .withProtocol(DistributedLogProtocol.builder()
+            .build())
+        .build();
+
+    DistributedLog<String> log2 = atomix2.<String>logBuilder()
+        .withProtocol(DistributedLogProtocol.builder()
+            .build())
+        .build();
+
+    CountDownLatch latch = new CountDownLatch(1);
+    log2.addConsumer(value -> {
+      System.out.println("Hello world!");
+      latch.countDown();
+    });
+    log1.produce("Hello world!");
+    latch.await(10, TimeUnit.SECONDS);
   }
 
   @Test
