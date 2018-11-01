@@ -23,18 +23,18 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Log entry.
  */
 public class LogRecord {
-  private final long offset;
+  private final long index;
   private final long timestamp;
   private final byte[] value;
 
-  public LogRecord(long offset, long timestamp, byte[] value) {
-    this.offset = offset;
+  public LogRecord(long index, long timestamp, byte[] value) {
+    this.index = index;
     this.timestamp = timestamp;
     this.value = value;
   }
 
   public long index() {
-    return offset;
+    return index;
   }
 
   public long timestamp() {
@@ -48,7 +48,7 @@ public class LogRecord {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("offset", index())
+        .add("index", index())
         .add("timestamp", timestamp())
         .add("value", ArraySizeHashPrinter.of(value()))
         .toString();
