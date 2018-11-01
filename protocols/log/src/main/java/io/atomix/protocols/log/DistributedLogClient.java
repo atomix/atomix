@@ -15,11 +15,14 @@
  */
 package io.atomix.protocols.log;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.primitive.log.LogSession;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
-import io.atomix.primitive.session.SessionIdService;
+import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.log.impl.DistributedLogSession;
 import io.atomix.protocols.log.protocol.LogClientProtocol;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -28,8 +31,6 @@ import io.atomix.utils.concurrent.ThreadModel;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
-
-import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -52,7 +53,7 @@ public class DistributedLogClient {
   private final PartitionId partitionId;
   private final ClusterMembershipService clusterMembershipService;
   private final LogClientProtocol protocol;
-  private final SessionIdService sessionIdService;
+  private final Supplier<CompletableFuture<SessionId>> sessionIdProvider;
   private final PrimaryElection primaryElection;
   private final ThreadContextFactory threadContextFactory;
   private final ThreadContext threadContext;
@@ -63,7 +64,7 @@ public class DistributedLogClient {
       PartitionId partitionId,
       ClusterMembershipService clusterMembershipService,
       LogClientProtocol protocol,
-      SessionIdService sessionIdService,
+      Supplier<CompletableFuture<SessionId>> sessionIdProvider,
       PrimaryElection primaryElection,
       ThreadContextFactory threadContextFactory,
       boolean closeOnStop) {
@@ -71,7 +72,7 @@ public class DistributedLogClient {
     this.partitionId = partitionId;
     this.clusterMembershipService = clusterMembershipService;
     this.protocol = protocol;
-    this.sessionIdService = sessionIdService;
+    this.sessionIdProvider = sessionIdProvider;
     this.primaryElection = primaryElection;
     this.threadContextFactory = threadContextFactory;
     this.threadContext = threadContextFactory.createContext();
@@ -89,7 +90,7 @@ public class DistributedLogClient {
       public LogSession build() {
         return new DistributedLogSession(
             partitionId,
-            sessionIdService.nextSessionId().join(),
+            sessionIdProvider.get().join(),
             clusterMembershipService,
             protocol,
             primaryElection,
@@ -119,7 +120,7 @@ public class DistributedLogClient {
     protected PartitionId partitionId;
     protected ClusterMembershipService clusterMembershipService;
     protected LogClientProtocol protocol;
-    protected SessionIdService sessionIdService;
+    protected Supplier<CompletableFuture<SessionId>> sessionIdProvider;
     protected PrimaryElection primaryElection;
     protected ThreadModel threadModel = ThreadModel.SHARED_THREAD_POOL;
     protected int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 16), 4);
@@ -173,11 +174,11 @@ public class DistributedLogClient {
     /**
      * Sets the session ID service
      *
-     * @param sessionIdService the session ID service
+     * @param sessionIdProvider the session ID service
      * @return the client builder
      */
-    public Builder withSessionIdService(SessionIdService sessionIdService) {
-      this.sessionIdService = checkNotNull(sessionIdService, "sessionIdService cannot be null");
+    public Builder withSessionIdProvider(Supplier<CompletableFuture<SessionId>> sessionIdProvider) {
+      this.sessionIdProvider = checkNotNull(sessionIdProvider, "sessionIdProvider cannot be null");
       return this;
     }
 
@@ -251,7 +252,7 @@ public class DistributedLogClient {
           partitionId,
           clusterMembershipService,
           protocol,
-          sessionIdService,
+          sessionIdProvider,
           primaryElection,
           threadContextFactory,
           closeOnStop);

@@ -83,7 +83,7 @@ public class LogPartitionClient implements PartitionClient, Managed<LogPartition
             partition.name(),
             Serializer.using(LogNamespaces.PROTOCOL),
             managementService.getMessagingService()))
-        .withSessionIdService(managementService.getSessionIdService())
+        .withSessionIdProvider(() -> managementService.getSessionIdService().nextSessionId())
         .withPrimaryElection(managementService.getElectionService().getElectionFor(partition.id()))
         .withThreadContextFactory(threadFactory)
         .build();
