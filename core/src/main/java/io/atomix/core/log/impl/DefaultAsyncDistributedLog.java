@@ -105,6 +105,6 @@ public class DefaultAsyncDistributedLog<E> implements AsyncDistributedLog<E> {
 
   @Override
   public CompletableFuture<Void> delete() {
-    return client.delete();
+    return client.close();
   }
 }

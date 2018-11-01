@@ -15,12 +15,13 @@
  */
 package io.atomix.primitive.log;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.concurrent.ThreadContext;
-
-import java.util.function.Consumer;
 
 /**
  * Log session.
@@ -82,6 +83,20 @@ public interface LogSession {
    * @param listener the state change listener to remove
    */
   void removeStateChangeListener(Consumer<PrimitiveState> listener);
+
+  /**
+   * Connects the log session.
+   *
+   * @return a future to be completed once the log session has been connected
+   */
+  CompletableFuture<LogSession> connect();
+
+  /**
+   * Closes the log session.
+   *
+   * @return a future to be completed once the log session has been closed
+   */
+  CompletableFuture<Void> close();
 
   /**
    * Log session builder.

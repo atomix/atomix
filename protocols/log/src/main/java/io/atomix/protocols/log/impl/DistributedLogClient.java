@@ -15,6 +15,14 @@
  */
 package io.atomix.protocols.log.impl;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
+
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveState;
@@ -23,14 +31,7 @@ import io.atomix.primitive.log.LogSession;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.protocol.LogProtocol;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
+import io.atomix.utils.concurrent.Futures;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -100,56 +101,42 @@ public class DistributedLogClient implements LogClient {
     stateChangeListeners.remove(listener);
   }
 
+  private synchronized void onStateChange(PartitionId partitionId, PrimitiveState state) {
+    states.put(partitionId, state);
+    switch (state) {
+      case CONNECTED:
+        if (!states.containsValue(PrimitiveState.SUSPENDED) && !states.containsValue(PrimitiveState.CLOSED)) {
+          changeState(PrimitiveState.CONNECTED);
+        }
+        break;
+      case SUSPENDED:
+        changeState(PrimitiveState.SUSPENDED);
+        break;
+      case CLOSED:
+        changeState(PrimitiveState.CLOSED);
+        break;
+    }
+  }
+
   private synchronized void changeState(PrimitiveState state) {
     if (this.state != state) {
       this.state = state;
-      // TODO: Should state changes be handled on another thread?
       stateChangeListeners.forEach(l -> l.accept(state));
     }
   }
 
   @Override
   public CompletableFuture<LogClient> connect() {
-    changeState(PrimitiveState.CONNECTED);
-    return CompletableFuture.completedFuture(this);
+    return Futures.allOf(partitions.values().stream().map(LogSession::connect)).thenApply(v -> {
+      changeState(PrimitiveState.CONNECTED);
+      return this;
+    });
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    changeState(PrimitiveState.CLOSED);
-    return CompletableFuture.completedFuture(null);
-  }
-
-  @Override
-  public CompletableFuture<Void> delete() {
-    changeState(PrimitiveState.CLOSED);
-    return CompletableFuture.completedFuture(null);
-  }
-
-  /**
-   * Handles a partition proxy state change.
-   */
-  private synchronized void onStateChange(PartitionId partitionId, PrimitiveState state) {
-    states.put(partitionId, state);
-    switch (state) {
-      case CONNECTED:
-        if (this.state != PrimitiveState.CONNECTED && !states.containsValue(PrimitiveState.SUSPENDED) && !states.containsValue(PrimitiveState.CLOSED)) {
-          this.state = PrimitiveState.CONNECTED;
-          stateChangeListeners.forEach(l -> l.accept(PrimitiveState.CONNECTED));
-        }
-        break;
-      case SUSPENDED:
-        if (this.state == PrimitiveState.CONNECTED) {
-          this.state = PrimitiveState.SUSPENDED;
-          stateChangeListeners.forEach(l -> l.accept(PrimitiveState.SUSPENDED));
-        }
-        break;
-      case CLOSED:
-        if (this.state != PrimitiveState.CLOSED) {
-          this.state = PrimitiveState.CLOSED;
-          stateChangeListeners.forEach(l -> l.accept(PrimitiveState.CLOSED));
-        }
-        break;
-    }
+    return Futures.allOf(partitions.values().stream().map(LogSession::connect)).thenRun(() -> {
+      changeState(PrimitiveState.CLOSED);
+    });
   }
 }
