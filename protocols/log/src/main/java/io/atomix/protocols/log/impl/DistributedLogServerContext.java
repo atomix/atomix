@@ -56,6 +56,8 @@ import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadContextFactory;
+import io.atomix.utils.logging.ContextualLogger;
+import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +67,7 @@ import static io.atomix.protocols.log.DistributedLogServer.Role;
  * Primary-backup server context.
  */
 public class DistributedLogServerContext implements Managed<Void> {
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log;
   private final String serverName;
   private final MemberId memberId;
   private final ClusterMembershipService clusterMembershipService;
@@ -78,7 +80,7 @@ public class DistributedLogServerContext implements Managed<Void> {
   private final boolean closeOnStop;
   private final PrimaryElection primaryElection;
   private MemberId leader;
-  private List<MemberId> backups;
+  private List<MemberId> followers;
   private LogServerRole role;
   private long currentTerm;
   private long commitIndex;
@@ -120,6 +122,10 @@ public class DistributedLogServerContext implements Managed<Void> {
     this.maxLogSize = maxLogSize;
     this.maxLogAge = maxLogAge;
     this.primaryElection = primaryElection;
+    this.log = new ContextualLogger(LoggerFactory.getLogger(getClass()),
+        LoggerContext.builder(getClass())
+            .addValue(serverName)
+            .build());
   }
 
   /**
@@ -224,12 +230,12 @@ public class DistributedLogServerContext implements Managed<Void> {
   }
 
   /**
-   * Returns a list of backup nodes.
+   * Returns a list of follower nodes.
    *
-   * @return a list of backup nodes
+   * @return a list of follower nodes
    */
-  public List<MemberId> backups() {
-    return backups;
+  public List<MemberId> followers() {
+    return followers;
   }
 
   /**
@@ -337,10 +343,10 @@ public class DistributedLogServerContext implements Managed<Void> {
       primaryElection.addListener(primaryElectionListener);
       if (group != null) {
         return primaryElection.enter(new GroupMember(clusterMembershipService.getLocalMember().id(), group.id()))
-            .thenApplyAsync(term -> {
+            .thenApply(term -> {
               changeRole(term);
               return null;
-            }, threadContext);
+            });
       }
       return CompletableFuture.completedFuture(null);
     }, threadContext).thenApply(v -> {
@@ -354,11 +360,11 @@ public class DistributedLogServerContext implements Managed<Void> {
    */
   private void changeRole(PrimaryTerm term) {
     threadContext.execute(() -> {
-      if (term.term() > currentTerm) {
-        log.debug("Term changed: {}", term);
+      if (term.term() >= currentTerm) {
+        log.debug("{} - Term changed: {}", memberId, term);
         currentTerm = term.term();
         leader = term.primary() != null ? term.primary().memberId() : null;
-        backups = term.backups(replicationFactor - 1)
+        followers = term.backups(replicationFactor - 1)
             .stream()
             .map(GroupMember::memberId)
             .collect(Collectors.toList());
@@ -372,7 +378,7 @@ public class DistributedLogServerContext implements Managed<Void> {
             this.role = new LeaderRole(this);
             log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.LEADER);
           }
-        } else if (backups.contains(clusterMembershipService.getLocalMember().id())) {
+        } else if (followers.contains(clusterMembershipService.getLocalMember().id())) {
           if (this.role == null) {
             this.role = new FollowerRole(this);
             log.debug("{} transitioning to {}", clusterMembershipService.getLocalMember().id(), Role.FOLLOWER);
