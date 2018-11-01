@@ -225,7 +225,7 @@ public class AtomixTest extends AbstractAtomixTest {
             .withMembers(String.valueOf(1), String.valueOf(2))
             .withDataDirectory(new File(new File(DATA_DIR, "log"), "2"))
             .build())
-            .withPartitionGroups(LogPartitionGroup.builder("test")
+            .withPartitionGroups(LogPartitionGroup.builder("log")
                 .withNumPartitions(3)
                 .build())
             .build());

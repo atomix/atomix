@@ -88,12 +88,12 @@ public class LogServerCommunicator implements LogServerProtocol {
 
   @Override
   public void registerConsumeHandler(Function<ConsumeRequest, CompletableFuture<ConsumeResponse>> handler) {
-    clusterCommunicator.subscribe(context.readSubject, serializer::decode, handler, serializer::encode);
+    clusterCommunicator.subscribe(context.consumeSubject, serializer::decode, handler, serializer::encode);
   }
 
   @Override
   public void unregisterConsumeHandler() {
-    clusterCommunicator.unsubscribe(context.readSubject);
+    clusterCommunicator.unsubscribe(context.consumeSubject);
   }
 
   @Override
