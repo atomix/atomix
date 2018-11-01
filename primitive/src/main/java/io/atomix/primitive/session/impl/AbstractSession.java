@@ -47,7 +47,7 @@ public abstract class AbstractSession<C> implements Session<C> {
     this.sessionId = checkNotNull(sessionId);
     this.primitiveName = checkNotNull(primitiveName);
     this.primitiveType = checkNotNull(primitiveType);
-    this.memberId = checkNotNull(memberId);
+    this.memberId = memberId;
     this.serializer = checkNotNull(serializer);
   }
 

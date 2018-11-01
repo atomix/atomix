@@ -32,6 +32,7 @@ import io.atomix.core.map.AtomicCounterMapType;
 import io.atomix.core.map.AtomicMapType;
 import io.atomix.core.map.AtomicNavigableMapType;
 import io.atomix.core.map.AtomicSortedMapType;
+import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapType;
 import io.atomix.core.map.DistributedNavigableMapType;
 import io.atomix.core.map.DistributedSortedMapType;
@@ -207,7 +208,7 @@ public class AtomixTest extends AbstractAtomixTest {
   }
 
   @Test
-  public void testLogPrimitives() throws Exception {
+  public void testLogPrimitive() throws Exception {
     CompletableFuture<Atomix> future1 = startAtomix(1, Arrays.asList(1, 2), builder ->
         builder.withManagementGroup(RaftPartitionGroup.builder("system")
             .withNumPartitions(1)
@@ -249,6 +250,53 @@ public class AtomixTest extends AbstractAtomixTest {
       latch.countDown();
     });
     log1.produce("Hello world!");
+    latch.await(10, TimeUnit.SECONDS);
+    assertEquals(0, latch.getCount());
+  }
+
+  @Test
+  public void testLogBasedPrimitive() throws Exception {
+    CompletableFuture<Atomix> future1 = startAtomix(1, Arrays.asList(1, 2), builder ->
+        builder.withManagementGroup(RaftPartitionGroup.builder("system")
+            .withNumPartitions(1)
+            .withMembers(String.valueOf(1), String.valueOf(2))
+            .withDataDirectory(new File(new File(DATA_DIR, "log"), "1"))
+            .build())
+            .withPartitionGroups(LogPartitionGroup.builder("log")
+                .withNumPartitions(3)
+                .build())
+            .build());
+
+    CompletableFuture<Atomix> future2 = startAtomix(2, Arrays.asList(1, 2), builder ->
+        builder.withManagementGroup(RaftPartitionGroup.builder("system")
+            .withNumPartitions(1)
+            .withMembers(String.valueOf(1), String.valueOf(2))
+            .withDataDirectory(new File(new File(DATA_DIR, "log"), "2"))
+            .build())
+            .withPartitionGroups(LogPartitionGroup.builder("log")
+                .withNumPartitions(3)
+                .build())
+            .build());
+
+    Atomix atomix1 = future1.get();
+    Atomix atomix2 = future2.get();
+
+    DistributedMap<String, String> map1 = atomix1.<String, String>mapBuilder("test")
+        .withProtocol(DistributedLogProtocol.builder().build())
+        .build();
+
+    DistributedMap<String, String> map2 = atomix2.<String, String>mapBuilder("test")
+        .withProtocol(DistributedLogProtocol.builder().build())
+        .build();
+
+    CountDownLatch latch = new CountDownLatch(1);
+    map2.addListener(event -> {
+      map2.async().get("foo").thenAccept(value -> {
+        assertEquals("bar", value);
+        latch.countDown();
+      });
+    });
+    map1.put("foo", "bar");
     latch.await(10, TimeUnit.SECONDS);
     assertEquals(0, latch.getCount());
   }

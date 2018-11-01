@@ -28,8 +28,8 @@ import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.log.LogConsumer;
 import io.atomix.primitive.log.LogProducer;
-import io.atomix.primitive.log.LogSession;
 import io.atomix.primitive.log.LogRecord;
+import io.atomix.primitive.log.LogSession;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PrimaryElection;
 import io.atomix.primitive.partition.PrimaryElectionEventListener;
@@ -65,7 +65,7 @@ public class DistributedLogSession implements LogSession {
   private final MemberId memberId;
   private final String subject;
   private PrimaryTerm term;
-  private volatile PrimitiveState state = PrimitiveState.CLOSED;
+  private volatile PrimitiveState state = PrimitiveState.CONNECTED;
   private final Logger log;
 
   public DistributedLogSession(
@@ -165,6 +165,23 @@ public class DistributedLogSession implements LogSession {
   @Override
   public void removeStateChangeListener(Consumer<PrimitiveState> listener) {
     stateChangeListeners.remove(checkNotNull(listener));
+  }
+
+  @Override
+  public CompletableFuture<LogSession> connect() {
+    return term()
+        .thenRun(() -> changeState(PrimitiveState.CONNECTED))
+        .thenApply(v -> this);
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    threadContext.execute(() -> {
+      changeState(PrimitiveState.CLOSED);
+      future.complete(null);
+    });
+    return future;
   }
 
   /**
