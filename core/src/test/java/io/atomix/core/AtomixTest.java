@@ -19,6 +19,7 @@ import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.Member;
 import io.atomix.core.barrier.DistributedCyclicBarrierType;
+import io.atomix.core.counter.AtomicCounter;
 import io.atomix.core.counter.AtomicCounterType;
 import io.atomix.core.counter.DistributedCounterType;
 import io.atomix.core.election.LeaderElectionType;
@@ -255,7 +256,7 @@ public class AtomixTest extends AbstractAtomixTest {
   }
 
   @Test
-  public void testLogBasedPrimitive() throws Exception {
+  public void testLogBasedPrimitives() throws Exception {
     CompletableFuture<Atomix> future1 = startAtomix(1, Arrays.asList(1, 2), builder ->
         builder.withManagementGroup(RaftPartitionGroup.builder("system")
             .withNumPartitions(1)
@@ -281,11 +282,11 @@ public class AtomixTest extends AbstractAtomixTest {
     Atomix atomix1 = future1.get();
     Atomix atomix2 = future2.get();
 
-    DistributedMap<String, String> map1 = atomix1.<String, String>mapBuilder("test")
+    DistributedMap<String, String> map1 = atomix1.<String, String>mapBuilder("test-map")
         .withProtocol(DistributedLogProtocol.builder().build())
         .build();
 
-    DistributedMap<String, String> map2 = atomix2.<String, String>mapBuilder("test")
+    DistributedMap<String, String> map2 = atomix2.<String, String>mapBuilder("test-map")
         .withProtocol(DistributedLogProtocol.builder().build())
         .build();
 
@@ -299,6 +300,21 @@ public class AtomixTest extends AbstractAtomixTest {
     map1.put("foo", "bar");
     latch.await(10, TimeUnit.SECONDS);
     assertEquals(0, latch.getCount());
+
+    AtomicCounter counter1 = atomix1.atomicCounterBuilder("test-counter")
+        .withProtocol(DistributedLogProtocol.builder().build())
+        .build();
+
+    AtomicCounter counter2 = atomix2.atomicCounterBuilder("test-counter")
+        .withProtocol(DistributedLogProtocol.builder().build())
+        .build();
+
+    assertEquals(1, counter1.incrementAndGet());
+    assertEquals(1, counter1.get());
+    assertEquals(0, counter2.get());
+    Thread.sleep(1000);
+    assertEquals(1, counter2.get());
+    assertEquals(2, counter2.incrementAndGet());
   }
 
   @Test

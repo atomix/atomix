@@ -187,6 +187,13 @@ public class LogProxySession<S> implements ProxySession<S> {
     // Decode the raw log operation from the record.
     LogOperation operation = decodeInternal(record.value());
 
+    // If this operation is not destined for this primitive, ignore it.
+    // TODO: If multiple primitives of different types are created and destroyed on the same distributed log,
+    // we need to be able to differentiate between different instances of a service by the service ID.
+    if (!operation.primitive().equals(name())) {
+      return;
+    }
+
     // Create a session from the log record.
     Session session = getOrCreateSession(operation.sessionId());
 
@@ -472,14 +479,15 @@ public class LogProxySession<S> implements ProxySession<S> {
         if (operationId.type() == OperationType.COMMAND) {
           long index = operationIndex.incrementAndGet();
           writeFutures.put(index, future);
-          connect().thenRun(() -> session.producer().append(encodeInternal(new LogOperation(session.sessionId(), index, operationId, bytes)))
+          LogOperation operation = new LogOperation(session.sessionId(), name, index, operationId, bytes);
+          connect().thenRun(() -> session.producer().append(encodeInternal(operation))
               .whenComplete((result, error) -> {
                 if (error == null) {
                   lastIndex = result;
                 }
               }));
         } else {
-          session.context().execute(() -> {
+          connect().thenRun(() -> {
             if (currentIndex >= lastIndex) {
               SessionId sessionId = session.sessionId();
               Session session = getOrCreateSession(sessionId);
