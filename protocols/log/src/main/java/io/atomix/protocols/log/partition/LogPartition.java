@@ -38,16 +38,16 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class LogPartition implements Partition {
   private final PartitionId partitionId;
-  private final MemberGroupProvider memberGroupProvider;
+  private final LogPartitionGroupConfig config;
   private PrimaryElection election;
   private LogPartitionServer server;
   private LogPartitionClient client;
 
   public LogPartition(
       PartitionId partitionId,
-      MemberGroupProvider memberGroupProvider) {
+      LogPartitionGroupConfig config) {
     this.partitionId = partitionId;
-    this.memberGroupProvider = memberGroupProvider;
+    this.config = config;
   }
 
   @Override
@@ -109,7 +109,7 @@ public class LogPartition implements Partition {
     server = new LogPartitionServer(
         this,
         managementService,
-        memberGroupProvider,
+        config,
         threadFactory);
     client = new LogPartitionClient(this, managementService, threadFactory);
     return server.start().thenCompose(v -> client.start()).thenApply(v -> this);

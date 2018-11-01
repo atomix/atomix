@@ -15,13 +15,6 @@
  */
 package io.atomix.storage.journal;
 
-import com.google.common.collect.Sets;
-import io.atomix.storage.StorageException;
-import io.atomix.storage.StorageLevel;
-import io.atomix.utils.serializer.Namespace;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -35,6 +28,13 @@ import java.util.NavigableMap;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+
+import com.google.common.collect.Sets;
+import io.atomix.storage.StorageException;
+import io.atomix.storage.StorageLevel;
+import io.atomix.utils.serializer.Namespace;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -165,6 +165,36 @@ public class SegmentedJournal<E> implements Journal<E> {
   @Deprecated
   public int maxEntriesPerSegment() {
     return maxEntriesPerSegment;
+  }
+
+  /**
+   * Returns the collection of journal segments.
+   *
+   * @return the collection of journal segments
+   */
+  public Collection<JournalSegment<E>> segments() {
+    return segments.values();
+  }
+
+  /**
+   * Returns the collection of journal segments with indexes greater than the given index.
+   *
+   * @param index the starting index
+   * @return the journal segments starting with indexes greater than or equal to the given index
+   */
+  public Collection<JournalSegment<E>> segments(long index) {
+    return segments.tailMap(index).values();
+  }
+
+  /**
+   * Returns the total size of the journal.
+   *
+   * @return the total size of the journal
+   */
+  public long size() {
+    return segments.values().stream()
+        .mapToLong(segment -> segment.size())
+        .sum();
   }
 
   @Override

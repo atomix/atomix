@@ -19,6 +19,8 @@ import io.atomix.primitive.partition.MemberGroupStrategy;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Log partition group configuration.
  */
@@ -26,6 +28,8 @@ public class LogPartitionGroupConfig extends PartitionGroupConfig<LogPartitionGr
   private static final int DEFAULT_PARTITIONS = 71;
 
   private String memberGroupStrategy = MemberGroupStrategy.NODE_AWARE.name();
+  private LogStorageConfig storageConfig = new LogStorageConfig();
+  private LogCompactionConfig compactionConfig = new LogCompactionConfig();
 
   @Override
   public PartitionGroup.Type getType() {
@@ -54,6 +58,46 @@ public class LogPartitionGroupConfig extends PartitionGroupConfig<LogPartitionGr
    */
   public LogPartitionGroupConfig setMemberGroupStrategy(MemberGroupStrategy memberGroupStrategy) {
     this.memberGroupStrategy = memberGroupStrategy.name();
+    return this;
+  }
+
+  /**
+   * Returns the log storage configuration.
+   *
+   * @return the log storage configuration
+   */
+  public LogStorageConfig getStorageConfig() {
+    return storageConfig;
+  }
+
+  /**
+   * Sets the log storage configuration.
+   *
+   * @param storageConfig the log storage configuration
+   * @return the partition group configuration
+   */
+  public LogPartitionGroupConfig setStorageConfig(LogStorageConfig storageConfig) {
+    this.storageConfig = checkNotNull(storageConfig, "storageConfig cannot be null");
+    return this;
+  }
+
+  /**
+   * Returns the log compaction configuration.
+   *
+   * @return the log compaction configuration
+   */
+  public LogCompactionConfig getCompactionConfig() {
+    return compactionConfig;
+  }
+
+  /**
+   * Sets the log compaction configuration.
+   *
+   * @param compactionConfig the log compaction configuration
+   * @return the partition group configuration
+   */
+  public LogPartitionGroupConfig setCompactionConfig(LogCompactionConfig compactionConfig) {
+    this.compactionConfig = checkNotNull(compactionConfig, "compactionConfig cannot be null");
     return this;
   }
 }
