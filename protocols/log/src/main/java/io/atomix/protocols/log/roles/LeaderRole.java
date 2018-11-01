@@ -135,7 +135,9 @@ public class LeaderRole extends LogServerRole {
       context.threadContext().execute(() -> {
         if (reader.hasNext()) {
           Indexed<LogEntry> entry = reader.next();
-          RecordsRequest request = RecordsRequest.request(new LogRecord(entry.index(), entry.entry().timestamp(), entry.entry().value()));
+          LogRecord record = new LogRecord(entry.index(), entry.entry().timestamp(), entry.entry().value());
+          boolean reset = reader.getFirstIndex() == entry.index();
+          RecordsRequest request = RecordsRequest.request(record, reset);
           log.trace("Sending {} to {} at {}", request, memberId, subject);
           context.protocol().produce(memberId, subject, request);
           next();

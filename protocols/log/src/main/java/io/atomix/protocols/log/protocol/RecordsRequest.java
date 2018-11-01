@@ -24,24 +24,31 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class RecordsRequest extends LogRequest {
 
-  public static RecordsRequest request(LogRecord record) {
-    return new RecordsRequest(record);
+  public static RecordsRequest request(LogRecord record, boolean reset) {
+    return new RecordsRequest(record, reset);
   }
 
   private final LogRecord record;
+  private final boolean reset;
 
-  private RecordsRequest(LogRecord record) {
+  private RecordsRequest(LogRecord record, boolean reset) {
     this.record = record;
+    this.reset = reset;
   }
 
   public LogRecord record() {
     return record;
   }
 
+  public boolean reset() {
+    return reset;
+  }
+
   @Override
   public String toString() {
     return toStringHelper(this)
         .add("record", record)
+        .add("reset", reset)
         .toString();
   }
 }

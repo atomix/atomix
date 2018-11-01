@@ -76,7 +76,7 @@ public class DistributedLogServer implements Managed<DistributedLogServer> {
     NONE,
   }
 
-  private final DistributedLogServerContext context;
+  final DistributedLogServerContext context;
 
   private DistributedLogServer(DistributedLogServerContext context) {
     this.context = checkNotNull(context, "context cannot be null");
