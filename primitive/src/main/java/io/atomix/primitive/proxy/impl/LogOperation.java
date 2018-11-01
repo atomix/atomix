@@ -23,12 +23,14 @@ import io.atomix.primitive.session.SessionId;
  */
 public class LogOperation {
   private final SessionId sessionId;
+  private final String primitive;
   private final long operationIndex;
   private final OperationId operationId;
   private final byte[] operation;
 
-  public LogOperation(SessionId sessionId, long operationIndex, OperationId operationId, byte[] operation) {
+  public LogOperation(SessionId sessionId, String primitive, long operationIndex, OperationId operationId, byte[] operation) {
     this.sessionId = sessionId;
+    this.primitive = primitive;
     this.operationIndex = operationIndex;
     this.operationId = operationId;
     this.operation = operation;
@@ -36,6 +38,10 @@ public class LogOperation {
 
   public SessionId sessionId() {
     return sessionId;
+  }
+
+  public String primitive() {
+    return primitive;
   }
 
   public long operationIndex() {
