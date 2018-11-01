@@ -15,6 +15,7 @@
  */
 package io.atomix.core.log;
 
+import io.atomix.core.log.impl.DefaultDistributedLogBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.PrimitiveService;
@@ -34,6 +35,7 @@ public class DistributedLogType<T> implements PrimitiveType<DistributedLogBuilde
    *
    * @return a new distributed log type
    */
+  @SuppressWarnings("unchecked")
   public static <T> DistributedLogType<T> instance() {
     return INSTANCE;
   }
@@ -55,7 +57,7 @@ public class DistributedLogType<T> implements PrimitiveType<DistributedLogBuilde
 
   @Override
   public DistributedLogBuilder<T> newBuilder(String name, DistributedLogConfig config, PrimitiveManagementService managementService) {
-    throw new UnsupportedOperationException();
+    return new DefaultDistributedLogBuilder<>(name, config, managementService);
   }
 
   @Override

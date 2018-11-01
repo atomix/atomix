@@ -55,6 +55,7 @@ public class DistributedLogSession implements LogSession {
   private final PartitionId partitionId;
   private final SessionId sessionId;
   private final LogClientProtocol protocol;
+  private final PrimaryElection primaryElection;
   private final ThreadContext threadContext;
   private final Set<Consumer<PrimitiveState>> stateChangeListeners = Sets.newIdentityHashSet();
   private final ClusterMembershipEventListener membershipEventListener = this::handleClusterEvent;
@@ -63,7 +64,7 @@ public class DistributedLogSession implements LogSession {
   private final DistributedLogConsumer consumer = new DistributedLogConsumer();
   private final MemberId memberId;
   private final String subject;
-  private volatile PrimaryTerm term;
+  private PrimaryTerm term;
   private volatile PrimitiveState state = PrimitiveState.CLOSED;
   private final Logger log;
 
@@ -77,6 +78,7 @@ public class DistributedLogSession implements LogSession {
     this.partitionId = checkNotNull(partitionId, "partitionId cannot be null");
     this.sessionId = checkNotNull(sessionId, "sessionId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
+    this.primaryElection = checkNotNull(primaryElection, "primaryElection cannot be null");
     this.threadContext = checkNotNull(threadContext, "threadContext cannot be null");
     this.memberId = clusterMembershipService.getLocalMember().id();
     this.subject = String.format("%s-%s-%s", partitionId.group(), partitionId.id(), sessionId);
@@ -166,29 +168,48 @@ public class DistributedLogSession implements LogSession {
   }
 
   /**
+   * Returns the current primary term.
+   *
+   * @return the current primary term
+   */
+  private CompletableFuture<PrimaryTerm> term() {
+    CompletableFuture<PrimaryTerm> future = new CompletableFuture<>();
+    threadContext.execute(() -> {
+      if (term != null) {
+        future.complete(term);
+      } else {
+        primaryElection.getTerm().whenCompleteAsync((term, error) -> {
+          if (term != null) {
+            this.term = term;
+            future.complete(term);
+          } else {
+            future.completeExceptionally(new PrimitiveException.Unavailable());
+          }
+        });
+      }
+    });
+    return future;
+  }
+
+  /**
    * Distributed log producer.
    */
   private class DistributedLogProducer implements LogProducer {
     @Override
     public CompletableFuture<Long> append(byte[] value) {
       CompletableFuture<Long> future = new CompletableFuture<>();
-      PrimaryTerm term = DistributedLogSession.this.term;
-      if (term != null && term.primary() != null) {
-        protocol.append(term.primary().memberId(), AppendRequest.request(value))
-            .whenCompleteAsync((response, error) -> {
-              if (error == null) {
-                if (response.status() == LogResponse.Status.OK) {
-                  future.complete(response.index());
-                } else {
-                  future.completeExceptionally(new PrimitiveException.Unavailable());
-                }
+      term().thenCompose(term -> protocol.append(term.primary().memberId(), AppendRequest.request(value)))
+          .whenCompleteAsync((response, error) -> {
+            if (error == null) {
+              if (response.status() == LogResponse.Status.OK) {
+                future.complete(response.index());
               } else {
-                future.completeExceptionally(error);
+                future.completeExceptionally(new PrimitiveException.Unavailable());
               }
-            }, threadContext);
-      } else {
-        future.completeExceptionally(new PrimitiveException.Unavailable());
-      }
+            } else {
+              future.completeExceptionally(error);
+            }
+          }, threadContext);
       return future;
     }
   }
@@ -208,6 +229,7 @@ public class DistributedLogSession implements LogSession {
      */
     private CompletableFuture<Void> register(MemberId leader) {
       CompletableFuture<Void> future = new CompletableFuture<>();
+      this.leader = leader;
       protocol.consume(leader, ConsumeRequest.request(memberId, subject, index + 1))
           .whenCompleteAsync((response, error) -> {
             if (error == null) {
@@ -242,17 +264,12 @@ public class DistributedLogSession implements LogSession {
 
     @Override
     public CompletableFuture<Void> consume(long index, Consumer<Record> consumer) {
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      PrimaryTerm term = DistributedLogSession.this.term;
-      if (term != null && term.primary() != null) {
+      return term().thenCompose(term -> {
         protocol.registerRecordsConsumer(subject, this::handleRecords, threadContext);
         this.consumer = consumer;
         this.index = index - 1;
         return register(term.primary().memberId());
-      } else {
-        future.completeExceptionally(new PrimitiveException.Unavailable());
-      }
-      return future;
+      });
     }
   }
 }
