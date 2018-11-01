@@ -15,6 +15,18 @@
  */
 package io.atomix.primitive.partition.impl;
 
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
@@ -32,18 +44,6 @@ import io.atomix.primitive.session.Session;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
-
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static io.atomix.primitive.partition.impl.PrimaryElectorEvents.CHANGE;
 
@@ -369,7 +369,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
         int registrationCount = countPrimaries(registration);
         for (int i = 0; i < registrations.size(); i++) {
           if (countPrimaries(registrations.get(i)) > registrationCount) {
-            updatedRegistrations.set(i, registration);
+            updatedRegistrations.add(i, registration);
             added = true;
             break;
           }
