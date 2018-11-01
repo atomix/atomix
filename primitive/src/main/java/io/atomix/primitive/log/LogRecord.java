@@ -22,12 +22,12 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 /**
  * Log entry.
  */
-public class Record {
+public class LogRecord {
   private final long offset;
   private final long timestamp;
   private final byte[] value;
 
-  public Record(long offset, long timestamp, byte[] value) {
+  public LogRecord(long offset, long timestamp, byte[] value) {
     this.offset = offset;
     this.timestamp = timestamp;
     this.value = value;

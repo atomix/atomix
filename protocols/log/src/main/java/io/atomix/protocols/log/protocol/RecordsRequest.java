@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.log.protocol;
 
-import io.atomix.primitive.log.Record;
+import io.atomix.primitive.log.LogRecord;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -24,17 +24,17 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class RecordsRequest extends LogRequest {
 
-  public static RecordsRequest request(Record record) {
+  public static RecordsRequest request(LogRecord record) {
     return new RecordsRequest(record);
   }
 
-  private final Record record;
+  private final LogRecord record;
 
-  private RecordsRequest(Record record) {
+  private RecordsRequest(LogRecord record) {
     this.record = record;
   }
 
-  public Record record() {
+  public LogRecord record() {
     return record;
   }
 

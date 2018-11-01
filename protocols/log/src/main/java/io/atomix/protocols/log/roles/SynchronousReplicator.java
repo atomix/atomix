@@ -46,14 +46,14 @@ class SynchronousReplicator implements Replicator {
 
   @Override
   public CompletableFuture<Void> replicate(BackupOperation operation) {
-    if (context.backups().isEmpty()) {
+    if (context.followers().isEmpty()) {
       context.setCommitIndex(operation.index());
       return CompletableFuture.completedFuture(null);
     }
 
     CompletableFuture<Void> future = new CompletableFuture<>();
     futures.put(operation.index(), future);
-    for (MemberId backup : context.backups()) {
+    for (MemberId backup : context.followers()) {
       queues.computeIfAbsent(backup, BackupQueue::new).add(operation);
     }
     return future;
