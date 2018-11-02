@@ -63,6 +63,7 @@ public class DefaultPrimaryElection implements ManagedPrimaryElection {
         listeners.forEach(l -> l.event(event));
       }
     };
+    service.addListener(eventListener);
   }
 
   @Override
@@ -87,7 +88,6 @@ public class DefaultPrimaryElection implements ManagedPrimaryElection {
 
   @Override
   public CompletableFuture<PrimaryElection> start() {
-    service.addListener(eventListener);
     started.set(true);
     return CompletableFuture.completedFuture(this);
   }
