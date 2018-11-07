@@ -80,7 +80,7 @@ public class SwimMembershipProtocol
    * Bootstrap member location provider type.
    */
   public static class Type implements GroupMembershipProtocol.Type<SwimMembershipProtocolConfig> {
-    private static final String NAME = "bootstrap";
+    private static final String NAME = "swim";
 
     @Override
     public String name() {
