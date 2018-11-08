@@ -181,7 +181,7 @@ public interface ClusterCommunicationService {
    * @return future that is completed when the message is sent
    */
   default <M> CompletableFuture<Void> unicast(String subject, M message, Function<M, byte[]> encoder, MemberId toMemberId) {
-    return unicast(subject, message, BASIC::encode, toMemberId, true);
+    return unicast(subject, message, encoder, toMemberId, true);
   }
 
   /**
