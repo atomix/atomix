@@ -48,7 +48,13 @@ public class SingleThreadContext extends AbstractThreadContext {
     @Override
     public void execute(Runnable command) {
       try {
-        executor.execute(command);
+        executor.execute(() -> {
+          try {
+            command.run();
+          } catch (Exception e) {
+            LOGGER.error("An uncaught exception occurred", e);
+          }
+        });
       } catch (RejectedExecutionException e) {
       }
     }
