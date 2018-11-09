@@ -18,7 +18,7 @@ package io.atomix.cluster;
 import io.atomix.cluster.discovery.NodeDiscoveryConfig;
 import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.cluster.protocol.GroupMembershipProtocolConfig;
-import io.atomix.cluster.protocol.PhiMembershipProtocolConfig;
+import io.atomix.cluster.protocol.SwimMembershipProtocolConfig;
 import io.atomix.utils.config.Config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -33,7 +33,7 @@ public class ClusterConfig implements Config {
   private MemberConfig nodeConfig = new MemberConfig();
   private NodeDiscoveryConfig discoveryConfig;
   private MulticastConfig multicastConfig = new MulticastConfig();
-  private GroupMembershipProtocolConfig protocolConfig = new PhiMembershipProtocolConfig();
+  private GroupMembershipProtocolConfig protocolConfig = new SwimMembershipProtocolConfig();
   private MembershipConfig membershipConfig = new MembershipConfig();
   private MessagingConfig messagingConfig = new MessagingConfig();
 
