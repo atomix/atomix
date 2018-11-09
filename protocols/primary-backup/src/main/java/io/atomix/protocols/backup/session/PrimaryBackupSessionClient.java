@@ -49,6 +49,7 @@ import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.net.ConnectException;
+import java.net.SocketException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
@@ -212,7 +213,7 @@ public class PrimaryBackupSessionClient implements SessionClient {
           execute(operation).whenComplete(future);
         } else {
           Throwable cause = Throwables.getRootCause(error);
-          if (cause instanceof PrimitiveException.Unavailable || cause instanceof TimeoutException) {
+          if (cause instanceof PrimitiveException.Unavailable || cause instanceof SocketException || cause instanceof TimeoutException) {
             threadContext.schedule(Duration.ofMillis(RETRY_DELAY), () -> execute(operation, attempt + 1, future));
           } else {
             future.completeExceptionally(error);

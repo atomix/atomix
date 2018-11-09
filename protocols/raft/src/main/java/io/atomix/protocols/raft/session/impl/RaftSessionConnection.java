@@ -38,6 +38,7 @@ import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.net.ConnectException;
+import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -267,7 +268,7 @@ public class RaftSessionConnection {
         error = error.getCause();
       }
       log.debug("{} failed! Reason: {}", request, error);
-      if (error instanceof ConnectException || error instanceof TimeoutException || error instanceof ClosedChannelException) {
+      if (error instanceof SocketException || error instanceof TimeoutException || error instanceof ClosedChannelException) {
         if (count < selector.members().size() + 1) {
           retryRequest(error, request, sender, count + 1, selectionId, future);
         } else {
