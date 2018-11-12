@@ -349,7 +349,11 @@ abstract class AbstractAppender implements AutoCloseable {
           log.trace("Received {} from {}", response, member.getMember().memberId());
           handleConfigureResponse(member, request, response, timestamp);
         } else {
-          log.warn("Failed to configure {}", member.getMember().memberId());
+          if (log.isTraceEnabled()) {
+            log.debug("Failed to configure {}", member.getMember().memberId(), error);
+          } else {
+            log.debug("Failed to configure {}", member.getMember().memberId());
+          }
           handleConfigureResponseFailure(member, request, error);
         }
       }
