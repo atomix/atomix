@@ -50,7 +50,9 @@ import io.atomix.core.value.AtomicValueType;
 import io.atomix.core.value.DistributedValueType;
 import io.atomix.core.workqueue.WorkQueueType;
 import io.atomix.primitive.protocol.ProxyProtocol;
+import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.net.Address;
 import org.junit.After;
 import org.junit.Before;
@@ -550,6 +552,24 @@ public class AtomixTest extends AbstractAtomixTest {
     //}
 
     atomix.start().get(30, TimeUnit.SECONDS);
+
+    try {
+      atomix.mapBuilder("foo")
+          .withProtocol(MultiRaftProtocol.builder("wrong").build())
+          .get();
+      fail();
+    } catch (Exception e) {
+      assertTrue(e instanceof ConfigurationException);
+    }
+
+    try {
+      atomix.mapBuilder("bar")
+          .withProtocol(MultiRaftProtocol.builder("wrong").build())
+          .build();
+      fail();
+    } catch (Exception e) {
+      assertTrue(e instanceof ConfigurationException);
+    }
 
     assertEquals(AtomicCounterType.instance(), atomix.getPrimitive("atomic-counter", AtomicCounterType.instance()).type());
     assertEquals("atomic-counter", atomix.getAtomicCounter("atomic-counter").name());
