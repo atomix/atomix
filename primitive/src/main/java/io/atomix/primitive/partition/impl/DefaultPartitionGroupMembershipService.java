@@ -190,10 +190,12 @@ public class DefaultPartitionGroupMembershipService
         .whenComplete((result, error) -> {
           if (error == null) {
             if (systemGroup == null) {
-              LOGGER.warn("Failed to locate system partition group. Retrying...");
+              LOGGER.warn("Failed to locate system partition group via bootstrap nodes. Please ensure partition " +
+                  "groups are configured either locally or remotely and the node is able to reach partition group members.");
               threadContext.schedule(Duration.ofSeconds(FIBONACCI_NUMBERS[Math.min(attempt, 4)]), () -> bootstrap(attempt + 1, future));
             } else if (groups.isEmpty()) {
-              LOGGER.warn("Failed to locate primitive partition group(s). Retrying...");
+              LOGGER.warn("Failed to locate primitive partition group(s) via bootstrap nodes. Please ensure partition " +
+                  "groups are configured either locally or remotely and the node is able to reach partition group members.");
               threadContext.schedule(Duration.ofSeconds(FIBONACCI_NUMBERS[Math.min(attempt, 4)]), () -> bootstrap(attempt + 1, future));
             } else {
               future.complete(null);
