@@ -33,6 +33,7 @@ import io.atomix.utils.serializer.Serializer;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -162,8 +163,12 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
   protected <S> CompletableFuture<ProxyClient<S>> newProxy(Class<S> serviceType, ServiceConfig config) {
     PrimitiveProtocol protocol = protocol();
     if (protocol instanceof ProxyProtocol) {
-      return CompletableFuture.completedFuture(((ProxyProtocol) protocol)
-          .newProxy(name, type, serviceType, config, managementService.getPartitionService()));
+      try {
+        return CompletableFuture.completedFuture(((ProxyProtocol) protocol)
+            .newProxy(name, type, serviceType, config, managementService.getPartitionService()));
+      } catch (Exception e) {
+        return Futures.exceptionalFuture(e);
+      }
     }
     return Futures.exceptionalFuture(new UnsupportedOperationException());
   }
@@ -178,7 +183,15 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
    */
   @Override
   public P build() {
-    return buildAsync().join();
+    try {
+      return buildAsync().join();
+    } catch (Exception e) {
+      if (e instanceof CompletionException && e.getCause() instanceof RuntimeException) {
+        throw (RuntimeException) e.getCause();
+      } else {
+        throw e;
+      }
+    }
   }
 
   /**
@@ -200,7 +213,15 @@ public abstract class PrimitiveBuilder<B extends PrimitiveBuilder<B, C, P>, C ex
    * @return a singleton instance of the primitive
    */
   public P get() {
-    return getAsync().join();
+    try {
+      return getAsync().join();
+    } catch (Exception e) {
+      if (e instanceof CompletionException && e.getCause() instanceof RuntimeException) {
+        throw (RuntimeException) e.getCause();
+      } else {
+        throw e;
+      }
+    }
   }
 
   /**
