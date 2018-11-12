@@ -211,7 +211,11 @@ public class ConfigMapper {
           if ((Named.class.isAssignableFrom(clazz) || NamedConfig.class.isAssignableFrom(clazz))
               && descriptor.setter.getParameterTypes()[0] == String.class && name != null && descriptor.name.equals("name")) {
             if (descriptor.deprecated) {
-              LOGGER.warn("{}.{} is deprecated!", path, name);
+              if (path == null) {
+                LOGGER.warn("{} is deprecated!", name);
+              } else {
+                LOGGER.warn("{}.{} is deprecated!", path, name);
+              }
             }
             setter.invoke(instance, name);
           }
@@ -221,7 +225,11 @@ public class ConfigMapper {
         Object value = getValue(instance.getClass(), parameterType, parameterClass, config, toPath(path, name), configPropName);
         if (value != null) {
           if (descriptor.deprecated) {
-            LOGGER.warn("{}.{} is deprecated!", path, name);
+            if (path == null) {
+              LOGGER.warn("{}.{} is deprecated!", name, configPropName);
+            } else {
+              LOGGER.warn("{}.{}.{} is deprecated!", path, name, configPropName);
+            }
           }
           setter.invoke(instance, value);
         }
