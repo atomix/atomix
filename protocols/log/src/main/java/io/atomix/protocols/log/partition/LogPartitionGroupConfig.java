@@ -25,7 +25,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Log partition group configuration.
  */
 public class LogPartitionGroupConfig extends PartitionGroupConfig<LogPartitionGroupConfig> {
-  private static final int DEFAULT_PARTITIONS = 71;
+  private static final int DEFAULT_PARTITIONS = 7;
 
   private String memberGroupStrategy = MemberGroupStrategy.NODE_AWARE.name();
   private LogStorageConfig storageConfig = new LogStorageConfig();
