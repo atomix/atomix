@@ -335,8 +335,16 @@ public class ConfigMapper {
       }
     } else if (parameterClass.isEnum()) {
       String value = config.getString(configPropName);
+      String enumName = value.replace("-", "_").toUpperCase();
       @SuppressWarnings("unchecked")
-      Enum enumValue = Enum.valueOf((Class<Enum>) parameterClass, value.replace("-", "_").toUpperCase());
+      Enum enumValue = Enum.valueOf((Class<Enum>) parameterClass, enumName);
+      try {
+        Deprecated deprecated = enumValue.getDeclaringClass().getField(enumName).getAnnotation(Deprecated.class);
+        if (deprecated != null) {
+          LOGGER.warn("{}.{} = {} is deprecated!", configPath, configPropName, value);
+        }
+      } catch (NoSuchFieldException e) {
+      }
       return enumValue;
     } else {
       return map(config.getConfig(configPropName), configPath, configPropName, parameterClass);

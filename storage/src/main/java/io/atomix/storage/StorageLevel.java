@@ -23,6 +23,7 @@ public enum StorageLevel {
   /**
    * Stores data in memory only.
    */
+  @Deprecated
   MEMORY,
 
   /**
