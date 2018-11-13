@@ -812,7 +812,7 @@ public class AtomixTest extends AbstractAtomixTest {
     }
 
     public ClusterMembershipEvent event() throws InterruptedException, TimeoutException {
-      ClusterMembershipEvent event = queue.poll(10, TimeUnit.SECONDS);
+      ClusterMembershipEvent event = queue.poll(15, TimeUnit.SECONDS);
       if (event == null) {
         throw new TimeoutException();
       }

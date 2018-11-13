@@ -32,6 +32,8 @@ import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,6 +114,7 @@ public class SwimMembershipProtocol
           .register(new AddressSerializer(), Address.class)
           .register(ImmutableMember.class)
           .register(State.class)
+          .register(ImmutablePair.class)
           .build("ClusterMembershipService"));
 
   private final BiFunction<Address, byte[], byte[]> probeHandler = (address, payload) ->
@@ -380,7 +383,8 @@ public class SwimMembershipProtocol
    */
   private void probe(ImmutableMember member) {
     LOGGER.trace("{} - Probing {}", localMember.id(), member);
-    bootstrapService.getMessagingService().sendAndReceive(member.address(), MEMBERSHIP_PROBE, SERIALIZER.encode(member))
+    bootstrapService.getMessagingService().sendAndReceive(
+        member.address(), MEMBERSHIP_PROBE, SERIALIZER.encode(Pair.of(localMember.copy(), member)), config.getProbeTimeout())
         .whenCompleteAsync((response, error) -> {
           if (error == null) {
             updateState(SERIALIZER.decode(response));
@@ -398,52 +402,69 @@ public class SwimMembershipProtocol
   /**
    * Handles a probe from another peer.
    *
-   * @param member the probing member
+   * @param members the probing member and local member info
    * @return the current term
    */
-  private ImmutableMember handleProbe(ImmutableMember member) {
-    LOGGER.trace("{} - Received probe {}", localMember.id(), member);
+  private ImmutableMember handleProbe(Pair<ImmutableMember, ImmutableMember> members) {
+    ImmutableMember remoteMember = members.getLeft();
+    ImmutableMember localMember = members.getRight();
+
+    LOGGER.trace("{} - Received probe {} from {}", this.localMember.id(), localMember, remoteMember);
+
     // If the probe indicates a term greater than the local term, update the local term, increment and respond.
-    if (member.incarnationNumber() > localMember.getIncarnationNumber()) {
-      localMember.setIncarnationNumber(member.incarnationNumber() + 1);
+    if (localMember.incarnationNumber() > this.localMember.getIncarnationNumber()) {
+      this.localMember.setIncarnationNumber(localMember.incarnationNumber() + 1);
       if (config.isBroadcastDisputes()) {
-        broadcast(localMember.copy());
+        broadcast(this.localMember.copy());
       }
     }
     // If the probe indicates this member is suspect, increment the local term and respond.
-    else if (member.state() == State.SUSPECT) {
-      localMember.setIncarnationNumber(localMember.getIncarnationNumber() + 1);
+    else if (localMember.state() == State.SUSPECT) {
+      this.localMember.setIncarnationNumber(this.localMember.getIncarnationNumber() + 1);
       if (config.isBroadcastDisputes()) {
-        broadcast(localMember.copy());
+        broadcast(this.localMember.copy());
       }
     }
-    return localMember.copy();
+
+    // Update the state of the probing member.
+    updateState(remoteMember);
+    return this.localMember.copy();
   }
 
   /**
    * Requests probes from n peers.
    */
   private void requestProbes(ImmutableMember suspect) {
-    Collection<SwimMember> members = selectRandomMembers(config.getSuspectProbes(), suspect);
-    AtomicInteger counter = new AtomicInteger();
-    AtomicBoolean succeeded = new AtomicBoolean();
-    for (SwimMember member : members) {
-      requestProbe(member, suspect).whenCompleteAsync((success, error) -> {
-        int count = counter.incrementAndGet();
-        if (error == null && success) {
-          succeeded.set(true);
-        }
-        // If the count is equal to the number of probe peers and no probe has succeeded, the node is unreachable.
-        else if (count == members.size() && !succeeded.get()) {
-          // Broadcast the unreachable change to all peers if necessary.
-          SwimMember swimMember = new SwimMember(suspect);
-          LOGGER.debug("{} - Failed all probes of {}", localMember.id(), swimMember);
-          swimMember.setState(State.SUSPECT);
-          if (updateState(swimMember.copy()) && config.isBroadcastUpdates()) {
-            broadcast(swimMember.copy());
+    Collection<SwimMember> members = selectRandomMembers(config.getSuspectProbes() - 1, suspect);
+    if (!members.isEmpty()) {
+      AtomicInteger counter = new AtomicInteger();
+      AtomicBoolean succeeded = new AtomicBoolean();
+      for (SwimMember member : members) {
+        requestProbe(member, suspect).whenCompleteAsync((success, error) -> {
+          int count = counter.incrementAndGet();
+          if (error == null && success) {
+            succeeded.set(true);
           }
-        }
-      }, swimScheduler);
+          // If the count is equal to the number of probe peers and no probe has succeeded, the node is unreachable.
+          else if (count == members.size() && !succeeded.get()) {
+            failProbes(suspect);
+          }
+        }, swimScheduler);
+      }
+    } else {
+      failProbes(suspect);
+    }
+  }
+
+  /**
+   * Marks the given member suspect after all probes failing.
+   */
+  private void failProbes(ImmutableMember suspect) {
+    SwimMember swimMember = new SwimMember(suspect);
+    LOGGER.debug("{} - Failed all probes of {}", localMember.id(), swimMember);
+    swimMember.setState(State.SUSPECT);
+    if (updateState(swimMember.copy()) && config.isBroadcastUpdates()) {
+      broadcast(swimMember.copy());
     }
   }
 
@@ -455,9 +476,11 @@ public class SwimMembershipProtocol
    */
   private CompletableFuture<Boolean> requestProbe(SwimMember member, ImmutableMember suspect) {
     LOGGER.debug("{} - Requesting probe of {} from {}", this.localMember.id(), suspect, member);
-    return bootstrapService.getMessagingService().sendAndReceive(member.address(), MEMBERSHIP_PROBE_REQUEST, SERIALIZER.encode(suspect))
-        .thenApply(response -> {
-          boolean succeeded = SERIALIZER.decode(response);
+    return bootstrapService.getMessagingService().sendAndReceive(
+        member.address(), MEMBERSHIP_PROBE_REQUEST, SERIALIZER.encode(suspect), config.getProbeTimeout().multipliedBy(2))
+        .<Boolean>thenApply(SERIALIZER::decode)
+        .<Boolean>exceptionally(e -> false)
+        .thenApply(succeeded -> {
           LOGGER.debug("{} - Probe request of {} from {} {}", localMember.id(), suspect, member, succeeded ? "succeeded" : "failed");
           return succeeded;
         });
