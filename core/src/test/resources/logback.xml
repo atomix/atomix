@@ -21,8 +21,9 @@
         </encoder>
     </appender>
 
-    <logger name="io.atomix.protocols.backup" level="${root.logging.level:-TRACE}" />
-    <logger name="io.atomix.protocols.raft" level="${root.logging.level:-TRACE}" />
+    <logger name="io.atomix.protocols.backup" level="${root.logging.level:-INFO}" />
+    <logger name="io.atomix.protocols.raft" level="${root.logging.level:-INFO}" />
+    <logger name="io.atomix.cluster.protocol" level="${root.logging.level:-INFO}" />
     <logger name="io.atomix.messaging" level="INFO" />
 
     <root level="${root.logging.level:-INFO}">
