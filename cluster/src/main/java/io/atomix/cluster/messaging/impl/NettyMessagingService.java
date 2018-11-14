@@ -27,6 +27,7 @@ import io.atomix.cluster.messaging.MessagingException;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.utils.AtomixRuntimeException;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.OrderedFuture;
 import io.atomix.utils.net.Address;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -519,7 +520,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   private CompletableFuture<Channel> bootstrapClient(Address address) {
-    CompletableFuture<Channel> future = new CompletableFuture<>();
+    CompletableFuture<Channel> future = new OrderedFuture<>();
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     bootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK,
