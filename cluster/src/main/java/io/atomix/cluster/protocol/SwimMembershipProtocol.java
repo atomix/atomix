@@ -384,7 +384,7 @@ public class SwimMembershipProtocol
   private void probe(ImmutableMember member) {
     LOGGER.trace("{} - Probing {}", localMember.id(), member);
     bootstrapService.getMessagingService().sendAndReceive(
-        member.address(), MEMBERSHIP_PROBE, SERIALIZER.encode(Pair.of(localMember.copy(), member)), config.getProbeTimeout())
+        member.address(), MEMBERSHIP_PROBE, SERIALIZER.encode(Pair.of(localMember.copy(), member)), false, config.getProbeTimeout())
         .whenCompleteAsync((response, error) -> {
           if (error == null) {
             updateState(SERIALIZER.decode(response));
@@ -477,7 +477,7 @@ public class SwimMembershipProtocol
   private CompletableFuture<Boolean> requestProbe(SwimMember member, ImmutableMember suspect) {
     LOGGER.debug("{} - Requesting probe of {} from {}", this.localMember.id(), suspect, member);
     return bootstrapService.getMessagingService().sendAndReceive(
-        member.address(), MEMBERSHIP_PROBE_REQUEST, SERIALIZER.encode(suspect), config.getProbeTimeout().multipliedBy(2))
+        member.address(), MEMBERSHIP_PROBE_REQUEST, SERIALIZER.encode(suspect), false, config.getProbeTimeout().multipliedBy(2))
         .<Boolean>thenApply(SERIALIZER::decode)
         .<Boolean>exceptionally(e -> false)
         .thenApply(succeeded -> {
@@ -510,7 +510,8 @@ public class SwimMembershipProtocol
     CompletableFuture<Boolean> future = new CompletableFuture<>();
     swimScheduler.execute(() -> {
       LOGGER.trace("{} - Probing {}", localMember.id(), member);
-      bootstrapService.getMessagingService().sendAndReceive(member.address(), MEMBERSHIP_PROBE, SERIALIZER.encode(member))
+      bootstrapService.getMessagingService().sendAndReceive(
+          member.address(), MEMBERSHIP_PROBE, SERIALIZER.encode(Pair.of(localMember.copy(), member)), false, config.getProbeTimeout())
           .whenCompleteAsync((response, error) -> {
             if (error != null) {
               LOGGER.debug("{} - Failed to probe {}", localMember.id(), member);

@@ -280,7 +280,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public CompletableFuture<Void> sendAsync(Address address, String type, byte[] payload) {
+  public CompletableFuture<Void> sendAsync(Address address, String type, byte[] payload, boolean keepAlive) {
     long messageId = messageIdGenerator.incrementAndGet();
     ProtocolRequest message = new ProtocolRequest(
         messageId,
@@ -291,29 +291,33 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload) {
-    return sendAndReceive(address, type, payload, null, MoreExecutors.directExecutor());
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, boolean keepAlive) {
+    return sendAndReceive(address, type, payload, keepAlive, null, MoreExecutors.directExecutor());
   }
 
   @Override
-  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Executor executor) {
-    return sendAndReceive(address, type, payload, null, executor);
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, boolean keepAlive, Executor executor) {
+    return sendAndReceive(address, type, payload, keepAlive, null, executor);
   }
 
   @Override
-  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout) {
-    return sendAndReceive(address, type, payload, timeout, MoreExecutors.directExecutor());
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, boolean keepAlive, Duration timeout) {
+    return sendAndReceive(address, type, payload, keepAlive, timeout, MoreExecutors.directExecutor());
   }
 
   @Override
-  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout, Executor executor) {
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, boolean keepAlive, Duration timeout, Executor executor) {
     long messageId = messageIdGenerator.incrementAndGet();
     ProtocolRequest message = new ProtocolRequest(
         messageId,
         returnAddress,
         type,
         payload);
-    return executeOnPooledConnection(address, type, c -> c.sendAndReceive(message, timeout), executor);
+    if (keepAlive) {
+      return executeOnPooledConnection(address, type, c -> c.sendAndReceive(message, timeout), executor);
+    } else {
+      return executeOnTemporaryConnection(address, type, c -> c.sendAndReceive(message, timeout), executor);
+    }
   }
 
   private List<CompletableFuture<Channel>> getChannelPool(Address address) {
@@ -474,6 +478,40 @@ public class NettyMessagingService implements ManagedMessagingService {
       connection = clientConnections.computeIfAbsent(channel, RemoteClientConnection::new);
     }
     return connection;
+  }
+
+  private <T> CompletableFuture<T> executeOnTemporaryConnection(
+      Address address,
+      String type,
+      Function<ClientConnection, CompletableFuture<T>> callback,
+      Executor executor) {
+    CompletableFuture<T> future = new CompletableFuture<>();
+    if (address.equals(returnAddress)) {
+      callback.apply(localClientConnection).whenComplete((result, error) -> {
+        if (error == null) {
+          executor.execute(() -> future.complete(result));
+        } else {
+          executor.execute(() -> future.completeExceptionally(error));
+        }
+      });
+      return future;
+    }
+
+    openChannel(address).whenComplete((channel, channelError) -> {
+      if (channelError == null) {
+        callback.apply(new RemoteClientConnection(channel)).whenComplete((result, sendError) -> {
+          if (sendError == null) {
+            executor.execute(() -> future.complete(result));
+          } else {
+            executor.execute(() -> future.completeExceptionally(sendError));
+          }
+        });
+        channel.close();
+      } else {
+        executor.execute(() -> future.completeExceptionally(channelError));
+      }
+    });
+    return future;
   }
 
   @Override
