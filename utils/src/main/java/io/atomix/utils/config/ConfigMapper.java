@@ -18,6 +18,7 @@ package io.atomix.utils.config;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Streams;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
@@ -181,22 +182,35 @@ public class ConfigMapper {
 
     // If any properties present in the configuration were not found on config beans, throw an exception.
     if (!propertyNames.isEmpty()) {
-      checkRemainingProperties(propertyNames.keySet(), toPath(path, name), clazz);
+      checkRemainingProperties(propertyNames.keySet(), describeProperties(instance), toPath(path, name), clazz);
     }
     return instance;
   }
 
-  protected void checkRemainingProperties(Set<String> propertyNames, String path, Class<?> clazz) {
+  protected void checkRemainingProperties(Set<String> missingProperties, List<String> availableProperties, String path, Class<?> clazz) {
     Properties properties = System.getProperties();
-    Set<String> cleanNames = propertyNames
-        .stream()
+    List<String> cleanNames = missingProperties.stream()
         .map(propertyName -> toPath(path, propertyName))
         .filter(propertyName -> !properties.containsKey(propertyName))
         .filter(propertyName -> properties.entrySet().stream().noneMatch(entry -> entry.getKey().toString().startsWith(propertyName + ".")))
-        .collect(Collectors.toSet());
+        .sorted()
+        .collect(Collectors.toList());
     if (!cleanNames.isEmpty()) {
-      throw new ConfigurationException("Unknown properties present in configuration: " + Joiner.on(", ").join(cleanNames));
+      throw new ConfigurationException("Unknown properties present in configuration: " + Joiner.on(", ").join(cleanNames) + "\n"
+          + "Available properties:\n- " + Joiner.on("\n- ").join(availableProperties));
     }
+  }
+
+  private List<String> describeProperties(Object instance) {
+    Stream<String> setters = getSetterDescriptors(instance.getClass())
+        .stream()
+        .map(descriptor -> descriptor.name);
+    Stream<String> fields = getFieldDescriptors(instance.getClass())
+        .stream()
+        .map(descriptor -> descriptor.name);
+    return Streams.concat(setters, fields)
+        .sorted()
+        .collect(Collectors.toList());
   }
 
   private <T> void mapSetters(T instance, Class<T> clazz, String path, String name, Map<String, String> propertyNames, Config config) {

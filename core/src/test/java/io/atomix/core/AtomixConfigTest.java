@@ -22,7 +22,7 @@ import io.atomix.cluster.MulticastConfig;
 import io.atomix.cluster.discovery.MulticastDiscoveryConfig;
 import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
 import io.atomix.cluster.messaging.MessagingConfig;
-import io.atomix.cluster.protocol.PhiMembershipProtocolConfig;
+import io.atomix.cluster.protocol.HeartbeatMembershipProtocolConfig;
 import io.atomix.core.map.AtomicMapConfig;
 import io.atomix.core.profile.ConsensusProfile;
 import io.atomix.core.profile.ConsensusProfileConfig;
@@ -81,9 +81,9 @@ public class AtomixConfigTest {
     assertEquals("230.0.1.1", multicast.getGroup().getHostAddress());
     assertEquals(56789, multicast.getPort());
 
-    PhiMembershipProtocolConfig protocol = (PhiMembershipProtocolConfig) cluster.getProtocolConfig();
+    HeartbeatMembershipProtocolConfig protocol = (HeartbeatMembershipProtocolConfig) cluster.getProtocolConfig();
     assertEquals(Duration.ofMillis(200), protocol.getHeartbeatInterval());
-    assertEquals(12, protocol.getFailureThreshold());
+    assertEquals(12, protocol.getPhiFailureThreshold());
     assertEquals(Duration.ofSeconds(15), protocol.getFailureTimeout());
 
     MembershipConfig membership = cluster.getMembershipConfig();

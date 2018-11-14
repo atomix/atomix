@@ -22,18 +22,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Gossip group membership protocol configuration.
  */
-public class PhiMembershipProtocolConfig extends GroupMembershipProtocolConfig {
+public class HeartbeatMembershipProtocolConfig extends GroupMembershipProtocolConfig {
   private static final int DEFAULT_HEARTBEAT_INTERVAL = 1000;
   private static final int DEFAULT_FAILURE_TIMEOUT = 10000;
   private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
 
   private Duration heartbeatInterval = Duration.ofMillis(DEFAULT_HEARTBEAT_INTERVAL);
-  private int failureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
+  private int phiFailureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
   private Duration failureTimeout = Duration.ofMillis(DEFAULT_FAILURE_TIMEOUT);
 
   @Override
   public GroupMembershipProtocol.Type getType() {
-    return PhiMembershipProtocol.TYPE;
+    return HeartbeatMembershipProtocol.TYPE;
   }
 
   /**
@@ -51,7 +51,7 @@ public class PhiMembershipProtocolConfig extends GroupMembershipProtocolConfig {
    * @param heartbeatInterval the heartbeat interval
    * @return the group membership configuration
    */
-  public PhiMembershipProtocolConfig setHeartbeatInterval(Duration heartbeatInterval) {
+  public HeartbeatMembershipProtocolConfig setHeartbeatInterval(Duration heartbeatInterval) {
     this.heartbeatInterval = checkNotNull(heartbeatInterval);
     return this;
   }
@@ -61,18 +61,18 @@ public class PhiMembershipProtocolConfig extends GroupMembershipProtocolConfig {
    *
    * @return the failure detector threshold
    */
-  public int getFailureThreshold() {
-    return failureThreshold;
+  public int getPhiFailureThreshold() {
+    return phiFailureThreshold;
   }
 
   /**
    * Sets the failure detector threshold.
    *
-   * @param failureThreshold the failure detector threshold
+   * @param phiFailureThreshold the failure detector threshold
    * @return the group membership configuration
    */
-  public PhiMembershipProtocolConfig setFailureThreshold(int failureThreshold) {
-    this.failureThreshold = failureThreshold;
+  public HeartbeatMembershipProtocolConfig setPhiFailureThreshold(int phiFailureThreshold) {
+    this.phiFailureThreshold = phiFailureThreshold;
     return this;
   }
 
@@ -91,7 +91,7 @@ public class PhiMembershipProtocolConfig extends GroupMembershipProtocolConfig {
    * @param failureTimeout the base failure timeout
    * @return the group membership configuration
    */
-  public PhiMembershipProtocolConfig setFailureTimeout(Duration failureTimeout) {
+  public HeartbeatMembershipProtocolConfig setFailureTimeout(Duration failureTimeout) {
     this.failureTimeout = checkNotNull(failureTimeout);
     return this;
   }

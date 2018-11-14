@@ -20,8 +20,8 @@ import java.time.Duration;
 /**
  * Gossip based group membership protocol builder.
  */
-public class PhiMembershipProtocolBuilder extends GroupMembershipProtocolBuilder {
-  private final PhiMembershipProtocolConfig config = new PhiMembershipProtocolConfig();
+public class HeartbeatMembershipProtocolBuilder extends GroupMembershipProtocolBuilder {
+  private final HeartbeatMembershipProtocolConfig config = new HeartbeatMembershipProtocolConfig();
 
   /**
    * Sets the failure detection heartbeat interval.
@@ -29,7 +29,7 @@ public class PhiMembershipProtocolBuilder extends GroupMembershipProtocolBuilder
    * @param heartbeatInterval the failure detection heartbeat interval
    * @return the location provider builder
    */
-  public PhiMembershipProtocolBuilder withHeartbeatInterval(Duration heartbeatInterval) {
+  public HeartbeatMembershipProtocolBuilder withHeartbeatInterval(Duration heartbeatInterval) {
     config.setHeartbeatInterval(heartbeatInterval);
     return this;
   }
@@ -40,8 +40,8 @@ public class PhiMembershipProtocolBuilder extends GroupMembershipProtocolBuilder
    * @param failureThreshold the phi accrual failure threshold
    * @return the location provider builder
    */
-  public PhiMembershipProtocolBuilder withFailureThreshold(int failureThreshold) {
-    config.setFailureThreshold(failureThreshold);
+  public HeartbeatMembershipProtocolBuilder withFailureThreshold(int failureThreshold) {
+    config.setPhiFailureThreshold(failureThreshold);
     return this;
   }
 
@@ -51,13 +51,13 @@ public class PhiMembershipProtocolBuilder extends GroupMembershipProtocolBuilder
    * @param failureTimeout the failure timeout
    * @return the location provider builder
    */
-  public PhiMembershipProtocolBuilder withFailureTimeout(Duration failureTimeout) {
+  public HeartbeatMembershipProtocolBuilder withFailureTimeout(Duration failureTimeout) {
     config.setFailureTimeout(failureTimeout);
     return this;
   }
 
   @Override
   public GroupMembershipProtocol build() {
-    return new PhiMembershipProtocol(config);
+    return new HeartbeatMembershipProtocol(config);
   }
 }
