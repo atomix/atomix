@@ -78,21 +78,13 @@ public class ConfigMapper {
       return loadResources(type, resources);
     }
 
-    Config config = null;
+    Config config = ConfigFactory.systemProperties();
     for (File file : files) {
-      if (config == null) {
-        config = ConfigFactory.parseFile(file, ConfigParseOptions.defaults().setAllowMissing(false));
-      } else {
-        config = config.withFallback(ConfigFactory.parseFile(file, ConfigParseOptions.defaults().setAllowMissing(false)));
-      }
+      config = config.withFallback(ConfigFactory.parseFile(file, ConfigParseOptions.defaults().setAllowMissing(false)));
     }
 
     for (String resource : resources) {
-      if (config == null) {
-        config = ConfigFactory.load(classLoader, resource);
-      } else {
-        config = config.withFallback(ConfigFactory.load(classLoader, resource));
-      }
+      config = config.withFallback(ConfigFactory.load(classLoader, resource));
     }
     return map(checkNotNull(config, "config cannot be null").resolve(), type);
   }

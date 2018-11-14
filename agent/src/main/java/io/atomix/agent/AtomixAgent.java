@@ -38,8 +38,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Atomix agent runner.
@@ -54,7 +57,11 @@ public class AtomixAgent {
    */
   public static void main(String[] args) throws Exception {
     // Parse the command line arguments.
-    final Namespace namespace = parseArgs(args);
+    final List<String> unknown = new ArrayList<>();
+    final Namespace namespace = parseArgs(args, unknown);
+    final Namespace extraArgs = parseUnknown(unknown);
+    extraArgs.getAttrs().forEach((key, value) -> System.setProperty(key, value.toString()));
+
     final Logger logger = createLogger(namespace);
 
     final Atomix atomix = buildAtomix(namespace);
@@ -79,16 +86,43 @@ public class AtomixAgent {
    * @param args the arguments to parse
    * @return the namespace
    */
-  private static Namespace parseArgs(String[] args) {
+  static Namespace parseArgs(String[] args, List<String> unknown) {
     ArgumentParser parser = createParser();
     Namespace namespace = null;
     try {
-      namespace = parser.parseArgs(args);
+      namespace = parser.parseKnownArgs(args, unknown);
     } catch (ArgumentParserException e) {
       parser.handleError(e);
       System.exit(1);
     }
     return namespace;
+  }
+
+  /**
+   * Parses unknown arguments, returning an argparse4j namespace.
+   *
+   * @param unknown the unknown arguments to parse
+   * @return the namespace
+   * --foo.bar baz --bar.baz foo bar --foo.bar.baz bang
+   */
+  static Namespace parseUnknown(List<String> unknown) {
+    Map<String, Object> attrs = new HashMap<>();
+    String attr = null;
+    for (String arg : unknown) {
+      if (arg.startsWith("--")) {
+        int splitIndex = arg.indexOf('=');
+        if (splitIndex == -1) {
+          attr = arg.substring(2);
+        } else {
+          attrs.put(arg.substring(2, splitIndex), arg.substring(splitIndex + 1));
+          attr = null;
+        }
+      } else if (attr != null) {
+        attrs.put(attr, arg);
+        attr = null;
+      }
+    }
+    return new Namespace(attrs);
   }
 
   /**
@@ -115,7 +149,8 @@ public class AtomixAgent {
 
     final ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
         .defaultHelp(true)
-        .description("Atomix server");
+        .description("Runs the Atomix agent with the given arguments. Arbitrary configuration options may be overridden " +
+            "by specifying the option path and value as an optional argument, e.g. --cluster.node.id node-1");
     parser.addArgument("--member", "-m")
         .type(String.class)
         .nargs("?")
@@ -237,7 +272,7 @@ public class AtomixAgent {
    * @param namespace the namespace from which to create the logger configuration
    * @return a new agent logger
    */
-  private static Logger createLogger(Namespace namespace) {
+  static Logger createLogger(Namespace namespace) {
     String logConfig = namespace.getString("log_config");
     if (logConfig != null) {
       System.setProperty("logback.configurationFile", logConfig);
@@ -255,7 +290,7 @@ public class AtomixAgent {
    * @param namespace the namespace from which to create the configuration
    * @return the Atomix configuration for the given namespace
    */
-  private static AtomixConfig createConfig(Namespace namespace) {
+  static AtomixConfig createConfig(Namespace namespace) {
     final List<File> configFiles = namespace.getList("config");
     final String memberId = namespace.getString("member");
     final Address address = namespace.get("address");

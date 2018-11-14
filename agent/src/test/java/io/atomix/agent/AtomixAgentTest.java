@@ -16,7 +16,9 @@
 package io.atomix.agent;
 
 import io.atomix.core.Atomix;
+import io.atomix.core.AtomixConfig;
 import io.atomix.core.map.AtomicMap;
+import net.sourceforge.argparse4j.inf.Namespace;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -29,6 +31,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -37,6 +42,30 @@ import static org.junit.Assert.assertEquals;
  */
 public class AtomixAgentTest {
   private static final Path PATH = Paths.get("target/test-logs/");
+
+  @Test
+  public void testParseArgs() {
+    List<String> unknown = new ArrayList<>();
+    Namespace namespace = AtomixAgent.parseArgs(new String[]{"-c", "some.conf", "--a.b.c", "d", "--b.c.d=a"}, unknown);
+    assertEquals("some.conf", namespace.getList("config").get(0).toString());
+    assertEquals(3, unknown.size());
+    Namespace extraArgs = AtomixAgent.parseUnknown(unknown);
+    assertEquals("d", extraArgs.getString("a.b.c"));
+    assertEquals("a", extraArgs.getString("b.c.d"));
+  }
+
+  @Test
+  public void testCreateConfig() {
+    final List<String> unknown = new ArrayList<>();
+    final String path = getClass().getClassLoader().getResource("test.conf").getPath();
+    final String[] args = new String[]{"-c", path, "--cluster.node.id", "member-1", "--cluster.node.address", "localhost:5000"};
+    final Namespace namespace = AtomixAgent.parseArgs(args, unknown);
+    final Namespace extraArgs = AtomixAgent.parseUnknown(unknown);
+    extraArgs.getAttrs().forEach((key, value) -> System.setProperty(key, value.toString()));
+    final AtomixConfig config = AtomixAgent.createConfig(namespace);
+    assertEquals("member-1", config.getClusterConfig().getNodeConfig().getId().id());
+    assertEquals("localhost:5000", config.getClusterConfig().getNodeConfig().getAddress().toString());
+  }
 
   @Test
   @Ignore
