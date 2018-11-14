@@ -651,10 +651,11 @@ public final class LeaderRole extends ActiveRole {
                   .build());
       }
     }
-    // Otherwise, commit the command and update the request sequence number.
+    // Otherwise, commit the command and update the request sequence number, then drain pending commands.
     else {
       commitCommand(request, future);
       session.setRequestSequence(sequenceNumber);
+      drainCommands(sequenceNumber, session);
     }
 
     return future.thenApply(this::logResponse);
