@@ -507,16 +507,20 @@ public class ConfigMapper {
 
   protected static String toCamelCase(String originalName) {
     String[] words = originalName.split("-+");
-    StringBuilder nameBuilder = new StringBuilder(originalName.length());
-    for (String word : words) {
-      if (nameBuilder.length() == 0) {
-        nameBuilder.append(word);
-      } else {
-        nameBuilder.append(word.substring(0, 1).toUpperCase());
-        nameBuilder.append(word.substring(1));
+    if (words.length > 1) {
+      LOGGER.warn("Kebab case config name '" + originalName + "' is deprecated!");
+      StringBuilder nameBuilder = new StringBuilder(originalName.length());
+      for (String word : words) {
+        if (nameBuilder.length() == 0) {
+          nameBuilder.append(word);
+        } else {
+          nameBuilder.append(word.substring(0, 1).toUpperCase());
+          nameBuilder.append(word.substring(1));
+        }
       }
+      return nameBuilder.toString();
     }
-    return nameBuilder.toString();
+    return originalName;
   }
 
   protected static String toSetterName(String name) {
