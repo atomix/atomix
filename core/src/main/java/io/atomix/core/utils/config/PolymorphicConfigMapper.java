@@ -25,6 +25,7 @@ import io.atomix.utils.config.TypedConfig;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
@@ -71,6 +72,9 @@ public class PolymorphicConfigMapper extends ConfigMapper {
 
       String typeName = typeMapper.getTypePath() != null ? config.getString(typeMapper.getTypePath()) : key;
       Class<? extends TypedConfig<?>> concreteClass = typeMapper.getConcreteClass(registry, typeName);
+      if (concreteClass == null) {
+        throw new ConfigurationException("Unknown " + key + " type '" + typeName + "'");
+      }
       try {
         instance = (T) concreteClass.newInstance();
       } catch (InstantiationException | IllegalAccessException e) {
@@ -87,17 +91,18 @@ public class PolymorphicConfigMapper extends ConfigMapper {
   }
 
   @Override
-  protected void checkRemainingProperties(Set<String> propertyNames, String path, Class<?> clazz) {
+  protected void checkRemainingProperties(Set<String> missingProperties, List<String> availableProperties, String path, Class<?> clazz) {
     Properties properties = System.getProperties();
-    Set<String> cleanNames = propertyNames
-        .stream()
+    List<String> cleanNames = missingProperties.stream()
         .filter(propertyName -> !isPolymorphicType(clazz) || !polymorphicTypes.stream().anyMatch(type -> Objects.equals(type.getTypePath(), propertyName)))
         .map(propertyName -> toPath(path, propertyName))
         .filter(propertyName -> !properties.containsKey(propertyName))
         .filter(propertyName -> properties.entrySet().stream().noneMatch(entry -> entry.getKey().toString().startsWith(propertyName + ".")))
-        .collect(Collectors.toSet());
+        .sorted()
+        .collect(Collectors.toList());
     if (!cleanNames.isEmpty()) {
-      throw new ConfigurationException("Unknown properties present in configuration: " + Joiner.on(", ").join(cleanNames));
+      throw new ConfigurationException("Unknown properties present in configuration: " + Joiner.on(", ").join(cleanNames) + "\n"
+          + "Available properties:\n- " + Joiner.on("\n- ").join(availableProperties));
     }
   }
 

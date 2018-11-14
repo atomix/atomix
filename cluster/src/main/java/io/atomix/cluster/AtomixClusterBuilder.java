@@ -18,7 +18,8 @@ package io.atomix.cluster;
 import com.google.common.collect.Lists;
 import io.atomix.cluster.discovery.NodeDiscoveryProvider;
 import io.atomix.cluster.protocol.GroupMembershipProtocol;
-import io.atomix.cluster.protocol.PhiMembershipProtocolConfig;
+import io.atomix.cluster.protocol.HeartbeatMembershipProtocol;
+import io.atomix.cluster.protocol.HeartbeatMembershipProtocolConfig;
 import io.atomix.cluster.protocol.GroupMembershipProtocolConfig;
 import io.atomix.utils.Builder;
 import io.atomix.utils.net.Address;
@@ -332,8 +333,8 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
   @Deprecated
   public AtomixClusterBuilder setBroadcastInterval(Duration interval) {
     GroupMembershipProtocolConfig protocolConfig = config.getProtocolConfig();
-    if (protocolConfig instanceof PhiMembershipProtocolConfig) {
-      ((PhiMembershipProtocolConfig) protocolConfig).setHeartbeatInterval(interval);
+    if (protocolConfig instanceof HeartbeatMembershipProtocolConfig) {
+      ((HeartbeatMembershipProtocolConfig) protocolConfig).setHeartbeatInterval(interval);
     }
     return this;
   }
@@ -349,8 +350,8 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
   @Deprecated
   public AtomixClusterBuilder withBroadcastInterval(Duration interval) {
     GroupMembershipProtocolConfig protocolConfig = config.getProtocolConfig();
-    if (protocolConfig instanceof PhiMembershipProtocolConfig) {
-      ((PhiMembershipProtocolConfig) protocolConfig).setHeartbeatInterval(interval);
+    if (protocolConfig instanceof HeartbeatMembershipProtocolConfig) {
+      ((HeartbeatMembershipProtocolConfig) protocolConfig).setHeartbeatInterval(interval);
     }
     return this;
   }
@@ -368,8 +369,8 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
   @Deprecated
   public AtomixClusterBuilder setReachabilityThreshold(int threshold) {
     GroupMembershipProtocolConfig protocolConfig = config.getProtocolConfig();
-    if (protocolConfig instanceof PhiMembershipProtocolConfig) {
-      ((PhiMembershipProtocolConfig) protocolConfig).setFailureThreshold(threshold);
+    if (protocolConfig instanceof HeartbeatMembershipProtocolConfig) {
+      ((HeartbeatMembershipProtocolConfig) protocolConfig).setPhiFailureThreshold(threshold);
     }
     return this;
   }
@@ -386,8 +387,8 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
   @Deprecated
   public AtomixClusterBuilder withReachabilityThreshold(int threshold) {
     GroupMembershipProtocolConfig protocolConfig = config.getProtocolConfig();
-    if (protocolConfig instanceof PhiMembershipProtocolConfig) {
-      ((PhiMembershipProtocolConfig) protocolConfig).setFailureThreshold(threshold);
+    if (protocolConfig instanceof HeartbeatMembershipProtocolConfig) {
+      ((HeartbeatMembershipProtocolConfig) protocolConfig).setPhiFailureThreshold(threshold);
     }
     return this;
   }
@@ -404,8 +405,8 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
   @Deprecated
   public AtomixClusterBuilder withReachabilityTimeout(Duration timeout) {
     GroupMembershipProtocolConfig protocolConfig = config.getProtocolConfig();
-    if (protocolConfig instanceof PhiMembershipProtocolConfig) {
-      ((PhiMembershipProtocolConfig) protocolConfig).setFailureTimeout(timeout);
+    if (protocolConfig instanceof HeartbeatMembershipProtocolConfig) {
+      ((HeartbeatMembershipProtocolConfig) protocolConfig).setFailureTimeout(timeout);
     }
     return this;
   }
@@ -414,11 +415,11 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    * Sets the cluster membership protocol.
    * <p>
    * The membership protocol is responsible for determining the active set of members in the cluster, replicating
-   * member metadata, and detecting failures. The default is {@link io.atomix.cluster.protocol.PhiMembershipProtocol}.
+   * member metadata, and detecting failures. The default is {@link HeartbeatMembershipProtocol}.
    *
    * @param protocol the cluster membership protocol
    * @return the cluster builder
-   * @see io.atomix.cluster.protocol.PhiMembershipProtocol
+   * @see HeartbeatMembershipProtocol
    * @see io.atomix.cluster.protocol.SwimMembershipProtocol
    */
   public AtomixClusterBuilder withMembershipProtocol(GroupMembershipProtocol protocol) {

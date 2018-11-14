@@ -30,8 +30,8 @@ import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.cluster.messaging.MessagingService;
 import io.atomix.cluster.messaging.UnicastService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
-import io.atomix.cluster.protocol.PhiMembershipProtocol;
-import io.atomix.cluster.protocol.PhiMembershipProtocolConfig;
+import io.atomix.cluster.protocol.HeartbeatMembershipProtocol;
+import io.atomix.cluster.protocol.HeartbeatMembershipProtocolConfig;
 import io.atomix.primitive.PrimitiveBuilder;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
@@ -515,7 +515,7 @@ public class RaftPerformanceTest implements Runnable {
             Version.from("1.0.0"),
             new DefaultNodeDiscoveryService(bootstrapService, member, new BootstrapDiscoveryProvider(members)),
             bootstrapService,
-            new PhiMembershipProtocol(new PhiMembershipProtocolConfig())))
+            new HeartbeatMembershipProtocol(new HeartbeatMembershipProtocolConfig())))
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/perf-logs/%s", member.id())))

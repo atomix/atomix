@@ -17,6 +17,7 @@ package io.atomix.core.utils.config;
 
 import io.atomix.core.AtomixRegistry;
 import io.atomix.utils.ConfiguredType;
+import io.atomix.utils.NamedType;
 import io.atomix.utils.config.TypedConfig;
 
 /**
@@ -64,11 +65,15 @@ public class PolymorphicTypeMapper {
    * Returns the concrete configuration class.
    *
    * @param registry the Atomix type registry
-   * @param type     the type name
+   * @param typeName the type name
    * @return the concrete configuration class
    */
   @SuppressWarnings("unchecked")
-  public Class<? extends TypedConfig<?>> getConcreteClass(AtomixRegistry registry, String type) {
-    return (Class<? extends TypedConfig<?>>) registry.getType(typeClass, type).newConfig().getClass();
+  public Class<? extends TypedConfig<?>> getConcreteClass(AtomixRegistry registry, String typeName) {
+    ConfiguredType type = registry.getType(typeClass, typeName);
+    if (type == null) {
+      return null;
+    }
+    return (Class<? extends TypedConfig<?>>) type.newConfig().getClass();
   }
 }

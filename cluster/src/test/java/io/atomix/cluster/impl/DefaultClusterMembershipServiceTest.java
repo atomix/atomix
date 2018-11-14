@@ -27,8 +27,8 @@ import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.cluster.messaging.impl.TestBroadcastServiceFactory;
 import io.atomix.cluster.messaging.impl.TestMessagingServiceFactory;
 import io.atomix.cluster.messaging.impl.TestUnicastServiceFactory;
-import io.atomix.cluster.protocol.PhiMembershipProtocol;
-import io.atomix.cluster.protocol.PhiMembershipProtocolConfig;
+import io.atomix.cluster.protocol.HeartbeatMembershipProtocol;
+import io.atomix.cluster.protocol.HeartbeatMembershipProtocolConfig;
 import io.atomix.utils.Version;
 import io.atomix.utils.net.Address;
 import org.junit.Test;
@@ -85,7 +85,7 @@ public class DefaultClusterMembershipServiceTest {
         Version.from("1.0.0"),
         new DefaultNodeDiscoveryService(bootstrapService1, localMember1, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService1,
-        new PhiMembershipProtocol(new PhiMembershipProtocolConfig().setFailureTimeout(Duration.ofSeconds(2))));
+        new HeartbeatMembershipProtocol(new HeartbeatMembershipProtocolConfig().setFailureTimeout(Duration.ofSeconds(2))));
 
     Member localMember2 = buildMember(2);
     BootstrapService bootstrapService2 = new TestBootstrapService(
@@ -97,7 +97,7 @@ public class DefaultClusterMembershipServiceTest {
         Version.from("1.0.0"),
         new DefaultNodeDiscoveryService(bootstrapService2, localMember2, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService2,
-        new PhiMembershipProtocol(new PhiMembershipProtocolConfig().setFailureTimeout(Duration.ofSeconds(2))));
+        new HeartbeatMembershipProtocol(new HeartbeatMembershipProtocolConfig().setFailureTimeout(Duration.ofSeconds(2))));
 
     Member localMember3 = buildMember(3);
     BootstrapService bootstrapService3 = new TestBootstrapService(
@@ -109,7 +109,7 @@ public class DefaultClusterMembershipServiceTest {
         Version.from("1.0.1"),
         new DefaultNodeDiscoveryService(bootstrapService3, localMember3, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService3,
-        new PhiMembershipProtocol(new PhiMembershipProtocolConfig().setFailureTimeout(Duration.ofSeconds(2))));
+        new HeartbeatMembershipProtocol(new HeartbeatMembershipProtocolConfig().setFailureTimeout(Duration.ofSeconds(2))));
 
     assertNull(clusterService1.getMember(MemberId.from("1")));
     assertNull(clusterService1.getMember(MemberId.from("2")));
@@ -143,7 +143,7 @@ public class DefaultClusterMembershipServiceTest {
         Version.from("1.1.0"),
         new DefaultNodeDiscoveryService(ephemeralBootstrapService, anonymousMember, new BootstrapDiscoveryProvider(bootstrapLocations)),
         ephemeralBootstrapService,
-        new PhiMembershipProtocol(new PhiMembershipProtocolConfig().setFailureTimeout(Duration.ofSeconds(2))));
+        new HeartbeatMembershipProtocol(new HeartbeatMembershipProtocolConfig().setFailureTimeout(Duration.ofSeconds(2))));
 
     assertFalse(ephemeralClusterService.getLocalMember().isActive());
 

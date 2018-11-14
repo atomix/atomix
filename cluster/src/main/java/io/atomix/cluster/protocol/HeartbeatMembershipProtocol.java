@@ -57,7 +57,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 /**
  * Gossip based group membership protocol.
  */
-public class PhiMembershipProtocol
+public class HeartbeatMembershipProtocol
     extends AbstractListenerManager<GroupMembershipEvent, GroupMembershipEventListener>
     implements GroupMembershipProtocol {
 
@@ -68,15 +68,15 @@ public class PhiMembershipProtocol
    *
    * @return a new bootstrap provider builder
    */
-  public static PhiMembershipProtocolBuilder builder() {
-    return new PhiMembershipProtocolBuilder();
+  public static HeartbeatMembershipProtocolBuilder builder() {
+    return new HeartbeatMembershipProtocolBuilder();
   }
 
   /**
    * Bootstrap member location provider type.
    */
-  public static class Type implements GroupMembershipProtocol.Type<PhiMembershipProtocolConfig> {
-    private static final String NAME = "phi";
+  public static class Type implements GroupMembershipProtocol.Type<HeartbeatMembershipProtocolConfig> {
+    private static final String NAME = "heartbeat";
 
     @Override
     public String name() {
@@ -84,19 +84,19 @@ public class PhiMembershipProtocol
     }
 
     @Override
-    public PhiMembershipProtocolConfig newConfig() {
-      return new PhiMembershipProtocolConfig();
+    public HeartbeatMembershipProtocolConfig newConfig() {
+      return new HeartbeatMembershipProtocolConfig();
     }
 
     @Override
-    public GroupMembershipProtocol newProtocol(PhiMembershipProtocolConfig config) {
-      return new PhiMembershipProtocol(config);
+    public GroupMembershipProtocol newProtocol(HeartbeatMembershipProtocolConfig config) {
+      return new HeartbeatMembershipProtocol(config);
     }
   }
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(PhiMembershipProtocol.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(HeartbeatMembershipProtocol.class);
 
-  private final PhiMembershipProtocolConfig config;
+  private final HeartbeatMembershipProtocolConfig config;
 
   private static final String HEARTBEAT_MESSAGE = "atomix-cluster-membership";
 
@@ -125,7 +125,7 @@ public class PhiMembershipProtocol
       namedThreads("atomix-cluster-events", LOGGER));
   private ScheduledFuture<?> heartbeatFuture;
 
-  public PhiMembershipProtocol(PhiMembershipProtocolConfig config) {
+  public HeartbeatMembershipProtocol(HeartbeatMembershipProtocolConfig config) {
     this.config = config;
   }
 
@@ -237,7 +237,7 @@ public class PhiMembershipProtocol
 
             PhiAccrualFailureDetector failureDetector = failureDetectors.computeIfAbsent(member.id(), n -> new PhiAccrualFailureDetector());
             double phi = failureDetector.phi();
-            if (phi >= config.getFailureThreshold()
+            if (phi >= config.getPhiFailureThreshold()
                 || (phi == 0.0 && System.currentTimeMillis() - failureDetector.lastUpdated() > config.getFailureTimeout().toMillis())) {
               if (members.remove(member.id()) != null) {
                 failureDetectors.remove(member.id());
