@@ -105,7 +105,7 @@ public class TestMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public CompletableFuture<Void> sendAsync(Address address, String type, byte[] payload) {
+  public CompletableFuture<Void> sendAsync(Address address, String type, byte[] payload, boolean keepAlive) {
     if (isPartitioned(address)) {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -113,7 +113,7 @@ public class TestMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload) {
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, boolean keepAlive) {
     if (isPartitioned(address)) {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -121,7 +121,7 @@ public class TestMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Executor executor) {
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, boolean keepAlive, Executor executor) {
     if (isPartitioned(address)) {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -131,7 +131,7 @@ public class TestMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout) {
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, boolean keepAlive, Duration timeout) {
     if (isPartitioned(address)) {
       return Futures.exceptionalFuture(new ConnectException());
     }
@@ -139,7 +139,7 @@ public class TestMessagingService implements ManagedMessagingService {
   }
 
   @Override
-  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, Duration timeout, Executor executor) {
+  public CompletableFuture<byte[]> sendAndReceive(Address address, String type, byte[] payload, boolean keepAlive, Duration timeout, Executor executor) {
     if (isPartitioned(address)) {
       return Futures.exceptionalFuture(new ConnectException());
     }
