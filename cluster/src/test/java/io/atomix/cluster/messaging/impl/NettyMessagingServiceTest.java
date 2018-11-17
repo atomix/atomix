@@ -42,11 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -125,7 +121,6 @@ public class NettyMessagingServiceTest {
   }
 
   @Test
-  @Ignore // FIXME disabled on 9/29/16 due to random failures
   public void testSendAndReceive() {
     String subject = nextSubject();
     AtomicBoolean handlerInvoked = new AtomicBoolean(false);
@@ -144,11 +139,33 @@ public class NettyMessagingServiceTest {
     assertTrue(Arrays.equals("hello there".getBytes(), response.join()));
     assertTrue(handlerInvoked.get());
     assertTrue(Arrays.equals(request.get(), "hello world".getBytes()));
-    assertEquals(ep1, sender.get());
+    assertEquals(ep1.address(), sender.get().address());
   }
 
   @Test
-  public void testSendTimeout() {
+  public void testTransientSendAndReceive() {
+    String subject = nextSubject();
+    AtomicBoolean handlerInvoked = new AtomicBoolean(false);
+    AtomicReference<byte[]> request = new AtomicReference<>();
+    AtomicReference<Address> sender = new AtomicReference<>();
+
+    BiFunction<Address, byte[], byte[]> handler = (ep, data) -> {
+      handlerInvoked.set(true);
+      sender.set(ep);
+      request.set(data);
+      return "hello there".getBytes();
+    };
+    netty2.registerHandler(subject, handler, MoreExecutors.directExecutor());
+
+    CompletableFuture<byte[]> response = netty1.sendAndReceive(ep2, subject, "hello world".getBytes(), false);
+    assertTrue(Arrays.equals("hello there".getBytes(), response.join()));
+    assertTrue(handlerInvoked.get());
+    assertTrue(Arrays.equals(request.get(), "hello world".getBytes()));
+    assertEquals(ep1.address(), sender.get().address());
+  }
+
+  @Test
+  public void testSendAndReceiveWithFixedTimeout() {
     String subject = nextSubject();
     BiFunction<Address, byte[], CompletableFuture<byte[]>> handler = (ep, payload) -> new CompletableFuture<>();
     netty2.registerHandler(subject, handler);
@@ -162,7 +179,7 @@ public class NettyMessagingServiceTest {
   }
 
   @Test
-  public void testSendAutoTimeout() {
+  public void testSendAndReceiveWithDynamicTimeout() {
     String subject = nextSubject();
     BiFunction<Address, byte[], CompletableFuture<byte[]>> handler = (ep, payload) -> new CompletableFuture<>();
     netty2.registerHandler(subject, handler);
@@ -175,10 +192,6 @@ public class NettyMessagingServiceTest {
     }
   }
 
-  /*
-   * Supplies executors when registering a handler and calling sendAndReceive and verifies the request handling
-   * and response completion occurs on the expected thread.
-   */
   @Test
   @Ignore
   public void testSendAndReceiveWithExecutor() {

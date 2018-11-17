@@ -389,10 +389,10 @@ public class SwimMembershipProtocol
           if (error == null) {
             updateState(SERIALIZER.decode(response));
           } else {
+            LOGGER.debug("{} - Failed to probe {}", this.localMember.id(), member, error);
             // Verify that the local member term has not changed and request probes from peers.
             SwimMember swimMember = members.get(member.id());
             if (swimMember != null && swimMember.getIncarnationNumber() == member.incarnationNumber()) {
-              LOGGER.debug("{} - Failed to probe {}", this.localMember.id(), member);
               requestProbes(swimMember.copy());
             }
           }
