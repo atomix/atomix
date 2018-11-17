@@ -16,8 +16,6 @@
 package io.atomix.cluster.messaging.impl;
 
 import com.google.common.base.Throwables;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -54,8 +52,6 @@ import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.util.concurrent.Future;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.commons.math3.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,29 +60,22 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.net.ConnectException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.cert.Certificate;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -101,37 +90,20 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * Netty based MessagingService.
  */
 public class NettyMessagingService implements ManagedMessagingService {
-  private static final long HISTORY_EXPIRE_MILLIS = Duration.ofMinutes(1).toMillis();
-  private static final long MIN_TIMEOUT_MILLIS = 100;
-  private static final long MAX_TIMEOUT_MILLIS = 5000;
-  private static final long TIMEOUT_INTERVAL = 50;
-  private static final int WINDOW_SIZE = 10;
-  private static final int WINDOW_UPDATE_SAMPLE_SIZE = 100;
-  private static final long WINDOW_UPDATE_MILLIS = 60000;
-  private static final int MIN_SAMPLES = 25;
-  private static final double PHI_FACTOR = 1.0 / Math.log(10.0);
-  private static final int PHI_FAILURE_THRESHOLD = 12;
   private static final int CHANNEL_POOL_SIZE = 8;
 
-  private static final byte[] EMPTY_PAYLOAD = new byte[0];
-
   private final Logger log = LoggerFactory.getLogger(getClass());
-
-  private final LocalClientConnection localClientConnection = new LocalClientConnection();
-  private final LocalServerConnection localServerConnection = new LocalServerConnection(null);
 
   private final Address returnAddress;
   private final int preamble;
   private final MessagingConfig config;
   private final AtomicBoolean started = new AtomicBoolean(false);
-  private final Map<String, BiConsumer<ProtocolRequest, ServerConnection>> handlers = new ConcurrentHashMap<>();
-  private final Map<Channel, RemoteClientConnection> clientConnections = Maps.newConcurrentMap();
-  private final Map<Channel, RemoteServerConnection> serverConnections = Maps.newConcurrentMap();
+  private final HandlerRegistry handlers = new HandlerRegistry();
+  private volatile LocalClientConnection localConnection;
+  private final Map<Channel, RemoteClientConnection> connections = Maps.newConcurrentMap();
   private final AtomicLong messageIdGenerator = new AtomicLong(0);
 
-  private ScheduledFuture<?> timeoutFuture;
-
-  private final Map<Address, List<CompletableFuture<Channel>>> channels = Maps.newConcurrentMap();
+  private final ChannelPool channelPool = new ChannelPool(this::openChannel, CHANNEL_POOL_SIZE);
 
   private EventLoopGroup serverGroup;
   private EventLoopGroup clientGroup;
@@ -166,10 +138,9 @@ public class NettyMessagingService implements ManagedMessagingService {
     enableNettyTls = loadKeyStores();
     initEventLoopGroup();
     return bootstrapServer().thenRun(() -> {
-      timeoutExecutor = Executors.newSingleThreadScheduledExecutor(
-          namedThreads("netty-messaging-timeout-%d", log));
-      timeoutFuture = timeoutExecutor.scheduleAtFixedRate(
-          this::timeoutAllCallbacks, TIMEOUT_INTERVAL, TIMEOUT_INTERVAL, TimeUnit.MILLISECONDS);
+      timeoutExecutor = Executors.newScheduledThreadPool(
+          4, namedThreads("netty-messaging-timeout-%d", log));
+      localConnection = new LocalClientConnection(timeoutExecutor, handlers);
       started.set(true);
       log.info("Started");
     }).thenApply(v -> this);
@@ -269,17 +240,6 @@ public class NettyMessagingService implements ManagedMessagingService {
     clientChannelClass = NioSocketChannel.class;
   }
 
-  /**
-   * Times out response callbacks.
-   */
-  private void timeoutAllCallbacks() {
-    // Iterate through all connections and time out callbacks.
-    localClientConnection.timeoutCallbacks();
-    for (RemoteClientConnection connection : clientConnections.values()) {
-      connection.timeoutCallbacks();
-    }
-  }
-
   @Override
   public CompletableFuture<Void> sendAsync(Address address, String type, byte[] payload, boolean keepAlive) {
     long messageId = messageIdGenerator.incrementAndGet();
@@ -317,111 +277,20 @@ public class NettyMessagingService implements ManagedMessagingService {
     if (keepAlive) {
       return executeOnPooledConnection(address, type, c -> c.sendAndReceive(message, timeout), executor);
     } else {
-      return executeOnTemporaryConnection(address, type, c -> c.sendAndReceive(message, timeout), executor);
+      return executeOnTransientConnection(address, c -> c.sendAndReceive(message, timeout), executor);
     }
   }
 
-  private List<CompletableFuture<Channel>> getChannelPool(Address address) {
-    List<CompletableFuture<Channel>> channelPool = channels.get(address);
-    if (channelPool != null) {
-      return channelPool;
-    }
-    return channels.computeIfAbsent(address, e -> {
-      List<CompletableFuture<Channel>> defaultList = new ArrayList<>(CHANNEL_POOL_SIZE);
-      for (int i = 0; i < CHANNEL_POOL_SIZE; i++) {
-        defaultList.add(null);
-      }
-      return Lists.newCopyOnWriteArrayList(defaultList);
-    });
-  }
-
-  private int getChannelOffset(String messageType) {
-    return Math.abs(messageType.hashCode() % CHANNEL_POOL_SIZE);
-  }
-
-  private CompletableFuture<Channel> getChannel(Address address, String messageType) {
-    List<CompletableFuture<Channel>> channelPool = getChannelPool(address);
-    int offset = getChannelOffset(messageType);
-
-    CompletableFuture<Channel> channelFuture = channelPool.get(offset);
-    if (channelFuture == null || channelFuture.isCompletedExceptionally()) {
-      synchronized (channelPool) {
-        channelFuture = channelPool.get(offset);
-        if (channelFuture == null || channelFuture.isCompletedExceptionally()) {
-          log.debug("Connecting to {}", address);
-          channelFuture = openChannel(address);
-          channelFuture.whenComplete((channel, error) -> {
-            if (error == null) {
-              log.debug("Connected to {}", channel.remoteAddress());
-            } else {
-              log.debug("Failed to connect to {}", address, error);
-            }
-          });
-          channelPool.set(offset, channelFuture);
-        }
-      }
-    }
-
-    final CompletableFuture<Channel> future = new CompletableFuture<>();
-    final CompletableFuture<Channel> finalFuture = channelFuture;
-    finalFuture.whenComplete((channel, error) -> {
-      if (error == null) {
-        if (!channel.isActive()) {
-          CompletableFuture<Channel> currentFuture;
-          synchronized (channelPool) {
-            currentFuture = channelPool.get(offset);
-            if (currentFuture == finalFuture) {
-              channelPool.set(offset, null);
-            } else if (currentFuture == null) {
-              currentFuture = openChannel(address);
-              currentFuture.whenComplete((c, e) -> {
-                if (e == null) {
-                  log.debug("Connected to {}", channel.remoteAddress());
-                } else {
-                  log.debug("Failed to connect to {}", channel.remoteAddress(), e);
-                }
-              });
-              channelPool.set(offset, currentFuture);
-            }
-          }
-
-          final RemoteClientConnection connection = clientConnections.remove(channel);
-          if (connection != null) {
-            log.debug("Closing connection to {}", connection.channel.remoteAddress());
-            connection.close();
-          }
-
-          if (currentFuture == finalFuture) {
-            getChannel(address, messageType).whenComplete((recursiveResult, recursiveError) -> {
-              if (recursiveError == null) {
-                future.complete(recursiveResult);
-              } else {
-                future.completeExceptionally(recursiveError);
-              }
-            });
-          } else {
-            currentFuture.whenComplete((recursiveResult, recursiveError) -> {
-              if (recursiveError == null) {
-                future.complete(recursiveResult);
-              } else {
-                future.completeExceptionally(recursiveError);
-              }
-            });
-          }
-        } else {
-          future.complete(channel);
-        }
-      } else {
-        future.completeExceptionally(error);
-      }
-    });
-    return future;
-  }
-
-  private CompletableFuture<Channel> openChannel(Address address) {
-    return bootstrapClient(address);
-  }
-
+  /**
+   * Executes the given callback on a pooled connection.
+   *
+   * @param address  the connection address
+   * @param type     the message type to map to the connection
+   * @param callback the callback to execute
+   * @param executor an executor on which to complete the callback future
+   * @param <T>      the callback response type
+   * @return a future to be completed once the callback future is complete
+   */
   private <T> CompletableFuture<T> executeOnPooledConnection(
       Address address,
       String type,
@@ -432,6 +301,16 @@ public class NettyMessagingService implements ManagedMessagingService {
     return future;
   }
 
+  /**
+   * Executes the given callback on a pooled connection.
+   *
+   * @param address  the connection address
+   * @param type     the message type to map to the connection
+   * @param callback the callback to execute
+   * @param executor an executor on which to complete the callback future
+   * @param future   the future to be completed once the callback future is complete
+   * @param <T>      the callback response type
+   */
   private <T> void executeOnPooledConnection(
       Address address,
       String type,
@@ -439,7 +318,7 @@ public class NettyMessagingService implements ManagedMessagingService {
       Executor executor,
       CompletableFuture<T> future) {
     if (address.equals(returnAddress)) {
-      callback.apply(localClientConnection).whenComplete((result, error) -> {
+      callback.apply(localConnection).whenComplete((result, error) -> {
         if (error == null) {
           executor.execute(() -> future.complete(result));
         } else {
@@ -449,9 +328,9 @@ public class NettyMessagingService implements ManagedMessagingService {
       return;
     }
 
-    getChannel(address, type).whenComplete((channel, channelError) -> {
+    channelPool.getChannel(address, type).whenComplete((channel, channelError) -> {
       if (channelError == null) {
-        final ClientConnection connection = getOrCreateRemoteClientConnection(channel);
+        final ClientConnection connection = getOrCreateClientConnection(channel);
         callback.apply(connection).whenComplete((result, sendError) -> {
           if (sendError == null) {
             executor.execute(() -> future.complete(result));
@@ -461,7 +340,7 @@ public class NettyMessagingService implements ManagedMessagingService {
               channel.close().addListener(f -> {
                 log.debug("Closing connection to {}", channel.remoteAddress());
                 connection.close();
-                clientConnections.remove(channel);
+                connections.remove(channel);
               });
             }
             executor.execute(() -> future.completeExceptionally(sendError));
@@ -473,22 +352,21 @@ public class NettyMessagingService implements ManagedMessagingService {
     });
   }
 
-  private RemoteClientConnection getOrCreateRemoteClientConnection(Channel channel) {
-    RemoteClientConnection connection = clientConnections.get(channel);
-    if (connection == null) {
-      connection = clientConnections.computeIfAbsent(channel, RemoteClientConnection::new);
-    }
-    return connection;
-  }
-
-  private <T> CompletableFuture<T> executeOnTemporaryConnection(
+  /**
+   * Executes the given callback on a transient connection.
+   *
+   * @param address  the connection address
+   * @param callback the callback to execute
+   * @param executor an executor on which to complete the callback future
+   * @param <T>      the callback response type
+   */
+  private <T> CompletableFuture<T> executeOnTransientConnection(
       Address address,
-      String type,
       Function<ClientConnection, CompletableFuture<T>> callback,
       Executor executor) {
     CompletableFuture<T> future = new CompletableFuture<>();
     if (address.equals(returnAddress)) {
-      callback.apply(localClientConnection).whenComplete((result, error) -> {
+      callback.apply(localConnection).whenComplete((result, error) -> {
         if (error == null) {
           executor.execute(() -> future.complete(result));
         } else {
@@ -500,14 +378,14 @@ public class NettyMessagingService implements ManagedMessagingService {
 
     openChannel(address).whenComplete((channel, channelError) -> {
       if (channelError == null) {
-        callback.apply(new RemoteClientConnection(channel)).whenComplete((result, sendError) -> {
+        callback.apply(getOrCreateClientConnection(channel)).whenComplete((result, sendError) -> {
           if (sendError == null) {
             executor.execute(() -> future.complete(result));
           } else {
             executor.execute(() -> future.completeExceptionally(sendError));
           }
+          channel.close();
         });
-        channel.close();
       } else {
         executor.execute(() -> future.completeExceptionally(channelError));
       }
@@ -515,15 +393,29 @@ public class NettyMessagingService implements ManagedMessagingService {
     return future;
   }
 
+  private RemoteClientConnection getOrCreateClientConnection(Channel channel) {
+    RemoteClientConnection connection = connections.get(channel);
+    if (connection == null) {
+      connection = connections.computeIfAbsent(channel, c -> new RemoteClientConnection(timeoutExecutor, c));
+      channel.closeFuture().addListener(f -> {
+        RemoteClientConnection removedConnection = connections.remove(channel);
+        if (removedConnection != null) {
+          removedConnection.close();
+        }
+      });
+    }
+    return connection;
+  }
+
   @Override
   public void registerHandler(String type, BiConsumer<Address, byte[]> handler, Executor executor) {
-    handlers.put(type, (message, connection) -> executor.execute(() ->
+    handlers.register(type, (message, connection) -> executor.execute(() ->
         handler.accept(message.sender(), message.payload())));
   }
 
   @Override
   public void registerHandler(String type, BiFunction<Address, byte[], byte[]> handler, Executor executor) {
-    handlers.put(type, (message, connection) -> executor.execute(() -> {
+    handlers.register(type, (message, connection) -> executor.execute(() -> {
       byte[] responsePayload = null;
       ProtocolReply.Status status = ProtocolReply.Status.OK;
       try {
@@ -538,7 +430,7 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   @Override
   public void registerHandler(String type, BiFunction<Address, byte[], CompletableFuture<byte[]>> handler) {
-    handlers.put(type, (message, connection) -> {
+    handlers.register(type, (message, connection) -> {
       handler.apply(message.sender(), message.payload()).whenComplete((result, error) -> {
         ProtocolReply.Status status;
         if (error == null) {
@@ -554,9 +446,25 @@ public class NettyMessagingService implements ManagedMessagingService {
 
   @Override
   public void unregisterHandler(String type) {
-    handlers.remove(type);
+    handlers.unregister(type);
   }
 
+  /**
+   * Opens a new Netty channel to the given address.
+   *
+   * @param address the address to which to open the channel
+   * @return a future to be completed once the channel has been opened and the handshake is complete
+   */
+  private CompletableFuture<Channel> openChannel(Address address) {
+    return bootstrapClient(address);
+  }
+
+  /**
+   * Bootstraps a new channel to the given address.
+   *
+   * @param address the address to which to connect
+   * @return a future to be completed with the connected channel
+   */
   private CompletableFuture<Channel> bootstrapClient(Address address) {
     CompletableFuture<Channel> future = new OrderedFuture<>();
     Bootstrap bootstrap = new Bootstrap();
@@ -575,7 +483,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     bootstrap.remoteAddress(address.address(true), address.port());
     if (enableNettyTls) {
       try {
-        bootstrap.handler(new SslClientCommunicationChannelInitializer(future, address));
+        bootstrap.handler(new SslClientChannelInitializer(future, address));
       } catch (SSLException e) {
         return Futures.exceptionalFuture(e);
       }
@@ -590,6 +498,11 @@ public class NettyMessagingService implements ManagedMessagingService {
     return future;
   }
 
+  /**
+   * Bootstraps a server.
+   *
+   * @return a future to be completed once the server has been bound to all interfaces
+   */
   private CompletableFuture<Void> bootstrapServer() {
     ServerBootstrap b = new ServerBootstrap();
     b.option(ChannelOption.SO_REUSEADDR, true);
@@ -605,7 +518,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     b.channel(serverChannelClass);
     if (enableNettyTls) {
       try {
-        b.childHandler(new SslServerCommunicationChannelInitializer());
+        b.childHandler(new SslServerChannelInitializer());
       } catch (SSLException e) {
         return Futures.exceptionalFuture(e);
       }
@@ -615,6 +528,12 @@ public class NettyMessagingService implements ManagedMessagingService {
     return bind(b);
   }
 
+  /**
+   * Binds the given bootstrap to the appropriate interfaces.
+   *
+   * @param bootstrap the bootstrap to bind
+   * @return a future to be completed once the bootstrap has been bound to all interfaces
+   */
   private CompletableFuture<Void> bind(ServerBootstrap bootstrap) {
     CompletableFuture<Void> future = new CompletableFuture<>();
     int port = config.getPort() != null ? config.getPort() : returnAddress.port();
@@ -626,6 +545,14 @@ public class NettyMessagingService implements ManagedMessagingService {
     return future;
   }
 
+  /**
+   * Recursivesly binds the given bootstrap to the given interfaces.
+   *
+   * @param bootstrap the bootstrap to bind
+   * @param ifaces an iterator of interfaces to which to bind
+   * @param port the port to which to bind
+   * @param future the future to completed once the bootstrap has been bound to all provided interfaces
+   */
   private void bind(ServerBootstrap bootstrap, Iterator<String> ifaces, int port, CompletableFuture<Void> future) {
     if (ifaces.hasNext()) {
       String iface = ifaces.next();
@@ -667,7 +594,6 @@ public class NettyMessagingService implements ManagedMessagingService {
           } catch (InterruptedException e) {
             interrupted = true;
           }
-          timeoutFuture.cancel(false);
           timeoutExecutor.shutdown();
         } finally {
           log.info("Stopped");
@@ -682,33 +608,14 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   /**
-   * Channel initializer for TLS servers.
-   */
-  private class SslServerCommunicationChannelInitializer extends ChannelInitializer<SocketChannel> {
-
-    private final SslContext sslContext;
-
-    private SslServerCommunicationChannelInitializer() throws SSLException {
-      this.sslContext = SslContextBuilder.forServer(keyManager).clientAuth(ClientAuth.REQUIRE).trustManager(trustManager)
-              .build();
-    }
-
-    @Override
-    protected void initChannel(SocketChannel channel) throws Exception {
-      channel.pipeline().addLast("ssl", sslContext.newHandler(channel.alloc()))
-              .addLast("handshake", new ServerHandshakeHandlerAdapter());
-    }
-  }
-
-  /**
    * Channel initializer for TLS clients.
    */
-  private class SslClientCommunicationChannelInitializer extends ChannelInitializer<SocketChannel> {
+  private class SslClientChannelInitializer extends ChannelInitializer<SocketChannel> {
     private final CompletableFuture<Channel> future;
     private final Address address;
     private final SslContext sslContext;
 
-    SslClientCommunicationChannelInitializer(CompletableFuture<Channel> future, Address address) throws SSLException {
+    SslClientChannelInitializer(CompletableFuture<Channel> future, Address address) throws SSLException {
       this.future = future;
       this.address = address;
       this.sslContext = SslContextBuilder.forClient().keyManager(keyManager).trustManager(trustManager).build();
@@ -716,8 +623,26 @@ public class NettyMessagingService implements ManagedMessagingService {
 
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
-        channel.pipeline().addLast("ssl", sslContext.newHandler(channel.alloc(), address.host(), address.port()))
-                .addLast("handshake", new ClientHandshakeHandlerAdapter(future));
+      channel.pipeline().addLast("ssl", sslContext.newHandler(channel.alloc(), address.host(), address.port()))
+          .addLast("handshake", new ClientHandshakeHandlerAdapter(future));
+    }
+  }
+
+  /**
+   * Channel initializer for TLS servers.
+   */
+  private class SslServerChannelInitializer extends ChannelInitializer<SocketChannel> {
+    private final SslContext sslContext;
+
+    private SslServerChannelInitializer() throws SSLException {
+      this.sslContext = SslContextBuilder.forServer(keyManager).clientAuth(ClientAuth.REQUIRE).trustManager(trustManager)
+          .build();
+    }
+
+    @Override
+    protected void initChannel(SocketChannel channel) throws Exception {
+      channel.pipeline().addLast("ssl", sslContext.newHandler(channel.alloc()))
+          .addLast("handshake", new ServerHandshakeHandlerAdapter());
     }
   }
 
@@ -750,7 +675,14 @@ public class NettyMessagingService implements ManagedMessagingService {
   /**
    * Base class for handshake handlers.
    */
-  private abstract class HandshakeHandlerAdapter extends ChannelInboundHandlerAdapter {
+  private abstract class HandshakeHandlerAdapter<M extends ProtocolMessage> extends ChannelInboundHandlerAdapter {
+
+    /**
+     * Writes the protocol version to the given context.
+     *
+     * @param context the context to which to write the version
+     * @param version the version to write
+     */
     void writeProtocolVersion(ChannelHandlerContext context, ProtocolVersion version) {
       ByteBuf buffer = context.alloc().buffer(6);
       buffer.writeInt(preamble);
@@ -758,6 +690,13 @@ public class NettyMessagingService implements ManagedMessagingService {
       context.writeAndFlush(buffer);
     }
 
+    /**
+     * Reads the protocol version from the given buffer.
+     *
+     * @param context the buffer context
+     * @param buffer  the buffer from which to read the version
+     * @return the read protocol version
+     */
     Optional<ProtocolVersion> readProtocolVersion(ChannelHandlerContext context, ByteBuf buffer) {
       int preamble = buffer.readInt();
       if (preamble != NettyMessagingService.this.preamble) {
@@ -774,19 +713,26 @@ public class NettyMessagingService implements ManagedMessagingService {
       return Optional.ofNullable(protocolVersion);
     }
 
-    void activateProtocolVersion(ChannelHandlerContext context, ProtocolVersion protocolVersion) {
+    /**
+     * Activates the given version of the messaging protocol.
+     *
+     * @param context         the channel handler context
+     * @param connection      the client or server connection for which to activate the protocol version
+     * @param protocolVersion the protocol version to activate
+     */
+    void activateProtocolVersion(ChannelHandlerContext context, Connection<M> connection, ProtocolVersion protocolVersion) {
       MessagingProtocol protocol = protocolVersion.createProtocol(returnAddress);
       context.pipeline().remove(this);
       context.pipeline().addLast("encoder", protocol.newEncoder());
       context.pipeline().addLast("decoder", protocol.newDecoder());
-      context.pipeline().addLast("handler", new InboundMessageDispatcher());
+      context.pipeline().addLast("handler", new MessageDispatcher<>(connection));
     }
   }
 
   /**
-   * Client-side handshake handler adapter.
+   * Client handshake handler.
    */
-  private class ClientHandshakeHandlerAdapter extends HandshakeHandlerAdapter {
+  private class ClientHandshakeHandlerAdapter extends HandshakeHandlerAdapter<ProtocolReply> {
     private final CompletableFuture<Channel> future;
 
     ClientHandshakeHandlerAdapter(CompletableFuture<Channel> future) {
@@ -801,7 +747,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     @Override
     public void channelRead(ChannelHandlerContext context, Object message) throws Exception {
       readProtocolVersion(context, (ByteBuf) message)
-          .ifPresent(version -> activateProtocolVersion(context, version));
+          .ifPresent(version -> activateProtocolVersion(context, getOrCreateClientConnection(context.channel()), version));
     }
 
     @Override
@@ -810,16 +756,16 @@ public class NettyMessagingService implements ManagedMessagingService {
     }
 
     @Override
-    void activateProtocolVersion(ChannelHandlerContext context, ProtocolVersion protocolVersion) {
-      super.activateProtocolVersion(context, protocolVersion);
+    void activateProtocolVersion(ChannelHandlerContext context, Connection<ProtocolReply> connection, ProtocolVersion protocolVersion) {
+      super.activateProtocolVersion(context, connection, protocolVersion);
       future.complete(context.channel());
     }
   }
 
   /**
-   * Server-side handshake handler adapter.
+   * Server handshake handler.
    */
-  private class ServerHandshakeHandlerAdapter extends HandshakeHandlerAdapter {
+  private class ServerHandshakeHandlerAdapter extends HandshakeHandlerAdapter<ProtocolRequest> {
     @Override
     public void channelRead(ChannelHandlerContext context, Object message) throws Exception {
       readProtocolVersion(context, (ByteBuf) message)
@@ -835,32 +781,26 @@ public class NettyMessagingService implements ManagedMessagingService {
 
             ProtocolVersion protocolVersion = negotiatedVersion.get();
             writeProtocolVersion(context, protocolVersion);
-            activateProtocolVersion(context, protocolVersion);
+            activateProtocolVersion(context, new RemoteServerConnection(handlers, context.channel()), protocolVersion);
           });
     }
   }
 
   /**
-   * Channel inbound handler that dispatches messages to the appropriate handler.
+   * Connection message dispatcher.
    */
-  private class InboundMessageDispatcher extends SimpleChannelInboundHandler<Object> {
-    // Effectively SimpleChannelInboundHandler<InternalMessage>,
-    // had to specify <Object> to avoid Class Loader not being able to find some classes.
+  private class MessageDispatcher<M extends ProtocolMessage> extends SimpleChannelInboundHandler<Object> {
+    private final Connection<M> connection;
+
+    MessageDispatcher(Connection<M> connection) {
+      this.connection = connection;
+    }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Object rawMessage) throws Exception {
-      ProtocolMessage message = (ProtocolMessage) rawMessage;
+    @SuppressWarnings("unchecked")
+    protected void channelRead0(ChannelHandlerContext ctx, Object message) throws Exception {
       try {
-        if (message.isRequest()) {
-          RemoteServerConnection connection = serverConnections.get(ctx.channel());
-          if (connection == null) {
-            connection = serverConnections.computeIfAbsent(ctx.channel(), RemoteServerConnection::new);
-          }
-          connection.dispatch((ProtocolRequest) message);
-        } else {
-          RemoteClientConnection connection = getOrCreateRemoteClientConnection(ctx.channel());
-          connection.dispatch((ProtocolReply) message);
-        }
+        connection.dispatch((M) message);
       } catch (RejectedExecutionException e) {
         log.warn("Unable to dispatch message due to {}", e.getMessage());
       }
@@ -868,435 +808,20 @@ public class NettyMessagingService implements ManagedMessagingService {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext context, Throwable cause) {
-      log.error("Exception inside channel handling pipeline.", cause);
-
-      RemoteClientConnection clientConnection = clientConnections.remove(context.channel());
-      if (clientConnection != null) {
-        clientConnection.close();
-      }
-
-      RemoteServerConnection serverConnection = serverConnections.remove(context.channel());
-      if (serverConnection != null) {
-        serverConnection.close();
-      }
+      log.error("Exception inside channel handling pipeline", cause);
+      connection.close();
       context.close();
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext context) throws Exception {
-      RemoteClientConnection clientConnection = clientConnections.remove(context.channel());
-      if (clientConnection != null) {
-        clientConnection.close();
-      }
-
-      RemoteServerConnection serverConnection = serverConnections.remove(context.channel());
-      if (serverConnection != null) {
-        serverConnection.close();
-      }
+      connection.close();
       context.close();
     }
 
-    /**
-     * Returns true if the given message should be handled.
-     *
-     * @param msg inbound message
-     * @return true if {@code msg} is {@link ProtocolMessage} instance.
-     * @see SimpleChannelInboundHandler#acceptInboundMessage(Object)
-     */
     @Override
-    public final boolean acceptInboundMessage(Object msg) {
+    public boolean acceptInboundMessage(Object msg) {
       return msg instanceof ProtocolMessage;
-    }
-  }
-
-  /**
-   * Wraps a {@link CompletableFuture} and tracks its type and creation time.
-   */
-  private static final class Callback {
-    private final String type;
-    private final long timeout;
-    private final CompletableFuture<byte[]> future;
-    private final long time = System.currentTimeMillis();
-
-    Callback(String type, Duration timeout, CompletableFuture<byte[]> future) {
-      this.type = type;
-      this.timeout = timeout != null ? timeout.toMillis() : 0;
-      this.future = future;
-    }
-
-    public void complete(byte[] value) {
-      future.complete(value);
-    }
-
-    public void completeExceptionally(Throwable error) {
-      future.completeExceptionally(error);
-    }
-  }
-
-  /**
-   * Represents the client side of a connection to a local or remote server.
-   */
-  private interface ClientConnection {
-
-    /**
-     * Sends a message to the other side of the connection.
-     *
-     * @param message the message to send
-     * @return a completable future to be completed once the message has been sent
-     */
-    CompletableFuture<Void> sendAsync(ProtocolRequest message);
-
-    /**
-     * Sends a message to the other side of the connection, awaiting a reply.
-     *
-     * @param message the message to send
-     * @param timeout the response timeout
-     * @return a completable future to be completed once a reply is received or the request times out
-     */
-    CompletableFuture<byte[]> sendAndReceive(ProtocolRequest message, Duration timeout);
-
-    /**
-     * Closes the connection.
-     */
-    default void close() {
-    }
-  }
-
-  /**
-   * Represents the server side of a connection.
-   */
-  private interface ServerConnection {
-
-    /**
-     * Sends a reply to the other side of the connection.
-     *
-     * @param message the message to which to reply
-     * @param status the reply status
-     * @param payload the response payload
-     */
-    void reply(ProtocolRequest message, ProtocolReply.Status status, Optional<byte[]> payload);
-
-    /**
-     * Closes the connection.
-     */
-    default void close() {
-    }
-  }
-
-  /**
-   * Remote connection implementation.
-   */
-  private abstract class AbstractClientConnection implements ClientConnection {
-    private final Cache<String, RequestMonitor> requestMonitors = CacheBuilder.newBuilder()
-        .expireAfterAccess(HISTORY_EXPIRE_MILLIS, TimeUnit.MILLISECONDS)
-        .build();
-    final Map<Long, Callback> futures = Maps.newConcurrentMap();
-    final AtomicBoolean closed = new AtomicBoolean(false);
-
-    /**
-     * Times out callbacks for this connection.
-     */
-    void timeoutCallbacks() {
-      // Store the current time.
-      long currentTime = System.currentTimeMillis();
-
-      // Iterate through future callbacks and time out callbacks that have been alive
-      // longer than the current timeout according to the message type.
-      Iterator<Map.Entry<Long, Callback>> iterator = futures.entrySet().iterator();
-      while (iterator.hasNext()) {
-        Callback callback = iterator.next().getValue();
-        try {
-          long elapsedTime = currentTime - callback.time;
-
-          // If a timeout for the callback was provided and the timeout elapsed, timeout the future but don't
-          // record the response time.
-          if (callback.timeout > 0 && elapsedTime > callback.timeout) {
-            iterator.remove();
-            callback.completeExceptionally(
-                new TimeoutException("Request timed out in " + elapsedTime + " milliseconds"));
-          } else {
-            // If no timeout was provided, use the RequestMonitor to calculate the dynamic timeout and determine
-            // whether to timeout the response future.
-            RequestMonitor requestMonitor = requestMonitors.get(callback.type, RequestMonitor::new);
-            if (callback.timeout == 0 && (elapsedTime > MAX_TIMEOUT_MILLIS || (elapsedTime > MIN_TIMEOUT_MILLIS && requestMonitor.isTimedOut(elapsedTime)))) {
-              iterator.remove();
-              requestMonitor.addReplyTime(elapsedTime);
-              callback.completeExceptionally(
-                  new TimeoutException("Request timed out in " + elapsedTime + " milliseconds"));
-            }
-          }
-        } catch (ExecutionException e) {
-          throw new AssertionError();
-        }
-      }
-    }
-
-    protected void registerCallback(long id, String subject, Duration timeout, CompletableFuture<byte[]> future) {
-      futures.put(id, new Callback(subject, timeout, future));
-    }
-
-    protected Callback completeCallback(long id) {
-      Callback callback = futures.remove(id);
-      if (callback != null) {
-        try {
-          RequestMonitor requestMonitor = requestMonitors.get(callback.type, RequestMonitor::new);
-          requestMonitor.addReplyTime(System.currentTimeMillis() - callback.time);
-        } catch (ExecutionException e) {
-          throw new AssertionError();
-        }
-      }
-      return callback;
-    }
-
-    protected Callback failCallback(long id) {
-      return futures.remove(id);
-    }
-
-    @Override
-    public void close() {
-      if (closed.compareAndSet(false, true)) {
-        for (Callback callback : futures.values()) {
-          callback.completeExceptionally(new ConnectException());
-        }
-      }
-    }
-  }
-
-  /**
-   * Local connection implementation.
-   */
-  private final class LocalClientConnection extends AbstractClientConnection {
-    @Override
-    public CompletableFuture<Void> sendAsync(ProtocolRequest message) {
-      BiConsumer<ProtocolRequest, ServerConnection> handler = handlers.get(message.subject());
-      if (handler != null) {
-        log.trace("{} - Received message type {} from {}", returnAddress, message.subject(), message.sender());
-        handler.accept(message, localServerConnection);
-      } else {
-        log.debug("{} - No handler for message type {} from {}", returnAddress, message.subject(), message.sender());
-      }
-      return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public CompletableFuture<byte[]> sendAndReceive(ProtocolRequest message, Duration timeout) {
-      CompletableFuture<byte[]> future = new CompletableFuture<>();
-      future.whenComplete((r, e) -> completeCallback(message.id()));
-      registerCallback(message.id(), message.subject(), timeout, future);
-      BiConsumer<ProtocolRequest, ServerConnection> handler = handlers.get(message.subject());
-      if (handler != null) {
-        log.trace("{} - Received message type {} from {}", returnAddress, message.subject(), message.sender());
-        handler.accept(message, new LocalServerConnection(future));
-      } else {
-        log.debug("{} - No handler for message type {} from {}", returnAddress, message.subject(), message.sender());
-        new LocalServerConnection(future)
-            .reply(message, ProtocolReply.Status.ERROR_NO_HANDLER, Optional.empty());
-      }
-      return future;
-    }
-  }
-
-  /**
-   * Local server connection.
-   */
-  private static final class LocalServerConnection implements ServerConnection {
-    private final CompletableFuture<byte[]> future;
-
-    LocalServerConnection(CompletableFuture<byte[]> future) {
-      this.future = future;
-    }
-
-    @Override
-    public void reply(ProtocolRequest message, ProtocolReply.Status status, Optional<byte[]> payload) {
-      if (future != null) {
-        if (status == ProtocolReply.Status.OK) {
-          future.complete(payload.orElse(EMPTY_PAYLOAD));
-        } else if (status == ProtocolReply.Status.ERROR_NO_HANDLER) {
-          future.completeExceptionally(new MessagingException.NoRemoteHandler());
-        } else if (status == ProtocolReply.Status.ERROR_HANDLER_EXCEPTION) {
-          future.completeExceptionally(new MessagingException.RemoteHandlerFailure());
-        } else if (status == ProtocolReply.Status.PROTOCOL_EXCEPTION) {
-          future.completeExceptionally(new MessagingException.ProtocolException());
-        }
-      }
-    }
-  }
-
-  /**
-   * Remote connection implementation.
-   */
-  private final class RemoteClientConnection extends AbstractClientConnection {
-    private final Channel channel;
-
-    RemoteClientConnection(Channel channel) {
-      this.channel = channel;
-    }
-
-    @Override
-    public CompletableFuture<Void> sendAsync(ProtocolRequest message) {
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      channel.writeAndFlush(message).addListener(channelFuture -> {
-        if (!channelFuture.isSuccess()) {
-          future.completeExceptionally(channelFuture.cause());
-        } else {
-          future.complete(null);
-        }
-      });
-      return future;
-    }
-
-    @Override
-    public CompletableFuture<byte[]> sendAndReceive(ProtocolRequest message, Duration timeout) {
-      CompletableFuture<byte[]> future = new CompletableFuture<>();
-      registerCallback(message.id(), message.subject(), timeout, future);
-      channel.writeAndFlush(message).addListener(channelFuture -> {
-        if (!channelFuture.isSuccess()) {
-          Callback callback = failCallback(message.id());
-          if (callback != null) {
-            callback.completeExceptionally(channelFuture.cause());
-          }
-        }
-      });
-      return future;
-    }
-
-    /**
-     * Dispatches a message to a local handler.
-     *
-     * @param message the message to dispatch
-     */
-    private void dispatch(ProtocolReply message) {
-      Callback callback = completeCallback(message.id());
-      if (callback != null) {
-        if (message.status() == ProtocolReply.Status.OK) {
-          callback.complete(message.payload());
-        } else if (message.status() == ProtocolReply.Status.ERROR_NO_HANDLER) {
-          callback.completeExceptionally(new MessagingException.NoRemoteHandler());
-        } else if (message.status() == ProtocolReply.Status.ERROR_HANDLER_EXCEPTION) {
-          callback.completeExceptionally(new MessagingException.RemoteHandlerFailure());
-        } else if (message.status() == ProtocolReply.Status.PROTOCOL_EXCEPTION) {
-          callback.completeExceptionally(new MessagingException.ProtocolException());
-        }
-      } else {
-        log.debug("Received a reply for message id:[{}] "
-            + "but was unable to locate the"
-            + " request handle", message.id());
-      }
-    }
-
-    @Override
-    public void close() {
-      if (closed.compareAndSet(false, true)) {
-        for (Callback callback : futures.values()) {
-          callback.completeExceptionally(new ConnectException());
-        }
-      }
-    }
-  }
-
-  /**
-   * Remote server connection.
-   */
-  private final class RemoteServerConnection implements ServerConnection {
-    private final Channel channel;
-
-    RemoteServerConnection(Channel channel) {
-      this.channel = channel;
-    }
-
-    /**
-     * Dispatches a message to a local handler.
-     *
-     * @param message the message to dispatch
-     */
-    private void dispatch(ProtocolRequest message) {
-      BiConsumer<ProtocolRequest, ServerConnection> handler = handlers.get(message.subject());
-      if (handler != null) {
-        log.trace("{} - Received message type {} from {}", returnAddress, message.subject(), message.sender());
-        handler.accept(message, this);
-      } else {
-        log.debug("{} - No handler for message type {} from {}", returnAddress, message.subject(), message.sender());
-        reply(message, ProtocolReply.Status.ERROR_NO_HANDLER, Optional.empty());
-      }
-    }
-
-    @Override
-    public void reply(ProtocolRequest message, ProtocolReply.Status status, Optional<byte[]> payload) {
-      ProtocolReply response = new ProtocolReply(
-          message.id(),
-          payload.orElse(EMPTY_PAYLOAD),
-          status);
-      channel.writeAndFlush(response, channel.voidPromise());
-    }
-  }
-
-  /**
-   * Request-reply timeout history tracker.
-   */
-  private static final class RequestMonitor {
-    private final DescriptiveStatistics samples = new SynchronizedDescriptiveStatistics(WINDOW_SIZE);
-    private final AtomicLong max = new AtomicLong();
-    private volatile int replyCount;
-    private volatile long lastUpdate = System.currentTimeMillis();
-
-    /**
-     * Adds a reply time to the history.
-     *
-     * @param replyTime the reply time to add to the history
-     */
-    void addReplyTime(long replyTime) {
-      max.accumulateAndGet(replyTime, Math::max);
-      replyCount++;
-
-      // If at least WINDOW_UPDATE_SAMPLE_SIZE response times have been recorded, and at least WINDOW_UPDATE_MILLIS
-      // have passed since the last update, record the maximum response time in the samples.
-      if (replyCount >= WINDOW_UPDATE_SAMPLE_SIZE && System.currentTimeMillis() - lastUpdate > WINDOW_UPDATE_MILLIS) {
-        synchronized (this) {
-          if (replyCount >= WINDOW_UPDATE_SAMPLE_SIZE && System.currentTimeMillis() - lastUpdate > WINDOW_UPDATE_MILLIS) {
-            long lastMax = max.get();
-            if (lastMax > 0) {
-              samples.addValue(lastMax);
-              lastUpdate = System.currentTimeMillis();
-              replyCount = 0;
-              max.set(0);
-            }
-          }
-        }
-      }
-    }
-
-    /**
-     * Returns a boolean indicating whether the given request should be timed out according to the elapsed time.
-     *
-     * @param elapsedTime the elapsed request time
-     * @return indicates whether the request should be timed out
-     */
-    boolean isTimedOut(long elapsedTime) {
-      return samples.getN() == WINDOW_SIZE && phi(elapsedTime) >= PHI_FAILURE_THRESHOLD;
-    }
-
-    /**
-     * Compute phi for the specified node id.
-     *
-     * @param elapsedTime the duration since the request was sent
-     * @return phi value
-     */
-    private double phi(long elapsedTime) {
-      if (samples.getN() < MIN_SAMPLES) {
-        return 0.0;
-      }
-      return computePhi(samples, elapsedTime);
-    }
-
-    /**
-     * Computes the phi value from the given samples.
-     *
-     * @param samples the samples from which to compute phi
-     * @param elapsedTime the duration since the request was sent
-     * @return phi
-     */
-    private double computePhi(DescriptiveStatistics samples, long elapsedTime) {
-      return (samples.getN() > 0) ? PHI_FACTOR * elapsedTime / samples.getMean() : 100;
     }
   }
 }

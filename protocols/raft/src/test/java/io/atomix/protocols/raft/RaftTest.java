@@ -97,9 +97,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -1166,7 +1164,8 @@ public class RaftTest extends ConcurrentTestCase {
       resume();
     });
     primitive2.read().whenComplete((result, error) -> {
-      threadAssertTrue(error.getCause() instanceof PrimitiveException.UnknownService);
+      threadAssertTrue(error.getCause() instanceof PrimitiveException.ClosedSession
+          || error.getCause() instanceof PrimitiveException.UnknownService);
       resume();
     });
     await(5000, 2);
