@@ -27,6 +27,7 @@ import java.util.List;
 public class MessagingConfig implements Config {
   private List<String> interfaces = new ArrayList<>();
   private Integer port;
+  private int connectionPoolSize = 8;
   private Duration connectTimeout = Duration.ofSeconds(10);
   private TlsConfig tlsConfig = new TlsConfig();
 
@@ -67,6 +68,26 @@ public class MessagingConfig implements Config {
    */
   public MessagingConfig setPort(Integer port) {
     this.port = port;
+    return this;
+  }
+
+  /**
+   * Returns the connection pool size.
+   *
+   * @return the connection pool size
+   */
+  public int getConnectionPoolSize() {
+    return connectionPoolSize;
+  }
+
+  /**
+   * Sets the connection pool size.
+   *
+   * @param connectionPoolSize the connection pool size
+   * @return the messaging configuration
+   */
+  public MessagingConfig setConnectionPoolSize(int connectionPoolSize) {
+    this.connectionPoolSize = connectionPoolSize;
     return this;
   }
 
