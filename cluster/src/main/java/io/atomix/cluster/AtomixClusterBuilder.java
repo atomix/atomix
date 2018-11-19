@@ -150,6 +150,22 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
   }
 
   /**
+   * Sets the messaging connection pool size.
+   * <p>
+   * The node will create {@code connectionPoolSize} connections to each peer with which it regularly communicates
+   * over TCP. Periodic heartbeats from cluster membership protocols will not consume pool connections. Thus, if
+   * a node does not communicate with one of its peers for replication or application communication, the pool for
+   * that peer should remain empty.
+   *
+   * @param connectionPoolSize the connection pool size
+   * @return the cluster builder
+   */
+  public AtomixClusterBuilder withConnectionPoolSize(int connectionPoolSize) {
+    config.getMessagingConfig().setConnectionPoolSize(connectionPoolSize);
+    return this;
+  }
+
+  /**
    * Sets the member address.
    * <p>
    * The constructed {@link AtomixCluster} will bind to the given address for intra-cluster communication. The format

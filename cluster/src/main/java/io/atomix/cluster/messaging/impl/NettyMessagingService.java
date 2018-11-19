@@ -102,8 +102,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   private volatile LocalClientConnection localConnection;
   private final Map<Channel, RemoteClientConnection> connections = Maps.newConcurrentMap();
   private final AtomicLong messageIdGenerator = new AtomicLong(0);
-
-  private final ChannelPool channelPool = new ChannelPool(this::openChannel, CHANNEL_POOL_SIZE);
+  private final ChannelPool channelPool;
 
   private EventLoopGroup serverGroup;
   private EventLoopGroup clientGroup;
@@ -121,6 +120,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     this.preamble = cluster.hashCode();
     this.returnAddress = address;
     this.config = config;
+    this.channelPool = new ChannelPool(this::openChannel, config.getConnectionPoolSize());
   }
 
   @Override
