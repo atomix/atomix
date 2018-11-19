@@ -698,19 +698,23 @@ public class NettyMessagingService implements ManagedMessagingService {
      * @return the read protocol version
      */
     Optional<ProtocolVersion> readProtocolVersion(ChannelHandlerContext context, ByteBuf buffer) {
-      int preamble = buffer.readInt();
-      if (preamble != NettyMessagingService.this.preamble) {
-        log.warn("Received invalid handshake, closing connection");
-        context.close();
-        return Optional.empty();
-      }
+      try {
+        int preamble = buffer.readInt();
+        if (preamble != NettyMessagingService.this.preamble) {
+          log.warn("Received invalid handshake, closing connection");
+          context.close();
+          return Optional.empty();
+        }
 
-      int version = buffer.readShort();
-      ProtocolVersion protocolVersion = ProtocolVersion.valueOf(version);
-      if (protocolVersion == null) {
-        context.close();
+        int version = buffer.readShort();
+        ProtocolVersion protocolVersion = ProtocolVersion.valueOf(version);
+        if (protocolVersion == null) {
+          context.close();
+        }
+        return Optional.ofNullable(protocolVersion);
+      } finally {
+        buffer.release();
       }
-      return Optional.ofNullable(protocolVersion);
     }
 
     /**
