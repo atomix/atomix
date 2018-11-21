@@ -23,6 +23,8 @@ import io.atomix.cluster.discovery.MulticastDiscoveryConfig;
 import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
 import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.cluster.protocol.HeartbeatMembershipProtocolConfig;
+import io.atomix.core.log.DistributedLogConfig;
+import io.atomix.core.log.DistributedLogType;
 import io.atomix.core.map.AtomicMapConfig;
 import io.atomix.core.profile.ConsensusProfile;
 import io.atomix.core.profile.ConsensusProfileConfig;
@@ -36,6 +38,10 @@ import io.atomix.protocols.backup.MultiPrimaryProtocol;
 import io.atomix.protocols.backup.MultiPrimaryProtocolConfig;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroup;
 import io.atomix.protocols.backup.partition.PrimaryBackupPartitionGroupConfig;
+import io.atomix.protocols.log.DistributedLogProtocol;
+import io.atomix.protocols.log.DistributedLogProtocolConfig;
+import io.atomix.protocols.log.partition.LogPartitionGroup;
+import io.atomix.protocols.log.partition.LogPartitionGroupConfig;
 import io.atomix.protocols.raft.MultiRaftProtocolConfig;
 import io.atomix.protocols.raft.ReadConsistency;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
@@ -124,6 +130,11 @@ public class AtomixConfigTest {
     assertEquals("two", groupTwo.getName());
     assertEquals(32, groupTwo.getPartitions());
 
+    LogPartitionGroupConfig groupThree = (LogPartitionGroupConfig) config.getPartitionGroups().get("three");
+    assertEquals(LogPartitionGroup.TYPE, groupThree.getType());
+    assertEquals("three", groupThree.getName());
+    assertEquals(3, groupThree.getPartitions());
+
     ConsensusProfileConfig consensusProfile = (ConsensusProfileConfig) config.getProfiles().get(0);
     assertEquals(ConsensusProfile.TYPE, consensusProfile.getType());
     assertEquals("management", consensusProfile.getManagementGroup());
@@ -159,5 +170,12 @@ public class AtomixConfigTest {
     assertEquals(ReadConsistency.SEQUENTIAL, multiRaft.getReadConsistency());
     assertEquals(Recovery.RECOVER, multiRaft.getRecoveryStrategy());
     assertEquals(Duration.ofSeconds(2), multiRaft.getRetryDelay());
+
+    DistributedLogConfig log = config.getPrimitive("log");
+    assertEquals("log", log.getType().name());
+
+    DistributedLogProtocolConfig logConfig = (DistributedLogProtocolConfig) log.getProtocolConfig();
+    assertEquals(DistributedLogProtocol.TYPE, logConfig.getType());
+    assertEquals("three", logConfig.getGroup());
   }
 }
