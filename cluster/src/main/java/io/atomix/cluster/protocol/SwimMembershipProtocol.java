@@ -37,6 +37,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -102,6 +103,7 @@ public class SwimMembershipProtocol
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SwimMembershipProtocol.class);
 
+  private static final String MEMBERSHIP_SYNC = "atomix-membership-sync";
   private static final String MEMBERSHIP_GOSSIP = "atomix-membership-gossip";
   private static final String MEMBERSHIP_PROBE = "atomix-membership-probe";
   private static final String MEMBERSHIP_PROBE_REQUEST = "atomix-membership-probe-request";
@@ -117,6 +119,8 @@ public class SwimMembershipProtocol
           .register(ImmutablePair.class)
           .build("ClusterMembershipService"));
 
+  private final BiFunction<Address, byte[], byte[]> syncHandler = (address, payload) ->
+      SERIALIZER.encode(handleSync(SERIALIZER.decode(payload)));
   private final BiFunction<Address, byte[], byte[]> probeHandler = (address, payload) ->
       SERIALIZER.encode(handleProbe(SERIALIZER.decode(payload)));
   private final BiFunction<Address, byte[], CompletableFuture<byte[]>> probeRequestHandler = (address, payload) ->
@@ -332,25 +336,51 @@ public class SwimMembershipProtocol
   }
 
   /**
-   * Sends probes to all known members.
+   * Synchronizes the node state with peers.
    */
-  private void probeAll() {
-    probe(true);
+  private void sync() {
+    List<SwimMember> syncMembers = discoveryService.getNodes().stream()
+        .map(node -> new SwimMember(MemberId.from(node.id().id()), node.address()))
+        .filter(member -> !member.id().equals(localMember.id()))
+        .collect(Collectors.toList());
+    for (SwimMember member : syncMembers) {
+      sync(member.copy());
+    }
   }
 
   /**
-   * Probes a random member.
+   * Synchronizes the node state with the given peer.
+   *
+   * @param member the peer with which to synchronize the node state
    */
-  private void probe() {
-    probe(false);
+  private void sync(ImmutableMember member) {
+    LOGGER.trace("{} - Synchronizing membership with {}", localMember.id(), member);
+    bootstrapService.getMessagingService().sendAndReceive(
+        member.address(), MEMBERSHIP_SYNC, SERIALIZER.encode(localMember.copy()), false, config.getProbeTimeout())
+        .whenCompleteAsync((response, error) -> {
+          if (error == null) {
+            Collection<ImmutableMember> members = SERIALIZER.decode(response);
+            members.forEach(this::updateState);
+          } else {
+            LOGGER.debug("{} - Failed to synchronize membership with {}", localMember.id(), member);
+          }
+        }, swimScheduler);
+  }
+
+  /**
+   * Handles a synchronize request from a peer.
+   *
+   * @param member the peer from which to handle the request
+   */
+  private Collection<ImmutableMember> handleSync(ImmutableMember member) {
+    updateState(member);
+    return new ArrayList<>(members.values().stream().map(SwimMember::copy).collect(Collectors.toList()));
   }
 
   /**
    * Sends probes to all members or to the next member in round robin fashion.
-   *
-   * @param all whether to send probes to all members
    */
-  private void probe(boolean all) {
+  private void probe() {
     // First get a sorted list of discovery service nodes that are not present in the SWIM members.
     // This is necessary to ensure we attempt to probe all nodes that are provided by the discovery provider.
     List<SwimMember> probeMembers = Lists.newArrayList(discoveryService.getNodes().stream()
@@ -365,14 +395,8 @@ public class SwimMembershipProtocol
 
     // If there are members to probe, select the next member to probe using a counter for round robin probes.
     if (!probeMembers.isEmpty()) {
-      if (all) {
-        for (SwimMember member : probeMembers) {
-          probe(member.copy());
-        }
-      } else {
-        SwimMember probeMember = probeMembers.get(Math.abs(probeCounter.incrementAndGet() % probeMembers.size()));
-        probe(probeMember.copy());
-      }
+      SwimMember probeMember = probeMembers.get(Math.abs(probeCounter.incrementAndGet() % probeMembers.size()));
+      probe(probeMember.copy());
     }
   }
 
@@ -653,6 +677,7 @@ public class SwimMembershipProtocol
    */
   private void registerHandlers() {
     // Register TCP message handlers.
+    bootstrapService.getMessagingService().registerHandler(MEMBERSHIP_SYNC, syncHandler, swimScheduler);
     bootstrapService.getMessagingService().registerHandler(MEMBERSHIP_PROBE, probeHandler, swimScheduler);
     bootstrapService.getMessagingService().registerHandler(MEMBERSHIP_PROBE_REQUEST, probeRequestHandler);
 
@@ -665,6 +690,7 @@ public class SwimMembershipProtocol
    */
   private void unregisterHandlers() {
     // Unregister TCP message handlers.
+    bootstrapService.getMessagingService().unregisterHandler(MEMBERSHIP_SYNC);
     bootstrapService.getMessagingService().unregisterHandler(MEMBERSHIP_PROBE);
     bootstrapService.getMessagingService().unregisterHandler(MEMBERSHIP_PROBE_REQUEST);
 
@@ -699,7 +725,7 @@ public class SwimMembershipProtocol
           this::gossip, 0, config.getGossipInterval().toMillis(), TimeUnit.MILLISECONDS);
       probeFuture = swimScheduler.scheduleAtFixedRate(
           this::probe, 0, config.getProbeInterval().toMillis(), TimeUnit.MILLISECONDS);
-      swimScheduler.execute(this::probeAll);
+      swimScheduler.execute(this::sync);
       LOGGER.info("Started");
     }
     return CompletableFuture.completedFuture(null);
