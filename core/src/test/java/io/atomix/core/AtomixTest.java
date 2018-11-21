@@ -29,6 +29,7 @@ import io.atomix.core.list.DistributedListType;
 import io.atomix.core.lock.AtomicLockType;
 import io.atomix.core.lock.DistributedLockType;
 import io.atomix.core.log.DistributedLog;
+import io.atomix.core.log.DistributedLogPartition;
 import io.atomix.core.map.AtomicCounterMapType;
 import io.atomix.core.map.AtomicMapType;
 import io.atomix.core.map.AtomicNavigableMapType;
@@ -245,12 +246,28 @@ public class AtomixTest extends AbstractAtomixTest {
             .build())
         .build();
 
-    CountDownLatch latch = new CountDownLatch(1);
-    log2.consume(value -> {
-      System.out.println("Hello world!");
+    assertEquals(3, log1.getPartitions().size());
+    assertEquals(1, log1.getPartitions().get(0).id());
+    assertEquals(2, log1.getPartitions().get(1).id());
+    assertEquals(3, log1.getPartitions().get(2).id());
+    assertEquals(1, log2.getPartition(1).id());
+    assertEquals(2, log2.getPartition(2).id());
+    assertEquals(3, log2.getPartition(3).id());
+
+    DistributedLogPartition<String> partition1 = log1.getPartition("Hello world!");
+    DistributedLogPartition<String> partition2 = log2.getPartition("Hello world!");
+    assertEquals(partition1.id(), partition2.id());
+
+    CountDownLatch latch = new CountDownLatch(2);
+    partition2.consume(record -> {
+      assertEquals("Hello world!", record.value());
       latch.countDown();
     });
-    log1.produce("Hello world!");
+    log2.consume(record -> {
+      assertEquals("Hello world!", record.value());
+      latch.countDown();
+    });
+    partition1.produce("Hello world!");
     latch.await(10, TimeUnit.SECONDS);
     assertEquals(0, latch.getCount());
   }

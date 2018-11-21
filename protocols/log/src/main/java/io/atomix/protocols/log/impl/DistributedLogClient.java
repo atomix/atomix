@@ -15,14 +15,6 @@
  */
 package io.atomix.protocols.log.impl;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
-
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.PrimitiveState;
@@ -33,6 +25,14 @@ import io.atomix.primitive.partition.Partitioner;
 import io.atomix.primitive.protocol.LogProtocol;
 import io.atomix.utils.concurrent.Futures;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -42,6 +42,7 @@ public class DistributedLogClient implements LogClient {
   private final LogProtocol protocol;
   private final List<PartitionId> partitionIds = new CopyOnWriteArrayList<>();
   private final Map<PartitionId, LogSession> partitions = Maps.newConcurrentMap();
+  private final List<LogSession> sortedPartitions = new CopyOnWriteArrayList<>();
   private final Partitioner<String> partitioner;
   private final Set<Consumer<PrimitiveState>> stateChangeListeners = Sets.newCopyOnWriteArraySet();
   private final Map<PartitionId, PrimitiveState> states = Maps.newHashMap();
@@ -56,6 +57,7 @@ public class DistributedLogClient implements LogClient {
     partitions.forEach(partition -> {
       this.partitionIds.add(partition.partitionId());
       this.partitions.put(partition.partitionId(), partition);
+      this.sortedPartitions.add(partition);
       states.put(partition.partitionId(), PrimitiveState.CLOSED);
       partition.addStateChangeListener(state -> onStateChange(partition.partitionId(), state));
     });
@@ -73,7 +75,7 @@ public class DistributedLogClient implements LogClient {
 
   @Override
   public Collection<LogSession> getPartitions() {
-    return partitions.values();
+    return sortedPartitions;
   }
 
   @Override
