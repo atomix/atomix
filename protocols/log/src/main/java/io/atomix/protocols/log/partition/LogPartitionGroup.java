@@ -15,16 +15,6 @@
  */
 package io.atomix.protocols.log.partition;
 
-import java.io.File;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.primitive.Recovery;
@@ -46,6 +36,15 @@ import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -82,6 +81,9 @@ public class LogPartitionGroup implements ManagedPartitionGroup {
       return Namespace.builder()
           .nextId(Namespaces.BEGIN_USER_CUSTOM_ID + 300)
           .register(LogPartitionGroupConfig.class)
+          .register(LogStorageConfig.class)
+          .register(LogCompactionConfig.class)
+          .register(MemorySize.class)
           .build();
     }
 
@@ -109,6 +111,7 @@ public class LogPartitionGroup implements ManagedPartitionGroup {
   private final String name;
   private final LogPartitionGroupConfig config;
   private final Map<PartitionId, LogPartition> partitions = Maps.newConcurrentMap();
+  private final List<LogPartition> sortedPartitions = Lists.newCopyOnWriteArrayList();
   private final List<PartitionId> sortedPartitionIds = Lists.newCopyOnWriteArrayList();
   private ThreadContextFactory threadFactory;
 
@@ -117,9 +120,9 @@ public class LogPartitionGroup implements ManagedPartitionGroup {
     this.name = checkNotNull(config.getName());
     buildPartitions(config).forEach(p -> {
       this.partitions.put(p.id(), p);
+      this.sortedPartitions.add(p);
       this.sortedPartitionIds.add(p.id());
     });
-    Collections.sort(sortedPartitionIds);
   }
 
   @Override
@@ -157,7 +160,7 @@ public class LogPartitionGroup implements ManagedPartitionGroup {
   @Override
   @SuppressWarnings("unchecked")
   public Collection<Partition> getPartitions() {
-    return (Collection) partitions.values();
+    return (Collection) sortedPartitions;
   }
 
   @Override
