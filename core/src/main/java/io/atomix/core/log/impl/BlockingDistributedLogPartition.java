@@ -16,71 +16,49 @@
 package io.atomix.core.log.impl;
 
 import com.google.common.base.Throwables;
-import io.atomix.core.log.AsyncDistributedLog;
-import io.atomix.core.log.DistributedLog;
+import io.atomix.core.log.AsyncDistributedLogPartition;
 import io.atomix.core.log.DistributedLogPartition;
 import io.atomix.core.log.Record;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.Synchronous;
 
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 /**
- * Default distributed log.
+ * Blocking distributed log partition.
  */
-public class BlockingDistributedLog<E> extends Synchronous<AsyncDistributedLog<E>> implements DistributedLog<E> {
-  private final AsyncDistributedLog<E> asyncLog;
-  private final Map<Integer, DistributedLogPartition<E>> partitions = new ConcurrentHashMap<>();
-  private final List<DistributedLogPartition<E>> sortedPartitions = new CopyOnWriteArrayList<>();
+public class BlockingDistributedLogPartition<E> extends Synchronous<AsyncDistributedLogPartition<E>> implements DistributedLogPartition<E> {
+  private final AsyncDistributedLogPartition<E> asyncPartition;
   private final long operationTimeoutMillis;
 
-  public BlockingDistributedLog(AsyncDistributedLog<E> asyncLog, long operationTimeoutMillis) {
-    super(asyncLog);
-    this.asyncLog = asyncLog;
+  public BlockingDistributedLogPartition(AsyncDistributedLogPartition<E> asyncPartition, long operationTimeoutMillis) {
+    super(asyncPartition);
+    this.asyncPartition = asyncPartition;
     this.operationTimeoutMillis = operationTimeoutMillis;
-    asyncLog.getPartitions().forEach(partition -> {
-      DistributedLogPartition<E> blockingPartition = new BlockingDistributedLogPartition<>(partition, operationTimeoutMillis);
-      partitions.put(blockingPartition.id(), blockingPartition);
-      sortedPartitions.add(blockingPartition);
-    });
   }
 
   @Override
-  public List<DistributedLogPartition<E>> getPartitions() {
-    return sortedPartitions;
-  }
-
-  @Override
-  public DistributedLogPartition<E> getPartition(int partitionId) {
-    return partitions.get(partitionId);
-  }
-
-  @Override
-  public DistributedLogPartition<E> getPartition(E entry) {
-    return getPartition(asyncLog.getPartition(entry).id());
+  public int id() {
+    return asyncPartition.id();
   }
 
   @Override
   public void produce(E entry) {
-    complete(asyncLog.produce(entry));
+    complete(asyncPartition.produce(entry));
   }
 
   @Override
-  public void consume(Consumer<Record<E>> consumer) {
-    complete(asyncLog.consume(consumer));
+  public void consume(long offset, Consumer<Record<E>> consumer) {
+    complete(asyncPartition.consume(offset, consumer));
   }
 
   @Override
-  public AsyncDistributedLog<E> async() {
-    return asyncLog;
+  public AsyncDistributedLogPartition<E> async() {
+    return asyncPartition;
   }
 
   private <T> T complete(CompletableFuture<T> future) {

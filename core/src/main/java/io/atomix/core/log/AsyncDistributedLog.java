@@ -16,6 +16,7 @@
 package io.atomix.core.log;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -27,31 +28,43 @@ import io.atomix.primitive.AsyncPrimitive;
 public interface AsyncDistributedLog<E> extends AsyncPrimitive {
 
   /**
+   * Returns the distributed log partitions.
+   *
+   * @return the distributed log partitions
+   */
+  List<AsyncDistributedLogPartition<E>> getPartitions();
+
+  /**
+   * Returns the distributed log partition for the given ID.
+   *
+   * @param partitionId the partition identifier
+   * @return the distributed log partition
+   */
+  AsyncDistributedLogPartition<E> getPartition(int partitionId);
+
+  /**
+   * Returns the distributed log partition for the given entry.
+   *
+   * @param entry the entry for which to return the distributed log partition
+   * @return the partition for the given entry
+   */
+  AsyncDistributedLogPartition<E> getPartition(E entry);
+
+  /**
    * Appends an entry to the distributed log.
    *
    * @param entry the entry to append
-   * @return a future to be completed once the entry has been appended
+   * @return a future to be completed once the entry has been produced
    */
   CompletableFuture<Void> produce(E entry);
 
   /**
-   * Adds a consumer to the log.
+   * Adds a consumer to all partitions.
    *
    * @param consumer the log consumer
    * @return a future to be completed once the consumer has been added
    */
-  default CompletableFuture<Void> consume(Consumer<Record<E>> consumer) {
-    return consume(1, consumer);
-  }
-
-  /**
-   * Adds a consumer to the log.
-   *
-   * @param offset the offset from which to begin consuming the log
-   * @param consumer the log consumer
-   * @return a future to be completed once the consumer has been added
-   */
-  CompletableFuture<Void> consume(long offset, Consumer<Record<E>> consumer);
+  CompletableFuture<Void> consume(Consumer<Record<E>> consumer);
 
   @Override
   default DistributedLog<E> sync() {

@@ -15,14 +15,38 @@
  */
 package io.atomix.core.log;
 
-import java.util.function.Consumer;
-
 import io.atomix.primitive.SyncPrimitive;
+
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Distributed log primitive.
  */
 public interface DistributedLog<E> extends SyncPrimitive {
+
+  /**
+   * Returns the distributed log partitions.
+   *
+   * @return the distributed log partitions
+   */
+  List<DistributedLogPartition<E>> getPartitions();
+
+  /**
+   * Returns the distributed log partition for the given ID.
+   *
+   * @param partitionId the partition identifier
+   * @return the distributed log partition
+   */
+  DistributedLogPartition<E> getPartition(int partitionId);
+
+  /**
+   * Returns the distributed log partition for the given entry.
+   *
+   * @param entry the entry for which to return the distributed log partition
+   * @return the partition for the given entry
+   */
+  DistributedLogPartition<E> getPartition(E entry);
 
   /**
    * Appends an entry to the distributed log.
@@ -32,21 +56,11 @@ public interface DistributedLog<E> extends SyncPrimitive {
   void produce(E entry);
 
   /**
-   * Adds a consumer to the log.
+   * Adds a consumer to all partitions.
    *
    * @param consumer the log consumer
    */
-  default void consume(Consumer<Record<E>> consumer) {
-    consume(1, consumer);
-  }
-
-  /**
-   * Adds a consumer to the log.
-   *
-   * @param offset the offset from which to begin consuming the log
-   * @param consumer the log consumer
-   */
-  void consume(long offset, Consumer<Record<E>> consumer);
+  void consume(Consumer<Record<E>> consumer);
 
   @Override
   AsyncDistributedLog<E> async();
