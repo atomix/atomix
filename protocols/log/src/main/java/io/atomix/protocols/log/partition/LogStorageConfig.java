@@ -25,7 +25,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class LogStorageConfig {
   private static final String DATA_PREFIX = ".data";
-  private static final StorageLevel DEFAULT_STORAGE_LEVEL = StorageLevel.DISK;
+  private static final StorageLevel DEFAULT_STORAGE_LEVEL = StorageLevel.MAPPED;
   private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
   private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 1024;
   private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
