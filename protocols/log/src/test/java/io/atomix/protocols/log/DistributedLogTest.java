@@ -78,16 +78,16 @@ public class DistributedLogTest extends ConcurrentTestCase {
   private volatile int sessionId;
   private PrimaryElection election;
   protected volatile List<MemberId> nodes;
-  protected volatile List<DistributedLogClient> clients = new ArrayList<>();
+  protected volatile List<DistributedLogSessionClient> clients = new ArrayList<>();
   protected volatile List<DistributedLogServer> servers = new ArrayList<>();
   protected volatile TestLogProtocolFactory protocolFactory;
 
   @Test
   public void testProducerConsumer() throws Throwable {
     createServers(3);
-    DistributedLogClient client1 = createClient();
+    DistributedLogSessionClient client1 = createClient();
     LogSession session1 = createSession(client1);
-    DistributedLogClient client2 = createClient();
+    DistributedLogSessionClient client2 = createClient();
     LogSession session2 = createSession(client2);
 
     session1.consumer().consume(1, record -> {
@@ -101,9 +101,9 @@ public class DistributedLogTest extends ConcurrentTestCase {
   @Test
   public void testConsumeIndex() throws Throwable {
     createServers(3);
-    DistributedLogClient client1 = createClient();
+    DistributedLogSessionClient client1 = createClient();
     LogSession session1 = createSession(client1);
-    DistributedLogClient client2 = createClient();
+    DistributedLogSessionClient client2 = createClient();
     LogSession session2 = createSession(client2);
 
     for (int i = 1; i <= 10; i++) {
@@ -122,9 +122,9 @@ public class DistributedLogTest extends ConcurrentTestCase {
   @Test
   public void testConsumeAfterSizeCompact() throws Throwable {
     List<DistributedLogServer> servers = createServers(3);
-    DistributedLogClient client1 = createClient();
+    DistributedLogSessionClient client1 = createClient();
     LogSession session1 = createSession(client1);
-    DistributedLogClient client2 = createClient();
+    DistributedLogSessionClient client2 = createClient();
     LogSession session2 = createSession(client2);
 
     Predicate<List<DistributedLogServer>> predicate = s ->
@@ -144,9 +144,9 @@ public class DistributedLogTest extends ConcurrentTestCase {
   @Test
   public void testConsumeAfterAgeCompact() throws Throwable {
     List<DistributedLogServer> servers = createServers(3);
-    DistributedLogClient client1 = createClient();
+    DistributedLogSessionClient client1 = createClient();
     LogSession session1 = createSession(client1);
-    DistributedLogClient client2 = createClient();
+    DistributedLogSessionClient client2 = createClient();
     LogSession session2 = createSession(client2);
 
     Predicate<List<DistributedLogServer>> predicate = s ->
@@ -220,9 +220,9 @@ public class DistributedLogTest extends ConcurrentTestCase {
   /**
    * Creates a Raft client.
    */
-  private DistributedLogClient createClient() throws Throwable {
+  private DistributedLogSessionClient createClient() throws Throwable {
     MemberId memberId = nextMemberId();
-    DistributedLogClient client = DistributedLogClient.builder()
+    DistributedLogSessionClient client = DistributedLogSessionClient.builder()
         .withClientName("test")
         .withPartitionId(PartitionId.from("test", 1))
         .withMembershipService(new TestClusterMembershipService(memberId, nodes))
@@ -237,7 +237,7 @@ public class DistributedLogTest extends ConcurrentTestCase {
   /**
    * Creates a new log session.
    */
-  private LogSession createSession(DistributedLogClient client) {
+  private LogSession createSession(DistributedLogSessionClient client) {
     try {
       return client.sessionBuilder()
           .build()

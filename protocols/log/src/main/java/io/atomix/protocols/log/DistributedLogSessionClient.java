@@ -38,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Distributed log client.
  */
-public class DistributedLogClient {
+public class DistributedLogSessionClient {
 
   /**
    * Returns a new primary-backup client builder.
@@ -59,7 +59,7 @@ public class DistributedLogClient {
   private final ThreadContext threadContext;
   private final boolean closeOnStop;
 
-  public DistributedLogClient(
+  public DistributedLogSessionClient(
       String clientName,
       PartitionId partitionId,
       ClusterMembershipService clusterMembershipService,
@@ -115,7 +115,7 @@ public class DistributedLogClient {
   /**
    * Primary-backup client builder.
    */
-  public static class Builder implements io.atomix.utils.Builder<DistributedLogClient> {
+  public static class Builder implements io.atomix.utils.Builder<DistributedLogSessionClient> {
     protected String clientName = "atomix";
     protected PartitionId partitionId;
     protected ClusterMembershipService clusterMembershipService;
@@ -231,8 +231,8 @@ public class DistributedLogClient {
     }
 
     @Override
-    public DistributedLogClient build() {
-      Logger log = ContextualLoggerFactory.getLogger(DistributedLogClient.class, LoggerContext.builder(DistributedLogClient.class)
+    public DistributedLogSessionClient build() {
+      Logger log = ContextualLoggerFactory.getLogger(DistributedLogSessionClient.class, LoggerContext.builder(DistributedLogSessionClient.class)
           .addValue(clientName)
           .build());
 
@@ -247,7 +247,7 @@ public class DistributedLogClient {
         closeOnStop = false;
       }
 
-      return new DistributedLogClient(
+      return new DistributedLogSessionClient(
           clientName,
           partitionId,
           clusterMembershipService,

@@ -21,7 +21,7 @@ import io.atomix.primitive.partition.PartitionClient;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.primitive.session.SessionClient;
-import io.atomix.protocols.log.DistributedLogClient;
+import io.atomix.protocols.log.DistributedLogSessionClient;
 import io.atomix.protocols.log.partition.LogPartition;
 import io.atomix.protocols.log.serializer.impl.LogNamespaces;
 import io.atomix.utils.Managed;
@@ -40,7 +40,7 @@ public class LogPartitionClient implements PartitionClient, Managed<LogPartition
   private final LogPartition partition;
   private final PartitionManagementService managementService;
   private final ThreadContextFactory threadFactory;
-  private volatile DistributedLogClient client;
+  private volatile DistributedLogSessionClient client;
 
   public LogPartitionClient(
       LogPartition partition,
@@ -74,8 +74,8 @@ public class LogPartitionClient implements PartitionClient, Managed<LogPartition
     return CompletableFuture.completedFuture(this);
   }
 
-  private DistributedLogClient newClient() {
-    return DistributedLogClient.builder()
+  private DistributedLogSessionClient newClient() {
+    return DistributedLogSessionClient.builder()
         .withClientName(partition.name())
         .withPartitionId(partition.id())
         .withMembershipService(managementService.getMembershipService())
