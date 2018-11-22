@@ -108,13 +108,15 @@ public class AtomixAgentTest {
 
     Atomix client1 = Atomix.builder(path)
         .withMemberId("client1")
-        .withAddress("localhost:5003")
+        .withHost("localhost")
+        .withPort(5003)
         .build();
     client1.start().join();
 
     Atomix client2 = Atomix.builder(path)
         .withMemberId("client2")
-        .withAddress("localhost:5004")
+        .withHost("localhost")
+        .withPort(5004)
         .build();
     client2.start().join();
 

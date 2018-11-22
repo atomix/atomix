@@ -322,13 +322,13 @@ public class AtomixAgent {
     }
 
     if (host != null) {
-      config.getClusterConfig().getNodeConfig().setHost(host);
+      config.getClusterConfig().getNodeConfig().setHostId(host);
     }
     if (rack != null) {
-      config.getClusterConfig().getNodeConfig().setRack(rack);
+      config.getClusterConfig().getNodeConfig().setRackId(rack);
     }
     if (zone != null) {
-      config.getClusterConfig().getNodeConfig().setZone(zone);
+      config.getClusterConfig().getNodeConfig().setZoneId(zone);
     }
 
     if (bootstrap != null && !bootstrap.isEmpty()) {

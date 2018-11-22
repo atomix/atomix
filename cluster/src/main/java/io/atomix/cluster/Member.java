@@ -115,9 +115,9 @@ public class Member extends Node {
   public Member(MemberConfig config) {
     super(config);
     this.id = config.getId();
-    this.zone = config.getZone();
-    this.rack = config.getRack();
-    this.host = config.getHost();
+    this.zone = config.getZoneId();
+    this.rack = config.getRackId();
+    this.host = config.getHostId();
     this.properties = new Properties();
     properties.putAll(config.getProperties());
   }
@@ -217,9 +217,9 @@ public class Member extends Node {
     return new MemberConfig()
         .setId(id())
         .setAddress(address())
-        .setZone(zone())
-        .setRack(rack())
-        .setHost(host())
+        .setZoneId(zone())
+        .setRackId(rack())
+        .setHostId(host())
         .setProperties(properties());
   }
 

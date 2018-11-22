@@ -70,9 +70,9 @@ public class AtomixConfigTest {
     MemberConfig node = cluster.getNodeConfig();
     assertEquals("one", node.getId().id());
     assertEquals("localhost:5000", node.getAddress().toString());
-    assertEquals("foo", node.getZone());
-    assertEquals("bar", node.getRack());
-    assertEquals("baz", node.getHost());
+    assertEquals("foo", node.getZoneId());
+    assertEquals("bar", node.getRackId());
+    assertEquals("baz", node.getHostId());
     assertEquals("bar", node.getProperties().getProperty("foo"));
     assertEquals("baz", node.getProperties().getProperty("bar"));
 
