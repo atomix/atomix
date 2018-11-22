@@ -54,7 +54,8 @@ public class DefaultClusterEventServiceTest {
 
   private Member buildNode(int memberId) {
     return Member.builder(String.valueOf(memberId))
-        .withAddress("localhost", memberId)
+        .withHost("localhost")
+        .withPort(memberId)
         .build();
   }
 

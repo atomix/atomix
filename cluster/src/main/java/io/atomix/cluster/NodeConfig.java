@@ -23,7 +23,8 @@ import io.atomix.utils.net.Address;
  */
 public class NodeConfig implements Config {
   private NodeId id = NodeId.anonymous();
-  private Address address;
+  private String host = "localhost";
+  private int port = 5679;
 
   /**
    * Returns the node identifier.
@@ -56,12 +57,52 @@ public class NodeConfig implements Config {
   }
 
   /**
+   * Returns the node hostname.
+   *
+   * @return the node hostname
+   */
+  public String getHost() {
+    return host;
+  }
+
+  /**
+   * Sets the node hostname.
+   *
+   * @param host the node hostname
+   * @return the node configuration
+   */
+  public NodeConfig setHost(String host) {
+    this.host = host;
+    return this;
+  }
+
+  /**
+   * Returns the node port.
+   *
+   * @return the node port
+   */
+  public int getPort() {
+    return port;
+  }
+
+  /**
+   * Sets the node port.
+   *
+   * @param port the node port
+   * @return the node configuration
+   */
+  public NodeConfig setPort(int port) {
+    this.port = port;
+    return this;
+  }
+
+  /**
    * Returns the node address.
    *
    * @return the node address
    */
   public Address getAddress() {
-    return address;
+    return Address.from(host, port);
   }
 
   /**
@@ -70,6 +111,7 @@ public class NodeConfig implements Config {
    * @param address the node address
    * @return the node configuration
    */
+  @Deprecated
   public NodeConfig setAddress(String address) {
     return setAddress(Address.from(address));
   }
@@ -80,8 +122,10 @@ public class NodeConfig implements Config {
    * @param address the node address
    * @return the node configuration
    */
+  @Deprecated
   public NodeConfig setAddress(Address address) {
-    this.address = address;
+    this.host = address.host();
+    this.port = address.port();
     return this;
   }
 }

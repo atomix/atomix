@@ -46,7 +46,8 @@ public class AtomixClusterTest {
 
     AtomixCluster cluster1 = AtomixCluster.builder()
         .withMemberId("foo")
-        .withAddress("localhost:5000")
+        .withHost("localhost")
+        .withPort(5000)
         .withMembershipProvider(BootstrapDiscoveryProvider.builder()
             .withNodes(bootstrapLocations)
             .build())
@@ -57,7 +58,8 @@ public class AtomixClusterTest {
 
     AtomixCluster cluster2 = AtomixCluster.builder()
         .withMemberId("bar")
-        .withAddress("localhost:5001")
+        .withHost("localhost")
+        .withPort(5001)
         .withMembershipProvider(BootstrapDiscoveryProvider.builder()
             .withNodes(bootstrapLocations)
             .build())
@@ -68,7 +70,8 @@ public class AtomixClusterTest {
 
     AtomixCluster cluster3 = AtomixCluster.builder()
         .withMemberId("baz")
-        .withAddress("localhost:5002")
+        .withHost("localhost")
+        .withPort(5002)
         .withMembershipProvider(BootstrapDiscoveryProvider.builder()
             .withNodes(bootstrapLocations)
             .build())
@@ -89,17 +92,20 @@ public class AtomixClusterTest {
   @Test
   public void testDiscovery() throws Exception {
     AtomixCluster cluster1 = AtomixCluster.builder()
-        .withAddress("localhost:5000")
+        .withHost("localhost")
+        .withPort(5000)
         .withMulticastEnabled()
         .withMembershipProvider(new MulticastDiscoveryProvider())
         .build();
     AtomixCluster cluster2 = AtomixCluster.builder()
-        .withAddress("localhost:5001")
+        .withHost("localhost")
+        .withPort(5001)
         .withMulticastEnabled()
         .withMembershipProvider(new MulticastDiscoveryProvider())
         .build();
     AtomixCluster cluster3 = AtomixCluster.builder()
-        .withAddress("localhost:5002")
+        .withHost("localhost")
+        .withPort(5002)
         .withMulticastEnabled()
         .withMembershipProvider(new MulticastDiscoveryProvider())
         .build();

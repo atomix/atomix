@@ -56,7 +56,8 @@ public abstract class AbstractAtomixTest {
     return Atomix.builder()
         .withClusterId("test")
         .withMemberId(String.valueOf(id))
-        .withAddress("localhost", BASE_PORT + id)
+        .withHost("localhost")
+        .withPort(BASE_PORT + id)
         .withProperties(properties)
         .withMulticastEnabled()
         .withMembershipProvider(new MulticastDiscoveryProvider());
@@ -76,7 +77,8 @@ public abstract class AbstractAtomixTest {
     return Atomix.builder()
         .withClusterId("test")
         .withMemberId(String.valueOf(id))
-        .withAddress("localhost", BASE_PORT + id)
+        .withHost("localhost")
+        .withPort(BASE_PORT + id)
         .withProperties(properties)
         .withMulticastEnabled()
         .withMembershipProvider(!nodes.isEmpty() ? new BootstrapDiscoveryProvider(nodes) : new MulticastDiscoveryProvider());

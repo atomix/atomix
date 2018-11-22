@@ -135,7 +135,8 @@ public class DnsDiscoveryProvider
 
         Node node = Node.builder()
             .withId(id)
-            .withAddress(host, Integer.parseInt(port))
+            .withHost(host)
+            .withPort(Integer.parseInt(port))
             .build();
 
         if (nodes.putIfAbsent(node.id(), node) == null) {

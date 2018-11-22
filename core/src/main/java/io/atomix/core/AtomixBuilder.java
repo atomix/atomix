@@ -311,6 +311,89 @@ public class AtomixBuilder extends AtomixClusterBuilder {
   }
 
   @Override
+  public AtomixBuilder withHost(String host) {
+    super.withHost(host);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withPort(int port) {
+    super.withPort(port);
+    return this;
+  }
+
+  @Override
+  @Deprecated
+  public AtomixBuilder withAddress(String address) {
+    super.withAddress(address);
+    return this;
+  }
+
+  @Override
+  @Deprecated
+  public AtomixBuilder withAddress(String host, int port) {
+    super.withAddress(host, port);
+    return this;
+  }
+
+  @Override
+  @Deprecated
+  public AtomixBuilder withAddress(int port) {
+    super.withAddress(port);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withAddress(Address address) {
+    super.withAddress(address);
+    return this;
+  }
+
+  @Override
+  @Deprecated
+  public AtomixBuilder withZone(String zone) {
+    super.withZone(zone);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withZoneId(String zoneId) {
+    super.withZoneId(zoneId);
+    return this;
+  }
+
+  @Override
+  @Deprecated
+  public AtomixBuilder withRack(String rack) {
+    super.withRack(rack);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withRackId(String rackId) {
+    super.withRackId(rackId);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withHostId(String hostId) {
+    super.withHostId(hostId);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withProperties(Properties properties) {
+    super.withProperties(properties);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withProperty(String key, String value) {
+    super.withProperty(key, value);
+    return this;
+  }
+
+  @Override
   public AtomixBuilder withMessagingInterface(String iface) {
     super.withMessagingInterface(iface);
     return this;
@@ -335,56 +418,8 @@ public class AtomixBuilder extends AtomixClusterBuilder {
   }
 
   @Override
-  public AtomixBuilder withAddress(String address) {
-    super.withAddress(address);
-    return this;
-  }
-
-  @Override
-  public AtomixBuilder withAddress(String host, int port) {
-    super.withAddress(host, port);
-    return this;
-  }
-
-  @Override
-  public AtomixBuilder withAddress(int port) {
-    super.withAddress(port);
-    return this;
-  }
-
-  @Override
-  public AtomixBuilder withAddress(Address address) {
-    super.withAddress(address);
-    return this;
-  }
-
-  @Override
-  public AtomixBuilder withZone(String zone) {
-    super.withZone(zone);
-    return this;
-  }
-
-  @Override
-  public AtomixBuilder withRack(String rack) {
-    super.withRack(rack);
-    return this;
-  }
-
-  @Override
-  public AtomixBuilder withHost(String host) {
-    super.withHost(host);
-    return this;
-  }
-
-  @Override
-  public AtomixBuilder withProperties(Properties properties) {
-    super.withProperties(properties);
-    return this;
-  }
-
-  @Override
-  public AtomixBuilder withProperty(String key, String value) {
-    super.withProperty(key, value);
+  public AtomixBuilder withConnectionPoolSize(int connectionPoolSize) {
+    super.withConnectionPoolSize(connectionPoolSize);
     return this;
   }
 
@@ -407,7 +442,7 @@ public class AtomixBuilder extends AtomixClusterBuilder {
   }
 
   @Override
-  public AtomixClusterBuilder withMembershipProtocol(GroupMembershipProtocol protocol) {
+  public AtomixBuilder withMembershipProtocol(GroupMembershipProtocol protocol) {
     super.withMembershipProtocol(protocol);
     return this;
   }

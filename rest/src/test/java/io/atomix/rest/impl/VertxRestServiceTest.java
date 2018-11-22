@@ -30,7 +30,6 @@ import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
-import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +48,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 
 /**
@@ -451,20 +449,24 @@ public class VertxRestServiceTest {
     return Atomix.builder()
         .withClusterId("test")
         .withMemberId(String.valueOf(memberId))
-        .withAddress(Address.from("localhost", 5000 + memberId))
+        .withHost("localhost")
+        .withPort(5000 + memberId)
         .withMulticastEnabled()
         .withMembershipProvider(new BootstrapDiscoveryProvider(
             Node.builder()
                 .withId("1")
-                .withAddress("localhost", 5001)
+                .withHost("localhost")
+                .withPort(5001)
                 .build(),
             Node.builder()
                 .withId("2")
-                .withAddress("localhost", 5002)
+                .withHost("localhost")
+                .withPort(5002)
                 .build(),
             Node.builder()
                 .withId("3")
-                .withAddress("localhost", 5003)
+                .withHost("localhost")
+                .withPort(5003)
                 .build()))
         .withManagementGroup(PrimaryBackupPartitionGroup.builder("system")
             .withNumPartitions(1)

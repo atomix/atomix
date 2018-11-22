@@ -25,9 +25,9 @@ import java.util.Properties;
  */
 public class MemberConfig extends NodeConfig {
   private MemberId id = MemberId.anonymous();
-  private String zone;
-  private String rack;
-  private String host;
+  private String zoneId;
+  private String rackId;
+  private String hostId;
   private Properties properties = new Properties();
 
   /**
@@ -65,32 +65,19 @@ public class MemberConfig extends NodeConfig {
     return this;
   }
 
-  /**
-   * Returns the member address.
-   *
-   * @return the member address
-   */
-  public Address getAddress() {
-    return super.getAddress();
+  @Override
+  public MemberConfig setPort(int port) {
+    super.setPort(port);
+    return this;
   }
 
-  /**
-   * Sets the member address.
-   *
-   * @param address the member address
-   * @return the member configuration
-   */
+  @Override
   public MemberConfig setAddress(String address) {
     super.setAddress(address);
     return this;
   }
 
-  /**
-   * Sets the member address.
-   *
-   * @param address the member address
-   * @return the member configuration
-   */
+  @Override
   public MemberConfig setAddress(Address address) {
     super.setAddress(address);
     return this;
@@ -101,8 +88,19 @@ public class MemberConfig extends NodeConfig {
    *
    * @return the member zone
    */
-  public String getZone() {
-    return zone;
+  public String getZoneId() {
+    return zoneId;
+  }
+
+  /**
+   * Sets the member zone.
+   *
+   * @param zoneId the member zone
+   * @return the member configuration
+   */
+  public MemberConfig setZoneId(String zoneId) {
+    this.zoneId = zoneId;
+    return this;
   }
 
   /**
@@ -112,8 +110,7 @@ public class MemberConfig extends NodeConfig {
    * @return the member configuration
    */
   public MemberConfig setZone(String zone) {
-    this.zone = zone;
-    return this;
+    return setZoneId(zone);
   }
 
   /**
@@ -121,8 +118,19 @@ public class MemberConfig extends NodeConfig {
    *
    * @return the member rack
    */
-  public String getRack() {
-    return rack;
+  public String getRackId() {
+    return rackId;
+  }
+
+  /**
+   * Sets the member rack.
+   *
+   * @param rackId the member rack
+   * @return the member configuration
+   */
+  public MemberConfig setRackId(String rackId) {
+    this.rackId = rackId;
+    return this;
   }
 
   /**
@@ -132,8 +140,7 @@ public class MemberConfig extends NodeConfig {
    * @return the member configuration
    */
   public MemberConfig setRack(String rack) {
-    this.rack = rack;
-    return this;
+    return setRackId(rack);
   }
 
   /**
@@ -141,18 +148,25 @@ public class MemberConfig extends NodeConfig {
    *
    * @return the member host
    */
-  public String getHost() {
-    return host;
+  public String getHostId() {
+    return hostId;
   }
 
   /**
    * Sets the member host.
    *
-   * @param host the member host
+   * @param hostId the member host
    * @return the member configuration
    */
+  public MemberConfig setHostId(String hostId) {
+    this.hostId = hostId;
+    return this;
+  }
+
+  @Override
   public MemberConfig setHost(String host) {
-    this.host = host;
+    super.setHost(host);
+    setHostId(host);
     return this;
   }
 

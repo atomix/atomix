@@ -532,7 +532,8 @@ public class AtomixTest extends AbstractAtomixTest {
     IntStream.range(1, 4).forEach(i ->
         instances.add(Atomix.builder(getClass().getResource("/primitives.conf").getFile())
             .withMemberId(String.valueOf(i))
-            .withAddress("localhost", 5000 + i)
+            .withHost("localhost")
+            .withPort(5000 + i)
             .withProfiles(ConsensusProfile.builder()
                 .withMembers("1", "2", "3")
                 .withDataPath(new File(new File(DATA_DIR, "primitive-getters"), String.valueOf(i)))
@@ -541,7 +542,8 @@ public class AtomixTest extends AbstractAtomixTest {
     Futures.allOf(instances.stream().map(Atomix::start)).get(30, TimeUnit.SECONDS);
 
     Atomix atomix = Atomix.builder(getClass().getResource("/primitives.conf").getFile())
-        .withAddress("localhost:5000")
+        .withHost("localhost")
+        .withPort(5000)
         .build();
     instances.add(atomix);
 
