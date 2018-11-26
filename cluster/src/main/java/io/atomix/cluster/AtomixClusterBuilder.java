@@ -138,6 +138,7 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    * @param address a host:port tuple
    * @return the cluster builder
    * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
+   * @deprecated since 3.1. Use {@link #withHost(String)} and/or {@link #withPort(int)} instead
    */
   @Deprecated
   public AtomixClusterBuilder withAddress(String address) {
@@ -154,6 +155,7 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    * @param port the port number
    * @return the cluster builder
    * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
+   * @deprecated since 3.1. Use {@link #withHost(String)} and {@link #withPort(int)} instead
    */
   @Deprecated
   public AtomixClusterBuilder withAddress(String host, int port) {
@@ -168,6 +170,7 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    * @param port the port number
    * @return the cluster builder
    * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
+   * @deprecated since 3.1. Use {@link #withPort(int)} instead
    */
   @Deprecated
   public AtomixClusterBuilder withAddress(int port) {
@@ -210,6 +213,7 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    *
    * @param zone the zone to which the member belongs
    * @return the cluster builder
+   * @deprecated since 3.1. Use {@link #withZoneId(String)} instead
    */
   @Deprecated
   public AtomixClusterBuilder withZone(String zone) {
@@ -239,6 +243,7 @@ public class AtomixClusterBuilder implements Builder<AtomixCluster> {
    *
    * @param rack the rack to which the member belongs
    * @return the cluster builder
+   * @deprecated since 3.1. Use {@link #withRackId(String)} instead
    */
   @Deprecated
   public AtomixClusterBuilder withRack(String rack) {

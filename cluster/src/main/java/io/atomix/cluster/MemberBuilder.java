@@ -71,6 +71,7 @@ public class MemberBuilder extends NodeBuilder {
    * @param address a host:port tuple
    * @return the member builder
    * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
+   * @deprecated since 3.1. Use {@link #withHost(String)} and/or {@link #withPort(int)} instead
    */
   @Deprecated
   public MemberBuilder withAddress(String address) {
@@ -84,6 +85,7 @@ public class MemberBuilder extends NodeBuilder {
    * @param port the port number
    * @return the member builder
    * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
+   * @deprecated since 3.1. Use {@link #withHost(String)} and {@link #withPort(int)} instead
    */
   @Deprecated
   public MemberBuilder withAddress(String host, int port) {
@@ -96,6 +98,7 @@ public class MemberBuilder extends NodeBuilder {
    * @param port the port number
    * @return the member builder
    * @throws io.atomix.utils.net.MalformedAddressException if a valid {@link Address} cannot be constructed from the arguments
+   * @deprecated since 3.1. Use {@link #withPort(int)} instead
    */
   @Deprecated
   public MemberBuilder withAddress(int port) {
@@ -129,6 +132,7 @@ public class MemberBuilder extends NodeBuilder {
    *
    * @param zone the zone to which the member belongs
    * @return the member builder
+   * @deprecated since 3.1. Use {@link #withZoneId(String)} instead
    */
   @Deprecated
   public MemberBuilder withZone(String zone) {
@@ -152,6 +156,7 @@ public class MemberBuilder extends NodeBuilder {
    *
    * @param rack the rack to which the member belongs
    * @return the member builder
+   * @deprecated since 3.1. Use {@link #withRackId(String)} instead
    */
   @Deprecated
   public MemberBuilder withRack(String rack) {
