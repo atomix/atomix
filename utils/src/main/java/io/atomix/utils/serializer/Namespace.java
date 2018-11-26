@@ -545,17 +545,21 @@ public final class Namespace implements KryoFactory, KryoPool {
     }
 
     for (Class<?> type : types) {
-      Registration r;
+      Registration r = null;
       if (serializer == null) {
         r = kryo.register(type, id);
+      } else if (type.isInterface()) {
+        kryo.addDefaultSerializer(type, serializer);
       } else {
         r = kryo.register(type, serializer, id);
       }
-      if (r.getId() != id) {
-        log.debug("{}: {} already registered as {}. Skipping {}.",
-            friendlyName(), r.getType(), r.getId(), id);
+      if (r != null) {
+        if (r.getId() != id) {
+          log.debug("{}: {} already registered as {}. Skipping {}.",
+              friendlyName(), r.getType(), r.getId(), id);
+        }
+        log.trace("{} registered as {}", r.getType(), r.getId());
       }
-      log.trace("{} registered as {}", r.getType(), r.getId());
     }
   }
 
