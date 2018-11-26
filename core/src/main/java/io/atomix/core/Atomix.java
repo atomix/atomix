@@ -121,7 +121,7 @@ import static com.google.common.base.Preconditions.checkState;
  *   {@code
  *   Atomix atomix = Atomix.builder()
  *     .withMemberId("member-1")
- *     .withAddress("localhost:5000")
+ *     .withHost("192.168.10.2")
  *     .build();
  *   }
  * </pre>
@@ -141,7 +141,7 @@ import static com.google.common.base.Preconditions.checkState;
  * create and configure primitives in code:
  * <pre>
  *   {@code
- *   AtomicMap<String, String> map = atomix.mapBuilder("my-map")
+ *   DistributedMap<String, String> map = atomix.mapBuilder("my-map")
  *     .withProtocol(MultiRaftProtocol.builder("raft")
  *       .withReadConsistency(ReadConsistency.SEQUENTIAL)
  *       .build())

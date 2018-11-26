@@ -46,7 +46,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   {@code
  *   Atomix atomix = Atomix.builder()
  *     .withMemberId("member-1")
- *     .withAddress("localhost", 5000)
+ *     .withHost("192.168.10.2")
+ *     .withPort(5000)
  *     .build();
  *   }
  * </pre>
@@ -517,7 +518,8 @@ public class AtomixBuilder extends AtomixClusterBuilder {
    *   {@code
    *   Atomix atomix = Atomix.builder()
    *     .withMemberId("member-1")
-   *     .withAddress("localhost", 5000)
+   *     .withHost("192.168.10.2")
+   *     .withPort(5000)
    *     .build();
    *   atomix.start().join();
    *   }
