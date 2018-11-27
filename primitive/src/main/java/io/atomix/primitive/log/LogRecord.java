@@ -20,7 +20,11 @@ import io.atomix.utils.misc.ArraySizeHashPrinter;
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Log entry.
+ * Distributed log protocol record.
+ * <p>
+ * A log record represents an entry in a distributed log. The record includes an {@link #index()} and a
+ * {@link #timestamp()} at which the entry was committed to the log in addition to the {@link #value()}
+ * of the entry.
  */
 public class LogRecord {
   private final long index;
@@ -33,14 +37,29 @@ public class LogRecord {
     this.value = value;
   }
 
+  /**
+   * Returns the record index.
+   *
+   * @return the record index
+   */
   public long index() {
     return index;
   }
 
+  /**
+   * Returns the record timestamp.
+   *
+   * @return the record timestamp
+   */
   public long timestamp() {
     return timestamp;
   }
 
+  /**
+   * Returns the record value.
+   *
+   * @return the record value
+   */
   public byte[] value() {
     return value;
   }

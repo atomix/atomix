@@ -15,13 +15,13 @@
  */
 package io.atomix.core.log.impl;
 
-import java.util.concurrent.CompletableFuture;
-
 import io.atomix.core.log.DistributedLog;
 import io.atomix.core.log.DistributedLogBuilder;
 import io.atomix.core.log.DistributedLogConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.LogProtocol;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Default distributed log builder.
@@ -36,6 +36,6 @@ public class DefaultDistributedLogBuilder<E> extends DistributedLogBuilder<E> {
     LogProtocol protocol = (LogProtocol) protocol();
     return protocol.newClient(managementService.getPartitionService())
         .connect()
-        .thenApply(client -> new DefaultAsyncDistributedLog<E>(client, serializer()).sync());
+        .thenApply(client -> new DefaultAsyncDistributedLog<E>(name, client, serializer()).sync());
   }
 }

@@ -19,7 +19,7 @@ import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.session.SessionId;
 
 /**
- * Log operation.
+ * Container for a distributed log based state machine operation.
  */
 public class LogOperation {
   private final SessionId sessionId;
@@ -36,22 +36,47 @@ public class LogOperation {
     this.operation = operation;
   }
 
+  /**
+   * Returns the primitive session ID.
+   *
+   * @return the primitive session ID
+   */
   public SessionId sessionId() {
     return sessionId;
   }
 
+  /**
+   * Returns the primitive name.
+   *
+   * @return the primitive name
+   */
   public String primitive() {
     return primitive;
   }
 
+  /**
+   * Returns the write index used to maintain read-after-write consistency.
+   *
+   * @return the write index
+   */
   public long operationIndex() {
     return operationIndex;
   }
 
+  /**
+   * Returns the primitive operation ID.
+   *
+   * @return the primitive operation ID
+   */
   public OperationId operationId() {
     return operationId;
   }
 
+  /**
+   * Returns the serialized primitive operation.
+   *
+   * @return the serialized primitive operation
+   */
   public byte[] operation() {
     return operation;
   }
