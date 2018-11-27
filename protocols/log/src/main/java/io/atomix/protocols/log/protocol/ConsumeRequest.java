@@ -20,7 +20,7 @@ import io.atomix.cluster.MemberId;
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Read request.
+ * Consume request, sent by a log client to consume a distributed log from the given index.
  */
 public class ConsumeRequest extends LogRequest {
 

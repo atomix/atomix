@@ -35,18 +35,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Default distributed log.
  */
 public class DefaultAsyncDistributedLog<E> implements AsyncDistributedLog<E> {
+  private final String name;
   private final LogClient client;
   private final Map<Integer, DefaultAsyncDistributedLogPartition<E>> partitions = new ConcurrentHashMap<>();
   private final List<AsyncDistributedLogPartition<E>> sortedPartitions = new CopyOnWriteArrayList<>();
   private final Serializer serializer;
 
-  public DefaultAsyncDistributedLog(LogClient client, Serializer serializer) {
-    this.client = client;
-    this.serializer = serializer;
+  public DefaultAsyncDistributedLog(String name, LogClient client, Serializer serializer) {
+    this.name = checkNotNull(name);
+    this.client = checkNotNull(client);
+    this.serializer = checkNotNull(serializer);
     client.getPartitions().forEach(partition -> {
       DefaultAsyncDistributedLogPartition<E> logPartition = new DefaultAsyncDistributedLogPartition<>(this, partition, serializer);
       partitions.put(partition.partitionId().id(), logPartition);
@@ -56,7 +60,7 @@ public class DefaultAsyncDistributedLog<E> implements AsyncDistributedLog<E> {
 
   @Override
   public String name() {
-    return null;
+    return name;
   }
 
   @Override

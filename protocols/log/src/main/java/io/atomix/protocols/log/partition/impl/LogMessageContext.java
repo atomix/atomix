@@ -26,7 +26,7 @@ class LogMessageContext {
 
   LogMessageContext(String prefix) {
     this.appendSubject = getSubject(prefix, "append");
-    this.consumeSubject = getSubject(prefix, "read");
+    this.consumeSubject = getSubject(prefix, "consume");
     this.resetSubject = getSubject(prefix, "reset");
     this.backupSubject = getSubject(prefix, "backup");
   }

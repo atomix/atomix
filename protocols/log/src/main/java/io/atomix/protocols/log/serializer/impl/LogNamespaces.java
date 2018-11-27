@@ -55,7 +55,7 @@ public final class LogNamespaces {
       .register(BackupOperation.class)
       .register(LogEntry.class)
       .register(LogRecord.class)
-      .build("PrimaryBackupProtocol");
+      .build("LogProtocol");
 
   private LogNamespaces() {
   }

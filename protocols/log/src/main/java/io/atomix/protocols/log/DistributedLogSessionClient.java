@@ -240,7 +240,7 @@ public class DistributedLogSessionClient {
       boolean closeOnStop;
       ThreadContextFactory threadContextFactory;
       if (this.threadContextFactory == null) {
-        threadContextFactory = threadModel.factory("backup-client-" + clientName + "-%d", threadPoolSize, log);
+        threadContextFactory = threadModel.factory("log-client-" + clientName + "-%d", threadPoolSize, log);
         closeOnStop = true;
       } else {
         threadContextFactory = this.threadContextFactory;

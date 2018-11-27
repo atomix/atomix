@@ -20,7 +20,7 @@ import io.atomix.utils.misc.ArraySizeHashPrinter;
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Append operation.
+ * Backup operation, sent by a distributed log server leader to a follower to backup a log entry.
  */
 public class BackupOperation {
   private final long index;
