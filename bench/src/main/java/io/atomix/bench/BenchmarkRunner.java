@@ -17,6 +17,8 @@ package io.atomix.bench;
 
 import io.atomix.core.Atomix;
 import io.atomix.core.map.AtomicMap;
+import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
@@ -162,9 +164,22 @@ public class BenchmarkRunner {
       teardown();
     }
 
+    void read(String key) {
+      map.get(key);
+      readCounter.incrementAndGet();
+    }
+
+    void write(String key, String value) {
+      map.put(key, value);
+      writeCounter.incrementAndGet();
+    }
+
+    @SuppressWarnings("unchecked")
     void setup() {
+      ProxyProtocol protocol = (ProxyProtocol) atomix.getRegistry().getType(PrimitiveProtocol.Type.class, "foo").newProtocol(config.getProtocol());
       map = atomix.<String, String>atomicMapBuilder("bench")
           .withSerializer(Serializer.using(Namespaces.BASIC))
+          .withProtocol(protocol)
           .build();
       if (config.isIncludeEvents()) {
         map.addListener(event -> {
@@ -184,11 +199,9 @@ public class BenchmarkRunner {
     void submit() {
       String key = keys[random.nextInt(keys.length)];
       if (random.nextInt(100) < config.getWritePercentage()) {
-        map.put(key, values[random.nextInt(values.length)]);
-        writeCounter.incrementAndGet();
+        write(key, values[random.nextInt(values.length)]);
       } else {
-        map.get(key);
-        readCounter.incrementAndGet();
+        read(key);
       }
     }
   }
@@ -199,11 +212,9 @@ public class BenchmarkRunner {
     @Override
     void submit() {
       if (random.nextInt(100) < config.getWritePercentage()) {
-        map.put(keys[index++ % keys.length], values[random.nextInt(values.length)]);
-        writeCounter.incrementAndGet();
+        write(keys[index++ % keys.length], values[random.nextInt(values.length)]);
       } else {
-        map.get(keys[random.nextInt(keys.length)]);
-        readCounter.incrementAndGet();
+        read(keys[random.nextInt(keys.length)]);
       }
     }
   }

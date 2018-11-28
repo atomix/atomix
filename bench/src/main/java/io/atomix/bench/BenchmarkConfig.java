@@ -16,6 +16,7 @@
 package io.atomix.bench;
 
 import io.atomix.primitive.config.PrimitiveConfig;
+import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
 import java.util.UUID;
 
@@ -33,7 +34,7 @@ public class BenchmarkConfig {
   private static final boolean DEFAULT_DETERMINISTIC = true;
 
   private String benchId = UUID.randomUUID().toString();
-  private PrimitiveConfig primitive;
+  private PrimitiveProtocolConfig protocol;
   private int operations = DEFAULT_OPERATIONS;
   private int writePercentage = DEFAULT_WRITE_PERCENTAGE;
   private int numKeys = DEFAULT_NUM_KEYS;
@@ -52,12 +53,12 @@ public class BenchmarkConfig {
     return this;
   }
 
-  public PrimitiveConfig getPrimitive() {
-    return primitive;
+  public PrimitiveProtocolConfig getProtocol() {
+    return protocol;
   }
 
-  public BenchmarkConfig setPrimitive(PrimitiveConfig primitive) {
-    this.primitive = primitive;
+  public BenchmarkConfig setProtocol(PrimitiveProtocolConfig protocol) {
+    this.protocol = protocol;
     return this;
   }
 
