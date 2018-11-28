@@ -15,19 +15,6 @@
  */
 package io.atomix.cluster.messaging.impl;
 
-import java.net.ConnectException;
-import java.time.Duration;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 import io.atomix.cluster.ClusterMembershipService;
@@ -41,6 +28,19 @@ import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.net.Address;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.ConnectException;
+import java.time.Duration;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -211,7 +211,7 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
   }
 
   @Override
-  public <M> CompletableFuture<Void> subscribe(String subject, Function<byte[], M> decoder, BiConsumer<Address, M> handler, Executor executor) {
+  public <M> CompletableFuture<Void> subscribe(String subject, Function<byte[], M> decoder, BiConsumer<MemberId, M> handler, Executor executor) {
     messagingService.registerHandler(subject, new InternalMessageBiConsumer<>(decoder, handler), executor);
     BiConsumer<Address, byte[]> unicastConsumer = new InternalMessageBiConsumer<>(decoder, handler);
     unicastConsumers.put(subject, unicastConsumer);
@@ -259,18 +259,21 @@ public class DefaultClusterCommunicationService implements ManagedClusterCommuni
     }
   }
 
-  private static class InternalMessageBiConsumer<M> implements BiConsumer<Address, byte[]> {
+  private class InternalMessageBiConsumer<M> implements BiConsumer<Address, byte[]> {
     private final Function<byte[], M> decoder;
-    private final BiConsumer<Address, M> consumer;
+    private final BiConsumer<MemberId, M> consumer;
 
-    InternalMessageBiConsumer(Function<byte[], M> decoder, BiConsumer<Address, M> consumer) {
+    InternalMessageBiConsumer(Function<byte[], M> decoder, BiConsumer<MemberId, M> consumer) {
       this.decoder = decoder;
       this.consumer = consumer;
     }
 
     @Override
     public void accept(Address sender, byte[] bytes) {
-      consumer.accept(sender, decoder.apply(bytes));
+      Member member = membershipService.getMember(sender);
+      if (member != null) {
+        consumer.accept(member.id(), decoder.apply(bytes));
+      }
     }
   }
 
