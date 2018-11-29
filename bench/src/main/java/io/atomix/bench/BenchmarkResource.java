@@ -15,8 +15,11 @@
  */
 package io.atomix.bench;
 
-import io.atomix.core.Atomix;
+import io.atomix.cluster.ClusterMembershipService;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.rest.AtomixResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -38,20 +41,26 @@ import java.util.concurrent.TimeoutException;
 @AtomixResource
 @Path("/bench")
 public class BenchmarkResource {
+  private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkResource.class);
+
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.TEXT_PLAIN)
-  public Response startTest(BenchmarkConfig config, @Context Atomix atomix) {
+  public Response startTest(
+      BenchmarkConfig config,
+      @Context ClusterMembershipService membershipService,
+      @Context ClusterCommunicationService communicationService) {
     try {
-      String testId = atomix.getCommunicationService().<BenchmarkConfig, String>send(
+      String testId = communicationService.<BenchmarkConfig, String>send(
           BenchmarkConstants.START_SUBJECT,
           config,
           BenchmarkSerializer.INSTANCE::encode,
           BenchmarkSerializer.INSTANCE::decode,
-          atomix.getMembershipService().getLocalMember().id())
+          membershipService.getLocalMember().id())
           .get(10, TimeUnit.SECONDS);
       return Response.ok(testId).build();
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      LOGGER.warn("An uncaught exception occurred", e);
       return Response.serverError().build();
     }
   }
@@ -59,17 +68,21 @@ public class BenchmarkResource {
   @GET
   @Path("/{testId}/progress")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getProgress(@PathParam("testId") String testId, @Context Atomix atomix) {
+  public Response getProgress(
+      @PathParam("testId") String testId,
+      @Context ClusterMembershipService membershipService,
+      @Context ClusterCommunicationService communicationService) {
     try {
-      BenchmarkProgress progress = atomix.getCommunicationService().<Void, BenchmarkProgress>send(
+      BenchmarkProgress progress = communicationService.<Void, BenchmarkProgress>send(
           BenchmarkConstants.PROGRESS_SUBJECT,
           null,
           BenchmarkSerializer.INSTANCE::encode,
           BenchmarkSerializer.INSTANCE::decode,
-          atomix.getMembershipService().getLocalMember().id())
+          membershipService.getLocalMember().id())
           .get(10, TimeUnit.SECONDS);
       return Response.ok(progress).build();
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      LOGGER.warn("An uncaught exception occurred", e);
       return Response.serverError().build();
     }
   }
@@ -77,32 +90,40 @@ public class BenchmarkResource {
   @GET
   @Path("/{testId}/result")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getResult(@PathParam("testId") String testId, @Context Atomix atomix) {
+  public Response getResult(
+      @PathParam("testId") String testId,
+      @Context ClusterMembershipService membershipService,
+      @Context ClusterCommunicationService communicationService) {
     try {
-      BenchmarkResult result = atomix.getCommunicationService().<Void, BenchmarkResult>send(
+      BenchmarkResult result = communicationService.<Void, BenchmarkResult>send(
           BenchmarkConstants.RESULT_SUBJECT,
           null,
           BenchmarkSerializer.INSTANCE::encode,
           BenchmarkSerializer.INSTANCE::decode,
-          atomix.getMembershipService().getLocalMember().id())
+          membershipService.getLocalMember().id())
           .get(10, TimeUnit.SECONDS);
       return Response.ok(result).build();
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      LOGGER.warn("An uncaught exception occurred", e);
       return Response.serverError().build();
     }
   }
 
   @DELETE
   @Path("/{testId}")
-  public Response stopTest(@PathParam("testId") String testId, @Context Atomix atomix) {
+  public Response stopTest(
+      @PathParam("testId") String testId,
+      @Context ClusterMembershipService membershipService,
+      @Context ClusterCommunicationService communicationService) {
     try {
-      atomix.getCommunicationService().send(
+      communicationService.send(
           BenchmarkConstants.STOP_SUBJECT,
           null,
-          atomix.getMembershipService().getLocalMember().id())
+          membershipService.getLocalMember().id())
           .get(10, TimeUnit.SECONDS);
       return Response.ok().build();
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      LOGGER.warn("An uncaught exception occurred", e);
       return Response.serverError().build();
     }
   }

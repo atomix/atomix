@@ -15,6 +15,14 @@
  */
 package io.atomix.bench;
 
+import io.atomix.primitive.Consistency;
+import io.atomix.primitive.Recovery;
+import io.atomix.primitive.Replication;
+import io.atomix.primitive.partition.Murmur3Partitioner;
+import io.atomix.protocols.backup.MultiPrimaryProtocolConfig;
+import io.atomix.protocols.raft.MultiRaftProtocolConfig;
+import io.atomix.protocols.raft.ReadConsistency;
+import io.atomix.protocols.raft.session.CommunicationStrategy;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -30,6 +38,14 @@ public final class BenchmarkSerializer {
       .register(BenchmarkConfig.class)
       .register(BenchmarkProgress.class)
       .register(BenchmarkResult.class)
+      .register(MultiRaftProtocolConfig.class)
+      .register(Murmur3Partitioner.class)
+      .register(ReadConsistency.class)
+      .register(CommunicationStrategy.class)
+      .register(Recovery.class)
+      .register(MultiPrimaryProtocolConfig.class)
+      .register(Consistency.class)
+      .register(Replication.class)
       .build());
 
   private BenchmarkSerializer() {
