@@ -22,6 +22,8 @@ import io.atomix.cluster.discovery.BootstrapDiscoveryConfig;
 import io.atomix.cluster.discovery.MulticastDiscoveryConfig;
 import io.atomix.core.Atomix;
 import io.atomix.core.AtomixConfig;
+import io.atomix.rest.ManagedRestService;
+import io.atomix.rest.RestService;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.net.MalformedAddressException;
 import net.sourceforge.argparse4j.ArgumentParsers;
@@ -60,17 +62,17 @@ public class AtomixBenchmark {
     final Namespace namespace = parseArgs(args, unknown);
     final Namespace extraArgs = parseUnknown(unknown);
     extraArgs.getAttrs().forEach((key, value) -> System.setProperty(key, value.toString()));
-
-    final Atomix atomix = buildAtomix(namespace);
-    new AtomixBenchmark(atomix).start();
+    new AtomixBenchmark(namespace).start();
   }
 
   private final Atomix atomix;
+  private final Namespace namespace;
   private final Map<String, BenchmarkController> controllers = new ConcurrentHashMap<>();
   private final Map<String, BenchmarkRunner> runners = new ConcurrentHashMap<>();
 
-  private AtomixBenchmark(Atomix atomix) {
-    this.atomix = atomix;
+  private AtomixBenchmark(Namespace namespace) {
+    this.atomix = buildAtomix(namespace);
+    this.namespace = namespace;
   }
 
   /**
@@ -93,6 +95,11 @@ public class AtomixBenchmark {
         BenchmarkConstants.STOP_SUBJECT, BenchmarkSerializer.INSTANCE::decode, this::stopBenchmark, BenchmarkSerializer.INSTANCE::encode);
 
     LOGGER.info("Atomix listening at {}", atomix.getMembershipService().getLocalMember().address());
+
+    final ManagedRestService rest = buildRestService(atomix, namespace);
+    rest.start().join();
+    LOGGER.warn("The Atomix HTTP API is BETA and is intended for development and debugging purposes only!");
+    LOGGER.info("HTTP server listening at {}", rest.address());
 
     synchronized (Atomix.class) {
       while (atomix.isRunning()) {
@@ -336,6 +343,22 @@ public class AtomixBenchmark {
     return Atomix.builder(createConfig(namespace))
         .withProperty(BenchmarkConstants.BENCH_NODE_TYPE, Boolean.TRUE.toString())
         .withShutdownHookEnabled()
+        .build();
+  }
+
+  /**
+   * Builds a REST service for the given Atomix instance from the given namespace.
+   *
+   * @param atomix the Atomix instance
+   * @param namespace the namespace from which to build the service
+   * @return the managed REST service
+   */
+  private static ManagedRestService buildRestService(Atomix atomix, Namespace namespace) {
+    final String httpHost = namespace.getString("http_host");
+    final Integer httpPort = namespace.getInt("http_port");
+    return RestService.builder()
+        .withAtomix(atomix)
+        .withAddress(Address.from(httpHost, httpPort))
         .build();
   }
 
