@@ -4,6 +4,12 @@ import argparse
 import json
 import time
 import sys
+import curses
+
+try:
+    from terminaltables import AsciiTable
+except ImportError:
+    AsciiTable = None
 
 
 def start_bench(config, url):
@@ -14,6 +20,63 @@ def start_bench(config, url):
     return response.text
 
 
+def _report_text(processes):
+    lines = []
+    for id, stats in processes.items():
+        if stats['time'] > 0:
+            time = round(stats['time'] / float(1000), 2)
+            ops = round(stats['operations'] / (stats['time'] / float(1000)), 2)
+            rps = round(stats['reads'] / (stats['time'] / float(1000)), 2)
+            wps = round(stats['writes'] / (stats['time'] / float(1000)), 2)
+
+            lines.append("process: {}, ops: {}, reads: {}, writes: {}, events: {}, time: {}s, ops/sec: {}, reads/sec: {}, writes/sec: {}".format(
+                id, stats['operations'], stats['reads'], stats['writes'], stats['events'], time, ops, rps, wps))
+    return '\n'.join(lines)
+
+
+def _create_table(data):
+    """Creates a table from the given data."""
+    table = AsciiTable(data)
+    table.inner_column_border = False
+    table.inner_row_border = False
+    table.outer_border = False
+    table.inner_heading_row_border = False
+    table.padding_right = 4
+    return str(table.table)
+
+def _report_table(processes):
+    data = [['PROCESS', 'OPS', 'READS', 'WRITES', 'EVENTS', 'TIME', 'OPS/S', 'READS/S', 'WRITES/S']]
+    for id, stats in processes.items():
+        if stats['time'] > 0:
+            time = round(stats['time'] / float(1000), 2)
+            ops = round(stats['operations'] / (stats['time'] / float(1000)), 2)
+            rps = round(stats['reads'] / (stats['time'] / float(1000)), 2)
+            wps = round(stats['writes'] / (stats['time'] / float(1000)), 2)
+
+            data.append([
+                id,
+                stats['operations'],
+                stats['reads'],
+                stats['writes'],
+                stats['events'],
+                time,
+                ops,
+                rps,
+                wps
+            ])
+
+    return _create_table(data)
+
+
+def _report_processes(processes):
+    if AsciiTable is not None:
+        text = _report_table(processes)
+    else:
+        text = _report_text(processes)
+    stdscr.addstr(0, 0, text)
+    stdscr.refresh()
+
+
 def report_progress(bench_id, url):
     response = requests.get("{}/v1/bench/{}/progress".format(url, bench_id))
     if response.status_code != 200:
@@ -21,7 +84,7 @@ def report_progress(bench_id, url):
         return False
     else:
         progress = response.json()
-        print("ops: {}, time: {}".format(progress['operations'], progress['time']))
+        _report_processes(progress['processes'])
 
         if progress['state'] == 'COMPLETE':
             return False
@@ -33,8 +96,8 @@ def report_result(bench_id, url):
     if response.status_code != 200:
         print("Failed to fetch test result")
     else:
-        progress = response.json()
-        print("ops: {}, time: {}".format(progress['operations'], progress['time']))
+        result = response.json()
+        print(_report_processes(result['processes']))
 
 
 def stop_bench(bench_id, url):
@@ -67,6 +130,9 @@ def run_bench(args):
         print("Failed to start benchmark")
         sys.exit(1)
 
+    curses.noecho()
+    curses.cbreak()
+
     try:
         while True:
             if not report_progress(bench_id, url):
@@ -75,6 +141,10 @@ def run_bench(args):
     except KeyboardInterrupt:
         stop_bench(bench_id, url)
         sys.exit(1)
+    finally:
+        curses.nocbreak()
+        curses.echo()
+        curses.endwin()
 
     report_result(bench_id, url)
 
@@ -103,4 +173,6 @@ if __name__ == '__main__':
     parser.add_argument('--non-deterministic', action='store_true', default=False, help="Whether to partition operations non-deterministically")
 
     args = parser.parse_args()
+
+    stdscr = curses.initscr()
     run_bench(args)

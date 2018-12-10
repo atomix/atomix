@@ -53,9 +53,10 @@ public class BenchmarkRunner {
       namedThreads("atomix-bench-reporter", LOGGER));
   private long startTime;
   private volatile boolean running;
-  private final AtomicInteger totalCounter = new AtomicInteger();
+  private final AtomicInteger opCounter = new AtomicInteger();
   private final AtomicInteger readCounter = new AtomicInteger();
   private final AtomicInteger writeCounter = new AtomicInteger();
+  private final AtomicInteger eventCounter = new AtomicInteger();
 
   public BenchmarkRunner(Atomix atomix, BenchmarkConfig config) {
     this.atomix = atomix;
@@ -102,15 +103,19 @@ public class BenchmarkRunner {
     running = false;
     runnerExecutor.shutdownNow();
     reporterExecutor.shutdownNow();
+    report();
   }
 
   /**
    * Sends a progress report to the controller node.
    */
   private void report() {
-    BenchmarkProgress report = new BenchmarkProgress(
+    RunnerProgress report = new RunnerProgress(
         running ? BenchmarkState.RUNNING : BenchmarkState.COMPLETE,
-        totalCounter.get(),
+        opCounter.get(),
+        readCounter.get(),
+        writeCounter.get(),
+        eventCounter.get(),
         System.currentTimeMillis() - startTime);
     atomix.getCommunicationService().broadcastIncludeSelf(config.getBenchId(), report, BenchmarkSerializer.INSTANCE::encode, false);
   }
@@ -164,13 +169,12 @@ public class BenchmarkRunner {
     public void run() {
       setup();
       startTime = System.currentTimeMillis();
-      while (running) {
+      while (running && opCounter.get() < config.getOperations()) {
         try {
+          opCounter.incrementAndGet();
           submit();
         } catch (Exception e) {
           LOGGER.warn("Exception during benchmark cycle", e);
-        } finally {
-          totalCounter.incrementAndGet();
         }
       }
       teardown();
@@ -195,6 +199,7 @@ public class BenchmarkRunner {
           .build();
       if (config.isIncludeEvents()) {
         map.addListener(event -> {
+          eventCounter.incrementAndGet();
         });
       }
     }
@@ -202,7 +207,8 @@ public class BenchmarkRunner {
     abstract void submit();
 
     void teardown() {
-      map.delete();
+      map.close();
+      stop();
     }
   }
 

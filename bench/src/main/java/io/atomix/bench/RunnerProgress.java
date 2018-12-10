@@ -15,25 +15,47 @@
  */
 package io.atomix.bench;
 
-import java.util.Map;
-
 /**
- * Benchmark progress report.
+ * Benchmark runner progress report.
  */
-public class BenchmarkProgress {
+public class RunnerProgress {
   private final BenchmarkState state;
-  private final Map<String, RunnerProgress> processes;
+  private final int operations;
+  private final int reads;
+  private final int writes;
+  private final int events;
+  private final long time;
 
-  public BenchmarkProgress(BenchmarkState state, Map<String, RunnerProgress> processes) {
+  public RunnerProgress(BenchmarkState state, int operations, int reads, int writes, int events, long time) {
     this.state = state;
-    this.processes = processes;
+    this.operations = operations;
+    this.reads = reads;
+    this.writes = writes;
+    this.events = events;
+    this.time = time;
   }
 
   public BenchmarkState getState() {
     return state;
   }
 
-  public Map<String, RunnerProgress> getProcesses() {
-    return processes;
+  public int getOperations() {
+    return operations;
+  }
+
+  public int getReads() {
+    return reads;
+  }
+
+  public int getWrites() {
+    return writes;
+  }
+
+  public int getEvents() {
+    return events;
+  }
+
+  public long getTime() {
+    return time;
   }
 }
