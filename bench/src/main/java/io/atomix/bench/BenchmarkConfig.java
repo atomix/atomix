@@ -25,6 +25,7 @@ import java.util.UUID;
  */
 public class BenchmarkConfig {
   private static final int DEFAULT_OPERATIONS = 10000;
+  private static final int DEFAULT_CONCURRENCY = 1;
   private static final int DEFAULT_WRITE_PERCENTAGE = 100;
   private static final int DEFAULT_NUM_KEYS = 100000;
   private static final int DEFAULT_KEY_LENGTH = 32;
@@ -36,6 +37,7 @@ public class BenchmarkConfig {
   private String benchId = UUID.randomUUID().toString();
   private PrimitiveProtocolConfig protocol;
   private int operations = DEFAULT_OPERATIONS;
+  private int concurrency = DEFAULT_CONCURRENCY;
   private int writePercentage = DEFAULT_WRITE_PERCENTAGE;
   private int numKeys = DEFAULT_NUM_KEYS;
   private int keyLength = DEFAULT_KEY_LENGTH;
@@ -51,6 +53,7 @@ public class BenchmarkConfig {
     this.benchId = config.benchId;
     this.protocol = config.protocol;
     this.operations = config.operations;
+    this.concurrency = config.concurrency;
     this.writePercentage = config.writePercentage;
     this.numKeys = config.numKeys;
     this.keyLength = config.keyLength;
@@ -85,6 +88,14 @@ public class BenchmarkConfig {
   public BenchmarkConfig setOperations(int operations) {
     this.operations = operations;
     return this;
+  }
+
+  public int getConcurrency() {
+    return concurrency;
+  }
+
+  public void setConcurrency(int concurrency) {
+    this.concurrency = concurrency;
   }
 
   public int getWritePercentage() {
