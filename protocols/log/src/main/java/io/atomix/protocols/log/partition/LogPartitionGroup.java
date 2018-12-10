@@ -84,6 +84,7 @@ public class LogPartitionGroup implements ManagedPartitionGroup {
           .register(LogStorageConfig.class)
           .register(LogCompactionConfig.class)
           .register(MemorySize.class)
+          .register(StorageLevel.class)
           .build();
     }
 
