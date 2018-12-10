@@ -37,6 +37,7 @@ public final class BenchmarkSerializer {
       .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
       .register(BenchmarkConfig.class)
       .register(BenchmarkProgress.class)
+      .register(BenchmarkState.class)
       .register(BenchmarkResult.class)
       .register(MultiRaftProtocolConfig.class)
       .register(Murmur3Partitioner.class)

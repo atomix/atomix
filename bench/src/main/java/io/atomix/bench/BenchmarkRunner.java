@@ -17,7 +17,6 @@ package io.atomix.bench;
 
 import io.atomix.core.Atomix;
 import io.atomix.core.map.AtomicMap;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -39,7 +38,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * Benchmark runner.
  */
 public class BenchmarkRunner {
-  private final Logger log = LoggerFactory.getLogger(getClass());
+  private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkRunner.class);
 
   private static final int REPORT_PERIOD = 1_000;
 
@@ -48,8 +47,10 @@ public class BenchmarkRunner {
   private final Atomix atomix;
   private final BenchmarkConfig config;
 
-  private final ExecutorService runnerExecutor = Executors.newSingleThreadExecutor(namedThreads("atomix-bench-runner", log));
-  private final ScheduledExecutorService reporterExecutor = Executors.newSingleThreadScheduledExecutor(namedThreads("atomix-bench-reporter", log));
+  private final ExecutorService runnerExecutor = Executors.newSingleThreadExecutor(
+      namedThreads("atomix-bench-runner", LOGGER));
+  private final ScheduledExecutorService reporterExecutor = Executors.newSingleThreadScheduledExecutor(
+      namedThreads("atomix-bench-reporter", LOGGER));
   private long startTime;
   private volatile boolean running;
   private final AtomicInteger totalCounter = new AtomicInteger();
@@ -74,6 +75,17 @@ public class BenchmarkRunner {
    * Starts the benchmark runner.
    */
   public void start() {
+    LOGGER.info("Running benchmark {}", getBenchId());
+
+    LOGGER.debug("operations: {}", config.getOperations());
+    LOGGER.debug("writePercentage: {}", config.getWritePercentage());
+    LOGGER.debug("numKeys: {}", config.getNumKeys());
+    LOGGER.debug("keyLength: {}", config.getKeyLength());
+    LOGGER.debug("numValues: {}", config.getNumValues());
+    LOGGER.debug("valueLength: {}", config.getValueLength());
+    LOGGER.debug("includeEvents: {}", config.isIncludeEvents());
+    LOGGER.debug("deterministic: {}", config.isDeterministic());
+
     reporterExecutor.scheduleAtFixedRate(this::report, REPORT_PERIOD, REPORT_PERIOD, TimeUnit.MILLISECONDS);
     running = true;
     if (config.isDeterministic()) {
@@ -156,7 +168,7 @@ public class BenchmarkRunner {
         try {
           submit();
         } catch (Exception e) {
-          log.warn("Exception during cycle", e);
+          LOGGER.warn("Exception during benchmark cycle", e);
         } finally {
           totalCounter.incrementAndGet();
         }
@@ -176,8 +188,8 @@ public class BenchmarkRunner {
 
     @SuppressWarnings("unchecked")
     void setup() {
-      ProxyProtocol protocol = (ProxyProtocol) atomix.getRegistry().getType(PrimitiveProtocol.Type.class, "foo").newProtocol(config.getProtocol());
-      map = atomix.<String, String>atomicMapBuilder("bench")
+      ProxyProtocol protocol = (ProxyProtocol) config.getProtocol().getType().newProtocol(config.getProtocol());
+      map = atomix.<String, String>atomicMapBuilder(config.getBenchId())
           .withSerializer(Serializer.using(Namespaces.BASIC))
           .withProtocol(protocol)
           .build();
@@ -190,7 +202,7 @@ public class BenchmarkRunner {
     abstract void submit();
 
     void teardown() {
-      //map.destroy();
+      map.delete();
     }
   }
 

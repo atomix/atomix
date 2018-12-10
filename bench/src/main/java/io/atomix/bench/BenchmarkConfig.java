@@ -44,6 +44,22 @@ public class BenchmarkConfig {
   private boolean includeEvents = DEFAULT_INCLUDE_EVENTS;
   private boolean deterministic = DEFAULT_DETERMINISTIC;
 
+  public BenchmarkConfig() {
+  }
+
+  public BenchmarkConfig(BenchmarkConfig config) {
+    this.benchId = config.benchId;
+    this.protocol = config.protocol;
+    this.operations = config.operations;
+    this.writePercentage = config.writePercentage;
+    this.numKeys = config.numKeys;
+    this.keyLength = config.keyLength;
+    this.numValues = config.numValues;
+    this.valueLength = config.valueLength;
+    this.includeEvents = config.includeEvents;
+    this.deterministic = config.deterministic;
+  }
+
   public String getBenchId() {
     return benchId;
   }
@@ -53,11 +69,11 @@ public class BenchmarkConfig {
     return this;
   }
 
-  public PrimitiveProtocolConfig getProtocol() {
+  public PrimitiveProtocolConfig<?> getProtocol() {
     return protocol;
   }
 
-  public BenchmarkConfig setProtocol(PrimitiveProtocolConfig protocol) {
+  public BenchmarkConfig setProtocol(PrimitiveProtocolConfig<?> protocol) {
     this.protocol = protocol;
     return this;
   }
