@@ -16,8 +16,9 @@
 package io.atomix.bench;
 
 import io.atomix.core.Atomix;
-import io.atomix.core.map.AtomicMap;
+import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.primitive.protocol.ProxyProtocol;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
@@ -26,11 +27,13 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
@@ -79,6 +82,7 @@ public class BenchmarkRunner {
     LOGGER.info("Running benchmark {}", getBenchId());
 
     LOGGER.debug("operations: {}", config.getOperations());
+    LOGGER.debug("concurrency: {}", config.getConcurrency());
     LOGGER.debug("writePercentage: {}", config.getWritePercentage());
     LOGGER.debug("numKeys: {}", config.getNumKeys());
     LOGGER.debug("keyLength: {}", config.getKeyLength());
@@ -158,7 +162,7 @@ public class BenchmarkRunner {
     final String[] keys;
     final String[] values;
     final Random random = new Random();
-    AtomicMap<String, String> map;
+    AsyncAtomicMap<String, String> map;
 
     Submitter() {
       this.keys = createStrings(config.getKeyLength(), config.getNumKeys());
@@ -169,25 +173,34 @@ public class BenchmarkRunner {
     public void run() {
       setup();
       startTime = System.currentTimeMillis();
-      while (running && opCounter.get() < config.getOperations()) {
-        try {
-          opCounter.incrementAndGet();
-          submit();
-        } catch (Exception e) {
-          LOGGER.warn("Exception during benchmark cycle", e);
-        }
+      try {
+        Futures.allOf(IntStream.range(0, config.getConcurrency()).mapToObj(i -> execute())).join();
+      } catch (Exception e) {
+        LOGGER.warn("Exception in benchmark runner", e);
       }
       teardown();
     }
 
-    void read(String key) {
-      map.get(key);
-      readCounter.incrementAndGet();
+    CompletableFuture<Void> execute() {
+      return execute(new CompletableFuture<>());
     }
 
-    void write(String key, String value) {
-      map.put(key, value);
-      writeCounter.incrementAndGet();
+    private CompletableFuture<Void> execute(CompletableFuture<Void> future) {
+      if (running && opCounter.incrementAndGet() <= config.getOperations()) {
+        submit().whenComplete((r, e) -> execute(future));
+      } else {
+        opCounter.set(config.getOperations());
+        future.complete(null);
+      }
+      return future;
+    }
+
+    CompletableFuture<Void> read(String key) {
+      return map.get(key).whenComplete((r, e) -> readCounter.incrementAndGet()).thenApply(v -> null);
+    }
+
+    CompletableFuture<Void> write(String key, String value) {
+      return map.put(key, value).whenComplete((r, e) -> writeCounter.incrementAndGet()).thenApply(v -> null);
     }
 
     @SuppressWarnings("unchecked")
@@ -196,7 +209,8 @@ public class BenchmarkRunner {
       map = atomix.<String, String>atomicMapBuilder(config.getBenchId())
           .withSerializer(Serializer.using(Namespaces.BASIC))
           .withProtocol(protocol)
-          .build();
+          .build()
+          .async();
       if (config.isIncludeEvents()) {
         map.addListener(event -> {
           eventCounter.incrementAndGet();
@@ -204,22 +218,22 @@ public class BenchmarkRunner {
       }
     }
 
-    abstract void submit();
+    abstract CompletableFuture<Void> submit();
 
     void teardown() {
-      map.close();
+      map.sync().close();
       stop();
     }
   }
 
   private class NonDeterministicSubmitter extends Submitter {
     @Override
-    void submit() {
+    CompletableFuture<Void> submit() {
       String key = keys[random.nextInt(keys.length)];
       if (random.nextInt(100) < config.getWritePercentage()) {
-        write(key, values[random.nextInt(values.length)]);
+        return write(key, values[random.nextInt(values.length)]);
       } else {
-        read(key);
+        return read(key);
       }
     }
   }
@@ -228,11 +242,11 @@ public class BenchmarkRunner {
     private int index;
 
     @Override
-    void submit() {
+    CompletableFuture<Void> submit() {
       if (random.nextInt(100) < config.getWritePercentage()) {
-        write(keys[index++ % keys.length], values[random.nextInt(values.length)]);
+        return write(keys[index++ % keys.length], values[random.nextInt(values.length)]);
       } else {
-        read(keys[random.nextInt(keys.length)]);
+        return read(keys[random.nextInt(keys.length)]);
       }
     }
   }

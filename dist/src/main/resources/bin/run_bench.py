@@ -111,6 +111,7 @@ def run_bench(args):
 
     config = {
         'operations': args.ops,
+        'concurrency': args.concurrency,
         'write-percentage': args.writes,
         'num-keys': args.keys,
         'key-length': args.key_length,
@@ -163,6 +164,7 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=5678, help="The HTTP port to use to control the test")
     parser.add_argument('--protocol', '-p', default=None, choices=['multi-raft', 'multi-primary', 'multi-log'], help="The protocol on which to run the test")
     parser.add_argument('--group', '-g', type=str, default=None, help="The partition group on which to run the test")
+    parser.add_argument('--concurrency', '-c', type=int, default=1, help="The number of concurrent operations to execute from a single process")
     parser.add_argument('--ops', '-o', type=int, default=10000, help="The number of operations to perform")
     parser.add_argument('--writes', '-w', type=percentage, default='100%', help="The percentage of operations to be writes")
     parser.add_argument('--keys', type=int, default=1000, help="The total number of unique keys to write")
