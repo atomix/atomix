@@ -67,14 +67,14 @@ def run_bench(args):
         print("Failed to start benchmark")
         sys.exit(1)
 
-    while True:
-        try:
+    try:
+        while True:
             if not report_progress(bench_id, url):
                 break
-        except KeyboardInterrupt:
-            stop_bench(bench_id)
-            sys.exit(1)
-        time.sleep(1)
+            time.sleep(1)
+    except KeyboardInterrupt:
+        stop_bench(bench_id, url)
+        sys.exit(1)
 
     report_result(bench_id, url)
 

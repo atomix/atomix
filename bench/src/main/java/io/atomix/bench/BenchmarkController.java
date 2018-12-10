@@ -19,6 +19,8 @@ import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.core.Atomix;
 import io.atomix.utils.concurrent.Futures;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,8 @@ import java.util.stream.Collectors;
  * Benchmark controller.
  */
 public class BenchmarkController {
+  private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkController.class);
+
   private final Atomix atomix;
   private final BenchmarkConfig config;
   private final Map<MemberId, BenchmarkProgress> reports = new ConcurrentHashMap<>();
@@ -69,10 +73,10 @@ public class BenchmarkController {
     }
 
     int totalOperations = 0;
-    int totalTime = 0;
+    long totalTime = 0;
     for (BenchmarkProgress progress : reports.values()) {
       totalOperations += progress.getOperations();
-      totalTime += progress.getTime();
+      totalTime = Math.max(totalOperations, progress.getTime());
     }
     return new BenchmarkProgress(BenchmarkState.RUNNING, totalOperations, totalTime);
   }
@@ -92,6 +96,8 @@ public class BenchmarkController {
    * @return a future to be completed once the benchmark has been started
    */
   public CompletableFuture<Void> start() {
+    LOGGER.info("Starting benchmark {}", getBenchId());
+
     atomix.getCommunicationService().subscribe(
         config.getBenchId(),
         BenchmarkSerializer.INSTANCE::decode,
@@ -109,7 +115,7 @@ public class BenchmarkController {
     List<CompletableFuture<Void>> runFutures = benchMembers.stream()
         .map(member -> atomix.getCommunicationService().<BenchmarkConfig, Void>send(
             BenchmarkConstants.RUN_SUBJECT,
-            new BenchmarkConfig().setOperations(operationsPerMember),
+            new BenchmarkConfig(config).setOperations(operationsPerMember),
             BenchmarkSerializer.INSTANCE::encode,
             BenchmarkSerializer.INSTANCE::decode,
             member))
@@ -123,6 +129,8 @@ public class BenchmarkController {
    * @return a future to be completed once the benchmark has been stopped
    */
   public CompletableFuture<Void> stop() {
+    LOGGER.info("Stopping benchmark {}", config.getBenchId());
+
     atomix.getCommunicationService().unsubscribe(config.getBenchId());
     if (reports.isEmpty()) {
       return CompletableFuture.completedFuture(null);

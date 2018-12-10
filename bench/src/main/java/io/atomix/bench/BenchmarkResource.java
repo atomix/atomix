@@ -73,9 +73,9 @@ public class BenchmarkResource {
       @Context ClusterMembershipService membershipService,
       @Context ClusterCommunicationService communicationService) {
     try {
-      BenchmarkProgress progress = communicationService.<Void, BenchmarkProgress>send(
+      BenchmarkProgress progress = communicationService.<String, BenchmarkProgress>send(
           BenchmarkConstants.PROGRESS_SUBJECT,
-          null,
+          testId,
           BenchmarkSerializer.INSTANCE::encode,
           BenchmarkSerializer.INSTANCE::decode,
           membershipService.getLocalMember().id())
@@ -95,9 +95,9 @@ public class BenchmarkResource {
       @Context ClusterMembershipService membershipService,
       @Context ClusterCommunicationService communicationService) {
     try {
-      BenchmarkResult result = communicationService.<Void, BenchmarkResult>send(
+      BenchmarkResult result = communicationService.<String, BenchmarkResult>send(
           BenchmarkConstants.RESULT_SUBJECT,
-          null,
+          testId,
           BenchmarkSerializer.INSTANCE::encode,
           BenchmarkSerializer.INSTANCE::decode,
           membershipService.getLocalMember().id())
@@ -118,7 +118,7 @@ public class BenchmarkResource {
     try {
       communicationService.send(
           BenchmarkConstants.STOP_SUBJECT,
-          null,
+          testId,
           membershipService.getLocalMember().id())
           .get(10, TimeUnit.SECONDS);
       return Response.ok().build();
