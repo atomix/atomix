@@ -15,23 +15,19 @@
  */
 package io.atomix.bench;
 
+import java.util.Map;
+
 /**
  * Benchmark result.
  */
 public class BenchmarkResult {
-  private final int operations;
-  private final long time;
+  private final Map<String, RunnerResult> processes;
 
-  public BenchmarkResult(int operations, long time) {
-    this.operations = operations;
-    this.time = time;
+  public BenchmarkResult(Map<String, RunnerResult> processes) {
+    this.processes = processes;
   }
 
-  public int getOperations() {
-    return operations;
-  }
-
-  public long getTime() {
-    return time;
+  public Map<String, RunnerResult> getProcesses() {
+    return processes;
   }
 }

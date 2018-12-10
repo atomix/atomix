@@ -15,6 +15,7 @@
  */
 package io.atomix.bench;
 
+import com.google.common.collect.Maps;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
 import io.atomix.core.Atomix;
@@ -36,7 +37,7 @@ public class BenchmarkController {
 
   private final Atomix atomix;
   private final BenchmarkConfig config;
-  private final Map<MemberId, BenchmarkProgress> reports = new ConcurrentHashMap<>();
+  private final Map<String, RunnerProgress> reports = new ConcurrentHashMap<>();
   private volatile BenchmarkResult result;
 
   public BenchmarkController(Atomix atomix, BenchmarkConfig config) {
@@ -69,16 +70,17 @@ public class BenchmarkController {
    */
   public BenchmarkProgress getProgress() {
     if (result != null) {
-      return new BenchmarkProgress(BenchmarkState.COMPLETE, result.getOperations(), result.getTime());
+      return new BenchmarkProgress(BenchmarkState.COMPLETE, result.getProcesses().entrySet().stream()
+          .map(entry -> Maps.immutableEntry(entry.getKey(), new RunnerProgress(
+              BenchmarkState.COMPLETE,
+              entry.getValue().getOperations(),
+              entry.getValue().getReads(),
+              entry.getValue().getWrites(),
+              entry.getValue().getEvents(),
+              entry.getValue().getTime())))
+          .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue())));
     }
-
-    int totalOperations = 0;
-    long totalTime = 0;
-    for (BenchmarkProgress progress : reports.values()) {
-      totalOperations += progress.getOperations();
-      totalTime = Math.max(totalOperations, progress.getTime());
-    }
-    return new BenchmarkProgress(BenchmarkState.RUNNING, totalOperations, totalTime);
+    return new BenchmarkProgress(BenchmarkState.RUNNING, reports);
   }
 
   /**
@@ -109,7 +111,7 @@ public class BenchmarkController {
         .map(Member::id)
         .collect(Collectors.toList());
 
-    benchMembers.forEach(member -> reports.put(member, new BenchmarkProgress(BenchmarkState.RUNNING, 0, 0)));
+    benchMembers.forEach(member -> reports.put(member.id(), new RunnerProgress(BenchmarkState.RUNNING, 0, 0, 0, 0, 0)));
 
     int operationsPerMember = config.getOperations() / benchMembers.size();
     List<CompletableFuture<Void>> runFutures = benchMembers.stream()
@@ -142,7 +144,7 @@ public class BenchmarkController {
             null,
             BenchmarkSerializer.INSTANCE::encode,
             BenchmarkSerializer.INSTANCE::decode,
-            member))
+            MemberId.from(member)))
         .collect(Collectors.toList());
     return Futures.allOf(runFutures).thenApply(v -> null);
   }
@@ -153,7 +155,21 @@ public class BenchmarkController {
    * @param memberId the reporting member
    * @param progress the progress for a runner
    */
-  private void report(MemberId memberId, BenchmarkProgress progress) {
-    reports.put(memberId, progress);
+  private void report(MemberId memberId, RunnerProgress progress) {
+    reports.put(memberId.id(), progress);
+
+    if (progress.getState() == BenchmarkState.COMPLETE) {
+      boolean complete = reports.values().stream().allMatch(p -> p.getState() == BenchmarkState.COMPLETE);
+      if (complete) {
+        result = new BenchmarkResult(reports.entrySet().stream()
+            .map(entry -> Maps.immutableEntry(entry.getKey(), new RunnerResult(
+                entry.getValue().getOperations(),
+                entry.getValue().getReads(),
+                entry.getValue().getWrites(),
+                entry.getValue().getEvents(),
+                entry.getValue().getTime())))
+            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue())));
+      }
+    }
   }
 }

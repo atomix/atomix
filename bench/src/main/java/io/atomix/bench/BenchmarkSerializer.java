@@ -39,6 +39,8 @@ public final class BenchmarkSerializer {
       .register(BenchmarkProgress.class)
       .register(BenchmarkState.class)
       .register(BenchmarkResult.class)
+      .register(RunnerProgress.class)
+      .register(RunnerResult.class)
       .register(MultiRaftProtocolConfig.class)
       .register(Murmur3Partitioner.class)
       .register(ReadConsistency.class)
