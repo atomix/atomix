@@ -23,13 +23,18 @@ import io.atomix.core.Atomix;
 /**
  * Messaging benchmark type.
  */
-public class MessagingBenchmarkType implements BenchmarkType {
+public class MessagingBenchmarkType implements BenchmarkType<MessagingBenchmarkConfig> {
   public static final MessagingBenchmarkType INSTANCE = new MessagingBenchmarkType();
   private static final String NAME = "messaging";
 
   @Override
   public String name() {
     return NAME;
+  }
+
+  @Override
+  public MessagingBenchmarkConfig newConfig() {
+    return new MessagingBenchmarkConfig();
   }
 
   @Override

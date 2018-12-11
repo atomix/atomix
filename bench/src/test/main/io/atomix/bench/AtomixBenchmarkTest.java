@@ -24,7 +24,6 @@ import io.atomix.core.Atomix;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
-import io.atomix.rest.impl.VertxRestService;
 import io.atomix.utils.net.Address;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.RequestLoggingFilter;
@@ -174,7 +173,7 @@ public class AtomixBenchmarkTest {
     List<CompletableFuture<RestService>> serviceFutures = new ArrayList<>(3);
     services = new ArrayList<>(3);
     for (int i = 0; i < 3; i++) {
-      ManagedRestService restService = new VertxRestService(benchInstances.get(i), Address.from("localhost", findAvailablePort(BASE_PORT)));
+      ManagedRestService restService = new BenchmarkRestService(benchInstances.get(i), Address.from("localhost", findAvailablePort(BASE_PORT)));
       serviceFutures.add(restService.start());
       services.add(restService);
     }

@@ -23,7 +23,6 @@ import io.atomix.cluster.discovery.MulticastDiscoveryConfig;
 import io.atomix.core.Atomix;
 import io.atomix.core.AtomixConfig;
 import io.atomix.rest.ManagedRestService;
-import io.atomix.rest.RestService;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.net.MalformedAddressException;
 import net.sourceforge.argparse4j.ArgumentParsers;
@@ -107,10 +106,11 @@ public class AtomixBenchmark {
         BenchmarkConstants.STOP_SUBJECT, BenchmarkSerializer.INSTANCE::decode, this::stopBenchmark, BenchmarkSerializer.INSTANCE::encode);
   }
 
+  @SuppressWarnings("unchecked")
   private CompletableFuture<String> startBenchmark(BenchmarkConfig config) {
     BenchmarkController controller = controllers.get(config.getBenchId());
     if (controller == null) {
-      controller = atomix.getRegistry().getType(BenchmarkType.class, config.getType()).createController(atomix);
+      controller = config.getType().createController(atomix);
       controllers.put(config.getBenchId(), controller);
       return controller.start(config).thenApply(v -> config.getBenchId());
     }
@@ -121,7 +121,7 @@ public class AtomixBenchmark {
   private CompletableFuture<Void> runBenchmark(BenchmarkConfig config) {
     BenchmarkExecutor executor = executors.get(config.getBenchId());
     if (executor == null) {
-      executor = atomix.getRegistry().getType(BenchmarkType.class, config.getType()).createExecutor(atomix);
+      executor = config.getType().createExecutor(atomix);
       executors.put(config.getBenchId(), executor);
       executor.start(config);
     }
@@ -357,10 +357,7 @@ public class AtomixBenchmark {
   private static ManagedRestService buildRestService(Atomix atomix, Namespace namespace) {
     final String httpHost = namespace.getString("http_host");
     final Integer httpPort = namespace.getInt("http_port");
-    return RestService.builder()
-        .withAtomix(atomix)
-        .withAddress(Address.from(httpHost, httpPort))
-        .build();
+    return new BenchmarkRestService(atomix, Address.from(httpHost, httpPort));
   }
 
   static MemberId parseMemberId(String address) {

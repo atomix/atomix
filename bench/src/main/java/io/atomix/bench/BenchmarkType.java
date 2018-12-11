@@ -16,12 +16,12 @@
 package io.atomix.bench;
 
 import io.atomix.core.Atomix;
-import io.atomix.utils.NamedType;
+import io.atomix.utils.ConfiguredType;
 
 /**
  * Benchmark type.
  */
-public interface BenchmarkType extends NamedType {
+public interface BenchmarkType<C extends BenchmarkConfig> extends ConfiguredType<C> {
 
   /**
    * Creates a new controller for the benchmark type.

@@ -17,6 +17,7 @@ package io.atomix.bench;
 
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.core.AtomixRegistry;
 import io.atomix.rest.AtomixResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ import javax.ws.rs.core.Response;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 /**
  * Benchmark resource.
@@ -63,6 +65,17 @@ public class BenchmarkResource {
       LOGGER.warn("An uncaught exception occurred", e);
       return Response.serverError().build();
     }
+  }
+
+  @GET
+  @Path("/types")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getTypes(@Context AtomixRegistry registry) {
+    return Response.ok(registry.getTypes(BenchmarkType.class)
+        .stream()
+        .map(type -> type.name())
+        .collect(Collectors.toList()))
+        .build();
   }
 
   @GET

@@ -15,25 +15,15 @@
  */
 package io.atomix.bench;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.atomix.bench.map.MapBenchmarkConfig;
-import io.atomix.bench.messaging.MessagingBenchmarkConfig;
+import com.fasterxml.jackson.annotation.JsonGetter;
+import io.atomix.utils.config.TypedConfig;
 
 import java.util.UUID;
 
 /**
  * Benchmark configuration.
  */
-@JsonTypeInfo(
-    use = JsonTypeInfo.Id.NAME,
-    property = "type"
-)
-@JsonSubTypes({
-    @JsonSubTypes.Type(value = MapBenchmarkConfig.class, name = "map"),
-    @JsonSubTypes.Type(value = MessagingBenchmarkConfig.class, name = "messaging")
-})
-public abstract class BenchmarkConfig {
+public abstract class BenchmarkConfig implements TypedConfig<BenchmarkType> {
   private static final int DEFAULT_OPERATIONS = 10000;
 
   private String benchId = UUID.randomUUID().toString();
@@ -48,6 +38,11 @@ public abstract class BenchmarkConfig {
     this.operations = config.operations;
   }
 
+  @JsonGetter("type")
+  public String getTypeName() {
+    return getType().name();
+  }
+
   public String getBenchId() {
     return benchId;
   }
@@ -56,8 +51,6 @@ public abstract class BenchmarkConfig {
     this.benchId = benchId;
     return this;
   }
-
-  public abstract String getType();
 
   public int getOperations() {
     return operations;
