@@ -110,6 +110,7 @@ def run_bench(args):
     url = "http://{}".format(address)
 
     config = {
+        'type': 'map',
         'operations': args.ops,
         'concurrency': args.concurrency,
         'write-percentage': args.writes,

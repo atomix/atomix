@@ -62,25 +62,37 @@ public class AtomixBenchmark {
     final Namespace namespace = parseArgs(args, unknown);
     final Namespace extraArgs = parseUnknown(unknown);
     extraArgs.getAttrs().forEach((key, value) -> System.setProperty(key, value.toString()));
-    new AtomixBenchmark(namespace).start();
+
+    Atomix atomix = buildAtomix(namespace);
+    atomix.start().join();
+    LOGGER.info("Atomix listening at {}", atomix.getMembershipService().getLocalMember().address());
+
+    final ManagedRestService rest = buildRestService(atomix, namespace);
+    rest.start().join();
+    LOGGER.warn("The Atomix HTTP API is BETA and is intended for development and debugging purposes only!");
+    LOGGER.info("HTTP server listening at {}", rest.address());
+
+    new AtomixBenchmark(buildAtomix(namespace)).start();
+
+    synchronized (Atomix.class) {
+      while (atomix.isRunning()) {
+        Atomix.class.wait();
+      }
+    }
   }
 
   private final Atomix atomix;
-  private final Namespace namespace;
   private final Map<String, BenchmarkController> controllers = new ConcurrentHashMap<>();
-  private final Map<String, BenchmarkRunner> runners = new ConcurrentHashMap<>();
+  private final Map<String, BenchmarkExecutor> executors = new ConcurrentHashMap<>();
 
-  private AtomixBenchmark(Namespace namespace) {
-    this.atomix = buildAtomix(namespace);
-    this.namespace = namespace;
+  AtomixBenchmark(Atomix atomix) {
+    this.atomix = atomix;
   }
 
   /**
    * Starts the instance.
    */
-  private void start() throws Exception {
-    atomix.start().join();
-
+  void start() {
     atomix.getCommunicationService().<BenchmarkConfig, String>subscribe(
         BenchmarkConstants.START_SUBJECT, BenchmarkSerializer.INSTANCE::decode, this::startBenchmark, BenchmarkSerializer.INSTANCE::encode);
     atomix.getCommunicationService().<BenchmarkConfig, Void>subscribe(
@@ -93,19 +105,6 @@ public class AtomixBenchmark {
         BenchmarkConstants.RESULT_SUBJECT, BenchmarkSerializer.INSTANCE::decode, this::getResult, BenchmarkSerializer.INSTANCE::encode);
     atomix.getCommunicationService().<String, Void>subscribe(
         BenchmarkConstants.STOP_SUBJECT, BenchmarkSerializer.INSTANCE::decode, this::stopBenchmark, BenchmarkSerializer.INSTANCE::encode);
-
-    LOGGER.info("Atomix listening at {}", atomix.getMembershipService().getLocalMember().address());
-
-    final ManagedRestService rest = buildRestService(atomix, namespace);
-    rest.start().join();
-    LOGGER.warn("The Atomix HTTP API is BETA and is intended for development and debugging purposes only!");
-    LOGGER.info("HTTP server listening at {}", rest.address());
-
-    synchronized (Atomix.class) {
-      while (atomix.isRunning()) {
-        Atomix.class.wait();
-      }
-    }
   }
 
   private CompletableFuture<String> startBenchmark(BenchmarkConfig config) {
@@ -118,20 +117,22 @@ public class AtomixBenchmark {
     return CompletableFuture.completedFuture(null);
   }
 
+  @SuppressWarnings("unchecked")
   private CompletableFuture<Void> runBenchmark(BenchmarkConfig config) {
-    BenchmarkRunner runner = runners.get(config.getBenchId());
-    if (runner == null) {
-      runner = new BenchmarkRunner(atomix, config);
-      runners.put(runner.getBenchId(), runner);
-      runner.start();
+    BenchmarkExecutor executor = executors.get(config.getBenchId());
+    if (executor == null) {
+      executor = BenchmarkType.forTypeName(config.getType()).createExecutor(atomix);
+      executors.put(config.getBenchId(), executor);
+      executor.start(config);
     }
     return CompletableFuture.completedFuture(null);
   }
 
+  @SuppressWarnings("unchecked")
   private CompletableFuture<Void> killBenchmark(String benchId) {
-    BenchmarkRunner runner = runners.get(benchId);
-    if (runner != null) {
-      runner.stop();
+    BenchmarkExecutor executor = executors.get(benchId);
+    if (executor != null) {
+      executor.stop();
     }
     return CompletableFuture.completedFuture(null);
   }

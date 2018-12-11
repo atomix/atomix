@@ -38,17 +38,17 @@ import java.util.stream.IntStream;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
- * Benchmark runner.
+ * Map benchmark executor.
  */
-public class BenchmarkRunner {
-  private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkRunner.class);
+public class MapBenchmarkExecutor implements BenchmarkExecutor<MapBenchmarkConfig> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkExecutor.class);
 
   private static final int REPORT_PERIOD = 1_000;
 
   private static final char[] CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
 
   private final Atomix atomix;
-  private final BenchmarkConfig config;
+  private MapBenchmarkConfig config;
 
   private final ExecutorService runnerExecutor = Executors.newSingleThreadExecutor(
       namedThreads("atomix-bench-runner", LOGGER));
@@ -61,25 +61,14 @@ public class BenchmarkRunner {
   private final AtomicInteger writeCounter = new AtomicInteger();
   private final AtomicInteger eventCounter = new AtomicInteger();
 
-  public BenchmarkRunner(Atomix atomix, BenchmarkConfig config) {
+  public MapBenchmarkExecutor(Atomix atomix) {
     this.atomix = atomix;
+  }
+
+  @Override
+  public void start(MapBenchmarkConfig config) {
     this.config = config;
-  }
-
-  /**
-   * Returns the benchmark identifier.
-   *
-   * @return the benchmark identifier
-   */
-  public String getBenchId() {
-    return config.getBenchId();
-  }
-
-  /**
-   * Starts the benchmark runner.
-   */
-  public void start() {
-    LOGGER.info("Running benchmark {}", getBenchId());
+    LOGGER.info("Running benchmark {}", config.getBenchId());
 
     LOGGER.debug("operations: {}", config.getOperations());
     LOGGER.debug("concurrency: {}", config.getConcurrency());
@@ -91,29 +80,27 @@ public class BenchmarkRunner {
     LOGGER.debug("includeEvents: {}", config.isIncludeEvents());
     LOGGER.debug("deterministic: {}", config.isDeterministic());
 
-    reporterExecutor.scheduleAtFixedRate(this::report, REPORT_PERIOD, REPORT_PERIOD, TimeUnit.MILLISECONDS);
+    reporterExecutor.scheduleAtFixedRate(() -> report(config), REPORT_PERIOD, REPORT_PERIOD, TimeUnit.MILLISECONDS);
     running = true;
     if (config.isDeterministic()) {
-      runnerExecutor.submit(new DeterministicSubmitter());
+      runnerExecutor.submit(new DeterministicSubmitter(config));
     } else {
-      runnerExecutor.submit(new NonDeterministicSubmitter());
+      runnerExecutor.submit(new NonDeterministicSubmitter(config));
     }
   }
 
-  /**
-   * Stops the benchmark runner.
-   */
+  @Override
   public void stop() {
     running = false;
     runnerExecutor.shutdownNow();
     reporterExecutor.shutdownNow();
-    report();
+    report(config);
   }
 
   /**
    * Sends a progress report to the controller node.
    */
-  private void report() {
+  private void report(BenchmarkConfig config) {
     RunnerProgress report = new RunnerProgress(
         running ? BenchmarkState.RUNNING : BenchmarkState.COMPLETE,
         opCounter.get(),
@@ -159,12 +146,14 @@ public class BenchmarkRunner {
    * Base submitter for primitive operations.
    */
   abstract class Submitter implements Runnable {
+    final MapBenchmarkConfig config;
     final String[] keys;
     final String[] values;
     final Random random = new Random();
     AsyncAtomicMap<String, String> map;
 
-    Submitter() {
+    Submitter(MapBenchmarkConfig config) {
+      this.config = config;
       this.keys = createStrings(config.getKeyLength(), config.getNumKeys());
       this.values = createStrings(config.getValueLength(), config.getNumValues());
     }
@@ -227,6 +216,10 @@ public class BenchmarkRunner {
   }
 
   private class NonDeterministicSubmitter extends Submitter {
+    NonDeterministicSubmitter(MapBenchmarkConfig config) {
+      super(config);
+    }
+
     @Override
     CompletableFuture<Void> submit() {
       String key = keys[random.nextInt(keys.length)];
@@ -240,6 +233,10 @@ public class BenchmarkRunner {
 
   private class DeterministicSubmitter extends Submitter {
     private int index;
+
+    DeterministicSubmitter(MapBenchmarkConfig config) {
+      super(config);
+    }
 
     @Override
     CompletableFuture<Void> submit() {
