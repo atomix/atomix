@@ -21,6 +21,8 @@ import io.atomix.bench.BenchmarkStatus;
 import io.atomix.bench.ExecutorProgress;
 import io.atomix.bench.ExecutorResult;
 
+import java.math.BigDecimal;
+
 /**
  * Messaging executor result.
  */
@@ -28,16 +30,16 @@ public class MessagingExecutorResult extends ExecutorResult {
   private final int requests;
   private final int responses;
   private final int failures;
-  private final long time;
-  private final long[] latency;
+  private final BigDecimal time;
+  private final BigDecimal[] latency;
 
   @JsonCreator
   public MessagingExecutorResult(
       @JsonProperty("requests") int requests,
       @JsonProperty("responses") int responses,
       @JsonProperty("failures") int failures,
-      @JsonProperty("time") long time,
-      @JsonProperty("latency") long[] latency) {
+      @JsonProperty("time") BigDecimal time,
+      @JsonProperty("latency") BigDecimal[] latency) {
     this.requests = requests;
     this.responses = responses;
     this.failures = failures;
@@ -62,11 +64,11 @@ public class MessagingExecutorResult extends ExecutorResult {
     return failures;
   }
 
-  public long getTime() {
+  public BigDecimal getTime() {
     return time;
   }
 
-  public long[] getLatency() {
+  public BigDecimal[] getLatency() {
     return latency;
   }
 }

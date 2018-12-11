@@ -68,14 +68,7 @@ public class AtomixBenchmarkTest {
   private List<RequestSpecification> specs;
 
   @Test
-  public void testBench() throws Exception {
-    given()
-        .spec(specs.get(0))
-        .when()
-        .get("status")
-        .then()
-        .statusCode(200);
-
+  public void testMapBench() throws Exception {
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     ObjectNode json = jsonFactory.objectNode();
     json.set("type", jsonFactory.textNode("map"));
@@ -85,6 +78,21 @@ public class AtomixBenchmarkTest {
         .put("type", "multi-raft")
         .put("read-consistency", "SEQUENTIAL"));
 
+    testBench(json);
+  }
+
+  @Test
+  public void testMessagingBench() throws Exception {
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    ObjectNode json = jsonFactory.objectNode();
+    json.set("type", jsonFactory.textNode("messaging"));
+    json.set("operations", jsonFactory.numberNode(10000));
+    json.set("message-size", jsonFactory.numberNode(128));
+
+    testBench(json);
+  }
+
+  private void testBench(JsonNode json) throws Exception {
     String testId = given()
         .spec(specs.get(0))
         .contentType(ContentType.JSON)
@@ -99,8 +107,6 @@ public class AtomixBenchmarkTest {
 
     assertNotNull(testId);
 
-    Thread.sleep(1000);
-
     JsonNode progress = given()
         .spec(specs.get(0))
         .when()
@@ -112,7 +118,6 @@ public class AtomixBenchmarkTest {
         .as(JsonNode.class);
 
     assertEquals(BenchmarkStatus.RUNNING.name(), progress.get("status").asText());
-    assertEquals(3, progress.get("processes").size());
 
     do {
       Thread.sleep(1000);

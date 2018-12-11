@@ -27,6 +27,8 @@ import org.apache.commons.math3.stat.descriptive.SynchronizedDescriptiveStatisti
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,6 +42,8 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  */
 public class MessagingBenchmarkExecutor extends BenchmarkExecutor<MessagingBenchmarkConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(MapBenchmarkExecutor.class);
+
+  private static final double NANOSECONDS_PER_SECOND = 1_000_000_000.0;
 
   private final Atomix atomix;
   private MessagingBenchmarkConfig config;
@@ -63,20 +67,22 @@ public class MessagingBenchmarkExecutor extends BenchmarkExecutor<MessagingBench
 
   @Override
   public ExecutorProgress getProgress() {
-    long[] quantiles = new long[]{
-        (long) statistics.getPercentile(.1),
-        (long) statistics.getPercentile(.25),
-        (long) statistics.getPercentile(.5),
-        (long) statistics.getPercentile(.75),
-        (long) statistics.getPercentile(.9)
+    BigDecimal[] percentiles = new BigDecimal[]{
+        new BigDecimal(statistics.getPercentile(.05) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP),
+        new BigDecimal(statistics.getPercentile(.25) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP),
+        new BigDecimal(statistics.getPercentile(.5) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP),
+        new BigDecimal(statistics.getPercentile(.75) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP),
+        new BigDecimal(statistics.getPercentile(.95) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP)
     };
     return new MessagingExecutorProgress(
         running ? BenchmarkStatus.RUNNING : BenchmarkStatus.COMPLETE,
         requestCounter.get(),
         responseCounter.get(),
         failureCounter.get(),
-        System.currentTimeMillis() - startTime,
-        quantiles);
+        new BigDecimal(System.currentTimeMillis() - startTime)
+            .setScale(3, RoundingMode.HALF_UP)
+            .divide(new BigDecimal(1000.0)),
+        percentiles);
   }
 
   @Override
@@ -126,7 +132,7 @@ public class MessagingBenchmarkExecutor extends BenchmarkExecutor<MessagingBench
    */
   private void run() {
     List<Address> benchMembers = atomix.getMembershipService().getMembers().stream()
-        .filter(member -> member.id().equals(atomix.getMembershipService().getLocalMember().id()))
+        .filter(member -> !member.id().equals(atomix.getMembershipService().getLocalMember().id()))
         .filter(member -> member.properties().getProperty(BenchmarkConstants.BENCH_NODE_TYPE, Boolean.FALSE.toString()).equals(Boolean.TRUE.toString()))
         .map(Member::address)
         .collect(Collectors.toList());
@@ -165,11 +171,11 @@ public class MessagingBenchmarkExecutor extends BenchmarkExecutor<MessagingBench
     }
 
     Address address = members.get(index % members.size());
-    long requestTime = System.currentTimeMillis();
+    long requestTime = System.nanoTime();
     atomix.getMessagingService().sendAndReceive(address, config.getBenchId(), message)
         .whenCompleteAsync((r, e) -> {
           if (e == null) {
-            long responseTime = System.currentTimeMillis();
+            long responseTime = System.nanoTime();
             responseCounter.incrementAndGet();
             statistics.addValue(responseTime - requestTime);
           } else {

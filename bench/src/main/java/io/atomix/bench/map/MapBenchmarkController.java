@@ -20,6 +20,8 @@ import io.atomix.bench.BenchmarkStatus;
 import io.atomix.bench.ExecutorProgress;
 import io.atomix.core.Atomix;
 
+import java.math.BigDecimal;
+
 /**
  * Map benchmark controller.
  */
@@ -30,6 +32,6 @@ public class MapBenchmarkController extends BenchmarkController {
 
   @Override
   protected ExecutorProgress getDefaultProgress() {
-    return new MapExecutorProgress(BenchmarkStatus.RUNNING, 0, 0, 0, 0, 0);
+    return new MapExecutorProgress(BenchmarkStatus.RUNNING, 0, 0, 0, 0, BigDecimal.ZERO);
   }
 }
