@@ -15,6 +15,9 @@
  */
 package io.atomix.bench;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Map;
 
 /**
@@ -24,7 +27,10 @@ public class BenchmarkProgress {
   private final BenchmarkState state;
   private final Map<String, RunnerProgress> processes;
 
-  public BenchmarkProgress(BenchmarkState state, Map<String, RunnerProgress> processes) {
+  @JsonCreator
+  public BenchmarkProgress(
+      @JsonProperty("state") BenchmarkState state,
+      @JsonProperty("processes") Map<String, RunnerProgress> processes) {
     this.state = state;
     this.processes = processes;
   }

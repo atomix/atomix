@@ -117,7 +117,7 @@ public class BenchmarkController {
     List<CompletableFuture<Void>> runFutures = benchMembers.stream()
         .map(member -> atomix.getCommunicationService().<BenchmarkConfig, Void>send(
             BenchmarkConstants.RUN_SUBJECT,
-            new BenchmarkConfig(config).setOperations(operationsPerMember),
+            config.copy().setOperations(operationsPerMember),
             BenchmarkSerializer.INSTANCE::encode,
             BenchmarkSerializer.INSTANCE::decode,
             member))

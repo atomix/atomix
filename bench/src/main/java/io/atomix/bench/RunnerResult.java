@@ -15,6 +15,9 @@
  */
 package io.atomix.bench;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Benchmark runner progress report.
  */
@@ -25,7 +28,13 @@ public class RunnerResult {
   private final int events;
   private final long time;
 
-  public RunnerResult(int operations, int reads, int writes, int events, long time) {
+  @JsonCreator
+  public RunnerResult(
+      @JsonProperty("operations") int operations,
+      @JsonProperty("reads") int reads,
+      @JsonProperty("writes") int writes,
+      @JsonProperty("events") int events,
+      @JsonProperty("time") long time) {
     this.operations = operations;
     this.reads = reads;
     this.writes = writes;

@@ -35,7 +35,7 @@ public final class BenchmarkSerializer {
   public static final Serializer INSTANCE = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
-      .register(BenchmarkConfig.class)
+      .register(MapBenchmarkConfig.class)
       .register(BenchmarkProgress.class)
       .register(BenchmarkState.class)
       .register(BenchmarkResult.class)

@@ -15,52 +15,34 @@
  */
 package io.atomix.bench;
 
-import io.atomix.primitive.config.PrimitiveConfig;
-import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.util.UUID;
 
 /**
  * Benchmark configuration.
  */
-public class BenchmarkConfig {
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    property = "type"
+)
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = MapBenchmarkConfig.class, name = "map")
+})
+public abstract class BenchmarkConfig {
   private static final int DEFAULT_OPERATIONS = 10000;
-  private static final int DEFAULT_CONCURRENCY = 1;
-  private static final int DEFAULT_WRITE_PERCENTAGE = 100;
-  private static final int DEFAULT_NUM_KEYS = 100000;
-  private static final int DEFAULT_KEY_LENGTH = 32;
-  private static final int DEFAULT_NUM_UNIQUE_VALUES = 100;
-  private static final int DEFAULT_VALUE_LENGTH = 1024;
-  private static final boolean DEFAULT_INCLUDE_EVENTS = false;
-  private static final boolean DEFAULT_DETERMINISTIC = true;
 
   private String benchId = UUID.randomUUID().toString();
-  private PrimitiveProtocolConfig protocol;
+  private String type;
   private int operations = DEFAULT_OPERATIONS;
-  private int concurrency = DEFAULT_CONCURRENCY;
-  private int writePercentage = DEFAULT_WRITE_PERCENTAGE;
-  private int numKeys = DEFAULT_NUM_KEYS;
-  private int keyLength = DEFAULT_KEY_LENGTH;
-  private int numValues = DEFAULT_NUM_UNIQUE_VALUES;
-  private int valueLength = DEFAULT_VALUE_LENGTH;
-  private boolean includeEvents = DEFAULT_INCLUDE_EVENTS;
-  private boolean deterministic = DEFAULT_DETERMINISTIC;
 
   public BenchmarkConfig() {
   }
 
   public BenchmarkConfig(BenchmarkConfig config) {
     this.benchId = config.benchId;
-    this.protocol = config.protocol;
     this.operations = config.operations;
-    this.concurrency = config.concurrency;
-    this.writePercentage = config.writePercentage;
-    this.numKeys = config.numKeys;
-    this.keyLength = config.keyLength;
-    this.numValues = config.numValues;
-    this.valueLength = config.valueLength;
-    this.includeEvents = config.includeEvents;
-    this.deterministic = config.deterministic;
   }
 
   public String getBenchId() {
@@ -72,14 +54,7 @@ public class BenchmarkConfig {
     return this;
   }
 
-  public PrimitiveProtocolConfig<?> getProtocol() {
-    return protocol;
-  }
-
-  public BenchmarkConfig setProtocol(PrimitiveProtocolConfig<?> protocol) {
-    this.protocol = protocol;
-    return this;
-  }
+  public abstract String getType();
 
   public int getOperations() {
     return operations;
@@ -90,74 +65,5 @@ public class BenchmarkConfig {
     return this;
   }
 
-  public int getConcurrency() {
-    return concurrency;
-  }
-
-  public void setConcurrency(int concurrency) {
-    this.concurrency = concurrency;
-  }
-
-  public int getWritePercentage() {
-    return writePercentage;
-  }
-
-  public BenchmarkConfig setWritePercentage(int writePercentage) {
-    this.writePercentage = writePercentage;
-    return this;
-  }
-
-  public int getNumKeys() {
-    return numKeys;
-  }
-
-  public BenchmarkConfig setNumKeys(int numKeys) {
-    this.numKeys = numKeys;
-    return this;
-  }
-
-  public int getKeyLength() {
-    return keyLength;
-  }
-
-  public BenchmarkConfig setKeyLength(int keyLength) {
-    this.keyLength = keyLength;
-    return this;
-  }
-
-  public int getNumValues() {
-    return numValues;
-  }
-
-  public BenchmarkConfig setNumValues(int numValues) {
-    this.numValues = numValues;
-    return this;
-  }
-
-  public int getValueLength() {
-    return valueLength;
-  }
-
-  public BenchmarkConfig setValueLength(int valueLength) {
-    this.valueLength = valueLength;
-    return this;
-  }
-
-  public boolean isIncludeEvents() {
-    return includeEvents;
-  }
-
-  public BenchmarkConfig setIncludeEvents(boolean includeEvents) {
-    this.includeEvents = includeEvents;
-    return this;
-  }
-
-  public boolean isDeterministic() {
-    return deterministic;
-  }
-
-  public BenchmarkConfig setDeterministic(boolean deterministic) {
-    this.deterministic = deterministic;
-    return this;
-  }
+  abstract BenchmarkConfig copy();
 }
