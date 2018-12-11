@@ -33,6 +33,8 @@ import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 
+import java.math.BigDecimal;
+
 /**
  * Benchmark serializer utilities.
  */
@@ -58,6 +60,8 @@ public final class BenchmarkSerializer {
       .register(MultiPrimaryProtocolConfig.class)
       .register(Consistency.class)
       .register(Replication.class)
+      .register(BigDecimal.class)
+      .register(BigDecimal[].class)
       .build());
 
   private BenchmarkSerializer() {

@@ -21,6 +21,8 @@ import io.atomix.bench.BenchmarkStatus;
 import io.atomix.bench.ExecutorProgress;
 import io.atomix.bench.ExecutorResult;
 
+import java.math.BigDecimal;
+
 /**
  * Map executor progress.
  */
@@ -29,7 +31,7 @@ public class MapExecutorProgress extends ExecutorProgress {
   private final int reads;
   private final int writes;
   private final int events;
-  private final long time;
+  private final BigDecimal time;
 
   @JsonCreator
   public MapExecutorProgress(
@@ -38,7 +40,7 @@ public class MapExecutorProgress extends ExecutorProgress {
       @JsonProperty("reads") int reads,
       @JsonProperty("writes") int writes,
       @JsonProperty("events") int events,
-      @JsonProperty("time") long time) {
+      @JsonProperty("time") BigDecimal time) {
     super(state);
     this.operations = operations;
     this.reads = reads;
@@ -68,7 +70,7 @@ public class MapExecutorProgress extends ExecutorProgress {
     return events;
   }
 
-  public long getTime() {
+  public BigDecimal getTime() {
     return time;
   }
 }

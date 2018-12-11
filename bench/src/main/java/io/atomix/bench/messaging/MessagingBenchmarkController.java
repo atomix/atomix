@@ -20,6 +20,8 @@ import io.atomix.bench.BenchmarkStatus;
 import io.atomix.bench.ExecutorProgress;
 import io.atomix.core.Atomix;
 
+import java.math.BigDecimal;
+
 /**
  * Messaging benchmark controller.
  */
@@ -30,6 +32,12 @@ public class MessagingBenchmarkController extends BenchmarkController {
 
   @Override
   protected ExecutorProgress getDefaultProgress() {
-    return new MessagingExecutorProgress(BenchmarkStatus.RUNNING, 0, 0, 0, 0, new long[]{0, 0, 0, 0, 0});
+    BigDecimal[] latency = new BigDecimal[]{
+        BigDecimal.ZERO,
+        BigDecimal.ZERO,
+        BigDecimal.ZERO,
+        BigDecimal.ZERO,
+        BigDecimal.ZERO};
+    return new MessagingExecutorProgress(BenchmarkStatus.RUNNING, 0, 0, 0, BigDecimal.ZERO, latency);
   }
 }

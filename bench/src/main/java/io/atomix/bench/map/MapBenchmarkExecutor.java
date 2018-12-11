@@ -27,6 +27,8 @@ import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -71,7 +73,9 @@ public class MapBenchmarkExecutor extends BenchmarkExecutor<MapBenchmarkConfig> 
         readCounter.get(),
         writeCounter.get(),
         eventCounter.get(),
-        System.currentTimeMillis() - startTime);
+        new BigDecimal(System.currentTimeMillis() - startTime)
+            .setScale(3, RoundingMode.HALF_UP)
+            .divide(new BigDecimal(1000.0)));
   }
 
   @Override
