@@ -49,11 +49,11 @@ public class MapBenchmarkExecutor extends BenchmarkExecutor<MapBenchmarkConfig> 
   private static final char[] CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
 
   private final Atomix atomix;
-  private MapBenchmarkConfig config;
 
   private final ExecutorService runnerExecutor = Executors.newSingleThreadExecutor(
       namedThreads("atomix-bench-runner", LOGGER));
   private long startTime;
+  private long endTime;
   private volatile boolean running;
   private final AtomicInteger opCounter = new AtomicInteger();
   private final AtomicInteger readCounter = new AtomicInteger();
@@ -73,7 +73,7 @@ public class MapBenchmarkExecutor extends BenchmarkExecutor<MapBenchmarkConfig> 
         readCounter.get(),
         writeCounter.get(),
         eventCounter.get(),
-        new BigDecimal(System.currentTimeMillis() - startTime)
+        new BigDecimal((endTime > 0 ? endTime : System.currentTimeMillis()) - startTime)
             .setScale(3, RoundingMode.HALF_UP)
             .divide(new BigDecimal(1000.0)));
   }
@@ -81,8 +81,6 @@ public class MapBenchmarkExecutor extends BenchmarkExecutor<MapBenchmarkConfig> 
   @Override
   public void start(MapBenchmarkConfig config) {
     super.start(config);
-    this.config = config;
-
     LOGGER.debug("operations: {}", config.getOperations());
     LOGGER.debug("concurrency: {}", config.getConcurrency());
     LOGGER.debug("writePercentage: {}", config.getWritePercentage());
@@ -104,6 +102,7 @@ public class MapBenchmarkExecutor extends BenchmarkExecutor<MapBenchmarkConfig> 
   @Override
   public void stop() {
     running = false;
+    endTime = System.currentTimeMillis();
     runnerExecutor.shutdownNow();
     super.stop();
   }

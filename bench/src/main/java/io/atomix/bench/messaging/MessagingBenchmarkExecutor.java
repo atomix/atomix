@@ -53,6 +53,7 @@ public class MessagingBenchmarkExecutor extends BenchmarkExecutor<MessagingBench
   private final ExecutorService responderExecutor = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-bench-responder", LOGGER));
   private long startTime;
+  private long endTime;
   private byte[] message;
   private volatile boolean running;
   private final AtomicInteger requestCounter = new AtomicInteger();
@@ -79,7 +80,7 @@ public class MessagingBenchmarkExecutor extends BenchmarkExecutor<MessagingBench
         requestCounter.get(),
         responseCounter.get(),
         failureCounter.get(),
-        new BigDecimal(System.currentTimeMillis() - startTime)
+        new BigDecimal((endTime > 0 ? endTime : System.currentTimeMillis()) - startTime)
             .setScale(3, RoundingMode.HALF_UP)
             .divide(new BigDecimal(1000.0)),
         percentiles);
@@ -140,7 +141,7 @@ public class MessagingBenchmarkExecutor extends BenchmarkExecutor<MessagingBench
     if (!benchMembers.isEmpty()) {
       run(message, benchMembers);
     } else {
-      running = false;
+      stop();
     }
   }
 
@@ -188,6 +189,7 @@ public class MessagingBenchmarkExecutor extends BenchmarkExecutor<MessagingBench
   @Override
   public void stop() {
     running = false;
+    endTime = System.currentTimeMillis();
     runnerExecutor.shutdownNow();
     responderExecutor.shutdownNow();
     atomix.getMessagingService().unregisterHandler(config.getBenchId());
