@@ -17,7 +17,7 @@ package io.atomix.bench.messaging;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.atomix.bench.BenchmarkState;
+import io.atomix.bench.BenchmarkStatus;
 import io.atomix.bench.ExecutorProgress;
 import io.atomix.bench.ExecutorResult;
 
@@ -33,7 +33,7 @@ public class MessagingExecutorProgress extends ExecutorProgress {
 
   @JsonCreator
   public MessagingExecutorProgress(
-      @JsonProperty("state") BenchmarkState state,
+      @JsonProperty("state") BenchmarkStatus state,
       @JsonProperty("requests") int requests,
       @JsonProperty("responses") int responses,
       @JsonProperty("failures") int failures,

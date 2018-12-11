@@ -17,7 +17,7 @@ package io.atomix.bench.map;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.atomix.bench.BenchmarkState;
+import io.atomix.bench.BenchmarkStatus;
 import io.atomix.bench.ExecutorProgress;
 import io.atomix.bench.ExecutorResult;
 
@@ -33,7 +33,7 @@ public class MapExecutorProgress extends ExecutorProgress {
 
   @JsonCreator
   public MapExecutorProgress(
-      @JsonProperty("state") BenchmarkState state,
+      @JsonProperty("state") BenchmarkStatus state,
       @JsonProperty("operations") int operations,
       @JsonProperty("reads") int reads,
       @JsonProperty("writes") int writes,

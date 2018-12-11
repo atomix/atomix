@@ -86,7 +86,7 @@ def report_progress(bench_id, url):
         progress = response.json()
         _report_processes(progress['processes'])
 
-        if progress['state'] == 'COMPLETE':
+        if progress['status'] == 'COMPLETE':
             return False
     return True
 
