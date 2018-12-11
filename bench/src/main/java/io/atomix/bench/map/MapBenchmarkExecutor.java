@@ -16,7 +16,7 @@
 package io.atomix.bench.map;
 
 import io.atomix.bench.BenchmarkExecutor;
-import io.atomix.bench.BenchmarkState;
+import io.atomix.bench.BenchmarkStatus;
 import io.atomix.bench.ExecutorProgress;
 import io.atomix.core.Atomix;
 import io.atomix.core.map.AsyncAtomicMap;
@@ -66,7 +66,7 @@ public class MapBenchmarkExecutor extends BenchmarkExecutor<MapBenchmarkConfig> 
   @Override
   public ExecutorProgress getProgress() {
     return new MapExecutorProgress(
-        running ? BenchmarkState.RUNNING : BenchmarkState.COMPLETE,
+        running ? BenchmarkStatus.RUNNING : BenchmarkStatus.COMPLETE,
         opCounter.get(),
         readCounter.get(),
         writeCounter.get(),

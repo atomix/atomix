@@ -16,7 +16,7 @@
 package io.atomix.bench.messaging;
 
 import io.atomix.bench.BenchmarkController;
-import io.atomix.bench.BenchmarkState;
+import io.atomix.bench.BenchmarkStatus;
 import io.atomix.bench.ExecutorProgress;
 import io.atomix.core.Atomix;
 
@@ -30,6 +30,6 @@ public class MessagingBenchmarkController extends BenchmarkController {
 
   @Override
   protected ExecutorProgress getDefaultProgress() {
-    return new MessagingExecutorProgress(BenchmarkState.RUNNING, 0, 0, 0, 0, new long[]{0, 0, 0, 0, 0});
+    return new MessagingExecutorProgress(BenchmarkStatus.RUNNING, 0, 0, 0, 0, new long[]{0, 0, 0, 0, 0});
   }
 }

@@ -17,7 +17,7 @@ package io.atomix.bench.messaging;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.atomix.bench.BenchmarkState;
+import io.atomix.bench.BenchmarkStatus;
 import io.atomix.bench.ExecutorProgress;
 import io.atomix.bench.ExecutorResult;
 
@@ -47,7 +47,7 @@ public class MessagingExecutorResult extends ExecutorResult {
 
   @Override
   public ExecutorProgress asProgress() {
-    return new MessagingExecutorProgress(BenchmarkState.COMPLETE, requests, responses, failures, time, latency);
+    return new MessagingExecutorProgress(BenchmarkStatus.COMPLETE, requests, responses, failures, time, latency);
   }
 
   public int getRequests() {

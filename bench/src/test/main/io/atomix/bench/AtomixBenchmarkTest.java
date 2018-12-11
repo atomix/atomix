@@ -111,7 +111,7 @@ public class AtomixBenchmarkTest {
         .body()
         .as(JsonNode.class);
 
-    assertEquals(BenchmarkState.RUNNING.name(), progress.get("state").asText());
+    assertEquals(BenchmarkStatus.RUNNING.name(), progress.get("status").asText());
     assertEquals(3, progress.get("processes").size());
 
     do {
@@ -125,7 +125,7 @@ public class AtomixBenchmarkTest {
           .extract()
           .body()
           .as(JsonNode.class);
-    } while (progress.get("state").asText().equals(BenchmarkState.RUNNING.name()));
+    } while (progress.get("status").asText().equals(BenchmarkStatus.RUNNING.name()));
 
     JsonNode result = given()
         .spec(specs.get(0))

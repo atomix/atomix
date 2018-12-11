@@ -18,7 +18,7 @@ package io.atomix.bench;
 /**
  * Benchmark state.
  */
-public enum BenchmarkState {
+public enum BenchmarkStatus {
   /**
    * Indicates that the benchmark is running.
    */

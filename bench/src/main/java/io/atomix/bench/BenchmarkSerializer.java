@@ -42,7 +42,7 @@ public final class BenchmarkSerializer {
       .register(Namespaces.BASIC)
       .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
       .register(BenchmarkProgress.class)
-      .register(BenchmarkState.class)
+      .register(BenchmarkStatus.class)
       .register(BenchmarkResult.class)
       .register(MapBenchmarkConfig.class)
       .register(MapExecutorProgress.class)

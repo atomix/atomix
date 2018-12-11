@@ -58,8 +58,8 @@ public abstract class BenchmarkController<C extends BenchmarkConfig> {
    *
    * @return the current state of the benchmark
    */
-  public BenchmarkState getState() {
-    return result != null ? BenchmarkState.COMPLETE : BenchmarkState.RUNNING;
+  public BenchmarkStatus getStatus() {
+    return result != null ? BenchmarkStatus.COMPLETE : BenchmarkStatus.RUNNING;
   }
 
   /**
@@ -69,11 +69,11 @@ public abstract class BenchmarkController<C extends BenchmarkConfig> {
    */
   public BenchmarkProgress getProgress() {
     if (result != null) {
-      return new BenchmarkProgress<>(BenchmarkState.COMPLETE, result.getProcesses().entrySet().stream()
+      return new BenchmarkProgress<>(BenchmarkStatus.COMPLETE, result.getProcesses().entrySet().stream()
           .map(entry -> Maps.immutableEntry(entry.getKey(), entry.getValue().asProgress()))
           .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue())));
     }
-    return new BenchmarkProgress(BenchmarkState.RUNNING, reports);
+    return new BenchmarkProgress<>(BenchmarkStatus.RUNNING, reports);
   }
 
   /**
@@ -160,8 +160,8 @@ public abstract class BenchmarkController<C extends BenchmarkConfig> {
   private void report(MemberId memberId, ExecutorProgress progress) {
     reports.put(memberId.id(), progress);
 
-    if (progress.getState() == BenchmarkState.COMPLETE) {
-      boolean complete = reports.values().stream().allMatch(p -> p.getState() == BenchmarkState.COMPLETE);
+    if (progress.getStatus() == BenchmarkStatus.COMPLETE) {
+      boolean complete = reports.values().stream().allMatch(p -> p.getStatus() == BenchmarkStatus.COMPLETE);
       if (complete) {
         result = new BenchmarkResult<>(reports.entrySet().stream()
             .map(entry -> Maps.immutableEntry(entry.getKey(), entry.getValue().asResult()))

@@ -17,7 +17,7 @@ package io.atomix.bench.messaging;
 
 import io.atomix.bench.BenchmarkConstants;
 import io.atomix.bench.BenchmarkExecutor;
-import io.atomix.bench.BenchmarkState;
+import io.atomix.bench.BenchmarkStatus;
 import io.atomix.bench.ExecutorProgress;
 import io.atomix.bench.map.MapBenchmarkExecutor;
 import io.atomix.cluster.Member;
@@ -71,7 +71,7 @@ public class MessagingBenchmarkExecutor extends BenchmarkExecutor<MessagingBench
         (long) statistics.getPercentile(.9)
     };
     return new MessagingExecutorProgress(
-        running ? BenchmarkState.RUNNING : BenchmarkState.COMPLETE,
+        running ? BenchmarkStatus.RUNNING : BenchmarkStatus.COMPLETE,
         requestCounter.get(),
         responseCounter.get(),
         failureCounter.get(),

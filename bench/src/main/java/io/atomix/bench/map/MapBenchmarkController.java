@@ -16,7 +16,7 @@
 package io.atomix.bench.map;
 
 import io.atomix.bench.BenchmarkController;
-import io.atomix.bench.BenchmarkState;
+import io.atomix.bench.BenchmarkStatus;
 import io.atomix.bench.ExecutorProgress;
 import io.atomix.core.Atomix;
 
@@ -30,6 +30,6 @@ public class MapBenchmarkController extends BenchmarkController {
 
   @Override
   protected ExecutorProgress getDefaultProgress() {
-    return new MapExecutorProgress(BenchmarkState.RUNNING, 0, 0, 0, 0, 0);
+    return new MapExecutorProgress(BenchmarkStatus.RUNNING, 0, 0, 0, 0, 0);
   }
 }
