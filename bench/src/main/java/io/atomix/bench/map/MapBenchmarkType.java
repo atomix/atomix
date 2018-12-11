@@ -23,13 +23,18 @@ import io.atomix.core.Atomix;
 /**
  * Map benchmark type.
  */
-public class MapBenchmarkType implements BenchmarkType {
+public class MapBenchmarkType implements BenchmarkType<MapBenchmarkConfig> {
   public static final MapBenchmarkType INSTANCE = new MapBenchmarkType();
   private static final String NAME = "map";
 
   @Override
   public String name() {
     return NAME;
+  }
+
+  @Override
+  public MapBenchmarkConfig newConfig() {
+    return new MapBenchmarkConfig();
   }
 
   @Override

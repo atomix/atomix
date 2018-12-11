@@ -23,6 +23,7 @@ import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.core.Atomix;
+import io.atomix.core.AtomixRegistry;
 import io.atomix.core.PrimitivesService;
 import io.atomix.primitive.PrimitiveFactory;
 import io.atomix.primitive.config.PrimitiveConfig;
@@ -94,6 +95,8 @@ public class VertxRestService implements ManagedRestService {
         .put(PrimitivesService.class, atomix.getPrimitivesService());
     deployment.getDispatcher().getDefaultContextObjects()
         .put(EventManager.class, new EventManager());
+    deployment.getDispatcher().getDefaultContextObjects()
+        .put(AtomixRegistry.class, atomix.getRegistry());
 
     final ClassLoader classLoader = atomix.getClass().getClassLoader();
     final String[] whitelistPackages = StringUtils.split(System.getProperty("io.atomix.whitelistPackages"), ",");
@@ -144,7 +147,7 @@ public class VertxRestService implements ManagedRestService {
     return CompletableFuture.completedFuture(null);
   }
 
-  private ObjectMapper createObjectMapper() {
+  protected ObjectMapper createObjectMapper() {
     ObjectMapper mapper = new ObjectMapper();
 
     mapper.setPropertyNamingStrategy(new ConfigPropertyNamingStrategy());
