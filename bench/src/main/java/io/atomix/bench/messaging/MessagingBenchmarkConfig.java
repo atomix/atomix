@@ -16,7 +16,6 @@
 package io.atomix.bench.messaging;
 
 import io.atomix.bench.BenchmarkConfig;
-import io.atomix.bench.BenchmarkType;
 
 /**
  * Messaging benchmark configuration.
@@ -41,7 +40,7 @@ public class MessagingBenchmarkConfig extends BenchmarkConfig {
 
   @Override
   public String getType() {
-    return BenchmarkType.MESSAGING.typeName();
+    return MessagingBenchmarkType.INSTANCE.name();
   }
 
   @Override

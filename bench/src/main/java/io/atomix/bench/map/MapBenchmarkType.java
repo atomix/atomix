@@ -13,30 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.bench;
+package io.atomix.bench.map;
 
+import io.atomix.bench.BenchmarkController;
+import io.atomix.bench.BenchmarkExecutor;
+import io.atomix.bench.BenchmarkType;
 import io.atomix.core.Atomix;
-import io.atomix.utils.NamedType;
 
 /**
- * Benchmark type.
+ * Map benchmark type.
  */
-public interface BenchmarkType extends NamedType {
+public class MapBenchmarkType implements BenchmarkType {
+  public static final MapBenchmarkType INSTANCE = new MapBenchmarkType();
+  private static final String NAME = "map";
 
-  /**
-   * Creates a new controller for the benchmark type.
-   *
-   * @param atomix the Atomix instance
-   * @return the controller for the benchmark type
-   */
-  BenchmarkController createController(Atomix atomix);
+  @Override
+  public String name() {
+    return NAME;
+  }
 
-  /**
-   * Creates a new executor for the benchmark type.
-   *
-   * @param atomix the Atomix instance
-   * @return the executor for the benchmark type
-   */
-  BenchmarkExecutor createExecutor(Atomix atomix);
+  @Override
+  public BenchmarkController createController(Atomix atomix) {
+    return new MapBenchmarkController(atomix);
+  }
 
+  @Override
+  public BenchmarkExecutor createExecutor(Atomix atomix) {
+    return new MapBenchmarkExecutor(atomix);
+  }
 }

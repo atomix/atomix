@@ -110,7 +110,7 @@ public class AtomixBenchmark {
   private CompletableFuture<String> startBenchmark(BenchmarkConfig config) {
     BenchmarkController controller = controllers.get(config.getBenchId());
     if (controller == null) {
-      controller = BenchmarkType.forTypeName(config.getType()).createController(atomix);
+      controller = atomix.getRegistry().getType(BenchmarkType.class, config.getType()).createController(atomix);
       controllers.put(config.getBenchId(), controller);
       return controller.start(config).thenApply(v -> config.getBenchId());
     }
@@ -121,7 +121,7 @@ public class AtomixBenchmark {
   private CompletableFuture<Void> runBenchmark(BenchmarkConfig config) {
     BenchmarkExecutor executor = executors.get(config.getBenchId());
     if (executor == null) {
-      executor = BenchmarkType.forTypeName(config.getType()).createExecutor(atomix);
+      executor = atomix.getRegistry().getType(BenchmarkType.class, config.getType()).createExecutor(atomix);
       executors.put(config.getBenchId(), executor);
       executor.start(config);
     }
