@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.bench;
+package io.atomix.bench.map;
 
+import io.atomix.bench.BenchmarkExecutor;
+import io.atomix.bench.BenchmarkState;
+import io.atomix.bench.ExecutorProgress;
 import io.atomix.core.Atomix;
 import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.primitive.protocol.ProxyProtocol;
@@ -30,8 +33,6 @@ import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
@@ -40,10 +41,8 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 /**
  * Map benchmark executor.
  */
-public class MapBenchmarkExecutor implements BenchmarkExecutor<MapBenchmarkConfig> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkExecutor.class);
-
-  private static final int REPORT_PERIOD = 1_000;
+public class MapBenchmarkExecutor extends BenchmarkExecutor<MapBenchmarkConfig> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(MapBenchmarkExecutor.class);
 
   private static final char[] CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
 
@@ -52,8 +51,6 @@ public class MapBenchmarkExecutor implements BenchmarkExecutor<MapBenchmarkConfi
 
   private final ExecutorService runnerExecutor = Executors.newSingleThreadExecutor(
       namedThreads("atomix-bench-runner", LOGGER));
-  private final ScheduledExecutorService reporterExecutor = Executors.newSingleThreadScheduledExecutor(
-      namedThreads("atomix-bench-reporter", LOGGER));
   private long startTime;
   private volatile boolean running;
   private final AtomicInteger opCounter = new AtomicInteger();
@@ -62,13 +59,25 @@ public class MapBenchmarkExecutor implements BenchmarkExecutor<MapBenchmarkConfi
   private final AtomicInteger eventCounter = new AtomicInteger();
 
   public MapBenchmarkExecutor(Atomix atomix) {
+    super(atomix);
     this.atomix = atomix;
   }
 
   @Override
+  public ExecutorProgress getProgress() {
+    return new MapExecutorProgress(
+        running ? BenchmarkState.RUNNING : BenchmarkState.COMPLETE,
+        opCounter.get(),
+        readCounter.get(),
+        writeCounter.get(),
+        eventCounter.get(),
+        System.currentTimeMillis() - startTime);
+  }
+
+  @Override
   public void start(MapBenchmarkConfig config) {
+    super.start(config);
     this.config = config;
-    LOGGER.info("Running benchmark {}", config.getBenchId());
 
     LOGGER.debug("operations: {}", config.getOperations());
     LOGGER.debug("concurrency: {}", config.getConcurrency());
@@ -80,7 +89,6 @@ public class MapBenchmarkExecutor implements BenchmarkExecutor<MapBenchmarkConfi
     LOGGER.debug("includeEvents: {}", config.isIncludeEvents());
     LOGGER.debug("deterministic: {}", config.isDeterministic());
 
-    reporterExecutor.scheduleAtFixedRate(() -> report(config), REPORT_PERIOD, REPORT_PERIOD, TimeUnit.MILLISECONDS);
     running = true;
     if (config.isDeterministic()) {
       runnerExecutor.submit(new DeterministicSubmitter(config));
@@ -93,22 +101,7 @@ public class MapBenchmarkExecutor implements BenchmarkExecutor<MapBenchmarkConfi
   public void stop() {
     running = false;
     runnerExecutor.shutdownNow();
-    reporterExecutor.shutdownNow();
-    report(config);
-  }
-
-  /**
-   * Sends a progress report to the controller node.
-   */
-  private void report(BenchmarkConfig config) {
-    RunnerProgress report = new RunnerProgress(
-        running ? BenchmarkState.RUNNING : BenchmarkState.COMPLETE,
-        opCounter.get(),
-        readCounter.get(),
-        writeCounter.get(),
-        eventCounter.get(),
-        System.currentTimeMillis() - startTime);
-    atomix.getCommunicationService().broadcastIncludeSelf(config.getBenchId(), report, BenchmarkSerializer.INSTANCE::encode, false);
+    super.stop();
   }
 
   /**

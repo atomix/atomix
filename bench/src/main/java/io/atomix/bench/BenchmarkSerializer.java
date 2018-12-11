@@ -15,6 +15,12 @@
  */
 package io.atomix.bench;
 
+import io.atomix.bench.map.MapBenchmarkConfig;
+import io.atomix.bench.map.MapExecutorProgress;
+import io.atomix.bench.map.MapExecutorResult;
+import io.atomix.bench.messaging.MessagingBenchmarkConfig;
+import io.atomix.bench.messaging.MessagingExecutorProgress;
+import io.atomix.bench.messaging.MessagingExecutorResult;
 import io.atomix.primitive.Consistency;
 import io.atomix.primitive.Recovery;
 import io.atomix.primitive.Replication;
@@ -35,12 +41,15 @@ public final class BenchmarkSerializer {
   public static final Serializer INSTANCE = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
-      .register(MapBenchmarkConfig.class)
       .register(BenchmarkProgress.class)
       .register(BenchmarkState.class)
       .register(BenchmarkResult.class)
-      .register(RunnerProgress.class)
-      .register(RunnerResult.class)
+      .register(MapBenchmarkConfig.class)
+      .register(MapExecutorProgress.class)
+      .register(MapExecutorResult.class)
+      .register(MessagingBenchmarkConfig.class)
+      .register(MessagingExecutorProgress.class)
+      .register(MessagingExecutorResult.class)
       .register(MultiRaftProtocolConfig.class)
       .register(Murmur3Partitioner.class)
       .register(ReadConsistency.class)

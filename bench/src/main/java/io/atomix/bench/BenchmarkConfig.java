@@ -17,6 +17,8 @@ package io.atomix.bench;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.atomix.bench.map.MapBenchmarkConfig;
+import io.atomix.bench.messaging.MessagingBenchmarkConfig;
 
 import java.util.UUID;
 
@@ -28,7 +30,8 @@ import java.util.UUID;
     property = "type"
 )
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = MapBenchmarkConfig.class, name = "map")
+    @JsonSubTypes.Type(value = MapBenchmarkConfig.class, name = "map"),
+    @JsonSubTypes.Type(value = MessagingBenchmarkConfig.class, name = "messaging")
 })
 public abstract class BenchmarkConfig {
   private static final int DEFAULT_OPERATIONS = 10000;
@@ -65,5 +68,5 @@ public abstract class BenchmarkConfig {
     return this;
   }
 
-  abstract BenchmarkConfig copy();
+  public abstract BenchmarkConfig copy();
 }

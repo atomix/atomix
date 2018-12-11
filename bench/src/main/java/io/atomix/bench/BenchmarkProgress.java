@@ -23,14 +23,14 @@ import java.util.Map;
 /**
  * Benchmark progress report.
  */
-public class BenchmarkProgress {
+public class BenchmarkProgress<E extends ExecutorProgress> {
   private final BenchmarkState state;
-  private final Map<String, RunnerProgress> processes;
+  private final Map<String, E> processes;
 
   @JsonCreator
   public BenchmarkProgress(
       @JsonProperty("state") BenchmarkState state,
-      @JsonProperty("processes") Map<String, RunnerProgress> processes) {
+      @JsonProperty("processes") Map<String, E> processes) {
     this.state = state;
     this.processes = processes;
   }
@@ -39,7 +39,7 @@ public class BenchmarkProgress {
     return state;
   }
 
-  public Map<String, RunnerProgress> getProcesses() {
+  public Map<String, E> getProcesses() {
     return processes;
   }
 }

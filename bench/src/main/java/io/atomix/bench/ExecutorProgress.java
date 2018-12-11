@@ -15,23 +15,19 @@
  */
 package io.atomix.bench;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Map;
-
 /**
- * Benchmark result.
+ * Benchmark runner progress report.
  */
-public class BenchmarkResult<E extends ExecutorResult> {
-  private final Map<String, E> processes;
+public abstract class ExecutorProgress {
+  private final BenchmarkState state;
 
-  @JsonCreator
-  public BenchmarkResult(@JsonProperty("processes") Map<String, E> processes) {
-    this.processes = processes;
+  public ExecutorProgress(BenchmarkState state) {
+    this.state = state;
   }
 
-  public Map<String, E> getProcesses() {
-    return processes;
+  public BenchmarkState getState() {
+    return state;
   }
+
+  public abstract ExecutorResult asResult();
 }

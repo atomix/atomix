@@ -32,17 +32,16 @@ import java.util.stream.Collectors;
 /**
  * Benchmark controller.
  */
-public class BenchmarkController {
+public abstract class BenchmarkController<C extends BenchmarkConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkController.class);
 
   private final Atomix atomix;
-  private final BenchmarkConfig config;
-  private final Map<String, RunnerProgress> reports = new ConcurrentHashMap<>();
-  private volatile BenchmarkResult result;
+  private final Map<String, ExecutorProgress> reports = new ConcurrentHashMap<>();
+  private C config;
+  private volatile BenchmarkResult<?> result;
 
-  public BenchmarkController(Atomix atomix, BenchmarkConfig config) {
+  public BenchmarkController(Atomix atomix) {
     this.atomix = atomix;
-    this.config = config;
   }
 
   /**
@@ -70,14 +69,8 @@ public class BenchmarkController {
    */
   public BenchmarkProgress getProgress() {
     if (result != null) {
-      return new BenchmarkProgress(BenchmarkState.COMPLETE, result.getProcesses().entrySet().stream()
-          .map(entry -> Maps.immutableEntry(entry.getKey(), new RunnerProgress(
-              BenchmarkState.COMPLETE,
-              entry.getValue().getOperations(),
-              entry.getValue().getReads(),
-              entry.getValue().getWrites(),
-              entry.getValue().getEvents(),
-              entry.getValue().getTime())))
+      return new BenchmarkProgress<>(BenchmarkState.COMPLETE, result.getProcesses().entrySet().stream()
+          .map(entry -> Maps.immutableEntry(entry.getKey(), entry.getValue().asProgress()))
           .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue())));
     }
     return new BenchmarkProgress(BenchmarkState.RUNNING, reports);
@@ -93,11 +86,20 @@ public class BenchmarkController {
   }
 
   /**
+   * Returns a default progress report for the controller.
+   *
+   * @return a default progress report for the controller
+   */
+  protected abstract ExecutorProgress getDefaultProgress();
+
+  /**
    * Starts the benchmark.
    *
+   * @param config the benchmark configuration
    * @return a future to be completed once the benchmark has been started
    */
-  public CompletableFuture<Void> start() {
+  public CompletableFuture<Void> start(C config) {
+    this.config = config;
     LOGGER.info("Starting benchmark {}", getBenchId());
 
     atomix.getCommunicationService().subscribe(
@@ -111,7 +113,7 @@ public class BenchmarkController {
         .map(Member::id)
         .collect(Collectors.toList());
 
-    benchMembers.forEach(member -> reports.put(member.id(), new RunnerProgress(BenchmarkState.RUNNING, 0, 0, 0, 0, 0)));
+    benchMembers.forEach(member -> reports.put(member.id(), getDefaultProgress()));
 
     int operationsPerMember = config.getOperations() / benchMembers.size();
     List<CompletableFuture<Void>> runFutures = benchMembers.stream()
@@ -155,19 +157,14 @@ public class BenchmarkController {
    * @param memberId the reporting member
    * @param progress the progress for a runner
    */
-  private void report(MemberId memberId, RunnerProgress progress) {
+  private void report(MemberId memberId, ExecutorProgress progress) {
     reports.put(memberId.id(), progress);
 
     if (progress.getState() == BenchmarkState.COMPLETE) {
       boolean complete = reports.values().stream().allMatch(p -> p.getState() == BenchmarkState.COMPLETE);
       if (complete) {
-        result = new BenchmarkResult(reports.entrySet().stream()
-            .map(entry -> Maps.immutableEntry(entry.getKey(), new RunnerResult(
-                entry.getValue().getOperations(),
-                entry.getValue().getReads(),
-                entry.getValue().getWrites(),
-                entry.getValue().getEvents(),
-                entry.getValue().getTime())))
+        result = new BenchmarkResult<>(reports.entrySet().stream()
+            .map(entry -> Maps.immutableEntry(entry.getKey(), entry.getValue().asResult()))
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue())));
       }
     }

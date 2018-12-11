@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.bench;
+package io.atomix.bench.map;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.atomix.bench.BenchmarkState;
+import io.atomix.bench.ExecutorProgress;
+import io.atomix.bench.ExecutorResult;
 
 /**
- * Benchmark runner progress report.
+ * Map executor progress.
  */
-public class RunnerResult {
+public class MapExecutorProgress extends ExecutorProgress {
   private final int operations;
   private final int reads;
   private final int writes;
@@ -29,17 +32,24 @@ public class RunnerResult {
   private final long time;
 
   @JsonCreator
-  public RunnerResult(
+  public MapExecutorProgress(
+      @JsonProperty("state") BenchmarkState state,
       @JsonProperty("operations") int operations,
       @JsonProperty("reads") int reads,
       @JsonProperty("writes") int writes,
       @JsonProperty("events") int events,
       @JsonProperty("time") long time) {
+    super(state);
     this.operations = operations;
     this.reads = reads;
     this.writes = writes;
     this.events = events;
     this.time = time;
+  }
+
+  @Override
+  public ExecutorResult asResult() {
+    return new MapExecutorResult(operations, reads, writes, events, time);
   }
 
   public int getOperations() {

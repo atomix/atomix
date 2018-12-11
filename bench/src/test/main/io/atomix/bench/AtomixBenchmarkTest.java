@@ -15,6 +15,7 @@
  */
 package io.atomix.bench;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.atomix.cluster.Node;
@@ -100,7 +101,7 @@ public class AtomixBenchmarkTest {
 
     Thread.sleep(1000);
 
-    BenchmarkProgress progress = given()
+    JsonNode progress = given()
         .spec(specs.get(0))
         .when()
         .get("bench/{testId}/progress", testId)
@@ -108,10 +109,10 @@ public class AtomixBenchmarkTest {
         .statusCode(200)
         .extract()
         .body()
-        .as(BenchmarkProgress.class);
+        .as(JsonNode.class);
 
-    assertEquals(BenchmarkState.RUNNING, progress.getState());
-    assertEquals(3, progress.getProcesses().size());
+    assertEquals(BenchmarkState.RUNNING.name(), progress.get("state").asText());
+    assertEquals(3, progress.get("processes").size());
 
     do {
       Thread.sleep(1000);
@@ -123,10 +124,10 @@ public class AtomixBenchmarkTest {
           .statusCode(200)
           .extract()
           .body()
-          .as(BenchmarkProgress.class);
-    } while (progress.getState() == BenchmarkState.RUNNING);
+          .as(JsonNode.class);
+    } while (progress.get("state").asText().equals(BenchmarkState.RUNNING.name()));
 
-    BenchmarkResult result = given()
+    JsonNode result = given()
         .spec(specs.get(0))
         .when()
         .get("bench/{testId}/result", testId)
@@ -134,8 +135,8 @@ public class AtomixBenchmarkTest {
         .statusCode(200)
         .extract()
         .body()
-        .as(BenchmarkResult.class);
-    assertEquals(3, result.getProcesses().size());
+        .as(JsonNode.class);
+    assertEquals(3, result.get("processes").size());
   }
 
   @Before
