@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.bench;
+package io.atomix.bench.messaging;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Map;
+import io.atomix.bench.BenchmarkController;
+import io.atomix.bench.BenchmarkState;
+import io.atomix.bench.ExecutorProgress;
+import io.atomix.core.Atomix;
 
 /**
- * Benchmark result.
+ * Messaging benchmark controller.
  */
-public class BenchmarkResult<E extends ExecutorResult> {
-  private final Map<String, E> processes;
-
-  @JsonCreator
-  public BenchmarkResult(@JsonProperty("processes") Map<String, E> processes) {
-    this.processes = processes;
+public class MessagingBenchmarkController extends BenchmarkController {
+  public MessagingBenchmarkController(Atomix atomix) {
+    super(atomix);
   }
 
-  public Map<String, E> getProcesses() {
-    return processes;
+  @Override
+  protected ExecutorProgress getDefaultProgress() {
+    return new MessagingExecutorProgress(BenchmarkState.RUNNING, 0, 0, 0, 0, new long[]{0, 0, 0, 0, 0});
   }
 }

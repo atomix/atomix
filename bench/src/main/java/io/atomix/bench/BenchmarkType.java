@@ -15,6 +15,10 @@
  */
 package io.atomix.bench;
 
+import io.atomix.bench.map.MapBenchmarkController;
+import io.atomix.bench.map.MapBenchmarkExecutor;
+import io.atomix.bench.messaging.MessagingBenchmarkController;
+import io.atomix.bench.messaging.MessagingBenchmarkExecutor;
 import io.atomix.core.Atomix;
 
 /**
@@ -23,8 +27,25 @@ import io.atomix.core.Atomix;
 public enum BenchmarkType {
   MAP("map") {
     @Override
+    public BenchmarkController createController(Atomix atomix) {
+      return new MapBenchmarkController(atomix);
+    }
+
+    @Override
     public BenchmarkExecutor createExecutor(Atomix atomix) {
       return new MapBenchmarkExecutor(atomix);
+    }
+  },
+
+  MESSAGING("messaging") {
+    @Override
+    public BenchmarkController createController(Atomix atomix) {
+      return new MessagingBenchmarkController(atomix);
+    }
+
+    @Override
+    public BenchmarkExecutor createExecutor(Atomix atomix) {
+      return new MessagingBenchmarkExecutor(atomix);
     }
   };
 
@@ -54,9 +75,17 @@ public enum BenchmarkType {
    *
    * @return the benchmark type name
    */
-  String typeName() {
+  public String typeName() {
     return typeName;
   }
+
+  /**
+   * Creates a new controller for the benchmark type.
+   *
+   * @param atomix the Atomix instance
+   * @return the controller for the benchmark type
+   */
+  public abstract BenchmarkController createController(Atomix atomix);
 
   /**
    * Creates a new executor for the benchmark type.

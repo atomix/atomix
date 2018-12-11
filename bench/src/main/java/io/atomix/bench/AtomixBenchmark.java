@@ -110,9 +110,9 @@ public class AtomixBenchmark {
   private CompletableFuture<String> startBenchmark(BenchmarkConfig config) {
     BenchmarkController controller = controllers.get(config.getBenchId());
     if (controller == null) {
-      controller = new BenchmarkController(atomix, config);
-      controllers.put(controller.getBenchId(), controller);
-      return controller.start().thenApply(v -> config.getBenchId());
+      controller = BenchmarkType.forTypeName(config.getType()).createController(atomix);
+      controllers.put(config.getBenchId(), controller);
+      return controller.start(config).thenApply(v -> config.getBenchId());
     }
     return CompletableFuture.completedFuture(null);
   }

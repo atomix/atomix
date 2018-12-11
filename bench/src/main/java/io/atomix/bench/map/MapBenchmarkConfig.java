@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.bench;
+package io.atomix.bench.map;
 
+import io.atomix.bench.BenchmarkConfig;
+import io.atomix.bench.BenchmarkType;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
 /**
@@ -57,7 +59,7 @@ public class MapBenchmarkConfig extends BenchmarkConfig {
   }
 
   @Override
-  BenchmarkConfig copy() {
+  public BenchmarkConfig copy() {
     return new MapBenchmarkConfig(this);
   }
 
