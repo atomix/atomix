@@ -16,13 +16,8 @@
 package io.atomix.core.registry;
 
 import com.google.common.collect.Sets;
-import io.atomix.cluster.discovery.NodeDiscoveryProvider;
-import io.atomix.cluster.protocol.GroupMembershipProtocol;
 import io.atomix.core.AtomixRegistry;
-import io.atomix.core.profile.Profile;
-import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.partition.PartitionGroup;
-import io.atomix.primitive.protocol.PrimitiveProtocol;
+import io.atomix.utils.ConfiguredType;
 import io.atomix.utils.NamedType;
 import io.atomix.utils.ServiceException;
 import io.atomix.utils.misc.StringUtils;
@@ -32,9 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -57,81 +52,76 @@ public class ClasspathScanningRegistry implements AtomixRegistry {
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathScanningRegistry.class);
-  private static final Collection<Class<? extends NamedType>> TYPES = Arrays.asList(
-      PartitionGroup.Type.class,
-      PrimitiveType.class,
-      PrimitiveProtocol.Type.class,
-      Profile.Type.class,
-      NodeDiscoveryProvider.Type.class);
 
-  private static final Map<ClassLoader, Map<CacheKey, Map<Class<? extends NamedType>, Map<String, NamedType>>>> CACHE =
+  private static final Map<ClassLoader, Map<Class<? extends NamedType>, Map<String, NamedType>>> CACHE =
       Collections.synchronizedMap(new WeakHashMap<>());
 
   private final Map<Class<? extends NamedType>, Map<String, NamedType>> registrations = new ConcurrentHashMap<>();
 
   private ClasspathScanningRegistry(ClassLoader classLoader) {
-    this(classLoader, TYPES, Sets.newHashSet());
+    this(classLoader, Sets.newHashSet());
   }
 
   @SuppressWarnings("unchecked")
-  private ClasspathScanningRegistry(ClassLoader classLoader, Collection<Class<? extends NamedType>> types, Set<String> whitelistPackages) {
-    final Map<CacheKey, Map<Class<? extends NamedType>, Map<String, NamedType>>> mappings =
-        CACHE.computeIfAbsent(classLoader, cl -> new ConcurrentHashMap<>());
+  private ClasspathScanningRegistry(ClassLoader classLoader, Set<String> whitelistPackages) {
     final Map<Class<? extends NamedType>, Map<String, NamedType>> registrations =
-        mappings.computeIfAbsent(new CacheKey(types.toArray(new Class[0])), cacheKey -> {
+        CACHE.computeIfAbsent(classLoader, cl -> {
           final ClassGraph classGraph = !whitelistPackages.isEmpty() ?
               new ClassGraph().enableClassInfo().whitelistPackages(whitelistPackages.toArray(new String[0])).addClassLoader(classLoader) :
               new ClassGraph().enableClassInfo().addClassLoader(classLoader);
           try (final ScanResult scanResult = classGraph.scan()) {
             final Map<Class<? extends NamedType>, Map<String, NamedType>> result = new ConcurrentHashMap<>();
-            for (Class<? extends NamedType> type : cacheKey.types) {
-              final Map<String, NamedType> tmp = new ConcurrentHashMap<>();
-              scanResult.getClassesImplementing(type.getName()).forEach(classInfo -> {
-                if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {
-                  return;
-                }
-                final NamedType instance = newInstance(classInfo.loadClass());
-                final NamedType oldInstance = tmp.put(instance.name(), instance);
-                if (oldInstance != null) {
-                  LOGGER.warn("Found multiple types with name={}, classes=[{}, {}]", instance.name(),
-                      oldInstance.getClass().getName(), instance.getClass().getName());
-                }
-              });
-              result.put(type, Collections.unmodifiableMap(tmp));
-            }
+            scanResult.getClassesImplementing(NamedType.class.getName()).forEach(classInfo -> {
+              if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {
+                return;
+              }
+              final Class<?> type = classInfo.loadClass();
+              final Class<? extends NamedType> classType = getClassType(type);
+              final NamedType instance = newInstance(type);
+              final NamedType oldInstance = result.computeIfAbsent(classType, t -> new HashMap<>()).put(instance.name(), instance);
+              if (oldInstance != null) {
+                LOGGER.warn("Found multiple types with name={}, classes=[{}, {}]", instance.name(),
+                    oldInstance.getClass().getName(), instance.getClass().getName());
+              }
+            });
             return result;
           }
         });
     this.registrations.putAll(registrations);
   }
 
-  private static final class CacheKey {
-    // intentionally no reference to ClassLoader to avoid leaks
-    private final Class<? extends NamedType>[] types;
-
-    CacheKey(Class<? extends NamedType>[] types) {
-      this.types = types;
+  private Class<? extends NamedType> getClassType(Class<?> type) {
+    while (type != Object.class) {
+      Class<? extends NamedType> baseType = getInterfaceType(type);
+      if (baseType != null) {
+        return baseType;
+      }
+      type = type.getSuperclass();
     }
+    return null;
+  }
 
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      CacheKey cacheKey = (CacheKey) o;
-      return Arrays.equals(types, cacheKey.types);
+  @SuppressWarnings("unchecked")
+  private Class<? extends NamedType> getInterfaceType(Class<?> type) {
+    for (Class<?> iface : type.getInterfaces()) {
+      if (iface == ConfiguredType.class || iface == NamedType.class) {
+        return (Class<? extends NamedType>) type;
+      }
     }
-
-    @Override
-    public int hashCode() {
-      return Arrays.hashCode(types);
+    for (Class<?> iface : type.getInterfaces()) {
+      type = getInterfaceType(iface);
+      if (type != null) {
+        return (Class<? extends NamedType>) type;
+      }
     }
+    return null;
   }
 
   /**
    * Instantiates the given type using a no-argument constructor.
    *
    * @param type the type to instantiate
-   * @param <T> the generic type
+   * @param <T>  the generic type
    * @return the instantiated object
    * @throws ServiceException if the type cannot be instantiated
    */
@@ -222,16 +212,7 @@ public class ClasspathScanningRegistry implements AtomixRegistry {
 
     @Override
     public AtomixRegistry build() {
-      return new ClasspathScanningRegistry(
-          classLoader,
-          Arrays.asList(
-              PartitionGroup.Type.class,
-              PrimitiveType.class,
-              PrimitiveProtocol.Type.class,
-              Profile.Type.class,
-              NodeDiscoveryProvider.Type.class,
-              GroupMembershipProtocol.Type.class),
-          whitelistPackages);
+      return new ClasspathScanningRegistry(classLoader, whitelistPackages);
     }
   }
 }

@@ -16,7 +16,6 @@
 package io.atomix.bench.map;
 
 import io.atomix.bench.BenchmarkConfig;
-import io.atomix.bench.BenchmarkType;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
 /**
@@ -65,7 +64,7 @@ public class MapBenchmarkConfig extends BenchmarkConfig {
 
   @Override
   public String getType() {
-    return BenchmarkType.MAP.typeName();
+    return MapBenchmarkType.INSTANCE.name();
   }
 
   @Override

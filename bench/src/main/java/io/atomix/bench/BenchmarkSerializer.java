@@ -15,20 +15,6 @@
  */
 package io.atomix.bench;
 
-import io.atomix.bench.map.MapBenchmarkConfig;
-import io.atomix.bench.map.MapExecutorProgress;
-import io.atomix.bench.map.MapExecutorResult;
-import io.atomix.bench.messaging.MessagingBenchmarkConfig;
-import io.atomix.bench.messaging.MessagingExecutorProgress;
-import io.atomix.bench.messaging.MessagingExecutorResult;
-import io.atomix.primitive.Consistency;
-import io.atomix.primitive.Recovery;
-import io.atomix.primitive.Replication;
-import io.atomix.primitive.partition.Murmur3Partitioner;
-import io.atomix.protocols.backup.MultiPrimaryProtocolConfig;
-import io.atomix.protocols.raft.MultiRaftProtocolConfig;
-import io.atomix.protocols.raft.ReadConsistency;
-import io.atomix.protocols.raft.session.CommunicationStrategy;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -43,23 +29,7 @@ public final class BenchmarkSerializer {
   public static final Serializer INSTANCE = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
-      .register(BenchmarkProgress.class)
-      .register(BenchmarkStatus.class)
-      .register(BenchmarkResult.class)
-      .register(MapBenchmarkConfig.class)
-      .register(MapExecutorProgress.class)
-      .register(MapExecutorResult.class)
-      .register(MessagingBenchmarkConfig.class)
-      .register(MessagingExecutorProgress.class)
-      .register(MessagingExecutorResult.class)
-      .register(MultiRaftProtocolConfig.class)
-      .register(Murmur3Partitioner.class)
-      .register(ReadConsistency.class)
-      .register(CommunicationStrategy.class)
-      .register(Recovery.class)
-      .register(MultiPrimaryProtocolConfig.class)
-      .register(Consistency.class)
-      .register(Replication.class)
+      .setRegistrationRequired(false)
       .register(BigDecimal.class)
       .register(BigDecimal[].class)
       .build());
