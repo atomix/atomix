@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
 import io.atomix.core.Atomix;
+import io.atomix.protocols.log.partition.LogPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
@@ -101,6 +102,28 @@ public class AtomixBenchmarkTest {
     testBench(json);
   }
 
+  @Test
+  public void testLogBenchProducer() throws Exception {
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    ObjectNode json = jsonFactory.objectNode();
+    json.set("type", jsonFactory.textNode("log"));
+    json.set("operations", jsonFactory.numberNode(1000));
+    json.set("mode", jsonFactory.textNode("producer"));
+
+    testBench(json);
+  }
+
+  @Test
+  public void testLogBenchConsumer() throws Exception {
+    JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
+    ObjectNode json = jsonFactory.objectNode();
+    json.set("type", jsonFactory.textNode("log"));
+    json.set("operations", jsonFactory.numberNode(1000));
+    json.set("mode", jsonFactory.textNode("consumer"));
+
+    testBench(json);
+  }
+
   private void testBench(JsonNode json) throws Exception {
     String testId = given()
         .spec(specs.get(0))
@@ -116,18 +139,7 @@ public class AtomixBenchmarkTest {
 
     assertNotNull(testId);
 
-    JsonNode progress = given()
-        .spec(specs.get(0))
-        .when()
-        .get("bench/{testId}/progress", testId)
-        .then()
-        .statusCode(200)
-        .extract()
-        .body()
-        .as(JsonNode.class);
-
-    assertEquals(BenchmarkStatus.RUNNING.name(), progress.get("status").asText());
-
+    JsonNode progress;
     do {
       Thread.sleep(1000);
       progress = given()
@@ -217,7 +229,7 @@ public class AtomixBenchmarkTest {
       CompletableFuture.allOf(atomixFutures.toArray(new CompletableFuture[0])).get(30, TimeUnit.SECONDS);
 
       List<CompletableFuture<Void>> benchFutures = new ArrayList<>(3);
-      for (Atomix instance : atomixInstances) {
+      for (Atomix instance : benchInstances) {
         benchFutures.add(instance.stop());
       }
       CompletableFuture.allOf(benchFutures.toArray(new CompletableFuture[0])).get(30, TimeUnit.SECONDS);
@@ -250,6 +262,10 @@ public class AtomixBenchmarkTest {
             .withPartitionSize(3)
             .withDataDirectory(new File("target/test-logs/data/" + memberId))
             .withMembers("1", "2", "3")
+            .build())
+        .addPartitionGroup(LogPartitionGroup.builder("log")
+            .withNumPartitions(3)
+            .withDataDirectory(new File("target/test-logs/log/" + memberId))
             .build())
         .build();
   }
