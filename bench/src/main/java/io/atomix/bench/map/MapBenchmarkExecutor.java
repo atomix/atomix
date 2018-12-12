@@ -29,8 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -38,6 +36,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import static io.atomix.bench.util.Strings.randomStrings;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
@@ -45,8 +44,6 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  */
 public class MapBenchmarkExecutor extends BenchmarkExecutor<MapBenchmarkConfig> {
   private static final Logger LOGGER = LoggerFactory.getLogger(MapBenchmarkExecutor.class);
-
-  private static final char[] CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
 
   private final Atomix atomix;
 
@@ -108,37 +105,6 @@ public class MapBenchmarkExecutor extends BenchmarkExecutor<MapBenchmarkConfig> 
   }
 
   /**
-   * Creates a deterministic array of strings to write to the cluster.
-   *
-   * @param length the string lengths
-   * @param count  the string count
-   * @return a deterministic array of strings
-   */
-  private String[] createStrings(int length, int count) {
-    Random random = new Random(length);
-    List<String> stringsList = new ArrayList<>(count);
-    for (int i = 0; i < count; i++) {
-      stringsList.add(randomString(length, random));
-    }
-    return stringsList.toArray(new String[0]);
-  }
-
-  /**
-   * Creates a deterministic string based on the given seed.
-   *
-   * @param length the seed from which to create the string
-   * @param random the random object from which to create the string characters
-   * @return the string
-   */
-  private String randomString(int length, Random random) {
-    char[] buffer = new char[length];
-    for (int i = 0; i < length; i++) {
-      buffer[i] = CHARS[random.nextInt(CHARS.length)];
-    }
-    return new String(buffer);
-  }
-
-  /**
    * Base submitter for primitive operations.
    */
   abstract class Submitter implements Runnable {
@@ -150,8 +116,8 @@ public class MapBenchmarkExecutor extends BenchmarkExecutor<MapBenchmarkConfig> 
 
     Submitter(MapBenchmarkConfig config) {
       this.config = config;
-      this.keys = createStrings(config.getKeyLength(), config.getNumKeys());
-      this.values = createStrings(config.getValueLength(), config.getNumValues());
+      this.keys = randomStrings(config.getKeyLength(), config.getNumKeys());
+      this.values = randomStrings(config.getValueLength(), config.getNumValues());
     }
 
     @Override
@@ -190,7 +156,12 @@ public class MapBenchmarkExecutor extends BenchmarkExecutor<MapBenchmarkConfig> 
 
     @SuppressWarnings("unchecked")
     void setup() {
-      ProxyProtocol protocol = (ProxyProtocol) config.getProtocol().getType().newProtocol(config.getProtocol());
+      ProxyProtocol protocol;
+      if (config.getProtocol() == null) {
+        protocol = atomix.getPartitionService().getPartitionGroups().iterator().next().newProtocol();
+      } else {
+        protocol = (ProxyProtocol) config.getProtocol().getType().newProtocol(config.getProtocol());
+      }
       map = atomix.<String, String>atomicMapBuilder(config.getBenchId())
           .withSerializer(Serializer.using(Namespaces.BASIC))
           .withProtocol(protocol)
