@@ -71,7 +71,7 @@ public class AtomixBenchmark {
     LOGGER.warn("The Atomix HTTP API is BETA and is intended for development and debugging purposes only!");
     LOGGER.info("HTTP server listening at {}", rest.address());
 
-    new AtomixBenchmark(buildAtomix(namespace)).start();
+    new AtomixBenchmark(atomix).start();
 
     synchronized (Atomix.class) {
       while (atomix.isRunning()) {

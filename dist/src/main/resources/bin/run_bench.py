@@ -4,12 +4,30 @@ import argparse
 import json
 import time
 import sys
+import os
 import curses
+import re
 
 try:
     from terminaltables import AsciiTable
 except ImportError:
     AsciiTable = None
+
+
+def _get_bench_types(url):
+    response = requests.get('{}/v1/bench/types'.format(url))
+    if response.status_code != 200:
+        print("Failed to fetch benchmark types")
+        return
+    return response.json()
+
+
+def _get_bench_options(type, url):
+    response = requests.get('{}/v1/bench/types/{}'.format(url, type))
+    if response.status_code != 200:
+        print("Failed to fetch benchmark options")
+        return
+    return response.json()
 
 
 def start_bench(config, url):
@@ -18,20 +36,6 @@ def start_bench(config, url):
         print("Failed to start test")
         return
     return response.text
-
-
-def _report_text(processes):
-    lines = []
-    for id, stats in processes.items():
-        if stats['time'] > 0:
-            time = round(stats['time'] / float(1000), 2)
-            ops = round(stats['operations'] / (stats['time'] / float(1000)), 2)
-            rps = round(stats['reads'] / (stats['time'] / float(1000)), 2)
-            wps = round(stats['writes'] / (stats['time'] / float(1000)), 2)
-
-            lines.append("process: {}, ops: {}, reads: {}, writes: {}, events: {}, time: {}s, ops/sec: {}, reads/sec: {}, writes/sec: {}".format(
-                id, stats['operations'], stats['reads'], stats['writes'], stats['events'], time, ops, rps, wps))
-    return '\n'.join(lines)
 
 
 def _create_table(data):
@@ -44,35 +48,30 @@ def _create_table(data):
     table.padding_right = 4
     return str(table.table)
 
-def _report_table(processes):
-    data = [['PROCESS', 'OPS', 'READS', 'WRITES', 'EVENTS', 'TIME', 'OPS/S', 'READS/S', 'WRITES/S']]
-    for id, stats in processes.items():
-        if stats['time'] > 0:
-            time = round(stats['time'] / float(1000), 2)
-            ops = round(stats['operations'] / (stats['time'] / float(1000)), 2)
-            rps = round(stats['reads'] / (stats['time'] / float(1000)), 2)
-            wps = round(stats['writes'] / (stats['time'] / float(1000)), 2)
-
-            data.append([
-                id,
-                stats['operations'],
-                stats['reads'],
-                stats['writes'],
-                stats['events'],
-                time,
-                ops,
-                rps,
-                wps
-            ])
-
-    return _create_table(data)
-
 
 def _report_processes(processes):
-    if AsciiTable is not None:
-        text = _report_table(processes)
-    else:
-        text = _report_text(processes)
+    def to_snake_case(option):
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', option)
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+    columns = ['PROCESS']
+    fields = []
+    data = []
+    data.append(columns)
+    for id, stats in processes.items():
+        for stat, value in stats.items():
+            if stat not in fields:
+                fields.append(stat)
+                columns.append(to_snake_case(stat).upper())
+
+    for id, stats in processes.items():
+        row = []
+        row.append(id)
+        for field in fields:
+            row.append(stats[field])
+        data.append(row)
+
+    text = _create_table(data)
     stdscr.addstr(0, 0, text)
     stdscr.refresh()
 
@@ -104,28 +103,38 @@ def stop_bench(bench_id, url):
     requests.delete("{}/v1/bench/{}".format(url, bench_id))
 
 
-def run_bench(args):
+def run_bench(args, unknown, url):
     """Runs the benchmark."""
-    address = "{}:{}".format(args.host, args.port)
-    url = "http://{}".format(address)
+    def to_kebab_case(name):
+        return name.replace('_', '-')
 
-    config = {
-        'type': 'map',
-        'operations': args.ops,
-        'concurrency': args.concurrency,
-        'write-percentage': args.writes,
-        'num-keys': args.keys,
-        'key-length': args.key_length,
-        'num-values': args.values,
-        'value-length': args.value_length,
-        'include-events': args.include_events,
-        'deterministic': not args.non_deterministic
-    }
-    if args.protocol is not None:
-        config['protocol'] = {
-            'type': args.protocol,
-            'group': args.group
-        }
+    config = {}
+    for key, value in vars(args).items():
+        if value is not None:
+            config[to_kebab_case(key)] = value
+
+    i = 0
+    while i < len(unknown):
+        arg = unknown[i]
+        if '=' in arg:
+            arg, value = arg.split('=')
+            i += 1
+        else:
+            value = unknown[i+1]
+            i += 2
+
+        if arg.startswith('--'):
+            arg = arg[2:]
+        if '.' in arg:
+            parts = arg.split('.')
+            obj = config
+            for part in parts[:-1]:
+                if part not in obj:
+                    obj[part] = {}
+                obj = obj[part]
+            obj[to_kebab_case(parts[-1])] = value
+        else:
+            config[to_kebab_case(arg)] = value
 
     bench_id = start_bench(config, url)
     if bench_id is None:
@@ -160,22 +169,31 @@ if __name__ == '__main__':
         except ValueError:
             raise argparse.ArgumentTypeError(str(value) + " is not a valid percentage value")
 
-    parser = argparse.ArgumentParser(description="Run an Atomix benchmark")
-    parser.add_argument('--host', type=str, default='localhost', help="The bench host through which to run the test")
-    parser.add_argument('--port', type=int, default=5678, help="The HTTP port to use to control the test")
-    parser.add_argument('--protocol', '-p', default=None, choices=['multi-raft', 'multi-primary', 'multi-log'], help="The protocol on which to run the test")
-    parser.add_argument('--group', '-g', type=str, default=None, help="The partition group on which to run the test")
-    parser.add_argument('--concurrency', '-c', type=int, default=1, help="The number of concurrent operations to execute from a single process")
-    parser.add_argument('--ops', '-o', type=int, default=10000, help="The number of operations to perform")
-    parser.add_argument('--writes', '-w', type=percentage, default='100%', help="The percentage of operations to be writes")
-    parser.add_argument('--keys', type=int, default=1000, help="The total number of unique keys to write")
-    parser.add_argument('--key-length', type=int, default=64, help="The length of each unique key")
-    parser.add_argument('--values', type=int, default=1000, help="The total number of unique values to write")
-    parser.add_argument('--value-length', type=int, default=1024, help="The length of each unique value")
-    parser.add_argument('--include-events', action='store_true', default=False, help="Whether to include events in the test")
-    parser.add_argument('--non-deterministic', action='store_true', default=False, help="Whether to partition operations non-deterministically")
+    host = os.getenv('ATOMIX_HOST', 'localhost')
+    port = int(os.getenv('ATOMIX_PORT', '5678'))
 
-    args = parser.parse_args()
+    address = "{}:{}".format(host, port)
+    url = "http://{}".format(address)
+
+    types = _get_bench_types(url)
+
+    def to_kebab_case(option):
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', option)
+        return re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
+
+    parser = argparse.ArgumentParser(description="Run an Atomix benchmark")
+    subparsers = parser.add_subparsers(dest='type', help="The type of benchmark to run")
+    for type in _get_bench_types(url):
+        subparser = subparsers.add_parser(type, help="{} benchmark".format(type))
+        for optname, opttype in _get_bench_options(type, url).items():
+            if optname in ('type', 'benchId'):
+                continue
+            if opttype == 'boolean':
+                subparser.add_argument('--{}'.format(to_kebab_case(optname)), action='store_true', default=False)
+            elif opttype != 'object':
+                subparser.add_argument('--{}'.format(to_kebab_case(optname)), type=str, default=None)
+
+    args, unknown = parser.parse_known_args()
 
     stdscr = curses.initscr()
-    run_bench(args)
+    run_bench(args, unknown, url)

@@ -141,9 +141,9 @@ public abstract class BenchmarkController<C extends BenchmarkConfig> {
     }
 
     List<CompletableFuture<Void>> runFutures = reports.keySet().stream()
-        .map(member -> atomix.getCommunicationService().<Void, Void>send(
+        .map(member -> atomix.getCommunicationService().<String, Void>send(
             BenchmarkConstants.KILL_SUBJECT,
-            null,
+            config.getBenchId(),
             BenchmarkSerializer.INSTANCE::encode,
             BenchmarkSerializer.INSTANCE::decode,
             MemberId.from(member)))
