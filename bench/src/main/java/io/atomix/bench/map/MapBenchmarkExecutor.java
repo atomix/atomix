@@ -120,7 +120,7 @@ public class MapBenchmarkExecutor extends BenchmarkExecutor<MapBenchmarkConfig> 
     for (int i = 0; i < count; i++) {
       stringsList.add(randomString(length, random));
     }
-    return stringsList.toArray(new String[stringsList.size()]);
+    return stringsList.toArray(new String[0]);
   }
 
   /**

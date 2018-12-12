@@ -15,6 +15,10 @@
  */
 package io.atomix.bench;
 
+import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.core.AtomixRegistry;
@@ -32,6 +36,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -76,6 +83,32 @@ public class BenchmarkResource {
         .map(type -> type.name())
         .collect(Collectors.toList()))
         .build();
+  }
+
+  @GET
+  @Path("/types/{type}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getTypeInfo(@PathParam("type") String type, @Context AtomixRegistry registry) {
+    BenchmarkConfig config = (BenchmarkConfig) registry.getType(BenchmarkType.class, type).newConfig();
+    ObjectMapper mapper = new ObjectMapper();
+    JavaType javaType = mapper.getTypeFactory().constructType(config.getClass());
+    BeanDescription beanDescription = mapper.getSerializationConfig().introspect(javaType);
+    List<BeanPropertyDefinition> beanProperties = beanDescription.findProperties();
+    Map<String, String> typeInfo = new HashMap<>();
+    for (BeanPropertyDefinition beanProperty : beanProperties) {
+      if (beanProperty.getPrimaryType().isPrimitive()) {
+        if (beanProperty.getPrimaryType().getRawClass() != Boolean.TYPE) {
+          typeInfo.put(beanProperty.getName(), "number");
+        } else {
+          typeInfo.put(beanProperty.getName(), "boolean");
+        }
+      } else if (beanProperty.getPrimaryType().isTypeOrSubTypeOf(String.class)) {
+        typeInfo.put(beanProperty.getName(), "text");
+      } else {
+        typeInfo.put(beanProperty.getName(), "object");
+      }
+    }
+    return Response.ok(typeInfo).build();
   }
 
   @GET
@@ -132,6 +165,8 @@ public class BenchmarkResource {
       communicationService.send(
           BenchmarkConstants.STOP_SUBJECT,
           testId,
+          BenchmarkSerializer.INSTANCE::encode,
+          BenchmarkSerializer.INSTANCE::decode,
           membershipService.getLocalMember().id())
           .get(10, TimeUnit.SECONDS);
       return Response.ok().build();

@@ -72,16 +72,26 @@ public class AtomixBenchmarkTest {
     ObjectNode json = jsonFactory.objectNode();
     json.set("type", jsonFactory.textNode("map"));
     json.set("operations", jsonFactory.numberNode(1000));
-    json.set("concurrency", jsonFactory.numberNode(2));
-    json.set("protocol", jsonFactory.objectNode()
-        .put("type", "multi-raft")
-        .put("read-consistency", "SEQUENTIAL"));
 
     testBench(json);
   }
 
   @Test
   public void testMessagingBench() throws Exception {
+    given()
+        .spec(specs.get(0))
+        .when()
+        .get("bench/types")
+        .then()
+        .statusCode(200);
+
+    given()
+        .spec(specs.get(0))
+        .when()
+        .get("bench/types/map")
+        .then()
+        .statusCode(200);
+
     JsonNodeFactory jsonFactory = JsonNodeFactory.withExactBigDecimals(true);
     ObjectNode json = jsonFactory.objectNode();
     json.set("type", jsonFactory.textNode("messaging"));

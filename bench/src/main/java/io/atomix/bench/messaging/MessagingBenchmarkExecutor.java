@@ -69,11 +69,11 @@ public class MessagingBenchmarkExecutor extends BenchmarkExecutor<MessagingBench
   @Override
   public ExecutorProgress getProgress() {
     BigDecimal[] percentiles = new BigDecimal[]{
-        new BigDecimal(statistics.getPercentile(.05) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP),
-        new BigDecimal(statistics.getPercentile(.25) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP),
-        new BigDecimal(statistics.getPercentile(.5) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP),
-        new BigDecimal(statistics.getPercentile(.75) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP),
-        new BigDecimal(statistics.getPercentile(.95) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP)
+        new BigDecimal(statistics.getN() == 0 ? 0 : statistics.getPercentile(.05) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP),
+        new BigDecimal(statistics.getN() == 0 ? 0 : statistics.getPercentile(.25) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP),
+        new BigDecimal(statistics.getN() == 0 ? 0 : statistics.getPercentile(.5) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP),
+        new BigDecimal(statistics.getN() == 0 ? 0 : statistics.getPercentile(.75) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP),
+        new BigDecimal(statistics.getN() == 0 ? 0 : statistics.getPercentile(.95) / NANOSECONDS_PER_SECOND).setScale(10, RoundingMode.HALF_UP)
     };
     return new MessagingExecutorProgress(
         running ? BenchmarkStatus.RUNNING : BenchmarkStatus.COMPLETE,
