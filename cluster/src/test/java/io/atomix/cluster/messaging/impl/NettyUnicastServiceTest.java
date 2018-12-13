@@ -16,6 +16,7 @@
 package io.atomix.cluster.messaging.impl;
 
 import io.atomix.cluster.messaging.ManagedUnicastService;
+import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.utils.net.Address;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.junit.After;
@@ -59,17 +60,11 @@ public class NettyUnicastServiceTest extends ConcurrentTestCase {
     address1 = Address.from("127.0.0.1", findAvailablePort(5001));
     address2 = Address.from("127.0.0.1", findAvailablePort(5002));
 
-    service1 = (ManagedUnicastService) NettyUnicastService.builder()
-        .withAddress(address1)
-        .build()
-        .start()
-        .join();
+    service1 = new NettyUnicastService(address1, new MessagingConfig());
+    service1.start().join();
 
-    service2 = (ManagedUnicastService) NettyUnicastService.builder()
-        .withAddress(address2)
-        .build()
-        .start()
-        .join();
+    service2 = new NettyUnicastService(address2, new MessagingConfig());
+    service2.start().join();
   }
 
   @After
