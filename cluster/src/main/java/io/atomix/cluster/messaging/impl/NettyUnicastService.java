@@ -15,9 +15,11 @@
  */
 package io.atomix.cluster.messaging.impl;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.cluster.impl.AddressSerializer;
 import io.atomix.cluster.messaging.ManagedUnicastService;
+import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.cluster.messaging.UnicastService;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.Namespace;
@@ -25,7 +27,12 @@ import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.*;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.DefaultMaxBytesRecvByteBufAllocator;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
@@ -34,52 +41,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Netty unicast service.
  */
 public class NettyUnicastService implements ManagedUnicastService {
-
-  /**
-   * Returns a new unicast service builder.
-   *
-   * @return a new unicast service builder
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  /**
-   * Netty unicast service builder.
-   */
-  public static class Builder implements UnicastService.Builder {
-    private Address address;
-
-    /**
-     * Sets the local address.
-     *
-     * @param address the local address
-     * @return the unicast service builder
-     */
-    public Builder withAddress(Address address) {
-      this.address = checkNotNull(address);
-      return this;
-    }
-
-    @Override
-    public ManagedUnicastService build() {
-      return new NettyUnicastService(address);
-    }
-  }
-
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
@@ -90,14 +64,16 @@ public class NettyUnicastService implements ManagedUnicastService {
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final Address address;
+  private final MessagingConfig config;
   private EventLoopGroup group;
   private DatagramChannel channel;
 
   private final Map<String, Map<BiConsumer<Address, byte[]>, Executor>> listeners = Maps.newConcurrentMap();
   private final AtomicBoolean started = new AtomicBoolean();
 
-  public NettyUnicastService(Address address) {
+  public NettyUnicastService(Address address, MessagingConfig config) {
     this.address = address;
+    this.config = config;
   }
 
   @Override
@@ -146,16 +122,50 @@ public class NettyUnicastService implements ManagedUnicastService {
         .option(ChannelOption.SO_BROADCAST, true)
         .option(ChannelOption.SO_REUSEADDR, true);
 
+    return bind(serverBootstrap);
+  }
+
+  /**
+   * Binds the given bootstrap to the appropriate interfaces.
+   *
+   * @param bootstrap the bootstrap to bind
+   * @return a future to be completed once the bootstrap has been bound to all interfaces
+   */
+  private CompletableFuture<Void> bind(Bootstrap bootstrap) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    serverBootstrap.bind(new InetSocketAddress(address.address(), address.port())).addListener((ChannelFutureListener) f -> {
-      if (f.isSuccess()) {
-        channel = (DatagramChannel) f.channel();
-        future.complete(null);
-      } else {
-        future.completeExceptionally(f.cause());
-      }
-    });
+    int port = config.getPort() != null ? config.getPort() : address.port();
+    if (config.getInterfaces().isEmpty()) {
+      bind(bootstrap, Lists.newArrayList("0.0.0.0").iterator(), port, future);
+    } else {
+      bind(bootstrap, config.getInterfaces().iterator(), port, future);
+    }
     return future;
+  }
+
+  /**
+   * Recursivesly binds the given bootstrap to the given interfaces.
+   *
+   * @param bootstrap the bootstrap to bind
+   * @param ifaces an iterator of interfaces to which to bind
+   * @param port the port to which to bind
+   * @param future the future to completed once the bootstrap has been bound to all provided interfaces
+   */
+  private void bind(Bootstrap bootstrap, Iterator<String> ifaces, int port, CompletableFuture<Void> future) {
+    if (ifaces.hasNext()) {
+      String iface = ifaces.next();
+      bootstrap.bind(iface, port).addListener((ChannelFutureListener) f -> {
+        if (f.isSuccess()) {
+          log.info("UDP server listening for connections on {}:{}", iface, port);
+          channel = (DatagramChannel) f.channel();
+          bind(bootstrap, ifaces, port, future);
+        } else {
+          log.warn("Failed to bind TCP server to port {}:{} due to {}", iface, port, f.cause());
+          future.completeExceptionally(f.cause());
+        }
+      });
+    } else {
+      future.complete(null);
+    }
   }
 
   @Override
