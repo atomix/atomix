@@ -179,7 +179,6 @@
 
   <modules>
     <module>agent</module>
-    <module>bench</module>
     <module>cluster</module>
     <module>core</module>
     <module>dist</module>
