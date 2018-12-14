@@ -328,7 +328,6 @@ public class AtomixTest extends AbstractAtomixTest {
 
     assertEquals(1, counter1.incrementAndGet());
     assertEquals(1, counter1.get());
-    assertEquals(0, counter2.get());
     Thread.sleep(1000);
     assertEquals(1, counter2.get());
     assertEquals(2, counter2.incrementAndGet());
