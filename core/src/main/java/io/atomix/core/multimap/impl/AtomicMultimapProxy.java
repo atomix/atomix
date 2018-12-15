@@ -56,6 +56,7 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 
@@ -213,6 +214,7 @@ public class AtomicMultimapProxy
   @Override
   public CompletableFuture<AsyncAtomicMultimap<String, byte[]>> connect() {
     return super.connect()
+        .thenCompose(v -> Futures.allOf(getProxyClient().getPartitions().stream().map(ProxySession::connect)))
         .thenRun(() -> getProxyClient().getPartitionIds().forEach(partition -> {
           getProxyClient().getPartition(partition).addStateChangeListener(state -> {
             if (state == PrimitiveState.CONNECTED && isListening()) {

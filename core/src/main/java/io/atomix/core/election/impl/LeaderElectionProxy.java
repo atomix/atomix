@@ -104,6 +104,7 @@ public class LeaderElectionProxy
   @Override
   public CompletableFuture<AsyncLeaderElection<byte[]>> connect() {
     return super.connect()
+        .thenCompose(v -> getProxyClient().getPartition(name()).connect())
         .thenRun(() -> getProxyClient().getPartitions().forEach(partition -> {
           partition.addStateChangeListener(state -> {
             if (state == PrimitiveState.CONNECTED && isListening()) {

@@ -196,6 +196,7 @@ public class AtomicDocumentTreeProxy
   @Override
   public CompletableFuture<AsyncAtomicDocumentTree<byte[]>> connect() {
     return super.connect()
+        .thenCompose(v -> getProxyClient().getPartition(name()).connect())
         .thenRun(() -> getProxyClient().getPartition(name()).addStateChangeListener(state -> {
           if (state == PrimitiveState.CONNECTED && isListening()) {
             getProxyClient().acceptBy(name(), service -> service.listen(root()));

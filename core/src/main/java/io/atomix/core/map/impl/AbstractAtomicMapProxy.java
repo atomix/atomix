@@ -307,6 +307,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   @Override
   public CompletableFuture<P> connect() {
     return super.connect()
+        .thenCompose(v -> getProxyClient().getPartition(name()).connect())
         .thenRun(() -> getProxyClient().getPartition(name()).addStateChangeListener(state -> {
           if (state == PrimitiveState.CONNECTED && isListening()) {
             getProxyClient().getPartition(name()).accept(service -> service.listen());

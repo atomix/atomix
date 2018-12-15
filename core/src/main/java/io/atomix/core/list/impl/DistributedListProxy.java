@@ -73,6 +73,13 @@ public class DistributedListProxy extends DistributedCollectionProxy<AsyncDistri
   }
 
   @Override
+  public CompletableFuture<AsyncDistributedList<String>> connect() {
+    return super.connect()
+        .thenCompose(v -> getProxyClient().getPartition(name()).connect())
+        .thenApply(v -> this);
+  }
+
+  @Override
   public DistributedList<String> sync(Duration operationTimeout) {
     return new BlockingDistributedList<>(this, operationTimeout.toMillis());
   }

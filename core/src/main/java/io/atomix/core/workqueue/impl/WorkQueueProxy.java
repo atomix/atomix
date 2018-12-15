@@ -142,6 +142,7 @@ public class WorkQueueProxy
   @Override
   public CompletableFuture<AsyncWorkQueue<byte[]>> connect() {
     return super.connect()
+        .thenCompose(v -> getProxyClient().getPartition(name()).connect())
         .thenRun(() -> getProxyClient().getPartition(name()).addStateChangeListener(state -> {
           if (state == PrimitiveState.CONNECTED && isRegistered.get()) {
             getProxyClient().acceptBy(name(), service -> service.register());

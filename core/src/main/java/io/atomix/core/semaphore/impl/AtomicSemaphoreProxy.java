@@ -153,6 +153,13 @@ public class AtomicSemaphoreProxy
   }
 
   @Override
+  public CompletableFuture<AsyncAtomicSemaphore> connect() {
+    return super.connect()
+        .thenCompose(v -> getProxyClient().getPartition(name()).connect())
+        .thenApply(v -> this);
+  }
+
+  @Override
   public AtomicSemaphore sync(Duration operationTimeout) {
     return new BlockingAtomicSemaphore(this, operationTimeout);
   }

@@ -28,6 +28,7 @@ import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.ProxyClient;
+import io.atomix.primitive.proxy.ProxySession;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.Collection;
@@ -176,6 +177,7 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
   @Override
   public CompletableFuture<A> connect() {
     return super.connect()
+        .thenCompose(v -> Futures.allOf(getProxyClient().getPartitions().stream().map(ProxySession::connect)))
         .thenRun(() -> getProxyClient().getPartitions().forEach(partition -> {
           partition.addStateChangeListener(state -> {
             if (state == PrimitiveState.CONNECTED && isListening()) {
