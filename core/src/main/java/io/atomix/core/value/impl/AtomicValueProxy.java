@@ -82,6 +82,13 @@ public class AtomicValueProxy extends AbstractAsyncPrimitive<AsyncAtomicValue<by
   }
 
   @Override
+  public CompletableFuture<AsyncAtomicValue<byte[]>> connect() {
+    return super.connect()
+        .thenCompose(v -> getProxyClient().getPartition(name()).connect())
+        .thenApply(v -> this);
+  }
+
+  @Override
   public AtomicValue<byte[]> sync(Duration operationTimeout) {
     return new BlockingAtomicValue<>(this, operationTimeout.toMillis());
   }

@@ -149,6 +149,7 @@ public abstract class DistributedCollectionProxy<A extends AsyncDistributedColle
   @Override
   public CompletableFuture<A> connect() {
     return super.connect()
+        .thenCompose(v -> getProxyClient().getPartition(name()).connect())
         .thenRun(() -> {
           ProxySession<S> partition = getProxyClient().getPartition(name());
           partition.addStateChangeListener(state -> {

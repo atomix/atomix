@@ -15,18 +15,6 @@
  */
 package io.atomix.primitive.proxy.impl;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
 import com.google.common.base.Defaults;
 import com.google.common.collect.Maps;
 import io.atomix.cluster.MemberId;
@@ -63,6 +51,18 @@ import io.atomix.utils.time.WallClock;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -480,14 +480,14 @@ public class LogProxySession<S> implements ProxySession<S> {
           long index = operationIndex.incrementAndGet();
           writeFutures.put(index, future);
           LogOperation operation = new LogOperation(session.sessionId(), name, index, operationId, bytes);
-          connect().thenRun(() -> session.producer().append(encodeInternal(operation))
-              .whenComplete((result, error) -> {
+          session.producer().append(encodeInternal(operation))
+              .whenCompleteAsync((result, error) -> {
                 if (error == null) {
                   lastIndex = result;
                 }
-              }));
+              }, context());
         } else {
-          connect().thenRun(() -> {
+          context().execute(() -> {
             if (currentIndex >= lastIndex) {
               SessionId sessionId = session.sessionId();
               Session session = getOrCreateSession(sessionId);

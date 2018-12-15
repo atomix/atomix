@@ -68,102 +68,74 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
     super(proxy, registry);
   }
 
-  protected K greaterKey(K a, K b) {
-    return a.compareTo(b) > 0 ? a : b;
-  }
-
-  protected K lesserKey(K a, K b) {
-    return a.compareTo(b) < 0 ? a : b;
-  }
-
-  protected Map.Entry<K, Versioned<byte[]>> greaterEntry(Map.Entry<K, Versioned<byte[]>> a, Map.Entry<K, Versioned<byte[]>> b) {
-    return a.getKey().compareTo(b.getKey()) > 0 ? a : b;
-  }
-
-  protected Map.Entry<K, Versioned<byte[]>> lesserEntry(Map.Entry<K, Versioned<byte[]>> a, Map.Entry<K, Versioned<byte[]>> b) {
-    return a.getKey().compareTo(b.getKey()) < 0 ? a : b;
-  }
-
   @Override
   public CompletableFuture<K> firstKey() {
-    return getProxyClient().applyAll(service -> service.firstKey())
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
+    return getProxyClient().applyBy(name(), service -> service.firstKey());
   }
 
   @Override
   public CompletableFuture<K> lastKey() {
-    return getProxyClient().applyAll(service -> service.lastKey())
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
+    return getProxyClient().applyBy(name(), service -> service.lastKey());
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> ceilingEntry(K key) {
-    return getProxyClient().applyAll(service -> service.ceilingEntry(key))
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
+    return getProxyClient().applyBy(name(), service -> service.ceilingEntry(key));
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> floorEntry(K key) {
-    return getProxyClient().applyAll(service -> service.floorEntry(key))
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
+    return getProxyClient().applyBy(name(), service -> service.floorEntry(key));
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> higherEntry(K key) {
-    return getProxyClient().applyAll(service -> service.higherEntry(key))
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
+    return getProxyClient().applyBy(name(), service -> service.higherEntry(key));
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> lowerEntry(K key) {
-    return getProxyClient().applyAll(service -> service.lowerEntry(key))
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
+    return getProxyClient().applyBy(name(), service -> service.lowerEntry(key));
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> firstEntry() {
-    return getProxyClient().applyAll(service -> service.firstEntry())
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserEntry).orElse(null));
+    return getProxyClient().applyBy(name(), service -> service.firstEntry());
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> lastEntry() {
-    return getProxyClient().applyAll(service -> service.lastEntry())
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterEntry).orElse(null));
+    return getProxyClient().applyBy(name(), service -> service.lastEntry());
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> pollFirstEntry() {
-    return Futures.exceptionalFuture(new UnsupportedOperationException());
+    return getProxyClient().applyBy(name(), service -> service.pollFirstEntry());
   }
 
   @Override
   public CompletableFuture<Map.Entry<K, Versioned<byte[]>>> pollLastEntry() {
-    return Futures.exceptionalFuture(new UnsupportedOperationException());
+    return getProxyClient().applyBy(name(), service -> service.pollLastEntry());
   }
 
   @Override
   public CompletableFuture<K> lowerKey(K key) {
-    return getProxyClient().applyAll(service -> service.lowerKey(key))
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
+    return getProxyClient().applyBy(name(), service -> service.lowerKey(key));
   }
 
   @Override
   public CompletableFuture<K> floorKey(K key) {
-    return getProxyClient().applyAll(service -> service.floorKey(key))
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::greaterKey).orElse(null));
+    return getProxyClient().applyBy(name(), service -> service.floorKey(key));
   }
 
   @Override
   public CompletableFuture<K> ceilingKey(K key) {
-    return getProxyClient().applyAll(service -> service.ceilingKey(key))
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
+    return getProxyClient().applyBy(name(), service -> service.ceilingKey(key));
   }
 
   @Override
   public CompletableFuture<K> higherKey(K key) {
-    return getProxyClient().applyAll(service -> service.higherKey(key))
-        .thenApply(results -> results.filter(Objects::nonNull).reduce(this::lesserKey).orElse(null));
+    return getProxyClient().applyBy(name(), service -> service.higherKey(key));
   }
 
   @Override

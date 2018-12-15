@@ -78,6 +78,13 @@ public class AtomicCounterProxy extends AbstractAsyncPrimitive<AsyncAtomicCounte
   }
 
   @Override
+  public CompletableFuture<AsyncAtomicCounter> connect() {
+    return super.connect()
+        .thenCompose(v -> getProxyClient().getPartition(name()).connect())
+        .thenApply(v -> this);
+  }
+
+  @Override
   public AtomicCounter sync(Duration operationTimeout) {
     return new BlockingAtomicCounter(this, operationTimeout.toMillis());
   }

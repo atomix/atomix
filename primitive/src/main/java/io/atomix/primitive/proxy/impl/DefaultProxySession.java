@@ -231,8 +231,7 @@ public class DefaultProxySession<S> implements ProxySession<S> {
     public Object invoke(Object object, Method method, Object[] args) throws Throwable {
       OperationId operationId = operations.get(method);
       if (operationId != null) {
-        future.set(connect()
-            .thenCompose(v -> session.execute(PrimitiveOperation.operation(operationId, encode(args))))
+        future.set(session.execute(PrimitiveOperation.operation(operationId, encode(args)))
             .thenApply(DefaultProxySession.this::decode));
       } else {
         throw new PrimitiveException("Unknown primitive operation: " + method.getName());
