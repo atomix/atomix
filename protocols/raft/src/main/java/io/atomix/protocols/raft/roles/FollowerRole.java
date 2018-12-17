@@ -40,14 +40,13 @@ import java.util.stream.Collectors;
  * Follower state.
  */
 public final class FollowerRole extends ActiveRole {
-  private final PhiAccrualFailureDetector failureDetector;
+  private final PhiAccrualFailureDetector failureDetector = new PhiAccrualFailureDetector();
   private final Random random = new Random();
   private Scheduled heartbeatTimer;
   private Scheduled heartbeatTimeout;
 
   public FollowerRole(RaftContext context) {
     super(context);
-    this.failureDetector = new PhiAccrualFailureDetector(25, context.getHeartbeatInterval().toMillis() / 2);
   }
 
   @Override

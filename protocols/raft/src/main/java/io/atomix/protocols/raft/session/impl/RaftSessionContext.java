@@ -74,7 +74,7 @@ public class RaftSessionContext implements RaftSession {
   private volatile State state = State.CLOSED;
   private volatile long lastUpdated;
   private long lastHeartbeat;
-  private PhiAccrualFailureDetector failureDetector;
+  private PhiAccrualFailureDetector failureDetector = new PhiAccrualFailureDetector();
   private long requestSequence;
   private volatile long commandSequence;
   private volatile long lastApplied;
@@ -116,7 +116,6 @@ public class RaftSessionContext implements RaftSession {
     this.context = context;
     this.server = server;
     this.eventExecutor = threadContextFactory.createContext();
-    this.failureDetector = new PhiAccrualFailureDetector(25, minTimeout / 2);
     this.log = ContextualLoggerFactory.getLogger(getClass(), LoggerContext.builder(RaftSession.class)
         .addValue(sessionId)
         .add("type", context.serviceType())
@@ -226,7 +225,7 @@ public class RaftSessionContext implements RaftSession {
    */
   public void resetHeartbeats() {
     this.lastHeartbeat = 0;
-    this.failureDetector = new PhiAccrualFailureDetector(25, minTimeout() / 2);
+    this.failureDetector = new PhiAccrualFailureDetector();
   }
 
   /**
