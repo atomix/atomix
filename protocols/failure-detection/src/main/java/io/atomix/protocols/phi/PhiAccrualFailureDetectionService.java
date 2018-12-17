@@ -62,7 +62,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
   private final ScheduledFuture<?> heartbeatFuture;
   private final int phiFailureThreshold;
   private final int minSamples;
-  private final long minStandardDeviation;
+  private final double phiFactor;
   private final Map<T, PhiAccrualFailureDetector> nodes = Maps.newConcurrentMap();
 
   private final Map<T, FailureDetectionEvent.State> nodeStates = Maps.newConcurrentMap();
@@ -75,14 +75,14 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
       Duration heartbeatInterval,
       int phiFailureThreshold,
       int minSamples,
-      long minStandardDeviation) {
+      double phiFactor) {
     checkArgument(phiFailureThreshold > 0, "phiFailureThreshold must be positive");
     this.localNode = checkNotNull(localNode, "localNode cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.peerProvider = checkNotNull(peerProvider, "peerProvider cannot be null");
     this.phiFailureThreshold = phiFailureThreshold;
     this.minSamples = minSamples;
-    this.minStandardDeviation = minStandardDeviation;
+    this.phiFactor = phiFactor;
     this.heartbeatFuture = heartbeatExecutor.scheduleAtFixedRate(
         this::heartbeat, heartbeatInterval.toMillis(), heartbeatInterval.toMillis(), TimeUnit.MILLISECONDS);
     protocol.registerHeartbeatListener(new HeartbeatMessageHandler());
@@ -107,7 +107,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
       peers.forEach((node) -> {
         heartbeatToPeer(heartbeat, node);
         FailureDetectionEvent.State currentState = nodeStates.get(node.id());
-        double phi = nodes.computeIfAbsent(node, n -> new PhiAccrualFailureDetector(minSamples, minStandardDeviation)).phi();
+        double phi = nodes.computeIfAbsent(node, n -> new PhiAccrualFailureDetector(minSamples, phiFactor)).phi();
         if (phi >= phiFailureThreshold) {
           if (currentState == FailureDetectionEvent.State.ACTIVE) {
             updateState(node, FailureDetectionEvent.State.INACTIVE);
@@ -134,7 +134,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
   private class HeartbeatMessageHandler implements Consumer<HeartbeatMessage<T>> {
     @Override
     public void accept(HeartbeatMessage<T> heartbeat) {
-      nodes.computeIfAbsent(heartbeat.source(), n -> new PhiAccrualFailureDetector(minSamples, minStandardDeviation)).report();
+      nodes.computeIfAbsent(heartbeat.source(), n -> new PhiAccrualFailureDetector(minSamples, phiFactor)).report();
       updateState(heartbeat.source(), heartbeat.state());
     }
   }
@@ -154,7 +154,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
     private static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(100);
     private static final int DEFAULT_PHI_FAILURE_THRESHOLD = 10;
     private static final int DEFAULT_MIN_SAMPLES = 25;
-    private static final long DEFAULT_MIN_STANDARD_DEVIATION = 50;
+    private static final double DEFAULT_PHI_FACTOR = 1.0 / Math.log(10.0);
 
     private FailureDetectionProtocol<T> protocol;
     private T localNode;
@@ -163,7 +163,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
     private Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     private int phiFailureThreshold = DEFAULT_PHI_FAILURE_THRESHOLD;
     private int minSamples = DEFAULT_MIN_SAMPLES;
-    private long minStandardDeviation = DEFAULT_MIN_STANDARD_DEVIATION;
+    private double phiFactor = DEFAULT_PHI_FACTOR;
 
     /**
      * Sets the failure detection protocol.
@@ -252,15 +252,15 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
     }
 
     /**
-     * Sets the minimum standard deviation.
+     * Sets the phi factor.
      *
-     * @param minStandardDeviation the minimum standard deviation
+     * @param phiFactor the phi factor
      * @return the failure detection service builder
-     * @throws IllegalArgumentException if the minimum standard deviation is not positive
+     * @throws IllegalArgumentException if the phi factor is not positive
      */
-    public Builder<T> withMinStandardDeviation(long minStandardDeviation) {
-      checkArgument(minStandardDeviation >= 0, "minStandardDeviation must be positive");
-      this.minStandardDeviation = minStandardDeviation;
+    public Builder<T> withPhiFactor(double phiFactor) {
+      checkArgument(phiFactor > 0, "phiFactor must be positive");
+      this.phiFactor = phiFactor;
       return this;
     }
 
@@ -274,7 +274,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
           heartbeatInterval,
           phiFailureThreshold,
           minSamples,
-          minStandardDeviation);
+          phiFactor);
     }
   }
 }

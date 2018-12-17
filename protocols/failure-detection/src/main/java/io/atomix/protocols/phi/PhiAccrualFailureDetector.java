@@ -25,42 +25,52 @@ import static com.google.common.base.Preconditions.checkArgument;
  * Based on a paper titled: "The φ Accrual Failure Detector" by Hayashibara, et al.
  */
 public class PhiAccrualFailureDetector {
+
+  /**
+   * Returns a new failure detector builder.
+   *
+   * @return a new failure detector builder
+   */
+  public static Builder newBuilder() {
+    return new Builder();
+  }
+
   // Default value
   private static final int DEFAULT_WINDOW_SIZE = 250;
   private static final int DEFAULT_MIN_SAMPLES = 25;
-  private static final long DEFAULT_MIN_STANDARD_DEVIATION = 50;
+  private static final double DEFAULT_PHI_FACTOR = 1.0 / Math.log(10.0);
 
   private final int minSamples;
-  private final long minStandardDeviation;
+  private final double phiFactor;
   private final History history;
 
   /**
    * Creates a new failure detector with the default configuration.
    */
   public PhiAccrualFailureDetector() {
-    this(DEFAULT_MIN_SAMPLES, DEFAULT_MIN_STANDARD_DEVIATION, DEFAULT_WINDOW_SIZE);
+    this(DEFAULT_MIN_SAMPLES, DEFAULT_PHI_FACTOR, DEFAULT_WINDOW_SIZE);
   }
 
   /**
    * Creates a new failure detector.
    *
-   * @param minSamples           the minimum number of samples required to compute phi
-   * @param minStandardDeviation the minimum standard deviation
+   * @param minSamples the minimum number of samples required to compute phi
+   * @param phiFactor the phi factor
    */
-  public PhiAccrualFailureDetector(int minSamples, long minStandardDeviation) {
-    this(minSamples, minStandardDeviation, DEFAULT_WINDOW_SIZE);
+  public PhiAccrualFailureDetector(int minSamples, double phiFactor) {
+    this(minSamples, phiFactor, DEFAULT_WINDOW_SIZE);
   }
 
   /**
    * Creates a new failure detector.
    *
-   * @param minSamples           the minimum number of samples required to compute phi
-   * @param minStandardDeviation the minimum standard deviation
-   * @param windowSize           the phi accrual window size
+   * @param minSamples the minimum number of samples required to compute phi
+   * @param phiFactor the phi factor
+   * @param windowSize the phi accrual window size
    */
-  public PhiAccrualFailureDetector(int minSamples, long minStandardDeviation, int windowSize) {
+  public PhiAccrualFailureDetector(int minSamples, double phiFactor, int windowSize) {
     this.minSamples = minSamples;
-    this.minStandardDeviation = minStandardDeviation;
+    this.phiFactor = phiFactor;
     this.history = new History(windowSize);
   }
 
@@ -102,21 +112,17 @@ public class PhiAccrualFailureDetector {
   /**
    * Computes the phi value from the given samples.
    *
-   * @param samples       the samples from which to compute phi
+   * @param samples the samples from which to compute phi
    * @param lastHeartbeat the last heartbeat
-   * @param currentTime   the current time
+   * @param currentTime the current time
    * @return phi
    */
   private double computePhi(DescriptiveStatistics samples, long lastHeartbeat, long currentTime) {
-    long elapsedTime = currentTime - lastHeartbeat;
-    double meanMillis = samples.getMean();
-    double y = (elapsedTime - meanMillis) / Math.max(samples.getStandardDeviation(), minStandardDeviation);
-    double e = Math.exp(-y * (1.5976 + 0.070566 * y * y));
-    if (elapsedTime > meanMillis) {
-      return -Math.log10(e / (1.0 + e));
-    } else {
-      return -Math.log10(1.0 - 1.0 / (1.0 + e));
-    }
+    long size = samples.getN();
+    long t = currentTime - lastHeartbeat;
+    return (size > 0)
+        ? phiFactor * t / samples.getMean()
+        : 100;
   }
 
   /**
@@ -140,6 +146,55 @@ public class PhiAccrualFailureDetector {
 
     void setLatestHeartbeatTime(long value) {
       lastHeartbeatTime = value;
+    }
+  }
+
+  /**
+   * Phi accrual failure detector builder.
+   */
+  public static class Builder implements io.atomix.utils.Builder<PhiAccrualFailureDetector> {
+    private int minSamples = DEFAULT_MIN_SAMPLES;
+    private double phiFactor = DEFAULT_PHI_FACTOR;
+    private int windowSize = DEFAULT_WINDOW_SIZE;
+
+    /**
+     * Sets the minimum number of samples required to compute phi.
+     *
+     * @param minSamples the minimum number of samples
+     * @return the phi accrual failure detector builder
+     */
+    public Builder withMinSamples(int minSamples) {
+      checkArgument(minSamples > 0, "minSamples must be positive");
+      this.minSamples = minSamples;
+      return this;
+    }
+
+    /**
+     * Sets the phi factor.
+     *
+     * @param phiFactor the phi factor
+     * @return the phi accrual failure detector builder
+     */
+    public Builder withPhiFactor(double phiFactor) {
+      this.phiFactor = phiFactor;
+      return this;
+    }
+
+    /**
+     * Sets the history window size.
+     *
+     * @param windowSize the history window size
+     * @return the phi accrual failure detector builder
+     */
+    public Builder withWindowSize(int windowSize) {
+      checkArgument(windowSize > 0, "windowSize must be positive");
+      this.windowSize = windowSize;
+      return this;
+    }
+
+    @Override
+    public PhiAccrualFailureDetector build() {
+      return new PhiAccrualFailureDetector(minSamples, phiFactor, windowSize);
     }
   }
 }
