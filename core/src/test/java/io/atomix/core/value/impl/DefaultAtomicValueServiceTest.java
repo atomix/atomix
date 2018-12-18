@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.core.value;
+package io.atomix.core.value.impl;
 
 import io.atomix.core.map.AtomicMapType;
 import io.atomix.core.value.impl.DefaultAtomicValueService;
@@ -34,9 +34,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Consistent map service test.
+ * Atomic value service test.
  */
-public class DefaultAtomicMapServiceTest {
+public class DefaultAtomicValueServiceTest {
 
   @Test
   @SuppressWarnings("unchecked")
@@ -58,6 +58,8 @@ public class DefaultAtomicMapServiceTest {
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
 
+    assertNull(service.get());
+
     service = new DefaultAtomicValueService();
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
 
@@ -68,6 +70,8 @@ public class DefaultAtomicMapServiceTest {
 
     buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
+
+    assertArrayEquals("Hello world!".getBytes(), service.get());
 
     service = new DefaultAtomicValueService();
     service.restore(new DefaultBackupInput(buffer.flip(), service.serializer()));
