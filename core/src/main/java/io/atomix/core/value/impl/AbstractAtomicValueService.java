@@ -52,7 +52,7 @@ public abstract class AbstractAtomicValueService extends AbstractPrimitiveServic
 
   @Override
   public void backup(BackupOutput writer) {
-    value = this.value;
+    byte[] value = this.value;
     if (value == null) {
       value = new byte[0];
     }
