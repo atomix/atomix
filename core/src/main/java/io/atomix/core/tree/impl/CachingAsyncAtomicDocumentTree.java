@@ -19,12 +19,15 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.UncheckedExecutionException;
+import io.atomix.core.cache.CacheConfig;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
 import io.atomix.core.tree.AtomicDocumentTree;
 import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.DocumentTreeEvent;
 import io.atomix.core.tree.DocumentTreeEventListener;
 import io.atomix.primitive.PrimitiveState;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 
@@ -43,7 +46,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Caching asynchronous document tree.
  */
 public class CachingAsyncAtomicDocumentTree<V> extends DelegatingAsyncAtomicDocumentTree<V> implements AsyncAtomicDocumentTree<V> {
-  private static final int DEFAULT_CACHE_SIZE = 10000;
   private final Logger log = getLogger(getClass());
 
   private final LoadingCache<DocumentPath, CompletableFuture<Versioned<V>>> cache;
@@ -52,24 +54,15 @@ public class CachingAsyncAtomicDocumentTree<V> extends DelegatingAsyncAtomicDocu
   private final Map<DocumentTreeEventListener<V>, InternalListener<V>> eventListeners = new ConcurrentHashMap<>();
 
   /**
-   * Default constructor.
-   *
-   * @param backingTree a distributed, strongly consistent map for backing
-   */
-  public CachingAsyncAtomicDocumentTree(AsyncAtomicDocumentTree<V> backingTree) {
-    this(backingTree, DEFAULT_CACHE_SIZE);
-  }
-
-  /**
    * Constructor to configure cache size.
    *
    * @param backingTree a distributed, strongly consistent map for backing
-   * @param cacheSize   the maximum size of the cache
+   * @param cacheConfig the cache configuration
    */
-  public CachingAsyncAtomicDocumentTree(AsyncAtomicDocumentTree<V> backingTree, int cacheSize) {
+  public CachingAsyncAtomicDocumentTree(AsyncAtomicDocumentTree<V> backingTree, CacheConfig cacheConfig) {
     super(backingTree);
     cache = CacheBuilder.newBuilder()
-        .maximumSize(cacheSize)
+        .maximumSize(cacheConfig.getSize())
         .build(CacheLoader.from(CachingAsyncAtomicDocumentTree.super::get));
     cacheUpdater = event -> {
       if (!event.newValue().isPresent()) {
@@ -87,13 +80,17 @@ public class CachingAsyncAtomicDocumentTree<V> extends DelegatingAsyncAtomicDocu
         cache.invalidateAll();
       }
     };
-    super.addListener(cacheUpdater, MoreExecutors.directExecutor());
+    super.addListener(root(), cacheUpdater, MoreExecutors.directExecutor());
     super.addStateChangeListener(stateListener);
   }
 
   @Override
   public CompletableFuture<Versioned<V>> get(DocumentPath path) {
-    return cache.getUnchecked(path);
+    try {
+      return cache.getUnchecked(path);
+    } catch (UncheckedExecutionException e) {
+      return Futures.exceptionalFuture(e.getCause());
+    }
   }
 
   @Override

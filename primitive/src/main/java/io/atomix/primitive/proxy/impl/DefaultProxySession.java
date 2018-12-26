@@ -19,12 +19,13 @@ import com.google.common.base.Defaults;
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.event.Events;
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.operation.Operations;
 import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.proxy.ProxySession;
+import io.atomix.primitive.session.SessionClient;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
@@ -48,6 +49,7 @@ public class DefaultProxySession<S> implements ProxySession<S> {
   private final Serializer serializer;
   private final ServiceProxy<S> proxy;
   private volatile CompletableFuture<ProxySession<S>> connectFuture;
+  private volatile boolean closed;
 
   @SuppressWarnings("unchecked")
   public DefaultProxySession(SessionClient session, Class<S> serviceType, Serializer serializer) {
@@ -93,11 +95,17 @@ public class DefaultProxySession<S> implements ProxySession<S> {
 
   @Override
   public CompletableFuture<Void> accept(Consumer<S> operation) {
+    if (closed) {
+      return Futures.exceptionalFuture(new PrimitiveException.ClosedSession());
+    }
     return proxy.accept(operation);
   }
 
   @Override
   public <R> CompletableFuture<R> apply(Function<S, R> operation) {
+    if (closed) {
+      return Futures.exceptionalFuture(new PrimitiveException.ClosedSession());
+    }
     return proxy.apply(operation);
   }
 
@@ -125,7 +133,12 @@ public class DefaultProxySession<S> implements ProxySession<S> {
 
   @Override
   public CompletableFuture<Void> close() {
-    return session.close();
+    return session.close().thenRun(() -> closed = true);
+  }
+
+  @Override
+  public CompletableFuture<Void> delete() {
+    return session.delete().thenRun(() -> closed = true);
   }
 
   /**

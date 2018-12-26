@@ -87,6 +87,15 @@ public abstract class Snapshot implements AutoCloseable {
   }
 
   /**
+   * Returns the snapshot format version.
+   *
+   * @return the snapshot format version
+   */
+  public int version() {
+    return descriptor.version();
+  }
+
+  /**
    * Opens a new snapshot writer.
    * <p>
    * Only a single {@link SnapshotWriter} per {@link Snapshot} can be created. The single writer

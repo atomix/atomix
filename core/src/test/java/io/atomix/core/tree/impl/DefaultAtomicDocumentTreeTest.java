@@ -16,8 +16,8 @@
 
 package io.atomix.core.tree.impl;
 
-import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.AtomicDocumentTree;
+import io.atomix.core.tree.DocumentPath;
 import io.atomix.core.tree.IllegalDocumentModificationException;
 import io.atomix.core.tree.NoSuchDocumentPathException;
 import io.atomix.utils.time.Versioned;
@@ -53,7 +53,7 @@ public class DefaultAtomicDocumentTreeTest {
   public void testCreateRecursive() {
     AtomicDocumentTree<String> tree = new DefaultAtomicDocumentTree<>();
     tree.createRecursive(path("/a/b/c"), "bar");
-    Assert.assertEquals(tree.get(path("/a/b/c")).value(), "bar");
+    Assert.assertEquals("bar", tree.get(path("/a/b/c")).value());
     Assert.assertNull(tree.get(path("/a/b")).value());
     Assert.assertNull(tree.get(path("/a")).value());
   }
@@ -192,6 +192,6 @@ public class DefaultAtomicDocumentTreeTest {
   }
 
   private static DocumentPath path(String path) {
-    return DocumentPath.from(path.replace(".", DocumentPath.DEFAULT_SEPARATOR));
+    return DocumentPath.from(path);
   }
 }

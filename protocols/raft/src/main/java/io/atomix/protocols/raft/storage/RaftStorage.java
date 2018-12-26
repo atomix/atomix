@@ -70,6 +70,7 @@ public class RaftStorage {
   private final File directory;
   private final Serializer serializer;
   private final int maxSegmentSize;
+  private final int maxEntrySize;
   private final int maxEntriesPerSegment;
   private final boolean dynamicCompaction;
   private final double freeDiskBuffer;
@@ -84,6 +85,7 @@ public class RaftStorage {
       File directory,
       Serializer serializer,
       int maxSegmentSize,
+      int maxEntrySize,
       int maxEntriesPerSegment,
       boolean dynamicCompaction,
       double freeDiskBuffer,
@@ -95,6 +97,7 @@ public class RaftStorage {
     this.directory = directory;
     this.serializer = serializer;
     this.maxSegmentSize = maxSegmentSize;
+    this.maxEntrySize = maxEntrySize;
     this.maxEntriesPerSegment = maxEntriesPerSegment;
     this.dynamicCompaction = dynamicCompaction;
     this.freeDiskBuffer = freeDiskBuffer;
@@ -166,7 +169,9 @@ public class RaftStorage {
    * that are allowed to be stored in any segment in a {@link RaftLog}.
    *
    * @return The maximum number of entries per segment.
+   * @deprecated since 3.0.2
    */
+  @Deprecated
   public int maxLogEntriesPerSegment() {
     return maxEntriesPerSegment;
   }
@@ -324,6 +329,7 @@ public class RaftStorage {
         .withStorageLevel(storageLevel)
         .withSerializer(serializer)
         .withMaxSegmentSize(maxSegmentSize)
+        .withMaxEntrySize(maxEntrySize)
         .withMaxEntriesPerSegment(maxEntriesPerSegment)
         .withFlushOnCommit(flushOnCommit)
         .build();
@@ -380,8 +386,9 @@ public class RaftStorage {
    */
   public static class Builder implements io.atomix.utils.Builder<RaftStorage> {
     private static final String DEFAULT_PREFIX = "atomix";
-    private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
+    private static final String DEFAULT_DIRECTORY = System.getProperty("atomix.data", System.getProperty("user.dir"));
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
+    private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 1024; // 1MB
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
     private static final boolean DEFAULT_DYNAMIC_COMPACTION = true;
     private static final double DEFAULT_FREE_DISK_BUFFER = .2;
@@ -394,6 +401,7 @@ public class RaftStorage {
     private File directory = new File(DEFAULT_DIRECTORY);
     private Serializer serializer;
     private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
+    private int maxEntrySize = DEFAULT_MAX_ENTRY_SIZE;
     private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
     private boolean dynamicCompaction = DEFAULT_DYNAMIC_COMPACTION;
     private double freeDiskBuffer = DEFAULT_FREE_DISK_BUFFER;
@@ -490,6 +498,19 @@ public class RaftStorage {
     }
 
     /**
+     * Sets the maximum entry size in bytes, returning the builder for method chaining.
+     *
+     * @param maxEntrySize the maximum entry size in bytes
+     * @return the storage builder
+     * @throws IllegalArgumentException if the {@code maxEntrySize} is not positive
+     */
+    public Builder withMaxEntrySize(int maxEntrySize) {
+      checkArgument(maxEntrySize > 0, "maxEntrySize must be positive");
+      this.maxEntrySize = maxEntrySize;
+      return this;
+    }
+
+    /**
      * Sets the maximum number of allows entries per segment, returning the builder for method chaining.
      * <p>
      * The maximum entry count dictates when logs should roll over to new segments. As entries are written to
@@ -502,7 +523,9 @@ public class RaftStorage {
      * @return The storage builder.
      * @throws IllegalArgumentException If the {@code maxEntriesPerSegment} not greater than the default max entries per
      *                                  segment
+     * @deprecated since 3.0.2
      */
+    @Deprecated
     public Builder withMaxEntriesPerSegment(int maxEntriesPerSegment) {
       checkArgument(maxEntriesPerSegment > 0, "max entries per segment must be positive");
       checkArgument(maxEntriesPerSegment <= DEFAULT_MAX_ENTRIES_PER_SEGMENT,
@@ -636,6 +659,7 @@ public class RaftStorage {
           directory,
           serializer,
           maxSegmentSize,
+          maxEntrySize,
           maxEntriesPerSegment,
           dynamicCompaction,
           freeDiskBuffer,

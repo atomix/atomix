@@ -20,8 +20,6 @@ import io.atomix.core.counter.impl.AtomicCounterProxy;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -32,23 +30,22 @@ import static org.junit.Assert.assertTrue;
 public abstract class AtomicCounterTest extends AbstractPrimitiveTest<ProxyProtocol> {
   @Test
   public void testBasicOperations() throws Throwable {
-    AsyncAtomicCounter along = atomix().atomicCounterBuilder("test-counter-basic-operations")
+    AtomicCounter along = atomix().atomicCounterBuilder("test-counter-basic-operations")
         .withProtocol(protocol())
-        .build()
-        .async();
-    assertEquals(0, along.get().get(30, TimeUnit.SECONDS).longValue());
-    assertEquals(1, along.incrementAndGet().get(30, TimeUnit.SECONDS).longValue());
-    along.set(100).get(30, TimeUnit.SECONDS);
-    assertEquals(100, along.get().get(30, TimeUnit.SECONDS).longValue());
-    assertEquals(100, along.getAndAdd(10).get(30, TimeUnit.SECONDS).longValue());
-    assertEquals(110, along.get().get(30, TimeUnit.SECONDS).longValue());
-    assertFalse(along.compareAndSet(109, 111).get(30, TimeUnit.SECONDS));
-    assertTrue(along.compareAndSet(110, 111).get(30, TimeUnit.SECONDS));
-    assertEquals(100, along.addAndGet(-11).get(30, TimeUnit.SECONDS).longValue());
-    assertEquals(100, along.getAndIncrement().get(30, TimeUnit.SECONDS).longValue());
-    assertEquals(101, along.get().get(30, TimeUnit.SECONDS).longValue());
-    assertEquals(100, along.decrementAndGet().get(30, TimeUnit.SECONDS).longValue());
-    assertEquals(100, along.getAndDecrement().get(30, TimeUnit.SECONDS).longValue());
-    assertEquals(99, along.get().get(30, TimeUnit.SECONDS).longValue());
+        .build();
+    assertEquals(0, along.get());
+    assertEquals(1, along.incrementAndGet());
+    along.set(100);
+    assertEquals(100, along.get());
+    assertEquals(100, along.getAndAdd(10));
+    assertEquals(110, along.get());
+    assertFalse(along.compareAndSet(109, 111));
+    assertTrue(along.compareAndSet(110, 111));
+    assertEquals(100, along.addAndGet(-11));
+    assertEquals(100, along.getAndIncrement());
+    assertEquals(101, along.get());
+    assertEquals(100, along.decrementAndGet());
+    assertEquals(100, along.getAndDecrement());
+    assertEquals(99, along.get());
   }
 }

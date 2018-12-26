@@ -29,7 +29,7 @@ public interface IterableService<E> {
    * @return the iterator ID
    */
   @Command
-  long iterate();
+  IteratorBatch<E> iterate();
 
   /**
    * Returns the next batch of elements for the given iterator.

@@ -29,6 +29,7 @@ import io.atomix.cluster.impl.DefaultNodeDiscoveryService;
 import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.ManagedClusterEventService;
 import io.atomix.cluster.messaging.MessagingService;
+import io.atomix.utils.Version;
 import io.atomix.utils.net.Address;
 import io.atomix.utils.serializer.Namespaces;
 import io.atomix.utils.serializer.Serializer;
@@ -79,6 +80,7 @@ public class DefaultClusterEventServiceTest {
         broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService clusterService1 = new DefaultClusterMembershipService(
         localMember1,
+        Version.from("1.0.0"),
         new DefaultNodeDiscoveryService(bootstrapService1, localMember1, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService1,
         new MembershipConfig());
@@ -93,6 +95,7 @@ public class DefaultClusterEventServiceTest {
         broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService clusterService2 = new DefaultClusterMembershipService(
         localMember2,
+        Version.from("1.0.0"),
         new DefaultNodeDiscoveryService(bootstrapService2, localMember2, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService2,
         new MembershipConfig());
@@ -107,6 +110,7 @@ public class DefaultClusterEventServiceTest {
         broadcastServiceFactory.newBroadcastService().start().join());
     ManagedClusterMembershipService clusterService3 = new DefaultClusterMembershipService(
         localMember3,
+        Version.from("1.0.0"),
         new DefaultNodeDiscoveryService(bootstrapService3, localMember3, new BootstrapDiscoveryProvider(bootstrapLocations)),
         bootstrapService3,
         new MembershipConfig());
@@ -119,17 +123,17 @@ public class DefaultClusterEventServiceTest {
     Set<Integer> events = new CopyOnWriteArraySet<>();
 
     eventService1.<String>subscribe("test1", SERIALIZER::decode, message -> {
-      assertEquals(message, "Hello world!");
+      assertEquals("Hello world!", message);
       events.add(1);
     }, MoreExecutors.directExecutor()).join();
 
     eventService2.<String>subscribe("test1", SERIALIZER::decode, message -> {
-      assertEquals(message, "Hello world!");
+      assertEquals("Hello world!", message);
       events.add(2);
     }, MoreExecutors.directExecutor()).join();
 
     eventService2.<String>subscribe("test1", SERIALIZER::decode, message -> {
-      assertEquals(message, "Hello world!");
+      assertEquals("Hello world!", message);
       events.add(3);
     }, MoreExecutors.directExecutor()).join();
 

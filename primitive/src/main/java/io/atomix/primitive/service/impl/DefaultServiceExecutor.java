@@ -136,7 +136,7 @@ public class DefaultServiceExecutor implements ServiceExecutor {
     checkNotNull(operationId, "operationId cannot be null");
     checkNotNull(callback, "callback cannot be null");
     operations.put(operationId.id(), callback);
-    log.debug("Registered operation callback {}", operationId);
+    log.trace("Registered operation callback {}", operationId);
   }
 
   @Override

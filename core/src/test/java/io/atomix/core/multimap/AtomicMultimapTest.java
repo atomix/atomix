@@ -28,13 +28,15 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -48,53 +50,33 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
   private final List<String> all = Lists.newArrayList(one, two, three, four);
 
   /**
-   * Test that size behaves correctly (This includes testing of the empty
-   * check).
+   * Test that size behaves correctly (This includes testing of the empty check).
    */
   @Test
   public void testSize() throws Throwable {
-    AsyncAtomicMultimap<String, String> map = createMultimap("testOneMap");
-    //Simplest operation case
-    map.isEmpty().thenAccept(result -> assertTrue(result)).join();
-    map.put(one, one).
-        thenAccept(result -> assertTrue(result)).join();
-    map.isEmpty().thenAccept(result -> assertFalse(result));
-    map.size().thenAccept(result -> assertEquals(1, (int) result))
-        .join();
-    //Make sure sizing is dependent on values not keys
-    map.put(one, two).
-        thenAccept(result -> assertTrue(result)).join();
-    map.size().thenAccept(result -> assertEquals(2, (int) result))
-        .join();
-    //Ensure that double adding has no effect
-    map.put(one, one).
-        thenAccept(result -> assertFalse(result)).join();
-    map.size().thenAccept(result -> assertEquals(2, (int) result))
-        .join();
-    //Check handling for multiple keys
-    map.put(two, one)
-        .thenAccept(result -> assertTrue(result)).join();
-    map.put(two, two)
-        .thenAccept(result -> assertTrue(result)).join();
-    map.size().thenAccept(result -> assertEquals(4, (int) result))
-        .join();
-    //Check size with removal
-    map.remove(one, one).
-        thenAccept(result -> assertTrue(result)).join();
-    map.size().thenAccept(result -> assertEquals(3, (int) result))
-        .join();
-    //Check behavior under remove of non-existent key
-    map.remove(one, one).
-        thenAccept(result -> assertFalse(result)).join();
-    map.size().thenAccept(result -> assertEquals(3, (int) result))
-        .join();
-    //Check clearing the entirety of the map
-    map.clear().join();
-    map.size().thenAccept(result -> assertEquals(0, (int) result))
-        .join();
-    map.isEmpty().thenAccept(result -> assertTrue(result));
+    AtomicMultimap<String, String> multimap = atomix().<String, String>atomicMultimapBuilder("testOneMap")
+        .withProtocol(protocol())
+        .build();
 
-    map.delete().join();
+    assertTrue(multimap.isEmpty());
+    assertEquals(0, multimap.size());
+    assertTrue(multimap.put(one, one));
+    assertFalse(multimap.isEmpty());
+    assertEquals(1, multimap.size());
+    assertTrue(multimap.put(one, two));
+    assertEquals(2, multimap.size());
+    assertFalse(multimap.put(one, one));
+    assertEquals(2, multimap.size());
+    assertTrue(multimap.put(two, one));
+    assertTrue(multimap.put(two, two));
+    assertEquals(4, multimap.size());
+    assertTrue(multimap.remove(one, one));
+    assertEquals(3, multimap.size());
+    assertFalse(multimap.remove(one, one));
+    assertEquals(3, multimap.size());
+    multimap.clear();
+    assertEquals(0, multimap.size());
+    assertTrue(multimap.isEmpty());
   }
 
   /**
@@ -102,55 +84,28 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
    */
   @Test
   public void containsTest() throws Throwable {
-    AsyncAtomicMultimap<String, String> map = createMultimap("testTwoMap");
+    AtomicMultimap<String, String> multimap = atomix().<String, String>atomicMultimapBuilder("testTwoMap")
+        .withProtocol(protocol())
+        .build();
 
-    //Populate the maps
-    all.forEach(key -> {
-      map.putAll(key, all)
-          .thenAccept(result -> assertTrue(result)).join();
-    });
-    map.size().thenAccept(result -> assertEquals(16, (int) result)).join();
+    all.forEach(key -> assertTrue(multimap.putAll(key, all)));
+    assertEquals(16, multimap.size());
 
-    //Test value contains positive results
-    all.forEach(value -> {
-      map.containsValue(value)
-          .thenAccept(result -> assertTrue(result)).join();
-    });
-
-    //Test contains entry for all possible entries
-    all.forEach(key -> {
-      all.forEach(value -> {
-        map.containsEntry(key, value)
-            .thenAccept(result -> assertTrue(result)).join();
-      });
-    });
+    all.forEach(value -> assertTrue(multimap.containsValue(value)));
+    all.forEach(key -> all.forEach(value -> assertTrue(multimap.containsEntry(key, value))));
 
     final String[] removedKey = new String[1];
 
-    //Test behavior after removals
     all.forEach(value -> {
       all.forEach(key -> {
-        map.remove(key, value)
-            .thenAccept(result -> assertTrue(result)).join();
-        map.containsEntry(key, value)
-            .thenAccept(result -> assertFalse(result)).join();
+        assertTrue(multimap.remove(key, value));
+        assertFalse(multimap.containsEntry(key, value));
         removedKey[0] = key;
       });
     });
 
-    //Check that contains key works properly for removed keys
-    map.containsKey(removedKey[0])
-        .thenAccept(result -> assertFalse(result))
-        .join();
-
-    //Check that contains value works correctly for removed values
-    all.forEach(value -> {
-      map.containsValue(value)
-          .thenAccept(result -> assertFalse(result))
-          .join();
-    });
-
-    map.delete().join();
+    assertFalse(multimap.containsKey(removedKey[0]));
+    all.forEach(value -> assertFalse(multimap.containsValue(value)));
   }
 
   /**
@@ -160,179 +115,152 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
    */
   @Test
   public void addAndRemoveTest() throws Exception {
-    AsyncAtomicMultimap<String, String> map = createMultimap("testThreeMap");
+    AtomicMultimap<String, String> multimap = atomix().<String, String>atomicMultimapBuilder("testThreeMap")
+        .withProtocol(protocol())
+        .build();
 
-    //Test single put
-    all.forEach(key -> {
-      //Value should actually be added here
-      all.forEach(value -> {
-        map.put(key, value)
-            .thenAccept(result -> assertTrue(result)).join();
-        //Duplicate values should be ignored here
-        map.put(key, value)
-            .thenAccept(result -> assertFalse(result)).join();
-      });
-    });
+    all.forEach(key -> all.forEach(value -> {
+      assertTrue(multimap.put(key, value));
+      assertFalse(multimap.put(key, value));
+    }));
 
-    //Test single remove
-    all.forEach(key -> {
-      //Value should actually be added here
-      all.forEach(value -> {
-        map.remove(key, value)
-            .thenAccept(result -> assertTrue(result)).join();
-        //Duplicate values should be ignored here
-        map.remove(key, value)
-            .thenAccept(result -> assertFalse(result)).join();
-      });
-    });
+    all.forEach(key -> all.forEach(value -> {
+      assertTrue(multimap.remove(key, value));
+      assertFalse(multimap.remove(key, value));
+    }));
 
-    map.isEmpty().thenAccept(result -> assertTrue(result)).join();
-
-    //Test multi put
-    all.forEach(key -> {
-      map.putAll(key, Lists.newArrayList(all.subList(0, 2)))
-          .thenAccept(result -> assertTrue(result)).join();
-      map.putAll(key, Lists.newArrayList(all.subList(0, 2)))
-          .thenAccept(result -> assertFalse(result)).join();
-      map.putAll(key, Lists.newArrayList(all.subList(2, 4)))
-          .thenAccept(result -> assertTrue(result)).join();
-      map.putAll(key, Lists.newArrayList(all.subList(2, 4)))
-          .thenAccept(result -> assertFalse(result)).join();
-
-    });
-
-    //Test multi remove
-    all.forEach(key -> {
-      //Split the lists to test how multiRemove can work piecewise
-      map.removeAll(key, Lists.newArrayList(all.subList(0, 2)))
-          .thenAccept(result -> assertTrue(result)).join();
-      map.removeAll(key, Lists.newArrayList(all.subList(0, 2)))
-          .thenAccept(result -> assertFalse(result)).join();
-      map.removeAll(key, Lists.newArrayList(all.subList(2, 4)))
-          .thenAccept(result -> assertTrue(result)).join();
-      map.removeAll(key, Lists.newArrayList(all.subList(2, 4)))
-          .thenAccept(result -> assertFalse(result)).join();
-    });
-
-    map.isEmpty().thenAccept(result -> assertTrue(result)).join();
-
-    //Repopulate for next test
-    all.forEach(key -> {
-      map.putAll(key, all)
-          .thenAccept(result -> assertTrue(result)).join();
-    });
-
-    map.size().thenAccept(result -> assertEquals(16, (int) result)).join();
-
-    //Test removeAll of entire entry
-    all.forEach(key -> {
-      map.removeAll(key).thenAccept(result -> {
-        assertTrue(stringArrayCollectionIsEqual(all, result.value()));
-      }).join();
-      map.removeAll(key).thenAccept(result -> {
-        assertNotEquals(all, result.value());
-      }).join();
-    });
-
-    map.isEmpty().thenAccept(result -> assertTrue(result)).join();
-
-    //Repopulate for next test
-    all.forEach(key -> {
-      map.putAll(key, all)
-          .thenAccept(result -> assertTrue(result)).join();
-    });
-
-    map.size().thenAccept(result -> assertEquals(16, (int) result)).join();
+    assertTrue(multimap.isEmpty());
 
     all.forEach(key -> {
-      map.replaceValues(key, all)
-          .thenAccept(result ->
-              assertTrue(stringArrayCollectionIsEqual(all, result.value())))
-          .join();
-      map.replaceValues(key, Lists.newArrayList())
-          .thenAccept(result ->
-              assertTrue(stringArrayCollectionIsEqual(all, result.value())))
-          .join();
-      map.replaceValues(key, all)
-          .thenAccept(result ->
-              assertTrue(result.value().isEmpty()))
-          .join();
+      assertTrue(multimap.putAll(key, Lists.newArrayList(all.subList(0, 2))));
+      assertFalse(multimap.putAll(key, Lists.newArrayList(all.subList(0, 2))));
+      assertTrue(multimap.putAll(key, Lists.newArrayList(all.subList(2, 4))));
+      assertFalse(multimap.putAll(key, Lists.newArrayList(all.subList(2, 4))));
     });
 
-
-    //Test replacements of partial sets
-    map.size().thenAccept(result -> assertEquals(16, (int) result)).join();
+    multimap.clear();
+    all.forEach(key -> assertTrue(multimap.putAll(key, all)));
+    assertEquals(16, multimap.size());
 
     all.forEach(key -> {
-      map.remove(key, one)
-          .thenAccept(result ->
-              assertTrue(result)).join();
-      map.replaceValues(key, Lists.newArrayList())
-          .thenAccept(result ->
-              assertTrue(stringArrayCollectionIsEqual(Lists.newArrayList(two, three, four), result.value())))
-          .join();
-      map.replaceValues(key, all)
-          .thenAccept(result ->
-              assertTrue(result.value().isEmpty()))
-          .join();
+      assertTrue(stringArrayCollectionIsEqual(all, multimap.removeAll(key).value()));
+      assertNotEquals(all, multimap.removeAll(key));
     });
 
-    map.delete().join();
-  }
+    assertTrue(multimap.isEmpty());
 
-  @Test
-  public void testBlocking() throws Exception {
-    AsyncAtomicMultimap<String, String> map = createMultimap("testMultimapBlocking");
-    map.put("foo", "Hello world!").thenRun(() -> {
-      assertEquals(1, map.get("foo").join().value().size());
-    }).join();
+    all.forEach(key -> assertTrue(multimap.putAll(key, all)));
+    assertEquals(16, multimap.size());
 
-    CountDownLatch latch = new CountDownLatch(1);
-    map.addListener(event -> {
-      assertEquals("Hello world!", event.newValue());
-      assertEquals("Hello world!", map.get("bar").join().value().iterator().next());
-      map.put("bar", "Hello world again!").join();
-      assertEquals(2, map.get("bar").join().value().size());
-      latch.countDown();
-    }).join();
-    map.put("bar", "Hello world!").join();
-    latch.await(5, TimeUnit.SECONDS);
+    all.forEach(key -> {
+      assertTrue(stringArrayCollectionIsEqual(all, multimap.replaceValues(key, all).value()));
+      assertTrue(stringArrayCollectionIsEqual(all, multimap.replaceValues(key, Lists.newArrayList()).value()));
+      assertTrue(multimap.replaceValues(key, all).value().isEmpty());
+    });
+
+    assertEquals(16, multimap.size());
+
+    all.forEach(key -> {
+      assertTrue(multimap.remove(key, one));
+      assertTrue(stringArrayCollectionIsEqual(Lists.newArrayList(two, three, four), multimap.replaceValues(key, Lists.newArrayList()).value()));
+      assertTrue(multimap.replaceValues(key, all).value().isEmpty());
+    });
   }
 
   /**
-   * Tests the get, keySet, keys, values, and entries implementations as well
-   * as a trivial test of the asMap functionality (throws error).
+   * Tests the get, keySet, keys, values, and entries implementations as well as a trivial test of the asMap
+   * functionality (throws error).
    *
    * @throws Exception
    */
   @Test
   public void testAccessors() throws Exception {
-    AsyncAtomicMultimap<String, String> map = createMultimap("testFourMap");
+    AtomicMultimap<String, String> multimap = atomix().<String, String>atomicMultimapBuilder("testFourMap")
+        .withProtocol(protocol())
+        .build();
 
-    //Populate for full map behavior tests
-    all.forEach(key -> {
-      map.putAll(key, all)
-          .thenAccept(result -> assertTrue(result)).join();
-    });
+    all.forEach(key -> assertTrue(multimap.putAll(key, all)));
+    assertEquals(16, multimap.size());
 
-    map.size().thenAccept(result -> assertEquals(16, (int) result)).join();
+    all.forEach(key -> assertTrue(stringArrayCollectionIsEqual(all, multimap.get(key).value())));
 
-    all.forEach(key -> {
-      map.get(key).thenAccept(result -> {
-        assertTrue(stringArrayCollectionIsEqual(all, result.value()));
-      }).join();
-    });
+    multimap.clear();
 
-    //Testing for empty map behavior
-    map.clear().join();
+    all.forEach(key -> assertTrue(multimap.get(key).value().isEmpty()));
+  }
 
-    all.forEach(key -> {
-      map.get(key).thenAccept(result -> {
-        assertTrue(result.value().isEmpty());
-      }).join();
-    });
+  @Test
+  public void testMultimapEvents() throws Exception {
+    AtomicMultimap<String, String> multimap1 = atomix().<String, String>atomicMultimapBuilder("testMultimapEvents")
+        .withProtocol(protocol())
+        .build();
+    AtomicMultimap<String, String> multimap2 = atomix().<String, String>atomicMultimapBuilder("testMultimapEvents")
+        .withProtocol(protocol())
+        .build();
 
-    map.delete().join();
+    TestAtomicMultimapEventListener listener = new TestAtomicMultimapEventListener();
+    multimap2.addListener(listener);
+
+    assertTrue(multimap1.isEmpty());
+    assertTrue(multimap1.put("foo", "bar"));
+
+    AtomicMultimapEvent event = listener.event();
+    assertEquals(AtomicMultimapEvent.Type.INSERT, event.type());
+    assertNull(event.oldValue());
+    assertNotNull(event.newValue());
+
+    assertFalse(multimap1.put("foo", "bar"));
+    assertFalse(listener.eventReceived());
+
+    assertTrue(multimap1.remove("foo", "bar"));
+    event = listener.event();
+    assertEquals(AtomicMultimapEvent.Type.REMOVE, event.type());
+    assertNotNull(event.oldValue());
+    assertNull(event.newValue());
+
+    assertTrue(multimap1.put("foo", "foo"));
+    assertTrue(multimap1.put("foo", "bar"));
+    assertTrue(multimap1.put("foo", "baz"));
+
+    for (int i = 0; i < 3; i++) {
+      event = listener.event();
+      assertEquals(AtomicMultimapEvent.Type.INSERT, event.type());
+      assertEquals("foo", event.key());
+    }
+
+    assertEquals(3, multimap1.removeAll("foo").value().size());
+
+    for (int i = 0; i < 3; i++) {
+      event = listener.event();
+      assertEquals(AtomicMultimapEvent.Type.REMOVE, event.type());
+      assertEquals("foo", event.key());
+    }
+
+    assertTrue(multimap1.put("bar", "foo"));
+    assertTrue(multimap1.put("bar", "bar"));
+    assertTrue(multimap1.put("bar", "baz"));
+
+    for (int i = 0; i < 3; i++) {
+      event = listener.event();
+      assertEquals(AtomicMultimapEvent.Type.INSERT, event.type());
+      assertEquals("bar", event.key());
+    }
+
+    multimap1.replaceValues("bar", Arrays.asList("foo", "barbaz"));
+
+    event = listener.event();
+    assertEquals(AtomicMultimapEvent.Type.REMOVE, event.type());
+    assertEquals("bar", event.key());
+    assertEquals("bar", event.oldValue());
+    event = listener.event();
+    assertEquals(AtomicMultimapEvent.Type.REMOVE, event.type());
+    assertEquals("bar", event.key());
+    assertEquals("baz", event.oldValue());
+
+    event = listener.event();
+    assertEquals(AtomicMultimapEvent.Type.INSERT, event.type());
+    assertEquals("bar", event.key());
+    assertEquals("barbaz", event.newValue());
   }
 
   @Test
@@ -429,29 +357,12 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
     while (iterator.hasNext()) {
       iterator.next();
       i += 1;
-      map.put(String.valueOf(200 * i), String.valueOf(200 * i));
-    }
-
-    AtomicInteger count = new AtomicInteger();
-    map.values().forEach(value -> count.incrementAndGet());
-    assertTrue(count.get() > 0);
-  }
-
-  private AsyncAtomicMultimap<String, String> createMultimap(String mapName) {
-    try {
-      return atomix().<String, String>atomicMultimapBuilder(mapName)
-          .withCacheEnabled()
-          .withProtocol(protocol())
-          .build()
-          .async();
-    } catch (Throwable e) {
-      throw new RuntimeException(e.toString());
+      map.put(String.valueOf(100 * i), String.valueOf(100 * i));
     }
   }
 
   /**
-   * Compares two collections of strings returns true if they contain the
-   * same strings, false otherwise.
+   * Compares two collections of strings returns true if they contain the same strings, false otherwise.
    *
    * @param s1 string collection one
    * @param s2 string collection two
@@ -475,5 +386,26 @@ public abstract class AtomicMultimapTest extends AbstractPrimitiveTest<ProxyProt
       }
     }
     return true;
+  }
+
+  private static class TestAtomicMultimapEventListener implements AtomicMultimapEventListener<String, String> {
+    private final BlockingQueue<AtomicMultimapEvent<String, String>> queue = new LinkedBlockingQueue<>();
+
+    @Override
+    public void event(AtomicMultimapEvent<String, String> event) {
+      try {
+        queue.put(event);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+
+    public boolean eventReceived() {
+      return !queue.isEmpty();
+    }
+
+    public AtomicMultimapEvent<String, String> event() throws InterruptedException {
+      return queue.poll(10, TimeUnit.SECONDS);
+    }
   }
 }

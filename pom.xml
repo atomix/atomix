@@ -24,7 +24,7 @@
 
   <groupId>io.atomix</groupId>
   <artifactId>atomix-parent</artifactId>
-  <version>3.0.0-SNAPSHOT</version>
+  <version>3.0.9-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Atomix Parent Pom</name>
   <description>Distributed systems framework.</description>
@@ -57,7 +57,7 @@
     <jaxrs.version>2.0</jaxrs.version>
     <jackson.version>2.9.6</jackson.version>
     <config.version>1.3.2</config.version>
-    <fast-classpath-scanner.version>2.21</fast-classpath-scanner.version>
+    <classgraph.version>4.2.3</classgraph.version>
     <resteasy.version>3.1.4.Final</resteasy.version>
     <rest-assured.version>3.0.7</rest-assured.version>
     <argparse4j.version>0.7.0</argparse4j.version>
@@ -65,6 +65,7 @@
     <!-- Maven plugins -->
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.7.0</maven.compiler.plugin.version>
+    <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
     <maven.failsafe.plugin.version>2.21.0</maven.failsafe.plugin.version>
     <maven.surefire.plugin.version>2.22.0</maven.surefire.plugin.version>
     <maven.clean.plugin.version>2.5</maven.clean.plugin.version>
@@ -74,8 +75,11 @@
     <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
     <maven.bundle.plugin.version>2.5.3</maven.bundle.plugin.version>
     <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
+    <maven.dockerfile.plugin.version>1.4.3</maven.dockerfile.plugin.version>
 
-    <argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.scanSpec=io.atomix</argLine.common>
+    <dockerfile.version>latest</dockerfile.version>
+
+    <argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -Dio.atomix.whitelistPackages=io.atomix</argLine.common>
     <argLine.extras /> <!-- Overridden in some profiles -->
     <argLine.javadocs />
   </properties>
@@ -85,7 +89,7 @@
     <profile>
       <id>java9</id>
       <properties>
-        <argLine.common>-Xss256k -Xms512m -Xmx2G -Dio.atomix.scanSpec=io.atomix</argLine.common>
+        <argLine.common>-Xss256k -Xms512m -Xmx2G -Dio.atomix.whitelistPackages=io.atomix</argLine.common>
         <argLine.extras>--add-modules jdk.unsupported --add-opens=java.base/java.nio=ALL-UNNAMED</argLine.extras>
         <argLine.javadocs>-html5</argLine.javadocs>
         <!-- coverall version 4.3.0 does not work with java 9, see https://github.com/trautonen/coveralls-maven-plugin/issues/112 -->
@@ -95,17 +99,55 @@
         <jdk>[1.9,)</jdk>
       </activation>
     </profile>
-    <!-- JDK11+ -->
     <profile>
-        <id>java11</id>
-        <properties>
-          <!--argLine.common>-Xss256k -Xms512m -Xmx2G -XX:+UseShenandoahGC -XX:+UseStringDeduplication -XX:-OmitStackTraceInFastThrow -Dio.atomix.scanSpec=io.atomix</argLine.common-->
-          <!-- jacoco version 0.8.1 does not work with java 11, see https://github.com/jacoco/jacoco/issues/663 -->
-          <jacoco.skip>true</jacoco.skip>
-        </properties>
-        <activation>
-            <jdk>[11,)</jdk>
-        </activation>
+      <id>sonatype-oss-release</id>
+      <properties>
+        <dockerfile.version>${project.version}</dockerfile.version>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.1.2</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.7</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.1</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 
@@ -139,6 +181,7 @@
     <module>agent</module>
     <module>cluster</module>
     <module>core</module>
+    <module>dist</module>
     <module>primitive</module>
     <module>protocols</module>
     <module>rest</module>
@@ -211,13 +254,42 @@
   </dependencies>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>buildnumber-maven-plugin</artifactId>
+          <version>1.4</version>
+          <configuration>
+            <revisionOnScmFailure>N/A</revisionOnScmFailure>
+            <format>{0} (revision {1} built on {2,date,yyyy-MM-dd HH:mm:ss})</format>
+            <items>
+              <item>${project.version}</item>
+              <item>scmVersion</item>
+              <item>timestamp</item>
+            </items>
+            <shortRevisionLength>6</shortRevisionLength>
+            <doCheck>false</doCheck>
+            <doUpdate>false</doUpdate>
+          </configuration>
+          <executions>
+            <execution>
+              <id>configure-buildnumber</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>create</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven.surefire.plugin.version}</version>
         <configuration>
-          <skipTests>${env.SKIP_TESTS}</skipTests>
           <shutdown>kill</shutdown>
           <argLine>${argLine} ${argLine.extras} ${argLine.common}</argLine>
         </configuration>
@@ -263,11 +335,13 @@
           <execution>
             <id>attach-javadocs</id>
             <goals>
-              <goal>aggregate-jar</goal>
+              <goal>jar</goal>
             </goals>
           </execution>
         </executions>
         <configuration>
+          <verbose>false</verbose>
+          <quiet>true</quiet>
           <additionalparam>${argLine.javadocs}</additionalparam>
           <show>public</show>
           <doctitle>Atomix API Reference (${jv})</doctitle>
@@ -326,6 +400,7 @@
         <version>2.1</version><!--$NO-MVN-MAN-VER$ -->
         <configuration>
           <allowTimestampedSnapshots>true</allowTimestampedSnapshots>
+          <arguments>-Psonatype-oss-release -DskipTests=${env.SKIP_TESTS}</arguments>
         </configuration>
       </plugin>
 
@@ -348,7 +423,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.1</version>
+        <version>0.8.2</version>
         <executions>
           <execution>
             <id>prepare-agent</id>

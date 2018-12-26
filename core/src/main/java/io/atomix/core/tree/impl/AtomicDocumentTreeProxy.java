@@ -16,7 +16,6 @@
 
 package io.atomix.core.tree.impl;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import io.atomix.core.tree.AsyncAtomicDocumentTree;
 import io.atomix.core.tree.AtomicDocumentTree;
@@ -71,7 +70,7 @@ public class AtomicDocumentTreeProxy
 
   @Override
   public CompletableFuture<Versioned<byte[]>> get(DocumentPath path) {
-    checkPath(path);;
+    checkPath(path);
     return getProxyClient().applyBy(name(), service -> service.get(path));
   }
 
@@ -202,11 +201,6 @@ public class AtomicDocumentTreeProxy
             getProxyClient().acceptBy(name(), service -> service.listen(root()));
           }
         })).thenApply(v -> this);
-  }
-
-  @Override
-  public CompletableFuture<Void> delete() {
-    return getProxyClient().acceptBy(name(), service -> service.clear());
   }
 
   @Override

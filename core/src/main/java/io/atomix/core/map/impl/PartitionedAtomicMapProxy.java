@@ -19,12 +19,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.DistributedCollectionType;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
+import io.atomix.core.iterator.AsyncIterator;
 import io.atomix.core.iterator.impl.PartitionedProxyIterator;
 import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.AtomicMapEvent;
@@ -486,7 +486,12 @@ public abstract class PartitionedAtomicMapProxy<P extends AsyncPrimitive, S exte
 
     @Override
     public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
+      return PartitionedAtomicMapProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return PartitionedAtomicMapProxy.this.delete();
     }
 
     @Override
@@ -627,7 +632,12 @@ public abstract class PartitionedAtomicMapProxy<P extends AsyncPrimitive, S exte
 
     @Override
     public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
+      return PartitionedAtomicMapProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return PartitionedAtomicMapProxy.this.delete();
     }
 
     @Override
@@ -733,7 +743,12 @@ public abstract class PartitionedAtomicMapProxy<P extends AsyncPrimitive, S exte
 
     @Override
     public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
+      return PartitionedAtomicMapProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return PartitionedAtomicMapProxy.this.delete();
     }
 
     @Override

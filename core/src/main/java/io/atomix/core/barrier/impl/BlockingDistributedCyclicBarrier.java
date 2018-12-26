@@ -15,6 +15,7 @@
  */
 package io.atomix.core.barrier.impl;
 
+import com.google.common.base.Throwables;
 import io.atomix.core.barrier.AsyncDistributedCyclicBarrier;
 import io.atomix.core.barrier.DistributedCyclicBarrier;
 import io.atomix.primitive.PrimitiveException;
@@ -84,7 +85,12 @@ public class BlockingDistributedCyclicBarrier extends Synchronous<AsyncDistribut
     } catch (TimeoutException e) {
       throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
-      throw new PrimitiveException(e.getCause());
+      Throwable cause = Throwables.getRootCause(e);
+      if (cause instanceof PrimitiveException) {
+        throw (PrimitiveException) cause;
+      } else {
+        throw new PrimitiveException(cause);
+      }
     }
   }
 }

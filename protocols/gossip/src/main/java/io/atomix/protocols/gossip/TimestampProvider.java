@@ -15,11 +15,13 @@
  */
 package io.atomix.protocols.gossip;
 
+import com.google.common.annotations.Beta;
 import io.atomix.utils.time.Timestamp;
 
 /**
  * Timestamp provider.
  */
+@Beta
 @FunctionalInterface
 public interface TimestampProvider<E> {
 

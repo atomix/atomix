@@ -20,14 +20,12 @@ import io.atomix.core.transaction.TransactionLog;
 import io.atomix.core.transaction.impl.CommitResult;
 import io.atomix.core.transaction.impl.PrepareResult;
 import io.atomix.core.transaction.impl.RollbackResult;
-import io.atomix.core.tree.impl.DefaultDocumentTreeService;
 import io.atomix.core.tree.impl.DefaultAtomicDocumentTreeBuilder;
-import io.atomix.core.tree.impl.DocumentTreeResource;
+import io.atomix.core.tree.impl.DefaultDocumentTreeService;
 import io.atomix.core.tree.impl.DocumentTreeResult;
 import io.atomix.core.tree.impl.NodeUpdate;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.misc.Match;
@@ -88,12 +86,6 @@ public class AtomicDocumentTreeType<V> implements PrimitiveType<AtomicDocumentTr
   @Override
   public PrimitiveService newService(ServiceConfig config) {
     return new DefaultDocumentTreeService();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(AtomicDocumentTree<V> primitive) {
-    return new DocumentTreeResource((AsyncAtomicDocumentTree<String>) primitive.async());
   }
 
   @Override

@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
@@ -189,12 +190,14 @@ public final class LeaderRole extends ActiveRole {
    * Handles a cluster event.
    */
   private void handleClusterEvent(ClusterMembershipEvent event) {
-    if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
-      log.debug("Node {} deactivated", event.subject().id());
-      raft.getSessions().getSessions().stream()
-          .filter(session -> session.memberId().equals(event.subject().id()))
-          .forEach(this::expireSession);
-    }
+    raft.getThreadContext().execute(() -> {
+      if (event.type() == ClusterMembershipEvent.Type.MEMBER_REMOVED) {
+        log.debug("Node {} deactivated", event.subject().id());
+        raft.getSessions().getSessions().stream()
+            .filter(session -> session.memberId().equals(event.subject().id()))
+            .forEach(this::expireSession);
+      }
+    });
   }
 
   /**
@@ -203,7 +206,7 @@ public final class LeaderRole extends ActiveRole {
   private void expireSession(RaftSession session) {
     if (expiring.add(session.sessionId())) {
       log.debug("Expiring session due to heartbeat failure: {}", session);
-      appendAndCompact(new CloseSessionEntry(raft.getTerm(), System.currentTimeMillis(), session.sessionId().id(), true))
+      appendAndCompact(new CloseSessionEntry(raft.getTerm(), System.currentTimeMillis(), session.sessionId().id(), true, false))
               .whenCompleteAsync((entry, error) -> {
                 if (error != null) {
                   expiring.remove(session.sessionId());
@@ -608,11 +611,8 @@ public final class LeaderRole extends ActiveRole {
     // duplicate requests aren't committed as duplicate entries in the log.
     PendingCommand existingCommand = session.getCommand(sequenceNumber);
     if (existingCommand != null) {
-      if (sequenceNumber == session.nextRequestSequence()) {
-          session.removeCommand(sequenceNumber);
-          commitCommand(existingCommand.request(), existingCommand.future());
-          session.setRequestSequence(sequenceNumber);
-          drainCommands(session);
+      if (sequenceNumber <= session.nextRequestSequence()) {
+        drainCommands(sequenceNumber, session);
       }
       log.trace("Returning pending result for command sequence {}", sequenceNumber);
       return existingCommand.future();
@@ -665,8 +665,18 @@ public final class LeaderRole extends ActiveRole {
    *
    * @param session the session for which to drain commands
    */
-  private void drainCommands(RaftSession session) {
+  private void drainCommands(long sequenceNumber, RaftSession session) {
+    // First we need to drain any commands that exist in the queue *prior* to the next sequence number. This is
+    // possible if commands from the prior term are committed after a leader change.
     long nextSequence = session.nextRequestSequence();
+    for (long i = sequenceNumber; i < nextSequence; i++) {
+      PendingCommand nextCommand = session.removeCommand(i);
+      if (nextCommand != null) {
+        commitCommand(nextCommand.request(), nextCommand.future());
+      }
+    }
+
+    // Finally, drain any commands that are sequenced in the session.
     PendingCommand nextCommand = session.removeCommand(nextSequence);
     while (nextCommand != null) {
       commitCommand(nextCommand.request(), nextCommand.future());
@@ -686,13 +696,23 @@ public final class LeaderRole extends ActiveRole {
     final long term = raft.getTerm();
     final long timestamp = System.currentTimeMillis();
 
-    appendAndCompact(new CommandEntry(term, timestamp, request.session(), request.sequenceNumber(), request.operation()))
+    CommandEntry command = new CommandEntry(term, timestamp, request.session(), request.sequenceNumber(), request.operation());
+    appendAndCompact(command)
         .whenCompleteAsync((entry, error) -> {
           if (error != null) {
-            future.complete(CommandResponse.builder()
-                .withStatus(RaftResponse.Status.ERROR)
-                .withError(RaftError.Type.COMMAND_FAILURE)
-                .build());
+            Throwable cause = Throwables.getRootCause(error);
+            if (Throwables.getRootCause(error) instanceof StorageException.TooLarge) {
+              log.warn("Failed to append command {}", command, cause);
+              future.complete(CommandResponse.builder()
+                  .withStatus(RaftResponse.Status.ERROR)
+                  .withError(RaftError.Type.PROTOCOL_ERROR)
+                  .build());
+            } else {
+              future.complete(CommandResponse.builder()
+                  .withStatus(RaftResponse.Status.ERROR)
+                  .withError(RaftError.Type.COMMAND_FAILURE)
+                  .build());
+            }
             return;
           }
 
@@ -970,7 +990,7 @@ public final class LeaderRole extends ActiveRole {
     logRequest(request);
 
     CompletableFuture<CloseSessionResponse> future = new CompletableFuture<>();
-    appendAndCompact(new CloseSessionEntry(term, timestamp, request.session(), false))
+    appendAndCompact(new CloseSessionEntry(term, timestamp, request.session(), false, request.delete()))
         .whenCompleteAsync((entry, error) -> {
           if (error != null) {
             future.complete(logResponse(CloseSessionResponse.builder()
@@ -1053,6 +1073,8 @@ public final class LeaderRole extends ActiveRole {
               log.trace("Appended {}", indexed);
               return indexed;
             });
+      } catch (StorageException.TooLarge e) {
+        return Futures.exceptionalFuture(e);
       } catch (StorageException.OutOfDiskSpace e) {
         log.warn("Caught OutOfDiskSpace error! Force compacting logs...");
         return raft.getServiceManager().compact().thenCompose(v -> appendAndCompact(entry, attempt + 1));

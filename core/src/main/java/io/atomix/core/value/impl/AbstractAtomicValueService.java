@@ -21,6 +21,7 @@ import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.service.AbstractPrimitiveService;
 import io.atomix.primitive.service.BackupInput;
 import io.atomix.primitive.service.BackupOutput;
+import io.atomix.primitive.session.Session;
 import io.atomix.primitive.session.SessionId;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
@@ -105,5 +106,15 @@ public abstract class AbstractAtomicValueService extends AbstractPrimitiveServic
   @Override
   public void removeListener() {
     listeners.remove(getCurrentSession().sessionId());
+  }
+
+  @Override
+  protected void onExpire(Session session) {
+    listeners.remove(session.sessionId());
+  }
+
+  @Override
+  protected void onClose(Session session) {
+    listeners.remove(session.sessionId());
   }
 }

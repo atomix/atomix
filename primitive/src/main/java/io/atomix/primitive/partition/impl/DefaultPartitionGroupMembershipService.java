@@ -71,6 +71,7 @@ public class DefaultPartitionGroupMembershipService
     implements ManagedPartitionGroupMembershipService {
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPartitionGroupMembershipService.class);
   private static final String BOOTSTRAP_SUBJECT = "partition-group-bootstrap";
+  private static final int[] FIBONACCI_NUMBERS = new int[]{1, 1, 2, 3, 5};
 
   private final ClusterMembershipService membershipService;
   private final ClusterCommunicationService messagingService;
@@ -104,6 +105,7 @@ public class DefaultPartitionGroupMembershipService
           ImmutableSet.of(membershipService.getLocalMember().id()), false));
     });
 
+
     Namespace.Builder namespaceBuilder = Namespace.builder()
         .register(Namespaces.BASIC)
         .register(MemberId.class)
@@ -115,8 +117,7 @@ public class DefaultPartitionGroupMembershipService
     List<PartitionGroup.Type> groupTypes = Lists.newArrayList(groupTypeRegistry.getGroupTypes());
     groupTypes.sort(Comparator.comparing(PartitionGroup.Type::name));
     for (PartitionGroup.Type groupType : groupTypes) {
-      namespaceBuilder.register(groupType.getClass());
-      namespaceBuilder.register(groupType.newConfig().getClass());
+      namespaceBuilder.register(groupType.namespace());
     }
 
     serializer = Serializer.using(namespaceBuilder.build());
@@ -175,7 +176,13 @@ public class DefaultPartitionGroupMembershipService
    * Bootstraps the service.
    */
   private CompletableFuture<Void> bootstrap() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
+    return bootstrap(0, new CompletableFuture<>());
+  }
+
+  /**
+   * Recursively bootstraps the service, retrying if necessary until a system partition group is found.
+   */
+  private CompletableFuture<Void> bootstrap(int attempt, CompletableFuture<Void> future) {
     Futures.allOf(membershipService.getMembers().stream()
         .filter(node -> !node.id().equals(membershipService.getLocalMember().id()))
         .map(node -> bootstrap(node))
@@ -183,9 +190,13 @@ public class DefaultPartitionGroupMembershipService
         .whenComplete((result, error) -> {
           if (error == null) {
             if (systemGroup == null) {
-              future.completeExceptionally(new ConfigurationException("Failed to locate system partition group"));
+              LOGGER.warn("Failed to locate system partition group via bootstrap nodes. Please ensure partition " +
+                  "groups are configured either locally or remotely and the node is able to reach partition group members.");
+              threadContext.schedule(Duration.ofSeconds(FIBONACCI_NUMBERS[Math.min(attempt, 4)]), () -> bootstrap(attempt + 1, future));
             } else if (groups.isEmpty()) {
-              future.completeExceptionally(new ConfigurationException("Failed to locate partition groups"));
+              LOGGER.warn("Failed to locate primitive partition group(s) via bootstrap nodes. Please ensure partition " +
+                  "groups are configured either locally or remotely and the node is able to reach partition group members.");
+              threadContext.schedule(Duration.ofSeconds(FIBONACCI_NUMBERS[Math.min(attempt, 4)]), () -> bootstrap(attempt + 1, future));
             } else {
               future.complete(null);
             }

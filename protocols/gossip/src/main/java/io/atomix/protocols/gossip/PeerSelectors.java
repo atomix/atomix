@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.gossip;
 
+import com.google.common.annotations.Beta;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 /**
  * Configurable peer selectors.
  */
+@Beta
 public enum PeerSelectors implements PeerSelector {
   RANDOM {
     @Override

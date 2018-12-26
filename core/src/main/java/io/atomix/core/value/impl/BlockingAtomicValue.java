@@ -15,6 +15,7 @@
  */
 package io.atomix.core.value.impl;
 
+import com.google.common.base.Throwables;
 import io.atomix.core.value.AsyncAtomicValue;
 import io.atomix.core.value.AtomicValue;
 import io.atomix.core.value.AtomicValueEventListener;
@@ -86,7 +87,12 @@ public class BlockingAtomicValue<V> extends Synchronous<AsyncAtomicValue<V>> imp
     } catch (TimeoutException e) {
       throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
-      throw new PrimitiveException(e.getCause());
+      Throwable cause = Throwables.getRootCause(e);
+      if (cause instanceof PrimitiveException) {
+        throw (PrimitiveException) cause;
+      } else {
+        throw new PrimitiveException(cause);
+      }
     }
   }
 }

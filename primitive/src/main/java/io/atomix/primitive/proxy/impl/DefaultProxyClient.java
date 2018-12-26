@@ -145,6 +145,15 @@ public class DefaultProxyClient<S> implements ProxyClient<S> {
   }
 
   @Override
+  public CompletableFuture<Void> delete() {
+    return Futures.allOf(partitions.values()
+        .stream()
+        .map(ProxySession::delete)
+        .collect(Collectors.toList()))
+        .thenApply(v -> null);
+  }
+
+  @Override
   public CompletableFuture<Void> close() {
     return Futures.allOf(partitions.values()
         .stream()

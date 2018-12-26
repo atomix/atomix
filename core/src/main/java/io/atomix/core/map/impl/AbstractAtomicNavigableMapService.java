@@ -17,6 +17,7 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.collect.Maps;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.map.AtomicNavigableMapType;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.primitive.PrimitiveType;
@@ -253,15 +254,28 @@ public abstract class AbstractAtomicNavigableMapService<K extends Comparable<K>>
   }
 
   @Override
-  public long subMapIterate(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
-    entryIterators.put(getCurrentIndex(), new AscendingIterator(getCurrentSession().sessionId().id(), fromKey, fromInclusive, toKey, toInclusive));
-    return getCurrentIndex();
+  public IteratorBatch<K> subMapIterateKeys(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return iterate(sessionId -> new AscendingIterator(sessionId, fromKey, fromInclusive, toKey, toInclusive), (k, v) -> k);
   }
 
   @Override
-  public long subMapIterateDescending(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
-    entryIterators.put(getCurrentIndex(), new DescendingIterator(getCurrentSession().sessionId().id(), fromKey, fromInclusive, toKey, toInclusive));
-    return getCurrentIndex();
+  public IteratorBatch<Map.Entry<K, Versioned<byte[]>>> subMapIterateEntries(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return iterate(sessionId -> new AscendingIterator(sessionId, fromKey, fromInclusive, toKey, toInclusive), Maps::immutableEntry);
+  }
+
+  @Override
+  public IteratorBatch<Versioned<byte[]>> subMapIterateValues(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return iterate(sessionId -> new AscendingIterator(sessionId, fromKey, fromInclusive, toKey, toInclusive), (k, v) -> v);
+  }
+
+  @Override
+  public IteratorBatch<K> subMapIterateDescendingKeys(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return iterate(sessionId -> new DescendingIterator(sessionId, fromKey, fromInclusive, toKey, toInclusive), (k, v) -> k);
+  }
+
+  @Override
+  public IteratorBatch<Map.Entry<K, Versioned<byte[]>>> subMapIterateDescendingEntries(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+    return iterate(sessionId -> new DescendingIterator(sessionId, fromKey, fromInclusive, toKey, toInclusive), Maps::immutableEntry);
   }
 
   @Override

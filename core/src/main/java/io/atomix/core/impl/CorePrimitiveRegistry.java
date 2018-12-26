@@ -77,6 +77,11 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   }
 
   @Override
+  public CompletableFuture<Void> deletePrimitive(String name) {
+    return primitives.remove(name).thenApply(v -> null);
+  }
+
+  @Override
   public Collection<PrimitiveInfo> getPrimitives() {
     return primitives.sync().entrySet().stream()
         .map(entry -> new PrimitiveInfo(entry.getKey(), primitiveTypeRegistry.getPrimitiveType(entry.getValue().value())))
@@ -87,7 +92,7 @@ public class CorePrimitiveRegistry implements ManagedPrimitiveRegistry {
   public Collection<PrimitiveInfo> getPrimitives(PrimitiveType primitiveType) {
     return getPrimitives()
         .stream()
-        .filter(primitive -> primitive.type().equals(primitiveType))
+        .filter(primitive -> primitive.type().name().equals(primitiveType.name()))
         .collect(Collectors.toList());
   }
 

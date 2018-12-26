@@ -15,12 +15,14 @@
  */
 package io.atomix.primitive.protocol.map;
 
+import com.google.common.annotations.Beta;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.utils.serializer.Serializer;
 
 /**
  * Navigable map protocol.
  */
+@Beta
 public interface NavigableMapProtocol extends SortedMapProtocol {
 
   /**

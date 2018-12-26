@@ -60,7 +60,7 @@ public abstract class OperationRequest extends SessionRequest {
   /**
    * Operation request builder.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends OperationRequest> extends SessionRequest.Builder<T, U> {
+  public abstract static class Builder<T extends Builder<T, U>, U extends OperationRequest> extends SessionRequest.Builder<T, U> {
     protected long sequence;
     protected PrimitiveOperation operation;
 

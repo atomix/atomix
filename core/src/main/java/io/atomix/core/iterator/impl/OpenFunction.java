@@ -19,13 +19,14 @@ package io.atomix.core.iterator.impl;
  * Iterator open function.
  */
 @FunctionalInterface
-public interface OpenFunction<S> {
+public interface OpenFunction<S, T> {
 
   /**
    * Opens the iterator using the given service proxy.
    *
    * @param service the service proxy
-   * @return
+   * @return the initial iterator batch
    */
-  long open(S service);
+  IteratorBatch<T> open(S service);
+
 }

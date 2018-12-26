@@ -16,37 +16,32 @@
 package io.atomix.core.iterator.impl;
 
 import io.atomix.core.iterator.AsyncIterator;
-import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Partitioned proxy iterator iterator.
  */
 public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
-  private final ProxyClient<S> client;
-  private final Iterator<PartitionId> partitions;
-  private final OpenFunction<S> openFunction;
-  private final NextFunction<S, T> nextFunction;
-  private final CloseFunction<S> closeFunction;
+  private final Iterator<AsyncIterator<T>> partitions;
   private volatile AsyncIterator<T> iterator;
   private AtomicBoolean closed = new AtomicBoolean();
 
   public PartitionedProxyIterator(
       ProxyClient<S> client,
-      OpenFunction<S> openFunction,
+      OpenFunction<S, T> openFunction,
       NextFunction<S, T> nextFunction,
       CloseFunction<S> closeFunction) {
-    this.client = client;
-    this.partitions = client.getPartitionIds().iterator();
-    this.openFunction = openFunction;
-    this.nextFunction = nextFunction;
-    this.closeFunction = closeFunction;
-    iterator = new ProxyIterator<>(client, partitions.next(), openFunction, nextFunction, closeFunction);
+    this.partitions = client.getPartitionIds().stream()
+        .<AsyncIterator<T>>map(partitionId -> new ProxyIterator<>(client, partitionId, openFunction, nextFunction, closeFunction))
+        .collect(Collectors.toList())
+        .iterator();
+    iterator = partitions.next();
   }
 
   @Override
@@ -58,7 +53,7 @@ public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
               if (closed.get()) {
                 return Futures.exceptionalFuture(new IllegalStateException("Iterator closed"));
               }
-              iterator = new ProxyIterator<>(client, partitions.next(), openFunction, nextFunction, closeFunction);
+              iterator = partitions.next();
               return hasNext();
             }
             return CompletableFuture.completedFuture(false);

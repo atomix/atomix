@@ -20,7 +20,6 @@ import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.set.impl.DefaultDistributedSetBuilder;
 import io.atomix.core.set.impl.DefaultDistributedSetService;
-import io.atomix.core.set.impl.DistributedSetResource;
 import io.atomix.core.set.impl.SetUpdate;
 import io.atomix.core.transaction.TransactionId;
 import io.atomix.core.transaction.TransactionLog;
@@ -29,7 +28,6 @@ import io.atomix.core.transaction.impl.PrepareResult;
 import io.atomix.core.transaction.impl.RollbackResult;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Namespace;
@@ -84,12 +82,6 @@ public class DistributedSetType<E> implements PrimitiveType<DistributedSetBuilde
   @Override
   public PrimitiveService newService(ServiceConfig config) {
     return new DefaultDistributedSetService<>();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(DistributedSet<E> primitive) {
-    return new DistributedSetResource((AsyncDistributedSet<String>) primitive.async());
   }
 
   @Override

@@ -16,7 +16,6 @@
 package io.atomix.core.map;
 
 import io.atomix.core.iterator.impl.IteratorBatch;
-import io.atomix.core.map.impl.AtomicMapResource;
 import io.atomix.core.map.impl.DefaultAtomicMapBuilder;
 import io.atomix.core.map.impl.DefaultAtomicMapService;
 import io.atomix.core.map.impl.MapEntryUpdateResult;
@@ -28,7 +27,6 @@ import io.atomix.core.transaction.impl.PrepareResult;
 import io.atomix.core.transaction.impl.RollbackResult;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Namespace;
@@ -94,12 +92,6 @@ public class AtomicMapType<K, V> implements PrimitiveType<AtomicMapBuilder<K, V>
   @Override
   public AtomicMapConfig newConfig() {
     return new AtomicMapConfig();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(AtomicMap<K, V> primitive) {
-    return new AtomicMapResource((AsyncAtomicMap<String, String>) primitive.async());
   }
 
   @Override

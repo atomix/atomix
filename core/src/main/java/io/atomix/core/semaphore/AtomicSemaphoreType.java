@@ -15,13 +15,11 @@
  */
 package io.atomix.core.semaphore;
 
-import io.atomix.core.semaphore.impl.AtomicSemaphoreResource;
 import io.atomix.core.semaphore.impl.AtomicSemaphoreServiceConfig;
 import io.atomix.core.semaphore.impl.DefaultAtomicSemaphoreBuilder;
 import io.atomix.core.semaphore.impl.DefaultAtomicSemaphoreService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Namespace;
@@ -74,11 +72,6 @@ public class AtomicSemaphoreType implements PrimitiveType<AtomicSemaphoreBuilder
   @Override
   public AtomicSemaphoreBuilder newBuilder(String name, AtomicSemaphoreConfig config, PrimitiveManagementService managementService) {
     return new DefaultAtomicSemaphoreBuilder(name, config, managementService);
-  }
-
-  @Override
-  public PrimitiveResource newResource(AtomicSemaphore primitive) {
-    return new AtomicSemaphoreResource(primitive.async());
   }
 
   @Override

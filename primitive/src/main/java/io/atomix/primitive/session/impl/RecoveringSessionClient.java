@@ -18,6 +18,7 @@ package io.atomix.primitive.session.impl;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.event.EventType;
@@ -26,6 +27,7 @@ import io.atomix.primitive.operation.PrimitiveOperation;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.session.SessionClient;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.OrderedFuture;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -37,6 +39,7 @@ import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -117,7 +120,7 @@ public class RecoveringSessionClient implements SessionClient {
    */
   private synchronized void onStateChange(PrimitiveState state) {
     if (this.state != state) {
-      if (state == PrimitiveState.CLOSED) {
+      if (state == PrimitiveState.EXPIRED) {
         if (connected) {
           onStateChange(PrimitiveState.SUSPENDED);
           recover();
@@ -130,6 +133,10 @@ public class RecoveringSessionClient implements SessionClient {
         log.debug("State changed: {}", state);
         this.state = state;
         stateChangeListeners.forEach(l -> l.accept(state));
+        if (state == PrimitiveState.CLOSED) {
+          connectFuture = Futures.exceptionalFuture(new PrimitiveException.ClosedSession());
+          session = null;
+        }
       }
     }
   }
@@ -224,15 +231,24 @@ public class RecoveringSessionClient implements SessionClient {
 
   @Override
   public CompletableFuture<Void> close() {
+    return close(SessionClient::close);
+  }
+
+  @Override
+  public CompletableFuture<Void> delete() {
+    return close(SessionClient::delete);
+  }
+
+  private CompletableFuture<Void> close(Function<SessionClient, CompletableFuture<Void>> closeFunction) {
     if (closeFuture == null) {
       synchronized (this) {
         if (closeFuture == null) {
           connected = false;
           SessionClient session = this.session;
           if (session != null) {
-            closeFuture = session.close();
+            closeFuture = closeFunction.apply(session);
           } else if (closeFuture != null) {
-            closeFuture = connectFuture.thenCompose(c -> c.close());
+            closeFuture = connectFuture.thenCompose(closeFunction);
           } else {
             closeFuture = CompletableFuture.completedFuture(null);
           }

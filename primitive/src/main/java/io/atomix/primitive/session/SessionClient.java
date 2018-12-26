@@ -127,6 +127,13 @@ public interface SessionClient {
   CompletableFuture<Void> close();
 
   /**
+   * Closes the session and deletes the service.
+   *
+   * @return a future to be completed once the service has been deleted
+   */
+  CompletableFuture<Void> delete();
+
+  /**
    * Partition proxy builder.
    */
   abstract class Builder implements io.atomix.utils.Builder<SessionClient> {

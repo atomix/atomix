@@ -222,6 +222,18 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
     }
 
     /**
+     * Sets the maximum entry size in bytes, returning the builder for method chaining.
+     *
+     * @param maxEntrySize the maximum entry size in bytes
+     * @return the storage builder
+     * @throws IllegalArgumentException if the {@code maxEntrySize} is not positive
+     */
+    public Builder withMaxEntrySize(int maxEntrySize) {
+      journalBuilder.withMaxEntrySize(maxEntrySize);
+      return this;
+    }
+
+    /**
      * Sets the maximum number of allows entries per segment, returning the builder for method chaining.
      * <p>
      * The maximum entry count dictates when logs should roll over to new segments. As entries are written to
@@ -234,7 +246,9 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
      * @return The storage builder.
      * @throws IllegalArgumentException If the {@code maxEntriesPerSegment} not greater than the default max entries per
      *                                  segment
+     * @deprecated since 3.0.2
      */
+    @Deprecated
     public Builder withMaxEntriesPerSegment(int maxEntriesPerSegment) {
       journalBuilder.withMaxEntriesPerSegment(maxEntriesPerSegment);
       return this;

@@ -290,6 +290,9 @@ public class PassiveRole extends InactiveRole {
     try {
       Indexed<RaftLogEntry> indexed = writer.append(entry);
       log.trace("Appended {}", indexed);
+    } catch (StorageException.TooLarge e) {
+      log.warn("Entry size exceeds maximum allowed bytes. Ensure Raft storage configuration is consistent on all nodes!");
+      return false;
     } catch (StorageException.OutOfDiskSpace e) {
       log.trace("Append failed: {}", e);
       raft.getServiceManager().compact();
@@ -473,11 +476,21 @@ public class PassiveRole extends InactiveRole {
     logRequest(request);
     updateTermAndLeader(request.term(), request.leader());
 
+    log.debug("Received snapshot {} chunk {} from {}", request.snapshotIndex(), request.chunkOffset(), request.leader());
+
     // If the request is for a lesser term, reject the request.
     if (request.term() < raft.getTerm()) {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)
           .withError(RaftError.Type.ILLEGAL_MEMBER_STATE, "Request term is less than the local term " + request.term())
+          .build()));
+    }
+
+    // If the index has already been applied, we have enough state to populate the state machine up to this index.
+    // Skip the snapshot and response successfully.
+    if (raft.getLastApplied() > request.snapshotIndex()) {
+      return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
+          .withStatus(RaftResponse.Status.OK)
           .build()));
     }
 
@@ -497,6 +510,7 @@ public class PassiveRole extends InactiveRole {
     // and so snapshots aren't simply sent at the beginning of the follower's log, but rather the
     // leader dictates when a snapshot needs to be sent.
     if (pendingSnapshot != null && request.snapshotIndex() != pendingSnapshot.snapshot().index()) {
+      log.debug("Rolling back snapshot {}", pendingSnapshot.snapshot().index());
       pendingSnapshot.rollback();
       pendingSnapshot = null;
     }
@@ -511,7 +525,7 @@ public class PassiveRole extends InactiveRole {
             .build()));
       }
 
-      Snapshot snapshot = raft.getSnapshotStore().newSnapshot(
+      Snapshot snapshot = raft.getSnapshotStore().newTemporarySnapshot(
           request.snapshotIndex(),
           WallClockTimestamp.from(request.snapshotTimestamp()));
       pendingSnapshot = new PendingSnapshot(snapshot);
@@ -538,6 +552,7 @@ public class PassiveRole extends InactiveRole {
 
     // If the snapshot is complete, store the snapshot and reset state, otherwise update the next snapshot offset.
     if (request.complete()) {
+      log.debug("Committing snapshot {}", pendingSnapshot.snapshot().index());
       pendingSnapshot.commit();
       pendingSnapshot = null;
     } else {
@@ -780,7 +795,7 @@ public class PassiveRole extends InactiveRole {
      * Commits the snapshot to disk.
      */
     public void commit() {
-      snapshot.complete();
+      snapshot.persist().complete();
     }
 
     /**

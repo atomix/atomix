@@ -72,9 +72,9 @@ public class RaftSessionInvokerTest {
 
     RaftSessionInvoker submitter = new RaftSessionInvoker(connection, mock(RaftSessionConnection.class), state, new RaftSessionSequencer(state), manager, threadContext);
     assertArrayEquals(submitter.invoke(operation(COMMAND, HeapBytes.EMPTY)).get(), "Hello world!".getBytes());
-    assertEquals(state.getCommandRequest(), 1);
-    assertEquals(state.getCommandResponse(), 1);
-    assertEquals(state.getResponseIndex(), 10);
+    assertEquals(1, state.getCommandRequest());
+    assertEquals(1, state.getCommandResponse());
+    assertEquals(10, state.getResponseIndex());
   }
 
   /**
@@ -105,9 +105,9 @@ public class RaftSessionInvokerTest {
       .withResult("Hello world again!".getBytes())
       .build());
 
-    assertEquals(state.getCommandRequest(), 2);
-    assertEquals(state.getCommandResponse(), 0);
-    assertEquals(state.getResponseIndex(), 1);
+    assertEquals(2, state.getCommandRequest());
+    assertEquals(0, state.getCommandResponse());
+    assertEquals(1, state.getResponseIndex());
 
     assertFalse(result1.isDone());
     assertFalse(result2.isDone());
@@ -123,9 +123,9 @@ public class RaftSessionInvokerTest {
     assertTrue(result2.isDone());
     assertTrue(Arrays.equals(result2.get(), "Hello world again!".getBytes()));
 
-    assertEquals(state.getCommandRequest(), 2);
-    assertEquals(state.getCommandResponse(), 2);
-    assertEquals(state.getResponseIndex(), 10);
+    assertEquals(2, state.getCommandRequest());
+    assertEquals(2, state.getCommandResponse());
+    assertEquals(10, state.getResponseIndex());
   }
 
   /**
@@ -147,7 +147,7 @@ public class RaftSessionInvokerTest {
 
     RaftSessionInvoker submitter = new RaftSessionInvoker(mock(RaftSessionConnection.class), connection, state, new RaftSessionSequencer(state), manager, threadContext);
     assertTrue(Arrays.equals(submitter.invoke(operation(QUERY)).get(), "Hello world!".getBytes()));
-    assertEquals(state.getResponseIndex(), 10);
+    assertEquals(10, state.getResponseIndex());
   }
 
   /**
@@ -178,7 +178,7 @@ public class RaftSessionInvokerTest {
       .withResult("Hello world again!".getBytes())
       .build());
 
-    assertEquals(state.getResponseIndex(), 1);
+    assertEquals(1, state.getResponseIndex());
 
     assertFalse(result1.isDone());
     assertFalse(result2.isDone());
@@ -194,7 +194,7 @@ public class RaftSessionInvokerTest {
     assertTrue(result2.isDone());
     assertTrue(Arrays.equals(result2.get(), "Hello world again!".getBytes()));
 
-    assertEquals(state.getResponseIndex(), 10);
+    assertEquals(10, state.getResponseIndex());
   }
 
   /**
@@ -219,7 +219,7 @@ public class RaftSessionInvokerTest {
     CompletableFuture<byte[]> result1 = submitter.invoke(operation(QUERY));
     CompletableFuture<byte[]> result2 = submitter.invoke(operation(QUERY));
 
-    assertEquals(state.getResponseIndex(), 1);
+    assertEquals(1, state.getResponseIndex());
 
     assertFalse(result1.isDone());
     assertFalse(result2.isDone());
@@ -235,7 +235,7 @@ public class RaftSessionInvokerTest {
     assertTrue(result2.isDone());
     assertTrue(Arrays.equals(result2.get(), "Hello world!".getBytes()));
 
-    assertEquals(state.getResponseIndex(), 10);
+    assertEquals(10, state.getResponseIndex());
   }
 
   /**
@@ -256,7 +256,7 @@ public class RaftSessionInvokerTest {
 
     CompletableFuture<byte[]> result = submitter.invoke(operation(COMMAND));
 
-    assertEquals(state.getResponseIndex(), 1);
+    assertEquals(1, state.getResponseIndex());
 
     assertFalse(result.isDone());
 
@@ -284,7 +284,7 @@ public class RaftSessionInvokerTest {
 
     CompletableFuture<byte[]> result = submitter.invoke(operation(QUERY));
 
-    assertEquals(state.getResponseIndex(), 1);
+    assertEquals(1, state.getResponseIndex());
 
     assertFalse(result.isDone());
 

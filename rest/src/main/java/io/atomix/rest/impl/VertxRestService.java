@@ -24,18 +24,17 @@ import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.core.Atomix;
 import io.atomix.core.PrimitivesService;
-import io.atomix.core.utils.EventManager;
+import io.atomix.primitive.PrimitiveFactory;
 import io.atomix.primitive.config.PrimitiveConfig;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
+import io.atomix.rest.AtomixResource;
 import io.atomix.rest.ManagedRestService;
 import io.atomix.rest.RestService;
-import io.atomix.rest.resources.ClusterResource;
-import io.atomix.rest.resources.EventsResource;
-import io.atomix.rest.resources.MessagesResource;
-import io.atomix.rest.resources.PrimitivesResource;
-import io.atomix.rest.resources.StatusResource;
+import io.atomix.utils.misc.StringUtils;
 import io.atomix.utils.net.Address;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import org.jboss.resteasy.plugins.server.vertx.VertxRequestHandler;
@@ -90,22 +89,30 @@ public class VertxRestService implements ManagedRestService {
     deployment.getDispatcher().getDefaultContextObjects()
         .put(ClusterEventService.class, atomix.getEventService());
     deployment.getDispatcher().getDefaultContextObjects()
+        .put(PrimitiveFactory.class, atomix.getPrimitivesService());
+    deployment.getDispatcher().getDefaultContextObjects()
         .put(PrimitivesService.class, atomix.getPrimitivesService());
     deployment.getDispatcher().getDefaultContextObjects()
         .put(EventManager.class, new EventManager());
 
-    deployment.getRegistry().addPerInstanceResource(StatusResource.class);
-    deployment.getRegistry().addPerInstanceResource(ClusterResource.class);
-    deployment.getRegistry().addPerInstanceResource(EventsResource.class);
-    deployment.getRegistry().addPerInstanceResource(MessagesResource.class);
-    deployment.getRegistry().addPerInstanceResource(PrimitivesResource.class);
+    final ClassLoader classLoader = atomix.getClass().getClassLoader();
+    final String[] whitelistPackages = StringUtils.split(System.getProperty("io.atomix.whitelistPackages"), ",");
+    final ClassGraph classGraph = whitelistPackages != null ?
+        new ClassGraph().enableAnnotationInfo().whitelistPackages(whitelistPackages).addClassLoader(classLoader) :
+        new ClassGraph().enableAnnotationInfo().addClassLoader(classLoader);
+
+    try (final ScanResult scanResult = classGraph.scan()) {
+      scanResult.getClassesWithAnnotation(AtomixResource.class.getName()).forEach(classInfo -> {
+        deployment.getRegistry().addPerInstanceResource(classInfo.loadClass(), "/v1");
+      });
+    }
 
     deployment.getDispatcher().getProviderFactory().register(new JacksonProvider(createObjectMapper()));
 
     server.requestHandler(new VertxRequestHandler(vertx, deployment));
 
     CompletableFuture<RestService> future = new CompletableFuture<>();
-    server.listen(address.port(), address.address().getHostAddress(), result -> {
+    server.listen(address.port(), address.address(true).getHostAddress(), result -> {
       if (result.succeeded()) {
         open.set(true);
         LOGGER.info("Started");

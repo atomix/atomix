@@ -15,12 +15,10 @@
  */
 package io.atomix.core.lock;
 
-import io.atomix.core.lock.impl.AtomicLockResource;
 import io.atomix.core.lock.impl.DefaultAtomicLockBuilder;
 import io.atomix.core.lock.impl.DefaultAtomicLockService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 
@@ -50,12 +48,6 @@ public class AtomicLockType implements PrimitiveType<AtomicLockBuilder, AtomicLo
   @Override
   public PrimitiveService newService(ServiceConfig config) {
     return new DefaultAtomicLockService();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(AtomicLock primitive) {
-    return new AtomicLockResource(primitive.async());
   }
 
   @Override

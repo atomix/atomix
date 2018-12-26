@@ -15,6 +15,8 @@
  */
 package io.atomix.rest.resources;
 
+import io.atomix.rest.AtomixResource;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
@@ -22,8 +24,9 @@ import javax.ws.rs.core.Response;
 /**
  * Status resource.
  */
+@AtomixResource
 @Path("/status")
-public class StatusResource extends AbstractRestResource {
+public class StatusResource {
   @GET
   public Response getStatus() {
     return Response.ok().build();

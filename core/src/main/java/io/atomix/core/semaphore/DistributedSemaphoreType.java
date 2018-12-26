@@ -18,10 +18,8 @@ package io.atomix.core.semaphore;
 import io.atomix.core.semaphore.impl.AtomicSemaphoreServiceConfig;
 import io.atomix.core.semaphore.impl.DefaultDistributedSemaphoreBuilder;
 import io.atomix.core.semaphore.impl.DefaultDistributedSemaphoreService;
-import io.atomix.core.semaphore.impl.DistributedSemaphoreResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Namespace;
@@ -74,11 +72,6 @@ public class DistributedSemaphoreType implements PrimitiveType<DistributedSemaph
   @Override
   public DistributedSemaphoreBuilder newBuilder(String name, DistributedSemaphoreConfig config, PrimitiveManagementService managementService) {
     return new DefaultDistributedSemaphoreBuilder(name, config, managementService);
-  }
-
-  @Override
-  public PrimitiveResource newResource(DistributedSemaphore primitive) {
-    return new DistributedSemaphoreResource(primitive.async());
   }
 
   @Override

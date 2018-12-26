@@ -19,10 +19,12 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigList;
 import com.typesafe.config.ConfigMemorySize;
 import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigParseOptions;
 import com.typesafe.config.ConfigValue;
 import io.atomix.utils.Named;
 import io.atomix.utils.memory.MemorySize;
@@ -74,9 +76,9 @@ public class ConfigMapper {
     Config config = null;
     for (File file : files) {
       if (config == null) {
-        config = ConfigFactory.parseFile(file);
+        config = ConfigFactory.parseFile(file, ConfigParseOptions.defaults().setAllowMissing(false));
       } else {
-        config = config.withFallback(ConfigFactory.parseFile(file));
+        config = config.withFallback(ConfigFactory.parseFile(file, ConfigParseOptions.defaults().setAllowMissing(false)));
       }
     }
 
@@ -132,7 +134,7 @@ public class ConfigMapper {
     return map(config, null, null, clazz);
   }
 
-  protected <T> T newInstance(Config config, Class<T> clazz) {
+  protected <T> T newInstance(Config config, String key, Class<T> clazz) {
     try {
       return clazz.newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
@@ -148,7 +150,7 @@ public class ConfigMapper {
    */
   @SuppressWarnings("unchecked")
   protected <T> T map(Config config, String path, String name, Class<T> clazz) {
-    T instance = newInstance(config, clazz);
+    T instance = newInstance(config, name, clazz);
 
     // Map config property names to bean properties.
     Map<String, String> propertyNames = new HashMap<>();
@@ -246,13 +248,41 @@ public class ConfigMapper {
 
   protected Object getValue(Class<?> beanClass, Type parameterType, Class<?> parameterClass, Config config, String configPath, String configPropName) {
     if (parameterClass == Boolean.class || parameterClass == boolean.class) {
-      return config.getBoolean(configPropName);
+      try {
+        return config.getBoolean(configPropName);
+      } catch (ConfigException.WrongType e) {
+        return Boolean.parseBoolean(config.getString(configPropName));
+      }
     } else if (parameterClass == Integer.class || parameterClass == int.class) {
-      return config.getInt(configPropName);
+      try {
+        return config.getInt(configPropName);
+      } catch (ConfigException.WrongType e) {
+        try {
+          return Integer.parseInt(config.getString(configPropName));
+        } catch (NumberFormatException e1) {
+          throw e;
+        }
+      }
     } else if (parameterClass == Double.class || parameterClass == double.class) {
-      return config.getDouble(configPropName);
+      try {
+        return config.getDouble(configPropName);
+      } catch (ConfigException.WrongType e) {
+        try {
+          return Double.parseDouble(config.getString(configPropName));
+        } catch (NumberFormatException e1) {
+          throw e;
+        }
+      }
     } else if (parameterClass == Long.class || parameterClass == long.class) {
-      return config.getLong(configPropName);
+      try {
+        return config.getLong(configPropName);
+      } catch (ConfigException.WrongType e) {
+        try {
+          return Long.parseLong(config.getString(configPropName));
+        } catch (NumberFormatException e1) {
+          throw e;
+        }
+      }
     } else if (parameterClass == String.class) {
       return config.getString(configPropName);
     } else if (parameterClass == Duration.class) {
@@ -335,13 +365,56 @@ public class ConfigMapper {
     }
 
     if (elementType == Boolean.class) {
-      return config.getBooleanList(configPropName);
+      try {
+        return config.getBooleanList(configPropName);
+      } catch (ConfigException.WrongType e) {
+        return config.getStringList(configPropName)
+            .stream()
+            .map(Boolean::parseBoolean)
+            .collect(Collectors.toList());
+      }
     } else if (elementType == Integer.class) {
-      return config.getIntList(configPropName);
+      try {
+        return config.getIntList(configPropName);
+      } catch (ConfigException.WrongType e) {
+        return config.getStringList(configPropName)
+            .stream()
+            .map(value -> {
+              try {
+                return Integer.parseInt(value);
+              } catch (NumberFormatException e2) {
+                throw e;
+              }
+            }).collect(Collectors.toList());
+      }
     } else if (elementType == Double.class) {
-      return config.getDoubleList(configPropName);
+      try {
+        return config.getDoubleList(configPropName);
+      } catch (ConfigException.WrongType e) {
+        return config.getStringList(configPropName)
+            .stream()
+            .map(value -> {
+              try {
+                return Double.parseDouble(value);
+              } catch (NumberFormatException e2) {
+                throw e;
+              }
+            }).collect(Collectors.toList());
+      }
     } else if (elementType == Long.class) {
-      return config.getLongList(configPropName);
+      try {
+        return config.getLongList(configPropName);
+      } catch (ConfigException.WrongType e) {
+        return config.getStringList(configPropName)
+            .stream()
+            .map(value -> {
+              try {
+                return Long.parseLong(value);
+              } catch (NumberFormatException e2) {
+                throw e;
+              }
+            }).collect(Collectors.toList());
+      }
     } else if (elementType == String.class) {
       return config.getStringList(configPropName);
     } else if (elementType == Duration.class) {

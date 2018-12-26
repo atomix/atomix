@@ -72,6 +72,11 @@ public abstract class TransactionalSetParticipant<E> implements AsyncTransaction
   }
 
   @Override
+  public CompletableFuture<Void> delete() {
+    return set.delete();
+  }
+
+  @Override
   public TransactionalSet<E> sync(Duration operationTimeout) {
     return new BlockingTransactionalSet<>(this, operationTimeout.toMillis());
   }

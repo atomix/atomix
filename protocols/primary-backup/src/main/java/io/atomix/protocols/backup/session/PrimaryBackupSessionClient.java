@@ -42,12 +42,14 @@ import io.atomix.protocols.backup.protocol.PrimaryBackupClientProtocol;
 import io.atomix.protocols.backup.protocol.PrimaryBackupResponse.Status;
 import io.atomix.protocols.backup.protocol.PrimitiveDescriptor;
 import io.atomix.utils.concurrent.ComposableFuture;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.logging.ContextualLoggerFactory;
 import io.atomix.utils.logging.LoggerContext;
 import org.slf4j.Logger;
 
 import java.net.ConnectException;
+import java.net.SocketException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
@@ -211,7 +213,7 @@ public class PrimaryBackupSessionClient implements SessionClient {
           execute(operation).whenComplete(future);
         } else {
           Throwable cause = Throwables.getRootCause(error);
-          if (cause instanceof PrimitiveException.Unavailable || cause instanceof TimeoutException) {
+          if (cause instanceof PrimitiveException.Unavailable || cause instanceof SocketException || cause instanceof TimeoutException) {
             threadContext.schedule(Duration.ofMillis(RETRY_DELAY), () -> execute(operation, attempt + 1, future));
           } else {
             future.completeExceptionally(error);
@@ -325,6 +327,11 @@ public class PrimaryBackupSessionClient implements SessionClient {
       future.complete(null);
     }
     return future;
+  }
+
+  @Override
+  public CompletableFuture<Void> delete() {
+    return close().thenCompose(v -> Futures.exceptionalFuture(new UnsupportedOperationException("Delete not supported by primary-backup protocol")));
   }
 
   /**

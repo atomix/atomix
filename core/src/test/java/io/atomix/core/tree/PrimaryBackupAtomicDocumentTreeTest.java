@@ -21,7 +21,7 @@ import io.atomix.protocols.backup.MultiPrimaryProtocol;
 /**
  * Document tree test using the primary-backup protocol.
  */
-public class PrimaryBackupAtomicDocumentTreeTest extends DocumentTreeTest {
+public class PrimaryBackupAtomicDocumentTreeTest extends AtomicDocumentTreeTest {
   @Override
   protected ProxyProtocol protocol() {
     return MultiPrimaryProtocol.builder()

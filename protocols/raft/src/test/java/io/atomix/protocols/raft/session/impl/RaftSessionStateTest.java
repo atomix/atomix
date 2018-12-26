@@ -39,12 +39,12 @@ public class RaftSessionStateTest {
     String sessionName = UUID.randomUUID().toString();
     RaftSessionState state = new RaftSessionState("test", SessionId.from(1), sessionName, TestPrimitiveType.instance(), 1000);
     assertEquals(state.getSessionId(), SessionId.from(1));
-    assertEquals(state.getPrimitiveName(), sessionName);
-    assertEquals(state.getPrimitiveType().name(), "test");
-    assertEquals(state.getCommandRequest(), 0);
-    assertEquals(state.getCommandResponse(), 0);
-    assertEquals(state.getResponseIndex(), 1);
-    assertEquals(state.getEventIndex(), 1);
+    assertEquals(sessionName, state.getPrimitiveName());
+    assertEquals("test", state.getPrimitiveType().name());
+    assertEquals(0, state.getCommandRequest());
+    assertEquals(0, state.getCommandResponse());
+    assertEquals(1, state.getResponseIndex());
+    assertEquals(1, state.getEventIndex());
   }
 
   /**
@@ -54,20 +54,20 @@ public class RaftSessionStateTest {
   public void testSessionState() {
     RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
     assertEquals(state.getSessionId(), SessionId.from(1));
-    assertEquals(state.getResponseIndex(), 1);
-    assertEquals(state.getEventIndex(), 1);
+    assertEquals(1, state.getResponseIndex());
+    assertEquals(1, state.getEventIndex());
     state.setCommandRequest(2);
-    assertEquals(state.getCommandRequest(), 2);
-    assertEquals(state.nextCommandRequest(), 3);
-    assertEquals(state.getCommandRequest(), 3);
+    assertEquals(2, state.getCommandRequest());
+    assertEquals(3, state.nextCommandRequest());
+    assertEquals(3, state.getCommandRequest());
     state.setCommandResponse(3);
-    assertEquals(state.getCommandResponse(), 3);
+    assertEquals(3, state.getCommandResponse());
     state.setResponseIndex(4);
-    assertEquals(state.getResponseIndex(), 4);
+    assertEquals(4, state.getResponseIndex());
     state.setResponseIndex(3);
-    assertEquals(state.getResponseIndex(), 4);
+    assertEquals(4, state.getResponseIndex());
     state.setEventIndex(5);
-    assertEquals(state.getEventIndex(), 5);
+    assertEquals(5, state.getEventIndex());
   }
 
 }

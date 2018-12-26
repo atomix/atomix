@@ -15,10 +15,18 @@
  */
 package io.atomix.core.barrier;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
+import org.junit.Test;
 
 import java.time.Duration;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Raft distributed cyclic barrier test.
@@ -31,5 +39,30 @@ public class RaftDistributedCyclicBarrierTest extends DistributedCyclicBarrierTe
         .withMaxTimeout(Duration.ofSeconds(1))
         .withMaxRetries(5)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    DistributedCyclicBarrier barrier;
+    barrier = atomix().cyclicBarrierBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+
+    int count = client.getPrimitives(barrier.type()).size();
+    barrier.delete();
+    assertEquals(count - 1, client.getPrimitives(barrier.type()).size());
+
+    try {
+      barrier.getParties();
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    barrier = atomix().cyclicBarrierBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertEquals(count, client.getPrimitives(barrier.type()).size());
   }
 }

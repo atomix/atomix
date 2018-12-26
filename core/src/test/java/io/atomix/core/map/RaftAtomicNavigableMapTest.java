@@ -15,8 +15,14 @@
  */
 package io.atomix.core.map;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Raft consistent tree map test.
@@ -27,5 +33,30 @@ public class RaftAtomicNavigableMapTest extends AtomicNavigableMapTest {
     return MultiRaftProtocol.builder()
         .withMaxRetries(5)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    AtomicNavigableMap<String, String> map;
+    map = atomix().<String, String>atomicNavigableMapBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+
+    int count = client.getPrimitives(map.type()).size();
+    map.delete();
+    assertEquals(count - 1, client.getPrimitives(map.type()).size());
+
+    try {
+      map.get("foo");
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    map = atomix().<String, String>atomicNavigableMapBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertEquals(count, client.getPrimitives(map.type()).size());
   }
 }

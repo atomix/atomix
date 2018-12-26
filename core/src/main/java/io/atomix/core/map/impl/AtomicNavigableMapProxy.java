@@ -257,6 +257,11 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
     public CompletableFuture<Void> close() {
       return AtomicNavigableMapProxy.this.close();
     }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return AtomicNavigableMapProxy.this.delete();
+    }
   }
 
   private class KeySet extends SubSet implements AsyncDistributedNavigableSet<K> {
@@ -306,7 +311,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.subMapIterate(fromKey, fromInclusive, toKey, toInclusive),
+          service -> service.subMapIterateKeys(fromKey, fromInclusive, toKey, toInclusive),
           AtomicTreeMapService::nextKeys,
           AtomicTreeMapService::closeKeys);
     }
@@ -316,7 +321,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.subMapIterateDescending(fromKey, fromInclusive, toKey, toInclusive),
+          service -> service.subMapIterateDescendingKeys(fromKey, fromInclusive, toKey, toInclusive),
           AtomicTreeMapService::nextKeys,
           AtomicTreeMapService::closeKeys);
     }
@@ -510,6 +515,11 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
     @Override
     public CompletableFuture<Void> close() {
       return AtomicNavigableMapProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return AtomicNavigableMapProxy.this.delete();
     }
 
     @Override
@@ -906,7 +916,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.subMapIterate(fromKey, fromInclusive, toKey, toInclusive),
+          service -> service.subMapIterateEntries(fromKey, fromInclusive, toKey, toInclusive),
           AtomicTreeMapService::nextEntries,
           AtomicTreeMapService::closeEntries);
     }
@@ -929,6 +939,11 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
     @Override
     public CompletableFuture<Void> close() {
       return AtomicNavigableMapProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return AtomicNavigableMapProxy.this.delete();
     }
 
     @Override
@@ -1030,7 +1045,7 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
       return new ProxyIterator<>(
           getProxyClient(),
           getProxyClient().getPartitionId(name()),
-          service -> service.subMapIterate(fromKey, fromInclusive, toKey, toInclusive),
+          service -> service.subMapIterateValues(fromKey, fromInclusive, toKey, toInclusive),
           AtomicTreeMapService::nextValues,
           AtomicTreeMapService::closeValues);
     }

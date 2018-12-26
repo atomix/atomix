@@ -1,7 +1,26 @@
 language: java
+
+sudo: false
+
+services:
+  - docker
+
 jdk:
-  - oraclejdk8
-  - openjdk8
+- oraclejdk8
+- openjdk8
+- openjdk10
+- openjdk11
+
+matrix:
+  allow_failures:
+  - jdk: openjdk10
+  - jdk: openjdk11
+
+addons:
+  sonarcloud:
+    organization: "atomix"
+    token:
+      secure: "lGc/yOj/HBugU0jPSx/mu6TnJHkDRJ4PVVP3rDUk9gzvEpa6P/txt/focXtgQ4L5NToEwA85cFQIRLuaxzySFy7+79TxCuhqO9/wj/IjI8i2cQivZCximLiVEl4QEYBKjVIUPcV33PdjE/B2t5YuMB9gBwjBQxAyfT/jum3ny2w="
 
 notifications:
   email: false
@@ -9,14 +28,15 @@ notifications:
 branches:
   only:
     - master
+    - 3.0
 
 install:
-  - ./mvnw clean install -B -V -DskipTests=true -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+  - mvn clean install --batch-mode -V -DskipTests=true -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
 script:
-  - ./mvnw verify -Droot.logging.level=INFO
+  - mvn verify --batch-mode -Droot.logging.level=INFO -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
 after_success:
-  - ./mvnw jacoco:report coveralls:report
+  - mvn jacoco:report coveralls:report sonar:sonar --batch-mode -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
   - bin/ci-push-javadoc.sh
   - bin/ci-deploy-snapshot.sh

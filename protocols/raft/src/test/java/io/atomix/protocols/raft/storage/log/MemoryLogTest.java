@@ -21,6 +21,10 @@ import io.atomix.storage.StorageLevel;
  * Memory log test.
  */
 public class MemoryLogTest extends AbstractLogTest {
+  public MemoryLogTest(int maxSegmentSize, int cacheSize) {
+    super(maxSegmentSize, cacheSize);
+  }
+
   @Override
   protected StorageLevel storageLevel() {
     return StorageLevel.MEMORY;

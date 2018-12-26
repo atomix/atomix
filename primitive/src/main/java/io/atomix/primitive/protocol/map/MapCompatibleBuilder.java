@@ -15,9 +15,12 @@
  */
 package io.atomix.primitive.protocol.map;
 
+import com.google.common.annotations.Beta;
+
 /**
  * Map builder.
  */
+@Beta
 public interface MapCompatibleBuilder<B extends MapCompatibleBuilder<B>> {
 
   /**

@@ -15,8 +15,14 @@
  */
 package io.atomix.core.map;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Raft atomic counter map test.
@@ -27,5 +33,30 @@ public class RaftAtomicCounterMapTest extends AtomicCounterMapTest {
     return MultiRaftProtocol.builder()
         .withMaxRetries(5)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    AtomicCounterMap<String> counterMap;
+    counterMap = atomix().<String>atomicCounterMapBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+
+    int count = client.getPrimitives(counterMap.type()).size();
+    counterMap.delete();
+    assertEquals(count - 1, client.getPrimitives(counterMap.type()).size());
+
+    try {
+      counterMap.get("foo");
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    counterMap = atomix().<String>atomicCounterMapBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertEquals(count, client.getPrimitives(counterMap.type()).size());
   }
 }

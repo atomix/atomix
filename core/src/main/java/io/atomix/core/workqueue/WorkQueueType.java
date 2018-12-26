@@ -15,12 +15,10 @@
  */
 package io.atomix.core.workqueue;
 
-import io.atomix.core.workqueue.impl.DefaultWorkQueueService;
 import io.atomix.core.workqueue.impl.DefaultWorkQueueBuilder;
-import io.atomix.core.workqueue.impl.WorkQueueResource;
+import io.atomix.core.workqueue.impl.DefaultWorkQueueService;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 import io.atomix.utils.serializer.Namespace;
@@ -64,12 +62,6 @@ public class WorkQueueType<E> implements PrimitiveType<WorkQueueBuilder<E>, Work
   @Override
   public PrimitiveService newService(ServiceConfig config) {
     return new DefaultWorkQueueService();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(WorkQueue<E> primitive) {
-    return new WorkQueueResource((AsyncWorkQueue<String>) primitive.async());
   }
 
   @Override

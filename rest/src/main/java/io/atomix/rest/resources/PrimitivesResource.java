@@ -15,48 +15,51 @@
  */
 package io.atomix.rest.resources;
 
+import com.google.common.collect.Maps;
 import io.atomix.core.PrimitivesService;
-import io.atomix.primitive.SyncPrimitive;
-import io.atomix.primitive.config.PrimitiveConfig;
-import io.atomix.primitive.resource.PrimitiveResource;
+import io.atomix.rest.AtomixResource;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
+import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Primitives resource.
  */
-@Path("/v1/primitives")
-public class PrimitivesResource extends AbstractRestResource {
+@AtomixResource
+@Path("/primitives")
+public class PrimitivesResource {
 
-  /**
-   * Returns a primitive resource by name.
-   */
-  @Path("/{name}")
-  @SuppressWarnings("unchecked")
-  public PrimitiveResource getPrimitive(@PathParam("name") String name, @Context PrimitivesService primitives) {
-    SyncPrimitive primitive = primitives.getPrimitive(name);
-    return primitive.type().newResource(primitive);
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getPrimitives(@Context PrimitivesService primitives) {
+    Map<String, PrimitiveInfo> primitivesInfo = primitives.getPrimitives()
+        .stream()
+        .map(info -> Maps.immutableEntry(info.name(), new PrimitiveInfo(info.name(), info.type().name())))
+        .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+    return Response.ok(primitivesInfo).build();
   }
 
-  /**
-   * Creates a new primitive resource.
-   */
-  @POST
-  @Path("/{name}")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @SuppressWarnings("unchecked")
-  public Response createPrimitive(@PathParam("name") String name, PrimitiveConfig<?> config, @Context PrimitivesService primitives) {
-    try {
-      primitives.getPrimitive(name, config.getType(), (PrimitiveConfig) config);
-      return Response.ok().build();
-    } catch (Exception e) {
-      return Response.status(Response.Status.NOT_ACCEPTABLE).build();
+  static class PrimitiveInfo {
+    private String name;
+    private String type;
+
+    PrimitiveInfo(String name, String type) {
+      this.name = name;
+      this.type = type;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public String getType() {
+      return type;
     }
   }
 }

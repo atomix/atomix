@@ -67,13 +67,7 @@ public class MappedBytes extends ByteBufferBytes {
    * @see #allocate(File, int)
    */
   public static MappedBytes allocate(File file, FileChannel.MapMode mode, int size) {
-    try {
-      RandomAccessFile randomAccessFile = new RandomAccessFile(file, parseMode(mode));
-      MappedByteBuffer buffer = randomAccessFile.getChannel().map(mode, 0, size);
-      return new MappedBytes(file, randomAccessFile, buffer, mode);
-    } catch (IOException e) {
-      throw new AtomixIOException(e);
-    }
+    return FileBytes.allocate(file, size).map(0, size, mode);
   }
 
   private final File file;

@@ -22,13 +22,26 @@ import java.util.Iterator;
  * Iterator batch.
  */
 public final class IteratorBatch<T> implements Iterator<T> {
+  private final long id;
   private final int position;
   private final Collection<T> entries;
+  private final boolean complete;
   private transient volatile Iterator<T> iterator;
 
-  public IteratorBatch(int position, Collection<T> entries) {
+  public IteratorBatch(long id, int position, Collection<T> entries, boolean complete) {
+    this.id = id;
     this.position = position;
     this.entries = entries;
+    this.complete = complete;
+  }
+
+  /**
+   * Returns the iterator identifier.
+   *
+   * @return the iterator identifier
+   */
+  public long id() {
+    return id;
   }
 
   /**
@@ -47,6 +60,15 @@ public final class IteratorBatch<T> implements Iterator<T> {
    */
   public Collection<T> entries() {
     return entries;
+  }
+
+  /**
+   * Returns a boolean indicating whether the batch is complete.
+   *
+   * @return indicates whether this batch completes iteration
+   */
+  public boolean complete() {
+    return complete;
   }
 
   private Iterator<T> iterator() {

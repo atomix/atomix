@@ -17,7 +17,6 @@ package io.atomix.core.lock;
 
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.primitive.protocol.ProxyProtocol;
-import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Version;
 import org.junit.Test;
 
@@ -39,14 +38,16 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testLockUnlock() throws Throwable {
-    AsyncAtomicLock lock = atomix().atomicLockBuilder("test-lock-unlock")
+    AtomicLock lock = atomix().atomicLockBuilder("test-lock-unlock")
         .withProtocol(protocol())
-        .build()
-        .async();
-    lock.lock().get(30, TimeUnit.SECONDS);
-    assertTrue(lock.isLocked().get(30, TimeUnit.SECONDS));
-    lock.unlock().get(30, TimeUnit.SECONDS);
-    assertFalse(lock.isLocked().get(30, TimeUnit.SECONDS));
+        .build();
+    Version version = lock.lock();
+    assertTrue(lock.isLocked());
+    assertTrue(lock.isLocked(version));
+    assertFalse(lock.isLocked(new Version(version.value() + 1)));
+    lock.unlock();
+    assertFalse(lock.isLocked());
+    assertFalse(lock.isLocked(version));
   }
 
   /**
@@ -54,18 +55,16 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testReleaseOnClose() throws Throwable {
-    AsyncAtomicLock lock1 = atomix().atomicLockBuilder("test-lock-on-close")
+    AtomicLock lock1 = atomix().atomicLockBuilder("test-lock-on-close")
         .withProtocol(protocol())
-        .build()
-        .async();
-    AsyncAtomicLock lock2 = atomix().atomicLockBuilder("test-lock-on-close")
+        .build();
+    AtomicLock lock2 = atomix().atomicLockBuilder("test-lock-on-close")
         .withProtocol(protocol())
-        .build()
-        .async();
-    lock1.lock().get(30, TimeUnit.SECONDS);
-    CompletableFuture<Version> future = lock2.lock();
+        .build();
+    lock1.lock();
+    CompletableFuture<Version> future = lock2.async().lock();
     lock1.close();
-    future.get(30, TimeUnit.SECONDS);
+    future.get(10, TimeUnit.SECONDS);
   }
 
   /**
@@ -73,18 +72,16 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testTryLockFail() throws Throwable {
-    AsyncAtomicLock lock1 = atomix().atomicLockBuilder("test-try-lock-fail")
+    AtomicLock lock1 = atomix().atomicLockBuilder("test-try-lock-fail")
         .withProtocol(protocol())
-        .build()
-        .async();
-    AsyncAtomicLock lock2 = atomix().atomicLockBuilder("test-try-lock-fail")
+        .build();
+    AtomicLock lock2 = atomix().atomicLockBuilder("test-try-lock-fail")
         .withProtocol(protocol())
-        .build()
-        .async();
+        .build();
 
-    lock1.lock().get(30, TimeUnit.SECONDS);
+    lock1.lock();
 
-    assertFalse(lock2.tryLock().get(30, TimeUnit.SECONDS).isPresent());
+    assertFalse(lock2.tryLock().isPresent());
   }
 
   /**
@@ -92,11 +89,10 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testTryLockSucceed() throws Throwable {
-    AsyncAtomicLock lock = atomix().atomicLockBuilder("test-try-lock-succeed")
+    AtomicLock lock = atomix().atomicLockBuilder("test-try-lock-succeed")
         .withProtocol(protocol())
-        .build()
-        .async();
-    assertTrue(lock.tryLock().get(30, TimeUnit.SECONDS).isPresent());
+        .build();
+    assertTrue(lock.tryLock().isPresent());
   }
 
   /**
@@ -104,18 +100,16 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testTryLockFailWithTimeout() throws Throwable {
-    AsyncAtomicLock lock1 = atomix().atomicLockBuilder("test-try-lock-fail-with-timeout")
+    AtomicLock lock1 = atomix().atomicLockBuilder("test-try-lock-fail-with-timeout")
         .withProtocol(protocol())
-        .build()
-        .async();
-    AsyncAtomicLock lock2 = atomix().atomicLockBuilder("test-try-lock-fail-with-timeout")
+        .build();
+    AtomicLock lock2 = atomix().atomicLockBuilder("test-try-lock-fail-with-timeout")
         .withProtocol(protocol())
-        .build()
-        .async();
+        .build();
 
-    lock1.lock().get(30, TimeUnit.SECONDS);
+    lock1.lock();
 
-    assertFalse(lock2.tryLock(Duration.ofSeconds(1)).get(30, TimeUnit.SECONDS).isPresent());
+    assertFalse(lock2.tryLock(Duration.ofSeconds(1)).isPresent());
   }
 
   /**
@@ -123,20 +117,18 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testTryLockSucceedWithTimeout() throws Throwable {
-    AsyncAtomicLock lock1 = atomix().atomicLockBuilder("test-try-lock-succeed-with-timeout")
+    AtomicLock lock1 = atomix().atomicLockBuilder("test-try-lock-succeed-with-timeout")
         .withProtocol(protocol())
-        .build()
-        .async();
-    AsyncAtomicLock lock2 = atomix().atomicLockBuilder("test-try-lock-succeed-with-timeout")
+        .build();
+    AtomicLock lock2 = atomix().atomicLockBuilder("test-try-lock-succeed-with-timeout")
         .withProtocol(protocol())
-        .build()
-        .async();
+        .build();
 
-    lock1.lock().get(30, TimeUnit.SECONDS);
+    lock1.lock();
 
-    CompletableFuture<Optional<Version>> future = lock2.tryLock(Duration.ofSeconds(1));
-    lock1.unlock().get(30, TimeUnit.SECONDS);
-    assertTrue(future.get(30, TimeUnit.SECONDS).isPresent());
+    CompletableFuture<Optional<Version>> future = lock2.async().tryLock(Duration.ofSeconds(1));
+    lock1.unlock();
+    assertTrue(future.get(10, TimeUnit.SECONDS).isPresent());
   }
 
   /**
@@ -144,19 +136,15 @@ public abstract class AtomicLockTest extends AbstractPrimitiveTest<ProxyProtocol
    */
   @Test
   public void testBlockingUnlock() throws Throwable {
-    AsyncAtomicLock lock1 = atomix().atomicLockBuilder("test-blocking-unlock")
+    AtomicLock lock1 = atomix().atomicLockBuilder("test-blocking-unlock")
         .withProtocol(protocol())
-        .build()
-        .async();
-    AsyncAtomicLock lock2 = atomix().atomicLockBuilder("test-blocking-unlock")
+        .build();
+    AtomicLock lock2 = atomix().atomicLockBuilder("test-blocking-unlock")
         .withProtocol(protocol())
-        .build()
-        .async();
+        .build();
 
-    lock1.lock().thenRun(() -> {
-      Futures.get(lock1.unlock());
-    }).get(30, TimeUnit.SECONDS);
+    lock1.async().lock().thenRun(() -> lock1.unlock());
 
-    lock2.lock().get(30, TimeUnit.SECONDS);
+    lock2.lock();
   }
 }

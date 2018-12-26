@@ -15,6 +15,7 @@
  */
 package io.atomix.core.semaphore.impl;
 
+import com.google.common.base.Throwables;
 import io.atomix.core.semaphore.AsyncAtomicSemaphore;
 import io.atomix.core.semaphore.AtomicSemaphore;
 import io.atomix.core.semaphore.QueueStatus;
@@ -140,7 +141,12 @@ public class BlockingAtomicSemaphore extends Synchronous<AsyncAtomicSemaphore> i
       throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
       needRelease.set(acquirePermits > 0);
-      throw new PrimitiveException(e.getCause());
+      Throwable cause = Throwables.getRootCause(e);
+      if (cause instanceof PrimitiveException) {
+        throw (PrimitiveException) cause;
+      } else {
+        throw new PrimitiveException(cause);
+      }
     }
   }
 }

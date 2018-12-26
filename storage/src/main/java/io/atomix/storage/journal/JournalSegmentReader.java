@@ -15,12 +15,12 @@
  */
 package io.atomix.storage.journal;
 
-import io.atomix.utils.serializer.Serializer;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.Bytes;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.journal.index.JournalIndex;
 import io.atomix.storage.journal.index.Position;
+import io.atomix.utils.serializer.Serializer;
 
 import java.nio.BufferUnderflowException;
 import java.util.NoSuchElementException;
@@ -34,16 +34,23 @@ import java.util.zip.Checksum;
  */
 public class JournalSegmentReader<E> implements JournalReader<E> {
   private final Buffer buffer;
+  private final int maxEntrySize;
   private final JournalSegmentCache cache;
   private final JournalIndex index;
   private final Serializer serializer;
-  private final HeapBuffer memory = HeapBuffer.allocate();
+  private final Buffer memory = HeapBuffer.allocate().flip();
   private final long firstIndex;
   private Indexed<E> currentEntry;
   private Indexed<E> nextEntry;
 
-  public JournalSegmentReader(JournalSegmentDescriptor descriptor, JournalSegmentCache cache, JournalIndex index, Serializer serializer) {
+  public JournalSegmentReader(
+      JournalSegmentDescriptor descriptor,
+      int maxEntrySize,
+      JournalSegmentCache cache,
+      JournalIndex index,
+      Serializer serializer) {
     this.buffer = descriptor.buffer().slice().duplicate();
+    this.maxEntrySize = maxEntrySize;
     this.cache = cache;
     this.index = index;
     this.serializer = serializer;
@@ -73,6 +80,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     if (position != null) {
       currentEntry = new Indexed<>(position.index() - 1, null, 0);
       buffer.position(position.position());
+      memory.clear().flip();
       readNext();
     }
     while (getNextIndex() < index && hasNext()) {
@@ -83,6 +91,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
   @Override
   public void reset() {
     buffer.clear();
+    memory.clear().flip();
     currentEntry = null;
     nextEntry = null;
     readNext();
@@ -127,45 +136,58 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
     Indexed cachedEntry = cache.get(index);
     if (cachedEntry != null) {
       this.nextEntry = cachedEntry;
-      buffer.skip(cachedEntry.size() + Bytes.INTEGER + Bytes.INTEGER);
+      buffer.skip(memory.position() + cachedEntry.size() + Bytes.INTEGER + Bytes.INTEGER);
+      memory.clear().limit(0);
+      return;
+    } else if (cache.index() > 0 && cache.index() < index) {
+      this.nextEntry = null;
       return;
     }
 
+    // Read more bytes from the segment if necessary.
+    if (memory.remaining() < maxEntrySize) {
+      buffer.skip(memory.position())
+          .mark()
+          .read(memory.clear().limit(maxEntrySize * 2))
+          .reset();
+      memory.flip();
+    }
+
     // Mark the buffer so it can be reset if necessary.
-    buffer.mark();
+    memory.mark();
 
     try {
       // Read the length of the entry.
-      final int length = buffer.readInt();
+      final int length = memory.readInt();
 
       // If the buffer length is zero then return.
-      if (length == 0) {
-        buffer.reset();
+      if (length <= 0 || length > maxEntrySize) {
+        memory.reset().limit(memory.position());
         nextEntry = null;
         return;
       }
 
       // Read the checksum of the entry.
-      long checksum = buffer.readUnsignedInt();
+      long checksum = memory.readUnsignedInt();
 
       // Read the entry into memory.
-      buffer.read(memory.clear().limit(length));
-      memory.flip();
+      byte[] bytes = new byte[length];
+      memory.read(bytes);
 
       // Compute the checksum for the entry bytes.
       final Checksum crc32 = new CRC32();
-      crc32.update(memory.array(), 0, length);
+      crc32.update(bytes, 0, length);
 
       // If the stored checksum equals the computed checksum, return the entry.
       if (checksum == crc32.getValue()) {
-        E entry = serializer.decode(memory.array());
+        E entry = serializer.decode(bytes);
         nextEntry = new Indexed<>(index, entry, length);
       } else {
-        buffer.reset();
+        memory.reset().limit(memory.position());
         nextEntry = null;
       }
     } catch (BufferUnderflowException e) {
-      buffer.reset();
+      memory.reset().limit(memory.position());
       nextEntry = null;
     }
   }

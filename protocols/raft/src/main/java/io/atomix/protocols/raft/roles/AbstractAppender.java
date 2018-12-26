@@ -350,9 +350,9 @@ abstract class AbstractAppender implements AutoCloseable {
           handleConfigureResponse(member, request, response, timestamp);
         } else {
           if (log.isTraceEnabled()) {
-            log.warn("Failed to configure {}", member.getMember().memberId(), error);
+            log.debug("Failed to configure {}", member.getMember().memberId(), error);
           } else {
-            log.warn("Failed to configure {}", member.getMember().memberId());
+            log.debug("Failed to configure {}", member.getMember().memberId());
           }
           handleConfigureResponseFailure(member, request, error);
         }
@@ -429,6 +429,8 @@ abstract class AbstractAppender implements AutoCloseable {
             .withTerm(raft.getTerm())
             .withLeader(leader != null ? leader.memberId() : null)
             .withIndex(snapshot.index())
+            .withTimestamp(snapshot.timestamp().unixTimestamp())
+            .withVersion(snapshot.version())
             .withOffset(member.getNextSnapshotOffset())
             .withData(data)
             .withComplete(!reader.hasRemaining())

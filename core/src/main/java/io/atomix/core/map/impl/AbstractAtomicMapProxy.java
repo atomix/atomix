@@ -449,7 +449,12 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
 
     @Override
     public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
+      return AbstractAtomicMapProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return AbstractAtomicMapProxy.this.delete();
     }
 
     @Override
@@ -585,7 +590,12 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
 
     @Override
     public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
+      return AbstractAtomicMapProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return AbstractAtomicMapProxy.this.delete();
     }
 
     @Override
@@ -692,7 +702,12 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
 
     @Override
     public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
+      return AbstractAtomicMapProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return AbstractAtomicMapProxy.this.delete();
     }
 
     @Override

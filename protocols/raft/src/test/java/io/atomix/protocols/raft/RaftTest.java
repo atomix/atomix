@@ -21,6 +21,7 @@ import io.atomix.cluster.MemberId;
 import io.atomix.primitive.AbstractAsyncPrimitive;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.PrimitiveBuilder;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveInfo;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveRegistry;
@@ -1145,6 +1146,46 @@ public class RaftTest extends ConcurrentTestCase {
     await(Duration.ofSeconds(10).toMillis(), 2);
   }
 
+  @Test
+  public void testSessionDelete() throws Throwable {
+    createServers(3);
+
+    RaftClient client1 = createClient();
+    TestPrimitive primitive1 = createPrimitive(client1);
+
+    RaftClient client2 = createClient();
+    TestPrimitive primitive2 = createPrimitive(client2);
+
+    primitive1.write("foo").thenRun(this::resume);
+    primitive2.write("bar").thenRun(this::resume);
+    await(5000, 2);
+
+    primitive1.delete().thenRun(this::resume);
+    await(5000);
+
+    primitive2.write("baz").whenComplete((result, error) -> {
+      threadAssertTrue(error.getCause() instanceof PrimitiveException.UnknownService);
+      resume();
+    });
+    primitive2.read().whenComplete((result, error) -> {
+      threadAssertTrue(error.getCause() instanceof PrimitiveException.UnknownService);
+      resume();
+    });
+    await(5000, 2);
+
+    primitive2.read().whenComplete((result, error) -> {
+      threadAssertTrue(error.getCause() instanceof PrimitiveException.ClosedSession);
+      resume();
+    });
+    await(5000);
+
+    RaftClient client3 = createClient();
+    TestPrimitive primitive3 = createPrimitive(client3);
+
+    primitive3.write("foo").thenCompose(v -> primitive3.read()).thenRun(this::resume);
+    await(5000);
+  }
+
   /**
    * Returns the next unique member identifier.
    *
@@ -1291,6 +1332,7 @@ public class RaftTest extends ConcurrentTestCase {
         (key, partitions) -> partitions.get(0));
     PrimitiveRegistry registry = mock(PrimitiveRegistry.class);
     when(registry.createPrimitive(any(String.class), any(PrimitiveType.class))).thenReturn(CompletableFuture.completedFuture(new PrimitiveInfo("raft-test", TestPrimitiveType.INSTANCE)));
+    when(registry.deletePrimitive(any(String.class))).thenReturn(CompletableFuture.completedFuture(null));
     return new TestPrimitiveImpl(proxy, registry);
   }
 

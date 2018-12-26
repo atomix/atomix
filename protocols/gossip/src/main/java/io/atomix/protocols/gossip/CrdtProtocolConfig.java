@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.gossip;
 
+import com.google.common.annotations.Beta;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
@@ -25,6 +26,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * CRDT protocol configuration.
  */
+@Beta
 public class CrdtProtocolConfig extends PrimitiveProtocolConfig<CrdtProtocolConfig> {
   private TimestampProvider timestampProvider = TimestampProviders.WALL_CLOCK;
   private Duration gossipInterval = Duration.ofMillis(50);

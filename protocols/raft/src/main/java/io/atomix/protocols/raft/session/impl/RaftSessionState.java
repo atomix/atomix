@@ -113,18 +113,20 @@ public final class RaftSessionState {
    */
   public void setState(PrimitiveState state) {
     if (this.state != state) {
-      this.state = state;
-      if (state == PrimitiveState.SUSPENDED) {
-        if (suspendedTime == null) {
-          suspendedTime = System.currentTimeMillis();
+      if (this.state != PrimitiveState.EXPIRED && this.state != PrimitiveState.CLOSED) {
+        this.state = state;
+        if (state == PrimitiveState.SUSPENDED) {
+          if (suspendedTime == null) {
+            suspendedTime = System.currentTimeMillis();
+          }
+        } else {
+          suspendedTime = null;
         }
-      } else {
-        suspendedTime = null;
+        changeListeners.forEach(l -> l.accept(state));
       }
-      changeListeners.forEach(l -> l.accept(state));
     } else if (this.state == PrimitiveState.SUSPENDED) {
       if (System.currentTimeMillis() - suspendedTime > timeout) {
-        setState(PrimitiveState.CLOSED);
+        setState(PrimitiveState.EXPIRED);
       }
     }
   }

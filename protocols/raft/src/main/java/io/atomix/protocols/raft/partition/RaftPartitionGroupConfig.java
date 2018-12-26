@@ -17,8 +17,6 @@ package io.atomix.protocols.raft.partition;
 
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
-import io.atomix.storage.StorageLevel;
-import io.atomix.utils.memory.MemorySize;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -28,14 +26,11 @@ import java.util.Set;
  */
 public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartitionGroupConfig> {
   private static final int DEFAULT_PARTITIONS = 7;
-  private static final String DATA_PREFIX = ".data";
 
   private Set<String> members = new HashSet<>();
   private int partitionSize;
-  private String storageLevel = StorageLevel.MAPPED.name();
-  private long segmentSize = 1024 * 1024 * 32;
-  private boolean flushOnCommit = true;
-  private String dataDirectory;
+  private RaftStorageConfig storageConfig = new RaftStorageConfig();
+  private RaftCompactionConfig compactionConfig = new RaftCompactionConfig();
 
   @Override
   public PartitionGroup.Type getType() {
@@ -88,83 +83,42 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
   }
 
   /**
-   * Returns the partition storage level.
+   * Returns the storage configuration.
    *
-   * @return the partition storage level
+   * @return the storage configuration
    */
-  public String getStorageLevel() {
-    return storageLevel;
+  public RaftStorageConfig getStorageConfig() {
+    return storageConfig;
   }
 
   /**
-   * Sets the partition storage level.
+   * Sets the storage configuration.
    *
-   * @param storageLevel the partition storage level
+   * @param storageConfig the storage configuration
    * @return the Raft partition group configuration
    */
-  public RaftPartitionGroupConfig setStorageLevel(String storageLevel) {
-    StorageLevel.valueOf(storageLevel.toUpperCase());
-    this.storageLevel = storageLevel;
+  public RaftPartitionGroupConfig setStorageConfig(RaftStorageConfig storageConfig) {
+    this.storageConfig = storageConfig;
     return this;
   }
 
   /**
-   * Returns the Raft log segment size.
+   * Returns the compaction configuration.
    *
-   * @return the Raft log segment size
+   * @return the compaction configuration
    */
-  public MemorySize getSegmentSize() {
-    return MemorySize.from(segmentSize);
+  public RaftCompactionConfig getCompactionConfig() {
+    return compactionConfig;
   }
 
   /**
-   * Sets the Raft log segment size.
+   * Sets the compaction configuration.
    *
-   * @param segmentSize the Raft log segment size
-   * @return the partition group configuration
-   */
-  public RaftPartitionGroupConfig setSegmentSize(MemorySize segmentSize) {
-    this.segmentSize = segmentSize.bytes();
-    return this;
-  }
-
-  /**
-   * Returns whether to flush logs to disk on commit.
-   *
-   * @return whether to flush logs to disk on commit
-   */
-  public boolean isFlushOnCommit() {
-    return flushOnCommit;
-  }
-
-  /**
-   * Sets whether to flush logs to disk on commit.
-   *
-   * @param flushOnCommit whether to flush logs to disk on commit
+   * @param compactionConfig the compaction configuration
    * @return the Raft partition group configuration
    */
-  public RaftPartitionGroupConfig setFlushOnCommit(boolean flushOnCommit) {
-    this.flushOnCommit = flushOnCommit;
-    return this;
-  }
-
-  /**
-   * Returns the partition data directory.
-   *
-   * @return the partition data directory
-   */
-  public String getDataDirectory() {
-    return dataDirectory != null ? dataDirectory : DATA_PREFIX + "/" + getName();
-  }
-
-  /**
-   * Sets the partition data directory.
-   *
-   * @param dataDirectory the partition data directory
-   * @return the Raft partition group configuration
-   */
-  public RaftPartitionGroupConfig setDataDirectory(String dataDirectory) {
-    this.dataDirectory = dataDirectory;
+  public RaftPartitionGroupConfig setCompactionConfig(RaftCompactionConfig compactionConfig) {
+    this.compactionConfig = compactionConfig;
     return this;
   }
 }

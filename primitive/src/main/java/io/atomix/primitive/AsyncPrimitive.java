@@ -39,9 +39,7 @@ public interface AsyncPrimitive extends DistributedPrimitive {
    *
    * @return {@code CompletableFuture} that is completed when the operation completes
    */
-  default CompletableFuture<Void> delete() {
-    return CompletableFuture.completedFuture(null);
-  }
+  CompletableFuture<Void> delete();
 
   /**
    * Returns a synchronous wrapper around the asynchronous primitive.

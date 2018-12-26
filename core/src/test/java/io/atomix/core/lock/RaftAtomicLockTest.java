@@ -15,8 +15,14 @@
  */
 package io.atomix.core.lock;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Raft distributed lock test.
@@ -27,5 +33,30 @@ public class RaftAtomicLockTest extends AtomicLockTest {
     return MultiRaftProtocol.builder()
         .withMaxRetries(5)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    AtomicLock lock;
+    lock = atomix().atomicLockBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+
+    int count = client.getPrimitives(lock.type()).size();
+    lock.delete();
+    assertEquals(count - 1, client.getPrimitives(lock.type()).size());
+
+    try {
+      lock.isLocked();
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    lock = atomix().atomicLockBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertEquals(count, client.getPrimitives(lock.type()).size());
   }
 }

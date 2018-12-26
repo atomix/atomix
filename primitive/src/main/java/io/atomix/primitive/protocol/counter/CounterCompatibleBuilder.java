@@ -15,9 +15,12 @@
  */
 package io.atomix.primitive.protocol.counter;
 
+import com.google.common.annotations.Beta;
+
 /**
  * Counter builder.
  */
+@Beta
 public interface CounterCompatibleBuilder<B extends CounterCompatibleBuilder<B>> {
 
   /**

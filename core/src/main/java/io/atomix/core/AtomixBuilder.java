@@ -310,6 +310,30 @@ public class AtomixBuilder extends AtomixClusterBuilder {
   }
 
   @Override
+  public AtomixBuilder withMessagingInterface(String iface) {
+    super.withMessagingInterface(iface);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withMessagingInterfaces(String... ifaces) {
+    super.withMessagingInterfaces(ifaces);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withMessagingInterfaces(Collection<String> ifaces) {
+    super.withMessagingInterfaces(ifaces);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withMessagingPort(int bindPort) {
+    super.withMessagingPort(bindPort);
+    return this;
+  }
+
+  @Override
   public AtomixBuilder withAddress(String address) {
     super.withAddress(address);
     return this;
@@ -402,6 +426,42 @@ public class AtomixBuilder extends AtomixClusterBuilder {
   @Override
   public AtomixBuilder withReachabilityTimeout(Duration timeout) {
     super.withReachabilityTimeout(timeout);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withTlsEnabled() {
+    super.withTlsEnabled();
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withTlsEnabled(boolean tlsEnabled) {
+    super.withTlsEnabled(tlsEnabled);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withKeyStore(String keyStore) {
+    super.withKeyStore(keyStore);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withKeyStorePassword(String keyStorePassword) {
+    super.withKeyStorePassword(keyStorePassword);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withTrustStore(String trustStore) {
+    super.withTrustStore(trustStore);
+    return this;
+  }
+
+  @Override
+  public AtomixBuilder withTrustStorePassword(String trustStorePassword) {
+    super.withTrustStorePassword(trustStorePassword);
     return this;
   }
 

@@ -15,8 +15,14 @@
  */
 package io.atomix.core.election;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Raft leader elector test.
@@ -27,5 +33,30 @@ public class RaftLeaderElectorTest extends LeaderElectorTest {
     return MultiRaftProtocol.builder()
         .withMaxRetries(5)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    LeaderElector<String> elector;
+    elector = atomix().<String>leaderElectorBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+
+    int count = client.getPrimitives(elector.type()).size();
+    elector.delete();
+    assertEquals(count - 1, client.getPrimitives(elector.type()).size());
+
+    try {
+      elector.getLeadership("foo");
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    elector = atomix().<String>leaderElectorBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertEquals(count, client.getPrimitives(elector.type()).size());
   }
 }

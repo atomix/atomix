@@ -81,6 +81,9 @@ public class FileBytes extends AbstractBytes {
     return new FileBytes(file, mode, (int) Math.min(Memory.Util.toPow2(size), Integer.MAX_VALUE));
   }
 
+  private static final int PAGE_SIZE = 1024 * 4;
+  private static final byte[] BLANK_PAGE = new byte[PAGE_SIZE];
+
   private final File file;
   private final String mode;
   private final RandomAccessFile randomAccessFile;
@@ -133,11 +136,14 @@ public class FileBytes extends AbstractBytes {
   public Bytes resize(int newSize) {
     if (newSize < size)
       throw new IllegalArgumentException("cannot decrease file bytes size; use zero() to decrease file size");
+    int oldSize = this.size;
     this.size = newSize;
     try {
       long length = randomAccessFile.length();
-      if (size > length)
+      if (newSize > length) {
         randomAccessFile.setLength(newSize);
+        zero(oldSize);
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -215,6 +221,9 @@ public class FileBytes extends AbstractBytes {
     try {
       randomAccessFile.setLength(0);
       randomAccessFile.setLength(size);
+      for (int i = 0; i < size; i += PAGE_SIZE) {
+        randomAccessFile.write(BLANK_PAGE, 0, Math.min(size - i, PAGE_SIZE));
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -224,8 +233,13 @@ public class FileBytes extends AbstractBytes {
   @Override
   public Bytes zero(int offset) {
     try {
+      int length = Math.max(offset, size);
       randomAccessFile.setLength(offset);
-      randomAccessFile.setLength(Math.max(offset, size));
+      randomAccessFile.setLength(length);
+      seekToOffset(offset);
+      for (int i = offset; i < length; i += PAGE_SIZE) {
+        randomAccessFile.write(BLANK_PAGE, 0, Math.min(length - i, PAGE_SIZE));
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

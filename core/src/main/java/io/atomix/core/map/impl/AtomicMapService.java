@@ -295,7 +295,7 @@ public interface AtomicMapService<K> {
    * @return the key iterator ID
    */
   @Command
-  long iterateKeys();
+  IteratorBatch<K> iterateKeys();
 
   /**
    * Returns the next batch of entries for the given iterator.
@@ -321,7 +321,7 @@ public interface AtomicMapService<K> {
    * @return the values iterator ID
    */
   @Command
-  long iterateValues();
+  IteratorBatch<Versioned<byte[]>> iterateValues();
 
   /**
    * Returns the next batch of values for the given iterator.
@@ -347,7 +347,7 @@ public interface AtomicMapService<K> {
    * @return the entry iterator ID
    */
   @Command
-  long iterateEntries();
+  IteratorBatch<Map.Entry<K, Versioned<byte[]>>> iterateEntries();
 
   /**
    * Returns the next batch of entries for the given iterator.

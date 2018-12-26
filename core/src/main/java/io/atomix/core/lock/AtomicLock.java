@@ -49,6 +49,21 @@ public interface AtomicLock extends SyncPrimitive {
   Optional<Version> tryLock(Duration timeout);
 
   /**
+   * Returns a boolean indicating whether the lock is locked.
+   *
+   * @return indicates whether the lock is locked
+   */
+  boolean isLocked();
+
+  /**
+   * Returns a boolean indicating whether the lock is locked with the given version.
+   *
+   * @param version the lock version
+   * @return indicates whether the lock is locked
+   */
+  boolean isLocked(Version version);
+
+  /**
    * Unlocks the lock.
    */
   void unlock();

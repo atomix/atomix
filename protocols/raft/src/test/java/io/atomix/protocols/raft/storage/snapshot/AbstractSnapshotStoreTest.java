@@ -41,8 +41,8 @@ public abstract class AbstractSnapshotStoreTest {
     SnapshotStore store = createSnapshotStore();
     WallClockTimestamp timestamp = new WallClockTimestamp();
     Snapshot snapshot = store.newSnapshot(2, timestamp);
-    assertEquals(snapshot.index(), 2);
-    assertEquals(snapshot.timestamp(), timestamp);
+    assertEquals(2, snapshot.index());
+    assertEquals(timestamp, snapshot.timestamp());
 
     assertNull(store.getSnapshot(2));
 
@@ -65,12 +65,12 @@ public abstract class AbstractSnapshotStoreTest {
     assertNull(store.getSnapshot(2));
     snapshot.complete();
 
-    assertEquals(store.getSnapshot(2).index(), 2);
+    assertEquals(2, store.getSnapshot(2).index());
 
     try (SnapshotReader reader = store.getSnapshot(2).openReader()) {
-      assertEquals(reader.readLong(), 10);
-      assertEquals(reader.readLong(), 11);
-      assertEquals(reader.readLong(), 12);
+      assertEquals(10, reader.readLong());
+      assertEquals(11, reader.readLong());
+      assertEquals(12, reader.readLong());
     }
   }
 

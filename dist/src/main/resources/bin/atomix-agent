@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Setup some environmental context for developers
+if [ -z "${JAVA_HOME}" ]; then
+    if [ -x /usr/libexec/java_home ]; then
+        export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+    elif [ -d /usr/lib/jvm/java-8-oracle ]; then
+        export JAVA_HOME="/usr/lib/jvm/java-8-oracle"
+    elif [ -d /usr/lib/jvm/java-8-openjdk-amd64 ]; then
+        export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
+    fi
+fi
+
+ATOMIX_ROOT="$(dirname "$(dirname "$0")")"
+
+java \
+  -XX:+UseConcMarkSweepGC \
+  $JAVA_OPTS \
+  -Datomix.root="$ATOMIX_ROOT" \
+  -Datomix.data="$ATOMIX_ROOT/data" \
+  -Datomix.logback="$ATOMIX_ROOT/conf/logback.xml" \
+  -Datomix.log.directory="$ATOMIX_ROOT/log" \
+  -Datomix.config.resources="$ATOMIX_ROOT/conf/atomix" \
+  -Dvertx.disableFileCPResolving=true \
+  -cp .:"$ATOMIX_ROOT/lib/system/*":"$ATOMIX_ROOT/lib/ext/*" \
+  io.atomix.agent.AtomixAgent \
+  "$@"

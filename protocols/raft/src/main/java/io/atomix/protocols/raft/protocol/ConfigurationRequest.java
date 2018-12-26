@@ -68,7 +68,7 @@ public abstract class ConfigurationRequest extends AbstractRaftRequest {
   /**
    * Configuration request builder.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends ConfigurationRequest> extends AbstractRaftRequest.Builder<T, U> {
+  public abstract static class Builder<T extends Builder<T, U>, U extends ConfigurationRequest> extends AbstractRaftRequest.Builder<T, U> {
     protected RaftMember member;
 
     /**

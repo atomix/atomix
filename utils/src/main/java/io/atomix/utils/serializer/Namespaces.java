@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multisets;
 import com.google.common.collect.Sets;
+import io.atomix.utils.Version;
 import io.atomix.utils.serializer.serializers.ArraysAsListSerializer;
 import io.atomix.utils.serializer.serializers.ImmutableListSerializer;
 import io.atomix.utils.serializer.serializers.ImmutableMapSerializer;
@@ -103,6 +104,7 @@ public final class Namespaces {
       .register(Object[].class)
       .register(LogicalTimestamp.class)
       .register(WallClockTimestamp.class)
+      .register(Version.class)
       .build("BASIC");
 
   /**

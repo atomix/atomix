@@ -27,11 +27,21 @@ class JournalSegmentCache {
   private final int size;
   private final Map<Long, Indexed> entries;
   private long firstIndex;
+  private long lastIndex;
 
   JournalSegmentCache(long index, int size) {
     this.size = size;
     this.entries = new HashMap<>(size);
     this.firstIndex = index;
+  }
+
+  /**
+   * Returns the last cache index.
+   *
+   * @return the last cache index
+   */
+  public long index() {
+    return lastIndex;
   }
 
   /**
@@ -42,6 +52,7 @@ class JournalSegmentCache {
   public void put(Indexed indexed) {
     if (indexed.index() == firstIndex + entries.size()) {
       entries.put(indexed.index(), indexed);
+      lastIndex = indexed.index();
     }
     if (entries.size() > size) {
       entries.remove(firstIndex);
@@ -67,12 +78,14 @@ class JournalSegmentCache {
   public void truncate(long index) {
     if (index < firstIndex) {
       firstIndex = index + 1;
+      lastIndex = 0;
       entries.clear();
     } else {
       int size = entries.size();
       for (long i = index + 1; i < firstIndex + size; i++) {
         entries.remove(i);
       }
+      lastIndex = firstIndex + entries.size() - 1;
     }
   }
 

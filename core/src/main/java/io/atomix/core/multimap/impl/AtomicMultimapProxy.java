@@ -190,6 +190,7 @@ public class AtomicMultimapProxy
   @Override
   public CompletableFuture<Void> addListener(AtomicMultimapEventListener<String, byte[]> listener, Executor executor) {
     if (mapEventListeners.isEmpty()) {
+      mapEventListeners.put(listener, executor);
       return getProxyClient().acceptAll(service -> service.listen());
     } else {
       mapEventListeners.put(listener, executor);
@@ -372,7 +373,12 @@ public class AtomicMultimapProxy
 
     @Override
     public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
+      return AtomicMultimapProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return AtomicMultimapProxy.this.delete();
     }
   }
 
@@ -494,7 +500,12 @@ public class AtomicMultimapProxy
 
     @Override
     public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
+      return AtomicMultimapProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return AtomicMultimapProxy.this.delete();
     }
 
     @Override
@@ -667,7 +678,12 @@ public class AtomicMultimapProxy
 
     @Override
     public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
+      return AtomicMultimapProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return AtomicMultimapProxy.this.delete();
     }
 
     @Override
@@ -821,7 +837,12 @@ public class AtomicMultimapProxy
 
     @Override
     public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
+      return AtomicMultimapProxy.this.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return AtomicMultimapProxy.this.delete();
     }
 
     @Override
@@ -935,6 +956,11 @@ public class AtomicMultimapProxy
       }
 
       @Override
+      public CompletableFuture<Void> delete() {
+        return AtomicMultimapProxy.this.delete();
+      }
+
+      @Override
       public DistributedSet<byte[]> sync(Duration operationTimeout) {
         return new BlockingDistributedSet<>(this, operationTimeout.toMillis());
       }
@@ -1043,6 +1069,11 @@ public class AtomicMultimapProxy
       @Override
       public CompletableFuture<Void> close() {
         return AtomicMultimapProxy.this.close();
+      }
+
+      @Override
+      public CompletableFuture<Void> delete() {
+        return AtomicMultimapProxy.this.delete();
       }
 
       @Override
@@ -1163,6 +1194,11 @@ public class AtomicMultimapProxy
     @Override
     public CompletableFuture<Void> close() {
       return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+      return AtomicMultimapProxy.this.delete();
     }
 
     @Override

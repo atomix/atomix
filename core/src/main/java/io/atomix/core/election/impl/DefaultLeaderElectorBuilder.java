@@ -15,6 +15,7 @@
  */
 package io.atomix.core.election.impl;
 
+import io.atomix.core.election.AsyncLeaderElector;
 import io.atomix.core.election.LeaderElector;
 import io.atomix.core.election.LeaderElectorBuilder;
 import io.atomix.core.election.LeaderElectorConfig;
@@ -37,13 +38,17 @@ public class DefaultLeaderElectorBuilder<T> extends LeaderElectorBuilder<T> {
   public CompletableFuture<LeaderElector<T>> buildAsync() {
     return newProxy(LeaderElectorService.class, new ServiceConfig())
         .thenCompose(proxy -> new LeaderElectorProxy(proxy, managementService.getPrimitiveRegistry()).connect())
-        .thenApply(elector -> {
+        .thenApply(proxy -> {
           Serializer serializer = serializer();
-          return new TranscodingAsyncLeaderElector<T, byte[]>(
-              elector,
+          AsyncLeaderElector<T> elector = new TranscodingAsyncLeaderElector<>(
+              proxy,
               key -> serializer.encode(key),
-              bytes -> serializer.decode(bytes))
-              .sync();
+              bytes -> serializer.decode(bytes));
+
+          if (config.getCacheConfig().isEnabled()) {
+            elector = new CachingAsyncLeaderElector<T>(elector, config.getCacheConfig());
+          }
+          return elector.sync();
         });
   }
 }

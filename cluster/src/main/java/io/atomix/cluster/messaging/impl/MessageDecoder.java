@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
+import java.net.ProtocolException;
 import java.nio.charset.Charset;
 import java.util.List;
 
@@ -34,6 +35,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class MessageDecoder extends ByteToMessageDecoder {
 
+  private static final int VERSION = 1;
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private static final byte[] EMPTY_PAYLOAD = new byte[0];
@@ -43,11 +45,12 @@ public class MessageDecoder extends ByteToMessageDecoder {
   private static final int INT_SIZE = 4;
   private static final int LONG_SIZE = 8;
 
-  private DecoderState currentState = DecoderState.READ_SENDER_IP;
+  private DecoderState currentState = DecoderState.READ_SENDER_VERSION;
 
   private InetAddress senderIp;
   private int senderPort;
   private Address address;
+  private int version;
 
   private InternalMessage.Type type;
   private int preamble;
@@ -64,6 +67,15 @@ public class MessageDecoder extends ByteToMessageDecoder {
       List<Object> out) throws Exception {
 
     switch (currentState) {
+      case READ_SENDER_VERSION:
+        if (buffer.readableBytes() < SHORT_SIZE) {
+          return;
+        }
+        version = buffer.readShort();
+        if (version != VERSION) {
+          throw new ProtocolException("Unsupported protocol version: " + version);
+        }
+        currentState = DecoderState.READ_SENDER_IP;
       case READ_SENDER_IP:
         if (buffer.readableBytes() < BYTE_SIZE) {
           return;

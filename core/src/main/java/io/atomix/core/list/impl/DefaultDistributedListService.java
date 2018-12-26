@@ -17,11 +17,18 @@ package io.atomix.core.list.impl;
 
 import io.atomix.core.collection.impl.CollectionUpdateResult;
 import io.atomix.core.collection.impl.DefaultDistributedCollectionService;
+import io.atomix.core.iterator.impl.IteratorBatch;
 import io.atomix.core.list.DistributedListType;
+import io.atomix.primitive.service.BackupInput;
+import io.atomix.primitive.service.BackupOutput;
+import io.atomix.primitive.session.SessionId;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Serializer;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import static io.atomix.core.collection.impl.CollectionUpdateResult.noop;
@@ -31,12 +38,35 @@ import static io.atomix.core.collection.impl.CollectionUpdateResult.ok;
  * Default distributed list service.
  */
 public class DefaultDistributedListService extends DefaultDistributedCollectionService<List<String>, String> implements DistributedListService {
+  private final Serializer serializer;
+
   public DefaultDistributedListService() {
     super(DistributedListType.instance(), Collections.synchronizedList(new ArrayList<>()));
+    this.serializer = Serializer.using(Namespace.builder()
+        .register(DistributedListType.instance().namespace())
+        .register(SessionId.class)
+        .register(DefaultDistributedCollectionService.IteratorContext.class)
+        .register(IteratorContext.class)
+        .build());
+  }
+
+  @Override
+  public Serializer serializer() {
+    return serializer;
   }
 
   private List<String> list() {
     return collection();
+  }
+
+  @Override
+  public void backup(BackupOutput output) {
+    output.writeObject(new ArrayList<>(list()));
+  }
+
+  @Override
+  public void restore(BackupInput input) {
+    collection = Collections.synchronizedList(input.readObject());
   }
 
   @Override
@@ -101,5 +131,35 @@ public class DefaultDistributedListService extends DefaultDistributedCollectionS
   @Override
   public int lastIndexOf(Object o) {
     return list().lastIndexOf(o);
+  }
+
+  @Override
+  public IteratorBatch<String> iterate() {
+    return iterate(IteratorContext::new);
+  }
+
+  protected class IteratorContext extends AbstractIteratorContext {
+    public IteratorContext(long sessionId) {
+      super(sessionId);
+    }
+
+    @Override
+    protected Iterator<String> create() {
+      return new ListIterator();
+    }
+  }
+
+  private class ListIterator implements Iterator<String> {
+    private int index;
+
+    @Override
+    public boolean hasNext() {
+      return list().size() > index;
+    }
+
+    @Override
+    public String next() {
+      return list().get(index++);
+    }
   }
 }

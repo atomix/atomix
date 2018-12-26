@@ -170,6 +170,11 @@ public class PrimaryBackupServiceContext implements ServiceContext {
   public PrimitiveId serviceId() {
     return primitiveId;
   }
+  
+  @Override
+  public MemberId localMemberId() {
+      return memberId();
+  }
 
   /**
    * Returns the primitive descriptor.

@@ -66,7 +66,7 @@ public abstract class SessionRequest extends AbstractRaftRequest {
   /**
    * Session request builder.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends SessionRequest> extends AbstractRaftRequest.Builder<T, U> {
+  public abstract static class Builder<T extends Builder<T, U>, U extends SessionRequest> extends AbstractRaftRequest.Builder<T, U> {
     protected long session;
 
     /**

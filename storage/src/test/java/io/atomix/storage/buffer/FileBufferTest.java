@@ -67,12 +67,12 @@ public class FileBufferTest extends BufferTest {
     File file = FileTesting.createFile();
     try (FileBuffer buffer = FileBuffer.allocate(file, 16)) {
       buffer.writeLong(10).writeLong(11).flip();
-      assertEquals(buffer.readLong(), 10);
-      assertEquals(buffer.readLong(), 11);
+      assertEquals(10, buffer.readLong());
+      assertEquals(11, buffer.readLong());
     }
     try (FileBuffer buffer = FileBuffer.allocate(file, 16)) {
-      assertEquals(buffer.readLong(), 10);
-      assertEquals(buffer.readLong(), 11);
+      assertEquals(10, buffer.readLong());
+      assertEquals(11, buffer.readLong());
     }
   }
 
@@ -84,8 +84,8 @@ public class FileBufferTest extends BufferTest {
     File file = FileTesting.createFile();
     FileBuffer buffer = FileBuffer.allocate(file, 16);
     buffer.writeLong(10).writeLong(11).flip();
-    assertEquals(buffer.readLong(), 10);
-    assertEquals(buffer.readLong(), 11);
+    assertEquals(10, buffer.readLong());
+    assertEquals(11, buffer.readLong());
     assertTrue(Files.exists(file.toPath()));
     buffer.delete();
     assertFalse(Files.exists(file.toPath()));

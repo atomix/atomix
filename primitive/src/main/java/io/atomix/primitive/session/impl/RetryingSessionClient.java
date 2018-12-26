@@ -70,7 +70,7 @@ public class RetryingSessionClient extends DelegatingSessionClient {
   @Override
   public CompletableFuture<byte[]> execute(PrimitiveOperation operation) {
     if (getState() == PrimitiveState.CLOSED) {
-      return Futures.exceptionalFuture(new PrimitiveException.Unavailable());
+      return Futures.exceptionalFuture(new PrimitiveException.ClosedSession());
     }
     CompletableFuture<byte[]> future = new CompletableFuture<>();
     execute(operation, 1, future);

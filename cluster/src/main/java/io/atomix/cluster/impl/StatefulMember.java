@@ -17,6 +17,7 @@ package io.atomix.cluster.impl;
 
 import io.atomix.cluster.Member;
 import io.atomix.cluster.MemberId;
+import io.atomix.utils.Version;
 import io.atomix.utils.net.Address;
 
 import java.util.Properties;
@@ -25,11 +26,13 @@ import java.util.Properties;
  * Default cluster node.
  */
 public class StatefulMember extends Member {
+  private final Version version;
   private volatile boolean active;
   private volatile boolean reachable;
 
   public StatefulMember(MemberId id, Address address) {
     super(id, address);
+    this.version = null;
   }
 
   public StatefulMember(
@@ -38,8 +41,15 @@ public class StatefulMember extends Member {
       String zone,
       String rack,
       String host,
-      Properties properties) {
+      Properties properties,
+      Version version) {
     super(id, address, zone, rack, host, properties);
+    this.version = version;
+  }
+
+  @Override
+  public Version version() {
+    return version;
   }
 
   /**

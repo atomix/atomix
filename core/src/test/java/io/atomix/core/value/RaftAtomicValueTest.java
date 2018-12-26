@@ -15,8 +15,15 @@
  */
 package io.atomix.core.value;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * Raft atomix value test.
@@ -27,5 +34,36 @@ public class RaftAtomicValueTest extends AtomicValueTest {
     return MultiRaftProtocol.builder()
         .withMaxRetries(5)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    AtomicValue<String> value;
+    value = atomix().<String>atomicValueBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+
+    value.set("Hello world!");
+    assertEquals("Hello world!", value.get());
+
+    int count = client.getPrimitives(value.type()).size();
+    value.delete();
+    assertEquals(count - 1, client.getPrimitives(value.type()).size());
+
+    try {
+      value.get();
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    value = atomix().<String>atomicValueBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertEquals(count, client.getPrimitives(value.type()).size());
+    assertNull(value.get());
+    value.set("Hello world again!");
+    assertEquals("Hello world again!", value.get());
   }
 }

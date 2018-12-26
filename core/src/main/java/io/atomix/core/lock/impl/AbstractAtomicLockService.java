@@ -29,6 +29,7 @@ import io.atomix.utils.serializer.Serializer;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 
@@ -44,9 +45,9 @@ public abstract class AbstractAtomicLockService extends AbstractPrimitiveService
       .register(SessionId.class)
       .build());
 
-  private LockHolder lock;
-  private Queue<LockHolder> queue = new ArrayDeque<>();
-  private final Map<Long, Scheduled> timers = new HashMap<>();
+  LockHolder lock;
+  Queue<LockHolder> queue = new ArrayDeque<>();
+  final Map<Long, Scheduled> timers = new HashMap<>();
 
   public AbstractAtomicLockService(PrimitiveType primitiveType) {
     super(primitiveType, AtomicLockClient.class);
@@ -59,13 +60,20 @@ public abstract class AbstractAtomicLockService extends AbstractPrimitiveService
 
   @Override
   public void backup(BackupOutput output) {
-    output.writeObject(lock);
+    if (lock != null) {
+      output.writeBoolean(true);
+      output.writeObject(lock);
+    } else {
+      output.writeBoolean(false);
+    }
     output.writeObject(queue);
   }
 
   @Override
   public void restore(BackupInput input) {
-    lock = input.readObject();
+    if (input.readBoolean()) {
+      lock = input.readObject();
+    }
     queue = input.readObject();
 
     // After the snapshot is installed, we need to cancel any existing timers and schedule new ones based on the
@@ -145,15 +153,21 @@ public abstract class AbstractAtomicLockService extends AbstractPrimitiveService
   @Override
   public void unlock(int id) {
     if (lock != null) {
-      // If the commit's session does not match the current lock holder, ignore the request.
-      if (!lock.session.equals(getCurrentSession().sessionId())) {
-        return;
-      }
-
-      // If the current lock ID does not match the requested lock ID, ignore the request. This ensures that
-      // internal releases of locks that were never acquired by the client-side primitive do not cause
-      // legitimate locks to be unlocked.
-      if (lock.id != id) {
+      // If the commit's session does not match the current lock holder, preserve the existing lock.
+      // If the current lock ID does not match the requested lock ID, preserve the existing lock.
+      // However, ensure the associated lock request is removed from the queue.
+      if (!lock.session.equals(getCurrentSession().sessionId()) || lock.id != id) {
+        Iterator<LockHolder> iterator = queue.iterator();
+        while (iterator.hasNext()) {
+          LockHolder lock = iterator.next();
+          if (lock.session.equals(getCurrentSession().sessionId()) && lock.id == id) {
+            iterator.remove();
+            Scheduled timer = timers.remove(lock.index);
+            if (timer != null) {
+              timer.cancel();
+            }
+          }
+        }
         return;
       }
 
@@ -178,8 +192,8 @@ public abstract class AbstractAtomicLockService extends AbstractPrimitiveService
   }
 
   @Override
-  public boolean isLocked() {
-    return lock != null;
+  public boolean isLocked(long version) {
+    return lock != null && (version == 0 || lock.index == version);
   }
 
   /**
@@ -217,13 +231,13 @@ public abstract class AbstractAtomicLockService extends AbstractPrimitiveService
     }
   }
 
-  private class LockHolder {
-    private final int id;
-    private final long index;
-    private final SessionId session;
-    private final long expire;
+  class LockHolder {
+    final int id;
+    final long index;
+    final SessionId session;
+    final long expire;
 
-    public LockHolder(int id, long index, SessionId session, long expire) {
+    LockHolder(int id, long index, SessionId session, long expire) {
       this.id = id;
       this.index = index;
       this.session = session;

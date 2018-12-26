@@ -36,6 +36,7 @@ import io.atomix.cluster.messaging.impl.DefaultClusterEventService;
 import io.atomix.cluster.messaging.impl.NettyBroadcastService;
 import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.utils.Managed;
+import io.atomix.utils.Version;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
@@ -172,18 +173,20 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   private final AtomicBoolean started = new AtomicBoolean();
 
   public AtomixCluster(String configFile) {
-    this(loadConfig(new File(System.getProperty("user.dir"), configFile), Thread.currentThread().getContextClassLoader()));
+    this(loadConfig(
+        new File(System.getProperty("atomix.root", System.getProperty("user.dir")), configFile),
+        Thread.currentThread().getContextClassLoader()), null);
   }
 
   public AtomixCluster(File configFile) {
-    this(loadConfig(configFile, Thread.currentThread().getContextClassLoader()));
+    this(loadConfig(configFile, Thread.currentThread().getContextClassLoader()), null);
   }
 
-  public AtomixCluster(ClusterConfig config) {
+  public AtomixCluster(ClusterConfig config, Version version) {
     this.messagingService = buildMessagingService(config);
     this.broadcastService = buildBroadcastService(config);
     this.discoveryProvider = buildLocationProvider(config);
-    this.membershipService = buildClusterMembershipService(config, this, discoveryProvider);
+    this.membershipService = buildClusterMembershipService(config, this, discoveryProvider, version);
     this.communicationService = buildClusterMessagingService(membershipService, messagingService);
     this.eventService = buildClusterEventService(membershipService, messagingService);
   }
@@ -278,7 +281,6 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
 
   protected CompletableFuture<Void> completeStartup() {
     started.set(true);
-    LOGGER.info("Started");
     return CompletableFuture.completedFuture(null);
   }
 
@@ -335,10 +337,10 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
    * Builds a default messaging service.
    */
   protected static ManagedMessagingService buildMessagingService(ClusterConfig config) {
-    return NettyMessagingService.builder()
-        .withName(config.getClusterId())
-        .withAddress(config.getNodeConfig().getAddress())
-        .build();
+    return new NettyMessagingService(
+        config.getClusterId(),
+        config.getNodeConfig().getAddress(),
+        config.getMessagingConfig());
   }
 
   /**
@@ -377,7 +379,8 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
   protected static ManagedClusterMembershipService buildClusterMembershipService(
       ClusterConfig config,
       BootstrapService bootstrapService,
-      NodeDiscoveryProvider discoveryProvider) {
+      NodeDiscoveryProvider discoveryProvider,
+      Version version) {
     // If the local node has not be configured, create a default node.
     Member localMember = Member.builder()
         .withId(config.getNodeConfig().getId())
@@ -389,6 +392,7 @@ public class AtomixCluster implements BootstrapService, Managed<Void> {
         .build();
     return new DefaultClusterMembershipService(
         localMember,
+        version,
         new DefaultNodeDiscoveryService(bootstrapService, localMember, discoveryProvider),
         bootstrapService,
         config.getMembershipConfig());

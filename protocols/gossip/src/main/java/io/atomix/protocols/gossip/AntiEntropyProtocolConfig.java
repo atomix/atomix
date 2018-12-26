@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.gossip;
 
+import com.google.common.annotations.Beta;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.protocol.PrimitiveProtocolConfig;
 
@@ -26,6 +27,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Anti-entropy protocol configuration.
  */
+@Beta
 public class AntiEntropyProtocolConfig extends PrimitiveProtocolConfig<AntiEntropyProtocolConfig> {
   private TimestampProvider timestampProvider = TimestampProviders.WALL_CLOCK;
   private Set<String> peers;

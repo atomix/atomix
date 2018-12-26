@@ -1,0 +1,6 @@
+This folder contains example configurations for common Atomix cluster architectures.
+* `client.conf` - a client-only configuration designed to discover partition groups on a separate cluster
+* `consensus.conf` - a consensus-based cluster with a Raft management group and Multi-Raft partition group for primitives
+* `data-grid.conf` - a data-grid like cluster with a Raft management group and multi-primary data group for primitives
+* `onos.conf` - an example configuration for use with [ONOS](http://onosproject.org)
+* `reference.conf` - a complete reference for all available configuration options

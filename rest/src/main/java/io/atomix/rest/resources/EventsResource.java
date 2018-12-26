@@ -18,8 +18,9 @@ package io.atomix.rest.resources;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.atomix.cluster.messaging.ClusterEventService;
 import io.atomix.cluster.messaging.Subscription;
-import io.atomix.core.utils.EventLog;
-import io.atomix.core.utils.EventManager;
+import io.atomix.rest.AtomixResource;
+import io.atomix.rest.impl.EventLog;
+import io.atomix.rest.impl.EventManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +46,8 @@ import java.util.stream.Collectors;
 /**
  * Events resource.
  */
-@Path("/v1/events")
+@AtomixResource
+@Path("/events")
 public class EventsResource {
   private static final Logger LOGGER = LoggerFactory.getLogger(EventsResource.class);
   private static final int UUID_STRING_LENGTH = UUID.randomUUID().toString().length();

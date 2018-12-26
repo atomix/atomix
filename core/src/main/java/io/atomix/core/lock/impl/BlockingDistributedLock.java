@@ -15,6 +15,7 @@
  */
 package io.atomix.core.lock.impl;
 
+import com.google.common.base.Throwables;
 import io.atomix.core.lock.AsyncDistributedLock;
 import io.atomix.core.lock.DistributedLock;
 import io.atomix.primitive.PrimitiveException;
@@ -90,7 +91,12 @@ public class BlockingDistributedLock extends Synchronous<AsyncDistributedLock> i
     } catch (TimeoutException e) {
       throw new PrimitiveException.Timeout();
     } catch (ExecutionException e) {
-      throw new PrimitiveException(e.getCause());
+      Throwable cause = Throwables.getRootCause(e);
+      if (cause instanceof PrimitiveException) {
+        throw (PrimitiveException) cause;
+      } else {
+        throw new PrimitiveException(cause);
+      }
     }
   }
 }

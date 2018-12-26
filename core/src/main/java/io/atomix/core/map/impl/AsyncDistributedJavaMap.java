@@ -180,6 +180,12 @@ public class AsyncDistributedJavaMap<K, V> implements AsyncDistributedMap<K, V> 
   }
 
   @Override
+  public CompletableFuture<Void> delete() {
+    map.clear();
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
   public DistributedMap<K, V> sync(Duration operationTimeout) {
     return new BlockingDistributedMap<>(this, operationTimeout.toMillis());
   }

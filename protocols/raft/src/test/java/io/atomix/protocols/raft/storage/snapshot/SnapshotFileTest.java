@@ -33,8 +33,8 @@ public class SnapshotFileTest {
    */
   @Test
   public void testCreateSnapshotFileName() throws Exception {
-    assertEquals(SnapshotFile.createSnapshotFileName("test", 1), "test-1.snapshot");
-    assertEquals(SnapshotFile.createSnapshotFileName("test", 2), "test-2.snapshot");
+    assertEquals("test-1.snapshot", SnapshotFile.createSnapshotFileName("test", 1));
+    assertEquals("test-2.snapshot", SnapshotFile.createSnapshotFileName("test", 2));
   }
 
   /**

@@ -26,87 +26,87 @@ public interface AsyncDistributedSortedSet<E extends Comparable<E>> extends Asyn
 
   /**
    * Returns a view of the portion of this set whose elements range
-   * from <tt>fromElement</tt>, inclusive, to <tt>toElement</tt>,
-   * exclusive.  (If <tt>fromElement</tt> and <tt>toElement</tt> are
+   * from <code>fromElement</code>, inclusive, to <code>toElement</code>,
+   * exclusive.  (If <code>fromElement</code> and <code>toElement</code> are
    * equal, the returned set is empty.)  The returned set is backed
    * by this set, so changes in the returned set are reflected in
    * this set, and vice-versa.  The returned set supports all
    * optional set operations that this set supports.
    *
-   * <p>The returned set will throw an <tt>IllegalArgumentException</tt>
+   * <p>The returned set will throw an <code>IllegalArgumentException</code>
    * on an attempt to insert an element outside its range.
    *
    * @param fromElement low endpoint (inclusive) of the returned set
    * @param toElement   high endpoint (exclusive) of the returned set
    * @return a view of the portion of this set whose elements range from
-   * <tt>fromElement</tt>, inclusive, to <tt>toElement</tt>, exclusive
-   * @throws ClassCastException       if <tt>fromElement</tt> and
-   *                                  <tt>toElement</tt> cannot be compared to one another using this
+   * <code>fromElement</code>, inclusive, to <code>toElement</code>, exclusive
+   * @throws ClassCastException       if <code>fromElement</code> and
+   *                                  <code>toElement</code> cannot be compared to one another using this
    *                                  set's comparator (or, if the set has no comparator, using
    *                                  natural ordering).  Implementations may, but are not required
-   *                                  to, throw this exception if <tt>fromElement</tt> or
-   *                                  <tt>toElement</tt> cannot be compared to elements currently in
+   *                                  to, throw this exception if <code>fromElement</code> or
+   *                                  <code>toElement</code> cannot be compared to elements currently in
    *                                  the set.
-   * @throws NullPointerException     if <tt>fromElement</tt> or
-   *                                  <tt>toElement</tt> is null and this set does not permit null
+   * @throws NullPointerException     if <code>fromElement</code> or
+   *                                  <code>toElement</code> is null and this set does not permit null
    *                                  elements
-   * @throws IllegalArgumentException if <tt>fromElement</tt> is
-   *                                  greater than <tt>toElement</tt>; or if this set itself
-   *                                  has a restricted range, and <tt>fromElement</tt> or
-   *                                  <tt>toElement</tt> lies outside the bounds of the range
+   * @throws IllegalArgumentException if <code>fromElement</code> is
+   *                                  greater than <code>toElement</code>; or if this set itself
+   *                                  has a restricted range, and <code>fromElement</code> or
+   *                                  <code>toElement</code> lies outside the bounds of the range
    */
   AsyncDistributedSortedSet<E> subSet(E fromElement, E toElement);
 
   /**
    * Returns a view of the portion of this set whose elements are
-   * strictly less than <tt>toElement</tt>.  The returned set is
+   * strictly less than <code>toElement</code>.  The returned set is
    * backed by this set, so changes in the returned set are
    * reflected in this set, and vice-versa.  The returned set
    * supports all optional set operations that this set supports.
    *
-   * <p>The returned set will throw an <tt>IllegalArgumentException</tt>
+   * <p>The returned set will throw an <code>IllegalArgumentException</code>
    * on an attempt to insert an element outside its range.
    *
    * @param toElement high endpoint (exclusive) of the returned set
    * @return a view of the portion of this set whose elements are strictly
-   * less than <tt>toElement</tt>
-   * @throws ClassCastException       if <tt>toElement</tt> is not compatible
+   * less than <code>toElement</code>
+   * @throws ClassCastException       if <code>toElement</code> is not compatible
    *                                  with this set's comparator (or, if the set has no comparator,
-   *                                  if <tt>toElement</tt> does not implement {@link Comparable}).
+   *                                  if <code>toElement</code> does not implement {@link Comparable}).
    *                                  Implementations may, but are not required to, throw this
-   *                                  exception if <tt>toElement</tt> cannot be compared to elements
+   *                                  exception if <code>toElement</code> cannot be compared to elements
    *                                  currently in the set.
-   * @throws NullPointerException     if <tt>toElement</tt> is null and
+   * @throws NullPointerException     if <code>toElement</code> is null and
    *                                  this set does not permit null elements
    * @throws IllegalArgumentException if this set itself has a
-   *                                  restricted range, and <tt>toElement</tt> lies outside the
+   *                                  restricted range, and <code>toElement</code> lies outside the
    *                                  bounds of the range
    */
   AsyncDistributedSortedSet<E> headSet(E toElement);
 
   /**
    * Returns a view of the portion of this set whose elements are
-   * greater than or equal to <tt>fromElement</tt>.  The returned
+   * greater than or equal to <code>fromElement</code>.  The returned
    * set is backed by this set, so changes in the returned set are
    * reflected in this set, and vice-versa.  The returned set
    * supports all optional set operations that this set supports.
    *
-   * <p>The returned set will throw an <tt>IllegalArgumentException</tt>
+   * <p>The returned set will throw an <code>IllegalArgumentException</code>
    * on an attempt to insert an element outside its range.
    *
    * @param fromElement low endpoint (inclusive) of the returned set
    * @return a view of the portion of this set whose elements are greater
-   * than or equal to <tt>fromElement</tt>
-   * @throws ClassCastException       if <tt>fromElement</tt> is not compatible
+   * than or equal to <code>fromElement</code>
+   * @throws ClassCastException       if <code>fromElement</code> is not compatible
    *                                  with this set's comparator (or, if the set has no comparator,
-   *                                  if <tt>fromElement</tt> does not implement {@link Comparable}).
+   *                                  if <code>fromElement</code> does not implement {@link Comparable}).
    *                                  Implementations may, but are not required to, throw this
-   *                                  exception if <tt>fromElement</tt> cannot be compared to elements
+   *                                  exception if <code>fromElement</code> cannot be compared to elements
    *                                  currently in the set.
-   * @throws NullPointerException     if <tt>fromElement</tt> is null
+   * @throws NullPointerException     if <code>fromElement</code> is null
    *                                  and this set does not permit null elements
    * @throws IllegalArgumentException if this set itself has a
-   *                                  restricted range, and <tt>fromElement</tt> lies outside the
+   *                                  restricted range, and <code>fromElement</code> lies outside the
    *                                  bounds of the range
    */
   AsyncDistributedSortedSet<E> tailSet(E fromElement);

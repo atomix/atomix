@@ -120,8 +120,14 @@ public class BlockingAtomicDocumentTree<V> extends Synchronous<AsyncAtomicDocume
     } catch (TimeoutException e) {
       throw new DocumentException.Timeout(name());
     } catch (ExecutionException e) {
-      Throwables.propagateIfPossible(e.getCause());
-      throw new PrimitiveException(e.getCause());
+      Throwable cause = Throwables.getRootCause(e);
+      if (cause instanceof PrimitiveException) {
+        throw (PrimitiveException) cause;
+      } else if (cause instanceof IllegalArgumentException || cause instanceof IllegalStateException) {
+        throw (RuntimeException) cause;
+      } else {
+        throw new PrimitiveException(cause);
+      }
     }
   }
 }

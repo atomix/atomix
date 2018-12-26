@@ -19,7 +19,7 @@
   <parent>
     <groupId>io.atomix</groupId>
     <artifactId>atomix-parent</artifactId>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>3.0.9-SNAPSHOT</version>
   </parent>
 
   <packaging>bundle</packaging>
@@ -53,9 +53,9 @@
       <version>${config.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.github.lukehutch</groupId>
-      <artifactId>fast-classpath-scanner</artifactId>
-      <version>${fast-classpath-scanner.version}</version>
+      <groupId>io.github.classgraph</groupId>
+      <artifactId>classgraph</artifactId>
+      <version>${classgraph.version}</version>
     </dependency>
   </dependencies>
 

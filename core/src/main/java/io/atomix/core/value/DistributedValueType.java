@@ -17,10 +17,8 @@ package io.atomix.core.value;
 
 import io.atomix.core.value.impl.DefaultDistributedValueBuilder;
 import io.atomix.core.value.impl.DefaultDistributedValueService;
-import io.atomix.core.value.impl.DistributedValueResource;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.PrimitiveType;
-import io.atomix.primitive.resource.PrimitiveResource;
 import io.atomix.primitive.service.PrimitiveService;
 import io.atomix.primitive.service.ServiceConfig;
 
@@ -52,12 +50,6 @@ public class DistributedValueType<V> implements PrimitiveType<DistributedValueBu
   @Override
   public PrimitiveService newService(ServiceConfig config) {
     return new DefaultDistributedValueService();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public PrimitiveResource newResource(DistributedValue<V> primitive) {
-    return new DistributedValueResource((AsyncDistributedValue<String>) primitive.async());
   }
 
   @Override

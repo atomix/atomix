@@ -341,7 +341,7 @@ public abstract class DistributedNavigableSetTest extends AbstractPrimitiveTest<
 
     set.subSet("k", false, "n", false).clear();
     assertEquals(5, set.size());
-    assertEquals(Sets.newHashSet(set), Sets.newHashSet("h", "i", "j", "k", "n"));
+    assertEquals(Sets.newHashSet("h", "i", "j", "k", "n"), Sets.newHashSet(set));
   }
 
   private static class TestSetEventListener implements CollectionEventListener<String> {

@@ -15,11 +15,17 @@
  */
 package io.atomix.core.map;
 
+import io.atomix.core.Atomix;
+import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.raft.MultiRaftProtocol;
 import io.atomix.protocols.raft.ReadConsistency;
+import org.junit.Test;
 
 import java.time.Duration;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Raft consistent map test.
@@ -32,5 +38,30 @@ public class RaftAtomicMapTest extends AtomicMapTest {
         .withMaxRetries(5)
         .withReadConsistency(ReadConsistency.LINEARIZABLE)
         .build();
+  }
+
+  @Test
+  public void testDelete() throws Exception {
+    Atomix client = atomix();
+
+    AtomicMap<String, String> map;
+    map = atomix().<String, String>atomicMapBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+
+    int count = client.getPrimitives(map.type()).size();
+    map.delete();
+    assertEquals(count - 1, client.getPrimitives(map.type()).size());
+
+    try {
+      map.get("foo");
+      fail();
+    } catch (PrimitiveException.ClosedSession e) {
+    }
+
+    map = atomix().<String, String>atomicMapBuilder("test-delete")
+        .withProtocol(protocol())
+        .build();
+    assertEquals(count, client.getPrimitives(map.type()).size());
   }
 }

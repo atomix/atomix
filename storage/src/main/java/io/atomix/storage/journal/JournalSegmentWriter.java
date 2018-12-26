@@ -15,14 +15,17 @@
  */
 package io.atomix.storage.journal;
 
-import io.atomix.utils.serializer.Serializer;
+import io.atomix.storage.StorageException;
 import io.atomix.storage.buffer.Buffer;
+import io.atomix.storage.buffer.Bytes;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.buffer.MappedBuffer;
 import io.atomix.storage.buffer.SlicedBuffer;
 import io.atomix.storage.journal.index.JournalIndex;
+import io.atomix.utils.serializer.Serializer;
 
+import java.nio.BufferOverflowException;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
@@ -43,16 +46,23 @@ import java.util.zip.Checksum;
  */
 public class JournalSegmentWriter<E> implements JournalWriter<E> {
   private final JournalSegmentDescriptor descriptor;
+  private final int maxEntrySize;
   private final JournalSegmentCache cache;
   private final JournalIndex index;
   private final Buffer buffer;
   private final Serializer serializer;
-  private final HeapBuffer memory = HeapBuffer.allocate();
+  private final Buffer memory = HeapBuffer.allocate().flip();
   private final long firstIndex;
   private Indexed<E> lastEntry;
 
-  public JournalSegmentWriter(JournalSegmentDescriptor descriptor, JournalSegmentCache cache, JournalIndex index, Serializer serializer) {
+  public JournalSegmentWriter(
+      JournalSegmentDescriptor descriptor,
+      int maxEntrySize,
+      JournalSegmentCache cache,
+      JournalIndex index,
+      Serializer serializer) {
     this.descriptor = descriptor;
+    this.maxEntrySize = maxEntrySize;
     this.cache = cache;
     this.index = index;
     this.buffer = descriptor.buffer().slice();
@@ -70,30 +80,39 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
 
     // Clear the buffer indexes.
     buffer.clear();
+    memory.clear().flip();
 
     // Record the current buffer position.
     int position = buffer.position();
 
+    // Read more bytes from the segment if necessary.
+    if (memory.remaining() < maxEntrySize) {
+      buffer.mark()
+          .read(memory.clear().limit(maxEntrySize * 2))
+          .reset();
+      memory.flip();
+    }
+
     // Read the entry length.
-    int length = buffer.mark().readInt();
+    int length = memory.mark().readInt();
 
     // If the length is non-zero, read the entry.
-    while (length > 0 && (index == 0 || nextIndex <= index)) {
+    while (0 < length && length <= maxEntrySize && (index == 0 || nextIndex <= index)) {
 
       // Read the checksum of the entry.
-      final long checksum = buffer.readUnsignedInt();
+      final long checksum = memory.readUnsignedInt();
 
       // Read the entry into memory.
-      buffer.read(memory.clear().limit(length));
-      memory.flip();
+      byte[] bytes = new byte[length];
+      memory.read(bytes);
 
       // Compute the checksum for the entry bytes.
       final Checksum crc32 = new CRC32();
-      crc32.update(memory.array(), 0, length);
+      crc32.update(bytes, 0, length);
 
       // If the stored checksum equals the computed checksum, return the entry.
       if (checksum == crc32.getValue()) {
-        final E entry = serializer.decode(memory.array());
+        final E entry = serializer.decode(bytes);
         lastEntry = new Indexed<>(nextIndex, entry, length);
         this.index.index(nextIndex, position);
         nextIndex++;
@@ -101,13 +120,23 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
         break;
       }
 
-      // Read the next entry length.
-      position = buffer.position();
-      length = buffer.mark().readInt();
+      // Update the current position for indexing.
+      position = buffer.position() + memory.position();
+
+      // Read more bytes from the segment if necessary.
+      if (memory.remaining() < maxEntrySize) {
+        buffer.skip(memory.position())
+            .mark()
+            .read(memory.clear().limit(maxEntrySize * 2))
+            .reset();
+        memory.flip();
+      }
+
+      length = memory.mark().readInt();
     }
 
     // Reset the buffer to the previous mark.
-    buffer.reset();
+    buffer.skip(memory.reset().position());
   }
 
   @Override
@@ -191,6 +220,16 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     final byte[] bytes = serializer.encode(entry);
     final int length = bytes.length;
 
+    // Ensure there's enough space left in the buffer to store the entry.
+    if (buffer.remaining() < length + Bytes.INTEGER + Bytes.INTEGER) {
+      throw new BufferOverflowException();
+    }
+
+    // If the entry length exceeds the maximum entry size then throw an exception.
+    if (length > maxEntrySize) {
+      throw new StorageException.TooLarge("Entry size " + length + " exceeds maximum allowed bytes (" + maxEntrySize + ")");
+    }
+
     // Compute the checksum for the entry.
     final Checksum crc32 = new CRC32();
     crc32.update(bytes, 0, length);
@@ -199,10 +238,12 @@ public class JournalSegmentWriter<E> implements JournalWriter<E> {
     // Record the current buffer position;
     int position = buffer.position();
 
-    // Write the entry length and entry to the segment.
-    buffer.writeInt(length)
+    // Create a single byte[] in memory for the entire entry and write it as a batch to the underlying buffer.
+    buffer.write(memory.clear()
+        .writeInt(length)
         .writeUnsignedInt(checksum)
-        .write(bytes);
+        .write(bytes)
+        .flip());
 
     // Update the last entry with the correct index/term/length.
     Indexed<E> indexedEntry = new Indexed<>(index, entry, length);

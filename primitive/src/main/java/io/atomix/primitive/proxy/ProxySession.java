@@ -113,4 +113,11 @@ public interface ProxySession<S> {
    */
   CompletableFuture<Void> close();
 
+  /**
+   * Closes the proxy session and deletes the service.
+   *
+   * @return a future to be completed once the service has been deleted
+   */
+  CompletableFuture<Void> delete();
+
 }
