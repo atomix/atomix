@@ -108,9 +108,22 @@ public class NettyUnicastService implements ManagedUnicastService {
         .handler(new SimpleChannelInboundHandler<DatagramPacket>() {
           @Override
           protected void channelRead0(ChannelHandlerContext context, DatagramPacket packet) throws Exception {
-            byte[] payload = new byte[packet.content().readInt()];
+            if(packet.content().readableBytes() < 4) {
+              return;
+            }
+            int payloadLength = packet.content().readInt();
+            // filter abnormal packages
+            // standard UDP MTU = 576 bytes, 544 = 576 - 8 - 20 - 4 
+            if(payloadLength > 544) {
+              return;
+            }
+            byte[] payload = new byte[payloadLength];
             packet.content().readBytes(payload);
             Message message = SERIALIZER.decode(payload);
+            // filter abnormal packages
+            if(message == null) {
+              return;
+            }
             Map<BiConsumer<Address, byte[]>, Executor> listeners = NettyUnicastService.this.listeners.get(message.subject());
             if (listeners != null) {
               listeners.forEach((consumer, executor) ->
