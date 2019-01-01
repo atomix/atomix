@@ -204,15 +204,18 @@ public class SwimMembershipProtocol
 
     // If the local member is not present, add the member in the ALIVE state.
     if (swimMember == null) {
-      swimMember = new SwimMember(member);
-      members.put(swimMember.id(), swimMember);
-      randomMembers.add(swimMember);
-      Collections.shuffle(randomMembers);
-      LOGGER.debug("{} - Member added {}", this.localMember.id(), swimMember);
-      swimMember.setState(State.ALIVE);
-      post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, swimMember.copy()));
-      recordUpdate(swimMember.copy());
-      return true;
+      if (member.state() == State.ALIVE) {
+        swimMember = new SwimMember(member);
+        members.put(swimMember.id(), swimMember);
+        randomMembers.add(swimMember);
+        Collections.shuffle(randomMembers);
+        LOGGER.debug("{} - Member added {}", this.localMember.id(), swimMember);
+        swimMember.setState(State.ALIVE);
+        post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, swimMember.copy()));
+        recordUpdate(swimMember.copy());
+        return true;
+      }
+      return false;
     }
     // If the term has been increased, update the member and record a gossip event.
     else if (member.incarnationNumber() > swimMember.getIncarnationNumber()) {
@@ -331,6 +334,7 @@ public class SwimMembershipProtocol
         Collections.shuffle(randomMembers);
         LOGGER.debug("{} - Member removed {}", this.localMember.id(), member);
         post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_REMOVED, member.copy()));
+        recordUpdate(member.copy());
       }
     }
   }
