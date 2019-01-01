@@ -15,6 +15,28 @@
  */
 package io.atomix.cluster.protocol;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -36,27 +58,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
@@ -139,7 +140,7 @@ public class SwimMembershipProtocol
   private final Map<MemberId, SwimMember> members = Maps.newConcurrentMap();
   private List<SwimMember> randomMembers = Lists.newCopyOnWriteArrayList();
   private final NodeDiscoveryEventListener discoveryEventListener = this::handleDiscoveryEvent;
-  private final List<ImmutableMember> updates = Lists.newCopyOnWriteArrayList();
+  private final Map<MemberId, ImmutableMember> updates = new LinkedHashMap<>();
 
   private final ScheduledExecutorService swimScheduler = Executors.newSingleThreadScheduledExecutor(
       namedThreads("atomix-cluster-heartbeat-sender", LOGGER));
@@ -319,7 +320,7 @@ public class SwimMembershipProtocol
    * @param member the updated member
    */
   private void recordUpdate(ImmutableMember member) {
-    updates.add(member);
+    updates.put(member.id(), member);
   }
 
   /**
@@ -590,7 +591,7 @@ public class SwimMembershipProtocol
 
     // Copy and clear the list of pending updates.
     if (!updates.isEmpty()) {
-      List<ImmutableMember> updates = Lists.newArrayList(this.updates);
+      List<ImmutableMember> updates = Lists.newArrayList(this.updates.values());
       this.updates.clear();
 
       // Gossip the pending updates to peers.
