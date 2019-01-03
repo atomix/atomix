@@ -137,7 +137,7 @@ public class LeaderElectorProxy
   }
 
   private boolean isListening() {
-    return !topicListeners.isEmpty();
+    return !leadershipChangeListeners.isEmpty() && !topicListeners.isEmpty();
   }
 
   @Override
