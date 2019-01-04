@@ -107,7 +107,7 @@ public class LeaderElectorProxy
 
   @Override
   public synchronized CompletableFuture<Void> removeListener(LeadershipEventListener<byte[]> listener) {
-    if (leadershipChangeListeners.remove(listener)) {
+    if (leadershipChangeListeners.remove(listener) && !isListening()) {
       return getProxyClient().acceptAll(service -> service.unlisten());
     }
     return CompletableFuture.completedFuture(null);
@@ -126,12 +126,14 @@ public class LeaderElectorProxy
 
   @Override
   public synchronized CompletableFuture<Void> removeListener(String topic, LeadershipEventListener<byte[]> listener) {
-    topicListeners.computeIfPresent(topic, (t, s) -> {
-      s.remove(listener);
-      return s.size() == 0 ? null : s;
-    });
-    if (topicListeners.isEmpty()) {
-      return getProxyClient().acceptBy(topic, service -> service.unlisten());
+    if (!topicListeners.isEmpty()) {
+      topicListeners.computeIfPresent(topic, (t, s) -> {
+        s.remove(listener);
+        return s.size() == 0 ? null : s;
+      });
+      if (!isListening()) {
+        return getProxyClient().acceptBy(topic, service -> service.unlisten());
+      }
     }
     return CompletableFuture.completedFuture(null);
   }
