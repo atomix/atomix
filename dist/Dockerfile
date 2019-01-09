@@ -2,6 +2,8 @@
 
 FROM java:8
 
+RUN apt-get update -y && apt-get install -y iptables stress
+
 ARG VERSION
 RUN mkdir -p /opt/atomix
 COPY target/atomix.tar.gz /opt/atomix/atomix.tar.gz
