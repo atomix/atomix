@@ -333,10 +333,9 @@ public class RaftServiceContext implements ServiceContext {
    * @param eventIndex The session event index.
    */
   public boolean keepAlive(long index, long timestamp, RaftSession session, long commandSequence, long eventIndex) {
-    // If the service has been deleted then throw an unknown service exception.
+    // If the service has been deleted, just return false to ignore the keep-alive.
     if (deleted) {
-      log.warn("Service {} has been deleted by another process", serviceName);
-      throw new RaftException.UnknownService("Service " + serviceName + " has been deleted");
+      return false;
     }
 
     // Update the state machine index/timestamp.
