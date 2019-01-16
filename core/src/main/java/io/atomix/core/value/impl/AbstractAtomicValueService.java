@@ -66,7 +66,6 @@ public abstract class AbstractAtomicValueService extends AbstractPrimitiveServic
     if (value.length == 0) {
       value = null;
     }
-    value = reader.readBytes(reader.readInt());
     listeners = reader.readObject();
   }
 
