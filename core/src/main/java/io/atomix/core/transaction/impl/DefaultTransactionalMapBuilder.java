@@ -15,17 +15,21 @@
  */
 package io.atomix.core.transaction.impl;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import io.atomix.core.map.AtomicMap;
 import io.atomix.core.map.AtomicMapBuilder;
 import io.atomix.core.map.AtomicMapConfig;
 import io.atomix.core.map.AtomicMapType;
+import io.atomix.core.transaction.TransactionParticipant;
 import io.atomix.core.transaction.TransactionalMap;
 import io.atomix.core.transaction.TransactionalMapBuilder;
 import io.atomix.core.transaction.TransactionalMapConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.serializer.Serializer;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Transactional map builder.
@@ -53,8 +57,19 @@ public class DefaultTransactionalMapBuilder<K, V> extends TransactionalMapBuilde
   }
 
   @Override
+  public CompletableFuture<TransactionalMap<K, V>> getAsync() {
+    return buildMap(mapBuilder::getAsync, SingletonTransactionalMap::new);
+  }
+
+  @Override
   public CompletableFuture<TransactionalMap<K, V>> buildAsync() {
-    return mapBuilder.buildAsync()
+    return buildMap(mapBuilder::buildAsync, m -> m);
+  }
+
+  private CompletableFuture<TransactionalMap<K, V>> buildMap(
+      Supplier<CompletableFuture<AtomicMap<K, V>>> mapSupplier,
+      Function<TransactionalMapParticipant<K, V>, TransactionParticipant<?>> mapWrapper) {
+    return mapSupplier.get()
         .thenApply(map -> {
           TransactionalMapParticipant<K, V> transactionalMap;
           switch (transaction.isolation()) {
@@ -67,7 +82,7 @@ public class DefaultTransactionalMapBuilder<K, V> extends TransactionalMapBuilde
             default:
               throw new AssertionError();
           }
-          transaction.addParticipants(transactionalMap);
+          transaction.addParticipants(mapWrapper.apply(transactionalMap));
           return transactionalMap.sync();
         });
   }
