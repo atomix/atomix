@@ -15,15 +15,15 @@
  */
 package io.atomix.core.set;
 
-import io.atomix.core.AbstractPrimitiveTest;
-import io.atomix.core.collection.CollectionEvent;
-import io.atomix.core.collection.CollectionEventListener;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import io.atomix.core.AbstractPrimitiveTest;
+import io.atomix.core.collection.CollectionEvent;
+import io.atomix.core.collection.CollectionEventListener;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -54,6 +54,13 @@ public class DistributedSetTest extends AbstractPrimitiveTest {
     assertTrue(set.remove("bar"));
     assertTrue(set.isEmpty());
     assertFalse(set.remove("bar"));
+    assertTrue(set.add("foo"));
+    assertTrue(set.add("bar"));
+    assertEquals(2, set.size());
+    assertFalse(set.isEmpty());
+    set.clear();
+    assertEquals(0, set.size());
+    assertTrue(set.isEmpty());
   }
 
   @Test
