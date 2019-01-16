@@ -171,7 +171,7 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
 
   @Override
   public CompletableFuture<Void> clear() {
-    return getProxyClient().acceptBy(name(), service -> service.clear());
+    return getProxyClient().acceptAll(service -> service.clear());
   }
 
   @Override
