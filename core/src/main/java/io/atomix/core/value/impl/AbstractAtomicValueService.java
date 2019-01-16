@@ -52,6 +52,10 @@ public abstract class AbstractAtomicValueService extends AbstractPrimitiveServic
 
   @Override
   public void backup(BackupOutput writer) {
+    byte[] value = this.value;
+    if (value == null) {
+      value = new byte[0];
+    }
     writer.writeInt(value.length).writeBytes(value);
     writer.writeObject(listeners);
   }
@@ -59,6 +63,9 @@ public abstract class AbstractAtomicValueService extends AbstractPrimitiveServic
   @Override
   public void restore(BackupInput reader) {
     value = reader.readBytes(reader.readInt());
+    if (value.length == 0) {
+      value = null;
+    }
     listeners = reader.readObject();
   }
 
