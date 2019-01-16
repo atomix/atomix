@@ -15,17 +15,21 @@
  */
 package io.atomix.core.transaction.impl;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import io.atomix.core.set.DistributedSet;
 import io.atomix.core.set.DistributedSetBuilder;
 import io.atomix.core.set.DistributedSetConfig;
 import io.atomix.core.set.DistributedSetType;
+import io.atomix.core.transaction.TransactionParticipant;
 import io.atomix.core.transaction.TransactionalSet;
 import io.atomix.core.transaction.TransactionalSetBuilder;
 import io.atomix.core.transaction.TransactionalSetConfig;
 import io.atomix.primitive.PrimitiveManagementService;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.utils.serializer.Serializer;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Default transactional set builder.
@@ -53,8 +57,19 @@ public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E
   }
 
   @Override
+  public CompletableFuture<TransactionalSet<E>> getAsync() {
+    return buildSet(setBuilder::getAsync, SingletonTransactionalSet::new);
+  }
+
+  @Override
   public CompletableFuture<TransactionalSet<E>> buildAsync() {
-    return setBuilder.buildAsync()
+    return buildSet(setBuilder::buildAsync, s -> s);
+  }
+
+  private CompletableFuture<TransactionalSet<E>> buildSet(
+      Supplier<CompletableFuture<DistributedSet<E>>> setSupplier,
+      Function<TransactionalSetParticipant<E>, TransactionParticipant<?>> setWrapper) {
+    return setSupplier.get()
         .thenApply(set -> {
           TransactionalSetParticipant<E> transactionalSet;
           switch (transaction.isolation()) {
@@ -67,7 +82,7 @@ public class DefaultTransactionalSetBuilder<E> extends TransactionalSetBuilder<E
             default:
               throw new AssertionError();
           }
-          transaction.addParticipants(transactionalSet);
+          transaction.addParticipants(setWrapper.apply(transactionalSet));
           return transactionalSet.sync();
         });
   }
