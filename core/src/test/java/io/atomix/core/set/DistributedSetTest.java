@@ -15,16 +15,16 @@
  */
 package io.atomix.core.set;
 
+import java.util.Arrays;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.collection.CollectionEvent;
 import io.atomix.core.collection.CollectionEventListener;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -55,6 +55,13 @@ public abstract class DistributedSetTest extends AbstractPrimitiveTest<ProxyProt
     assertTrue(set.remove("bar"));
     assertTrue(set.isEmpty());
     assertFalse(set.remove("bar"));
+    assertTrue(set.add("foo"));
+    assertTrue(set.add("bar"));
+    assertEquals(2, set.size());
+    assertFalse(set.isEmpty());
+    set.clear();
+    assertEquals(0, set.size());
+    assertTrue(set.isEmpty());
   }
 
   @Test
