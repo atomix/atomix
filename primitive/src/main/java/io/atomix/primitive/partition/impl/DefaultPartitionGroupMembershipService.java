@@ -15,6 +15,18 @@
  */
 package io.atomix.primitive.partition.impl;
 
+import java.time.Duration;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -48,18 +60,6 @@ import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import static io.atomix.primitive.partition.PartitionGroupMembershipEvent.Type.MEMBERS_CHANGED;
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
@@ -72,10 +72,10 @@ public class DefaultPartitionGroupMembershipService
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPartitionGroupMembershipService.class);
   private static final String BOOTSTRAP_SUBJECT = "partition-group-bootstrap";
   private static final int[] FIBONACCI_NUMBERS = new int[]{1, 1, 2, 3, 5};
+  private static final int MAX_PARTITION_GROUP_ATTEMPTS = 5;
 
   private final ClusterMembershipService membershipService;
   private final ClusterCommunicationService messagingService;
-  private final PartitionGroupTypeRegistry groupTypeRegistry;
   private final Serializer serializer;
   private volatile PartitionGroupMembership systemGroup;
   private final Map<String, PartitionGroupMembership> groups = Maps.newConcurrentMap();
@@ -92,7 +92,6 @@ public class DefaultPartitionGroupMembershipService
       PartitionGroupTypeRegistry groupTypeRegistry) {
     this.membershipService = membershipService;
     this.messagingService = messagingService;
-    this.groupTypeRegistry = groupTypeRegistry;
     this.systemGroup = systemGroup != null
         ? new PartitionGroupMembership(
         systemGroup.name(),
@@ -193,7 +192,7 @@ public class DefaultPartitionGroupMembershipService
               LOGGER.warn("Failed to locate system partition group via bootstrap nodes. Please ensure partition " +
                   "groups are configured either locally or remotely and the node is able to reach partition group members.");
               threadContext.schedule(Duration.ofSeconds(FIBONACCI_NUMBERS[Math.min(attempt, 4)]), () -> bootstrap(attempt + 1, future));
-            } else if (groups.isEmpty()) {
+            } else if (groups.isEmpty() && attempt < MAX_PARTITION_GROUP_ATTEMPTS) {
               LOGGER.warn("Failed to locate primitive partition group(s) via bootstrap nodes. Please ensure partition " +
                   "groups are configured either locally or remotely and the node is able to reach partition group members.");
               threadContext.schedule(Duration.ofSeconds(FIBONACCI_NUMBERS[Math.min(attempt, 4)]), () -> bootstrap(attempt + 1, future));
