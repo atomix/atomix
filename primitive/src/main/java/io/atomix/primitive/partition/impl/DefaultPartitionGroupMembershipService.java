@@ -189,11 +189,11 @@ public class DefaultPartitionGroupMembershipService
         .whenComplete((result, error) -> {
           if (error == null) {
             if (systemGroup == null) {
-              LOGGER.warn("Failed to locate system partition group via bootstrap nodes. Please ensure partition " +
+              LOGGER.warn("Failed to locate management group via bootstrap nodes. Please ensure partition " +
                   "groups are configured either locally or remotely and the node is able to reach partition group members.");
               threadContext.schedule(Duration.ofSeconds(FIBONACCI_NUMBERS[Math.min(attempt, 4)]), () -> bootstrap(attempt + 1, future));
             } else if (groups.isEmpty() && attempt < MAX_PARTITION_GROUP_ATTEMPTS) {
-              LOGGER.warn("Failed to locate primitive partition group(s) via bootstrap nodes. Please ensure partition " +
+              LOGGER.warn("Failed to locate partition group(s) via bootstrap nodes. Please ensure partition " +
                   "groups are configured either locally or remotely and the node is able to reach partition group members.");
               threadContext.schedule(Duration.ofSeconds(FIBONACCI_NUMBERS[Math.min(attempt, 4)]), () -> bootstrap(attempt + 1, future));
             } else {
@@ -251,7 +251,7 @@ public class DefaultPartitionGroupMembershipService
     if (systemGroup == null && info.systemGroup != null) {
       systemGroup = info.systemGroup;
       post(new PartitionGroupMembershipEvent(MEMBERS_CHANGED, systemGroup));
-      LOGGER.debug("{} - Bootstrapped system group {} from {}", membershipService.getLocalMember().id(), systemGroup, info.memberId);
+      LOGGER.info("{} - Bootstrapped management group {} from {}", membershipService.getLocalMember().id(), systemGroup, info.memberId);
     } else if (systemGroup != null && info.systemGroup != null) {
       if (!systemGroup.group().equals(info.systemGroup.group())
           || !systemGroup.config().getType().name().equals(info.systemGroup.config().getType().name())) {
@@ -263,7 +263,7 @@ public class DefaultPartitionGroupMembershipService
         if (!Sets.difference(newMembers, systemGroup.members()).isEmpty()) {
           systemGroup = new PartitionGroupMembership(systemGroup.group(), systemGroup.config(), ImmutableSet.copyOf(newMembers), true);
           post(new PartitionGroupMembershipEvent(MEMBERS_CHANGED, systemGroup));
-          LOGGER.debug("{} - Updated system group {} from {}", membershipService.getLocalMember().id(), systemGroup, info.memberId);
+          LOGGER.debug("{} - Updated management group {} from {}", membershipService.getLocalMember().id(), systemGroup, info.memberId);
         }
       }
     }
@@ -273,7 +273,7 @@ public class DefaultPartitionGroupMembershipService
       if (oldMembership == null) {
         groups.put(newMembership.group(), newMembership);
         post(new PartitionGroupMembershipEvent(MEMBERS_CHANGED, newMembership));
-        LOGGER.debug("{} - Bootstrapped partition group {} from {}", membershipService.getLocalMember().id(), newMembership, info.memberId);
+        LOGGER.info("{} - Bootstrapped partition group {} from {}", membershipService.getLocalMember().id(), newMembership, info.memberId);
       } else if (!oldMembership.group().equals(newMembership.group())
           || !oldMembership.config().getType().name().equals(newMembership.config().getType().name())) {
         throw new ConfigurationException("Duplicate partition group " + newMembership.group() + " detected");
