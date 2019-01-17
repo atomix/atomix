@@ -19,7 +19,7 @@
   <parent>
     <groupId>io.atomix</groupId>
     <artifactId>atomix-protocols-parent</artifactId>
-    <version>3.0.10-SNAPSHOT</version>
+    <version>3.0.10</version>
   </parent>
 
   <packaging>bundle</packaging>
