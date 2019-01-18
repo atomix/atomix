@@ -228,6 +228,9 @@ public class RaftServiceContext implements ServiceContext {
     }
 
     String serviceName = reader.readString();
+    currentIndex = reader.readLong();
+    currentTimestamp = reader.readLong();
+
     int sessionCount = reader.readInt();
     for (int i = 0; i < sessionCount; i++) {
       SessionId sessionId = SessionId.from(reader.readLong());
@@ -262,8 +265,6 @@ public class RaftServiceContext implements ServiceContext {
       session.open();
       service.register(sessions.addSession(session));
     }
-    currentIndex = reader.snapshot().index();
-    currentTimestamp = reader.snapshot().timestamp().unixTimestamp();
     service.restore(new DefaultBackupInput(reader, service.serializer()));
   }
 
@@ -277,6 +278,9 @@ public class RaftServiceContext implements ServiceContext {
     writer.writeLong(primitiveId.id());
     writer.writeString(primitiveType.name());
     writer.writeString(serviceName);
+    writer.writeLong(currentIndex);
+    writer.writeLong(currentTimestamp);
+
     writer.writeInt(sessions.getSessions().size());
     for (RaftSession session : sessions.getSessions()) {
       writer.writeLong(session.sessionId().id());
@@ -303,11 +307,11 @@ public class RaftServiceContext implements ServiceContext {
   public long openSession(long index, long timestamp, RaftSession session) {
     log.debug("Opening session {}", session.sessionId());
 
-    // Update the state machine index/ timestamp .
-    session.setLastUpdated(timestamp);
-
     // Update the state machine index/timestamp.
     tick(index, timestamp);
+
+    // Update the state machine index/ timestamp .
+    session.setLastUpdated(currentTimestamp);
 
     // Expire sessions that have timed out.
     expireSessions(currentTimestamp);
