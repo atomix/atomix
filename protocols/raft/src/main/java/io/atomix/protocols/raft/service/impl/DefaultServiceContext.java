@@ -64,6 +64,7 @@ public class DefaultServiceContext implements ServiceContext {
   private final ThreadContextFactory threadContextFactory;
   private long currentIndex;
   private long currentTimestamp;
+  private long timestampDelta;
   private OperationType currentOperation;
   private final LogicalClock logicalClock = new LogicalClock() {
     @Override
@@ -198,7 +199,23 @@ public class DefaultServiceContext implements ServiceContext {
    */
   private void tick(long index, long timestamp) {
     this.currentIndex = index;
-    this.currentTimestamp = Math.max(currentTimestamp, timestamp);
+
+    // If the entry timestamp is less than the current state machine timestamp
+    // and the delta is not yet set, set the delta and do not change the current timestamp.
+    // If the entry timestamp is less than the current state machine timestamp
+    // and the delta is set, update the current timestamp to the entry timestamp plus the delta.
+    // If the entry timestamp is greater than or equal to the current timestamp, update the current
+    // timestamp and reset the delta.
+    if (timestamp < currentTimestamp) {
+      if (timestampDelta == 0) {
+        timestampDelta = currentTimestamp - timestamp;
+      } else {
+        currentTimestamp = timestamp + timestampDelta;
+      }
+    } else {
+      currentTimestamp = timestamp;
+      timestampDelta = 0;
+    }
 
     // Set the current operation type to COMMAND to allow events to be sent.
     setOperation(OperationType.COMMAND);
@@ -224,6 +241,11 @@ public class DefaultServiceContext implements ServiceContext {
    */
   public void installSnapshot(SnapshotReader reader) {
     log.debug("Installing snapshot {}", reader.snapshot().index());
+
+    currentIndex = reader.readLong();
+    currentTimestamp = reader.readLong();
+    timestampDelta = reader.readLong();
+
     int sessionCount = reader.readInt();
     for (int i = 0; i < sessionCount; i++) {
       SessionId sessionId = SessionId.from(reader.readLong());
@@ -266,6 +288,10 @@ public class DefaultServiceContext implements ServiceContext {
    */
   public void takeSnapshot(SnapshotWriter writer) {
     log.debug("Taking snapshot {}", writer.snapshot().index());
+
+    writer.writeLong(currentIndex);
+    writer.writeLong(currentTimestamp);
+    writer.writeLong(timestampDelta);
 
     // Serialize sessions to the in-memory snapshot and request a snapshot from the state machine.
     writer.writeInt(sessions.getSessions().size());
