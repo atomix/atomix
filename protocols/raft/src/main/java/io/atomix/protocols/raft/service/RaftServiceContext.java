@@ -71,6 +71,7 @@ public class RaftServiceContext implements ServiceContext {
   private long currentIndex;
   private Session currentSession;
   private long currentTimestamp;
+  private long timestampDelta;
   private OperationType currentOperation;
   private boolean deleted;
   private final LogicalClock logicalClock = new LogicalClock() {
@@ -188,7 +189,23 @@ public class RaftServiceContext implements ServiceContext {
    */
   private void tick(long index, long timestamp) {
     this.currentIndex = index;
-    this.currentTimestamp = Math.max(currentTimestamp, timestamp);
+
+    // If the entry timestamp is less than the current state machine timestamp
+    // and the delta is not yet set, set the delta and do not change the current timestamp.
+    // If the entry timestamp is less than the current state machine timestamp
+    // and the delta is set, update the current timestamp to the entry timestamp plus the delta.
+    // If the entry timestamp is greater than or equal to the current timestamp, update the current
+    // timestamp and reset the delta.
+    if (timestamp < currentTimestamp) {
+      if (timestampDelta == 0) {
+        timestampDelta = currentTimestamp - timestamp;
+      } else {
+        currentTimestamp = timestamp + timestampDelta;
+      }
+    } else {
+      currentTimestamp = timestamp;
+      timestampDelta = 0;
+    }
 
     // Set the current operation type to COMMAND to allow events to be sent.
     setOperation(OperationType.COMMAND);
@@ -230,6 +247,7 @@ public class RaftServiceContext implements ServiceContext {
     String serviceName = reader.readString();
     currentIndex = reader.readLong();
     currentTimestamp = reader.readLong();
+    timestampDelta = reader.readLong();
 
     int sessionCount = reader.readInt();
     for (int i = 0; i < sessionCount; i++) {
@@ -280,6 +298,7 @@ public class RaftServiceContext implements ServiceContext {
     writer.writeString(serviceName);
     writer.writeLong(currentIndex);
     writer.writeLong(currentTimestamp);
+    writer.writeLong(timestampDelta);
 
     writer.writeInt(sessions.getSessions().size());
     for (RaftSession session : sessions.getSessions()) {
