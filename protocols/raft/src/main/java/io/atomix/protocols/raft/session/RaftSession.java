@@ -435,8 +435,13 @@ public class RaftSession extends AbstractSession {
   public void publish(PrimitiveEvent event) {
     // Store volatile state in a local variable.
     State state = this.state;
-    checkState(state != State.EXPIRED, "session is expired");
-    checkState(state != State.CLOSED, "session is closed");
+
+    // If the sessions's state is not active, just ignore the event.
+    if (!state.active()) {
+      return;
+    }
+
+    // If the event is being published during a read operation, throw an exception.
     checkState(context.currentOperation() == OperationType.COMMAND, "session events can only be published during command execution");
 
     // If the client acked an index greater than the current event sequence number since we know the
