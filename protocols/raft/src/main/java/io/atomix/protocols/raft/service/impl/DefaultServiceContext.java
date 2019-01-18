@@ -294,11 +294,11 @@ public class DefaultServiceContext implements ServiceContext {
   public long openSession(long index, long timestamp, RaftSessionContext session) {
     log.debug("Opening session {}", session.sessionId());
 
-    // Update the session's timestamp to prevent it from being expired.
-    session.setLastUpdated(timestamp);
-
     // Update the state machine index/timestamp.
     tick(index, timestamp);
+
+    // Update the session's timestamp to prevent it from being expired.
+    session.setLastUpdated(currentTimestamp);
 
     // Expire sessions that have timed out.
     expireSessions(currentTimestamp);
