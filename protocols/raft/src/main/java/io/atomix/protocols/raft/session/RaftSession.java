@@ -436,11 +436,9 @@ public class RaftSession extends AbstractSession {
     // Store volatile state in a local variable.
     State state = this.state;
     if (state == State.EXPIRED) {
-      log.warn("session {} is expired", this.sessionId());
       return;
     }
     if (state == State.CLOSED) {
-      log.warn("session {} is closed", this.sessionId());
       return;
     }
     checkState(context.currentOperation() == OperationType.COMMAND, "session events can only be published during command execution");
