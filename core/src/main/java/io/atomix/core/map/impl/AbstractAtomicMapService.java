@@ -125,6 +125,9 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
         });
       }
     });
+    listeners = listeners.stream()
+            .filter(each -> getSession(each) != null && getSession(each).getState().active())
+            .collect(Collectors.toSet());
   }
 
   @Override
@@ -893,7 +896,8 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
    * @param events list of map event to publish
    */
   private void publish(List<AtomicMapEvent<K, byte[]>> events) {
-    listeners.forEach(listener -> events.forEach(event -> getSession(listener).accept(client -> client.change(event))));
+    listeners.stream().filter(each->getSession(each) != null && getSession(each).getState().active())
+            .forEach(listener -> events.forEach(event -> getSession(listener).accept(client -> client.change(event))));
   }
 
   @Override
