@@ -15,9 +15,9 @@
  */
 package io.atomix.cluster.messaging.impl;
 
-import io.atomix.utils.net.Address;
-
 import java.util.stream.Stream;
+
+import io.atomix.utils.net.Address;
 
 /**
  * Messaging protocol version.
@@ -27,6 +27,12 @@ public enum ProtocolVersion {
     @Override
     public MessagingProtocol createProtocol(Address address) {
       return new MessagingProtocolV1(address);
+    }
+  },
+  V2(2) {
+    @Override
+    public MessagingProtocol createProtocol(Address address) {
+      return new MessagingProtocolV2(address);
     }
   };
 

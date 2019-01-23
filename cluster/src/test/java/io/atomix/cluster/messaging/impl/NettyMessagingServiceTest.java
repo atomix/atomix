@@ -37,6 +37,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -58,22 +59,27 @@ public class NettyMessagingServiceTest {
 
   ManagedMessagingService netty1;
   ManagedMessagingService netty2;
+  ManagedMessagingService netty3;
 
   private static final String IP_STRING = "127.0.0.1";
 
-  Address ep1;
-  Address ep2;
+  Address address1;
+  Address address2;
+  Address address3;
   Address invalidAddress;
 
   @Before
   public void setUp() throws Exception {
-    ep1 = Address.from(findAvailablePort(5001));
-    netty1 = (ManagedMessagingService) new NettyMessagingService("test", ep1, new MessagingConfig()).start().join();
+    address1 = Address.from(findAvailablePort(5001));
+    netty1 = (ManagedMessagingService) new NettyMessagingService("test", address1, new MessagingConfig()).start().join();
 
-    ep2 = Address.from(findAvailablePort(5003));
-    netty2 = (ManagedMessagingService) new NettyMessagingService("test", ep2, new MessagingConfig()).start().join();
+    address2 = Address.from(findAvailablePort(5002));
+    netty2 = (ManagedMessagingService) new NettyMessagingService("test", address2, new MessagingConfig()).start().join();
 
-    invalidAddress = Address.from(IP_STRING, 5003);
+    address3 = Address.from(findAvailablePort(5003));
+    netty3 = (ManagedMessagingService) new NettyMessagingService("test", address3, new MessagingConfig(), ProtocolVersion.V1).start().join();
+
+    invalidAddress = Address.from(IP_STRING, 5004);
   }
 
   /**
@@ -107,7 +113,7 @@ public class NettyMessagingServiceTest {
   public void testSendAsync() {
     String subject = nextSubject();
     CountDownLatch latch1 = new CountDownLatch(1);
-    CompletableFuture<Void> response = netty1.sendAsync(ep2, subject, "hello world".getBytes());
+    CompletableFuture<Void> response = netty1.sendAsync(address2, subject, "hello world".getBytes());
     response.whenComplete((r, e) -> {
       assertNull(e);
       latch1.countDown();
@@ -139,11 +145,11 @@ public class NettyMessagingServiceTest {
     };
     netty2.registerHandler(subject, handler, MoreExecutors.directExecutor());
 
-    CompletableFuture<byte[]> response = netty1.sendAndReceive(ep2, subject, "hello world".getBytes());
+    CompletableFuture<byte[]> response = netty1.sendAndReceive(address2, subject, "hello world".getBytes());
     assertTrue(Arrays.equals("hello there".getBytes(), response.join()));
     assertTrue(handlerInvoked.get());
     assertTrue(Arrays.equals(request.get(), "hello world".getBytes()));
-    assertEquals(ep1.address(), sender.get().address());
+    assertEquals(address1.address(), sender.get().address());
   }
 
   @Test
@@ -161,11 +167,11 @@ public class NettyMessagingServiceTest {
     };
     netty2.registerHandler(subject, handler, MoreExecutors.directExecutor());
 
-    CompletableFuture<byte[]> response = netty1.sendAndReceive(ep2, subject, "hello world".getBytes(), false);
+    CompletableFuture<byte[]> response = netty1.sendAndReceive(address2, subject, "hello world".getBytes(), false);
     assertTrue(Arrays.equals("hello there".getBytes(), response.join()));
     assertTrue(handlerInvoked.get());
     assertTrue(Arrays.equals(request.get(), "hello world".getBytes()));
-    assertEquals(ep1.address(), sender.get().address());
+    assertEquals(address1.address(), sender.get().address());
   }
 
   @Test
@@ -175,7 +181,7 @@ public class NettyMessagingServiceTest {
     netty2.registerHandler(subject, handler);
 
     try {
-      netty1.sendAndReceive(ep2, subject, "hello world".getBytes(), Duration.ofSeconds(1)).join();
+      netty1.sendAndReceive(address2, subject, "hello world".getBytes(), Duration.ofSeconds(1)).join();
       fail();
     } catch (CompletionException e) {
       assertTrue(e.getCause() instanceof TimeoutException);
@@ -189,7 +195,7 @@ public class NettyMessagingServiceTest {
     netty2.registerHandler(subject, handler);
 
     try {
-      netty1.sendAndReceive(ep2, subject, "hello world".getBytes()).join();
+      netty1.sendAndReceive(address2, subject, "hello world".getBytes()).join();
       fail();
     } catch (CompletionException e) {
       assertTrue(e.getCause() instanceof TimeoutException);
@@ -219,7 +225,7 @@ public class NettyMessagingServiceTest {
     };
     netty2.registerHandler(subject, handler, handlerExecutor);
 
-    CompletableFuture<byte[]> response = netty1.sendAndReceive(ep2,
+    CompletableFuture<byte[]> response = netty1.sendAndReceive(address2,
         subject,
         "hello world".getBytes(),
         completionExecutor);
@@ -232,6 +238,23 @@ public class NettyMessagingServiceTest {
     assertTrue(Arrays.equals("hello there".getBytes(), response.join()));
     assertEquals("completion-thread", completionThreadName.get());
     assertEquals("handler-thread", handlerThreadName.get());
+  }
+
+  @Test
+  public void testVersionNegotiation() throws Exception {
+    String subject;
+    byte[] payload = "Hello world!".getBytes();
+    byte[] response;
+
+    subject = nextSubject();
+    netty2.registerHandler(subject, (address, bytes) -> CompletableFuture.completedFuture(bytes));
+    response = netty3.sendAndReceive(address2, subject, payload).get(10, TimeUnit.SECONDS);
+    assertArrayEquals(payload, response);
+
+    subject = nextSubject();
+    netty3.registerHandler(subject, (address, bytes) -> CompletableFuture.completedFuture(bytes));
+    response = netty2.sendAndReceive(address3, subject, payload).get(10, TimeUnit.SECONDS);
+    assertArrayEquals(payload, response);
   }
 
   private static int findAvailablePort(int defaultPort) {
