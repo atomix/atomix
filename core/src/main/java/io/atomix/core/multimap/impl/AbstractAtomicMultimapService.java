@@ -107,6 +107,9 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   public void restore(BackupInput reader) {
     globalVersion = new AtomicLong(reader.readLong());
     listeners = reader.readObject();
+    listeners = listeners.stream()
+            .filter(each -> getSession(each) != null && getSession(each).getState().active())
+            .collect(Collectors.toSet());
     backingMap = reader.readObject();
   }
 

@@ -28,6 +28,7 @@ import io.atomix.utils.serializer.Serializer;
 
 import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Abstract atomic value service.
@@ -67,6 +68,9 @@ public abstract class AbstractAtomicValueService extends AbstractPrimitiveServic
       value = null;
     }
     listeners = reader.readObject();
+    listeners = listeners.stream()
+            .filter(each -> getSession(each) != null && getSession(each).getState().active())
+            .collect(Collectors.toSet());
   }
 
   private byte[] updateAndNotify(byte[] value) {
