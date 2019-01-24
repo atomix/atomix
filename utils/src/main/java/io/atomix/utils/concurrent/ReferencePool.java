@@ -29,8 +29,9 @@ public class ReferencePool<T extends ReferenceCounted<?>> implements ReferenceMa
   private volatile boolean closed;
 
   public ReferencePool(ReferenceFactory<T> factory) {
-    if (factory == null)
+    if (factory == null) {
       throw new NullPointerException("factory cannot be null");
+    }
     this.factory = factory;
   }
 
@@ -40,8 +41,9 @@ public class ReferencePool<T extends ReferenceCounted<?>> implements ReferenceMa
    * @return The acquired reference.
    */
   public T acquire() {
-    if (closed)
+    if (closed) {
       throw new IllegalStateException("pool closed");
+    }
 
     T reference = pool.poll();
     if (reference == null) {

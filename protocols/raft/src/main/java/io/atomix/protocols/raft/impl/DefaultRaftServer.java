@@ -105,8 +105,9 @@ public class DefaultRaftServer implements RaftServer {
    * Starts the server.
    */
   private CompletableFuture<RaftServer> start(Supplier<CompletableFuture<Void>> joiner) {
-    if (started)
+    if (started) {
       return CompletableFuture.completedFuture(this);
+    }
 
     if (openFuture == null) {
       synchronized (this) {

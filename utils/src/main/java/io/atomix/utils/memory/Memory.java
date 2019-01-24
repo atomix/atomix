@@ -50,12 +50,15 @@ public interface Memory {
      * Rounds the count to the nearest power of two.
      */
     public static long toPow2(int size) {
-      if ((size & (size - 1)) == 0)
+      if ((size & (size - 1)) == 0) {
         return size;
+      }
       int i = 128;
       while (i < size) {
         i *= 2;
-        if (i <= 0) return 1L << 62;
+        if (i <= 0) {
+          return 1L << 62;
+        }
       }
       return i;
     }

@@ -38,8 +38,9 @@ public abstract class AbstractBytes implements Bytes {
    * Checks whether the block is open.
    */
   protected void checkOpen() {
-    if (!open)
+    if (!open) {
       throw new IllegalStateException("bytes not open");
+    }
   }
 
   /**
@@ -47,8 +48,9 @@ public abstract class AbstractBytes implements Bytes {
    */
   protected void checkOffset(int offset) {
     checkOpen();
-    if (offset < 0 || offset > size())
+    if (offset < 0 || offset > size()) {
       throw new IndexOutOfBoundsException();
+    }
   }
 
   /**
@@ -57,8 +59,9 @@ public abstract class AbstractBytes implements Bytes {
   protected int checkRead(int offset, int length) {
     checkOffset(offset);
     int position = offset + length;
-    if (position > size())
+    if (position > size()) {
       throw new BufferUnderflowException();
+    }
     return position;
   }
 
@@ -68,8 +71,9 @@ public abstract class AbstractBytes implements Bytes {
   protected int checkWrite(int offset, int length) {
     checkOffset(offset);
     int position = offset + length;
-    if (position > size())
+    if (position > size()) {
       throw new BufferOverflowException();
+    }
     return position;
   }
 
@@ -90,12 +94,15 @@ public abstract class AbstractBytes implements Bytes {
 
   @Override
   public Bytes order(ByteOrder order) {
-    if (order == null)
+    if (order == null) {
       throw new NullPointerException("order cannot be null");
-    if (order == order())
+    }
+    if (order == order()) {
       return this;
-    if (swap != null)
+    }
+    if (swap != null) {
       return swap;
+    }
     swap = new SwappedBytes(this);
     return swap;
   }

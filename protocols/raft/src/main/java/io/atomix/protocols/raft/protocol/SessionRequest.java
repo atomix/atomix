@@ -49,8 +49,12 @@ public abstract class SessionRequest extends AbstractRaftRequest {
 
   @Override
   public boolean equals(Object object) {
-    if (this == object) return true;
-    if (object == null || !getClass().isAssignableFrom(object.getClass())) return false;
+    if (this == object) {
+      return true;
+    }
+    if (object == null || !getClass().isAssignableFrom(object.getClass())) {
+      return false;
+    }
 
     SessionRequest request = (SessionRequest) object;
     return request.session == session;

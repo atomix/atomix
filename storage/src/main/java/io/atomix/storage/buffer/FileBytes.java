@@ -90,20 +90,24 @@ public class FileBytes extends AbstractBytes {
   private int size;
 
   FileBytes(File file, String mode, int size) {
-    if (file == null)
+    if (file == null) {
       throw new NullPointerException("file cannot be null");
-    if (mode == null)
+    }
+    if (mode == null) {
       mode = DEFAULT_MODE;
-    if (size < 0)
+    }
+    if (size < 0) {
       throw new IllegalArgumentException("size must be positive");
+    }
 
     this.file = file;
     this.mode = mode;
     this.size = size;
     try {
       this.randomAccessFile = new RandomAccessFile(file, mode);
-      if (size > randomAccessFile.length())
+      if (size > randomAccessFile.length()) {
         randomAccessFile.setLength(size);
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -134,8 +138,9 @@ public class FileBytes extends AbstractBytes {
 
   @Override
   public Bytes resize(int newSize) {
-    if (newSize < size)
+    if (newSize < size) {
       throw new IllegalArgumentException("cannot decrease file bytes size; use zero() to decrease file size");
+    }
     int oldSize = this.size;
     this.size = newSize;
     try {
