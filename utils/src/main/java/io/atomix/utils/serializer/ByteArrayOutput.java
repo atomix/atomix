@@ -22,15 +22,15 @@ import com.esotericsoftware.kryo.io.Output;
  */
 final class ByteArrayOutput extends Output {
 
-    private final BufferAwareByteArrayOutputStream stream;
+  private final BufferAwareByteArrayOutputStream stream;
 
-    ByteArrayOutput(final int bufferSize, final int maxBufferSize, final BufferAwareByteArrayOutputStream stream) {
-        super(bufferSize, maxBufferSize);
-        super.setOutputStream(stream);
-        this.stream = stream;
-    }
+  ByteArrayOutput(final int bufferSize, final int maxBufferSize, final BufferAwareByteArrayOutputStream stream) {
+    super(bufferSize, maxBufferSize);
+    super.setOutputStream(stream);
+    this.stream = stream;
+  }
 
-    BufferAwareByteArrayOutputStream getByteArrayOutputStream() {
-        return stream;
-    }
+  BufferAwareByteArrayOutputStream getByteArrayOutputStream() {
+    return stream;
+  }
 }

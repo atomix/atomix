@@ -28,49 +28,49 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 final class UpdateRequest<K> {
 
-    private final MemberId sender;
-    private final Set<K> keys;
+  private final MemberId sender;
+  private final Set<K> keys;
 
-    /**
-     * Creates a new update request.
-     *
-     * @param sender the sender's node ID
-     * @param keys keys requested
-     */
-    public UpdateRequest(MemberId sender, Set<K> keys) {
-        this.sender = checkNotNull(sender);
-        this.keys = ImmutableSet.copyOf(keys);
-    }
+  /**
+   * Creates a new update request.
+   *
+   * @param sender the sender's node ID
+   * @param keys   keys requested
+   */
+  public UpdateRequest(MemberId sender, Set<K> keys) {
+    this.sender = checkNotNull(sender);
+    this.keys = ImmutableSet.copyOf(keys);
+  }
 
-    /**
-     * Returns the sender's node ID.
-     *
-     * @return the sender's node ID
-     */
-    public MemberId sender() {
-        return sender;
-    }
+  /**
+   * Returns the sender's node ID.
+   *
+   * @return the sender's node ID
+   */
+  public MemberId sender() {
+    return sender;
+  }
 
-    /**
-     * Returns the keys.
-     *
-     * @return the keys
-     */
-    public Set<K> keys() {
-        return keys;
-    }
+  /**
+   * Returns the keys.
+   *
+   * @return the keys
+   */
+  public Set<K> keys() {
+    return keys;
+  }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-                .add("sender", sender)
-                .add("keys", keys())
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(getClass())
+        .add("sender", sender)
+        .add("keys", keys())
+        .toString();
+  }
 
-    @SuppressWarnings("unused")
-    private UpdateRequest() {
-        this.sender = null;
-        this.keys = null;
-    }
+  @SuppressWarnings("unused")
+  private UpdateRequest() {
+    this.sender = null;
+    this.keys = null;
+  }
 }

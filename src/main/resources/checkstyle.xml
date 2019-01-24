@@ -64,12 +64,16 @@
     <!--   <property name="fileExtensions" value="java"/> -->
     <!-- </module> -->
 
-    <!--<module name="TreeWalker">-->
+    <module name="TreeWalker">
 
         <!-- Indentation -->
-        <!--<module name="Indentation">-->
-            <!--<property name="basicOffset" value="2"/>-->
-        <!--</module>-->
+        <module name="Indentation">
+            <property name="basicOffset" value="2"/>
+            <property name="caseIndent" value="2"/>
+            <property name="throwsIndent" value="2"/>
+            <property name="arrayInitIndent" value="2"/>
+            <property name="lineWrappingIndentation" value="4"/>
+        </module>
 
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
@@ -185,6 +189,6 @@
         <!--<module name="ArrayTypeStyle"/>-->
         <!--<module name="UpperEll"/>-->
 
-    <!--</module>-->
+    </module>
 
 </module>

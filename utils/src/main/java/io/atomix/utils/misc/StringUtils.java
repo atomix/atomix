@@ -8,26 +8,26 @@ import java.util.List;
  */
 public final class StringUtils {
 
-    private StringUtils() {
-    }
+  private StringUtils() {
+  }
 
-    /**
-     * Splits the input string with the given regex and filters empty strings.
-     *
-     * @param input the string to split.
-     * @return the array of strings computed by splitting this string
-     */
-    public static String[] split(String input, String regex) {
-        if (input == null) {
-            return null;
-        }
-        String[] arr = input.split(regex);
-        List<String> results = new ArrayList<>(arr.length);
-        for (String a : arr) {
-            if (!a.trim().isEmpty()) {
-                results.add(a);
-            }
-        }
-        return results.toArray(new String[0]);
+  /**
+   * Splits the input string with the given regex and filters empty strings.
+   *
+   * @param input the string to split.
+   * @return the array of strings computed by splitting this string
+   */
+  public static String[] split(String input, String regex) {
+    if (input == null) {
+      return null;
     }
+    String[] arr = input.split(regex);
+    List<String> results = new ArrayList<>(arr.length);
+    for (String a : arr) {
+      if (!a.trim().isEmpty()) {
+        results.add(a);
+      }
+    }
+    return results.toArray(new String[0]);
+  }
 }

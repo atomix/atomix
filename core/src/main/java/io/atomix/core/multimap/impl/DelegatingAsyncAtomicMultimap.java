@@ -92,20 +92,17 @@ public class DelegatingAsyncAtomicMultimap<K, V>
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<V>>>
-  removeAll(K key) {
+  public CompletableFuture<Versioned<Collection<V>>> removeAll(K key) {
     return delegateMap.removeAll(key);
   }
 
   @Override
-  public CompletableFuture<Boolean> putAll(
-      K key, Collection<? extends V> values) {
+  public CompletableFuture<Boolean> putAll(K key, Collection<? extends V> values) {
     return delegateMap.putAll(key, values);
   }
 
   @Override
-  public CompletableFuture<Versioned<Collection<V>>>
-  replaceValues(K key, Collection<V> values) {
+  public CompletableFuture<Versioned<Collection<V>>> replaceValues(K key, Collection<V> values) {
     return delegateMap.replaceValues(key, values);
   }
 

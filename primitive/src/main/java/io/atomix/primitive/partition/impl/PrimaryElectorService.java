@@ -182,7 +182,8 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
             return v;
           }
         }
-      }).term();
+      })
+          .term();
 
       if (!Objects.equals(oldTerm, newTerm)) {
         notifyTermChange(partitionId, newTerm);

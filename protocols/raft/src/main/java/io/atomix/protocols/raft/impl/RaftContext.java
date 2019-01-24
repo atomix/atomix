@@ -177,7 +177,7 @@ public class RaftContext implements AutoCloseable {
   }
 
   public MemberId localMemberId() {
-      return membershipService.getLocalMember().id();
+    return membershipService.getLocalMember().id();
   }
 
   /**
@@ -776,14 +776,14 @@ public class RaftContext implements AutoCloseable {
         protocol.transfer(leader.memberId(), TransferRequest.builder()
             .withMember(member.memberId())
             .build()).whenCompleteAsync((response, error) -> {
-          if (error != null) {
-            future.completeExceptionally(error);
-          } else if (response.status() == RaftResponse.Status.ERROR) {
-            future.completeExceptionally(response.error().createException());
-          } else {
-            transition(RaftServer.Role.CANDIDATE);
-          }
-        }, threadContext);
+              if (error != null) {
+                future.completeExceptionally(error);
+              } else if (response.status() == RaftResponse.Status.ERROR) {
+                future.completeExceptionally(response.error().createException());
+              } else {
+                transition(RaftServer.Role.CANDIDATE);
+              }
+            }, threadContext);
       } else {
         transition(RaftServer.Role.CANDIDATE);
       }

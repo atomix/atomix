@@ -28,44 +28,44 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class AntiEntropyAdvertisement {
 
-    private final MemberId sender;
-    private final Map<String, MapValue.Digest> digest;
+  private final MemberId sender;
+  private final Map<String, MapValue.Digest> digest;
 
-    /**
-     * Creates a new anti entropy advertisement message.
-     *
-     * @param sender the sender's node ID
-     * @param digest for map entries
-     */
-    public AntiEntropyAdvertisement(MemberId sender,
-                                    Map<String, MapValue.Digest> digest) {
-        this.sender = checkNotNull(sender);
-        this.digest = ImmutableMap.copyOf(checkNotNull(digest));
-    }
+  /**
+   * Creates a new anti entropy advertisement message.
+   *
+   * @param sender the sender's node ID
+   * @param digest for map entries
+   */
+  public AntiEntropyAdvertisement(MemberId sender,
+      Map<String, MapValue.Digest> digest) {
+    this.sender = checkNotNull(sender);
+    this.digest = ImmutableMap.copyOf(checkNotNull(digest));
+  }
 
-    /**
-     * Returns the sender's node ID.
-     *
-     * @return the sender's node ID
-     */
-    public MemberId sender() {
-        return sender;
-    }
+  /**
+   * Returns the sender's node ID.
+   *
+   * @return the sender's node ID
+   */
+  public MemberId sender() {
+    return sender;
+  }
 
-    /**
-     * Returns the digest for map entries.
-     *
-     * @return mapping from key to associated digest
-     */
-    public Map<String, MapValue.Digest> digest() {
-        return digest;
-    }
+  /**
+   * Returns the digest for map entries.
+   *
+   * @return mapping from key to associated digest
+   */
+  public Map<String, MapValue.Digest> digest() {
+    return digest;
+  }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-                .add("sender", sender)
-                .add("totalEntries", digest.size())
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(getClass())
+        .add("sender", sender)
+        .add("totalEntries", digest.size())
+        .toString();
+  }
 }

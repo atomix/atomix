@@ -121,7 +121,7 @@ public class RaftServiceContext implements ServiceContext {
 
   @Override
   public MemberId localMemberId() {
-      return raft.localMemberId();
+    return raft.localMemberId();
   }
 
   @Override
@@ -296,9 +296,9 @@ public class RaftServiceContext implements ServiceContext {
   /**
    * Registers the given session.
    *
-   * @param index The index of the registration.
+   * @param index     The index of the registration.
    * @param timestamp The timestamp of the registration.
-   * @param session The session to register.
+   * @param session   The session to register.
    */
   public long openSession(long index, long timestamp, RaftSession session) {
     log.debug("Opening session {}", session.sessionId());
@@ -326,11 +326,11 @@ public class RaftServiceContext implements ServiceContext {
   /**
    * Keeps the given session alive.
    *
-   * @param index The index of the keep-alive.
-   * @param timestamp The timestamp of the keep-alive.
-   * @param session The session to keep-alive.
+   * @param index           The index of the keep-alive.
+   * @param timestamp       The timestamp of the keep-alive.
+   * @param session         The session to keep-alive.
    * @param commandSequence The session command sequence number.
-   * @param eventIndex The session event index.
+   * @param eventIndex      The session event index.
    */
   public boolean keepAlive(long index, long timestamp, RaftSession session, long commandSequence, long eventIndex) {
     // If the service has been deleted, just return false to ignore the keep-alive.
@@ -377,7 +377,7 @@ public class RaftServiceContext implements ServiceContext {
   /**
    * Completes a keep-alive.
    *
-   * @param index the keep-alive index
+   * @param index     the keep-alive index
    * @param timestamp the keep-alive timestamp
    */
   public void completeKeepAlive(long index, long timestamp) {
@@ -394,7 +394,7 @@ public class RaftServiceContext implements ServiceContext {
   /**
    * Keeps all sessions alive using the given timestamp.
    *
-   * @param index the index of the timestamp
+   * @param index     the index of the timestamp
    * @param timestamp the timestamp with which to reset session timeouts
    */
   public void keepAliveSessions(long index, long timestamp) {
@@ -411,10 +411,10 @@ public class RaftServiceContext implements ServiceContext {
   /**
    * Unregister the given session.
    *
-   * @param index The index of the unregister.
+   * @param index     The index of the unregister.
    * @param timestamp The timestamp of the unregister.
-   * @param session The session to unregister.
-   * @param expired Whether the session was expired by the leader.
+   * @param session   The session to unregister.
+   * @param expired   Whether the session was expired by the leader.
    */
   public void closeSession(long index, long timestamp, RaftSession session, boolean expired) {
     log.debug("Closing session {}", session.sessionId());
@@ -450,10 +450,10 @@ public class RaftServiceContext implements ServiceContext {
   /**
    * Executes the given command on the state machine.
    *
-   * @param index The index of the command.
+   * @param index     The index of the command.
    * @param timestamp The timestamp of the command.
-   * @param sequence The command sequence number.
-   * @param session The session that submitted the command.
+   * @param sequence  The command sequence number.
+   * @param session   The session that submitted the command.
    * @param operation The command to execute.
    * @return A future to be completed with the command result.
    */
@@ -544,10 +544,10 @@ public class RaftServiceContext implements ServiceContext {
   /**
    * Executes the given query on the state machine.
    *
-   * @param index The index of the query.
-   * @param sequence The query sequence number.
+   * @param index     The index of the query.
+   * @param sequence  The query sequence number.
    * @param timestamp The timestamp of the query.
-   * @param session The session that submitted the query.
+   * @param session   The session that submitted the query.
    * @param operation The query to execute.
    * @return A future to be completed with the query result.
    */

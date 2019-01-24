@@ -22,11 +22,11 @@ import java.io.ByteArrayOutputStream;
  */
 final class BufferAwareByteArrayOutputStream extends ByteArrayOutputStream {
 
-    BufferAwareByteArrayOutputStream(int size) {
-        super(size);
-    }
+  BufferAwareByteArrayOutputStream(int size) {
+    super(size);
+  }
 
-    int getBufferSize() {
-        return buf.length;
-    }
+  int getBufferSize() {
+    return buf.length;
+  }
 }

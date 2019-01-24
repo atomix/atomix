@@ -60,7 +60,7 @@ public class MappedMemory implements Memory {
    */
   public static MappedMemory allocate(File file, FileChannel.MapMode mode, int size) {
     if (size > MAX_SIZE) {
-        throw new IllegalArgumentException("size cannot be greater than " + MAX_SIZE);
+      throw new IllegalArgumentException("size cannot be greater than " + MAX_SIZE);
     }
     return new MappedMemoryAllocator(file, mode).allocate(size);
   }

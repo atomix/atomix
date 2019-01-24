@@ -72,7 +72,7 @@ public class StorageStatistics {
    */
   public long getFreeMemory() {
     try {
-        return (long) mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "FreePhysicalMemorySize");
+      return (long) mBeanServer.getAttribute(new ObjectName("java.lang", "type", "OperatingSystem"), "FreePhysicalMemorySize");
     } catch (Exception e) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("An exception occurred during memory check", e);
@@ -88,7 +88,7 @@ public class StorageStatistics {
    */
   public long getTotalMemory() {
     try {
-        return (long) mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "TotalPhysicalMemorySize");
+      return (long) mBeanServer.getAttribute(new ObjectName("java.lang", "type", "OperatingSystem"), "TotalPhysicalMemorySize");
     } catch (Exception e) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("An exception occurred during memory check", e);
