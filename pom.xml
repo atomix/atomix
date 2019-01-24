@@ -410,8 +410,21 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>2.17</version>
         <configuration>
-          <configLocation>google_checks.xml</configLocation>
+          <configLocation>src/main/resources/checkstyle.xml</configLocation>
         </configuration>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <consoleOutput>true</consoleOutput>
+              <failsOnError>true</failsOnError>
+              <failOnViolation>true</failOnViolation>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <!-- Coverage -->
