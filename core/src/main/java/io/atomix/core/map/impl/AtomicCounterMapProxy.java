@@ -31,7 +31,7 @@ import java.util.function.Predicate;
  * {@code AsyncAtomicCounterMap} implementation backed by Atomix.
  */
 public class AtomicCounterMapProxy
-    extends AbstractAsyncPrimitive<AsyncAtomicCounterMap<String>, AtomicCounterMapService> 
+    extends AbstractAsyncPrimitive<AsyncAtomicCounterMap<String>, AtomicCounterMapService>
     implements AsyncAtomicCounterMap<String> {
   public AtomicCounterMapProxy(ProxyClient<AtomicCounterMapService> proxy, PrimitiveRegistry registry) {
     super(proxy, registry);

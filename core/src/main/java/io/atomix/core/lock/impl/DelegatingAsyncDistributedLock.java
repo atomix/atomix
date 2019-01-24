@@ -30,7 +30,7 @@ public class DelegatingAsyncDistributedLock extends DelegatingAsyncPrimitive<Asy
   public DelegatingAsyncDistributedLock(AsyncAtomicLock atomicLock) {
     super(atomicLock);
   }
-  
+
   @Override
   public CompletableFuture<Boolean> isLocked() {
     return delegate().isLocked();

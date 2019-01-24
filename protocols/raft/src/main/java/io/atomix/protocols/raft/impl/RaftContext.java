@@ -175,7 +175,7 @@ public class RaftContext implements AutoCloseable {
     // Register protocol listeners.
     registerHandlers(protocol);
   }
-  
+
   public MemberId localMemberId() {
       return membershipService.getLocalMember().id();
   }

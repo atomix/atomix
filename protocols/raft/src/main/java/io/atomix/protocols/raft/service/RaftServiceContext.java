@@ -118,7 +118,7 @@ public class RaftServiceContext implements ServiceContext {
   public boolean deleted() {
     return deleted;
   }
-  
+
   @Override
   public MemberId localMemberId() {
       return raft.localMemberId();
