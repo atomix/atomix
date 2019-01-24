@@ -15,6 +15,34 @@
  */
 package io.atomix.cluster.messaging.impl;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.security.cert.Certificate;
+import java.time.Duration;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.StringJoiner;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -55,48 +83,18 @@ import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.TrustManagerFactory;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.MessageDigest;
-import java.security.cert.Certificate;
-import java.time.Duration;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
-import java.util.StringJoiner;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.stream.Stream;
-
 import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Netty based MessagingService.
  */
 public class NettyMessagingService implements ManagedMessagingService {
-  private static final int CHANNEL_POOL_SIZE = 8;
-
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   private final Address returnAddress;
   private final int preamble;
   private final MessagingConfig config;
+  private final ProtocolVersion protocolVersion;
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final HandlerRegistry handlers = new HandlerRegistry();
   private volatile LocalClientConnection localConnection;
@@ -117,9 +115,14 @@ public class NettyMessagingService implements ManagedMessagingService {
   protected KeyManagerFactory keyManager;
 
   public NettyMessagingService(String cluster, Address address, MessagingConfig config) {
+    this(cluster, address, config, ProtocolVersion.latest());
+  }
+
+  NettyMessagingService(String cluster, Address address, MessagingConfig config, ProtocolVersion protocolVersion) {
     this.preamble = cluster.hashCode();
     this.returnAddress = address;
     this.config = config;
+    this.protocolVersion = protocolVersion;
     this.channelPool = new ChannelPool(this::openChannel, config.getConnectionPoolSize());
   }
 
@@ -697,21 +700,15 @@ public class NettyMessagingService implements ManagedMessagingService {
      * @param buffer  the buffer from which to read the version
      * @return the read protocol version
      */
-    Optional<ProtocolVersion> readProtocolVersion(ChannelHandlerContext context, ByteBuf buffer) {
+    OptionalInt readProtocolVersion(ChannelHandlerContext context, ByteBuf buffer) {
       try {
         int preamble = buffer.readInt();
         if (preamble != NettyMessagingService.this.preamble) {
           log.warn("Received invalid handshake, closing connection");
           context.close();
-          return Optional.empty();
+          return OptionalInt.empty();
         }
-
-        int version = buffer.readShort();
-        ProtocolVersion protocolVersion = ProtocolVersion.valueOf(version);
-        if (protocolVersion == null) {
-          context.close();
-        }
-        return Optional.ofNullable(protocolVersion);
+        return OptionalInt.of(buffer.readShort());
       } finally {
         buffer.release();
       }
@@ -745,13 +742,25 @@ public class NettyMessagingService implements ManagedMessagingService {
 
     @Override
     public void channelActive(ChannelHandlerContext context) throws Exception {
-      writeProtocolVersion(context, ProtocolVersion.latest());
+      log.debug("Writing client protocol version {} for connection to {}", protocolVersion, context.channel().remoteAddress());
+      writeProtocolVersion(context, protocolVersion);
     }
 
     @Override
     public void channelRead(ChannelHandlerContext context, Object message) throws Exception {
+      // Read the protocol version from the server.
       readProtocolVersion(context, (ByteBuf) message)
-          .ifPresent(version -> activateProtocolVersion(context, getOrCreateClientConnection(context.channel()), version));
+          .ifPresent(version -> {
+            // If the protocol version is a valid protocol version for the client, activate the protocol.
+            // Otherwise, close the connection and log an error.
+            ProtocolVersion protocolVersion = ProtocolVersion.valueOf(version);
+            if (protocolVersion != null) {
+              activateProtocolVersion(context, getOrCreateClientConnection(context.channel()), protocolVersion);
+            } else {
+              log.error("Failed to negotiate protocol version");
+              context.close();
+            }
+          });
     }
 
     @Override
@@ -761,6 +770,7 @@ public class NettyMessagingService implements ManagedMessagingService {
 
     @Override
     void activateProtocolVersion(ChannelHandlerContext context, Connection<ProtocolReply> connection, ProtocolVersion protocolVersion) {
+      log.debug("Activating client protocol version {} for connection to {}", protocolVersion, context.channel().remoteAddress());
       super.activateProtocolVersion(context, connection, protocolVersion);
       future.complete(context.channel());
     }
@@ -772,21 +782,23 @@ public class NettyMessagingService implements ManagedMessagingService {
   private class ServerHandshakeHandlerAdapter extends HandshakeHandlerAdapter<ProtocolRequest> {
     @Override
     public void channelRead(ChannelHandlerContext context, Object message) throws Exception {
+      // Read the protocol version from the client handshake. If the client's protocol version is unknown
+      // to the server, use the latest server protocol version.
       readProtocolVersion(context, (ByteBuf) message)
           .ifPresent(version -> {
-            Optional<ProtocolVersion> negotiatedVersion = Stream.of(ProtocolVersion.values())
-                .filter(v -> v.version() <= version.version())
-                .max(Comparator.comparing(ProtocolVersion::version));
-            if (!negotiatedVersion.isPresent()) {
-              log.warn("Failed to negotiate version, closing connection");
-              context.close();
-              return;
+            ProtocolVersion protocolVersion = ProtocolVersion.valueOf(version);
+            if (protocolVersion == null) {
+              protocolVersion = ProtocolVersion.latest();
             }
-
-            ProtocolVersion protocolVersion = negotiatedVersion.get();
             writeProtocolVersion(context, protocolVersion);
             activateProtocolVersion(context, new RemoteServerConnection(handlers, context.channel()), protocolVersion);
           });
+    }
+
+    @Override
+    void activateProtocolVersion(ChannelHandlerContext context, Connection<ProtocolRequest> connection, ProtocolVersion protocolVersion) {
+      log.debug("Activating server protocol version {} for connection to {}", protocolVersion, context.channel().remoteAddress());
+      super.activateProtocolVersion(context, connection, protocolVersion);
     }
   }
 
