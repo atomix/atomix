@@ -66,9 +66,9 @@ public class ClasspathScanningRegistry implements AtomixRegistry {
   private ClasspathScanningRegistry(ClassLoader classLoader, Set<String> whitelistPackages) {
     final Map<Class<? extends NamedType>, Map<String, NamedType>> registrations =
         CACHE.computeIfAbsent(classLoader, cl -> {
-          final ClassGraph classGraph = !whitelistPackages.isEmpty() ?
-              new ClassGraph().enableClassInfo().whitelistPackages(whitelistPackages.toArray(new String[0])).addClassLoader(classLoader) :
-              new ClassGraph().enableClassInfo().addClassLoader(classLoader);
+          final ClassGraph classGraph = !whitelistPackages.isEmpty()
+              ? new ClassGraph().enableClassInfo().whitelistPackages(whitelistPackages.toArray(new String[0])).addClassLoader(classLoader)
+              : new ClassGraph().enableClassInfo().addClassLoader(classLoader);
           try (final ScanResult scanResult = classGraph.scan()) {
             final Map<Class<? extends NamedType>, Map<String, NamedType>> result = new ConcurrentHashMap<>();
             scanResult.getClassesImplementing(NamedType.class.getName()).forEach(classInfo -> {

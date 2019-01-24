@@ -46,9 +46,9 @@ public class ClasspathScanningPrimitiveTypeRegistry implements PrimitiveTypeRegi
     Map<String, PrimitiveType> types = CACHE.computeIfAbsent(classLoader, cl -> {
       final Map<String, PrimitiveType> result = new ConcurrentHashMap<>();
       final String[] whitelistPackages = StringUtils.split(System.getProperty("io.atomix.whitelistPackages"), ",");
-      final ClassGraph classGraph = whitelistPackages != null ?
-              new ClassGraph().enableClassInfo().whitelistPackages(whitelistPackages).addClassLoader(classLoader) :
-              new ClassGraph().enableClassInfo().addClassLoader(classLoader);
+      final ClassGraph classGraph = whitelistPackages != null
+          ? new ClassGraph().enableClassInfo().whitelistPackages(whitelistPackages).addClassLoader(classLoader)
+          : new ClassGraph().enableClassInfo().addClassLoader(classLoader);
       try (final ScanResult scanResult = classGraph.scan()) {
         scanResult.getClassesImplementing(PrimitiveType.class.getName()).forEach(classInfo -> {
           if (classInfo.isInterface() || classInfo.isAbstract() || Modifier.isPrivate(classInfo.getModifiers())) {

@@ -149,8 +149,8 @@ public class AtomixAgent {
 
     final ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
         .defaultHelp(true)
-        .description("Runs the Atomix agent with the given arguments. Arbitrary configuration options may be overridden " +
-            "by specifying the option path and value as an optional argument, e.g. --cluster.node.id node-1");
+        .description("Runs the Atomix agent with the given arguments. Arbitrary configuration options may be overridden "
+            + "by specifying the option path and value as an optional argument, e.g. --cluster.node.id node-1");
     parser.addArgument("--member", "-m")
         .type(String.class)
         .nargs("?")
@@ -201,32 +201,32 @@ public class AtomixAgent {
         .type(String.class)
         .nargs("?")
         .setDefault(System.getProperty("atomix.log.directory", new File(System.getProperty("user.dir"), "logs").getPath()))
-        .help("The path to the Atomix log directory. " +
-            "This option is only valid for logback configurations that employ the atomix.log.directory property.");
+        .help("The path to the Atomix log directory. "
+            + "This option is only valid for logback configurations that employ the atomix.log.directory property.");
     parser.addArgument("--log-level")
         .metavar("LEVEL")
         .type(String.class)
         .choices(logLevels)
         .nargs("?")
         .setDefault(System.getProperty("atomix.log.level", Level.DEBUG.toString()))
-        .help("The globally filtered log level for all Atomix logs. " +
-            "This option is only valid for logback configurations that employ the atomix.log.level property.");
+        .help("The globally filtered log level for all Atomix logs. "
+            + "This option is only valid for logback configurations that employ the atomix.log.level property.");
     parser.addArgument("--file-log-level")
         .metavar("LEVEL")
         .type(String.class)
         .choices(logLevels)
         .nargs("?")
         .setDefault(System.getProperty("atomix.log.file.level", Level.DEBUG.toString()))
-        .help("The file log level. This option is only valid for logback configurations that employ the " +
-            "atomix.log.file.level property.");
+        .help("The file log level. This option is only valid for logback configurations that employ the "
+            + "atomix.log.file.level property.");
     parser.addArgument("--console-log-level")
         .metavar("LEVEL")
         .type(String.class)
         .choices(logLevels)
         .nargs("?")
         .setDefault(System.getProperty("atomix.log.console.level", Level.INFO.toString()))
-        .help("The console log level. This option is only valid for logback configurations that employ the " +
-            "atomix.log.console.level property.");
+        .help("The console log level. This option is only valid for logback configurations that employ the "
+            + "atomix.log.console.level property.");
     parser.addArgument("--data-dir")
         .metavar("FILE")
         .type(String.class)

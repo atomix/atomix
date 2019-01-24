@@ -148,9 +148,9 @@ public final class Match<T> {
       return false;
     }
     Match<T> that = (Match<T>) other;
-    return this.matchAny == that.matchAny &&
-        Objects.equals(this.value, that.value) &&
-        this.negation == that.negation;
+    return this.matchAny == that.matchAny
+        && Objects.equals(this.value, that.value)
+        && this.negation == that.negation;
   }
 
   @Override

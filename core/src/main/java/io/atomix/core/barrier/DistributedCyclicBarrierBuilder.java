@@ -30,7 +30,8 @@ public abstract class DistributedCyclicBarrierBuilder
     extends PrimitiveBuilder<DistributedCyclicBarrierBuilder, DistributedCyclicBarrierConfig, DistributedCyclicBarrier>
     implements ProxyCompatibleBuilder<DistributedCyclicBarrierBuilder> {
 
-  protected Runnable barrierAction = () -> {};
+  protected Runnable barrierAction = () -> {
+  };
 
   protected DistributedCyclicBarrierBuilder(String name, DistributedCyclicBarrierConfig config, PrimitiveManagementService managementService) {
     super(DistributedCyclicBarrierType.instance(), name, config, managementService);

@@ -137,16 +137,16 @@
 
         <!-- Checks for whitespace                               -->
         <!-- See http://checkstyle.sf.net/config_whitespace.html -->
-        <!--<module name="EmptyForIteratorPad"/>-->
-        <!--<module name="GenericWhitespace"/>-->
-        <!--<module name="MethodParamPad"/>-->
-        <!--<module name="NoWhitespaceAfter"/>-->
-        <!--<module name="NoWhitespaceBefore"/>-->
-        <!--<module name="OperatorWrap"/>-->
-        <!--<module name="ParenPad"/>-->
-        <!--<module name="TypecastParenPad"/>-->
-        <!--<module name="WhitespaceAfter"/>-->
-        <!--<module name="WhitespaceAround"/>-->
+        <module name="EmptyForIteratorPad"/>
+        <module name="GenericWhitespace"/>
+        <module name="MethodParamPad"/>
+        <module name="NoWhitespaceAfter"/>
+        <module name="NoWhitespaceBefore"/>
+        <module name="OperatorWrap"/>
+        <module name="ParenPad"/>
+        <module name="TypecastParenPad"/>
+        <module name="WhitespaceAfter"/>
+        <module name="WhitespaceAround"/>
 
         <!-- Modifier Checks                                    -->
         <!-- See http://checkstyle.sf.net/config_modifiers.html -->

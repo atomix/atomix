@@ -104,12 +104,11 @@ public class CrdtCounterDelegate implements CounterDelegate {
   }
 
   private long getDecrement(long local) {
-    return increments.sum() -
-        (decrements.asMap().entrySet()
-            .stream()
-            .filter(e -> !e.getKey().equals(localMemberId))
-            .mapToLong(e -> e.getValue())
-            .sum() + local);
+    return increments.sum() - (decrements.asMap().entrySet()
+        .stream()
+        .filter(e -> !e.getKey().equals(localMemberId))
+        .mapToLong(e -> e.getValue())
+        .sum() + local);
   }
 
   private void updateCounters(List<Map<MemberId, Long>> counters) {

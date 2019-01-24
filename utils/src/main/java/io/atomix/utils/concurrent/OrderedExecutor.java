@@ -34,7 +34,7 @@ public class OrderedExecutor implements Executor {
   }
 
   private void run() {
-    for (; ; ) {
+    for (;;) {
       final Runnable task;
       synchronized (tasks) {
         task = tasks.poll();

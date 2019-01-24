@@ -100,10 +100,10 @@ public class MapEvent<K, V> extends AbstractEvent<MapEvent.Type, K> {
     }
 
     MapEvent<K, V> that = (MapEvent) o;
-    return Objects.equals(this.type(), that.type()) &&
-        Objects.equals(this.key(), that.key()) &&
-        Objects.equals(this.newValue, that.newValue) &&
-        Objects.equals(this.oldValue, that.oldValue);
+    return Objects.equals(this.type(), that.type())
+        && Objects.equals(this.key(), that.key())
+        && Objects.equals(this.newValue, that.newValue)
+        && Objects.equals(this.oldValue, that.oldValue);
   }
 
   @Override

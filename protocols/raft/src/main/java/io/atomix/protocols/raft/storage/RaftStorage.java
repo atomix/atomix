@@ -286,8 +286,8 @@ public class RaftStorage {
    * files directly. Deleting the meta store does not involve reading any metadata files into memory.
    */
   public void deleteMetaStore() {
-    deleteFiles(f -> f.getName().equals(String.format("%s.meta", prefix)) ||
-        f.getName().equals(String.format("%s.conf", prefix)));
+    deleteFiles(f -> f.getName().equals(String.format("%s.meta", prefix))
+        || f.getName().equals(String.format("%s.conf", prefix)));
   }
 
   /**

@@ -75,8 +75,8 @@ public class DefaultDistributedCyclicBarrierService extends AbstractPrimitiveSer
     this.waiters = Maps.newLinkedHashMap();
     Map<SessionId, Long> waiters = input.readObject();
     waiters.forEach((sessionId, timeout) -> {
-      this.waiters.put(sessionId, new Waiter(timeout, timeout == 0 ? null :
-          getScheduler().schedule(Duration.ofMillis(timeout - getWallClock().getTime().unixTimestamp()), () -> timeout(barrierId))));
+      this.waiters.put(sessionId, new Waiter(timeout, timeout == 0 ? null
+          : getScheduler().schedule(Duration.ofMillis(timeout - getWallClock().getTime().unixTimestamp()), () -> timeout(barrierId))));
     });
   }
 

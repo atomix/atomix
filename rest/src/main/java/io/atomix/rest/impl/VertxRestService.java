@@ -100,9 +100,9 @@ public class VertxRestService implements ManagedRestService {
 
     final ClassLoader classLoader = atomix.getClass().getClassLoader();
     final String[] whitelistPackages = StringUtils.split(System.getProperty("io.atomix.whitelistPackages"), ",");
-    final ClassGraph classGraph = whitelistPackages != null ?
-        new ClassGraph().enableAnnotationInfo().whitelistPackages(whitelistPackages).addClassLoader(classLoader) :
-        new ClassGraph().enableAnnotationInfo().addClassLoader(classLoader);
+    final ClassGraph classGraph = whitelistPackages != null
+        ? new ClassGraph().enableAnnotationInfo().whitelistPackages(whitelistPackages).addClassLoader(classLoader)
+        : new ClassGraph().enableAnnotationInfo().addClassLoader(classLoader);
 
     try (final ScanResult scanResult = classGraph.scan()) {
       scanResult.getClassesWithAnnotation(AtomixResource.class.getName()).forEach(classInfo -> {

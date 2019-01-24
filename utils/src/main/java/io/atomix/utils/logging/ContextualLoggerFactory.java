@@ -44,5 +44,6 @@ public class ContextualLoggerFactory {
     return new ContextualLogger(LoggerFactory.getLogger(clazz), context);
   }
 
-  private ContextualLoggerFactory() {}
+  private ContextualLoggerFactory() {
+  }
 }

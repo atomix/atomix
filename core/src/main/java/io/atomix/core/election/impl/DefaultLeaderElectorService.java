@@ -159,9 +159,9 @@ public class DefaultLeaderElectorService extends AbstractPrimitiveService<Leader
       if (!Objects.equal(oldLeadership, newLeadership)) {
         notifyLeadershipChange(topic, oldLeadership, newLeadership);
       }
-      return (electionState != null &&
-          electionState.leader() != null &&
-          Arrays.equals(id, electionState.leader().id()));
+      return (electionState != null
+          && electionState.leader() != null
+          && Arrays.equals(id, electionState.leader().id()));
     } catch (Exception e) {
       getLogger().error("State machine operation failed", e);
       throw Throwables.propagate(e);

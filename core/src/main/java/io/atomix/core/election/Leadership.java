@@ -85,8 +85,8 @@ public class Leadership<T> {
     }
     if (obj instanceof Leadership) {
       final Leadership other = (Leadership) obj;
-      return Objects.equals(this.leader, other.leader) &&
-          Objects.equals(this.candidates, other.candidates);
+      return Objects.equals(this.leader, other.leader)
+          && Objects.equals(this.candidates, other.candidates);
     }
     return false;
   }

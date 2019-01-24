@@ -274,8 +274,8 @@ public abstract class PartitionedAtomicMapProxy<P extends AsyncPrimitive, S exte
 
   private CompletableFuture<MapEntryUpdateResult<K, byte[]>> checkLocked(
       MapEntryUpdateResult<K, byte[]> result) {
-    if (result.status() == MapEntryUpdateResult.Status.PRECONDITION_FAILED ||
-        result.status() == MapEntryUpdateResult.Status.WRITE_LOCK) {
+    if (result.status() == MapEntryUpdateResult.Status.PRECONDITION_FAILED
+        || result.status() == MapEntryUpdateResult.Status.WRITE_LOCK) {
       return Futures.exceptionalFuture(new PrimitiveException.ConcurrentModification());
     }
     return CompletableFuture.completedFuture(result);

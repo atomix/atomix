@@ -130,8 +130,7 @@ public final class NodeUpdate<V> {
     return MoreObjects.toStringHelper(this)
         .add("type", type)
         .add("path", path)
-        .add("value", value instanceof byte[] ?
-            ArraySizeHashPrinter.of((byte[]) value) : value)
+        .add("value", value instanceof byte[] ? ArraySizeHashPrinter.of((byte[]) value) : value)
         .add("version", version)
         .toString();
   }

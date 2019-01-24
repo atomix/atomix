@@ -78,8 +78,8 @@ public final class ValueEvent<V> extends AbstractEvent<ValueEvent.Type, Void> {
     }
 
     ValueEvent that = (ValueEvent) o;
-    return Objects.equals(this.newValue, that.newValue) &&
-        Objects.equals(this.oldValue, that.oldValue);
+    return Objects.equals(this.newValue, that.newValue)
+        && Objects.equals(this.oldValue, that.oldValue);
   }
 
   @Override

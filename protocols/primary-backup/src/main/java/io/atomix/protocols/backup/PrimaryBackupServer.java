@@ -241,8 +241,8 @@ public class PrimaryBackupServer implements Managed<PrimaryBackupServer> {
           membershipService,
           new DefaultMemberGroupService(membershipService, memberGroupProvider),
           protocol,
-          primitiveTypes != null ? primitiveTypes :
-                  new ClasspathScanningPrimitiveTypeRegistry(Thread.currentThread().getContextClassLoader()),
+          primitiveTypes != null ? primitiveTypes
+              : new ClasspathScanningPrimitiveTypeRegistry(Thread.currentThread().getContextClassLoader()),
           primaryElection,
           threadContextFactory,
           closeOnStop));

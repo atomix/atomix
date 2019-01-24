@@ -30,7 +30,7 @@ import io.atomix.primitive.protocol.map.SortedMapProtocol;
  */
 public abstract class DistributedSortedMapBuilder<K extends Comparable<K>, V>
     extends MapBuilder<DistributedSortedMapBuilder<K, V>, DistributedSortedMapConfig, DistributedSortedMap<K, V>, K, V>
-    implements ProxyCompatibleBuilder<DistributedSortedMapBuilder<K, V>>, SortedMapCompatibleBuilder<DistributedSortedMapBuilder<K, V>>{
+    implements ProxyCompatibleBuilder<DistributedSortedMapBuilder<K, V>>, SortedMapCompatibleBuilder<DistributedSortedMapBuilder<K, V>> {
 
   public DistributedSortedMapBuilder(String name, DistributedSortedMapConfig config, PrimitiveManagementService managementService) {
     super(DistributedSortedMapType.instance(), name, config, managementService);
