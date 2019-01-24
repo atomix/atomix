@@ -108,10 +108,12 @@ public final class ArraySizeHashPrinter {
   }
 
   private static Object[] toObjectArray(Object val) {
-    if (val == null)
+    if (val == null) {
       return null;
-    if (val instanceof Object[])
+    }
+    if (val instanceof Object[]) {
       return (Object[]) val;
+    }
     int length = Array.getLength(val);
     Object[] outputArray = new Object[length];
     for (int i = 0; i < length; ++i) {

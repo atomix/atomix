@@ -90,16 +90,20 @@ public abstract class OperationResponse extends SessionResponse {
 
   @Override
   public boolean equals(Object object) {
-    if (this == object) return true;
-    if (object == null || !getClass().isAssignableFrom(object.getClass())) return false;
+    if (this == object) {
+      return true;
+    }
+    if (object == null || !getClass().isAssignableFrom(object.getClass())) {
+      return false;
+    }
 
     OperationResponse response = (OperationResponse) object;
     return response.status == status
-            && Objects.equals(response.error, error)
-            && response.index == index
-            && response.eventIndex == eventIndex
-            && response.lastSequence == lastSequence
-            && Arrays.equals(response.result, result);
+        && Objects.equals(response.error, error)
+        && response.index == index
+        && response.eventIndex == eventIndex
+        && response.lastSequence == lastSequence
+        && Arrays.equals(response.result, result);
   }
 
   @Override

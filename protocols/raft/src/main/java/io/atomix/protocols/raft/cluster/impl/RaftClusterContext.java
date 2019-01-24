@@ -270,8 +270,9 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
 
   @Override
   public CompletableFuture<Void> bootstrap(Collection<MemberId> cluster) {
-    if (joinFuture != null)
+    if (joinFuture != null) {
       return joinFuture;
+    }
 
     if (configuration == null) {
       member.setType(RaftMember.Type.ACTIVE);
@@ -293,8 +294,9 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
 
   @Override
   public synchronized CompletableFuture<Void> listen(Collection<MemberId> cluster) {
-    if (joinFuture != null)
+    if (joinFuture != null) {
       return joinFuture;
+    }
 
     // If no configuration was loaded from disk, create a new configuration.
     if (configuration == null) {
@@ -321,8 +323,9 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
 
   @Override
   public synchronized CompletableFuture<Void> join(Collection<MemberId> cluster) {
-    if (joinFuture != null)
+    if (joinFuture != null) {
       return joinFuture;
+    }
 
     // If no configuration was loaded from disk, create a new configuration.
     if (configuration == null) {
@@ -465,8 +468,9 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
    */
   @Override
   public synchronized CompletableFuture<Void> leave() {
-    if (leaveFuture != null)
+    if (leaveFuture != null) {
       return leaveFuture;
+    }
 
     leaveFuture = new CompletableFuture<>();
 
@@ -474,8 +478,9 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
       // If a join attempt is still underway, cancel the join and complete the join future exceptionally.
       // The join future will be set to null once completed.
       cancelJoinTimer();
-      if (joinFuture != null)
+      if (joinFuture != null) {
         joinFuture.completeExceptionally(new IllegalStateException("failed to join cluster"));
+      }
 
       // If there are no remote members to leave, simply transition the server to INACTIVE.
       if (getActiveMemberStates().isEmpty() && configuration.index() <= raft.getCommitIndex()) {

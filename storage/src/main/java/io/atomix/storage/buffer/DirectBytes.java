@@ -31,8 +31,9 @@ public class DirectBytes extends ByteBufferBytes {
    *                                  an array on the Java heap - {@code Integer.MAX_VALUE - 5}
    */
   public static DirectBytes allocate(int size) {
-    if (size > MAX_SIZE)
+    if (size > MAX_SIZE) {
       throw new IllegalArgumentException("size cannot for DirectBytes cannot be greater than " + MAX_SIZE);
+    }
     return new DirectBytes(ByteBuffer.allocateDirect((int) size));
   }
 

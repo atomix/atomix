@@ -56,10 +56,12 @@ public abstract class AbstractBuffer implements Buffer {
   }
 
   protected AbstractBuffer(Bytes bytes, int offset, int initialCapacity, int maxCapacity, ReferenceManager<Buffer> referenceManager) {
-    if (bytes == null)
+    if (bytes == null) {
       throw new NullPointerException("bytes cannot be null");
-    if (offset < 0)
+    }
+    if (offset < 0) {
       throw new IndexOutOfBoundsException("offset out of bounds of the underlying byte array");
+    }
     this.bytes = bytes;
     this.offset = offset;
     this.capacity = 0;
@@ -120,12 +122,15 @@ public abstract class AbstractBuffer implements Buffer {
 
   @Override
   public Buffer order(ByteOrder order) {
-    if (order == null)
+    if (order == null) {
       throw new NullPointerException("order cannot be null");
-    if (order == order())
+    }
+    if (order == order()) {
       return this;
-    if (swap != null)
+    }
+    if (swap != null) {
       return swap;
+    }
     swap = new SwappedBuffer(this, offset, capacity, maxCapacity, referenceManager);
     return swap;
   }
@@ -168,8 +173,9 @@ public abstract class AbstractBuffer implements Buffer {
   public Buffer slice() {
     int maxCapacity = this.maxCapacity - position;
     int capacity = Math.min(Math.min(initialCapacity, maxCapacity), bytes.size() - offset(position));
-    if (limit != -1)
+    if (limit != -1) {
       capacity = maxCapacity = limit - position;
+    }
     return new SlicedBuffer(this, bytes, offset(position), capacity, maxCapacity);
   }
 
@@ -230,8 +236,9 @@ public abstract class AbstractBuffer implements Buffer {
     } else if (limit == -1 && position > maxCapacity) {
       throw new IllegalArgumentException("position cannot be greater than capacity");
     }
-    if (position > capacity)
+    if (position > capacity) {
       capacity((int) Math.min(maxCapacity, Memory.Util.toPow2(position)));
+    }
     this.position = position;
     return this;
   }
@@ -250,12 +257,15 @@ public abstract class AbstractBuffer implements Buffer {
 
   @Override
   public Buffer limit(int limit) {
-    if (limit > maxCapacity)
+    if (limit > maxCapacity) {
       throw new IllegalArgumentException("limit cannot be greater than buffer capacity");
-    if (limit < -1)
+    }
+    if (limit < -1) {
       throw new IllegalArgumentException("limit cannot be negative");
-    if (limit != -1 && offset(limit) > bytes.size())
+    }
+    if (limit != -1 && offset(limit) > bytes.size()) {
       bytes.resize(offset(limit));
+    }
     this.limit = limit;
     return this;
   }
@@ -293,16 +303,18 @@ public abstract class AbstractBuffer implements Buffer {
 
   @Override
   public Buffer reset() {
-    if (mark == -1)
+    if (mark == -1) {
       throw new InvalidMarkException();
+    }
     position = mark;
     return this;
   }
 
   @Override
   public Buffer skip(int length) {
-    if (length > remaining())
+    if (length > remaining()) {
       throw new IndexOutOfBoundsException("length cannot be greater than remaining bytes in the buffer");
+    }
     position += length;
     return this;
   }
@@ -322,11 +334,13 @@ public abstract class AbstractBuffer implements Buffer {
     if (offset(offset) < this.offset) {
       throw new IndexOutOfBoundsException();
     } else if (limit == -1) {
-      if (offset > maxCapacity)
+      if (offset > maxCapacity) {
         throw new IndexOutOfBoundsException();
+      }
     } else {
-      if (offset > limit)
+      if (offset > limit) {
         throw new IndexOutOfBoundsException();
+      }
     }
   }
 
@@ -344,8 +358,9 @@ public abstract class AbstractBuffer implements Buffer {
         }
       }
     } else {
-      if (offset + length > limit)
+      if (offset + length > limit) {
         throw new BufferUnderflowException();
+      }
     }
     return offset(offset);
   }
@@ -378,8 +393,9 @@ public abstract class AbstractBuffer implements Buffer {
         }
       }
     } else {
-      if (offset + length > limit)
+      if (offset + length > limit) {
         throw new BufferUnderflowException();
+      }
     }
     return offset(offset);
   }
@@ -408,8 +424,9 @@ public abstract class AbstractBuffer implements Buffer {
         }
       }
     } else {
-      if (offset + length > limit)
+      if (offset + length > limit) {
         throw new BufferOverflowException();
+      }
     }
     return offset(offset);
   }

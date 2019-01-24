@@ -26,22 +26,25 @@ public abstract class RaftException extends RuntimeException {
 
   protected RaftException(RaftError.Type type, String message, Object... args) {
     super(message != null ? String.format(message, args) : null);
-    if (type == null)
+    if (type == null) {
       throw new NullPointerException("type cannot be null");
+    }
     this.type = type;
   }
 
   protected RaftException(RaftError.Type type, Throwable cause, String message, Object... args) {
     super(String.format(message, args), cause);
-    if (type == null)
+    if (type == null) {
       throw new NullPointerException("type cannot be null");
+    }
     this.type = type;
   }
 
   protected RaftException(RaftError.Type type, Throwable cause) {
     super(cause);
-    if (type == null)
+    if (type == null) {
       throw new NullPointerException("type cannot be null");
+    }
     this.type = type;
   }
 

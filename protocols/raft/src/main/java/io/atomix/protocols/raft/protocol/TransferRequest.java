@@ -58,8 +58,12 @@ public class TransferRequest extends AbstractRaftRequest {
 
   @Override
   public boolean equals(Object object) {
-    if (this == object) return true;
-    if (object == null || !getClass().isAssignableFrom(object.getClass())) return false;
+    if (this == object) {
+      return true;
+    }
+    if (object == null || !getClass().isAssignableFrom(object.getClass())) {
+      return false;
+    }
 
     return ((TransferRequest) object).member.equals(member);
   }

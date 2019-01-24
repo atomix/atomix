@@ -99,7 +99,9 @@ public class AtomicSemaphoreProxy
 
   @Override
   public CompletableFuture<Optional<Version>> tryAcquire(int permits, Duration timeout) {
-    if (permits < 0) throw new IllegalArgumentException();
+    if (permits < 0) {
+      throw new IllegalArgumentException();
+    }
 
     long id = attemptId.incrementAndGet();
     AcquireAttempt attempt = new AcquireAttempt(id, permits, timeout, a -> onExpired(a.id()));
@@ -123,7 +125,9 @@ public class AtomicSemaphoreProxy
 
   @Override
   public CompletableFuture<Void> release(int permits) {
-    if (permits < 0) throw new IllegalArgumentException();
+    if (permits < 0) {
+      throw new IllegalArgumentException();
+    }
     return getProxyClient().acceptBy(name(), service -> service.release(permits));
   }
 

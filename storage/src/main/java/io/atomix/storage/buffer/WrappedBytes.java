@@ -27,8 +27,9 @@ public class WrappedBytes extends AbstractBytes {
   private final Bytes root;
 
   public WrappedBytes(Bytes bytes) {
-    if (bytes == null)
+    if (bytes == null) {
       throw new NullPointerException("bytes cannot be null");
+    }
     this.bytes = bytes;
     this.root = bytes instanceof WrappedBytes ? ((WrappedBytes) bytes).root : bytes;
   }

@@ -277,8 +277,12 @@ public abstract class AbstractAtomicSemaphoreService extends AbstractPrimitiveSe
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       Waiter waiter = (Waiter) o;
       return session.equals(waiter.session)
           && index == waiter.index

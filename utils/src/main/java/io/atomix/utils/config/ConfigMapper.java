@@ -71,7 +71,7 @@ public class ConfigMapper {
    * @param type      the type to load
    * @param files     the files to load
    * @param resources the resources to which to fall back
-   * @param <T> the resulting type
+   * @param <T>       the resulting type
    * @return the loaded configuration
    */
   public <T> T loadFiles(Class<T> type, List<File> files, List<String> resources) {
@@ -93,9 +93,9 @@ public class ConfigMapper {
   /**
    * Loads the given resources using the configuration mapper.
    *
-   * @param type the type to load
+   * @param type      the type to load
    * @param resources the resources to load
-   * @param <T> the resulting type
+   * @param <T>       the resulting type
    * @return the loaded configuration
    */
   public <T> T loadResources(Class<T> type, String... resources) {
@@ -129,7 +129,7 @@ public class ConfigMapper {
    * Applies the given configuration to the given type.
    *
    * @param config the configuration to apply
-   * @param clazz the class to which to apply the configuration
+   * @param clazz  the class to which to apply the configuration
    */
   protected <T> T map(Config config, Class<T> clazz) {
     return map(config, null, null, clazz);
@@ -147,7 +147,7 @@ public class ConfigMapper {
    * Applies the given configuration to the given type.
    *
    * @param config the configuration to apply
-   * @param clazz the class to which to apply the configuration
+   * @param clazz  the class to which to apply the configuration
    */
   @SuppressWarnings("unchecked")
   protected <T> T map(Config config, String path, String name, Class<T> clazz) {
@@ -160,10 +160,7 @@ public class ConfigMapper {
       String camelName = toCamelCase(originalName);
       // if a setting is in there both as some hyphen name and the camel name,
       // the camel one wins
-      if (propertyNames.containsKey(camelName) && !originalName.equals(camelName)) {
-        // if we aren't a camel name to start with, we lose.
-        // if we are or we are the first matching key, we win.
-      } else {
+      if (!propertyNames.containsKey(camelName) || originalName.equals(camelName)) {
         propertyNames.put(camelName, originalName);
       }
     }

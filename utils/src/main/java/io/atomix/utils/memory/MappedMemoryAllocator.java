@@ -53,12 +53,15 @@ public class MappedMemoryAllocator implements MemoryAllocator<MappedMemory> {
   }
 
   public MappedMemoryAllocator(RandomAccessFile file, FileChannel.MapMode mode, long offset) {
-    if (file == null)
+    if (file == null) {
       throw new NullPointerException("file cannot be null");
-    if (mode == null)
+    }
+    if (mode == null) {
       throw new NullPointerException("mode cannot be null");
-    if (offset < 0)
+    }
+    if (offset < 0) {
       throw new IllegalArgumentException("offset cannot be negative");
+    }
     this.file = file;
     this.channel = this.file.getChannel();
     this.mode = mode;
@@ -66,10 +69,12 @@ public class MappedMemoryAllocator implements MemoryAllocator<MappedMemory> {
   }
 
   private static RandomAccessFile createFile(File file, FileChannel.MapMode mode) {
-    if (file == null)
+    if (file == null) {
       throw new NullPointerException("file cannot be null");
-    if (mode == null)
+    }
+    if (mode == null) {
       mode = DEFAULT_MAP_MODE;
+    }
     try {
       return new RandomAccessFile(file, parseMode(mode));
     } catch (IOException e) {
