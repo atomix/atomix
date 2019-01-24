@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -59,13 +60,19 @@ public class NettyMessagingServiceTest {
 
   ManagedMessagingService netty1;
   ManagedMessagingService netty2;
-  ManagedMessagingService netty3;
+  ManagedMessagingService nettyv11;
+  ManagedMessagingService nettyv12;
+  ManagedMessagingService nettyv21;
+  ManagedMessagingService nettyv22;
 
   private static final String IP_STRING = "127.0.0.1";
 
   Address address1;
   Address address2;
-  Address address3;
+  Address addressv11;
+  Address addressv12;
+  Address addressv21;
+  Address addressv22;
   Address invalidAddress;
 
   @Before
@@ -76,10 +83,19 @@ public class NettyMessagingServiceTest {
     address2 = Address.from(findAvailablePort(5002));
     netty2 = (ManagedMessagingService) new NettyMessagingService("test", address2, new MessagingConfig()).start().join();
 
-    address3 = Address.from(findAvailablePort(5003));
-    netty3 = (ManagedMessagingService) new NettyMessagingService("test", address3, new MessagingConfig(), ProtocolVersion.V1).start().join();
+    addressv11 = Address.from(findAvailablePort(5003));
+    nettyv11 = (ManagedMessagingService) new NettyMessagingService("test", addressv11, new MessagingConfig(), ProtocolVersion.V1).start().join();
 
-    invalidAddress = Address.from(IP_STRING, 5004);
+    addressv12 = Address.from(findAvailablePort(5004));
+    nettyv12 = (ManagedMessagingService) new NettyMessagingService("test", addressv12, new MessagingConfig(), ProtocolVersion.V1).start().join();
+
+    addressv21 = Address.from(findAvailablePort(5005));
+    nettyv21 = (ManagedMessagingService) new NettyMessagingService("test", addressv21, new MessagingConfig(), ProtocolVersion.V2).start().join();
+
+    addressv22 = Address.from(findAvailablePort(5006));
+    nettyv22 = (ManagedMessagingService) new NettyMessagingService("test", addressv22, new MessagingConfig(), ProtocolVersion.V2).start().join();
+
+    invalidAddress = Address.from(IP_STRING, 5007);
   }
 
   /**
@@ -241,19 +257,43 @@ public class NettyMessagingServiceTest {
   }
 
   @Test
+  public void testV1() throws Exception {
+    String subject;
+    byte[] payload = "Hello world!".getBytes();
+    byte[] response;
+
+    subject = nextSubject();
+    nettyv11.registerHandler(subject, (address, bytes) -> CompletableFuture.completedFuture(bytes));
+    response = nettyv12.sendAndReceive(addressv11, subject, payload).get(10, TimeUnit.SECONDS);
+    assertArrayEquals(payload, response);
+  }
+
+  @Test
+  public void testV2() throws Exception {
+    String subject;
+    byte[] payload = "Hello world!".getBytes();
+    byte[] response;
+
+    subject = nextSubject();
+    nettyv21.registerHandler(subject, (address, bytes) -> CompletableFuture.completedFuture(bytes));
+    response = nettyv22.sendAndReceive(addressv21, subject, payload).get(10, TimeUnit.SECONDS);
+    assertArrayEquals(payload, response);
+  }
+
+  @Test
   public void testVersionNegotiation() throws Exception {
     String subject;
     byte[] payload = "Hello world!".getBytes();
     byte[] response;
 
     subject = nextSubject();
-    netty2.registerHandler(subject, (address, bytes) -> CompletableFuture.completedFuture(bytes));
-    response = netty3.sendAndReceive(address2, subject, payload).get(10, TimeUnit.SECONDS);
+    nettyv11.registerHandler(subject, (address, bytes) -> CompletableFuture.completedFuture(bytes));
+    response = nettyv21.sendAndReceive(addressv11, subject, payload).get(10, TimeUnit.SECONDS);
     assertArrayEquals(payload, response);
 
     subject = nextSubject();
-    netty3.registerHandler(subject, (address, bytes) -> CompletableFuture.completedFuture(bytes));
-    response = netty2.sendAndReceive(address3, subject, payload).get(10, TimeUnit.SECONDS);
+    nettyv22.registerHandler(subject, (address, bytes) -> CompletableFuture.completedFuture(bytes));
+    response = nettyv12.sendAndReceive(addressv22, subject, payload).get(10, TimeUnit.SECONDS);
     assertArrayEquals(payload, response);
   }
 
