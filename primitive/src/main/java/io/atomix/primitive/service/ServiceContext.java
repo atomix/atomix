@@ -54,10 +54,10 @@ public interface ServiceContext {
    * @return The state machine type.
    */
   PrimitiveType serviceType();
-  
+
   /**
    * Returns the local member ID
-   * 
+   *
    * @return The local member ID
    */
   MemberId localMemberId();
