@@ -29,21 +29,21 @@ import java.util.List;
  */
 public final class ArraysAsListSerializer extends Serializer<List<?>> {
 
-    @Override
-    public void write(Kryo kryo, Output output, List<?> object) {
-        output.writeInt(object.size(), true);
-        for (Object elm : object) {
-            kryo.writeClassAndObject(output, elm);
-        }
+  @Override
+  public void write(Kryo kryo, Output output, List<?> object) {
+    output.writeInt(object.size(), true);
+    for (Object elm : object) {
+      kryo.writeClassAndObject(output, elm);
     }
+  }
 
-    @Override
-    public List<?> read(Kryo kryo, Input input, Class<List<?>> type) {
-        final int size = input.readInt(true);
-        List<Object> list = new ArrayList<>(size);
-        for (int i = 0; i < size; ++i) {
-            list.add(kryo.readClassAndObject(input));
-        }
-        return list;
+  @Override
+  public List<?> read(Kryo kryo, Input input, Class<List<?>> type) {
+    final int size = input.readInt(true);
+    List<Object> list = new ArrayList<>(size);
+    for (int i = 0; i < size; ++i) {
+      list.add(kryo.readClassAndObject(input));
     }
+    return list;
+  }
 }

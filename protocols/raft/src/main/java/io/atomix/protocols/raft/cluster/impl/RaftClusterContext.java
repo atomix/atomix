@@ -505,23 +505,23 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     raft.getRaftRole().onLeave(LeaveRequest.builder()
         .withMember(getMember())
         .build()).whenComplete((response, error) -> {
-      // Cancel the leave timer.
-      cancelLeaveTimer();
+          // Cancel the leave timer.
+          cancelLeaveTimer();
 
-      if (error == null && response.status() == RaftResponse.Status.OK) {
-        Configuration configuration = new Configuration(response.index(), response.term(), response.timestamp(), response.members());
+          if (error == null && response.status() == RaftResponse.Status.OK) {
+            Configuration configuration = new Configuration(response.index(), response.term(), response.timestamp(), response.members());
 
-        // Configure the cluster and commit the configuration as we know the successful response
-        // indicates commitment.
-        configure(configuration).commit();
-        future.complete(null);
-      } else {
-        // Reset the leave timer.
-        leaveTimeout = raft.getThreadContext().schedule(raft.getElectionTimeout(), () -> {
-          leave(future);
+            // Configure the cluster and commit the configuration as we know the successful response
+            // indicates commitment.
+            configure(configuration).commit();
+            future.complete(null);
+          } else {
+            // Reset the leave timer.
+            leaveTimeout = raft.getThreadContext().schedule(raft.getElectionTimeout(), () -> {
+              leave(future);
+            });
+          }
         });
-      }
-    });
   }
 
   /**

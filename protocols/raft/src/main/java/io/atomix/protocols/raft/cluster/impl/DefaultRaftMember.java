@@ -181,25 +181,25 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
         .withTerm(cluster.getConfiguration().term())
         .withMember(new DefaultRaftMember(id, type, updated))
         .build()).whenComplete((response, error) -> {
-      if (error == null) {
-        if (response.status() == RaftResponse.Status.OK) {
-          cancelConfigureTimer();
-          cluster.configure(new Configuration(response.index(), response.term(), response.timestamp(), response.members()));
-          future.complete(null);
-        } else if (response.error() == null
-            || response.error().type() == RaftError.Type.UNAVAILABLE
-            || response.error().type() == RaftError.Type.PROTOCOL_ERROR
-            || response.error().type() == RaftError.Type.NO_LEADER) {
-          cancelConfigureTimer();
-          configureTimeout = cluster.getContext().getThreadContext().schedule(cluster.getContext().getElectionTimeout().multipliedBy(2), () -> configure(type, future));
-        } else {
-          cancelConfigureTimer();
-          future.completeExceptionally(response.error().createException());
-        }
-      } else {
-        future.completeExceptionally(error);
-      }
-    });
+          if (error == null) {
+            if (response.status() == RaftResponse.Status.OK) {
+              cancelConfigureTimer();
+              cluster.configure(new Configuration(response.index(), response.term(), response.timestamp(), response.members()));
+              future.complete(null);
+            } else if (response.error() == null
+                || response.error().type() == RaftError.Type.UNAVAILABLE
+                || response.error().type() == RaftError.Type.PROTOCOL_ERROR
+                || response.error().type() == RaftError.Type.NO_LEADER) {
+              cancelConfigureTimer();
+              configureTimeout = cluster.getContext().getThreadContext().schedule(cluster.getContext().getElectionTimeout().multipliedBy(2), () -> configure(type, future));
+            } else {
+              cancelConfigureTimer();
+              future.completeExceptionally(response.error().createException());
+            }
+          } else {
+            future.completeExceptionally(error);
+          }
+        });
   }
 
   /**
