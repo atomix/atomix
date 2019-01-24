@@ -15,7 +15,6 @@
  */
 package io.atomix.cluster.messaging.impl;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import io.netty.buffer.ByteBuf;
