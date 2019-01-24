@@ -53,10 +53,14 @@ import io.atomix.core.tree.AtomicDocumentTreeType;
 import io.atomix.core.value.AtomicValueType;
 import io.atomix.core.value.DistributedValueType;
 import io.atomix.core.workqueue.WorkQueueType;
+import io.atomix.primitive.partition.PartitionId;
+import io.atomix.primitive.partition.impl.DefaultPartitionService;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.log.DistributedLogProtocol;
 import io.atomix.protocols.log.partition.LogPartitionGroup;
 import io.atomix.protocols.raft.MultiRaftProtocol;
+import io.atomix.protocols.raft.RaftServer.Role;
+import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.config.ConfigurationException;
@@ -80,6 +84,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.*;
 
@@ -207,6 +213,43 @@ public class AtomixTest extends AbstractAtomixTest {
     assertEquals(3, atomix1.getMembershipService().getMembers().size());
     assertEquals(3, atomix2.getMembershipService().getMembers().size());
     assertEquals(3, atomix3.getMembershipService().getMembers().size());
+  }
+
+  @Test
+  public void testRoleChangedListener() throws Exception {
+    // given
+    final CompletableFuture<Void> roleChanged = new CompletableFuture<>();
+
+    final CompletableFuture<Atomix> nodeOneFuture = startAtomix(1, Arrays.asList(1),
+        builder ->
+        {
+          final RaftPartitionGroup partitionGroup = RaftPartitionGroup.builder("system")
+              .withNumPartitions(1)
+              .withMembers(String.valueOf(1))
+              .withDataDirectory(new File(new File(DATA_DIR, "log"), "1"))
+              .build();
+
+          final Atomix atomix = builder.withManagementGroup(partitionGroup).build();
+
+          final DefaultPartitionService partitionService = (DefaultPartitionService) atomix.getPartitionService();
+          final RaftPartitionGroup raftPartitionGroup = (RaftPartitionGroup) partitionService.getSystemPartitionGroup();
+
+          // when
+          raftPartitionGroup.getPartitions().forEach(
+              partition -> {
+                final RaftPartition raftPartition = (RaftPartition) partition;
+                raftPartition.addRoleChangeListener((role) ->
+                {
+                  roleChanged.complete(null);
+                  System.out.println(role.toString());
+                });
+              });
+          return atomix;
+        });
+
+    // then
+    nodeOneFuture.get();
+    roleChanged.get();
   }
 
   @Test
