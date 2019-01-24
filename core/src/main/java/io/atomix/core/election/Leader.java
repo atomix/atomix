@@ -91,9 +91,9 @@ public class Leader<T> {
     }
     if (other != null && other instanceof Leader) {
       Leader that = (Leader) other;
-      return Objects.equal(this.id, that.id) &&
-          this.term == that.term &&
-          this.termStartTime == that.termStartTime;
+      return Objects.equal(this.id, that.id)
+          && this.term == that.term
+          && this.termStartTime == that.termStartTime;
     }
     return false;
   }

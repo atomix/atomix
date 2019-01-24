@@ -105,9 +105,9 @@ public class LeadershipEvent<T> extends AbstractEvent<LeadershipEvent.Type, Lead
     }
     if (obj instanceof LeadershipEvent) {
       final LeadershipEvent other = (LeadershipEvent) obj;
-      return Objects.equals(this.type(), other.type()) &&
-          Objects.equals(this.subject(), other.subject()) &&
-          Objects.equals(this.time(), other.time());
+      return Objects.equals(this.type(), other.type())
+          && Objects.equals(this.subject(), other.subject())
+          && Objects.equals(this.time(), other.time());
     }
     return false;
   }

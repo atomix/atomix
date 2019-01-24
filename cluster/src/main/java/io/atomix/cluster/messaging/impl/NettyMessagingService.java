@@ -195,7 +195,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     if (log.isInfoEnabled()) {
       log.info("Loaded cluster key store from: {}", ksLocation);
       try {
-        for (Enumeration<String> e = ks.aliases(); e.hasMoreElements(); ) {
+        for (Enumeration<String> e = ks.aliases(); e.hasMoreElements();) {
           String alias = e.nextElement();
           Key key = ks.getKey(alias, ksPwd);
           Certificate[] certs = ks.getCertificateChain(alias);
@@ -549,9 +549,9 @@ public class NettyMessagingService implements ManagedMessagingService {
    * Recursivesly binds the given bootstrap to the given interfaces.
    *
    * @param bootstrap the bootstrap to bind
-   * @param ifaces an iterator of interfaces to which to bind
-   * @param port the port to which to bind
-   * @param future the future to completed once the bootstrap has been bound to all provided interfaces
+   * @param ifaces    an iterator of interfaces to which to bind
+   * @param port      the port to which to bind
+   * @param future    the future to completed once the bootstrap has been bound to all provided interfaces
    */
   private void bind(ServerBootstrap bootstrap, Iterator<String> ifaces, int port, CompletableFuture<Void> future) {
     if (ifaces.hasNext()) {

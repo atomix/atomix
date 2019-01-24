@@ -177,8 +177,8 @@ public class MapValue implements Comparable<MapValue> {
   public boolean equals(Object other) {
     if (other instanceof MapValue) {
       MapValue that = (MapValue) other;
-      return Objects.equal(this.timestamp, that.timestamp) &&
-          Objects.equal(this.value, that.value);
+      return Objects.equal(this.timestamp, that.timestamp)
+          && Objects.equal(this.value, that.value);
     }
     return false;
   }
@@ -230,8 +230,8 @@ public class MapValue implements Comparable<MapValue> {
     public boolean equals(Object other) {
       if (other instanceof Digest) {
         Digest that = (Digest) other;
-        return Objects.equal(this.timestamp, that.timestamp) &&
-            Objects.equal(this.isTombstone, that.isTombstone);
+        return Objects.equal(this.timestamp, that.timestamp)
+            && Objects.equal(this.isTombstone, that.isTombstone);
       }
       return false;
     }

@@ -146,8 +146,8 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
     this.timestampProvider = config.getTimestampProvider();
 
     List<MemberId> peers = config.getPeers() != null ? config.getPeers().stream().map(MemberId::from).collect(Collectors.toList()) : null;
-    this.peersSupplier = () -> peers != null ? peers :
-        managementService.getMembershipService()
+    this.peersSupplier = () -> peers != null ? peers
+        : managementService.getMembershipService()
             .getMembers()
             .stream()
             .map(Member::id)

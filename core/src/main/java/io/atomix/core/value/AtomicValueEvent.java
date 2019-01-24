@@ -78,8 +78,8 @@ public final class AtomicValueEvent<V> extends AbstractEvent<AtomicValueEvent.Ty
     }
 
     AtomicValueEvent that = (AtomicValueEvent) o;
-    return Objects.equals(this.newValue, that.newValue) &&
-        Objects.equals(this.oldValue, that.oldValue);
+    return Objects.equals(this.newValue, that.newValue)
+        && Objects.equals(this.oldValue, that.oldValue);
   }
 
   @Override

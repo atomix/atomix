@@ -141,8 +141,8 @@ public final class Namespace implements KryoFactory, KryoPool {
         if (id != FLOATING_ID && id < blockHeadId + types.size()) {
 
           if (log.isWarnEnabled()) {
-            log.warn("requested nextId {} could potentially overlap " +
-                    "with existing registrations {}+{} ",
+            log.warn("requested nextId {} could potentially overlap "
+                    + "with existing registrations {}+{} ",
                 id, blockHeadId, types.size(), new RuntimeException());
           }
         }

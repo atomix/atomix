@@ -832,8 +832,8 @@ public class Atomix extends AtomixCluster implements PrimitivesService {
   @Override
   public synchronized CompletableFuture<Void> start() {
     if (closeFuture != null) {
-      return Futures.exceptionalFuture(new IllegalStateException("Atomix instance " +
-          (closeFuture.isDone() ? "shutdown" : "shutting down")));
+      return Futures.exceptionalFuture(new IllegalStateException("Atomix instance "
+          + (closeFuture.isDone() ? "shutdown" : "shutting down")));
     }
 
     LOGGER.info(BUILD);

@@ -79,24 +79,24 @@ public class TranscodingAsyncAtomicMultimap<K1, V1, K2, V2> extends DelegatingAs
     this.valueDecoder = v -> v == null ? null : valueDecoder.apply(v);
     this.entryEncoder = e -> Maps.immutableEntry(this.keyEncoder.apply(e.getKey()), this.valueEncoder.apply(e.getValue()));
     this.entryDecoder = e -> Maps.immutableEntry(this.keyDecoder.apply(e.getKey()), this.valueDecoder.apply(e.getValue()));
-    this.versionedValueEncoder = v -> v == null ? null :
-        new Versioned<>(
+    this.versionedValueEncoder = v -> v == null ? null
+        : new Versioned<>(
             v.value()
                 .stream()
                 .map(valueEncoder)
                 .collect(Collectors.toSet()),
             v.version(),
             v.creationTime());
-    this.versionedValueDecoder = v -> v == null ? null :
-        new Versioned<>(
+    this.versionedValueDecoder = v -> v == null ? null
+        : new Versioned<>(
             v.value()
                 .stream()
                 .map(valueDecoder)
                 .collect(Collectors.toSet()),
             v.version(),
             v.creationTime());
-    this.valueCollectionEncode = v -> v == null ? null :
-        v.stream().map(valueEncoder).collect(Collectors.toSet());
+    this.valueCollectionEncode = v -> v == null ? null
+        : v.stream().map(valueEncoder).collect(Collectors.toSet());
   }
 
   @Override

@@ -84,9 +84,9 @@ public class ClusterMembershipEvent extends AbstractEvent<ClusterMembershipEvent
     }
     if (obj instanceof ClusterMembershipEvent) {
       final ClusterMembershipEvent other = (ClusterMembershipEvent) obj;
-      return Objects.equals(this.type(), other.type()) &&
-          Objects.equals(this.subject(), other.subject()) &&
-          Objects.equals(this.time(), other.time());
+      return Objects.equals(this.type(), other.type())
+          && Objects.equals(this.subject(), other.subject())
+          && Objects.equals(this.time(), other.time());
     }
     return false;
   }

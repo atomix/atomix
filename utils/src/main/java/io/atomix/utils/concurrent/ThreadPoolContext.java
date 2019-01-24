@@ -67,7 +67,7 @@ public class ThreadPoolContext extends AbstractThreadContext {
     // https://github.com/eclipse/vert.x/blob/master/src/main/java/io/vertx/core/impl/OrderedExecutorFactory.java
     runner = () -> {
       ((AtomixThread) Thread.currentThread()).setContext(this);
-      for (; ; ) {
+      for (;;) {
         final Runnable task;
         synchronized (tasks) {
           task = tasks.poll();

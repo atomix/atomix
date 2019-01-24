@@ -68,8 +68,8 @@ public class MultiValuedTimestamp<T extends Comparable<T>, U extends Comparable<
       return false;
     }
     MultiValuedTimestamp that = (MultiValuedTimestamp) obj;
-    return Objects.equals(this.value1, that.value1) &&
-        Objects.equals(this.value2, that.value2);
+    return Objects.equals(this.value1, that.value1)
+        && Objects.equals(this.value2, that.value2);
   }
 
   @Override

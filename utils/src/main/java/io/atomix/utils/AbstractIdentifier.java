@@ -74,8 +74,8 @@ public class AbstractIdentifier<T extends Comparable<T>> implements Identifier<T
     }
     if (obj instanceof AbstractIdentifier) {
       AbstractIdentifier that = (AbstractIdentifier) obj;
-      return this.getClass() == that.getClass() &&
-          Objects.equals(this.identifier, that.identifier);
+      return this.getClass() == that.getClass()
+          && Objects.equals(this.identifier, that.identifier);
     }
     return false;
   }

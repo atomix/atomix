@@ -107,9 +107,9 @@ public class BufferCleaner {
         return newBufferCleaner(directBufferClass, unmapper);
       }
     } catch (SecurityException se) {
-      return "Unmapping is not supported, because not all required permissions are given to the Lucene JAR file: " + se +
-          " [Please grant at least the following permissions: RuntimePermission(\"accessClassInPackage.sun.misc\") " +
-          " and ReflectPermission(\"suppressAccessChecks\")]";
+      return "Unmapping is not supported, because not all required permissions are given to the Lucene JAR file: "
+          + se + " [Please grant at least the following permissions: RuntimePermission(\"accessClassInPackage.sun.misc\") "
+          + " and ReflectPermission(\"suppressAccessChecks\")]";
     } catch (ReflectiveOperationException | RuntimeException e) {
       return "Unmapping is not supported on this platform, because internal Java APIs are not compatible with this Atomix version: " + e;
     }
