@@ -82,7 +82,6 @@ public class DefaultDocumentTreeNode<V> implements DocumentTreeNode<V> {
     return children.get(name);
   }
 
-
   public DocumentTreeNode<V> parent() {
     return parent;
   }

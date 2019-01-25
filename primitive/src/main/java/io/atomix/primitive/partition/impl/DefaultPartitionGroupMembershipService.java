@@ -104,7 +104,6 @@ public class DefaultPartitionGroupMembershipService
           ImmutableSet.of(membershipService.getLocalMember().id()), false));
     });
 
-
     Namespace.Builder namespaceBuilder = Namespace.builder()
         .register(Namespaces.BASIC)
         .register(MemberId.class)

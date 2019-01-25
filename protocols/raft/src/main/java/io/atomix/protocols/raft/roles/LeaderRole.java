@@ -717,7 +717,6 @@ public final class LeaderRole extends ActiveRole {
             return;
           }
 
-
           // Replicate the command to followers.
           appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
             raft.checkThread();
