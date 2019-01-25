@@ -22,7 +22,6 @@ import io.atomix.storage.buffer.BufferOutput;
 import io.atomix.storage.buffer.Bytes;
 
 import java.nio.charset.Charset;
-import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

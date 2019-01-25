@@ -20,7 +20,6 @@ import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.DelegatingJournal;
 import io.atomix.storage.journal.SegmentedJournal;
 import io.atomix.utils.serializer.Namespace;
-import io.atomix.utils.serializer.Serializer;
 
 import java.io.File;
 

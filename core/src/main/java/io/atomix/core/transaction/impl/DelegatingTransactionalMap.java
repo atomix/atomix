@@ -18,9 +18,7 @@ package io.atomix.core.transaction.impl;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
-import io.atomix.core.map.impl.MapUpdate;
 import io.atomix.core.transaction.AsyncTransactionalMap;
-import io.atomix.core.transaction.TransactionLog;
 import io.atomix.core.transaction.TransactionalMap;
 import io.atomix.primitive.PrimitiveType;
 import io.atomix.primitive.protocol.ProxyProtocol;

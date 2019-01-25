@@ -17,7 +17,6 @@ package io.atomix.protocols.log.partition;
 
 import io.atomix.cluster.MemberId;
 import io.atomix.primitive.partition.GroupMember;
-import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
