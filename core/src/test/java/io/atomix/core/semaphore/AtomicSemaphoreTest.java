@@ -380,10 +380,9 @@ public class AtomicSemaphoreTest extends AbstractPrimitiveTest {
     assertEquals(11, semaphore.availablePermits());
   }
 
-
   @Test(timeout = 60000)
   public void testExpireRace() throws Exception {
-    int TEST_COUNT = 10000;
+    int testCount = 10000;
     int threads = Runtime.getRuntime().availableProcessors();
     ExecutorService executorService = Executors.newFixedThreadPool(threads);
 
@@ -397,9 +396,9 @@ public class AtomicSemaphoreTest extends AbstractPrimitiveTest {
         AtomicSemaphore semaphore =
             atomix.atomicSemaphoreBuilder("test-semaphore-race")
                 .withProtocol(protocol())
-                .withInitialCapacity(TEST_COUNT)
+                .withInitialCapacity(testCount)
                 .build();
-        while (acquired.get() < TEST_COUNT) {
+        while (acquired.get() < testCount) {
           semaphore.tryAcquire(Duration.ofMillis(1)).ifPresent(v -> acquired.incrementAndGet());
         }
       }));

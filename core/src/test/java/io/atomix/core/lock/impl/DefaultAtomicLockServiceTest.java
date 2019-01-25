@@ -16,8 +16,6 @@
 package io.atomix.core.lock.impl;
 
 import io.atomix.core.election.LeaderElectionType;
-import io.atomix.core.election.Leadership;
-import io.atomix.core.election.impl.DefaultLeaderElectionService;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.operation.OperationType;
 import io.atomix.primitive.service.ServiceContext;
@@ -31,8 +29,6 @@ import io.atomix.utils.time.WallClock;
 import io.atomix.utils.time.WallClockTimestamp;
 import org.junit.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

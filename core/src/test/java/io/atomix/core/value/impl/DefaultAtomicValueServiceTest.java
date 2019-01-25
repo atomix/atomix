@@ -16,7 +16,6 @@
 package io.atomix.core.value.impl;
 
 import io.atomix.core.map.AtomicMapType;
-import io.atomix.core.value.impl.DefaultAtomicValueService;
 import io.atomix.primitive.PrimitiveId;
 import io.atomix.primitive.service.ServiceContext;
 import io.atomix.primitive.service.impl.DefaultBackupInput;

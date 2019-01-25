@@ -36,6 +36,7 @@ public class GenericsTest {
 
   public interface GenericInterface<T1, T2> {
     T1 type1();
+
     T2 type2();
   }
 

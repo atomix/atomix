@@ -15,6 +15,9 @@
  */
 package io.atomix.core;
 
+import java.time.Duration;
+import java.util.Arrays;
+
 import io.atomix.cluster.ClusterConfig;
 import io.atomix.cluster.MemberConfig;
 import io.atomix.cluster.MembershipConfig;
@@ -24,7 +27,6 @@ import io.atomix.cluster.discovery.MulticastDiscoveryProvider;
 import io.atomix.cluster.messaging.MessagingConfig;
 import io.atomix.cluster.protocol.HeartbeatMembershipProtocolConfig;
 import io.atomix.core.log.DistributedLogConfig;
-import io.atomix.core.log.DistributedLogType;
 import io.atomix.core.map.AtomicMapConfig;
 import io.atomix.core.profile.ConsensusProfile;
 import io.atomix.core.profile.ConsensusProfileConfig;
@@ -48,9 +50,6 @@ import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.protocols.raft.partition.RaftPartitionGroupConfig;
 import io.atomix.utils.memory.MemorySize;
 import org.junit.Test;
-
-import java.time.Duration;
-import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

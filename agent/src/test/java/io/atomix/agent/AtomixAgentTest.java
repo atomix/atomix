@@ -15,15 +15,6 @@
  */
 package io.atomix.agent;
 
-import io.atomix.core.Atomix;
-import io.atomix.core.AtomixConfig;
-import io.atomix.core.map.AtomicMap;
-import net.sourceforge.argparse4j.inf.Namespace;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -32,8 +23,16 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+
+import io.atomix.core.Atomix;
+import io.atomix.core.AtomixConfig;
+import io.atomix.core.map.AtomicMap;
+import net.sourceforge.argparse4j.inf.Namespace;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 

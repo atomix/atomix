@@ -31,7 +31,6 @@ public class WallClockTimestampTest {
     long stamp = System.currentTimeMillis() + 10000;
     WallClockTimestamp ts3 = new WallClockTimestamp(stamp);
 
-
     assertTrue(ts1.compareTo(ts1) == 0);
     assertTrue(ts2.compareTo(ts1) > 0);
     assertTrue(ts1.compareTo(ts2) < 0);

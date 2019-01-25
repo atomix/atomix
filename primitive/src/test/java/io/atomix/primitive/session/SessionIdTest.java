@@ -15,7 +15,6 @@
  */
 package io.atomix.primitive.session;
 
-import io.atomix.primitive.session.SessionId;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

@@ -411,6 +411,8 @@
         <version>3.0.0</version>
         <configuration>
           <configLocation>src/main/resources/checkstyle.xml</configLocation>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          <consoleOutput>true</consoleOutput>
         </configuration>
         <executions>
           <execution>
@@ -419,7 +421,6 @@
               <goal>check</goal>
             </goals>
             <configuration>
-              <consoleOutput>true</consoleOutput>
               <failsOnError>true</failsOnError>
               <failOnViolation>true</failOnViolation>
             </configuration>
