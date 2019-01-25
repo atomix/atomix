@@ -87,20 +87,15 @@ public class RaftPartition implements Partition {
     return client != null ? client.leader() : null;
   }
 
-  public void addRoleChangeListener(Consumer<Role> listener)
-  {
-    if (server == null)
-    {
+  public void addRoleChangeListener(Consumer<Role> listener) {
+    if (server == null) {
       deferredRoleChangeListeners.add(listener);
-    }
-    else
-    {
+    } else {
       server.addRoleChangeListener(listener);
     }
   }
 
-  public void removeRoleChangeListener(Consumer<Role> listener)
-  {
+  public void removeRoleChangeListener(Consumer<Role> listener) {
     deferredRoleChangeListeners.remove(listener);
     server.removeRoleChangeListener(listener);
   }
@@ -214,8 +209,7 @@ public class RaftPartition implements Partition {
         managementService.getPrimitiveTypes(),
         threadContextFactory);
 
-    if (!deferredRoleChangeListeners.isEmpty())
-    {
+    if (!deferredRoleChangeListeners.isEmpty()) {
       deferredRoleChangeListeners.forEach(raftPartitionServer::addRoleChangeListener);
       deferredRoleChangeListeners.clear();
     }

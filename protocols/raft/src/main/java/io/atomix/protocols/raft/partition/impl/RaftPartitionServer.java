@@ -135,20 +135,15 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
     return server.compact();
   }
 
-  public void addRoleChangeListener(Consumer<Role> listener)
-  {
-    if (server == null)
-    {
+  public void addRoleChangeListener(Consumer<Role> listener) {
+    if (server == null) {
       deferredRoleChangeListeners.add(listener);
-    }
-    else
-    {
+    } else {
       server.addRoleChangeListener(listener);
     }
   }
 
-  public void removeRoleChangeListener(Consumer<Role> listener)
-  {
+  public void removeRoleChangeListener(Consumer<Role> listener) {
     deferredRoleChangeListeners.remove(listener);
     server.removeRoleChangeListener(listener);
   }
@@ -202,8 +197,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
         .withThreadContextFactory(threadContextFactory)
         .build();
 
-    if (!deferredRoleChangeListeners.isEmpty())
-    {
+    if (!deferredRoleChangeListeners.isEmpty()) {
       deferredRoleChangeListeners.forEach(raftServer::addRoleChangeListener);
       deferredRoleChangeListeners.clear();
     }
