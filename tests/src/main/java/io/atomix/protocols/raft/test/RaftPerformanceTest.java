@@ -166,7 +166,7 @@ public class RaftPerformanceTest implements Runnable {
     new RaftPerformanceTest().run();
   }
 
-  private static final Serializer protocolSerializer = Serializer.using(Namespace.builder()
+  private static final Serializer PROTOCOL_SERIALIZER = Serializer.using(Namespace.builder()
       .register(HeartbeatRequest.class)
       .register(HeartbeatResponse.class)
       .register(OpenSessionRequest.class)
@@ -229,7 +229,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(Configuration.class)
       .build());
 
-  private static final Namespace storageNamespace = Namespace.builder()
+  private static final Namespace STORAGE_NAMESPACE = Namespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -253,7 +253,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(long[].class)
       .build();
 
-  private static final Serializer clientSerializer = Serializer.using(Namespace.builder()
+  private static final Serializer CLIENT_SERIALIZER = Serializer.using(Namespace.builder()
       .register(ReadConsistency.class)
       .register(Maps.immutableEntry("", "").getClass())
       .build());
@@ -344,7 +344,7 @@ public class RaftPerformanceTest implements Runnable {
     if (count > TOTAL_OPERATIONS) {
       future.complete(null);
     } else if (count % 10 < WRITE_RATIO) {
-      proxy.execute(operation(PUT, clientSerializer.encode(Maps.immutableEntry(randomKey(), UUID.randomUUID().toString()))))
+      proxy.execute(operation(PUT, CLIENT_SERIALIZER.encode(Maps.immutableEntry(randomKey(), UUID.randomUUID().toString()))))
           .whenComplete((result, error) -> {
             if (error == null) {
               writeCount.incrementAndGet();
@@ -352,7 +352,7 @@ public class RaftPerformanceTest implements Runnable {
             runProxy(proxy, future);
           });
     } else {
-      proxy.execute(operation(GET, clientSerializer.encode(randomKey()))).whenComplete((result, error) -> {
+      proxy.execute(operation(GET, CLIENT_SERIALIZER.encode(randomKey()))).whenComplete((result, error) -> {
         if (error == null) {
           readCount.incrementAndGet();
         }
@@ -376,7 +376,7 @@ public class RaftPerformanceTest implements Runnable {
     servers = new ArrayList<>();
     messagingServices = new ArrayList<>();
     addressMap = new ConcurrentHashMap<>();
-    protocolFactory = new LocalRaftProtocolFactory(protocolSerializer);
+    protocolFactory = new LocalRaftProtocolFactory(PROTOCOL_SERIALIZER);
   }
 
   /**
@@ -485,7 +485,7 @@ public class RaftPerformanceTest implements Runnable {
           .start()
           .join();
       messagingServices.add(messagingService);
-      protocol = new RaftServerMessagingProtocol(messagingService, protocolSerializer, addressMap::get);
+      protocol = new RaftServerMessagingProtocol(messagingService, PROTOCOL_SERIALIZER, addressMap::get);
     } else {
       protocol = protocolFactory.newServerProtocol(member.id());
     }
@@ -519,7 +519,7 @@ public class RaftPerformanceTest implements Runnable {
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/perf-logs/%s", member.id())))
-            .withNamespace(storageNamespace)
+            .withNamespace(STORAGE_NAMESPACE)
             .withMaxSegmentSize(1024 * 1024 * 64)
             .withDynamicCompaction()
             .withFlushOnCommit(false)
@@ -539,7 +539,7 @@ public class RaftPerformanceTest implements Runnable {
     RaftClientProtocol protocol;
     if (USE_NETTY) {
       MessagingService messagingService = new NettyMessagingService("test", member.address(), new MessagingConfig()).start().join();
-      protocol = new RaftClientMessagingProtocol(messagingService, protocolSerializer, addressMap::get);
+      protocol = new RaftClientMessagingProtocol(messagingService, PROTOCOL_SERIALIZER, addressMap::get);
     } else {
       protocol = protocolFactory.newClientProtocol(member.id());
     }
@@ -607,7 +607,7 @@ public class RaftPerformanceTest implements Runnable {
 
     @Override
     public Serializer serializer() {
-      return clientSerializer;
+      return CLIENT_SERIALIZER;
     }
 
     @Override

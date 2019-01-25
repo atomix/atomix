@@ -37,7 +37,7 @@ import javax.ws.rs.core.Response;
  * Distributed collection resource.
  */
 public abstract class DistributedCollectionResource<P extends AsyncDistributedCollection<String>, C extends DistributedCollectionConfig<C>> extends PrimitiveResource<P, C> {
-  private final Logger LOGGER = LoggerFactory.getLogger(getClass());
+  private final Logger log = LoggerFactory.getLogger(getClass());
 
   protected DistributedCollectionResource(PrimitiveType type) {
     super(type);
@@ -69,7 +69,7 @@ public abstract class DistributedCollectionResource<P extends AsyncDistributedCo
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
-        LOGGER.warn("{}", error);
+        log.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });
@@ -86,7 +86,7 @@ public abstract class DistributedCollectionResource<P extends AsyncDistributedCo
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
-        LOGGER.warn("{}", error);
+        log.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });
@@ -103,7 +103,7 @@ public abstract class DistributedCollectionResource<P extends AsyncDistributedCo
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
-        LOGGER.warn("{}", error);
+        log.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });
@@ -119,7 +119,7 @@ public abstract class DistributedCollectionResource<P extends AsyncDistributedCo
       if (error == null) {
         response.resume(Response.ok(result).build());
       } else {
-        LOGGER.warn("{}", error);
+        log.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });
@@ -134,7 +134,7 @@ public abstract class DistributedCollectionResource<P extends AsyncDistributedCo
       if (error == null) {
         response.resume(Response.ok().build());
       } else {
-        LOGGER.warn("{}", error);
+        log.warn("{}", error);
         response.resume(Response.serverError().build());
       }
     });

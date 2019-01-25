@@ -37,7 +37,7 @@ import java.util.function.Consumer;
 public class AtomicSemaphoreProxy
     extends AbstractAsyncPrimitive<AsyncAtomicSemaphore, AtomicSemaphoreService>
     implements AsyncAtomicSemaphore, AtomicSemaphoreClient {
-  private static Duration NO_TIMEOUT = Duration.ofMillis(-1);
+  private static final Duration NO_TIMEOUT = Duration.ofMillis(-1);
 
   private final ScheduledExecutorService scheduledExecutor;
   private final Map<Long, AcquireAttempt> attempts = new ConcurrentHashMap<>();
