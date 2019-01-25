@@ -146,7 +146,7 @@ public class RaftFuzzTest implements Runnable {
     new RaftFuzzTest().run();
   }
 
-  private static final Serializer protocolSerializer = Serializer.using(Namespace.builder()
+  private static final Serializer PROTOCOL_SERIALIZER = Serializer.using(Namespace.builder()
       .register(OpenSessionRequest.class)
       .register(OpenSessionResponse.class)
       .register(CloseSessionRequest.class)
@@ -207,7 +207,7 @@ public class RaftFuzzTest implements Runnable {
       .register(Configuration.class)
       .build());
 
-  private static final Namespace storageNamespace = Namespace.builder()
+  private static final Namespace STORAGE_NAMESPACE = Namespace.builder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -231,7 +231,7 @@ public class RaftFuzzTest implements Runnable {
       .register(long[].class)
       .build();
 
-  private static final Serializer clientSerializer = Serializer.using(Namespace.builder()
+  private static final Serializer CLIENT_SERIALIZER = Serializer.using(Namespace.builder()
       .register(ReadConsistency.class)
       .register(Maps.immutableEntry("", "").getClass())
       .build());
@@ -334,8 +334,8 @@ public class RaftFuzzTest implements Runnable {
         int type = randomNumber(4);
         switch (type) {
           case 0:
-            proxy.execute(operation(PUT, clientSerializer.encode(Maps.immutableEntry(randomKey(), randomString(1024 * 16)))))
-                .<Long>thenApply(clientSerializer::decode)
+            proxy.execute(operation(PUT, CLIENT_SERIALIZER.encode(Maps.immutableEntry(randomKey(), randomString(1024 * 16)))))
+                .<Long>thenApply(CLIENT_SERIALIZER::decode)
                 .thenAccept(result -> {
                   synchronized (lock) {
                     if (result < lastLinearizableIndex) {
@@ -358,11 +358,11 @@ public class RaftFuzzTest implements Runnable {
                 });
             break;
           case 1:
-            proxy.execute(operation(GET, clientSerializer.encode(randomKey())));
+            proxy.execute(operation(GET, CLIENT_SERIALIZER.encode(randomKey())));
             break;
           case 2:
-            proxy.execute(operation(REMOVE, clientSerializer.encode(randomKey())))
-                .<Long>thenApply(clientSerializer::decode)
+            proxy.execute(operation(REMOVE, CLIENT_SERIALIZER.encode(randomKey())))
+                .<Long>thenApply(CLIENT_SERIALIZER::decode)
                 .thenAccept(result -> {
                   synchronized (lock) {
                     if (result < lastLinearizableIndex) {
@@ -386,7 +386,7 @@ public class RaftFuzzTest implements Runnable {
             break;
           case 3:
             proxy.execute(operation(INDEX))
-                .<Long>thenApply(clientSerializer::decode)
+                .<Long>thenApply(CLIENT_SERIALIZER::decode)
                 .thenAccept(result -> {
                   synchronized (lock) {
                     switch (consistency) {
@@ -520,7 +520,7 @@ public class RaftFuzzTest implements Runnable {
     port = 5000;
     clients = new ArrayList<>();
     servers = new ArrayList<>();
-    protocolFactory = new LocalRaftProtocolFactory(protocolSerializer);
+    protocolFactory = new LocalRaftProtocolFactory(PROTOCOL_SERIALIZER);
   }
 
   /**
@@ -574,7 +574,7 @@ public class RaftFuzzTest implements Runnable {
       MessagingService messagingManager = new NettyMessagingService("test", address, new MessagingConfig()).start().join();
       messagingServices.add(messagingManager);
       addressMap.put(member.memberId(), address);
-      protocol = new RaftServerMessagingProtocol(messagingManager, protocolSerializer, addressMap::get);
+      protocol = new RaftServerMessagingProtocol(messagingManager, PROTOCOL_SERIALIZER, addressMap::get);
     } else {
       protocol = protocolFactory.newServerProtocol(member.memberId());
     }
@@ -584,7 +584,7 @@ public class RaftFuzzTest implements Runnable {
         .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/fuzz-logs/%s", member.memberId())))
-            .withNamespace(storageNamespace)
+            .withNamespace(STORAGE_NAMESPACE)
             .withMaxSegmentSize(1024 * 1024)
             .build());
 
@@ -604,7 +604,7 @@ public class RaftFuzzTest implements Runnable {
       Address address = Address.from(++port);
       MessagingService messagingManager = new NettyMessagingService("test", address, new MessagingConfig()).start().join();
       addressMap.put(memberId, address);
-      protocol = new RaftClientMessagingProtocol(messagingManager, protocolSerializer, addressMap::get);
+      protocol = new RaftClientMessagingProtocol(messagingManager, PROTOCOL_SERIALIZER, addressMap::get);
     } else {
       protocol = protocolFactory.newClientProtocol(memberId);
     }
@@ -672,7 +672,7 @@ public class RaftFuzzTest implements Runnable {
 
     @Override
     public Serializer serializer() {
-      return clientSerializer;
+      return CLIENT_SERIALIZER;
     }
 
     @Override

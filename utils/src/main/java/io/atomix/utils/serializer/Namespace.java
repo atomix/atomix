@@ -74,7 +74,7 @@ public final class Namespace implements KryoFactory, KryoPool {
 
   static final String NO_NAME = "(no name)";
 
-  private static final Logger log = getLogger(Namespace.class);
+  private static final Logger LOGGER = getLogger(Namespace.class);
 
   /**
    * Default Kryo namespace.
@@ -140,8 +140,8 @@ public final class Namespace implements KryoFactory, KryoPool {
       if (!types.isEmpty()) {
         if (id != FLOATING_ID && id < blockHeadId + types.size()) {
 
-          if (log.isWarnEnabled()) {
-            log.warn("requested nextId {} could potentially overlap "
+          if (LOGGER.isWarnEnabled()) {
+            LOGGER.warn("requested nextId {} could potentially overlap "
                     + "with existing registrations {}+{} ",
                 id, blockHeadId, types.size(), new RuntimeException());
           }
@@ -207,7 +207,7 @@ public final class Namespace implements KryoFactory, KryoPool {
 
       if (blocks.containsAll(ns.registeredBlocks)) {
         // Everything was already registered.
-        log.debug("Ignoring {}, already registered.", ns);
+        LOGGER.debug("Ignoring {}, already registered.", ns);
         return this;
       }
       for (RegistrationBlock block : ns.registeredBlocks) {
@@ -486,7 +486,7 @@ public final class Namespace implements KryoFactory, KryoPool {
    */
   @Override
   public Kryo create() {
-    log.trace("Creating Kryo instance for {}", this);
+    LOGGER.trace("Creating Kryo instance for {}", this);
     Kryo kryo = new Kryo();
     kryo.setClassLoader(classLoader);
     kryo.setRegistrationRequired(registrationRequired);
@@ -532,7 +532,7 @@ public final class Namespace implements KryoFactory, KryoPool {
       }
 
       if (!matches) {
-        log.error("{}: Failed to register {} as {}, {} was already registered.",
+        LOGGER.error("{}: Failed to register {} as {}, {} was already registered.",
             friendlyName(), types, id, existing.getType());
 
         throw new IllegalStateException(String.format(
@@ -555,10 +555,10 @@ public final class Namespace implements KryoFactory, KryoPool {
       }
       if (r != null) {
         if (r.getId() != id) {
-          log.debug("{}: {} already registered as {}. Skipping {}.",
+          LOGGER.debug("{}: {} already registered as {}. Skipping {}.",
               friendlyName(), r.getType(), r.getId(), id);
         }
-        log.trace("{} registered as {}", r.getType(), r.getId());
+        LOGGER.trace("{} registered as {}", r.getType(), r.getId());
       }
     }
   }

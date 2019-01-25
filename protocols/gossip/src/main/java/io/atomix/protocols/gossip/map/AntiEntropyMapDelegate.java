@@ -82,7 +82,7 @@ import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 
 public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
 
-  private static final Logger log = LoggerFactory.getLogger(AntiEntropyMapDelegate.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(AntiEntropyMapDelegate.class);
   private static final String ERROR_DESTROYED = " map is already destroyed";
   private static final String ERROR_NULL_KEY = "Key cannot be null";
   private static final String ERROR_NULL_VALUE = "Null values are not allowed";
@@ -164,9 +164,9 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
           .collect(Collectors.toList());
     };
 
-    this.executor = newFixedThreadPool(8, namedThreads("atomix-anti-entropy-map-" + mapName + "-fg-%d", log));
-    this.communicationExecutor = newFixedThreadPool(8, namedThreads("atomix-anti-entropy-map-" + mapName + "-publish-%d", log));
-    this.backgroundExecutor = newSingleThreadScheduledExecutor(namedThreads("atomix-anti-entropy-map-" + mapName + "-bg-%d", log));
+    this.executor = newFixedThreadPool(8, namedThreads("atomix-anti-entropy-map-" + mapName + "-fg-%d", LOGGER));
+    this.communicationExecutor = newFixedThreadPool(8, namedThreads("atomix-anti-entropy-map-" + mapName + "-publish-%d", LOGGER));
+    this.backgroundExecutor = newSingleThreadScheduledExecutor(namedThreads("atomix-anti-entropy-map-" + mapName + "-bg-%d", LOGGER));
 
     // start anti-entropy thread
     this.backgroundExecutor.scheduleAtFixedRate(
@@ -375,7 +375,7 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
         valueMatches = Arrays.equals(value.get(), existing.get());
       }
       if (existing == null) {
-        log.trace("ECMap Remove: Existing value for key {} is already null", k);
+        LOGGER.trace("ECMap Remove: Existing value for key {} is already null", k);
       }
       if (valueMatches) {
         if (existing == null) {
@@ -540,7 +540,7 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
       pickRandomActivePeer().ifPresent(this::sendAdvertisementToPeer);
     } catch (Exception e) {
       // Catch all exceptions to avoid scheduled task being suppressed.
-      log.error("Exception thrown while sending advertisement", e);
+      LOGGER.error("Exception thrown while sending advertisement", e);
     }
   }
 
@@ -561,7 +561,7 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
         peer)
         .whenComplete((result, error) -> {
           if (error != null) {
-            log.debug("Failed to send anti-entropy advertisement to {}: {}",
+            LOGGER.debug("Failed to send anti-entropy advertisement to {}: {}",
                 peer, error.getMessage());
           } else if (result == AntiEntropyResponse.PROCESSED) {
             antiEntropyTimes.put(peer, adCreationTime);
@@ -578,7 +578,7 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
         peer)
         .whenComplete((result, error) -> {
           if (error != null) {
-            log.debug("Failed to send update request to {}: {}",
+            LOGGER.debug("Failed to send update request to {}: {}",
                 peer, error.getMessage());
           }
         });
@@ -594,13 +594,13 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
       return AntiEntropyResponse.IGNORED;
     }
     try {
-      if (log.isTraceEnabled()) {
-        log.trace("Received anti-entropy advertisement from {} for {} with {} entries in it",
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Received anti-entropy advertisement from {} for {} with {} entries in it",
             ad.sender(), mapName, ad.digest().size());
       }
       antiEntropyCheckLocalItems(ad).forEach(this::notifyListeners);
     } catch (Exception e) {
-      log.warn("Error handling anti-entropy advertisement", e);
+      LOGGER.warn("Error handling anti-entropy advertisement", e);
       return AntiEntropyResponse.FAILED;
     }
     return AntiEntropyResponse.PROCESSED;
@@ -727,7 +727,7 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
       requestBootstrapFromPeers(activePeers)
           .get(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     } catch (ExecutionException | InterruptedException | TimeoutException e) {
-      log.debug("Failed to bootstrap ec map {}: {}", mapName, ExceptionUtils.getStackTrace(e));
+      LOGGER.debug("Failed to bootstrap ec map {}: {}", mapName, ExceptionUtils.getStackTrace(e));
     }
   }
 
@@ -783,7 +783,7 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
    * @return a future to be completed once the peer has sent bootstrap updates
    */
   private CompletableFuture<Void> requestBootstrapFromPeer(MemberId peer) {
-    log.trace("Sending bootstrap request to {} for {}", peer, mapName);
+    LOGGER.trace("Sending bootstrap request to {} for {}", peer, mapName);
     return clusterCommunicator.<MemberId, Void>send(
         bootstrapMessageSubject,
         localMemberId,
@@ -792,7 +792,7 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
         peer)
         .whenComplete((updates, error) -> {
           if (error != null) {
-            log.debug("Bootstrap request to {} failed: {}", peer, error.getMessage());
+            LOGGER.debug("Bootstrap request to {} failed: {}", peer, error.getMessage());
           }
         });
   }
@@ -807,10 +807,10 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
    * @return a future to be completed once updates have been sent to the peer
    */
   private CompletableFuture<Void> handleBootstrap(MemberId peer) {
-    log.trace("Received bootstrap request from {} for {}", peer, bootstrapMessageSubject);
+    LOGGER.trace("Received bootstrap request from {} for {}", peer, bootstrapMessageSubject);
 
     Function<List<UpdateEntry>, CompletableFuture<Void>> sendUpdates = updates -> {
-      log.trace("Initializing {} with {} entries", peer, updates.size());
+      LOGGER.trace("Initializing {} with {} entries", peer, updates.size());
       return clusterCommunicator.<List<UpdateEntry>, Void>send(
           initializeMessageSubject,
           ImmutableList.copyOf(updates),
@@ -819,7 +819,7 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
           peer)
           .whenComplete((result, error) -> {
             if (error != null) {
-              log.debug("Failed to initialize {}", peer, error);
+              LOGGER.debug("Failed to initialize {}", peer, error);
             }
           });
     };
@@ -873,11 +873,11 @@ public class AntiEntropyMapDelegate<K, V> implements MapDelegate<K, V> {
               peer)
               .whenComplete((result, error) -> {
                 if (error != null) {
-                  log.debug("Failed to send to {}", peer, error);
+                  LOGGER.debug("Failed to send to {}", peer, error);
                 }
               });
         } catch (Exception e) {
-          log.warn("Failed to send to {}", peer, e);
+          LOGGER.warn("Failed to send to {}", peer, e);
         }
       });
     }

@@ -55,7 +55,7 @@ public class OrderedFuture<T> extends CompletableFuture<T> {
     return newFuture;
   }
 
-  private static ThreadContext NULL_CONTEXT = new NullThreadContext();
+  private static final ThreadContext NULL_CONTEXT = new NullThreadContext();
 
   private final Queue<CompletableFuture<T>> orderedFutures = new LinkedList<>();
   private volatile boolean complete;

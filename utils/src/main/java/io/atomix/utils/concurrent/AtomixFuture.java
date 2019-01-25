@@ -77,7 +77,7 @@ public class AtomixFuture<T> extends CompletableFuture<T> {
     return future;
   }
 
-  private static ThreadContext NULL_CONTEXT = new NullThreadContext();
+  private static final ThreadContext NULL_CONTEXT = new NullThreadContext();
 
   private ThreadContext getThreadContext() {
     ThreadContext context = ThreadContext.currentContext();
