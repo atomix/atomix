@@ -329,7 +329,7 @@ public class RaftServiceContext implements ServiceContext {
     // Update the state machine index/timestamp.
     tick(index, timestamp);
 
-    // Update the state machine index/ timestamp .
+    // Set the session timestamp to the current service timestamp.
     session.setLastUpdated(currentTimestamp);
 
     // Expire sessions that have timed out.
