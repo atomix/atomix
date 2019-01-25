@@ -369,7 +369,7 @@ public class HeartbeatMembershipProtocol
       this.timestamp = 0;
     }
 
-    public GossipMember(
+    GossipMember(
         MemberId id,
         Address address,
         String zone,

@@ -175,7 +175,7 @@ public class WorkQueueProxy
     private final Executor executor;
     private final Accumulator<String> taskCompleter;
 
-    public TaskProcessor(Consumer<byte[]> backingConsumer,
+    TaskProcessor(Consumer<byte[]> backingConsumer,
                          int parallelism,
                          Executor executor,
                          Accumulator<String> taskCompleter) {
@@ -185,7 +185,7 @@ public class WorkQueueProxy
       this.taskCompleter = taskCompleter;
     }
 
-    public int headRoom() {
+    int headRoom() {
       return headRoom.get();
     }
 

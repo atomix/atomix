@@ -259,7 +259,7 @@ public class DefaultLeaderElectorService extends AbstractPrimitiveService<Leader
     private final byte[] id;
     private final long sessionId;
 
-    public Registration(byte[] id, long sessionId) {
+    Registration(byte[] id, long sessionId) {
       this.id = id;
       this.sessionId = sessionId;
     }
@@ -288,7 +288,7 @@ public class DefaultLeaderElectorService extends AbstractPrimitiveService<Leader
     final List<Registration> registrations;
     transient Map<String, ElectionState> elections;
 
-    public ElectionState(Registration registration, Supplier<Long> termCounter,
+    ElectionState(Registration registration, Supplier<Long> termCounter,
                          Map<String, ElectionState> elections) {
       registrations = Arrays.asList(registration);
       term = termCounter.get();
@@ -297,7 +297,7 @@ public class DefaultLeaderElectorService extends AbstractPrimitiveService<Leader
       this.elections = elections;
     }
 
-    public ElectionState(ElectionState other) {
+    ElectionState(ElectionState other) {
       registrations = Lists.newArrayList(other.registrations);
       leader = other.leader;
       term = other.term;
@@ -305,7 +305,7 @@ public class DefaultLeaderElectorService extends AbstractPrimitiveService<Leader
       elections = other.elections;
     }
 
-    public ElectionState(List<Registration> registrations,
+    ElectionState(List<Registration> registrations,
                          Registration leader,
                          long term,
                          long termStartTime,

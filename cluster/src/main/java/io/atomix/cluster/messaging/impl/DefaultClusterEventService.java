@@ -613,7 +613,7 @@ public class DefaultClusterEventService implements ManagedClusterEventService {
     private final InternalSubscriptionInfo metadata;
     private final Function<byte[], CompletableFuture<byte[]>> callback;
 
-    public InternalSubscription(InternalTopic topic, Function<byte[], CompletableFuture<byte[]>> callback) {
+    InternalSubscription(InternalTopic topic, Function<byte[], CompletableFuture<byte[]>> callback) {
       this.topic = topic;
       this.metadata = new InternalSubscriptionInfo(localMemberId, topic.topic, new LogicalTimestamp(logicalTime.incrementAndGet()));
       this.callback = callback;

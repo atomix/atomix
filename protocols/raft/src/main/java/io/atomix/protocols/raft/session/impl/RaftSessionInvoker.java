@@ -69,7 +69,7 @@ final class RaftSessionInvoker {
   private final Map<Long, OperationAttempt> attempts = new LinkedHashMap<>();
   private final AtomicLong keepAliveIndex = new AtomicLong();
 
-  public RaftSessionInvoker(
+  RaftSessionInvoker(
       RaftSessionConnection leaderConnection,
       RaftSessionConnection sessionConnection,
       RaftSessionState state,

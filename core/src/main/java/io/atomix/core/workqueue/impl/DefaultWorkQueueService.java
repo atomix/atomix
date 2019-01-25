@@ -204,7 +204,7 @@ public class DefaultWorkQueueService extends AbstractPrimitiveService<WorkQueueC
     private final long sessionId;
     private final Task<byte[]> task;
 
-    public TaskAssignment(long sessionId, Task<byte[]> task) {
+    TaskAssignment(long sessionId, Task<byte[]> task) {
       this.sessionId = sessionId;
       this.task = task;
     }

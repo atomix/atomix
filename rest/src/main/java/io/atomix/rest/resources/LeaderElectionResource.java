@@ -219,7 +219,7 @@ public class LeaderElectionResource extends PrimitiveResource<AsyncLeaderElectio
   static class LeadershipResponse {
     private final Leadership<String> leadership;
 
-    public LeadershipResponse(Leadership<String> leadership) {
+    LeadershipResponse(Leadership<String> leadership) {
       this.leadership = leadership;
     }
 

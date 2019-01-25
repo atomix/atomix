@@ -194,7 +194,7 @@ public class DocumentTreeResource extends PrimitiveResource<AsyncAtomicDocumentT
   static class VersionedResult {
     private final Versioned<String> value;
 
-    public VersionedResult(Versioned<String> value) {
+    VersionedResult(Versioned<String> value) {
       this.value = value;
     }
 

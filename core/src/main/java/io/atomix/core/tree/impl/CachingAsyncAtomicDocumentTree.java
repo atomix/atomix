@@ -153,7 +153,7 @@ public class CachingAsyncAtomicDocumentTree<V> extends DelegatingAsyncAtomicDocu
     private final DocumentTreeEventListener<V> listener;
     private final Executor executor;
 
-    public InternalListener(DocumentPath path, DocumentTreeEventListener<V> listener, Executor executor) {
+    InternalListener(DocumentPath path, DocumentTreeEventListener<V> listener, Executor executor) {
       this.path = path;
       this.listener = listener;
       this.executor = executor;

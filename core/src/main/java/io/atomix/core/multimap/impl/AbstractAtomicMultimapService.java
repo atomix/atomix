@@ -529,7 +529,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
     private long version;
     private final TreeSet<byte[]> valueSet = Sets.newTreeSet(new ByteArrayComparator());
 
-    public NonTransactionalValues() {
+    NonTransactionalValues() {
       //Set the version to current it will only be updated once this is
       // populated
       this.version = globalVersion.get();

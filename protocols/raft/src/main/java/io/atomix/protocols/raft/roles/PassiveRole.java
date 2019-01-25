@@ -762,7 +762,7 @@ public class PassiveRole extends InactiveRole {
     private final Snapshot snapshot;
     private long nextOffset;
 
-    public PendingSnapshot(Snapshot snapshot) {
+    PendingSnapshot(Snapshot snapshot) {
       this.snapshot = snapshot;
     }
 
