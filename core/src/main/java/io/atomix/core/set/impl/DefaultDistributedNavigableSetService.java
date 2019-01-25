@@ -15,21 +15,17 @@
  */
 package io.atomix.core.set.impl;
 
-import com.google.common.collect.Sets;
-import io.atomix.core.iterator.impl.IteratorBatch;
-import io.atomix.core.set.DistributedNavigableSetType;
-import io.atomix.primitive.service.BackupInput;
-import io.atomix.primitive.service.BackupOutput;
-import io.atomix.primitive.session.SessionId;
-import io.atomix.utils.serializer.Namespace;
-import io.atomix.utils.serializer.Serializer;
-
 import java.util.Iterator;
 import java.util.NavigableSet;
-import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import io.atomix.core.iterator.impl.IteratorBatch;
+import io.atomix.core.set.DistributedNavigableSetType;
+import io.atomix.primitive.session.SessionId;
+import io.atomix.utils.serializer.Namespace;
+import io.atomix.utils.serializer.Serializer;
 
 /**
  * Default distributed tree set service.

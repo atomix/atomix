@@ -16,7 +16,6 @@
 package io.atomix.utils.concurrent;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 import static io.atomix.utils.concurrent.Threads.namedThreads;

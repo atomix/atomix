@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.log.partition.impl;
 
-import io.atomix.primitive.partition.MemberGroupProvider;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.protocols.log.DistributedLogServer;
 import io.atomix.protocols.log.partition.LogPartition;

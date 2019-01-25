@@ -18,7 +18,6 @@ package io.atomix.protocols.raft.storage.snapshot;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.HeapBuffer;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**

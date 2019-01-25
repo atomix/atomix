@@ -17,7 +17,6 @@ package io.atomix.core.utils.config;
 
 import io.atomix.core.AtomixRegistry;
 import io.atomix.utils.ConfiguredType;
-import io.atomix.utils.NamedType;
 import io.atomix.utils.config.TypedConfig;
 
 /**

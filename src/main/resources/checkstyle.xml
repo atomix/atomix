@@ -115,26 +115,25 @@
 
         <!-- Checks for imports                              -->
         <!-- See http://checkstyle.sf.net/config_import.html -->
-        <!--<module name="AvoidStarImport"/>-->
-        <!--<module name="IllegalImport"/>--> <!-- defaults to sun.* packages -->
-        <!--<module name="RedundantImport"/>-->
-        <!--<module name="UnusedImports">-->
-            <!--<property name="processJavadoc" value="false"/>-->
-        <!--</module>-->
+        <module name="AvoidStarImport"/>
+        <module name="IllegalImport"/> <!-- defaults to sun.* packages -->
+        <module name="RedundantImport"/>
+        <module name="UnusedImports"/>
 
         <!-- Checks for Size Violations.                    -->
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
-        <!--<module name="LineLength">-->
-            <!--<property name="max" value="120"/>-->
-            <!--<property name="ignorePattern" value="^import"/>-->
-        <!--</module>-->
-        <!--<module name="MethodLength">-->
-            <!--<property name="max" value="200"/>-->
-        <!--</module>-->
-        <!--<module name="ParameterNumber">-->
-            <!--<property name="max" value="15"/>-->
-            <!--<property name="tokens" value="CTOR_DEF"/>-->
-        <!--</module>-->
+        <module name="LineLength">
+            <property name="max" value="120"/>
+            <property name="ignorePattern" value="^import"/>
+            <property name="severity" value="warning"/>
+        </module>
+        <module name="MethodLength">
+            <property name="max" value="200"/>
+        </module>
+        <module name="ParameterNumber">
+            <property name="max" value="15"/>
+            <property name="tokens" value="CTOR_DEF"/>
+        </module>
 
         <!-- Checks for whitespace                               -->
         <!-- See http://checkstyle.sf.net/config_whitespace.html -->
@@ -165,14 +164,17 @@
         <!-- Checks for blocks. You know, those {}'s         -->
         <!-- See http://checkstyle.sf.net/config_blocks.html -->
         <module name="AvoidNestedBlocks"/>
-        <module name="EmptyBlock"/>
+        <module name="EmptyBlock">
+            <!-- allow empty block, as long as there's some comment -->
+            <property name="option" value="text"/>
+        </module>
         <module name="LeftCurly"/>
         <module name="NeedBraces"/>
         <!--<module name="RightCurly"/>-->
 
         <!-- Checks for common coding problems               -->
         <!-- See http://checkstyle.sf.net/config_coding.html -->
-        <!--<module name="EmptyStatement"/>-->
+        <module name="EmptyStatement"/>
         <!--<module name="EqualsHashCode"/>-->
         <!--<module name="HiddenField">
             <property name="ignoreSetter" value="true"/>
@@ -183,8 +185,8 @@
         <!-- TODO: Remove magic numbers -->
         <!-- <module name="MagicNumber"/> -->
         <!--<module name="MissingSwitchDefault"/>-->
-        <!--<module name="SimplifyBooleanExpression"/>-->
-        <!--<module name="SimplifyBooleanReturn"/>-->
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
 
         <!-- Checks for class design                         -->
         <!-- See http://checkstyle.sf.net/config_design.html -->

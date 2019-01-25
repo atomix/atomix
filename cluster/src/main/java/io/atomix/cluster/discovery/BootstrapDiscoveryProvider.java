@@ -17,7 +17,6 @@ package io.atomix.cluster.discovery;
 
 import com.google.common.collect.ImmutableSet;
 import io.atomix.cluster.BootstrapService;
-import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.Node;
 import io.atomix.cluster.NodeConfig;
 import io.atomix.utils.event.AbstractListenerManager;
@@ -41,8 +40,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * propagating membership information using a gossip style protocol.
  * <p>
  * A phi accrual failure detector is used to detect failures and remove peers from the configuration. In order to avoid
- * flapping of membership following a {@link ClusterMembershipEvent.Type#MEMBER_ADDED} event, the implementation attempts
- * to heartbeat all newly discovered peers before triggering a {@link ClusterMembershipEvent.Type#MEMBER_REMOVED} event.
+ * flapping of membership following a {@link io.atomix.cluster.ClusterMembershipEvent.Type#MEMBER_ADDED} event, the implementation attempts
+ * to heartbeat all newly discovered peers before triggering a {@link io.atomix.cluster.ClusterMembershipEvent.Type#MEMBER_REMOVED} event.
  */
 public class BootstrapDiscoveryProvider
     extends AbstractListenerManager<NodeDiscoveryEvent, NodeDiscoveryEventListener>
