@@ -267,7 +267,7 @@ public abstract class AbstractAtomicSemaphoreService extends AbstractPrimitiveSe
     private final int acquirePermits;
     private final long expire;
 
-    public Waiter(SessionId session, long index, long id, int acquirePermits, long expire) {
+    Waiter(SessionId session, long index, long id, int acquirePermits, long expire) {
       this.session = session;
       this.index = index;
       this.id = id;

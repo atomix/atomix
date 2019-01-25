@@ -237,7 +237,7 @@ public class ClusterResource {
     private final MemberId memberId;
     private final ClusterMembershipEvent.Type type;
 
-    public NodeEvent(MemberId memberId, Type type) {
+    NodeEvent(MemberId memberId, Type type) {
       this.memberId = memberId;
       this.type = type;
     }

@@ -224,7 +224,7 @@ public class AtomicDocumentTreeProxy
     private final DocumentTreeEventListener<byte[]> listener;
     private final Executor executor;
 
-    public InternalListener(DocumentPath path, DocumentTreeEventListener<byte[]> listener, Executor executor) {
+    InternalListener(DocumentPath path, DocumentTreeEventListener<byte[]> listener, Executor executor) {
       this.path = path;
       this.listener = listener;
       this.executor = executor;

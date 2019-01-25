@@ -235,7 +235,7 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
     private final GroupMember member;
     private final long sessionId;
 
-    public Registration(GroupMember member, long sessionId) {
+    Registration(GroupMember member, long sessionId) {
       this.member = member;
       this.sessionId = sessionId;
     }

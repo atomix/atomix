@@ -151,8 +151,8 @@
 
         <!-- Modifier Checks                                    -->
         <!-- See http://checkstyle.sf.net/config_modifiers.html -->
-        <!--<module name="ModifierOrder"/>-->
-        <!--<module name="RedundantModifier"/>-->
+        <module name="ModifierOrder"/>
+        <module name="RedundantModifier"/>
 
         <!-- Checks for blocks. You know, those {}'s         -->
         <!-- See http://checkstyle.sf.net/config_blocks.html -->

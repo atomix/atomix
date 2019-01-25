@@ -27,7 +27,7 @@ public interface JournalReader<E> extends Iterator<Indexed<E>>, AutoCloseable {
   /**
    * Raft log reader mode.
    */
-  public enum Mode {
+  enum Mode {
 
     /**
      * Reads all entries from the log.

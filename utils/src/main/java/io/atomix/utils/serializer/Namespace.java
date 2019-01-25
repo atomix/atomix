@@ -596,7 +596,7 @@ public final class Namespace implements KryoFactory, KryoPool {
     private final int begin;
     private final ImmutableList<Pair<Class<?>[], Serializer<?>>> types;
 
-    public RegistrationBlock(int begin, List<Pair<Class<?>[], Serializer<?>>> types) {
+    RegistrationBlock(int begin, List<Pair<Class<?>[], Serializer<?>>> types) {
       this.begin = begin;
       this.types = ImmutableList.copyOf(types);
     }

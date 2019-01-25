@@ -37,7 +37,7 @@ final class UpdateRequest<K> {
    * @param sender the sender's node ID
    * @param keys   keys requested
    */
-  public UpdateRequest(MemberId sender, Set<K> keys) {
+  UpdateRequest(MemberId sender, Set<K> keys) {
     this.sender = checkNotNull(sender);
     this.keys = ImmutableSet.copyOf(keys);
   }

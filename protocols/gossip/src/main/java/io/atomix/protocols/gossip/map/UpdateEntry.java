@@ -32,7 +32,7 @@ final class UpdateEntry {
    * @param key   key of the entry
    * @param value value of the entry
    */
-  public UpdateEntry(String key, MapValue value) {
+  UpdateEntry(String key, MapValue value) {
     this.key = checkNotNull(key);
     this.value = value;
   }

@@ -117,7 +117,6 @@ public class AtomicSemaphoreProxy
     return attempt.thenApply(Optional::ofNullable);
   }
 
-
   @Override
   public CompletableFuture<Void> release() {
     return release(1);
@@ -183,12 +182,12 @@ public class AtomicSemaphoreProxy
     private final int permits;
     private ScheduledFuture<?> scheduledFuture;
 
-    public AcquireAttempt(long id, int permits) {
+    AcquireAttempt(long id, int permits) {
       this.id = id;
       this.permits = permits;
     }
 
-    public AcquireAttempt(long id, int permits, Duration timeout, Consumer<AcquireAttempt> callback) {
+    AcquireAttempt(long id, int permits, Duration timeout, Consumer<AcquireAttempt> callback) {
       this(id, permits);
       this.scheduledFuture = timeout != null && callback != null && timeout.toMillis() > 0
           ? scheduledExecutor.schedule(() -> callback.accept(this), timeout.toMillis(), TimeUnit.MILLISECONDS)

@@ -155,7 +155,7 @@ public class AtomicMapResource extends PrimitiveResource<AsyncAtomicMap<String, 
   static class VersionedResult {
     private final Versioned<String> value;
 
-    public VersionedResult(Versioned<String> value) {
+    VersionedResult(Versioned<String> value) {
       this.value = value;
     }
 
