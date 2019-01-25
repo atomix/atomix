@@ -15,12 +15,11 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
+import java.util.UUID;
+
 import io.atomix.primitive.session.SessionId;
 import io.atomix.protocols.raft.TestPrimitiveType;
-import io.atomix.protocols.raft.session.impl.RaftSessionState;
 import org.junit.Test;
-
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 

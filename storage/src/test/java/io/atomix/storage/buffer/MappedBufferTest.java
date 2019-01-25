@@ -35,7 +35,7 @@ public class MappedBufferTest extends BufferTest {
   public static void afterTest() {
     FileTesting.cleanFiles();
   }
-  
+
   @Override
   protected Buffer createBuffer(int capacity) {
     return MappedBuffer.allocate(FileTesting.createFile(), capacity);

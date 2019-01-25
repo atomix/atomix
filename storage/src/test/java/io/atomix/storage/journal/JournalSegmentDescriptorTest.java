@@ -34,11 +34,11 @@ public class JournalSegmentDescriptorTest {
   @Test
   public void testDescriptorBuilder() {
     JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder(ByteBuffer.allocate(JournalSegmentDescriptor.BYTES))
-      .withId(2)
-      .withIndex(1025)
-      .withMaxSegmentSize(1024 * 1024)
-      .withMaxEntries(2048)
-      .build();
+        .withId(2)
+        .withIndex(1025)
+        .withMaxSegmentSize(1024 * 1024)
+        .withMaxEntries(2048)
+        .build();
 
     assertEquals(2, descriptor.id());
     assertEquals(JournalSegmentDescriptor.VERSION, descriptor.version());
@@ -58,11 +58,11 @@ public class JournalSegmentDescriptorTest {
   @Test
   public void testDescriptorCopy() {
     JournalSegmentDescriptor descriptor = JournalSegmentDescriptor.builder()
-      .withId(2)
-      .withIndex(1025)
-      .withMaxSegmentSize(1024 * 1024)
-      .withMaxEntries(2048)
-      .build();
+        .withId(2)
+        .withIndex(1025)
+        .withMaxSegmentSize(1024 * 1024)
+        .withMaxEntries(2048)
+        .build();
 
     long time = System.currentTimeMillis();
     descriptor.update(time);

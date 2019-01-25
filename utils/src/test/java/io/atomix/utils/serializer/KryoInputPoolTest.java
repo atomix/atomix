@@ -47,7 +47,6 @@ public class KryoInputPoolTest {
     assertTrue(result[0] != result[1]);
   }
 
-
   @Test
   public void recycleOutput() {
     final Input[] result = new Input[2];

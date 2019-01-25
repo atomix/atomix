@@ -60,11 +60,11 @@ public class RaftSessionInvokerTest {
   public void testSubmitCommand() throws Throwable {
     RaftSessionConnection connection = mock(RaftSessionConnection.class);
     when(connection.command(any(CommandRequest.class)))
-      .thenReturn(CompletableFuture.completedFuture(CommandResponse.builder()
-        .withStatus(RaftResponse.Status.OK)
-        .withIndex(10)
-        .withResult("Hello world!".getBytes())
-        .build()));
+        .thenReturn(CompletableFuture.completedFuture(CommandResponse.builder()
+            .withStatus(RaftResponse.Status.OK)
+            .withIndex(10)
+            .withResult("Hello world!".getBytes())
+            .build()));
 
     RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
     RaftSessionManager manager = mock(RaftSessionManager.class);
@@ -87,8 +87,8 @@ public class RaftSessionInvokerTest {
 
     RaftSessionConnection connection = mock(RaftSessionConnection.class);
     Mockito.when(connection.command(any(CommandRequest.class)))
-      .thenReturn(future1)
-      .thenReturn(future2);
+        .thenReturn(future1)
+        .thenReturn(future2);
 
     RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
     RaftSessionManager manager = mock(RaftSessionManager.class);
@@ -100,10 +100,10 @@ public class RaftSessionInvokerTest {
     CompletableFuture<byte[]> result2 = submitter.invoke(operation(COMMAND));
 
     future2.complete(CommandResponse.builder()
-      .withStatus(RaftResponse.Status.OK)
-      .withIndex(10)
-      .withResult("Hello world again!".getBytes())
-      .build());
+        .withStatus(RaftResponse.Status.OK)
+        .withIndex(10)
+        .withResult("Hello world again!".getBytes())
+        .build());
 
     assertEquals(2, state.getCommandRequest());
     assertEquals(0, state.getCommandResponse());
@@ -113,10 +113,10 @@ public class RaftSessionInvokerTest {
     assertFalse(result2.isDone());
 
     future1.complete(CommandResponse.builder()
-      .withStatus(RaftResponse.Status.OK)
-      .withIndex(9)
-      .withResult("Hello world!".getBytes())
-      .build());
+        .withStatus(RaftResponse.Status.OK)
+        .withIndex(9)
+        .withResult("Hello world!".getBytes())
+        .build());
 
     assertTrue(result1.isDone());
     assertTrue(Arrays.equals(result1.get(), "Hello world!".getBytes()));
@@ -135,11 +135,11 @@ public class RaftSessionInvokerTest {
   public void testSubmitQuery() throws Throwable {
     RaftSessionConnection connection = mock(RaftSessionConnection.class);
     when(connection.query(any(QueryRequest.class)))
-      .thenReturn(CompletableFuture.completedFuture(QueryResponse.builder()
-        .withStatus(RaftResponse.Status.OK)
-        .withIndex(10)
-        .withResult("Hello world!".getBytes())
-        .build()));
+        .thenReturn(CompletableFuture.completedFuture(QueryResponse.builder()
+            .withStatus(RaftResponse.Status.OK)
+            .withIndex(10)
+            .withResult("Hello world!".getBytes())
+            .build()));
 
     RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
     RaftSessionManager manager = mock(RaftSessionManager.class);
@@ -160,8 +160,8 @@ public class RaftSessionInvokerTest {
 
     RaftSessionConnection connection = mock(RaftSessionConnection.class);
     Mockito.when(connection.query(any(QueryRequest.class)))
-      .thenReturn(future1)
-      .thenReturn(future2);
+        .thenReturn(future1)
+        .thenReturn(future2);
 
     RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
     RaftSessionManager manager = mock(RaftSessionManager.class);
@@ -173,10 +173,10 @@ public class RaftSessionInvokerTest {
     CompletableFuture<byte[]> result2 = submitter.invoke(operation(QUERY));
 
     future2.complete(QueryResponse.builder()
-      .withStatus(RaftResponse.Status.OK)
-      .withIndex(10)
-      .withResult("Hello world again!".getBytes())
-      .build());
+        .withStatus(RaftResponse.Status.OK)
+        .withIndex(10)
+        .withResult("Hello world again!".getBytes())
+        .build());
 
     assertEquals(1, state.getResponseIndex());
 
@@ -184,10 +184,10 @@ public class RaftSessionInvokerTest {
     assertFalse(result2.isDone());
 
     future1.complete(QueryResponse.builder()
-      .withStatus(RaftResponse.Status.OK)
-      .withIndex(9)
-      .withResult("Hello world!".getBytes())
-      .build());
+        .withStatus(RaftResponse.Status.OK)
+        .withIndex(9)
+        .withResult("Hello world!".getBytes())
+        .build());
 
     assertTrue(result1.isDone());
     assertTrue(Arrays.equals(result1.get(), "Hello world!".getBytes()));
@@ -207,8 +207,8 @@ public class RaftSessionInvokerTest {
 
     RaftSessionConnection connection = mock(RaftSessionConnection.class);
     Mockito.when(connection.query(any(QueryRequest.class)))
-      .thenReturn(future1)
-      .thenReturn(future2);
+        .thenReturn(future1)
+        .thenReturn(future2);
 
     RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
     RaftSessionManager manager = mock(RaftSessionManager.class);
@@ -226,10 +226,10 @@ public class RaftSessionInvokerTest {
 
     future1.completeExceptionally(new RaftException.QueryFailure("failure"));
     future2.complete(QueryResponse.builder()
-      .withStatus(RaftResponse.Status.OK)
-      .withIndex(10)
-      .withResult("Hello world!".getBytes())
-      .build());
+        .withStatus(RaftResponse.Status.OK)
+        .withIndex(10)
+        .withResult("Hello world!".getBytes())
+        .build());
 
     assertTrue(result1.isCompletedExceptionally());
     assertTrue(result2.isDone());
@@ -274,7 +274,7 @@ public class RaftSessionInvokerTest {
 
     RaftSessionConnection connection = mock(RaftSessionConnection.class);
     Mockito.when(connection.query(any(QueryRequest.class)))
-      .thenReturn(future);
+        .thenReturn(future);
 
     RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
     RaftSessionManager manager = mock(RaftSessionManager.class);

@@ -97,7 +97,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -201,8 +203,9 @@ public class RaftTest extends ConcurrentTestCase {
     await(15000);
     RaftServer joiner = createServer(nextNodeId());
     joiner.addRoleChangeListener(s -> {
-      if (s == role)
+      if (s == role) {
         resume();
+      }
     });
     if (type == RaftMember.Type.ACTIVE) {
       joiner.join(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);

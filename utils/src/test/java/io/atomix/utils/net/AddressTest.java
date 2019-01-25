@@ -18,8 +18,6 @@ package io.atomix.utils.net;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.net.InetAddress;
-
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -32,7 +30,7 @@ public class AddressTest {
     assertEquals("127.0.0.1", address.host());
     assertEquals(5000, address.port());
     assertEquals("localhost", address.address().getHostName());
-    assertEquals( "127.0.0.1:5000", address.toString());
+    assertEquals("127.0.0.1:5000", address.toString());
   }
 
   @Test
