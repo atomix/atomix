@@ -15,12 +15,9 @@
  */
 package io.atomix.primitive.partition;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -93,35 +90,7 @@ public class PrimaryTerm {
     if (primary == null) {
       return Collections.emptyList();
     }
-
-    List<GroupMember> backups = new ArrayList<>();
-    Set<MemberGroupId> groups = new HashSet<>();
-
-    // Add the primary group to the set of groups to avoid assigning a backup in the same group.
-    groups.add(primary.groupId());
-
-    // First populate backups with members from a unique set of groups.
-    int i = 0;
-    for (int j = 0; j < numBackups; j++) {
-      while (i < candidates.size()) {
-        GroupMember member = candidates.get(i++);
-        if (groups.add(member.groupId())) {
-          backups.add(member);
-          break;
-        }
-      }
-    }
-
-    // If there are still not enough backups, add duplicate groups.
-    for (int j = backups.size(); j < numBackups; j++) {
-      for (GroupMember candidate : candidates) {
-        if (!candidate.equals(primary) && !backups.contains(candidate)) {
-          backups.add(candidate);
-          break;
-        }
-      }
-    }
-    return backups;
+    return candidates.subList(1, Math.min(candidates.size(), numBackups + 1));
   }
 
   @Override
