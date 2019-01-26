@@ -477,8 +477,7 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   @Test
-  public void testNodeCatchUpAfterCompaction() throws Throwable
-  {
+  public void testNodeCatchUpAfterCompaction() throws Throwable {
     // given
     createServers(3);
 
@@ -489,8 +488,7 @@ public class RaftTest extends ConcurrentTestCase {
     final int entries = 10;
     final int entrySize = 1024;
     final String entry = RandomStringUtils.random(entrySize);
-    for (int i = 0; i < entries; i++)
-    {
+    for (int i = 0; i < entries; i++) {
       primitive.write(entry)
                .get(1_000, TimeUnit.MILLISECONDS);
     }

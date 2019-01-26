@@ -92,8 +92,7 @@ public abstract class AbstractJournalTest {
   }
 
   @Test
-  public void testCloseMultipleTimes()
-  {
+  public void testCloseMultipleTimes() {
     // given
     final Journal<TestEntry> journal = createJournal();
 
