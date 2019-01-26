@@ -87,7 +87,7 @@ public class PrimaryTerm {
    * @return an ordered list of backup members
    */
   public List<GroupMember> backups(int numBackups) {
-    if (primary == null) {
+    if (primary == null || candidates.isEmpty()) {
       return Collections.emptyList();
     }
     return candidates.subList(1, Math.min(candidates.size(), numBackups + 1));

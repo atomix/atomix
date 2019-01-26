@@ -19,14 +19,27 @@ import io.atomix.cluster.MemberId;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Primary term test.
  */
 public class PrimaryTermTest {
+  @Test
+  public void testEmptyTerm() throws Exception {
+    PrimaryTerm term = new PrimaryTerm(1, null, Collections.emptyList());
+    assertNull(term.primary());
+    assertTrue(term.candidates().isEmpty());
+    assertTrue(term.backups(0).isEmpty());
+    assertTrue(term.backups(1).isEmpty());
+    assertTrue(term.backups(2).isEmpty());
+  }
+
   @Test
   public void testPrimaryTerm() throws Exception {
     GroupMember primary = new GroupMember(MemberId.from("1"), MemberGroupId.from("1"));
