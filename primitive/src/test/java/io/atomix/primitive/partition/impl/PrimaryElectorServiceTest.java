@@ -191,7 +191,6 @@ public class PrimaryElectorServiceTest {
   @Test
   public void testSortCandidatesByGroup() {
     PrimaryElectorService elector = newService();
-    PartitionId partId = new PartitionId("test", 1);
     PrimaryTerm term = null;
 
     term = enter("node1", "group1", elector);
@@ -238,6 +237,26 @@ public class PrimaryElectorServiceTest {
     assertEquals("node3", term.candidates().get(5).memberId().id());
   }
 
+  @Test
+  public void testSortCandidatesWithoutGroup() {
+    PrimaryElectorService elector = newService();
+    PrimaryTerm term = null;
+
+    term = enter("node1", "node1", elector);
+    term = enter("node2", "node2", elector);
+    term = enter("node3", "node3", elector);
+    term = enter("node4", "node4", elector);
+    term = enter("node5", "node5", elector);
+    term = enter("node6", "node6", elector);
+
+    assertEquals("node1", term.candidates().get(0).memberId().id());
+    assertEquals("node2", term.candidates().get(1).memberId().id());
+    assertEquals("node3", term.candidates().get(2).memberId().id());
+    assertEquals("node4", term.candidates().get(3).memberId().id());
+    assertEquals("node5", term.candidates().get(4).memberId().id());
+    assertEquals("node6", term.candidates().get(5).memberId().id());
+  }
+
   private PrimaryTerm enter(String nodeId, String groupId, PrimaryElectorService elector) {
     PartitionId partId = new PartitionId("test", 1);
     GroupMember member = createGroupMember(nodeId, groupId);
@@ -256,7 +275,7 @@ public class PrimaryElectorServiceTest {
   }
 
   GroupMember createGroupMember(String id, String groupId) {
-    return new GroupMember(MemberId.from(id), MemberGroupId.from(groupId));
+    return new GroupMember(MemberId.from(id), groupId != null ? MemberGroupId.from(groupId) : null);
   }
 
   PrimaryElectorService newService() {
