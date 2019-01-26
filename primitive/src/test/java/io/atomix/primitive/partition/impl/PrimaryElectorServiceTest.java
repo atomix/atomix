@@ -188,6 +188,63 @@ public class PrimaryElectorServiceTest {
     assertEquals(members.get(4), backups3.get(1));
   }
 
+  @Test
+  public void testSortCandidatesByGroup() {
+    PrimaryElectorService elector = newService();
+    PartitionId partId = new PartitionId("test", 1);
+    PrimaryTerm term = null;
+
+    term = enter("node1", "group1", elector);
+    assertEquals("node1", term.primary().memberId().id());
+
+    term = enter("node2", "group1", elector);
+    assertEquals("node1", term.primary().memberId().id());
+    assertEquals("node2", term.candidates().get(1).memberId().id());
+    assertEquals("node2", term.backups(2).get(0).memberId().id());
+
+    term = enter("node3", "group1", elector);
+    assertEquals("node1", term.primary().memberId().id());
+    assertEquals("node2", term.candidates().get(1).memberId().id());
+    assertEquals("node2", term.backups(2).get(0).memberId().id());
+    assertEquals("node3", term.candidates().get(2).memberId().id());
+    assertEquals("node3", term.backups(2).get(1).memberId().id());
+
+    term = enter("node4", "group2", elector);
+    assertEquals("node1", term.primary().memberId().id());
+    assertEquals("node4", term.candidates().get(1).memberId().id());
+    assertEquals("node4", term.backups(2).get(0).memberId().id());
+    assertEquals("node2", term.candidates().get(2).memberId().id());
+    assertEquals("node2", term.backups(2).get(1).memberId().id());
+
+    term = enter("node5", "group3", elector);
+    assertEquals("node1", term.primary().memberId().id());
+    assertEquals("node4", term.candidates().get(1).memberId().id());
+    assertEquals("node4", term.backups(2).get(0).memberId().id());
+    assertEquals("node5", term.candidates().get(2).memberId().id());
+    assertEquals("node5", term.backups(2).get(1).memberId().id());
+
+    term = enter("node6", "group3", elector);
+    assertEquals("node1", term.primary().memberId().id());
+    assertEquals("node4", term.candidates().get(1).memberId().id());
+    assertEquals("node4", term.backups(2).get(0).memberId().id());
+    assertEquals("node5", term.candidates().get(2).memberId().id());
+    assertEquals("node5", term.backups(2).get(1).memberId().id());
+
+    assertEquals("node1", term.candidates().get(0).memberId().id());
+    assertEquals("node4", term.candidates().get(1).memberId().id());
+    assertEquals("node5", term.candidates().get(2).memberId().id());
+    assertEquals("node2", term.candidates().get(3).memberId().id());
+    assertEquals("node6", term.candidates().get(4).memberId().id());
+    assertEquals("node3", term.candidates().get(5).memberId().id());
+  }
+
+  private PrimaryTerm enter(String nodeId, String groupId, PrimaryElectorService elector) {
+    PartitionId partId = new PartitionId("test", 1);
+    GroupMember member = createGroupMember(nodeId, groupId);
+    Session session = createSession(member);
+    return elector.enter(createEnterOp(partId, member, session));
+  }
+
   Commit<Enter> createEnterOp(PartitionId partition, GroupMember member, Session<?> session) {
     Enter enter = new Enter(partition, member);
     return new DefaultCommit<>(0, null, enter, session, System.currentTimeMillis());
