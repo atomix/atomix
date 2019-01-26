@@ -131,6 +131,15 @@
                 </goals>
               </execution>
             </executions>
+            <configuration>
+              <!-- workaround for https://bugs.openjdk.java.net/browse/JDK-8212233 -->
+              <javaApiLinks>
+                <property>
+                  <name>foo</name>
+                  <value>bar</value>
+                </property>
+              </javaApiLinks>
+            </configuration>
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
