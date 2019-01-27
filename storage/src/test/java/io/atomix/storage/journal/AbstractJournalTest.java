@@ -92,6 +92,18 @@ public abstract class AbstractJournalTest {
   }
 
   @Test
+  public void testCloseMultipleTimes() {
+    // given
+    final Journal<TestEntry> journal = createJournal();
+
+    // when
+    journal.close();
+
+    // then
+    journal.close();
+  }
+
+  @Test
   @SuppressWarnings("unchecked")
   public void testWriteRead() throws Exception {
     try (Journal<TestEntry> journal = createJournal()) {

@@ -50,7 +50,6 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
   @Override
   public void reset(long index) {
     if (index > currentSegment.index()) {
-      currentWriter.close();
       currentSegment.release();
       currentSegment = journal.resetSegments(index);
       currentSegment.acquire();
