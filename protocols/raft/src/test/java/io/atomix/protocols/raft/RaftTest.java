@@ -68,6 +68,7 @@ import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 import net.jodah.concurrentunit.ConcurrentTestCase;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -473,6 +474,40 @@ public class RaftTest extends ConcurrentTestCase {
   @Test
   public void testTwoOfThreeNodeSubmitCommand() throws Throwable {
     testSubmitCommand(2, 3);
+  }
+
+  @Test
+  public void testNodeCatchUpAfterCompaction() throws Throwable {
+    // given
+    createServers(3);
+
+    servers.get(0).shutdown();
+    RaftClient client = createClient();
+    TestPrimitive primitive = createPrimitive(client);
+
+    final int entries = 10;
+    final int entrySize = 1024;
+    final String entry = RandomStringUtils.random(entrySize);
+    for (int i = 0; i < entries; i++) {
+      primitive.write(entry)
+               .get(1_000, TimeUnit.MILLISECONDS);
+    }
+
+    // when
+    CompletableFuture
+        .allOf(servers.get(1).compact(),
+               servers.get(2).compact())
+        .get(15_000, TimeUnit.MILLISECONDS);
+
+    // then
+    final RaftServer server = createServer(members.get(0).memberId());
+    List<MemberId> members =
+        this.members
+            .stream()
+            .map(RaftMember::memberId)
+            .collect(Collectors.toList());
+
+    server.join(members).get(15_000, TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -1271,6 +1306,7 @@ public class RaftTest extends ConcurrentTestCase {
             .build());
 
     RaftServer server = builder.build();
+
     servers.add(server);
     return server;
   }
