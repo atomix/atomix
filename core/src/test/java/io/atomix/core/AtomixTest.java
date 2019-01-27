@@ -15,6 +15,12 @@
  */
 package io.atomix.core;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import io.atomix.cluster.ClusterMembershipEvent;
 import io.atomix.cluster.ClusterMembershipEventListener;
 import io.atomix.cluster.Member;
@@ -53,22 +59,16 @@ import io.atomix.core.tree.AtomicDocumentTreeType;
 import io.atomix.core.value.AtomicValueType;
 import io.atomix.core.value.DistributedValueType;
 import io.atomix.core.workqueue.WorkQueueType;
-import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.impl.DefaultPartitionService;
 import io.atomix.primitive.protocol.ProxyProtocol;
 import io.atomix.protocols.log.DistributedLogProtocol;
 import io.atomix.protocols.log.partition.LogPartitionGroup;
 import io.atomix.protocols.raft.MultiRaftProtocol;
-import io.atomix.protocols.raft.RaftServer.Role;
 import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.partition.RaftPartitionGroup;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.config.ConfigurationException;
 import io.atomix.utils.net.Address;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -84,10 +84,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Atomix test.
@@ -221,8 +220,7 @@ public class AtomixTest extends AbstractAtomixTest {
     final CompletableFuture<Void> roleChanged = new CompletableFuture<>();
 
     final CompletableFuture<Atomix> nodeOneFuture = startAtomix(1, Arrays.asList(1),
-        builder ->
-        {
+        builder -> {
           final RaftPartitionGroup partitionGroup = RaftPartitionGroup.builder("system")
               .withNumPartitions(1)
               .withMembers(String.valueOf(1))
@@ -238,11 +236,7 @@ public class AtomixTest extends AbstractAtomixTest {
           raftPartitionGroup.getPartitions().forEach(
               partition -> {
                 final RaftPartition raftPartition = (RaftPartition) partition;
-                raftPartition.addRoleChangeListener((role) ->
-                {
-                  roleChanged.complete(null);
-                  System.out.println(role.toString());
-                });
+                raftPartition.addRoleChangeListener((role) -> roleChanged.complete(null));
               });
           return atomix;
         });
