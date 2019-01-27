@@ -94,7 +94,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
       }
       synchronized (this) {
         try {
-          server = buildServer();
+          initServer();
         } catch (StorageException e) {
           return Futures.exceptionalFuture(e);
         }
@@ -172,7 +172,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
   }
 
   private RaftServer buildServer() {
-    final RaftServer raftServer = RaftServer.builder(localMemberId)
+    return RaftServer.builder(localMemberId)
         .withName(partition.name())
         .withMembershipService(membershipService)
         .withProtocol(new RaftServerCommunicator(
@@ -196,18 +196,20 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
             .build())
         .withThreadContextFactory(threadContextFactory)
         .build();
+  }
+
+  private void initServer() {
+    server = buildServer();
 
     if (!deferredRoleChangeListeners.isEmpty()) {
-      deferredRoleChangeListeners.forEach(raftServer::addRoleChangeListener);
+      deferredRoleChangeListeners.forEach(server::addRoleChangeListener);
       deferredRoleChangeListeners.clear();
     }
-
-    return raftServer;
   }
 
   public CompletableFuture<Void> join(Collection<MemberId> otherMembers) {
     log.info("Joining partition {} ({})", partition.id(), partition.name());
-    server = buildServer();
+    initServer();
     return server.join(otherMembers).whenComplete((r, e) -> {
       if (e == null) {
         log.debug("Successfully joined partition {} ({})", partition.id(), partition.name());

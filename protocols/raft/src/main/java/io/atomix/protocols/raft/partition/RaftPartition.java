@@ -150,7 +150,7 @@ public class RaftPartition implements Partition {
     this.partition = metadata;
     this.client = createClient(managementService);
     if (partition.members().contains(managementService.getMembershipService().getLocalMember().id())) {
-      server = createServer(managementService);
+      initServer(managementService);
       return server.start()
           .thenCompose(v -> client.start())
           .thenApply(v -> null);
@@ -164,7 +164,7 @@ public class RaftPartition implements Partition {
    */
   CompletableFuture<Void> update(PartitionMetadata metadata, PartitionManagementService managementService) {
     if (server == null && metadata.members().contains(managementService.getMembershipService().getLocalMember().id())) {
-      server = createServer(managementService);
+      initServer(managementService);
       return server.join(metadata.members());
     } else if (server != null && !metadata.members().contains(managementService.getMembershipService().getLocalMember().id())) {
       return server.leave().thenRun(() -> server = null);
@@ -200,7 +200,7 @@ public class RaftPartition implements Partition {
    * Creates a Raft server.
    */
   protected RaftPartitionServer createServer(PartitionManagementService managementService) {
-    final RaftPartitionServer raftPartitionServer = new RaftPartitionServer(
+    return new RaftPartitionServer(
         this,
         config,
         managementService.getMembershipService().getLocalMember().id(),
@@ -208,13 +208,15 @@ public class RaftPartition implements Partition {
         managementService.getMessagingService(),
         managementService.getPrimitiveTypes(),
         threadContextFactory);
+  }
+
+  private void initServer(final PartitionManagementService managementService) {
+    server = createServer(managementService);
 
     if (!deferredRoleChangeListeners.isEmpty()) {
-      deferredRoleChangeListeners.forEach(raftPartitionServer::addRoleChangeListener);
+      deferredRoleChangeListeners.forEach(server::addRoleChangeListener);
       deferredRoleChangeListeners.clear();
     }
-
-    return raftPartitionServer;
   }
 
   /**
