@@ -15,12 +15,21 @@
  */
 package io.atomix.primitive.partition;
 
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Optional;
+
+import io.atomix.cluster.MemberId;
 import io.atomix.utils.event.AbstractEvent;
+import io.atomix.utils.misc.TimestampPrinter;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Partition event.
  */
-public class PartitionEvent extends AbstractEvent<PartitionEvent.Type, Partition> {
+public class PartitionEvent extends AbstractEvent<PartitionEvent.Type, PartitionId> {
 
   /**
    * Partition event type.
@@ -42,20 +51,94 @@ public class PartitionEvent extends AbstractEvent<PartitionEvent.Type, Partition
     MEMBERS_CHANGED,
   }
 
-  public PartitionEvent(Type type, Partition partition) {
-    super(type, partition);
+  private final Collection<MemberId> members;
+  private final MemberId primary;
+  private final Collection<MemberId> backups;
+
+  public PartitionEvent(
+      Type type,
+      PartitionId partition,
+      Collection<MemberId> members,
+      MemberId primary,
+      Collection<MemberId> backups) {
+    this(type, partition, members, primary, backups, System.currentTimeMillis());
   }
 
-  public PartitionEvent(Type type, Partition partition, long time) {
+  public PartitionEvent(
+      Type type,
+      PartitionId partition,
+      Collection<MemberId> members,
+      MemberId primary,
+      Collection<MemberId> backups,
+      long time) {
     super(type, partition, time);
+    this.members = checkNotNull(members);
+    this.primary = primary;
+    this.backups = checkNotNull(backups);
   }
 
   /**
-   * Returns the partition.
+   * Returns the partition ID.
    *
-   * @return the partition
+   * @return the partition ID
    */
-  public Partition partition() {
+  public PartitionId partitionId() {
     return subject();
+  }
+
+  /**
+   * Returns the collection of partition members.
+   *
+   * @return the collection of partition members
+   */
+  public Collection<MemberId> members() {
+    return members;
+  }
+
+  /**
+   * Returns the current partition primary.
+   *
+   * @return the current partition primary
+   */
+  public Optional<MemberId> primary() {
+    return Optional.ofNullable(primary);
+  }
+
+  /**
+   * Returns the collection of backups.
+   *
+   * @return the collection of backups
+   */
+  public Collection<MemberId> backups() {
+    return backups;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(partitionId(), members(), primary(), backups());
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof PartitionEvent) {
+      PartitionEvent that = (PartitionEvent) object;
+      return this.partitionId().equals(that.partitionId())
+          && this.members.equals(that.members)
+          && Objects.equals(this.primary, that.primary)
+          && this.backups.equals(that.backups);
+    }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("time", new TimestampPrinter(time()))
+        .add("type", type())
+        .add("partitionId", subject())
+        .add("members", members)
+        .add("primary", primary)
+        .add("backups", backups)
+        .toString();
   }
 }
