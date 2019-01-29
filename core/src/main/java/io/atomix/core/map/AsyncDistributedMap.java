@@ -15,19 +15,20 @@
  */
 package io.atomix.core.map;
 
-import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.core.collection.AsyncDistributedCollection;
-import io.atomix.core.set.AsyncDistributedSet;
-import io.atomix.primitive.AsyncPrimitive;
-
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+
+import com.google.common.util.concurrent.MoreExecutors;
+import io.atomix.core.collection.AsyncDistributedCollection;
+import io.atomix.core.set.AsyncDistributedSet;
+import io.atomix.primitive.AsyncPrimitive;
 
 /**
  * Asynchronous distributed map.
@@ -406,6 +407,59 @@ public interface AsyncDistributedMap<K, V> extends AsyncPrimitive {
    *     (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
    */
   CompletableFuture<V> compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
+
+  /**
+   * Acquires a lock on the given key.
+   *
+   * @param key the key for which to acquire the lock
+   * @return future to be completed once the lock has been acquired
+   */
+  CompletableFuture<Void> lock(K key);
+
+  /**
+   * Attempts to acquire a lock on the given key.
+   *
+   * @param key the key for which to acquire the lock
+   * @return future to be completed with a boolean indicating whether the lock was acquired
+   */
+  CompletableFuture<Boolean> tryLock(K key);
+
+  /**
+   * Attempts to acquire a lock on the given key.
+   *
+   * @param key the key for which to acquire the lock
+   * @param timeout the lock timeout
+   * @param unit the lock unit
+   * @return future to be completed with a boolean indicating whether the lock was acquired
+   */
+  default CompletableFuture<Boolean> tryLock(K key, long timeout, TimeUnit unit) {
+    return tryLock(key, Duration.ofMillis(unit.toMillis(timeout)));
+  }
+
+  /**
+   * Attempts to acquire a lock on the given key.
+   *
+   * @param key the key for which to acquire the lock
+   * @param timeout the lock timeout
+   * @return future to be completed with a boolean indicating whether the lock was acquired
+   */
+  CompletableFuture<Boolean> tryLock(K key, Duration timeout);
+
+  /**
+   * Returns a boolean indicating whether a lock is currently held on the given key.
+   *
+   * @param key the key for which to determine whether a lock exists
+   * @return indicates whether a lock exists on the given key
+   */
+  CompletableFuture<Boolean> isLocked(K key);
+
+  /**
+   * Releases a lock on the given key.
+   *
+   * @param key the key for which to release the lock
+   * @return future to be completed once the lock has been released
+   */
+  CompletableFuture<Void> unlock(K key);
 
   /**
    * Registers the specified listener to be notified whenever the map is updated.

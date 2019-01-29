@@ -28,6 +28,7 @@ import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.concurrent.Retries;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -158,6 +159,31 @@ public class BlockingDistributedMap<K, V> extends Synchronous<AsyncDistributedMa
   @Override
   public boolean replace(K key, V oldValue, V newValue) {
     return complete(asyncMap.replace(key, oldValue, newValue));
+  }
+
+  @Override
+  public void lock(K key) {
+    complete(asyncMap.lock(key));
+  }
+
+  @Override
+  public boolean tryLock(K key) {
+    return complete(asyncMap.tryLock(key));
+  }
+
+  @Override
+  public boolean tryLock(K key, Duration timeout) {
+    return complete(asyncMap.tryLock(key, timeout));
+  }
+
+  @Override
+  public boolean isLocked(K key) {
+    return complete(asyncMap.isLocked(key));
+  }
+
+  @Override
+  public void unlock(K key) {
+    complete(asyncMap.unlock(key));
   }
 
   @Override

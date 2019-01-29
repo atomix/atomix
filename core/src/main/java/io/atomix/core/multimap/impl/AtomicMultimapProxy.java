@@ -359,6 +359,31 @@ public class AtomicMultimapProxy
     }
 
     @Override
+    public CompletableFuture<Void> lock(String key) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> tryLock(String key) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> tryLock(String key, Duration timeout) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> isLocked(String key) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
+    public CompletableFuture<Void> unlock(String key) {
+      return Futures.exceptionalFuture(new UnsupportedOperationException());
+    }
+
+    @Override
     public CompletableFuture<Void> addListener(MapEventListener<String, Versioned<Collection<byte[]>>> listener, Executor executor) {
       return Futures.exceptionalFuture(new UnsupportedOperationException());
     }

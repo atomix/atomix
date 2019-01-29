@@ -15,6 +15,16 @@
  */
 package io.atomix.core.map.impl;
 
+import java.time.Duration;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import com.google.common.collect.Maps;
 import io.atomix.core.collection.AsyncDistributedCollection;
 import io.atomix.core.collection.CollectionEvent;
@@ -44,16 +54,6 @@ import io.atomix.primitive.impl.DelegatingAsyncPrimitive;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.time.Versioned;
-
-import java.time.Duration;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Distributed map implementation that delegates to an atomic map.
@@ -170,6 +170,31 @@ public class DelegatingAsyncDistributedMap<K, V> extends DelegatingAsyncPrimitiv
   @Override
   public CompletableFuture<V> compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
     return atomicMap.compute(key, remappingFunction).thenApply(Versioned::valueOrNull);
+  }
+
+  @Override
+  public CompletableFuture<Void> lock(K key) {
+    return atomicMap.lock(key).thenApply(v -> null);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> tryLock(K key) {
+    return atomicMap.tryLock(key).thenApply(version -> version.isPresent());
+  }
+
+  @Override
+  public CompletableFuture<Boolean> tryLock(K key, Duration timeout) {
+    return atomicMap.tryLock(key, timeout).thenApply(version -> version.isPresent());
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isLocked(K key) {
+    return atomicMap.isLocked(key);
+  }
+
+  @Override
+  public CompletableFuture<Void> unlock(K key) {
+    return atomicMap.unlock(key);
   }
 
   @Override

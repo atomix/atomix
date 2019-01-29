@@ -165,6 +165,31 @@ public class AsyncDistributedJavaMap<K, V> implements AsyncDistributedMap<K, V> 
   }
 
   @Override
+  public CompletableFuture<Void> lock(K key) {
+    return Futures.exceptionalFuture(new UnsupportedOperationException());
+  }
+
+  @Override
+  public CompletableFuture<Boolean> tryLock(K key) {
+    return Futures.exceptionalFuture(new UnsupportedOperationException());
+  }
+
+  @Override
+  public CompletableFuture<Boolean> tryLock(K key, Duration timeout) {
+    return Futures.exceptionalFuture(new UnsupportedOperationException());
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isLocked(K key) {
+    return Futures.exceptionalFuture(new UnsupportedOperationException());
+  }
+
+  @Override
+  public CompletableFuture<Void> unlock(K key) {
+    return Futures.exceptionalFuture(new UnsupportedOperationException());
+  }
+
+  @Override
   public CompletableFuture<Void> addListener(MapEventListener<K, V> listener, Executor executor) {
     return CompletableFuture.completedFuture(null);
   }
