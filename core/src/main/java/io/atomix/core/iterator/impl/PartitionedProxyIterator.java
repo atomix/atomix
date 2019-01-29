@@ -16,9 +16,11 @@
 package io.atomix.core.iterator.impl;
 
 import io.atomix.core.iterator.AsyncIterator;
+import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.concurrent.Futures;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,14 +36,15 @@ public class PartitionedProxyIterator<S, T> implements AsyncIterator<T> {
 
   public PartitionedProxyIterator(
       ProxyClient<S> client,
+      Collection<PartitionId> partitions,
       OpenFunction<S, T> openFunction,
       NextFunction<S, T> nextFunction,
       CloseFunction<S> closeFunction) {
-    this.partitions = client.getPartitionIds().stream()
+    this.partitions = partitions.stream()
         .<AsyncIterator<T>>map(partitionId -> new ProxyIterator<>(client, partitionId, openFunction, nextFunction, closeFunction))
         .collect(Collectors.toList())
         .iterator();
-    iterator = partitions.next();
+    this.iterator = this.partitions.next();
   }
 
   @Override

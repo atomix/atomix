@@ -15,6 +15,20 @@
  */
 package io.atomix.core.map.impl;
 
+import java.time.Duration;
+import java.util.Map;
+import java.util.Objects;
+import java.util.OptionalLong;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 import com.google.common.base.Throwables;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
@@ -28,19 +42,6 @@ import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.concurrent.Retries;
 import io.atomix.utils.time.Versioned;
-
-import java.time.Duration;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Default implementation of {@code ConsistentMap}.
@@ -186,6 +187,36 @@ public class BlockingAtomicMap<K, V> extends Synchronous<AsyncAtomicMap<K, V>> i
   @Override
   public boolean replace(K key, long oldVersion, V newValue) {
     return complete(asyncMap.replace(key, oldVersion, newValue));
+  }
+
+  @Override
+  public long lock(K key) {
+    return complete(asyncMap.lock(key));
+  }
+
+  @Override
+  public OptionalLong tryLock(K key) {
+    return complete(asyncMap.tryLock(key));
+  }
+
+  @Override
+  public OptionalLong tryLock(K key, Duration timeout) {
+    return complete(asyncMap.tryLock(key, timeout));
+  }
+
+  @Override
+  public boolean isLocked(K key) {
+    return complete(asyncMap.isLocked(key));
+  }
+
+  @Override
+  public boolean isLocked(K key, long version) {
+    return complete(asyncMap.isLocked(key, version));
+  }
+
+  @Override
+  public void unlock(K key) {
+    complete(asyncMap.unlock(key));
   }
 
   @Override

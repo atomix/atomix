@@ -290,6 +290,46 @@ public interface AtomicMapService<K> {
   MapEntryUpdateResult<K, byte[]> replace(K key, long oldVersion, byte[] newValue);
 
   /**
+   * Attempts to acquire a lock.
+   *
+   * @param key the key to lock
+   * @param lockId the lock identifier
+   */
+  @Command("lock")
+  default void lock(K key, int lockId) {
+    lock(key, lockId, -1);
+  }
+
+  /**
+   * Attempts to acquire a lock.
+   *
+   * @param key the key to lock
+   * @param lockId  the lock identifier
+   * @param timeout the lock to acquire
+   */
+  @Command("lockWithTimeout")
+  void lock(K key, int lockId, long timeout);
+
+  /**
+   * Unlocks an owned lock.
+   *
+   * @param key the key to unlock
+   * @param lockId the lock identifier
+   */
+  @Command("unlock")
+  void unlock(K key, int lockId);
+
+  /**
+   * Query whether the lock state.
+   *
+   * @param key the key to check
+   * @param version the lock version
+   * @return {@code true} if this lock is locked, {@code false} otherwise
+   */
+  @Query
+  boolean isLocked(K key, long version);
+
+  /**
    * Returns a key iterator.
    *
    * @return the key iterator ID

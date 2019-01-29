@@ -28,6 +28,7 @@ import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
@@ -242,6 +243,36 @@ public class DescendingAsyncAtomicNavigableMap<K extends Comparable<K>, V>
   @Override
   public CompletableFuture<Boolean> replace(K key, long oldVersion, V newValue) {
     return delegate().replace(key, oldVersion, newValue);
+  }
+
+  @Override
+  public CompletableFuture<Long> lock(K key) {
+    return delegate().lock(key);
+  }
+
+  @Override
+  public CompletableFuture<OptionalLong> tryLock(K key) {
+    return delegate().tryLock(key);
+  }
+
+  @Override
+  public CompletableFuture<OptionalLong> tryLock(K key, Duration timeout) {
+    return delegate().tryLock(key, timeout);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isLocked(K key) {
+    return delegate().isLocked(key);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isLocked(K key, long version) {
+    return delegate().isLocked(key, version);
+  }
+
+  @Override
+  public CompletableFuture<Void> unlock(K key) {
+    return delegate().unlock(key);
   }
 
   @Override

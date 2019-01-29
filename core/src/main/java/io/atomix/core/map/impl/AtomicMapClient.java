@@ -31,4 +31,23 @@ public interface AtomicMapClient<K> {
   @Event("change")
   void change(AtomicMapEvent<K, byte[]> event);
 
+  /**
+   * Called when the client has acquired a lock.
+   *
+   * @param key     the lock key
+   * @param id      the lock identifier
+   * @param version the lock version
+   */
+  @Event("locked")
+  void locked(K key, int id, long version);
+
+  /**
+   * Called when a lock attempt has failed.
+   *
+   * @param key the lock key
+   * @param id  the lock identifier
+   */
+  @Event("failed")
+  void failed(K key, int id);
+
 }

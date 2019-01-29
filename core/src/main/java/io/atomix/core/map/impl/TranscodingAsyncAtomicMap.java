@@ -36,6 +36,7 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -190,6 +191,36 @@ public class TranscodingAsyncAtomicMap<K1, V1, K2, V2> extends DelegatingAsyncPr
   @Override
   public CompletableFuture<Void> clear() {
     return backingMap.clear();
+  }
+
+  @Override
+  public CompletableFuture<Long> lock(K1 key) {
+    return backingMap.lock(keyEncoder.apply(key));
+  }
+
+  @Override
+  public CompletableFuture<OptionalLong> tryLock(K1 key) {
+    return backingMap.tryLock(keyEncoder.apply(key));
+  }
+
+  @Override
+  public CompletableFuture<OptionalLong> tryLock(K1 key, Duration timeout) {
+    return backingMap.tryLock(keyEncoder.apply(key), timeout);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isLocked(K1 key) {
+    return backingMap.isLocked(keyEncoder.apply(key));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isLocked(K1 key, long version) {
+    return backingMap.isLocked(keyEncoder.apply(key), version);
+  }
+
+  @Override
+  public CompletableFuture<Void> unlock(K1 key) {
+    return backingMap.unlock(keyEncoder.apply(key));
   }
 
   @Override

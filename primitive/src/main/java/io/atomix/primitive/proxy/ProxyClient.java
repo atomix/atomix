@@ -181,6 +181,33 @@ public interface ProxyClient<S> {
   }
 
   /**
+   * Submits an empty operation to the given partition.
+   *
+   * @param partitions the partitions in which to execute the operation
+   * @param operation  the operation identifier
+   * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
+   * {@link PrimitiveOperation} submission futures that preceded it.
+   * @throws NullPointerException if {@code operation} is null
+   */
+  default CompletableFuture<Void> acceptOn(Collection<PartitionId> partitions, Consumer<S> operation) {
+    return Futures.allOf(partitions.stream().map(partition -> getPartition(partition).accept(operation))).thenApply(v -> null);
+  }
+
+  /**
+   * Submits an empty operation to the given partition.
+   *
+   * @param partitions the partitions in which to execute the operation
+   * @param operation  the operation identifier
+   * @param <R>        the operation result type
+   * @return A completable future to be completed with the operation result. The future is guaranteed to be completed after all
+   * {@link PrimitiveOperation} submission futures that preceded it.
+   * @throws NullPointerException if {@code operation} is null
+   */
+  default <R> CompletableFuture<Stream<R>> applyOn(Collection<PartitionId> partitions, Function<S, R> operation) {
+    return Futures.allOf(partitions.stream().map(partition -> getPartition(partition).apply(operation)));
+  }
+
+  /**
    * Submits an empty operation to the owning partition for the given key.
    *
    * @param key       the key for which to submit the operation
