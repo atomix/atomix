@@ -326,6 +326,17 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
         getWallClock().getTime().unixTimestamp(),
         ttl);
 
+    // Check if there's a pessimistic lock on the key and return a WRITE_LOCK error if the lock does not belong
+    // to the requester's session.
+    LockContext lock = locks.get(key);
+    if (lock != null && lock.isLocked() && !lock.isLockedBy(getCurrentSession().sessionId())) {
+      return new MapEntryUpdateResult<>(
+          MapEntryUpdateResult.Status.WRITE_LOCK,
+          getCurrentIndex(),
+          key,
+          toVersioned(oldValue));
+    }
+
     // If the value is null or a tombstone, this is an insert.
     // Otherwise, only update the value if it has changed to reduce the number of events.
     if (valueIsNull(oldValue)) {
@@ -363,6 +374,17 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   public MapEntryUpdateResult<K, byte[]> putIfAbsent(K key, byte[] value, long ttl) {
     MapEntryValue oldValue = entries().get(key);
 
+    // Check if there's a pessimistic lock on the key and return a WRITE_LOCK error if the lock does not belong
+    // to the requester's session.
+    LockContext lock = locks.get(key);
+    if (lock != null && lock.isLocked() && !lock.isLockedBy(getCurrentSession().sessionId())) {
+      return new MapEntryUpdateResult<>(
+          MapEntryUpdateResult.Status.WRITE_LOCK,
+          getCurrentIndex(),
+          key,
+          toVersioned(oldValue));
+    }
+
     // If the value is null, this is an INSERT.
     if (valueIsNull(oldValue)) {
       // If the key has been locked by a transaction, return a WRITE_LOCK error.
@@ -395,6 +417,17 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   public MapEntryUpdateResult<K, byte[]> putAndGet(K key, byte[] value, long ttl) {
     MapEntryValue oldValue = entries().get(key);
     MapEntryValue newValue = new MapEntryValue(MapEntryValue.Type.VALUE, getCurrentIndex(), value, getWallClock().getTime().unixTimestamp(), ttl);
+
+    // Check if there's a pessimistic lock on the key and return a WRITE_LOCK error if the lock does not belong
+    // to the requester's session.
+    LockContext lock = locks.get(key);
+    if (lock != null && lock.isLocked() && !lock.isLockedBy(getCurrentSession().sessionId())) {
+      return new MapEntryUpdateResult<>(
+          MapEntryUpdateResult.Status.WRITE_LOCK,
+          getCurrentIndex(),
+          key,
+          toVersioned(oldValue));
+    }
 
     // If the value is null or a tombstone, this is an insert.
     // Otherwise, only update the value if it has changed to reduce the number of events.
@@ -438,6 +471,17 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
    */
   private MapEntryUpdateResult<K, byte[]> removeIf(long index, K key, Predicate<MapEntryValue> predicate) {
     MapEntryValue value = entries().get(key);
+
+    // Check if there's a pessimistic lock on the key and return a WRITE_LOCK error if the lock does not belong
+    // to the requester's session.
+    LockContext lock = locks.get(key);
+    if (lock != null && lock.isLocked() && !lock.isLockedBy(getCurrentSession().sessionId())) {
+      return new MapEntryUpdateResult<>(
+          MapEntryUpdateResult.Status.WRITE_LOCK,
+          getCurrentIndex(),
+          key,
+          toVersioned(value));
+    }
 
     // If the value does not exist or doesn't match the predicate, return a PRECONDITION_FAILED error.
     if (valueIsNull(value) || !predicate.test(value)) {
@@ -492,6 +536,17 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   private MapEntryUpdateResult<K, byte[]> replaceIf(
       long index, K key, MapEntryValue newValue, Predicate<MapEntryValue> predicate) {
     MapEntryValue oldValue = entries().get(key);
+
+    // Check if there's a pessimistic lock on the key and return a WRITE_LOCK error if the lock does not belong
+    // to the requester's session.
+    LockContext lock = locks.get(key);
+    if (lock != null && lock.isLocked() && !lock.isLockedBy(getCurrentSession().sessionId())) {
+      return new MapEntryUpdateResult<>(
+          MapEntryUpdateResult.Status.WRITE_LOCK,
+          getCurrentIndex(),
+          key,
+          toVersioned(oldValue));
+    }
 
     // If the key is not set or the current value doesn't match the predicate, return a PRECONDITION_FAILED error.
     if (valueIsNull(oldValue) || !predicate.test(oldValue)) {
@@ -1160,6 +1215,10 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
 
     LockContext(K key) {
       this.key = key;
+    }
+
+    boolean isLockedBy(SessionId sessionId) {
+      return lock != null && lock.session.equals(sessionId);
     }
 
     void lock(int id, long timeout) {
