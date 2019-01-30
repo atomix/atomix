@@ -29,6 +29,7 @@ import io.atomix.primitive.Synchronous;
 import io.atomix.utils.concurrent.Retries;
 
 import java.time.Duration;
+import java.util.ConcurrentModificationException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -223,6 +224,8 @@ public class BlockingDistributedMap<K, V> extends Synchronous<AsyncDistributedMa
       Throwable cause = Throwables.getRootCause(e);
       if (cause instanceof PrimitiveException) {
         throw (PrimitiveException) cause;
+      } else if (cause instanceof ConcurrentModificationException) {
+        throw (ConcurrentModificationException) cause;
       } else {
         throw new PrimitiveException(cause);
       }
