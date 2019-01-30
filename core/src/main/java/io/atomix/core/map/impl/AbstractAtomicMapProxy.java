@@ -264,7 +264,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
    * @return the key lock
    */
   private KeyLock<K> getOrCreateLock(K key) {
-    return locks.computeIfAbsent(key, k -> new KeyLock<>(getPartition(key), k, lockId::incrementAndGet, getProxyClient()));
+    return locks.computeIfAbsent(key, this::createLock);
   }
 
   /**
@@ -275,6 +275,16 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
    */
   private KeyLock<K> getLock(K key) {
     return locks.get(key);
+  }
+
+  /**
+   * Creates a lock for the given key.
+   *
+   * @param key the key for which to create the lock
+   * @return the lock for the given key
+   */
+  private KeyLock<K> createLock(K key) {
+    return new KeyLock<>(getPartition(key), key, lockId::incrementAndGet, getProxyClient());
   }
 
   /**
@@ -324,7 +334,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   public CompletableFuture<Boolean> isLocked(K key) {
     KeyLock<K> lock = getLock(key);
     if (lock == null) {
-      return Futures.completedFuture(false);
+      lock = createLock(key);
     }
     return lock.isLocked();
   }
@@ -333,7 +343,7 @@ public abstract class AbstractAtomicMapProxy<P extends AsyncPrimitive, S extends
   public CompletableFuture<Boolean> isLocked(K key, long version) {
     KeyLock<K> lock = getLock(key);
     if (lock == null) {
-      return Futures.completedFuture(false);
+      lock = createLock(key);
     }
     return lock.isLocked(version);
   }

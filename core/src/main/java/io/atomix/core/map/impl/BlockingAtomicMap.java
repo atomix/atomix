@@ -16,6 +16,7 @@
 package io.atomix.core.map.impl;
 
 import java.time.Duration;
+import java.util.ConcurrentModificationException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalLong;
@@ -256,6 +257,8 @@ public class BlockingAtomicMap<K, V> extends Synchronous<AsyncAtomicMap<K, V>> i
       Throwable cause = Throwables.getRootCause(e);
       if (cause instanceof PrimitiveException) {
         throw (PrimitiveException) cause;
+      } else if (cause instanceof ConcurrentModificationException) {
+        throw (ConcurrentModificationException) cause;
       } else {
         throw new PrimitiveException(cause);
       }
