@@ -33,7 +33,9 @@ import org.junit.Test;
 import java.time.Duration;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -53,11 +55,14 @@ public class DefaultAtomicMapServiceTest {
 
     Session session = mock(Session.class);
     when(session.sessionId()).thenReturn(SessionId.from(1));
+    when(context.currentSession()).thenReturn(session);
 
     AbstractAtomicMapService service = new TestAtomicMapService();
+    service.register(session);
     service.init(context);
 
     service.put("foo", "Hello world!".getBytes());
+    service.lock("bar", 1, 0);
 
     Buffer buffer = HeapBuffer.allocate();
     service.backup(new DefaultBackupOutput(buffer, service.serializer()));
@@ -68,6 +73,8 @@ public class DefaultAtomicMapServiceTest {
     Versioned<byte[]> value = service.get("foo");
     assertNotNull(value);
     assertArrayEquals("Hello world!".getBytes(), value.value());
+    assertFalse(service.isLocked("foo", 0));
+    assertTrue(service.isLocked("bar", 0));
   }
 
   private static class TestAtomicMapService extends AbstractAtomicMapService {
