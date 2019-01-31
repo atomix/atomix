@@ -45,11 +45,10 @@ public class RaftSessionRegistryTest {
     RaftSessionContext session = createSession(1);
     sessionManager.addSession(session);
     assertNotNull(sessionManager.getSession(1));
-    assertEquals(0, sessionManager.getSessions(ServiceId.from(1)).size());
-    session.open();
     assertEquals(1, sessionManager.getSessions(ServiceId.from(1)).size());
     sessionManager.removeSession(SessionId.from(1));
     assertNull(sessionManager.getSession(1));
+    assertEquals(0, sessionManager.getSessions(ServiceId.from(1)).size());
   }
 
   private RaftSessionContext createSession(long sessionId) {

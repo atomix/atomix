@@ -19,29 +19,42 @@ import io.atomix.protocols.raft.service.ServiceId;
 import io.atomix.protocols.raft.session.SessionId;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Session manager.
  */
 public class RaftSessionRegistry {
   private final Map<Long, RaftSessionContext> sessions = new ConcurrentHashMap<>();
+  private final Map<ServiceId, Map<Long, RaftSessionContext>> serviceSessions = new ConcurrentHashMap<>();
 
   /**
    * Adds a session.
    */
   public RaftSessionContext addSession(RaftSessionContext session) {
     RaftSessionContext existingSession = sessions.putIfAbsent(session.sessionId().id(), session);
-    return existingSession != null ? existingSession : session;
+    if (existingSession == null) {
+      serviceSessions.computeIfAbsent(session.getService().serviceId(), id -> new ConcurrentHashMap<>())
+          .put(session.sessionId().id(), session);
+      return session;
+    }
+    return existingSession;
   }
 
   /**
    * Removes a session.
    */
   public RaftSessionContext removeSession(SessionId sessionId) {
-    return sessions.remove(sessionId.id());
+    RaftSessionContext session = sessions.remove(sessionId.id());
+    Map<Long, RaftSessionContext> serviceSessions = this.serviceSessions.get(session.getService().serviceId());
+    if (serviceSessions != null) {
+      serviceSessions.remove(session.sessionId().id());
+    }
+    return session;
   }
 
   /**
@@ -80,10 +93,8 @@ public class RaftSessionRegistry {
    * @return a collection of sessions associated with the given service
    */
   public Collection<RaftSessionContext> getSessions(ServiceId serviceId) {
-    return sessions.values().stream()
-        .filter(session -> session.getService().serviceId().equals(serviceId))
-        .filter(session -> session.getState().active())
-        .collect(Collectors.toSet());
+    Map<Long, RaftSessionContext> sessions = serviceSessions.get(serviceId);
+    return sessions != null ? sessions.values() : Collections.emptyList();
   }
 
   /**
