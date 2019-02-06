@@ -403,7 +403,7 @@ public class RaftProxyManager {
     }
 
     // Schedule the keep alive for 3/4 the timeout minus the delta from the last keep-alive request.
-    keepAliveTimers.put(timeout, threadContext.schedule(Duration.ofMillis(Math.max(Math.max((long)(timeout * TIMEOUT_FACTOR) - delta, timeout - MIN_TIMEOUT_DELTA - delta), 0)), () -> {
+    keepAliveTimers.put(timeout, threadContext.schedule(Duration.ofMillis((long)(timeout * TIMEOUT_FACTOR) - delta), () -> {
       if (open.get()) {
         keepAliveSessions(lastKeepAliveTime, timeout);
       }
