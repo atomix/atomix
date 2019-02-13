@@ -15,7 +15,6 @@
  */
 package io.atomix.core.map.impl;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -52,6 +51,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Throwables.throwIfUnchecked;
 
 /**
  * State Machine for {@link AtomicMapProxy} resource.
@@ -725,7 +725,8 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
         return PrepareResult.OK;
       }
     } catch (Exception e) {
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -740,7 +741,8 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
       this.currentVersion = getCurrentIndex();
       return commitTransaction(transactionScope);
     } catch (Exception e) {
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     } finally {
       discardTombstones();
     }
