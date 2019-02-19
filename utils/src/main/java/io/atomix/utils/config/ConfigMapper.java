@@ -18,7 +18,6 @@ package io.atomix.utils.config;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Streams;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
@@ -197,7 +196,7 @@ public class ConfigMapper {
     Stream<String> fields = getFieldDescriptors(instance.getClass())
         .stream()
         .map(descriptor -> descriptor.name);
-    return Streams.concat(setters, fields)
+    return Stream.concat(setters, fields)
         .sorted()
         .collect(Collectors.toList());
   }

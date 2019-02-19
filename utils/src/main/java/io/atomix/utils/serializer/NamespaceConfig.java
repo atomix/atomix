@@ -42,6 +42,7 @@ public class NamespaceConfig implements Config {
    * Sets the serializer name.
    *
    * @param name the serializer name
+   * @return the serializer configuration
    */
   public NamespaceConfig setName(String name) {
     this.name = name;

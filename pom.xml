@@ -341,6 +341,13 @@
         </executions>
         <configuration>
           <verbose>false</verbose>
+          <!-- workaround for https://bugs.openjdk.java.net/browse/JDK-8212233 -->
+          <javaApiLinks>
+            <property>
+              <name>foo</name>
+              <value>bar</value>
+            </property>
+          </javaApiLinks>
           <quiet>true</quiet>
           <additionalparam>${argLine.javadocs}</additionalparam>
           <show>public</show>
