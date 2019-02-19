@@ -16,7 +16,6 @@
 package io.atomix.core.workqueue.impl;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
@@ -44,6 +43,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static com.google.common.base.Throwables.throwIfUnchecked;
 
 /**
  * State machine for {@link WorkQueueProxy} resource.
@@ -154,7 +155,8 @@ public class DefaultWorkQueueService extends AbstractPrimitiveService<WorkQueueC
           .collect(Collectors.toCollection(ArrayList::new));
     } catch (Exception e) {
       getLogger().warn("State machine update failed", e);
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -171,7 +173,8 @@ public class DefaultWorkQueueService extends AbstractPrimitiveService<WorkQueueC
       });
     } catch (Exception e) {
       getLogger().warn("State machine update failed", e);
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 

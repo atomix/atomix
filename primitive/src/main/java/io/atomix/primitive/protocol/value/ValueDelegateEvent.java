@@ -27,7 +27,7 @@ public class ValueDelegateEvent<V> extends AbstractEvent<ValueDelegateEvent.Type
    */
   public enum Type {
     /**
-     * Valuee updated event.
+     * Value updated event.
      */
     UPDATE,
   }

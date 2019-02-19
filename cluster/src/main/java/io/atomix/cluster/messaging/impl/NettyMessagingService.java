@@ -549,7 +549,7 @@ public class NettyMessagingService implements ManagedMessagingService {
   }
 
   /**
-   * Recursivesly binds the given bootstrap to the given interfaces.
+   * Recursively binds the given bootstrap to the given interfaces.
    *
    * @param bootstrap the bootstrap to bind
    * @param ifaces    an iterator of interfaces to which to bind
