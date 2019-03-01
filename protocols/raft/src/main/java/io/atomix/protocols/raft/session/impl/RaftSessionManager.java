@@ -223,7 +223,7 @@ public class RaftSessionManager {
       return Futures.exceptionalFuture(new RaftException.UnknownSession("Unknown session: " + sessionId));
     }
 
-    log.info("Closing session {}", sessionId);
+    log.debug("Closing session {}", sessionId);
     CloseSessionRequest request = CloseSessionRequest.builder()
         .withSession(sessionId.id())
         .withDelete(delete)
@@ -231,9 +231,9 @@ public class RaftSessionManager {
 
     CompletableFuture<Void> future = new CompletableFuture<>();
     connection.closeSession(request).whenComplete((response, error) -> {
+      sessions.remove(sessionId.id());
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {
-          sessions.remove(sessionId.id());
           future.complete(null);
         } else {
           future.completeExceptionally(response.error().createException());
