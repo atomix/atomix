@@ -369,14 +369,14 @@ final class RaftSessionInvoker {
         // If the client is unknown by the cluster, close the session and complete the operation exceptionally.
         else if (response.error().type() == RaftError.Type.UNKNOWN_CLIENT
             || response.error().type() == RaftError.Type.UNKNOWN_SESSION) {
-          state.setState(PrimitiveState.EXPIRED);
           complete(response.error().createException());
+          state.setState(PrimitiveState.EXPIRED);
         }
         // If the service is unknown by the cluster or the session was explicitly closed, set the session state to CLOSED.
         else if (response.error().type() == RaftError.Type.UNKNOWN_SERVICE
             || response.error().type() == RaftError.Type.CLOSED_SESSION) {
-          state.setState(PrimitiveState.CLOSED);
           complete(response.error().createException());
+          state.setState(PrimitiveState.CLOSED);
         }
         // For all other errors, use fibonacci backoff to resubmit the command.
         else {
@@ -437,12 +437,12 @@ final class RaftSessionInvoker {
           complete(response);
         } else if (response.error().type() == RaftError.Type.UNKNOWN_CLIENT
             || response.error().type() == RaftError.Type.UNKNOWN_SESSION) {
-          state.setState(PrimitiveState.EXPIRED);
           complete(response.error().createException());
+          state.setState(PrimitiveState.EXPIRED);
         } else if (response.error().type() == RaftError.Type.UNKNOWN_SERVICE
             || response.error().type() == RaftError.Type.CLOSED_SESSION) {
-          state.setState(PrimitiveState.CLOSED);
           complete(response.error().createException());
+          state.setState(PrimitiveState.CLOSED);
         } else {
           complete(response.error().createException());
         }
