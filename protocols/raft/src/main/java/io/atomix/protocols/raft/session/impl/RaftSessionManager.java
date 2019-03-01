@@ -231,9 +231,9 @@ public class RaftSessionManager {
 
     CompletableFuture<Void> future = new CompletableFuture<>();
     connection.closeSession(request).whenComplete((response, error) -> {
+      sessions.remove(sessionId.id());
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {
-          sessions.remove(sessionId.id());
           future.complete(null);
         } else {
           future.completeExceptionally(response.error().createException());
