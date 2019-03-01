@@ -1167,11 +1167,7 @@ public class RaftTest extends ConcurrentTestCase {
       threadAssertTrue(error.getCause() instanceof PrimitiveException.UnknownService);
       resume();
     });
-    primitive2.read().whenComplete((result, error) -> {
-      threadAssertTrue(error.getCause() instanceof PrimitiveException.ClosedSession);
-      resume();
-    });
-    await(5000, 2);
+    await(5000);
 
     primitive2.read().whenComplete((result, error) -> {
       threadAssertTrue(error.getCause() instanceof PrimitiveException.ClosedSession);
