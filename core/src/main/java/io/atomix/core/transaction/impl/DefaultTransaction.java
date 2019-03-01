@@ -128,7 +128,7 @@ public class DefaultTransaction implements AsyncTransaction {
             .thenCompose(v -> rollback(participants))
             .thenApply(v -> CommitStatus.FAILURE));
     return status.thenCompose(v -> transactionService.complete(transactionId)
-        .thenRun(() -> participants.forEach(p -> p.close().exceptionally(e -> null)))
+        .thenRun(() -> this.participants.forEach(p -> p.close().exceptionally(e -> null)))
         .thenApply(u -> v));
   }
 
