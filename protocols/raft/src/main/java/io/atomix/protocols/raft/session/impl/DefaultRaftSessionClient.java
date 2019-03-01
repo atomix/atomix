@@ -221,8 +221,10 @@ public class DefaultRaftSessionClient implements RaftSessionClient {
 
           selectorManager.addLeaderChangeListener(leaderChangeListener);
           state.addStateChangeListener(s -> {
-            if (s == PrimitiveState.CLOSED) {
+            if (s == PrimitiveState.EXPIRED || s == PrimitiveState.CLOSED) {
               selectorManager.removeLeaderChangeListener(leaderChangeListener);
+              proxyListener.close();
+              proxyInvoker.close();
             }
           });
 
