@@ -41,7 +41,7 @@ public class TransactionalMapTest extends AbstractPrimitiveTest {
         .build();
     transaction2.begin();
 
-    TransactionalMap<String, String> map2 = transaction1.<String, String>mapBuilder("test-map")
+    TransactionalMap<String, String> map2 = transaction2.<String, String>mapBuilder("test-map")
         .withProtocol(protocol())
         .build();
 
