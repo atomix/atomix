@@ -376,6 +376,39 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     }
 
     /**
+     * Sets the leader election timeout.
+     *
+     * @param electionTimeout the leader election timeout
+     * @return the Raft partition group configuration
+     */
+    public Builder withElectionTimeout(Duration electionTimeout) {
+      config.setElectionTimeout(electionTimeout);
+      return this;
+    }
+
+    /**
+     * Sets the heartbeat interval.
+     *
+     * @param heartbeatInterval the heartbeat interval
+     * @return the Raft partition group configuration
+     */
+    public Builder withHeartbeatInterval(Duration heartbeatInterval) {
+      config.setHeartbeatInterval(heartbeatInterval);
+      return this;
+    }
+
+    /**
+     * Sets the default session timeout.
+     *
+     * @param defaultSessionTimeout the default session timeout
+     * @return the Raft partition group configuration
+     */
+    public Builder withDefaultSessionTimeout(Duration defaultSessionTimeout) {
+      config.setDefaultSessionTimeout(defaultSessionTimeout);
+      return this;
+    }
+
+    /**
      * Sets the storage level.
      *
      * @param storageLevel the storage level
