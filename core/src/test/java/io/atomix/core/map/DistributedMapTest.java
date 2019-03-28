@@ -68,13 +68,32 @@ public class DistributedMapTest extends AbstractPrimitiveTest {
   }
 
   @Test
-  public void testBasicMapOperations() throws Throwable {
+  public void testSimpleMap() throws Throwable {
+    testBasicMapOperations(atomix().<String, String>mapBuilder("testBasicMapOperationMap")
+        .withProtocol(protocol())
+        .build());
+  }
+
+  @Test
+  public void testCachedMap() throws Throwable {
+    testBasicMapOperations(atomix().<String, String>mapBuilder("testBasicMapOperationMap")
+        .withProtocol(protocol())
+        .withCacheEnabled()
+        .build());
+  }
+
+  @Test
+  public void testLocalMap() throws Throwable {
+    testBasicMapOperations(atomix().<String, String>mapBuilder("testBasicMapOperationMap")
+        .withProtocol(protocol())
+        .withCacheEnabled()
+        .withCacheSize(-1)
+        .build());
+  }
+
+  private void testBasicMapOperations(DistributedMap<String, String> map) throws Throwable {
     final String fooValue = "Hello foo!";
     final String barValue = "Hello bar!";
-
-    DistributedMap<String, String> map = atomix().<String, String>mapBuilder("testBasicMapOperationMap")
-        .withProtocol(protocol())
-        .build();
 
     assertTrue(map.isEmpty());
     assertNull(map.put("foo", fooValue));
