@@ -69,14 +69,14 @@ public class DistributedMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testSimpleMap() throws Throwable {
-    testBasicMapOperations(atomix().<String, String>mapBuilder("testBasicMapOperationMap")
+    testBasicMapOperations(atomix().<String, String>mapBuilder("testSimpleMap")
         .withProtocol(protocol())
         .build());
   }
 
   @Test
   public void testCachedMap() throws Throwable {
-    testBasicMapOperations(atomix().<String, String>mapBuilder("testBasicMapOperationMap")
+    testBasicMapOperations(atomix().<String, String>mapBuilder("testCachedMap")
         .withProtocol(protocol())
         .withCacheEnabled()
         .build());
@@ -84,7 +84,7 @@ public class DistributedMapTest extends AbstractPrimitiveTest {
 
   @Test
   public void testLocalMap() throws Throwable {
-    testBasicMapOperations(atomix().<String, String>mapBuilder("testBasicMapOperationMap")
+    testBasicMapOperations(atomix().<String, String>mapBuilder("testLocalMap")
         .withProtocol(protocol())
         .withCacheEnabled()
         .withCacheSize(-1)
