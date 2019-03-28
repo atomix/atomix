@@ -87,13 +87,32 @@ public class AtomicMapTest extends AbstractPrimitiveTest {
   }
 
   @Test
-  public void testBasicMapOperations() throws Throwable {
+  public void testSimpleMap() throws Throwable {
+    testMap(atomix().<String, String>atomicMapBuilder("testBasicMapOperationMap")
+        .withProtocol(protocol())
+        .build());
+  }
+
+  @Test
+  public void testCachedMap() throws Throwable {
+    testMap(atomix().<String, String>atomicMapBuilder("testBasicMapOperationMap")
+        .withProtocol(protocol())
+        .withCacheEnabled()
+        .build());
+  }
+
+  @Test
+  public void testLocalMap() throws Throwable {
+    testMap(atomix().<String, String>atomicMapBuilder("testBasicMapOperationMap")
+        .withProtocol(protocol())
+        .withCacheEnabled()
+        .withCacheSize(-1)
+        .build());
+  }
+
+  private void testMap(AtomicMap<String, String> map) throws Exception {
     final String fooValue = "Hello foo!";
     final String barValue = "Hello bar!";
-
-    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testBasicMapOperationMap")
-        .withProtocol(protocol())
-        .build();
 
     assertTrue(map.isEmpty());
     assertNull(map.put("foo", fooValue));
