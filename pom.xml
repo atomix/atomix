@@ -22,7 +22,7 @@
     <version>7</version>
   </parent>
 
-  <groupId>io.atomix</groupId>
+  <groupId>io.zeebe</groupId>
   <artifactId>atomix-parent</artifactId>
   <version>3.2.0-SNAPSHOT</version>
   <packaging>pom</packaging>
@@ -167,14 +167,14 @@
   </developers>
 
   <scm>
-    <connection>scm:git:git@github.com:atomix/atomix.git</connection>
-    <developerConnection>scm:git:git@github.com:atomix/atomix.git</developerConnection>
-    <url>git@github.com:atomix/atomix.git</url>
+    <connection>scm:git:git@github.com:zeebe-io/atomix.git</connection>
+    <developerConnection>scm:git:git@github.com:zeebe-io/atomix.git</developerConnection>
+    <url>git@github.com:zeebe-io/atomix.git</url>
   </scm>
 
   <issueManagement>
     <system>GitHub</system>
-    <url>http://github.com/atomix/atomix/issues</url>
+    <url>http://github.com/zeebe-io/atomix/issues</url>
   </issueManagement>
 
   <modules>
@@ -456,4 +456,44 @@
       </plugin>
     </plugins>
   </build>
+
+  <repositories>
+    <repository>
+      <id>zeebe-nexus</id>
+      <name>Zeebe Repository</name>
+      <url>https://app.camunda.com/nexus/content/repositories/zeebe-io/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+
+    <repository>
+      <id>zeebe-snapshots-nexus</id>
+      <name>Zeebe Snapshot Repository</name>
+      <url>https://app.camunda.com/nexus/content/repositories/zeebe-io-snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>camunda-nexus</id>
+      <name>Zeebe Snapshots Repository</name>
+      <url>https://app.camunda.com/nexus/content/repositories/zeebe-io-snapshots/</url>
+    </snapshotRepository>
+    <repository>
+      <id>camunda-nexus</id>
+      <name>Zeebe Release Repository</name>
+      <url>https://app.camunda.com/nexus/content/repositories/zeebe-io-snapshots/</url>
+    </repository>
+  </distributionManagement>
+
 </project>
