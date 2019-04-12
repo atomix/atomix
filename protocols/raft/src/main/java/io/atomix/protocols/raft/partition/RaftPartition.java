@@ -20,6 +20,7 @@ import io.atomix.primitive.partition.Partition;
 import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.partition.PartitionManagementService;
 import io.atomix.primitive.partition.PartitionMetadata;
+import io.atomix.protocols.raft.RaftServer.Role;
 import io.atomix.protocols.raft.partition.impl.RaftClientCommunicator;
 import io.atomix.protocols.raft.partition.impl.RaftNamespaces;
 import io.atomix.protocols.raft.partition.impl.RaftPartitionClient;
@@ -30,7 +31,10 @@ import io.atomix.utils.serializer.Serializer;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -43,6 +47,7 @@ public class RaftPartition implements Partition {
   private final RaftPartitionGroupConfig config;
   private final File dataDirectory;
   private final ThreadContextFactory threadContextFactory;
+  private final Set<Consumer<Role>> deferredRoleChangeListeners = new CopyOnWriteArraySet<>();
   private PartitionMetadata partition;
   private RaftPartitionClient client;
   private RaftPartitionServer server;
@@ -80,6 +85,19 @@ public class RaftPartition implements Partition {
   @Override
   public MemberId primary() {
     return client != null ? client.leader() : null;
+  }
+
+  public void addRoleChangeListener(Consumer<Role> listener) {
+    if (server == null) {
+      deferredRoleChangeListeners.add(listener);
+    } else {
+      server.addRoleChangeListener(listener);
+    }
+  }
+
+  public void removeRoleChangeListener(Consumer<Role> listener) {
+    deferredRoleChangeListeners.remove(listener);
+    server.removeRoleChangeListener(listener);
   }
 
   @Override
@@ -132,7 +150,7 @@ public class RaftPartition implements Partition {
     this.partition = metadata;
     this.client = createClient(managementService);
     if (partition.members().contains(managementService.getMembershipService().getLocalMember().id())) {
-      server = createServer(managementService);
+      initServer(managementService);
       return server.start()
           .thenCompose(v -> client.start())
           .thenApply(v -> null);
@@ -146,7 +164,7 @@ public class RaftPartition implements Partition {
    */
   CompletableFuture<Void> update(PartitionMetadata metadata, PartitionManagementService managementService) {
     if (server == null && metadata.members().contains(managementService.getMembershipService().getLocalMember().id())) {
-      server = createServer(managementService);
+      initServer(managementService);
       return server.join(metadata.members());
     } else if (server != null && !metadata.members().contains(managementService.getMembershipService().getLocalMember().id())) {
       return server.leave().thenRun(() -> server = null);
@@ -190,6 +208,15 @@ public class RaftPartition implements Partition {
         managementService.getMessagingService(),
         managementService.getPrimitiveTypes(),
         threadContextFactory);
+  }
+
+  private void initServer(final PartitionManagementService managementService) {
+    server = createServer(managementService);
+
+    if (!deferredRoleChangeListeners.isEmpty()) {
+      deferredRoleChangeListeners.forEach(server::addRoleChangeListener);
+      deferredRoleChangeListeners.clear();
+    }
   }
 
   /**

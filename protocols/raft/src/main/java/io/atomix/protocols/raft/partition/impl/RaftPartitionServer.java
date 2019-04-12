@@ -21,6 +21,7 @@ import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.primitive.PrimitiveTypeRegistry;
 import io.atomix.primitive.partition.Partition;
 import io.atomix.protocols.raft.RaftServer;
+import io.atomix.protocols.raft.RaftServer.Role;
 import io.atomix.protocols.raft.partition.RaftPartition;
 import io.atomix.protocols.raft.partition.RaftPartitionGroupConfig;
 import io.atomix.protocols.raft.storage.RaftStorage;
@@ -29,6 +30,9 @@ import io.atomix.utils.Managed;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 import io.atomix.utils.serializer.Serializer;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -60,6 +64,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
   private final ClusterCommunicationService clusterCommunicator;
   private final PrimitiveTypeRegistry primitiveTypes;
   private final ThreadContextFactory threadContextFactory;
+  private final Set<Consumer<Role>> deferredRoleChangeListeners = new CopyOnWriteArraySet<>();
   private RaftServer server;
 
   public RaftPartitionServer(
@@ -89,7 +94,7 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
       }
       synchronized (this) {
         try {
-          server = buildServer();
+          initServer();
         } catch (StorageException e) {
           return Futures.exceptionalFuture(e);
         }
@@ -128,6 +133,19 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
    */
   public CompletableFuture<Void> snapshot() {
     return server.compact();
+  }
+
+  public void addRoleChangeListener(Consumer<Role> listener) {
+    if (server == null) {
+      deferredRoleChangeListeners.add(listener);
+    } else {
+      server.addRoleChangeListener(listener);
+    }
+  }
+
+  public void removeRoleChangeListener(Consumer<Role> listener) {
+    deferredRoleChangeListeners.remove(listener);
+    server.removeRoleChangeListener(listener);
   }
 
   /**
@@ -180,9 +198,18 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
         .build();
   }
 
+  private void initServer() {
+    server = buildServer();
+
+    if (!deferredRoleChangeListeners.isEmpty()) {
+      deferredRoleChangeListeners.forEach(server::addRoleChangeListener);
+      deferredRoleChangeListeners.clear();
+    }
+  }
+
   public CompletableFuture<Void> join(Collection<MemberId> otherMembers) {
     log.info("Joining partition {} ({})", partition.id(), partition.name());
-    server = buildServer();
+    initServer();
     return server.join(otherMembers).whenComplete((r, e) -> {
       if (e == null) {
         log.debug("Successfully joined partition {} ({})", partition.id(), partition.name());
