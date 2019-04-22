@@ -15,8 +15,6 @@
  */
 package io.atomix.storage.buffer;
 
-import io.atomix.utils.AtomixIOException;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -24,6 +22,11 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+
+import io.atomix.utils.AtomixIOException;
+import io.atomix.utils.memory.BufferCleaner;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * {@link ByteBuffer} based mapped bytes.
@@ -73,19 +76,31 @@ public class MappedBytes extends ByteBufferBytes {
 
   private final File file;
   private final RandomAccessFile randomAccessFile;
+  private final FileChannel channel;
   private final FileChannel.MapMode mode;
 
   protected MappedBytes(File file, RandomAccessFile randomAccessFile, MappedByteBuffer buffer, FileChannel.MapMode mode) {
     super(buffer);
     this.file = file;
     this.randomAccessFile = randomAccessFile;
+    this.channel = randomAccessFile.getChannel();
     this.mode = mode;
+  }
+
+  @Override
+  public Bytes reset(ByteBuffer buffer) {
+    try {
+      BufferCleaner.freeBuffer(this.buffer);
+    } catch (IOException e) {
+    }
+    this.buffer = checkNotNull(buffer, "buffer cannot be null");
+    return this;
   }
 
   @Override
   protected ByteBuffer newByteBuffer(int size) {
     try {
-      return randomAccessFile.getChannel().map(mode, 0, size);
+      return channel.map(mode, 0, size);
     } catch (IOException e) {
       throw new AtomixIOException(e);
     }
@@ -105,6 +120,8 @@ public class MappedBytes extends ByteBufferBytes {
   @Override
   public void close() {
     try {
+      BufferCleaner.freeBuffer(buffer);
+      channel.close();
       randomAccessFile.close();
     } catch (IOException e) {
       throw new RuntimeException(e);

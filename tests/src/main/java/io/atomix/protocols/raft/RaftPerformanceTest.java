@@ -68,6 +68,7 @@ import io.atomix.protocols.raft.proxy.CommunicationStrategy;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.service.AbstractRaftService;
 import io.atomix.protocols.raft.service.Commit;
+import io.atomix.protocols.raft.service.PropagationStrategy;
 import io.atomix.protocols.raft.service.RaftServiceExecutor;
 import io.atomix.protocols.raft.session.SessionId;
 import io.atomix.protocols.raft.storage.RaftStorage;
@@ -199,6 +200,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
+      .register(PropagationStrategy.class)
       .build());
 
   private static final Serializer storageSerializer = Serializer.using(KryoNamespace.newBuilder()
@@ -221,6 +223,7 @@ public class RaftPerformanceTest implements Runnable {
       .register(RaftMember.Type.class)
       .register(Instant.class)
       .register(Configuration.class)
+      .register(PropagationStrategy.class)
       .register(byte[].class)
       .register(long[].class)
       .build());

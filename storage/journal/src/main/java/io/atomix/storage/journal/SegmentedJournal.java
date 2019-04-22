@@ -635,7 +635,7 @@ public class SegmentedJournal<E> implements Journal<E> {
       if (!compactSegments.isEmpty()) {
         log.debug("{} - Compacting {} segment(s)", name, compactSegments.size());
         for (JournalSegment segment : compactSegments.values()) {
-          log.trace("Deleting segment: {}", segment);
+          log.debug("Deleting segment: {}", segment);
           segment.close();
           segment.delete();
         }
