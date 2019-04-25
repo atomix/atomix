@@ -40,6 +40,7 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.Map;
@@ -54,6 +55,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * Netty unicast service.
  */
 public class NettyUnicastService implements ManagedUnicastService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(NettyUnicastService.class);
   private static final Serializer SERIALIZER = Serializer.using(Namespace.builder()
       .register(Namespaces.BASIC)
       .nextId(Namespaces.BEGIN_USER_CUSTOM_ID)
@@ -78,11 +80,17 @@ public class NettyUnicastService implements ManagedUnicastService {
 
   @Override
   public void unicast(Address address, String subject, byte[] payload) {
+    final InetAddress resolvedAddress = address.address();
+    if (resolvedAddress == null) {
+      LOGGER.debug("Cannot send unicast message to destination address {} as it cannot be resolved", address);
+      return;
+    }
+
     Message message = new Message(this.address, subject, payload);
     byte[] bytes = SERIALIZER.encode(message);
     ByteBuf buf = channel.alloc().buffer(4 + bytes.length);
     buf.writeInt(bytes.length).writeBytes(bytes);
-    channel.writeAndFlush(new DatagramPacket(buf, new InetSocketAddress(address.address(), address.port())));
+    channel.writeAndFlush(new DatagramPacket(buf, new InetSocketAddress(resolvedAddress, address.port())));
   }
 
   @Override
