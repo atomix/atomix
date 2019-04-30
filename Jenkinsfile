@@ -61,7 +61,7 @@ spec:
     stage('Build') {
       steps {
         container('maven') {
-            sh 'mvn install -B -s settings.xml -Ddockerfile.skip -Dmaven.test.redirectTestOutputToFile'
+            sh 'mvn install -B -s settings.xml -Ddockerfile.skip -Dmaven.test.redirectTestOutputToFile -Dsurefire.rerunFailingTestsCount=3'
         }
       }
 
