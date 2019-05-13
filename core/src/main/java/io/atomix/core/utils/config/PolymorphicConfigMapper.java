@@ -25,6 +25,7 @@ import io.atomix.utils.config.TypedConfig;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -97,7 +98,7 @@ public class PolymorphicConfigMapper extends ConfigMapper {
         .filter(propertyName -> !isPolymorphicType(clazz) || !polymorphicTypes.stream().anyMatch(type -> Objects.equals(type.getTypePath(), propertyName)))
         .map(propertyName -> toPath(path, propertyName))
         .filter(propertyName -> !properties.containsKey(propertyName))
-        .filter(propertyName -> properties.entrySet().stream().noneMatch(entry -> entry.getKey().toString().startsWith(propertyName + ".")))
+        .filter(propertyName -> new HashSet<>(properties.entrySet()).stream().noneMatch(entry -> entry.getKey().toString().startsWith(propertyName + ".")))
         .sorted()
         .collect(Collectors.toList());
     if (!cleanNames.isEmpty()) {
