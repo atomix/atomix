@@ -289,6 +289,13 @@ public interface RaftServer {
   Role getRole();
 
   /**
+   * Returns the server's term.
+   *
+   * @return the server's term
+   */
+  long getTerm();
+
+  /**
    * Returns whether the server is the leader.
    *
    * @return whether the server is the leader

@@ -72,6 +72,11 @@ public class DefaultRaftServer implements RaftServer {
   }
 
   @Override
+  public long getTerm() {
+    return context.getTerm();
+  }
+
+  @Override
   public void addRoleChangeListener(Consumer<Role> listener) {
     context.addRoleChangeListener(listener);
   }

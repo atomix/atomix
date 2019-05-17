@@ -135,6 +135,14 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
     return server.compact();
   }
 
+  public Role getRole() {
+    return server.getRole();
+  }
+
+  public long getTerm() {
+    return server.getTerm();
+  }
+
   public void addRoleChangeListener(Consumer<Role> listener) {
     if (server == null) {
       deferredRoleChangeListeners.add(listener);

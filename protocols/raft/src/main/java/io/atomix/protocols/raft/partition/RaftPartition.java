@@ -79,12 +79,16 @@ public class RaftPartition implements Partition {
 
   @Override
   public long term() {
-    return client != null ? client.term() : 0;
+    return server != null ? server.getTerm() : 0;
   }
 
   @Override
   public MemberId primary() {
     return client != null ? client.leader() : null;
+  }
+
+  public Role getRole() {
+    return server != null ? server.getRole() : null;
   }
 
   public void addRoleChangeListener(Consumer<Role> listener) {
