@@ -99,6 +99,16 @@ public class SnapshotStore implements AutoCloseable {
   }
 
   /**
+   * Returns the index of the current snapshot. Defaults to 0.
+   *
+   * @return the index of the current snapshot
+   */
+  public long getCurrentSnapshotIndex() {
+    final Snapshot snapshot = getCurrentSnapshot();
+    return snapshot != null ? snapshot.index() : 0L;
+  }
+
+  /**
    * Returns the snapshot at the given index.
    *
    * @param index the index for which to lookup the snapshot

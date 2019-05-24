@@ -544,6 +544,7 @@ public final class LeaderRole extends ActiveRole {
           .withTerm(raft.getTerm())
           .withSucceeded(false)
           .withLastLogIndex(raft.getLogWriter().getLastIndex())
+          .withLastSnapshotIndex(raft.getSnapshotStore().getCurrentSnapshotIndex())
           .build()));
     } else {
       raft.setLeader(request.leader());

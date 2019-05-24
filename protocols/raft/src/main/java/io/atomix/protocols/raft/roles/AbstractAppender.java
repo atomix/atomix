@@ -238,6 +238,7 @@ abstract class AbstractAppender implements AutoCloseable {
     else {
       resetMatchIndex(member, response);
       resetNextIndex(member, response);
+      resetSnapshotIndex(member, response);
 
       // If there are more entries to send then attempt to send another commit.
       if (response.lastLogIndex() != request.prevLogIndex() && hasMoreEntries(member)) {
@@ -311,6 +312,17 @@ abstract class AbstractAppender implements AutoCloseable {
     if (member.getLogReader().getNextIndex() != nextIndex) {
       member.getLogReader().reset(nextIndex);
       log.trace("Reset next index for {} to {}", member, nextIndex);
+    }
+  }
+
+  /**
+   * Resets the snapshot index of the member when a response fails.
+   */
+  protected void resetSnapshotIndex(RaftMemberContext member, AppendResponse response) {
+    final long snapshotIndex = response.lastSnapshotIndex();
+    if (member.getSnapshotIndex() != snapshotIndex) {
+      member.setSnapshotIndex(snapshotIndex);
+      log.trace("Reset snapshot index for {} to {}", member, snapshotIndex);
     }
   }
 
