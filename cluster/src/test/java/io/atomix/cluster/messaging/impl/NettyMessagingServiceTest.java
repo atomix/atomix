@@ -126,6 +126,14 @@ public class NettyMessagingServiceTest {
   }
 
   @Test
+  public void testSendAsyncToUnresolvable() {
+    final Address unresolvable = Address.from("unknown.local", address1.port());
+    final String subject = nextSubject();
+    final CompletableFuture<Void> response = netty1.sendAsync(unresolvable, subject, "hello world".getBytes());
+    assertTrue(response.isCompletedExceptionally());
+  }
+
+  @Test
   public void testSendAsync() {
     String subject = nextSubject();
     CountDownLatch latch1 = new CountDownLatch(1);
