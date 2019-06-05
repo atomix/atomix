@@ -18,6 +18,7 @@ package io.atomix.protocols.raft.partition;
 import io.atomix.primitive.partition.PartitionGroup;
 import io.atomix.primitive.partition.PartitionGroupConfig;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,9 +27,15 @@ import java.util.Set;
  */
 public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartitionGroupConfig> {
   private static final int DEFAULT_PARTITIONS = 7;
+  private static final Duration DEFAULT_ELECTION_TIMEOUT = Duration.ofMillis(2500);
+  private static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(250);
+  private static final Duration DEFAULT_DEFAULT_SESSION_TIMEOUT = Duration.ofMillis(5000);
 
   private Set<String> members = new HashSet<>();
   private int partitionSize;
+  private Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
+  private Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
+  private Duration defaultSessionTimeout = DEFAULT_DEFAULT_SESSION_TIMEOUT;
   private RaftStorageConfig storageConfig = new RaftStorageConfig();
   private RaftCompactionConfig compactionConfig = new RaftCompactionConfig();
 
@@ -79,6 +86,66 @@ public class RaftPartitionGroupConfig extends PartitionGroupConfig<RaftPartition
    */
   public RaftPartitionGroupConfig setPartitionSize(int partitionSize) {
     this.partitionSize = partitionSize;
+    return this;
+  }
+
+  /**
+   * Returns the Raft leader election timeout.
+   *
+   * @return the Raft leader election timeout
+   */
+  public Duration getElectionTimeout() {
+    return electionTimeout;
+  }
+
+  /**
+   * Sets the leader election timeout.
+   *
+   * @param electionTimeout the leader election timeout
+   * @return the Raft partition group configuration
+   */
+  public RaftPartitionGroupConfig setElectionTimeout(Duration electionTimeout) {
+    this.electionTimeout = electionTimeout;
+    return this;
+  }
+
+  /**
+   * Returns the heartbeat interval.
+   *
+   * @return the heartbeat interval
+   */
+  public Duration getHeartbeatInterval() {
+    return heartbeatInterval;
+  }
+
+  /**
+   * Sets the heartbeat interval.
+   *
+   * @param heartbeatInterval the heartbeat interval
+   * @return the Raft partition group configuration
+   */
+  public RaftPartitionGroupConfig setHeartbeatInterval(Duration heartbeatInterval) {
+    this.heartbeatInterval = heartbeatInterval;
+    return this;
+  }
+
+  /**
+   * Returns the default session timeout.
+   *
+   * @return the default session timeout
+   */
+  public Duration getDefaultSessionTimeout() {
+    return defaultSessionTimeout;
+  }
+
+  /**
+   * Sets the default session timeout.
+   *
+   * @param defaultSessionTimeout the default session timeout
+   * @return the Raft partition group configuration
+   */
+  public RaftPartitionGroupConfig setDefaultSessionTimeout(Duration defaultSessionTimeout) {
+    this.defaultSessionTimeout = defaultSessionTimeout;
     return this;
   }
 
