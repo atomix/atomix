@@ -20,6 +20,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.net.InetAddress;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.MessageDigest;
@@ -470,6 +471,13 @@ public class NettyMessagingService implements ManagedMessagingService {
    */
   private CompletableFuture<Channel> bootstrapClient(Address address) {
     CompletableFuture<Channel> future = new OrderedFuture<>();
+    final InetAddress resolvedAddress = address.address(true);
+    if (resolvedAddress == null) {
+      future.completeExceptionally(new IllegalStateException("Failed to bootstrap client (address "
+          + address.toString() + " cannot be resolved)"));
+      return future;
+    }
+
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     bootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK,
@@ -483,7 +491,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     // TODO: Make this faster:
     // http://normanmaurer.me/presentations/2014-facebook-eng-netty/slides.html#37.0
     bootstrap.channel(clientChannelClass);
-    bootstrap.remoteAddress(address.address(true), address.port());
+    bootstrap.remoteAddress(resolvedAddress, address.port());
     if (enableNettyTls) {
       try {
         bootstrap.handler(new SslClientChannelInitializer(future, address));
