@@ -237,7 +237,7 @@ public final class Version implements Comparable<Version> {
       String format(int version) {
         if (name == null) {
           return null;
-        } else if (name.equals("snapshot")) {
+        } else if ("snapshot".equals(name)) {
           return "SNAPSHOT";
         } else {
           return String.format("%s%d", name, version);
