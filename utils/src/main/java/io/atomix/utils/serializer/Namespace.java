@@ -18,12 +18,12 @@ package io.atomix.utils.serializer;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.SerializerFactory;
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
-import com.esotericsoftware.kryo.pool.KryoCallback;
-import com.esotericsoftware.kryo.pool.KryoFactory;
-import com.esotericsoftware.kryo.pool.KryoPool;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
+import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
+import com.esotericsoftware.kryo.util.Pool;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import io.atomix.utils.config.ConfigurationException;
@@ -48,7 +48,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Pool of Kryo instances, with classes pre-registered.
  */
 //@ThreadSafe
-public final class Namespace implements KryoFactory, KryoPool {
+public final class Namespace {
 
   /**
    * Default buffer size used for serialization.
@@ -81,9 +81,7 @@ public final class Namespace implements KryoFactory, KryoPool {
    */
   public static final Namespace DEFAULT = builder().build();
 
-  private final KryoPool kryoPool = new KryoPool.Builder(this)
-      .softReferences()
-      .build();
+  private final Pool<Kryo> kryoPool;
 
   private final KryoOutputPool kryoOutputPool = new KryoOutputPool();
   private final KryoInputPool kryoInputPool = new KryoInputPool();
@@ -306,6 +304,12 @@ public final class Namespace implements KryoFactory, KryoPool {
     this.classLoader = classLoader;
     this.compatible = compatible;
     this.friendlyName = checkNotNull(friendlyName);
+    this.kryoPool = new Pool<Kryo>(true, true) {
+      @Override
+      protected Kryo create() {
+        return createKryo();
+      }
+    };
   }
 
   /**
@@ -317,7 +321,7 @@ public final class Namespace implements KryoFactory, KryoPool {
   public Namespace populate(int instances) {
 
     for (int i = 0; i < instances; ++i) {
-      release(create());
+      release(createKryo());
     }
     return this;
   }
@@ -343,7 +347,7 @@ public final class Namespace implements KryoFactory, KryoPool {
    */
   public byte[] serialize(final Object obj, final int bufferSize) {
     return kryoOutputPool.run(output -> {
-      return kryoPool.run(kryo -> {
+      return run(kryo -> {
         kryo.writeClassAndObject(output, obj);
         output.flush();
         return output.getByteArrayOutputStream().toByteArray();
@@ -406,7 +410,7 @@ public final class Namespace implements KryoFactory, KryoPool {
   public <T> T deserialize(final byte[] bytes) {
     return kryoInputPool.run(input -> {
       input.setInputStream(new ByteArrayInputStream(bytes));
-      return kryoPool.run(kryo -> {
+      return run(kryo -> {
         @SuppressWarnings("unchecked")
         T obj = (T) kryo.readClassAndObject(input);
         return obj;
@@ -484,8 +488,7 @@ public final class Namespace implements KryoFactory, KryoPool {
    *
    * @return Kryo instance
    */
-  @Override
-  public Kryo create() {
+  private Kryo createKryo() {
     LOGGER.trace("Creating Kryo instance for {}", this);
     Kryo kryo = new Kryo();
     kryo.setClassLoader(classLoader);
@@ -493,12 +496,12 @@ public final class Namespace implements KryoFactory, KryoPool {
 
     // If compatible serialization is enabled, override the default serializer.
     if (compatible) {
-      kryo.setDefaultSerializer(CompatibleFieldSerializer::new);
+      kryo.setDefaultSerializer(new SerializerFactory.CompatibleFieldSerializerFactory());
     }
 
     // TODO rethink whether we want to use StdInstantiatorStrategy
     kryo.setInstantiatorStrategy(
-        new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
+        new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
 
     for (RegistrationBlock block : registeredBlocks) {
       int id = block.begin();
@@ -563,19 +566,41 @@ public final class Namespace implements KryoFactory, KryoPool {
     }
   }
 
-  @Override
+  /**
+   * Returns a Kryo instance from this pool. The object may be new or reused
+   * (previously {@link #release(Kryo)} released}).
+   *
+   * @return kryo instance
+   */
   public Kryo borrow() {
-    return kryoPool.borrow();
+    return kryoPool.obtain();
   }
 
-  @Override
+  /**
+   * Puts the specified object in the pool, making it eligible to be returned
+   * by {@link #borrow()} ()}.
+   *
+   * @param kryo instance to release
+   */
   public void release(Kryo kryo) {
-    kryoPool.release(kryo);
+    kryoPool.free(kryo);
   }
 
-  @Override
+  /**
+   * Executes the given {@link KryoCallback} with a {@link Kryo} instance
+   * from the pool (borrow/release around {@link KryoCallback#execute(Kryo)}).
+   *
+   * @param callback callback
+   * @param <T> callback result type
+   * @return callback result
+   */
   public <T> T run(KryoCallback<T> callback) {
-    return kryoPool.run(callback);
+    final Kryo kryo = kryoPool.obtain();
+    try {
+      return callback.execute(kryo);
+    } finally {
+      kryoPool.free(kryo);
+    }
   }
 
   @Override
@@ -635,5 +660,14 @@ public final class Namespace implements KryoFactory, KryoPool {
       }
       return false;
     }
+  }
+
+  /**
+   * Callback to run with a provided kryo instance.
+   *
+   * @param <T> The type of the result of the interaction with Kryo.
+   */
+  public interface KryoCallback<T> {
+    T execute(Kryo kryo);
   }
 }

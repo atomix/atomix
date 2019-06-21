@@ -74,7 +74,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
 
         @Override
         @SuppressWarnings("unchecked")
-        public NonTransactionalValues read(Kryo kryo, Input input, Class<NonTransactionalValues> type) {
+        public NonTransactionalValues read(Kryo kryo, Input input, Class<? extends NonTransactionalValues> type) {
           NonTransactionalValues commit = new NonTransactionalValues();
           commit.valueSet.addAll((Collection<byte[]>) kryo.readClassAndObject(input));
           return commit;

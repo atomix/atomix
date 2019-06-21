@@ -48,7 +48,7 @@ public class ImmutableMapSerializer extends Serializer<ImmutableMap<?, ?>> {
 
   @Override
   public ImmutableMap<?, ?> read(Kryo kryo, Input input,
-      Class<ImmutableMap<?, ?>> type) {
+      Class<? extends ImmutableMap<?, ?>> type) {
     final int size = input.readInt();
     switch (size) {
       case 0:

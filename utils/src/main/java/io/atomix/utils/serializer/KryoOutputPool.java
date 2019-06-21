@@ -29,7 +29,7 @@ class KryoOutputPool extends KryoIOPool<ByteArrayOutput> {
   protected boolean recycle(ByteArrayOutput output) {
     if (output.getByteArrayOutputStream().getBufferSize() < MAX_POOLED_BUFFER_SIZE) {
       output.getByteArrayOutputStream().reset();
-      output.clear();
+      output.reset();
       return true;
     }
     return false; // discard

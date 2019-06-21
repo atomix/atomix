@@ -69,7 +69,7 @@ public class DefaultDocumentTreeService extends AbstractPrimitiveService<Documen
 
         @Override
         @SuppressWarnings("unchecked")
-        public DefaultAtomicDocumentTree read(Kryo kryo, Input input, Class<DefaultAtomicDocumentTree> type) {
+        public DefaultAtomicDocumentTree read(Kryo kryo, Input input, Class<? extends DefaultAtomicDocumentTree> type) {
           return new DefaultAtomicDocumentTree(versionCounter::incrementAndGet,
               kryo.readObject(input, DefaultDocumentTreeNode.class));
         }
