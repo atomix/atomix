@@ -146,56 +146,70 @@ public class PassiveRole extends InactiveRole {
    */
   protected boolean checkPreviousEntry(AppendRequest request, CompletableFuture<AppendResponse> future) {
     RaftLogWriter writer = raft.getLogWriter();
-    RaftLogReader reader = raft.getLogReader();
 
     // If the previous term is set, validate that it matches the local log.
     // We check the previous log term since that indicates whether any entry is present in the leader's
-    // log at the previous log index. It's possible that the leader can send a non-zero previous log index
-    // with a zero term in the event the leader has compacted its logs and is sending the first entry.
+    // log at the previous log index. prevLogTerm is 0 only when it is the first entry of the log.
     if (request.prevLogTerm() != 0) {
       // Get the last entry written to the log.
       Indexed<RaftLogEntry> lastEntry = writer.getLastEntry();
 
       // If the local log is non-empty...
       if (lastEntry != null) {
-        // If the previous log index is greater than the last entry index, fail the attempt.
-        if (request.prevLogIndex() > lastEntry.index()) {
-          log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index ({})", request, request.prevLogIndex(), lastEntry.index());
-          return failAppend(lastEntry.index(), future);
-        }
-
-        // If the previous log index is less than the last written entry index, look up the entry.
-        if (request.prevLogIndex() < lastEntry.index()) {
-          // Reset the reader to the previous log index.
-          if (reader.getNextIndex() != request.prevLogIndex()) {
-            reader.reset(request.prevLogIndex());
-          }
-
-          // The previous entry should exist in the log if we've gotten this far.
-          if (!reader.hasNext()) {
-            log.debug("Rejected {}: Previous entry does not exist in the local log", request);
-            return failAppend(lastEntry.index(), future);
-          }
-
-          // Read the previous entry and validate that the term matches the request previous log term.
-          Indexed<RaftLogEntry> previousEntry = reader.next();
-          if (request.prevLogTerm() != previousEntry.entry().term()) {
-            log.debug("Rejected {}: Previous entry term ({}) does not match local log's term for the same entry ({})", request, request.prevLogTerm(), previousEntry.entry().term());
-            return failAppend(request.prevLogIndex() - 1, future);
-          }
-        }
-        // If the previous log term doesn't equal the last entry term, fail the append, sending the prior entry.
-        else if (request.prevLogTerm() != lastEntry.entry().term()) {
-          log.debug("Rejected {}: Previous entry term ({}) does not equal the local log's last term ({})", request, request.prevLogTerm(), lastEntry.entry().term());
-          return failAppend(request.prevLogIndex() - 1, future);
-        }
+        return checkPreviousEntry(request, lastEntry.index(), lastEntry.entry().term(), future);
       } else {
-        // If the previous log index is set and the last entry is null, fail the append.
-        if (request.prevLogIndex() > 0) {
-          log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index (0)", request, request.prevLogIndex());
-          return failAppend(0, future);
+        final Snapshot currentSnapshot = raft.getSnapshotStore().getCurrentSnapshot();
+        if (currentSnapshot != null) {
+          return checkPreviousEntry(request, currentSnapshot.index(), currentSnapshot.term(), future);
+        } else {
+          // If the previous log index is set and the last entry is null and there is no snapshot, fail the append.
+          if (request.prevLogIndex() > 0) {
+            log.debug(
+                "Rejected {}: Previous index ({}) is greater than the local log's last index (0)",
+                request,
+                request.prevLogIndex());
+            return failAppend(0, future);
+          }
         }
       }
+    }
+    return true;
+  }
+
+  private boolean checkPreviousEntry(AppendRequest request, long lastEntryIndex, long lastEntryTerm, CompletableFuture<AppendResponse> future) {
+
+    RaftLogReader reader = raft.getLogReader();
+
+    // If the previous log index is greater than the last entry index, fail the attempt.
+    if (request.prevLogIndex() > lastEntryIndex) {
+      log.debug("Rejected {}: Previous index ({}) is greater than the local log's last index ({})", request, request.prevLogIndex(), lastEntryIndex);
+      return failAppend(lastEntryIndex, future);
+    }
+
+    // If the previous log index is less than the last written entry index, look up the entry.
+    if (request.prevLogIndex() < lastEntryIndex) {
+      // Reset the reader to the previous log index.
+      if (reader.getNextIndex() != request.prevLogIndex()) {
+        reader.reset(request.prevLogIndex());
+      }
+
+      // The previous entry should exist in the log if we've gotten this far.
+      if (!reader.hasNext()) {
+        log.debug("Rejected {}: Previous entry does not exist in the local log", request);
+        return failAppend(lastEntryIndex, future);
+      }
+
+      // Read the previous entry and validate that the term matches the request previous log term.
+      Indexed<RaftLogEntry> previousEntry = reader.next();
+      if (request.prevLogTerm() != previousEntry.entry().term()) {
+        log.debug("Rejected {}: Previous entry term ({}) does not match local log's term for the same entry ({})", request, request.prevLogTerm(), previousEntry.entry().term());
+        return failAppend(request.prevLogIndex() - 1, future);
+      }
+    }
+    // If the previous log term doesn't equal the last entry term, fail the append, sending the prior entry.
+    else if (request.prevLogTerm() != lastEntryTerm) {
+      log.debug("Rejected {}: Previous entry term ({}) does not equal the local log's last term ({})", request, request.prevLogTerm(), lastEntryTerm);
+      return failAppend(request.prevLogIndex() - 1, future);
     }
     return true;
   }
@@ -554,6 +568,7 @@ public class PassiveRole extends InactiveRole {
 
       Snapshot snapshot = raft.getSnapshotStore().newTemporarySnapshot(
           request.snapshotIndex(),
+          request.snapshotTerm(),
           WallClockTimestamp.from(request.snapshotTimestamp()));
       pendingSnapshot = new PendingSnapshot(snapshot);
     }
@@ -579,9 +594,14 @@ public class PassiveRole extends InactiveRole {
 
     // If the snapshot is complete, store the snapshot and reset state, otherwise update the next snapshot offset.
     if (request.complete()) {
-      log.debug("Committing snapshot {}", pendingSnapshot.snapshot().index());
+      final long index = pendingSnapshot.snapshot().index();
+      log.debug("Committing snapshot {}", index);
       pendingSnapshot.commit();
       pendingSnapshot = null;
+      // Throw away existing log if it is not up-to-date with the snapshot index.
+      if (raft.getLogWriter().getLastIndex() < index) {
+        raft.getLogWriter().reset(index + 1);
+      }
     } else {
       pendingSnapshot.incrementOffset();
     }

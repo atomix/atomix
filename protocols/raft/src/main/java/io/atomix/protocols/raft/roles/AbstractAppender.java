@@ -101,11 +101,9 @@ abstract class AbstractAppender implements AutoCloseable {
     Indexed<RaftLogEntry> prevEntry = reader != null ? reader.getCurrentEntry() : null;
 
     DefaultRaftMember leader = raft.getLeader();
-    return AppendRequest.builder()
+    return builderWithPreviousEntry(prevEntry)
         .withTerm(raft.getTerm())
         .withLeader(leader != null ? leader.memberId() : null)
-        .withPrevLogIndex(prevEntry != null ? prevEntry.index() : reader != null ? reader.getFirstIndex() - 1 : 0)
-        .withPrevLogTerm(prevEntry != null ? prevEntry.entry().term() : 0)
         .withEntries(Collections.emptyList())
         .withCommitIndex(raft.getCommitIndex())
         .build();
@@ -121,11 +119,9 @@ abstract class AbstractAppender implements AutoCloseable {
     final Indexed<RaftLogEntry> prevEntry = reader.getCurrentEntry();
 
     final DefaultRaftMember leader = raft.getLeader();
-    AppendRequest.Builder builder = AppendRequest.builder()
+    AppendRequest.Builder builder = builderWithPreviousEntry(prevEntry)
         .withTerm(raft.getTerm())
         .withLeader(leader != null ? leader.memberId() : null)
-        .withPrevLogIndex(prevEntry != null ? prevEntry.index() : reader.getFirstIndex() - 1)
-        .withPrevLogTerm(prevEntry != null ? prevEntry.entry().term() : 0)
         .withCommitIndex(raft.getCommitIndex());
 
     // Build a list of entries to send to the member.
@@ -152,6 +148,26 @@ abstract class AbstractAppender implements AutoCloseable {
 
     // Add the entries to the request builder and build the request.
     return builder.withEntries(entries).build();
+  }
+
+  private AppendRequest.Builder builderWithPreviousEntry(Indexed<RaftLogEntry> prevEntry) {
+    long prevIndex = 0;
+    long prevTerm = 0;
+
+    if (prevEntry != null) {
+      prevIndex = prevEntry.index();
+      prevTerm = prevEntry.entry().term();
+    }
+    else {
+      final Snapshot currentSnapshot = raft.getSnapshotStore().getCurrentSnapshot();
+      if (currentSnapshot != null) {
+        prevIndex = currentSnapshot.index();
+        prevTerm = currentSnapshot.term();
+      }
+    }
+    return AppendRequest.builder()
+        .withPrevLogTerm(prevTerm)
+        .withPrevLogIndex(prevIndex);
   }
 
   /**
@@ -308,6 +324,10 @@ abstract class AbstractAppender implements AutoCloseable {
    */
   protected void resetNextIndex(RaftMemberContext member, AppendResponse response) {
     long nextIndex = response.lastLogIndex() + 1;
+    resetNextIndex(member, nextIndex);
+  }
+
+  private void resetNextIndex(RaftMemberContext member, long nextIndex) {
     if (member.getLogReader().getNextIndex() != nextIndex) {
       member.getLogReader().reset(nextIndex);
       log.trace("Reset next index for {} to {}", member, nextIndex);
@@ -429,6 +449,7 @@ abstract class AbstractAppender implements AutoCloseable {
             .withTerm(raft.getTerm())
             .withLeader(leader != null ? leader.memberId() : null)
             .withIndex(snapshot.index())
+            .withSnapshotTerm(snapshot.term())
             .withTimestamp(snapshot.timestamp().unixTimestamp())
             .withVersion(snapshot.version())
             .withOffset(member.getNextSnapshotOffset())
@@ -507,6 +528,7 @@ abstract class AbstractAppender implements AutoCloseable {
       member.setNextSnapshotIndex(0);
       member.setNextSnapshotOffset(0);
       member.setSnapshotIndex(request.snapshotIndex());
+      resetNextIndex(member, request.snapshotIndex() + 1);
     }
     // If more install requests remain, increment the member's snapshot offset.
     else {

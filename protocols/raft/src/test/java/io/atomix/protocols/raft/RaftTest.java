@@ -57,7 +57,6 @@ import io.atomix.protocols.raft.impl.RaftContext;
 import io.atomix.protocols.raft.protocol.InstallResponse;
 import io.atomix.protocols.raft.protocol.TestPartitionableRaftProtocolFactory;
 import io.atomix.protocols.raft.protocol.TestRaftProtocolFactory;
-import io.atomix.protocols.raft.protocol.TestRaftServerProtocol;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
@@ -1442,11 +1441,10 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   private RaftServer createServer(MemberId memberId, Function<RaftServer.Builder, RaftServer.Builder> configurator) {
-    final TestRaftServerProtocol raftServerProtocol = protocolFactory.newServerProtocol(memberId);
     final RaftServer.Builder defaults =
         RaftServer.builder(memberId)
             .withMembershipService(mock(ClusterMembershipService.class))
-            .withProtocol(raftServerProtocol);
+            .withProtocol(protocolFactory.newServerProtocol(memberId));
     final RaftServer server = configurator.apply(defaults).build();
 
     servers.add(server);

@@ -64,7 +64,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   public void testStoreLoadSnapshot() {
     SnapshotStore store = createSnapshotStore();
 
-    Snapshot snapshot = store.newSnapshot(2, new WallClockTimestamp());
+    Snapshot snapshot = store.newSnapshot(2, 3, new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(10);
     }
@@ -75,6 +75,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     store = createSnapshotStore();
     assertNotNull(store.getSnapshot(2));
     assertEquals(2, store.getSnapshot(2).index());
+    assertEquals(3, store.getSnapshot(2).term());
 
     try (SnapshotReader reader = snapshot.openReader()) {
       assertEquals(10, reader.readLong());
@@ -88,7 +89,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   public void testPersistLoadSnapshot() {
     SnapshotStore store = createSnapshotStore();
 
-    Snapshot snapshot = store.newTemporarySnapshot(2, new WallClockTimestamp());
+    Snapshot snapshot = store.newTemporarySnapshot(2, 3, new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(10);
     }
@@ -111,6 +112,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     store = createSnapshotStore();
     assertNotNull(store.getSnapshot(2));
     assertEquals(2, store.getSnapshot(2).index());
+    assertEquals(3, store.getSnapshot(2).term());
 
     snapshot = store.getSnapshot(2);
     try (SnapshotReader reader = snapshot.openReader()) {
@@ -125,7 +127,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   public void testStreamSnapshot() throws Exception {
     SnapshotStore store = createSnapshotStore();
 
-    Snapshot snapshot = store.newSnapshot(1, new WallClockTimestamp());
+    Snapshot snapshot = store.newSnapshot(1, 1, new WallClockTimestamp());
     for (long i = 1; i <= 10; i++) {
       try (SnapshotWriter writer = snapshot.openWriter()) {
         writer.writeLong(i);

@@ -75,6 +75,10 @@ public abstract class Snapshot implements AutoCloseable {
     return descriptor.index();
   }
 
+  public long term() {
+    return descriptor.term();
+  }
+
   /**
    * Returns the snapshot timestamp.
    * <p>

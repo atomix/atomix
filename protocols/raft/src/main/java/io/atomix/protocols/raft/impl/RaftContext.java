@@ -117,6 +117,7 @@ public class RaftContext implements AutoCloseable {
   private long commitIndex;
   private volatile long firstCommitIndex;
   private volatile long lastApplied;
+  private volatile long lastAppliedTerm;
 
   @SuppressWarnings("unchecked")
   public RaftContext(
@@ -526,10 +527,11 @@ public class RaftContext implements AutoCloseable {
   /**
    * Sets the last applied index.
    *
-   * @param lastApplied the last applied index
+   * @param lastApplied the last applied index and the last applied term
    */
-  public void setLastApplied(long lastApplied) {
+  public void setLastApplied(long lastApplied, long lastAppliedTerm) {
     this.lastApplied = Math.max(this.lastApplied, lastApplied);
+    this.lastAppliedTerm = Math.max(this.lastAppliedTerm, lastAppliedTerm);
     if (state == State.ACTIVE) {
       threadContext.execute(() -> {
         if (state == State.ACTIVE && this.lastApplied >= firstCommitIndex) {
@@ -547,6 +549,15 @@ public class RaftContext implements AutoCloseable {
    */
   public long getLastApplied() {
     return lastApplied;
+  }
+
+  /**
+   * Returns the term of the last applied entry.
+   *
+   * @return the last applied index
+   */
+  public long getLastAppliedTerm() {
+    return lastAppliedTerm;
   }
 
   /**

@@ -362,8 +362,9 @@ public class RaftServiceManager implements AutoCloseable {
           throw new IllegalStateException("inconsistent index applying entry " + index + ": " + entry);
         }
         CompletableFuture future = futures.remove(index);
+        final long term = entry.entry().term();
         apply(entry).whenComplete((r, e) -> {
-          raft.setLastApplied(index);
+          raft.setLastApplied(index, term);
           if (future != null) {
             if (e == null) {
               future.complete(r);
@@ -450,7 +451,7 @@ public class RaftServiceManager implements AutoCloseable {
    * Takes snapshots for the given index.
    */
   Snapshot snapshot() {
-    Snapshot snapshot = raft.getSnapshotStore().newTemporarySnapshot(raft.getLastApplied(), new WallClockTimestamp());
+    Snapshot snapshot = raft.getSnapshotStore().newTemporarySnapshot(raft.getLastApplied(), raft.getLastAppliedTerm(), new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       for (RaftServiceContext service : raft.getServices()) {
         writer.buffer().mark();

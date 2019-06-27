@@ -31,9 +31,11 @@ public class SnapshotDescriptorTest {
     SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
         .withIndex(2)
         .withTimestamp(3)
+        .withTerm(4)
         .build();
     assertEquals(2, descriptor.index());
     assertEquals(3, descriptor.timestamp());
+    assertEquals(4, descriptor.term());
     assertEquals(1, descriptor.version());
   }
 
@@ -42,6 +44,7 @@ public class SnapshotDescriptorTest {
     SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
         .withIndex(2)
         .withTimestamp(3)
+        .withTerm(4)
         .build();
     Buffer buffer = HeapBuffer.allocate(SnapshotDescriptor.BYTES);
     descriptor.copyTo(buffer);
@@ -49,6 +52,7 @@ public class SnapshotDescriptorTest {
     descriptor = new SnapshotDescriptor(buffer);
     assertEquals(2, descriptor.index());
     assertEquals(3, descriptor.timestamp());
+    assertEquals(4, descriptor.term());
     assertEquals(1, descriptor.version());
   }
 

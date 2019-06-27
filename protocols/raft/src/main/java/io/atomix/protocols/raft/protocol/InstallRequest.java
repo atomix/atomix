@@ -49,13 +49,14 @@ public class InstallRequest extends AbstractRaftRequest {
   private final long term;
   private final MemberId leader;
   private final long index;
+  private final long snapshotTerm;
   private final long timestamp;
   private final int version;
   private final int offset;
   private final byte[] data;
   private final boolean complete;
 
-  public InstallRequest(long term, MemberId leader, long index, long timestamp, int version, int offset, byte[] data, boolean complete) {
+  public InstallRequest(long term, MemberId leader, long index, long snapshotTerm, long timestamp, int version, int offset, byte[] data, boolean complete) {
     this.term = term;
     this.leader = leader;
     this.index = index;
@@ -64,6 +65,7 @@ public class InstallRequest extends AbstractRaftRequest {
     this.offset = offset;
     this.data = data;
     this.complete = complete;
+    this.snapshotTerm = snapshotTerm;
   }
 
   /**
@@ -73,6 +75,15 @@ public class InstallRequest extends AbstractRaftRequest {
    */
   public long term() {
     return term;
+  }
+
+  /**
+   * Returns the term of the last applied entry in the snapshot.
+   *
+   * @return The snapshot term.
+   */
+  public long snapshotTerm() {
+    return snapshotTerm;
   }
 
   /**
@@ -140,7 +151,7 @@ public class InstallRequest extends AbstractRaftRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), term, leader, index, offset, complete, data);
+    return Objects.hash(getClass(), term, leader, index, offset, complete, data, snapshotTerm);
   }
 
   @Override
@@ -152,6 +163,7 @@ public class InstallRequest extends AbstractRaftRequest {
           && request.index == index
           && request.offset == offset
           && request.complete == complete
+          && request.snapshotTerm == snapshotTerm
           && Arrays.equals(request.data, data);
     }
     return false;
@@ -163,6 +175,7 @@ public class InstallRequest extends AbstractRaftRequest {
         .add("term", term)
         .add("leader", leader)
         .add("index", index)
+        .add("snapshotTerm", snapshotTerm)
         .add("timestamp", timestamp)
         .add("version", version)
         .add("offset", offset)
@@ -183,6 +196,7 @@ public class InstallRequest extends AbstractRaftRequest {
     private int offset;
     private byte[] data;
     private boolean complete;
+    private long snapshotTerm;
 
     /**
      * Sets the request term.
@@ -206,6 +220,12 @@ public class InstallRequest extends AbstractRaftRequest {
      */
     public Builder withLeader(MemberId leader) {
       this.leader = checkNotNull(leader, "leader cannot be null");
+      return this;
+    }
+
+    public Builder withSnapshotTerm(long term) {
+      checkArgument(term > 0, "snapshotTerm must be positive");
+      this.snapshotTerm = term;
       return this;
     }
 
@@ -286,6 +306,7 @@ public class InstallRequest extends AbstractRaftRequest {
       checkArgument(term > 0, "term must be positive");
       checkNotNull(leader, "leader cannot be null");
       checkArgument(index >= 0, "index must be positive");
+      checkArgument(snapshotTerm > 0, "snapshotTerm must be positive");
       checkArgument(offset >= 0, "offset must be positive");
       checkNotNull(data, "data cannot be null");
     }
@@ -296,7 +317,7 @@ public class InstallRequest extends AbstractRaftRequest {
     @Override
     public InstallRequest build() {
       validate();
-      return new InstallRequest(term, leader, index, timestamp, version, offset, data, complete);
+      return new InstallRequest(term, leader, index,  snapshotTerm, timestamp, version, offset, data, complete);
     }
   }
 
