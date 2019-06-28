@@ -25,9 +25,9 @@ import java.util.Map;
  * Test Raft protocol factory.
  */
 public class TestRaftProtocolFactory {
-  private final Map<MemberId, TestRaftServerProtocol> servers = Maps.newConcurrentMap();
-  private final Map<MemberId, TestRaftClientProtocol> clients = Maps.newConcurrentMap();
-  private final ThreadContext context;
+  final Map<MemberId, TestRaftServerProtocol> servers = Maps.newConcurrentMap();
+  final Map<MemberId, TestRaftClientProtocol> clients = Maps.newConcurrentMap();
+  final ThreadContext context;
 
   public TestRaftProtocolFactory(ThreadContext context) {
     this.context = context;
@@ -39,7 +39,7 @@ public class TestRaftProtocolFactory {
    * @param memberId the client member identifier
    * @return a new test client protocol
    */
-  public RaftClientProtocol newClientProtocol(MemberId memberId) {
+  public TestRaftClientProtocol newClientProtocol(MemberId memberId) {
     return new TestRaftClientProtocol(memberId, servers, clients, context);
   }
 
@@ -49,7 +49,7 @@ public class TestRaftProtocolFactory {
    * @param memberId the server member identifier
    * @return a new test server protocol
    */
-  public RaftServerProtocol newServerProtocol(MemberId memberId) {
+  public TestRaftServerProtocol newServerProtocol(MemberId memberId) {
     return new TestRaftServerProtocol(memberId, servers, clients, context);
   }
 }
