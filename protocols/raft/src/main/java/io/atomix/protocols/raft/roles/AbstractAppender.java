@@ -322,7 +322,7 @@ abstract class AbstractAppender implements AutoCloseable {
     final long snapshotIndex = response.lastSnapshotIndex();
     if (member.getSnapshotIndex() != snapshotIndex) {
       member.setSnapshotIndex(snapshotIndex);
-      log.trace("Reset snapshot index for {} to {}", member, snapshotIndex);
+      log.warn("Reset snapshot index for {} to {}", member, snapshotIndex);
     }
   }
 
