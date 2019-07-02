@@ -61,7 +61,7 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
 
   @Override
   public RaftLogReader openReader(long index, RaftLogReader.Mode mode) {
-    return new RaftLogReader(journal.openReader(index), this, mode);
+    return new RaftLogReader(journal.openReader(index, mode));
   }
 
   /**

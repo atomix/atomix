@@ -23,7 +23,7 @@ import io.atomix.storage.journal.SegmentedJournalReader;
  * Raft log reader.
  */
 public class RaftLogReader extends DelegatingJournalReader<RaftLogEntry> {
-  public RaftLogReader(SegmentedJournalReader<RaftLogEntry> reader, RaftLog log, Mode mode) {
+  public RaftLogReader(SegmentedJournalReader<RaftLogEntry> reader) {
     super(reader);
   }
 }
