@@ -44,6 +44,7 @@ import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.Indexed;
+import io.atomix.utils.AtomixIOException;
 import io.atomix.utils.concurrent.ComposableFuture;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.OrderedFuture;
@@ -206,7 +207,7 @@ public class RaftServiceManager implements AutoCloseable {
       // Wait for snapshots in all state machines to be completed before compacting the log at the last applied index.
       takeSnapshots().whenComplete((snapshot, error) -> {
         if (error == null) {
-          scheduleCompletion(snapshot.persist());
+          scheduleCompletion(snapshot);
         }
       });
 
@@ -251,7 +252,19 @@ public class RaftServiceManager implements AutoCloseable {
     stateContext.schedule(SNAPSHOT_COMPLETION_DELAY, () -> {
       if (completeSnapshot(snapshot.index())) {
         logger.debug("Completing snapshot {}", snapshot.index());
-        snapshot.complete();
+        try {
+          snapshot.complete();
+        } catch (AtomixIOException e) {
+          logger.error("Failed to complete snapshot {}, rescheduling completion", snapshot, e);
+          scheduleCompletion(snapshot);
+          return;
+        } catch (Exception e) {
+          logger.error("Failed to complete snapshot {}, rescheduling snapshots", snapshot, e);
+          snapshot.close();
+          scheduleSnapshots();
+          return;
+        }
+
         // If log compaction is being forced, immediately compact the logs.
         if (!raft.getLoadMonitor().isUnderHighLoad() || isRunningOutOfDiskSpace() || isRunningOutOfMemory()) {
           compactLogs(snapshot.index());
@@ -450,7 +463,7 @@ public class RaftServiceManager implements AutoCloseable {
    * Takes snapshots for the given index.
    */
   Snapshot snapshot() {
-    Snapshot snapshot = raft.getSnapshotStore().newTemporarySnapshot(raft.getLastApplied(), new WallClockTimestamp());
+    Snapshot snapshot = raft.getSnapshotStore().newSnapshot(raft.getLastApplied(), new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       for (RaftServiceContext service : raft.getServices()) {
         writer.buffer().mark();

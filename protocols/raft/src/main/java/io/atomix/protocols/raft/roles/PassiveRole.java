@@ -537,9 +537,7 @@ public class PassiveRole extends InactiveRole {
     // and so snapshots aren't simply sent at the beginning of the follower's log, but rather the
     // leader dictates when a snapshot needs to be sent.
     if (pendingSnapshot != null && request.snapshotIndex() != pendingSnapshot.snapshot().index()) {
-      log.debug("Rolling back snapshot {}", pendingSnapshot.snapshot().index());
-      pendingSnapshot.rollback();
-      pendingSnapshot = null;
+      rollbackPendingSnapshot();
     }
 
     // If there is no pending snapshot, create a new snapshot.
@@ -552,7 +550,7 @@ public class PassiveRole extends InactiveRole {
             .build()));
       }
 
-      Snapshot snapshot = raft.getSnapshotStore().newTemporarySnapshot(
+      Snapshot snapshot = raft.getSnapshotStore().newSnapshot(
           request.snapshotIndex(),
           WallClockTimestamp.from(request.snapshotTimestamp()));
       pendingSnapshot = new PendingSnapshot(snapshot);
@@ -579,8 +577,20 @@ public class PassiveRole extends InactiveRole {
 
     // If the snapshot is complete, store the snapshot and reset state, otherwise update the next snapshot offset.
     if (request.complete()) {
-      log.debug("Committing snapshot {}", pendingSnapshot.snapshot().index());
-      pendingSnapshot.commit();
+      final long index = pendingSnapshot.snapshot().index();
+      log.debug("Committing snapshot {}", index);
+      try {
+        pendingSnapshot.commit();
+      } catch (Exception e) {
+        log.error("Failed to commit pending snapshot {}, rolling back", pendingSnapshot.snapshot(), e);
+        rollbackPendingSnapshot();
+
+        return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
+                .withStatus(RaftResponse.Status.ERROR)
+                .withError(RaftError.Type.APPLICATION_ERROR, "Failed to commit pending snapshot")
+                .build()));
+      }
+
       pendingSnapshot = null;
     } else {
       pendingSnapshot.incrementOffset();
@@ -589,6 +599,12 @@ public class PassiveRole extends InactiveRole {
     return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
         .withStatus(RaftResponse.Status.OK)
         .build()));
+  }
+
+  private void rollbackPendingSnapshot() {
+    log.debug("Rolling back snapshot {}", pendingSnapshot.snapshot().index());
+    pendingSnapshot.rollback();
+    pendingSnapshot = null;
   }
 
   @Override
@@ -822,15 +838,14 @@ public class PassiveRole extends InactiveRole {
      * Commits the snapshot to disk.
      */
     public void commit() {
-      snapshot.persist().complete();
+      snapshot.complete();
     }
 
     /**
-     * Closes and deletes the snapshot.
+     * Closes the snapshot.
      */
     public void rollback() {
       snapshot.close();
-      snapshot.delete();
     }
 
     @Override
