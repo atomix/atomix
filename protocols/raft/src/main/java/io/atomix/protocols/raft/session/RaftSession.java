@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.atomic.LongAccumulator;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
@@ -63,7 +64,7 @@ public class RaftSession extends AbstractSession {
   private final ThreadContext eventExecutor;
   private volatile State state = State.CLOSED;
   private volatile long lastUpdated;
-  private long requestSequence;
+  private LongAccumulator requestSequence;
   private volatile long commandSequence;
   private volatile long lastApplied;
   private volatile long commandLowWaterMark;
@@ -106,6 +107,7 @@ public class RaftSession extends AbstractSession {
         .add("type", context.serviceType())
         .add("name", context.serviceName())
         .build());
+    this.requestSequence = new LongAccumulator(Long::max, 0);
   }
 
   /**
@@ -196,7 +198,7 @@ public class RaftSession extends AbstractSession {
    * @return The session request number.
    */
   public long getRequestSequence() {
-    return requestSequence;
+    return requestSequence.get();
   }
 
   /**
@@ -205,7 +207,7 @@ public class RaftSession extends AbstractSession {
    * @return the next request sequence number
    */
   public long nextRequestSequence() {
-    return this.requestSequence + 1;
+    return this.requestSequence.get() + 1;
   }
 
   /**
@@ -214,7 +216,7 @@ public class RaftSession extends AbstractSession {
    * @param requestSequence the current request sequence number
    */
   public void setRequestSequence(long requestSequence) {
-    this.requestSequence = Math.max(this.requestSequence, requestSequence);
+    this.requestSequence.accumulate(requestSequence);
   }
 
   /**
@@ -226,9 +228,7 @@ public class RaftSession extends AbstractSession {
     // If the request sequence number is less than the applied sequence number, update the request
     // sequence number. This is necessary to ensure that if the local server is a follower that is
     // later elected leader, its sequences are consistent for commands.
-    if (requestSequence > this.requestSequence) {
-      this.requestSequence = requestSequence;
-    }
+    this.requestSequence.accumulate(requestSequence);
   }
 
   /**
