@@ -15,8 +15,21 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
+import static io.atomix.primitive.operation.PrimitiveOperation.operation;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import io.atomix.primitive.operation.OperationId;
 import io.atomix.primitive.session.SessionId;
+import io.atomix.protocols.raft.RaftError;
 import io.atomix.protocols.raft.RaftException;
 import io.atomix.protocols.raft.TestPrimitiveType;
 import io.atomix.protocols.raft.protocol.CommandRequest;
@@ -25,24 +38,21 @@ import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.storage.buffer.HeapBytes;
+import io.atomix.utils.concurrent.BlockingAwareThreadPoolContextFactory;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
-import static io.atomix.primitive.operation.PrimitiveOperation.operation;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Client session submitter test.
@@ -74,6 +84,86 @@ public class RaftSessionInvokerTest {
     assertArrayEquals(submitter.invoke(operation(COMMAND, HeapBytes.EMPTY)).get(), "Hello world!".getBytes());
     assertEquals(1, state.getCommandRequest());
     assertEquals(1, state.getCommandResponse());
+    assertEquals(10, state.getResponseIndex());
+  }
+
+  @Test
+  public void testReSubmitCommand() throws Throwable {
+    // given
+    // setup  thread context
+    final Logger log = LoggerFactory.getLogger(getClass());
+    final int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 16), 4);
+    final ThreadContext context = spy(new BlockingAwareThreadPoolContextFactory(
+        "raft-partition-group-data-%d", threadPoolSize, log).createContext());
+
+    // collecting request futures
+    final List<CompletableFuture<CommandResponse>> futures = new CopyOnWriteArrayList<>();
+    final List<Long> sequences = new CopyOnWriteArrayList<>();
+    final RaftSessionConnection connection = mock(RaftSessionConnection.class);
+    when(connection.command(any(CommandRequest.class)))
+        .thenAnswer(invocationOnMock -> {
+          final CommandRequest commandRequest = (CommandRequest) invocationOnMock.getArguments()[0];
+          sequences.add(commandRequest.sequenceNumber());
+          final CompletableFuture<CommandResponse> future = new CompletableFuture<>();
+          futures.add(future);
+          return future;
+        });
+
+    // raft session invoker
+    final RaftSessionState state = new RaftSessionState("test", SessionId.from(1), UUID.randomUUID().toString(), TestPrimitiveType.instance(), 1000);
+    final RaftSessionManager manager = mock(RaftSessionManager.class);
+    final RaftSessionInvoker submitter =
+        new RaftSessionInvoker(connection,
+            mock(RaftSessionConnection.class),
+            state,
+            new RaftSessionSequencer(state),
+            manager,
+            context);
+
+    // send five commands
+    submitter.invoke(operation(COMMAND, HeapBytes.EMPTY));
+    submitter.invoke(operation(COMMAND, HeapBytes.EMPTY));
+    submitter.invoke(operation(COMMAND, HeapBytes.EMPTY));
+    submitter.invoke(operation(COMMAND, HeapBytes.EMPTY));
+    final CompletableFuture<byte[]> lastFuture = submitter.invoke(operation(COMMAND, HeapBytes.EMPTY));
+
+    verify(connection, timeout(2000).times(5)).command(any());
+
+    // when we missed second command
+    futures.get(0).complete(CommandResponse.builder()
+        .withStatus(RaftResponse.Status.OK)
+        .withIndex(10)
+        .withResult("Hello world!".getBytes())
+        .build());
+    final ArrayList<CompletableFuture<CommandResponse>> copiedFutures = new ArrayList<>(futures.subList(1, futures.size()));
+    futures.clear();
+    sequences.clear();
+    copiedFutures.forEach(f ->
+        f.complete(CommandResponse.builder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.COMMAND_FAILURE)
+          .withLastSequence(1)
+          .build()));
+
+    // then session invoker should resubmit 4 commands
+    verify(connection, timeout(2000).times(9)).command(any());
+    final CountDownLatch latch = new CountDownLatch(1);
+    // context thread pool ensures execution of task in order
+    context.execute(latch::countDown);
+    latch.await();
+
+    assertEquals(4, futures.size());
+    assertArrayEquals(new Long[]{2L, 3L, 4L, 5L}, sequences.toArray(new Long[0]));
+
+    futures.forEach(f -> f.complete(CommandResponse.builder()
+            .withStatus(RaftResponse.Status.OK)
+            .withIndex(10)
+            .withResult("Hello world!".getBytes())
+            .build()));
+
+    assertArrayEquals(lastFuture.get(), "Hello world!".getBytes());
+    assertEquals(5, state.getCommandRequest());
+    assertEquals(5, state.getCommandResponse());
     assertEquals(10, state.getResponseIndex());
   }
 

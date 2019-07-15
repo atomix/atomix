@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.operation.PrimitiveOperation;
@@ -28,7 +30,6 @@ import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.utils.concurrent.ThreadContext;
-
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
@@ -41,8 +42,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Session operation submitter.
@@ -310,7 +309,7 @@ final class RaftSessionInvoker {
      * Immediately retries the attempt.
      */
     public void retry() {
-      context.execute(() -> invoke(next()));
+      invoke(next());
     }
 
     /**
