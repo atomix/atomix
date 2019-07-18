@@ -22,7 +22,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -93,8 +92,8 @@ public class RaftSessionInvokerTest {
     // setup  thread context
     final Logger log = LoggerFactory.getLogger(getClass());
     final int threadPoolSize = Math.max(Math.min(Runtime.getRuntime().availableProcessors() * 2, 16), 4);
-    final ThreadContext context = spy(new BlockingAwareThreadPoolContextFactory(
-        "raft-partition-group-data-%d", threadPoolSize, log).createContext());
+    final ThreadContext context = new BlockingAwareThreadPoolContextFactory(
+        "raft-partition-group-data-%d", threadPoolSize, log).createContext();
 
     // collecting request futures
     final List<CompletableFuture<CommandResponse>> futures = new CopyOnWriteArrayList<>();

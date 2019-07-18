@@ -309,6 +309,7 @@ final class RaftSessionInvoker {
      * Immediately retries the attempt.
      */
     public void retry() {
+      context.checkThread();
       invoke(next());
     }
 
@@ -336,7 +337,7 @@ final class RaftSessionInvoker {
 
     @Override
     protected void send() {
-      leaderConnection.command(request).whenComplete(this);
+      leaderConnection.command(request).whenCompleteAsync(this, context);
     }
 
     @Override
