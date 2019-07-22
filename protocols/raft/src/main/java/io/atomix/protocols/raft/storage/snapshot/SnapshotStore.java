@@ -180,7 +180,7 @@ public class SnapshotStore implements AutoCloseable {
             storage.directory(),
             storage.prefix(),
             descriptor.index());
-    File temporaryFile = SnapshotFile.createTemporaryFile(snapshotFile);
+    File temporaryFile = SnapshotFile.createTemporaryFile(storage.directory(), snapshotFile);
 
     SnapshotFile file = new SnapshotFile(snapshotFile, temporaryFile);
     Snapshot snapshot = new FileSnapshot(file, descriptor, this);

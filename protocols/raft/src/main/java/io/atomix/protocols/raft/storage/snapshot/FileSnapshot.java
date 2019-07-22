@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.AtomicMoveNotSupportedException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -79,9 +81,7 @@ final class FileSnapshot extends Snapshot {
     }
 
     try {
-      Files.move(file.temporaryFile().toPath(), file.file().toPath());
-    } catch (FileAlreadyExistsException e) {
-      LOGGER.debug("Snapshot {} was already previously completed", this);
+      persistTemporaryFile();
     } catch (IOException e) {
       throw new AtomixIOException(e);
     }
@@ -99,6 +99,7 @@ final class FileSnapshot extends Snapshot {
 
     if (file.temporaryFile() != null) {
       deleteFileSilently(file.temporaryFile().toPath());
+      file.clearTemporaryFile();
     }
   }
 
@@ -120,6 +121,21 @@ final class FileSnapshot extends Snapshot {
       Files.delete(path);
     } catch (IOException e) {
       LOGGER.debug("Failed to delete snapshot file {}", path, e);
+    }
+  }
+
+  private void persistTemporaryFile() throws IOException {
+    final Path temporaryPath = file.temporaryFile().toPath();
+    final Path persistedPath = file.file().toPath();
+
+    try {
+      Files.move(temporaryPath, persistedPath, StandardCopyOption.ATOMIC_MOVE);
+    } catch (AtomicMoveNotSupportedException e) {
+      try {
+        Files.move(temporaryPath, persistedPath);
+      } catch (FileAlreadyExistsException ignored) {
+        LOGGER.debug("Snapshot {} was already previously completed", this);
+      }
     }
   }
 }

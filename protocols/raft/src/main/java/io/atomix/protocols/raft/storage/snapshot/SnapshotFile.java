@@ -96,11 +96,9 @@ public final class SnapshotFile {
   /**
    * Creates a temporary file for writing snapshots.
    */
-  static File createTemporaryFile(File base) {
+  static File createTemporaryFile(File directory, File base) {
     try {
-      final File file = File.createTempFile(base.getName(), null);
-      file.deleteOnExit();
-      return file;
+      return File.createTempFile(base.getName(), null, directory);
     } catch (IOException e) {
       throw new AtomixIOException(e);
     }

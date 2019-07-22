@@ -32,9 +32,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * Snapshot store test.
@@ -93,7 +91,9 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     }
 
     assertNull(store.getSnapshot(2));
+    assertTempSnapshotCount(store, 1);
     snapshot.complete();
+    assertTempSnapshotCount(store, 0);
     assertNotNull(store.getSnapshot(2));
 
     try (SnapshotReader reader = snapshot.openReader()) {
@@ -168,6 +168,16 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     assertEquals(result, 1);
   }
 
+  @Test
+  public void testTemporarySnapshotCleanedUpOnClose() {
+    final SnapshotStore store = createSnapshotStore();
+    final Snapshot snapshot = store.newSnapshot(1, new WallClockTimestamp());
+
+    assertTempSnapshotCount(store, 1);
+    snapshot.close();
+    assertTempSnapshotCount(store, 0);
+  }
+
   @Before
   @After
   public void cleanupStorage() throws IOException {
@@ -188,5 +198,10 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
       });
     }
     testId = UUID.randomUUID().toString();
+  }
+
+  private void assertTempSnapshotCount(SnapshotStore store, int expected) {
+    final File[] tempSnapshots = store.storage.directory().listFiles(f -> f.getName().endsWith(".tmp"));
+    assertEquals(expected, tempSnapshots != null ? tempSnapshots.length : 0);
   }
 }
