@@ -211,6 +211,9 @@ public abstract class Snapshot implements AutoCloseable {
 
   @Override
   public boolean equals(Object object) {
+    if (object == this) {
+      return true;
+    }
     if (object == null || getClass() != object.getClass()) {
       return false;
     }

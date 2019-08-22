@@ -121,6 +121,9 @@ public class AppendRequest extends AbstractRaftRequest {
 
   @Override
   public boolean equals(Object object) {
+    if (object == this) {
+      return true;
+    }
     if (object instanceof AppendRequest) {
       AppendRequest request = (AppendRequest) object;
       return request.term == term

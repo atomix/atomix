@@ -89,7 +89,7 @@ public class Leader<T> {
     if (this == other) {
       return true;
     }
-    if (other != null && other instanceof Leader) {
+    if (other instanceof Leader) {
       Leader that = (Leader) other;
       return Objects.equal(this.id, that.id)
           && this.term == that.term
