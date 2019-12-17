@@ -92,6 +92,9 @@ public class DefaultCommit<T> implements Commit<T> {
 
   @Override
   public boolean equals(Object object) {
+    if (object == this) {
+      return true;
+    }
     if (object instanceof Commit) {
       Commit commit = (Commit) object;
       return commit.index() == index

@@ -127,6 +127,9 @@ public class OpenSessionRequest extends AbstractRaftRequest {
 
   @Override
   public boolean equals(Object object) {
+    if (object == this) {
+      return true;
+    }
     if (object instanceof OpenSessionRequest) {
       OpenSessionRequest request = (OpenSessionRequest) object;
       return request.node.equals(node)

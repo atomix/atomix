@@ -99,7 +99,7 @@ public class PollRequest extends AbstractRaftRequest {
     if (object instanceof PollRequest) {
       PollRequest request = (PollRequest) object;
       return request.term == term
-          && request.candidate == candidate
+          && request.candidate.equals(candidate)
           && request.lastLogIndex == lastLogIndex
           && request.lastLogTerm == lastLogTerm;
     }
