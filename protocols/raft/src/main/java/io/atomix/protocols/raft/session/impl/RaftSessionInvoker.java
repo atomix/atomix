@@ -216,8 +216,6 @@ final class RaftSessionInvoker {
       attempt.fail(new PrimitiveException.ClosedSession("session closed"));
     }
     attempts.clear();
-    sessionConnection.close();
-    leaderConnection.close();
     return CompletableFuture.completedFuture(null);
   }
 
