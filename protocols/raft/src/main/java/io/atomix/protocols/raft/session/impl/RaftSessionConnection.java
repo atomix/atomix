@@ -306,11 +306,4 @@ public class RaftSessionConnection {
       return currentNode;
     }
   }
-
-  /**
-   * Closes the connection.
-   */
-  public void close() {
-    selector.close();
-  }
 }

@@ -140,7 +140,6 @@ final class RaftSessionListener {
    */
   public CompletableFuture<Void> close() {
     protocol.unregisterPublishListener(state.getSessionId());
-    memberSelector.close();
     return CompletableFuture.completedFuture(null);
   }
 }
