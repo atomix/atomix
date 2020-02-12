@@ -162,12 +162,16 @@ public class SwimMembershipProtocol
 
   @Override
   public Set<Member> getMembers() {
-    return ImmutableSet.copyOf(members.values());
+    return ImmutableSet.copyOf(members.values().stream().filter(m -> m.getState() != State.DEAD).collect(Collectors.toSet()));
   }
 
   @Override
   public Member getMember(MemberId memberId) {
-    return members.get(memberId);
+    Member member = members.get(memberId);
+    if (((SwimMember) member).getState() == State.DEAD) {
+      return null;
+    }
+    return member;
   }
 
   @Override
@@ -198,6 +202,15 @@ public class SwimMembershipProtocol
   private boolean updateState(ImmutableMember member) {
     // If the member matches the local member, ignore the update.
     if (member.id().equals(localMember.id())) {
+        if (member.incarnationNumber() > localMember.getIncarnationNumber() || member.state() != State.ALIVE) {
+            LOGGER.debug("{} - Detected stale state. Incrementing incarnation number {} to {}",
+                localMember.id(), localMember.getIncarnationNumber(), localMember.getIncarnationNumber() + 1);
+            localMember.setIncarnationNumber(member.incarnationNumber() + 1);
+            if (config.isBroadcastDisputes()) {
+                LOGGER.trace("{} - Broadcasting member state dispute: {}", localMember.copy());
+                broadcast(localMember.copy());
+            }
+        }
       return false;
     }
 
@@ -239,9 +252,15 @@ public class SwimMembershipProtocol
 
         // If the state has been changed to ALIVE, trigger a REACHABILITY_CHANGED event and then update metadata.
         if (member.state() == State.ALIVE && swimMember.getState() != State.ALIVE) {
+          State swimState = swimMember.getState();
           swimMember.setState(State.ALIVE);
-          LOGGER.debug("{} - Member reachable {}", this.localMember.id(), swimMember);
-          post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, swimMember.copy()));
+          if (config.isRetainTombstones() && swimState == State.DEAD) {
+            LOGGER.debug("{} - Member added {}", this.localMember.id(), swimMember);
+            post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, swimMember.copy()));
+          } else {
+            LOGGER.debug("{} - Member reachable {}", this.localMember.id(), swimMember);
+            post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, swimMember.copy()));
+          }
           if (!Objects.equals(member.properties(), swimMember.properties())) {
             swimMember.properties().putAll(member.properties());
             LOGGER.debug("{} - Member metadata changed {}", this.localMember.id(), swimMember);
@@ -271,9 +290,11 @@ public class SwimMembershipProtocol
             post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, swimMember.copy()));
           }
           swimMember.setState(State.DEAD);
-          members.remove(swimMember.id());
-          randomMembers.remove(swimMember);
-          Collections.shuffle(randomMembers);
+          if (!config.isRetainTombstones()) {
+            members.remove(swimMember.id());
+            randomMembers.remove(swimMember);
+            Collections.shuffle(randomMembers);
+          }
           LOGGER.debug("{} - Member removed {}", this.localMember.id(), swimMember);
           post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_REMOVED, swimMember.copy()));
         } else if (!Objects.equals(member.properties(), swimMember.properties())) {
@@ -302,15 +323,18 @@ public class SwimMembershipProtocol
       // If the updated state is DEAD, post a REACHABILITY_CHANGED event if necessary, then post a MEMBER_REMOVED
       // event and record an update.
       else if (member.state() == State.DEAD) {
-        members.remove(swimMember.id());
-        randomMembers.remove(swimMember);
-        Collections.shuffle(randomMembers);
+        if (!config.isRetainTombstones()) {
+          members.remove(swimMember.id());
+          randomMembers.remove(swimMember);
+          Collections.shuffle(randomMembers);
+        }
         LOGGER.debug("{} - Member removed {}", this.localMember.id(), swimMember);
         post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_REMOVED, swimMember.copy()));
       }
       recordUpdate(swimMember.copy());
       return true;
     }
+    LOGGER.trace("{} - Ignored update {}; state: {}", this.localMember.id(), member, swimMember.copy());
     return false;
   }
 
@@ -330,9 +354,11 @@ public class SwimMembershipProtocol
     for (SwimMember member : members.values()) {
       if (member.getState() == State.SUSPECT && System.currentTimeMillis() - member.getUpdated() > config.getFailureTimeout().toMillis()) {
         member.setState(State.DEAD);
-        members.remove(member.id());
-        randomMembers.remove(member);
-        Collections.shuffle(randomMembers);
+        if (!config.isRetainTombstones()) {
+          members.remove(member.id());
+          randomMembers.remove(member);
+          Collections.shuffle(randomMembers);
+        }
         LOGGER.debug("{} - Member removed {}", this.localMember.id(), member);
         post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_REMOVED, member.copy()));
         recordUpdate(member.copy());
@@ -441,16 +467,12 @@ public class SwimMembershipProtocol
     LOGGER.trace("{} - Received probe {} from {}", this.localMember.id(), localMember, remoteMember);
 
     // If the probe indicates a term greater than the local term, update the local term, increment and respond.
-    if (localMember.incarnationNumber() > this.localMember.getIncarnationNumber()) {
+    if (localMember.incarnationNumber() > this.localMember.getIncarnationNumber() || localMember.state() != State.ALIVE) {
+      LOGGER.debug("{} - Detected stale state. Incrementing incarnation number {} to {}",
+          this.localMember.id(), this.localMember.getIncarnationNumber(), this.localMember.getIncarnationNumber() + 1);
       this.localMember.setIncarnationNumber(localMember.incarnationNumber() + 1);
       if (config.isBroadcastDisputes()) {
-        broadcast(this.localMember.copy());
-      }
-    }
-    // If the probe indicates this member is suspect, increment the local term and respond.
-    else if (localMember.state() == State.SUSPECT) {
-      this.localMember.setIncarnationNumber(this.localMember.getIncarnationNumber() + 1);
-      if (config.isBroadcastDisputes()) {
+        LOGGER.trace("{} - Broadcasting member state dispute: {}", this.localMember.copy());
         broadcast(this.localMember.copy());
       }
     }
@@ -634,6 +656,7 @@ public class SwimMembershipProtocol
    * Handles a gossip message from a peer.
    */
   private void handleGossipUpdates(Collection<ImmutableMember> updates) {
+    LOGGER.trace("{} - Received gossip updates {}", localMember.id(), updates);
     for (ImmutableMember update : updates) {
       updateState(update);
     }
