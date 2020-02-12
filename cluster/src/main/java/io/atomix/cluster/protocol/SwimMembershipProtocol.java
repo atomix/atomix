@@ -202,15 +202,15 @@ public class SwimMembershipProtocol
   private boolean updateState(ImmutableMember member) {
     // If the member matches the local member, ignore the update.
     if (member.id().equals(localMember.id())) {
-        if (member.incarnationNumber() > localMember.getIncarnationNumber() || member.state() != State.ALIVE) {
-            LOGGER.debug("{} - Detected stale state. Incrementing incarnation number {} to {}",
-                localMember.id(), localMember.getIncarnationNumber(), localMember.getIncarnationNumber() + 1);
-            localMember.setIncarnationNumber(member.incarnationNumber() + 1);
-            if (config.isBroadcastDisputes()) {
-                LOGGER.trace("{} - Broadcasting member state dispute: {}", localMember.copy());
-                broadcast(localMember.copy());
-            }
+      if (member.incarnationNumber() > localMember.getIncarnationNumber() || member.state() != State.ALIVE) {
+        LOGGER.debug("{} - Detected stale state. Incrementing incarnation number {} to {}",
+            localMember.id(), localMember.getIncarnationNumber(), localMember.getIncarnationNumber() + 1);
+        localMember.setIncarnationNumber(member.incarnationNumber() + 1);
+        if (config.isBroadcastDisputes()) {
+          LOGGER.trace("{} - Broadcasting member state dispute: {}", localMember.copy());
+          broadcast(localMember.copy());
         }
+      }
       return false;
     }
 
@@ -522,7 +522,7 @@ public class SwimMembershipProtocol
   /**
    * Requests a probe of the given suspect from the given member.
    *
-   * @param member the member to perform the probe
+   * @param member  the member to perform the probe
    * @param suspect the suspect member to probe
    */
   private CompletableFuture<Boolean> requestProbe(SwimMember member, ImmutableMember suspect) {
@@ -540,7 +540,7 @@ public class SwimMembershipProtocol
   /**
    * Selects a set of random members, excluding the local member and a given member.
    *
-   * @param count count the number of random members to select
+   * @param count   count the number of random members to select
    * @param exclude the member to exclude
    * @return members a set of random members
    */
@@ -641,7 +641,7 @@ public class SwimMembershipProtocol
   /**
    * Gossips this node's pending updates with the given peer.
    *
-   * @param member the peer with which to gossip this node's updates
+   * @param member  the peer with which to gossip this node's updates
    * @param updates the updated members to gossip
    */
   private void gossip(SwimMember member, Collection<ImmutableMember> updates) {
