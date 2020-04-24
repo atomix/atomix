@@ -34,6 +34,8 @@
   <properties>
     <jv>${project.version}</jv>
 
+    <project.root.basedir>${project.basedir}</project.root.basedir>
+    
     <!-- Java -->
     <java.version>1.8</java.version>
     <java.releaseVersion>8</java.releaseVersion>
@@ -431,7 +433,8 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>3.0.0</version>
         <configuration>
-          <configLocation>src/main/resources/checkstyle.xml</configLocation>
+          <propertyExpansion>basedir=${project.root.basedir}</propertyExpansion>
+          <configLocation>${project.root.basedir}/src/main/resources/checkstyle.xml</configLocation>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <consoleOutput>true</consoleOutput>
         </configuration>
