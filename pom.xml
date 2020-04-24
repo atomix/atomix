@@ -99,6 +99,16 @@
       <activation>
         <jdk>[1.9,)</jdk>
       </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <release>${java.releaseVersion}</release>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
     <profile>
       <id>sonatype-oss-release</id>
@@ -319,7 +329,6 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven.compiler.plugin.version}</version>
         <configuration>
-          <release>${java.releaseVersion}</release>
           <source>${java.version}</source>
           <target>${java.version}</target>
         </configuration>
