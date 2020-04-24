@@ -409,7 +409,7 @@
               <packages>io.atomix.utils*</packages>
             </group>
           </groups>
-          <stylesheetfile>${basedir}/docs/style.css</stylesheetfile>
+          <stylesheetfile>${project.basedir}/docs/style.css</stylesheetfile>
           <excludePackageNames>*.impl*:io.atomix.core.config.jackson:io.atomix.core.utils:io.atomix.rest*:io.atomix.agent*:io.atomix.storage.buffer:io.atomix.storage.journal*:io.atomix.storage.statistics:io.atomix.protocols.raft.utils:io.atomix.utils.serializer.serializers:io.atomix.utils.concurrent:io.atomix.utils.logging:io.atomix.utils.misc:io.atomix.utils.memory:io.atomix.protocols.raft.roles:io.atomix.protocols.raft.protocol:io.atomix.protocols.raft.storage:io.atomix.protocols.raft.cluster:io.atomix.protocols.raft.test:io.atomix.protocols.backup.roles:io.atomix.protocols.backup.protocol:io.atomix.protocols.gossip.*
           </excludePackageNames>
         </configuration>
@@ -431,7 +431,7 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>3.0.0</version>
         <configuration>
-          <configLocation>src/main/resources/checkstyle.xml</configLocation>
+          <configLocation>${project.basedir}/src/main/resources/checkstyle.xml</configLocation>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <consoleOutput>true</consoleOutput>
         </configuration>
