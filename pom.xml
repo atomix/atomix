@@ -431,7 +431,7 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>3.0.0</version>
         <configuration>
-          <propertyExpansion>basedir=${session.executionRootDirectory}</propertyExpansion>
+          <propertyExpansion>basedir=${maven.multiModuleProjectDirectory}</propertyExpansion>
           <configLocation>src/main/resources/checkstyle.xml</configLocation>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <consoleOutput>true</consoleOutput>
