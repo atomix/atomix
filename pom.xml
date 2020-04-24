@@ -434,7 +434,7 @@
         <version>3.0.0</version>
         <configuration>
           <propertyExpansion>basedir=${project.root.basedir}</propertyExpansion>
-          <configLocation>${project.root.basedir}/src/main/resources/checkstyle.xml</configLocation>
+          <configLocation>src/main/resources/checkstyle.xml</configLocation>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <consoleOutput>true</consoleOutput>
         </configuration>
