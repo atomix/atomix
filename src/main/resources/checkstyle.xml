@@ -61,7 +61,7 @@
     <!-- See http://checkstyle.sf.net/config_header.html   -->
     <module name="RegexpHeader">
         <!-- The following line is different for maven due to how the maven checkstyle plugin works -->
-        <property name="headerFile" value="${project.basedir}/src/main/resources/atomix.header"/>
+        <property name="headerFile" value="${basedir}/src/main/resources/atomix.header"/>
         <property name="fileExtensions" value="java"/>
     </module>
 
