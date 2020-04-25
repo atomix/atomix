@@ -33,7 +33,7 @@
 
   <properties>
     <jv>${project.version}</jv>
-    
+
     <!-- Java -->
     <java.version>1.8</java.version>
     <java.releaseVersion>8</java.releaseVersion>
@@ -466,12 +466,6 @@
             <id>default-report</id>
             <goals>
               <goal>report</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>default-check</id>
-            <goals>
-              <goal>check</goal>
             </goals>
           </execution>
         </executions>
