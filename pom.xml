@@ -305,7 +305,7 @@
           <forkCount>0</forkCount>
           <testFailureIgnore>true</testFailureIgnore>
           <shutdown>kill</shutdown>
-          <argLine>${argLine} ${argLine.extras} ${argLine.common}</argLine>
+          <argLine>@{argLine} ${argLine.extras} ${argLine.common}</argLine>
         </configuration>
       </plugin>
 
