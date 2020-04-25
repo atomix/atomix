@@ -457,13 +457,20 @@
         <version>0.8.5</version>
         <executions>
           <execution>
-            <id>default-prepare-agent</id>
+            <id>jacoco-prepare-agent</id>
             <goals>
               <goal>prepare-agent</goal>
             </goals>
           </execution>
           <execution>
-            <id>default-report</id>
+            <id>jacoco-prepare-agent-integration</id>
+            <goals>
+              <goal>prepare-agent-integration</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>jacoco-report</id>
+            <phase>verify</phase>
             <goals>
               <goal>report</goal>
             </goals>
