@@ -162,12 +162,16 @@ public class SwimMembershipProtocol
 
   @Override
   public Set<Member> getMembers() {
-    return ImmutableSet.copyOf(members.values());
+    return ImmutableSet.copyOf(members.values().stream().filter(m -> m.getState() != State.DEAD).collect(Collectors.toSet()));
   }
 
   @Override
   public Member getMember(MemberId memberId) {
-    return members.get(memberId);
+    Member member = members.get(memberId);
+    if (((SwimMember) member).getState() == State.DEAD) {
+      return null;
+    }
+    return member;
   }
 
   @Override
@@ -198,6 +202,15 @@ public class SwimMembershipProtocol
   private boolean updateState(ImmutableMember member) {
     // If the member matches the local member, ignore the update.
     if (member.id().equals(localMember.id())) {
+      if (member.incarnationNumber() > localMember.getIncarnationNumber() || member.state() == State.SUSPECT || member.state() == State.DEAD) {
+        LOGGER.debug("{} - Detected stale state. Incrementing incarnation number {} to {}",
+            localMember.id(), localMember.getIncarnationNumber(), localMember.getIncarnationNumber() + 1);
+        localMember.setIncarnationNumber(member.incarnationNumber() + 1);
+        if (config.isBroadcastDisputes()) {
+          LOGGER.trace("{} - Broadcasting member state dispute: {}", localMember.id(), localMember.copy());
+          broadcast(localMember.copy());
+        }
+      }
       return false;
     }
 
@@ -239,9 +252,19 @@ public class SwimMembershipProtocol
 
         // If the state has been changed to ALIVE, trigger a REACHABILITY_CHANGED event and then update metadata.
         if (member.state() == State.ALIVE && swimMember.getState() != State.ALIVE) {
+          State swimState = swimMember.getState();
           swimMember.setState(State.ALIVE);
-          LOGGER.debug("{} - Member reachable {}", this.localMember.id(), swimMember);
-          post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, swimMember.copy()));
+          if (!randomMembers.contains(swimMember)) {
+            randomMembers.add(swimMember);
+            Collections.shuffle(randomMembers);
+          }
+          if (config.isRetainTombstones() && swimState == State.DEAD) {
+            LOGGER.debug("{} - Member added {}", this.localMember.id(), swimMember);
+            post(new GroupMembershipEvent(GroupMembershipEvent.Type.MEMBER_ADDED, swimMember.copy()));
+          } else {
+            LOGGER.debug("{} - Member reachable {}", this.localMember.id(), swimMember);
+            post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, swimMember.copy()));
+          }
           if (!Objects.equals(member.properties(), swimMember.properties())) {
             swimMember.properties().putAll(member.properties());
             LOGGER.debug("{} - Member metadata changed {}", this.localMember.id(), swimMember);
@@ -271,7 +294,9 @@ public class SwimMembershipProtocol
             post(new GroupMembershipEvent(GroupMembershipEvent.Type.REACHABILITY_CHANGED, swimMember.copy()));
           }
           swimMember.setState(State.DEAD);
-          members.remove(swimMember.id());
+          if (!config.isRetainTombstones()) {
+            members.remove(swimMember.id());
+          }
           randomMembers.remove(swimMember);
           Collections.shuffle(randomMembers);
           LOGGER.debug("{} - Member removed {}", this.localMember.id(), swimMember);
@@ -302,7 +327,9 @@ public class SwimMembershipProtocol
       // If the updated state is DEAD, post a REACHABILITY_CHANGED event if necessary, then post a MEMBER_REMOVED
       // event and record an update.
       else if (member.state() == State.DEAD) {
-        members.remove(swimMember.id());
+        if (!config.isRetainTombstones()) {
+          members.remove(swimMember.id());
+        }
         randomMembers.remove(swimMember);
         Collections.shuffle(randomMembers);
         LOGGER.debug("{} - Member removed {}", this.localMember.id(), swimMember);
@@ -311,6 +338,7 @@ public class SwimMembershipProtocol
       recordUpdate(swimMember.copy());
       return true;
     }
+    LOGGER.trace("{} - Ignored update {}; state: {}", this.localMember.id(), member, swimMember.copy());
     return false;
   }
 
@@ -330,7 +358,9 @@ public class SwimMembershipProtocol
     for (SwimMember member : members.values()) {
       if (member.getState() == State.SUSPECT && System.currentTimeMillis() - member.getUpdated() > config.getFailureTimeout().toMillis()) {
         member.setState(State.DEAD);
-        members.remove(member.id());
+        if (!config.isRetainTombstones()) {
+          members.remove(member.id());
+        }
         randomMembers.remove(member);
         Collections.shuffle(randomMembers);
         LOGGER.debug("{} - Member removed {}", this.localMember.id(), member);
@@ -390,7 +420,7 @@ public class SwimMembershipProtocol
     // This is necessary to ensure we attempt to probe all nodes that are provided by the discovery provider.
     List<SwimMember> probeMembers = Lists.newArrayList(discoveryService.getNodes().stream()
         .map(node -> new SwimMember(MemberId.from(node.id().id()), node.address()))
-        .filter(member -> !members.containsKey(member.id()))
+        .filter(member -> !members.containsKey(member.id()) || members.get(member.id()).getState() == State.DEAD)
         .filter(member -> !member.id().equals(localMember.id()))
         .sorted(Comparator.comparing(Member::id))
         .collect(Collectors.toList()));
@@ -416,7 +446,13 @@ public class SwimMembershipProtocol
         member.address(), MEMBERSHIP_PROBE, SERIALIZER.encode(Pair.of(localMember.copy(), member)), false, config.getProbeTimeout())
         .whenCompleteAsync((response, error) -> {
           if (error == null) {
-            updateState(SERIALIZER.decode(response));
+            Pair<ImmutableMember, ImmutableMember> members = SERIALIZER.decode(response);
+            if (members.getLeft() != null) {
+              updateState(members.getLeft());
+            }
+            if (members.getRight() != null) {
+              updateState(members.getRight());
+            }
           } else {
             LOGGER.debug("{} - Failed to probe {}", this.localMember.id(), member, error);
             // Verify that the local member term has not changed and request probes from peers.
@@ -434,30 +470,27 @@ public class SwimMembershipProtocol
    * @param members the probing member and local member info
    * @return the current term
    */
-  private ImmutableMember handleProbe(Pair<ImmutableMember, ImmutableMember> members) {
+  private Pair<ImmutableMember, ImmutableMember> handleProbe(Pair<ImmutableMember, ImmutableMember> members) {
     ImmutableMember remoteMember = members.getLeft();
     ImmutableMember localMember = members.getRight();
 
     LOGGER.trace("{} - Received probe {} from {}", this.localMember.id(), localMember, remoteMember);
 
     // If the probe indicates a term greater than the local term, update the local term, increment and respond.
-    if (localMember.incarnationNumber() > this.localMember.getIncarnationNumber()) {
+    if (localMember.incarnationNumber() > this.localMember.getIncarnationNumber() || localMember.state() == State.SUSPECT || localMember.state() == State.DEAD) {
+      LOGGER.debug("{} - Detected stale state. Incrementing incarnation number {} to {}",
+          this.localMember.id(), this.localMember.getIncarnationNumber(), this.localMember.getIncarnationNumber() + 1);
       this.localMember.setIncarnationNumber(localMember.incarnationNumber() + 1);
       if (config.isBroadcastDisputes()) {
-        broadcast(this.localMember.copy());
-      }
-    }
-    // If the probe indicates this member is suspect, increment the local term and respond.
-    else if (localMember.state() == State.SUSPECT) {
-      this.localMember.setIncarnationNumber(this.localMember.getIncarnationNumber() + 1);
-      if (config.isBroadcastDisputes()) {
+        LOGGER.trace("{} - Broadcasting member state dispute: {}", this.localMember.id(), this.localMember.copy());
         broadcast(this.localMember.copy());
       }
     }
 
     // Update the state of the probing member.
     updateState(remoteMember);
-    return this.localMember.copy();
+    SwimMember swimMember = this.members.get(remoteMember.id());
+    return Pair.of(this.localMember.copy(), swimMember != null ? swimMember.copy() : null);
   }
 
   /**
@@ -500,7 +533,7 @@ public class SwimMembershipProtocol
   /**
    * Requests a probe of the given suspect from the given member.
    *
-   * @param member the member to perform the probe
+   * @param member  the member to perform the probe
    * @param suspect the suspect member to probe
    */
   private CompletableFuture<Boolean> requestProbe(SwimMember member, ImmutableMember suspect) {
@@ -518,7 +551,7 @@ public class SwimMembershipProtocol
   /**
    * Selects a set of random members, excluding the local member and a given member.
    *
-   * @param count count the number of random members to select
+   * @param count   count the number of random members to select
    * @param exclude the member to exclude
    * @return members a set of random members
    */
@@ -619,7 +652,7 @@ public class SwimMembershipProtocol
   /**
    * Gossips this node's pending updates with the given peer.
    *
-   * @param member the peer with which to gossip this node's updates
+   * @param member  the peer with which to gossip this node's updates
    * @param updates the updated members to gossip
    */
   private void gossip(SwimMember member, Collection<ImmutableMember> updates) {
@@ -634,6 +667,7 @@ public class SwimMembershipProtocol
    * Handles a gossip message from a peer.
    */
   private void handleGossipUpdates(Collection<ImmutableMember> updates) {
+    LOGGER.trace("{} - Received gossip updates {}", localMember.id(), updates);
     for (ImmutableMember update : updates) {
       updateState(update);
     }

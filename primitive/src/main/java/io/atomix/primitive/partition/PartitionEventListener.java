@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-present Open Networking Foundation
+ * Copyright 2019-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.log;
+package io.atomix.primitive.partition;
 
-import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.storage.journal.DelegatingJournalReader;
-import io.atomix.storage.journal.SegmentedJournalReader;
+import io.atomix.utils.event.EventListener;
 
 /**
- * Raft log reader.
+ * Partition event listener.
  */
-public class RaftLogReader extends DelegatingJournalReader<RaftLogEntry> {
-  public RaftLogReader(SegmentedJournalReader<RaftLogEntry> reader) {
-    super(reader);
-  }
+public interface PartitionEventListener extends EventListener<PartitionEvent> {
 }

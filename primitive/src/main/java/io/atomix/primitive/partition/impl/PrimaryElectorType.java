@@ -46,7 +46,7 @@ public class PrimaryElectorType implements PrimitiveType {
   }
 
   @Override
-  public PrimitiveService newService(ServiceConfig confi) {
+  public PrimitiveService newService(ServiceConfig config) {
     return new PrimaryElectorService();
   }
 

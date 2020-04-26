@@ -14,7 +14,8 @@ fi
 ATOMIX_ROOT="$(dirname "$(dirname "$0")")"
 
 java \
-  -XX:+UseConcMarkSweepGC \
+  -XX:+UseG1GC \
+  -XX:MaxGCPauseMillis=200 \
   $JAVA_OPTS \
   -Datomix.root="$ATOMIX_ROOT" \
   -Datomix.data="$ATOMIX_ROOT/data" \

@@ -91,13 +91,53 @@ public class AtomicMapTest extends AbstractPrimitiveTest {
   }
 
   @Test
-  public void testBasicMapOperations() throws Throwable {
+  public void testSimpleMap() throws Throwable {
+    testMap(atomix().<String, String>atomicMapBuilder("testSimpleMap")
+        .withProtocol(protocol())
+        .build());
+  }
+
+  @Test
+  public void testCachedMap() throws Throwable {
+    testMap(atomix().<String, String>atomicMapBuilder("testCachedMap")
+        .withProtocol(protocol())
+        .withCacheEnabled()
+        .build());
+  }
+
+  @Test
+  public void testLocalMap() throws Throwable {
+    testMap(atomix().<String, String>atomicMapBuilder("testLocalMap")
+        .withProtocol(protocol())
+        .withCacheEnabled()
+        .withCacheSize(-1)
+        .build());
+  }
+
+  @Test
+  public void testLocalMapInitialization() throws Exception {
+    AtomicMap<String, String> map1 = atomix().<String, String>atomicMapBuilder("testLocalMapInitialization")
+        .withProtocol(protocol())
+        .withCacheEnabled()
+        .withCacheSize(-1)
+        .build();
+
+    map1.put("foo", "bar");
+    map1.put("bar", "baz");
+
+    AtomicMap<String, String> map2 = atomix().<String, String>atomicMapBuilder("testLocalMapInitialization")
+        .withProtocol(protocol())
+        .withCacheEnabled()
+        .withCacheSize(-1)
+        .build();
+
+    assertEquals("bar", map2.get("foo").value());
+    assertEquals("baz", map2.get("bar").value());
+  }
+
+  private void testMap(AtomicMap<String, String> map) throws Exception {
     final String fooValue = "Hello foo!";
     final String barValue = "Hello bar!";
-
-    AtomicMap<String, String> map = atomix().<String, String>atomicMapBuilder("testBasicMapOperationMap")
-        .withProtocol(protocol())
-        .build();
 
     assertTrue(map.isEmpty());
     assertNull(map.put("foo", fooValue));

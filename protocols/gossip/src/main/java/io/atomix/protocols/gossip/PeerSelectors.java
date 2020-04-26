@@ -40,5 +40,5 @@ public enum PeerSelectors implements PeerSelector {
           .collect(Collectors.toList());
       return Collections.singletonList(sortedMembers.get((int) Math.floor(Math.random() * sortedMembers.size())));
     }
-  };
+  }
 }

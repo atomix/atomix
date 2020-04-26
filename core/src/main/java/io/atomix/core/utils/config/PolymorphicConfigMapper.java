@@ -92,7 +92,9 @@ public class PolymorphicConfigMapper extends ConfigMapper {
 
   @Override
   protected void checkRemainingProperties(Set<String> missingProperties, List<String> availableProperties, String path, Class<?> clazz) {
-    Properties properties = System.getProperties();
+    Properties properties = new Properties();
+    properties.putAll(System.getProperties());
+
     List<String> cleanNames = missingProperties.stream()
         .filter(propertyName -> !isPolymorphicType(clazz) || !polymorphicTypes.stream().anyMatch(type -> Objects.equals(type.getTypePath(), propertyName)))
         .map(propertyName -> toPath(path, propertyName))

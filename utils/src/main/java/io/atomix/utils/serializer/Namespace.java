@@ -580,7 +580,7 @@ public final class Namespace implements KryoFactory, KryoPool {
 
   @Override
   public String toString() {
-    if (friendlyName != NO_NAME) {
+    if (!NO_NAME.equals(friendlyName)) {
       return MoreObjects.toStringHelper(getClass())
           .omitNullValues()
           .add("friendlyName", friendlyName)

@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import io.atomix.primitive.PrimitiveException;
 import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.operation.PrimitiveOperation;
@@ -28,7 +30,6 @@ import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.utils.concurrent.ThreadContext;
-
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
@@ -41,8 +42,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Session operation submitter.
@@ -216,6 +215,8 @@ final class RaftSessionInvoker {
       attempt.fail(new PrimitiveException.ClosedSession("session closed"));
     }
     attempts.clear();
+    sessionConnection.close();
+    leaderConnection.close();
     return CompletableFuture.completedFuture(null);
   }
 
@@ -310,7 +311,8 @@ final class RaftSessionInvoker {
      * Immediately retries the attempt.
      */
     public void retry() {
-      context.execute(() -> invoke(next()));
+      context.checkThread();
+      invoke(next());
     }
 
     /**
@@ -337,7 +339,7 @@ final class RaftSessionInvoker {
 
     @Override
     protected void send() {
-      leaderConnection.command(request).whenComplete(this);
+      leaderConnection.command(request).whenCompleteAsync(this, context);
     }
 
     @Override
@@ -369,14 +371,14 @@ final class RaftSessionInvoker {
         // If the client is unknown by the cluster, close the session and complete the operation exceptionally.
         else if (response.error().type() == RaftError.Type.UNKNOWN_CLIENT
             || response.error().type() == RaftError.Type.UNKNOWN_SESSION) {
-          state.setState(PrimitiveState.EXPIRED);
           complete(response.error().createException());
+          state.setState(PrimitiveState.EXPIRED);
         }
         // If the service is unknown by the cluster or the session was explicitly closed, set the session state to CLOSED.
         else if (response.error().type() == RaftError.Type.UNKNOWN_SERVICE
             || response.error().type() == RaftError.Type.CLOSED_SESSION) {
-          state.setState(PrimitiveState.CLOSED);
           complete(response.error().createException());
+          state.setState(PrimitiveState.CLOSED);
         }
         // For all other errors, use fibonacci backoff to resubmit the command.
         else {
@@ -437,12 +439,12 @@ final class RaftSessionInvoker {
           complete(response);
         } else if (response.error().type() == RaftError.Type.UNKNOWN_CLIENT
             || response.error().type() == RaftError.Type.UNKNOWN_SESSION) {
-          state.setState(PrimitiveState.EXPIRED);
           complete(response.error().createException());
+          state.setState(PrimitiveState.EXPIRED);
         } else if (response.error().type() == RaftError.Type.UNKNOWN_SERVICE
             || response.error().type() == RaftError.Type.CLOSED_SESSION) {
-          state.setState(PrimitiveState.CLOSED);
           complete(response.error().createException());
+          state.setState(PrimitiveState.CLOSED);
         } else {
           complete(response.error().createException());
         }

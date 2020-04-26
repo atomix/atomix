@@ -17,7 +17,6 @@ package io.atomix.core.election.impl;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import io.atomix.core.election.Leader;
 import io.atomix.core.election.LeaderElectionType;
@@ -40,6 +39,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+
+import static com.google.common.base.Throwables.throwIfUnchecked;
 
 /**
  * State machine for {@link LeaderElectionProxy} resource.
@@ -119,7 +120,8 @@ public class DefaultLeaderElectionService extends AbstractPrimitiveService<Leade
       return newLeadership;
     } catch (Exception e) {
       getLogger().error("State machine operation failed", e);
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -134,7 +136,8 @@ public class DefaultLeaderElectionService extends AbstractPrimitiveService<Leade
       }
     } catch (Exception e) {
       getLogger().error("State machine operation failed", e);
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -158,7 +161,8 @@ public class DefaultLeaderElectionService extends AbstractPrimitiveService<Leade
       return leader != null && Arrays.equals(id, leader.id());
     } catch (Exception e) {
       getLogger().error("State machine operation failed", e);
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -188,7 +192,8 @@ public class DefaultLeaderElectionService extends AbstractPrimitiveService<Leade
       return true;
     } catch (Exception e) {
       getLogger().error("State machine operation failed", e);
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -223,7 +228,8 @@ public class DefaultLeaderElectionService extends AbstractPrimitiveService<Leade
       }
     } catch (Exception e) {
       getLogger().error("State machine operation failed", e);
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -233,7 +239,8 @@ public class DefaultLeaderElectionService extends AbstractPrimitiveService<Leade
       return leadership();
     } catch (Exception e) {
       getLogger().error("State machine operation failed", e);
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 

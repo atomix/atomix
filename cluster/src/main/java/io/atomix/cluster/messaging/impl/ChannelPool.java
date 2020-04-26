@@ -94,6 +94,12 @@ class ChannelPool {
           channelFuture.whenComplete((channel, error) -> {
             if (error == null) {
               LOGGER.debug("Connected to {}", channel.remoteAddress());
+              channel.closeFuture().addListener(f -> {
+                LOGGER.debug("Disconnected from {}", address);
+                synchronized (channelPool) {
+                  channelPool.set(offset, null);
+                }
+              });
             } else {
               LOGGER.debug("Failed to connect to {}", address, error);
             }
@@ -118,6 +124,12 @@ class ChannelPool {
               currentFuture.whenComplete((c, e) -> {
                 if (e == null) {
                   LOGGER.debug("Connected to {}", channel.remoteAddress());
+                  channel.closeFuture().addListener(f -> {
+                    LOGGER.debug("Disconnected from {}", address);
+                    synchronized (channelPool) {
+                      channelPool.set(offset, null);
+                    }
+                  });
                 } else {
                   LOGGER.debug("Failed to connect to {}", channel.remoteAddress(), e);
                 }

@@ -113,7 +113,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
     if (object instanceof ConfigureRequest) {
       ConfigureRequest request = (ConfigureRequest) object;
       return request.term == term
-          && request.leader == leader
+          && request.leader.equals(leader)
           && request.index == index
           && request.timestamp == timestamp
           && request.members.equals(members);

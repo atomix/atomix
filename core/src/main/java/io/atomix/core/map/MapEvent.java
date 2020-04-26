@@ -95,6 +95,9 @@ public class MapEvent<K, V> extends AbstractEvent<MapEvent.Type, K> {
 
   @Override
   public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
     if (!(o instanceof MapEvent)) {
       return false;
     }

@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.HeapBuffer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -26,7 +25,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 final class MemorySnapshot extends Snapshot {
   private final HeapBuffer buffer;
   private final SnapshotDescriptor descriptor;
-  private final SnapshotStore store;
 
   MemorySnapshot(HeapBuffer buffer, SnapshotDescriptor descriptor, SnapshotStore store) {
     super(descriptor, store);
@@ -34,7 +32,6 @@ final class MemorySnapshot extends Snapshot {
     this.buffer = checkNotNull(buffer, "buffer cannot be null");
     this.buffer.position(SnapshotDescriptor.BYTES).mark();
     this.descriptor = checkNotNull(descriptor, "descriptor cannot be null");
-    this.store = checkNotNull(store, "store cannot be null");
   }
 
   @Override
@@ -52,25 +49,6 @@ final class MemorySnapshot extends Snapshot {
   @Override
   public synchronized SnapshotReader openReader() {
     return openReader(new SnapshotReader(buffer.reset().slice(), this), descriptor);
-  }
-
-  @Override
-  public Snapshot persist() {
-    if (store.storage.storageLevel() != StorageLevel.MEMORY) {
-      try (Snapshot newSnapshot = store.newSnapshot(index(), timestamp())) {
-        try (SnapshotWriter newSnapshotWriter = newSnapshot.openWriter()) {
-          buffer.flip().skip(SnapshotDescriptor.BYTES);
-          newSnapshotWriter.write(buffer.array(), buffer.position(), buffer.remaining());
-        }
-        return newSnapshot;
-      }
-    }
-    return this;
-  }
-
-  @Override
-  public boolean isPersisted() {
-    return store.storage.storageLevel() == StorageLevel.MEMORY;
   }
 
   @Override

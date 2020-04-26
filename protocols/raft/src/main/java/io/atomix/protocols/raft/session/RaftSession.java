@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
@@ -53,6 +54,9 @@ import static com.google.common.base.Preconditions.checkState;
  * Raft session.
  */
 public class RaftSession extends AbstractSession {
+  private static final AtomicLongFieldUpdater<RaftSession> REQUEST_SEQUENCE_UPDATER =
+      AtomicLongFieldUpdater.newUpdater(RaftSession.class, "requestSequence");
+
   private final Logger log;
   private final ReadConsistency readConsistency;
   private final long minTimeout;
@@ -63,7 +67,7 @@ public class RaftSession extends AbstractSession {
   private final ThreadContext eventExecutor;
   private volatile State state = State.CLOSED;
   private volatile long lastUpdated;
-  private long requestSequence;
+  private volatile long requestSequence;
   private volatile long commandSequence;
   private volatile long lastApplied;
   private volatile long commandLowWaterMark;
@@ -214,7 +218,7 @@ public class RaftSession extends AbstractSession {
    * @param requestSequence the current request sequence number
    */
   public void setRequestSequence(long requestSequence) {
-    this.requestSequence = Math.max(this.requestSequence, requestSequence);
+    REQUEST_SEQUENCE_UPDATER.accumulateAndGet(this, requestSequence, Math::max);
   }
 
   /**
@@ -226,9 +230,7 @@ public class RaftSession extends AbstractSession {
     // If the request sequence number is less than the applied sequence number, update the request
     // sequence number. This is necessary to ensure that if the local server is a follower that is
     // later elected leader, its sequences are consistent for commands.
-    if (requestSequence > this.requestSequence) {
-      this.requestSequence = requestSequence;
-    }
+    REQUEST_SEQUENCE_UPDATER.accumulateAndGet(this, requestSequence, Math::max);
   }
 
   /**

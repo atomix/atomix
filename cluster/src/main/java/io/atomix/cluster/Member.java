@@ -230,6 +230,9 @@ public class Member extends Node {
 
   @Override
   public boolean equals(Object object) {
+    if (object == this) {
+      return true;
+    }
     if (object instanceof Member) {
       Member member = (Member) object;
       return member.id().equals(id())

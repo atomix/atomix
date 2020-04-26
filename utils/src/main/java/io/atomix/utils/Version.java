@@ -125,10 +125,12 @@ public final class Version implements Comparable<Version> {
 
   @Override
   public boolean equals(Object object) {
+    if (object == this) {
+      return true;
+    }
     if (!(object instanceof Version)) {
       return false;
     }
-
     Version that = (Version) object;
     return this.major == that.major
         && this.minor == that.minor
@@ -206,6 +208,9 @@ public final class Version implements Comparable<Version> {
 
     @Override
     public boolean equals(Object object) {
+      if (object == this) {
+        return true;
+      }
       if (!(object instanceof Build)) {
         return false;
       }
@@ -237,7 +242,7 @@ public final class Version implements Comparable<Version> {
       String format(int version) {
         if (name == null) {
           return null;
-        } else if (name.equals("snapshot")) {
+        } else if ("snapshot".equals(name)) {
           return "SNAPSHOT";
         } else {
           return String.format("%s%d", name, version);

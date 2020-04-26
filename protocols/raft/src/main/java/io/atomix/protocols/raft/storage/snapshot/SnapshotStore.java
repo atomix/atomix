@@ -40,10 +40,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * to the configured {@link RaftStorage#storageLevel() storage level}. Each server with a snapshottable state machine
  * persists the state machine state to allow commands to be removed from disk.
  * <p>
- * When a snapshot store is {@link RaftStorage#openSnapshotStore() created}, the store will load any
- * existing snapshots from disk and make them available for reading. Only snapshots that have been
- * written and {@link Snapshot#complete() completed} will be read from disk. Incomplete snapshots are
- * automatically deleted from disk when the snapshot store is opened.
+ * When a snapshot store is {@link RaftStorage#openSnapshotStore() created} with a non-memory storage level, the store
+ * will load any existing snapshots from disk and make them available for reading. Only snapshots that have been
+ * written and {@link Snapshot#complete() completed} will be read from disk.
  * <p>
  * <pre>
  *   {@code
@@ -83,8 +82,11 @@ public class SnapshotStore implements AutoCloseable {
    * Opens the snapshot manager.
    */
   private void open() {
-    for (Snapshot snapshot : loadSnapshots()) {
-      completeSnapshot(snapshot);
+    // load persisted snapshots only if storage level is persistent
+    if (storage.storageLevel() != StorageLevel.MEMORY) {
+      for (Snapshot snapshot : loadSnapshots()) {
+        completeSnapshot(snapshot);
+      }
     }
   }
 
@@ -96,6 +98,16 @@ public class SnapshotStore implements AutoCloseable {
   public Snapshot getCurrentSnapshot() {
     Map.Entry<Long, Snapshot> entry = snapshots.lastEntry();
     return entry != null ? entry.getValue() : null;
+  }
+
+  /**
+   * Returns the index of the current snapshot. Defaults to 0.
+   *
+   * @return the index of the current snapshot
+   */
+  public long getCurrentSnapshotIndex() {
+    final Snapshot snapshot = getCurrentSnapshot();
+    return snapshot != null ? snapshot.index() : 0L;
   }
 
   /**
@@ -124,7 +136,7 @@ public class SnapshotStore implements AutoCloseable {
 
       // If the file looks like a segment file, attempt to load the segment.
       if (SnapshotFile.isSnapshotFile(file)) {
-        SnapshotFile snapshotFile = new SnapshotFile(file);
+        SnapshotFile snapshotFile = new SnapshotFile(file, null);
         SnapshotDescriptor descriptor = new SnapshotDescriptor(FileBuffer.allocate(file, SnapshotDescriptor.BYTES));
 
         // Valid segments will have been locked. Segments that resulting from failures during log cleaning will be
@@ -134,31 +146,10 @@ public class SnapshotStore implements AutoCloseable {
           snapshots.add(new FileSnapshot(snapshotFile, descriptor, this));
           descriptor.close();
         }
-        // If the segment descriptor wasn't locked, close and delete the descriptor.
-        else {
-          log.debug("Deleting partial snapshot: {} ({})", descriptor.index(), snapshotFile.file().getName());
-          descriptor.close();
-          descriptor.delete();
-        }
       }
     }
 
     return snapshots;
-  }
-
-  /**
-   * Creates a temporary in-memory snapshot.
-   *
-   * @param index     The snapshot index.
-   * @param timestamp The snapshot timestamp.
-   * @return The snapshot.
-   */
-  public Snapshot newTemporarySnapshot(long index, WallClockTimestamp timestamp) {
-    SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
-        .withIndex(index)
-        .withTimestamp(timestamp.unixTimestamp())
-        .build();
-    return newSnapshot(descriptor, StorageLevel.MEMORY);
   }
 
   /**
@@ -173,14 +164,8 @@ public class SnapshotStore implements AutoCloseable {
         .withIndex(index)
         .withTimestamp(timestamp.unixTimestamp())
         .build();
-    return newSnapshot(descriptor, storage.storageLevel());
-  }
 
-  /**
-   * Creates a new snapshot buffer.
-   */
-  private Snapshot newSnapshot(SnapshotDescriptor descriptor, StorageLevel storageLevel) {
-    if (storageLevel == StorageLevel.MEMORY) {
+    if (storage.storageLevel() == StorageLevel.MEMORY) {
       return createMemorySnapshot(descriptor);
     } else {
       return createDiskSnapshot(descriptor);
@@ -201,11 +186,13 @@ public class SnapshotStore implements AutoCloseable {
    * Creates a disk snapshot.
    */
   private Snapshot createDiskSnapshot(SnapshotDescriptor descriptor) {
-    SnapshotFile file = new SnapshotFile(SnapshotFile.createSnapshotFile(
-        storage.directory(),
-        storage.prefix(),
-        descriptor.index()
-    ));
+    File snapshotFile = SnapshotFile.createSnapshotFile(
+            storage.directory(),
+            storage.prefix(),
+            descriptor.index());
+    File temporaryFile = SnapshotFile.createTemporaryFile(storage.directory(), snapshotFile);
+
+    SnapshotFile file = new SnapshotFile(snapshotFile, temporaryFile);
     Snapshot snapshot = new FileSnapshot(file, descriptor, this);
     log.debug("Created disk snapshot: {}", snapshot);
     return snapshot;
@@ -220,6 +207,9 @@ public class SnapshotStore implements AutoCloseable {
     Map.Entry<Long, Snapshot> lastEntry = snapshots.lastEntry();
     if (lastEntry == null) {
       snapshots.put(snapshot.index(), snapshot);
+    } else if (lastEntry.getValue().index() == snapshot.index()) {
+      // in case of concurrently trying to complete the same snapshot
+      snapshot.close();
     } else if (lastEntry.getValue().index() < snapshot.index()) {
       snapshots.put(snapshot.index(), snapshot);
       Snapshot lastSnapshot = lastEntry.getValue();

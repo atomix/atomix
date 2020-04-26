@@ -18,7 +18,6 @@ package io.atomix.utils.config;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Streams;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
@@ -197,7 +196,7 @@ public class ConfigMapper {
     Stream<String> fields = getFieldDescriptors(instance.getClass())
         .stream()
         .map(descriptor -> descriptor.name);
-    return Streams.concat(setters, fields)
+    return Stream.concat(setters, fields)
         .sorted()
         .collect(Collectors.toList());
   }
@@ -212,7 +211,7 @@ public class ConfigMapper {
         String configPropName = propertyNames.remove(descriptor.name);
         if (configPropName == null) {
           if ((Named.class.isAssignableFrom(clazz) || NamedConfig.class.isAssignableFrom(clazz))
-              && descriptor.setter.getParameterTypes()[0] == String.class && name != null && descriptor.name.equals("name")) {
+              && descriptor.setter.getParameterTypes()[0] == String.class && name != null && "name".equals(descriptor.name)) {
             if (descriptor.deprecated) {
               if (path == null) {
                 LOGGER.warn("{} is deprecated!", name);
@@ -255,7 +254,7 @@ public class ConfigMapper {
 
         String configPropName = propertyNames.remove(descriptor.name);
         if (configPropName == null) {
-          if (Named.class.isAssignableFrom(clazz) && field.getType() == String.class && name != null && descriptor.name.equals("name")) {
+          if (Named.class.isAssignableFrom(clazz) && field.getType() == String.class && name != null && "name".equals(descriptor.name)) {
             if (descriptor.deprecated) {
               LOGGER.warn("{}.{} is deprecated!", path, name);
             }
@@ -536,7 +535,7 @@ public class ConfigMapper {
       String name = method.getName();
       if (method.getParameterTypes().length == 1
           && name.length() > 3
-          && name.substring(0, 3).equals("set")
+          && "set".equals(name.substring(0, 3))
           && name.charAt(3) >= 'A'
           && name.charAt(3) <= 'Z') {
 

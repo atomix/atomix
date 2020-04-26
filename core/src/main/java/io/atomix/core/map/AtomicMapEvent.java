@@ -96,10 +96,12 @@ public class AtomicMapEvent<K, V> extends AbstractEvent<AtomicMapEvent.Type, K> 
 
   @Override
   public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
     if (!(o instanceof AtomicMapEvent)) {
       return false;
     }
-
     AtomicMapEvent<K, V> that = (AtomicMapEvent) o;
     return Objects.equals(this.type(), that.type())
         && Objects.equals(this.key(), that.key())

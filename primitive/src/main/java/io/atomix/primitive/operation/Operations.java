@@ -117,17 +117,17 @@ public final class Operations {
   private static OperationId getOperationId(Method method) {
     Command command = method.getAnnotation(Command.class);
     if (command != null) {
-      String name = command.value().equals("") ? method.getName() : command.value();
+      String name = "".equals(command.value()) ? method.getName() : command.value();
       return OperationId.from(name, OperationType.COMMAND);
     }
     Query query = method.getAnnotation(Query.class);
     if (query != null) {
-      String name = query.value().equals("") ? method.getName() : query.value();
+      String name = "".equals(query.value()) ? method.getName() : query.value();
       return OperationId.from(name, OperationType.QUERY);
     }
     Operation operation = method.getAnnotation(Operation.class);
     if (operation != null) {
-      String name = operation.value().equals("") ? method.getName() : operation.value();
+      String name = "".equals(operation.value()) ? method.getName() : operation.value();
       return OperationId.from(name, operation.type());
     }
     return null;

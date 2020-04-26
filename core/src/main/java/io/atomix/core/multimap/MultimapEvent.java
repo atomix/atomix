@@ -91,6 +91,9 @@ public class MultimapEvent<K, V> extends AbstractEvent<MultimapEvent.Type, K> {
 
   @Override
   public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
     if (!(o instanceof MultimapEvent)) {
       return false;
     }
