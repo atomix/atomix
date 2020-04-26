@@ -73,11 +73,11 @@ import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.journal.Indexed;
 import io.atomix.storage.journal.JournalReader.Mode;
+import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
-import java.lang.reflect.Field;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
@@ -87,6 +87,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -99,8 +100,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -1238,27 +1239,77 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   @Test
-  public void testLeaderTruncate() throws Throwable {
-    TestPartitionableRaftProtocolFactory partitionableProtocolFactory =
-        new TestPartitionableRaftProtocolFactory(protocolFactory);
+  public void testSnapshotSentOnDataLoss() throws Throwable {
     final List<RaftMember> members =
         Lists.newArrayList(createMember(), createMember(), createMember());
-    List<MemberId> memberIds =
-        members.stream().map(RaftMember::memberId).collect(Collectors.toList());
     final Map<MemberId, RaftStorage> storages =
-        memberIds.stream().collect(Collectors.toMap(Function.identity(), this::createStorage));
-    final Map<MemberId, RaftServer> servers =
         members.stream()
-            .collect(
-                Collectors.toMap(
-                    member -> member.memberId(),
-                    member ->
-                        createServer(
-                            member.memberId(),
-                            builder ->
-                                builder
-                                    .withStorage(storages.get(member.memberId()))
-                                    .withProtocol(partitionableProtocolFactory.newServerProtocol(member.memberId())))));
+            .map(RaftMember::memberId)
+            .collect(Collectors.toMap(Function.identity(), this::createStorage));
+    final Map<MemberId, RaftServer> servers =
+        storages.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, this::createServer));
+
+    // wait for cluster to start
+    startCluster(servers);
+
+    // fill two segments then compact so we have at least one snapshot
+    final RaftClient client = createClient(members);
+    final TestPrimitive primitive = createPrimitive(client);
+    fillSegment(primitive);
+    fillSegment(primitive);
+    Futures.allOf(servers.values().stream().map(RaftServer::compact)).thenRun(this::resume);
+    await(30000);
+
+    // partition into leader/followers
+    final Map<Boolean, List<RaftMember>> collect =
+        members.stream()
+            .collect(Collectors.partitioningBy(m -> servers.get(m.memberId()).isLeader()));
+    final RaftMember leader = collect.get(true).get(0);
+    final RaftStorage leaderStorage = storages.get(leader.memberId());
+    final RaftMember slave = collect.get(false).get(0);
+    final RaftStorage slaveStorage = storages.get(slave.memberId());
+
+    // shutdown client + primitive
+    primitive.close().thenCompose(nothing -> client.close()).thenRun(this::resume);
+    await(30000);
+
+    // shutdown other node
+    final RaftMember other = collect.get(false).get(1);
+    servers.get(other.memberId()).shutdown().thenRun(this::resume);
+    await(30000);
+
+    // shutdown slave and recreate from scratch
+    final RaftServer slaveServer = recreateServerWithDataLoss(leader, slave, servers.get(slave.memberId()), slaveStorage);
+    assertEquals(leaderStorage.openSnapshotStore().getCurrentSnapshotIndex(), slaveStorage.openSnapshotStore().getCurrentSnapshotIndex());
+
+    // and again a second time to ensure the snapshot index of the member is reset
+    recreateServerWithDataLoss(leader, slave, slaveServer, slaveStorage);
+    assertEquals(leaderStorage.openSnapshotStore().getCurrentSnapshotIndex(), slaveStorage.openSnapshotStore().getCurrentSnapshotIndex());
+  }
+
+  @Test
+  public void testLeaderTruncate() throws Throwable {
+    TestPartitionableRaftProtocolFactory partitionableProtocolFactory =
+            new TestPartitionableRaftProtocolFactory(protocolFactory);
+    final List<RaftMember> members =
+            Lists.newArrayList(createMember(), createMember(), createMember());
+    List<MemberId> memberIds =
+            members.stream().map(RaftMember::memberId).collect(Collectors.toList());
+    final Map<MemberId, RaftStorage> storages =
+            memberIds.stream().collect(Collectors.toMap(Function.identity(), this::createStorage));
+    final Map<MemberId, RaftServer> servers =
+            members.stream()
+                    .collect(
+                            Collectors.toMap(
+                                    member -> member.memberId(),
+                                    member ->
+                                            createServer(
+                                                    member.memberId(),
+                                                    builder ->
+                                                            builder
+                                                                    .withStorage(storages.get(member.memberId()))
+                                                                    .withProtocol(partitionableProtocolFactory.newServerProtocol(member.memberId())))));
 
     partitionableProtocolFactory.connectAll();
     // wait for cluster to start
@@ -1266,7 +1317,7 @@ public class RaftTest extends ConcurrentTestCase {
 
     MemberId leaderId = members.stream().filter(m -> servers.get(m.memberId()).isLeader()).findFirst().get().memberId();
     List<MemberId> followers =
-        memberIds.stream().filter(m -> !m.equals(leaderId)).collect(Collectors.toList());
+            memberIds.stream().filter(m -> !m.equals(leaderId)).collect(Collectors.toList());
 
     final RaftClient client = createClient(members);
     final TestPrimitive primitive = createPrimitive(client);
@@ -1282,18 +1333,18 @@ public class RaftTest extends ConcurrentTestCase {
 
     long lastNonReplicatedEntryIndex = getLastLogEntryIndex(storages.get(leaderId), Mode.ALL);
     final long committedIndex =
-        Math.max(
-            getLastLogEntryIndex(storages.get(followers.get(0)), Mode.ALL),
-            getLastLogEntryIndex(storages.get(followers.get(1)), Mode.ALL));
+            Math.max(
+                    getLastLogEntryIndex(storages.get(followers.get(0)), Mode.ALL),
+                    getLastLogEntryIndex(storages.get(followers.get(1)), Mode.ALL));
     assumeTrue(committedIndex < lastNonReplicatedEntryIndex); // verify that leader has non replicated entries in the log.
 
     // write and compact log
     final RaftClient client1 =
-        createClient(members.stream().filter(m -> !m.memberId().equals(leaderId)).collect(Collectors.toList()));
+            createClient(members.stream().filter(m -> !m.memberId().equals(leaderId)).collect(Collectors.toList()));
     final TestPrimitive primitive1 = createPrimitive(client1);
     fillSegment(primitive1);
     final List<CompletableFuture<Void>> compactFutures =
-        memberIds.stream().map(m -> servers.get(m).compact()).collect(Collectors.toList());
+            memberIds.stream().map(m -> servers.get(m).compact()).collect(Collectors.toList());
     compactFutures.get(0).get(15_000, TimeUnit.MILLISECONDS);
     compactFutures.get(1).get(15_000, TimeUnit.MILLISECONDS);
 
@@ -1316,6 +1367,23 @@ public class RaftTest extends ConcurrentTestCase {
       final Indexed<RaftLogEntry> next = reader.next();
       assertNotEquals(lastNonReplicatedEntryIndex, next.index());
     }
+  }
+
+  private RaftServer recreateServerWithDataLoss(RaftMember leader, RaftMember member, RaftServer server, RaftStorage storage) throws TimeoutException {
+    server.shutdown().thenRun(this::resume);
+    await(30000);
+    deleteStorage(storage);
+
+    final RaftServer newServer = createServer(member.memberId(), b -> b.withStorage(storage));
+    newServer.bootstrap(leader.memberId()).thenRun(this::resume);
+    await(30000);
+    return newServer;
+  }
+
+  private void deleteStorage(RaftStorage storage) {
+    storage.deleteSnapshotStore();
+    storage.deleteLog();
+    storage.deleteMetaStore();
   }
 
   private RaftLog getRaftLog(DefaultRaftServer server) {

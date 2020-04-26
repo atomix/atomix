@@ -26,6 +26,7 @@ import io.atomix.primitive.PrimitiveState;
 import io.atomix.utils.time.Versioned;
 import org.slf4j.Logger;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -134,20 +135,20 @@ public class CachingAsyncAtomicMap<K, V> extends DelegatingAsyncAtomicMap<K, V> 
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> put(K key, V value) {
-    return super.put(key, value)
+  public CompletableFuture<Versioned<V>> put(K key, V value, Duration ttl) {
+    return super.put(key, value, ttl)
         .whenComplete((r, e) -> cache.invalidate(key));
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> putAndGet(K key, V value) {
-    return super.putAndGet(key, value)
+  public CompletableFuture<Versioned<V>> putAndGet(K key, V value, Duration ttl) {
+    return super.putAndGet(key, value, ttl)
         .whenComplete((r, e) -> cache.invalidate(key));
   }
 
   @Override
-  public CompletableFuture<Versioned<V>> putIfAbsent(K key, V value) {
-    return super.putIfAbsent(key, value)
+  public CompletableFuture<Versioned<V>> putIfAbsent(K key, V value, Duration ttl) {
+    return super.putIfAbsent(key, value, ttl)
         .whenComplete((r, e) -> cache.invalidate(key));
   }
 

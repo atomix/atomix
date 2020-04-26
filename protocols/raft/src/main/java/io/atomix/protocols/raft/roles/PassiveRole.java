@@ -379,6 +379,7 @@ public class PassiveRole extends InactiveRole {
         .withTerm(raft.getTerm())
         .withSucceeded(succeeded)
         .withLastLogIndex(lastLogIndex)
+        .withLastSnapshotIndex(raft.getSnapshotStore().getCurrentSnapshotIndex())
         .build()));
     return succeeded;
   }

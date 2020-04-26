@@ -404,6 +404,7 @@ final class LeaderAppender extends AbstractAppender {
       member.appendFailed();
       resetMatchIndex(member, response);
       resetNextIndex(member, response);
+      resetSnapshotIndex(member, response);
 
       // If there are more entries to send then attempt to send another commit.
       if (hasMoreEntries(member)) {
