@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.atomix.cluster.ClusterMembershipService;
 import io.atomix.cluster.MemberId;
@@ -51,8 +52,14 @@ import io.atomix.primitive.session.SessionMetadata;
 import io.atomix.protocols.raft.cluster.RaftClusterEvent;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
+import io.atomix.protocols.raft.impl.DefaultRaftServer;
+import io.atomix.protocols.raft.impl.RaftContext;
+import io.atomix.protocols.raft.protocol.InstallResponse;
+import io.atomix.protocols.raft.protocol.TestPartitionableRaftProtocolFactory;
 import io.atomix.protocols.raft.protocol.TestRaftProtocolFactory;
 import io.atomix.protocols.raft.storage.RaftStorage;
+import io.atomix.protocols.raft.storage.log.RaftLog;
+import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
 import io.atomix.protocols.raft.storage.log.entry.ConfigurationEntry;
@@ -61,12 +68,16 @@ import io.atomix.protocols.raft.storage.log.entry.KeepAliveEntry;
 import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
+import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.storage.StorageLevel;
+import io.atomix.storage.journal.Indexed;
+import io.atomix.storage.journal.JournalReader.Mode;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
+import java.lang.reflect.Field;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
@@ -89,6 +100,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -96,11 +108,15 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -1221,6 +1237,117 @@ public class RaftTest extends ConcurrentTestCase {
     await(5000);
   }
 
+  @Test
+  public void testLeaderTruncate() throws Throwable {
+    TestPartitionableRaftProtocolFactory partitionableProtocolFactory =
+        new TestPartitionableRaftProtocolFactory(protocolFactory);
+    final List<RaftMember> members =
+        Lists.newArrayList(createMember(), createMember(), createMember());
+    List<MemberId> memberIds =
+        members.stream().map(RaftMember::memberId).collect(Collectors.toList());
+    final Map<MemberId, RaftStorage> storages =
+        memberIds.stream().collect(Collectors.toMap(Function.identity(), this::createStorage));
+    final Map<MemberId, RaftServer> servers =
+        members.stream()
+            .collect(
+                Collectors.toMap(
+                    member -> member.memberId(),
+                    member ->
+                        createServer(
+                            member.memberId(),
+                            builder ->
+                                builder
+                                    .withStorage(storages.get(member.memberId()))
+                                    .withProtocol(partitionableProtocolFactory.newServerProtocol(member.memberId())))));
+
+    partitionableProtocolFactory.connectAll();
+    // wait for cluster to start
+    startCluster(servers);
+
+    MemberId leaderId = members.stream().filter(m -> servers.get(m.memberId()).isLeader()).findFirst().get().memberId();
+    List<MemberId> followers =
+        memberIds.stream().filter(m -> !m.equals(leaderId)).collect(Collectors.toList());
+
+    final RaftClient client = createClient(members);
+    final TestPrimitive primitive = createPrimitive(client);
+    final String entry = RandomStringUtils.randomAscii(1024);
+    primitive.write(entry).get(5, TimeUnit.SECONDS);
+
+    // partition leader from other members
+    partitionableProtocolFactory.partition(leaderId, followers.get(0));
+    partitionableProtocolFactory.partition(leaderId, followers.get(1));
+    primitive.write("ShouldNotBeCommitted");
+
+    client.close();
+
+    long lastNonReplicatedEntryIndex = getLastLogEntryIndex(storages.get(leaderId), Mode.ALL);
+    final long committedIndex =
+        Math.max(
+            getLastLogEntryIndex(storages.get(followers.get(0)), Mode.ALL),
+            getLastLogEntryIndex(storages.get(followers.get(1)), Mode.ALL));
+    assumeTrue(committedIndex < lastNonReplicatedEntryIndex); // verify that leader has non replicated entries in the log.
+
+    // write and compact log
+    final RaftClient client1 =
+        createClient(members.stream().filter(m -> !m.memberId().equals(leaderId)).collect(Collectors.toList()));
+    final TestPrimitive primitive1 = createPrimitive(client1);
+    fillSegment(primitive1);
+    final List<CompletableFuture<Void>> compactFutures =
+        memberIds.stream().map(m -> servers.get(m).compact()).collect(Collectors.toList());
+    compactFutures.get(0).get(15_000, TimeUnit.MILLISECONDS);
+    compactFutures.get(1).get(15_000, TimeUnit.MILLISECONDS);
+
+    final CompletableFuture<Void> rejoined = new CompletableFuture();
+    partitionableProtocolFactory.getServer(leaderId).registerInstallHandler(request -> {
+      rejoined.complete(null);
+      CompletableFuture<InstallResponse> response = new CompletableFuture<>();
+      response.completeExceptionally(new RuntimeException());
+      return response;
+    });
+
+    // heal partition to old leader
+    partitionableProtocolFactory.heal(leaderId, followers.get(0));
+    partitionableProtocolFactory.heal(leaderId, followers.get(1));
+
+    rejoined.get(15_000, TimeUnit.SECONDS);
+
+    final RaftLogReader reader = getRaftLog((DefaultRaftServer) servers.get(leaderId)).openReader(0, Mode.COMMITS);
+    while (reader.hasNext()) {
+      final Indexed<RaftLogEntry> next = reader.next();
+      assertNotEquals(lastNonReplicatedEntryIndex, next.index());
+    }
+  }
+
+  private RaftLog getRaftLog(DefaultRaftServer server) {
+    try {
+      final Field context = DefaultRaftServer.class.getDeclaredField("context");
+      context.setAccessible(true);
+      final RaftContext raft = (RaftContext) context.get(server);
+      final Field raftLog = RaftContext.class.getDeclaredField("raftLog");
+      raftLog.setAccessible(true);
+      final RaftLog log = (RaftLog) raftLog.get(raft);
+      raftLog.setAccessible(false);
+      context.setAccessible(false);
+      return log;
+    } catch (IllegalAccessException | NoSuchFieldException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private long getLastLogEntryIndex(RaftStorage storage, Mode mode) {
+    final RaftLogReader reader = storage.openLog().openReader(0, mode);
+    while (reader.hasNext()) {
+      reader.next();
+    }
+    return reader.getCurrentEntry().index();
+  }
+
+  private void fillSegment(TestPrimitive primitive) throws InterruptedException, ExecutionException, TimeoutException {
+    final String entry = RandomStringUtils.randomAscii(1024);
+    primitive.write(entry).get(5, TimeUnit.SECONDS);
+    IntStream.range(0, 10 - 1).forEach(i -> primitive.write(entry).join());
+  }
+
   /**
    * Returns the next unique member identifier.
    *
@@ -1290,38 +1417,75 @@ public class RaftTest extends ConcurrentTestCase {
     return servers;
   }
 
+  private RaftMember createMember() {
+    final RaftMember member = nextMember(RaftMember.Type.ACTIVE);
+    members.add(member);
+
+    return member;
+  }
+
+  private void startCluster(Map<MemberId, RaftServer> servers) throws TimeoutException {
+    final List<MemberId> members = new ArrayList<>(servers.keySet());
+    final CompletableFuture[] bootstrapped = new CompletableFuture[members.size()];
+    servers.values().stream().map(s -> s.bootstrap(members)).collect(Collectors.toList()).toArray(bootstrapped);
+
+    CompletableFuture.allOf(bootstrapped).thenRun(this::resume);
+    await(30000);
+  }
+
   /**
    * Creates a Raft server.
    */
   private RaftServer createServer(MemberId memberId) {
-    RaftServer.Builder builder = RaftServer.builder(memberId)
-        .withMembershipService(mock(ClusterMembershipService.class))
-        .withProtocol(protocolFactory.newServerProtocol(memberId))
-        .withStorage(RaftStorage.builder()
-            .withStorageLevel(StorageLevel.DISK)
-            .withDirectory(new File(String.format("target/test-logs/%s", memberId)))
-            .withNamespace(NAMESPACE)
-            .withMaxSegmentSize(1024 * 10)
-            .withMaxEntriesPerSegment(10)
-            .build());
+    return createServer(memberId, b -> b.withStorage(createStorage(memberId)));
+  }
 
-    RaftServer server = builder.build();
+  private RaftServer createServer(MemberId memberId, Function<RaftServer.Builder, RaftServer.Builder> configurator) {
+    final RaftServer.Builder defaults =
+        RaftServer.builder(memberId)
+            .withMembershipService(mock(ClusterMembershipService.class))
+            .withProtocol(protocolFactory.newServerProtocol(memberId));
+    final RaftServer server = configurator.apply(defaults).build();
 
     servers.add(server);
     return server;
+  }
+
+  private RaftServer createServer(Map.Entry<MemberId, RaftStorage> entry) {
+    return createServer(entry.getKey(), b -> b.withStorage(entry.getValue()));
+  }
+
+  private RaftStorage createStorage(MemberId memberId) {
+    return createStorage(memberId, Function.identity());
+  }
+
+  private RaftStorage createStorage(MemberId memberId, Function<RaftStorage.Builder, RaftStorage.Builder> configurator) {
+    final RaftStorage.Builder defaults =
+        RaftStorage.builder()
+            .withStorageLevel(StorageLevel.DISK)
+            .withDirectory(new File(String.format("target/test-logs/%s", memberId)))
+            .withMaxEntriesPerSegment(10)
+            .withMaxSegmentSize(1024 * 10)
+            .withNamespace(NAMESPACE);
+    return configurator.apply(defaults).build();
   }
 
   /**
    * Creates a Raft client.
    */
   private RaftClient createClient() throws Throwable {
-    MemberId memberId = nextNodeId();
-    RaftClient client = RaftClient.builder()
-        .withMemberId(memberId)
-        .withPartitionId(PartitionId.from("test", 1))
-        .withProtocol(protocolFactory.newClientProtocol(memberId))
-        .build();
-    client.connect(members.stream().map(RaftMember::memberId).collect(Collectors.toList())).thenRun(this::resume);
+    return createClient(members);
+  }
+
+  private RaftClient createClient(List<RaftMember> members) throws Throwable {
+    final MemberId memberId = nextNodeId();
+    final List<MemberId> memberIds = members.stream().map(RaftMember::memberId).collect(Collectors.toList());
+    final RaftClient client = RaftClient.builder()
+            .withMemberId(memberId)
+            .withPartitionId(PartitionId.from("test", 1))
+            .withProtocol(protocolFactory.newClientProtocol(memberId))
+            .build();
+    client.connect(memberIds).thenRun(this::resume);
     await(30000);
     clients.add(client);
     return client;

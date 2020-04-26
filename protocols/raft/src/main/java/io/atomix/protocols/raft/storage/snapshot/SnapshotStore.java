@@ -149,9 +149,10 @@ public class SnapshotStore implements AutoCloseable {
    * @param timestamp The snapshot timestamp.
    * @return The snapshot.
    */
-  public Snapshot newSnapshot(long index, WallClockTimestamp timestamp) {
+  public Snapshot newSnapshot(long index, long term, WallClockTimestamp timestamp) {
     SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
         .withIndex(index)
+        .withTerm(term)
         .withTimestamp(timestamp.unixTimestamp())
         .build();
 

@@ -30,7 +30,23 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class SnapshotDescriptor implements AutoCloseable {
   public static final int BYTES = 64;
-  public static final int VERSION = 1;
+
+  // Current snapshot version.
+  private static final int VERSION = 1; // TODO: compatibility?
+
+  // The lengths of each field in the header.
+  private static final int INDEX_LENGTH = Long.BYTES;          // 64-bit signed integer
+  private static final int TIMESTAMP_LENGTH = Long.BYTES;      // 64-bit signed integer
+  private static final int VERSION_LENGTH = Integer.BYTES;     // 32-bit signed integer
+  private static final int LOCKED_LENGTH = 1;                  // 8-bit signed byte
+  private static final int TERM_LENGTH = Long.BYTES;           // 64-bit signed integer
+
+  // The positions of each field in the header.
+  private static final int INDEX_POSITION = 0;                                           // 0
+  private static final int TIMESTAMP_POSITION = INDEX_POSITION + INDEX_LENGTH;           // 8
+  private static final int VERSION_POSITION = TIMESTAMP_POSITION + TIMESTAMP_LENGTH;     // 16
+  private static final int LOCKED_POSITION = VERSION_POSITION + VERSION_LENGTH;          // 20
+  private static final int TERM_POSITION = LOCKED_POSITION + LOCKED_LENGTH;              // 21
 
   /**
    * Returns a descriptor builder.
@@ -57,6 +73,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
   private Buffer buffer;
   private final long index;
   private final long timestamp;
+  private final long term;
   private boolean locked;
   private int version;
 
@@ -69,6 +86,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
     this.timestamp = buffer.readLong();
     this.version = buffer.readInt();
     this.locked = buffer.readBoolean();
+    this.term = buffer.readLong();
     buffer.skip(BYTES - buffer.position());
   }
 
@@ -99,6 +117,10 @@ public final class SnapshotDescriptor implements AutoCloseable {
     return version;
   }
 
+  public long term() {
+    return term;
+  }
+
   /**
    * Returns whether the snapshot has been locked by commitment.
    * <p>
@@ -115,7 +137,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
    */
   public void lock() {
     buffer.flush()
-        .writeBoolean(20, true)
+        .writeBoolean(LOCKED_POSITION, true)
         .flush();
     locked = true;
   }
@@ -129,6 +151,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
         .writeLong(timestamp)
         .writeInt(version)
         .writeBoolean(locked)
+        .writeLong(term)
         .skip(BYTES - buffer.position())
         .flush();
     return this;
@@ -165,7 +188,12 @@ public final class SnapshotDescriptor implements AutoCloseable {
      * @return The snapshot builder.
      */
     public Builder withIndex(long index) {
-      buffer.writeLong(0, index);
+      buffer.writeLong(INDEX_POSITION, index);
+      return this;
+    }
+
+    public Builder withTerm(long term) {
+      buffer.writeLong(TERM_POSITION, term);
       return this;
     }
 
@@ -176,7 +204,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
      * @return The snapshot builder.
      */
     public Builder withTimestamp(long timestamp) {
-      buffer.writeLong(8, timestamp);
+      buffer.writeLong(TIMESTAMP_POSITION, timestamp);
       return this;
     }
 
@@ -186,7 +214,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
      * @return The built snapshot descriptor.
      */
     public SnapshotDescriptor build() {
-      return new SnapshotDescriptor(buffer.writeInt(16, VERSION));
+      return new SnapshotDescriptor(buffer.writeInt(VERSION_POSITION, VERSION));
     }
   }
 }

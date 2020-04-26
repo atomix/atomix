@@ -29,7 +29,7 @@ import java.util.concurrent.TimeoutException;
  * Base class for Raft protocol.
  */
 public abstract class TestRaftProtocol {
-  private final Map<MemberId, TestRaftServerProtocol> servers;
+  protected final Map<MemberId, TestRaftServerProtocol> servers;
   private final Map<MemberId, TestRaftClientProtocol> clients;
   private final ThreadContext context;
 

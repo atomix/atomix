@@ -47,21 +47,19 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
    */
   protected SnapshotStore createSnapshotStore() {
     RaftStorage storage = RaftStorage.builder()
-        .withPrefix("test")
-        .withDirectory(new File(String.format("target/test-logs/%s", testId)))
-        .withStorageLevel(StorageLevel.DISK)
-        .build();
+            .withPrefix("test")
+            .withDirectory(new File(String.format("target/test-logs/%s", testId)))
+            .withStorageLevel(StorageLevel.DISK)
+            .build();
     return new SnapshotStore(storage);
   }
 
-  /**
-   * Tests storing and loading snapshots.
-   */
+  /** Tests storing and loading snapshots. */
   @Test
   public void testStoreLoadSnapshot() {
     SnapshotStore store = createSnapshotStore();
 
-    Snapshot snapshot = store.newSnapshot(2, new WallClockTimestamp());
+    final Snapshot snapshot = store.newSnapshot(2, 3, new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(10);
     }
@@ -72,28 +70,25 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     store = createSnapshotStore();
     assertNotNull(store.getSnapshot(2));
     assertEquals(2, store.getSnapshot(2).index());
+    assertEquals(3, store.getSnapshot(2).term());
 
     try (SnapshotReader reader = snapshot.openReader()) {
       assertEquals(10, reader.readLong());
     }
   }
 
-  /**
-   * Tests persisting and loading snapshots.
-   */
+  /** Tests persisting and loading snapshots. */
   @Test
   public void testPersistLoadSnapshot() {
     SnapshotStore store = createSnapshotStore();
 
-    Snapshot snapshot = store.newSnapshot(2, new WallClockTimestamp());
+    Snapshot snapshot = store.newSnapshot(2, 3, new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(10);
     }
 
     assertNull(store.getSnapshot(2));
-    assertTempSnapshotCount(store, 1);
     snapshot.complete();
-    assertTempSnapshotCount(store, 0);
     assertNotNull(store.getSnapshot(2));
 
     try (SnapshotReader reader = snapshot.openReader()) {
@@ -117,9 +112,9 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
    */
   @Test
   public void testStreamSnapshot() {
-    SnapshotStore store = createSnapshotStore();
+    final SnapshotStore store = createSnapshotStore();
 
-    Snapshot snapshot = store.newSnapshot(1, new WallClockTimestamp());
+    Snapshot snapshot = store.newSnapshot(1, 1, new WallClockTimestamp());
     for (long i = 1; i <= 10; i++) {
       try (SnapshotWriter writer = snapshot.openWriter()) {
         writer.writeLong(i);
@@ -135,15 +130,13 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     }
   }
 
-  /**
-   * Tests case where two {@link FileSnapshot} instances are trying to write the same snapshot
-   */
+  /** Tests case where two {@link FileSnapshot} instances are trying to write the same snapshot */
   @Test
   public void testConcurrentSnapshotWriters() {
-    SnapshotStore store = createSnapshotStore();
+    final SnapshotStore store = createSnapshotStore();
     final WallClockTimestamp timestamp = new WallClockTimestamp();
-    Snapshot first = store.newSnapshot(1, timestamp);
-    Snapshot second = store.newSnapshot(1, timestamp);
+    final Snapshot first = store.newSnapshot(1, 1, timestamp);
+    final Snapshot second = store.newSnapshot(1, 1, timestamp);
 
     try (SnapshotWriter firstWriter = first.openWriter()) {
       firstWriter.writeLong(1);
@@ -156,7 +149,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     first.complete();
     second.complete();
 
-    Snapshot completed = store.getSnapshot(first.index());
+    final Snapshot completed = store.getSnapshot(first.index());
     assertNotNull(completed);
     long result = 0;
     try (SnapshotReader reader = completed.openReader()) {
@@ -168,40 +161,68 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     assertEquals(result, 1);
   }
 
-  @Test
-  public void testTemporarySnapshotCleanedUpOnClose() {
-    final SnapshotStore store = createSnapshotStore();
-    final Snapshot snapshot = store.newSnapshot(1, new WallClockTimestamp());
-
-    assertTempSnapshotCount(store, 1);
-    snapshot.close();
-    assertTempSnapshotCount(store, 0);
-  }
-
   @Before
   @After
   public void cleanupStorage() throws IOException {
-    Path directory = Paths.get("target/test-logs/");
+    final Path directory = Paths.get("target/test-logs/");
     if (Files.exists(directory)) {
-      Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
-        @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-          Files.delete(file);
-          return FileVisitResult.CONTINUE;
-        }
+      Files.walkFileTree(
+              directory,
+              new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                        throws IOException {
+                  Files.delete(file);
+                  return FileVisitResult.CONTINUE;
+                }
 
-        @Override
-        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-          Files.delete(dir);
-          return FileVisitResult.CONTINUE;
-        }
-      });
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                        throws IOException {
+                  Files.delete(dir);
+                  return FileVisitResult.CONTINUE;
+                }
+              });
     }
     testId = UUID.randomUUID().toString();
   }
 
-  private void assertTempSnapshotCount(SnapshotStore store, int expected) {
-    final File[] tempSnapshots = store.storage.directory().listFiles(f -> f.getName().endsWith(".tmp"));
-    assertEquals(expected, tempSnapshots != null ? tempSnapshots.length : 0);
+  /** Tests writing a snapshot. */
+  @Test
+  public void testWriteSnapshotChunks() {
+    final SnapshotStore store = createSnapshotStore();
+    final WallClockTimestamp timestamp = new WallClockTimestamp();
+    final Snapshot snapshot = store.newSnapshot(2, 1, timestamp);
+    assertEquals(2, snapshot.index());
+    assertEquals(timestamp, snapshot.timestamp());
+
+    assertNull(store.getSnapshot(2));
+
+    try (SnapshotWriter writer = snapshot.openWriter()) {
+      writer.writeLong(10);
+    }
+
+    assertNull(store.getSnapshot(2));
+
+    try (SnapshotWriter writer = snapshot.openWriter()) {
+      writer.writeLong(11);
+    }
+
+    assertNull(store.getSnapshot(2));
+
+    try (SnapshotWriter writer = snapshot.openWriter()) {
+      writer.writeLong(12);
+    }
+
+    assertNull(store.getSnapshot(2));
+    snapshot.complete();
+
+    assertEquals(2, store.getSnapshot(2).index());
+
+    try (SnapshotReader reader = store.getSnapshot(2).openReader()) {
+      assertEquals(10, reader.readLong());
+      assertEquals(11, reader.readLong());
+      assertEquals(12, reader.readLong());
+    }
   }
 }
