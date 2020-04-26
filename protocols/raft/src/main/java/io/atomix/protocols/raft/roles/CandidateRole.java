@@ -55,6 +55,13 @@ public final class CandidateRole extends ActiveRole {
 
   @Override
   public synchronized CompletableFuture<RaftRole> start() {
+    if (raft.getCluster().getActiveMemberStates().isEmpty()) {
+      log.debug("Single member cluster. Transitioning directly to leader.");
+      raft.setTerm(raft.getTerm() + 1);
+      raft.setLastVotedFor(raft.getCluster().getMember().memberId());
+      raft.transition(RaftServer.Role.LEADER);
+      return CompletableFuture.completedFuture(this);
+    }
     return super.start().thenRun(this::startElection).thenApply(v -> this);
   }
 
@@ -90,13 +97,6 @@ public final class CandidateRole extends ActiveRole {
 
     final AtomicBoolean complete = new AtomicBoolean();
     final Set<DefaultRaftMember> votingMembers = new HashSet<>(raft.getCluster().getActiveMemberStates().stream().map(RaftMemberContext::getMember).collect(Collectors.toList()));
-
-    // If there are no other members in the cluster, immediately transition to leader.
-    if (votingMembers.isEmpty()) {
-      log.debug("Single member cluster. Transitioning directly to leader.", raft.getCluster().getMember().memberId());
-      raft.transition(RaftServer.Role.LEADER);
-      return;
-    }
 
     // Send vote requests to all nodes. The vote request that is sent
     // to this node will be automatically successful.
