@@ -164,6 +164,7 @@ public abstract class PartitionedDistributedCollectionProxy<A extends AsyncDistr
   public AsyncIterator<String> iterator() {
     return new PartitionedProxyIterator<>(
         getProxyClient(),
+        getProxyClient().getPartitionIds(),
         DistributedCollectionService::iterate,
         DistributedCollectionService::next,
         DistributedCollectionService::close);

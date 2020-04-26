@@ -172,6 +172,7 @@ public class DistributedMultisetProxy
     public AsyncIterator<String> iterator() {
       return new PartitionedProxyIterator<>(
           getProxyClient(),
+          getProxyClient().getPartitionIds(),
           DistributedMultisetService::iterateElements,
           DistributedMultisetService::nextElements,
           DistributedMultisetService::closeElements);
@@ -293,6 +294,7 @@ public class DistributedMultisetProxy
     public AsyncIterator<Multiset.Entry<String>> iterator() {
       return new PartitionedProxyIterator<>(
           getProxyClient(),
+          getProxyClient().getPartitionIds(),
           DistributedMultisetService::iterateEntries,
           DistributedMultisetService::nextEntries,
           DistributedMultisetService::closeEntries);

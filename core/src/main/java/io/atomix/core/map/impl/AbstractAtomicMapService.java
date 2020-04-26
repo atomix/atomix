@@ -36,7 +36,9 @@ import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 import io.atomix.utils.time.Versioned;
 
+import java.nio.BufferUnderflowException;
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,12 +46,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 
@@ -66,6 +70,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   protected Set<K> preparedKeys = Sets.newHashSet();
   protected Map<TransactionId, TransactionScope<K>> activeTransactions = Maps.newHashMap();
   protected Map<Long, IteratorContext> entryIterators = Maps.newHashMap();
+  protected Map<K, LockContext> locks = Maps.newHashMap();
   protected long currentVersion;
 
   public AbstractAtomicMapService(PrimitiveType primitiveType) {
@@ -79,6 +84,8 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
         .register(MapEntryValue.Type.class)
         .register(new HashMap().keySet().getClass())
         .register(DefaultIterator.class)
+        .register(LockContext.class)
+        .register(LockHolder.class)
         .build());
     map = createMap();
   }
@@ -104,6 +111,7 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
     writer.writeObject(activeTransactions);
     writer.writeLong(currentVersion);
     writer.writeObject(entryIterators);
+    writer.writeObject(locks);
   }
 
   @Override
@@ -117,12 +125,37 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
     currentVersion = reader.readLong();
     entryIterators = reader.readObject();
 
+    // Attempt to read the locks. If a BufferUnderflowException is thrown, that indicates the snapshot is from
+    // a version that did not support locks. Just initialize the locks to an empty map.
+    try {
+      locks = reader.readObject();
+    } catch (BufferUnderflowException e) {
+      locks = Maps.newHashMap();
+    }
+
     map.forEach((key, value) -> {
       if (value.ttl() > 0) {
         value.timer = getScheduler().schedule(Duration.ofMillis(value.ttl() - (getWallClock().getTime().unixTimestamp() - value.created())), () -> {
           entries().remove(key, value);
           publish(new AtomicMapEvent<>(AtomicMapEvent.Type.REMOVE, key, null, toVersioned(value)));
         });
+      }
+    });
+
+    locks.forEach((key, lock) -> {
+      lock.timers.values().forEach(Scheduled::cancel);
+      lock.timers.clear();
+      for (LockHolder holder : lock.queue) {
+        if (holder.expire > 0) {
+          lock.timers.put(holder.index, getScheduler().schedule(Duration.ofMillis(holder.expire - getWallClock().getTime().unixTimestamp()), () -> {
+            lock.timers.remove(holder.index);
+            lock.queue.remove(holder);
+            Session session = getSession(holder.session);
+            if (session != null && session.getState().active()) {
+              getSession(holder.session).accept(service -> service.failed(key, holder.id));
+            }
+          }));
+        }
       }
     });
   }
@@ -293,6 +326,17 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
         getWallClock().getTime().unixTimestamp(),
         ttl);
 
+    // Check if there's a pessimistic lock on the key and return a WRITE_LOCK error if the lock does not belong
+    // to the requester's session.
+    LockContext lock = locks.get(key);
+    if (lock != null && lock.isLocked() && !lock.isLockedBy(getCurrentSession().sessionId())) {
+      return new MapEntryUpdateResult<>(
+          MapEntryUpdateResult.Status.WRITE_LOCK,
+          getCurrentIndex(),
+          key,
+          toVersioned(oldValue));
+    }
+
     // If the value is null or a tombstone, this is an insert.
     // Otherwise, only update the value if it has changed to reduce the number of events.
     if (valueIsNull(oldValue)) {
@@ -330,6 +374,17 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   public MapEntryUpdateResult<K, byte[]> putIfAbsent(K key, byte[] value, long ttl) {
     MapEntryValue oldValue = entries().get(key);
 
+    // Check if there's a pessimistic lock on the key and return a WRITE_LOCK error if the lock does not belong
+    // to the requester's session.
+    LockContext lock = locks.get(key);
+    if (lock != null && lock.isLocked() && !lock.isLockedBy(getCurrentSession().sessionId())) {
+      return new MapEntryUpdateResult<>(
+          MapEntryUpdateResult.Status.WRITE_LOCK,
+          getCurrentIndex(),
+          key,
+          toVersioned(oldValue));
+    }
+
     // If the value is null, this is an INSERT.
     if (valueIsNull(oldValue)) {
       // If the key has been locked by a transaction, return a WRITE_LOCK error.
@@ -362,6 +417,17 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   public MapEntryUpdateResult<K, byte[]> putAndGet(K key, byte[] value, long ttl) {
     MapEntryValue oldValue = entries().get(key);
     MapEntryValue newValue = new MapEntryValue(MapEntryValue.Type.VALUE, getCurrentIndex(), value, getWallClock().getTime().unixTimestamp(), ttl);
+
+    // Check if there's a pessimistic lock on the key and return a WRITE_LOCK error if the lock does not belong
+    // to the requester's session.
+    LockContext lock = locks.get(key);
+    if (lock != null && lock.isLocked() && !lock.isLockedBy(getCurrentSession().sessionId())) {
+      return new MapEntryUpdateResult<>(
+          MapEntryUpdateResult.Status.WRITE_LOCK,
+          getCurrentIndex(),
+          key,
+          toVersioned(oldValue));
+    }
 
     // If the value is null or a tombstone, this is an insert.
     // Otherwise, only update the value if it has changed to reduce the number of events.
@@ -405,6 +471,17 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
    */
   private MapEntryUpdateResult<K, byte[]> removeIf(long index, K key, Predicate<MapEntryValue> predicate) {
     MapEntryValue value = entries().get(key);
+
+    // Check if there's a pessimistic lock on the key and return a WRITE_LOCK error if the lock does not belong
+    // to the requester's session.
+    LockContext lock = locks.get(key);
+    if (lock != null && lock.isLocked() && !lock.isLockedBy(getCurrentSession().sessionId())) {
+      return new MapEntryUpdateResult<>(
+          MapEntryUpdateResult.Status.WRITE_LOCK,
+          getCurrentIndex(),
+          key,
+          toVersioned(value));
+    }
 
     // If the value does not exist or doesn't match the predicate, return a PRECONDITION_FAILED error.
     if (valueIsNull(value) || !predicate.test(value)) {
@@ -459,6 +536,17 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
   private MapEntryUpdateResult<K, byte[]> replaceIf(
       long index, K key, MapEntryValue newValue, Predicate<MapEntryValue> predicate) {
     MapEntryValue oldValue = entries().get(key);
+
+    // Check if there's a pessimistic lock on the key and return a WRITE_LOCK error if the lock does not belong
+    // to the requester's session.
+    LockContext lock = locks.get(key);
+    if (lock != null && lock.isLocked() && !lock.isLockedBy(getCurrentSession().sessionId())) {
+      return new MapEntryUpdateResult<>(
+          MapEntryUpdateResult.Status.WRITE_LOCK,
+          getCurrentIndex(),
+          key,
+          toVersioned(oldValue));
+    }
 
     // If the key is not set or the current value doesn't match the predicate, return a PRECONDITION_FAILED error.
     if (valueIsNull(oldValue) || !predicate.test(oldValue)) {
@@ -535,6 +623,31 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
       }
     }
     entries().putAll(entriesToAdd);
+  }
+
+  @Override
+  public void lock(K key, int lockId, long timeout) {
+    locks.computeIfAbsent(key, k -> new LockContext(key)).lock(lockId, timeout);
+  }
+
+  @Override
+  public void unlock(K key, int lockId) {
+    LockContext lock = locks.get(key);
+    if (lock != null) {
+      lock.unlock(lockId);
+      if (!lock.isLocked()) {
+        locks.remove(key);
+      }
+    }
+  }
+
+  @Override
+  public boolean isLocked(K key, long version) {
+    LockContext lock = locks.get(key);
+    if (lock != null) {
+      return lock.isLocked(version);
+    }
+    return false;
   }
 
   @Override
@@ -900,14 +1013,26 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
 
   @Override
   public void onExpire(Session session) {
-    listeners.remove(session.sessionId());
-    entryIterators.entrySet().removeIf(entry -> entry.getValue().sessionId == session.sessionId().id());
+    cleanup(session);
   }
 
   @Override
   public void onClose(Session session) {
+    cleanup(session);
+  }
+
+  private void cleanup(Session session) {
     listeners.remove(session.sessionId());
     entryIterators.entrySet().removeIf(entry -> entry.getValue().sessionId == session.sessionId().id());
+
+    Iterator<Map.Entry<K, LockContext>> iterator = locks.entrySet().iterator();
+    while (iterator.hasNext()) {
+      LockContext lock = iterator.next().getValue();
+      lock.cleanup(session);
+      if (!lock.isLocked()) {
+        iterator.remove();
+      }
+    }
   }
 
   /**
@@ -1077,6 +1202,172 @@ public abstract class AbstractAtomicMapService<K> extends AbstractPrimitiveServi
     @Override
     protected Iterator<Map.Entry<K, MapEntryValue>> create() {
       return entries().entrySet().iterator();
+    }
+  }
+
+
+  /**
+   * Key lock context.
+   */
+  class LockContext {
+    final K key;
+    LockHolder lock;
+    Queue<LockHolder> queue = new ArrayDeque<>();
+    final Map<Long, Scheduled> timers = new HashMap<>();
+
+    LockContext(K key) {
+      this.key = key;
+    }
+
+    boolean isLockedBy(SessionId sessionId) {
+      return lock != null && lock.session.equals(sessionId);
+    }
+
+    void lock(int id, long timeout) {
+      Session<AtomicMapClient> session = getCurrentSession();
+
+      // If the lock is not already owned, immediately grant the lock to the requester.
+      // Note that we still have to publish an event to the session. The event is guaranteed to be received
+      // by the client-side primitive after the LOCK response.
+      if (lock == null) {
+        lock = new LockHolder(
+            id,
+            getCurrentIndex(),
+            session.sessionId(),
+            0);
+        session.accept(service -> service.locked(key, id, getCurrentIndex()));
+        // If the timeout is 0, that indicates this is a tryLock request. Immediately fail the request.
+      } else if (timeout == 0) {
+        session.accept(service -> service.failed(key, id));
+        // If a timeout exists, add the request to the queue and set a timer. Note that the lock request expiration
+        // time is based on the *state machine* time - not the system time - to ensure consistency across servers.
+      } else if (timeout > 0) {
+        LockHolder holder = new LockHolder(
+            id,
+            getCurrentIndex(),
+            session.sessionId(),
+            getWallClock().getTime().unixTimestamp() + timeout);
+        queue.add(holder);
+        timers.put(getCurrentIndex(), getScheduler().schedule(Duration.ofMillis(timeout), () -> {
+          // When the lock request timer expires, remove the request from the queue and publish a FAILED
+          // event to the session. Note that this timer is guaranteed to be executed in the same thread as the
+          // state machine commands, so there's no need to use a lock here.
+          timers.remove(getCurrentIndex());
+          queue.remove(holder);
+          if (session.getState().active()) {
+            session.accept(service -> service.failed(key, id));
+          }
+        }));
+        // If the lock is -1, just add the request to the queue with no expiration.
+      } else {
+        LockHolder holder = new LockHolder(
+            id,
+            getCurrentIndex(),
+            session.sessionId(),
+            0);
+        queue.add(holder);
+      }
+    }
+
+    void unlock(int id) {
+      if (lock != null) {
+        // If the commit's session does not match the current lock holder, preserve the existing lock.
+        // If the current lock ID does not match the requested lock ID, preserve the existing lock.
+        // However, ensure the associated lock request is removed from the queue.
+        if (!lock.session.equals(getCurrentSession().sessionId()) || lock.id != id) {
+          Iterator<LockHolder> iterator = queue.iterator();
+          while (iterator.hasNext()) {
+            LockHolder lock = iterator.next();
+            if (lock.session.equals(getCurrentSession().sessionId()) && lock.id == id) {
+              iterator.remove();
+              Scheduled timer = timers.remove(lock.index);
+              if (timer != null) {
+                timer.cancel();
+              }
+            }
+          }
+          return;
+        }
+
+        // The lock has been released. Populate the lock from the queue.
+        lock = queue.poll();
+        while (lock != null) {
+          // If the waiter has a lock timer, cancel the timer.
+          Scheduled timer = timers.remove(lock.index);
+          if (timer != null) {
+            timer.cancel();
+          }
+
+          // Notify the client that it has acquired the lock.
+          Session lockSession = getSession(lock.session);
+          if (lockSession != null && lockSession.getState().active()) {
+            getSession(lock.session).accept(service -> service.locked(key, lock.id, getCurrentIndex()));
+            break;
+          }
+          lock = queue.poll();
+        }
+      }
+    }
+
+    boolean isLocked() {
+      return isLocked(0);
+    }
+
+    boolean isLocked(long version) {
+      return lock != null && (version == 0 || lock.index == version);
+    }
+
+    void cleanup(Session session) {
+      // Remove all instances of the session from the lock queue.
+      queue.removeIf(lock -> lock.session.equals(session.sessionId()));
+
+      // If the removed session is the current holder of the lock, nullify the lock and attempt to grant it
+      // to the next waiter in the queue.
+      if (lock != null && lock.session.equals(session.sessionId())) {
+        lock = queue.poll();
+        while (lock != null) {
+          // If the waiter has a lock timer, cancel the timer.
+          Scheduled timer = timers.remove(lock.index);
+          if (timer != null) {
+            timer.cancel();
+          }
+
+          // Notify the client that it has acquired the lock.
+          Session lockSession = getSession(lock.session);
+          if (lockSession != null && lockSession.getState().active()) {
+            getSession(lock.session).accept(service -> service.locked(key, lock.id, lock.index));
+            break;
+          }
+          lock = queue.poll();
+        }
+      }
+    }
+  }
+
+  /**
+   * Lock holder.
+   */
+  class LockHolder {
+    final int id;
+    final long index;
+    final SessionId session;
+    final long expire;
+
+    LockHolder(int id, long index, SessionId session, long expire) {
+      this.id = id;
+      this.index = index;
+      this.session = session;
+      this.expire = expire;
+    }
+
+    @Override
+    public String toString() {
+      return toStringHelper(this)
+          .add("id", id)
+          .add("index", index)
+          .add("session", session)
+          .add("expire", expire)
+          .toString();
     }
   }
 }

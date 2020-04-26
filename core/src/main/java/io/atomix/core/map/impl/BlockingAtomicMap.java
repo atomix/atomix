@@ -15,6 +15,21 @@
  */
 package io.atomix.core.map.impl;
 
+import java.time.Duration;
+import java.util.ConcurrentModificationException;
+import java.util.Map;
+import java.util.Objects;
+import java.util.OptionalLong;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 import com.google.common.base.Throwables;
 import io.atomix.core.collection.DistributedCollection;
 import io.atomix.core.collection.impl.BlockingDistributedCollection;
@@ -28,19 +43,6 @@ import io.atomix.primitive.PrimitiveState;
 import io.atomix.primitive.Synchronous;
 import io.atomix.utils.concurrent.Retries;
 import io.atomix.utils.time.Versioned;
-
-import java.time.Duration;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Default implementation of {@code ConsistentMap}.
@@ -189,6 +191,36 @@ public class BlockingAtomicMap<K, V> extends Synchronous<AsyncAtomicMap<K, V>> i
   }
 
   @Override
+  public long lock(K key) {
+    return complete(asyncMap.lock(key));
+  }
+
+  @Override
+  public OptionalLong tryLock(K key) {
+    return complete(asyncMap.tryLock(key));
+  }
+
+  @Override
+  public OptionalLong tryLock(K key, Duration timeout) {
+    return complete(asyncMap.tryLock(key, timeout));
+  }
+
+  @Override
+  public boolean isLocked(K key) {
+    return complete(asyncMap.isLocked(key));
+  }
+
+  @Override
+  public boolean isLocked(K key, long version) {
+    return complete(asyncMap.isLocked(key, version));
+  }
+
+  @Override
+  public void unlock(K key) {
+    complete(asyncMap.unlock(key));
+  }
+
+  @Override
   public void addListener(AtomicMapEventListener<K, V> listener, Executor executor) {
     complete(asyncMap.addListener(listener, executor));
   }
@@ -225,6 +257,8 @@ public class BlockingAtomicMap<K, V> extends Synchronous<AsyncAtomicMap<K, V>> i
       Throwable cause = Throwables.getRootCause(e);
       if (cause instanceof PrimitiveException) {
         throw (PrimitiveException) cause;
+      } else if (cause instanceof ConcurrentModificationException) {
+        throw (ConcurrentModificationException) cause;
       } else {
         throw new PrimitiveException(cause);
       }

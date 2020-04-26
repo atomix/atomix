@@ -42,6 +42,7 @@ import io.atomix.core.transaction.TransactionLog;
 import io.atomix.primitive.AsyncPrimitive;
 import io.atomix.primitive.PrimitiveRegistry;
 import io.atomix.primitive.PrimitiveType;
+import io.atomix.primitive.partition.PartitionId;
 import io.atomix.primitive.protocol.PrimitiveProtocol;
 import io.atomix.primitive.proxy.ProxyClient;
 import io.atomix.utils.concurrent.Futures;
@@ -49,9 +50,11 @@ import io.atomix.utils.time.Versioned;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
@@ -66,6 +69,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAtomicMapProxy<AsyncAtomicNavigableMap<K, byte[]>, AtomicTreeMapService<K>, K> implements AsyncAtomicNavigableMap<K, byte[]> {
   public AtomicNavigableMapProxy(ProxyClient<AtomicTreeMapService<K>> proxy, PrimitiveRegistry registry) {
     super(proxy, registry);
+  }
+
+  @Override
+  protected PartitionId getPartition(K key) {
+    return getProxyClient().getPartitionId(name());
+  }
+
+  @Override
+  protected Collection<PartitionId> getPartitions() {
+    return Collections.singleton(getProxyClient().getPartitionId(name()));
   }
 
   @Override
@@ -705,6 +718,36 @@ public class AtomicNavigableMapProxy<K extends Comparable<K>> extends AbstractAt
     @Override
     public CompletableFuture<Void> clear() {
       return getProxyClient().acceptBy(name(), service -> service.subMapClear(fromKey, fromInclusive, toKey, toInclusive));
+    }
+
+    @Override
+    public CompletableFuture<Long> lock(K key) {
+      return !isInBounds(key) ? Futures.exceptionalFuture(new NoSuchElementException()) : AtomicNavigableMapProxy.this.lock(key);
+    }
+
+    @Override
+    public CompletableFuture<OptionalLong> tryLock(K key) {
+      return !isInBounds(key) ? Futures.exceptionalFuture(new NoSuchElementException()) : AtomicNavigableMapProxy.this.tryLock(key);
+    }
+
+    @Override
+    public CompletableFuture<OptionalLong> tryLock(K key, Duration timeout) {
+      return !isInBounds(key) ? Futures.exceptionalFuture(new NoSuchElementException()) : AtomicNavigableMapProxy.this.tryLock(key, timeout);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> isLocked(K key) {
+      return !isInBounds(key) ? Futures.exceptionalFuture(new NoSuchElementException()) : AtomicNavigableMapProxy.this.isLocked(key);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> isLocked(K key, long version) {
+      return !isInBounds(key) ? Futures.exceptionalFuture(new NoSuchElementException()) : AtomicNavigableMapProxy.this.isLocked(key, version);
+    }
+
+    @Override
+    public CompletableFuture<Void> unlock(K key) {
+      return !isInBounds(key) ? Futures.exceptionalFuture(new NoSuchElementException()) : AtomicNavigableMapProxy.this.unlock(key);
     }
 
     @Override

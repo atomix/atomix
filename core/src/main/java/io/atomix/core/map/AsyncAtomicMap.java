@@ -29,8 +29,10 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -375,6 +377,67 @@ public interface AsyncAtomicMap<K, V> extends AsyncPrimitive, Transactional<MapU
    * @return true if the value was replaced
    */
   CompletableFuture<Boolean> replace(K key, long oldVersion, V newValue);
+
+  /**
+   * Acquires a lock on the given key.
+   *
+   * @param key the key for which to acquire the lock
+   * @return the lock version
+   */
+  CompletableFuture<Long> lock(K key);
+
+  /**
+   * Attempts to acquire a lock on the given key.
+   *
+   * @param key the key for which to acquire the lock
+   * @return an optional long containing the version of the key at the time it was locked
+   */
+  CompletableFuture<OptionalLong> tryLock(K key);
+
+  /**
+   * Attempts to acquire a lock on the given key.
+   *
+   * @param key the key for which to acquire the lock
+   * @param timeout the lock timeout
+   * @param unit the lock unit
+   * @return an optional long containing the version of the key at the time it was locked
+   */
+  default CompletableFuture<OptionalLong> tryLock(K key, long timeout, TimeUnit unit) {
+    return tryLock(key, Duration.ofMillis(unit.toMillis(timeout)));
+  }
+
+  /**
+   * Attempts to acquire a lock on the given key.
+   *
+   * @param key the key for which to acquire the lock
+   * @param timeout the lock timeout
+   * @return an optional long containing the version of the key at the time it was locked
+   */
+  CompletableFuture<OptionalLong> tryLock(K key, Duration timeout);
+
+  /**
+   * Returns a boolean indicating whether a lock is currently held on the given key.
+   *
+   * @param key the key for which to determine whether a lock exists
+   * @return indicates whether a lock exists on the given key
+   */
+  CompletableFuture<Boolean> isLocked(K key);
+
+  /**
+   * Returns a boolean indicating whether a lock is currently held on the given key with the given version.
+   *
+   * @param key the key for which to determine whether a lock exists
+   * @param version the version that must match the lock
+   * @return indicates whether a lock exists on the given key
+   */
+  CompletableFuture<Boolean> isLocked(K key, long version);
+
+  /**
+   * Releases a lock on the given key.
+   *
+   * @param key the key for which to release the lock
+   */
+  CompletableFuture<Void> unlock(K key);
 
   /**
    * Registers the specified listener to be notified whenever the map is updated.

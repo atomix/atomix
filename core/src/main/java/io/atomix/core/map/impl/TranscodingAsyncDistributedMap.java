@@ -229,6 +229,31 @@ public class TranscodingAsyncDistributedMap<K1, V1, K2, V2> extends DelegatingAs
   }
 
   @Override
+  public CompletableFuture<Void> lock(K1 key) {
+    return backingMap.lock(keyEncoder.apply(key));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> tryLock(K1 key) {
+    return backingMap.tryLock(keyEncoder.apply(key));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> tryLock(K1 key, Duration timeout) {
+    return backingMap.tryLock(keyEncoder.apply(key), timeout);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isLocked(K1 key) {
+    return backingMap.isLocked(keyEncoder.apply(key));
+  }
+
+  @Override
+  public CompletableFuture<Void> unlock(K1 key) {
+    return backingMap.unlock(keyEncoder.apply(key));
+  }
+
+  @Override
   public CompletableFuture<Void> addListener(MapEventListener<K1, V1> listener, Executor executor) {
     synchronized (listeners) {
       InternalBackingMapEventListener backingMapListener =
