@@ -24,15 +24,17 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.Files;
-import java.nio.file.FileVisitResult;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Snapshot store test.
@@ -166,28 +168,26 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   public void cleanupStorage() throws IOException {
     final Path directory = Paths.get("target/test-logs/");
     if (Files.exists(directory)) {
-      Files.walkFileTree(
-              directory,
-              new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
-                  Files.delete(file);
-                  return FileVisitResult.CONTINUE;
-                }
+      Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+          Files.delete(file);
+          return FileVisitResult.CONTINUE;
+        }
 
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-                        throws IOException {
-                  Files.delete(dir);
-                  return FileVisitResult.CONTINUE;
-                }
-              });
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+          Files.delete(dir);
+          return FileVisitResult.CONTINUE;
+        }
+      });
     }
     testId = UUID.randomUUID().toString();
   }
 
-  /** Tests writing a snapshot. */
+  /**
+   * Tests writing a snapshot.
+   */
   @Test
   public void testWriteSnapshotChunks() {
     final SnapshotStore store = createSnapshotStore();
