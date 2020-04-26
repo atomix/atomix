@@ -16,7 +16,6 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.io.BaseEncoding;
-import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.AsyncDistributedMap;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapBuilder;
