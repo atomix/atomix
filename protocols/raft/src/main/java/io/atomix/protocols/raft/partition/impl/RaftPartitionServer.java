@@ -41,7 +41,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
@@ -53,9 +52,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class RaftPartitionServer implements Managed<RaftPartitionServer> {
 
   private final Logger log = getLogger(getClass());
-
-  private static final long ELECTION_TIMEOUT_MILLIS = 2500;
-  private static final long HEARTBEAT_INTERVAL_MILLIS = 250;
 
   private final MemberId localMemberId;
   private final RaftPartition partition;
@@ -180,8 +176,9 @@ public class RaftPartitionServer implements Managed<RaftPartitionServer> {
             Serializer.using(RaftNamespaces.RAFT_PROTOCOL),
             clusterCommunicator))
         .withPrimitiveTypes(primitiveTypes)
-        .withElectionTimeout(Duration.ofMillis(ELECTION_TIMEOUT_MILLIS))
-        .withHeartbeatInterval(Duration.ofMillis(HEARTBEAT_INTERVAL_MILLIS))
+        .withElectionTimeout(config.getElectionTimeout())
+        .withHeartbeatInterval(config.getHeartbeatInterval())
+        .withSessionTimeout(config.getDefaultSessionTimeout())
         .withStorage(RaftStorage.builder()
             .withPrefix(partition.name())
             .withDirectory(partition.dataDirectory())

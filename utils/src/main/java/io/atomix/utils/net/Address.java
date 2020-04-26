@@ -230,10 +230,7 @@ public final class Address {
     if (this == obj) {
       return true;
     }
-    if (obj == null) {
-      return false;
-    }
-    if (getClass() != obj.getClass()) {
+    if (!(obj instanceof Address)) {
       return false;
     }
     Address that = (Address) obj;

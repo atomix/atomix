@@ -36,6 +36,7 @@
 
     <!-- Java -->
     <java.version>1.8</java.version>
+    <java.releaseVersion>8</java.releaseVersion>
 
     <!-- Logging -->
     <slf4j.version>1.7.7</slf4j.version>
@@ -64,7 +65,7 @@
 
     <!-- Maven plugins -->
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
-    <maven.compiler.plugin.version>3.7.0</maven.compiler.plugin.version>
+    <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
     <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
     <maven.failsafe.plugin.version>2.21.0</maven.failsafe.plugin.version>
     <maven.surefire.plugin.version>2.22.0</maven.surefire.plugin.version>
@@ -98,6 +99,16 @@
       <activation>
         <jdk>[1.9,)</jdk>
       </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <release>${java.releaseVersion}</release>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
     <profile>
       <id>sonatype-oss-release</id>
@@ -290,8 +301,11 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven.surefire.plugin.version}</version>
         <configuration>
+          <useSystemClassLoader>false</useSystemClassLoader>
+          <forkCount>1</forkCount>
+          <testFailureIgnore>true</testFailureIgnore>
           <shutdown>kill</shutdown>
-          <argLine>${argLine} ${argLine.extras} ${argLine.common}</argLine>
+          <argLine>@{argLine} ${argLine.extras} ${argLine.common}</argLine>
         </configuration>
       </plugin>
 
@@ -341,6 +355,13 @@
         </executions>
         <configuration>
           <verbose>false</verbose>
+          <!-- workaround for https://bugs.openjdk.java.net/browse/JDK-8212233 -->
+          <javaApiLinks>
+            <property>
+              <name>foo</name>
+              <value>bar</value>
+            </property>
+          </javaApiLinks>
           <quiet>true</quiet>
           <additionalparam>${argLine.javadocs}</additionalparam>
           <show>public</show>
@@ -388,7 +409,7 @@
               <packages>io.atomix.utils*</packages>
             </group>
           </groups>
-          <stylesheetfile>${basedir}/docs/style.css</stylesheetfile>
+          <stylesheetfile>${project.basedir}/docs/style.css</stylesheetfile>
           <excludePackageNames>*.impl*:io.atomix.core.config.jackson:io.atomix.core.utils:io.atomix.rest*:io.atomix.agent*:io.atomix.storage.buffer:io.atomix.storage.journal*:io.atomix.storage.statistics:io.atomix.protocols.raft.utils:io.atomix.utils.serializer.serializers:io.atomix.utils.concurrent:io.atomix.utils.logging:io.atomix.utils.misc:io.atomix.utils.memory:io.atomix.protocols.raft.roles:io.atomix.protocols.raft.protocol:io.atomix.protocols.raft.storage:io.atomix.protocols.raft.cluster:io.atomix.protocols.raft.test:io.atomix.protocols.backup.roles:io.atomix.protocols.backup.protocol:io.atomix.protocols.gossip.*
           </excludePackageNames>
         </configuration>
@@ -410,6 +431,7 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>3.0.0</version>
         <configuration>
+          <propertyExpansion>basedir=${maven.multiModuleProjectDirectory}</propertyExpansion>
           <configLocation>src/main/resources/checkstyle.xml</configLocation>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <consoleOutput>true</consoleOutput>
@@ -430,22 +452,35 @@
 
       <!-- Coverage -->
       <plugin>
-        <groupId>org.eluder.coveralls</groupId>
-        <artifactId>coveralls-maven-plugin</artifactId>
-        <version>4.3.0</version>
-      </plugin>
-      <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.2</version>
+        <version>0.8.5</version>
         <executions>
           <execution>
-            <id>prepare-agent</id>
+            <id>jacoco-prepare-agent</id>
             <goals>
               <goal>prepare-agent</goal>
             </goals>
           </execution>
+          <execution>
+            <id>jacoco-prepare-agent-integration</id>
+            <goals>
+              <goal>prepare-agent-integration</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>jacoco-report</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.eluder.coveralls</groupId>
+        <artifactId>coveralls-maven-plugin</artifactId>
+        <version>4.3.0</version>
       </plugin>
     </plugins>
   </build>

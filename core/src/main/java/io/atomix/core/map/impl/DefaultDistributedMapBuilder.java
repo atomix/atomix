@@ -16,7 +16,6 @@
 package io.atomix.core.map.impl;
 
 import com.google.common.io.BaseEncoding;
-import io.atomix.core.map.AsyncAtomicMap;
 import io.atomix.core.map.AsyncDistributedMap;
 import io.atomix.core.map.DistributedMap;
 import io.atomix.core.map.DistributedMapBuilder;
@@ -58,23 +57,29 @@ public class DefaultDistributedMapBuilder<K, V> extends DistributedMapBuilder<K,
           .thenCompose(proxy -> new AtomicMapProxy((ProxyClient) proxy, managementService.getPrimitiveRegistry()).connect())
           .thenApply(rawMap -> {
             Serializer serializer = serializer();
-            AsyncAtomicMap<K, V> map = new TranscodingAsyncAtomicMap<K, V, String, byte[]>(
+            return new TranscodingAsyncAtomicMap<K, V, String, byte[]>(
                 rawMap,
                 key -> BaseEncoding.base16().encode(serializer.encode(key)),
                 string -> serializer.decode(BaseEncoding.base16().decode(string)),
                 value -> serializer.encode(value),
                 bytes -> serializer.decode(bytes));
-
+          }).thenApply(map -> {
             if (!config.isNullValues()) {
-              map = new NotNullAsyncAtomicMap<>(map);
+              return new NotNullAsyncAtomicMap<>(map);
             }
-
+            return map;
+          }).thenCompose(map -> {
             if (config.getCacheConfig().isEnabled()) {
-              map = new CachingAsyncAtomicMap<>(map, config.getCacheConfig());
+              if (config.getCacheConfig().getSize() == -1) {
+                return new CachedAsyncAtomicMap<>(map).create();
+              } else {
+                return CompletableFuture.completedFuture(new CachingAsyncAtomicMap<>(map, config.getCacheConfig()));
+              }
             }
-
+            return CompletableFuture.completedFuture(map);
+          }).thenApply(map -> {
             if (config.isReadOnly()) {
-              map = new UnmodifiableAsyncAtomicMap<>(map);
+              return new UnmodifiableAsyncAtomicMap<>(map);
             }
             return map;
           }).thenApply(atomicMap -> new DelegatingAsyncDistributedMap<>(atomicMap).sync());

@@ -16,8 +16,10 @@
 package io.atomix.protocols.raft.storage.snapshot;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.atomix.utils.AtomixIOException;
 
 import java.io.File;
+import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -29,6 +31,7 @@ public final class SnapshotFile {
   private static final char EXTENSION_SEPARATOR = '.';
   private static final String EXTENSION = "snapshot";
   private final File file;
+  private File temporaryFile;
 
   /**
    * Returns a boolean value indicating whether the given file appears to be a parsable snapshot file.
@@ -91,6 +94,17 @@ public final class SnapshotFile {
   }
 
   /**
+   * Creates a temporary file for writing snapshots.
+   */
+  static File createTemporaryFile(File directory, File base) {
+    try {
+      return File.createTempFile(base.getName(), null, directory);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
+    }
+  }
+
+  /**
    * Creates a snapshot file name from the given parameters.
    */
   @VisibleForTesting
@@ -102,10 +116,29 @@ public final class SnapshotFile {
   }
 
   /**
-   * @throws IllegalArgumentException if {@code file} is not a valid snapshot file
+   * Creates a new SnapshotFile with references to a permanent snapshot file (for reading)
+   * and a temporary snapshot file (for writing). The temporary file can be null if the snapshot
+   * is already completed and should not be written to.
+   *
+   * @param file the snapshot file which is used for reading
+   * @param temporaryFile the snapshot file which is used for writing
    */
-  SnapshotFile(File file) {
+  SnapshotFile(File file, File temporaryFile) {
     this.file = file;
+    this.temporaryFile = temporaryFile;
+  }
+
+  /**
+   * Returns the snapshot lock file name.
+   *
+   * @return the snapshot lock file name
+   */
+  File temporaryFile() {
+    return temporaryFile;
+  }
+
+  void clearTemporaryFile() {
+    temporaryFile = null;
   }
 
   /**
@@ -130,5 +163,4 @@ public final class SnapshotFile {
   static String parseName(String fileName) {
     return fileName.substring(0, fileName.lastIndexOf(PART_SEPARATOR, fileName.lastIndexOf(PART_SEPARATOR) - 1));
   }
-
 }

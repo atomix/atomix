@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.atomix.primitive.partition.GroupMember;
@@ -48,6 +47,7 @@ import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Serializer;
 
+import static com.google.common.base.Throwables.throwIfUnchecked;
 import static io.atomix.primitive.partition.impl.PrimaryElectorEvents.CHANGE;
 
 /**
@@ -195,7 +195,8 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
       return newTerm;
     } catch (Exception e) {
       getLogger().error("State machine operation failed", e);
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -211,7 +212,8 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
       return term(partitionId);
     } catch (Exception e) {
       getLogger().error("State machine operation failed", e);
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 

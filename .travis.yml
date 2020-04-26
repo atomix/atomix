@@ -6,7 +6,6 @@ services:
   - docker
 
 jdk:
-- oraclejdk8
 - openjdk8
 - openjdk10
 - openjdk11
@@ -37,6 +36,6 @@ script:
   - mvn verify --batch-mode -Droot.logging.level=INFO -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
 after_success:
-  - mvn jacoco:report coveralls:report sonar:sonar --batch-mode -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+  - mvn coveralls:report sonar:sonar --batch-mode -Droot.logging.level=INFO -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
   - bin/ci-push-javadoc.sh
   - bin/ci-deploy-snapshot.sh

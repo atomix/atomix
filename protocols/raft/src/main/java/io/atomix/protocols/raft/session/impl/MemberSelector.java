@@ -23,7 +23,6 @@ import io.atomix.protocols.raft.session.CommunicationStrategy;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Set;
 
@@ -63,7 +62,7 @@ public final class MemberSelector implements Iterator<MemberId>, AutoCloseable {
   private Set<MemberId> members;
   private volatile MemberId selection;
   private final CommunicationStrategy strategy;
-  private Collection<MemberId> selections = new LinkedList<>();
+  private Collection<MemberId> selections;
   private Iterator<MemberId> selectionsIterator;
 
   public MemberSelector(MemberId leader, Collection<MemberId> members, CommunicationStrategy strategy, MemberSelectorManager selectors) {

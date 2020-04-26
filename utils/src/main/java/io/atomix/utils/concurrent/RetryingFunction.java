@@ -15,9 +15,9 @@
  */
 package io.atomix.utils.concurrent;
 
-import com.google.common.base.Throwables;
-
 import java.util.function.Function;
+
+import static com.google.common.base.Throwables.throwIfUnchecked;
 
 /**
  * Function that retries execution on failure.
@@ -51,7 +51,8 @@ public class RetryingFunction<U, V> implements Function<U, V> {
         return baseFunction.apply(input);
       } catch (Throwable t) {
         if (!exceptionClass.isAssignableFrom(t.getClass()) || retryAttempts == maxRetries) {
-          Throwables.propagate(t);
+          throwIfUnchecked(t);
+          throw new RuntimeException(t);
         }
         Retries.randomDelay(maxDelayBetweenRetries);
         retryAttempts++;

@@ -52,7 +52,7 @@ public final class Events {
     for (Method method : type.getDeclaredMethods()) {
       Event event = method.getAnnotation(Event.class);
       if (event != null) {
-        String name = event.value().equals("") ? method.getName() : event.value();
+        String name = "".equals(event.value()) ? method.getName() : event.value();
         events.put(method, EventType.from(name));
       }
     }
@@ -94,7 +94,7 @@ public final class Events {
     for (Method method : type.getDeclaredMethods()) {
       Event event = method.getAnnotation(Event.class);
       if (event != null) {
-        String name = event.value().equals("") ? method.getName() : event.value();
+        String name = "".equals(event.value()) ? method.getName() : event.value();
         events.put(EventType.from(name), method);
       }
     }

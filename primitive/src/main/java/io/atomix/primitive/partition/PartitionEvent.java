@@ -120,6 +120,9 @@ public class PartitionEvent extends AbstractEvent<PartitionEvent.Type, Partition
 
   @Override
   public boolean equals(Object object) {
+    if (object == this) {
+      return true;
+    }
     if (object instanceof PartitionEvent) {
       PartitionEvent that = (PartitionEvent) object;
       return this.partitionId().equals(that.partitionId())

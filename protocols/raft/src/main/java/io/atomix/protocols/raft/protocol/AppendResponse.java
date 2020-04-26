@@ -39,12 +39,14 @@ public class AppendResponse extends AbstractRaftResponse {
   private final long term;
   private final boolean succeeded;
   private final long lastLogIndex;
+  private final long lastSnapshotIndex;
 
-  public AppendResponse(Status status, RaftError error, long term, boolean succeeded, long lastLogIndex) {
+  public AppendResponse(Status status, RaftError error, long term, boolean succeeded, long lastLogIndex, long lastSnapshotIndex) {
     super(status, error);
     this.term = term;
     this.succeeded = succeeded;
     this.lastLogIndex = lastLogIndex;
+    this.lastSnapshotIndex = lastSnapshotIndex;
   }
 
   /**
@@ -74,9 +76,18 @@ public class AppendResponse extends AbstractRaftResponse {
     return lastLogIndex;
   }
 
+  /**
+   * Returns the index of the replica's last snapshot
+   *
+   * @return The index of the responding replica's last snapshot
+   */
+  public long lastSnapshotIndex() {
+    return lastSnapshotIndex;
+  }
+
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), status, term, succeeded, lastLogIndex);
+    return Objects.hash(getClass(), status, term, succeeded, lastLogIndex, lastSnapshotIndex);
   }
 
   @Override
@@ -86,7 +97,8 @@ public class AppendResponse extends AbstractRaftResponse {
       return response.status == status
           && response.term == term
           && response.succeeded == succeeded
-          && response.lastLogIndex == lastLogIndex;
+          && response.lastLogIndex == lastLogIndex
+          && response.lastSnapshotIndex == lastSnapshotIndex;
     }
     return false;
   }
@@ -99,6 +111,7 @@ public class AppendResponse extends AbstractRaftResponse {
           .add("term", term)
           .add("succeeded", succeeded)
           .add("lastLogIndex", lastLogIndex)
+          .add("lastSnapshotIndex", lastSnapshotIndex)
           .toString();
     } else {
       return toStringHelper(this)
@@ -115,6 +128,7 @@ public class AppendResponse extends AbstractRaftResponse {
     private long term;
     private boolean succeeded;
     private long lastLogIndex;
+    private long lastSnapshotIndex;
 
     /**
      * Sets the response term.
@@ -153,12 +167,19 @@ public class AppendResponse extends AbstractRaftResponse {
       return this;
     }
 
+    public Builder withLastSnapshotIndex(long lastSnapshotIndex) {
+      checkArgument(lastSnapshotIndex >= 0, "lastSnapshotIndex must be positive");
+      this.lastSnapshotIndex = lastSnapshotIndex;
+      return this;
+    }
+
     @Override
     protected void validate() {
       super.validate();
       if (status == Status.OK) {
         checkArgument(term > 0, "term must be positive");
         checkArgument(lastLogIndex >= 0, "lastLogIndex must be positive");
+        checkArgument(lastSnapshotIndex >= 0, "lastSnapshotIndex must be positive");
       }
     }
 
@@ -168,7 +189,7 @@ public class AppendResponse extends AbstractRaftResponse {
     @Override
     public AppendResponse build() {
       validate();
-      return new AppendResponse(status, error, term, succeeded, lastLogIndex);
+      return new AppendResponse(status, error, term, succeeded, lastLogIndex, lastSnapshotIndex);
     }
   }
 }
