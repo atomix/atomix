@@ -19,6 +19,9 @@ import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import org.junit.Test;
 
+import static io.atomix.protocols.raft.storage.snapshot.SnapshotDescriptor.VERSION_1;
+import static io.atomix.protocols.raft.storage.snapshot.SnapshotDescriptor.VERSION_2;
+import static io.atomix.protocols.raft.storage.snapshot.SnapshotDescriptor.VERSION_POSITION;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -36,7 +39,7 @@ public class SnapshotDescriptorTest {
     assertEquals(2, descriptor.index());
     assertEquals(3, descriptor.timestamp());
     assertEquals(4, descriptor.term());
-    assertEquals(SnapshotDescriptor.VERSION_2, descriptor.version());
+    assertEquals(VERSION_2, descriptor.version());
   }
 
   @Test
@@ -53,9 +56,29 @@ public class SnapshotDescriptorTest {
     assertEquals(2, descriptor.index());
     assertEquals(3, descriptor.timestamp());
     assertEquals(4, descriptor.term());
-    assertEquals(SnapshotDescriptor.VERSION_2, descriptor.version());
+    assertEquals(VERSION_2, descriptor.version());
   }
 
-  // TODO: additional tests to check compatibility
+  @Test
+  public void testReadOldSnapshot() {
+    Buffer tmpBuffer = HeapBuffer.allocate(SnapshotDescriptor.BYTES);
+    SnapshotDescriptor.builder()
+            .withIndex(2)
+            .withTimestamp(3)
+            .build()
+            .copyTo(tmpBuffer);
+    tmpBuffer.writeInt(VERSION_POSITION, VERSION_1);
+    tmpBuffer.flip();
+
+    SnapshotDescriptor descriptor = new SnapshotDescriptor(tmpBuffer);
+    Buffer buffer = HeapBuffer.allocate(SnapshotDescriptor.BYTES);
+    descriptor.copyTo(buffer);
+    buffer.flip();
+    descriptor = new SnapshotDescriptor(buffer);
+    assertEquals(2, descriptor.index());
+    assertEquals(3, descriptor.timestamp());
+    assertEquals(1, descriptor.term());
+    assertEquals(VERSION_1, descriptor.version());
+  }
 
 }

@@ -45,7 +45,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
   // The positions of each field in the header.
   private static final int INDEX_POSITION = 0;                                           // 0
   private static final int TIMESTAMP_POSITION = INDEX_POSITION + INDEX_LENGTH;           // 8
-  private static final int VERSION_POSITION = TIMESTAMP_POSITION + TIMESTAMP_LENGTH;     // 16
+  static final int VERSION_POSITION = TIMESTAMP_POSITION + TIMESTAMP_LENGTH;     // 16
   private static final int LOCKED_POSITION = VERSION_POSITION + VERSION_LENGTH;          // 20
   private static final int TERM_POSITION = LOCKED_POSITION + LOCKED_LENGTH;              // 21
 
