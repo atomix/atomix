@@ -36,7 +36,7 @@ public class SnapshotDescriptorTest {
     assertEquals(2, descriptor.index());
     assertEquals(3, descriptor.timestamp());
     assertEquals(4, descriptor.term());
-    assertEquals(1, descriptor.version());
+    assertEquals(SnapshotDescriptor.VERSION_2, descriptor.version());
   }
 
   @Test
@@ -53,7 +53,9 @@ public class SnapshotDescriptorTest {
     assertEquals(2, descriptor.index());
     assertEquals(3, descriptor.timestamp());
     assertEquals(4, descriptor.term());
-    assertEquals(1, descriptor.version());
+    assertEquals(SnapshotDescriptor.VERSION_2, descriptor.version());
   }
+
+  // TODO: additional tests to check compatibility
 
 }

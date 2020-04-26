@@ -32,7 +32,8 @@ public final class SnapshotDescriptor implements AutoCloseable {
   public static final int BYTES = 64;
 
   // Current snapshot version.
-  private static final int VERSION = 1; // TODO: compatibility?
+  static final int VERSION_1 = 1;
+  static final int VERSION_2 = 2;
 
   // The lengths of each field in the header.
   private static final int INDEX_LENGTH = Long.BYTES;          // 64-bit signed integer
@@ -86,7 +87,13 @@ public final class SnapshotDescriptor implements AutoCloseable {
     this.timestamp = buffer.readLong();
     this.version = buffer.readInt();
     this.locked = buffer.readBoolean();
-    this.term = buffer.readLong();
+    if (version == VERSION_2) {
+      this.term = buffer.readLong();
+    } else if (version == VERSION_1) {
+      this.term = 1;
+    } else {
+      throw new IllegalArgumentException("Incompatible snapshot version " + version);
+    }
     buffer.skip(BYTES - buffer.position());
   }
 
@@ -146,14 +153,18 @@ public final class SnapshotDescriptor implements AutoCloseable {
    * Copies the snapshot to a new buffer.
    */
   SnapshotDescriptor copyTo(Buffer buffer) {
-    this.buffer = buffer
+    buffer
         .writeLong(index)
         .writeLong(timestamp)
         .writeInt(version)
-        .writeBoolean(locked)
-        .writeLong(term)
-        .skip(BYTES - buffer.position())
-        .flush();
+        .writeBoolean(locked);
+
+    if (version == VERSION_2) {
+      buffer.writeLong(term);
+    }
+    this.buffer = buffer.skip(BYTES - buffer.position())
+          .flush();
+
     return this;
   }
 
@@ -214,7 +225,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
      * @return The built snapshot descriptor.
      */
     public SnapshotDescriptor build() {
-      return new SnapshotDescriptor(buffer.writeInt(VERSION_POSITION, VERSION));
+      return new SnapshotDescriptor(buffer.writeInt(VERSION_POSITION, VERSION_2));
     }
   }
 }

@@ -50,7 +50,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   Snapshot snapshot = snapshots.snapshot(1);
  *   }
  * </pre>
- * To create a new {@link Snapshot}, use the {@link #newSnapshot(long, WallClockTimestamp)} method. Each snapshot must
+ * To create a new {@link Snapshot}, use the {@link #newSnapshot(long, long, WallClockTimestamp)} method. Each snapshot must
  * be created with a unique {@code index} which represents the index of the server state machine at
  * the point at which the snapshot was taken. Snapshot indices are used to sort snapshots loaded from
  * disk and apply them at the correct point in the state machine.
