@@ -1290,34 +1290,25 @@ public class RaftTest extends ConcurrentTestCase {
 
   @Test
   public void testLeaderTruncate() throws Throwable {
-    TestPartitionableRaftProtocolFactory partitionableProtocolFactory =
-            new TestPartitionableRaftProtocolFactory(protocolFactory);
-    final List<RaftMember> members =
-            Lists.newArrayList(createMember(), createMember(), createMember());
-    List<MemberId> memberIds =
-            members.stream().map(RaftMember::memberId).collect(Collectors.toList());
-    final Map<MemberId, RaftStorage> storages =
-            memberIds.stream().collect(Collectors.toMap(Function.identity(), this::createStorage));
-    final Map<MemberId, RaftServer> servers =
-            members.stream()
-                    .collect(
-                            Collectors.toMap(
-                                    member -> member.memberId(),
-                                    member ->
-                                            createServer(
-                                                    member.memberId(),
-                                                    builder ->
-                                                            builder
-                                                                    .withStorage(storages.get(member.memberId()))
-                                                                    .withProtocol(partitionableProtocolFactory.newServerProtocol(member.memberId())))));
+    TestPartitionableRaftProtocolFactory partitionableProtocolFactory = new TestPartitionableRaftProtocolFactory(protocolFactory);
+    final List<RaftMember> members = Lists.newArrayList(createMember(), createMember(), createMember());
+    List<MemberId> memberIds = members.stream().map(RaftMember::memberId).collect(Collectors.toList());
+    final Map<MemberId, RaftStorage> storages = memberIds
+            .stream()
+            .collect(Collectors.toMap(Function.identity(), this::createStorage));
+    final Map<MemberId, RaftServer> servers = members
+            .stream()
+            .collect(Collectors.toMap(RaftMember::memberId, member ->
+                    createServer(member.memberId(), builder ->
+                            builder.withStorage(storages.get(member.memberId()))
+                                   .withProtocol(partitionableProtocolFactory.newServerProtocol(member.memberId())))));
 
     partitionableProtocolFactory.connectAll();
     // wait for cluster to start
     startCluster(servers);
 
     MemberId leaderId = members.stream().filter(m -> servers.get(m.memberId()).isLeader()).findFirst().get().memberId();
-    List<MemberId> followers =
-            memberIds.stream().filter(m -> !m.equals(leaderId)).collect(Collectors.toList());
+    List<MemberId> followers = memberIds.stream().filter(m -> !m.equals(leaderId)).collect(Collectors.toList());
 
     final RaftClient client = createClient(members);
     final TestPrimitive primitive = createPrimitive(client);
@@ -1332,10 +1323,7 @@ public class RaftTest extends ConcurrentTestCase {
     client.close();
 
     long lastNonReplicatedEntryIndex = getLastLogEntryIndex(storages.get(leaderId), Mode.ALL);
-    final long committedIndex =
-            Math.max(
-                    getLastLogEntryIndex(storages.get(followers.get(0)), Mode.ALL),
-                    getLastLogEntryIndex(storages.get(followers.get(1)), Mode.ALL));
+    final long committedIndex = Math.max(getLastLogEntryIndex(storages.get(followers.get(0)), Mode.ALL), getLastLogEntryIndex(storages.get(followers.get(1)), Mode.ALL));
     assumeTrue(committedIndex < lastNonReplicatedEntryIndex); // verify that leader has non replicated entries in the log.
 
     // write and compact log
