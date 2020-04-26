@@ -16,7 +16,6 @@
 package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.utils.time.WallClockTimestamp;
-
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -174,24 +173,6 @@ public abstract class Snapshot implements AutoCloseable {
   }
 
   /**
-   * Persists the snapshot to disk if necessary.
-   * <p>
-   * If the snapshot store is backed by disk, the snapshot will be persisted.
-   *
-   * @return The persisted snapshot.
-   */
-  public Snapshot persist() {
-    return this;
-  }
-
-  /**
-   * Returns whether the snapshot is persisted.
-   *
-   * @return Whether the snapshot is persisted.
-   */
-  public abstract boolean isPersisted();
-
-  /**
    * Closes the snapshot.
    */
   @Override
@@ -202,6 +183,7 @@ public abstract class Snapshot implements AutoCloseable {
    * Deletes the snapshot.
    */
   public void delete() {
+
   }
 
   @Override

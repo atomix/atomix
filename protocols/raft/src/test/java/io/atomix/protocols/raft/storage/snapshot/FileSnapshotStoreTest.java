@@ -24,21 +24,18 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.nio.file.FileVisitResult;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
- * File snapshot store test.
+ * Snapshot store test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -88,18 +85,15 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
   public void testPersistLoadSnapshot() {
     SnapshotStore store = createSnapshotStore();
 
-    Snapshot snapshot = store.newTemporarySnapshot(2, new WallClockTimestamp());
+    Snapshot snapshot = store.newSnapshot(2, new WallClockTimestamp());
     try (SnapshotWriter writer = snapshot.openWriter()) {
       writer.writeLong(10);
     }
 
-    snapshot = snapshot.persist();
-
-    assertTrue(snapshot.isPersisted());
-
     assertNull(store.getSnapshot(2));
-
+    assertTempSnapshotCount(store, 1);
     snapshot.complete();
+    assertTempSnapshotCount(store, 0);
     assertNotNull(store.getSnapshot(2));
 
     try (SnapshotReader reader = snapshot.openReader()) {
@@ -122,7 +116,7 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
    * Tests writing multiple times to a snapshot designed to mimic chunked snapshots from leaders.
    */
   @Test
-  public void testStreamSnapshot() throws Exception {
+  public void testStreamSnapshot() {
     SnapshotStore store = createSnapshotStore();
 
     Snapshot snapshot = store.newSnapshot(1, new WallClockTimestamp());
@@ -139,6 +133,49 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
         assertEquals(i, reader.readLong());
       }
     }
+  }
+
+  /**
+   * Tests case where two {@link FileSnapshot} instances are trying to write the same snapshot
+   */
+  @Test
+  public void testConcurrentSnapshotWriters() {
+    SnapshotStore store = createSnapshotStore();
+    final WallClockTimestamp timestamp = new WallClockTimestamp();
+    Snapshot first = store.newSnapshot(1, timestamp);
+    Snapshot second = store.newSnapshot(1, timestamp);
+
+    try (SnapshotWriter firstWriter = first.openWriter()) {
+      firstWriter.writeLong(1);
+    }
+
+    try (SnapshotWriter secondWriter = second.openWriter()) {
+      secondWriter.writeLong(1);
+    }
+
+    first.complete();
+    second.complete();
+
+    Snapshot completed = store.getSnapshot(first.index());
+    assertNotNull(completed);
+    long result = 0;
+    try (SnapshotReader reader = completed.openReader()) {
+      while (reader.hasRemaining()) {
+        result += reader.readLong();
+      }
+    }
+
+    assertEquals(result, 1);
+  }
+
+  @Test
+  public void testTemporarySnapshotCleanedUpOnClose() {
+    final SnapshotStore store = createSnapshotStore();
+    final Snapshot snapshot = store.newSnapshot(1, new WallClockTimestamp());
+
+    assertTempSnapshotCount(store, 1);
+    snapshot.close();
+    assertTempSnapshotCount(store, 0);
   }
 
   @Before
@@ -163,4 +200,8 @@ public class FileSnapshotStoreTest extends AbstractSnapshotStoreTest {
     testId = UUID.randomUUID().toString();
   }
 
+  private void assertTempSnapshotCount(SnapshotStore store, int expected) {
+    final File[] tempSnapshots = store.storage.directory().listFiles(f -> f.getName().endsWith(".tmp"));
+    assertEquals(expected, tempSnapshots != null ? tempSnapshots.length : 0);
+  }
 }

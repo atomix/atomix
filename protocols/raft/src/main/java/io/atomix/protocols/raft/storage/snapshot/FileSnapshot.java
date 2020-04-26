@@ -17,12 +17,16 @@ package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
+import io.atomix.utils.AtomixIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.AtomicMoveNotSupportedException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -42,7 +46,9 @@ final class FileSnapshot extends Snapshot {
   @Override
   public synchronized SnapshotWriter openWriter() {
     checkWriter();
-    Buffer buffer = FileBuffer.allocate(file.file(), SnapshotDescriptor.BYTES);
+    checkState(!file.file().exists(), "cannot write to completed snapshot");
+    checkNotNull(file.temporaryFile(), "missing temporary snapshot file for writing");
+    Buffer buffer = FileBuffer.allocate(file.temporaryFile(), SnapshotDescriptor.BYTES);
     descriptor.copyTo(buffer);
 
     int length = buffer.position(SnapshotDescriptor.BYTES).readInt();
@@ -66,17 +72,35 @@ final class FileSnapshot extends Snapshot {
   }
 
   @Override
-  public boolean isPersisted() {
-    return true;
-  }
-
-  @Override
   public Snapshot complete() {
-    Buffer buffer = FileBuffer.allocate(file.file(), SnapshotDescriptor.BYTES);
+    checkNotNull(file.temporaryFile(), "no temporary snapshot file to read from");
+
+    Buffer buffer = FileBuffer.allocate(file.temporaryFile(), SnapshotDescriptor.BYTES);
     try (SnapshotDescriptor descriptor = new SnapshotDescriptor(buffer)) {
       descriptor.lock();
     }
+
+    try {
+      persistTemporaryFile();
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
+    }
+
+    file.clearTemporaryFile();
     return super.complete();
+  }
+
+  /**
+   * Deletes the temporary file
+   */
+  @Override
+  public void close() {
+    super.close();
+
+    if (file.temporaryFile() != null) {
+      deleteFileSilently(file.temporaryFile().toPath());
+      file.clearTemporaryFile();
+    }
   }
 
   /**
@@ -86,10 +110,31 @@ final class FileSnapshot extends Snapshot {
   public void delete() {
     LOGGER.debug("Deleting {}", this);
     Path path = file.file().toPath();
+
     if (Files.exists(path)) {
+      deleteFileSilently(path);
+    }
+  }
+
+  private void deleteFileSilently(Path path) {
+    try {
+      Files.delete(path);
+    } catch (IOException e) {
+      LOGGER.debug("Failed to delete snapshot file {}", path, e);
+    }
+  }
+
+  private void persistTemporaryFile() throws IOException {
+    final Path temporaryPath = file.temporaryFile().toPath();
+    final Path persistedPath = file.file().toPath();
+
+    try {
+      Files.move(temporaryPath, persistedPath, StandardCopyOption.ATOMIC_MOVE);
+    } catch (AtomicMoveNotSupportedException e) {
       try {
-        Files.delete(file.file().toPath());
-      } catch (IOException e) {
+        Files.move(temporaryPath, persistedPath);
+      } catch (FileAlreadyExistsException ignored) {
+        LOGGER.debug("Snapshot {} was already previously completed", this);
       }
     }
   }
