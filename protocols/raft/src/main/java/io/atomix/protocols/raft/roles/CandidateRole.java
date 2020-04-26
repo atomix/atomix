@@ -57,6 +57,8 @@ public final class CandidateRole extends ActiveRole {
   public synchronized CompletableFuture<RaftRole> start() {
     if (raft.getCluster().getActiveMemberStates().isEmpty()) {
       log.debug("Single member cluster. Transitioning directly to leader.");
+      raft.setTerm(raft.getTerm() + 1);
+      raft.setLastVotedFor(raft.getCluster().getMember().memberId());
       raft.transition(RaftServer.Role.LEADER);
       return CompletableFuture.completedFuture(this);
     }
