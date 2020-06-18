@@ -25,6 +25,7 @@ import io.atomix.utils.serializer.Namespace;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Primitive partition group.
@@ -113,6 +114,25 @@ public interface PartitionGroup extends Configured<PartitionGroupConfig> {
    * @return a sorted list of partition IDs
    */
   List<PartitionId> getPartitionIds();
+
+  /**
+   * Takes a snapshot of the partition.
+   *
+   * @param partitionId the partition identifier
+   * @return a future to be completed once the snapshot is complete
+   */
+  default CompletableFuture<Void> snapshot(PartitionId partitionId) {
+    return CompletableFuture.completedFuture(null);
+  }
+
+  /**
+   * Takes snapshots of all partitions.
+   *
+   * @return a future to be completed once snapshots have been taken
+   */
+  default CompletableFuture<Void> snapshot() {
+    return CompletableFuture.completedFuture(null);
+  }
 
   /**
    * Partition group builder.

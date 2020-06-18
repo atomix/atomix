@@ -43,6 +43,7 @@ import io.atomix.utils.logging.LoggerContext;
 import io.atomix.utils.memory.MemorySize;
 import io.atomix.utils.serializer.Namespace;
 import io.atomix.utils.serializer.Namespaces;
+import io.atomix.utils.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -68,6 +70,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class RaftPartitionGroup implements ManagedPartitionGroup {
   public static final Type TYPE = new Type();
+  private final Serializer serializer;
 
   /**
    * Returns a new Raft partition group builder.
@@ -153,6 +156,11 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     this.threadContextFactory = new BlockingAwareThreadPoolContextFactory(
         "raft-partition-group-" + name + "-%d", threadPoolSize, log);
     this.snapshotSubject = "raft-partition-group-" + name + "-snapshot";
+    this.serializer = Serializer.using(Namespace.builder()
+            .nextId(Namespaces.BEGIN_USER_CUSTOM_ID + 100)
+            .register(Namespaces.BASIC)
+            .register(PartitionId.class)
+            .build("raft-partition-group-" + name));
 
     buildPartitions(config, threadContextFactory).forEach(p -> {
       this.partitions.put(p.id(), p);
@@ -205,15 +213,32 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     return sortedPartitionIds;
   }
 
-  /**
-   * Takes snapshots of all Raft partitions.
-   *
-   * @return a future to be completed once snapshots have been taken
-   */
+  @Override
+  public CompletableFuture<Void> snapshot(PartitionId partitionId) {
+    return Futures.allOf(config.getMembers().stream()
+            .map(MemberId::from)
+            .map(id -> communicationService.send(
+                    snapshotSubject,
+                    partitionId,
+                    serializer::encode,
+                    serializer::decode,
+                    id,
+                    SNAPSHOT_TIMEOUT))
+            .collect(Collectors.toList()))
+            .thenApply(v -> null);
+  }
+
+  @Override
   public CompletableFuture<Void> snapshot() {
     return Futures.allOf(config.getMembers().stream()
         .map(MemberId::from)
-        .map(id -> communicationService.send(snapshotSubject, null, id, SNAPSHOT_TIMEOUT))
+        .map(id -> communicationService.send(
+                snapshotSubject,
+                null,
+                serializer::encode,
+                serializer::decode,
+                id,
+                SNAPSHOT_TIMEOUT))
         .collect(Collectors.toList()))
         .thenApply(v -> null);
   }
@@ -221,20 +246,41 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
   /**
    * Handles a snapshot request from a peer.
    *
+   * @param partitionId partition identifier
    * @return a future to be completed once the snapshot is complete
    */
-  private CompletableFuture<Void> handleSnapshot() {
+  private CompletableFuture<Void> handleSnapshot(PartitionId partitionId) {
+    if (partitionId == null) {
+      return handleAllSnapshot();
+    }
+    return handlePartitionSnapshot(partitionId);
+  }
+
+  private CompletableFuture<Void> handleAllSnapshot() {
     return Futures.allOf(partitions.values().stream()
         .map(partition -> partition.snapshot())
         .collect(Collectors.toList()))
         .thenApply(v -> null);
   }
 
+  private CompletableFuture<Void> handlePartitionSnapshot(PartitionId partitionId) {
+    RaftPartition partition = partitions.get(partitionId);
+    if (partition != null) {
+      return partition.snapshot();
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
   @Override
   public CompletableFuture<ManagedPartitionGroup> join(PartitionManagementService managementService) {
     this.metadata = buildPartitions();
     this.communicationService = managementService.getMessagingService();
-    communicationService.<Void, Void>subscribe(snapshotSubject, m -> handleSnapshot());
+    communicationService.subscribe(
+            snapshotSubject,
+            serializer::decode,
+            (Function<PartitionId, CompletableFuture<Void>>) this::handleSnapshot,
+            serializer::encode
+    );
     List<CompletableFuture<Partition>> futures = metadata.stream()
         .map(metadata -> {
           RaftPartition partition = partitions.get(metadata.id());
