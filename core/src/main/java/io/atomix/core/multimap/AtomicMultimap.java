@@ -129,6 +129,18 @@ public interface AtomicMultimap<K, V> extends SyncPrimitive {
   Versioned<Collection<V>> removeAll(K key);
 
   /**
+   * Removes the set of key-value pairs with the specified key and values if they
+   * exist. In implementations that allow duplicates each instance of a key
+   * will remove one matching entry, which one is not defined. Equivalent to
+   * repeated calls to {@code remove()} for each key value pair but more
+   * efficient.
+   *
+   * @param mapping the keys-values to be removed
+   * @return true if the map changes because of this call, false otherwise.
+   */
+  boolean removeAll(Map<K, Collection<? extends V>> mapping);
+
+  /**
    * Adds the set of key-value pairs of the specified key with each of the
    * values in the iterable if each key-value pair does not already exist,
    * if the pair does exist the behavior is implementation specific.
@@ -140,6 +152,17 @@ public interface AtomicMultimap<K, V> extends SyncPrimitive {
    * false otherwise
    */
   boolean putAll(K key, Collection<? extends V> values);
+
+  /**
+   * Adds the set of key-value pairs of the specified mapping with each of
+   * the values in the iterable if each key-value pair does not already exist,
+   * if the pair does exist the behavior is implementation specific.
+   * (Same as repeated puts but with efficiency gains.)
+   *
+   * @param mapping the keys-values to be added
+   * @return true if any change in the map results from this call, false otherwise
+   */
+  boolean putAll(Map<K, Collection<? extends V>> mapping);
 
   /**
    * Stores all the values in values associated with the key specified,
