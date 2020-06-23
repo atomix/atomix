@@ -269,7 +269,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
 
     Collection<? extends byte[]> addedValues = backingMap.computeIfAbsent(key, k -> new NonTransactionalValues()).putAll(key, values);
     if (addedValues != null) {
-      addedValues.forEach(value -> onChange(key, value, null));
+      addedValues.forEach(value -> onChange(key, null, value));
       return true;
     }
     return false;
