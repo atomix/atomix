@@ -163,7 +163,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class Atomix extends AtomixCluster implements PrimitivesService {
   private static final String[] RESOURCES = System.getProperty("atomix.config.resources", "atomix").split(",");
 
-  private static final String VERSION_RESOURCE = "VERSION";
+  private static final String VERSION_RESOURCE = "ATOMIX-VERSION";
 
   /**
    * Returns a new Atomix configuration.
