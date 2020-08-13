@@ -200,15 +200,17 @@ public class NettyMessagingService implements ManagedMessagingService {
       try {
         for (Enumeration<String> e = ks.aliases(); e.hasMoreElements(); ) {
           String alias = e.nextElement();
-          Key key = ks.getKey(alias, ksPwd);
+          // Use this for PrivateKeyEntry and SecretKeyEntry
           Certificate[] certs = ks.getCertificateChain(alias);
           log.debug("{} -> {}", alias, certs);
           final byte[] encodedKey;
+          // If the key is imported this check will fail
           if (certs != null && certs.length > 0) {
             encodedKey = certs[0].getEncoded();
           } else {
+            // Fallback for TrustedCertificateEntry
             log.info("Could not find cert chain for {}, using fingerprint of key instead...", alias);
-            encodedKey = key.getEncoded();
+            encodedKey = ks.getCertificate(alias).getEncoded();
           }
           // Compute the certificate's fingerprint (use the key if certificate cannot be found)
           MessageDigest digest = MessageDigest.getInstance("SHA1");
