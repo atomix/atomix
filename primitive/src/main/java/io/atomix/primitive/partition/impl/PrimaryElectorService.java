@@ -127,27 +127,29 @@ public class PrimaryElectorService extends AbstractPrimitiveService {
 
       // Find the registration with the fewest number of primaries.
       int minCandidateCount = 0;
+      Registration minCountCandidate = null;
       for (Registration candidate : election.registrations) {
         if (minCandidateCount == 0) {
           minCandidateCount = election.countPrimaries(candidate);
+          minCountCandidate = candidate;
         } else {
-          minCandidateCount = Math.min(minCandidateCount, election.countPrimaries(candidate));
+          int candidateCount = election.countPrimaries(candidate);
+          if (candidateCount <= minCandidateCount) {
+            minCandidateCount = candidateCount;
+            minCountCandidate = candidate;
+          }
         }
       }
 
       // If the primary count for the current primary is more than that of the candidate with the fewest
       // primaries then transfer leadership to the candidate.
-      if (minCandidateCount < primaryCount) {
-        for (Registration candidate : election.registrations) {
-          if (election.countPrimaries(candidate) < primaryCount) {
-            PrimaryTerm oldTerm = election.term();
-            elections.put(election.partitionId, election.transfer(candidate.member()));
-            PrimaryTerm newTerm = term(election.partitionId);
-            if (!Objects.equals(oldTerm, newTerm)) {
-              notifyTermChange(election.partitionId, newTerm);
-              rebalanced = true;
-            }
-          }
+      if (minCandidateCount < primaryCount && minCountCandidate != null) {
+        PrimaryTerm oldTerm = election.term();
+        elections.put(election.partitionId, election.transfer(minCountCandidate.member()));
+        PrimaryTerm newTerm = term(election.partitionId);
+        if (!Objects.equals(oldTerm, newTerm)) {
+          notifyTermChange(election.partitionId, newTerm);
+          rebalanced = true;
         }
       }
     }
