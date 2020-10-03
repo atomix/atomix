@@ -16,18 +16,14 @@
 package io.atomix.protocols.backup.partition;
 
 import io.atomix.cluster.MemberId;
-import io.atomix.primitive.partition.GroupMember;
-import io.atomix.primitive.partition.MemberGroupProvider;
-import io.atomix.primitive.partition.Partition;
-import io.atomix.primitive.partition.PartitionId;
-import io.atomix.primitive.partition.PartitionManagementService;
-import io.atomix.primitive.partition.PrimaryElection;
+import io.atomix.primitive.partition.*;
 import io.atomix.protocols.backup.partition.impl.PrimaryBackupPartitionClient;
 import io.atomix.protocols.backup.partition.impl.PrimaryBackupPartitionServer;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.ThreadContextFactory;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -78,11 +74,11 @@ public class PrimaryBackupPartition implements Partition {
 
   @Override
   public Collection<MemberId> backups() {
-    return Futures.get(election.getTerm())
-        .candidates()
-        .stream()
-        .map(GroupMember::memberId)
-        .collect(Collectors.toList());
+    PrimaryTerm term = Futures.get(election.getTerm());
+    return term.candidates().stream()
+            .filter(member -> !Objects.equals(term.primary().memberId(), member.memberId()))
+            .map(GroupMember::memberId)
+            .collect(Collectors.toList());
   }
 
   /**
