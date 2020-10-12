@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -58,6 +60,28 @@ public class DistributedListTest extends AbstractPrimitiveTest {
     assertEquals("bar", list.set(1, "baz"));
     assertEquals(2, list.size());
     assertEquals("baz", list.get(1));
+  }
+
+  @Test
+  public void testListOperations_addAll() throws Exception {
+    DistributedList<String> list = atomix().<String>listBuilder("test-list")
+            .withProtocol(protocol())
+            .build();
+
+    assertEquals(0, list.size());
+    assertTrue(list.isEmpty());
+    assertFalse(list.contains("foo"));
+    assertTrue(list.addAll(Stream.of("foo", "baz").collect(Collectors.toList())));
+    assertEquals(2, list.size());
+    assertEquals("foo", list.get(0));
+    assertEquals("baz", list.get(1));
+    assertTrue(list.addAll(1, Stream.of("bar", "wad", "liu").collect(Collectors.toList())));
+    assertEquals(5, list.size());
+    assertEquals("foo", list.get(0));
+    assertEquals("bar", list.get(1));
+    assertEquals("wad", list.get(2));
+    assertEquals("liu", list.get(3));
+    assertEquals("baz", list.get(4));
   }
 
   @Test

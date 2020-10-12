@@ -73,8 +73,9 @@ public class DefaultDistributedListService extends DefaultDistributedCollectionS
   public CollectionUpdateResult<Boolean> addAll(int index, Collection<? extends String> c) {
     boolean changed = false;
     for (String element : c) {
-      if (add(element).status() == CollectionUpdateResult.Status.OK) {
+      if (add(index, element).status() == CollectionUpdateResult.Status.OK) {
         changed = true;
+        index++;
       }
     }
     return ok(changed);
