@@ -222,7 +222,7 @@ public class FileBytes extends AbstractBytes {
       randomAccessFile.setLength(0);
       randomAccessFile.setLength(size);
       for (int i = 0; i < size; i += PAGE_SIZE) {
-        randomAccessFile.write(BLANK_PAGE, 0, Math.min(size - i, PAGE_SIZE));
+        randomAccessFile.write(BLANK_PAGE, i, Math.min(size - i, PAGE_SIZE));
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -238,7 +238,7 @@ public class FileBytes extends AbstractBytes {
       randomAccessFile.setLength(length);
       seekToOffset(offset);
       for (int i = offset; i < length; i += PAGE_SIZE) {
-        randomAccessFile.write(BLANK_PAGE, 0, Math.min(length - i, PAGE_SIZE));
+        randomAccessFile.write(BLANK_PAGE, i, Math.min(length - i, PAGE_SIZE));
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
