@@ -15,6 +15,7 @@
  */
 package io.atomix.storage.buffer;
 
+import io.atomix.utils.memory.Memory;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -37,6 +38,11 @@ public class DirectBufferTest extends BufferTest {
   @Override
   protected Buffer createBuffer(int capacity, int maxCapacity) {
     return DirectBuffer.allocate(capacity, maxCapacity);
+  }
+
+  @Override
+  protected Buffer createBuffer(int offset, int capacity, int maxCapacity) {
+    return new DirectBuffer(DirectBytes.allocate((int) Memory.Util.toPow2(capacity)), offset, capacity, maxCapacity);
   }
 
   @Test

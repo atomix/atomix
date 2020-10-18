@@ -42,11 +42,13 @@ public abstract class ByteBufferBuffer extends AbstractBuffer {
   protected void compact(int from, int to, int length) {
     byte[] bytes = new byte[1024];
     int position = from;
+    int destPosition = to;
     while (position < from + length) {
       int size = Math.min((from + length) - position, 1024);
       this.bytes.read(position, bytes, 0, size);
-      this.bytes.write(0, bytes, 0, size);
+      this.bytes.write(destPosition, bytes, 0, size);
       position += size;
+      destPosition += size;
     }
   }
 

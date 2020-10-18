@@ -15,10 +15,12 @@
  */
 package io.atomix.storage.buffer;
 
+import io.atomix.utils.memory.Memory;
 import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.io.File;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 
 import static org.junit.Assert.assertEquals;
@@ -44,6 +46,11 @@ public class MappedBufferTest extends BufferTest {
   @Override
   protected Buffer createBuffer(int capacity, int maxCapacity) {
     return MappedBuffer.allocate(FileTesting.createFile(), capacity, maxCapacity);
+  }
+
+  @Override
+  protected Buffer createBuffer(int offset, int capacity, int maxCapacity) {
+    return new MappedBuffer(MappedBytes.allocate(FileTesting.createFile(), FileChannel.MapMode.READ_WRITE, capacity), 0, capacity, maxCapacity);
   }
 
   /**

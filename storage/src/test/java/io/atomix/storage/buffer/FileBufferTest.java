@@ -15,6 +15,7 @@
  */
 package io.atomix.storage.buffer;
 
+import io.atomix.utils.memory.Memory;
 import org.junit.AfterClass;
 import org.junit.Test;
 
@@ -44,6 +45,11 @@ public class FileBufferTest extends BufferTest {
   @Override
   protected Buffer createBuffer(int capacity, int maxCapacity) {
     return FileBuffer.allocate(FileTesting.createFile(), capacity, maxCapacity);
+  }
+
+  @Override
+  protected Buffer createBuffer(int offset, int capacity, int maxCapacity) {
+    return new FileBuffer(new FileBytes(FileTesting.createFile(), FileBytes.DEFAULT_MODE, (int) Math.min(Memory.Util.toPow2(capacity), maxCapacity)), offset, capacity, maxCapacity);
   }
 
   @Test

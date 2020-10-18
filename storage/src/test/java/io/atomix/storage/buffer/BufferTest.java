@@ -42,6 +42,8 @@ public abstract class BufferTest {
    */
   protected abstract Buffer createBuffer(int capacity, int maxCapacity);
 
+  protected abstract Buffer createBuffer(int offset, int capacity, int maxCapacity);
+
   @Test
   public void testPosition() {
     Buffer buffer = createBuffer(8);
@@ -375,6 +377,30 @@ public abstract class BufferTest {
   }
 
   @Test
+  public void testCompactWithOffsetNotZero() {
+    Buffer buffer = createBuffer(8, 2048, 2048);
+    buffer.position(4).writeInt(123)
+            .position(100).writeLong(1234)
+            .position(300).writeString("hello")
+            .position(500).writeBoolean(false)
+            .position(1020).writeInt(234)
+            .position(2040).writeLong(2345)
+            .position(4).compact();
+    assertEquals(0, buffer.position());
+    assertEquals(123, buffer.readInt());
+    buffer.position(96);
+    assertEquals(1234, buffer.readLong());
+    buffer.position(296);
+    assertEquals("hello", buffer.readString());
+    buffer.position(496);
+    assertEquals(false, buffer.readBoolean());
+    buffer.position(1016);
+    assertEquals(234, buffer.readInt());
+    buffer.position(2036);
+    assertEquals(2345, buffer.readLong());
+  }
+
+  @Test
   public void testSwappedPosition() {
     Buffer buffer = createBuffer(8).order(ByteOrder.LITTLE_ENDIAN);
     assertEquals(0, buffer.position());
@@ -656,6 +682,30 @@ public abstract class BufferTest {
     buffer.position(100).writeLong(1234).position(100).compact();
     assertEquals(0, buffer.position());
     assertEquals(1234, buffer.readLong());
+  }
+
+  @Test
+  public void testSwappedCompactWithOffsetNotZero() {
+    Buffer buffer = createBuffer(8, 2048, 2048).order(ByteOrder.LITTLE_ENDIAN);
+    buffer.position(4).writeInt(123)
+            .position(100).writeLong(1234)
+            .position(300).writeString("hello")
+            .position(500).writeBoolean(false)
+            .position(1020).writeInt(234)
+            .position(2040).writeLong(2345)
+            .position(4).compact();
+    assertEquals(0, buffer.position());
+    assertEquals(123, buffer.readInt());
+    buffer.position(96);
+    assertEquals(1234, buffer.readLong());
+    buffer.position(296);
+    assertEquals("hello", buffer.readString());
+    buffer.position(496);
+    assertEquals(false, buffer.readBoolean());
+    buffer.position(1016);
+    assertEquals(234, buffer.readInt());
+    buffer.position(2036);
+    assertEquals(2345, buffer.readLong());
   }
 
   @Test

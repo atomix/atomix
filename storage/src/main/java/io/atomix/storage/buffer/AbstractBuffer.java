@@ -155,7 +155,7 @@ public abstract class AbstractBuffer implements Buffer {
 
   @Override
   public Buffer compact() {
-    compact(offset(position), offset, (limit != -1 ? limit : capacity) - offset(position));
+    compact(offset(position), offset, (limit != -1 ? limit : capacity) - position);
     return clear();
   }
 

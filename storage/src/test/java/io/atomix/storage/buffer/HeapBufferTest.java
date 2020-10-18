@@ -15,6 +15,7 @@
  */
 package io.atomix.storage.buffer;
 
+import io.atomix.utils.memory.Memory;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -36,6 +37,11 @@ public class HeapBufferTest extends BufferTest {
   @Override
   protected Buffer createBuffer(int capacity, int maxCapacity) {
     return HeapBuffer.allocate(capacity, maxCapacity);
+  }
+
+  @Override
+  protected Buffer createBuffer(int offset, int capacity, int maxCapacity) {
+    return new HeapBuffer(HeapBytes.allocate((int)Memory.Util.toPow2(capacity)), offset, capacity, maxCapacity);
   }
 
   @Test
