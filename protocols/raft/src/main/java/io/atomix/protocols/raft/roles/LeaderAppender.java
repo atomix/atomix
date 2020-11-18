@@ -261,7 +261,7 @@ final class LeaderAppender extends AbstractAppender {
       TimestampedFuture<Long> future = iterator.next();
 
       // If the future is timestamped prior to the last heartbeat to a majority of the cluster, complete the future.
-      if (future.timestamp < heartbeatTime) {
+      if (future.timestamp <= heartbeatTime) {
         future.complete(null);
         iterator.remove();
       }
@@ -277,7 +277,7 @@ final class LeaderAppender extends AbstractAppender {
     }
 
     // If heartbeat futures are still pending, attempt to send heartbeats.
-    if (!heartbeatFutures.isEmpty()) {
+    if (!heartbeatFutures.isEmpty() && member.getMember().getType() == RaftMember.Type.ACTIVE) {
       sendHeartbeats();
     }
   }
