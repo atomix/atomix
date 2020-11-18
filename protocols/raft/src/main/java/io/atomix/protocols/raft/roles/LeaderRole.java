@@ -258,20 +258,20 @@ public final class LeaderRole extends ActiveRole {
     final long term = raft.getTerm();
 
     return appendAndCompact(new ConfigurationEntry(term, System.currentTimeMillis(), members))
-        .thenComposeAsync(entry -> {
-          // Store the index of the configuration entry in order to prevent other configurations from
-          // being logged and committed concurrently. This is an important safety property of Raft.
-          configuring = entry.index();
-          raft.getCluster().configure(new Configuration(entry.index(), entry.entry().term(), entry.entry().timestamp(), entry.entry().members()));
+            .thenCompose(entry -> {
+              // Store the index of the configuration entry in order to prevent other configurations from
+              // being logged and committed concurrently. This is an important safety property of Raft.
+              configuring = entry.index();
+              raft.getCluster().configure(new Configuration(entry.index(), entry.entry().term(), entry.entry().timestamp(), entry.entry().members()));
 
-          return appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
-            raft.checkThread();
-            if (isRunning() && commitError == null) {
-              raft.getServiceManager().<OperationResult>apply(entry.index());
-            }
-            configuring = 0;
-          });
-        }, raft.getThreadContext());
+              return appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
+                raft.checkThread();
+                if (isRunning() && commitError == null) {
+                  raft.getServiceManager().<OperationResult>apply(entry.index());
+                }
+                configuring = 0;
+              });
+            });
   }
 
   @Override
