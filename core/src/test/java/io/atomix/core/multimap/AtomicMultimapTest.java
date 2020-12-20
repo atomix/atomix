@@ -260,6 +260,20 @@ public class AtomicMultimapTest extends AbstractPrimitiveTest {
     assertEquals(AtomicMultimapEvent.Type.INSERT, event.type());
     assertEquals("bar", event.key());
     assertEquals("barbaz", event.newValue());
+
+    List<String> values = Lists.newArrayList("b", "a", "r");
+    List<String> storedValues = Lists.newArrayList();
+    assertTrue(multimap1.putAll("foo", values));
+
+    for (int i = 0; i < 3; i++) {
+      event = listener.event();
+      assertEquals(AtomicMultimapEvent.Type.INSERT, event.type());
+      assertEquals("foo", event.key());
+      assertNull(event.oldValue());
+      assertNotNull(event.newValue());
+      storedValues.add((String) event.newValue());
+    }
+    assertTrue(stringArrayCollectionIsEqual(values, storedValues));
   }
 
   @Test
