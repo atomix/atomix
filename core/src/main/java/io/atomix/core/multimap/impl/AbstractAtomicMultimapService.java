@@ -262,7 +262,7 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
     // Decompose the commit in several updates
     boolean operationResult = false;
     for (Map.Entry<String, Collection<? extends byte[]>> entry : mapping.entrySet()) {
-      if(removeAll(entry.getKey(), entry.getValue())) {
+      if (removeAll(entry.getKey(), entry.getValue())) {
         operationResult = true;
       }
     }
