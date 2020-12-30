@@ -143,8 +143,28 @@ public class AtomicMultimapProxy
   }
 
   @Override
+  public CompletableFuture<Boolean> removeAll(Map<String, Collection<? extends byte[]>> mapping) {
+    Map<PartitionId, Map<String, Collection<? extends byte[]>>> subMappings = buildSubMappings(mapping);
+    // Semantic is that any change in the partitions should return true
+    return Futures.allOf(subMappings.entrySet().stream()
+                    .map(entry -> getProxyClient().applyOn(entry.getKey(), service -> service.removeAll(entry.getValue())))
+                    .collect(Collectors.toList()),
+            Boolean::logicalOr, false);
+  }
+
+  @Override
   public CompletableFuture<Boolean> putAll(String key, Collection<? extends byte[]> values) {
     return getProxyClient().applyBy(key, service -> service.putAll(key, values));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> putAll(Map<String, Collection<? extends byte[]>> mapping) {
+    Map<PartitionId, Map<String, Collection<? extends byte[]>>> subMappings = buildSubMappings(mapping);
+    // Semantic is that any change in the partitions should return true
+    return Futures.allOf(subMappings.entrySet().stream()
+                    .map(entry -> getProxyClient().applyOn(entry.getKey(), service -> service.putAll(entry.getValue())))
+                    .collect(Collectors.toList()),
+            Boolean::logicalOr, false);
   }
 
   @Override
@@ -228,6 +248,26 @@ public class AtomicMultimapProxy
   @Override
   public AtomicMultimap<String, byte[]> sync(Duration operationTimeout) {
     return new BlockingAtomicMultimap<>(this, operationTimeout.toMillis());
+  }
+
+  /**
+   * Build sub-mappings for each partition.
+   *
+   * @param mapping initial mapping key-value
+   * @return sub-mappings partition-values
+   */
+  private Map<PartitionId, Map<String, Collection<? extends byte[]>>> buildSubMappings(
+          Map<String, Collection<? extends byte[]>> mapping) {
+    Map<PartitionId, Map<String, Collection<? extends byte[]>>> subMappings = Maps.newHashMap();
+    // Build first a mapping with the partitions
+    mapping.forEach((key, values) -> subMappings.compute(getProxyClient().getPartitionId(key), (k, v) -> {
+      if (v == null) {
+        v = Maps.newHashMap();
+      }
+      v.put(key, values);
+      return v;
+    }));
+    return subMappings;
   }
 
   private class AsMap implements AsyncDistributedMap<String, Versioned<Collection<byte[]>>> {

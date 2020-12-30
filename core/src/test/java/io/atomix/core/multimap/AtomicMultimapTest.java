@@ -20,6 +20,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.atomix.core.AbstractPrimitiveTest;
 import io.atomix.core.multimap.impl.AtomicMultimapProxy;
+import io.atomix.utils.time.Versioned;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -164,6 +165,55 @@ public class AtomicMultimapTest extends AbstractPrimitiveTest {
       assertTrue(stringArrayCollectionIsEqual(Lists.newArrayList(two, three, four), multimap.replaceValues(key, Lists.newArrayList()).value()));
       assertTrue(multimap.replaceValues(key, all).value().isEmpty());
     });
+
+    multimap.clear();
+    assertEquals(0, multimap.size());
+
+    // First build the mappings having each key a different mapping
+    Map<String, Collection<? extends String>> mapping = Maps.newHashMap();
+    all.forEach(value -> {
+      switch (value) {
+        case one:
+          mapping.put(one, Lists.newArrayList(all.subList(0, 1)));
+          break;
+        case two:
+          mapping.put(two, Lists.newArrayList(all.subList(0, 2)));
+          break;
+        case three:
+          mapping.put(three, Lists.newArrayList(all.subList(0, 3)));
+          break;
+        default:
+          mapping.put(four, Lists.newArrayList(all.subList(0, 4)));
+          break;
+      }
+    });
+    assertTrue(multimap.putAll(mapping));
+    // Keys are already present operation has to fail
+    assertFalse(multimap.putAll(mapping));
+    assertEquals(10, multimap.size());
+    // Verify mapping is ok
+    all.forEach(value -> {
+      Versioned<Collection<String>> result = multimap.get(value);
+      switch (value) {
+        case one:
+          assertTrue(stringArrayCollectionIsEqual(all.subList(0, 1), result.value()));
+          break;
+        case two:
+          assertTrue(stringArrayCollectionIsEqual(all.subList(0, 2), result.value()));
+          break;
+        case three:
+          assertTrue(stringArrayCollectionIsEqual(all.subList(0, 3), result.value()));
+          break;
+        default:
+          assertTrue(stringArrayCollectionIsEqual(all.subList(0, 4), result.value()));
+          break;
+      }
+    });
+    assertTrue(multimap.removeAll(mapping));
+    // Map is empty operation has to fail
+    assertFalse(multimap.removeAll(mapping));
+    // No more elements
+    assertEquals(0, multimap.size());
   }
 
   /**

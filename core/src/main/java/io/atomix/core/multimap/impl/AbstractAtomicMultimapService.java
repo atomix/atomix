@@ -253,6 +253,23 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
   }
 
   @Override
+  public boolean removeAll(Map<String, Collection<? extends byte[]>> mapping) {
+    // There are no updates
+    if (mapping.isEmpty()) {
+      return false;
+    }
+
+    // Decompose the commit in several updates
+    boolean operationResult = false;
+    for (Map.Entry<String, Collection<? extends byte[]>> entry : mapping.entrySet()) {
+      if (removeAll(entry.getKey(), entry.getValue())) {
+        operationResult = true;
+      }
+    }
+    return operationResult;
+  }
+
+  @Override
   public boolean put(String key, byte[] value) {
     if (backingMap.computeIfAbsent(key, k -> new NonTransactionalValues()).put(key, value)) {
       onChange(key, null, value);
@@ -273,6 +290,23 @@ public abstract class AbstractAtomicMultimapService extends AbstractPrimitiveSer
       return true;
     }
     return false;
+  }
+
+  @Override
+  public boolean putAll(Map<String, Collection<? extends byte[]>> mapping) {
+    // There are no updates
+    if (mapping.isEmpty()) {
+      return false;
+    }
+
+    // Decompose the commit in several updates
+    boolean operationResult = false;
+    for (Map.Entry<String, Collection<? extends byte[]>> entry : mapping.entrySet()) {
+      if (putAll(entry.getKey(), entry.getValue())) {
+        operationResult = true;
+      }
+    }
+    return operationResult;
   }
 
   @Override

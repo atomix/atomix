@@ -105,8 +105,18 @@ public class BlockingAtomicMultimap<K, V>
   }
 
   @Override
+  public boolean removeAll(Map<K, Collection<? extends V>> mapping) {
+    return complete(asyncMultimap.removeAll(mapping));
+  }
+
+  @Override
   public boolean putAll(K key, Collection<? extends V> values) {
     return complete(asyncMultimap.putAll(key, values));
+  }
+
+  @Override
+  public boolean putAll(Map<K, Collection<? extends V>> mapping) {
+    return complete(asyncMultimap.putAll(mapping));
   }
 
   @Override
