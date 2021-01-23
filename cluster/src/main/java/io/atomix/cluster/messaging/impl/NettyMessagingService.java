@@ -182,7 +182,7 @@ public class NettyMessagingService implements ManagedMessagingService {
       }
       kmf.init(ks, ksPwd);
       if (log.isInfoEnabled()) {
-        logKeyStore(ks, ksLocation, ksPwd);
+        logKeyStore(ks, ksLocation);
       }
     } catch (FileNotFoundException e) {
       throw new AtomixRuntimeException("Could not load cluster keystore: {}", e.getMessage());
@@ -194,7 +194,7 @@ public class NettyMessagingService implements ManagedMessagingService {
     return true;
   }
 
-  private void logKeyStore(KeyStore ks, String ksLocation, char[] ksPwd) {
+  private void logKeyStore(KeyStore ks, String ksLocation) {
     if (log.isInfoEnabled()) {
       log.info("Loaded cluster key store from: {}", ksLocation);
       try {
