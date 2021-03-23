@@ -182,7 +182,7 @@ public class NettyMessagingService implements ManagedMessagingService {
       }
       kmf.init(ks, ksPwd);
       if (log.isInfoEnabled()) {
-        logKeyStore(ks, ksLocation, ksPwd);
+        logKeyStore(ks, ksLocation);
       }
     } catch (FileNotFoundException e) {
       throw new AtomixRuntimeException("Could not load cluster keystore: {}", e.getMessage());
@@ -194,21 +194,23 @@ public class NettyMessagingService implements ManagedMessagingService {
     return true;
   }
 
-  private void logKeyStore(KeyStore ks, String ksLocation, char[] ksPwd) {
+  private void logKeyStore(KeyStore ks, String ksLocation) {
     if (log.isInfoEnabled()) {
       log.info("Loaded cluster key store from: {}", ksLocation);
       try {
         for (Enumeration<String> e = ks.aliases(); e.hasMoreElements(); ) {
           String alias = e.nextElement();
-          Key key = ks.getKey(alias, ksPwd);
+          // Use this for PrivateKeyEntry and SecretKeyEntry
           Certificate[] certs = ks.getCertificateChain(alias);
           log.debug("{} -> {}", alias, certs);
           final byte[] encodedKey;
+          // If the key is imported this check will fail
           if (certs != null && certs.length > 0) {
             encodedKey = certs[0].getEncoded();
           } else {
+            // Fallback for TrustedCertificateEntry
             log.info("Could not find cert chain for {}, using fingerprint of key instead...", alias);
-            encodedKey = key.getEncoded();
+            encodedKey = ks.getCertificate(alias).getEncoded();
           }
           // Compute the certificate's fingerprint (use the key if certificate cannot be found)
           MessageDigest digest = MessageDigest.getInstance("SHA1");

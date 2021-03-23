@@ -19,6 +19,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
 import io.atomix.cluster.messaging.ManagedMessagingService;
 import io.atomix.cluster.messaging.MessagingConfig;
+import io.atomix.cluster.messaging.TlsConfig;
 import io.atomix.utils.net.Address;
 import org.junit.After;
 import org.junit.Before;
@@ -54,12 +55,22 @@ public class NettyMessagingServiceTest {
 
   ManagedMessagingService netty1;
   ManagedMessagingService netty2;
+  ManagedMessagingService netty3;
+  ManagedMessagingService netty4;
 
   private static final String IP_STRING = "127.0.0.1";
 
   Address ep1;
   Address ep2;
+  Address ep3;
+  Address ep4;
   Address invalidAddress;
+
+  private static final String KEY_STORE = "src/test/resources/atomix.keystore";
+  private static final String KEY_STORE_PSW = "atomix";
+
+  private static final String P12_KEY_STORE = "src/test/resources/atomix.p12";
+  private static final String P12_KEY_STORE_PSW = "kpchangemenow";
 
   @Before
   public void setUp() throws Exception {
@@ -97,6 +108,23 @@ public class NettyMessagingServiceTest {
         LOGGER.warn("Failed stopping netty2", e);
       }
     }
+
+    if (netty3 != null) {
+      try {
+        netty3.stop().join();
+      } catch (Exception e) {
+        LOGGER.warn("Failed stopping netty3", e);
+      }
+    }
+
+    if (netty4 != null) {
+      try {
+        netty4.stop().join();
+      } catch (Exception e) {
+        LOGGER.warn("Failed stopping netty4", e);
+      }
+    }
+
   }
 
   @Test
@@ -228,6 +256,58 @@ public class NettyMessagingServiceTest {
     assertTrue(Arrays.equals("hello there".getBytes(), response.join()));
     assertEquals("completion-thread", completionThreadName.get());
     assertEquals("handler-thread", handlerThreadName.get());
+  }
+
+  /**
+   * Test tls configuration with a password protected cert that expires in 100+ years stored in keystore
+   *
+   * openssl req -newkey rsa:4096 -nodes -keyout key.pem -x509 -days 365000 -subj "/CN=atomix.io" -out certificate.pem
+   * -passout pass:"temporarypassword"
+   * openssl pkcs12 -export -in certificate.pem -inkey key.pem -out atomix.pk12 -name "atomix"
+   * -password pass:temporarypassword
+   * keytool -importkeystore -srckeystore atomix.pk12 -destkeystore atomix.p12 -srcstoretype PKCS12
+   * -deststoretype pkcs12 -srcstorepass temporarypassword -deststorepass kpchangemenow -destkeypass kpchangemenow
+   * openssl pkcs12 -in atomix.p12 -out atomix.pem
+   * keytool -importcert -file atomix.pem -keystore atomix.keystore
+   */
+  @Test
+  public void testTlsConfig() {
+    // To test tls configuration
+    ep3 = Address.from(findAvailablePort(5004));
+    TlsConfig tlsConfig = new TlsConfig().setEnabled(true)
+            .setKeyStore(KEY_STORE)
+            .setTrustStore(KEY_STORE)
+            .setKeyStorePassword(KEY_STORE_PSW)
+            .setTrustStorePassword(KEY_STORE_PSW);
+    MessagingConfig messagingConfig = new MessagingConfig().setTlsConfig(tlsConfig);
+    netty3 = (ManagedMessagingService) new NettyMessagingService("test", ep3, messagingConfig).start().join();
+
+    assertTrue(((NettyMessagingService) netty3).enableNettyTls);
+  }
+
+  /**
+   * Test tls configuration with a password protected cert that expires in 100+ years stored in a p12 keystore
+   *
+   * openssl req -newkey rsa:4096 -nodes -keyout key.pem -x509 -days 365000 -subj "/CN=atomix.io" -out certificate.pem
+   * -passout pass:"temporarypassword"
+   * openssl pkcs12 -export -in certificate.pem -inkey key.pem -out atomix.pk12 -name "atomix"
+   * -password pass:temporarypassword
+   * keytool -importkeystore -srckeystore atomix.pk12 -destkeystore atomix.p12 -srcstoretype PKCS12
+   * -deststoretype pkcs12 -srcstorepass temporarypassword -deststorepass kpchangemenow -destkeypass kpchangemenow
+   */
+  @Test
+  public void testTlsConfigP12() {
+    // To test tls configuration with p12 keystore
+    ep4 = Address.from(findAvailablePort(5004));
+    TlsConfig tlsConfig = new TlsConfig().setEnabled(true)
+            .setKeyStore(P12_KEY_STORE)
+            .setTrustStore(P12_KEY_STORE)
+            .setKeyStorePassword(P12_KEY_STORE_PSW)
+            .setTrustStorePassword(P12_KEY_STORE_PSW);
+    MessagingConfig messagingConfig = new MessagingConfig().setTlsConfig(tlsConfig);
+    netty4 = (ManagedMessagingService) new NettyMessagingService("test", ep4, messagingConfig).start().join();
+
+    assertTrue(((NettyMessagingService) netty4).enableNettyTls);
   }
 
   private static int findAvailablePort(int defaultPort) {
