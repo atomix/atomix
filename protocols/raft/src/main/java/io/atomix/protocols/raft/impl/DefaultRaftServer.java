@@ -157,10 +157,14 @@ public class DefaultRaftServer implements RaftServer {
    * @return A completable future to be completed once the server has been shutdown.
    */
   public CompletableFuture<Void> shutdown() {
-    if (!started) {
-      return Futures.exceptionalFuture(new IllegalStateException("Server not running"));
+    if (!started && openFuture == null) {
+      synchronized (this) {
+        if (openFuture == null) {
+          return Futures.exceptionalFuture(new IllegalStateException("Server not running"));
+        }
+      }
     }
-
+    assert openFuture != null;
     CompletableFuture<Void> future = new AtomixFuture<>();
     context.getThreadContext().execute(() -> {
       started = false;
