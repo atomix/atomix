@@ -1,0 +1,26 @@
+# Dockerfile
+
+FROM openjdk:8
+
+ARG VERSION
+ARG ATOMIX_YOURKIT
+RUN mkdir -p /opt/atomix
+COPY target/atomix.tar.gz /opt/atomix/atomix.tar.gz
+RUN tar -xvf /opt/atomix/atomix.tar.gz -C /opt/atomix && rm /opt/atomix/atomix.tar.gz
+
+# Install yourkit agent
+RUN curl -L -o yourkit.zip https://www.yourkit.com/download/YourKit-JavaProfiler-$ATOMIX_YOURKIT.zip && \
+    unzip -o yourkit.zip && \
+    rm yourkit.zip && \
+    mv YourKit-JavaProfiler-$(echo $ATOMIX_YOURKIT | sed 's/\(.*\)-.*/\1/')/bin/linux-x86-64/libyjpagent.so /opt/atomix/libyjpagent.so
+
+WORKDIR /opt/atomix
+
+EXPOSE 5678
+EXPOSE 5679
+EXPOSE 10001-10010
+
+# Enable the agent by default
+ENV ATOMIX_YOURKIT true
+
+ENTRYPOINT ["./bin/atomix-agent"]

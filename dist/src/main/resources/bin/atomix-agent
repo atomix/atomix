@@ -13,8 +13,14 @@ fi
 
 ATOMIX_ROOT="$(dirname "$(dirname "$0")")"
 
+# Pass gc and other useful jvm opts through the env variable
+JAVA_OPTS="${JAVA_OPTS:--XX:+UseG1GC -XX:MaxGCPauseMillis=200}"
+if [ ! -z "$ATOMIX_YOURKIT" ]; then
+  JAVA_OPTS+=" -agentpath:$ATOMIX_ROOT/libyjpagent.so=listen=all"
+fi
+export JAVA_OPTS=${JAVA_OPTS}
+
 java \
-  -XX:+UseConcMarkSweepGC \
   $JAVA_OPTS \
   -Datomix.root="$ATOMIX_ROOT" \
   -Datomix.data="$ATOMIX_ROOT/data" \
