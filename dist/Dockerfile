@@ -1,8 +1,4 @@
-# Dockerfile
-
-FROM openjdk:8
-
-RUN apt-get update -y && apt-get install -y iptables stress
+FROM anapsix/alpine-java:8_server-jre
 
 ENV HOME=/opt/atomix
 ENV ATOMIX_DIR=/var/lib/atomix
@@ -10,19 +6,18 @@ ENV DATA_DIR=${ATOMIX_DIR}/data
 
 ARG VERSION
 
-RUN groupadd -g 2000 atomix && \
-useradd -r -s /bin/false -u 1000 -g atomix atomix && \
-mkdir -p ${HOME} && \
-mkdir -p ${DATA_DIR} && \
-chown -R 1000:2000 ${ATOMIX_DIR} && \
-chown -R 1000:2000 ${HOME}
+RUN addgroup -S atomix && adduser -S atomix -G atomix && \
+mkdir -p ${HOME} && mkdir -p ${DATA_DIR}
 
-COPY target/atomix.tar.gz ${HOME}/atomix.tar.gz
-RUN tar -xvf ${HOME}/atomix.tar.gz -C ${HOME} && rm ${HOME}/atomix.tar.gz
+COPY target/atomix.tar.gz /opt/atomix/atomix.tar.gz
+RUN tar -xvf /opt/atomix/atomix.tar.gz -C /opt/atomix && rm /opt/atomix/atomix.tar.gz && \
+ chown -R atomix:atomix ${ATOMIX_DIR} && chown -R atomix:atomix /opt/atomix
 
-WORKDIR ${HOME}
+WORKDIR /opt/atomix
 
 EXPOSE 5678
 EXPOSE 5679
+
+USER atomix
 
 ENTRYPOINT ["./bin/atomix-agent"]
