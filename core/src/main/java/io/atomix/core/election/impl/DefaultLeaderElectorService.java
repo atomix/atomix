@@ -396,7 +396,7 @@ public class DefaultLeaderElectorService extends AbstractPrimitiveService<Leader
     }
 
     public boolean isDuplicate(Registration registration) {
-      return registrations.stream().anyMatch(r -> r.sessionId() == registration.sessionId());
+      return registrations.stream().anyMatch(r -> Arrays.equals(registration.id(), r.id()));
     }
 
     public Leader<byte[]> leader() {
