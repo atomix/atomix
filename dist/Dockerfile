@@ -12,4 +12,8 @@ WORKDIR /opt/atomix
 EXPOSE 5678
 EXPOSE 5679
 
+RUN groupadd -g 1000 atomix && useradd -r -s /bin/false -u 1000 -g atomix atomix && \
+chown -R 1000:1000 /opt/atomix
+USER atomix
+
 ENTRYPOINT ["./bin/atomix-agent"]
