@@ -105,6 +105,7 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
               <release>${java.releaseVersion}</release>
+            	<fork>true</fork>
             </configuration>
           </plugin>
         </plugins>
@@ -331,6 +332,7 @@
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
+            	<fork>true</fork>
         </configuration>
       </plugin>
 
