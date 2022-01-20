@@ -64,6 +64,18 @@ public interface LeaderElector<T> extends SyncPrimitive {
   boolean promote(String topic, T identifier);
 
   /**
+   * Attempts to demote a node to the bottom of the candidate list. It is not allowed
+   * to demote the current leader
+   *
+   * @param topic      leadership topic
+   * @param identifier instance identifier
+   * @return CompletableFuture that is completed with a boolean when the operation is done. Boolean is true if
+   * node is now the bottom candidate. This operation can fail (i.e. return false) if the node
+   * is not registered to run for election for the topic or if the node is the leader.
+   */
+  boolean demote(String topic, T identifier);
+
+  /**
    * Attempts to evict a node from all leadership elections it is registered for.
    * <p>
    * If the node the current leader for a topic, this call will force the next candidate (if one exists)

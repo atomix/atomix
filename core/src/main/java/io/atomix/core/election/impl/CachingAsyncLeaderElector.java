@@ -85,6 +85,11 @@ public class CachingAsyncLeaderElector<T> extends DelegatingAsyncLeaderElector<T
   }
 
   @Override
+  public CompletableFuture<Boolean> demote(String topic, T identifier) {
+    return super.demote(topic, identifier).whenComplete((r, e) -> cache.invalidate(topic));
+  }
+
+    @Override
   public CompletableFuture<Void> evict(T nodeId) {
     return super.evict(nodeId).whenComplete((r, e) -> cache.invalidateAll());
   }

@@ -74,6 +74,11 @@ public class TranscodingAsyncLeaderElector<V1, V2> extends DelegatingAsyncPrimit
   }
 
   @Override
+  public CompletableFuture<Boolean> demote(String topic, V1 identifier) {
+    return backingElector.demote(topic, valueEncoder.apply(identifier));
+  }
+
+  @Override
   public CompletableFuture<Leadership<V1>> getLeadership(String topic) {
     return backingElector.getLeadership(topic)
         .thenApply(leadership -> leadership.map(valueDecoder));
