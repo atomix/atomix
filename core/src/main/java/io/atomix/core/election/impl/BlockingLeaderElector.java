@@ -67,6 +67,11 @@ public class BlockingLeaderElector<T> extends Synchronous<AsyncLeaderElector<T>>
   }
 
   @Override
+  public boolean demote(String topic, T identifier) {
+    return complete(asyncElector.demote(topic, identifier));
+  }
+
+  @Override
   public void evict(T identifier) {
     complete(asyncElector.evict(identifier));
   }

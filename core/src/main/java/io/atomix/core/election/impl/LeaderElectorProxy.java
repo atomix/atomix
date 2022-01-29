@@ -80,6 +80,11 @@ public class LeaderElectorProxy
   }
 
   @Override
+  public CompletableFuture<Boolean> demote(String topic, byte[] id) {
+    return getProxyClient().applyBy(topic, service -> service.demote(topic, id));
+  }
+
+  @Override
   public CompletableFuture<Void> evict(byte[] id) {
     return getProxyClient().acceptAll(service -> service.evict(id));
   }

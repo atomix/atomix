@@ -59,6 +59,11 @@ public class DelegatingAsyncLeaderElector<T> extends DelegatingAsyncPrimitive<As
   }
 
   @Override
+  public CompletableFuture<Boolean> demote(String topic, T identifier) {
+    return delegate().demote(topic, identifier);
+  }
+
+  @Override
   public CompletableFuture<Leadership<T>> getLeadership(String topic) {
     return delegate().getLeadership(topic);
   }

@@ -214,6 +214,128 @@ public class LeaderElectorTest extends AbstractPrimitiveTest {
   }
 
   @Test
+  public void testDemote() throws Throwable {
+    LeaderElector<String> elector1 = atomix().<String>leaderElectorBuilder("test-elector-demote")
+            .withProtocol(protocol())
+            .build();
+    LeaderElector<String> elector2 = atomix().<String>leaderElectorBuilder("test-elector-demote")
+            .withProtocol(protocol())
+            .build();
+    LeaderElector<String> elector3 = atomix().<String>leaderElectorBuilder("test-elector-demote")
+            .withProtocol(protocol())
+            .build();
+
+    // leadership is null
+    assertFalse(elector3.demote("foo", node3));
+
+    elector1.run("foo", node1);
+    elector2.run("foo", node2);
+
+    LeaderEventListener listener1 = new LeaderEventListener();
+    elector1.addListener("foo", listener1);
+    LeaderEventListener listener2 = new LeaderEventListener();
+    elector2.addListener(listener2);
+    LeaderEventListener listener3 = new LeaderEventListener();
+    elector3.addListener(listener3);
+
+    // not part of the leadership
+    assertFalse(elector3.demote("foo", node3));
+    assertFalse(listener1.hasEvent());
+    assertFalse(listener2.hasEvent());
+    assertFalse(listener3.hasEvent());
+
+    // leader cannot be demoted
+    assertEquals(elector1.getLeadership("foo"), elector2.getLeadership("foo"));
+    assertEquals(elector1.getLeadership("foo"), elector3.getLeadership("foo"));
+    assertEquals(elector1.getLeadership("foo").leader().id(), node1);
+    assertFalse(elector1.demote("foo", node1));
+    assertFalse(listener1.hasEvent());
+    assertFalse(listener2.hasEvent());
+    assertFalse(listener3.hasEvent());
+    assertFalse(elector2.demote("foo", node1));
+    assertFalse(listener1.hasEvent());
+    assertFalse(listener2.hasEvent());
+    assertFalse(listener3.hasEvent());
+    assertFalse(elector3.demote("foo", node1));
+    assertFalse(listener1.hasEvent());
+    assertFalse(listener2.hasEvent());
+    assertFalse(listener3.hasEvent());
+
+    elector3.run("foo", node3);
+
+    Leadership<String> leadership = listener1.nextEvent().get().newLeadership();
+    Assert.assertEquals(node3, leadership.candidates().get(2));
+    leadership = listener2.nextEvent().get().newLeadership();
+    Assert.assertEquals(node3, leadership.candidates().get(2));
+    leadership = listener3.nextEvent().get().newLeadership();
+    Assert.assertEquals(node3, leadership.candidates().get(2));
+
+    // demote node2
+    assertTrue(elector3.demote("foo", node2));
+    leadership = listener1.nextEvent().get().newLeadership();
+    Assert.assertEquals(node3, leadership.candidates().get(1));
+    Assert.assertEquals(node2, leadership.candidates().get(2));
+    leadership = listener2.nextEvent().get().newLeadership();
+    Assert.assertEquals(node3, leadership.candidates().get(1));
+    Assert.assertEquals(node2, leadership.candidates().get(2));
+    leadership = listener3.nextEvent().get().newLeadership();
+    Assert.assertEquals(node3, leadership.candidates().get(1));
+    Assert.assertEquals(node2, leadership.candidates().get(2));
+
+    // demote leader by displacing it first
+    assertTrue(elector3.promote("foo", node2));
+    leadership = listener1.nextEvent().get().newLeadership();
+    Assert.assertEquals(node1, leadership.leader().id());
+    Assert.assertEquals(node2, leadership.candidates().get(0));
+    Assert.assertEquals(node1, leadership.candidates().get(1));
+    Assert.assertEquals(node3, leadership.candidates().get(2));
+    leadership = listener2.nextEvent().get().newLeadership();
+    Assert.assertEquals(node1, leadership.leader().id());
+    Assert.assertEquals(node2, leadership.candidates().get(0));
+    Assert.assertEquals(node1, leadership.candidates().get(1));
+    Assert.assertEquals(node3, leadership.candidates().get(2));
+    leadership = listener3.nextEvent().get().newLeadership();
+    Assert.assertEquals(node1, leadership.leader().id());
+    Assert.assertEquals(node2, leadership.candidates().get(0));
+    Assert.assertEquals(node1, leadership.candidates().get(1));
+    Assert.assertEquals(node3, leadership.candidates().get(2));
+
+    assertTrue(elector2.anoint("foo", node2));
+    leadership = listener1.nextEvent().get().newLeadership();
+    Assert.assertEquals(node2, leadership.leader().id());
+    Assert.assertEquals(node2, leadership.candidates().get(0));
+    Assert.assertEquals(node1, leadership.candidates().get(1));
+    Assert.assertEquals(node3, leadership.candidates().get(2));
+    leadership = listener2.nextEvent().get().newLeadership();
+    Assert.assertEquals(node2, leadership.leader().id());
+    Assert.assertEquals(node2, leadership.candidates().get(0));
+    Assert.assertEquals(node1, leadership.candidates().get(1));
+    Assert.assertEquals(node3, leadership.candidates().get(2));
+    leadership = listener3.nextEvent().get().newLeadership();
+    Assert.assertEquals(node2, leadership.leader().id());
+    Assert.assertEquals(node2, leadership.candidates().get(0));
+    Assert.assertEquals(node1, leadership.candidates().get(1));
+    Assert.assertEquals(node3, leadership.candidates().get(2));
+
+    assertTrue(elector1.demote("foo", node1));
+    leadership = listener1.nextEvent().get().newLeadership();
+    Assert.assertEquals(node2, leadership.leader().id());
+    Assert.assertEquals(node2, leadership.candidates().get(0));
+    Assert.assertEquals(node3, leadership.candidates().get(1));
+    Assert.assertEquals(node1, leadership.candidates().get(2));
+    leadership = listener2.nextEvent().get().newLeadership();
+    Assert.assertEquals(node2, leadership.leader().id());
+    Assert.assertEquals(node2, leadership.candidates().get(0));
+    Assert.assertEquals(node3, leadership.candidates().get(1));
+    Assert.assertEquals(node1, leadership.candidates().get(2));
+    leadership = listener3.nextEvent().get().newLeadership();
+    Assert.assertEquals(node2, leadership.leader().id());
+    Assert.assertEquals(node2, leadership.candidates().get(0));
+    Assert.assertEquals(node3, leadership.candidates().get(1));
+    Assert.assertEquals(node1, leadership.candidates().get(2));
+  }
+
+  @Test
   public void testLeaderSessionClose() throws Throwable {
     LeaderElector<String> elector1 = atomix().<String>leaderElectorBuilder("test-elector-leader-session-close")
         .withProtocol(protocol())

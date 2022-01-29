@@ -69,6 +69,19 @@ public interface LeaderElectorService {
   boolean promote(String topic, byte[] id);
 
   /**
+   * Attempts to demote a node to the bottom of candidate list. It is not allowed
+   * to demote the current leader
+   *
+   * @param topic leadership topic
+   * @param id    instance identifier of the node to promote
+   * @return {@code true} if node is now the bottom candidate. This operation can fail (i.e. return
+   * {@code false}) if the node is not registered to run for election for the topic or it is the
+   * current leader
+   */
+  @Command
+  boolean demote(String topic, byte[] id);
+
+  /**
    * Attempts to evict a node from all leadership elections it is registered for.
    * <p>
    * If the node the current leader for a topic, this call will force the next candidate (if one exists)

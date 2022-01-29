@@ -188,6 +188,27 @@ public class DefaultLeaderElectorService extends AbstractPrimitiveService<Leader
   }
 
   @Override
+  public boolean demote(String topic, byte[] id) {
+    try {
+      Leadership<byte[]> oldLeadership = leadership(topic);
+      if (oldLeadership == null ||
+              oldLeadership.candidates().stream().noneMatch(candidate -> Arrays.equals(candidate, id)) ||
+              Arrays.equals(oldLeadership.leader().id(), id)) {
+        return false;
+      }
+      elections.computeIfPresent(topic, (k, v) -> v.demote(id));
+      Leadership<byte[]> newLeadership = leadership(topic);
+      if (!Objects.equal(oldLeadership, newLeadership)) {
+        notifyLeadershipChange(topic, oldLeadership, newLeadership);
+      }
+      return true;
+    } catch (Exception e) {
+      getLogger().error("State machine operation failed", e);
+      throw Throwables.propagate(e);
+    }
+  }
+
+  @Override
   public void evict(byte[] id) {
     try {
       List<LeadershipEvent<byte[]>> changes = Lists.newArrayList();
@@ -466,6 +487,24 @@ public class DefaultLeaderElectorService extends AbstractPrimitiveService<Leader
           term,
           termStartTime,
           elections);
+
+    }
+
+    public ElectionState demote(byte[] id) {
+      Registration registration = registrations.stream()
+              .filter(r -> Arrays.equals(r.id(), id))
+              .findFirst()
+              .orElse(null);
+      List<Registration> updatedRegistrations = Lists.newArrayList();
+      registrations.stream()
+              .filter(r -> !Arrays.equals(r.id(), id))
+              .forEach(updatedRegistrations::add);
+      updatedRegistrations.add(registration);
+      return new ElectionState(updatedRegistrations,
+              leader,
+              term,
+              termStartTime,
+              elections);
 
     }
   }
