@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
-Files: VERSION *.so *.png *.gif *.jpg go.mod
+Files: VERSION *.so *.png *.gif *.jpg go.mod .github/* *.conf bin/settings.xml */VERSION *.css *.ftl */README *.xml
 Copyright: 2019 Open Networking Foundation
 License: Apache-2.0
 

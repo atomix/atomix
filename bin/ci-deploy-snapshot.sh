@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2015-present Open Networking Foundation <info@opennetworking.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # From https://coderwall.com/p/9b_lfq
 
 REPO="atomix/atomix"

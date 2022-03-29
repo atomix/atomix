@@ -1,4 +1,7 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: 2016-present Open Networking Foundation <info@opennetworking.org>
+#
+# SPDX-License-Identifier: Apache-2.0
 
 # Setup some environmental context for developers
 if [ -z "${JAVA_HOME}" ]; then

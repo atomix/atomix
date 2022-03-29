@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2015-present Open Networking Foundation <info@opennetworking.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # Called by Travis CI to push latest javadoc
 # From http://benlimmer.com/2013/12/26/automatically-publish-javadoc-to-gh-pages-with-travis-ci/
 
