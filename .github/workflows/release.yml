@@ -1,0 +1,21 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Release Environment
+        run: |-
+          echo 'GITHUB_TOKEN=${{secrets.GH_TOKEN}}' > .release-env
+      - name: Release
+        run: make release

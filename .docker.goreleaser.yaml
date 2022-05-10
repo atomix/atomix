@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+project_name: atomix-runtime-docker
+
+dist: dist/docker
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - skip: true
+
+dockers:
+  - id: atomix-controller
+    dockerfile: ./build/docker/controller.Dockerfile
+    image_templates:
+      - "atomix/controller:latest"
+      - "{{ if (not .IsSnapshot) }}atomix/controller:{{ .Tag }}{{ end }}"
+      - "{{ if (not .IsSnapshot) }}atomix/controller:v{{ .Major }}.{{ .Minor }}{{ end }}"
+    extra_files:
+      - dist/bin/atomix-controller_linux_amd64_v1/atomix-controller
+  - id: atomix-proxy
+    dockerfile: ./build/docker/proxy.Dockerfile
+    image_templates:
+      - "atomix/proxy:latest"
+      - "{{ if (not .IsSnapshot) }}atomix/proxy:{{ .Tag }}{{ end }}"
+      - "{{ if (not .IsSnapshot) }}atomix/proxy:v{{ .Major }}.{{ .Minor }}{{ end }}"
+    extra_files:
+      - dist/bin/atomix-proxy_linux_amd64_v1/atomix-proxy
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-{{.ShortCommit}}"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+
+release:
+  github:
+    owner: atomix
+    name: runtime
+  prerelease: auto
+  draft: true
