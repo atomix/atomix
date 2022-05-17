@@ -84,7 +84,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.AtomRequestHeaders](#atomix-runtime-v1-AtomRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
 | input | [EventsInput](#atomix-value-v1-EventsInput) |  |  |
 
 
@@ -100,7 +100,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.AtomResponseHeaders](#atomix-runtime-v1-AtomResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
 | output | [EventsOutput](#atomix-value-v1-EventsOutput) |  |  |
 
 
@@ -141,7 +141,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.AtomRequestHeaders](#atomix-runtime-v1-AtomRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
 | input | [GetInput](#atomix-value-v1-GetInput) |  |  |
 
 
@@ -157,7 +157,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.AtomResponseHeaders](#atomix-runtime-v1-AtomResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
 | output | [GetOutput](#atomix-value-v1-GetOutput) |  |  |
 
 
@@ -235,7 +235,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.AtomRequestHeaders](#atomix-runtime-v1-AtomRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
 | input | [SetInput](#atomix-value-v1-SetInput) |  |  |
 
 
@@ -251,7 +251,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.AtomResponseHeaders](#atomix-runtime-v1-AtomResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
 | output | [SetOutput](#atomix-value-v1-SetOutput) |  |  |
 
 

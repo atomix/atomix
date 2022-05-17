@@ -15,7 +15,7 @@ import "google/protobuf/timestamp.proto";
 
 service Topic {
     option (atomix.runtime.v1.name) = "Topic";
-    option (atomix.runtime.v1.component) = ATOM;
+    option (atomix.runtime.v1.component) = PRIMITIVE;
 
     rpc Publish(PublishRequest) returns (PublishResponse) {
         option (atomix.runtime.v1.operation_id) = 3;
@@ -29,7 +29,7 @@ service Topic {
 }
 
 message PublishRequest {
-    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+    atomix.runtime.v1.PrimitiveRequestHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -45,7 +45,7 @@ message PublishInput {
 }
 
 message PublishResponse {
-    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+    atomix.runtime.v1.PrimitiveResponseHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -61,7 +61,7 @@ message PublishOutput {
 }
 
 message SubscribeRequest {
-    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+    atomix.runtime.v1.PrimitiveRequestHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -77,7 +77,7 @@ message SubscribeInput {
 }
 
 message SubscribeResponse {
-    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+    atomix.runtime.v1.PrimitiveResponseHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];

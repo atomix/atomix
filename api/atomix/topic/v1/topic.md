@@ -59,7 +59,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.AtomRequestHeaders](#atomix-runtime-v1-AtomRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
 | input | [PublishInput](#atomix-topic-v1-PublishInput) |  |  |
 
 
@@ -75,7 +75,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.AtomResponseHeaders](#atomix-runtime-v1-AtomResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
 | output | [PublishOutput](#atomix-topic-v1-PublishOutput) |  |  |
 
 
@@ -118,7 +118,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.AtomRequestHeaders](#atomix-runtime-v1-AtomRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
 | input | [SubscribeInput](#atomix-topic-v1-SubscribeInput) |  |  |
 
 
@@ -134,7 +134,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.AtomResponseHeaders](#atomix-runtime-v1-AtomResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
 | output | [SubscribeOutput](#atomix-topic-v1-SubscribeOutput) |  |  |
 
 

@@ -31,7 +31,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | headers | [atomix.runtime.v1.ClusterRequestHeaders](#atomix-runtime-v1-ClusterRequestHeaders) |  |  |
-| atom | [string](#string) |  |  |
+| name | [string](#string) |  |  |
 
 
 
@@ -62,7 +62,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | headers | [atomix.runtime.v1.ClusterRequestHeaders](#atomix-runtime-v1-ClusterRequestHeaders) |  |  |
-| atom | [string](#string) |  |  |
+| name | [string](#string) |  |  |
 
 
 

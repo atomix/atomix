@@ -4,10 +4,10 @@
 ## Table of Contents
 
 - [atomix/runtime/v1/headers.proto](#atomix_runtime_v1_headers-proto)
-    - [AtomRequestHeaders](#atomix-runtime-v1-AtomRequestHeaders)
-    - [AtomResponseHeaders](#atomix-runtime-v1-AtomResponseHeaders)
     - [ClusterRequestHeaders](#atomix-runtime-v1-ClusterRequestHeaders)
     - [ClusterResponseHeaders](#atomix-runtime-v1-ClusterResponseHeaders)
+    - [PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders)
+    - [PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -17,31 +17,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/runtime/v1/headers.proto
-
-
-
-<a name="atomix-runtime-v1-AtomRequestHeaders"></a>
-
-### AtomRequestHeaders
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| atom | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-AtomResponseHeaders"></a>
-
-### AtomResponseHeaders
-
-
-
-
 
 
 
@@ -63,6 +38,31 @@
 <a name="atomix-runtime-v1-ClusterResponseHeaders"></a>
 
 ### ClusterResponseHeaders
+
+
+
+
+
+
+
+<a name="atomix-runtime-v1-PrimitiveRequestHeaders"></a>
+
+### PrimitiveRequestHeaders
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| primitive | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-PrimitiveResponseHeaders"></a>
+
+### PrimitiveResponseHeaders
 
 
 

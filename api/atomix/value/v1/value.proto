@@ -16,7 +16,7 @@ import "gogoproto/gogo.proto";
 // Value is a service for a value primitive
 service Value {
     option (atomix.runtime.v1.name) = "Value";
-    option (atomix.runtime.v1.component) = ATOM;
+    option (atomix.runtime.v1.component) = PRIMITIVE;
 
     // Set sets the value
     rpc Set (SetRequest) returns (SetResponse) {
@@ -38,7 +38,7 @@ service Value {
 }
 
 message GetRequest {
-    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+    atomix.runtime.v1.PrimitiveRequestHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -54,7 +54,7 @@ message GetInput {
 }
 
 message GetResponse {
-    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+    atomix.runtime.v1.PrimitiveResponseHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -78,7 +78,7 @@ message Precondition {
 }
 
 message SetRequest {
-    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+    atomix.runtime.v1.PrimitiveRequestHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -99,7 +99,7 @@ message SetInput {
 }
 
 message SetResponse {
-    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+    atomix.runtime.v1.PrimitiveResponseHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -117,7 +117,7 @@ message SetOutput {
 }
 
 message EventsRequest {
-    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+    atomix.runtime.v1.PrimitiveRequestHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -133,7 +133,7 @@ message EventsInput {
 }
 
 message EventsResponse {
-    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+    atomix.runtime.v1.PrimitiveResponseHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];

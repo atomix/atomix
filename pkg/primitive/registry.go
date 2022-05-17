@@ -2,19 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package atom
+package primitive
 
 import (
 	"sync"
 )
 
-func NewRegistry[T Atom]() *Registry[T] {
+func NewRegistry[T Primitive]() *Registry[T] {
 	return &Registry[T]{
 		proxies: make(map[string]T),
 	}
 }
 
-type Registry[T Atom] struct {
+type Registry[T Primitive] struct {
 	proxies map[string]T
 	mu      sync.RWMutex
 }

@@ -103,22 +103,22 @@ func (m *ClusterResponseHeaders) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ClusterResponseHeaders proto.InternalMessageInfo
 
-type AtomRequestHeaders struct {
-	Atom string `protobuf:"bytes,1,opt,name=atom,proto3" json:"atom,omitempty"`
+type PrimitiveRequestHeaders struct {
+	Primitive string `protobuf:"bytes,1,opt,name=primitive,proto3" json:"primitive,omitempty"`
 }
 
-func (m *AtomRequestHeaders) Reset()         { *m = AtomRequestHeaders{} }
-func (m *AtomRequestHeaders) String() string { return proto.CompactTextString(m) }
-func (*AtomRequestHeaders) ProtoMessage()    {}
-func (*AtomRequestHeaders) Descriptor() ([]byte, []int) {
+func (m *PrimitiveRequestHeaders) Reset()         { *m = PrimitiveRequestHeaders{} }
+func (m *PrimitiveRequestHeaders) String() string { return proto.CompactTextString(m) }
+func (*PrimitiveRequestHeaders) ProtoMessage()    {}
+func (*PrimitiveRequestHeaders) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e02bdcc4e6c8a94f, []int{2}
 }
-func (m *AtomRequestHeaders) XXX_Unmarshal(b []byte) error {
+func (m *PrimitiveRequestHeaders) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AtomRequestHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PrimitiveRequestHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_AtomRequestHeaders.Marshal(b, m, deterministic)
+		return xxx_messageInfo_PrimitiveRequestHeaders.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -128,40 +128,40 @@ func (m *AtomRequestHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *AtomRequestHeaders) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AtomRequestHeaders.Merge(m, src)
+func (m *PrimitiveRequestHeaders) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PrimitiveRequestHeaders.Merge(m, src)
 }
-func (m *AtomRequestHeaders) XXX_Size() int {
+func (m *PrimitiveRequestHeaders) XXX_Size() int {
 	return m.Size()
 }
-func (m *AtomRequestHeaders) XXX_DiscardUnknown() {
-	xxx_messageInfo_AtomRequestHeaders.DiscardUnknown(m)
+func (m *PrimitiveRequestHeaders) XXX_DiscardUnknown() {
+	xxx_messageInfo_PrimitiveRequestHeaders.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AtomRequestHeaders proto.InternalMessageInfo
+var xxx_messageInfo_PrimitiveRequestHeaders proto.InternalMessageInfo
 
-func (m *AtomRequestHeaders) GetAtom() string {
+func (m *PrimitiveRequestHeaders) GetPrimitive() string {
 	if m != nil {
-		return m.Atom
+		return m.Primitive
 	}
 	return ""
 }
 
-type AtomResponseHeaders struct {
+type PrimitiveResponseHeaders struct {
 }
 
-func (m *AtomResponseHeaders) Reset()         { *m = AtomResponseHeaders{} }
-func (m *AtomResponseHeaders) String() string { return proto.CompactTextString(m) }
-func (*AtomResponseHeaders) ProtoMessage()    {}
-func (*AtomResponseHeaders) Descriptor() ([]byte, []int) {
+func (m *PrimitiveResponseHeaders) Reset()         { *m = PrimitiveResponseHeaders{} }
+func (m *PrimitiveResponseHeaders) String() string { return proto.CompactTextString(m) }
+func (*PrimitiveResponseHeaders) ProtoMessage()    {}
+func (*PrimitiveResponseHeaders) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e02bdcc4e6c8a94f, []int{3}
 }
-func (m *AtomResponseHeaders) XXX_Unmarshal(b []byte) error {
+func (m *PrimitiveResponseHeaders) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AtomResponseHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PrimitiveResponseHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_AtomResponseHeaders.Marshal(b, m, deterministic)
+		return xxx_messageInfo_PrimitiveResponseHeaders.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -171,29 +171,29 @@ func (m *AtomResponseHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return b[:n], nil
 	}
 }
-func (m *AtomResponseHeaders) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AtomResponseHeaders.Merge(m, src)
+func (m *PrimitiveResponseHeaders) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PrimitiveResponseHeaders.Merge(m, src)
 }
-func (m *AtomResponseHeaders) XXX_Size() int {
+func (m *PrimitiveResponseHeaders) XXX_Size() int {
 	return m.Size()
 }
-func (m *AtomResponseHeaders) XXX_DiscardUnknown() {
-	xxx_messageInfo_AtomResponseHeaders.DiscardUnknown(m)
+func (m *PrimitiveResponseHeaders) XXX_DiscardUnknown() {
+	xxx_messageInfo_PrimitiveResponseHeaders.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AtomResponseHeaders proto.InternalMessageInfo
+var xxx_messageInfo_PrimitiveResponseHeaders proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*ClusterRequestHeaders)(nil), "atomix.runtime.v1.ClusterRequestHeaders")
 	proto.RegisterType((*ClusterResponseHeaders)(nil), "atomix.runtime.v1.ClusterResponseHeaders")
-	proto.RegisterType((*AtomRequestHeaders)(nil), "atomix.runtime.v1.AtomRequestHeaders")
-	proto.RegisterType((*AtomResponseHeaders)(nil), "atomix.runtime.v1.AtomResponseHeaders")
+	proto.RegisterType((*PrimitiveRequestHeaders)(nil), "atomix.runtime.v1.PrimitiveRequestHeaders")
+	proto.RegisterType((*PrimitiveResponseHeaders)(nil), "atomix.runtime.v1.PrimitiveResponseHeaders")
 }
 
 func init() { proto.RegisterFile("atomix/runtime/v1/headers.proto", fileDescriptor_e02bdcc4e6c8a94f) }
 
 var fileDescriptor_e02bdcc4e6c8a94f = []byte{
-	// 191 bytes of a gzipped FileDescriptorProto
+	// 197 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x4f, 0x2c, 0xc9, 0xcf,
 	0xcd, 0xac, 0xd0, 0x2f, 0x2a, 0xcd, 0x2b, 0xc9, 0xcc, 0x4d, 0xd5, 0x2f, 0x33, 0xd4, 0xcf, 0x48,
 	0x4d, 0x4c, 0x49, 0x2d, 0x2a, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x84, 0x28, 0xd0,
@@ -201,11 +201,12 @@ var fileDescriptor_e02bdcc4e6c8a94f = []byte{
 	0x10, 0x85, 0x4a, 0x86, 0x5c, 0xa2, 0xce, 0x39, 0xa5, 0xc5, 0x25, 0xa9, 0x45, 0x41, 0xa9, 0x85,
 	0xa5, 0xa9, 0xc5, 0x25, 0x1e, 0x10, 0x73, 0x84, 0x24, 0xb8, 0xd8, 0x93, 0x21, 0x12, 0x12, 0x8c,
 	0x0a, 0x8c, 0x1a, 0x9c, 0x41, 0x30, 0xae, 0x92, 0x04, 0x97, 0x18, 0x5c, 0x4b, 0x71, 0x41, 0x7e,
-	0x5e, 0x71, 0x2a, 0x54, 0x8f, 0x92, 0x06, 0x97, 0x90, 0x63, 0x49, 0x7e, 0x2e, 0x9a, 0x49, 0x42,
-	0x5c, 0x2c, 0x20, 0xd7, 0x40, 0x8d, 0x01, 0xb3, 0x95, 0x44, 0xb9, 0x84, 0x21, 0x2a, 0x51, 0x0c,
-	0x70, 0x92, 0x38, 0xf1, 0x48, 0x8e, 0xf1, 0xc2, 0x23, 0x39, 0xc6, 0x07, 0x8f, 0xe4, 0x18, 0x27,
-	0x3c, 0x96, 0x63, 0xb8, 0xf0, 0x58, 0x8e, 0xe1, 0xc6, 0x63, 0x39, 0x86, 0x24, 0x36, 0xb0, 0x73,
-	0x8d, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x69, 0x91, 0x3f, 0x0c, 0xfa, 0x00, 0x00, 0x00,
+	0x5e, 0x71, 0x2a, 0x54, 0x8f, 0x92, 0x39, 0x97, 0x78, 0x40, 0x51, 0x66, 0x6e, 0x66, 0x49, 0x66,
+	0x59, 0x2a, 0x9a, 0x71, 0x32, 0x5c, 0x9c, 0x05, 0x30, 0x29, 0xa8, 0x81, 0x08, 0x01, 0x25, 0x29,
+	0x2e, 0x09, 0x24, 0x8d, 0x28, 0x86, 0x3a, 0x49, 0x9c, 0x78, 0x24, 0xc7, 0x78, 0xe1, 0x91, 0x1c,
+	0xe3, 0x83, 0x47, 0x72, 0x8c, 0x13, 0x1e, 0xcb, 0x31, 0x5c, 0x78, 0x2c, 0xc7, 0x70, 0xe3, 0xb1,
+	0x1c, 0x43, 0x12, 0x1b, 0xd8, 0x0b, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0x8e, 0xc9, 0xbf,
+	0x39, 0x0e, 0x01, 0x00, 0x00,
 }
 
 func (m *ClusterRequestHeaders) Marshal() (dAtA []byte, err error) {
@@ -261,7 +262,7 @@ func (m *ClusterResponseHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *AtomRequestHeaders) Marshal() (dAtA []byte, err error) {
+func (m *PrimitiveRequestHeaders) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -271,27 +272,27 @@ func (m *AtomRequestHeaders) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AtomRequestHeaders) MarshalTo(dAtA []byte) (int, error) {
+func (m *PrimitiveRequestHeaders) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *AtomRequestHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *PrimitiveRequestHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Atom) > 0 {
-		i -= len(m.Atom)
-		copy(dAtA[i:], m.Atom)
-		i = encodeVarintHeaders(dAtA, i, uint64(len(m.Atom)))
+	if len(m.Primitive) > 0 {
+		i -= len(m.Primitive)
+		copy(dAtA[i:], m.Primitive)
+		i = encodeVarintHeaders(dAtA, i, uint64(len(m.Primitive)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *AtomResponseHeaders) Marshal() (dAtA []byte, err error) {
+func (m *PrimitiveResponseHeaders) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -301,12 +302,12 @@ func (m *AtomResponseHeaders) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AtomResponseHeaders) MarshalTo(dAtA []byte) (int, error) {
+func (m *PrimitiveResponseHeaders) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *AtomResponseHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *PrimitiveResponseHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -347,20 +348,20 @@ func (m *ClusterResponseHeaders) Size() (n int) {
 	return n
 }
 
-func (m *AtomRequestHeaders) Size() (n int) {
+func (m *PrimitiveRequestHeaders) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Atom)
+	l = len(m.Primitive)
 	if l > 0 {
 		n += 1 + l + sovHeaders(uint64(l))
 	}
 	return n
 }
 
-func (m *AtomResponseHeaders) Size() (n int) {
+func (m *PrimitiveResponseHeaders) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -507,7 +508,7 @@ func (m *ClusterResponseHeaders) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AtomRequestHeaders) Unmarshal(dAtA []byte) error {
+func (m *PrimitiveRequestHeaders) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -530,15 +531,15 @@ func (m *AtomRequestHeaders) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AtomRequestHeaders: wiretype end group for non-group")
+			return fmt.Errorf("proto: PrimitiveRequestHeaders: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AtomRequestHeaders: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PrimitiveRequestHeaders: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Atom", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Primitive", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -566,7 +567,7 @@ func (m *AtomRequestHeaders) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Atom = string(dAtA[iNdEx:postIndex])
+			m.Primitive = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -589,7 +590,7 @@ func (m *AtomRequestHeaders) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AtomResponseHeaders) Unmarshal(dAtA []byte) error {
+func (m *PrimitiveResponseHeaders) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -612,10 +613,10 @@ func (m *AtomResponseHeaders) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AtomResponseHeaders: wiretype end group for non-group")
+			return fmt.Errorf("proto: PrimitiveResponseHeaders: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AtomResponseHeaders: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PrimitiveResponseHeaders: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package atom
+package primitive
 
 type RepoOptions struct {
 	Path string

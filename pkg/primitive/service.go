@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package atom
+package primitive
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 
 type Connector func(ctx context.Context, name string) (driver.Conn, error)
 
-func NewService[T Atom](connector Connector, resolver ClientResolver[T], proxies *Registry[T]) *Service[T] {
+func NewService[T Primitive](connector Connector, resolver ClientResolver[T], proxies *Registry[T]) *Service[T] {
 	return &Service[T]{
 		connector: connector,
 		resolver:  resolver,
@@ -22,7 +22,7 @@ func NewService[T Atom](connector Connector, resolver ClientResolver[T], proxies
 	}
 }
 
-type Service[T Atom] struct {
+type Service[T Primitive] struct {
 	connector Connector
 	resolver  ClientResolver[T]
 	proxies   *Registry[T]

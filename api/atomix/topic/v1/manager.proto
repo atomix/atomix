@@ -33,7 +33,7 @@ message CreateRequest {
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
-    string atom = 2;
+    string name = 2;
 }
 
 message CreateResponse {
@@ -48,7 +48,7 @@ message CloseRequest {
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
-    string atom = 2;
+    string name = 2;
 }
 
 message CloseResponse {

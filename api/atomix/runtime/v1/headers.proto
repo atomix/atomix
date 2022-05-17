@@ -18,10 +18,10 @@ message ClusterResponseHeaders {
 
 }
 
-message AtomRequestHeaders {
-    string atom = 1;
+message PrimitiveRequestHeaders {
+    string primitive = 1;
 }
 
-message AtomResponseHeaders {
+message PrimitiveResponseHeaders {
 
 }

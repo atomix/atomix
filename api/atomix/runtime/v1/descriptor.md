@@ -36,7 +36,7 @@
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | NONE | 0 |  |
-| ATOM | 1 |  |
+| PRIMITIVE | 1 |  |
 | MANAGER | 2 |  |
 
 
