@@ -1,0 +1,59 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.map.v1;
+
+import "atomix/runtime/v1/descriptor.proto";
+import "atomix/runtime/v1/headers.proto";
+import "gogoproto/gogo.proto";
+
+// MapManager is a manager for a Map primitive
+service MapManager {
+    option (atomix.runtime.v1.name) = "Map";
+    option (atomix.runtime.v1.component) = MANAGER;
+
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option (atomix.runtime.v1.operation_id) = 1;
+        option (atomix.runtime.v1.operation_type) = CREATE;
+    }
+
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option (atomix.runtime.v1.operation_id) = 2;
+        option (atomix.runtime.v1.operation_type) = CLOSE;
+    }
+}
+
+message CreateRequest {
+    atomix.runtime.v1.ClusterRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    string atom = 2;
+}
+
+message CreateResponse {
+    atomix.runtime.v1.ClusterResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseRequest {
+    atomix.runtime.v1.ClusterRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    string atom = 2;
+}
+
+message CloseResponse {
+    atomix.runtime.v1.ClusterResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+}

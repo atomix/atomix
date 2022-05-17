@@ -1,0 +1,160 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.lock.v1;
+
+import "google/protobuf/duration.proto";
+import "atomix/runtime/v1/descriptor.proto";
+import "atomix/runtime/v1/headers.proto";
+import "atomix/runtime/v1/object.proto";
+import "gogoproto/gogo.proto";
+
+// Lock is a service for a lock primitive
+service Lock {
+    option (atomix.runtime.v1.name) = "Lock";
+    option (atomix.runtime.v1.component) = ATOM;
+
+    // Lock attempts to acquire the lock
+    rpc Lock (LockRequest) returns (LockResponse) {
+        option (atomix.runtime.v1.operation_id) = 3;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+
+    // Unlock releases the lock
+    rpc Unlock (UnlockRequest) returns (UnlockResponse) {
+        option (atomix.runtime.v1.operation_id) = 4;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+
+    // GetLock gets the lock state
+    rpc GetLock (GetLockRequest) returns (GetLockResponse) {
+        option (atomix.runtime.v1.operation_id) = 5;
+        option (atomix.runtime.v1.operation_type) = QUERY;
+    }
+}
+
+message LockRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    LockInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message LockInput {
+    google.protobuf.Duration timeout = 1 [
+        (gogoproto.stdduration) = true
+    ];
+}
+
+message LockResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    LockOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message LockOutput {
+    LockInstance lock = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message UnlockRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    UnlockInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message UnlockInput {
+    LockInstance lock = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message UnlockResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    UnlockOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message UnlockOutput {
+    LockInstance lock = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetLockRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    GetLockInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetLockInput {
+    LockInstance lock = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetLockResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    GetLockOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetLockOutput {
+    LockInstance lock = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message LockInstance {
+    atomix.runtime.v1.ObjectMeta meta = 1 [
+        (gogoproto.embed) = true,
+        (gogoproto.nullable) = false
+    ];
+    State state = 2;
+
+    enum State {
+        UNLOCKED = 0;
+        LOCKED = 1;
+    }
+}

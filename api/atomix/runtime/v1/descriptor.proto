@@ -1,0 +1,41 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.v1;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.ServiceOptions {
+    string name = 50000;
+    ComponentType component = 50001;
+}
+
+enum ComponentType {
+    NONE = 0;
+    ATOM = 1;
+    MANAGER = 2;
+}
+
+extend google.protobuf.FieldOptions {
+    bool headers = 51000;
+    bool input = 51001;
+    bool output = 51002;
+}
+
+extend google.protobuf.MethodOptions {
+    uint32 operation_id = 52000;
+    OperationType operation_type = 52001;
+}
+
+// OperationType is an enum for specifying the type of operation
+enum OperationType {
+    COMMAND = 0;
+    QUERY = 1;
+    CREATE = 2;
+    CLOSE = 3;
+}

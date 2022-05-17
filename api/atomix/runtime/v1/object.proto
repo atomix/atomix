@@ -1,0 +1,24 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.v1;
+
+import "atomix/runtime/v1/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+message ObjectMeta {
+    uint64 revision = 1 [
+        (gogoproto.casttype) = "Revision"
+    ];
+    Timestamp timestamp = 2;
+    Type type = 3;
+    enum Type {
+        OBJECT = 0;
+        TOMBSTONE = 1;
+    }
+}

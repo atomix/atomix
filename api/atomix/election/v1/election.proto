@@ -1,0 +1,332 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.election.v1;
+
+import "atomix/runtime/v1/descriptor.proto";
+import "atomix/runtime/v1/headers.proto";
+import "atomix/runtime/v1/object.proto";
+import "gogoproto/gogo.proto";
+
+// LeaderElection is a service for a leader election primitive
+service LeaderElection {
+    option (atomix.runtime.v1.name) = "LeaderElection";
+    option (atomix.runtime.v1.component) = ATOM;
+
+    // Enter enters the leader election
+    rpc Enter (EnterRequest) returns (EnterResponse) {
+        option (atomix.runtime.v1.operation_id) = 3;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+
+    // Withdraw withdraws a candidate from the leader election
+    rpc Withdraw (WithdrawRequest) returns (WithdrawResponse) {
+        option (atomix.runtime.v1.operation_id) = 4;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+
+    // Anoint anoints a candidate leader
+    rpc Anoint (AnointRequest) returns (AnointResponse) {
+        option (atomix.runtime.v1.operation_id) = 5;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+
+    // Promote promotes a candidate
+    rpc Promote (PromoteRequest) returns (PromoteResponse) {
+        option (atomix.runtime.v1.operation_id) = 6;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+
+    // Evict evicts a candidate from the election
+    rpc Evict (EvictRequest) returns (EvictResponse) {
+        option (atomix.runtime.v1.operation_id) = 7;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+
+    // GetTerm gets the current leadership term
+    rpc GetTerm (GetTermRequest) returns (GetTermResponse) {
+        option (atomix.runtime.v1.operation_id) = 8;
+        option (atomix.runtime.v1.operation_type) = QUERY;
+    }
+
+    // Events listens for leadership events
+    rpc Events (EventsRequest) returns (stream EventsResponse) {
+        option (atomix.runtime.v1.operation_id) = 9;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+}
+
+message EnterRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EnterInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EnterInput {
+
+}
+
+message EnterResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EnterOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EnterOutput {
+    uint64 candidate_id = 2 [
+        (gogoproto.customname) = "CandidateID"
+    ];
+    Term term = 3 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message WithdrawRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    WithdrawInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message WithdrawInput {
+    uint64 candidate_id = 1 [
+        (gogoproto.customname) = "CandidateID"
+    ];
+}
+
+message WithdrawResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    WithdrawOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message WithdrawOutput {
+    Term term = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message AnointRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    AnointInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message AnointInput {
+    uint64 candidate_id = 1 [
+        (gogoproto.customname) = "CandidateID"
+    ];
+}
+
+message AnointResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    AnointOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message AnointOutput {
+    Term term = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message PromoteRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    PromoteInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message PromoteInput {
+    uint64 candidate_id = 1 [
+        (gogoproto.customname) = "CandidateID"
+    ];
+}
+
+message PromoteResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    PromoteOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message PromoteOutput {
+    Term term = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EvictRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EvictInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EvictInput {
+    uint64 candidate_id = 1 [
+        (gogoproto.customname) = "CandidateID"
+    ];
+}
+
+message EvictResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EvictOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EvictOutput {
+    Term term = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetTermRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    GetTermInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetTermInput {
+
+}
+
+message GetTermResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    GetTermOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetTermOutput {
+    Term term = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EventsRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EventsInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsInput {
+
+}
+
+message EventsResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EventsOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsOutput {
+    Event event = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Event {
+    Type type = 1;
+    Term term = 2 [
+        (gogoproto.nullable) = false
+    ];
+
+    enum Type {
+        NONE = 0;
+        CHANGED = 1;
+    }
+}
+
+message Term {
+    atomix.runtime.v1.ObjectMeta meta = 1 [
+        (gogoproto.embed) = true,
+        (gogoproto.nullable) = false
+    ];
+    uint64 leader = 2;
+    repeated uint64 candidates = 3;
+}

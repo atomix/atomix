@@ -1,0 +1,171 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.value.v1;
+
+import "atomix/runtime/v1/descriptor.proto";
+import "atomix/runtime/v1/headers.proto";
+import "atomix/runtime/v1/object.proto";
+import "gogoproto/gogo.proto";
+
+// Value is a service for a value primitive
+service Value {
+    option (atomix.runtime.v1.name) = "Value";
+    option (atomix.runtime.v1.component) = ATOM;
+
+    // Set sets the value
+    rpc Set (SetRequest) returns (SetResponse) {
+        option (atomix.runtime.v1.operation_id) = 3;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+
+    // Get gets the value
+    rpc Get (GetRequest) returns (GetResponse) {
+        option (atomix.runtime.v1.operation_id) = 4;
+        option (atomix.runtime.v1.operation_type) = QUERY;
+    }
+
+    // Events listens for value change events
+    rpc Events (EventsRequest) returns (stream EventsResponse) {
+        option (atomix.runtime.v1.operation_id) = 5;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+}
+
+message GetRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    GetInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetInput {
+
+}
+
+message GetResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    GetOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetOutput {
+    Object value = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Precondition {
+    oneof precondition {
+        atomix.runtime.v1.ObjectMeta metadata = 1;
+    }
+}
+
+message SetRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    SetInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message SetInput {
+    Object value = 1 [
+        (gogoproto.nullable) = false
+    ];
+    repeated Precondition preconditions = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message SetResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    SetOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message SetOutput {
+    Object value = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EventsRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EventsInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsInput {
+
+}
+
+message EventsResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EventsOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsOutput {
+    Event event = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Event {
+    Type type = 1;
+    Object value = 2 [
+        (gogoproto.nullable) = false
+    ];
+
+    enum Type {
+        NONE = 0;
+        UPDATE = 1;
+    }
+}
+
+message Object {
+    atomix.runtime.v1.ObjectMeta meta = 1 [
+        (gogoproto.embed) = true,
+        (gogoproto.nullable) = false
+    ];
+    bytes value = 2;
+}

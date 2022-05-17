@@ -1,0 +1,352 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.map.v1;
+
+import "google/protobuf/duration.proto";
+import "atomix/runtime/v1/headers.proto";
+import "atomix/runtime/v1/object.proto";
+import "atomix/runtime/v1/descriptor.proto";
+import "gogoproto/gogo.proto";
+
+// Map is a service for a map primitive
+service Map {
+    option (atomix.runtime.v1.name) = "Map";
+    option (atomix.runtime.v1.component) = ATOM;
+
+    // Size returns the size of the map
+    rpc Size (SizeRequest) returns (SizeResponse) {
+        option (atomix.runtime.v1.operation_id) = 3;
+        option (atomix.runtime.v1.operation_type) = QUERY;
+    }
+
+    // Put puts an entry into the map
+    rpc Put (PutRequest) returns (PutResponse) {
+        option (atomix.runtime.v1.operation_id) = 4;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+
+    // Get gets the entry for a key
+    rpc Get (GetRequest) returns (GetResponse) {
+        option (atomix.runtime.v1.operation_id) = 5;
+        option (atomix.runtime.v1.operation_type) = QUERY;
+    }
+
+    // Remove removes an entry from the map
+    rpc Remove (RemoveRequest) returns (RemoveResponse) {
+        option (atomix.runtime.v1.operation_id) = 6;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+
+    // Clear removes all entries from the map
+    rpc Clear (ClearRequest) returns (ClearResponse) {
+        option (atomix.runtime.v1.operation_id) = 7;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+
+    // Events listens for change events
+    rpc Events (EventsRequest) returns (stream EventsResponse) {
+        option (atomix.runtime.v1.operation_id) = 8;
+        option (atomix.runtime.v1.operation_type) = COMMAND;
+    }
+
+    // Entries lists all entries in the map
+    rpc Entries (EntriesRequest) returns (stream EntriesResponse) {
+        option (atomix.runtime.v1.operation_id) = 9;
+        option (atomix.runtime.v1.operation_type) = QUERY;
+    }
+}
+
+message SizeRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    SizeInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message SizeInput {
+
+}
+
+message SizeResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    SizeOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message SizeOutput {
+    uint32 size = 1;
+}
+
+message Precondition {
+    oneof precondition {
+        atomix.runtime.v1.ObjectMeta metadata = 1;
+    }
+}
+
+message PutRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    PutInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message PutInput {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+    repeated Precondition preconditions = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message PutResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    PutOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message PutOutput {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    GetInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetInput {
+    string key = 1;
+}
+
+message GetResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    GetOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetOutput {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message RemoveRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    RemoveInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message RemoveInput {
+    Key key = 1 [
+        (gogoproto.nullable) = false
+    ];
+    repeated Precondition preconditions = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message RemoveResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    RemoveOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message RemoveOutput {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ClearRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    ClearInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message ClearInput {
+
+}
+
+message ClearResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    ClearOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message ClearOutput {
+
+}
+
+message EntriesRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EntriesInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EntriesInput {
+
+}
+
+message EntriesResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EntriesOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EntriesOutput {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EventsRequest {
+    atomix.runtime.v1.AtomRequestHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EventsInput input = 2 [
+        (atomix.runtime.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsInput {
+    string key = 1;
+    bool replay = 2;
+}
+
+message EventsResponse {
+    atomix.runtime.v1.AtomResponseHeaders headers = 1 [
+        (atomix.runtime.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EventsOutput output = 2 [
+        (atomix.runtime.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsOutput {
+    Event event = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Event {
+    Type type = 1;
+    Entry entry = 2 [
+        (gogoproto.nullable) = false
+    ];
+
+    enum Type {
+        NONE = 0;
+        INSERT = 1;
+        UPDATE = 2;
+        REMOVE = 3;
+        REPLAY = 4;
+    }
+}
+
+message Entry {
+    Key key = 1 [
+        (gogoproto.nullable) = false
+    ];
+    Value value = 2;
+}
+
+message Key {
+    atomix.runtime.v1.ObjectMeta meta = 1 [
+        (gogoproto.embed) = true,
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+}
+
+message Value {
+    bytes value = 1;
+    google.protobuf.Duration ttl = 2 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
+}

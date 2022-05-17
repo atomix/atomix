@@ -1,0 +1,27 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.v1;
+
+import "gogoproto/gogo.proto";
+
+message ClusterRequestHeaders {
+    string cluster = 1;
+}
+
+message ClusterResponseHeaders {
+
+}
+
+message AtomRequestHeaders {
+    string atom = 1;
+}
+
+message AtomResponseHeaders {
+
+}
