@@ -16,14 +16,14 @@ type Driver interface {
 	Connect(ctx context.Context, config []byte) (Conn, error)
 }
 
-func New[C config.Config](connector Connector[C], codec config.Codec[C]) Driver {
+func New[C any](connector Connector[C], codec config.Codec[C]) Driver {
 	return &configurableDriver[C]{
 		connector: connector,
 		codec:     codec,
 	}
 }
 
-type configurableDriver[C config.Config] struct {
+type configurableDriver[C any] struct {
 	connector Connector[C]
 	codec     config.Codec[C]
 }
@@ -40,4 +40,4 @@ func (d *configurableDriver[C]) Connect(ctx context.Context, bytes []byte) (Conn
 	return newConfigurableConn[C](conn, d.codec), nil
 }
 
-var _ Driver = (*configurableDriver[config.Config])(nil)
+var _ Driver = (*configurableDriver[any])(nil)

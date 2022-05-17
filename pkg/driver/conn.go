@@ -18,7 +18,7 @@ type Conn interface {
 	Closer
 }
 
-func newConfigurableConn[C config.Config](client Client, codec config.Codec[C]) Conn {
+func newConfigurableConn[C any](client Client, codec config.Codec[C]) Conn {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &configurableClient[C]{
 		client: client,
@@ -28,7 +28,7 @@ func newConfigurableConn[C config.Config](client Client, codec config.Codec[C]) 
 	}
 }
 
-type configurableClient[C config.Config] struct {
+type configurableClient[C any] struct {
 	client Client
 	codec  config.Codec[C]
 	ctx    context.Context
@@ -59,4 +59,4 @@ func (c *configurableClient[C]) Close(ctx context.Context) error {
 	return c.client.Close(ctx)
 }
 
-var _ Conn = (*configurableClient[config.Config])(nil)
+var _ Conn = (*configurableClient[any])(nil)
