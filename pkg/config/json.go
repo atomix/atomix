@@ -8,26 +8,22 @@ import (
 	"encoding/json"
 )
 
-func NewJSONCodec[C any](provider Provider[C]) Codec[C] {
-	return &jsonCodec[C]{
-		provider: provider,
-	}
+func NewJSONCodec[C struct{}]() Codec[C] {
+	return &jsonCodec[C]{}
 }
 
-type jsonCodec[C any] struct {
-	provider Provider[C]
-}
+type jsonCodec[C struct{}] struct{}
 
 func (c *jsonCodec[C]) Encode(config C) ([]byte, error) {
 	return json.Marshal(&config)
 }
 
 func (c *jsonCodec[C]) Decode(bytes []byte) (C, error) {
-	config := c.provider()
+	var config C
 	if err := json.Unmarshal(bytes, &config); err != nil {
 		return config, err
 	}
 	return config, nil
 }
 
-var _ Codec[any] = (*jsonCodec[any])(nil)
+var _ Codec[struct{}] = (*jsonCodec[struct{}])(nil)
