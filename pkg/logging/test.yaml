@@ -1,0 +1,53 @@
+loggers:
+  root:
+    level: info
+    output:
+      stdout:
+        sink: stdout
+      file:
+        sink: file
+  test/1:
+    level: debug
+  test/2:
+    level: warn
+    output:
+      stdout-1:
+        sink: stdout-1
+        level: info
+  test/2/3:
+    level: info
+  test/3:
+    level: info
+    output:
+      stdout:
+        level: info
+      stdout-1:
+        sink: stdout-1
+        level: warn
+  test/kafka:
+    level: info
+    output:
+      kafka:
+        sink: kafka-1
+sinks:
+  stdout:
+    type: stdout
+    encoding: console
+    stdout: {}
+  kafka-1:
+    type: kafka
+    encoding: json
+    kafka:
+      brokers:
+      - "127.0.0.1:9092"
+      topic: "traces"
+      key: "test"
+  stdout-1:
+    type: stdout
+    encoding: json
+    stdout: {}
+  file:
+    type: file
+    encoding: json
+    file:
+      path: test.log
