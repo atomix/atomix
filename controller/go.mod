@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/atomix/runtime v0.0.0-20220517161348-de968c41c7c5 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

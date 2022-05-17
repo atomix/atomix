@@ -9,6 +9,7 @@ import (
 	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
+	"github.com/atomix/runtime/pkg/version"
 	"io"
 	"os"
 )
@@ -21,6 +22,19 @@ func newRuntimeServer(runtime *Runtime) runtimev1.RuntimeServer {
 
 type runtimeServer struct {
 	runtime *Runtime
+}
+
+func (s *runtimeServer) GetRuntimeInfo(ctx context.Context, request *runtimev1.GetRuntimeInfoRequest) (*runtimev1.GetRuntimeInfoResponse, error) {
+	log.Debugw("GetRuntimeInfo",
+		logging.Stringer("GetRuntimeInfoRequest", request))
+	response := &runtimev1.GetRuntimeInfoResponse{
+		RuntimeInfo: runtimev1.RuntimeInfo{
+			Version: version.Version(),
+		},
+	}
+	log.Debugw("GetRuntimeInfo",
+		logging.Stringer("GetRuntimeInfoResponse", response))
+	return response, nil
 }
 
 func (s *runtimeServer) ConnectCluster(ctx context.Context, request *runtimev1.ConnectClusterRequest) (*runtimev1.ConnectClusterResponse, error) {
