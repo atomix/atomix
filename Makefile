@@ -8,8 +8,7 @@ build:
 api: go docs
 
 go:
-	@find ./pkg -name '*.pb.go' -delete
-	rm -r **/*.pb.go || true
+	@find ./api -name '*.pb.go' -delete
 	docker run -it \
 		-v `pwd`:/build \
 		atomix/codegen:go-latest \
@@ -17,12 +16,12 @@ go:
 	docker run -it \
 		-v `pwd`:/build \
 		atomix/codegen:latest \
-		protoc -I=./proto:/go/src/github.com/gogo/protobuf \
+		protoc -I=./api:/go/src/github.com/gogo/protobuf \
 			--go_out=Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor,import_path=github.com/atomix/runtime/api/atomix/runtime/v1:pkg \
 			api/atomix/runtime/v1/descriptor.proto
 
 docs:
-	@find ./docs -name '*.md' -delete
+	@find ./api -name '*.md' -delete
 	docker run -it \
 		-v `pwd`:/build \
 		atomix/codegen:docs-latest \
