@@ -38,8 +38,8 @@ func (s *proxyService) Start() error {
 		return err
 	}
 
-	for _, atom := range s.options.Atoms {
-		atom.Register(s.server, s.runtime.connect)
+	for _, primitive := range s.options.Primitives {
+		primitive.Register(s.server, s.runtime.connect)
 	}
 
 	go func() {

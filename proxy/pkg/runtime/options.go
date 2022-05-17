@@ -5,7 +5,7 @@
 package runtime
 
 import (
-	"github.com/atomix/runtime/pkg/atom"
+	"github.com/atomix/runtime/pkg/primitive"
 )
 
 type Options struct {
@@ -16,9 +16,9 @@ type Options struct {
 }
 
 type ProxyServiceOptions struct {
-	ProxyHost string
-	ProxyPort int
-	Atoms     []atom.Type
+	ProxyHost  string
+	ProxyPort  int
+	Primitives []primitive.Type
 }
 
 type RuntimeServiceOptions struct {
@@ -76,8 +76,8 @@ func WithCacheDir(dir string) Option {
 	}
 }
 
-func WithAtoms(atoms ...atom.Type) Option {
+func WithPrimitives(atoms ...primitive.Type) Option {
 	return func(options *Options) {
-		options.Atoms = append(options.Atoms, atoms...)
+		options.Primitives = append(options.Primitives, atoms...)
 	}
 }
