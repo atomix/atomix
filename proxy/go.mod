@@ -3,8 +3,7 @@ module github.com/atomix/runtime/proxy
 go 1.18
 
 require (
-	github.com/atomix/api v0.0.0-20220517064555-1a41fdda0a79
-	github.com/atomix/sdk v0.0.3-0.20220517083411-a8ffd9bcf738
+	github.com/atomix/runtime v0.0.0-20220517094013-4907087c6098
 	github.com/gofrs/flock v0.8.1
 	github.com/spf13/cobra v1.4.0
 	google.golang.org/grpc v1.46.0
