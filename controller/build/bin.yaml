@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project_name: atomix-runtime-bin
+project_name: atomix-controller-bin
 
 dist: dist/bin
 
@@ -14,27 +14,6 @@ builds:
   - id: atomix-controller
     main: ./cmd/atomix-controller
     binary: atomix-controller
-    goos:
-      - linux
-    goarch:
-      - amd64
-    env:
-      - CC=gcc
-      - CXX=g++
-    flags:
-      - -mod=readonly
-      - -trimpath
-    gcflags:
-      - all=-N -l
-    ldflags:
-      - -s -w
-      - -X github.com/atomix/runtime/pkg/version.shortCommit={{ .ShortCommit }}
-      - -X github.com/atomix/runtime/pkg/version.commit={{ .FullCommit }}
-      - -X github.com/atomix/runtime/pkg/version.version=v{{ .Version }}
-      - -X github.com/atomix/runtime/pkg/version.buildType={{ if .IsSnapshot }}snapshot{{ else }}release{{ end }}
-  - id: atomix-proxy
-    main: ./cmd/atomix-proxy
-    binary: atomix-proxy
     goos:
       - linux
     goarch:
