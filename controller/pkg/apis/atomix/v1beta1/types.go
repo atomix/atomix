@@ -26,6 +26,7 @@ type ClusterSpec struct {
 
 // ClusterStatus is the status for a Cluster resource
 type ClusterStatus struct {
+	Members []string `json:"members,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

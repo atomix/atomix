@@ -5,58 +5,86 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
-	"net"
+	"github.com/atomix/runtime/controller/pkg/apis"
+	"github.com/atomix/runtime/controller/pkg/controller/util/k8s"
+	"github.com/atomix/runtime/pkg/logging"
 	"os"
-	"os/signal"
-	"syscall"
+	"runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
+var log = logging.GetLogger("atomix", "runtime")
+
+func init() {
+	logging.SetLevel(logging.DebugLevel)
+}
+
 func main() {
-	cmd := &cobra.Command{
-		Use: "atomix-controller",
-		Run: func(cmd *cobra.Command, args []string) {
-			host, err := cmd.Flags().GetString("host")
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-			port, err := cmd.Flags().GetInt("port")
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
+	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
+	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
 
-			server := grpc.NewServer()
-
-			// TODO: Register services
-
-			lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", host, port))
-			if err != nil {
-				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-			}
-
-			go func() {
-				if err := server.Serve(lis); err != nil {
-					fmt.Println(err)
-					os.Exit(1)
-				}
-			}()
-
-			// Wait for an interrupt signal
-			ch := make(chan os.Signal, 2)
-			signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
-			<-ch
-
-			server.Stop()
-		},
+	var namespace string
+	if len(os.Args) > 1 {
+		namespace = os.Args[1]
 	}
-	cmd.Flags().StringP("host", "h", "", "the host to which to bind the controller server")
-	cmd.Flags().IntP("port", "p", 5678, "the port to which to bind the controller server")
 
-	if err := cmd.Execute(); err != nil {
-		panic(err)
+	// Get a config to talk to the apiserver
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+
+	// Become the leader before proceeding
+	_ = k8s.BecomeLeader(context.TODO())
+
+	r := k8s.NewFileReady()
+	err = r.Set()
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+	defer func() {
+		_ = r.Unset()
+	}()
+
+	// Create a new Cmd to provide shared dependencies and start components
+	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+
+	// Setup Scheme for all resources
+	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+
+	/*
+		// Add all the controllers
+		if err := corev2beta1.AddControllers(mgr); err != nil {
+			log.Error(err)
+			os.Exit(1)
+		}
+		if err := primitivesv2beta1.AddControllers(mgr); err != nil {
+			log.Error(err)
+			os.Exit(1)
+		}
+		if err := sidecarv2beta1.AddControllers(mgr); err != nil {
+			log.Error(err)
+			os.Exit(1)
+		}
+	*/
+
+	// Start the manager
+	log.Info("Starting the Manager")
+	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
+		log.Error(err, "controller exited non-zero")
+		os.Exit(1)
 	}
 }
