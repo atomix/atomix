@@ -15,7 +15,7 @@ builds:
 
 dockers:
   - id: atomix-controller
-    dockerfile: ./build/controller/Dockerfile
+    dockerfile: ./build/Dockerfile
     image_templates:
       - "atomix/controller:latest"
       - "{{ if (not .IsSnapshot) }}atomix/controller:{{ .Tag }}{{ end }}"
