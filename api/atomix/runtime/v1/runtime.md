@@ -15,8 +15,11 @@
     - [DriverHeader](#atomix-runtime-v1-DriverHeader)
     - [DriverInfo](#atomix-runtime-v1-DriverInfo)
     - [DriverTrailer](#atomix-runtime-v1-DriverTrailer)
+    - [GetRuntimeInfoRequest](#atomix-runtime-v1-GetRuntimeInfoRequest)
+    - [GetRuntimeInfoResponse](#atomix-runtime-v1-GetRuntimeInfoResponse)
     - [InstallDriverRequest](#atomix-runtime-v1-InstallDriverRequest)
     - [InstallDriverResponse](#atomix-runtime-v1-InstallDriverResponse)
+    - [RuntimeInfo](#atomix-runtime-v1-RuntimeInfo)
   
     - [Runtime](#atomix-runtime-v1-Runtime)
   
@@ -185,6 +188,31 @@
 
 
 
+<a name="atomix-runtime-v1-GetRuntimeInfoRequest"></a>
+
+### GetRuntimeInfoRequest
+
+
+
+
+
+
+
+<a name="atomix-runtime-v1-GetRuntimeInfoResponse"></a>
+
+### GetRuntimeInfoResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| runtime_info | [RuntimeInfo](#atomix-runtime-v1-RuntimeInfo) |  |  |
+
+
+
+
+
+
 <a name="atomix-runtime-v1-InstallDriverRequest"></a>
 
 ### InstallDriverRequest
@@ -211,6 +239,21 @@
 
 
 
+
+<a name="atomix-runtime-v1-RuntimeInfo"></a>
+
+### RuntimeInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [string](#string) |  |  |
+
+
+
+
+
  
 
  
@@ -225,6 +268,7 @@ The runtime service provides control functions for the runtime proxy.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| GetRuntimeInfo | [GetRuntimeInfoRequest](#atomix-runtime-v1-GetRuntimeInfoRequest) | [GetRuntimeInfoResponse](#atomix-runtime-v1-GetRuntimeInfoResponse) |  |
 | ConnectCluster | [ConnectClusterRequest](#atomix-runtime-v1-ConnectClusterRequest) | [ConnectClusterResponse](#atomix-runtime-v1-ConnectClusterResponse) |  |
 | ConfigureCluster | [ConfigureClusterRequest](#atomix-runtime-v1-ConfigureClusterRequest) | [ConfigureClusterResponse](#atomix-runtime-v1-ConfigureClusterResponse) |  |
 | DisconnectCluster | [DisconnectClusterRequest](#atomix-runtime-v1-DisconnectClusterRequest) | [DisconnectClusterResponse](#atomix-runtime-v1-DisconnectClusterResponse) |  |

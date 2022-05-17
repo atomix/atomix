@@ -27,6 +27,130 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+type RuntimeInfo struct {
+	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+}
+
+func (m *RuntimeInfo) Reset()         { *m = RuntimeInfo{} }
+func (m *RuntimeInfo) String() string { return proto.CompactTextString(m) }
+func (*RuntimeInfo) ProtoMessage()    {}
+func (*RuntimeInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d426e124a0fc8e61, []int{0}
+}
+func (m *RuntimeInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RuntimeInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RuntimeInfo.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RuntimeInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RuntimeInfo.Merge(m, src)
+}
+func (m *RuntimeInfo) XXX_Size() int {
+	return m.Size()
+}
+func (m *RuntimeInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_RuntimeInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RuntimeInfo proto.InternalMessageInfo
+
+func (m *RuntimeInfo) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
+type GetRuntimeInfoRequest struct {
+}
+
+func (m *GetRuntimeInfoRequest) Reset()         { *m = GetRuntimeInfoRequest{} }
+func (m *GetRuntimeInfoRequest) String() string { return proto.CompactTextString(m) }
+func (*GetRuntimeInfoRequest) ProtoMessage()    {}
+func (*GetRuntimeInfoRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d426e124a0fc8e61, []int{1}
+}
+func (m *GetRuntimeInfoRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetRuntimeInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetRuntimeInfoRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetRuntimeInfoRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRuntimeInfoRequest.Merge(m, src)
+}
+func (m *GetRuntimeInfoRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetRuntimeInfoRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetRuntimeInfoRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetRuntimeInfoRequest proto.InternalMessageInfo
+
+type GetRuntimeInfoResponse struct {
+	RuntimeInfo RuntimeInfo `protobuf:"bytes,1,opt,name=runtime_info,json=runtimeInfo,proto3" json:"runtime_info"`
+}
+
+func (m *GetRuntimeInfoResponse) Reset()         { *m = GetRuntimeInfoResponse{} }
+func (m *GetRuntimeInfoResponse) String() string { return proto.CompactTextString(m) }
+func (*GetRuntimeInfoResponse) ProtoMessage()    {}
+func (*GetRuntimeInfoResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d426e124a0fc8e61, []int{2}
+}
+func (m *GetRuntimeInfoResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetRuntimeInfoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetRuntimeInfoResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetRuntimeInfoResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRuntimeInfoResponse.Merge(m, src)
+}
+func (m *GetRuntimeInfoResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetRuntimeInfoResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetRuntimeInfoResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetRuntimeInfoResponse proto.InternalMessageInfo
+
+func (m *GetRuntimeInfoResponse) GetRuntimeInfo() RuntimeInfo {
+	if m != nil {
+		return m.RuntimeInfo
+	}
+	return RuntimeInfo{}
+}
+
 type ConnectionInfo struct {
 	Driver DriverInfo `protobuf:"bytes,1,opt,name=driver,proto3" json:"driver"`
 	Config []byte     `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
@@ -36,7 +160,7 @@ func (m *ConnectionInfo) Reset()         { *m = ConnectionInfo{} }
 func (m *ConnectionInfo) String() string { return proto.CompactTextString(m) }
 func (*ConnectionInfo) ProtoMessage()    {}
 func (*ConnectionInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{0}
+	return fileDescriptor_d426e124a0fc8e61, []int{3}
 }
 func (m *ConnectionInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -88,7 +212,7 @@ func (m *ConnectClusterRequest) Reset()         { *m = ConnectClusterRequest{} }
 func (m *ConnectClusterRequest) String() string { return proto.CompactTextString(m) }
 func (*ConnectClusterRequest) ProtoMessage()    {}
 func (*ConnectClusterRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{1}
+	return fileDescriptor_d426e124a0fc8e61, []int{4}
 }
 func (m *ConnectClusterRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -138,7 +262,7 @@ func (m *ConnectClusterResponse) Reset()         { *m = ConnectClusterResponse{}
 func (m *ConnectClusterResponse) String() string { return proto.CompactTextString(m) }
 func (*ConnectClusterResponse) ProtoMessage()    {}
 func (*ConnectClusterResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{2}
+	return fileDescriptor_d426e124a0fc8e61, []int{5}
 }
 func (m *ConnectClusterResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -176,7 +300,7 @@ func (m *ConfigureClusterRequest) Reset()         { *m = ConfigureClusterRequest
 func (m *ConfigureClusterRequest) String() string { return proto.CompactTextString(m) }
 func (*ConfigureClusterRequest) ProtoMessage()    {}
 func (*ConfigureClusterRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{3}
+	return fileDescriptor_d426e124a0fc8e61, []int{6}
 }
 func (m *ConfigureClusterRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -226,7 +350,7 @@ func (m *ConfigureClusterResponse) Reset()         { *m = ConfigureClusterRespon
 func (m *ConfigureClusterResponse) String() string { return proto.CompactTextString(m) }
 func (*ConfigureClusterResponse) ProtoMessage()    {}
 func (*ConfigureClusterResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{4}
+	return fileDescriptor_d426e124a0fc8e61, []int{7}
 }
 func (m *ConfigureClusterResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -263,7 +387,7 @@ func (m *DisconnectClusterRequest) Reset()         { *m = DisconnectClusterReque
 func (m *DisconnectClusterRequest) String() string { return proto.CompactTextString(m) }
 func (*DisconnectClusterRequest) ProtoMessage()    {}
 func (*DisconnectClusterRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{5}
+	return fileDescriptor_d426e124a0fc8e61, []int{8}
 }
 func (m *DisconnectClusterRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -306,7 +430,7 @@ func (m *DisconnectClusterResponse) Reset()         { *m = DisconnectClusterResp
 func (m *DisconnectClusterResponse) String() string { return proto.CompactTextString(m) }
 func (*DisconnectClusterResponse) ProtoMessage()    {}
 func (*DisconnectClusterResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{6}
+	return fileDescriptor_d426e124a0fc8e61, []int{9}
 }
 func (m *DisconnectClusterResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -347,7 +471,7 @@ func (m *InstallDriverRequest) Reset()         { *m = InstallDriverRequest{} }
 func (m *InstallDriverRequest) String() string { return proto.CompactTextString(m) }
 func (*InstallDriverRequest) ProtoMessage()    {}
 func (*InstallDriverRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{7}
+	return fileDescriptor_d426e124a0fc8e61, []int{10}
 }
 func (m *InstallDriverRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -440,7 +564,7 @@ func (m *InstallDriverResponse) Reset()         { *m = InstallDriverResponse{} }
 func (m *InstallDriverResponse) String() string { return proto.CompactTextString(m) }
 func (*InstallDriverResponse) ProtoMessage()    {}
 func (*InstallDriverResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{8}
+	return fileDescriptor_d426e124a0fc8e61, []int{11}
 }
 func (m *InstallDriverResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -477,7 +601,7 @@ func (m *DriverHeader) Reset()         { *m = DriverHeader{} }
 func (m *DriverHeader) String() string { return proto.CompactTextString(m) }
 func (*DriverHeader) ProtoMessage()    {}
 func (*DriverHeader) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{9}
+	return fileDescriptor_d426e124a0fc8e61, []int{12}
 }
 func (m *DriverHeader) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -521,7 +645,7 @@ func (m *DriverChunk) Reset()         { *m = DriverChunk{} }
 func (m *DriverChunk) String() string { return proto.CompactTextString(m) }
 func (*DriverChunk) ProtoMessage()    {}
 func (*DriverChunk) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{10}
+	return fileDescriptor_d426e124a0fc8e61, []int{13}
 }
 func (m *DriverChunk) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -565,7 +689,7 @@ func (m *DriverTrailer) Reset()         { *m = DriverTrailer{} }
 func (m *DriverTrailer) String() string { return proto.CompactTextString(m) }
 func (*DriverTrailer) ProtoMessage()    {}
 func (*DriverTrailer) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{11}
+	return fileDescriptor_d426e124a0fc8e61, []int{14}
 }
 func (m *DriverTrailer) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -610,7 +734,7 @@ func (m *DriverInfo) Reset()         { *m = DriverInfo{} }
 func (m *DriverInfo) String() string { return proto.CompactTextString(m) }
 func (*DriverInfo) ProtoMessage()    {}
 func (*DriverInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d426e124a0fc8e61, []int{12}
+	return fileDescriptor_d426e124a0fc8e61, []int{15}
 }
 func (m *DriverInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -654,6 +778,9 @@ func (m *DriverInfo) GetVersion() string {
 }
 
 func init() {
+	proto.RegisterType((*RuntimeInfo)(nil), "atomix.runtime.v1.RuntimeInfo")
+	proto.RegisterType((*GetRuntimeInfoRequest)(nil), "atomix.runtime.v1.GetRuntimeInfoRequest")
+	proto.RegisterType((*GetRuntimeInfoResponse)(nil), "atomix.runtime.v1.GetRuntimeInfoResponse")
 	proto.RegisterType((*ConnectionInfo)(nil), "atomix.runtime.v1.ConnectionInfo")
 	proto.RegisterType((*ConnectClusterRequest)(nil), "atomix.runtime.v1.ConnectClusterRequest")
 	proto.RegisterType((*ConnectClusterResponse)(nil), "atomix.runtime.v1.ConnectClusterResponse")
@@ -672,40 +799,44 @@ func init() {
 func init() { proto.RegisterFile("atomix/runtime/v1/runtime.proto", fileDescriptor_d426e124a0fc8e61) }
 
 var fileDescriptor_d426e124a0fc8e61 = []byte{
-	// 525 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x54, 0xcb, 0x6e, 0xd3, 0x40,
-	0x14, 0xb5, 0x69, 0x49, 0xda, 0x9b, 0x14, 0xd1, 0x51, 0x1f, 0xc6, 0x08, 0x27, 0x9d, 0x0d, 0x81,
-	0xa2, 0x44, 0x0d, 0x08, 0x89, 0xc7, 0x86, 0xa4, 0x8b, 0x54, 0xec, 0x46, 0xfc, 0x80, 0x71, 0xa6,
-	0x89, 0x95, 0x64, 0xa6, 0x8c, 0xc7, 0x16, 0x9f, 0xc1, 0xbf, 0xf0, 0x13, 0x5d, 0x96, 0x1d, 0x2b,
-	0x84, 0x92, 0x1f, 0x41, 0x9e, 0x19, 0xa7, 0x79, 0xd8, 0x22, 0x08, 0xa9, 0xbb, 0xb9, 0xce, 0x39,
-	0xf7, 0x9c, 0x99, 0x7b, 0x6e, 0xa0, 0xe6, 0x4b, 0x3e, 0x09, 0xbf, 0xb6, 0x44, 0xcc, 0x64, 0x38,
-	0xa1, 0xad, 0xe4, 0x2c, 0x3b, 0x36, 0xaf, 0x04, 0x97, 0x1c, 0xed, 0x6b, 0x40, 0x33, 0xfb, 0x9a,
-	0x9c, 0xb9, 0x07, 0x03, 0x3e, 0xe0, 0xea, 0xd7, 0x56, 0x7a, 0xd2, 0x40, 0x4c, 0xe1, 0x41, 0x97,
-	0x33, 0x46, 0x03, 0x19, 0x72, 0x76, 0xc1, 0x2e, 0x39, 0x7a, 0x07, 0xa5, 0xbe, 0x08, 0x13, 0x2a,
-	0x1c, 0xbb, 0x6e, 0x37, 0x2a, 0xed, 0x27, 0xcd, 0xb5, 0x5e, 0xcd, 0x73, 0x05, 0x48, 0xe1, 0x9d,
-	0xed, 0xeb, 0x5f, 0x35, 0x8b, 0x18, 0x0a, 0x3a, 0x82, 0x52, 0xc0, 0xd9, 0x65, 0x38, 0x70, 0xee,
-	0xd5, 0xed, 0x46, 0x95, 0x98, 0x0a, 0x4b, 0x38, 0x34, 0x32, 0xdd, 0x71, 0x1c, 0x49, 0x2a, 0x08,
-	0xfd, 0x12, 0xd3, 0x48, 0x22, 0x07, 0xca, 0x81, 0xfe, 0xa2, 0xe4, 0x76, 0x49, 0x56, 0xa2, 0x0f,
-	0x00, 0xc1, 0xdc, 0x99, 0x6a, 0x57, 0x69, 0x9f, 0xe4, 0x78, 0x59, 0xb6, 0x4f, 0x16, 0x48, 0xd8,
-	0x81, 0xa3, 0x55, 0xd5, 0xe8, 0x8a, 0xb3, 0x88, 0xe2, 0x04, 0x8e, 0xbb, 0xca, 0x59, 0x2c, 0xe8,
-	0x5d, 0x3a, 0x72, 0xc1, 0x59, 0xd7, 0x35, 0x9e, 0x5e, 0x81, 0x73, 0x1e, 0x46, 0xc1, 0xbf, 0x3d,
-	0x13, 0x7e, 0x0c, 0x8f, 0x72, 0x58, 0xa6, 0xe5, 0x0f, 0x1b, 0x0e, 0x2e, 0x58, 0x24, 0xfd, 0xf1,
-	0x58, 0x8f, 0x2c, 0xeb, 0xf7, 0x06, 0x4a, 0x43, 0xea, 0xf7, 0xe7, 0x43, 0xae, 0x15, 0x0e, 0xb9,
-	0xa7, 0x60, 0x3d, 0x8b, 0x18, 0x02, 0x7a, 0x0d, 0xf7, 0x83, 0x61, 0xcc, 0x46, 0xe6, 0x01, 0xbc,
-	0x42, 0x66, 0x37, 0x45, 0xf5, 0x2c, 0xa2, 0xe1, 0xe8, 0x3d, 0x94, 0xa5, 0xf0, 0xc3, 0x31, 0x15,
-	0xce, 0x96, 0x62, 0xd6, 0x0b, 0x99, 0x9f, 0x34, 0xae, 0x67, 0x91, 0x8c, 0xd2, 0xd9, 0xc9, 0x52,
-	0x89, 0x8f, 0xe1, 0x70, 0xe5, 0x4a, 0xe6, 0xb2, 0x1f, 0xa1, 0xba, 0x68, 0xf9, 0xbf, 0x82, 0x8c,
-	0x4f, 0xa0, 0xb2, 0x70, 0x0b, 0x84, 0x60, 0xbb, 0xef, 0x4b, 0x5f, 0x75, 0xaa, 0x12, 0x75, 0xc6,
-	0xa7, 0xb0, 0xb7, 0x64, 0x17, 0xb9, 0xb0, 0x13, 0x0c, 0x69, 0x30, 0x8a, 0xe2, 0x89, 0x99, 0xd2,
-	0xbc, 0xc6, 0x6f, 0x01, 0x6e, 0xb5, 0xd2, 0x76, 0xcc, 0x9f, 0x50, 0x83, 0x52, 0xe7, 0x74, 0xc4,
-	0x09, 0x15, 0x51, 0x16, 0xad, 0x5d, 0x92, 0x95, 0xed, 0xef, 0x5b, 0x50, 0x26, 0xda, 0x33, 0xba,
-	0xdd, 0x57, 0x33, 0x6b, 0xd4, 0x28, 0x4e, 0xe0, 0x72, 0x88, 0xdc, 0x67, 0x1b, 0x20, 0xf5, 0x5b,
-	0xa2, 0x11, 0x3c, 0x5c, 0xcd, 0x29, 0x7a, 0x9e, 0x4f, 0xcf, 0x5b, 0x22, 0xf7, 0x74, 0x23, 0xac,
-	0x11, 0x63, 0xb0, 0xbf, 0x16, 0x61, 0x94, 0xd7, 0xa1, 0x68, 0x3d, 0xdc, 0x17, 0x9b, 0x81, 0x8d,
-	0x5e, 0x1f, 0xf6, 0x96, 0x12, 0x84, 0x9e, 0xe6, 0xd0, 0xf3, 0xd6, 0xc6, 0x6d, 0xfc, 0x1d, 0xa8,
-	0x35, 0x1a, 0x76, 0xc7, 0xb9, 0x9e, 0x7a, 0xf6, 0xcd, 0xd4, 0xb3, 0x7f, 0x4f, 0x3d, 0xfb, 0xdb,
-	0xcc, 0xb3, 0x6e, 0x66, 0x9e, 0xf5, 0x73, 0xe6, 0x59, 0x9f, 0x4b, 0xea, 0xaf, 0xf7, 0xe5, 0x9f,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0x2e, 0x42, 0x23, 0x65, 0xc6, 0x05, 0x00, 0x00,
+	// 584 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x55, 0x4d, 0x6f, 0x12, 0x41,
+	0x18, 0xde, 0xad, 0x08, 0xf5, 0x85, 0x36, 0x76, 0xd2, 0xd2, 0x75, 0x8d, 0x0b, 0x9d, 0x4b, 0xd1,
+	0x1a, 0x48, 0xd1, 0x98, 0xf8, 0x71, 0x11, 0x9a, 0x94, 0xc6, 0xdb, 0xc6, 0xbb, 0x59, 0x97, 0x01,
+	0x36, 0xc0, 0x4c, 0x9d, 0x9d, 0x25, 0xfe, 0x0c, 0xcf, 0xfe, 0xa2, 0x1e, 0xeb, 0xcd, 0x93, 0x31,
+	0xf0, 0x47, 0x0c, 0xb3, 0xb3, 0xb0, 0x0b, 0x43, 0xc4, 0x98, 0xf4, 0x36, 0x33, 0xfb, 0x7c, 0xcd,
+	0xc7, 0xfb, 0x2e, 0x54, 0x3c, 0xc1, 0xc6, 0xc1, 0xd7, 0x06, 0x8f, 0xa8, 0x08, 0xc6, 0xa4, 0x31,
+	0x39, 0x4f, 0x86, 0xf5, 0x6b, 0xce, 0x04, 0x43, 0x07, 0x31, 0xa0, 0x9e, 0xac, 0x4e, 0xce, 0xed,
+	0xc3, 0x3e, 0xeb, 0x33, 0xf9, 0xb5, 0x31, 0x1f, 0xc5, 0x40, 0x7c, 0x0a, 0x45, 0x37, 0xc6, 0x5c,
+	0xd1, 0x1e, 0x43, 0x16, 0x14, 0x26, 0x84, 0x87, 0x01, 0xa3, 0x96, 0x59, 0x35, 0x6b, 0x0f, 0xdc,
+	0x64, 0x8a, 0x8f, 0xe1, 0xe8, 0x92, 0x88, 0x14, 0xd6, 0x25, 0x5f, 0x22, 0x12, 0x0a, 0xec, 0x41,
+	0x79, 0xf5, 0x43, 0x78, 0xcd, 0x68, 0x48, 0xd0, 0x25, 0x94, 0x94, 0xff, 0xa7, 0x80, 0xf6, 0x98,
+	0x54, 0x2c, 0x36, 0x9d, 0xfa, 0x5a, 0xb6, 0x7a, 0x8a, 0xdd, 0xca, 0xdd, 0xfc, 0xaa, 0x18, 0x6e,
+	0x91, 0x2f, 0x97, 0x30, 0x81, 0xfd, 0x36, 0xa3, 0x94, 0xf8, 0x22, 0x60, 0x54, 0xe6, 0x7c, 0x0b,
+	0xf9, 0x2e, 0x0f, 0x26, 0x84, 0x2b, 0xd1, 0x27, 0x1a, 0xd1, 0x0b, 0x09, 0x48, 0x69, 0x2a, 0x0a,
+	0x2a, 0x43, 0xde, 0x67, 0xb4, 0x17, 0xf4, 0xad, 0x9d, 0xaa, 0x59, 0x2b, 0xb9, 0x6a, 0x86, 0x05,
+	0x1c, 0x29, 0x9b, 0xf6, 0x28, 0x0a, 0x05, 0xe1, 0x6a, 0x8b, 0xf3, 0x53, 0xf1, 0xe3, 0x95, 0xe4,
+	0x54, 0xd4, 0x14, 0xbd, 0x07, 0xf0, 0x17, 0xc9, 0xa4, 0x5c, 0xb1, 0x79, 0xa2, 0xc9, 0x92, 0x8d,
+	0xef, 0xa6, 0x48, 0xd8, 0x82, 0xf2, 0xaa, 0x6b, 0x7c, 0x7e, 0x78, 0x02, 0xc7, 0x6d, 0x99, 0x2c,
+	0xe2, 0xe4, 0x2e, 0x13, 0xd9, 0x60, 0xad, 0xfb, 0xaa, 0x4c, 0x2f, 0xc1, 0xba, 0x08, 0x42, 0xff,
+	0xdf, 0x8e, 0x09, 0x3f, 0x86, 0x47, 0x1a, 0x96, 0x92, 0xfc, 0x61, 0xc2, 0xe1, 0x15, 0x0d, 0x85,
+	0x37, 0x1a, 0xc5, 0x57, 0x96, 0xe8, 0xbd, 0x86, 0xfc, 0x80, 0x78, 0xdd, 0xc5, 0x25, 0x57, 0x36,
+	0x5e, 0x72, 0x47, 0xc2, 0x3a, 0x86, 0xab, 0x08, 0xe8, 0x15, 0xdc, 0xf7, 0x07, 0x11, 0x1d, 0xaa,
+	0x03, 0x70, 0x36, 0x32, 0xdb, 0x73, 0x54, 0xc7, 0x70, 0x63, 0x38, 0x7a, 0x07, 0x05, 0xc1, 0xbd,
+	0x60, 0x44, 0xb8, 0x75, 0x4f, 0x32, 0xab, 0x1b, 0x99, 0x1f, 0x63, 0x5c, 0xc7, 0x70, 0x13, 0x4a,
+	0x6b, 0x37, 0x79, 0x95, 0xf3, 0x6a, 0x59, 0xd9, 0x92, 0xda, 0xec, 0x07, 0x28, 0xa5, 0x23, 0xff,
+	0xd7, 0x43, 0xc6, 0x27, 0x50, 0x4c, 0xed, 0x02, 0x21, 0xc8, 0x75, 0x3d, 0xe1, 0x49, 0xa5, 0x92,
+	0x2b, 0xc7, 0xf8, 0x0c, 0xf6, 0x32, 0x71, 0x91, 0x0d, 0xbb, 0xfe, 0x80, 0xf8, 0xc3, 0x30, 0x1a,
+	0xab, 0x5b, 0x5a, 0xcc, 0xf1, 0x1b, 0x80, 0xa5, 0xd7, 0x5c, 0x8e, 0x7a, 0x63, 0xa2, 0x50, 0x72,
+	0x9c, 0xee, 0x0f, 0x3b, 0x99, 0xfe, 0xd0, 0xfc, 0x9e, 0x83, 0x82, 0x2a, 0x63, 0x44, 0x60, 0x3f,
+	0xdb, 0x12, 0x50, 0x4d, 0xb3, 0x2d, 0x6d, 0x3b, 0xb1, 0x9f, 0x6e, 0x81, 0x54, 0xfd, 0x65, 0xd9,
+	0x16, 0xd4, 0x93, 0xd2, 0xda, 0x68, 0x4b, 0x5a, 0x6b, 0xa3, 0x2f, 0x43, 0x34, 0x84, 0x87, 0xab,
+	0xe5, 0x80, 0x9e, 0xe9, 0xe9, 0xba, 0x5a, 0xb5, 0xcf, 0xb6, 0xc2, 0x2a, 0x33, 0x0a, 0x07, 0x6b,
+	0x95, 0x82, 0x74, 0x0a, 0x9b, 0xaa, 0xd0, 0x7e, 0xbe, 0x1d, 0x58, 0xf9, 0x75, 0x61, 0x2f, 0xf3,
+	0x50, 0xd1, 0xa9, 0x86, 0xae, 0xab, 0x4e, 0xbb, 0xf6, 0x77, 0x60, 0xec, 0x51, 0x33, 0x5b, 0xd6,
+	0xcd, 0xd4, 0x31, 0x6f, 0xa7, 0x8e, 0xf9, 0x7b, 0xea, 0x98, 0xdf, 0x66, 0x8e, 0x71, 0x3b, 0x73,
+	0x8c, 0x9f, 0x33, 0xc7, 0xf8, 0x9c, 0x97, 0xbf, 0xa1, 0x17, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff,
+	0xf7, 0x1d, 0x24, 0x87, 0xd2, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -720,6 +851,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type RuntimeClient interface {
+	GetRuntimeInfo(ctx context.Context, in *GetRuntimeInfoRequest, opts ...grpc.CallOption) (*GetRuntimeInfoResponse, error)
 	ConnectCluster(ctx context.Context, in *ConnectClusterRequest, opts ...grpc.CallOption) (*ConnectClusterResponse, error)
 	ConfigureCluster(ctx context.Context, in *ConfigureClusterRequest, opts ...grpc.CallOption) (*ConfigureClusterResponse, error)
 	DisconnectCluster(ctx context.Context, in *DisconnectClusterRequest, opts ...grpc.CallOption) (*DisconnectClusterResponse, error)
@@ -732,6 +864,15 @@ type runtimeClient struct {
 
 func NewRuntimeClient(cc *grpc.ClientConn) RuntimeClient {
 	return &runtimeClient{cc}
+}
+
+func (c *runtimeClient) GetRuntimeInfo(ctx context.Context, in *GetRuntimeInfoRequest, opts ...grpc.CallOption) (*GetRuntimeInfoResponse, error) {
+	out := new(GetRuntimeInfoResponse)
+	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.Runtime/GetRuntimeInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *runtimeClient) ConnectCluster(ctx context.Context, in *ConnectClusterRequest, opts ...grpc.CallOption) (*ConnectClusterResponse, error) {
@@ -797,6 +938,7 @@ func (x *runtimeInstallDriverClient) CloseAndRecv() (*InstallDriverResponse, err
 
 // RuntimeServer is the server API for Runtime service.
 type RuntimeServer interface {
+	GetRuntimeInfo(context.Context, *GetRuntimeInfoRequest) (*GetRuntimeInfoResponse, error)
 	ConnectCluster(context.Context, *ConnectClusterRequest) (*ConnectClusterResponse, error)
 	ConfigureCluster(context.Context, *ConfigureClusterRequest) (*ConfigureClusterResponse, error)
 	DisconnectCluster(context.Context, *DisconnectClusterRequest) (*DisconnectClusterResponse, error)
@@ -807,6 +949,9 @@ type RuntimeServer interface {
 type UnimplementedRuntimeServer struct {
 }
 
+func (*UnimplementedRuntimeServer) GetRuntimeInfo(ctx context.Context, req *GetRuntimeInfoRequest) (*GetRuntimeInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRuntimeInfo not implemented")
+}
 func (*UnimplementedRuntimeServer) ConnectCluster(ctx context.Context, req *ConnectClusterRequest) (*ConnectClusterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConnectCluster not implemented")
 }
@@ -822,6 +967,24 @@ func (*UnimplementedRuntimeServer) InstallDriver(srv Runtime_InstallDriverServer
 
 func RegisterRuntimeServer(s *grpc.Server, srv RuntimeServer) {
 	s.RegisterService(&_Runtime_serviceDesc, srv)
+}
+
+func _Runtime_GetRuntimeInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRuntimeInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuntimeServer).GetRuntimeInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/atomix.runtime.v1.Runtime/GetRuntimeInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuntimeServer).GetRuntimeInfo(ctx, req.(*GetRuntimeInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Runtime_ConnectCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -909,6 +1072,10 @@ var _Runtime_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*RuntimeServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "GetRuntimeInfo",
+			Handler:    _Runtime_GetRuntimeInfo_Handler,
+		},
+		{
 			MethodName: "ConnectCluster",
 			Handler:    _Runtime_ConnectCluster_Handler,
 		},
@@ -929,6 +1096,92 @@ var _Runtime_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Metadata: "atomix/runtime/v1/runtime.proto",
+}
+
+func (m *RuntimeInfo) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RuntimeInfo) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RuntimeInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Version) > 0 {
+		i -= len(m.Version)
+		copy(dAtA[i:], m.Version)
+		i = encodeVarintRuntime(dAtA, i, uint64(len(m.Version)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetRuntimeInfoRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetRuntimeInfoRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetRuntimeInfoRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *GetRuntimeInfoResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetRuntimeInfoResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetRuntimeInfoResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.RuntimeInfo.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintRuntime(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
 }
 
 func (m *ConnectionInfo) Marshal() (dAtA []byte, err error) {
@@ -1413,6 +1666,39 @@ func encodeVarintRuntime(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *RuntimeInfo) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Version)
+	if l > 0 {
+		n += 1 + l + sovRuntime(uint64(l))
+	}
+	return n
+}
+
+func (m *GetRuntimeInfoRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *GetRuntimeInfoResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.RuntimeInfo.Size()
+	n += 1 + l + sovRuntime(uint64(l))
+	return n
+}
+
 func (m *ConnectionInfo) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1618,6 +1904,221 @@ func sovRuntime(x uint64) (n int) {
 }
 func sozRuntime(x uint64) (n int) {
 	return sovRuntime(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *RuntimeInfo) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRuntime
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RuntimeInfo: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RuntimeInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRuntime
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Version = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRuntime(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetRuntimeInfoRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRuntime
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetRuntimeInfoRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetRuntimeInfoRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRuntime(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetRuntimeInfoResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRuntime
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetRuntimeInfoResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetRuntimeInfoResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RuntimeInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRuntime
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.RuntimeInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRuntime(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *ConnectionInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)

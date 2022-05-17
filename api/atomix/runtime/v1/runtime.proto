@@ -12,11 +12,27 @@ import "gogoproto/gogo.proto";
 
 // The runtime service provides control functions for the runtime proxy.
 service Runtime {
+    rpc GetRuntimeInfo (GetRuntimeInfoRequest) returns (GetRuntimeInfoResponse);
+
     rpc ConnectCluster (ConnectClusterRequest) returns (ConnectClusterResponse);
     rpc ConfigureCluster (ConfigureClusterRequest) returns (ConfigureClusterResponse);
     rpc DisconnectCluster (DisconnectClusterRequest) returns (DisconnectClusterResponse);
 
     rpc InstallDriver (stream InstallDriverRequest) returns (InstallDriverResponse);
+}
+
+message RuntimeInfo {
+    string version = 1;
+}
+
+message GetRuntimeInfoRequest {
+
+}
+
+message GetRuntimeInfoResponse {
+    RuntimeInfo runtime_info = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message ConnectionInfo {
