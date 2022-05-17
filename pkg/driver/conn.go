@@ -6,7 +6,7 @@ package driver
 
 import (
 	"context"
-	"github.com/atomix/runtime/pkg/codec"
+	"encoding/json"
 )
 
 type Connector[C any] func(ctx context.Context, config C) (Client, error)
@@ -18,11 +18,10 @@ type Conn interface {
 	Closer
 }
 
-func newConfigurableConn[C any](client Client, codec codec.Codec[C]) Conn {
+func newConfigurableConn[C any](client Client) Conn {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &configurableClient[C]{
 		client: client,
-		codec:  codec,
 		ctx:    ctx,
 		cancel: cancel,
 	}
@@ -30,7 +29,6 @@ func newConfigurableConn[C any](client Client, codec codec.Codec[C]) Conn {
 
 type configurableClient[C any] struct {
 	client Client
-	codec  codec.Codec[C]
 	ctx    context.Context
 	cancel context.CancelFunc
 }
@@ -45,8 +43,8 @@ func (c *configurableClient[C]) Client() Client {
 
 func (c *configurableClient[C]) Configure(ctx context.Context, bytes []byte) error {
 	if configurator, ok := c.client.(Configurator[C]); ok {
-		config, err := c.codec.Decode(bytes)
-		if err != nil {
+		var config C
+		if err := json.Unmarshal(bytes, &config); err != nil {
 			return err
 		}
 		return configurator.Configure(ctx, config)
