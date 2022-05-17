@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "atomix-runtime.fullname" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "atomix-runtime.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ template "atomix-runtime.fullname" . }}
+  apiGroup: rbac.authorization.k8s.io

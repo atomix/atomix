@@ -1,0 +1,135 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "atomix-runtime.fullname" . }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      name: {{ template "atomix-runtime.fullname" . }}
+  template:
+    metadata:
+      labels:
+        name: {{ template "atomix-runtime.fullname" . }}
+    spec:
+      serviceAccountName: {{ template "atomix-runtime.fullname" . }}
+      initContainers:
+      - name: init-certs
+        image: {{ include "atomix-runtime.imagename" .Values.init.image | quote }}
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        env:
+        - name: CONTROLLER_NAME
+          value: {{ template "atomix-runtime.fullname" . }}
+        - name: CONTROLLER_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - name: config
+          mountPath: /etc/atomix/config
+          readOnly: true
+        - name: certs
+          mountPath: /etc/webhook/certs
+      containers:
+      - name: atomix-controller
+        # Replace this with the built image name
+        image: {{ include "atomix-runtime.imagename" .Values.controller.image | quote }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        ports:
+        - containerPort: 5678
+          name: control
+        - containerPort: 443
+          name: webhook-server
+        {{- if eq (.Values.scope | lower) "namespace" }}
+        args:
+          - {{ .Release.Namespace }}
+        {{- end }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        readinessProbe:
+          exec:
+            command:
+            - stat
+            - /tmp/atomix-controller-ready
+          initialDelaySeconds: 4
+          periodSeconds: 10
+          failureThreshold: 1
+        env:
+        - name: CONTROLLER_NAME
+          value: {{ template "atomix-runtime.fullname" . }}
+        - name: CONTROLLER_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: DEFAULT_BROKER_IMAGE
+          value: {{ include "atomix-runtime.imagename" .Values.broker.image | quote }}
+        volumeMounts:
+        - name: certs
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
+        - name: config
+          mountPath: /etc/atomix/config
+          readOnly: true
+      - name: atomix-plugin-registry
+        image: {{ include "atomix-runtime.imagename" .Values.registry.image | quote }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args:
+        - --port=5679
+        - --compiler
+        - v1=5690
+        ports:
+        - containerPort: 5679
+          name: registry
+        volumeMounts:
+        - name: plugins
+          mountPath: /plugins
+          readOnly: true
+        - name: config
+          mountPath: /etc/atomix/config
+          readOnly: true
+      - name: atomix-plugin-compiler-v1
+        image: {{ include "atomix-runtime.imagename" .Values.compiler.v1.image | quote }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args:
+        - --port=5690
+        ports:
+        - containerPort: 5690
+          name: registry
+        volumeMounts:
+        - name: plugins
+          mountPath: /plugins
+        - name: config
+          mountPath: /etc/atomix/config
+          readOnly: true
+      volumes:
+      - name: certs
+        emptyDir: {}
+      - name: plugins
+        emptyDir: {}
+      - name: config
+        configMap:
+          name: {{ template "atomix-runtime.fullname" . }}-config

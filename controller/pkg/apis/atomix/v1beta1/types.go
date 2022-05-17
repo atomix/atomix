@@ -5,7 +5,9 @@
 package v1beta1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // +genclient
@@ -22,11 +24,12 @@ type Cluster struct {
 
 // ClusterSpec is the spec for a Cluster resource
 type ClusterSpec struct {
+	Engine StorageEngineReference `json:"engine,omitempty"`
+	Config runtime.RawExtension   `json:"config,omitempty"`
 }
 
 // ClusterStatus is the status for a Cluster resource
 type ClusterStatus struct {
-	Members []string `json:"members,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -37,4 +40,32 @@ type ClusterList struct {
 	metav1.ListMeta `json:"metadata"`
 
 	Items []Cluster `json:"items"`
+}
+
+// StorageEngineReference is a reference to a runtime engine
+type StorageEngineReference struct {
+	corev1.ObjectReference `json:",inline"`
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type Driver struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Repo DriverRepo `json:"repo,omitempty"`
+}
+
+type DriverRepo struct {
+	URL string `json:"url"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type DriverList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []Driver `json:"items"`
 }
