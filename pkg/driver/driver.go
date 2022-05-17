@@ -6,7 +6,7 @@ package driver
 
 import (
 	"context"
-	"github.com/atomix/runtime/pkg/config"
+	"github.com/atomix/runtime/pkg/codec"
 	"github.com/atomix/runtime/pkg/logging"
 )
 
@@ -16,7 +16,7 @@ type Driver interface {
 	Connect(ctx context.Context, config []byte) (Conn, error)
 }
 
-func New[C any](connector Connector[C], codec config.Codec[C]) Driver {
+func New[C any](connector Connector[C], codec codec.Codec[C]) Driver {
 	return &configurableDriver[C]{
 		connector: connector,
 		codec:     codec,
@@ -25,7 +25,7 @@ func New[C any](connector Connector[C], codec config.Codec[C]) Driver {
 
 type configurableDriver[C any] struct {
 	connector Connector[C]
-	codec     config.Codec[C]
+	codec     codec.Codec[C]
 }
 
 func (d *configurableDriver[C]) Connect(ctx context.Context, bytes []byte) (Conn, error) {

@@ -6,7 +6,7 @@ package driver
 
 import (
 	"context"
-	"github.com/atomix/runtime/pkg/config"
+	"github.com/atomix/runtime/pkg/codec"
 )
 
 type Connector[C any] func(ctx context.Context, config C) (Client, error)
@@ -18,7 +18,7 @@ type Conn interface {
 	Closer
 }
 
-func newConfigurableConn[C any](client Client, codec config.Codec[C]) Conn {
+func newConfigurableConn[C any](client Client, codec codec.Codec[C]) Conn {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &configurableClient[C]{
 		client: client,
@@ -30,7 +30,7 @@ func newConfigurableConn[C any](client Client, codec config.Codec[C]) Conn {
 
 type configurableClient[C any] struct {
 	client Client
-	codec  config.Codec[C]
+	codec  codec.Codec[C]
 	ctx    context.Context
 	cancel context.CancelFunc
 }

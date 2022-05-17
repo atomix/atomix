@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package config
+package codec
 
 type Provider[C any] func() C
 
