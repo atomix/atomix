@@ -15,7 +15,7 @@ builds:
 
 dockers:
   - id: atomix-controller
-    dockerfile: ./build/Dockerfile
+    dockerfile: ./build/controller/Dockerfile
     image_templates:
       - "atomix/controller:latest"
       - "{{ if (not .IsSnapshot) }}atomix/controller:{{ .Tag }}{{ end }}"
@@ -28,16 +28,3 @@ checksum:
 
 snapshot:
   name_template: "{{ incpatch .Version }}-{{.ShortCommit}}"
-
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-
-release:
-  github:
-    owner: atomix
-    name: runtime
-  prerelease: auto
-  draft: true

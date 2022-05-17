@@ -28,7 +28,4 @@ builds:
       - all=-N -l
     ldflags:
       - -s -w
-      - -X github.com/atomix/runtime/pkg/version.shortCommit={{ .ShortCommit }}
-      - -X github.com/atomix/runtime/pkg/version.commit={{ .FullCommit }}
-      - -X github.com/atomix/runtime/pkg/version.version=v{{ .Version }}
-      - -X github.com/atomix/runtime/pkg/version.buildType={{ if .IsSnapshot }}snapshot{{ else }}release{{ end }}
+      - -X github.com/atomix/runtime/pkg/version.version={{ .Env.RUNTIME_VERSION }}
