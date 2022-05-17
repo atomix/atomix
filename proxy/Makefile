@@ -4,6 +4,8 @@
 
 GOLANG_CROSS_VERSION := v1.18.1
 
+RUNTIME_VERSION := $(shell go run github.com/atomix/runtime/cmd/atomix-runtime-version@master)
+
 .PHONY: build
 build: build-bin build-docker
 
@@ -12,6 +14,7 @@ build-bin:
 		--rm \
 		--privileged \
 		-e CGO_ENABLED=1 \
+		-e RUNTIME_VERSION=$(RUNTIME_VERSION) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/build \
 		-w /build \
@@ -23,6 +26,7 @@ build-docker:
 		--rm \
 		--privileged \
 		-e CGO_ENABLED=1 \
+		-e RUNTIME_VERSION=$(RUNTIME_VERSION) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/build \
 		-w /build \
@@ -37,6 +41,7 @@ release-bin:
 		--rm \
 		--privileged \
 		-e CGO_ENABLED=1 \
+		-e RUNTIME_VERSION=$(RUNTIME_VERSION) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/build \
 		-w /build \
@@ -48,6 +53,7 @@ release-docker:
 		--rm \
 		--privileged \
 		-e CGO_ENABLED=1 \
+		-e RUNTIME_VERSION=$(RUNTIME_VERSION) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/build \
 		-w /build \

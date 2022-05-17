@@ -28,16 +28,3 @@ checksum:
 
 snapshot:
   name_template: "{{ incpatch .Version }}-{{.ShortCommit}}"
-
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-
-release:
-  github:
-    owner: atomix
-    name: runtime
-  prerelease: auto
-  draft: true
