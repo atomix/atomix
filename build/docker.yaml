@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+project_name: atomix-runtime-docker
+
+dist: dist/docker
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - skip: true
+
+dockers:
+  - id: atomix-runtime
+    dockerfile: ./build/Dockerfile
+    image_templates:
+      - "atomix/runtime:latest"
+      - "{{ if (not .IsSnapshot) }}atomix/runtime:{{ .Tag }}{{ end }}"
+      - "{{ if (not .IsSnapshot) }}atomix/runtime:v{{ .Major }}.{{ .Minor }}{{ end }}"
+    extra_files:
+      - dist/bin/atomix-runtime_linux_amd64_v1/atomix-runtime
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-{{.ShortCommit}}"

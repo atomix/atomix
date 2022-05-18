@@ -1,13 +1,13 @@
-name: build
+name: release
 
 on:
   push:
-    branches:
-      - 'master'
+    tags:
+      - 'v*'
   pull_request:
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -19,7 +19,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build
-        run: make build
+      - name: Setup Release Environment
+        run: |-
+          echo 'GITHUB_TOKEN=${{secrets.GH_TOKEN}}' > .release-env
+      - name: Release
+        run: make release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
