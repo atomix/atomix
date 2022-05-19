@@ -22,11 +22,11 @@ type counterV1ManagerServer struct {
 }
 
 func (s *counterV1ManagerServer) Create(ctx context.Context, request *v1.CreateRequest) (*v1.CreateResponse, error) {
-	namespace, err := s.proxies.GetCluster(ctx, request.Headers.Cluster)
+	conn, err := s.proxies.Connect(ctx, request.Primitive)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	err = namespace.CreateProxy(ctx, request.Name)
+	err = conn.CreateProxy(ctx, request.Name)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
@@ -34,11 +34,11 @@ func (s *counterV1ManagerServer) Create(ctx context.Context, request *v1.CreateR
 }
 
 func (s *counterV1ManagerServer) Close(ctx context.Context, request *v1.CloseRequest) (*v1.CloseResponse, error) {
-	namespace, err := s.proxies.GetCluster(ctx, request.Headers.Cluster)
+	conn, err := s.proxies.Connect(ctx, request.PrimitiveID)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	err = namespace.CloseProxy(ctx, request.Name)
+	err = conn.CloseProxy(ctx, request.PrimitiveID)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}

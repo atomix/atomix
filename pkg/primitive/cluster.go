@@ -9,19 +9,19 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 )
 
-func newCluster[T Primitive](proxies *Registry[T], client *Client[T]) *Cluster[T] {
-	return &Cluster[T]{
+func newConn[T Primitive](proxies *Registry[T], client *Client[T]) *Conn[T] {
+	return &Conn[T]{
 		proxies: proxies,
 		client:  client,
 	}
 }
 
-type Cluster[T Primitive] struct {
+type Conn[T Primitive] struct {
 	proxies *Registry[T]
 	client  *Client[T]
 }
 
-func (n *Cluster[T]) CreateProxy(ctx context.Context, name string) error {
+func (n *Conn[T]) Create(ctx context.Context, name string) error {
 	proxy, err := n.client.GetPrimitive(ctx, name)
 	if err != nil {
 		return err
@@ -30,7 +30,7 @@ func (n *Cluster[T]) CreateProxy(ctx context.Context, name string) error {
 	return nil
 }
 
-func (n *Cluster[T]) CloseProxy(ctx context.Context, name string) error {
+func (n *Conn[T]) Close(ctx context.Context, name string) error {
 	proxy, ok := n.proxies.unregister(name)
 	if !ok {
 		return errors.NewForbidden("proxy '%s' not found", name)

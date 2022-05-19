@@ -74,7 +74,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [DecrementInput](#atomix-counter-v1-DecrementInput) |  |  |
 
 
@@ -90,7 +90,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [DecrementOutput](#atomix-counter-v1-DecrementOutput) |  |  |
 
 
@@ -131,7 +131,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [GetInput](#atomix-counter-v1-GetInput) |  |  |
 
 
@@ -147,7 +147,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [GetOutput](#atomix-counter-v1-GetOutput) |  |  |
 
 
@@ -193,7 +193,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [IncrementInput](#atomix-counter-v1-IncrementInput) |  |  |
 
 
@@ -209,7 +209,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [IncrementOutput](#atomix-counter-v1-IncrementOutput) |  |  |
 
 
@@ -271,7 +271,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [SetInput](#atomix-counter-v1-SetInput) |  |  |
 
 
@@ -287,7 +287,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [SetOutput](#atomix-counter-v1-SetOutput) |  |  |
 
 

@@ -6,6 +6,7 @@ package primitive
 
 import (
 	"context"
+	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/errors"
 	"sync"
@@ -18,7 +19,7 @@ func NewService[T Primitive](connector Connector, resolver ClientResolver[T], pr
 		connector: connector,
 		resolver:  resolver,
 		proxies:   proxies,
-		clusters:  make(map[string]*Cluster[T]),
+		conns:     make(map[string]*Conn[T]),
 	}
 }
 
@@ -26,30 +27,30 @@ type Service[T Primitive] struct {
 	connector Connector
 	resolver  ClientResolver[T]
 	proxies   *Registry[T]
-	clusters  map[string]*Cluster[T]
+	conns     map[string]*Conn[T]
 	mu        sync.RWMutex
 }
 
-func (m *Service[T]) GetCluster(ctx context.Context, name string) (*Cluster[T], error) {
-	namespace, ok := m.getCluster(name)
+func (m *Service[T]) Connect(ctx context.Context, primitive runtimev1.Primitive) (*Conn[T], error) {
+	conn, ok := m.GetConn(primitive.PrimitiveID)
 	if ok {
-		return namespace, nil
+		return conn, nil
 	}
-	return m.newCluster(ctx, name)
+	return m.connect(ctx, primitive)
 }
 
-func (m *Service[T]) getCluster(name string) (*Cluster[T], bool) {
+func (m *Service[T]) GetConn(primitiveID runtimev1.PrimitiveId) (*Conn[T], bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	namespace, ok := m.clusters[name]
-	return namespace, ok
+	conn, ok := m.conns[primitiveID.Name]
+	return conn, ok
 }
 
-func (m *Service[T]) newCluster(ctx context.Context, name string) (*Cluster[T], error) {
+func (m *Service[T]) connect(ctx context.Context, primitive runtimev1.Primitive) (*Conn[T], error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	cluster, ok := m.clusters[name]
+	cluster, ok := m.conns[primitive.PrimitiveID.Name]
 	if ok {
 		return cluster, nil
 	}
@@ -64,7 +65,7 @@ func (m *Service[T]) newCluster(ctx context.Context, name string) (*Cluster[T], 
 		return nil, errors.NewNotSupported("primitive type not supported by client for cluster '%s'", cluster)
 	}
 
-	cluster = newCluster(m.proxies, client)
-	m.clusters[name] = cluster
+	cluster = newConn(m.proxies, client)
+	m.conns[name] = cluster
 	return cluster, nil
 }

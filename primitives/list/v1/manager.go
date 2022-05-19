@@ -22,11 +22,11 @@ type listV1ManagerServer struct {
 }
 
 func (s *listV1ManagerServer) Create(ctx context.Context, request *v1.CreateRequest) (*v1.CreateResponse, error) {
-	namespace, err := s.proxies.GetCluster(ctx, request.Headers.Cluster)
+	namespace, err := s.proxies.Connect(ctx, request.Headers.Cluster)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	err = namespace.CreateProxy(ctx, request.Name)
+	err = namespace.Create(ctx, request.Name)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
@@ -34,11 +34,11 @@ func (s *listV1ManagerServer) Create(ctx context.Context, request *v1.CreateRequ
 }
 
 func (s *listV1ManagerServer) Close(ctx context.Context, request *v1.CloseRequest) (*v1.CloseResponse, error) {
-	namespace, err := s.proxies.GetCluster(ctx, request.Headers.Cluster)
+	namespace, err := s.proxies.Connect(ctx, request.Headers.Cluster)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	err = namespace.CloseProxy(ctx, request.Name)
+	err = namespace.Close(ctx, request.Name)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}

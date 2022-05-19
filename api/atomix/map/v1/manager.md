@@ -30,8 +30,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.ClusterRequestHeaders](#atomix-runtime-v1-ClusterRequestHeaders) |  |  |
-| name | [string](#string) |  |  |
+| primitive_id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 
 
 
@@ -42,11 +41,6 @@
 
 ### CloseResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.ClusterResponseHeaders](#atomix-runtime-v1-ClusterResponseHeaders) |  |  |
 
 
 
@@ -61,8 +55,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.ClusterRequestHeaders](#atomix-runtime-v1-ClusterRequestHeaders) |  |  |
-| name | [string](#string) |  |  |
+| primitive | [atomix.runtime.v1.Primitive](#atomix-runtime-v1-Primitive) |  |  |
 
 
 
@@ -73,11 +66,6 @@
 
 ### CreateResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.ClusterResponseHeaders](#atomix-runtime-v1-ClusterResponseHeaders) |  |  |
 
 
 

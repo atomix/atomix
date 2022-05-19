@@ -1,0 +1,94 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.v1;
+
+import "atomix/runtime/v1/cluster.proto";
+import "atomix/runtime/v1/driver.proto";
+import "gogoproto/gogo.proto";
+
+service BindingManager {
+    rpc GetBinding (GetBindingRequest) returns (GetBindingResponse);
+    rpc CreateBinding (CreateBindingRequest) returns (CreateBindingResponse);
+    rpc UpdateBinding (UpdateBindingRequest) returns (UpdateBindingResponse);
+    rpc DeleteBinding (DeleteBindingRequest) returns (DeleteBindingResponse);
+}
+
+message Binding {
+    BindingMeta meta = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    BindingSpec spec = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message BindingId {
+    string name = 1;
+}
+
+message BindingMeta {
+    BindingId binding_id = 1 [
+        (gogoproto.customname) = "BindingID",
+        (gogoproto.nullable) = false
+    ];
+    map<string, string> labels = 2;
+}
+
+message BindingSpec {
+    atomix.runtime.v1.ClusterId cluster_id = 1 [
+        (gogoproto.customname) = "ClusterID",
+        (gogoproto.nullable) = false
+    ];
+    map<string, string> selector = 2;
+}
+
+message GetBindingRequest {
+    BindingId binding_id = 1 [
+        (gogoproto.customname) = "BindingID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetBindingResponse {
+    Binding binding = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CreateBindingRequest {
+    Binding binding = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CreateBindingResponse {
+
+}
+
+message UpdateBindingRequest {
+    Binding binding = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message UpdateBindingResponse {
+
+}
+
+message DeleteBindingRequest {
+    BindingId binding_id = 1 [
+        (gogoproto.customname) = "BindingID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message DeleteBindingResponse {
+
+}

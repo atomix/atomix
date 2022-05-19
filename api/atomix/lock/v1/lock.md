@@ -71,7 +71,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [GetLockInput](#atomix-lock-v1-GetLockInput) |  |  |
 
 
@@ -87,7 +87,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [GetLockOutput](#atomix-lock-v1-GetLockOutput) |  |  |
 
 
@@ -149,7 +149,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [LockInput](#atomix-lock-v1-LockInput) |  |  |
 
 
@@ -165,7 +165,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [LockOutput](#atomix-lock-v1-LockOutput) |  |  |
 
 
@@ -211,7 +211,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [UnlockInput](#atomix-lock-v1-UnlockInput) |  |  |
 
 
@@ -227,7 +227,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [UnlockOutput](#atomix-lock-v1-UnlockOutput) |  |  |
 
 

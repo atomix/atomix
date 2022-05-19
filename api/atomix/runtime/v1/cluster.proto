@@ -1,0 +1,92 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.v1;
+
+import "atomix/runtime/v1/driver.proto";
+import "gogoproto/gogo.proto";
+
+service ClusterManager {
+    rpc GetCluster (GetClusterRequest) returns (GetClusterResponse);
+    rpc CreateCluster (CreateClusterRequest) returns (CreateClusterResponse);
+    rpc UpdateCluster (UpdateClusterRequest) returns (UpdateClusterResponse);
+    rpc DeleteCluster (DeleteClusterRequest) returns (DeleteClusterResponse);
+}
+
+message Cluster {
+    ClusterMeta meta = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    ClusterSpec spec = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ClusterId {
+    string name = 1;
+}
+
+message ClusterMeta {
+    ClusterId cluster_id = 1 [
+        (gogoproto.customname) = "ClusterID",
+        (gogoproto.nullable) = false
+    ];
+    map<string, string> labels = 2;
+}
+
+message ClusterSpec {
+    DriverId driver = 1 [
+        (gogoproto.nullable) = false
+    ];
+    bytes config = 2;
+}
+
+message GetClusterRequest {
+    ClusterId cluster_id = 1 [
+        (gogoproto.customname) = "ClusterID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetClusterResponse {
+    Cluster cluster = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CreateClusterRequest {
+    Cluster cluster = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CreateClusterResponse {
+
+}
+
+message UpdateClusterRequest {
+    Cluster cluster = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message UpdateClusterResponse {
+
+}
+
+message DeleteClusterRequest {
+    ClusterId cluster_id = 1 [
+        (gogoproto.customname) = "ClusterID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message DeleteClusterResponse {
+
+}

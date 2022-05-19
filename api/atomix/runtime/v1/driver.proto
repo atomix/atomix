@@ -1,0 +1,47 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.v1;
+
+import "gogoproto/gogo.proto";
+
+service DriverManager {
+    rpc InstallDriver (stream InstallDriverRequest) returns (InstallDriverResponse);
+}
+
+message InstallDriverRequest {
+    oneof driver {
+        DriverHeader header = 1;
+        DriverChunk chunk = 2;
+        DriverTrailer trailer = 3;
+    }
+}
+
+message InstallDriverResponse {
+
+}
+
+message DriverHeader {
+    DriverId driver_id = 1 [
+        (gogoproto.customname) = "DriverID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message DriverChunk {
+    bytes data = 1;
+}
+
+message DriverTrailer {
+    string checksum = 1;
+}
+
+message DriverId {
+    string name = 1;
+    string version = 2;
+}

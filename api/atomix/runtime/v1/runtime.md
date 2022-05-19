@@ -4,21 +4,8 @@
 ## Table of Contents
 
 - [atomix/runtime/v1/runtime.proto](#atomix_runtime_v1_runtime-proto)
-    - [ConfigureClusterRequest](#atomix-runtime-v1-ConfigureClusterRequest)
-    - [ConfigureClusterResponse](#atomix-runtime-v1-ConfigureClusterResponse)
-    - [ConnectClusterRequest](#atomix-runtime-v1-ConnectClusterRequest)
-    - [ConnectClusterResponse](#atomix-runtime-v1-ConnectClusterResponse)
-    - [ConnectionInfo](#atomix-runtime-v1-ConnectionInfo)
-    - [DisconnectClusterRequest](#atomix-runtime-v1-DisconnectClusterRequest)
-    - [DisconnectClusterResponse](#atomix-runtime-v1-DisconnectClusterResponse)
-    - [DriverChunk](#atomix-runtime-v1-DriverChunk)
-    - [DriverHeader](#atomix-runtime-v1-DriverHeader)
-    - [DriverInfo](#atomix-runtime-v1-DriverInfo)
-    - [DriverTrailer](#atomix-runtime-v1-DriverTrailer)
     - [GetRuntimeInfoRequest](#atomix-runtime-v1-GetRuntimeInfoRequest)
     - [GetRuntimeInfoResponse](#atomix-runtime-v1-GetRuntimeInfoResponse)
-    - [InstallDriverRequest](#atomix-runtime-v1-InstallDriverRequest)
-    - [InstallDriverResponse](#atomix-runtime-v1-InstallDriverResponse)
     - [RuntimeInfo](#atomix-runtime-v1-RuntimeInfo)
   
     - [Runtime](#atomix-runtime-v1-Runtime)
@@ -31,160 +18,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/runtime/v1/runtime.proto
-
-
-
-<a name="atomix-runtime-v1-ConfigureClusterRequest"></a>
-
-### ConfigureClusterRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| cluster | [string](#string) |  |  |
-| connection | [ConnectionInfo](#atomix-runtime-v1-ConnectionInfo) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-ConfigureClusterResponse"></a>
-
-### ConfigureClusterResponse
-
-
-
-
-
-
-
-<a name="atomix-runtime-v1-ConnectClusterRequest"></a>
-
-### ConnectClusterRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| cluster | [string](#string) |  |  |
-| connection | [ConnectionInfo](#atomix-runtime-v1-ConnectionInfo) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-ConnectClusterResponse"></a>
-
-### ConnectClusterResponse
-
-
-
-
-
-
-
-<a name="atomix-runtime-v1-ConnectionInfo"></a>
-
-### ConnectionInfo
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| driver | [DriverInfo](#atomix-runtime-v1-DriverInfo) |  |  |
-| config | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-DisconnectClusterRequest"></a>
-
-### DisconnectClusterRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| cluster | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-DisconnectClusterResponse"></a>
-
-### DisconnectClusterResponse
-
-
-
-
-
-
-
-<a name="atomix-runtime-v1-DriverChunk"></a>
-
-### DriverChunk
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| data | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-DriverHeader"></a>
-
-### DriverHeader
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| driver | [DriverInfo](#atomix-runtime-v1-DriverInfo) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-DriverInfo"></a>
-
-### DriverInfo
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| version | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-DriverTrailer"></a>
-
-### DriverTrailer
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| checksum | [string](#string) |  |  |
-
-
-
 
 
 
@@ -207,33 +40,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | runtime_info | [RuntimeInfo](#atomix-runtime-v1-RuntimeInfo) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-InstallDriverRequest"></a>
-
-### InstallDriverRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| header | [DriverHeader](#atomix-runtime-v1-DriverHeader) |  |  |
-| chunk | [DriverChunk](#atomix-runtime-v1-DriverChunk) |  |  |
-| trailer | [DriverTrailer](#atomix-runtime-v1-DriverTrailer) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-InstallDriverResponse"></a>
-
-### InstallDriverResponse
-
 
 
 
@@ -269,10 +75,6 @@ The runtime service provides control functions for the runtime proxy.
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | GetRuntimeInfo | [GetRuntimeInfoRequest](#atomix-runtime-v1-GetRuntimeInfoRequest) | [GetRuntimeInfoResponse](#atomix-runtime-v1-GetRuntimeInfoResponse) |  |
-| ConnectCluster | [ConnectClusterRequest](#atomix-runtime-v1-ConnectClusterRequest) | [ConnectClusterResponse](#atomix-runtime-v1-ConnectClusterResponse) |  |
-| ConfigureCluster | [ConfigureClusterRequest](#atomix-runtime-v1-ConfigureClusterRequest) | [ConfigureClusterResponse](#atomix-runtime-v1-ConfigureClusterResponse) |  |
-| DisconnectCluster | [DisconnectClusterRequest](#atomix-runtime-v1-DisconnectClusterRequest) | [DisconnectClusterResponse](#atomix-runtime-v1-DisconnectClusterResponse) |  |
-| InstallDriver | [InstallDriverRequest](#atomix-runtime-v1-InstallDriverRequest) stream | [InstallDriverResponse](#atomix-runtime-v1-InstallDriverResponse) |  |
 
  
 

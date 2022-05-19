@@ -9,7 +9,7 @@ syntax = "proto3";
 package atomix.topic.v1;
 
 import "atomix/runtime/v1/descriptor.proto";
-import "atomix/runtime/v1/headers.proto";
+import "atomix/runtime/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 
 // TopicManager is a manager for a Topic primitive
@@ -29,31 +29,22 @@ service TopicManager {
 }
 
 message CreateRequest {
-    atomix.runtime.v1.ClusterRequestHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.runtime.v1.Primitive primitive = 1 [
         (gogoproto.nullable) = false
     ];
-    string name = 2;
 }
 
 message CreateResponse {
-    atomix.runtime.v1.ClusterResponseHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
+
 }
 
 message CloseRequest {
-    atomix.runtime.v1.ClusterRequestHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.runtime.v1.PrimitiveId primitive_id = 1 [
+        (gogoproto.customname) = "PrimitiveID",
         (gogoproto.nullable) = false
     ];
-    string name = 2;
 }
 
 message CloseResponse {
-    atomix.runtime.v1.ClusterResponseHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
+
 }

@@ -10,7 +10,7 @@ package atomix.lock.v1;
 
 import "google/protobuf/duration.proto";
 import "atomix/runtime/v1/descriptor.proto";
-import "atomix/runtime/v1/headers.proto";
+import "atomix/runtime/v1/primitive.proto";
 import "atomix/runtime/v1/object.proto";
 import "gogoproto/gogo.proto";
 
@@ -39,7 +39,7 @@ service Lock {
 }
 
 message LockRequest {
-    atomix.runtime.v1.PrimitiveRequestHeaders headers = 1 [
+    atomix.runtime.v1.RequestHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -57,7 +57,7 @@ message LockInput {
 }
 
 message LockResponse {
-    atomix.runtime.v1.PrimitiveResponseHeaders headers = 1 [
+    atomix.runtime.v1.ResponseHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -75,7 +75,7 @@ message LockOutput {
 }
 
 message UnlockRequest {
-    atomix.runtime.v1.PrimitiveRequestHeaders headers = 1 [
+    atomix.runtime.v1.RequestHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -93,7 +93,7 @@ message UnlockInput {
 }
 
 message UnlockResponse {
-    atomix.runtime.v1.PrimitiveResponseHeaders headers = 1 [
+    atomix.runtime.v1.ResponseHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -111,7 +111,7 @@ message UnlockOutput {
 }
 
 message GetLockRequest {
-    atomix.runtime.v1.PrimitiveRequestHeaders headers = 1 [
+    atomix.runtime.v1.RequestHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -129,7 +129,7 @@ message GetLockInput {
 }
 
 message GetLockResponse {
-    atomix.runtime.v1.PrimitiveResponseHeaders headers = 1 [
+    atomix.runtime.v1.ResponseHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];

@@ -9,7 +9,7 @@ syntax = "proto3";
 package atomix.counter.v1;
 
 import "atomix/runtime/v1/descriptor.proto";
-import "atomix/runtime/v1/headers.proto";
+import "atomix/runtime/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 
 // Counter is a service for a counter primitive
@@ -43,7 +43,7 @@ service Counter {
 }
 
 message IncrementRequest {
-    atomix.runtime.v1.PrimitiveRequestHeaders headers = 1 [
+    atomix.runtime.v1.RequestHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -59,7 +59,7 @@ message IncrementInput {
 }
 
 message IncrementResponse {
-    atomix.runtime.v1.PrimitiveResponseHeaders headers = 1 [
+    atomix.runtime.v1.ResponseHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -75,7 +75,7 @@ message IncrementOutput {
 }
 
 message DecrementRequest {
-    atomix.runtime.v1.PrimitiveRequestHeaders headers = 1 [
+    atomix.runtime.v1.RequestHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -91,7 +91,7 @@ message DecrementInput {
 }
 
 message DecrementResponse {
-    atomix.runtime.v1.PrimitiveResponseHeaders headers = 1 [
+    atomix.runtime.v1.ResponseHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -107,7 +107,7 @@ message DecrementOutput {
 }
 
 message GetRequest {
-    atomix.runtime.v1.PrimitiveRequestHeaders headers = 1 [
+    atomix.runtime.v1.RequestHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -123,7 +123,7 @@ message GetInput {
 }
 
 message GetResponse {
-    atomix.runtime.v1.PrimitiveResponseHeaders headers = 1 [
+    atomix.runtime.v1.ResponseHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -145,7 +145,7 @@ message Precondition {
 }
 
 message SetRequest {
-    atomix.runtime.v1.PrimitiveRequestHeaders headers = 1 [
+    atomix.runtime.v1.RequestHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -164,7 +164,7 @@ message SetInput {
 }
 
 message SetResponse {
-    atomix.runtime.v1.PrimitiveResponseHeaders headers = 1 [
+    atomix.runtime.v1.ResponseHeaders headers = 1 [
         (atomix.runtime.v1.headers) = true,
         (gogoproto.nullable) = false
     ];

@@ -58,7 +58,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| candidate_id | [uint64](#uint64) |  |  |
+| candidate_id | [string](#string) |  |  |
 
 
 
@@ -88,7 +88,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [AnointInput](#atomix-election-v1-AnointInput) |  |  |
 
 
@@ -104,7 +104,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [AnointOutput](#atomix-election-v1-AnointOutput) |  |  |
 
 
@@ -116,6 +116,11 @@
 
 ### EnterInput
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| candidate_id | [string](#string) |  |  |
 
 
 
@@ -130,7 +135,6 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| candidate_id | [uint64](#uint64) |  |  |
 | term | [Term](#atomix-election-v1-Term) |  |  |
 
 
@@ -146,7 +150,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [EnterInput](#atomix-election-v1-EnterInput) |  |  |
 
 
@@ -162,7 +166,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [EnterOutput](#atomix-election-v1-EnterOutput) |  |  |
 
 
@@ -219,7 +223,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [EventsInput](#atomix-election-v1-EventsInput) |  |  |
 
 
@@ -235,7 +239,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [EventsOutput](#atomix-election-v1-EventsOutput) |  |  |
 
 
@@ -251,7 +255,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| candidate_id | [uint64](#uint64) |  |  |
+| candidate_id | [string](#string) |  |  |
 
 
 
@@ -281,7 +285,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [EvictInput](#atomix-election-v1-EvictInput) |  |  |
 
 
@@ -297,7 +301,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [EvictOutput](#atomix-election-v1-EvictOutput) |  |  |
 
 
@@ -338,7 +342,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [GetTermInput](#atomix-election-v1-GetTermInput) |  |  |
 
 
@@ -354,7 +358,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [GetTermOutput](#atomix-election-v1-GetTermOutput) |  |  |
 
 
@@ -370,7 +374,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| candidate_id | [uint64](#uint64) |  |  |
+| candidate_id | [string](#string) |  |  |
 
 
 
@@ -400,7 +404,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [PromoteInput](#atomix-election-v1-PromoteInput) |  |  |
 
 
@@ -416,7 +420,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [PromoteOutput](#atomix-election-v1-PromoteOutput) |  |  |
 
 
@@ -449,7 +453,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| candidate_id | [uint64](#uint64) |  |  |
+| candidate_id | [string](#string) |  |  |
 
 
 
@@ -479,7 +483,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveRequestHeaders](#atomix-runtime-v1-PrimitiveRequestHeaders) |  |  |
+| headers | [atomix.runtime.v1.RequestHeaders](#atomix-runtime-v1-RequestHeaders) |  |  |
 | input | [WithdrawInput](#atomix-election-v1-WithdrawInput) |  |  |
 
 
@@ -495,7 +499,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.runtime.v1.PrimitiveResponseHeaders](#atomix-runtime-v1-PrimitiveResponseHeaders) |  |  |
+| headers | [atomix.runtime.v1.ResponseHeaders](#atomix-runtime-v1-ResponseHeaders) |  |  |
 | output | [WithdrawOutput](#atomix-election-v1-WithdrawOutput) |  |  |
 
 

@@ -22,11 +22,11 @@ type topicV1ManagerServer struct {
 }
 
 func (s *topicV1ManagerServer) Create(ctx context.Context, request *v1.CreateRequest) (*v1.CreateResponse, error) {
-	namespace, err := s.proxies.GetCluster(ctx, request.Headers.Cluster)
+	namespace, err := s.proxies.Connect(ctx, request.Headers.Cluster)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	err = namespace.CreateProxy(ctx, request.Name)
+	err = namespace.Create(ctx, request.Name)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
@@ -34,11 +34,11 @@ func (s *topicV1ManagerServer) Create(ctx context.Context, request *v1.CreateReq
 }
 
 func (s *topicV1ManagerServer) Close(ctx context.Context, request *v1.CloseRequest) (*v1.CloseResponse, error) {
-	namespace, err := s.proxies.GetCluster(ctx, request.Headers.Cluster)
+	namespace, err := s.proxies.Connect(ctx, request.Headers.Cluster)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	err = namespace.CloseProxy(ctx, request.Name)
+	err = namespace.Close(ctx, request.Name)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
