@@ -16,7 +16,6 @@ import "gogoproto/gogo.proto";
 
 // Map is a service for a map primitive
 service Map {
-    option (atomix.primitive.v1.type) = "Map";
     option (atomix.primitive.v1.config) = "MapConfig";
 
     // Size returns the size of the map

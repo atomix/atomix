@@ -15,7 +15,6 @@ import "gogoproto/gogo.proto";
 
 // LeaderElection is a service for a leader election primitive
 service LeaderElection {
-    option (atomix.primitive.v1.type) = "LeaderElection";
     option (atomix.primitive.v1.config) = "LeaderElectionConfig";
 
     // Enter enters the leader election

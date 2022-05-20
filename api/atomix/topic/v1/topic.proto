@@ -14,7 +14,6 @@ import "atomix/primitive/v1/headers.proto";
 import "google/protobuf/timestamp.proto";
 
 service Topic {
-    option (atomix.primitive.v1.type) = "Topic";
     option (atomix.primitive.v1.config) = "TopicConfig";
 
     rpc Publish(PublishRequest) returns (PublishResponse) {

@@ -16,7 +16,6 @@ import "gogoproto/gogo.proto";
 
 // IndexedMap is a service for a sorted/indexed map primitive
 service IndexedMap {
-    option (atomix.primitive.v1.type) = "IndexedMap";
     option (atomix.primitive.v1.config) = "IndexedMapConfig";
 
     // Size returns the size of the map

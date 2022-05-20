@@ -14,7 +14,6 @@ import "gogoproto/gogo.proto";
 
 // Counter is a service for a counter primitive
 service Counter {
-    option (atomix.primitive.v1.type) = "Counter";
     option (atomix.primitive.v1.config) = "CounterConfig";
 
     // Set sets the counter value

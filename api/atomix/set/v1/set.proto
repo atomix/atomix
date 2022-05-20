@@ -15,7 +15,6 @@ import "gogoproto/gogo.proto";
 
 // Set is a service for a set primitive
 service Set {
-    option (atomix.primitive.v1.type) = "Set";
     option (atomix.primitive.v1.config) = "SetConfig";
 
     // Size gets the number of elements in the set
