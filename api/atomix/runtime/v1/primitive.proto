@@ -27,9 +27,7 @@ message Primitive {
 }
 
 message PrimitiveId {
-    string type = 1 [
-        (gogoproto.casttype) = "PrimitiveType"
-    ];
+    string type = 1;
     string name = 2;
 }
 
@@ -59,9 +57,7 @@ message GetPrimitiveResponse {
 }
 
 message ListPrimitivesRequest {
-    string type = 1 [
-        (gogoproto.casttype) = "PrimitiveType"
-    ];
+    string type = 1;
     bool watch = 2;
 }
 
