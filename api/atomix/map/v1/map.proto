@@ -17,6 +17,7 @@ import "gogoproto/gogo.proto";
 // Map is a service for a map primitive
 service Map {
     option (atomix.primitive.v1.type) = "Map";
+    option (atomix.primitive.v1.config) = "MapConfig";
 
     // Size returns the size of the map
     rpc Size (SizeRequest) returns (SizeResponse) {
@@ -59,6 +60,10 @@ service Map {
         option (atomix.primitive.v1.operation_id) = 9;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
+}
+
+message MapConfig {
+
 }
 
 message SizeRequest {

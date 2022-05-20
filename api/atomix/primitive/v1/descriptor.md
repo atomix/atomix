@@ -12,6 +12,7 @@
     - [File-level Extensions](#atomix_primitive_v1_descriptor-proto-extensions)
     - [File-level Extensions](#atomix_primitive_v1_descriptor-proto-extensions)
     - [File-level Extensions](#atomix_primitive_v1_descriptor-proto-extensions)
+    - [File-level Extensions](#atomix_primitive_v1_descriptor-proto-extensions)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -52,6 +53,7 @@ OperationType is an enum for specifying the type of operation
 | output | bool | .google.protobuf.FieldOptions | 51002 |  |
 | operation_id | uint32 | .google.protobuf.MethodOptions | 52000 |  |
 | operation_type | OperationType | .google.protobuf.MethodOptions | 52001 |  |
+| config | string | .google.protobuf.ServiceOptions | 50001 |  |
 | type | string | .google.protobuf.ServiceOptions | 50000 |  |
 
  

@@ -8,6 +8,7 @@
     - [GetLockOutput](#atomix-lock-v1-GetLockOutput)
     - [GetLockRequest](#atomix-lock-v1-GetLockRequest)
     - [GetLockResponse](#atomix-lock-v1-GetLockResponse)
+    - [LockConfig](#atomix-lock-v1-LockConfig)
     - [LockInput](#atomix-lock-v1-LockInput)
     - [LockInstance](#atomix-lock-v1-LockInstance)
     - [LockOutput](#atomix-lock-v1-LockOutput)
@@ -89,6 +90,16 @@
 | ----- | ---- | ----- | ----------- |
 | headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
 | output | [GetLockOutput](#atomix-lock-v1-GetLockOutput) |  |  |
+
+
+
+
+
+
+<a name="atomix-lock-v1-LockConfig"></a>
+
+### LockConfig
+
 
 
 

@@ -16,6 +16,7 @@ import "gogoproto/gogo.proto";
 // List is a service for a list primitive
 service List {
     option (atomix.primitive.v1.type) = "List";
+    option (atomix.primitive.v1.config) = "ListConfig";
 
     // Size gets the number of elements in the list
     rpc Size (SizeRequest) returns (SizeResponse) {
@@ -70,6 +71,10 @@ service List {
         option (atomix.primitive.v1.operation_id) = 11;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
+}
+
+message ListConfig {
+
 }
 
 message SizeRequest {

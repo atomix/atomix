@@ -16,6 +16,7 @@ import "gogoproto/gogo.proto";
 // LeaderElection is a service for a leader election primitive
 service LeaderElection {
     option (atomix.primitive.v1.type) = "LeaderElection";
+    option (atomix.primitive.v1.config) = "LeaderElectionConfig";
 
     // Enter enters the leader election
     rpc Enter (EnterRequest) returns (EnterResponse) {
@@ -58,6 +59,10 @@ service LeaderElection {
         option (atomix.primitive.v1.operation_id) = 9;
         option (atomix.primitive.v1.operation_type) = COMMAND;
     }
+}
+
+message LeaderElectionConfig {
+
 }
 
 message EnterRequest {

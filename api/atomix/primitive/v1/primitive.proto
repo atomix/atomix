@@ -8,6 +8,7 @@ syntax = "proto3";
 
 package atomix.primitive.v1;
 
+import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
 
 service PrimitiveManager {
@@ -41,6 +42,9 @@ message Primitive {
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
+    PrimitiveSpec spec = 2 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message PrimitiveId {
@@ -56,4 +60,8 @@ message PrimitiveMeta {
         (gogoproto.nullable) = false
     ];
     map<string, string> labels = 2;
+}
+
+message PrimitiveSpec {
+    google.protobuf.Any config = 1;
 }

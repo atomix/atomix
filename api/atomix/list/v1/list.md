@@ -34,6 +34,7 @@
     - [InsertRequest](#atomix-list-v1-InsertRequest)
     - [InsertResponse](#atomix-list-v1-InsertResponse)
     - [Item](#atomix-list-v1-Item)
+    - [ListConfig](#atomix-list-v1-ListConfig)
     - [Precondition](#atomix-list-v1-Precondition)
     - [RemoveInput](#atomix-list-v1-RemoveInput)
     - [RemoveOutput](#atomix-list-v1-RemoveOutput)
@@ -505,6 +506,16 @@
 | ----- | ---- | ----- | ----------- |
 | index | [uint32](#uint32) |  |  |
 | value | [Value](#atomix-list-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-list-v1-ListConfig"></a>
+
+### ListConfig
+
 
 
 

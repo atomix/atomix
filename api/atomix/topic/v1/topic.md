@@ -12,6 +12,7 @@
     - [SubscribeOutput](#atomix-topic-v1-SubscribeOutput)
     - [SubscribeRequest](#atomix-topic-v1-SubscribeRequest)
     - [SubscribeResponse](#atomix-topic-v1-SubscribeResponse)
+    - [TopicConfig](#atomix-topic-v1-TopicConfig)
   
     - [Topic](#atomix-topic-v1-Topic)
   
@@ -136,6 +137,16 @@
 | ----- | ---- | ----- | ----------- |
 | headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
 | output | [SubscribeOutput](#atomix-topic-v1-SubscribeOutput) |  |  |
+
+
+
+
+
+
+<a name="atomix-topic-v1-TopicConfig"></a>
+
+### TopicConfig
+
 
 
 

@@ -26,6 +26,7 @@
     - [GetOutput](#atomix-indexed_map-v1-GetOutput)
     - [GetRequest](#atomix-indexed_map-v1-GetRequest)
     - [GetResponse](#atomix-indexed_map-v1-GetResponse)
+    - [IndexedMapConfig](#atomix-indexed_map-v1-IndexedMapConfig)
     - [LastEntryInput](#atomix-indexed_map-v1-LastEntryInput)
     - [LastEntryOutput](#atomix-indexed_map-v1-LastEntryOutput)
     - [LastEntryRequest](#atomix-indexed_map-v1-LastEntryRequest)
@@ -386,6 +387,16 @@
 | ----- | ---- | ----- | ----------- |
 | headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
 | output | [GetOutput](#atomix-indexed_map-v1-GetOutput) |  |  |
+
+
+
+
+
+
+<a name="atomix-indexed_map-v1-IndexedMapConfig"></a>
+
+### IndexedMapConfig
+
 
 
 

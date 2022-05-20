@@ -25,6 +25,7 @@
     - [GetTermOutput](#atomix-election-v1-GetTermOutput)
     - [GetTermRequest](#atomix-election-v1-GetTermRequest)
     - [GetTermResponse](#atomix-election-v1-GetTermResponse)
+    - [LeaderElectionConfig](#atomix-election-v1-LeaderElectionConfig)
     - [PromoteInput](#atomix-election-v1-PromoteInput)
     - [PromoteOutput](#atomix-election-v1-PromoteOutput)
     - [PromoteRequest](#atomix-election-v1-PromoteRequest)
@@ -360,6 +361,16 @@
 | ----- | ---- | ----- | ----------- |
 | headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
 | output | [GetTermOutput](#atomix-election-v1-GetTermOutput) |  |  |
+
+
+
+
+
+
+<a name="atomix-election-v1-LeaderElectionConfig"></a>
+
+### LeaderElectionConfig
+
 
 
 

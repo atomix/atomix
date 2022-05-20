@@ -17,6 +17,7 @@ import "gogoproto/gogo.proto";
 // Lock is a service for a lock primitive
 service Lock {
     option (atomix.primitive.v1.type) = "Lock";
+    option (atomix.primitive.v1.config) = "LockConfig";
 
     // Lock attempts to acquire the lock
     rpc Lock (LockRequest) returns (LockResponse) {
@@ -35,6 +36,10 @@ service Lock {
         option (atomix.primitive.v1.operation_id) = 5;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
+}
+
+message LockConfig {
+
 }
 
 message LockRequest {

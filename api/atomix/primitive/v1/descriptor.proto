@@ -12,6 +12,7 @@ import "google/protobuf/descriptor.proto";
 
 extend google.protobuf.ServiceOptions {
     string type = 50000;
+    string config = 50001;
 }
 
 extend google.protobuf.FieldOptions {

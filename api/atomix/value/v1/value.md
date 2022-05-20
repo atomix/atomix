@@ -19,6 +19,7 @@
     - [SetOutput](#atomix-value-v1-SetOutput)
     - [SetRequest](#atomix-value-v1-SetRequest)
     - [SetResponse](#atomix-value-v1-SetResponse)
+    - [ValueConfig](#atomix-value-v1-ValueConfig)
   
     - [Event.Type](#atomix-value-v1-Event-Type)
   
@@ -253,6 +254,16 @@
 | ----- | ---- | ----- | ----------- |
 | headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
 | output | [SetOutput](#atomix-value-v1-SetOutput) |  |  |
+
+
+
+
+
+
+<a name="atomix-value-v1-ValueConfig"></a>
+
+### ValueConfig
+
 
 
 

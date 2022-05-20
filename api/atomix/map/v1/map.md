@@ -23,6 +23,7 @@
     - [GetRequest](#atomix-map-v1-GetRequest)
     - [GetResponse](#atomix-map-v1-GetResponse)
     - [Key](#atomix-map-v1-Key)
+    - [MapConfig](#atomix-map-v1-MapConfig)
     - [Precondition](#atomix-map-v1-Precondition)
     - [PutInput](#atomix-map-v1-PutInput)
     - [PutOutput](#atomix-map-v1-PutOutput)
@@ -329,6 +330,16 @@
 | ----- | ---- | ----- | ----------- |
 | meta | [atomix.primitive.v1.ObjectMeta](#atomix-primitive-v1-ObjectMeta) |  |  |
 | key | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-map-v1-MapConfig"></a>
+
+### MapConfig
+
 
 
 

@@ -4,6 +4,7 @@
 ## Table of Contents
 
 - [atomix/counter/v1/counter.proto](#atomix_counter_v1_counter-proto)
+    - [CounterConfig](#atomix-counter-v1-CounterConfig)
     - [DecrementInput](#atomix-counter-v1-DecrementInput)
     - [DecrementOutput](#atomix-counter-v1-DecrementOutput)
     - [DecrementRequest](#atomix-counter-v1-DecrementRequest)
@@ -33,6 +34,16 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/counter/v1/counter.proto
+
+
+
+<a name="atomix-counter-v1-CounterConfig"></a>
+
+### CounterConfig
+
+
+
+
 
 
 

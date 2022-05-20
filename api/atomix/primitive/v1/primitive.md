@@ -12,6 +12,7 @@
     - [PrimitiveId](#atomix-primitive-v1-PrimitiveId)
     - [PrimitiveMeta](#atomix-primitive-v1-PrimitiveMeta)
     - [PrimitiveMeta.LabelsEntry](#atomix-primitive-v1-PrimitiveMeta-LabelsEntry)
+    - [PrimitiveSpec](#atomix-primitive-v1-PrimitiveSpec)
   
     - [PrimitiveManager](#atomix-primitive-v1-PrimitiveManager)
   
@@ -85,6 +86,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | meta | [PrimitiveMeta](#atomix-primitive-v1-PrimitiveMeta) |  |  |
+| spec | [PrimitiveSpec](#atomix-primitive-v1-PrimitiveSpec) |  |  |
 
 
 
@@ -133,6 +135,21 @@
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-primitive-v1-PrimitiveSpec"></a>
+
+### PrimitiveSpec
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
 

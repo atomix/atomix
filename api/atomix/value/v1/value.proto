@@ -16,6 +16,7 @@ import "gogoproto/gogo.proto";
 // Value is a service for a value primitive
 service Value {
     option (atomix.primitive.v1.type) = "Value";
+    option (atomix.primitive.v1.config) = "ValueConfig";
 
     // Set sets the value
     rpc Set (SetRequest) returns (SetResponse) {
@@ -34,6 +35,10 @@ service Value {
         option (atomix.primitive.v1.operation_id) = 5;
         option (atomix.primitive.v1.operation_type) = COMMAND;
     }
+}
+
+message ValueConfig {
+
 }
 
 message GetRequest {

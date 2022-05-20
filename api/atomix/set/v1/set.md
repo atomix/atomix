@@ -30,6 +30,7 @@
     - [RemoveOutput](#atomix-set-v1-RemoveOutput)
     - [RemoveRequest](#atomix-set-v1-RemoveRequest)
     - [RemoveResponse](#atomix-set-v1-RemoveResponse)
+    - [SetConfig](#atomix-set-v1-SetConfig)
     - [SizeInput](#atomix-set-v1-SizeInput)
     - [SizeOutput](#atomix-set-v1-SizeOutput)
     - [SizeRequest](#atomix-set-v1-SizeRequest)
@@ -433,6 +434,16 @@
 | ----- | ---- | ----- | ----------- |
 | headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
 | output | [RemoveOutput](#atomix-set-v1-RemoveOutput) |  |  |
+
+
+
+
+
+
+<a name="atomix-set-v1-SetConfig"></a>
+
+### SetConfig
+
 
 
 
