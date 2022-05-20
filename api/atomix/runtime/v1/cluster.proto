@@ -62,7 +62,7 @@ message GetClusterResponse {
 }
 
 message ListClustersRequest {
-
+    bool watch = 1;
 }
 
 message ListClustersResponse {

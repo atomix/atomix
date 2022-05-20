@@ -62,6 +62,7 @@ message ListPrimitivesRequest {
     string type = 1 [
         (gogoproto.casttype) = "PrimitiveType"
     ];
+    bool watch = 2;
 }
 
 message ListPrimitivesResponse {

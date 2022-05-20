@@ -66,6 +66,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | type | [string](#string) |  |  |
+| watch | [bool](#bool) |  |  |
 
 
 

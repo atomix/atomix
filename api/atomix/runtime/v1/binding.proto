@@ -64,7 +64,7 @@ message GetBindingResponse {
 }
 
 message ListBindingsRequest {
-
+    bool watch = 1;
 }
 
 message ListBindingsResponse {
