@@ -22,17 +22,17 @@ type topicV1Server struct {
 }
 
 func (s *topicV1Server) Publish(ctx context.Context, request *v1.PublishRequest) (*v1.PublishResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.Primitive)
+	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
 	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.Primitive))
+		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
 	}
 	return proxy.Publish(ctx, request)
 }
 
 func (s *topicV1Server) Subscribe(request *v1.SubscribeRequest, server v1.Topic_SubscribeServer) error {
-	proxy, ok := s.proxies.GetProxy(request.Headers.Primitive)
+	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
 	if !ok {
-		return errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.Primitive))
+		return errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
 	}
 	return proxy.Subscribe(request, server)
 }

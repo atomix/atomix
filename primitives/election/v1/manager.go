@@ -22,11 +22,11 @@ type leaderElectionV1ManagerServer struct {
 }
 
 func (s *leaderElectionV1ManagerServer) Create(ctx context.Context, request *v1.CreateRequest) (*v1.CreateResponse, error) {
-	namespace, err := s.proxies.Connect(ctx, request.Headers.Cluster)
+	conn, err := s.proxies.Connect(ctx, request.Primitive)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	err = namespace.Create(ctx, request.Name)
+	err = conn.Create(ctx, request.Primitive.PrimitiveID)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
@@ -34,11 +34,11 @@ func (s *leaderElectionV1ManagerServer) Create(ctx context.Context, request *v1.
 }
 
 func (s *leaderElectionV1ManagerServer) Close(ctx context.Context, request *v1.CloseRequest) (*v1.CloseResponse, error) {
-	namespace, err := s.proxies.Connect(ctx, request.Headers.Cluster)
+	conn, err := s.proxies.GetConn(request.PrimitiveID)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	err = namespace.Close(ctx, request.Name)
+	err = conn.Close(ctx, request.PrimitiveID)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}

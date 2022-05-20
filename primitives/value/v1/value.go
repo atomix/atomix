@@ -6,13 +6,14 @@ package v1
 
 import (
 	"context"
+	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"github.com/atomix/runtime/api/atomix/value/v1"
 	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/primitive"
 	"google.golang.org/grpc"
 )
 
-var Atom = primitive.New[Value](clientFactory, func(server *grpc.Server, service *primitive.Service[Value], registry *primitive.Registry[Value]) {
+var Primitive = primitive.New[Value](clientFactory, func(server *grpc.Server, service *primitive.Service[Value], registry *primitive.Registry[Value]) {
 	v1.RegisterValueManagerServer(server, newValueV1ManagerServer(service))
 	v1.RegisterValueServer(server, newValueV1Server(registry))
 })
@@ -26,7 +27,7 @@ var clientFactory = func(client driver.Client) (*primitive.Client[Value], bool) 
 }
 
 type ValueClient interface {
-	GetValue(ctx context.Context, name string) (Value, error)
+	GetValue(ctx context.Context, primitiveID runtimev1.PrimitiveId) (Value, error)
 }
 
 type Value interface {

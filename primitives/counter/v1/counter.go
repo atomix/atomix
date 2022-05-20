@@ -7,12 +7,13 @@ package v1
 import (
 	"context"
 	"github.com/atomix/runtime/api/atomix/counter/v1"
+	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/primitive"
 	"google.golang.org/grpc"
 )
 
-var Atom = primitive.New[Counter](clientFactory, func(server *grpc.Server, service *primitive.Service[Counter], registry *primitive.Registry[Counter]) {
+var Primitive = primitive.New[Counter](clientFactory, func(server *grpc.Server, service *primitive.Service[Counter], registry *primitive.Registry[Counter]) {
 	v1.RegisterCounterManagerServer(server, newCounterV1ManagerServer(service))
 	v1.RegisterCounterServer(server, newCounterV1Server(registry))
 })
@@ -26,7 +27,7 @@ var clientFactory = func(client driver.Client) (*primitive.Client[Counter], bool
 }
 
 type CounterClient interface {
-	GetCounter(ctx context.Context, name string) (Counter, error)
+	GetCounter(ctx context.Context, primitiveID runtimev1.PrimitiveId) (Counter, error)
 }
 
 type Counter interface {

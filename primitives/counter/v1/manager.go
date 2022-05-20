@@ -26,7 +26,7 @@ func (s *counterV1ManagerServer) Create(ctx context.Context, request *v1.CreateR
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	err = conn.CreateProxy(ctx, request.Name)
+	err = conn.Create(ctx, request.Primitive.PrimitiveID)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
@@ -34,11 +34,11 @@ func (s *counterV1ManagerServer) Create(ctx context.Context, request *v1.CreateR
 }
 
 func (s *counterV1ManagerServer) Close(ctx context.Context, request *v1.CloseRequest) (*v1.CloseResponse, error) {
-	conn, err := s.proxies.Connect(ctx, request.PrimitiveID)
+	conn, err := s.proxies.GetConn(request.PrimitiveID)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	err = conn.CloseProxy(ctx, request.PrimitiveID)
+	err = conn.Close(ctx, request.PrimitiveID)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}

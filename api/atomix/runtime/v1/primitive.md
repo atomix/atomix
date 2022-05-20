@@ -3,69 +3,99 @@
 
 ## Table of Contents
 
-- [atomix/primitive/v1/primitive.proto](#atomix_primitive_v1_primitive-proto)
-    - [ClosePrimitiveRequest](#atomix-primitive-v1-ClosePrimitiveRequest)
-    - [ClosePrimitiveResponse](#atomix-primitive-v1-ClosePrimitiveResponse)
-    - [OpenPrimitiveRequest](#atomix-primitive-v1-OpenPrimitiveRequest)
-    - [OpenPrimitiveResponse](#atomix-primitive-v1-OpenPrimitiveResponse)
+- [atomix/runtime/v1/primitive.proto](#atomix_runtime_v1_primitive-proto)
+    - [Primitive](#atomix-runtime-v1-Primitive)
+    - [PrimitiveId](#atomix-runtime-v1-PrimitiveId)
+    - [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta)
+    - [PrimitiveMeta.LabelsEntry](#atomix-runtime-v1-PrimitiveMeta-LabelsEntry)
+    - [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec)
   
-    - [PrimitiveManager](#atomix-primitive-v1-PrimitiveManager)
+    - [PrimitiveService](#atomix-runtime-v1-PrimitiveService)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_primitive_v1_primitive-proto"></a>
+<a name="atomix_runtime_v1_primitive-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/primitive/v1/primitive.proto
+## atomix/runtime/v1/primitive.proto
 
 
 
-<a name="atomix-primitive-v1-ClosePrimitiveRequest"></a>
+<a name="atomix-runtime-v1-Primitive"></a>
 
-### ClosePrimitiveRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| primitive_id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-
-
-
-
-
-
-<a name="atomix-primitive-v1-ClosePrimitiveResponse"></a>
-
-### ClosePrimitiveResponse
-
-
-
-
-
-
-
-<a name="atomix-primitive-v1-OpenPrimitiveRequest"></a>
-
-### OpenPrimitiveRequest
+### Primitive
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitive | [atomix.runtime.v1.Primitive](#atomix-runtime-v1-Primitive) |  |  |
+| meta | [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta) |  |  |
+| spec | [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec) |  |  |
 
 
 
 
 
 
-<a name="atomix-primitive-v1-OpenPrimitiveResponse"></a>
+<a name="atomix-runtime-v1-PrimitiveId"></a>
 
-### OpenPrimitiveResponse
+### PrimitiveId
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
+| name | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-PrimitiveMeta"></a>
+
+### PrimitiveMeta
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| primitive_id | [PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| labels | [PrimitiveMeta.LabelsEntry](#atomix-runtime-v1-PrimitiveMeta-LabelsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-PrimitiveMeta-LabelsEntry"></a>
+
+### PrimitiveMeta.LabelsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-PrimitiveSpec"></a>
+
+### PrimitiveSpec
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
 
@@ -78,15 +108,13 @@
  
 
 
-<a name="atomix-primitive-v1-PrimitiveManager"></a>
+<a name="atomix-runtime-v1-PrimitiveService"></a>
 
-### PrimitiveManager
+### PrimitiveService
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Open | [OpenPrimitiveRequest](#atomix-primitive-v1-OpenPrimitiveRequest) | [OpenPrimitiveResponse](#atomix-primitive-v1-OpenPrimitiveResponse) |  |
-| Close | [ClosePrimitiveRequest](#atomix-primitive-v1-ClosePrimitiveRequest) | [ClosePrimitiveResponse](#atomix-primitive-v1-ClosePrimitiveResponse) |  |
 
  
 

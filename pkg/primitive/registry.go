@@ -5,41 +5,42 @@
 package primitive
 
 import (
+	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"sync"
 )
 
 func NewRegistry[T Primitive]() *Registry[T] {
 	return &Registry[T]{
-		proxies: make(map[string]T),
+		proxies: make(map[runtimev1.PrimitiveId]T),
 	}
 }
 
 type Registry[T Primitive] struct {
-	proxies map[string]T
+	proxies map[runtimev1.PrimitiveId]T
 	mu      sync.RWMutex
 }
 
-func (r *Registry[T]) GetProxy(name string) (T, bool) {
+func (r *Registry[T]) GetProxy(primitiveID runtimev1.PrimitiveId) (T, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	proxy, ok := r.proxies[name]
+	proxy, ok := r.proxies[primitiveID]
 	return proxy, ok
 }
 
-func (r *Registry[T]) register(name string, proxy T) {
+func (r *Registry[T]) register(primitiveID runtimev1.PrimitiveId, proxy T) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.proxies[name] = proxy
+	r.proxies[primitiveID] = proxy
 }
 
-func (r *Registry[T]) unregister(name string) (T, bool) {
+func (r *Registry[T]) unregister(primitiveID runtimev1.PrimitiveId) (T, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	var proxy T
-	proxy, ok := r.proxies[name]
+	proxy, ok := r.proxies[primitiveID]
 	if !ok {
 		return proxy, false
 	}
-	delete(r.proxies, name)
+	delete(r.proxies, primitiveID)
 	return proxy, true
 }

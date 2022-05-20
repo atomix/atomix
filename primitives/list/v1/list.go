@@ -7,12 +7,13 @@ package v1
 import (
 	"context"
 	"github.com/atomix/runtime/api/atomix/list/v1"
+	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/primitive"
 	"google.golang.org/grpc"
 )
 
-var Atom = primitive.New[List](clientFactory, func(server *grpc.Server, service *primitive.Service[List], registry *primitive.Registry[List]) {
+var Primitive = primitive.New[List](clientFactory, func(server *grpc.Server, service *primitive.Service[List], registry *primitive.Registry[List]) {
 	v1.RegisterListManagerServer(server, newListV1ManagerServer(service))
 	v1.RegisterListServer(server, newListV1Server(registry))
 })
@@ -26,7 +27,7 @@ var clientFactory = func(client driver.Client) (*primitive.Client[List], bool) {
 }
 
 type ListClient interface {
-	GetList(ctx context.Context, name string) (List, error)
+	GetList(ctx context.Context, primitiveID runtimev1.PrimitiveId) (List, error)
 }
 
 type List interface {

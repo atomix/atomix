@@ -6,6 +6,7 @@ package primitive
 
 import (
 	"context"
+	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"github.com/atomix/runtime/pkg/errors"
 )
 
@@ -21,19 +22,19 @@ type Conn[T Primitive] struct {
 	client  *Client[T]
 }
 
-func (n *Conn[T]) Create(ctx context.Context, name string) error {
-	proxy, err := n.client.GetPrimitive(ctx, name)
+func (n *Conn[T]) Create(ctx context.Context, primitiveID runtimev1.PrimitiveId) error {
+	proxy, err := n.client.GetPrimitive(ctx, primitiveID)
 	if err != nil {
 		return err
 	}
-	n.proxies.register(name, proxy)
+	n.proxies.register(primitiveID, proxy)
 	return nil
 }
 
-func (n *Conn[T]) Close(ctx context.Context, name string) error {
-	proxy, ok := n.proxies.unregister(name)
+func (n *Conn[T]) Close(ctx context.Context, primitiveID runtimev1.PrimitiveId) error {
+	proxy, ok := n.proxies.unregister(primitiveID)
 	if !ok {
-		return errors.NewForbidden("proxy '%s' not found", name)
+		return errors.NewForbidden("proxy '%s' not found", primitiveID.Name)
 	}
 	return proxy.Close(ctx)
 }

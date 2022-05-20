@@ -7,12 +7,13 @@ package v1
 import (
 	"context"
 	"github.com/atomix/runtime/api/atomix/election/v1"
+	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/primitive"
 	"google.golang.org/grpc"
 )
 
-var Atom = primitive.New[LeaderElection](clientFactory, func(server *grpc.Server, service *primitive.Service[LeaderElection], registry *primitive.Registry[LeaderElection]) {
+var Primitive = primitive.New[LeaderElection](clientFactory, func(server *grpc.Server, service *primitive.Service[LeaderElection], registry *primitive.Registry[LeaderElection]) {
 	v1.RegisterLeaderElectionManagerServer(server, newLeaderElectionV1ManagerServer(service))
 	v1.RegisterLeaderElectionServer(server, newLeaderElectionV1Server(registry))
 })
@@ -26,7 +27,7 @@ var clientFactory = func(client driver.Client) (*primitive.Client[LeaderElection
 }
 
 type LeaderElectionClient interface {
-	GetLeaderElection(ctx context.Context, name string) (LeaderElection, error)
+	GetLeaderElection(ctx context.Context, primitiveID runtimev1.PrimitiveId) (LeaderElection, error)
 }
 
 type LeaderElection interface {

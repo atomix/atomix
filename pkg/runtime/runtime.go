@@ -23,6 +23,7 @@ func New(opts ...Option) *Runtime {
 	options.apply(opts...)
 	return &Runtime{
 		options: options,
+		conns:   make(map[runtimev1.PrimitiveId]*runtimeConn),
 	}
 }
 
@@ -32,7 +33,10 @@ type Runtime struct {
 	proxyService   Service
 	runtimeService Service
 	drivers        *DriverPluginCache
-	conns          map[string]*runtimeConn
+	clusters       Store[runtimev1.ClusterId, *runtimev1.Cluster]
+	primitives     Store[runtimev1.PrimitiveId, *runtimev1.Primitive]
+	bindings       Store[runtimev1.BindingId, *runtimev1.Binding]
+	conns          map[runtimev1.PrimitiveId]*runtimeConn
 	mu             sync.RWMutex
 }
 
@@ -65,12 +69,12 @@ func (r *Runtime) Start() error {
 	return nil
 }
 
-func (r *Runtime) connect(ctx context.Context, name string) (driver.Conn, error) {
+func (r *Runtime) connect(ctx context.Context, primitive runtimev1.Primitive) (driver.Conn, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	conn, ok := r.conns[name]
+	conn, ok := r.conns[primitive.PrimitiveID]
 	if !ok {
-		return nil, errors.NewUnavailable("connection %s not configured", name)
+		return nil, errors.NewUnavailable("connection %s not configured", primitive.PrimitiveID.Name)
 	}
 	return conn.connect(ctx)
 }
