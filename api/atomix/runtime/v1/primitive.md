@@ -4,6 +4,10 @@
 ## Table of Contents
 
 - [atomix/runtime/v1/primitive.proto](#atomix_runtime_v1_primitive-proto)
+    - [GetPrimitiveRequest](#atomix-runtime-v1-GetPrimitiveRequest)
+    - [GetPrimitiveResponse](#atomix-runtime-v1-GetPrimitiveResponse)
+    - [ListPrimitivesRequest](#atomix-runtime-v1-ListPrimitivesRequest)
+    - [ListPrimitivesResponse](#atomix-runtime-v1-ListPrimitivesResponse)
     - [Primitive](#atomix-runtime-v1-Primitive)
     - [PrimitiveId](#atomix-runtime-v1-PrimitiveId)
     - [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta)
@@ -20,6 +24,66 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/runtime/v1/primitive.proto
+
+
+
+<a name="atomix-runtime-v1-GetPrimitiveRequest"></a>
+
+### GetPrimitiveRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| primitive_id | [PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-GetPrimitiveResponse"></a>
+
+### GetPrimitiveResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| primitive | [Primitive](#atomix-runtime-v1-Primitive) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ListPrimitivesRequest"></a>
+
+### ListPrimitivesRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ListPrimitivesResponse"></a>
+
+### ListPrimitivesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| primitives | [Primitive](#atomix-runtime-v1-Primitive) | repeated |  |
+
+
+
 
 
 
@@ -115,6 +179,8 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| GetPrimitive | [GetPrimitiveRequest](#atomix-runtime-v1-GetPrimitiveRequest) | [GetPrimitiveResponse](#atomix-runtime-v1-GetPrimitiveResponse) |  |
+| ListPrimitives | [ListPrimitivesRequest](#atomix-runtime-v1-ListPrimitivesRequest) | [ListPrimitivesResponse](#atomix-runtime-v1-ListPrimitivesResponse) |  |
 
  
 

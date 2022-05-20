@@ -15,6 +15,8 @@
     - [DeleteClusterResponse](#atomix-runtime-v1-DeleteClusterResponse)
     - [GetClusterRequest](#atomix-runtime-v1-GetClusterRequest)
     - [GetClusterResponse](#atomix-runtime-v1-GetClusterResponse)
+    - [ListClustersRequest](#atomix-runtime-v1-ListClustersRequest)
+    - [ListClustersResponse](#atomix-runtime-v1-ListClustersResponse)
     - [UpdateClusterRequest](#atomix-runtime-v1-UpdateClusterRequest)
     - [UpdateClusterResponse](#atomix-runtime-v1-UpdateClusterResponse)
   
@@ -190,6 +192,31 @@
 
 
 
+<a name="atomix-runtime-v1-ListClustersRequest"></a>
+
+### ListClustersRequest
+
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ListClustersResponse"></a>
+
+### ListClustersResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| clusters | [Cluster](#atomix-runtime-v1-Cluster) | repeated |  |
+
+
+
+
+
+
 <a name="atomix-runtime-v1-UpdateClusterRequest"></a>
 
 ### UpdateClusterRequest
@@ -229,6 +256,7 @@
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | GetCluster | [GetClusterRequest](#atomix-runtime-v1-GetClusterRequest) | [GetClusterResponse](#atomix-runtime-v1-GetClusterResponse) |  |
+| ListClusters | [ListClustersRequest](#atomix-runtime-v1-ListClustersRequest) | [ListClustersResponse](#atomix-runtime-v1-ListClustersResponse) |  |
 | CreateCluster | [CreateClusterRequest](#atomix-runtime-v1-CreateClusterRequest) | [CreateClusterResponse](#atomix-runtime-v1-CreateClusterResponse) |  |
 | UpdateCluster | [UpdateClusterRequest](#atomix-runtime-v1-UpdateClusterRequest) | [UpdateClusterResponse](#atomix-runtime-v1-UpdateClusterResponse) |  |
 | DeleteCluster | [DeleteClusterRequest](#atomix-runtime-v1-DeleteClusterRequest) | [DeleteClusterResponse](#atomix-runtime-v1-DeleteClusterResponse) |  |

@@ -308,6 +308,86 @@ func (m *GetBindingResponse) GetBinding() Binding {
 	return Binding{}
 }
 
+type ListBindingsRequest struct {
+}
+
+func (m *ListBindingsRequest) Reset()         { *m = ListBindingsRequest{} }
+func (m *ListBindingsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListBindingsRequest) ProtoMessage()    {}
+func (*ListBindingsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c6c6f31e381d250, []int{6}
+}
+func (m *ListBindingsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListBindingsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListBindingsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListBindingsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListBindingsRequest.Merge(m, src)
+}
+func (m *ListBindingsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListBindingsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListBindingsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListBindingsRequest proto.InternalMessageInfo
+
+type ListBindingsResponse struct {
+	Bindings []Binding `protobuf:"bytes,1,rep,name=bindings,proto3" json:"bindings"`
+}
+
+func (m *ListBindingsResponse) Reset()         { *m = ListBindingsResponse{} }
+func (m *ListBindingsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListBindingsResponse) ProtoMessage()    {}
+func (*ListBindingsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c6c6f31e381d250, []int{7}
+}
+func (m *ListBindingsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListBindingsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListBindingsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListBindingsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListBindingsResponse.Merge(m, src)
+}
+func (m *ListBindingsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListBindingsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListBindingsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListBindingsResponse proto.InternalMessageInfo
+
+func (m *ListBindingsResponse) GetBindings() []Binding {
+	if m != nil {
+		return m.Bindings
+	}
+	return nil
+}
+
 type CreateBindingRequest struct {
 	Binding Binding `protobuf:"bytes,1,opt,name=binding,proto3" json:"binding"`
 }
@@ -316,7 +396,7 @@ func (m *CreateBindingRequest) Reset()         { *m = CreateBindingRequest{} }
 func (m *CreateBindingRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateBindingRequest) ProtoMessage()    {}
 func (*CreateBindingRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{6}
+	return fileDescriptor_6c6c6f31e381d250, []int{8}
 }
 func (m *CreateBindingRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -359,7 +439,7 @@ func (m *CreateBindingResponse) Reset()         { *m = CreateBindingResponse{} }
 func (m *CreateBindingResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateBindingResponse) ProtoMessage()    {}
 func (*CreateBindingResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{7}
+	return fileDescriptor_6c6c6f31e381d250, []int{9}
 }
 func (m *CreateBindingResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -396,7 +476,7 @@ func (m *UpdateBindingRequest) Reset()         { *m = UpdateBindingRequest{} }
 func (m *UpdateBindingRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateBindingRequest) ProtoMessage()    {}
 func (*UpdateBindingRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{8}
+	return fileDescriptor_6c6c6f31e381d250, []int{10}
 }
 func (m *UpdateBindingRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -439,7 +519,7 @@ func (m *UpdateBindingResponse) Reset()         { *m = UpdateBindingResponse{} }
 func (m *UpdateBindingResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateBindingResponse) ProtoMessage()    {}
 func (*UpdateBindingResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{9}
+	return fileDescriptor_6c6c6f31e381d250, []int{11}
 }
 func (m *UpdateBindingResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -476,7 +556,7 @@ func (m *DeleteBindingRequest) Reset()         { *m = DeleteBindingRequest{} }
 func (m *DeleteBindingRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteBindingRequest) ProtoMessage()    {}
 func (*DeleteBindingRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{10}
+	return fileDescriptor_6c6c6f31e381d250, []int{12}
 }
 func (m *DeleteBindingRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -519,7 +599,7 @@ func (m *DeleteBindingResponse) Reset()         { *m = DeleteBindingResponse{} }
 func (m *DeleteBindingResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteBindingResponse) ProtoMessage()    {}
 func (*DeleteBindingResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{11}
+	return fileDescriptor_6c6c6f31e381d250, []int{13}
 }
 func (m *DeleteBindingResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -557,6 +637,8 @@ func init() {
 	proto.RegisterMapType((map[string]string)(nil), "atomix.runtime.v1.BindingSpec.SelectorEntry")
 	proto.RegisterType((*GetBindingRequest)(nil), "atomix.runtime.v1.GetBindingRequest")
 	proto.RegisterType((*GetBindingResponse)(nil), "atomix.runtime.v1.GetBindingResponse")
+	proto.RegisterType((*ListBindingsRequest)(nil), "atomix.runtime.v1.ListBindingsRequest")
+	proto.RegisterType((*ListBindingsResponse)(nil), "atomix.runtime.v1.ListBindingsResponse")
 	proto.RegisterType((*CreateBindingRequest)(nil), "atomix.runtime.v1.CreateBindingRequest")
 	proto.RegisterType((*CreateBindingResponse)(nil), "atomix.runtime.v1.CreateBindingResponse")
 	proto.RegisterType((*UpdateBindingRequest)(nil), "atomix.runtime.v1.UpdateBindingRequest")
@@ -568,42 +650,45 @@ func init() {
 func init() { proto.RegisterFile("atomix/runtime/v1/binding.proto", fileDescriptor_6c6c6f31e381d250) }
 
 var fileDescriptor_6c6c6f31e381d250 = []byte{
-	// 554 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x95, 0xcd, 0x6e, 0xd3, 0x4e,
-	0x14, 0xc5, 0xe3, 0x24, 0xff, 0xb6, 0xbe, 0x51, 0xff, 0x22, 0xa3, 0x54, 0x8d, 0x2c, 0x64, 0x57,
-	0x16, 0x88, 0x08, 0x21, 0x47, 0x0d, 0x9b, 0x52, 0x58, 0xb9, 0x41, 0x50, 0x09, 0x10, 0x72, 0xc5,
-	0x82, 0x15, 0xf2, 0xc7, 0x25, 0xb2, 0x70, 0x6c, 0x63, 0x4f, 0x2c, 0xba, 0xe4, 0x0d, 0xd8, 0xf1,
-	0x4a, 0x5d, 0x66, 0xc9, 0x02, 0x45, 0x28, 0xe1, 0x41, 0x90, 0x3d, 0x93, 0xef, 0x69, 0x22, 0x44,
-	0x76, 0x93, 0x99, 0x73, 0xe7, 0x77, 0xcf, 0x3d, 0x13, 0x19, 0x34, 0x9b, 0x46, 0x7d, 0xff, 0x4b,
-	0x3b, 0x19, 0x84, 0xd4, 0xef, 0x63, 0x3b, 0x3b, 0x6d, 0x3b, 0x7e, 0xe8, 0xf9, 0x61, 0xcf, 0x88,
-	0x93, 0x88, 0x46, 0xa4, 0xce, 0x04, 0x06, 0x17, 0x18, 0xd9, 0xa9, 0x22, 0xa8, 0x71, 0x83, 0x41,
-	0x4a, 0x31, 0x61, 0x35, 0x8a, 0xba, 0x2e, 0xf0, 0x12, 0x3f, 0x9b, 0x9d, 0x37, 0x7a, 0x51, 0x2f,
-	0x2a, 0x96, 0xed, 0x7c, 0xc5, 0x76, 0xf5, 0xaf, 0x12, 0xec, 0x9b, 0x8c, 0x4d, 0x9e, 0x41, 0xb5,
-	0x8f, 0xd4, 0x6e, 0x4a, 0x27, 0x52, 0xab, 0xd6, 0x51, 0x8d, 0xb5, 0x26, 0x0c, 0xae, 0x7c, 0x8d,
-	0xd4, 0x36, 0x0f, 0x6e, 0x46, 0x5a, 0x69, 0x38, 0xd2, 0x24, 0xab, 0xa8, 0x22, 0x67, 0x50, 0x4d,
-	0x63, 0x74, 0x9b, 0xe5, 0x6d, 0xd5, 0x57, 0x31, 0xba, 0x66, 0x35, 0xaf, 0xb6, 0x8a, 0x0a, 0x5d,
-	0x03, 0x99, 0x1f, 0x5d, 0x7a, 0x84, 0x40, 0x35, 0xb4, 0xfb, 0x58, 0x34, 0x21, 0x5b, 0xc5, 0x5a,
-	0xff, 0x29, 0x41, 0x6d, 0x01, 0x4d, 0xde, 0x00, 0xf0, 0x79, 0x7d, 0xf0, 0x3d, 0xde, 0xee, 0xdd,
-	0xdb, 0x81, 0x97, 0x9e, 0x59, 0xcf, 0x71, 0xe3, 0x91, 0x36, 0x03, 0x75, 0x2d, 0xd9, 0x99, 0x31,
-	0x4d, 0xd8, 0x0b, 0x6c, 0x07, 0x83, 0xb4, 0x59, 0x3e, 0xa9, 0xb4, 0x6a, 0x9d, 0x87, 0x9b, 0xad,
-	0x1b, 0xaf, 0x0a, 0xf1, 0xf3, 0x90, 0x26, 0xd7, 0x16, 0xaf, 0x54, 0x9e, 0x40, 0x6d, 0x61, 0x9b,
-	0xdc, 0x81, 0xca, 0x27, 0xbc, 0xe6, 0x2e, 0xf2, 0x25, 0x69, 0xc0, 0x7f, 0x99, 0x1d, 0x0c, 0xb0,
-	0x18, 0x90, 0x6c, 0xb1, 0x1f, 0xe7, 0xe5, 0x33, 0x49, 0xff, 0x3d, 0xb7, 0x97, 0xcf, 0x26, 0xb7,
-	0xc7, 0xa3, 0xdd, 0x6c, 0xef, 0x82, 0x89, 0x16, 0xed, 0x4d, 0xb7, 0xba, 0x96, 0xec, 0x4e, 0x4f,
-	0xc9, 0x4b, 0x38, 0x48, 0x31, 0x40, 0x97, 0x46, 0x09, 0x37, 0xf8, 0x68, 0x73, 0x3a, 0xc6, 0x15,
-	0x97, 0x33, 0x8b, 0xb3, 0x6a, 0xe5, 0x29, 0x1c, 0x2e, 0x1d, 0xfd, 0x95, 0x4d, 0x17, 0xea, 0x2f,
-	0x90, 0x72, 0x8c, 0x85, 0x9f, 0x07, 0x98, 0xd2, 0x5d, 0x47, 0xa9, 0xbf, 0x05, 0xb2, 0x08, 0x49,
-	0xe3, 0x28, 0x4c, 0x91, 0x9c, 0xc3, 0x3e, 0x97, 0x70, 0x84, 0x72, 0x3b, 0x82, 0x3f, 0xcd, 0x69,
-	0x81, 0x6e, 0x41, 0xe3, 0x22, 0x41, 0x9b, 0xe2, 0x4a, 0xe7, 0xff, 0x72, 0xe7, 0x31, 0x1c, 0xad,
-	0xdc, 0xc9, 0x1a, 0xcd, 0x61, 0xef, 0x62, 0x6f, 0xe7, 0xb0, 0x95, 0x3b, 0x39, 0xec, 0x23, 0x34,
-	0xba, 0x18, 0xe0, 0x1a, 0x6c, 0xd7, 0x99, 0x1c, 0xc3, 0xd1, 0x0a, 0x87, 0x35, 0xd0, 0xf9, 0x5e,
-	0x81, 0xff, 0xa7, 0xcf, 0x0e, 0x93, 0xcc, 0x77, 0x91, 0xbc, 0x07, 0x98, 0xe7, 0x47, 0xee, 0x09,
-	0xa8, 0x6b, 0x6f, 0x48, 0xb9, 0xbf, 0x45, 0xc5, 0x1f, 0x81, 0x03, 0x87, 0x4b, 0x43, 0x27, 0x0f,
-	0x44, 0xff, 0x29, 0x41, 0xd4, 0x4a, 0x6b, 0xbb, 0x70, 0xce, 0x58, 0x9a, 0xb5, 0x90, 0x21, 0x4a,
-	0x58, 0xc8, 0x10, 0xc6, 0x96, 0x33, 0x96, 0xc6, 0x29, 0x64, 0x88, 0x82, 0x15, 0x32, 0x84, 0xc9,
-	0x98, 0xcd, 0x9b, 0xb1, 0x2a, 0x0d, 0xc7, 0xaa, 0xf4, 0x6b, 0xac, 0x4a, 0xdf, 0x26, 0x6a, 0x69,
-	0x38, 0x51, 0x4b, 0x3f, 0x26, 0x6a, 0xc9, 0xd9, 0x2b, 0xbe, 0x1b, 0x8f, 0xff, 0x04, 0x00, 0x00,
-	0xff, 0xff, 0x14, 0xf4, 0xa1, 0x90, 0xc4, 0x06, 0x00, 0x00,
+	// 597 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x95, 0x4d, 0x8f, 0xd2, 0x50,
+	0x14, 0x86, 0x29, 0xe0, 0x0c, 0x1c, 0x1c, 0x23, 0x57, 0xc8, 0x90, 0xc6, 0x94, 0x49, 0xe3, 0x07,
+	0x31, 0xa6, 0x64, 0x70, 0x33, 0x8e, 0xb3, 0xea, 0x60, 0x74, 0x92, 0xd1, 0x98, 0x8e, 0x2e, 0x5c,
+	0x4d, 0x4a, 0x7b, 0x24, 0x8d, 0xa5, 0xc5, 0xf6, 0x42, 0x9c, 0xa5, 0xff, 0xc0, 0x9f, 0x35, 0x4b,
+	0x96, 0x2e, 0x0c, 0x31, 0xe0, 0x8f, 0x70, 0x69, 0xda, 0x1e, 0xbe, 0xef, 0x40, 0x8c, 0xec, 0x2e,
+	0xf7, 0xbe, 0x6f, 0x9f, 0xf3, 0xf1, 0x26, 0x40, 0xd5, 0xe4, 0x7e, 0xc7, 0xf9, 0x5a, 0x0f, 0x7a,
+	0x1e, 0x77, 0x3a, 0x58, 0xef, 0x1f, 0xd6, 0x5b, 0x8e, 0x67, 0x3b, 0x5e, 0x5b, 0xeb, 0x06, 0x3e,
+	0xf7, 0x59, 0x31, 0x11, 0x68, 0x24, 0xd0, 0xfa, 0x87, 0xb2, 0xc0, 0x63, 0xb9, 0xbd, 0x90, 0x63,
+	0x90, 0x78, 0x64, 0x65, 0x55, 0x60, 0x07, 0x4e, 0x7f, 0xfa, 0x5e, 0x6a, 0xfb, 0x6d, 0x3f, 0x3e,
+	0xd6, 0xa3, 0x53, 0x72, 0xab, 0x7e, 0x93, 0x60, 0x57, 0x4f, 0xd8, 0xec, 0x04, 0xb2, 0x1d, 0xe4,
+	0x66, 0x45, 0x3a, 0x90, 0x6a, 0x85, 0x86, 0xa2, 0xad, 0x14, 0xa1, 0x91, 0xf2, 0x0d, 0x72, 0x53,
+	0xcf, 0x5d, 0x0f, 0xab, 0xa9, 0xc1, 0xb0, 0x2a, 0x19, 0xb1, 0x8b, 0x1d, 0x41, 0x36, 0xec, 0xa2,
+	0x55, 0x49, 0x6f, 0x72, 0x5f, 0x74, 0xd1, 0xd2, 0xb3, 0x91, 0xdb, 0x88, 0x1d, 0x6a, 0x15, 0xf2,
+	0xf4, 0x74, 0x66, 0x33, 0x06, 0x59, 0xcf, 0xec, 0x60, 0x5c, 0x44, 0xde, 0x88, 0xcf, 0xea, 0x4f,
+	0x09, 0x0a, 0x73, 0x68, 0xf6, 0x16, 0x80, 0xe6, 0x75, 0xe9, 0xd8, 0x54, 0xee, 0xfd, 0x9b, 0x81,
+	0x67, 0xb6, 0x5e, 0x8c, 0x70, 0xa3, 0x61, 0x75, 0x0a, 0x6a, 0x1a, 0xf9, 0xd6, 0x94, 0xa9, 0xc3,
+	0x8e, 0x6b, 0xb6, 0xd0, 0x0d, 0x2b, 0xe9, 0x83, 0x4c, 0xad, 0xd0, 0x78, 0xb2, 0xbe, 0x75, 0xed,
+	0x3c, 0x16, 0xbf, 0xf4, 0x78, 0x70, 0x65, 0x90, 0x53, 0x7e, 0x0e, 0x85, 0xb9, 0x6b, 0x76, 0x17,
+	0x32, 0x9f, 0xf1, 0x8a, 0xba, 0x88, 0x8e, 0xac, 0x04, 0xb7, 0xfa, 0xa6, 0xdb, 0xc3, 0x78, 0x40,
+	0x79, 0x23, 0xf9, 0x71, 0x9c, 0x3e, 0x92, 0xd4, 0xdf, 0xb3, 0xf6, 0xa2, 0xd9, 0x44, 0xed, 0xd1,
+	0x6a, 0xd7, 0xb7, 0x77, 0x9a, 0x88, 0xe6, 0xdb, 0x9b, 0x5c, 0x35, 0x8d, 0xbc, 0x35, 0x79, 0x65,
+	0xaf, 0x21, 0x17, 0xa2, 0x8b, 0x16, 0xf7, 0x03, 0x6a, 0xf0, 0xe9, 0xfa, 0xed, 0x68, 0x17, 0x24,
+	0x4f, 0x5a, 0x9c, 0xba, 0xe5, 0x17, 0xb0, 0xb7, 0xf0, 0xf4, 0x4f, 0x6d, 0x5a, 0x50, 0x7c, 0x85,
+	0x9c, 0x30, 0x06, 0x7e, 0xe9, 0x61, 0xc8, 0xb7, 0xbd, 0x4a, 0xf5, 0x1d, 0xb0, 0x79, 0x48, 0xd8,
+	0xf5, 0xbd, 0x10, 0xd9, 0x31, 0xec, 0x92, 0x84, 0x10, 0xf2, 0xcd, 0x08, 0x8a, 0xe6, 0xc4, 0xa0,
+	0x96, 0xe1, 0xde, 0xb9, 0x13, 0x4e, 0x3e, 0x19, 0x52, 0xe1, 0xea, 0x7b, 0x28, 0x2d, 0x5e, 0x13,
+	0xea, 0x04, 0x72, 0xe4, 0x0c, 0x2b, 0x52, 0x3c, 0xec, 0xcd, 0xac, 0xa9, 0x43, 0x35, 0xa0, 0x74,
+	0x1a, 0xa0, 0xc9, 0x71, 0x69, 0x4c, 0xff, 0xd3, 0xc0, 0x3e, 0x94, 0x97, 0xbe, 0x99, 0x94, 0x1a,
+	0xc1, 0x3e, 0x74, 0xed, 0xad, 0xc3, 0x96, 0xbe, 0x49, 0xb0, 0x4f, 0x50, 0x6a, 0xa2, 0x8b, 0x2b,
+	0xb0, 0x6d, 0x07, 0x60, 0x1f, 0xca, 0x4b, 0x9c, 0xa4, 0x80, 0xc6, 0x9f, 0x0c, 0xdc, 0x99, 0x64,
+	0x1c, 0x83, 0xbe, 0x63, 0x21, 0xfb, 0x08, 0x30, 0x0b, 0x0b, 0x7b, 0x20, 0xa0, 0xae, 0x04, 0x56,
+	0x7e, 0xb8, 0x41, 0x45, 0x31, 0xb8, 0x84, 0xdb, 0xf3, 0xf1, 0x60, 0x8f, 0x04, 0x36, 0x41, 0xac,
+	0xe4, 0xc7, 0x1b, 0x75, 0x04, 0x68, 0xc1, 0xde, 0xc2, 0x56, 0x99, 0xc8, 0x29, 0xca, 0x92, 0x5c,
+	0xdb, 0x2c, 0x9c, 0x31, 0x16, 0x96, 0x29, 0x64, 0x88, 0x22, 0x24, 0x64, 0x08, 0x73, 0x11, 0x31,
+	0x16, 0xf6, 0x25, 0x64, 0x88, 0x92, 0x23, 0x64, 0x08, 0x57, 0xaf, 0x57, 0xae, 0x47, 0x8a, 0x34,
+	0x18, 0x29, 0xd2, 0xaf, 0x91, 0x22, 0x7d, 0x1f, 0x2b, 0xa9, 0xc1, 0x58, 0x49, 0xfd, 0x18, 0x2b,
+	0xa9, 0xd6, 0x4e, 0xfc, 0x2f, 0xf8, 0xec, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xf0, 0x5b, 0x6a,
+	0x57, 0x92, 0x07, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -619,6 +704,7 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type BindingServiceClient interface {
 	GetBinding(ctx context.Context, in *GetBindingRequest, opts ...grpc.CallOption) (*GetBindingResponse, error)
+	ListBindings(ctx context.Context, in *ListBindingsRequest, opts ...grpc.CallOption) (*ListBindingsResponse, error)
 	CreateBinding(ctx context.Context, in *CreateBindingRequest, opts ...grpc.CallOption) (*CreateBindingResponse, error)
 	UpdateBinding(ctx context.Context, in *UpdateBindingRequest, opts ...grpc.CallOption) (*UpdateBindingResponse, error)
 	DeleteBinding(ctx context.Context, in *DeleteBindingRequest, opts ...grpc.CallOption) (*DeleteBindingResponse, error)
@@ -635,6 +721,15 @@ func NewBindingServiceClient(cc *grpc.ClientConn) BindingServiceClient {
 func (c *bindingServiceClient) GetBinding(ctx context.Context, in *GetBindingRequest, opts ...grpc.CallOption) (*GetBindingResponse, error) {
 	out := new(GetBindingResponse)
 	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.BindingService/GetBinding", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bindingServiceClient) ListBindings(ctx context.Context, in *ListBindingsRequest, opts ...grpc.CallOption) (*ListBindingsResponse, error) {
+	out := new(ListBindingsResponse)
+	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.BindingService/ListBindings", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -671,6 +766,7 @@ func (c *bindingServiceClient) DeleteBinding(ctx context.Context, in *DeleteBind
 // BindingServiceServer is the server API for BindingService service.
 type BindingServiceServer interface {
 	GetBinding(context.Context, *GetBindingRequest) (*GetBindingResponse, error)
+	ListBindings(context.Context, *ListBindingsRequest) (*ListBindingsResponse, error)
 	CreateBinding(context.Context, *CreateBindingRequest) (*CreateBindingResponse, error)
 	UpdateBinding(context.Context, *UpdateBindingRequest) (*UpdateBindingResponse, error)
 	DeleteBinding(context.Context, *DeleteBindingRequest) (*DeleteBindingResponse, error)
@@ -682,6 +778,9 @@ type UnimplementedBindingServiceServer struct {
 
 func (*UnimplementedBindingServiceServer) GetBinding(ctx context.Context, req *GetBindingRequest) (*GetBindingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBinding not implemented")
+}
+func (*UnimplementedBindingServiceServer) ListBindings(ctx context.Context, req *ListBindingsRequest) (*ListBindingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListBindings not implemented")
 }
 func (*UnimplementedBindingServiceServer) CreateBinding(ctx context.Context, req *CreateBindingRequest) (*CreateBindingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateBinding not implemented")
@@ -711,6 +810,24 @@ func _BindingService_GetBinding_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BindingServiceServer).GetBinding(ctx, req.(*GetBindingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BindingService_ListBindings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBindingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BindingServiceServer).ListBindings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/atomix.runtime.v1.BindingService/ListBindings",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BindingServiceServer).ListBindings(ctx, req.(*ListBindingsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -776,6 +893,10 @@ var _BindingService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBinding",
 			Handler:    _BindingService_GetBinding_Handler,
+		},
+		{
+			MethodName: "ListBindings",
+			Handler:    _BindingService_ListBindings_Handler,
 		},
 		{
 			MethodName: "CreateBinding",
@@ -1034,6 +1155,66 @@ func (m *GetBindingResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *ListBindingsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListBindingsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListBindingsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *ListBindingsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListBindingsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListBindingsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Bindings) > 0 {
+		for iNdEx := len(m.Bindings) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Bindings[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintBinding(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -1299,6 +1480,30 @@ func (m *GetBindingResponse) Size() (n int) {
 	_ = l
 	l = m.Binding.Size()
 	n += 1 + l + sovBinding(uint64(l))
+	return n
+}
+
+func (m *ListBindingsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *ListBindingsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Bindings) > 0 {
+		for _, e := range m.Bindings {
+			l = e.Size()
+			n += 1 + l + sovBinding(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -2128,6 +2333,140 @@ func (m *GetBindingResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.Binding.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipBinding(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthBinding
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListBindingsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowBinding
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListBindingsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListBindingsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipBinding(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthBinding
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListBindingsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowBinding
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListBindingsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListBindingsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Bindings", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBinding
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthBinding
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthBinding
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Bindings = append(m.Bindings, Binding{})
+			if err := m.Bindings[len(m.Bindings)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

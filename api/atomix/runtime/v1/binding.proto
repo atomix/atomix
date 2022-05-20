@@ -14,6 +14,7 @@ import "gogoproto/gogo.proto";
 
 service BindingService {
     rpc GetBinding (GetBindingRequest) returns (GetBindingResponse);
+    rpc ListBindings (ListBindingsRequest) returns (ListBindingsResponse);
     rpc CreateBinding (CreateBindingRequest) returns (CreateBindingResponse);
     rpc UpdateBinding (UpdateBindingRequest) returns (UpdateBindingResponse);
     rpc DeleteBinding (DeleteBindingRequest) returns (DeleteBindingResponse);
@@ -58,6 +59,16 @@ message GetBindingRequest {
 
 message GetBindingResponse {
     Binding binding = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ListBindingsRequest {
+
+}
+
+message ListBindingsResponse {
+    repeated Binding bindings = 1 [
         (gogoproto.nullable) = false
     ];
 }

@@ -12,7 +12,8 @@ import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
 
 service PrimitiveService {
-
+    rpc GetPrimitive (GetPrimitiveRequest) returns (GetPrimitiveResponse);
+    rpc ListPrimitives (ListPrimitivesRequest) returns (ListPrimitivesResponse);
 }
 
 message Primitive {
@@ -42,4 +43,29 @@ message PrimitiveMeta {
 
 message PrimitiveSpec {
     google.protobuf.Any config = 1;
+}
+
+message GetPrimitiveRequest {
+    PrimitiveId primitive_id = 1 [
+        (gogoproto.customname) = "PrimitiveID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetPrimitiveResponse {
+    Primitive primitive = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ListPrimitivesRequest {
+    string type = 1 [
+        (gogoproto.casttype) = "PrimitiveType"
+    ];
+}
+
+message ListPrimitivesResponse {
+    repeated Primitive primitives = 1 [
+        (gogoproto.nullable) = false
+    ];
 }

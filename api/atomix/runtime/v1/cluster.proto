@@ -13,6 +13,7 @@ import "gogoproto/gogo.proto";
 
 service ClusterService {
     rpc GetCluster (GetClusterRequest) returns (GetClusterResponse);
+    rpc ListClusters (ListClustersRequest) returns (ListClustersResponse);
     rpc CreateCluster (CreateClusterRequest) returns (CreateClusterResponse);
     rpc UpdateCluster (UpdateClusterRequest) returns (UpdateClusterResponse);
     rpc DeleteCluster (DeleteClusterRequest) returns (DeleteClusterResponse);
@@ -56,6 +57,16 @@ message GetClusterRequest {
 
 message GetClusterResponse {
     Cluster cluster = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ListClustersRequest {
+
+}
+
+message ListClustersResponse {
+    repeated Cluster clusters = 1 [
         (gogoproto.nullable) = false
     ];
 }

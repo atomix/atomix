@@ -308,6 +308,86 @@ func (m *GetClusterResponse) GetCluster() Cluster {
 	return Cluster{}
 }
 
+type ListClustersRequest struct {
+}
+
+func (m *ListClustersRequest) Reset()         { *m = ListClustersRequest{} }
+func (m *ListClustersRequest) String() string { return proto.CompactTextString(m) }
+func (*ListClustersRequest) ProtoMessage()    {}
+func (*ListClustersRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7c70c2882cc9dd0a, []int{6}
+}
+func (m *ListClustersRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListClustersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListClustersRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListClustersRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListClustersRequest.Merge(m, src)
+}
+func (m *ListClustersRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListClustersRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListClustersRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListClustersRequest proto.InternalMessageInfo
+
+type ListClustersResponse struct {
+	Clusters []Cluster `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters"`
+}
+
+func (m *ListClustersResponse) Reset()         { *m = ListClustersResponse{} }
+func (m *ListClustersResponse) String() string { return proto.CompactTextString(m) }
+func (*ListClustersResponse) ProtoMessage()    {}
+func (*ListClustersResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7c70c2882cc9dd0a, []int{7}
+}
+func (m *ListClustersResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListClustersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListClustersResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListClustersResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListClustersResponse.Merge(m, src)
+}
+func (m *ListClustersResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListClustersResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListClustersResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListClustersResponse proto.InternalMessageInfo
+
+func (m *ListClustersResponse) GetClusters() []Cluster {
+	if m != nil {
+		return m.Clusters
+	}
+	return nil
+}
+
 type CreateClusterRequest struct {
 	Cluster Cluster `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster"`
 }
@@ -316,7 +396,7 @@ func (m *CreateClusterRequest) Reset()         { *m = CreateClusterRequest{} }
 func (m *CreateClusterRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateClusterRequest) ProtoMessage()    {}
 func (*CreateClusterRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7c70c2882cc9dd0a, []int{6}
+	return fileDescriptor_7c70c2882cc9dd0a, []int{8}
 }
 func (m *CreateClusterRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -359,7 +439,7 @@ func (m *CreateClusterResponse) Reset()         { *m = CreateClusterResponse{} }
 func (m *CreateClusterResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateClusterResponse) ProtoMessage()    {}
 func (*CreateClusterResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7c70c2882cc9dd0a, []int{7}
+	return fileDescriptor_7c70c2882cc9dd0a, []int{9}
 }
 func (m *CreateClusterResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -396,7 +476,7 @@ func (m *UpdateClusterRequest) Reset()         { *m = UpdateClusterRequest{} }
 func (m *UpdateClusterRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateClusterRequest) ProtoMessage()    {}
 func (*UpdateClusterRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7c70c2882cc9dd0a, []int{8}
+	return fileDescriptor_7c70c2882cc9dd0a, []int{10}
 }
 func (m *UpdateClusterRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -439,7 +519,7 @@ func (m *UpdateClusterResponse) Reset()         { *m = UpdateClusterResponse{} }
 func (m *UpdateClusterResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateClusterResponse) ProtoMessage()    {}
 func (*UpdateClusterResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7c70c2882cc9dd0a, []int{9}
+	return fileDescriptor_7c70c2882cc9dd0a, []int{11}
 }
 func (m *UpdateClusterResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -476,7 +556,7 @@ func (m *DeleteClusterRequest) Reset()         { *m = DeleteClusterRequest{} }
 func (m *DeleteClusterRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteClusterRequest) ProtoMessage()    {}
 func (*DeleteClusterRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7c70c2882cc9dd0a, []int{10}
+	return fileDescriptor_7c70c2882cc9dd0a, []int{12}
 }
 func (m *DeleteClusterRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -519,7 +599,7 @@ func (m *DeleteClusterResponse) Reset()         { *m = DeleteClusterResponse{} }
 func (m *DeleteClusterResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteClusterResponse) ProtoMessage()    {}
 func (*DeleteClusterResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7c70c2882cc9dd0a, []int{11}
+	return fileDescriptor_7c70c2882cc9dd0a, []int{13}
 }
 func (m *DeleteClusterResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -556,6 +636,8 @@ func init() {
 	proto.RegisterType((*ClusterSpec)(nil), "atomix.runtime.v1.ClusterSpec")
 	proto.RegisterType((*GetClusterRequest)(nil), "atomix.runtime.v1.GetClusterRequest")
 	proto.RegisterType((*GetClusterResponse)(nil), "atomix.runtime.v1.GetClusterResponse")
+	proto.RegisterType((*ListClustersRequest)(nil), "atomix.runtime.v1.ListClustersRequest")
+	proto.RegisterType((*ListClustersResponse)(nil), "atomix.runtime.v1.ListClustersResponse")
 	proto.RegisterType((*CreateClusterRequest)(nil), "atomix.runtime.v1.CreateClusterRequest")
 	proto.RegisterType((*CreateClusterResponse)(nil), "atomix.runtime.v1.CreateClusterResponse")
 	proto.RegisterType((*UpdateClusterRequest)(nil), "atomix.runtime.v1.UpdateClusterRequest")
@@ -567,40 +649,43 @@ func init() {
 func init() { proto.RegisterFile("atomix/runtime/v1/cluster.proto", fileDescriptor_7c70c2882cc9dd0a) }
 
 var fileDescriptor_7c70c2882cc9dd0a = []byte{
-	// 526 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x94, 0xcf, 0x8f, 0xd2, 0x40,
-	0x14, 0xc7, 0x29, 0x20, 0x2b, 0x0f, 0x35, 0x32, 0x61, 0x5d, 0x52, 0x4d, 0xbb, 0x69, 0x34, 0x12,
-	0x0f, 0x25, 0x8b, 0x97, 0xdd, 0x8d, 0xa7, 0x2e, 0xc6, 0x90, 0xa8, 0x31, 0x63, 0x3c, 0x78, 0xd2,
-	0xd2, 0xbe, 0x25, 0x8d, 0xa5, 0xad, 0xed, 0xd0, 0xb8, 0x47, 0xff, 0x03, 0x6f, 0xfe, 0x4b, 0x7b,
-	0xe4, 0xe8, 0xc1, 0x10, 0x03, 0xff, 0x88, 0xe9, 0x74, 0x60, 0xf9, 0x31, 0xc8, 0x41, 0x6e, 0xd3,
-	0xe1, 0x7d, 0xdf, 0xe7, 0xbd, 0xef, 0x77, 0x02, 0xe8, 0x36, 0x0b, 0x87, 0xde, 0xb7, 0x76, 0x3c,
-	0x0a, 0x98, 0x37, 0xc4, 0x76, 0x7a, 0xd2, 0x76, 0xfc, 0x51, 0xc2, 0x30, 0x36, 0xa3, 0x38, 0x64,
-	0x21, 0xa9, 0xe7, 0x05, 0xa6, 0x28, 0x30, 0xd3, 0x13, 0x55, 0xdb, 0xd4, 0xb8, 0xb1, 0x97, 0xce,
-	0x25, 0x6a, 0x63, 0x10, 0x0e, 0x42, 0x7e, 0x6c, 0x67, 0xa7, 0xfc, 0xd6, 0xf8, 0xae, 0xc0, 0xc1,
-	0x45, 0xde, 0x9a, 0xbc, 0x80, 0xf2, 0x10, 0x99, 0xdd, 0x54, 0x8e, 0x95, 0x56, 0xad, 0xa3, 0x99,
-	0x1b, 0x0c, 0x53, 0x54, 0xbe, 0x41, 0x66, 0x5b, 0xb7, 0xaf, 0x27, 0x7a, 0x61, 0x3c, 0xd1, 0x15,
-	0xca, 0x55, 0xe4, 0x14, 0xca, 0x49, 0x84, 0x4e, 0xb3, 0xb8, 0x4b, 0xfd, 0x3e, 0x42, 0xc7, 0x2a,
-	0x67, 0x6a, 0xca, 0x15, 0x86, 0x0e, 0x55, 0xf1, 0x53, 0xcf, 0x25, 0x04, 0xca, 0x81, 0x3d, 0x44,
-	0x3e, 0x44, 0x95, 0xf2, 0xb3, 0xf1, 0x5b, 0x81, 0xda, 0x12, 0x9a, 0xbc, 0x05, 0x10, 0x76, 0x7c,
-	0xf2, 0x5c, 0x31, 0xee, 0xa3, 0xed, 0xc0, 0x9e, 0x6b, 0xd5, 0x33, 0xdc, 0x74, 0xa2, 0x2f, 0x40,
-	0x5d, 0x5a, 0x75, 0x16, 0x4c, 0x0b, 0x2a, 0xbe, 0xdd, 0x47, 0x3f, 0x69, 0x16, 0x8f, 0x4b, 0xad,
-	0x5a, 0xe7, 0xd9, 0xbf, 0x57, 0x37, 0x5f, 0xf3, 0xe2, 0x97, 0x01, 0x8b, 0xaf, 0xa8, 0x50, 0xaa,
-	0x67, 0x50, 0x5b, 0xba, 0x26, 0xf7, 0xa1, 0xf4, 0x05, 0xaf, 0xc4, 0x16, 0xd9, 0x91, 0x34, 0xe0,
-	0x56, 0x6a, 0xfb, 0x23, 0xe4, 0x06, 0x55, 0x69, 0xfe, 0x71, 0x5e, 0x3c, 0x55, 0x8c, 0xcf, 0x8b,
-	0xed, 0x32, 0x6b, 0xc8, 0x19, 0x54, 0xf2, 0xe0, 0xc4, 0x66, 0x0f, 0x25, 0xd3, 0x74, 0x79, 0x41,
-	0xcf, 0x15, 0x3e, 0x0a, 0x01, 0x79, 0x00, 0x15, 0x27, 0x0c, 0x2e, 0xbd, 0x01, 0x87, 0xdc, 0xa1,
-	0xe2, 0xcb, 0x70, 0xa0, 0xfe, 0x0a, 0x99, 0x80, 0x50, 0xfc, 0x3a, 0xc2, 0x84, 0xed, 0xdb, 0x45,
-	0xe3, 0x1d, 0x90, 0x65, 0x48, 0x12, 0x85, 0x41, 0x82, 0xe4, 0x1c, 0x0e, 0x44, 0x89, 0x40, 0xa8,
-	0xdb, 0x11, 0x62, 0x9b, 0xb9, 0xc0, 0xa0, 0xd0, 0xb8, 0x88, 0xd1, 0x66, 0xb8, 0x36, 0xf9, 0xff,
-	0xf4, 0x3c, 0x82, 0xc3, 0xb5, 0x9e, 0xf9, 0xa0, 0x19, 0xec, 0x43, 0xe4, 0xee, 0x1d, 0xb6, 0xd6,
-	0x53, 0xc0, 0x2e, 0xa1, 0xd1, 0x45, 0x1f, 0x37, 0x60, 0xfb, 0xce, 0xe4, 0x08, 0x0e, 0xd7, 0x38,
-	0xf9, 0x00, 0x9d, 0x9f, 0x25, 0xb8, 0x37, 0x7f, 0x74, 0x18, 0xa7, 0x9e, 0x83, 0xe4, 0x23, 0xc0,
-	0x4d, 0x7e, 0xe4, 0xb1, 0x84, 0xba, 0xf1, 0x86, 0xd4, 0x27, 0x3b, 0xaa, 0xc4, 0x23, 0xe8, 0xc3,
-	0xdd, 0x15, 0xd3, 0xc9, 0x53, 0xd9, 0x4e, 0x92, 0xa8, 0xd5, 0xd6, 0xee, 0xc2, 0x1b, 0xc6, 0x8a,
-	0xd7, 0x52, 0x86, 0x2c, 0x61, 0x29, 0x43, 0x1a, 0x5b, 0xc6, 0x58, 0xb1, 0x53, 0xca, 0x90, 0x05,
-	0x2b, 0x65, 0x48, 0x93, 0xb1, 0x9a, 0xd7, 0x53, 0x4d, 0x19, 0x4f, 0x35, 0xe5, 0xcf, 0x54, 0x53,
-	0x7e, 0xcc, 0xb4, 0xc2, 0x78, 0xa6, 0x15, 0x7e, 0xcd, 0xb4, 0x42, 0xbf, 0xc2, 0xff, 0xb2, 0x9f,
-	0xff, 0x0d, 0x00, 0x00, 0xff, 0xff, 0x98, 0xd1, 0x9a, 0x68, 0x1e, 0x06, 0x00, 0x00,
+	// 571 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x95, 0x4d, 0x6f, 0x12, 0x41,
+	0x18, 0xc7, 0x19, 0x40, 0x5a, 0x1e, 0xaa, 0x91, 0x11, 0x2c, 0x59, 0xcd, 0xd2, 0x6c, 0x7c, 0x21,
+	0x1e, 0x96, 0x14, 0x2f, 0x6d, 0xd3, 0x13, 0xc5, 0x18, 0x92, 0x6a, 0xcc, 0xaa, 0x07, 0x4f, 0x75,
+	0xd9, 0x7d, 0x4a, 0x36, 0x02, 0x8b, 0xbb, 0x03, 0xb1, 0x47, 0xbf, 0x81, 0x1f, 0xab, 0x47, 0x8e,
+	0x1e, 0x0c, 0x31, 0xf0, 0x25, 0x3c, 0x9a, 0x9d, 0x7d, 0xa0, 0xbc, 0x4c, 0xe5, 0x20, 0xb7, 0xd9,
+	0xe1, 0xff, 0x9f, 0xdf, 0xf3, 0xf2, 0x4f, 0x80, 0xb2, 0x2d, 0xfc, 0xae, 0xf7, 0xad, 0x1a, 0x0c,
+	0x7a, 0xc2, 0xeb, 0x62, 0x75, 0x78, 0x58, 0x75, 0x3a, 0x83, 0x50, 0x60, 0x60, 0xf6, 0x03, 0x5f,
+	0xf8, 0x3c, 0x1f, 0x0b, 0x4c, 0x12, 0x98, 0xc3, 0x43, 0x4d, 0x5f, 0xf7, 0xb8, 0x81, 0x37, 0x9c,
+	0x59, 0xb4, 0x42, 0xdb, 0x6f, 0xfb, 0xf2, 0x58, 0x8d, 0x4e, 0xf1, 0xad, 0xf1, 0x9d, 0xc1, 0xce,
+	0x59, 0xfc, 0x34, 0x3f, 0x85, 0x74, 0x17, 0x85, 0x5d, 0x62, 0x07, 0xac, 0x92, 0xab, 0xe9, 0xe6,
+	0x1a, 0xc3, 0x24, 0xe5, 0x1b, 0x14, 0x76, 0x7d, 0xf7, 0x7a, 0x5c, 0x4e, 0x8c, 0xc6, 0x65, 0x66,
+	0x49, 0x17, 0x3f, 0x82, 0x74, 0xd8, 0x47, 0xa7, 0x94, 0xdc, 0xe4, 0x7e, 0xdf, 0x47, 0xa7, 0x9e,
+	0x8e, 0xdc, 0x96, 0x74, 0x18, 0x65, 0xc8, 0xd2, 0x4f, 0x4d, 0x97, 0x73, 0x48, 0xf7, 0xec, 0x2e,
+	0xca, 0x22, 0xb2, 0x96, 0x3c, 0x1b, 0xbf, 0x18, 0xe4, 0x16, 0xd0, 0xfc, 0x2d, 0x00, 0x8d, 0xe3,
+	0xc2, 0x73, 0xa9, 0xdc, 0xc7, 0xb7, 0x03, 0x9b, 0x6e, 0x3d, 0x1f, 0xe1, 0x26, 0xe3, 0xf2, 0x1c,
+	0xd4, 0xb0, 0xb2, 0xce, 0x9c, 0x59, 0x87, 0x4c, 0xc7, 0x6e, 0x61, 0x27, 0x2c, 0x25, 0x0f, 0x52,
+	0x95, 0x5c, 0xed, 0xc5, 0xbf, 0x5b, 0x37, 0xcf, 0xa5, 0xf8, 0x55, 0x4f, 0x04, 0x57, 0x16, 0x39,
+	0xb5, 0x63, 0xc8, 0x2d, 0x5c, 0xf3, 0xfb, 0x90, 0xfa, 0x82, 0x57, 0xd4, 0x45, 0x74, 0xe4, 0x05,
+	0xb8, 0x33, 0xb4, 0x3b, 0x03, 0x94, 0x03, 0xca, 0x5a, 0xf1, 0xc7, 0x49, 0xf2, 0x88, 0x19, 0x9f,
+	0xe7, 0xdd, 0x45, 0xa3, 0xe1, 0xc7, 0x90, 0x89, 0x17, 0x47, 0x9d, 0x3d, 0x52, 0x54, 0xd3, 0x90,
+	0x82, 0xa6, 0x4b, 0x73, 0x24, 0x03, 0x7f, 0x08, 0x19, 0xc7, 0xef, 0x5d, 0x7a, 0x6d, 0x09, 0xd9,
+	0xb3, 0xe8, 0xcb, 0x70, 0x20, 0xff, 0x1a, 0x05, 0x41, 0x2c, 0xfc, 0x3a, 0xc0, 0x50, 0x6c, 0x7b,
+	0x8a, 0xc6, 0x3b, 0xe0, 0x8b, 0x90, 0xb0, 0xef, 0xf7, 0x42, 0xe4, 0x27, 0xb0, 0x43, 0x12, 0x42,
+	0x68, 0xb7, 0x23, 0xa8, 0x9b, 0x99, 0xc1, 0x28, 0xc2, 0x83, 0x73, 0x2f, 0x9c, 0x3d, 0x19, 0x52,
+	0xe1, 0xc6, 0x07, 0x28, 0x2c, 0x5f, 0x13, 0xea, 0x14, 0x76, 0xc9, 0x19, 0x96, 0x98, 0x5c, 0xe4,
+	0x66, 0xd6, 0xdc, 0x61, 0x58, 0x50, 0x38, 0x0b, 0xd0, 0x16, 0xb8, 0x32, 0xa6, 0xff, 0x69, 0x60,
+	0x1f, 0x8a, 0x2b, 0x6f, 0xc6, 0xa5, 0x46, 0xb0, 0x8f, 0x7d, 0x77, 0xeb, 0xb0, 0x95, 0x37, 0x09,
+	0x76, 0x09, 0x85, 0x06, 0x76, 0x70, 0x0d, 0xb6, 0xed, 0x00, 0xec, 0x43, 0x71, 0x85, 0x13, 0x17,
+	0x50, 0xfb, 0x93, 0x82, 0x7b, 0xb3, 0x84, 0x63, 0x30, 0xf4, 0x1c, 0xe4, 0x9f, 0x00, 0x6e, 0xc2,
+	0xc2, 0x9f, 0x28, 0xa8, 0x6b, 0x81, 0xd5, 0x9e, 0x6e, 0x50, 0x51, 0x0c, 0x2e, 0x60, 0x6f, 0x31,
+	0x1e, 0xfc, 0x99, 0xc2, 0xa6, 0x88, 0x95, 0xf6, 0x7c, 0xa3, 0x8e, 0x00, 0x2d, 0xb8, 0xbb, 0xb4,
+	0x55, 0xae, 0x72, 0xaa, 0xb2, 0xa4, 0x55, 0x36, 0x0b, 0x6f, 0x18, 0x4b, 0xcb, 0x54, 0x32, 0x54,
+	0x11, 0x52, 0x32, 0x94, 0xb9, 0x88, 0x18, 0x4b, 0xfb, 0x52, 0x32, 0x54, 0xc9, 0x51, 0x32, 0x94,
+	0xab, 0xaf, 0x97, 0xae, 0x27, 0x3a, 0x1b, 0x4d, 0x74, 0xf6, 0x7b, 0xa2, 0xb3, 0x1f, 0x53, 0x3d,
+	0x31, 0x9a, 0xea, 0x89, 0x9f, 0x53, 0x3d, 0xd1, 0xca, 0xc8, 0x3f, 0xa0, 0x97, 0x7f, 0x03, 0x00,
+	0x00, 0xff, 0xff, 0x63, 0x4b, 0x46, 0xcf, 0xec, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -616,6 +701,7 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ClusterServiceClient interface {
 	GetCluster(ctx context.Context, in *GetClusterRequest, opts ...grpc.CallOption) (*GetClusterResponse, error)
+	ListClusters(ctx context.Context, in *ListClustersRequest, opts ...grpc.CallOption) (*ListClustersResponse, error)
 	CreateCluster(ctx context.Context, in *CreateClusterRequest, opts ...grpc.CallOption) (*CreateClusterResponse, error)
 	UpdateCluster(ctx context.Context, in *UpdateClusterRequest, opts ...grpc.CallOption) (*UpdateClusterResponse, error)
 	DeleteCluster(ctx context.Context, in *DeleteClusterRequest, opts ...grpc.CallOption) (*DeleteClusterResponse, error)
@@ -632,6 +718,15 @@ func NewClusterServiceClient(cc *grpc.ClientConn) ClusterServiceClient {
 func (c *clusterServiceClient) GetCluster(ctx context.Context, in *GetClusterRequest, opts ...grpc.CallOption) (*GetClusterResponse, error) {
 	out := new(GetClusterResponse)
 	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.ClusterService/GetCluster", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clusterServiceClient) ListClusters(ctx context.Context, in *ListClustersRequest, opts ...grpc.CallOption) (*ListClustersResponse, error) {
+	out := new(ListClustersResponse)
+	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.ClusterService/ListClusters", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -668,6 +763,7 @@ func (c *clusterServiceClient) DeleteCluster(ctx context.Context, in *DeleteClus
 // ClusterServiceServer is the server API for ClusterService service.
 type ClusterServiceServer interface {
 	GetCluster(context.Context, *GetClusterRequest) (*GetClusterResponse, error)
+	ListClusters(context.Context, *ListClustersRequest) (*ListClustersResponse, error)
 	CreateCluster(context.Context, *CreateClusterRequest) (*CreateClusterResponse, error)
 	UpdateCluster(context.Context, *UpdateClusterRequest) (*UpdateClusterResponse, error)
 	DeleteCluster(context.Context, *DeleteClusterRequest) (*DeleteClusterResponse, error)
@@ -679,6 +775,9 @@ type UnimplementedClusterServiceServer struct {
 
 func (*UnimplementedClusterServiceServer) GetCluster(ctx context.Context, req *GetClusterRequest) (*GetClusterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCluster not implemented")
+}
+func (*UnimplementedClusterServiceServer) ListClusters(ctx context.Context, req *ListClustersRequest) (*ListClustersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListClusters not implemented")
 }
 func (*UnimplementedClusterServiceServer) CreateCluster(ctx context.Context, req *CreateClusterRequest) (*CreateClusterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCluster not implemented")
@@ -708,6 +807,24 @@ func _ClusterService_GetCluster_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ClusterServiceServer).GetCluster(ctx, req.(*GetClusterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ClusterService_ListClusters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListClustersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterServiceServer).ListClusters(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/atomix.runtime.v1.ClusterService/ListClusters",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterServiceServer).ListClusters(ctx, req.(*ListClustersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -773,6 +890,10 @@ var _ClusterService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCluster",
 			Handler:    _ClusterService_GetCluster_Handler,
+		},
+		{
+			MethodName: "ListClusters",
+			Handler:    _ClusterService_ListClusters_Handler,
 		},
 		{
 			MethodName: "CreateCluster",
@@ -1019,6 +1140,66 @@ func (m *GetClusterResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *ListClustersRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListClustersRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListClustersRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *ListClustersResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListClustersResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListClustersResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Clusters) > 0 {
+		for iNdEx := len(m.Clusters) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Clusters[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintCluster(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -1280,6 +1461,30 @@ func (m *GetClusterResponse) Size() (n int) {
 	_ = l
 	l = m.Cluster.Size()
 	n += 1 + l + sovCluster(uint64(l))
+	return n
+}
+
+func (m *ListClustersRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *ListClustersResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Clusters) > 0 {
+		for _, e := range m.Clusters {
+			l = e.Size()
+			n += 1 + l + sovCluster(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -2016,6 +2221,140 @@ func (m *GetClusterResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.Cluster.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCluster(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCluster
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListClustersRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCluster
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListClustersRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListClustersRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCluster(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCluster
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListClustersResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCluster
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListClustersResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListClustersResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Clusters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCluster
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCluster
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCluster
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Clusters = append(m.Clusters, Cluster{})
+			if err := m.Clusters[len(m.Clusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

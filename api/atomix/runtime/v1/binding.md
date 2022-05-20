@@ -16,6 +16,8 @@
     - [DeleteBindingResponse](#atomix-runtime-v1-DeleteBindingResponse)
     - [GetBindingRequest](#atomix-runtime-v1-GetBindingRequest)
     - [GetBindingResponse](#atomix-runtime-v1-GetBindingResponse)
+    - [ListBindingsRequest](#atomix-runtime-v1-ListBindingsRequest)
+    - [ListBindingsResponse](#atomix-runtime-v1-ListBindingsResponse)
     - [UpdateBindingRequest](#atomix-runtime-v1-UpdateBindingRequest)
     - [UpdateBindingResponse](#atomix-runtime-v1-UpdateBindingResponse)
   
@@ -207,6 +209,31 @@
 
 
 
+<a name="atomix-runtime-v1-ListBindingsRequest"></a>
+
+### ListBindingsRequest
+
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ListBindingsResponse"></a>
+
+### ListBindingsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| bindings | [Binding](#atomix-runtime-v1-Binding) | repeated |  |
+
+
+
+
+
+
 <a name="atomix-runtime-v1-UpdateBindingRequest"></a>
 
 ### UpdateBindingRequest
@@ -246,6 +273,7 @@
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | GetBinding | [GetBindingRequest](#atomix-runtime-v1-GetBindingRequest) | [GetBindingResponse](#atomix-runtime-v1-GetBindingResponse) |  |
+| ListBindings | [ListBindingsRequest](#atomix-runtime-v1-ListBindingsRequest) | [ListBindingsResponse](#atomix-runtime-v1-ListBindingsResponse) |  |
 | CreateBinding | [CreateBindingRequest](#atomix-runtime-v1-CreateBindingRequest) | [CreateBindingResponse](#atomix-runtime-v1-CreateBindingResponse) |  |
 | UpdateBinding | [UpdateBindingRequest](#atomix-runtime-v1-UpdateBindingRequest) | [UpdateBindingResponse](#atomix-runtime-v1-UpdateBindingResponse) |  |
 | DeleteBinding | [DeleteBindingRequest](#atomix-runtime-v1-DeleteBindingRequest) | [DeleteBindingResponse](#atomix-runtime-v1-DeleteBindingResponse) |  |
