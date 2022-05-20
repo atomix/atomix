@@ -5,9 +5,6 @@
 
 - [atomix/runtime/v1/binding.proto](#atomix_runtime_v1_binding-proto)
     - [Binding](#atomix-runtime-v1-Binding)
-    - [BindingId](#atomix-runtime-v1-BindingId)
-    - [BindingMeta](#atomix-runtime-v1-BindingMeta)
-    - [BindingMeta.LabelsEntry](#atomix-runtime-v1-BindingMeta-LabelsEntry)
     - [BindingSpec](#atomix-runtime-v1-BindingSpec)
     - [BindingSpec.SelectorEntry](#atomix-runtime-v1-BindingSpec-SelectorEntry)
     - [CreateBindingRequest](#atomix-runtime-v1-CreateBindingRequest)
@@ -42,55 +39,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [BindingMeta](#atomix-runtime-v1-BindingMeta) |  |  |
+| meta | [ObjectMeta](#atomix-runtime-v1-ObjectMeta) |  |  |
 | spec | [BindingSpec](#atomix-runtime-v1-BindingSpec) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-BindingId"></a>
-
-### BindingId
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-BindingMeta"></a>
-
-### BindingMeta
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| binding_id | [BindingId](#atomix-runtime-v1-BindingId) |  |  |
-| labels | [BindingMeta.LabelsEntry](#atomix-runtime-v1-BindingMeta-LabelsEntry) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-BindingMeta-LabelsEntry"></a>
-
-### BindingMeta.LabelsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [string](#string) |  |  |
 
 
 
@@ -105,7 +55,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster_id | [ClusterId](#atomix-runtime-v1-ClusterId) |  |  |
+| cluster_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
 | selector | [BindingSpec.SelectorEntry](#atomix-runtime-v1-BindingSpec-SelectorEntry) | repeated |  |
 
 
@@ -162,7 +112,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding_id | [BindingId](#atomix-runtime-v1-BindingId) |  |  |
+| binding_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
 
 
 
@@ -187,7 +137,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding_id | [BindingId](#atomix-runtime-v1-BindingId) |  |  |
+| binding_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
 
 
 

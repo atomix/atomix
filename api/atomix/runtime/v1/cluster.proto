@@ -9,6 +9,7 @@ syntax = "proto3";
 package atomix.runtime.v1;
 
 import "atomix/runtime/v1/driver.proto";
+import "atomix/runtime/v1/meta.proto";
 import "gogoproto/gogo.proto";
 
 service ClusterService {
@@ -20,25 +21,13 @@ service ClusterService {
 }
 
 message Cluster {
-    ClusterMeta meta = 1 [
+    ObjectMeta meta = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
     ClusterSpec spec = 2 [
         (gogoproto.nullable) = false
     ];
-}
-
-message ClusterId {
-    string name = 1;
-}
-
-message ClusterMeta {
-    ClusterId cluster_id = 1 [
-        (gogoproto.customname) = "ClusterID",
-        (gogoproto.nullable) = false
-    ];
-    map<string, string> labels = 2;
 }
 
 message ClusterSpec {
@@ -49,7 +38,7 @@ message ClusterSpec {
 }
 
 message GetClusterRequest {
-    ClusterId cluster_id = 1 [
+    ObjectId cluster_id = 1 [
         (gogoproto.customname) = "ClusterID",
         (gogoproto.nullable) = false
     ];
@@ -92,7 +81,7 @@ message UpdateClusterResponse {
 }
 
 message DeleteClusterRequest {
-    ClusterId cluster_id = 1 [
+    ObjectId cluster_id = 1 [
         (gogoproto.customname) = "ClusterID",
         (gogoproto.nullable) = false
     ];

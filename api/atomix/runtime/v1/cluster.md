@@ -5,9 +5,6 @@
 
 - [atomix/runtime/v1/cluster.proto](#atomix_runtime_v1_cluster-proto)
     - [Cluster](#atomix-runtime-v1-Cluster)
-    - [ClusterId](#atomix-runtime-v1-ClusterId)
-    - [ClusterMeta](#atomix-runtime-v1-ClusterMeta)
-    - [ClusterMeta.LabelsEntry](#atomix-runtime-v1-ClusterMeta-LabelsEntry)
     - [ClusterSpec](#atomix-runtime-v1-ClusterSpec)
     - [CreateClusterRequest](#atomix-runtime-v1-CreateClusterRequest)
     - [CreateClusterResponse](#atomix-runtime-v1-CreateClusterResponse)
@@ -41,55 +38,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [ClusterMeta](#atomix-runtime-v1-ClusterMeta) |  |  |
+| meta | [ObjectMeta](#atomix-runtime-v1-ObjectMeta) |  |  |
 | spec | [ClusterSpec](#atomix-runtime-v1-ClusterSpec) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-ClusterId"></a>
-
-### ClusterId
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-ClusterMeta"></a>
-
-### ClusterMeta
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| cluster_id | [ClusterId](#atomix-runtime-v1-ClusterId) |  |  |
-| labels | [ClusterMeta.LabelsEntry](#atomix-runtime-v1-ClusterMeta-LabelsEntry) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-ClusterMeta-LabelsEntry"></a>
-
-### ClusterMeta.LabelsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [string](#string) |  |  |
 
 
 
@@ -145,7 +95,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster_id | [ClusterId](#atomix-runtime-v1-ClusterId) |  |  |
+| cluster_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
 
 
 
@@ -170,7 +120,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster_id | [ClusterId](#atomix-runtime-v1-ClusterId) |  |  |
+| cluster_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
 
 
 

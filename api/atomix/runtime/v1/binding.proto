@@ -10,6 +10,7 @@ package atomix.runtime.v1;
 
 import "atomix/runtime/v1/cluster.proto";
 import "atomix/runtime/v1/driver.proto";
+import "atomix/runtime/v1/meta.proto";
 import "gogoproto/gogo.proto";
 
 service BindingService {
@@ -21,7 +22,7 @@ service BindingService {
 }
 
 message Binding {
-    BindingMeta meta = 1 [
+    ObjectMeta meta = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -30,20 +31,8 @@ message Binding {
     ];
 }
 
-message BindingId {
-    string name = 1;
-}
-
-message BindingMeta {
-    BindingId binding_id = 1 [
-        (gogoproto.customname) = "BindingID",
-        (gogoproto.nullable) = false
-    ];
-    map<string, string> labels = 2;
-}
-
 message BindingSpec {
-    atomix.runtime.v1.ClusterId cluster_id = 1 [
+    ObjectId cluster_id = 1 [
         (gogoproto.customname) = "ClusterID",
         (gogoproto.nullable) = false
     ];
@@ -51,7 +40,7 @@ message BindingSpec {
 }
 
 message GetBindingRequest {
-    BindingId binding_id = 1 [
+    ObjectId binding_id = 1 [
         (gogoproto.customname) = "BindingID",
         (gogoproto.nullable) = false
     ];
@@ -94,7 +83,7 @@ message UpdateBindingResponse {
 }
 
 message DeleteBindingRequest {
-    BindingId binding_id = 1 [
+    ObjectId binding_id = 1 [
         (gogoproto.customname) = "BindingID",
         (gogoproto.nullable) = false
     ];

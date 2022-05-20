@@ -3,114 +3,63 @@
 
 ## Table of Contents
 
-- [atomix/runtime/v1/primitive.proto](#atomix_runtime_v1_primitive-proto)
-    - [GetPrimitiveRequest](#atomix-runtime-v1-GetPrimitiveRequest)
-    - [GetPrimitiveResponse](#atomix-runtime-v1-GetPrimitiveResponse)
-    - [ListPrimitivesRequest](#atomix-runtime-v1-ListPrimitivesRequest)
-    - [ListPrimitivesResponse](#atomix-runtime-v1-ListPrimitivesResponse)
-    - [Primitive](#atomix-runtime-v1-Primitive)
-    - [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec)
-  
-    - [PrimitiveService](#atomix-runtime-v1-PrimitiveService)
+- [atomix/runtime/v1/meta.proto](#atomix_runtime_v1_meta-proto)
+    - [ObjectId](#atomix-runtime-v1-ObjectId)
+    - [ObjectMeta](#atomix-runtime-v1-ObjectMeta)
+    - [ObjectMeta.LabelsEntry](#atomix-runtime-v1-ObjectMeta-LabelsEntry)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_runtime_v1_primitive-proto"></a>
+<a name="atomix_runtime_v1_meta-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/runtime/v1/primitive.proto
+## atomix/runtime/v1/meta.proto
 
 
 
-<a name="atomix-runtime-v1-GetPrimitiveRequest"></a>
+<a name="atomix-runtime-v1-ObjectId"></a>
 
-### GetPrimitiveRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| primitive_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-GetPrimitiveResponse"></a>
-
-### GetPrimitiveResponse
+### ObjectId
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitive | [Primitive](#atomix-runtime-v1-Primitive) |  |  |
+| name | [string](#string) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-ListPrimitivesRequest"></a>
+<a name="atomix-runtime-v1-ObjectMeta"></a>
 
-### ListPrimitivesRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| type | [string](#string) |  |  |
-| watch | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-ListPrimitivesResponse"></a>
-
-### ListPrimitivesResponse
+### ObjectMeta
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitives | [Primitive](#atomix-runtime-v1-Primitive) | repeated |  |
+| id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
+| labels | [ObjectMeta.LabelsEntry](#atomix-runtime-v1-ObjectMeta-LabelsEntry) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-Primitive"></a>
+<a name="atomix-runtime-v1-ObjectMeta-LabelsEntry"></a>
 
-### Primitive
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| meta | [ObjectMeta](#atomix-runtime-v1-ObjectMeta) |  |  |
-| spec | [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-PrimitiveSpec"></a>
-
-### PrimitiveSpec
+### ObjectMeta.LabelsEntry
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| type | [string](#string) |  |  |
-| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
 
 
 
@@ -121,17 +70,6 @@
  
 
  
-
-
-<a name="atomix-runtime-v1-PrimitiveService"></a>
-
-### PrimitiveService
-
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| GetPrimitive | [GetPrimitiveRequest](#atomix-runtime-v1-GetPrimitiveRequest) | [GetPrimitiveResponse](#atomix-runtime-v1-GetPrimitiveResponse) |  |
-| ListPrimitives | [ListPrimitivesRequest](#atomix-runtime-v1-ListPrimitivesRequest) | [ListPrimitivesResponse](#atomix-runtime-v1-ListPrimitivesResponse) |  |
 
  
 

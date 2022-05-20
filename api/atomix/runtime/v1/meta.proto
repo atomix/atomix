@@ -1,0 +1,24 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.v1;
+
+import "google/protobuf/any.proto";
+import "gogoproto/gogo.proto";
+
+message ObjectId {
+    string name = 1;
+}
+
+message ObjectMeta {
+    ObjectId id = 2 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    map<string, string> labels = 3;
+}
