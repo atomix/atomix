@@ -112,7 +112,6 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| type | [string](#string) |  |  |
 | name | [string](#string) |  |  |
 
 
@@ -128,6 +127,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
 | primitive_id | [PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | labels | [PrimitiveMeta.LabelsEntry](#atomix-runtime-v1-PrimitiveMeta-LabelsEntry) | repeated |  |
 
