@@ -18,7 +18,7 @@
     - [UpdateClusterRequest](#atomix-runtime-v1-UpdateClusterRequest)
     - [UpdateClusterResponse](#atomix-runtime-v1-UpdateClusterResponse)
   
-    - [ClusterManager](#atomix-runtime-v1-ClusterManager)
+    - [ClusterService](#atomix-runtime-v1-ClusterService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -221,9 +221,9 @@
  
 
 
-<a name="atomix-runtime-v1-ClusterManager"></a>
+<a name="atomix-runtime-v1-ClusterService"></a>
 
-### ClusterManager
+### ClusterService
 
 
 | Method Name | Request Type | Response Type | Description |

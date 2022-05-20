@@ -8,66 +8,65 @@ syntax = "proto3";
 
 package atomix.set.v1;
 
-import "atomix/runtime/v1/descriptor.proto";
-import "atomix/runtime/v1/primitive.proto";
-import "atomix/runtime/v1/object.proto";
+import "atomix/primitive/v1/descriptor.proto";
+import "atomix/primitive/v1/headers.proto";
+import "atomix/primitive/v1/object.proto";
 import "gogoproto/gogo.proto";
 
 // Set is a service for a set primitive
 service Set {
-    option (atomix.runtime.v1.name) = "Set";
-    option (atomix.runtime.v1.component) = PRIMITIVE;
+    option (atomix.primitive.v1.type) = "Set";
 
     // Size gets the number of elements in the set
     rpc Size (SizeRequest) returns (SizeResponse) {
-        option (atomix.runtime.v1.operation_id) = 3;
-        option (atomix.runtime.v1.operation_type) = QUERY;
+        option (atomix.primitive.v1.operation_id) = 3;
+        option (atomix.primitive.v1.operation_type) = QUERY;
     }
 
     // Contains returns whether the set contains a value
     rpc Contains (ContainsRequest) returns (ContainsResponse) {
-        option (atomix.runtime.v1.operation_id) = 4;
-        option (atomix.runtime.v1.operation_type) = QUERY;
+        option (atomix.primitive.v1.operation_id) = 4;
+        option (atomix.primitive.v1.operation_type) = QUERY;
     }
 
     // Add adds a value to the set
     rpc Add (AddRequest) returns (AddResponse) {
-        option (atomix.runtime.v1.operation_id) = 5;
-        option (atomix.runtime.v1.operation_type) = COMMAND;
+        option (atomix.primitive.v1.operation_id) = 5;
+        option (atomix.primitive.v1.operation_type) = COMMAND;
     }
 
     // Remove removes a value from the set
     rpc Remove (RemoveRequest) returns (RemoveResponse) {
-        option (atomix.runtime.v1.operation_id) = 6;
-        option (atomix.runtime.v1.operation_type) = COMMAND;
+        option (atomix.primitive.v1.operation_id) = 6;
+        option (atomix.primitive.v1.operation_type) = COMMAND;
     }
 
     // Clear removes all values from the set
     rpc Clear (ClearRequest) returns (ClearResponse) {
-        option (atomix.runtime.v1.operation_id) = 7;
-        option (atomix.runtime.v1.operation_type) = COMMAND;
+        option (atomix.primitive.v1.operation_id) = 7;
+        option (atomix.primitive.v1.operation_type) = COMMAND;
     }
 
     // Events listens for set change events
     rpc Events (EventsRequest) returns (stream EventsResponse) {
-        option (atomix.runtime.v1.operation_id) = 8;
-        option (atomix.runtime.v1.operation_type) = COMMAND;
+        option (atomix.primitive.v1.operation_id) = 8;
+        option (atomix.primitive.v1.operation_type) = COMMAND;
     }
 
     // Elements lists all elements in the set
     rpc Elements (ElementsRequest) returns (stream ElementsResponse) {
-        option (atomix.runtime.v1.operation_id) = 9;
-        option (atomix.runtime.v1.operation_type) = QUERY;
+        option (atomix.primitive.v1.operation_id) = 9;
+        option (atomix.primitive.v1.operation_type) = QUERY;
     }
 }
 
 message SizeRequest {
-    atomix.runtime.v1.RequestHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.RequestHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     SizeInput input = 2 [
-        (atomix.runtime.v1.input) = true,
+        (atomix.primitive.v1.input) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -78,12 +77,12 @@ message SizeInput {
 }
 
 message SizeResponse {
-    atomix.runtime.v1.ResponseHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.ResponseHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     SizeOutput output = 2 [
-        (atomix.runtime.v1.output) = true,
+        (atomix.primitive.v1.output) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -94,12 +93,12 @@ message SizeOutput {
 }
 
 message ContainsRequest {
-    atomix.runtime.v1.RequestHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.RequestHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     ContainsInput input = 2 [
-        (atomix.runtime.v1.input) = true,
+        (atomix.primitive.v1.input) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -112,12 +111,12 @@ message ContainsInput {
 }
 
 message ContainsResponse {
-    atomix.runtime.v1.ResponseHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.ResponseHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     ContainsOutput output = 2 [
-        (atomix.runtime.v1.output) = true,
+        (atomix.primitive.v1.output) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -128,12 +127,12 @@ message ContainsOutput {
 }
 
 message AddRequest {
-    atomix.runtime.v1.RequestHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.RequestHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     AddInput input = 2 [
-        (atomix.runtime.v1.input) = true,
+        (atomix.primitive.v1.input) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -146,12 +145,12 @@ message AddInput {
 }
 
 message AddResponse {
-    atomix.runtime.v1.ResponseHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.ResponseHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     AddOutput output = 2 [
-        (atomix.runtime.v1.output) = true,
+        (atomix.primitive.v1.output) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -164,12 +163,12 @@ message AddOutput {
 }
 
 message RemoveRequest {
-    atomix.runtime.v1.RequestHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.RequestHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     RemoveInput input = 2 [
-        (atomix.runtime.v1.input) = true,
+        (atomix.primitive.v1.input) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -182,12 +181,12 @@ message RemoveInput {
 }
 
 message RemoveResponse {
-    atomix.runtime.v1.ResponseHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.ResponseHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     RemoveOutput output = 2 [
-        (atomix.runtime.v1.output) = true,
+        (atomix.primitive.v1.output) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -200,12 +199,12 @@ message RemoveOutput {
 }
 
 message ClearRequest {
-    atomix.runtime.v1.RequestHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.RequestHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     ClearInput input = 2 [
-        (atomix.runtime.v1.input) = true,
+        (atomix.primitive.v1.input) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -216,12 +215,12 @@ message ClearInput {
 }
 
 message ClearResponse {
-    atomix.runtime.v1.ResponseHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.ResponseHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     ClearOutput output = 2 [
-        (atomix.runtime.v1.output) = true,
+        (atomix.primitive.v1.output) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -232,12 +231,12 @@ message ClearOutput {
 }
 
 message EventsRequest {
-    atomix.runtime.v1.RequestHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.RequestHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     EventsInput input = 2 [
-        (atomix.runtime.v1.input) = true,
+        (atomix.primitive.v1.input) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -248,12 +247,12 @@ message EventsInput {
 }
 
 message EventsResponse {
-    atomix.runtime.v1.ResponseHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.ResponseHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     EventsOutput output = 2 [
-        (atomix.runtime.v1.output) = true,
+        (atomix.primitive.v1.output) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -280,12 +279,12 @@ message Event {
 }
 
 message ElementsRequest {
-    atomix.runtime.v1.RequestHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.RequestHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     ElementsInput input = 2 [
-        (atomix.runtime.v1.input) = true,
+        (atomix.primitive.v1.input) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -296,12 +295,12 @@ message ElementsInput {
 }
 
 message ElementsResponse {
-    atomix.runtime.v1.ResponseHeaders headers = 1 [
-        (atomix.runtime.v1.headers) = true,
+    atomix.primitive.v1.ResponseHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
     ElementsOutput output = 2 [
-        (atomix.runtime.v1.output) = true,
+        (atomix.primitive.v1.output) = true,
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -314,7 +313,7 @@ message ElementsOutput {
 }
 
 message Element {
-    atomix.runtime.v1.ObjectMeta meta = 1 [
+    atomix.primitive.v1.ObjectMeta meta = 1 [
         (gogoproto.embed) = true,
         (gogoproto.nullable) = false
     ];

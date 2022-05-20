@@ -3,69 +3,136 @@
 
 ## Table of Contents
 
-- [atomix/election/v1/manager.proto](#atomix_election_v1_manager-proto)
-    - [CloseRequest](#atomix-election-v1-CloseRequest)
-    - [CloseResponse](#atomix-election-v1-CloseResponse)
-    - [CreateRequest](#atomix-election-v1-CreateRequest)
-    - [CreateResponse](#atomix-election-v1-CreateResponse)
+- [atomix/primitive/v1/primitive.proto](#atomix_primitive_v1_primitive-proto)
+    - [ClosePrimitiveRequest](#atomix-primitive-v1-ClosePrimitiveRequest)
+    - [ClosePrimitiveResponse](#atomix-primitive-v1-ClosePrimitiveResponse)
+    - [OpenPrimitiveRequest](#atomix-primitive-v1-OpenPrimitiveRequest)
+    - [OpenPrimitiveResponse](#atomix-primitive-v1-OpenPrimitiveResponse)
+    - [Primitive](#atomix-primitive-v1-Primitive)
+    - [PrimitiveId](#atomix-primitive-v1-PrimitiveId)
+    - [PrimitiveMeta](#atomix-primitive-v1-PrimitiveMeta)
+    - [PrimitiveMeta.LabelsEntry](#atomix-primitive-v1-PrimitiveMeta-LabelsEntry)
   
-    - [LeaderElectionManager](#atomix-election-v1-LeaderElectionManager)
+    - [PrimitiveManager](#atomix-primitive-v1-PrimitiveManager)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_election_v1_manager-proto"></a>
+<a name="atomix_primitive_v1_primitive-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/election/v1/manager.proto
+## atomix/primitive/v1/primitive.proto
 
 
 
-<a name="atomix-election-v1-CloseRequest"></a>
+<a name="atomix-primitive-v1-ClosePrimitiveRequest"></a>
 
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| primitive_id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-
-
-
-
-
-
-<a name="atomix-election-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-election-v1-CreateRequest"></a>
-
-### CreateRequest
+### ClosePrimitiveRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitive | [atomix.runtime.v1.Primitive](#atomix-runtime-v1-Primitive) |  |  |
+| primitive_id | [PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 
 
 
 
 
 
-<a name="atomix-election-v1-CreateResponse"></a>
+<a name="atomix-primitive-v1-ClosePrimitiveResponse"></a>
 
-### CreateResponse
+### ClosePrimitiveResponse
 
+
+
+
+
+
+
+<a name="atomix-primitive-v1-OpenPrimitiveRequest"></a>
+
+### OpenPrimitiveRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| primitive | [Primitive](#atomix-primitive-v1-Primitive) |  |  |
+
+
+
+
+
+
+<a name="atomix-primitive-v1-OpenPrimitiveResponse"></a>
+
+### OpenPrimitiveResponse
+
+
+
+
+
+
+
+<a name="atomix-primitive-v1-Primitive"></a>
+
+### Primitive
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| meta | [PrimitiveMeta](#atomix-primitive-v1-PrimitiveMeta) |  |  |
+
+
+
+
+
+
+<a name="atomix-primitive-v1-PrimitiveId"></a>
+
+### PrimitiveId
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
+| name | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-primitive-v1-PrimitiveMeta"></a>
+
+### PrimitiveMeta
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| primitive_id | [PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+| labels | [PrimitiveMeta.LabelsEntry](#atomix-primitive-v1-PrimitiveMeta-LabelsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-primitive-v1-PrimitiveMeta-LabelsEntry"></a>
+
+### PrimitiveMeta.LabelsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
 
 
 
@@ -78,15 +145,15 @@
  
 
 
-<a name="atomix-election-v1-LeaderElectionManager"></a>
+<a name="atomix-primitive-v1-PrimitiveManager"></a>
 
-### LeaderElectionManager
-LeaderElectionManager is a manager for a leader election primitive
+### PrimitiveManager
+
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-election-v1-CreateRequest) | [CreateResponse](#atomix-election-v1-CreateResponse) |  |
-| Close | [CloseRequest](#atomix-election-v1-CloseRequest) | [CloseResponse](#atomix-election-v1-CloseResponse) |  |
+| Open | [OpenPrimitiveRequest](#atomix-primitive-v1-OpenPrimitiveRequest) | [OpenPrimitiveResponse](#atomix-primitive-v1-OpenPrimitiveResponse) |  |
+| Close | [ClosePrimitiveRequest](#atomix-primitive-v1-ClosePrimitiveRequest) | [ClosePrimitiveResponse](#atomix-primitive-v1-ClosePrimitiveResponse) |  |
 
  
 

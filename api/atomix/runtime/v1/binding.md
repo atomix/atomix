@@ -19,7 +19,7 @@
     - [UpdateBindingRequest](#atomix-runtime-v1-UpdateBindingRequest)
     - [UpdateBindingResponse](#atomix-runtime-v1-UpdateBindingResponse)
   
-    - [BindingManager](#atomix-runtime-v1-BindingManager)
+    - [BindingService](#atomix-runtime-v1-BindingService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -238,9 +238,9 @@
  
 
 
-<a name="atomix-runtime-v1-BindingManager"></a>
+<a name="atomix-runtime-v1-BindingService"></a>
 
-### BindingManager
+### BindingService
 
 
 | Method Name | Request Type | Response Type | Description |

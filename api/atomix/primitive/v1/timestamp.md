@@ -3,69 +3,114 @@
 
 ## Table of Contents
 
-- [atomix/value/v1/manager.proto](#atomix_value_v1_manager-proto)
-    - [CloseRequest](#atomix-value-v1-CloseRequest)
-    - [CloseResponse](#atomix-value-v1-CloseResponse)
-    - [CreateRequest](#atomix-value-v1-CreateRequest)
-    - [CreateResponse](#atomix-value-v1-CreateResponse)
-  
-    - [ValueManager](#atomix-value-v1-ValueManager)
+- [atomix/primitive/v1/timestamp.proto](#atomix_primitive_v1_timestamp-proto)
+    - [CompositeTimestamp](#atomix-primitive-v1-CompositeTimestamp)
+    - [EpochTimestamp](#atomix-primitive-v1-EpochTimestamp)
+    - [LogicalTimestamp](#atomix-primitive-v1-LogicalTimestamp)
+    - [PhysicalTimestamp](#atomix-primitive-v1-PhysicalTimestamp)
+    - [Timestamp](#atomix-primitive-v1-Timestamp)
+    - [VectorTimestamp](#atomix-primitive-v1-VectorTimestamp)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_value_v1_manager-proto"></a>
+<a name="atomix_primitive_v1_timestamp-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/value/v1/manager.proto
+## atomix/primitive/v1/timestamp.proto
 
 
 
-<a name="atomix-value-v1-CloseRequest"></a>
+<a name="atomix-primitive-v1-CompositeTimestamp"></a>
 
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| primitive_id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-
-
-
-
-
-
-<a name="atomix-value-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-value-v1-CreateRequest"></a>
-
-### CreateRequest
+### CompositeTimestamp
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitive | [atomix.runtime.v1.Primitive](#atomix-runtime-v1-Primitive) |  |  |
+| timestamps | [Timestamp](#atomix-primitive-v1-Timestamp) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-value-v1-CreateResponse"></a>
+<a name="atomix-primitive-v1-EpochTimestamp"></a>
 
-### CreateResponse
+### EpochTimestamp
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| epoch | [uint64](#uint64) |  |  |
+| time | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-primitive-v1-LogicalTimestamp"></a>
+
+### LogicalTimestamp
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| time | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-primitive-v1-PhysicalTimestamp"></a>
+
+### PhysicalTimestamp
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+
+
+
+
+
+
+<a name="atomix-primitive-v1-Timestamp"></a>
+
+### Timestamp
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| physical_timestamp | [PhysicalTimestamp](#atomix-primitive-v1-PhysicalTimestamp) |  |  |
+| logical_timestamp | [LogicalTimestamp](#atomix-primitive-v1-LogicalTimestamp) |  |  |
+| vector_timestamp | [VectorTimestamp](#atomix-primitive-v1-VectorTimestamp) |  |  |
+| epoch_timestamp | [EpochTimestamp](#atomix-primitive-v1-EpochTimestamp) |  |  |
+| composite_timestamp | [CompositeTimestamp](#atomix-primitive-v1-CompositeTimestamp) |  |  |
+
+
+
+
+
+
+<a name="atomix-primitive-v1-VectorTimestamp"></a>
+
+### VectorTimestamp
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| time | [uint64](#uint64) | repeated |  |
 
 
 
@@ -76,17 +121,6 @@
  
 
  
-
-
-<a name="atomix-value-v1-ValueManager"></a>
-
-### ValueManager
-ValueManager is a manager for a Value primitive
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-value-v1-CreateRequest) | [CreateResponse](#atomix-value-v1-CreateResponse) |  |
-| Close | [CloseRequest](#atomix-value-v1-CloseRequest) | [CloseResponse](#atomix-value-v1-CloseResponse) |  |
 
  
 

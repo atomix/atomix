@@ -3,90 +3,58 @@
 
 ## Table of Contents
 
-- [atomix/indexed_map/v1/manager.proto](#atomix_indexed_map_v1_manager-proto)
-    - [CloseRequest](#atomix-indexed_map-v1-CloseRequest)
-    - [CloseResponse](#atomix-indexed_map-v1-CloseResponse)
-    - [CreateRequest](#atomix-indexed_map-v1-CreateRequest)
-    - [CreateResponse](#atomix-indexed_map-v1-CreateResponse)
+- [atomix/primitive/v1/descriptor.proto](#atomix_primitive_v1_descriptor-proto)
+    - [OperationType](#atomix-primitive-v1-OperationType)
   
-    - [IndexedMapManager](#atomix-indexed_map-v1-IndexedMapManager)
+    - [File-level Extensions](#atomix_primitive_v1_descriptor-proto-extensions)
+    - [File-level Extensions](#atomix_primitive_v1_descriptor-proto-extensions)
+    - [File-level Extensions](#atomix_primitive_v1_descriptor-proto-extensions)
+    - [File-level Extensions](#atomix_primitive_v1_descriptor-proto-extensions)
+    - [File-level Extensions](#atomix_primitive_v1_descriptor-proto-extensions)
+    - [File-level Extensions](#atomix_primitive_v1_descriptor-proto-extensions)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_indexed_map_v1_manager-proto"></a>
+<a name="atomix_primitive_v1_descriptor-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/indexed_map/v1/manager.proto
-
-
-
-<a name="atomix-indexed_map-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| primitive_id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| primitive | [atomix.runtime.v1.Primitive](#atomix-runtime-v1-Primitive) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-
+## atomix/primitive/v1/descriptor.proto
 
 
  
 
- 
+
+<a name="atomix-primitive-v1-OperationType"></a>
+
+### OperationType
+OperationType is an enum for specifying the type of operation
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| COMMAND | 0 |  |
+| QUERY | 1 |  |
+| CREATE | 2 |  |
+| CLOSE | 3 |  |
+
 
  
 
 
-<a name="atomix-indexed_map-v1-IndexedMapManager"></a>
+<a name="atomix_primitive_v1_descriptor-proto-extensions"></a>
 
-### IndexedMapManager
-IndexedMapManager is a manager for an indexed map primitive
+### File-level Extensions
+| Extension | Type | Base | Number | Description |
+| --------- | ---- | ---- | ------ | ----------- |
+| headers | bool | .google.protobuf.FieldOptions | 51000 |  |
+| input | bool | .google.protobuf.FieldOptions | 51001 |  |
+| output | bool | .google.protobuf.FieldOptions | 51002 |  |
+| operation_id | uint32 | .google.protobuf.MethodOptions | 52000 |  |
+| operation_type | OperationType | .google.protobuf.MethodOptions | 52001 |  |
+| type | string | .google.protobuf.ServiceOptions | 50000 |  |
 
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-indexed_map-v1-CreateRequest) | [CreateResponse](#atomix-indexed_map-v1-CreateResponse) |  |
-| Close | [CloseRequest](#atomix-indexed_map-v1-CloseRequest) | [CloseResponse](#atomix-indexed_map-v1-CloseResponse) |  |
+ 
 
  
 

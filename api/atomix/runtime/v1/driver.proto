@@ -10,7 +10,7 @@ package atomix.runtime.v1;
 
 import "gogoproto/gogo.proto";
 
-service DriverManager {
+service DriverService {
     rpc InstallDriver (stream InstallDriverRequest) returns (InstallDriverResponse);
 }
 

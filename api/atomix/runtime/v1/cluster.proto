@@ -11,7 +11,7 @@ package atomix.runtime.v1;
 import "atomix/runtime/v1/driver.proto";
 import "gogoproto/gogo.proto";
 
-service ClusterManager {
+service ClusterService {
     rpc GetCluster (GetClusterRequest) returns (GetClusterResponse);
     rpc CreateCluster (CreateClusterRequest) returns (CreateClusterResponse);
     rpc UpdateCluster (UpdateClusterRequest) returns (UpdateClusterResponse);

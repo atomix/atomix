@@ -6,19 +6,12 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.runtime.v1;
+package atomix.primitive.v1;
 
 import "google/protobuf/descriptor.proto";
 
 extend google.protobuf.ServiceOptions {
-    string name = 50000;
-    ComponentType component = 50001;
-}
-
-enum ComponentType {
-    NONE = 0;
-    PRIMITIVE = 1;
-    MANAGER = 2;
+    string type = 50000;
 }
 
 extend google.protobuf.FieldOptions {

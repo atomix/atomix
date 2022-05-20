@@ -1,0 +1,59 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.primitive.v1;
+
+import "gogoproto/gogo.proto";
+
+service PrimitiveManager {
+    rpc Open (OpenPrimitiveRequest) returns (OpenPrimitiveResponse);
+    rpc Close (ClosePrimitiveRequest) returns (ClosePrimitiveResponse);
+}
+
+message OpenPrimitiveRequest {
+    Primitive primitive = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message OpenPrimitiveResponse {
+
+}
+
+message ClosePrimitiveRequest {
+    PrimitiveId primitive_id = 1 [
+        (gogoproto.customname) = "PrimitiveID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ClosePrimitiveResponse {
+
+}
+
+message Primitive {
+    PrimitiveMeta meta = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message PrimitiveId {
+    string type = 1 [
+        (gogoproto.casttype) = "PrimitiveType"
+    ];
+    string name = 2;
+}
+
+message PrimitiveMeta {
+    PrimitiveId primitive_id = 1 [
+        (gogoproto.customname) = "PrimitiveID",
+        (gogoproto.nullable) = false
+    ];
+    map<string, string> labels = 2;
+}

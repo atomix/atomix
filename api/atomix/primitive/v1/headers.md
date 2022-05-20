@@ -3,114 +3,40 @@
 
 ## Table of Contents
 
-- [atomix/runtime/v1/timestamp.proto](#atomix_runtime_v1_timestamp-proto)
-    - [CompositeTimestamp](#atomix-runtime-v1-CompositeTimestamp)
-    - [EpochTimestamp](#atomix-runtime-v1-EpochTimestamp)
-    - [LogicalTimestamp](#atomix-runtime-v1-LogicalTimestamp)
-    - [PhysicalTimestamp](#atomix-runtime-v1-PhysicalTimestamp)
-    - [Timestamp](#atomix-runtime-v1-Timestamp)
-    - [VectorTimestamp](#atomix-runtime-v1-VectorTimestamp)
+- [atomix/primitive/v1/headers.proto](#atomix_primitive_v1_headers-proto)
+    - [RequestHeaders](#atomix-primitive-v1-RequestHeaders)
+    - [ResponseHeaders](#atomix-primitive-v1-ResponseHeaders)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_runtime_v1_timestamp-proto"></a>
+<a name="atomix_primitive_v1_headers-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/runtime/v1/timestamp.proto
+## atomix/primitive/v1/headers.proto
 
 
 
-<a name="atomix-runtime-v1-CompositeTimestamp"></a>
+<a name="atomix-primitive-v1-RequestHeaders"></a>
 
-### CompositeTimestamp
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| timestamps | [Timestamp](#atomix-runtime-v1-Timestamp) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-EpochTimestamp"></a>
-
-### EpochTimestamp
+### RequestHeaders
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| epoch | [uint64](#uint64) |  |  |
-| time | [uint64](#uint64) |  |  |
+| primitive_id | [PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-LogicalTimestamp"></a>
+<a name="atomix-primitive-v1-ResponseHeaders"></a>
 
-### LogicalTimestamp
+### ResponseHeaders
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| time | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-PhysicalTimestamp"></a>
-
-### PhysicalTimestamp
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-Timestamp"></a>
-
-### Timestamp
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| physical_timestamp | [PhysicalTimestamp](#atomix-runtime-v1-PhysicalTimestamp) |  |  |
-| logical_timestamp | [LogicalTimestamp](#atomix-runtime-v1-LogicalTimestamp) |  |  |
-| vector_timestamp | [VectorTimestamp](#atomix-runtime-v1-VectorTimestamp) |  |  |
-| epoch_timestamp | [EpochTimestamp](#atomix-runtime-v1-EpochTimestamp) |  |  |
-| composite_timestamp | [CompositeTimestamp](#atomix-runtime-v1-CompositeTimestamp) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-VectorTimestamp"></a>
-
-### VectorTimestamp
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| time | [uint64](#uint64) | repeated |  |
 
 
 

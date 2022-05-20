@@ -6,9 +6,9 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.runtime.v1;
+package atomix.primitive.v1;
 
-import "atomix/runtime/v1/timestamp.proto";
+import "atomix/primitive/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 message ObjectMeta {

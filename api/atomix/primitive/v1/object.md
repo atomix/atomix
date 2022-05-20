@@ -3,69 +3,33 @@
 
 ## Table of Contents
 
-- [atomix/list/v1/manager.proto](#atomix_list_v1_manager-proto)
-    - [CloseRequest](#atomix-list-v1-CloseRequest)
-    - [CloseResponse](#atomix-list-v1-CloseResponse)
-    - [CreateRequest](#atomix-list-v1-CreateRequest)
-    - [CreateResponse](#atomix-list-v1-CreateResponse)
+- [atomix/primitive/v1/object.proto](#atomix_primitive_v1_object-proto)
+    - [ObjectMeta](#atomix-primitive-v1-ObjectMeta)
   
-    - [ListManager](#atomix-list-v1-ListManager)
+    - [ObjectMeta.Type](#atomix-primitive-v1-ObjectMeta-Type)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_list_v1_manager-proto"></a>
+<a name="atomix_primitive_v1_object-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/list/v1/manager.proto
+## atomix/primitive/v1/object.proto
 
 
 
-<a name="atomix-list-v1-CloseRequest"></a>
+<a name="atomix-primitive-v1-ObjectMeta"></a>
 
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| primitive_id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-list-v1-CreateRequest"></a>
-
-### CreateRequest
+### ObjectMeta
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitive | [atomix.runtime.v1.Primitive](#atomix-runtime-v1-Primitive) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-CreateResponse"></a>
-
-### CreateResponse
-
+| revision | [uint64](#uint64) |  |  |
+| timestamp | [Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
+| type | [ObjectMeta.Type](#atomix-primitive-v1-ObjectMeta-Type) |  |  |
 
 
 
@@ -73,20 +37,21 @@
 
  
 
- 
+
+<a name="atomix-primitive-v1-ObjectMeta-Type"></a>
+
+### ObjectMeta.Type
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| OBJECT | 0 |  |
+| TOMBSTONE | 1 |  |
+
 
  
 
-
-<a name="atomix-list-v1-ListManager"></a>
-
-### ListManager
-ListManager is a manager for a list primitive
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-list-v1-CreateRequest) | [CreateResponse](#atomix-list-v1-CreateResponse) |  |
-| Close | [CloseRequest](#atomix-list-v1-CloseRequest) | [CloseResponse](#atomix-list-v1-CloseResponse) |  |
+ 
 
  
 

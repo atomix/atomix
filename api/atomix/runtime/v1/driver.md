@@ -11,7 +11,7 @@
     - [InstallDriverRequest](#atomix-runtime-v1-InstallDriverRequest)
     - [InstallDriverResponse](#atomix-runtime-v1-InstallDriverResponse)
   
-    - [DriverManager](#atomix-runtime-v1-DriverManager)
+    - [DriverService](#atomix-runtime-v1-DriverService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -118,9 +118,9 @@
  
 
 
-<a name="atomix-runtime-v1-DriverManager"></a>
+<a name="atomix-runtime-v1-DriverService"></a>
 
-### DriverManager
+### DriverService
 
 
 | Method Name | Request Type | Response Type | Description |
