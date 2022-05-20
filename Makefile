@@ -64,8 +64,8 @@ go:
 		-v `pwd`:/build \
 		atomix/codegen:latest \
 		protoc -I=./api:/go/src/github.com/gogo/protobuf \
-			--go_out=Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor,import_path=github.com/atomix/runtime/api/atomix/runtime/v1:api \
-			api/atomix/runtime/v1/descriptor.proto
+			--go_out=Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor,import_path=github.com/atomix/runtime/api/atomix/primitive/v1:api \
+			api/atomix/primitive/v1/descriptor.proto
 
 docs:
 	@find ./api -name '*.md' -delete
