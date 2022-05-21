@@ -45,9 +45,7 @@ message GetClusterRequest {
 }
 
 message GetClusterResponse {
-    Cluster cluster = 1 [
-        (gogoproto.nullable) = false
-    ];
+    Cluster cluster = 1;
 }
 
 message ListClustersRequest {
@@ -55,36 +53,27 @@ message ListClustersRequest {
 }
 
 message ListClustersResponse {
-    repeated Cluster clusters = 1 [
-        (gogoproto.nullable) = false
-    ];
+    repeated Cluster clusters = 1;
 }
 
 message CreateClusterRequest {
-    Cluster cluster = 1 [
-        (gogoproto.nullable) = false
-    ];
+    Cluster cluster = 1;
 }
 
 message CreateClusterResponse {
-
+    Cluster cluster = 1;
 }
 
 message UpdateClusterRequest {
-    Cluster cluster = 1 [
-        (gogoproto.nullable) = false
-    ];
+    Cluster cluster = 1;
 }
 
 message UpdateClusterResponse {
-
+    Cluster cluster = 1;
 }
 
 message DeleteClusterRequest {
-    ObjectId cluster_id = 1 [
-        (gogoproto.customname) = "ClusterID",
-        (gogoproto.nullable) = false
-    ];
+    Cluster cluster = 1;
 }
 
 message DeleteClusterResponse {

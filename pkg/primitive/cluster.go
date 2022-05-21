@@ -22,7 +22,7 @@ type Conn[T Primitive] struct {
 	client  *Client[T]
 }
 
-func (n *Conn[T]) Create(ctx context.Context, primitiveID runtimev1.PrimitiveId) error {
+func (n *Conn[T]) Create(ctx context.Context, primitiveID runtimev1.ObjectId) error {
 	proxy, err := n.client.GetPrimitive(ctx, primitiveID)
 	if err != nil {
 		return err
@@ -31,7 +31,7 @@ func (n *Conn[T]) Create(ctx context.Context, primitiveID runtimev1.PrimitiveId)
 	return nil
 }
 
-func (n *Conn[T]) Close(ctx context.Context, primitiveID runtimev1.PrimitiveId) error {
+func (n *Conn[T]) Close(ctx context.Context, primitiveID runtimev1.ObjectId) error {
 	proxy, ok := n.proxies.unregister(primitiveID)
 	if !ok {
 		return errors.NewForbidden("proxy '%s' not found", primitiveID.Name)

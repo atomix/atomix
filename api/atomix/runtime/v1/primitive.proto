@@ -40,9 +40,7 @@ message GetPrimitiveRequest {
 }
 
 message GetPrimitiveResponse {
-    Primitive primitive = 1 [
-        (gogoproto.nullable) = false
-    ];
+    Primitive primitive = 1;
 }
 
 message ListPrimitivesRequest {
@@ -51,7 +49,5 @@ message ListPrimitivesRequest {
 }
 
 message ListPrimitivesResponse {
-    repeated Primitive primitives = 1 [
-        (gogoproto.nullable) = false
-    ];
+    repeated Primitive primitives = 1;
 }

@@ -43,6 +43,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
+| revision | [uint64](#uint64) |  |  |
 | labels | [ObjectMeta.LabelsEntry](#atomix-runtime-v1-ObjectMeta-LabelsEntry) | repeated |  |
 
 

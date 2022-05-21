@@ -8,7 +8,6 @@ syntax = "proto3";
 
 package atomix.runtime.v1;
 
-import "atomix/runtime/v1/cluster.proto";
 import "gogoproto/gogo.proto";
 
 // The runtime service provides control functions for the runtime proxy.

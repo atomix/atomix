@@ -21,19 +21,19 @@ import (
 
 const driverSymbol = "Driver"
 
-func NewDriverPluginCache(path string) *DriverPluginCache {
-	return &DriverPluginCache{
+func NewDriverCache(path string) *DriverCache {
+	return &DriverCache{
 		Path: path,
 	}
 }
 
-type DriverPluginCache struct {
+type DriverCache struct {
 	Path    string
 	plugins map[string]*DriverPlugin
 	mu      sync.RWMutex
 }
 
-func (c *DriverPluginCache) Get(name, version string) *DriverPlugin {
+func (c *DriverCache) Get(name, version string) *DriverPlugin {
 	key := getVersionedName(name, version)
 	c.mu.RLock()
 	plugin, ok := c.plugins[key]

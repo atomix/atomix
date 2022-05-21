@@ -12,7 +12,7 @@ import (
 	"sync"
 )
 
-type Connector func(ctx context.Context, primitive runtimev1.Primitive) (driver.Conn, error)
+type Connector func(ctx context.Context, primitive *runtimev1.Primitive) (driver.Conn, error)
 
 func NewService[T Primitive](connector Connector, resolver ClientResolver[T], proxies *Registry[T]) *Service[T] {
 	return &Service[T]{
@@ -31,15 +31,15 @@ type Service[T Primitive] struct {
 	mu        sync.RWMutex
 }
 
-func (m *Service[T]) Connect(ctx context.Context, primitive runtimev1.Primitive) (*Conn[T], error) {
-	conn, ok := m.getConn(primitive.PrimitiveID)
+func (m *Service[T]) Connect(ctx context.Context, primitive *runtimev1.Primitive) (*Conn[T], error) {
+	conn, ok := m.getConn(primitive.ID)
 	if ok {
 		return conn, nil
 	}
 	return m.connect(ctx, primitive)
 }
 
-func (m *Service[T]) GetConn(primitiveID runtimev1.PrimitiveId) (*Conn[T], error) {
+func (m *Service[T]) GetConn(primitiveID runtimev1.ObjectId) (*Conn[T], error) {
 	conn, ok := m.getConn(primitiveID)
 	if !ok {
 		return nil, errors.NewUnavailable("connection not found")
@@ -47,18 +47,18 @@ func (m *Service[T]) GetConn(primitiveID runtimev1.PrimitiveId) (*Conn[T], error
 	return conn, nil
 }
 
-func (m *Service[T]) getConn(primitiveID runtimev1.PrimitiveId) (*Conn[T], bool) {
+func (m *Service[T]) getConn(primitiveID runtimev1.ObjectId) (*Conn[T], bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	conn, ok := m.conns[primitiveID.Name]
 	return conn, ok
 }
 
-func (m *Service[T]) connect(ctx context.Context, primitive runtimev1.Primitive) (*Conn[T], error) {
+func (m *Service[T]) connect(ctx context.Context, primitive *runtimev1.Primitive) (*Conn[T], error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	cluster, ok := m.conns[primitive.PrimitiveID.Name]
+	cluster, ok := m.conns[primitive.ID.Name]
 	if ok {
 		return cluster, nil
 	}
@@ -74,6 +74,6 @@ func (m *Service[T]) connect(ctx context.Context, primitive runtimev1.Primitive)
 	}
 
 	cluster = newConn(m.proxies, client)
-	m.conns[primitive.PrimitiveID.Name] = cluster
+	m.conns[primitive.ID.Name] = cluster
 	return cluster, nil
 }

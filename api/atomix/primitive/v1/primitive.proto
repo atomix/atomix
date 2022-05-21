@@ -18,9 +18,7 @@ service PrimitiveManager {
 }
 
 message OpenPrimitiveRequest {
-    atomix.runtime.v1.Primitive primitive = 1 [
-        (gogoproto.nullable) = false
-    ];
+    atomix.runtime.v1.Primitive primitive = 1;
 }
 
 message OpenPrimitiveResponse {

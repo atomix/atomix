@@ -11,29 +11,29 @@ import (
 
 func NewRegistry[T Primitive]() *Registry[T] {
 	return &Registry[T]{
-		proxies: make(map[runtimev1.PrimitiveId]T),
+		proxies: make(map[runtimev1.ObjectId]T),
 	}
 }
 
 type Registry[T Primitive] struct {
-	proxies map[runtimev1.PrimitiveId]T
+	proxies map[runtimev1.ObjectId]T
 	mu      sync.RWMutex
 }
 
-func (r *Registry[T]) GetProxy(primitiveID runtimev1.PrimitiveId) (T, bool) {
+func (r *Registry[T]) GetProxy(primitiveID runtimev1.ObjectId) (T, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	proxy, ok := r.proxies[primitiveID]
 	return proxy, ok
 }
 
-func (r *Registry[T]) register(primitiveID runtimev1.PrimitiveId, proxy T) {
+func (r *Registry[T]) register(primitiveID runtimev1.ObjectId, proxy T) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.proxies[primitiveID] = proxy
 }
 
-func (r *Registry[T]) unregister(primitiveID runtimev1.PrimitiveId) (T, bool) {
+func (r *Registry[T]) unregister(primitiveID runtimev1.ObjectId) (T, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	var proxy T

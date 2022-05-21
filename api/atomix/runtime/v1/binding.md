@@ -100,6 +100,11 @@
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
+
+
 
 
 
@@ -112,7 +117,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
+| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
 
 
 
@@ -208,6 +213,11 @@
 
 ### UpdateBindingResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
 
 
 

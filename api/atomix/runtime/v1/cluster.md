@@ -83,6 +83,11 @@
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cluster | [Cluster](#atomix-runtime-v1-Cluster) |  |  |
+
+
 
 
 
@@ -95,7 +100,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
+| cluster | [Cluster](#atomix-runtime-v1-Cluster) |  |  |
 
 
 
@@ -191,6 +196,11 @@
 
 ### UpdateClusterResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cluster | [Cluster](#atomix-runtime-v1-Cluster) |  |  |
 
 
 
