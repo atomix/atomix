@@ -7,30 +7,32 @@ package v1
 import (
 	"context"
 	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
-	"github.com/atomix/runtime/api/atomix/topic/v1"
+	topicv1 "github.com/atomix/runtime/api/atomix/topic/v1"
 	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/primitive"
 	"google.golang.org/grpc"
 )
 
-var Primitive = primitive.New[Topic](clientFactory, func(server *grpc.Server, service *primitive.Service[Topic], registry *primitive.Registry[Topic]) {
-	v1.RegisterTopicManagerServer(server, newTopicV1ManagerServer(service))
-	v1.RegisterTopicServer(server, newTopicV1Server(registry))
-})
+const serviceName = "atomix.topic.v1.Topic"
 
-// clientFactory is the topic/v1 client factory
-var clientFactory = func(client driver.Client) (*primitive.Client[Topic], bool) {
+var Primitive = primitive.NewType[Topic](serviceName, resolve, register)
+
+func resolve(client driver.Client) (*primitive.Client[Topic], bool) {
 	if topicClient, ok := client.(TopicClient); ok {
 		return primitive.NewClient[Topic](topicClient.GetTopic), true
 	}
 	return nil, false
 }
 
+func register(server *grpc.Server, service *primitive.Service[Topic], registry *primitive.Registry[Topic]) {
+	topicv1.RegisterTopicServer(server, newTopicV1Server(registry))
+}
+
 type TopicClient interface {
-	GetTopic(ctx context.Context, primitiveID runtimev1.PrimitiveId) (Topic, error)
+	GetTopic(ctx context.Context, primitiveID runtimev1.ObjectId) (Topic, error)
 }
 
 type Topic interface {
 	primitive.Primitive
-	v1.TopicServer
+	topicv1.TopicServer
 }

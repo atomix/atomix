@@ -13,8 +13,9 @@ import (
 
 type Registrar[T Primitive] func(*grpc.Server, *Service[T], *Registry[T])
 
-func New[T Primitive](resolver ClientResolver[T], registrar Registrar[T]) Type {
+func NewType[T Primitive](name string, resolver ClientResolver[T], registrar Registrar[T]) Type {
 	return &primitiveType[T]{
+		name:      name,
 		resolver:  resolver,
 		registrar: registrar,
 		registry:  NewRegistry[T](),
@@ -22,17 +23,23 @@ func New[T Primitive](resolver ClientResolver[T], registrar Registrar[T]) Type {
 }
 
 type Type interface {
+	Name() string
 	Register(server *grpc.Server, connector Connector)
 }
 
 type primitiveType[T Primitive] struct {
+	name      string
 	resolver  ClientResolver[T]
 	registrar Registrar[T]
 	registry  *Registry[T]
 }
 
-func (a *primitiveType[T]) Register(server *grpc.Server, connector Connector) {
-	a.registrar(server, NewService[T](connector, a.resolver, a.registry), a.registry)
+func (t *primitiveType[T]) Name() string {
+	return t.name
+}
+
+func (t *primitiveType[T]) Register(server *grpc.Server, connector Connector) {
+	t.registrar(server, NewService[T](connector, t.resolver, t.registry), t.registry)
 }
 
 type Primitive interface {
@@ -41,7 +48,7 @@ type Primitive interface {
 
 type ClientResolver[T Primitive] func(client driver.Client) (*Client[T], bool)
 
-type Provider[T Primitive] func(ctx context.Context, primitiveID runtimev1.PrimitiveId) (T, error)
+type Provider[T Primitive] func(ctx context.Context, primitiveID runtimev1.ObjectId) (T, error)
 
 // NewClient creates a new client for the given primitive type
 func NewClient[T Primitive](provider Provider[T]) *Client[T] {
@@ -51,9 +58,9 @@ func NewClient[T Primitive](provider Provider[T]) *Client[T] {
 }
 
 type Client[T Primitive] struct {
-	provider func(ctx context.Context, primitiveID runtimev1.PrimitiveId) (T, error)
+	provider func(ctx context.Context, primitiveID runtimev1.ObjectId) (T, error)
 }
 
-func (c *Client[T]) GetPrimitive(ctx context.Context, primitiveID runtimev1.PrimitiveId) (T, error) {
+func (c *Client[T]) GetPrimitive(ctx context.Context, primitiveID runtimev1.ObjectId) (T, error) {
 	return c.provider(ctx, primitiveID)
 }

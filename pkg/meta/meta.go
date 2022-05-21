@@ -5,11 +5,11 @@
 package meta
 
 import (
-	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
+	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
 	"github.com/atomix/runtime/pkg/time"
 )
 
-func Equal(m1, m2 runtimev1.ObjectMeta) bool {
+func Equal(m1, m2 primitivev1.ObjectMeta) bool {
 	return FromProto(m1).Equal(FromProto(m2))
 }
 
@@ -28,7 +28,7 @@ func NewTimestamped(timestamp time.Timestamp) ObjectMeta {
 }
 
 // FromProto creates new object metadata from the given proto metadata
-func FromProto(meta runtimev1.ObjectMeta) ObjectMeta {
+func FromProto(meta primitivev1.ObjectMeta) ObjectMeta {
 	var revision Revision
 	if meta.Revision != 0 {
 		revision = Revision(meta.Revision)
@@ -40,7 +40,7 @@ func FromProto(meta runtimev1.ObjectMeta) ObjectMeta {
 	return ObjectMeta{
 		Revision:  revision,
 		Timestamp: timestamp,
-		Tombstone: meta.Type == runtimev1.ObjectMeta_TOMBSTONE,
+		Tombstone: meta.Type == primitivev1.ObjectMeta_TOMBSTONE,
 	}
 }
 
@@ -77,19 +77,19 @@ func (m ObjectMeta) Meta() ObjectMeta {
 }
 
 // Proto returns the metadata in Protobuf format
-func (m ObjectMeta) Proto() runtimev1.ObjectMeta {
-	meta := runtimev1.ObjectMeta{}
+func (m ObjectMeta) Proto() primitivev1.ObjectMeta {
+	meta := primitivev1.ObjectMeta{}
 	if m.Revision > 0 {
-		meta.Revision = runtimev1.Revision(m.Revision)
+		meta.Revision = primitivev1.Revision(m.Revision)
 	}
 	if m.Timestamp != nil {
 		timestamp := m.Timestamp.Scheme().Codec().EncodeTimestamp(m.Timestamp)
 		meta.Timestamp = &timestamp
 	}
 	if m.Tombstone {
-		meta.Type = runtimev1.ObjectMeta_TOMBSTONE
+		meta.Type = primitivev1.ObjectMeta_TOMBSTONE
 	} else {
-		meta.Type = runtimev1.ObjectMeta_OBJECT
+		meta.Type = primitivev1.ObjectMeta_OBJECT
 	}
 	return meta
 }

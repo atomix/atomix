@@ -5,7 +5,7 @@
 package time
 
 import (
-	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
+	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
 	"sync"
 )
 
@@ -203,25 +203,25 @@ type CompositeTimestampCodec struct {
 	codecs []Codec
 }
 
-func (c CompositeTimestampCodec) EncodeTimestamp(timestamp Timestamp) runtimev1.Timestamp {
+func (c CompositeTimestampCodec) EncodeTimestamp(timestamp Timestamp) primitivev1.Timestamp {
 	t, ok := timestamp.(CompositeTimestamp)
 	if !ok {
 		panic("expected CompositeTimestamp")
 	}
-	timestamps := make([]runtimev1.Timestamp, 0, len(t.Timestamps))
+	timestamps := make([]primitivev1.Timestamp, 0, len(t.Timestamps))
 	for _, timestamp := range t.Timestamps {
 		timestamps = append(timestamps, timestamp.Scheme().Codec().EncodeTimestamp(timestamp))
 	}
-	return runtimev1.Timestamp{
-		Timestamp: &runtimev1.Timestamp_CompositeTimestamp{
-			CompositeTimestamp: &runtimev1.CompositeTimestamp{
+	return primitivev1.Timestamp{
+		Timestamp: &primitivev1.Timestamp_CompositeTimestamp{
+			CompositeTimestamp: &primitivev1.CompositeTimestamp{
 				Timestamps: timestamps,
 			},
 		},
 	}
 }
 
-func (c CompositeTimestampCodec) DecodeTimestamp(timestamp runtimev1.Timestamp) (Timestamp, error) {
+func (c CompositeTimestampCodec) DecodeTimestamp(timestamp primitivev1.Timestamp) (Timestamp, error) {
 	timestamps := make([]Timestamp, 0, len(timestamp.GetCompositeTimestamp().Timestamps))
 	for _, timestamp := range timestamp.GetCompositeTimestamp().Timestamps {
 		timestamps = append(timestamps, NewTimestamp(timestamp))
