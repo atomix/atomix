@@ -5,6 +5,9 @@
 
 - [atomix/runtime/v1/binding.proto](#atomix_runtime_v1_binding-proto)
     - [Binding](#atomix-management-v1-Binding)
+    - [BindingId](#atomix-management-v1-BindingId)
+    - [BindingMeta](#atomix-management-v1-BindingMeta)
+    - [BindingMeta.LabelsEntry](#atomix-management-v1-BindingMeta-LabelsEntry)
     - [BindingSpec](#atomix-management-v1-BindingSpec)
     - [BindingSpec.SelectorEntry](#atomix-management-v1-BindingSpec-SelectorEntry)
     - [BindingStatus](#atomix-management-v1-BindingStatus)
@@ -40,9 +43,58 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [ObjectMeta](#atomix-management-v1-ObjectMeta) |  |  |
+| meta | [BindingMeta](#atomix-management-v1-BindingMeta) |  |  |
 | spec | [BindingSpec](#atomix-management-v1-BindingSpec) |  |  |
 | status | [BindingStatus](#atomix-management-v1-BindingStatus) |  |  |
+
+
+
+
+
+
+<a name="atomix-management-v1-BindingId"></a>
+
+### BindingId
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| namespace | [string](#string) |  |  |
+| name | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-management-v1-BindingMeta"></a>
+
+### BindingMeta
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [BindingId](#atomix-management-v1-BindingId) |  |  |
+| version | [uint64](#uint64) |  |  |
+| labels | [BindingMeta.LabelsEntry](#atomix-management-v1-BindingMeta-LabelsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-management-v1-BindingMeta-LabelsEntry"></a>
+
+### BindingMeta.LabelsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
 
 
 
@@ -57,7 +109,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster_id | [ObjectId](#atomix-management-v1-ObjectId) |  |  |
+| cluster_id | [ClusterId](#atomix-management-v1-ClusterId) |  |  |
 | selector | [BindingSpec.SelectorEntry](#atomix-management-v1-BindingSpec-SelectorEntry) | repeated |  |
 
 
@@ -85,11 +137,6 @@
 
 ### BindingStatus
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| proxies | [ObjectId](#atomix-management-v1-ObjectId) | repeated |  |
 
 
 
@@ -159,7 +206,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding_id | [ObjectId](#atomix-management-v1-ObjectId) |  |  |
+| binding_id | [BindingId](#atomix-management-v1-BindingId) |  |  |
 
 
 

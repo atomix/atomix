@@ -27,17 +27,129 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+type ProxyId struct {
+	Namespace string `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Name      string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+}
+
+func (m *ProxyId) Reset()         { *m = ProxyId{} }
+func (m *ProxyId) String() string { return proto.CompactTextString(m) }
+func (*ProxyId) ProtoMessage()    {}
+func (*ProxyId) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2e3b2cb01e4d98b4, []int{0}
+}
+func (m *ProxyId) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ProxyId) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ProxyId.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ProxyId) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProxyId.Merge(m, src)
+}
+func (m *ProxyId) XXX_Size() int {
+	return m.Size()
+}
+func (m *ProxyId) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProxyId.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProxyId proto.InternalMessageInfo
+
+func (m *ProxyId) GetNamespace() string {
+	if m != nil {
+		return m.Namespace
+	}
+	return ""
+}
+
+func (m *ProxyId) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+type ProxyMeta struct {
+	ID      ProxyId           `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
+	Version ObjectVersion     `protobuf:"varint,2,opt,name=version,proto3,casttype=ObjectVersion" json:"version,omitempty"`
+	Labels  map[string]string `protobuf:"bytes,3,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+}
+
+func (m *ProxyMeta) Reset()         { *m = ProxyMeta{} }
+func (m *ProxyMeta) String() string { return proto.CompactTextString(m) }
+func (*ProxyMeta) ProtoMessage()    {}
+func (*ProxyMeta) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2e3b2cb01e4d98b4, []int{1}
+}
+func (m *ProxyMeta) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ProxyMeta) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ProxyMeta.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ProxyMeta) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProxyMeta.Merge(m, src)
+}
+func (m *ProxyMeta) XXX_Size() int {
+	return m.Size()
+}
+func (m *ProxyMeta) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProxyMeta.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProxyMeta proto.InternalMessageInfo
+
+func (m *ProxyMeta) GetID() ProxyId {
+	if m != nil {
+		return m.ID
+	}
+	return ProxyId{}
+}
+
+func (m *ProxyMeta) GetVersion() ObjectVersion {
+	if m != nil {
+		return m.Version
+	}
+	return 0
+}
+
+func (m *ProxyMeta) GetLabels() map[string]string {
+	if m != nil {
+		return m.Labels
+	}
+	return nil
+}
+
 type Proxy struct {
-	ObjectMeta `protobuf:"bytes,1,opt,name=meta,proto3,embedded=meta" json:"meta"`
-	Spec       ProxySpec   `protobuf:"bytes,2,opt,name=spec,proto3" json:"spec"`
-	Status     ProxyStatus `protobuf:"bytes,3,opt,name=status,proto3" json:"status"`
+	ProxyMeta `protobuf:"bytes,1,opt,name=meta,proto3,embedded=meta" json:"meta"`
+	Spec      ProxySpec   `protobuf:"bytes,2,opt,name=spec,proto3" json:"spec"`
+	Status    ProxyStatus `protobuf:"bytes,3,opt,name=status,proto3" json:"status"`
 }
 
 func (m *Proxy) Reset()         { *m = Proxy{} }
 func (m *Proxy) String() string { return proto.CompactTextString(m) }
 func (*Proxy) ProtoMessage()    {}
 func (*Proxy) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2e3b2cb01e4d98b4, []int{0}
+	return fileDescriptor_2e3b2cb01e4d98b4, []int{2}
 }
 func (m *Proxy) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -88,7 +200,7 @@ func (m *ProxySpec) Reset()         { *m = ProxySpec{} }
 func (m *ProxySpec) String() string { return proto.CompactTextString(m) }
 func (*ProxySpec) ProtoMessage()    {}
 func (*ProxySpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2e3b2cb01e4d98b4, []int{1}
+	return fileDescriptor_2e3b2cb01e4d98b4, []int{3}
 }
 func (m *ProxySpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -125,14 +237,14 @@ func (m *ProxySpec) GetType() string {
 }
 
 type ProxyStatus struct {
-	Binding *ObjectId `protobuf:"bytes,1,opt,name=binding,proto3" json:"binding,omitempty"`
+	Binding *BindingId `protobuf:"bytes,1,opt,name=binding,proto3" json:"binding,omitempty"`
 }
 
 func (m *ProxyStatus) Reset()         { *m = ProxyStatus{} }
 func (m *ProxyStatus) String() string { return proto.CompactTextString(m) }
 func (*ProxyStatus) ProtoMessage()    {}
 func (*ProxyStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2e3b2cb01e4d98b4, []int{2}
+	return fileDescriptor_2e3b2cb01e4d98b4, []int{4}
 }
 func (m *ProxyStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -161,7 +273,7 @@ func (m *ProxyStatus) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ProxyStatus proto.InternalMessageInfo
 
-func (m *ProxyStatus) GetBinding() *ObjectId {
+func (m *ProxyStatus) GetBinding() *BindingId {
 	if m != nil {
 		return m.Binding
 	}
@@ -169,14 +281,14 @@ func (m *ProxyStatus) GetBinding() *ObjectId {
 }
 
 type GetProxyRequest struct {
-	ProxyID ObjectId `protobuf:"bytes,1,opt,name=proxy_id,json=proxyId,proto3" json:"proxy_id"`
+	ProxyID ProxyId `protobuf:"bytes,1,opt,name=proxy_id,json=proxyId,proto3" json:"proxy_id"`
 }
 
 func (m *GetProxyRequest) Reset()         { *m = GetProxyRequest{} }
 func (m *GetProxyRequest) String() string { return proto.CompactTextString(m) }
 func (*GetProxyRequest) ProtoMessage()    {}
 func (*GetProxyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2e3b2cb01e4d98b4, []int{3}
+	return fileDescriptor_2e3b2cb01e4d98b4, []int{5}
 }
 func (m *GetProxyRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -205,11 +317,11 @@ func (m *GetProxyRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetProxyRequest proto.InternalMessageInfo
 
-func (m *GetProxyRequest) GetProxyID() ObjectId {
+func (m *GetProxyRequest) GetProxyID() ProxyId {
 	if m != nil {
 		return m.ProxyID
 	}
-	return ObjectId{}
+	return ProxyId{}
 }
 
 type GetProxyResponse struct {
@@ -220,7 +332,7 @@ func (m *GetProxyResponse) Reset()         { *m = GetProxyResponse{} }
 func (m *GetProxyResponse) String() string { return proto.CompactTextString(m) }
 func (*GetProxyResponse) ProtoMessage()    {}
 func (*GetProxyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2e3b2cb01e4d98b4, []int{4}
+	return fileDescriptor_2e3b2cb01e4d98b4, []int{6}
 }
 func (m *GetProxyResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -265,7 +377,7 @@ func (m *ListProxiesRequest) Reset()         { *m = ListProxiesRequest{} }
 func (m *ListProxiesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListProxiesRequest) ProtoMessage()    {}
 func (*ListProxiesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2e3b2cb01e4d98b4, []int{5}
+	return fileDescriptor_2e3b2cb01e4d98b4, []int{7}
 }
 func (m *ListProxiesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -316,7 +428,7 @@ func (m *ListProxiesResponse) Reset()         { *m = ListProxiesResponse{} }
 func (m *ListProxiesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListProxiesResponse) ProtoMessage()    {}
 func (*ListProxiesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2e3b2cb01e4d98b4, []int{6}
+	return fileDescriptor_2e3b2cb01e4d98b4, []int{8}
 }
 func (m *ListProxiesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -353,6 +465,9 @@ func (m *ListProxiesResponse) GetProxies() []*Proxy {
 }
 
 func init() {
+	proto.RegisterType((*ProxyId)(nil), "atomix.management.v1.ProxyId")
+	proto.RegisterType((*ProxyMeta)(nil), "atomix.management.v1.ProxyMeta")
+	proto.RegisterMapType((map[string]string)(nil), "atomix.management.v1.ProxyMeta.LabelsEntry")
 	proto.RegisterType((*Proxy)(nil), "atomix.management.v1.Proxy")
 	proto.RegisterType((*ProxySpec)(nil), "atomix.management.v1.ProxySpec")
 	proto.RegisterType((*ProxyStatus)(nil), "atomix.management.v1.ProxyStatus")
@@ -365,35 +480,72 @@ func init() {
 func init() { proto.RegisterFile("atomix/runtime/v1/proxy.proto", fileDescriptor_2e3b2cb01e4d98b4) }
 
 var fileDescriptor_2e3b2cb01e4d98b4 = []byte{
-	// 446 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x93, 0x41, 0x8b, 0xd3, 0x40,
-	0x14, 0xc7, 0x3b, 0x6e, 0xbb, 0xed, 0xbe, 0x0a, 0x2b, 0x63, 0x0f, 0xa1, 0xe2, 0xa4, 0x06, 0x94,
-	0xf5, 0x92, 0xd2, 0x15, 0x41, 0x2f, 0x2b, 0x14, 0x65, 0xa9, 0xac, 0x28, 0xe3, 0xc9, 0x83, 0x48,
-	0x9a, 0x3e, 0xea, 0x08, 0xc9, 0xc4, 0xcc, 0xb4, 0xee, 0x7e, 0x0b, 0xbf, 0x93, 0x97, 0xbd, 0x08,
-	0x3d, 0x7a, 0x2a, 0x92, 0x7e, 0x11, 0xc9, 0x4b, 0xa2, 0xeb, 0x6e, 0xe8, 0xee, 0xed, 0x25, 0xf3,
-	0xff, 0xfd, 0xdf, 0xff, 0xbd, 0x61, 0xe0, 0x7e, 0x60, 0x75, 0xa4, 0x4e, 0x87, 0xe9, 0x22, 0xb6,
-	0x2a, 0xc2, 0xe1, 0x72, 0x34, 0x4c, 0x52, 0x7d, 0x7a, 0xe6, 0x27, 0xa9, 0xb6, 0x9a, 0xf7, 0x8a,
-	0x63, 0x3f, 0x0a, 0xe2, 0x60, 0x8e, 0x11, 0xc6, 0xd6, 0x5f, 0x8e, 0xfa, 0xe2, 0x2a, 0xa4, 0xa7,
-	0x5f, 0x30, 0xb4, 0x05, 0xd5, 0xef, 0xcd, 0xf5, 0x5c, 0x53, 0x39, 0xcc, 0xab, 0xe2, 0xaf, 0xf7,
-	0x83, 0x41, 0xeb, 0x5d, 0xee, 0xcd, 0x8f, 0xa0, 0x19, 0xa1, 0x0d, 0x1c, 0x36, 0x60, 0x07, 0xdd,
-	0xc3, 0x81, 0x5f, 0xd7, 0xc4, 0x7f, 0x4b, 0x8e, 0x6f, 0xd0, 0x06, 0xe3, 0xce, 0xf9, 0xda, 0x6d,
-	0xac, 0xd6, 0x2e, 0x93, 0xc4, 0xf1, 0xe7, 0xd0, 0x34, 0x09, 0x86, 0xce, 0x2d, 0xe2, 0xdd, 0x7a,
-	0x9e, 0x5a, 0xbd, 0x4f, 0x30, 0x1c, 0x37, 0x73, 0x5c, 0x12, 0xc2, 0x5f, 0xc0, 0xae, 0xb1, 0x81,
-	0x5d, 0x18, 0x67, 0x87, 0xe0, 0x07, 0xdb, 0x60, 0x12, 0x96, 0x78, 0x89, 0x79, 0x2e, 0xec, 0xfd,
-	0x75, 0xe6, 0x1c, 0x9a, 0xf6, 0x2c, 0x41, 0x1a, 0x64, 0x4f, 0x52, 0xed, 0x1d, 0x43, 0xf7, 0x02,
-	0xcd, 0x9f, 0x41, 0x7b, 0xaa, 0xe2, 0x99, 0x8a, 0xe7, 0xe5, 0xb8, 0x62, 0xdb, 0xb8, 0x93, 0x99,
-	0xac, 0xe4, 0xde, 0x47, 0xd8, 0x3f, 0x46, 0x4b, 0x5e, 0x12, 0xbf, 0x2e, 0xd0, 0x58, 0xfe, 0x1a,
-	0x3a, 0x74, 0x3b, 0x9f, 0xd4, 0xec, 0x66, 0x6e, 0xe3, 0xfd, 0x3c, 0x7c, 0xb6, 0x76, 0xdb, 0xe4,
-	0x33, 0x79, 0x29, 0xdb, 0x64, 0x30, 0x99, 0x79, 0xaf, 0xe0, 0xce, 0x3f, 0x7b, 0x93, 0xe8, 0xd8,
-	0x20, 0x1f, 0x41, 0x8b, 0x8e, 0x4b, 0xf3, 0x7b, 0x5b, 0x96, 0x23, 0x0b, 0xa5, 0x77, 0x04, 0xfc,
-	0x44, 0x19, 0xf2, 0x51, 0x68, 0xaa, 0xa0, 0x35, 0x8b, 0xe1, 0x3d, 0x68, 0x7d, 0x0b, 0x6c, 0xf8,
-	0x99, 0xae, 0xad, 0x23, 0x8b, 0x0f, 0xef, 0x04, 0xee, 0xfe, 0xc7, 0x97, 0x49, 0x9e, 0x02, 0x05,
-	0x55, 0x68, 0x1c, 0x36, 0xd8, 0xb9, 0x2e, 0x4b, 0xa5, 0x3d, 0xfc, 0xc9, 0xe0, 0x76, 0xb1, 0x7d,
-	0x4c, 0x97, 0x2a, 0x44, 0xfe, 0x01, 0x3a, 0xd5, 0x94, 0xfc, 0x61, 0xbd, 0xc5, 0xa5, 0x25, 0xf7,
-	0x1f, 0x5d, 0x27, 0x2b, 0x23, 0x4e, 0xa1, 0x7b, 0x21, 0x39, 0x3f, 0xa8, 0xc7, 0xae, 0x2e, 0xa7,
-	0xff, 0xf8, 0x06, 0xca, 0xa2, 0xc7, 0xd8, 0x39, 0xcf, 0x04, 0x5b, 0x65, 0x82, 0xfd, 0xce, 0x04,
-	0xfb, 0xbe, 0x11, 0x8d, 0xd5, 0x46, 0x34, 0x7e, 0x6d, 0x44, 0x63, 0xba, 0x4b, 0x8f, 0xea, 0xc9,
-	0x9f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x0a, 0xbe, 0xea, 0x91, 0xc1, 0x03, 0x00, 0x00,
+	// 582 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0x4d, 0x8b, 0xd3, 0x5c,
+	0x14, 0xee, 0x6d, 0xd3, 0xaf, 0xd3, 0xf7, 0x65, 0xc6, 0x6b, 0x17, 0xa5, 0x3a, 0xc9, 0x18, 0x50,
+	0x2a, 0x03, 0x29, 0xad, 0x08, 0x76, 0x40, 0xc5, 0x38, 0x83, 0x16, 0x2a, 0x4a, 0x04, 0x41, 0x10,
+	0x24, 0x4d, 0x2f, 0x35, 0xda, 0x7c, 0x98, 0x7b, 0x5b, 0xa7, 0xff, 0xc2, 0x9f, 0xe0, 0x6f, 0x71,
+	0x35, 0x1b, 0xa1, 0x4b, 0x57, 0x45, 0xda, 0x8d, 0x7b, 0x77, 0xae, 0xe4, 0x7e, 0x84, 0xa9, 0x4e,
+	0xc9, 0xcc, 0xee, 0xe4, 0x9e, 0xe7, 0x79, 0xce, 0x73, 0x3e, 0x08, 0xec, 0xb9, 0x2c, 0x0a, 0xfc,
+	0x93, 0x76, 0x32, 0x0d, 0x99, 0x1f, 0x90, 0xf6, 0xac, 0xd3, 0x8e, 0x93, 0xe8, 0x64, 0x6e, 0xc5,
+	0x49, 0xc4, 0x22, 0x5c, 0x97, 0x69, 0x2b, 0x70, 0x43, 0x77, 0x4c, 0x02, 0x12, 0x32, 0x6b, 0xd6,
+	0x69, 0x1a, 0xe7, 0x49, 0x43, 0x3f, 0x1c, 0xf9, 0xe1, 0x58, 0xd2, 0x9a, 0xf5, 0x71, 0x34, 0x8e,
+	0x44, 0xd8, 0xe6, 0x91, 0x7c, 0x35, 0x1f, 0x41, 0xf9, 0x05, 0xd7, 0xee, 0x8f, 0xf0, 0x75, 0xa8,
+	0x86, 0x6e, 0x40, 0x68, 0xec, 0x7a, 0xa4, 0x81, 0xf6, 0x51, 0xab, 0xea, 0x9c, 0x3d, 0x60, 0x0c,
+	0x1a, 0xff, 0x68, 0xe4, 0x45, 0x42, 0xc4, 0x87, 0xda, 0xcf, 0x2f, 0x06, 0x32, 0x7f, 0x21, 0xa8,
+	0x0a, 0x8d, 0x67, 0x84, 0xb9, 0xb8, 0x07, 0x79, 0x7f, 0x24, 0xe8, 0xb5, 0xee, 0x9e, 0xb5, 0xcd,
+	0xaa, 0xa5, 0x0a, 0xda, 0x70, 0xba, 0x34, 0x72, 0xab, 0xa5, 0x91, 0xef, 0x1f, 0x39, 0x79, 0x7f,
+	0x84, 0x0f, 0xa0, 0x3c, 0x23, 0x09, 0xf5, 0xa3, 0x50, 0x54, 0xd1, 0xec, 0x2b, 0xbf, 0x97, 0xc6,
+	0xff, 0xcf, 0x87, 0xef, 0x89, 0xc7, 0x5e, 0xc9, 0x84, 0x93, 0x22, 0xf0, 0x63, 0x28, 0x4d, 0xdc,
+	0x21, 0x99, 0xd0, 0x46, 0x61, 0xbf, 0xd0, 0xaa, 0x75, 0x0f, 0x32, 0x6a, 0x71, 0x63, 0xd6, 0x40,
+	0xa0, 0x8f, 0x43, 0x96, 0xcc, 0x1d, 0x45, 0x6d, 0xf6, 0xa0, 0xb6, 0xf1, 0x8c, 0x77, 0xa1, 0xf0,
+	0x81, 0xcc, 0x55, 0xef, 0x3c, 0xc4, 0x75, 0x28, 0xce, 0xdc, 0xc9, 0x34, 0x6d, 0x5b, 0x7e, 0x1c,
+	0xe6, 0xef, 0x21, 0xf3, 0x2b, 0x82, 0xa2, 0x10, 0xc7, 0xf7, 0x41, 0x0b, 0x08, 0x73, 0x55, 0xcf,
+	0xc6, 0x05, 0x3e, 0xec, 0x0a, 0xef, 0x7a, 0xb1, 0x34, 0x90, 0x23, 0x68, 0xb8, 0x07, 0x1a, 0x8d,
+	0x89, 0x27, 0x2a, 0x64, 0xd3, 0x5f, 0xc6, 0xc4, 0xb3, 0x35, 0x4e, 0x77, 0x04, 0x05, 0x3f, 0x84,
+	0x12, 0x65, 0x2e, 0x9b, 0xf2, 0x19, 0x70, 0xf2, 0x8d, 0x2c, 0xb2, 0x00, 0x2a, 0xba, 0xa2, 0x99,
+	0x86, 0xda, 0x1c, 0x57, 0xe6, 0x1b, 0x66, 0xf3, 0x38, 0x5d, 0xbd, 0x88, 0xcd, 0xa7, 0x50, 0xdb,
+	0x60, 0xe3, 0x1e, 0x94, 0xd5, 0x51, 0x65, 0x77, 0x6b, 0x4b, 0x50, 0x7f, 0xe4, 0xa4, 0x78, 0xf3,
+	0x0d, 0xec, 0x3c, 0x21, 0x4c, 0x88, 0x39, 0xe4, 0xe3, 0x94, 0x50, 0x86, 0xfb, 0x50, 0x11, 0x77,
+	0xfd, 0xf6, 0xb2, 0x07, 0xb3, 0xa3, 0x0e, 0x46, 0x9d, 0xec, 0x91, 0x53, 0x8e, 0x65, 0xc6, 0x3c,
+	0x86, 0xdd, 0x33, 0x75, 0x1a, 0x47, 0x21, 0x25, 0xb8, 0x03, 0x45, 0x91, 0x56, 0xda, 0xd7, 0x32,
+	0xb4, 0x1d, 0x89, 0x34, 0x1f, 0x00, 0x1e, 0xf8, 0x54, 0xe8, 0xf8, 0x84, 0xa6, 0x3e, 0xb7, 0x0c,
+	0x86, 0x1f, 0xc6, 0x27, 0x97, 0x79, 0xef, 0xc4, 0xda, 0x2a, 0x8e, 0xfc, 0x30, 0x07, 0x70, 0xf5,
+	0x2f, 0xbe, 0x72, 0x72, 0x17, 0x84, 0x51, 0x9f, 0xd0, 0x06, 0x12, 0xc7, 0x9a, 0xe9, 0x25, 0xc5,
+	0x76, 0xbf, 0x21, 0xf8, 0x4f, 0x4e, 0x9f, 0x24, 0x33, 0xdf, 0x23, 0xf8, 0x35, 0x54, 0xd2, 0x2e,
+	0xf1, 0xcd, 0xed, 0x12, 0xff, 0xcc, 0xb8, 0x79, 0xeb, 0x22, 0x98, 0xb2, 0x38, 0x84, 0xda, 0x86,
+	0x73, 0xdc, 0xda, 0x4e, 0x3b, 0x3f, 0x9c, 0xe6, 0xed, 0x4b, 0x20, 0x65, 0x0d, 0xbb, 0x71, 0xba,
+	0xd2, 0xd1, 0x62, 0xa5, 0xa3, 0x1f, 0x2b, 0x1d, 0x7d, 0x5e, 0xeb, 0xb9, 0xc5, 0x5a, 0xcf, 0x7d,
+	0x5f, 0xeb, 0xb9, 0x61, 0x49, 0xfc, 0x8c, 0xee, 0xfc, 0x09, 0x00, 0x00, 0xff, 0xff, 0x8c, 0xce,
+	0xef, 0xa3, 0xfa, 0x04, 0x00, 0x00,
+}
+
+func (this *ProxyId) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*ProxyId)
+	if !ok {
+		that2, ok := that.(ProxyId)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Namespace != that1.Namespace {
+		return false
+	}
+	if this.Name != that1.Name {
+		return false
+	}
+	return true
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -512,6 +664,100 @@ var _ProxyService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "atomix/runtime/v1/proxy.proto",
 }
 
+func (m *ProxyId) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ProxyId) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ProxyId) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintProxy(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Namespace) > 0 {
+		i -= len(m.Namespace)
+		copy(dAtA[i:], m.Namespace)
+		i = encodeVarintProxy(dAtA, i, uint64(len(m.Namespace)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ProxyMeta) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ProxyMeta) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ProxyMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Labels) > 0 {
+		for k := range m.Labels {
+			v := m.Labels[k]
+			baseI := i
+			i -= len(v)
+			copy(dAtA[i:], v)
+			i = encodeVarintProxy(dAtA, i, uint64(len(v)))
+			i--
+			dAtA[i] = 0x12
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintProxy(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintProxy(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if m.Version != 0 {
+		i = encodeVarintProxy(dAtA, i, uint64(m.Version))
+		i--
+		dAtA[i] = 0x10
+	}
+	{
+		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintProxy(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
 func (m *Proxy) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -553,7 +799,7 @@ func (m *Proxy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i--
 	dAtA[i] = 0x12
 	{
-		size, err := m.ObjectMeta.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.ProxyMeta.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -786,13 +1032,52 @@ func encodeVarintProxy(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *ProxyId) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Namespace)
+	if l > 0 {
+		n += 1 + l + sovProxy(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovProxy(uint64(l))
+	}
+	return n
+}
+
+func (m *ProxyMeta) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ID.Size()
+	n += 1 + l + sovProxy(uint64(l))
+	if m.Version != 0 {
+		n += 1 + sovProxy(uint64(m.Version))
+	}
+	if len(m.Labels) > 0 {
+		for k, v := range m.Labels {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovProxy(uint64(len(k))) + 1 + len(v) + sovProxy(uint64(len(v)))
+			n += mapEntrySize + 1 + sovProxy(uint64(mapEntrySize))
+		}
+	}
+	return n
+}
+
 func (m *Proxy) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.ObjectMeta.Size()
+	l = m.ProxyMeta.Size()
 	n += 1 + l + sovProxy(uint64(l))
 	l = m.Spec.Size()
 	n += 1 + l + sovProxy(uint64(l))
@@ -888,6 +1173,349 @@ func sovProxy(x uint64) (n int) {
 func sozProxy(x uint64) (n int) {
 	return sovProxy(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
+func (m *ProxyId) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowProxy
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ProxyId: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ProxyId: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProxy
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthProxy
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthProxy
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Namespace = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProxy
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthProxy
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthProxy
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipProxy(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthProxy
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ProxyMeta) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowProxy
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ProxyMeta: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ProxyMeta: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProxy
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthProxy
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthProxy
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			m.Version = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProxy
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Version |= ObjectVersion(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Labels", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProxy
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthProxy
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthProxy
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Labels == nil {
+				m.Labels = make(map[string]string)
+			}
+			var mapkey string
+			var mapvalue string
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowProxy
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowProxy
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthProxy
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthProxy
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var stringLenmapvalue uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowProxy
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapvalue |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapvalue := int(stringLenmapvalue)
+					if intStringLenmapvalue < 0 {
+						return ErrInvalidLengthProxy
+					}
+					postStringIndexmapvalue := iNdEx + intStringLenmapvalue
+					if postStringIndexmapvalue < 0 {
+						return ErrInvalidLengthProxy
+					}
+					if postStringIndexmapvalue > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = string(dAtA[iNdEx:postStringIndexmapvalue])
+					iNdEx = postStringIndexmapvalue
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipProxy(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthProxy
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.Labels[mapkey] = mapvalue
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipProxy(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthProxy
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *Proxy) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -919,7 +1547,7 @@ func (m *Proxy) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ObjectMeta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ProxyMeta", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -946,7 +1574,7 @@ func (m *Proxy) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ObjectMeta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ProxyMeta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1178,7 +1806,7 @@ func (m *ProxyStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Binding == nil {
-				m.Binding = &ObjectId{}
+				m.Binding = &BindingId{}
 			}
 			if err := m.Binding.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

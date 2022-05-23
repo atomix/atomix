@@ -27,17 +27,129 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+type BindingId struct {
+	Namespace string `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Name      string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+}
+
+func (m *BindingId) Reset()         { *m = BindingId{} }
+func (m *BindingId) String() string { return proto.CompactTextString(m) }
+func (*BindingId) ProtoMessage()    {}
+func (*BindingId) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c6c6f31e381d250, []int{0}
+}
+func (m *BindingId) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *BindingId) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_BindingId.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *BindingId) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BindingId.Merge(m, src)
+}
+func (m *BindingId) XXX_Size() int {
+	return m.Size()
+}
+func (m *BindingId) XXX_DiscardUnknown() {
+	xxx_messageInfo_BindingId.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BindingId proto.InternalMessageInfo
+
+func (m *BindingId) GetNamespace() string {
+	if m != nil {
+		return m.Namespace
+	}
+	return ""
+}
+
+func (m *BindingId) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+type BindingMeta struct {
+	ID      BindingId         `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
+	Version ObjectVersion     `protobuf:"varint,2,opt,name=version,proto3,casttype=ObjectVersion" json:"version,omitempty"`
+	Labels  map[string]string `protobuf:"bytes,3,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+}
+
+func (m *BindingMeta) Reset()         { *m = BindingMeta{} }
+func (m *BindingMeta) String() string { return proto.CompactTextString(m) }
+func (*BindingMeta) ProtoMessage()    {}
+func (*BindingMeta) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6c6c6f31e381d250, []int{1}
+}
+func (m *BindingMeta) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *BindingMeta) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_BindingMeta.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *BindingMeta) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BindingMeta.Merge(m, src)
+}
+func (m *BindingMeta) XXX_Size() int {
+	return m.Size()
+}
+func (m *BindingMeta) XXX_DiscardUnknown() {
+	xxx_messageInfo_BindingMeta.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BindingMeta proto.InternalMessageInfo
+
+func (m *BindingMeta) GetID() BindingId {
+	if m != nil {
+		return m.ID
+	}
+	return BindingId{}
+}
+
+func (m *BindingMeta) GetVersion() ObjectVersion {
+	if m != nil {
+		return m.Version
+	}
+	return 0
+}
+
+func (m *BindingMeta) GetLabels() map[string]string {
+	if m != nil {
+		return m.Labels
+	}
+	return nil
+}
+
 type Binding struct {
-	ObjectMeta `protobuf:"bytes,1,opt,name=meta,proto3,embedded=meta" json:"meta"`
-	Spec       BindingSpec   `protobuf:"bytes,2,opt,name=spec,proto3" json:"spec"`
-	Status     BindingStatus `protobuf:"bytes,3,opt,name=status,proto3" json:"status"`
+	BindingMeta `protobuf:"bytes,1,opt,name=meta,proto3,embedded=meta" json:"meta"`
+	Spec        BindingSpec   `protobuf:"bytes,2,opt,name=spec,proto3" json:"spec"`
+	Status      BindingStatus `protobuf:"bytes,3,opt,name=status,proto3" json:"status"`
 }
 
 func (m *Binding) Reset()         { *m = Binding{} }
 func (m *Binding) String() string { return proto.CompactTextString(m) }
 func (*Binding) ProtoMessage()    {}
 func (*Binding) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{0}
+	return fileDescriptor_6c6c6f31e381d250, []int{2}
 }
 func (m *Binding) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -81,7 +193,7 @@ func (m *Binding) GetStatus() BindingStatus {
 }
 
 type BindingSpec struct {
-	ClusterID ObjectId          `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id"`
+	ClusterID ClusterId         `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id"`
 	Selector  map[string]string `protobuf:"bytes,2,rep,name=selector,proto3" json:"selector,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -89,7 +201,7 @@ func (m *BindingSpec) Reset()         { *m = BindingSpec{} }
 func (m *BindingSpec) String() string { return proto.CompactTextString(m) }
 func (*BindingSpec) ProtoMessage()    {}
 func (*BindingSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{1}
+	return fileDescriptor_6c6c6f31e381d250, []int{3}
 }
 func (m *BindingSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -118,11 +230,11 @@ func (m *BindingSpec) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_BindingSpec proto.InternalMessageInfo
 
-func (m *BindingSpec) GetClusterID() ObjectId {
+func (m *BindingSpec) GetClusterID() ClusterId {
 	if m != nil {
 		return m.ClusterID
 	}
-	return ObjectId{}
+	return ClusterId{}
 }
 
 func (m *BindingSpec) GetSelector() map[string]string {
@@ -133,14 +245,13 @@ func (m *BindingSpec) GetSelector() map[string]string {
 }
 
 type BindingStatus struct {
-	Proxies []ObjectId `protobuf:"bytes,1,rep,name=proxies,proto3" json:"proxies"`
 }
 
 func (m *BindingStatus) Reset()         { *m = BindingStatus{} }
 func (m *BindingStatus) String() string { return proto.CompactTextString(m) }
 func (*BindingStatus) ProtoMessage()    {}
 func (*BindingStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{2}
+	return fileDescriptor_6c6c6f31e381d250, []int{4}
 }
 func (m *BindingStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -169,22 +280,15 @@ func (m *BindingStatus) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_BindingStatus proto.InternalMessageInfo
 
-func (m *BindingStatus) GetProxies() []ObjectId {
-	if m != nil {
-		return m.Proxies
-	}
-	return nil
-}
-
 type GetBindingRequest struct {
-	BindingID ObjectId `protobuf:"bytes,1,opt,name=binding_id,json=bindingId,proto3" json:"binding_id"`
+	BindingID BindingId `protobuf:"bytes,1,opt,name=binding_id,json=bindingId,proto3" json:"binding_id"`
 }
 
 func (m *GetBindingRequest) Reset()         { *m = GetBindingRequest{} }
 func (m *GetBindingRequest) String() string { return proto.CompactTextString(m) }
 func (*GetBindingRequest) ProtoMessage()    {}
 func (*GetBindingRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{3}
+	return fileDescriptor_6c6c6f31e381d250, []int{5}
 }
 func (m *GetBindingRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -213,11 +317,11 @@ func (m *GetBindingRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetBindingRequest proto.InternalMessageInfo
 
-func (m *GetBindingRequest) GetBindingID() ObjectId {
+func (m *GetBindingRequest) GetBindingID() BindingId {
 	if m != nil {
 		return m.BindingID
 	}
-	return ObjectId{}
+	return BindingId{}
 }
 
 type GetBindingResponse struct {
@@ -228,7 +332,7 @@ func (m *GetBindingResponse) Reset()         { *m = GetBindingResponse{} }
 func (m *GetBindingResponse) String() string { return proto.CompactTextString(m) }
 func (*GetBindingResponse) ProtoMessage()    {}
 func (*GetBindingResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{4}
+	return fileDescriptor_6c6c6f31e381d250, []int{6}
 }
 func (m *GetBindingResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -272,7 +376,7 @@ func (m *ListBindingsRequest) Reset()         { *m = ListBindingsRequest{} }
 func (m *ListBindingsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListBindingsRequest) ProtoMessage()    {}
 func (*ListBindingsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{5}
+	return fileDescriptor_6c6c6f31e381d250, []int{7}
 }
 func (m *ListBindingsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -316,7 +420,7 @@ func (m *ListBindingsResponse) Reset()         { *m = ListBindingsResponse{} }
 func (m *ListBindingsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListBindingsResponse) ProtoMessage()    {}
 func (*ListBindingsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{6}
+	return fileDescriptor_6c6c6f31e381d250, []int{8}
 }
 func (m *ListBindingsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -360,7 +464,7 @@ func (m *CreateBindingRequest) Reset()         { *m = CreateBindingRequest{} }
 func (m *CreateBindingRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateBindingRequest) ProtoMessage()    {}
 func (*CreateBindingRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{7}
+	return fileDescriptor_6c6c6f31e381d250, []int{9}
 }
 func (m *CreateBindingRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -404,7 +508,7 @@ func (m *CreateBindingResponse) Reset()         { *m = CreateBindingResponse{} }
 func (m *CreateBindingResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateBindingResponse) ProtoMessage()    {}
 func (*CreateBindingResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{8}
+	return fileDescriptor_6c6c6f31e381d250, []int{10}
 }
 func (m *CreateBindingResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -448,7 +552,7 @@ func (m *UpdateBindingRequest) Reset()         { *m = UpdateBindingRequest{} }
 func (m *UpdateBindingRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateBindingRequest) ProtoMessage()    {}
 func (*UpdateBindingRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{9}
+	return fileDescriptor_6c6c6f31e381d250, []int{11}
 }
 func (m *UpdateBindingRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -492,7 +596,7 @@ func (m *UpdateBindingResponse) Reset()         { *m = UpdateBindingResponse{} }
 func (m *UpdateBindingResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateBindingResponse) ProtoMessage()    {}
 func (*UpdateBindingResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{10}
+	return fileDescriptor_6c6c6f31e381d250, []int{12}
 }
 func (m *UpdateBindingResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -536,7 +640,7 @@ func (m *DeleteBindingRequest) Reset()         { *m = DeleteBindingRequest{} }
 func (m *DeleteBindingRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteBindingRequest) ProtoMessage()    {}
 func (*DeleteBindingRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{11}
+	return fileDescriptor_6c6c6f31e381d250, []int{13}
 }
 func (m *DeleteBindingRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -579,7 +683,7 @@ func (m *DeleteBindingResponse) Reset()         { *m = DeleteBindingResponse{} }
 func (m *DeleteBindingResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteBindingResponse) ProtoMessage()    {}
 func (*DeleteBindingResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6c6c6f31e381d250, []int{12}
+	return fileDescriptor_6c6c6f31e381d250, []int{14}
 }
 func (m *DeleteBindingResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -609,6 +713,9 @@ func (m *DeleteBindingResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_DeleteBindingResponse proto.InternalMessageInfo
 
 func init() {
+	proto.RegisterType((*BindingId)(nil), "atomix.management.v1.BindingId")
+	proto.RegisterType((*BindingMeta)(nil), "atomix.management.v1.BindingMeta")
+	proto.RegisterMapType((map[string]string)(nil), "atomix.management.v1.BindingMeta.LabelsEntry")
 	proto.RegisterType((*Binding)(nil), "atomix.management.v1.Binding")
 	proto.RegisterType((*BindingSpec)(nil), "atomix.management.v1.BindingSpec")
 	proto.RegisterMapType((map[string]string)(nil), "atomix.management.v1.BindingSpec.SelectorEntry")
@@ -628,45 +735,79 @@ func init() {
 func init() { proto.RegisterFile("atomix/runtime/v1/binding.proto", fileDescriptor_6c6c6f31e381d250) }
 
 var fileDescriptor_6c6c6f31e381d250 = []byte{
-	// 606 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0x5f, 0x6f, 0xd2, 0x5e,
-	0x18, 0xa6, 0x1b, 0xdb, 0xe0, 0xe5, 0xc7, 0x2f, 0xee, 0xd8, 0xc5, 0xa6, 0x89, 0x05, 0xeb, 0x85,
-	0xe8, 0x92, 0x92, 0xe1, 0x85, 0x7f, 0x96, 0x2c, 0x91, 0xcd, 0x18, 0xa2, 0x0b, 0xb3, 0x8b, 0xd7,
-	0x4b, 0x69, 0xdf, 0x40, 0x15, 0xda, 0xda, 0x1e, 0x70, 0xfb, 0x16, 0x5e, 0xf9, 0x99, 0xe6, 0x1d,
-	0x97, 0x5e, 0x11, 0x03, 0x57, 0x7e, 0x0b, 0xd3, 0xd3, 0xd3, 0x8d, 0xb2, 0x02, 0xcb, 0xe4, 0xee,
-	0x1c, 0x78, 0xfe, 0xbc, 0xef, 0xc3, 0x73, 0x02, 0x94, 0x0c, 0xea, 0xf6, 0xec, 0xf3, 0xaa, 0xdf,
-	0x77, 0xa8, 0xdd, 0xc3, 0xea, 0x60, 0xaf, 0xda, 0xb2, 0x1d, 0xcb, 0x76, 0xda, 0x9a, 0xe7, 0xbb,
-	0xd4, 0x25, 0x62, 0x04, 0xd0, 0x7a, 0x86, 0x63, 0xb4, 0xb1, 0x87, 0x0e, 0xd5, 0x06, 0x7b, 0xb2,
-	0x72, 0x93, 0xe6, 0xb6, 0x3e, 0xa3, 0x49, 0x23, 0x96, 0x2c, 0xb6, 0xdd, 0xb6, 0xcb, 0x8e, 0xd5,
-	0xf0, 0x14, 0x7d, 0xaa, 0xfe, 0x14, 0x60, 0xab, 0x1e, 0xa9, 0x93, 0x03, 0xc8, 0xf6, 0x90, 0x1a,
-	0x92, 0x50, 0x16, 0x2a, 0x85, 0x5a, 0x59, 0x4b, 0xb3, 0xd1, 0x9a, 0x4c, 0xf3, 0x18, 0xa9, 0x51,
-	0xcf, 0x5d, 0x8e, 0x4a, 0x99, 0xe1, 0xa8, 0x24, 0xe8, 0x8c, 0x47, 0xf6, 0x21, 0x1b, 0x78, 0x68,
-	0x4a, 0x6b, 0x8c, 0xff, 0x28, 0x9d, 0xcf, 0xcd, 0x4e, 0x3d, 0x34, 0xeb, 0xd9, 0x50, 0x40, 0x67,
-	0x24, 0xf2, 0x06, 0x36, 0x03, 0x6a, 0xd0, 0x7e, 0x20, 0xad, 0x33, 0xfa, 0xe3, 0xc5, 0x74, 0x06,
-	0xe5, 0x02, 0x9c, 0xa8, 0xfe, 0x11, 0xa0, 0x30, 0x25, 0x4f, 0x4e, 0x00, 0xcc, 0x6e, 0x3f, 0xa0,
-	0xe8, 0x9f, 0xd9, 0x16, 0xdf, 0x4a, 0x59, 0xb4, 0x55, 0xc3, 0xaa, 0x6f, 0x87, 0x8a, 0xe3, 0x51,
-	0x29, 0x7f, 0x18, 0x31, 0x1b, 0x47, 0x7a, 0x9e, 0x8b, 0x34, 0x2c, 0xf2, 0x1e, 0x72, 0x01, 0x76,
-	0xd1, 0xa4, 0xae, 0x2f, 0xad, 0x95, 0xd7, 0x2b, 0x85, 0x5a, 0x75, 0xe9, 0x96, 0xda, 0x29, 0x67,
-	0xbc, 0x75, 0xa8, 0x7f, 0xa1, 0x5f, 0x09, 0xc8, 0xfb, 0x50, 0x4c, 0x7c, 0x45, 0xee, 0xc1, 0xfa,
-	0x17, 0xbc, 0x60, 0x83, 0xe6, 0xf5, 0xf0, 0x48, 0x44, 0xd8, 0x18, 0x18, 0xdd, 0x3e, 0xb2, 0x48,
-	0xf3, 0x7a, 0x74, 0x79, 0xbd, 0xf6, 0x52, 0x50, 0x9b, 0x50, 0x4c, 0x44, 0x41, 0x0e, 0x60, 0xcb,
-	0xf3, 0xdd, 0x73, 0x1b, 0x03, 0x49, 0x60, 0x93, 0x2d, 0xdb, 0x34, 0xca, 0x2e, 0x26, 0xa9, 0x08,
-	0xdb, 0xef, 0x90, 0x72, 0x4d, 0x1d, 0xbf, 0xf6, 0x31, 0xa0, 0x61, 0x82, 0xbc, 0x7a, 0x77, 0x48,
-	0x90, 0x6b, 0x85, 0x09, 0x72, 0x91, 0x86, 0xa5, 0x1e, 0x03, 0x99, 0xb6, 0x09, 0x3c, 0xd7, 0x09,
-	0x90, 0xbc, 0x80, 0x2d, 0x0e, 0xe1, 0x26, 0x0f, 0x17, 0xc6, 0xaa, 0xc7, 0x68, 0x75, 0x17, 0xee,
-	0x7f, 0xb0, 0x83, 0x58, 0x2f, 0x88, 0xe7, 0x16, 0x61, 0xe3, 0x9b, 0x41, 0xcd, 0x0e, 0x53, 0xcb,
-	0xe9, 0xd1, 0x45, 0xfd, 0x08, 0x62, 0x12, 0xcc, 0xdd, 0x5f, 0x41, 0x8e, 0xeb, 0xc5, 0xd9, 0x2d,
-	0xb1, 0xbf, 0x82, 0xab, 0x4d, 0x10, 0x0f, 0x7d, 0x34, 0x28, 0xce, 0x04, 0x77, 0xe7, 0x85, 0x4e,
-	0x60, 0x67, 0x46, 0xf0, 0x5f, 0x23, 0x6a, 0x82, 0xf8, 0xc9, 0xb3, 0x56, 0x3b, 0xe2, 0x8c, 0xe0,
-	0x0a, 0x46, 0x3c, 0xc2, 0x2e, 0xae, 0x6e, 0xc4, 0x07, 0xb0, 0x33, 0x23, 0x18, 0x8d, 0x58, 0xfb,
-	0x91, 0x85, 0xff, 0xe3, 0x77, 0x83, 0xfe, 0xc0, 0x36, 0x91, 0x9c, 0x01, 0x5c, 0x37, 0x92, 0x3c,
-	0x49, 0x77, 0xb8, 0xf1, 0x34, 0xe4, 0xca, 0x72, 0x20, 0x8f, 0x05, 0xe1, 0xbf, 0xe9, 0xda, 0x91,
-	0xa7, 0xe9, 0xcc, 0x94, 0x1e, 0xcb, 0xcf, 0x6e, 0x03, 0xe5, 0x36, 0x1d, 0x28, 0x26, 0x9a, 0x43,
-	0xe6, 0x90, 0xd3, 0xfa, 0x2a, 0xef, 0xde, 0x0a, 0x7b, 0xed, 0x94, 0x28, 0xc0, 0x3c, 0xa7, 0xb4,
-	0xda, 0xcd, 0x73, 0x4a, 0x6f, 0x54, 0x07, 0x8a, 0x89, 0xdf, 0x71, 0x9e, 0x53, 0x5a, 0x7b, 0xe6,
-	0x39, 0xa5, 0x16, 0xa3, 0x2e, 0x5d, 0x8e, 0x15, 0x61, 0x38, 0x56, 0x84, 0xdf, 0x63, 0x45, 0xf8,
-	0x3e, 0x51, 0x32, 0xc3, 0x89, 0x92, 0xf9, 0x35, 0x51, 0x32, 0xad, 0x4d, 0xf6, 0x47, 0xf9, 0xfc,
-	0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x56, 0x60, 0xfa, 0x91, 0x97, 0x07, 0x00, 0x00,
+	// 702 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0xcf, 0x6e, 0xd3, 0x4c,
+	0x10, 0x8f, 0x53, 0xb7, 0x4d, 0x26, 0x5f, 0x3e, 0xe8, 0xe2, 0x8a, 0xc8, 0x82, 0xb8, 0x98, 0x03,
+	0x85, 0x0a, 0x47, 0x2d, 0x07, 0x68, 0x7b, 0x40, 0xb8, 0xa9, 0x50, 0x45, 0xab, 0x52, 0x57, 0x70,
+	0xad, 0x1c, 0x67, 0x48, 0x0d, 0x89, 0x1d, 0xbc, 0x9b, 0x40, 0xdf, 0x82, 0x13, 0x67, 0x1e, 0xa7,
+	0xe2, 0xd4, 0x23, 0xa7, 0x08, 0xa5, 0x17, 0xc4, 0x1b, 0xc0, 0x09, 0x79, 0xbd, 0x4e, 0x9a, 0xe0,
+	0xd4, 0x05, 0x7a, 0x5b, 0xcf, 0xfe, 0xfe, 0xcc, 0xce, 0xfc, 0x22, 0x05, 0x34, 0x9b, 0xf9, 0x2d,
+	0xf7, 0x7d, 0x25, 0xe8, 0x78, 0xcc, 0x6d, 0x61, 0xa5, 0xbb, 0x5c, 0xa9, 0xb9, 0x5e, 0xdd, 0xf5,
+	0x1a, 0x46, 0x3b, 0xf0, 0x99, 0x4f, 0x94, 0x08, 0x60, 0xb4, 0x6c, 0xcf, 0x6e, 0x60, 0x0b, 0x3d,
+	0x66, 0x74, 0x97, 0xd5, 0x04, 0x9a, 0xd3, 0xec, 0x50, 0x86, 0x41, 0x44, 0x53, 0x95, 0x86, 0xdf,
+	0xf0, 0xf9, 0xb1, 0x12, 0x9e, 0xa2, 0xaa, 0xbe, 0x01, 0x79, 0x33, 0x52, 0xdf, 0xaa, 0x93, 0x1b,
+	0x90, 0xf7, 0xec, 0x16, 0xd2, 0xb6, 0xed, 0x60, 0x49, 0x5a, 0x90, 0x16, 0xf3, 0xd6, 0xb0, 0x40,
+	0x08, 0xc8, 0xe1, 0x47, 0x29, 0xcb, 0x2f, 0xf8, 0x79, 0x4d, 0xfe, 0xf6, 0x49, 0x93, 0xf4, 0x1f,
+	0x12, 0x14, 0x84, 0xca, 0x0e, 0x32, 0x9b, 0xac, 0x43, 0xd6, 0xad, 0x73, 0x81, 0xc2, 0x8a, 0x66,
+	0x24, 0xb5, 0x6b, 0x0c, 0x4c, 0x4d, 0x38, 0xee, 0x69, 0x99, 0x7e, 0x4f, 0xcb, 0x6e, 0x55, 0xad,
+	0xac, 0x5b, 0x27, 0x4b, 0x30, 0xdb, 0xc5, 0x80, 0xba, 0xbe, 0xc7, 0x9d, 0x64, 0x73, 0xee, 0x67,
+	0x4f, 0x2b, 0xee, 0xd6, 0x5e, 0xa3, 0xc3, 0x5e, 0x46, 0x17, 0x56, 0x8c, 0x20, 0x9b, 0x30, 0xd3,
+	0xb4, 0x6b, 0xd8, 0xa4, 0xa5, 0xa9, 0x85, 0xa9, 0xc5, 0xc2, 0xca, 0xfd, 0x73, 0xdd, 0xc2, 0xe6,
+	0x8c, 0x6d, 0x8e, 0xdf, 0xf4, 0x58, 0x70, 0x64, 0x09, 0xb2, 0xba, 0x0a, 0x85, 0x33, 0x65, 0x72,
+	0x15, 0xa6, 0xde, 0xe0, 0x91, 0x98, 0x40, 0x78, 0x24, 0x0a, 0x4c, 0x77, 0xed, 0x66, 0x27, 0x7e,
+	0x7c, 0xf4, 0xb1, 0x96, 0x7d, 0x24, 0xe9, 0x9f, 0x25, 0x98, 0x15, 0xf2, 0xe4, 0x31, 0xc8, 0x2d,
+	0x64, 0xb6, 0x78, 0xf9, 0xad, 0xd4, 0x5e, 0xcc, 0x5c, 0xf8, 0xf6, 0x93, 0x9e, 0x26, 0x59, 0x9c,
+	0x48, 0xd6, 0x41, 0xa6, 0x6d, 0x74, 0xb8, 0x4b, 0x9a, 0xc0, 0x7e, 0x1b, 0x1d, 0x53, 0x0e, 0x05,
+	0x2c, 0x4e, 0x22, 0x4f, 0x60, 0x86, 0x32, 0x9b, 0x75, 0xc2, 0x59, 0x84, 0xf4, 0xdb, 0xe7, 0xd3,
+	0x39, 0x54, 0x08, 0x08, 0xa2, 0xfe, 0x7d, 0xb8, 0xc8, 0x50, 0x9e, 0xec, 0x01, 0x88, 0x10, 0x1d,
+	0xa4, 0x2d, 0x74, 0x23, 0xc2, 0x6d, 0xd5, 0xcd, 0x39, 0xb1, 0xd0, 0x7c, 0x5c, 0xaa, 0x5a, 0x79,
+	0x27, 0xbe, 0x25, 0xcf, 0x20, 0x47, 0xb1, 0x89, 0x0e, 0xf3, 0x83, 0x52, 0x96, 0xef, 0xac, 0x92,
+	0xfa, 0x4c, 0x63, 0x5f, 0x30, 0xa2, 0xad, 0x0d, 0x04, 0xd4, 0x75, 0x28, 0x8e, 0x5c, 0xfd, 0xd1,
+	0xe6, 0xae, 0x40, 0x71, 0x64, 0x16, 0xfa, 0x2b, 0x98, 0x7b, 0x8a, 0x4c, 0xd4, 0x2c, 0x7c, 0xdb,
+	0x41, 0xca, 0xc2, 0x11, 0x88, 0x9f, 0xdf, 0xc1, 0xc5, 0x33, 0x3d, 0x18, 0x41, 0x5c, 0xaa, 0x5a,
+	0xf9, 0x5a, 0x7c, 0xab, 0xef, 0x00, 0x39, 0xeb, 0x43, 0xdb, 0xbe, 0x47, 0x91, 0x3c, 0x84, 0x59,
+	0x01, 0x11, 0x2e, 0x37, 0xcf, 0x75, 0xb1, 0x62, 0xb4, 0xbe, 0x04, 0xd7, 0xb6, 0x5d, 0x1a, 0xeb,
+	0xd1, 0xb8, 0x71, 0x05, 0xa6, 0xdf, 0xd9, 0xcc, 0x39, 0xe4, 0x6a, 0x39, 0x2b, 0xfa, 0xd0, 0xf7,
+	0x40, 0x19, 0x05, 0x0b, 0xf7, 0x55, 0xc8, 0x09, 0x3d, 0x5a, 0x92, 0xf8, 0x5a, 0x52, 0xec, 0x07,
+	0x70, 0x7d, 0x17, 0x94, 0x8d, 0x00, 0x6d, 0x86, 0x63, 0x93, 0xfb, 0xeb, 0x07, 0x3d, 0x87, 0xf9,
+	0x31, 0xc1, 0x7f, 0x1d, 0xd1, 0x2e, 0x28, 0x2f, 0xda, 0xf5, 0xcb, 0x6d, 0x71, 0x4c, 0xf0, 0x12,
+	0x5a, 0xac, 0x62, 0x13, 0x2f, 0xaf, 0xc5, 0xeb, 0x30, 0x3f, 0x26, 0x18, 0xb5, 0xb8, 0xf2, 0x51,
+	0x86, 0xff, 0xe3, 0xe0, 0x63, 0xd0, 0x75, 0x1d, 0x24, 0x07, 0x00, 0xc3, 0x44, 0x92, 0x3b, 0xc9,
+	0x0e, 0xbf, 0xfd, 0x36, 0xd4, 0xc5, 0x74, 0xa0, 0x18, 0x0b, 0xc2, 0x7f, 0x67, 0x63, 0x47, 0xee,
+	0x26, 0x33, 0x13, 0x72, 0xac, 0xde, 0xbb, 0x08, 0x54, 0xd8, 0x1c, 0x42, 0x71, 0x24, 0x39, 0x64,
+	0x02, 0x39, 0x29, 0xaf, 0xea, 0xd2, 0x85, 0xb0, 0x43, 0xa7, 0x91, 0x00, 0x4c, 0x72, 0x4a, 0x8a,
+	0xdd, 0x24, 0xa7, 0xe4, 0x44, 0x1d, 0x42, 0x71, 0x64, 0x8f, 0x93, 0x9c, 0x92, 0xd2, 0x33, 0xc9,
+	0x29, 0x31, 0x18, 0x66, 0xe9, 0xb8, 0x5f, 0x96, 0x4e, 0xfa, 0x65, 0xe9, 0x6b, 0xbf, 0x2c, 0x7d,
+	0x38, 0x2d, 0x67, 0x4e, 0x4e, 0xcb, 0x99, 0x2f, 0xa7, 0xe5, 0x4c, 0x6d, 0x86, 0xff, 0x59, 0x78,
+	0xf0, 0x2b, 0x00, 0x00, 0xff, 0xff, 0x4d, 0xae, 0x1e, 0x40, 0x9c, 0x08, 0x00, 0x00,
+}
+
+func (this *BindingId) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*BindingId)
+	if !ok {
+		that2, ok := that.(BindingId)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Namespace != that1.Namespace {
+		return false
+	}
+	if this.Name != that1.Name {
+		return false
+	}
+	return true
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -893,6 +1034,100 @@ var _BindingService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "atomix/runtime/v1/binding.proto",
 }
 
+func (m *BindingId) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BindingId) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *BindingId) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintBinding(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Namespace) > 0 {
+		i -= len(m.Namespace)
+		copy(dAtA[i:], m.Namespace)
+		i = encodeVarintBinding(dAtA, i, uint64(len(m.Namespace)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BindingMeta) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BindingMeta) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *BindingMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Labels) > 0 {
+		for k := range m.Labels {
+			v := m.Labels[k]
+			baseI := i
+			i -= len(v)
+			copy(dAtA[i:], v)
+			i = encodeVarintBinding(dAtA, i, uint64(len(v)))
+			i--
+			dAtA[i] = 0x12
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintBinding(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintBinding(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if m.Version != 0 {
+		i = encodeVarintBinding(dAtA, i, uint64(m.Version))
+		i--
+		dAtA[i] = 0x10
+	}
+	{
+		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintBinding(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
 func (m *Binding) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -934,7 +1169,7 @@ func (m *Binding) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i--
 	dAtA[i] = 0x12
 	{
-		size, err := m.ObjectMeta.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.BindingMeta.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1018,20 +1253,6 @@ func (m *BindingStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.Proxies) > 0 {
-		for iNdEx := len(m.Proxies) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Proxies[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintBinding(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0xa
-		}
-	}
 	return len(dAtA) - i, nil
 }
 
@@ -1382,13 +1603,52 @@ func encodeVarintBinding(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *BindingId) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Namespace)
+	if l > 0 {
+		n += 1 + l + sovBinding(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovBinding(uint64(l))
+	}
+	return n
+}
+
+func (m *BindingMeta) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ID.Size()
+	n += 1 + l + sovBinding(uint64(l))
+	if m.Version != 0 {
+		n += 1 + sovBinding(uint64(m.Version))
+	}
+	if len(m.Labels) > 0 {
+		for k, v := range m.Labels {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovBinding(uint64(len(k))) + 1 + len(v) + sovBinding(uint64(len(v)))
+			n += mapEntrySize + 1 + sovBinding(uint64(mapEntrySize))
+		}
+	}
+	return n
+}
+
 func (m *Binding) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.ObjectMeta.Size()
+	l = m.BindingMeta.Size()
 	n += 1 + l + sovBinding(uint64(l))
 	l = m.Spec.Size()
 	n += 1 + l + sovBinding(uint64(l))
@@ -1422,12 +1682,6 @@ func (m *BindingStatus) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if len(m.Proxies) > 0 {
-		for _, e := range m.Proxies {
-			l = e.Size()
-			n += 1 + l + sovBinding(uint64(l))
-		}
-	}
 	return n
 }
 
@@ -1562,6 +1816,349 @@ func sovBinding(x uint64) (n int) {
 func sozBinding(x uint64) (n int) {
 	return sovBinding(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
+func (m *BindingId) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowBinding
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BindingId: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BindingId: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBinding
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBinding
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthBinding
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Namespace = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBinding
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBinding
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthBinding
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipBinding(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthBinding
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BindingMeta) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowBinding
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BindingMeta: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BindingMeta: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBinding
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthBinding
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthBinding
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			m.Version = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBinding
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Version |= ObjectVersion(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Labels", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBinding
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthBinding
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthBinding
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Labels == nil {
+				m.Labels = make(map[string]string)
+			}
+			var mapkey string
+			var mapvalue string
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowBinding
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowBinding
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthBinding
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthBinding
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var stringLenmapvalue uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowBinding
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapvalue |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapvalue := int(stringLenmapvalue)
+					if intStringLenmapvalue < 0 {
+						return ErrInvalidLengthBinding
+					}
+					postStringIndexmapvalue := iNdEx + intStringLenmapvalue
+					if postStringIndexmapvalue < 0 {
+						return ErrInvalidLengthBinding
+					}
+					if postStringIndexmapvalue > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = string(dAtA[iNdEx:postStringIndexmapvalue])
+					iNdEx = postStringIndexmapvalue
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipBinding(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthBinding
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.Labels[mapkey] = mapvalue
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipBinding(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthBinding
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *Binding) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1593,7 +2190,7 @@ func (m *Binding) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ObjectMeta", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field BindingMeta", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1620,7 +2217,7 @@ func (m *Binding) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ObjectMeta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.BindingMeta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1950,40 +2547,6 @@ func (m *BindingStatus) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: BindingStatus: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Proxies", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBinding
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthBinding
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthBinding
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Proxies = append(m.Proxies, ObjectId{})
-			if err := m.Proxies[len(m.Proxies)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipBinding(dAtA[iNdEx:])

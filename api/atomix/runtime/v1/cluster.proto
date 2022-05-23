@@ -9,7 +9,6 @@ syntax = "proto3";
 package atomix.management.v1;
 
 import "atomix/runtime/v1/driver.proto";
-import "atomix/runtime/v1/object.proto";
 import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
 
@@ -21,8 +20,25 @@ service ClusterService {
     rpc DeleteCluster (DeleteClusterRequest) returns (DeleteClusterResponse);
 }
 
+message ClusterId {
+    option (gogoproto.equal) = true;
+    string namespace = 1;
+    string name = 2;
+}
+
+message ClusterMeta {
+    ClusterId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 version = 2 [
+        (gogoproto.casttype) = "ObjectVersion"
+    ];
+    map<string, string> labels = 3;
+}
+
 message Cluster {
-    ObjectMeta meta = 1 [
+    ClusterMeta meta = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -46,7 +62,7 @@ message ClusterStatus {
 }
 
 message GetClusterRequest {
-    ObjectId cluster_id = 1 [
+    ClusterId cluster_id = 1 [
         (gogoproto.customname) = "ClusterID",
         (gogoproto.nullable) = false
     ];

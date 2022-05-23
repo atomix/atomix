@@ -4,12 +4,20 @@
 
 package v1
 
-func (b *Binding) GetMeta() ObjectMeta {
-	return b.ObjectMeta
+func (b *Binding) GetID() *BindingId {
+	return &b.ID
 }
 
-func (b *Binding) SetMeta(meta ObjectMeta) {
-	b.ObjectMeta = meta
+func (b *Binding) SetID(id *BindingId) {
+	b.ID = *id
 }
 
-var _ Object = (*Binding)(nil)
+func (b *Binding) GetVersion() ObjectVersion {
+	return b.Version
+}
+
+func (b *Binding) SetVersion(version ObjectVersion) {
+	b.Version = version
+}
+
+var _ Object[*BindingId] = (*Binding)(nil)

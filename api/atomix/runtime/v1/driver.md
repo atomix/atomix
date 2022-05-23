@@ -4,9 +4,11 @@
 ## Table of Contents
 
 - [atomix/runtime/v1/driver.proto](#atomix_runtime_v1_driver-proto)
+    - [Driver](#atomix-management-v1-Driver)
     - [DriverChunk](#atomix-management-v1-DriverChunk)
     - [DriverHeader](#atomix-management-v1-DriverHeader)
     - [DriverId](#atomix-management-v1-DriverId)
+    - [DriverMeta](#atomix-management-v1-DriverMeta)
     - [DriverTrailer](#atomix-management-v1-DriverTrailer)
     - [InstallDriverRequest](#atomix-management-v1-InstallDriverRequest)
     - [InstallDriverResponse](#atomix-management-v1-InstallDriverResponse)
@@ -21,6 +23,21 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/runtime/v1/driver.proto
+
+
+
+<a name="atomix-management-v1-Driver"></a>
+
+### Driver
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| meta | [DriverMeta](#atomix-management-v1-DriverMeta) |  |  |
+
+
+
 
 
 
@@ -47,7 +64,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| driver_id | [DriverId](#atomix-management-v1-DriverId) |  |  |
+| driver | [Driver](#atomix-management-v1-Driver) |  |  |
 
 
 
@@ -64,6 +81,22 @@
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  |  |
 | version | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-management-v1-DriverMeta"></a>
+
+### DriverMeta
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [DriverId](#atomix-management-v1-DriverId) |  |  |
+| version | [uint64](#uint64) |  |  |
 
 
 

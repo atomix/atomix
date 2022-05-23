@@ -4,12 +4,20 @@
 
 package v1
 
-func (c *Cluster) GetMeta() ObjectMeta {
-	return c.ObjectMeta
+func (c *Cluster) GetID() *ClusterId {
+	return &c.ID
 }
 
-func (c *Cluster) SetMeta(meta ObjectMeta) {
-	c.ObjectMeta = meta
+func (c *Cluster) SetID(id *ClusterId) {
+	c.ID = *id
 }
 
-var _ Object = (*Cluster)(nil)
+func (c *Cluster) GetVersion() ObjectVersion {
+	return c.Version
+}
+
+func (c *Cluster) SetVersion(version ObjectVersion) {
+	c.Version = version
+}
+
+var _ Object[*ClusterId] = (*Cluster)(nil)

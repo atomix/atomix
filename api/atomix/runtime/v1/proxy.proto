@@ -8,7 +8,7 @@ syntax = "proto3";
 
 package atomix.management.v1;
 
-import "atomix/runtime/v1/object.proto";
+import "atomix/runtime/v1/binding.proto";
 import "gogoproto/gogo.proto";
 
 service ProxyService {
@@ -16,8 +16,25 @@ service ProxyService {
     rpc ListProxies (ListProxiesRequest) returns (ListProxiesResponse);
 }
 
+message ProxyId {
+    option (gogoproto.equal) = true;
+    string namespace = 1;
+    string name = 2;
+}
+
+message ProxyMeta {
+    ProxyId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 version = 2 [
+        (gogoproto.casttype) = "ObjectVersion"
+    ];
+    map<string, string> labels = 3;
+}
+
 message Proxy {
-    ObjectMeta meta = 1 [
+    ProxyMeta meta = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -34,11 +51,11 @@ message ProxySpec {
 }
 
 message ProxyStatus {
-    ObjectId binding = 1;
+    BindingId binding = 1;
 }
 
 message GetProxyRequest {
-    ObjectId proxy_id = 1 [
+    ProxyId proxy_id = 1 [
         (gogoproto.customname) = "ProxyID",
         (gogoproto.nullable) = false
     ];

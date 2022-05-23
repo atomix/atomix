@@ -5,6 +5,9 @@
 
 - [atomix/runtime/v1/cluster.proto](#atomix_runtime_v1_cluster-proto)
     - [Cluster](#atomix-management-v1-Cluster)
+    - [ClusterId](#atomix-management-v1-ClusterId)
+    - [ClusterMeta](#atomix-management-v1-ClusterMeta)
+    - [ClusterMeta.LabelsEntry](#atomix-management-v1-ClusterMeta-LabelsEntry)
     - [ClusterSpec](#atomix-management-v1-ClusterSpec)
     - [ClusterStatus](#atomix-management-v1-ClusterStatus)
     - [CreateClusterRequest](#atomix-management-v1-CreateClusterRequest)
@@ -39,9 +42,58 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [ObjectMeta](#atomix-management-v1-ObjectMeta) |  |  |
+| meta | [ClusterMeta](#atomix-management-v1-ClusterMeta) |  |  |
 | spec | [ClusterSpec](#atomix-management-v1-ClusterSpec) |  |  |
 | status | [ClusterStatus](#atomix-management-v1-ClusterStatus) |  |  |
+
+
+
+
+
+
+<a name="atomix-management-v1-ClusterId"></a>
+
+### ClusterId
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| namespace | [string](#string) |  |  |
+| name | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-management-v1-ClusterMeta"></a>
+
+### ClusterMeta
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [ClusterId](#atomix-management-v1-ClusterId) |  |  |
+| version | [uint64](#uint64) |  |  |
+| labels | [ClusterMeta.LabelsEntry](#atomix-management-v1-ClusterMeta-LabelsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-management-v1-ClusterMeta-LabelsEntry"></a>
+
+### ClusterMeta.LabelsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
 
 
 
@@ -142,7 +194,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster_id | [ObjectId](#atomix-management-v1-ObjectId) |  |  |
+| cluster_id | [ClusterId](#atomix-management-v1-ClusterId) |  |  |
 
 
 

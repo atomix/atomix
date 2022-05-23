@@ -8,7 +8,7 @@ syntax = "proto3";
 
 package atomix.management.v1;
 
-import "atomix/runtime/v1/object.proto";
+import "atomix/runtime/v1/cluster.proto";
 import "gogoproto/gogo.proto";
 
 service BindingService {
@@ -19,8 +19,25 @@ service BindingService {
     rpc DeleteBinding (DeleteBindingRequest) returns (DeleteBindingResponse);
 }
 
+message BindingId {
+    option (gogoproto.equal) = true;
+    string namespace = 1;
+    string name = 2;
+}
+
+message BindingMeta {
+    BindingId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 version = 2 [
+        (gogoproto.casttype) = "ObjectVersion"
+    ];
+    map<string, string> labels = 3;
+}
+
 message Binding {
-    ObjectMeta meta = 1 [
+    BindingMeta meta = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -33,7 +50,7 @@ message Binding {
 }
 
 message BindingSpec {
-    ObjectId cluster_id = 1 [
+    ClusterId cluster_id = 1 [
         (gogoproto.customname) = "ClusterID",
         (gogoproto.nullable) = false
     ];
@@ -41,13 +58,11 @@ message BindingSpec {
 }
 
 message BindingStatus {
-    repeated ObjectId proxies = 1 [
-        (gogoproto.nullable) = false
-    ];
+
 }
 
 message GetBindingRequest {
-    ObjectId binding_id = 1 [
+    BindingId binding_id = 1 [
         (gogoproto.customname) = "BindingID",
         (gogoproto.nullable) = false
     ];

@@ -9,6 +9,9 @@
     - [ListProxiesRequest](#atomix-management-v1-ListProxiesRequest)
     - [ListProxiesResponse](#atomix-management-v1-ListProxiesResponse)
     - [Proxy](#atomix-management-v1-Proxy)
+    - [ProxyId](#atomix-management-v1-ProxyId)
+    - [ProxyMeta](#atomix-management-v1-ProxyMeta)
+    - [ProxyMeta.LabelsEntry](#atomix-management-v1-ProxyMeta-LabelsEntry)
     - [ProxySpec](#atomix-management-v1-ProxySpec)
     - [ProxyStatus](#atomix-management-v1-ProxyStatus)
   
@@ -33,7 +36,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proxy_id | [ObjectId](#atomix-management-v1-ObjectId) |  |  |
+| proxy_id | [ProxyId](#atomix-management-v1-ProxyId) |  |  |
 
 
 
@@ -94,9 +97,58 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [ObjectMeta](#atomix-management-v1-ObjectMeta) |  |  |
+| meta | [ProxyMeta](#atomix-management-v1-ProxyMeta) |  |  |
 | spec | [ProxySpec](#atomix-management-v1-ProxySpec) |  |  |
 | status | [ProxyStatus](#atomix-management-v1-ProxyStatus) |  |  |
+
+
+
+
+
+
+<a name="atomix-management-v1-ProxyId"></a>
+
+### ProxyId
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| namespace | [string](#string) |  |  |
+| name | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-management-v1-ProxyMeta"></a>
+
+### ProxyMeta
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [ProxyId](#atomix-management-v1-ProxyId) |  |  |
+| version | [uint64](#uint64) |  |  |
+| labels | [ProxyMeta.LabelsEntry](#atomix-management-v1-ProxyMeta-LabelsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-management-v1-ProxyMeta-LabelsEntry"></a>
+
+### ProxyMeta.LabelsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
 
 
 
@@ -126,7 +178,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [ObjectId](#atomix-management-v1-ObjectId) |  |  |
+| binding | [BindingId](#atomix-management-v1-BindingId) |  |  |
 
 
 

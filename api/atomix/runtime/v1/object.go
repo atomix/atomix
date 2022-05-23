@@ -6,10 +6,17 @@ package v1
 
 import "github.com/gogo/protobuf/proto"
 
-type Object interface {
+type ObjectID interface {
 	proto.Message
-	GetMeta() ObjectMeta
-	SetMeta(ObjectMeta)
+	Equal(interface{}) bool
+}
+
+type Object[I ObjectID] interface {
+	proto.Message
+	GetID() I
+	SetID(I)
+	GetVersion() ObjectVersion
+	SetVersion(ObjectVersion)
 }
 
 type ObjectVersion uint64

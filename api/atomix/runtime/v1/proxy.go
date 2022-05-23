@@ -4,12 +4,20 @@
 
 package v1
 
-func (p *Proxy) GetMeta() ObjectMeta {
-	return p.ObjectMeta
+func (p *Proxy) GetID() *ProxyId {
+	return &p.ID
 }
 
-func (p *Proxy) SetMeta(meta ObjectMeta) {
-	p.ObjectMeta = meta
+func (p *Proxy) SetID(id *ProxyId) {
+	p.ID = *id
 }
 
-var _ Object = (*Proxy)(nil)
+func (p *Proxy) GetVersion() ObjectVersion {
+	return p.Version
+}
+
+func (p *Proxy) SetVersion(version ObjectVersion) {
+	p.Version = version
+}
+
+var _ Object[*ProxyId] = (*Proxy)(nil)
