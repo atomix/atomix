@@ -4,22 +4,22 @@
 ## Table of Contents
 
 - [atomix/runtime/v1/binding.proto](#atomix_runtime_v1_binding-proto)
-    - [Binding](#atomix-runtime-v1-Binding)
-    - [BindingSpec](#atomix-runtime-v1-BindingSpec)
-    - [BindingSpec.SelectorEntry](#atomix-runtime-v1-BindingSpec-SelectorEntry)
-    - [BindingStatus](#atomix-runtime-v1-BindingStatus)
-    - [CreateBindingRequest](#atomix-runtime-v1-CreateBindingRequest)
-    - [CreateBindingResponse](#atomix-runtime-v1-CreateBindingResponse)
-    - [DeleteBindingRequest](#atomix-runtime-v1-DeleteBindingRequest)
-    - [DeleteBindingResponse](#atomix-runtime-v1-DeleteBindingResponse)
-    - [GetBindingRequest](#atomix-runtime-v1-GetBindingRequest)
-    - [GetBindingResponse](#atomix-runtime-v1-GetBindingResponse)
-    - [ListBindingsRequest](#atomix-runtime-v1-ListBindingsRequest)
-    - [ListBindingsResponse](#atomix-runtime-v1-ListBindingsResponse)
-    - [UpdateBindingRequest](#atomix-runtime-v1-UpdateBindingRequest)
-    - [UpdateBindingResponse](#atomix-runtime-v1-UpdateBindingResponse)
+    - [Binding](#atomix-management-v1-Binding)
+    - [BindingSpec](#atomix-management-v1-BindingSpec)
+    - [BindingSpec.SelectorEntry](#atomix-management-v1-BindingSpec-SelectorEntry)
+    - [BindingStatus](#atomix-management-v1-BindingStatus)
+    - [CreateBindingRequest](#atomix-management-v1-CreateBindingRequest)
+    - [CreateBindingResponse](#atomix-management-v1-CreateBindingResponse)
+    - [DeleteBindingRequest](#atomix-management-v1-DeleteBindingRequest)
+    - [DeleteBindingResponse](#atomix-management-v1-DeleteBindingResponse)
+    - [GetBindingRequest](#atomix-management-v1-GetBindingRequest)
+    - [GetBindingResponse](#atomix-management-v1-GetBindingResponse)
+    - [ListBindingsRequest](#atomix-management-v1-ListBindingsRequest)
+    - [ListBindingsResponse](#atomix-management-v1-ListBindingsResponse)
+    - [UpdateBindingRequest](#atomix-management-v1-UpdateBindingRequest)
+    - [UpdateBindingResponse](#atomix-management-v1-UpdateBindingResponse)
   
-    - [BindingService](#atomix-runtime-v1-BindingService)
+    - [BindingService](#atomix-management-v1-BindingService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -32,7 +32,7 @@
 
 
 
-<a name="atomix-runtime-v1-Binding"></a>
+<a name="atomix-management-v1-Binding"></a>
 
 ### Binding
 
@@ -40,16 +40,16 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [ObjectMeta](#atomix-runtime-v1-ObjectMeta) |  |  |
-| spec | [BindingSpec](#atomix-runtime-v1-BindingSpec) |  |  |
-| status | [BindingStatus](#atomix-runtime-v1-BindingStatus) |  |  |
+| meta | [ObjectMeta](#atomix-management-v1-ObjectMeta) |  |  |
+| spec | [BindingSpec](#atomix-management-v1-BindingSpec) |  |  |
+| status | [BindingStatus](#atomix-management-v1-BindingStatus) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-BindingSpec"></a>
+<a name="atomix-management-v1-BindingSpec"></a>
 
 ### BindingSpec
 
@@ -57,15 +57,15 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
-| selector | [BindingSpec.SelectorEntry](#atomix-runtime-v1-BindingSpec-SelectorEntry) | repeated |  |
+| cluster_id | [ObjectId](#atomix-management-v1-ObjectId) |  |  |
+| selector | [BindingSpec.SelectorEntry](#atomix-management-v1-BindingSpec-SelectorEntry) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-BindingSpec-SelectorEntry"></a>
+<a name="atomix-management-v1-BindingSpec-SelectorEntry"></a>
 
 ### BindingSpec.SelectorEntry
 
@@ -81,7 +81,7 @@
 
 
 
-<a name="atomix-runtime-v1-BindingStatus"></a>
+<a name="atomix-management-v1-BindingStatus"></a>
 
 ### BindingStatus
 
@@ -89,14 +89,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitives | [ObjectId](#atomix-runtime-v1-ObjectId) | repeated |  |
+| proxies | [ObjectId](#atomix-management-v1-ObjectId) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-CreateBindingRequest"></a>
+<a name="atomix-management-v1-CreateBindingRequest"></a>
 
 ### CreateBindingRequest
 
@@ -104,14 +104,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
+| binding | [Binding](#atomix-management-v1-Binding) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-CreateBindingResponse"></a>
+<a name="atomix-management-v1-CreateBindingResponse"></a>
 
 ### CreateBindingResponse
 
@@ -119,14 +119,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
+| binding | [Binding](#atomix-management-v1-Binding) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-DeleteBindingRequest"></a>
+<a name="atomix-management-v1-DeleteBindingRequest"></a>
 
 ### DeleteBindingRequest
 
@@ -134,14 +134,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
+| binding | [Binding](#atomix-management-v1-Binding) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-DeleteBindingResponse"></a>
+<a name="atomix-management-v1-DeleteBindingResponse"></a>
 
 ### DeleteBindingResponse
 
@@ -151,7 +151,7 @@
 
 
 
-<a name="atomix-runtime-v1-GetBindingRequest"></a>
+<a name="atomix-management-v1-GetBindingRequest"></a>
 
 ### GetBindingRequest
 
@@ -159,14 +159,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
+| binding_id | [ObjectId](#atomix-management-v1-ObjectId) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-GetBindingResponse"></a>
+<a name="atomix-management-v1-GetBindingResponse"></a>
 
 ### GetBindingResponse
 
@@ -174,14 +174,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
+| binding | [Binding](#atomix-management-v1-Binding) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-ListBindingsRequest"></a>
+<a name="atomix-management-v1-ListBindingsRequest"></a>
 
 ### ListBindingsRequest
 
@@ -196,7 +196,7 @@
 
 
 
-<a name="atomix-runtime-v1-ListBindingsResponse"></a>
+<a name="atomix-management-v1-ListBindingsResponse"></a>
 
 ### ListBindingsResponse
 
@@ -204,14 +204,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| bindings | [Binding](#atomix-runtime-v1-Binding) | repeated |  |
+| bindings | [Binding](#atomix-management-v1-Binding) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-UpdateBindingRequest"></a>
+<a name="atomix-management-v1-UpdateBindingRequest"></a>
 
 ### UpdateBindingRequest
 
@@ -219,14 +219,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
+| binding | [Binding](#atomix-management-v1-Binding) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-UpdateBindingResponse"></a>
+<a name="atomix-management-v1-UpdateBindingResponse"></a>
 
 ### UpdateBindingResponse
 
@@ -234,7 +234,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
+| binding | [Binding](#atomix-management-v1-Binding) |  |  |
 
 
 
@@ -247,18 +247,18 @@
  
 
 
-<a name="atomix-runtime-v1-BindingService"></a>
+<a name="atomix-management-v1-BindingService"></a>
 
 ### BindingService
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| GetBinding | [GetBindingRequest](#atomix-runtime-v1-GetBindingRequest) | [GetBindingResponse](#atomix-runtime-v1-GetBindingResponse) |  |
-| ListBindings | [ListBindingsRequest](#atomix-runtime-v1-ListBindingsRequest) | [ListBindingsResponse](#atomix-runtime-v1-ListBindingsResponse) |  |
-| CreateBinding | [CreateBindingRequest](#atomix-runtime-v1-CreateBindingRequest) | [CreateBindingResponse](#atomix-runtime-v1-CreateBindingResponse) |  |
-| UpdateBinding | [UpdateBindingRequest](#atomix-runtime-v1-UpdateBindingRequest) | [UpdateBindingResponse](#atomix-runtime-v1-UpdateBindingResponse) |  |
-| DeleteBinding | [DeleteBindingRequest](#atomix-runtime-v1-DeleteBindingRequest) | [DeleteBindingResponse](#atomix-runtime-v1-DeleteBindingResponse) |  |
+| GetBinding | [GetBindingRequest](#atomix-management-v1-GetBindingRequest) | [GetBindingResponse](#atomix-management-v1-GetBindingResponse) |  |
+| ListBindings | [ListBindingsRequest](#atomix-management-v1-ListBindingsRequest) | [ListBindingsResponse](#atomix-management-v1-ListBindingsResponse) |  |
+| CreateBinding | [CreateBindingRequest](#atomix-management-v1-CreateBindingRequest) | [CreateBindingResponse](#atomix-management-v1-CreateBindingResponse) |  |
+| UpdateBinding | [UpdateBindingRequest](#atomix-management-v1-UpdateBindingRequest) | [UpdateBindingResponse](#atomix-management-v1-UpdateBindingResponse) |  |
+| DeleteBinding | [DeleteBindingRequest](#atomix-management-v1-DeleteBindingRequest) | [DeleteBindingResponse](#atomix-management-v1-DeleteBindingResponse) |  |
 
  
 

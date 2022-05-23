@@ -4,21 +4,21 @@
 ## Table of Contents
 
 - [atomix/runtime/v1/cluster.proto](#atomix_runtime_v1_cluster-proto)
-    - [Cluster](#atomix-runtime-v1-Cluster)
-    - [ClusterSpec](#atomix-runtime-v1-ClusterSpec)
-    - [ClusterStatus](#atomix-runtime-v1-ClusterStatus)
-    - [CreateClusterRequest](#atomix-runtime-v1-CreateClusterRequest)
-    - [CreateClusterResponse](#atomix-runtime-v1-CreateClusterResponse)
-    - [DeleteClusterRequest](#atomix-runtime-v1-DeleteClusterRequest)
-    - [DeleteClusterResponse](#atomix-runtime-v1-DeleteClusterResponse)
-    - [GetClusterRequest](#atomix-runtime-v1-GetClusterRequest)
-    - [GetClusterResponse](#atomix-runtime-v1-GetClusterResponse)
-    - [ListClustersRequest](#atomix-runtime-v1-ListClustersRequest)
-    - [ListClustersResponse](#atomix-runtime-v1-ListClustersResponse)
-    - [UpdateClusterRequest](#atomix-runtime-v1-UpdateClusterRequest)
-    - [UpdateClusterResponse](#atomix-runtime-v1-UpdateClusterResponse)
+    - [Cluster](#atomix-management-v1-Cluster)
+    - [ClusterSpec](#atomix-management-v1-ClusterSpec)
+    - [ClusterStatus](#atomix-management-v1-ClusterStatus)
+    - [CreateClusterRequest](#atomix-management-v1-CreateClusterRequest)
+    - [CreateClusterResponse](#atomix-management-v1-CreateClusterResponse)
+    - [DeleteClusterRequest](#atomix-management-v1-DeleteClusterRequest)
+    - [DeleteClusterResponse](#atomix-management-v1-DeleteClusterResponse)
+    - [GetClusterRequest](#atomix-management-v1-GetClusterRequest)
+    - [GetClusterResponse](#atomix-management-v1-GetClusterResponse)
+    - [ListClustersRequest](#atomix-management-v1-ListClustersRequest)
+    - [ListClustersResponse](#atomix-management-v1-ListClustersResponse)
+    - [UpdateClusterRequest](#atomix-management-v1-UpdateClusterRequest)
+    - [UpdateClusterResponse](#atomix-management-v1-UpdateClusterResponse)
   
-    - [ClusterService](#atomix-runtime-v1-ClusterService)
+    - [ClusterService](#atomix-management-v1-ClusterService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -31,7 +31,7 @@
 
 
 
-<a name="atomix-runtime-v1-Cluster"></a>
+<a name="atomix-management-v1-Cluster"></a>
 
 ### Cluster
 
@@ -39,16 +39,16 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [ObjectMeta](#atomix-runtime-v1-ObjectMeta) |  |  |
-| spec | [ClusterSpec](#atomix-runtime-v1-ClusterSpec) |  |  |
-| status | [ClusterStatus](#atomix-runtime-v1-ClusterStatus) |  |  |
+| meta | [ObjectMeta](#atomix-management-v1-ObjectMeta) |  |  |
+| spec | [ClusterSpec](#atomix-management-v1-ClusterSpec) |  |  |
+| status | [ClusterStatus](#atomix-management-v1-ClusterStatus) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-ClusterSpec"></a>
+<a name="atomix-management-v1-ClusterSpec"></a>
 
 ### ClusterSpec
 
@@ -56,7 +56,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| driver | [DriverId](#atomix-runtime-v1-DriverId) |  |  |
+| driver | [DriverId](#atomix-management-v1-DriverId) |  |  |
 | config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
@@ -64,7 +64,7 @@
 
 
 
-<a name="atomix-runtime-v1-ClusterStatus"></a>
+<a name="atomix-management-v1-ClusterStatus"></a>
 
 ### ClusterStatus
 
@@ -79,7 +79,7 @@
 
 
 
-<a name="atomix-runtime-v1-CreateClusterRequest"></a>
+<a name="atomix-management-v1-CreateClusterRequest"></a>
 
 ### CreateClusterRequest
 
@@ -87,14 +87,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster | [Cluster](#atomix-runtime-v1-Cluster) |  |  |
+| cluster | [Cluster](#atomix-management-v1-Cluster) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-CreateClusterResponse"></a>
+<a name="atomix-management-v1-CreateClusterResponse"></a>
 
 ### CreateClusterResponse
 
@@ -102,14 +102,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster | [Cluster](#atomix-runtime-v1-Cluster) |  |  |
+| cluster | [Cluster](#atomix-management-v1-Cluster) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-DeleteClusterRequest"></a>
+<a name="atomix-management-v1-DeleteClusterRequest"></a>
 
 ### DeleteClusterRequest
 
@@ -117,14 +117,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster | [Cluster](#atomix-runtime-v1-Cluster) |  |  |
+| cluster | [Cluster](#atomix-management-v1-Cluster) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-DeleteClusterResponse"></a>
+<a name="atomix-management-v1-DeleteClusterResponse"></a>
 
 ### DeleteClusterResponse
 
@@ -134,7 +134,7 @@
 
 
 
-<a name="atomix-runtime-v1-GetClusterRequest"></a>
+<a name="atomix-management-v1-GetClusterRequest"></a>
 
 ### GetClusterRequest
 
@@ -142,14 +142,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
+| cluster_id | [ObjectId](#atomix-management-v1-ObjectId) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-GetClusterResponse"></a>
+<a name="atomix-management-v1-GetClusterResponse"></a>
 
 ### GetClusterResponse
 
@@ -157,14 +157,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster | [Cluster](#atomix-runtime-v1-Cluster) |  |  |
+| cluster | [Cluster](#atomix-management-v1-Cluster) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-ListClustersRequest"></a>
+<a name="atomix-management-v1-ListClustersRequest"></a>
 
 ### ListClustersRequest
 
@@ -179,7 +179,7 @@
 
 
 
-<a name="atomix-runtime-v1-ListClustersResponse"></a>
+<a name="atomix-management-v1-ListClustersResponse"></a>
 
 ### ListClustersResponse
 
@@ -187,14 +187,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| clusters | [Cluster](#atomix-runtime-v1-Cluster) | repeated |  |
+| clusters | [Cluster](#atomix-management-v1-Cluster) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-UpdateClusterRequest"></a>
+<a name="atomix-management-v1-UpdateClusterRequest"></a>
 
 ### UpdateClusterRequest
 
@@ -202,14 +202,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster | [Cluster](#atomix-runtime-v1-Cluster) |  |  |
+| cluster | [Cluster](#atomix-management-v1-Cluster) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-UpdateClusterResponse"></a>
+<a name="atomix-management-v1-UpdateClusterResponse"></a>
 
 ### UpdateClusterResponse
 
@@ -217,7 +217,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster | [Cluster](#atomix-runtime-v1-Cluster) |  |  |
+| cluster | [Cluster](#atomix-management-v1-Cluster) |  |  |
 
 
 
@@ -230,18 +230,18 @@
  
 
 
-<a name="atomix-runtime-v1-ClusterService"></a>
+<a name="atomix-management-v1-ClusterService"></a>
 
 ### ClusterService
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| GetCluster | [GetClusterRequest](#atomix-runtime-v1-GetClusterRequest) | [GetClusterResponse](#atomix-runtime-v1-GetClusterResponse) |  |
-| ListClusters | [ListClustersRequest](#atomix-runtime-v1-ListClustersRequest) | [ListClustersResponse](#atomix-runtime-v1-ListClustersResponse) |  |
-| CreateCluster | [CreateClusterRequest](#atomix-runtime-v1-CreateClusterRequest) | [CreateClusterResponse](#atomix-runtime-v1-CreateClusterResponse) |  |
-| UpdateCluster | [UpdateClusterRequest](#atomix-runtime-v1-UpdateClusterRequest) | [UpdateClusterResponse](#atomix-runtime-v1-UpdateClusterResponse) |  |
-| DeleteCluster | [DeleteClusterRequest](#atomix-runtime-v1-DeleteClusterRequest) | [DeleteClusterResponse](#atomix-runtime-v1-DeleteClusterResponse) |  |
+| GetCluster | [GetClusterRequest](#atomix-management-v1-GetClusterRequest) | [GetClusterResponse](#atomix-management-v1-GetClusterResponse) |  |
+| ListClusters | [ListClustersRequest](#atomix-management-v1-ListClustersRequest) | [ListClustersResponse](#atomix-management-v1-ListClustersResponse) |  |
+| CreateCluster | [CreateClusterRequest](#atomix-management-v1-CreateClusterRequest) | [CreateClusterResponse](#atomix-management-v1-CreateClusterResponse) |  |
+| UpdateCluster | [UpdateClusterRequest](#atomix-management-v1-UpdateClusterRequest) | [UpdateClusterResponse](#atomix-management-v1-UpdateClusterResponse) |  |
+| DeleteCluster | [DeleteClusterRequest](#atomix-management-v1-DeleteClusterRequest) | [DeleteClusterResponse](#atomix-management-v1-DeleteClusterResponse) |  |
 
  
 

@@ -1,0 +1,100 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.primitive.topic.v1;
+
+import "atomix/primitive/v1/descriptor.proto";
+import "gogoproto/gogo.proto";
+import "atomix/primitive/v1/headers.proto";
+import "google/protobuf/timestamp.proto";
+
+service Topic {
+    option (atomix.primitive.v1.config) = "TopicConfig";
+
+    rpc Publish(PublishRequest) returns (PublishResponse) {
+        option (atomix.primitive.v1.operation_id) = 3;
+        option (atomix.primitive.v1.operation_type) = COMMAND;
+    }
+
+    rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse) {
+        option (atomix.primitive.v1.operation_id) = 4;
+        option (atomix.primitive.v1.operation_type) = QUERY;
+    }
+}
+
+message TopicConfig {
+
+}
+
+message PublishRequest {
+    atomix.primitive.v1.RequestHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    PublishInput input = 2 [
+        (atomix.primitive.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message PublishInput {
+    bytes payload = 1;
+}
+
+message PublishResponse {
+    atomix.primitive.v1.ResponseHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    PublishOutput output = 2 [
+        (atomix.primitive.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message PublishOutput {
+
+}
+
+message SubscribeRequest {
+    atomix.primitive.v1.RequestHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    SubscribeInput input = 2 [
+        (atomix.primitive.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message SubscribeInput {
+
+}
+
+message SubscribeResponse {
+    atomix.primitive.v1.ResponseHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    SubscribeOutput output = 2 [
+        (atomix.primitive.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message SubscribeOutput {
+    uint64 offset = 1;
+    google.protobuf.Timestamp timestamp = 2 [
+        (gogoproto.stdtime) = true
+    ];
+    bytes payload = 3;
+}

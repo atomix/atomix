@@ -11,39 +11,23 @@ package atomix.primitive.v1;
 import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
 
-service PrimitiveManager {
-    rpc Open (OpenPrimitiveRequest) returns (OpenPrimitiveResponse);
-    rpc Close (ClosePrimitiveRequest) returns (ClosePrimitiveResponse);
+message Primitive {
+    PrimitiveMeta meta = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
 }
 
-message Primitive {
+message PrimitiveMeta {
     PrimitiveId id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
     string type = 2;
-    google.protobuf.Any config = 3;
 }
 
 message PrimitiveId {
-    string name = 1;
-}
-
-message OpenPrimitiveRequest {
-    Primitive primitive = 1;
-}
-
-message OpenPrimitiveResponse {
-
-}
-
-message ClosePrimitiveRequest {
-    PrimitiveId primitive_id = 1 [
-        (gogoproto.customname) = "PrimitiveID",
-        (gogoproto.nullable) = false
-    ];
-}
-
-message ClosePrimitiveResponse {
-
+    option (gogoproto.equal) = true;
+    string namespace = 1;
+    string name = 2;
 }

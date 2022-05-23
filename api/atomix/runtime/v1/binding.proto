@@ -6,9 +6,9 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.runtime.v1;
+package atomix.management.v1;
 
-import "atomix/runtime/v1/meta.proto";
+import "atomix/runtime/v1/object.proto";
 import "gogoproto/gogo.proto";
 
 service BindingService {
@@ -41,7 +41,7 @@ message BindingSpec {
 }
 
 message BindingStatus {
-    repeated ObjectId primitives = 1 [
+    repeated ObjectId proxies = 1 [
         (gogoproto.nullable) = false
     ];
 }

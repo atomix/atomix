@@ -4,15 +4,15 @@
 ## Table of Contents
 
 - [atomix/runtime/v1/proxy.proto](#atomix_runtime_v1_proxy-proto)
-    - [GetProxyRequest](#atomix-runtime-v1-GetProxyRequest)
-    - [GetProxyResponse](#atomix-runtime-v1-GetProxyResponse)
-    - [ListProxiesRequest](#atomix-runtime-v1-ListProxiesRequest)
-    - [ListProxiesResponse](#atomix-runtime-v1-ListProxiesResponse)
-    - [Proxy](#atomix-runtime-v1-Proxy)
-    - [ProxySpec](#atomix-runtime-v1-ProxySpec)
-    - [ProxyStatus](#atomix-runtime-v1-ProxyStatus)
+    - [GetProxyRequest](#atomix-management-v1-GetProxyRequest)
+    - [GetProxyResponse](#atomix-management-v1-GetProxyResponse)
+    - [ListProxiesRequest](#atomix-management-v1-ListProxiesRequest)
+    - [ListProxiesResponse](#atomix-management-v1-ListProxiesResponse)
+    - [Proxy](#atomix-management-v1-Proxy)
+    - [ProxySpec](#atomix-management-v1-ProxySpec)
+    - [ProxyStatus](#atomix-management-v1-ProxyStatus)
   
-    - [ProxyService](#atomix-runtime-v1-ProxyService)
+    - [ProxyService](#atomix-management-v1-ProxyService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -25,7 +25,7 @@
 
 
 
-<a name="atomix-runtime-v1-GetProxyRequest"></a>
+<a name="atomix-management-v1-GetProxyRequest"></a>
 
 ### GetProxyRequest
 
@@ -33,14 +33,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proxy_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
+| proxy_id | [ObjectId](#atomix-management-v1-ObjectId) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-GetProxyResponse"></a>
+<a name="atomix-management-v1-GetProxyResponse"></a>
 
 ### GetProxyResponse
 
@@ -48,14 +48,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proxy | [Proxy](#atomix-runtime-v1-Proxy) |  |  |
+| proxy | [Proxy](#atomix-management-v1-Proxy) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-ListProxiesRequest"></a>
+<a name="atomix-management-v1-ListProxiesRequest"></a>
 
 ### ListProxiesRequest
 
@@ -71,7 +71,7 @@
 
 
 
-<a name="atomix-runtime-v1-ListProxiesResponse"></a>
+<a name="atomix-management-v1-ListProxiesResponse"></a>
 
 ### ListProxiesResponse
 
@@ -79,14 +79,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proxies | [Proxy](#atomix-runtime-v1-Proxy) | repeated |  |
+| proxies | [Proxy](#atomix-management-v1-Proxy) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-Proxy"></a>
+<a name="atomix-management-v1-Proxy"></a>
 
 ### Proxy
 
@@ -94,16 +94,16 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [ObjectMeta](#atomix-runtime-v1-ObjectMeta) |  |  |
-| spec | [ProxySpec](#atomix-runtime-v1-ProxySpec) |  |  |
-| status | [ProxyStatus](#atomix-runtime-v1-ProxyStatus) |  |  |
+| meta | [ObjectMeta](#atomix-management-v1-ObjectMeta) |  |  |
+| spec | [ProxySpec](#atomix-management-v1-ProxySpec) |  |  |
+| status | [ProxyStatus](#atomix-management-v1-ProxyStatus) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-ProxySpec"></a>
+<a name="atomix-management-v1-ProxySpec"></a>
 
 ### ProxySpec
 
@@ -112,14 +112,13 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | type | [string](#string) |  |  |
-| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-ProxyStatus"></a>
+<a name="atomix-management-v1-ProxyStatus"></a>
 
 ### ProxyStatus
 
@@ -127,7 +126,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
+| binding | [ObjectId](#atomix-management-v1-ObjectId) |  |  |
 
 
 
@@ -140,15 +139,15 @@
  
 
 
-<a name="atomix-runtime-v1-ProxyService"></a>
+<a name="atomix-management-v1-ProxyService"></a>
 
 ### ProxyService
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| GetProxy | [GetProxyRequest](#atomix-runtime-v1-GetProxyRequest) | [GetProxyResponse](#atomix-runtime-v1-GetProxyResponse) |  |
-| ListProxies | [ListProxiesRequest](#atomix-runtime-v1-ListProxiesRequest) | [ListProxiesResponse](#atomix-runtime-v1-ListProxiesResponse) |  |
+| GetProxy | [GetProxyRequest](#atomix-management-v1-GetProxyRequest) | [GetProxyResponse](#atomix-management-v1-GetProxyResponse) |  |
+| ListProxies | [ListProxiesRequest](#atomix-management-v1-ListProxiesRequest) | [ListProxiesResponse](#atomix-management-v1-ListProxiesResponse) |  |
 
  
 

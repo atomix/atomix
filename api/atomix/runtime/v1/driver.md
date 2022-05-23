@@ -4,14 +4,14 @@
 ## Table of Contents
 
 - [atomix/runtime/v1/driver.proto](#atomix_runtime_v1_driver-proto)
-    - [DriverChunk](#atomix-runtime-v1-DriverChunk)
-    - [DriverHeader](#atomix-runtime-v1-DriverHeader)
-    - [DriverId](#atomix-runtime-v1-DriverId)
-    - [DriverTrailer](#atomix-runtime-v1-DriverTrailer)
-    - [InstallDriverRequest](#atomix-runtime-v1-InstallDriverRequest)
-    - [InstallDriverResponse](#atomix-runtime-v1-InstallDriverResponse)
+    - [DriverChunk](#atomix-management-v1-DriverChunk)
+    - [DriverHeader](#atomix-management-v1-DriverHeader)
+    - [DriverId](#atomix-management-v1-DriverId)
+    - [DriverTrailer](#atomix-management-v1-DriverTrailer)
+    - [InstallDriverRequest](#atomix-management-v1-InstallDriverRequest)
+    - [InstallDriverResponse](#atomix-management-v1-InstallDriverResponse)
   
-    - [DriverService](#atomix-runtime-v1-DriverService)
+    - [DriverService](#atomix-management-v1-DriverService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -24,7 +24,7 @@
 
 
 
-<a name="atomix-runtime-v1-DriverChunk"></a>
+<a name="atomix-management-v1-DriverChunk"></a>
 
 ### DriverChunk
 
@@ -39,7 +39,7 @@
 
 
 
-<a name="atomix-runtime-v1-DriverHeader"></a>
+<a name="atomix-management-v1-DriverHeader"></a>
 
 ### DriverHeader
 
@@ -47,14 +47,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| driver_id | [DriverId](#atomix-runtime-v1-DriverId) |  |  |
+| driver_id | [DriverId](#atomix-management-v1-DriverId) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-DriverId"></a>
+<a name="atomix-management-v1-DriverId"></a>
 
 ### DriverId
 
@@ -70,7 +70,7 @@
 
 
 
-<a name="atomix-runtime-v1-DriverTrailer"></a>
+<a name="atomix-management-v1-DriverTrailer"></a>
 
 ### DriverTrailer
 
@@ -85,7 +85,7 @@
 
 
 
-<a name="atomix-runtime-v1-InstallDriverRequest"></a>
+<a name="atomix-management-v1-InstallDriverRequest"></a>
 
 ### InstallDriverRequest
 
@@ -93,16 +93,16 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| header | [DriverHeader](#atomix-runtime-v1-DriverHeader) |  |  |
-| chunk | [DriverChunk](#atomix-runtime-v1-DriverChunk) |  |  |
-| trailer | [DriverTrailer](#atomix-runtime-v1-DriverTrailer) |  |  |
+| header | [DriverHeader](#atomix-management-v1-DriverHeader) |  |  |
+| chunk | [DriverChunk](#atomix-management-v1-DriverChunk) |  |  |
+| trailer | [DriverTrailer](#atomix-management-v1-DriverTrailer) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-InstallDriverResponse"></a>
+<a name="atomix-management-v1-InstallDriverResponse"></a>
 
 ### InstallDriverResponse
 
@@ -118,14 +118,14 @@
  
 
 
-<a name="atomix-runtime-v1-DriverService"></a>
+<a name="atomix-management-v1-DriverService"></a>
 
 ### DriverService
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| InstallDriver | [InstallDriverRequest](#atomix-runtime-v1-InstallDriverRequest) stream | [InstallDriverResponse](#atomix-runtime-v1-InstallDriverResponse) |  |
+| InstallDriver | [InstallDriverRequest](#atomix-management-v1-InstallDriverRequest) stream | [InstallDriverResponse](#atomix-management-v1-InstallDriverResponse) |  |
 
  
 
