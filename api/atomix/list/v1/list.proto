@@ -10,7 +10,7 @@ package atomix.list.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
 import "atomix/primitive/v1/headers.proto";
-import "atomix/primitive/v1/object.proto";
+import "atomix/primitive/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // List is a service for a list primitive
@@ -142,12 +142,6 @@ message ContainsOutput {
     bool contains = 1;
 }
 
-message Precondition {
-    oneof precondition {
-        atomix.primitive.v1.ObjectMeta metadata = 1;
-    }
-}
-
 message AppendRequest {
     atomix.primitive.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
@@ -229,12 +223,12 @@ message SetRequest {
 }
 
 message SetInput {
-    Item item = 1 [
+    uint32 index = 1;
+    Value value = 2 [
+        (gogoproto.embed) = true,
         (gogoproto.nullable) = false
     ];
-    repeated Precondition preconditions = 2 [
-        (gogoproto.nullable) = false
-    ];
+    atomix.primitive.v1.Timestamp timestamp = 3;
 }
 
 message SetResponse {
@@ -268,10 +262,9 @@ message InsertRequest {
 }
 
 message InsertInput {
-    Item item = 1 [
-        (gogoproto.nullable) = false
-    ];
-    repeated Precondition preconditions = 2 [
+    uint32 index = 1;
+    Value value = 2 [
+        (gogoproto.embed) = true,
         (gogoproto.nullable) = false
     ];
 }
@@ -308,9 +301,7 @@ message RemoveRequest {
 
 message RemoveInput {
     uint32 index = 1;
-    repeated Precondition preconditions = 2 [
-        (gogoproto.nullable) = false
-    ];
+    atomix.primitive.v1.Timestamp timestamp = 2;
 }
 
 message RemoveResponse {
@@ -451,12 +442,9 @@ message Item {
         (gogoproto.embed) = true,
         (gogoproto.nullable) = false
     ];
+    atomix.primitive.v1.Timestamp timestamp = 3;
 }
 
 message Value {
-    atomix.primitive.v1.ObjectMeta meta = 1 [
-        (gogoproto.embed) = true,
-        (gogoproto.nullable) = false
-    ];
-    string value = 2;
+    string value = 1;
 }

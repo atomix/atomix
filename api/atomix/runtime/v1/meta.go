@@ -12,4 +12,4 @@ type Object interface {
 	SetMeta(ObjectMeta)
 }
 
-type ObjectRevision uint64
+type ObjectVersion uint64

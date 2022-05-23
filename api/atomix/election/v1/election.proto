@@ -10,7 +10,7 @@ package atomix.election.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
 import "atomix/primitive/v1/headers.proto";
-import "atomix/primitive/v1/object.proto";
+import "atomix/primitive/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // LeaderElection is a service for a leader election primitive
@@ -325,10 +325,9 @@ message Event {
 }
 
 message Term {
-    atomix.primitive.v1.ObjectMeta meta = 1 [
-        (gogoproto.embed) = true,
-        (gogoproto.nullable) = false
+    string leader_id = 1 [
+        (gogoproto.customname) = "CandidateID"
     ];
-    uint64 leader = 2;
-    repeated uint64 candidates = 3;
+    repeated string candidates = 2;
+    atomix.primitive.v1.Timestamp timestamp = 3;
 }

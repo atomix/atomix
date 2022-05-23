@@ -26,7 +26,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitive_id | [atomix.runtime.v1.ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
+| primitive_id | [PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 
 
 

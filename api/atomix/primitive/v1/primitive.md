@@ -8,6 +8,8 @@
     - [ClosePrimitiveResponse](#atomix-primitive-v1-ClosePrimitiveResponse)
     - [OpenPrimitiveRequest](#atomix-primitive-v1-OpenPrimitiveRequest)
     - [OpenPrimitiveResponse](#atomix-primitive-v1-OpenPrimitiveResponse)
+    - [Primitive](#atomix-primitive-v1-Primitive)
+    - [PrimitiveId](#atomix-primitive-v1-PrimitiveId)
   
     - [PrimitiveManager](#atomix-primitive-v1-PrimitiveManager)
   
@@ -30,7 +32,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitive_id | [atomix.runtime.v1.ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
+| primitive_id | [PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 
 
 
@@ -55,7 +57,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitive | [atomix.runtime.v1.Primitive](#atomix-runtime-v1-Primitive) |  |  |
+| primitive | [Primitive](#atomix-primitive-v1-Primitive) |  |  |
 
 
 
@@ -66,6 +68,38 @@
 
 ### OpenPrimitiveResponse
 
+
+
+
+
+
+
+<a name="atomix-primitive-v1-Primitive"></a>
+
+### Primitive
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+| type | [string](#string) |  |  |
+| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+
+
+
+
+
+
+<a name="atomix-primitive-v1-PrimitiveId"></a>
+
+### PrimitiveId
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
 
 
 

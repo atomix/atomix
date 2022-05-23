@@ -11,7 +11,7 @@ package atomix.lock.v1;
 import "google/protobuf/duration.proto";
 import "atomix/primitive/v1/descriptor.proto";
 import "atomix/primitive/v1/headers.proto";
-import "atomix/primitive/v1/object.proto";
+import "atomix/primitive/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // Lock is a service for a lock primitive
@@ -150,10 +150,7 @@ message GetLockOutput {
 }
 
 message LockInstance {
-    atomix.primitive.v1.ObjectMeta meta = 1 [
-        (gogoproto.embed) = true,
-        (gogoproto.nullable) = false
-    ];
+    atomix.primitive.v1.Timestamp timestamp = 1;
     State state = 2;
 
     enum State {

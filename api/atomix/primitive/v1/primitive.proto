@@ -8,8 +8,7 @@ syntax = "proto3";
 
 package atomix.primitive.v1;
 
-import "atomix/runtime/v1/primitive.proto";
-import "atomix/runtime/v1/meta.proto";
+import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
 
 service PrimitiveManager {
@@ -17,8 +16,21 @@ service PrimitiveManager {
     rpc Close (ClosePrimitiveRequest) returns (ClosePrimitiveResponse);
 }
 
+message Primitive {
+    PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string type = 2;
+    google.protobuf.Any config = 3;
+}
+
+message PrimitiveId {
+    string name = 1;
+}
+
 message OpenPrimitiveRequest {
-    atomix.runtime.v1.Primitive primitive = 1;
+    Primitive primitive = 1;
 }
 
 message OpenPrimitiveResponse {
@@ -26,7 +38,7 @@ message OpenPrimitiveResponse {
 }
 
 message ClosePrimitiveRequest {
-    atomix.runtime.v1.ObjectId primitive_id = 1 [
+    PrimitiveId primitive_id = 1 [
         (gogoproto.customname) = "PrimitiveID",
         (gogoproto.nullable) = false
     ];

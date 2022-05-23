@@ -8,11 +8,11 @@ syntax = "proto3";
 
 package atomix.primitive.v1;
 
-import "atomix/runtime/v1/meta.proto";
+import "atomix/primitive/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 
 message RequestHeaders {
-    atomix.runtime.v1.ObjectId primitive_id = 1 [
+    PrimitiveId primitive_id = 1 [
         (gogoproto.customname) = "PrimitiveID",
         (gogoproto.nullable) = false
     ];

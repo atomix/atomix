@@ -27,6 +27,9 @@ message Binding {
     BindingSpec spec = 2 [
         (gogoproto.nullable) = false
     ];
+    BindingStatus status = 3 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message BindingSpec {
@@ -35,6 +38,12 @@ message BindingSpec {
         (gogoproto.nullable) = false
     ];
     map<string, string> selector = 2;
+}
+
+message BindingStatus {
+    repeated ObjectId primitives = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message GetBindingRequest {

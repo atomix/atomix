@@ -11,7 +11,7 @@ package atomix.indexed_map.v1;
 import "google/protobuf/duration.proto";
 import "atomix/primitive/v1/descriptor.proto";
 import "atomix/primitive/v1/headers.proto";
-import "atomix/primitive/v1/object.proto";
+import "atomix/primitive/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // IndexedMap is a service for a sorted/indexed map primitive
@@ -121,12 +121,6 @@ message SizeOutput {
     uint32 size = 1;
 }
 
-message Precondition {
-    oneof precondition {
-        atomix.primitive.v1.ObjectMeta metadata = 1;
-    }
-}
-
 message PutRequest {
     atomix.primitive.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
@@ -140,12 +134,12 @@ message PutRequest {
 }
 
 message PutInput {
-    Entry entry = 1 [
+    Key key = 1 [
+        (gogoproto.embed) = true,
         (gogoproto.nullable) = false
     ];
-    repeated Precondition preconditions = 2 [
-        (gogoproto.nullable) = false
-    ];
+    Value value = 2;
+    atomix.primitive.v1.Timestamp timestamp = 3;
 }
 
 message PutResponse {
@@ -177,7 +171,7 @@ message GetRequest {
 }
 
 message GetInput {
-    Position position = 1 [
+    Key key = 1 [
         (gogoproto.nullable) = false
     ];
 }
@@ -339,10 +333,11 @@ message RemoveRequest {
 }
 
 message RemoveInput {
-    Entry entry = 1;
-    repeated Precondition preconditions = 2 [
+    Key key = 1 [
+        (gogoproto.embed) = true,
         (gogoproto.nullable) = false
     ];
+    atomix.primitive.v1.Timestamp timestamp = 2;
 }
 
 message RemoveResponse {
@@ -440,7 +435,7 @@ message EventsRequest {
 }
 
 message EventsInput {
-    Position pos = 1 [
+    Key key = 1 [
         (gogoproto.nullable) = false
     ];
     bool replay = 2;
@@ -479,30 +474,24 @@ message Event {
     }
 }
 
-message Position {
+message Key {
     uint64 index = 1;
     string key = 2;
 }
 
 message Value {
-    atomix.primitive.v1.ObjectMeta meta = 1 [
-        (gogoproto.embed) = true,
-        (gogoproto.nullable) = false
-    ];
-    bytes value = 2;
-    google.protobuf.Duration ttl = 3 [
+    bytes value = 1;
+    google.protobuf.Duration ttl = 2 [
         (gogoproto.customname) = "TTL",
         (gogoproto.stdduration) = true
     ];
 }
 
 message Entry {
-    Position pos = 1 [
+    Key key = 1 [
         (gogoproto.embed) = true,
         (gogoproto.nullable) = false
     ];
-    Value value = 2 [
-        (gogoproto.embed) = true,
-        (gogoproto.nullable) = false
-    ];
+    Value value = 2;
+    atomix.primitive.v1.Timestamp timestamp = 3;
 }

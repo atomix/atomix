@@ -7,6 +7,7 @@
     - [Binding](#atomix-runtime-v1-Binding)
     - [BindingSpec](#atomix-runtime-v1-BindingSpec)
     - [BindingSpec.SelectorEntry](#atomix-runtime-v1-BindingSpec-SelectorEntry)
+    - [BindingStatus](#atomix-runtime-v1-BindingStatus)
     - [CreateBindingRequest](#atomix-runtime-v1-CreateBindingRequest)
     - [CreateBindingResponse](#atomix-runtime-v1-CreateBindingResponse)
     - [DeleteBindingRequest](#atomix-runtime-v1-DeleteBindingRequest)
@@ -41,6 +42,7 @@
 | ----- | ---- | ----- | ----------- |
 | meta | [ObjectMeta](#atomix-runtime-v1-ObjectMeta) |  |  |
 | spec | [BindingSpec](#atomix-runtime-v1-BindingSpec) |  |  |
+| status | [BindingStatus](#atomix-runtime-v1-BindingStatus) |  |  |
 
 
 
@@ -73,6 +75,21 @@
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-BindingStatus"></a>
+
+### BindingStatus
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| primitives | [ObjectId](#atomix-runtime-v1-ObjectId) | repeated |  |
 
 
 

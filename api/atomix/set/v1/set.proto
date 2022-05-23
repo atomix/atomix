@@ -10,7 +10,7 @@ package atomix.set.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
 import "atomix/primitive/v1/headers.proto";
-import "atomix/primitive/v1/object.proto";
+import "atomix/primitive/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // Set is a service for a set primitive
@@ -317,9 +317,6 @@ message ElementsOutput {
 }
 
 message Element {
-    atomix.primitive.v1.ObjectMeta meta = 1 [
-        (gogoproto.embed) = true,
-        (gogoproto.nullable) = false
-    ];
-    string value = 2;
+    string value = 1;
+    atomix.primitive.v1.Timestamp timestamp = 2;
 }

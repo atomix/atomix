@@ -35,7 +35,6 @@
     - [InsertResponse](#atomix-list-v1-InsertResponse)
     - [Item](#atomix-list-v1-Item)
     - [ListConfig](#atomix-list-v1-ListConfig)
-    - [Precondition](#atomix-list-v1-Precondition)
     - [RemoveInput](#atomix-list-v1-RemoveInput)
     - [RemoveOutput](#atomix-list-v1-RemoveOutput)
     - [RemoveRequest](#atomix-list-v1-RemoveRequest)
@@ -441,8 +440,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| item | [Item](#atomix-list-v1-Item) |  |  |
-| preconditions | [Precondition](#atomix-list-v1-Precondition) | repeated |  |
+| index | [uint32](#uint32) |  |  |
+| value | [Value](#atomix-list-v1-Value) |  |  |
 
 
 
@@ -506,6 +505,7 @@
 | ----- | ---- | ----- | ----------- |
 | index | [uint32](#uint32) |  |  |
 | value | [Value](#atomix-list-v1-Value) |  |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 
@@ -522,21 +522,6 @@
 
 
 
-<a name="atomix-list-v1-Precondition"></a>
-
-### Precondition
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| metadata | [atomix.primitive.v1.ObjectMeta](#atomix-primitive-v1-ObjectMeta) |  |  |
-
-
-
-
-
-
 <a name="atomix-list-v1-RemoveInput"></a>
 
 ### RemoveInput
@@ -546,7 +531,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | index | [uint32](#uint32) |  |  |
-| preconditions | [Precondition](#atomix-list-v1-Precondition) | repeated |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 
@@ -608,8 +593,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| item | [Item](#atomix-list-v1-Item) |  |  |
-| preconditions | [Precondition](#atomix-list-v1-Precondition) | repeated |  |
+| index | [uint32](#uint32) |  |  |
+| value | [Value](#atomix-list-v1-Value) |  |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 
@@ -728,7 +714,6 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [atomix.primitive.v1.ObjectMeta](#atomix-primitive-v1-ObjectMeta) |  |  |
 | value | [string](#string) |  |  |
 
 

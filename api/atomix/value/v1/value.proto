@@ -10,7 +10,7 @@ package atomix.value.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
 import "atomix/primitive/v1/headers.proto";
-import "atomix/primitive/v1/object.proto";
+import "atomix/primitive/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // Value is a service for a value primitive
@@ -69,15 +69,8 @@ message GetResponse {
 }
 
 message GetOutput {
-    Object value = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message Precondition {
-    oneof precondition {
-        atomix.primitive.v1.ObjectMeta metadata = 1;
-    }
+    bytes value = 1;
+    atomix.primitive.v1.Timestamp timestamp = 2;
 }
 
 message SetRequest {
@@ -93,12 +86,8 @@ message SetRequest {
 }
 
 message SetInput {
-    Object value = 1 [
-        (gogoproto.nullable) = false
-    ];
-    repeated Precondition preconditions = 2 [
-        (gogoproto.nullable) = false
-    ];
+    bytes value = 1;
+    atomix.primitive.v1.Timestamp timestamp = 2;
 }
 
 message SetResponse {
@@ -114,9 +103,8 @@ message SetResponse {
 }
 
 message SetOutput {
-    Object value = 1 [
-        (gogoproto.nullable) = false
-    ];
+    bytes value = 1;
+    atomix.primitive.v1.Timestamp timestamp = 2;
 }
 
 message EventsRequest {
@@ -155,20 +143,11 @@ message EventsOutput {
 
 message Event {
     Type type = 1;
-    Object value = 2 [
-        (gogoproto.nullable) = false
-    ];
+    bytes value = 2;
+    atomix.primitive.v1.Timestamp timestamp = 3;
 
     enum Type {
         NONE = 0;
         UPDATE = 1;
     }
-}
-
-message Object {
-    atomix.primitive.v1.ObjectMeta meta = 1 [
-        (gogoproto.embed) = true,
-        (gogoproto.nullable) = false
-    ];
-    bytes value = 2;
 }

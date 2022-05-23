@@ -27,6 +27,7 @@
     - [GetRequest](#atomix-indexed_map-v1-GetRequest)
     - [GetResponse](#atomix-indexed_map-v1-GetResponse)
     - [IndexedMapConfig](#atomix-indexed_map-v1-IndexedMapConfig)
+    - [Key](#atomix-indexed_map-v1-Key)
     - [LastEntryInput](#atomix-indexed_map-v1-LastEntryInput)
     - [LastEntryOutput](#atomix-indexed_map-v1-LastEntryOutput)
     - [LastEntryRequest](#atomix-indexed_map-v1-LastEntryRequest)
@@ -35,8 +36,6 @@
     - [NextEntryOutput](#atomix-indexed_map-v1-NextEntryOutput)
     - [NextEntryRequest](#atomix-indexed_map-v1-NextEntryRequest)
     - [NextEntryResponse](#atomix-indexed_map-v1-NextEntryResponse)
-    - [Position](#atomix-indexed_map-v1-Position)
-    - [Precondition](#atomix-indexed_map-v1-Precondition)
     - [PrevEntryInput](#atomix-indexed_map-v1-PrevEntryInput)
     - [PrevEntryOutput](#atomix-indexed_map-v1-PrevEntryOutput)
     - [PrevEntryRequest](#atomix-indexed_map-v1-PrevEntryRequest)
@@ -187,8 +186,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| pos | [Position](#atomix-indexed_map-v1-Position) |  |  |
+| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
 | value | [Value](#atomix-indexed_map-v1-Value) |  |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 
@@ -219,7 +219,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| pos | [Position](#atomix-indexed_map-v1-Position) |  |  |
+| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
 | replay | [bool](#bool) |  |  |
 
 
@@ -339,7 +339,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| position | [Position](#atomix-indexed_map-v1-Position) |  |  |
+| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
 
 
 
@@ -397,6 +397,22 @@
 
 ### IndexedMapConfig
 
+
+
+
+
+
+
+<a name="atomix-indexed_map-v1-Key"></a>
+
+### Key
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| index | [uint64](#uint64) |  |  |
+| key | [string](#string) |  |  |
 
 
 
@@ -522,37 +538,6 @@
 
 
 
-<a name="atomix-indexed_map-v1-Position"></a>
-
-### Position
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| index | [uint64](#uint64) |  |  |
-| key | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-Precondition"></a>
-
-### Precondition
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| metadata | [atomix.primitive.v1.ObjectMeta](#atomix-primitive-v1-ObjectMeta) |  |  |
-
-
-
-
-
-
 <a name="atomix-indexed_map-v1-PrevEntryInput"></a>
 
 ### PrevEntryInput
@@ -623,8 +608,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-indexed_map-v1-Entry) |  |  |
-| preconditions | [Precondition](#atomix-indexed_map-v1-Precondition) | repeated |  |
+| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
+| value | [Value](#atomix-indexed_map-v1-Value) |  |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 
@@ -686,8 +672,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-indexed_map-v1-Entry) |  |  |
-| preconditions | [Precondition](#atomix-indexed_map-v1-Precondition) | repeated |  |
+| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 
@@ -806,7 +792,6 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [atomix.primitive.v1.ObjectMeta](#atomix-primitive-v1-ObjectMeta) |  |  |
 | value | [bytes](#bytes) |  |  |
 | ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
 

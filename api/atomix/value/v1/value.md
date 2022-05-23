@@ -13,8 +13,6 @@
     - [GetOutput](#atomix-value-v1-GetOutput)
     - [GetRequest](#atomix-value-v1-GetRequest)
     - [GetResponse](#atomix-value-v1-GetResponse)
-    - [Object](#atomix-value-v1-Object)
-    - [Precondition](#atomix-value-v1-Precondition)
     - [SetInput](#atomix-value-v1-SetInput)
     - [SetOutput](#atomix-value-v1-SetOutput)
     - [SetRequest](#atomix-value-v1-SetRequest)
@@ -45,7 +43,8 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | type | [Event.Type](#atomix-value-v1-Event-Type) |  |  |
-| value | [Object](#atomix-value-v1-Object) |  |  |
+| value | [bytes](#bytes) |  |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 
@@ -127,7 +126,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [Object](#atomix-value-v1-Object) |  |  |
+| value | [bytes](#bytes) |  |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 
@@ -166,37 +166,6 @@
 
 
 
-<a name="atomix-value-v1-Object"></a>
-
-### Object
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| meta | [atomix.primitive.v1.ObjectMeta](#atomix-primitive-v1-ObjectMeta) |  |  |
-| value | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="atomix-value-v1-Precondition"></a>
-
-### Precondition
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| metadata | [atomix.primitive.v1.ObjectMeta](#atomix-primitive-v1-ObjectMeta) |  |  |
-
-
-
-
-
-
 <a name="atomix-value-v1-SetInput"></a>
 
 ### SetInput
@@ -205,8 +174,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [Object](#atomix-value-v1-Object) |  |  |
-| preconditions | [Precondition](#atomix-value-v1-Precondition) | repeated |  |
+| value | [bytes](#bytes) |  |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 
@@ -221,7 +190,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [Object](#atomix-value-v1-Object) |  |  |
+| value | [bytes](#bytes) |  |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 

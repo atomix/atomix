@@ -22,9 +22,7 @@
     - [GetOutput](#atomix-map-v1-GetOutput)
     - [GetRequest](#atomix-map-v1-GetRequest)
     - [GetResponse](#atomix-map-v1-GetResponse)
-    - [Key](#atomix-map-v1-Key)
     - [MapConfig](#atomix-map-v1-MapConfig)
-    - [Precondition](#atomix-map-v1-Precondition)
     - [PutInput](#atomix-map-v1-PutInput)
     - [PutOutput](#atomix-map-v1-PutOutput)
     - [PutRequest](#atomix-map-v1-PutRequest)
@@ -68,6 +66,11 @@
 
 ### ClearOutput
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 
@@ -171,8 +174,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| key | [Key](#atomix-map-v1-Key) |  |  |
+| key | [string](#string) |  |  |
 | value | [Value](#atomix-map-v1-Value) |  |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 
@@ -320,41 +324,10 @@
 
 
 
-<a name="atomix-map-v1-Key"></a>
-
-### Key
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| meta | [atomix.primitive.v1.ObjectMeta](#atomix-primitive-v1-ObjectMeta) |  |  |
-| key | [string](#string) |  |  |
-
-
-
-
-
-
 <a name="atomix-map-v1-MapConfig"></a>
 
 ### MapConfig
 
-
-
-
-
-
-
-<a name="atomix-map-v1-Precondition"></a>
-
-### Precondition
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| metadata | [atomix.primitive.v1.ObjectMeta](#atomix-primitive-v1-ObjectMeta) |  |  |
 
 
 
@@ -369,8 +342,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-map-v1-Entry) |  |  |
-| preconditions | [Precondition](#atomix-map-v1-Precondition) | repeated |  |
+| key | [string](#string) |  |  |
+| value | [Value](#atomix-map-v1-Value) |  |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 
@@ -432,8 +406,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| key | [Key](#atomix-map-v1-Key) |  |  |
-| preconditions | [Precondition](#atomix-map-v1-Precondition) | repeated |  |
+| key | [string](#string) |  |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 

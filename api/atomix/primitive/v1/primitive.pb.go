@@ -6,9 +6,9 @@ package v1
 import (
 	context "context"
 	fmt "fmt"
-	v1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	types "github.com/gogo/protobuf/types"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -28,15 +28,119 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+type Primitive struct {
+	ID     PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
+	Type   string      `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	Config *types.Any  `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
+}
+
+func (m *Primitive) Reset()         { *m = Primitive{} }
+func (m *Primitive) String() string { return proto.CompactTextString(m) }
+func (*Primitive) ProtoMessage()    {}
+func (*Primitive) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ce01ee29cb809ef2, []int{0}
+}
+func (m *Primitive) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *Primitive) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_Primitive.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *Primitive) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Primitive.Merge(m, src)
+}
+func (m *Primitive) XXX_Size() int {
+	return m.Size()
+}
+func (m *Primitive) XXX_DiscardUnknown() {
+	xxx_messageInfo_Primitive.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Primitive proto.InternalMessageInfo
+
+func (m *Primitive) GetID() PrimitiveId {
+	if m != nil {
+		return m.ID
+	}
+	return PrimitiveId{}
+}
+
+func (m *Primitive) GetType() string {
+	if m != nil {
+		return m.Type
+	}
+	return ""
+}
+
+func (m *Primitive) GetConfig() *types.Any {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+type PrimitiveId struct {
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+}
+
+func (m *PrimitiveId) Reset()         { *m = PrimitiveId{} }
+func (m *PrimitiveId) String() string { return proto.CompactTextString(m) }
+func (*PrimitiveId) ProtoMessage()    {}
+func (*PrimitiveId) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ce01ee29cb809ef2, []int{1}
+}
+func (m *PrimitiveId) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *PrimitiveId) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_PrimitiveId.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *PrimitiveId) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PrimitiveId.Merge(m, src)
+}
+func (m *PrimitiveId) XXX_Size() int {
+	return m.Size()
+}
+func (m *PrimitiveId) XXX_DiscardUnknown() {
+	xxx_messageInfo_PrimitiveId.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PrimitiveId proto.InternalMessageInfo
+
+func (m *PrimitiveId) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
 type OpenPrimitiveRequest struct {
-	Primitive *v1.Primitive `protobuf:"bytes,1,opt,name=primitive,proto3" json:"primitive,omitempty"`
+	Primitive *Primitive `protobuf:"bytes,1,opt,name=primitive,proto3" json:"primitive,omitempty"`
 }
 
 func (m *OpenPrimitiveRequest) Reset()         { *m = OpenPrimitiveRequest{} }
 func (m *OpenPrimitiveRequest) String() string { return proto.CompactTextString(m) }
 func (*OpenPrimitiveRequest) ProtoMessage()    {}
 func (*OpenPrimitiveRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ce01ee29cb809ef2, []int{0}
+	return fileDescriptor_ce01ee29cb809ef2, []int{2}
 }
 func (m *OpenPrimitiveRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -65,7 +169,7 @@ func (m *OpenPrimitiveRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_OpenPrimitiveRequest proto.InternalMessageInfo
 
-func (m *OpenPrimitiveRequest) GetPrimitive() *v1.Primitive {
+func (m *OpenPrimitiveRequest) GetPrimitive() *Primitive {
 	if m != nil {
 		return m.Primitive
 	}
@@ -79,7 +183,7 @@ func (m *OpenPrimitiveResponse) Reset()         { *m = OpenPrimitiveResponse{} }
 func (m *OpenPrimitiveResponse) String() string { return proto.CompactTextString(m) }
 func (*OpenPrimitiveResponse) ProtoMessage()    {}
 func (*OpenPrimitiveResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ce01ee29cb809ef2, []int{1}
+	return fileDescriptor_ce01ee29cb809ef2, []int{3}
 }
 func (m *OpenPrimitiveResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -109,14 +213,14 @@ func (m *OpenPrimitiveResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_OpenPrimitiveResponse proto.InternalMessageInfo
 
 type ClosePrimitiveRequest struct {
-	PrimitiveID v1.ObjectId `protobuf:"bytes,1,opt,name=primitive_id,json=primitiveId,proto3" json:"primitive_id"`
+	PrimitiveID PrimitiveId `protobuf:"bytes,1,opt,name=primitive_id,json=primitiveId,proto3" json:"primitive_id"`
 }
 
 func (m *ClosePrimitiveRequest) Reset()         { *m = ClosePrimitiveRequest{} }
 func (m *ClosePrimitiveRequest) String() string { return proto.CompactTextString(m) }
 func (*ClosePrimitiveRequest) ProtoMessage()    {}
 func (*ClosePrimitiveRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ce01ee29cb809ef2, []int{2}
+	return fileDescriptor_ce01ee29cb809ef2, []int{4}
 }
 func (m *ClosePrimitiveRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -145,11 +249,11 @@ func (m *ClosePrimitiveRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ClosePrimitiveRequest proto.InternalMessageInfo
 
-func (m *ClosePrimitiveRequest) GetPrimitiveID() v1.ObjectId {
+func (m *ClosePrimitiveRequest) GetPrimitiveID() PrimitiveId {
 	if m != nil {
 		return m.PrimitiveID
 	}
-	return v1.ObjectId{}
+	return PrimitiveId{}
 }
 
 type ClosePrimitiveResponse struct {
@@ -159,7 +263,7 @@ func (m *ClosePrimitiveResponse) Reset()         { *m = ClosePrimitiveResponse{}
 func (m *ClosePrimitiveResponse) String() string { return proto.CompactTextString(m) }
 func (*ClosePrimitiveResponse) ProtoMessage()    {}
 func (*ClosePrimitiveResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ce01ee29cb809ef2, []int{3}
+	return fileDescriptor_ce01ee29cb809ef2, []int{5}
 }
 func (m *ClosePrimitiveResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -189,6 +293,8 @@ func (m *ClosePrimitiveResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_ClosePrimitiveResponse proto.InternalMessageInfo
 
 func init() {
+	proto.RegisterType((*Primitive)(nil), "atomix.primitive.v1.Primitive")
+	proto.RegisterType((*PrimitiveId)(nil), "atomix.primitive.v1.PrimitiveId")
 	proto.RegisterType((*OpenPrimitiveRequest)(nil), "atomix.primitive.v1.OpenPrimitiveRequest")
 	proto.RegisterType((*OpenPrimitiveResponse)(nil), "atomix.primitive.v1.OpenPrimitiveResponse")
 	proto.RegisterType((*ClosePrimitiveRequest)(nil), "atomix.primitive.v1.ClosePrimitiveRequest")
@@ -200,26 +306,31 @@ func init() {
 }
 
 var fileDescriptor_ce01ee29cb809ef2 = []byte{
-	// 303 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x4e, 0x2c, 0xc9, 0xcf,
-	0xcd, 0xac, 0xd0, 0x2f, 0x28, 0xca, 0xcc, 0xcd, 0x2c, 0xc9, 0x2c, 0x4b, 0xd5, 0x2f, 0x33, 0x44,
-	0x70, 0xf4, 0x0a, 0x8a, 0xf2, 0x4b, 0xf2, 0x85, 0x84, 0x21, 0x8a, 0xf4, 0x10, 0xe2, 0x65, 0x86,
-	0x52, 0x8a, 0x50, 0x9d, 0x45, 0xa5, 0x79, 0x25, 0x99, 0xb9, 0xd8, 0xf4, 0x49, 0xc9, 0x60, 0x2a,
-	0xc9, 0x4d, 0x2d, 0x49, 0x84, 0xca, 0x8a, 0xa4, 0xe7, 0xa7, 0xe7, 0x83, 0x99, 0xfa, 0x20, 0x16,
-	0x44, 0x54, 0x29, 0x88, 0x4b, 0xc4, 0xbf, 0x20, 0x35, 0x2f, 0x00, 0x66, 0x54, 0x50, 0x6a, 0x61,
-	0x69, 0x6a, 0x71, 0x89, 0x90, 0x15, 0x17, 0x27, 0xdc, 0x78, 0x09, 0x46, 0x05, 0x46, 0x0d, 0x6e,
-	0x23, 0x19, 0x3d, 0xa8, 0xbb, 0xa0, 0xe6, 0xeb, 0x95, 0x19, 0xea, 0x21, 0xf4, 0x21, 0x94, 0x2b,
-	0x89, 0x73, 0x89, 0xa2, 0x99, 0x59, 0x5c, 0x90, 0x9f, 0x57, 0x9c, 0xaa, 0x94, 0xc3, 0x25, 0xea,
-	0x9c, 0x93, 0x5f, 0x9c, 0x8a, 0x61, 0x5b, 0x30, 0x17, 0x0f, 0x5c, 0x7b, 0x7c, 0x66, 0x0a, 0xd4,
-	0x42, 0x69, 0x2c, 0x16, 0xfa, 0x27, 0x65, 0xa5, 0x26, 0x97, 0x78, 0xa6, 0x38, 0x09, 0x9f, 0xb8,
-	0x27, 0xcf, 0xf0, 0xe8, 0x9e, 0x3c, 0x37, 0xdc, 0x30, 0x4f, 0x97, 0x20, 0x6e, 0xb8, 0x29, 0x9e,
-	0x29, 0x4a, 0x12, 0x5c, 0x62, 0xe8, 0xb6, 0x41, 0xdc, 0x61, 0x74, 0x99, 0x91, 0x4b, 0x00, 0x2e,
-	0xea, 0x9b, 0x98, 0x97, 0x98, 0x9e, 0x5a, 0x24, 0x14, 0xcb, 0xc5, 0x02, 0x72, 0xb5, 0x90, 0xa6,
-	0x1e, 0x96, 0xe0, 0xd7, 0xc3, 0x16, 0x48, 0x52, 0x5a, 0xc4, 0x28, 0x85, 0xd8, 0x29, 0x94, 0xc0,
-	0xc5, 0x0a, 0x76, 0x8d, 0x10, 0x76, 0x4d, 0x58, 0xc3, 0x45, 0x4a, 0x9b, 0x28, 0xb5, 0x10, 0x1b,
-	0x9c, 0x24, 0x4e, 0x3c, 0x92, 0x63, 0xbc, 0xf0, 0x48, 0x8e, 0xf1, 0xc1, 0x23, 0x39, 0xc6, 0x09,
-	0x8f, 0xe5, 0x18, 0x2e, 0x3c, 0x96, 0x63, 0xb8, 0xf1, 0x58, 0x8e, 0x21, 0x89, 0x0d, 0x1c, 0xd7,
-	0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0xdb, 0x40, 0x55, 0xbf, 0x7e, 0x02, 0x00, 0x00,
+	// 373 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x92, 0x4f, 0x4f, 0xf2, 0x40,
+	0x10, 0xc6, 0xbb, 0x7d, 0x79, 0x49, 0x3a, 0x78, 0x30, 0x0b, 0x68, 0xed, 0xa1, 0x60, 0xbd, 0xe0,
+	0x9f, 0xb4, 0x01, 0xaf, 0x5c, 0x44, 0x2e, 0x1c, 0x8c, 0xa6, 0xf1, 0xe0, 0xc5, 0x68, 0x91, 0xa5,
+	0x69, 0x02, 0xbb, 0x85, 0x16, 0x22, 0x9f, 0xc1, 0x8b, 0x1f, 0x8b, 0x23, 0x89, 0x17, 0x4f, 0xc4,
+	0x94, 0x2f, 0x62, 0xd8, 0x85, 0x96, 0x60, 0x63, 0xf0, 0x36, 0x3b, 0xf9, 0xcd, 0x3c, 0xcf, 0x3c,
+	0x59, 0x38, 0x71, 0x42, 0xd6, 0xf7, 0x5e, 0x2d, 0x7f, 0xe8, 0xf5, 0xbd, 0xd0, 0x1b, 0x13, 0x6b,
+	0x5c, 0x4d, 0x1e, 0xa6, 0x3f, 0x64, 0x21, 0xc3, 0x79, 0x01, 0x99, 0x49, 0x7f, 0x5c, 0xd5, 0x8e,
+	0x5c, 0xc6, 0xdc, 0x1e, 0xb1, 0x38, 0xd2, 0x1e, 0x75, 0x2d, 0x87, 0x4e, 0x04, 0xaf, 0x15, 0x5c,
+	0xe6, 0x32, 0x5e, 0x5a, 0xcb, 0x4a, 0x74, 0x8d, 0x37, 0x04, 0xca, 0xdd, 0x7a, 0x03, 0xae, 0x83,
+	0xec, 0x75, 0x54, 0x54, 0x46, 0x95, 0x5c, 0xad, 0x6c, 0xa6, 0x08, 0x98, 0x31, 0xdb, 0xea, 0x34,
+	0x60, 0x3a, 0x2f, 0x49, 0xd1, 0xbc, 0x24, 0xb7, 0x9a, 0xb6, 0xec, 0x75, 0x30, 0x86, 0x4c, 0x38,
+	0xf1, 0x89, 0x2a, 0x97, 0x51, 0x45, 0xb1, 0x79, 0x8d, 0x2f, 0x20, 0xfb, 0xc2, 0x68, 0xd7, 0x73,
+	0xd5, 0x7f, 0x7c, 0x6b, 0xc1, 0x14, 0x0e, 0xcd, 0xb5, 0x43, 0xf3, 0x8a, 0x4e, 0xec, 0x15, 0x63,
+	0x1c, 0x43, 0x6e, 0x43, 0x60, 0xb9, 0x90, 0x3a, 0x7d, 0xc2, 0x0d, 0x29, 0x36, 0xaf, 0x8d, 0x7b,
+	0x28, 0xdc, 0xfa, 0x84, 0xc6, 0x98, 0x4d, 0x06, 0x23, 0x12, 0x84, 0xb8, 0x0e, 0x4a, 0x6c, 0x74,
+	0x75, 0x81, 0xfe, 0xfb, 0x05, 0x76, 0x32, 0x60, 0x1c, 0x42, 0x71, 0x6b, 0x6b, 0xe0, 0x33, 0x1a,
+	0x10, 0x63, 0x00, 0xc5, 0xeb, 0x1e, 0x0b, 0xc8, 0x0f, 0xbd, 0x07, 0xd8, 0x8b, 0xc7, 0x9f, 0xfe,
+	0x10, 0x5a, 0x7e, 0x15, 0xda, 0xc6, 0xa1, 0x4d, 0x3b, 0xe7, 0x27, 0x84, 0xa1, 0xc2, 0xc1, 0xb6,
+	0xa4, 0x30, 0x53, 0xfb, 0x40, 0xb0, 0x1f, 0x77, 0x6f, 0x1c, 0xea, 0xb8, 0x64, 0x88, 0x1f, 0x21,
+	0xb3, 0xb4, 0x8e, 0x4f, 0x53, 0xa5, 0xd3, 0xb2, 0xd2, 0xce, 0x76, 0x41, 0x85, 0x26, 0x7e, 0x86,
+	0xff, 0xdc, 0x0d, 0x4e, 0x1f, 0x4a, 0x0d, 0x47, 0x3b, 0xdf, 0x89, 0x15, 0x0a, 0x0d, 0x75, 0x1a,
+	0xe9, 0x68, 0x16, 0xe9, 0xe8, 0x2b, 0xd2, 0xd1, 0xfb, 0x42, 0x97, 0x66, 0x0b, 0x5d, 0xfa, 0x5c,
+	0xe8, 0x52, 0x3b, 0xcb, 0x3f, 0xc9, 0xe5, 0x77, 0x00, 0x00, 0x00, 0xff, 0xff, 0xbc, 0x6e, 0xe1,
+	0xbd, 0x10, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -336,6 +447,88 @@ var _PrimitiveManager_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "atomix/primitive/v1/primitive.proto",
+}
+
+func (m *Primitive) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Primitive) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Primitive) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Config != nil {
+		{
+			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintPrimitive(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Type) > 0 {
+		i -= len(m.Type)
+		copy(dAtA[i:], m.Type)
+		i = encodeVarintPrimitive(dAtA, i, uint64(len(m.Type)))
+		i--
+		dAtA[i] = 0x12
+	}
+	{
+		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintPrimitive(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *PrimitiveId) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PrimitiveId) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PrimitiveId) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintPrimitive(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *OpenPrimitiveRequest) Marshal() (dAtA []byte, err error) {
@@ -463,6 +656,38 @@ func encodeVarintPrimitive(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *Primitive) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ID.Size()
+	n += 1 + l + sovPrimitive(uint64(l))
+	l = len(m.Type)
+	if l > 0 {
+		n += 1 + l + sovPrimitive(uint64(l))
+	}
+	if m.Config != nil {
+		l = m.Config.Size()
+		n += 1 + l + sovPrimitive(uint64(l))
+	}
+	return n
+}
+
+func (m *PrimitiveId) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovPrimitive(uint64(l))
+	}
+	return n
+}
+
 func (m *OpenPrimitiveRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -510,6 +735,239 @@ func sovPrimitive(x uint64) (n int) {
 }
 func sozPrimitive(x uint64) (n int) {
 	return sovPrimitive(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *Primitive) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPrimitive
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Primitive: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Primitive: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPrimitive
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthPrimitive
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthPrimitive
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPrimitive
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthPrimitive
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthPrimitive
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Type = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPrimitive
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthPrimitive
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthPrimitive
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Config == nil {
+				m.Config = &types.Any{}
+			}
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPrimitive(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPrimitive
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PrimitiveId) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPrimitive
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PrimitiveId: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PrimitiveId: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPrimitive
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthPrimitive
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthPrimitive
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPrimitive(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPrimitive
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *OpenPrimitiveRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -570,7 +1028,7 @@ func (m *OpenPrimitiveRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Primitive == nil {
-				m.Primitive = &v1.Primitive{}
+				m.Primitive = &Primitive{}
 			}
 			if err := m.Primitive.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

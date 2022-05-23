@@ -10,6 +10,7 @@ package atomix.runtime.v1;
 
 import "atomix/runtime/v1/driver.proto";
 import "atomix/runtime/v1/meta.proto";
+import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
 
 service ClusterService {
@@ -28,13 +29,20 @@ message Cluster {
     ClusterSpec spec = 2 [
         (gogoproto.nullable) = false
     ];
+    ClusterStatus status = 3 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message ClusterSpec {
     DriverId driver = 1 [
         (gogoproto.nullable) = false
     ];
-    bytes config = 2;
+    google.protobuf.Any config = 2;
+}
+
+message ClusterStatus {
+    bool connected = 1;
 }
 
 message GetClusterRequest {

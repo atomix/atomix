@@ -4,12 +4,12 @@
 
 package v1
 
-func (p *Primitive) GetMeta() ObjectMeta {
+func (p *Proxy) GetMeta() ObjectMeta {
 	return p.ObjectMeta
 }
 
-func (p *Primitive) SetMeta(meta ObjectMeta) {
+func (p *Proxy) SetMeta(meta ObjectMeta) {
 	p.ObjectMeta = meta
 }
 
-var _ Object = (*Primitive)(nil)
+var _ Object = (*Proxy)(nil)

@@ -447,9 +447,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [atomix.primitive.v1.ObjectMeta](#atomix-primitive-v1-ObjectMeta) |  |  |
-| leader | [uint64](#uint64) |  |  |
-| candidates | [uint64](#uint64) | repeated |  |
+| leader_id | [string](#string) |  |  |
+| candidates | [string](#string) | repeated |  |
+| timestamp | [atomix.primitive.v1.Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
 
 
 

@@ -10,7 +10,7 @@ package atomix.map.v1;
 
 import "google/protobuf/duration.proto";
 import "atomix/primitive/v1/headers.proto";
-import "atomix/primitive/v1/object.proto";
+import "atomix/primitive/v1/timestamp.proto";
 import "atomix/primitive/v1/descriptor.proto";
 import "gogoproto/gogo.proto";
 
@@ -97,12 +97,6 @@ message SizeOutput {
     uint32 size = 1;
 }
 
-message Precondition {
-    oneof precondition {
-        atomix.primitive.v1.ObjectMeta metadata = 1;
-    }
-}
-
 message PutRequest {
     atomix.primitive.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
@@ -116,12 +110,9 @@ message PutRequest {
 }
 
 message PutInput {
-    Entry entry = 1 [
-        (gogoproto.nullable) = false
-    ];
-    repeated Precondition preconditions = 2 [
-        (gogoproto.nullable) = false
-    ];
+    string key = 1;
+    Value value = 2;
+    atomix.primitive.v1.Timestamp timestamp = 3;
 }
 
 message PutResponse {
@@ -189,12 +180,8 @@ message RemoveRequest {
 }
 
 message RemoveInput {
-    Key key = 1 [
-        (gogoproto.nullable) = false
-    ];
-    repeated Precondition preconditions = 2 [
-        (gogoproto.nullable) = false
-    ];
+    string key = 1;
+    atomix.primitive.v1.Timestamp timestamp = 2;
 }
 
 message RemoveResponse {
@@ -244,7 +231,7 @@ message ClearResponse {
 }
 
 message ClearOutput {
-
+    atomix.primitive.v1.Timestamp timestamp = 1;
 }
 
 message EntriesRequest {
@@ -332,18 +319,9 @@ message Event {
 }
 
 message Entry {
-    Key key = 1 [
-        (gogoproto.nullable) = false
-    ];
+    string key = 1;
     Value value = 2;
-}
-
-message Key {
-    atomix.primitive.v1.ObjectMeta meta = 1 [
-        (gogoproto.embed) = true,
-        (gogoproto.nullable) = false
-    ];
-    string key = 2;
+    atomix.primitive.v1.Timestamp timestamp = 3;
 }
 
 message Value {

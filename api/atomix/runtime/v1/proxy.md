@@ -3,33 +3,131 @@
 
 ## Table of Contents
 
-- [atomix/primitive/v1/object.proto](#atomix_primitive_v1_object-proto)
-    - [ObjectMeta](#atomix-primitive-v1-ObjectMeta)
+- [atomix/runtime/v1/proxy.proto](#atomix_runtime_v1_proxy-proto)
+    - [GetProxyRequest](#atomix-runtime-v1-GetProxyRequest)
+    - [GetProxyResponse](#atomix-runtime-v1-GetProxyResponse)
+    - [ListProxiesRequest](#atomix-runtime-v1-ListProxiesRequest)
+    - [ListProxiesResponse](#atomix-runtime-v1-ListProxiesResponse)
+    - [Proxy](#atomix-runtime-v1-Proxy)
+    - [ProxySpec](#atomix-runtime-v1-ProxySpec)
+    - [ProxyStatus](#atomix-runtime-v1-ProxyStatus)
   
-    - [ObjectMeta.Type](#atomix-primitive-v1-ObjectMeta-Type)
+    - [ProxyService](#atomix-runtime-v1-ProxyService)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_primitive_v1_object-proto"></a>
+<a name="atomix_runtime_v1_proxy-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/primitive/v1/object.proto
+## atomix/runtime/v1/proxy.proto
 
 
 
-<a name="atomix-primitive-v1-ObjectMeta"></a>
+<a name="atomix-runtime-v1-GetProxyRequest"></a>
 
-### ObjectMeta
+### GetProxyRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| revision | [uint64](#uint64) |  |  |
-| timestamp | [Timestamp](#atomix-primitive-v1-Timestamp) |  |  |
-| type | [ObjectMeta.Type](#atomix-primitive-v1-ObjectMeta-Type) |  |  |
+| proxy_id | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-GetProxyResponse"></a>
+
+### GetProxyResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| proxy | [Proxy](#atomix-runtime-v1-Proxy) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ListProxiesRequest"></a>
+
+### ListProxiesRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
+| watch | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ListProxiesResponse"></a>
+
+### ListProxiesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| proxies | [Proxy](#atomix-runtime-v1-Proxy) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-Proxy"></a>
+
+### Proxy
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| meta | [ObjectMeta](#atomix-runtime-v1-ObjectMeta) |  |  |
+| spec | [ProxySpec](#atomix-runtime-v1-ProxySpec) |  |  |
+| status | [ProxyStatus](#atomix-runtime-v1-ProxyStatus) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ProxySpec"></a>
+
+### ProxySpec
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
+| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ProxyStatus"></a>
+
+### ProxyStatus
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| binding | [ObjectId](#atomix-runtime-v1-ObjectId) |  |  |
 
 
 
@@ -37,21 +135,20 @@
 
  
 
-
-<a name="atomix-primitive-v1-ObjectMeta-Type"></a>
-
-### ObjectMeta.Type
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| OBJECT | 0 |  |
-| TOMBSTONE | 1 |  |
-
-
  
 
  
+
+
+<a name="atomix-runtime-v1-ProxyService"></a>
+
+### ProxyService
+
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| GetProxy | [GetProxyRequest](#atomix-runtime-v1-GetProxyRequest) | [GetProxyResponse](#atomix-runtime-v1-GetProxyResponse) |  |
+| ListProxies | [ListProxiesRequest](#atomix-runtime-v1-ListProxiesRequest) | [ListProxiesResponse](#atomix-runtime-v1-ListProxiesResponse) |  |
 
  
 

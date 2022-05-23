@@ -12,42 +12,49 @@ import "atomix/runtime/v1/meta.proto";
 import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
 
-service PrimitiveService {
-    rpc GetPrimitive (GetPrimitiveRequest) returns (GetPrimitiveResponse);
-    rpc ListPrimitives (ListPrimitivesRequest) returns (ListPrimitivesResponse);
+service ProxyService {
+    rpc GetProxy (GetProxyRequest) returns (GetProxyResponse);
+    rpc ListProxies (ListProxiesRequest) returns (ListProxiesResponse);
 }
 
-message Primitive {
+message Proxy {
     ObjectMeta meta = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
-    PrimitiveSpec spec = 2 [
+    ProxySpec spec = 2 [
+        (gogoproto.nullable) = false
+    ];
+    ProxyStatus status = 3 [
         (gogoproto.nullable) = false
     ];
 }
 
-message PrimitiveSpec {
+message ProxySpec {
     string type = 1;
     google.protobuf.Any config = 2;
 }
 
-message GetPrimitiveRequest {
-    ObjectId primitive_id = 1 [
-        (gogoproto.customname) = "PrimitiveID",
+message ProxyStatus {
+    ObjectId binding = 1;
+}
+
+message GetProxyRequest {
+    ObjectId proxy_id = 1 [
+        (gogoproto.customname) = "ProxyID",
         (gogoproto.nullable) = false
     ];
 }
 
-message GetPrimitiveResponse {
-    Primitive primitive = 1;
+message GetProxyResponse {
+    Proxy proxy = 1;
 }
 
-message ListPrimitivesRequest {
+message ListProxiesRequest {
     string type = 1;
     bool watch = 2;
 }
 
-message ListPrimitivesResponse {
-    repeated Primitive primitives = 1;
+message ListProxiesResponse {
+    repeated Proxy proxies = 1;
 }

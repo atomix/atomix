@@ -6,6 +6,7 @@
 - [atomix/runtime/v1/cluster.proto](#atomix_runtime_v1_cluster-proto)
     - [Cluster](#atomix-runtime-v1-Cluster)
     - [ClusterSpec](#atomix-runtime-v1-ClusterSpec)
+    - [ClusterStatus](#atomix-runtime-v1-ClusterStatus)
     - [CreateClusterRequest](#atomix-runtime-v1-CreateClusterRequest)
     - [CreateClusterResponse](#atomix-runtime-v1-CreateClusterResponse)
     - [DeleteClusterRequest](#atomix-runtime-v1-DeleteClusterRequest)
@@ -40,6 +41,7 @@
 | ----- | ---- | ----- | ----------- |
 | meta | [ObjectMeta](#atomix-runtime-v1-ObjectMeta) |  |  |
 | spec | [ClusterSpec](#atomix-runtime-v1-ClusterSpec) |  |  |
+| status | [ClusterStatus](#atomix-runtime-v1-ClusterStatus) |  |  |
 
 
 
@@ -55,7 +57,22 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | driver | [DriverId](#atomix-runtime-v1-DriverId) |  |  |
-| config | [bytes](#bytes) |  |  |
+| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ClusterStatus"></a>
+
+### ClusterStatus
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| connected | [bool](#bool) |  |  |
 
 
 
