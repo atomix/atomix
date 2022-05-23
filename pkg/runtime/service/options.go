@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package runtime
+package service
 
 type Options struct {
-	ConfigFile string
-	CacheDir   string
+	Host string
+	Port int
 }
 
 func (o Options) apply(opts ...Option) {
@@ -23,14 +23,14 @@ func WithOptions(opts Options) Option {
 	}
 }
 
-func WithConfigFile(file string) Option {
+func WithHost(host string) Option {
 	return func(options *Options) {
-		options.ConfigFile = file
+		options.Host = host
 	}
 }
 
-func WithCacheDir(dir string) Option {
+func WithPort(port int) Option {
 	return func(options *Options) {
-		options.CacheDir = dir
+		options.Port = port
 	}
 }
