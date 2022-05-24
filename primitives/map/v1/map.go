@@ -6,30 +6,33 @@ package v1
 
 import (
 	"context"
-	mapv1 "github.com/atomix/runtime/api/atomix/map/v1"
-	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
-	"github.com/atomix/runtime/pkg/driver"
+	mapv1 "github.com/atomix/runtime/api/atomix/primitive/map/v1"
+	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
 	"github.com/atomix/runtime/pkg/primitive"
 	"google.golang.org/grpc"
 )
 
 const serviceName = "atomix.map.v1.Map"
 
-var Primitive = primitive.NewType[Map](serviceName, resolve, register)
+var Primitive = primitive.NewType[MapClient, Map, *mapv1.MapConfig](serviceName, register, getMap)
 
-func resolve(client driver.Client) (*primitive.Client[Map], bool) {
-	if mapClient, ok := client.(MapClient); ok {
-		return primitive.NewClient[Map](mapClient.GetMap), true
-	}
-	return nil, false
+func register(server *grpc.Server, proxies *primitive.Manager[Map]) {
+	mapv1.RegisterMapServer(server, newProxyingMap(proxies))
 }
 
-func register(server *grpc.Server, service *primitive.Service[Map], registry *primitive.Registry[Map]) {
-	mapv1.RegisterMapServer(server, newMapV1Server(registry))
+func getMap(client MapClient) func(ctx context.Context, sessionID primitivev1.SessionId, config *mapv1.MapConfig) (Map, error) {
+	return func(ctx context.Context, sessionID primitivev1.SessionId, config *mapv1.MapConfig) (Map, error) {
+		m, err := client.GetMap(ctx, sessionID)
+		if err != nil {
+			return nil, err
+		}
+		// TODO: Construct caching map here
+		return m, nil
+	}
 }
 
 type MapClient interface {
-	GetMap(ctx context.Context, primitiveID runtimev1.ObjectId) (Map, error)
+	GetMap(ctx context.Context, sessionID primitivev1.SessionId) (Map, error)
 }
 
 type Map interface {
