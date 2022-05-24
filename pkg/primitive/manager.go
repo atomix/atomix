@@ -9,23 +9,24 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 )
 
-func newManager[T any](registry *Registry) *Manager[T] {
-	return &Manager[T]{
+func newManager[T any](registry *SessionRegistry) *SessionManager[T] {
+	return &SessionManager[T]{
 		registry: registry,
 	}
 }
 
-type Manager[T any] struct {
-	registry *Registry
+type SessionManager[T any] struct {
+	registry *SessionRegistry
 }
 
-func (m *Manager[T]) GetSession(sessionID primitivev1.SessionId) (T, error) {
-	session, ok := m.registry.Get(sessionID)
+func (m *SessionManager[T]) GetSession(sessionID primitivev1.SessionId) (T, error) {
+	var session T
+	primitive, ok := m.registry.Get(sessionID)
 	if !ok {
-		return nil, errors.NewNotFound("session '%s' not found", sessionID)
+		return session, errors.NewNotFound("session '%s' not found", sessionID)
 	}
-	if proxy, ok := session.(T); ok {
-		return proxy, nil
+	if session, ok := primitive.(T); ok {
+		return session, nil
 	}
-	return nil, errors.NewForbidden("session '%s' is not of the correct type")
+	return session, errors.NewForbidden("session '%s' is not of the correct type")
 }

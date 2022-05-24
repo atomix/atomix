@@ -6,29 +6,31 @@ package driver
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/atomix/runtime/pkg/logging"
+	"github.com/gogo/protobuf/jsonpb"
+	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 )
 
 var log = logging.GetLogger()
 
 type Driver interface {
-	Connect(ctx context.Context, config []byte) (Conn, error)
+	Connect(ctx context.Context, config *types.Any) (Conn, error)
 }
 
-func New[C any](connector Connector[C]) Driver {
+func New[C proto.Message](connector Connector[C]) Driver {
 	return &configurableDriver[C]{
 		connector: connector,
 	}
 }
 
-type configurableDriver[C any] struct {
+type configurableDriver[C proto.Message] struct {
 	connector Connector[C]
 }
 
-func (d *configurableDriver[C]) Connect(ctx context.Context, bytes []byte) (Conn, error) {
+func (d *configurableDriver[C]) Connect(ctx context.Context, rawConfig *types.Any) (Conn, error) {
 	var config C
-	if err := json.Unmarshal(bytes, &config); err != nil {
+	if err := jsonpb.UnmarshalString(string(rawConfig.Value), config); err != nil {
 		return nil, err
 	}
 	conn, err := d.connector(ctx, config)
@@ -38,4 +40,4 @@ func (d *configurableDriver[C]) Connect(ctx context.Context, bytes []byte) (Conn
 	return newConfigurableConn[C](conn), nil
 }
 
-var _ Driver = (*configurableDriver[any])(nil)
+var _ Driver = (*configurableDriver[*types.Any])(nil)

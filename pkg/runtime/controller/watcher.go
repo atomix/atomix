@@ -40,6 +40,6 @@ func (w *watchableWatcher[I, J, T]) Watch(ch chan<- I) store.WatchID {
 	return w.watchable.Watch(watchCh)
 }
 
-func (w *watchableWatcher[T]) Unwatch(watchID store.WatchID) {
+func (w *watchableWatcher[I, J, T]) Unwatch(watchID store.WatchID) {
 	w.watchable.Unwatch(watchID)
 }

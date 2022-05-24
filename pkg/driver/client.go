@@ -6,13 +6,14 @@ package driver
 
 import (
 	"context"
+	"github.com/gogo/protobuf/proto"
 )
 
 type Client interface {
 	Closer
 }
 
-type Configurator[C any] interface {
+type Configurator[C proto.Message] interface {
 	Configure(ctx context.Context, config C) error
 }
 

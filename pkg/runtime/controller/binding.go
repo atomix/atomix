@@ -40,7 +40,7 @@ type bindingReconciler struct {
 	clusters store.Store[*runtimev1.ClusterId, *runtimev1.Cluster]
 }
 
-func (r *bindingReconciler) Reconcile(objectID *runtimev1.BindingId) error {
+func (r *bindingReconciler) Reconcile(bindingID *runtimev1.BindingId) error {
 	//TODO implement me
 	panic("implement me")
 }

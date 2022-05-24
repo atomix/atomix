@@ -6,7 +6,18 @@ package main
 
 import (
 	"fmt"
+	primitiveservice "github.com/atomix/runtime/pkg/primitive/service"
 	"github.com/atomix/runtime/pkg/runtime"
+	runtimeservice "github.com/atomix/runtime/pkg/runtime/service"
+	counterv1 "github.com/atomix/runtime/primitives/counter/v1"
+	electionv1 "github.com/atomix/runtime/primitives/election/v1"
+	indexed_mapv1 "github.com/atomix/runtime/primitives/indexed_map/v1"
+	listv1 "github.com/atomix/runtime/primitives/list/v1"
+	lockv1 "github.com/atomix/runtime/primitives/lock/v1"
+	mapv1 "github.com/atomix/runtime/primitives/map/v1"
+	setv1 "github.com/atomix/runtime/primitives/set/v1"
+	topicv1 "github.com/atomix/runtime/primitives/topic/v1"
+	valuev1 "github.com/atomix/runtime/primitives/value/v1"
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
@@ -27,12 +38,12 @@ func main() {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
-			runtimeHost, err := cmd.Flags().GetString("runtime-host")
+			controlHost, err := cmd.Flags().GetString("control-host")
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
-			runtimePort, err := cmd.Flags().GetInt("runtime-port")
+			controlPort, err := cmd.Flags().GetInt("control-port")
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
@@ -48,14 +59,35 @@ func main() {
 				os.Exit(1)
 			}
 
-			rt := runtime.New(
-				runtime.WithProxyHost(proxyHost),
-				runtime.WithProxyPort(proxyPort),
-				runtime.WithRuntimeHost(runtimeHost),
-				runtime.WithRuntimePort(runtimePort),
+			// Create the runtime
+			runtime := runtime.New(
 				runtime.WithConfigFile(configFile),
 				runtime.WithCacheDir(cacheDir))
-			if err := rt.Start(); err != nil {
+
+			// Start the proxy service
+			runtimeService := runtimeservice.NewService(runtime,
+				runtimeservice.WithHost(proxyHost),
+				runtimeservice.WithPort(proxyPort))
+			if err := runtimeService.Start(); err != nil {
+				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
+				os.Exit(1)
+			}
+
+			// Start the primitive service
+			primitiveService := primitiveservice.NewService(runtime,
+				primitiveservice.WithHost(controlHost),
+				primitiveservice.WithPort(controlPort),
+				primitiveservice.WithPrimitiveTypes(
+					counterv1.Primitive,
+					electionv1.Primitive,
+					indexed_mapv1.Primitive,
+					listv1.Primitive,
+					lockv1.Primitive,
+					mapv1.Primitive,
+					setv1.Primitive,
+					topicv1.Primitive,
+					valuev1.Primitive))
+			if err := primitiveService.Start(); err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
@@ -65,8 +97,12 @@ func main() {
 			signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 			<-ch
 
-			// Stop the proxy service
-			if err := rt.Stop(); err != nil {
+			// Stop the services
+			if err := primitiveService.Stop(); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			if err := runtimeService.Stop(); err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
@@ -74,8 +110,8 @@ func main() {
 	}
 	cmd.Flags().StringP("proxy-host", "h", "", "the host to which to bind the proxy server")
 	cmd.Flags().IntP("proxy-port", "p", 5678, "the port to which to bind the proxy server")
-	cmd.Flags().String("runtime-host", "", "the host to which to bind the runtime server")
-	cmd.Flags().Int("runtime-port", 5679, "the port to which to bind the runtime server")
+	cmd.Flags().String("control-host", "", "the host to which to bind the runtime server")
+	cmd.Flags().Int("control-port", 5679, "the port to which to bind the runtime server")
 	cmd.Flags().StringP("config", "c", "~/.atomix/config.yaml", "the path to the Atomix configuration file")
 	cmd.Flags().String("cache", "~/.atomix/cache", "the path to the Atomix cache")
 

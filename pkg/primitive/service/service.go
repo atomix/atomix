@@ -41,7 +41,7 @@ func (s *Service) Start() error {
 		return err
 	}
 
-	registry := primitive.NewRegistry()
+	registry := primitive.NewSessionRegistry()
 	primitivev1.RegisterSessionServiceServer(s.server, newSessionServiceServer(s.runtime, registry, s.PrimitiveTypes...))
 	for _, primitiveType := range s.PrimitiveTypes {
 		primitiveType.Register(s.server, registry)

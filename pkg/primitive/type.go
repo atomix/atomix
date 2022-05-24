@@ -16,7 +16,7 @@ import (
 
 type Type interface {
 	Name() string
-	Register(server *grpc.Server, registry *Registry)
+	Register(server *grpc.Server, registry *SessionRegistry)
 	GetProxy(client driver.Client) func(ctx context.Context, sessionID primitivev1.SessionId, rawConfig *types.Any) (Primitive, error)
 }
 
@@ -28,11 +28,11 @@ type Primitive interface {
 	Closer
 }
 
-type Registrar[T Primitive] func(*grpc.Server, *Manager[T])
+type Registrar[T Primitive] func(*grpc.Server, *SessionManager[T])
 
-type Provider[P Primitive, T Primitive, C proto.Message] func(client P) func(ctx context.Context, sessionID primitivev1.SessionId, config C) (T, error)
+type Provider[P any, T Primitive, C proto.Message] func(client P) func(ctx context.Context, sessionID primitivev1.SessionId, config C) (T, error)
 
-func NewType[P Primitive, T Primitive, C proto.Message](name string, registrar Registrar[T], provider Provider[P, T, C]) Type {
+func NewType[P any, T Primitive, C proto.Message](name string, registrar Registrar[T], provider Provider[P, T, C]) Type {
 	return &genericType[P, T, C]{
 		name:      name,
 		registrar: registrar,
@@ -40,7 +40,7 @@ func NewType[P Primitive, T Primitive, C proto.Message](name string, registrar R
 	}
 }
 
-type genericType[P Primitive, T Primitive, C proto.Message] struct {
+type genericType[P any, T Primitive, C proto.Message] struct {
 	name      string
 	registrar Registrar[T]
 	provider  Provider[P, T, C]
@@ -50,7 +50,7 @@ func (t *genericType[P, T, C]) Name() string {
 	return t.name
 }
 
-func (t *genericType[P, T, C]) Register(server *grpc.Server, registry *Registry) {
+func (t *genericType[P, T, C]) Register(server *grpc.Server, registry *SessionRegistry) {
 	t.registrar(server, newManager[T](registry))
 }
 

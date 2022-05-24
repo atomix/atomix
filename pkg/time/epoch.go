@@ -5,7 +5,7 @@
 package time
 
 import (
-	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
+	metav1 "github.com/atomix/runtime/api/atomix/primitive/meta/v1"
 	"sync"
 )
 
@@ -134,21 +134,21 @@ func (t EpochTimestamp) Equal(u Timestamp) bool {
 // EpochTimestampCodec is a codec for epoch timestamps
 type EpochTimestampCodec struct{}
 
-func (c EpochTimestampCodec) EncodeTimestamp(timestamp Timestamp) primitivev1.Timestamp {
+func (c EpochTimestampCodec) EncodeTimestamp(timestamp Timestamp) metav1.Timestamp {
 	t, ok := timestamp.(EpochTimestamp)
 	if !ok {
 		panic("expected EpochTimestamp")
 	}
-	return primitivev1.Timestamp{
-		Timestamp: &primitivev1.Timestamp_EpochTimestamp{
-			EpochTimestamp: &primitivev1.EpochTimestamp{
-				Epoch: primitivev1.Epoch(t.Epoch),
-				Time:  primitivev1.LogicalTime(t.Time),
+	return metav1.Timestamp{
+		Timestamp: &metav1.Timestamp_EpochTimestamp{
+			EpochTimestamp: &metav1.EpochTimestamp{
+				Epoch: metav1.Epoch(t.Epoch),
+				Time:  metav1.LogicalTime(t.Time),
 			},
 		},
 	}
 }
 
-func (c EpochTimestampCodec) DecodeTimestamp(timestamp primitivev1.Timestamp) (Timestamp, error) {
+func (c EpochTimestampCodec) DecodeTimestamp(timestamp metav1.Timestamp) (Timestamp, error) {
 	return NewEpochTimestamp(Epoch(timestamp.GetEpochTimestamp().Epoch), LogicalTime(timestamp.GetEpochTimestamp().Time)), nil
 }

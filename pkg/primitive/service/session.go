@@ -15,7 +15,7 @@ import (
 	"sync"
 )
 
-func newSessionServiceServer(runtime runtime.Runtime, registry *primitive.Registry, types ...primitive.Type) primitivev1.SessionServiceServer {
+func newSessionServiceServer(runtime runtime.Runtime, registry *primitive.SessionRegistry, types ...primitive.Type) primitivev1.SessionServiceServer {
 	primitiveTypes := make(map[string]primitive.Type)
 	for _, t := range types {
 		primitiveTypes[t.Name()] = t
@@ -29,7 +29,7 @@ func newSessionServiceServer(runtime runtime.Runtime, registry *primitive.Regist
 
 type sessionServiceServer struct {
 	runtime  runtime.Runtime
-	registry *primitive.Registry
+	registry *primitive.SessionRegistry
 	types    map[string]primitive.Type
 	mu       sync.Mutex
 }
@@ -101,16 +101,6 @@ func (s *sessionServiceServer) CloseSession(ctx context.Context, request *primit
 	}
 
 	if err := session.Close(ctx); err != nil {
-		log.Warnw("CloseSession",
-			logging.Stringer("ClosePrimitiveRequest", request),
-			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
-	}
-
-	proxyID := runtimev1.ProxyId{
-		ID: request.SessionID.String(),
-	}
-	if err := s.runtime.Close(ctx, proxyID); err != nil {
 		log.Warnw("CloseSession",
 			logging.Stringer("ClosePrimitiveRequest", request),
 			logging.Error("Error", err))

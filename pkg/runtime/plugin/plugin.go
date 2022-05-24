@@ -53,13 +53,14 @@ func (p *Plugin[T]) Create() (*Writer[T], error) {
 func (p *Plugin[T]) Load() (T, error) {
 	p.lock.RLock()
 	defer p.lock.Unlock()
+	var t T
 	plugin, err := plugin.Open(p.Path)
 	if err != nil {
-		return nil, err
+		return t, err
 	}
 	symbol, err := plugin.Lookup(pluginSymbol)
 	if err != nil {
-		return nil, err
+		return t, err
 	}
 	return symbol.(T), nil
 }

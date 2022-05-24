@@ -5,7 +5,7 @@
 package time
 
 import (
-	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
+	metav1 "github.com/atomix/runtime/api/atomix/primitive/meta/v1"
 	"sync"
 	"time"
 )
@@ -129,20 +129,20 @@ func (t PhysicalTimestamp) Equal(u Timestamp) bool {
 // PhysicalTimestampCodec is a codec for physical timestamps
 type PhysicalTimestampCodec struct{}
 
-func (c PhysicalTimestampCodec) EncodeTimestamp(timestamp Timestamp) primitivev1.Timestamp {
+func (c PhysicalTimestampCodec) EncodeTimestamp(timestamp Timestamp) metav1.Timestamp {
 	t, ok := timestamp.(PhysicalTimestamp)
 	if !ok {
 		panic("expected PhysicalTimestamp")
 	}
-	return primitivev1.Timestamp{
-		Timestamp: &primitivev1.Timestamp_PhysicalTimestamp{
-			PhysicalTimestamp: &primitivev1.PhysicalTimestamp{
-				Time: primitivev1.PhysicalTime(t.Time),
+	return metav1.Timestamp{
+		Timestamp: &metav1.Timestamp_PhysicalTimestamp{
+			PhysicalTimestamp: &metav1.PhysicalTimestamp{
+				Time: metav1.PhysicalTime(t.Time),
 			},
 		},
 	}
 }
 
-func (c PhysicalTimestampCodec) DecodeTimestamp(timestamp primitivev1.Timestamp) (Timestamp, error) {
+func (c PhysicalTimestampCodec) DecodeTimestamp(timestamp metav1.Timestamp) (Timestamp, error) {
 	return NewPhysicalTimestamp(PhysicalTime(timestamp.GetPhysicalTimestamp().Time)), nil
 }
