@@ -26,7 +26,6 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitive | [PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | session | [SessionId](#atomix-primitive-v1-SessionId) |  |  |
 
 

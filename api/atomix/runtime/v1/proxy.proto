@@ -18,8 +18,9 @@ service ProxyService {
 
 message ProxyId {
     option (gogoproto.equal) = true;
-    string namespace = 1;
-    string name = 2;
+    string id = 1 [
+        (gogoproto.customname) = "ID"
+    ];
 }
 
 message ProxyMeta {
@@ -47,7 +48,7 @@ message Proxy {
 }
 
 message ProxySpec {
-    string type = 1;
+
 }
 
 message ProxyStatus {

@@ -34,8 +34,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitive | [PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
-| session | [SessionId](#atomix-primitive-v1-SessionId) |  |  |
+| session_id | [SessionId](#atomix-primitive-v1-SessionId) |  |  |
 
 
 
@@ -86,7 +85,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | meta | [SessionMeta](#atomix-primitive-v1-SessionMeta) |  |  |
-| primitive | [Primitive](#atomix-primitive-v1-Primitive) |  |  |
+| primitive_type | [string](#string) |  |  |
 | config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
@@ -103,6 +102,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  |  |
+| primitive | [PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 
 
 

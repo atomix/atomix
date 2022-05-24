@@ -4,9 +4,7 @@
 ## Table of Contents
 
 - [atomix/primitive/v1/primitive.proto](#atomix_primitive_v1_primitive-proto)
-    - [Primitive](#atomix-primitive-v1-Primitive)
     - [PrimitiveId](#atomix-primitive-v1-PrimitiveId)
-    - [PrimitiveMeta](#atomix-primitive-v1-PrimitiveMeta)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -16,21 +14,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/primitive/v1/primitive.proto
-
-
-
-<a name="atomix-primitive-v1-Primitive"></a>
-
-### Primitive
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| meta | [PrimitiveMeta](#atomix-primitive-v1-PrimitiveMeta) |  |  |
-
-
-
 
 
 
@@ -44,22 +27,6 @@
 | ----- | ---- | ----- | ----------- |
 | namespace | [string](#string) |  |  |
 | name | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-primitive-v1-PrimitiveMeta"></a>
-
-### PrimitiveMeta
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
-| type | [string](#string) |  |  |
 
 
 

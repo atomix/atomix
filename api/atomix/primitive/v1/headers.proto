@@ -13,10 +13,7 @@ import "atomix/primitive/v1/session.proto";
 import "gogoproto/gogo.proto";
 
 message RequestHeaders {
-    PrimitiveId primitive = 1 [
-        (gogoproto.nullable) = false
-    ];
-    SessionId session = 2 [
+    SessionId session = 1 [
         (gogoproto.nullable) = false
     ];
 }

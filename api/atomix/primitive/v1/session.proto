@@ -22,9 +22,7 @@ message Session {
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
-    Primitive primitive = 2 [
-        (gogoproto.nullable) = false
-    ];
+    string primitive_type = 2;
     google.protobuf.Any config = 3;
 }
 
@@ -38,6 +36,9 @@ message SessionMeta {
 
 message SessionId {
     string name = 1;
+    PrimitiveId primitive = 2 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message OpenSessionRequest {
@@ -49,10 +50,8 @@ message OpenSessionResponse {
 }
 
 message CloseSessionRequest {
-    PrimitiveId primitive = 1 [
-        (gogoproto.nullable) = false
-    ];
-    SessionId session = 2 [
+    SessionId session_id = 1 [
+        (gogoproto.customname) = "SessionID",
         (gogoproto.nullable) = false
     ];
 }

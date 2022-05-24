@@ -114,8 +114,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| namespace | [string](#string) |  |  |
-| name | [string](#string) |  |  |
+| id | [string](#string) |  |  |
 
 
 
@@ -159,11 +158,6 @@
 
 ### ProxySpec
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| type | [string](#string) |  |  |
 
 
 
