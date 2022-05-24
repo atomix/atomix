@@ -5,42 +5,45 @@
 package primitive
 
 import (
-	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
+	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
 	"sync"
 )
 
-func NewRegistry[T Primitive]() *Registry[T] {
-	return &Registry[T]{
-		proxies: make(map[runtimev1.ObjectId]T),
+func NewRegistry() *Registry {
+	return &Registry{
+		sessions: make(map[primitivev1.SessionId]Primitive),
 	}
 }
 
-type Registry[T Primitive] struct {
-	proxies map[runtimev1.ObjectId]T
-	mu      sync.RWMutex
+type Registry struct {
+	sessions map[primitivev1.SessionId]Primitive
+	mu       sync.RWMutex
 }
 
-func (r *Registry[T]) GetProxy(primitiveID runtimev1.ObjectId) (T, bool) {
+func (r *Registry) Get(sessionID primitivev1.SessionId) (Primitive, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	proxy, ok := r.proxies[primitiveID]
-	return proxy, ok
+	primitive, ok := r.sessions[sessionID]
+	return primitive, ok
 }
 
-func (r *Registry[T]) register(primitiveID runtimev1.ObjectId, proxy T) {
+func (r *Registry) Register(sessionID primitivev1.SessionId, primitive Primitive) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.proxies[primitiveID] = proxy
-}
-
-func (r *Registry[T]) unregister(primitiveID runtimev1.ObjectId) (T, bool) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	var proxy T
-	proxy, ok := r.proxies[primitiveID]
-	if !ok {
-		return proxy, false
+	if _, ok := r.sessions[sessionID]; ok {
+		return false
 	}
-	delete(r.proxies, primitiveID)
-	return proxy, true
+	r.sessions[sessionID] = primitive
+	return true
+}
+
+func (r *Registry) Unregister(sessionID primitivev1.SessionId) (Primitive, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	primitive, ok := r.sessions[sessionID]
+	if !ok {
+		return nil, false
+	}
+	delete(r.sessions, sessionID)
+	return primitive, true
 }
