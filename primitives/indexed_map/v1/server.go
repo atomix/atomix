@@ -6,107 +6,107 @@ package v1
 
 import (
 	"context"
-	"github.com/atomix/runtime/api/atomix/indexed_map/v1"
+	"github.com/atomix/runtime/api/atomix/primitive/indexed_map/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/primitive"
 )
 
-func newIndexedMapV1Server(proxies *primitive.Registry[IndexedMap]) v1.IndexedMapServer {
-	return &indexedMapV1Server{
-		proxies: proxies,
+func newIndexedMapServer(sessions *primitive.SessionManager[IndexedMap]) v1.IndexedMapServer {
+	return &indexedMapServer{
+		sessions: sessions,
 	}
 }
 
-type indexedMapV1Server struct {
-	proxies *primitive.Registry[IndexedMap]
+type indexedMapServer struct {
+	sessions *primitive.SessionManager[IndexedMap]
 }
 
-func (s *indexedMapV1Server) Size(ctx context.Context, request *v1.SizeRequest) (*v1.SizeResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *indexedMapServer) Size(ctx context.Context, request *v1.SizeRequest) (*v1.SizeResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Size(ctx, request)
+	return session.Size(ctx, request)
 }
 
-func (s *indexedMapV1Server) Put(ctx context.Context, request *v1.PutRequest) (*v1.PutResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *indexedMapServer) Put(ctx context.Context, request *v1.PutRequest) (*v1.PutResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Put(ctx, request)
+	return session.Put(ctx, request)
 }
 
-func (s *indexedMapV1Server) Get(ctx context.Context, request *v1.GetRequest) (*v1.GetResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *indexedMapServer) Get(ctx context.Context, request *v1.GetRequest) (*v1.GetResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Get(ctx, request)
+	return session.Get(ctx, request)
 }
 
-func (s *indexedMapV1Server) FirstEntry(ctx context.Context, request *v1.FirstEntryRequest) (*v1.FirstEntryResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *indexedMapServer) FirstEntry(ctx context.Context, request *v1.FirstEntryRequest) (*v1.FirstEntryResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.FirstEntry(ctx, request)
+	return session.FirstEntry(ctx, request)
 }
 
-func (s *indexedMapV1Server) LastEntry(ctx context.Context, request *v1.LastEntryRequest) (*v1.LastEntryResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *indexedMapServer) LastEntry(ctx context.Context, request *v1.LastEntryRequest) (*v1.LastEntryResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.LastEntry(ctx, request)
+	return session.LastEntry(ctx, request)
 }
 
-func (s *indexedMapV1Server) PrevEntry(ctx context.Context, request *v1.PrevEntryRequest) (*v1.PrevEntryResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *indexedMapServer) PrevEntry(ctx context.Context, request *v1.PrevEntryRequest) (*v1.PrevEntryResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.PrevEntry(ctx, request)
+	return session.PrevEntry(ctx, request)
 }
 
-func (s *indexedMapV1Server) NextEntry(ctx context.Context, request *v1.NextEntryRequest) (*v1.NextEntryResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *indexedMapServer) NextEntry(ctx context.Context, request *v1.NextEntryRequest) (*v1.NextEntryResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.NextEntry(ctx, request)
+	return session.NextEntry(ctx, request)
 }
 
-func (s *indexedMapV1Server) Remove(ctx context.Context, request *v1.RemoveRequest) (*v1.RemoveResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *indexedMapServer) Remove(ctx context.Context, request *v1.RemoveRequest) (*v1.RemoveResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Remove(ctx, request)
+	return session.Remove(ctx, request)
 }
 
-func (s *indexedMapV1Server) Clear(ctx context.Context, request *v1.ClearRequest) (*v1.ClearResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *indexedMapServer) Clear(ctx context.Context, request *v1.ClearRequest) (*v1.ClearResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Clear(ctx, request)
+	return session.Clear(ctx, request)
 }
 
-func (s *indexedMapV1Server) Events(request *v1.EventsRequest, server v1.IndexedMap_EventsServer) error {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *indexedMapServer) Events(request *v1.EventsRequest, server v1.IndexedMap_EventsServer) error {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return errors.ToProto(err)
 	}
-	return proxy.Events(request, server)
+	return session.Events(request, server)
 }
 
-func (s *indexedMapV1Server) Entries(request *v1.EntriesRequest, server v1.IndexedMap_EntriesServer) error {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *indexedMapServer) Entries(request *v1.EntriesRequest, server v1.IndexedMap_EntriesServer) error {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return errors.ToProto(err)
 	}
-	return proxy.Entries(request, server)
+	return session.Entries(request, server)
 }
 
-var _ v1.IndexedMapServer = (*indexedMapV1Server)(nil)
+var _ v1.IndexedMapServer = (*indexedMapServer)(nil)

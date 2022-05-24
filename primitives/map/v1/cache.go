@@ -8,50 +8,66 @@ import (
 	"context"
 	mapv1 "github.com/atomix/runtime/api/atomix/primitive/map/v1"
 	"github.com/atomix/runtime/pkg/time"
+	lru "github.com/hashicorp/golang-lru"
+	"math"
 	"sync"
 )
 
-func newCachingMap(delegate mapv1.MapServer) mapv1.MapServer {
-	return &cachingMap{
-		MapServer: newDelegatingMap(delegate),
-		entries:   make(map[string]*mapv1.Entry),
+func newCachingMap(delegate Map, config mapv1.MapCacheConfig) (Map, error) {
+	size := int(config.Size_)
+	if size == 0 {
+		size = math.MaxInt32
 	}
+	cache, err := lru.NewWithEvict(int(config.Size_), func(key interface{}, value interface{}) {
+
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &cachingMap{
+		Map:   newDelegatingMap(delegate),
+		cache: cache,
+		size:  int(config.Size_),
+	}, nil
 }
 
 type cachingMap struct {
-	mapv1.MapServer
-	entries map[string]*mapv1.Entry
-	mu      sync.RWMutex
+	Map
+	cache *lru.Cache
+	size  int
+	mu    sync.RWMutex
 }
 
 func (s *cachingMap) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
-	response, err := s.MapServer.Put(ctx, request)
+	response, err := s.Map.Put(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	entry, ok := s.entries[response.Entry.Key]
+	object, ok := s.cache.Get(response.Entry.Key)
 	if !ok {
-		s.entries[response.Entry.Key] = &response.Entry
+		s.cache.Add(response.Entry.Key, &response.Entry)
 		return response, nil
 	}
 
+	entry := object.(*mapv1.Entry)
+
 	localTS := entry.Timestamp
 	if localTS == nil {
-		s.entries[response.Entry.Key] = &response.Entry
+		s.cache.Add(response.Entry.Key, &response.Entry)
 		return response, nil
 	}
 
 	responseTS := response.Entry.Timestamp
 	if responseTS == nil {
-		s.entries[response.Entry.Key] = &response.Entry
+		s.cache.Add(response.Entry.Key, &response.Entry)
 		return response, nil
 	}
 
 	if time.NewTimestamp(*responseTS).After(time.NewTimestamp(*localTS)) {
-		s.entries[response.Entry.Key] = &response.Entry
+		s.cache.Add(response.Entry.Key, &response.Entry)
 		return response, nil
 	}
 
@@ -65,44 +81,46 @@ func (s *cachingMap) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1
 
 func (s *cachingMap) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
 	s.mu.RLock()
-	entry, ok := s.entries[request.Key]
+	object, ok := s.cache.Get(request.Key)
 	s.mu.RUnlock()
 	if ok {
 		response := &mapv1.GetResponse{
 			GetOutput: mapv1.GetOutput{
-				Entry: *entry,
+				Entry: *object.(*mapv1.Entry),
 			},
 		}
 		return response, nil
 	}
 
-	response, err := s.MapServer.Get(ctx, request)
+	response, err := s.Map.Get(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	entry, ok = s.entries[response.Entry.Key]
+	object, ok = s.cache.Get(response.Entry.Key)
 	if !ok {
-		s.entries[response.Entry.Key] = &response.Entry
+		s.cache.Add(response.Entry.Key, &response.Entry)
 		return response, nil
 	}
 
+	entry := object.(*mapv1.Entry)
+
 	localTS := entry.Timestamp
 	if localTS == nil {
-		s.entries[response.Entry.Key] = &response.Entry
+		s.cache.Add(response.Entry.Key, &response.Entry)
 		return response, nil
 	}
 
 	responseTS := response.Entry.Timestamp
 	if responseTS == nil {
-		s.entries[response.Entry.Key] = &response.Entry
+		s.cache.Add(response.Entry.Key, &response.Entry)
 		return response, nil
 	}
 
 	if time.NewTimestamp(*responseTS).After(time.NewTimestamp(*localTS)) {
-		s.entries[response.Entry.Key] = &response.Entry
+		s.cache.Add(response.Entry.Key, &response.Entry)
 		return response, nil
 	}
 
@@ -115,33 +133,35 @@ func (s *cachingMap) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1
 }
 
 func (s *cachingMap) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
-	response, err := s.MapServer.Remove(ctx, request)
+	response, err := s.Map.Remove(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	entry, ok := s.entries[response.Entry.Key]
+	object, ok := s.cache.Get(response.Entry.Key)
 	if !ok {
-		delete(s.entries, response.Entry.Key)
+		s.cache.Remove(response.Entry.Key)
 		return response, nil
 	}
 
+	entry := object.(*mapv1.Entry)
+
 	localTS := entry.Timestamp
 	if localTS == nil {
-		delete(s.entries, response.Entry.Key)
+		s.cache.Remove(response.Entry.Key)
 		return response, nil
 	}
 
 	responseTS := response.Entry.Timestamp
 	if responseTS == nil {
-		delete(s.entries, response.Entry.Key)
+		s.cache.Remove(response.Entry.Key)
 		return response, nil
 	}
 
 	if time.NewTimestamp(*responseTS).After(time.NewTimestamp(*localTS)) {
-		delete(s.entries, response.Entry.Key)
+		s.cache.Remove(response.Entry.Key)
 		return response, nil
 	}
 
@@ -154,7 +174,7 @@ func (s *cachingMap) Remove(ctx context.Context, request *mapv1.RemoveRequest) (
 }
 
 func (s *cachingMap) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
-	response, err := s.MapServer.Clear(ctx, request)
+	response, err := s.Map.Clear(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -164,17 +184,18 @@ func (s *cachingMap) Clear(ctx context.Context, request *mapv1.ClearRequest) (*m
 
 	responseTS := response.Timestamp
 	if responseTS == nil {
-		s.entries = make(map[string]*mapv1.Entry)
+		s.cache.Purge()
 		return response, nil
 	}
 
-	for key, entry := range s.entries {
-		localTS := entry.Timestamp
+	for _, key := range s.cache.Keys() {
+		object, _ := s.cache.Get(key)
+		localTS := object.(*mapv1.Entry).Timestamp
 		if localTS == nil || time.NewTimestamp(*responseTS).After(time.NewTimestamp(*localTS)) {
-			delete(s.entries, key)
+			s.cache.Remove(key)
 		}
 	}
 	return response, nil
 }
 
-var _ mapv1.MapServer = (*cachingMap)(nil)
+var _ Map = (*cachingMap)(nil)

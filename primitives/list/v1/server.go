@@ -6,91 +6,91 @@ package v1
 
 import (
 	"context"
-	"github.com/atomix/runtime/api/atomix/list/v1"
+	"github.com/atomix/runtime/api/atomix/primitive/list/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/primitive"
 )
 
-func newListV1Server(proxies *primitive.Registry[List]) v1.ListServer {
-	return &listV1Server{
-		proxies: proxies,
+func newListServer(sessions *primitive.SessionManager[List]) v1.ListServer {
+	return &listServer{
+		sessions: sessions,
 	}
 }
 
-type listV1Server struct {
-	proxies *primitive.Registry[List]
+type listServer struct {
+	sessions *primitive.SessionManager[List]
 }
 
-func (s *listV1Server) Size(ctx context.Context, request *v1.SizeRequest) (*v1.SizeResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *listServer) Size(ctx context.Context, request *v1.SizeRequest) (*v1.SizeResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Size(ctx, request)
+	return session.Size(ctx, request)
 }
 
-func (s *listV1Server) Append(ctx context.Context, request *v1.AppendRequest) (*v1.AppendResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *listServer) Append(ctx context.Context, request *v1.AppendRequest) (*v1.AppendResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Append(ctx, request)
+	return session.Append(ctx, request)
 }
 
-func (s *listV1Server) Insert(ctx context.Context, request *v1.InsertRequest) (*v1.InsertResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *listServer) Insert(ctx context.Context, request *v1.InsertRequest) (*v1.InsertResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Insert(ctx, request)
+	return session.Insert(ctx, request)
 }
 
-func (s *listV1Server) Get(ctx context.Context, request *v1.GetRequest) (*v1.GetResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *listServer) Get(ctx context.Context, request *v1.GetRequest) (*v1.GetResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Get(ctx, request)
+	return session.Get(ctx, request)
 }
 
-func (s *listV1Server) Set(ctx context.Context, request *v1.SetRequest) (*v1.SetResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *listServer) Set(ctx context.Context, request *v1.SetRequest) (*v1.SetResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Set(ctx, request)
+	return session.Set(ctx, request)
 }
 
-func (s *listV1Server) Remove(ctx context.Context, request *v1.RemoveRequest) (*v1.RemoveResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *listServer) Remove(ctx context.Context, request *v1.RemoveRequest) (*v1.RemoveResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Remove(ctx, request)
+	return session.Remove(ctx, request)
 }
 
-func (s *listV1Server) Clear(ctx context.Context, request *v1.ClearRequest) (*v1.ClearResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *listServer) Clear(ctx context.Context, request *v1.ClearRequest) (*v1.ClearResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Clear(ctx, request)
+	return session.Clear(ctx, request)
 }
 
-func (s *listV1Server) Events(request *v1.EventsRequest, server v1.List_EventsServer) error {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *listServer) Events(request *v1.EventsRequest, server v1.List_EventsServer) error {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return errors.ToProto(err)
 	}
-	return proxy.Events(request, server)
+	return session.Events(request, server)
 }
 
-func (s *listV1Server) Elements(request *v1.ElementsRequest, server v1.List_ElementsServer) error {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *listServer) Elements(request *v1.ElementsRequest, server v1.List_ElementsServer) error {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return errors.ToProto(err)
 	}
-	return proxy.Elements(request, server)
+	return session.Elements(request, server)
 }
 
-var _ v1.ListServer = (*listV1Server)(nil)
+var _ v1.ListServer = (*listServer)(nil)

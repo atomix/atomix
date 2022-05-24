@@ -6,22 +6,22 @@ package v1
 
 import (
 	"context"
-	"github.com/atomix/runtime/api/atomix/primitive/set/v1"
+	mapv1 "github.com/atomix/runtime/api/atomix/primitive/map/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/primitive"
 )
 
-func newSetServer(sessions *primitive.SessionManager[Set]) v1.SetServer {
-	return &setServer{
+func newMapServer(sessions *primitive.SessionManager[Map]) mapv1.MapServer {
+	return &mapServer{
 		sessions: sessions,
 	}
 }
 
-type setServer struct {
-	sessions *primitive.SessionManager[Set]
+type mapServer struct {
+	sessions *primitive.SessionManager[Map]
 }
 
-func (s *setServer) Size(ctx context.Context, request *v1.SizeRequest) (*v1.SizeResponse, error) {
+func (s *mapServer) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
 	session, err := s.sessions.GetSession(request.Headers.Session)
 	if err != nil {
 		return nil, errors.ToProto(err)
@@ -29,23 +29,23 @@ func (s *setServer) Size(ctx context.Context, request *v1.SizeRequest) (*v1.Size
 	return session.Size(ctx, request)
 }
 
-func (s *setServer) Contains(ctx context.Context, request *v1.ContainsRequest) (*v1.ContainsResponse, error) {
+func (s *mapServer) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
 	session, err := s.sessions.GetSession(request.Headers.Session)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	return session.Contains(ctx, request)
+	return session.Put(ctx, request)
 }
 
-func (s *setServer) Add(ctx context.Context, request *v1.AddRequest) (*v1.AddResponse, error) {
+func (s *mapServer) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
 	session, err := s.sessions.GetSession(request.Headers.Session)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	return session.Add(ctx, request)
+	return session.Get(ctx, request)
 }
 
-func (s *setServer) Remove(ctx context.Context, request *v1.RemoveRequest) (*v1.RemoveResponse, error) {
+func (s *mapServer) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
 	session, err := s.sessions.GetSession(request.Headers.Session)
 	if err != nil {
 		return nil, errors.ToProto(err)
@@ -53,7 +53,7 @@ func (s *setServer) Remove(ctx context.Context, request *v1.RemoveRequest) (*v1.
 	return session.Remove(ctx, request)
 }
 
-func (s *setServer) Clear(ctx context.Context, request *v1.ClearRequest) (*v1.ClearResponse, error) {
+func (s *mapServer) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
 	session, err := s.sessions.GetSession(request.Headers.Session)
 	if err != nil {
 		return nil, errors.ToProto(err)
@@ -61,7 +61,7 @@ func (s *setServer) Clear(ctx context.Context, request *v1.ClearRequest) (*v1.Cl
 	return session.Clear(ctx, request)
 }
 
-func (s *setServer) Events(request *v1.EventsRequest, server v1.Set_EventsServer) error {
+func (s *mapServer) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsServer) error {
 	session, err := s.sessions.GetSession(request.Headers.Session)
 	if err != nil {
 		return errors.ToProto(err)
@@ -69,12 +69,12 @@ func (s *setServer) Events(request *v1.EventsRequest, server v1.Set_EventsServer
 	return session.Events(request, server)
 }
 
-func (s *setServer) Elements(request *v1.ElementsRequest, server v1.Set_ElementsServer) error {
+func (s *mapServer) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
 	session, err := s.sessions.GetSession(request.Headers.Session)
 	if err != nil {
 		return errors.ToProto(err)
 	}
-	return session.Elements(request, server)
+	return session.Entries(request, server)
 }
 
-var _ v1.SetServer = (*setServer)(nil)
+var _ mapv1.MapServer = (*mapServer)(nil)

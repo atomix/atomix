@@ -62,7 +62,12 @@ service Map {
 }
 
 message MapConfig {
+    MapCacheConfig cache = 1;
+}
 
+message MapCacheConfig {
+    bool enabled = 1;
+    int32 size = 2;
 }
 
 message SizeRequest {

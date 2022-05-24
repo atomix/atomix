@@ -8,25 +8,33 @@ import (
 	"context"
 	mapv1 "github.com/atomix/runtime/api/atomix/primitive/map/v1"
 	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
+	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
 	"google.golang.org/grpc"
 )
 
+var log = logging.GetLogger()
+
 const serviceName = "atomix.map.v1.Map"
 
-var Primitive = primitive.NewType[MapClient, Map, *mapv1.MapConfig](serviceName, register, getMap)
+var Primitive = primitive.NewType[MapClient, Map, *mapv1.MapConfig](serviceName, register, create)
 
-func register(server *grpc.Server, proxies *primitive.Manager[Map]) {
-	mapv1.RegisterMapServer(server, newProxyingMap(proxies))
+func register(server *grpc.Server, sessions *primitive.SessionManager[Map]) {
+	mapv1.RegisterMapServer(server, newMapServer(sessions))
 }
 
-func getMap(client MapClient) func(ctx context.Context, sessionID primitivev1.SessionId, config *mapv1.MapConfig) (Map, error) {
+func create(client MapClient) func(ctx context.Context, sessionID primitivev1.SessionId, config *mapv1.MapConfig) (Map, error) {
 	return func(ctx context.Context, sessionID primitivev1.SessionId, config *mapv1.MapConfig) (Map, error) {
 		m, err := client.GetMap(ctx, sessionID)
 		if err != nil {
 			return nil, err
 		}
-		// TODO: Construct caching map here
+		if config.Cache != nil && config.Cache.Enabled {
+			m, err = newCachingMap(m, *config.Cache)
+			if err != nil {
+				return nil, err
+			}
+		}
 		return m, nil
 	}
 }

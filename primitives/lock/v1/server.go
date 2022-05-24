@@ -6,43 +6,43 @@ package v1
 
 import (
 	"context"
-	"github.com/atomix/runtime/api/atomix/lock/v1"
+	"github.com/atomix/runtime/api/atomix/primitive/lock/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/primitive"
 )
 
-func newLockV1Server(proxies *primitive.Registry[Lock]) v1.LockServer {
-	return &lockV1Server{
-		proxies: proxies,
+func newLockServer(sessions *primitive.SessionManager[Lock]) v1.LockServer {
+	return &lockServer{
+		sessions: sessions,
 	}
 }
 
-type lockV1Server struct {
-	proxies *primitive.Registry[Lock]
+type lockServer struct {
+	sessions *primitive.SessionManager[Lock]
 }
 
-func (s *lockV1Server) Lock(ctx context.Context, request *v1.LockRequest) (*v1.LockResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *lockServer) Lock(ctx context.Context, request *v1.LockRequest) (*v1.LockResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Lock(ctx, request)
+	return session.Lock(ctx, request)
 }
 
-func (s *lockV1Server) Unlock(ctx context.Context, request *v1.UnlockRequest) (*v1.UnlockResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *lockServer) Unlock(ctx context.Context, request *v1.UnlockRequest) (*v1.UnlockResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Unlock(ctx, request)
+	return session.Unlock(ctx, request)
 }
 
-func (s *lockV1Server) GetLock(ctx context.Context, request *v1.GetLockRequest) (*v1.GetLockResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *lockServer) GetLock(ctx context.Context, request *v1.GetLockRequest) (*v1.GetLockResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.GetLock(ctx, request)
+	return session.GetLock(ctx, request)
 }
 
-var _ v1.LockServer = (*lockV1Server)(nil)
+var _ v1.LockServer = (*lockServer)(nil)

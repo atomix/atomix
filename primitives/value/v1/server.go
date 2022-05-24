@@ -6,43 +6,43 @@ package v1
 
 import (
 	"context"
-	"github.com/atomix/runtime/api/atomix/value/v1"
+	"github.com/atomix/runtime/api/atomix/primitive/value/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/primitive"
 )
 
-func newValueV1Server(proxies *primitive.Registry[Value]) v1.ValueServer {
-	return &valueV1Server{
-		proxies: proxies,
+func newValueServer(sessions *primitive.SessionManager[Value]) v1.ValueServer {
+	return &valueServer{
+		sessions: sessions,
 	}
 }
 
-type valueV1Server struct {
-	proxies *primitive.Registry[Value]
+type valueServer struct {
+	sessions *primitive.SessionManager[Value]
 }
 
-func (s *valueV1Server) Set(ctx context.Context, request *v1.SetRequest) (*v1.SetResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *valueServer) Set(ctx context.Context, request *v1.SetRequest) (*v1.SetResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Set(ctx, request)
+	return session.Set(ctx, request)
 }
 
-func (s *valueV1Server) Get(ctx context.Context, request *v1.GetRequest) (*v1.GetResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *valueServer) Get(ctx context.Context, request *v1.GetRequest) (*v1.GetResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Get(ctx, request)
+	return session.Get(ctx, request)
 }
 
-func (s *valueV1Server) Events(request *v1.EventsRequest, server v1.Value_EventsServer) error {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *valueServer) Events(request *v1.EventsRequest, server v1.Value_EventsServer) error {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return errors.ToProto(err)
 	}
-	return proxy.Events(request, server)
+	return session.Events(request, server)
 }
 
-var _ v1.ValueServer = (*valueV1Server)(nil)
+var _ v1.ValueServer = (*valueServer)(nil)

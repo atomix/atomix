@@ -7,19 +7,16 @@ package v1
 import (
 	"context"
 	mapv1 "github.com/atomix/runtime/api/atomix/primitive/map/v1"
-	"sync"
 )
 
-func newDelegatingMap(delegate mapv1.MapServer) mapv1.MapServer {
+func newDelegatingMap(delegate Map) Map {
 	return &delegatingMap{
 		delegate: delegate,
 	}
 }
 
 type delegatingMap struct {
-	delegate mapv1.MapServer
-	entries  map[string]*mapv1.Entry
-	mu       sync.RWMutex
+	delegate Map
 }
 
 func (s *delegatingMap) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
@@ -50,4 +47,8 @@ func (s *delegatingMap) Entries(request *mapv1.EntriesRequest, server mapv1.Map_
 	return s.delegate.Entries(request, server)
 }
 
-var _ mapv1.MapServer = (*delegatingMap)(nil)
+func (s *delegatingMap) Close(ctx context.Context) error {
+	return s.delegate.Close(ctx)
+}
+
+var _ Map = (*delegatingMap)(nil)

@@ -6,51 +6,51 @@ package v1
 
 import (
 	"context"
-	"github.com/atomix/runtime/api/atomix/counter/v1"
+	"github.com/atomix/runtime/api/atomix/primitive/counter/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/primitive"
 )
 
-func newCounterV1Server(proxies *primitive.Registry[Counter]) v1.CounterServer {
-	return &counterV1Server{
-		proxies: proxies,
+func newCounterServer(sessions *primitive.SessionManager[Counter]) v1.CounterServer {
+	return &counterServer{
+		sessions: sessions,
 	}
 }
 
-type counterV1Server struct {
-	proxies *primitive.Registry[Counter]
+type counterServer struct {
+	sessions *primitive.SessionManager[Counter]
 }
 
-func (s *counterV1Server) Set(ctx context.Context, request *v1.SetRequest) (*v1.SetResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *counterServer) Set(ctx context.Context, request *v1.SetRequest) (*v1.SetResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Set(ctx, request)
+	return session.Set(ctx, request)
 }
 
-func (s *counterV1Server) Get(ctx context.Context, request *v1.GetRequest) (*v1.GetResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *counterServer) Get(ctx context.Context, request *v1.GetRequest) (*v1.GetResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Get(ctx, request)
+	return session.Get(ctx, request)
 }
 
-func (s *counterV1Server) Increment(ctx context.Context, request *v1.IncrementRequest) (*v1.IncrementResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *counterServer) Increment(ctx context.Context, request *v1.IncrementRequest) (*v1.IncrementResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Increment(ctx, request)
+	return session.Increment(ctx, request)
 }
 
-func (s *counterV1Server) Decrement(ctx context.Context, request *v1.DecrementRequest) (*v1.DecrementResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *counterServer) Decrement(ctx context.Context, request *v1.DecrementRequest) (*v1.DecrementResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Decrement(ctx, request)
+	return session.Decrement(ctx, request)
 }
 
-var _ v1.CounterServer = (*counterV1Server)(nil)
+var _ v1.CounterServer = (*counterServer)(nil)

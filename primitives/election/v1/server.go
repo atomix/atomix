@@ -6,75 +6,75 @@ package v1
 
 import (
 	"context"
-	"github.com/atomix/runtime/api/atomix/election/v1"
+	"github.com/atomix/runtime/api/atomix/primitive/election/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/primitive"
 )
 
-func newLeaderElectionV1Server(proxies *primitive.Registry[LeaderElection]) v1.LeaderElectionServer {
-	return &leaderElectionV1Server{
-		proxies: proxies,
+func newLeaderElectionServer(sessions *primitive.SessionManager[LeaderElection]) v1.LeaderElectionServer {
+	return &leaderElectionServer{
+		sessions: sessions,
 	}
 }
 
-type leaderElectionV1Server struct {
-	proxies *primitive.Registry[LeaderElection]
+type leaderElectionServer struct {
+	sessions *primitive.SessionManager[LeaderElection]
 }
 
-func (s *leaderElectionV1Server) Enter(ctx context.Context, request *v1.EnterRequest) (*v1.EnterResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *leaderElectionServer) Enter(ctx context.Context, request *v1.EnterRequest) (*v1.EnterResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Enter(ctx, request)
+	return session.Enter(ctx, request)
 }
 
-func (s *leaderElectionV1Server) Withdraw(ctx context.Context, request *v1.WithdrawRequest) (*v1.WithdrawResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *leaderElectionServer) Withdraw(ctx context.Context, request *v1.WithdrawRequest) (*v1.WithdrawResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Withdraw(ctx, request)
+	return session.Withdraw(ctx, request)
 }
 
-func (s *leaderElectionV1Server) Anoint(ctx context.Context, request *v1.AnointRequest) (*v1.AnointResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *leaderElectionServer) Anoint(ctx context.Context, request *v1.AnointRequest) (*v1.AnointResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Anoint(ctx, request)
+	return session.Anoint(ctx, request)
 }
 
-func (s *leaderElectionV1Server) Promote(ctx context.Context, request *v1.PromoteRequest) (*v1.PromoteResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *leaderElectionServer) Promote(ctx context.Context, request *v1.PromoteRequest) (*v1.PromoteResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Promote(ctx, request)
+	return session.Promote(ctx, request)
 }
 
-func (s *leaderElectionV1Server) Evict(ctx context.Context, request *v1.EvictRequest) (*v1.EvictResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *leaderElectionServer) Evict(ctx context.Context, request *v1.EvictRequest) (*v1.EvictResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.Evict(ctx, request)
+	return session.Evict(ctx, request)
 }
 
-func (s *leaderElectionV1Server) GetTerm(ctx context.Context, request *v1.GetTermRequest) (*v1.GetTermResponse, error) {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return nil, errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *leaderElectionServer) GetTerm(ctx context.Context, request *v1.GetTermRequest) (*v1.GetTermResponse, error) {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return nil, errors.ToProto(err)
 	}
-	return proxy.GetTerm(ctx, request)
+	return session.GetTerm(ctx, request)
 }
 
-func (s *leaderElectionV1Server) Events(request *v1.EventsRequest, server v1.LeaderElection_EventsServer) error {
-	proxy, ok := s.proxies.GetProxy(request.Headers.PrimitiveID)
-	if !ok {
-		return errors.ToProto(errors.NewForbidden("proxy '%s' not open", request.Headers.PrimitiveID))
+func (s *leaderElectionServer) Events(request *v1.EventsRequest, server v1.LeaderElection_EventsServer) error {
+	session, err := s.sessions.GetSession(request.Headers.Session)
+	if err != nil {
+		return errors.ToProto(err)
 	}
-	return proxy.Events(request, server)
+	return session.Events(request, server)
 }
 
-var _ v1.LeaderElectionServer = (*leaderElectionV1Server)(nil)
+var _ v1.LeaderElectionServer = (*leaderElectionServer)(nil)

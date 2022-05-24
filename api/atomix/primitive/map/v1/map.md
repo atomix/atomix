@@ -22,6 +22,7 @@
     - [GetOutput](#atomix-primitive-map-v1-GetOutput)
     - [GetRequest](#atomix-primitive-map-v1-GetRequest)
     - [GetResponse](#atomix-primitive-map-v1-GetResponse)
+    - [MapCacheConfig](#atomix-primitive-map-v1-MapCacheConfig)
     - [MapConfig](#atomix-primitive-map-v1-MapConfig)
     - [PutInput](#atomix-primitive-map-v1-PutInput)
     - [PutOutput](#atomix-primitive-map-v1-PutOutput)
@@ -324,10 +325,31 @@
 
 
 
+<a name="atomix-primitive-map-v1-MapCacheConfig"></a>
+
+### MapCacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+| size | [int32](#int32) |  |  |
+
+
+
+
+
+
 <a name="atomix-primitive-map-v1-MapConfig"></a>
 
 ### MapConfig
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [MapCacheConfig](#atomix-primitive-map-v1-MapCacheConfig) |  |  |
 
 
 
