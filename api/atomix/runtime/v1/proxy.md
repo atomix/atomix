@@ -3,64 +3,66 @@
 
 ## Table of Contents
 
-- [atomix/runtime/v1/primitive.proto](#atomix_runtime_v1_primitive-proto)
-    - [GetPrimitiveRequest](#atomix-runtime-v1-GetPrimitiveRequest)
-    - [GetPrimitiveResponse](#atomix-runtime-v1-GetPrimitiveResponse)
-    - [ListPrimitivesRequest](#atomix-runtime-v1-ListPrimitivesRequest)
-    - [ListPrimitivesResponse](#atomix-runtime-v1-ListPrimitivesResponse)
-    - [Primitive](#atomix-runtime-v1-Primitive)
-    - [PrimitiveId](#atomix-runtime-v1-PrimitiveId)
-    - [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta)
-    - [PrimitiveMeta.LabelsEntry](#atomix-runtime-v1-PrimitiveMeta-LabelsEntry)
-    - [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec)
-    - [PrimitiveStatus](#atomix-runtime-v1-PrimitiveStatus)
+- [atomix/runtime/v1/proxy.proto](#atomix_runtime_v1_proxy-proto)
+    - [GetProxyRequest](#atomix-runtime-v1-GetProxyRequest)
+    - [GetProxyResponse](#atomix-runtime-v1-GetProxyResponse)
+    - [ListProxysRequest](#atomix-runtime-v1-ListProxysRequest)
+    - [ListProxysResponse](#atomix-runtime-v1-ListProxysResponse)
+    - [Proxy](#atomix-runtime-v1-Proxy)
+    - [ProxyId](#atomix-runtime-v1-ProxyId)
+    - [ProxyMeta](#atomix-runtime-v1-ProxyMeta)
+    - [ProxyMeta.LabelsEntry](#atomix-runtime-v1-ProxyMeta-LabelsEntry)
+    - [ProxySpec](#atomix-runtime-v1-ProxySpec)
+    - [ProxyStatus](#atomix-runtime-v1-ProxyStatus)
   
-    - [PrimitiveService](#atomix-runtime-v1-PrimitiveService)
+    - [ProxyStatus.State](#atomix-runtime-v1-ProxyStatus-State)
+  
+    - [ProxyService](#atomix-runtime-v1-ProxyService)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_runtime_v1_primitive-proto"></a>
+<a name="atomix_runtime_v1_proxy-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/runtime/v1/primitive.proto
+## atomix/runtime/v1/proxy.proto
 
 
 
-<a name="atomix-runtime-v1-GetPrimitiveRequest"></a>
+<a name="atomix-runtime-v1-GetProxyRequest"></a>
 
-### GetPrimitiveRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| primitive_id | [PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-GetPrimitiveResponse"></a>
-
-### GetPrimitiveResponse
+### GetProxyRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| primitive | [Primitive](#atomix-runtime-v1-Primitive) |  |  |
+| proxy_id | [ProxyId](#atomix-runtime-v1-ProxyId) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-ListPrimitivesRequest"></a>
+<a name="atomix-runtime-v1-GetProxyResponse"></a>
 
-### ListPrimitivesRequest
+### GetProxyResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| proxy | [Proxy](#atomix-runtime-v1-Proxy) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ListProxysRequest"></a>
+
+### ListProxysRequest
 
 
 
@@ -74,73 +76,75 @@
 
 
 
-<a name="atomix-runtime-v1-ListPrimitivesResponse"></a>
+<a name="atomix-runtime-v1-ListProxysResponse"></a>
 
-### ListPrimitivesResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| primitives | [Primitive](#atomix-runtime-v1-Primitive) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-Primitive"></a>
-
-### Primitive
+### ListProxysResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta) |  |  |
-| spec | [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec) |  |  |
-| status | [PrimitiveStatus](#atomix-runtime-v1-PrimitiveStatus) |  |  |
+| proxys | [Proxy](#atomix-runtime-v1-Proxy) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-PrimitiveId"></a>
+<a name="atomix-runtime-v1-Proxy"></a>
 
-### PrimitiveId
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-PrimitiveMeta"></a>
-
-### PrimitiveMeta
+### Proxy
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| meta | [ProxyMeta](#atomix-runtime-v1-ProxyMeta) |  |  |
+| spec | [ProxySpec](#atomix-runtime-v1-ProxySpec) |  |  |
+| status | [ProxyStatus](#atomix-runtime-v1-ProxyStatus) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ProxyId"></a>
+
+### ProxyId
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| application | [string](#string) |  |  |
+| primitive | [string](#string) |  |  |
+| client | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ProxyMeta"></a>
+
+### ProxyMeta
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [ProxyId](#atomix-runtime-v1-ProxyId) |  |  |
 | version | [uint64](#uint64) |  |  |
-| labels | [PrimitiveMeta.LabelsEntry](#atomix-runtime-v1-PrimitiveMeta-LabelsEntry) | repeated |  |
+| labels | [ProxyMeta.LabelsEntry](#atomix-runtime-v1-ProxyMeta-LabelsEntry) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-PrimitiveMeta-LabelsEntry"></a>
+<a name="atomix-runtime-v1-ProxyMeta-LabelsEntry"></a>
 
-### PrimitiveMeta.LabelsEntry
+### ProxyMeta.LabelsEntry
 
 
 
@@ -154,30 +158,31 @@
 
 
 
-<a name="atomix-runtime-v1-PrimitiveSpec"></a>
+<a name="atomix-runtime-v1-ProxySpec"></a>
 
-### PrimitiveSpec
+### ProxySpec
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | kind | [string](#string) |  |  |
+| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-PrimitiveStatus"></a>
+<a name="atomix-runtime-v1-ProxyStatus"></a>
 
-### PrimitiveStatus
+### ProxyStatus
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [BindingId](#atomix-runtime-v1-BindingId) |  |  |
+| state | [ProxyStatus.State](#atomix-runtime-v1-ProxyStatus-State) |  |  |
 
 
 
@@ -185,20 +190,35 @@
 
  
 
- 
+
+<a name="atomix-runtime-v1-ProxyStatus-State"></a>
+
+### ProxyStatus.State
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NONE | 0 |  |
+| OPENING | 1 |  |
+| OPENED | 2 |  |
+| CLOSING | 3 |  |
+| CLOSED | 4 |  |
+
 
  
 
+ 
 
-<a name="atomix-runtime-v1-PrimitiveService"></a>
 
-### PrimitiveService
+<a name="atomix-runtime-v1-ProxyService"></a>
+
+### ProxyService
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| GetPrimitive | [GetPrimitiveRequest](#atomix-runtime-v1-GetPrimitiveRequest) | [GetPrimitiveResponse](#atomix-runtime-v1-GetPrimitiveResponse) |  |
-| ListPrimitives | [ListPrimitivesRequest](#atomix-runtime-v1-ListPrimitivesRequest) | [ListPrimitivesResponse](#atomix-runtime-v1-ListPrimitivesResponse) |  |
+| GetProxy | [GetProxyRequest](#atomix-runtime-v1-GetProxyRequest) | [GetProxyResponse](#atomix-runtime-v1-GetProxyResponse) |  |
+| ListProxys | [ListProxysRequest](#atomix-runtime-v1-ListProxysRequest) | [ListProxysResponse](#atomix-runtime-v1-ListProxysResponse) |  |
 
  
 

@@ -13,10 +13,8 @@ import "gogoproto/gogo.proto";
 
 message RequestHeaders {
     PrimitiveId primitive = 1 [
-        (gogoproto.nullable) = false
-    ];
-    SessionId session = 2 [
-        (gogoproto.nullable) = false
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
     ];
 }
 

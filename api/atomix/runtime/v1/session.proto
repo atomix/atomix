@@ -8,8 +8,7 @@ syntax = "proto3";
 
 package atomix.runtime.v1;
 
-import "atomix/runtime/v1/primitive.proto";
-import "google/protobuf/any.proto";
+import "atomix/runtime/v1/binding.proto";
 import "gogoproto/gogo.proto";
 
 service SessionService {
@@ -19,10 +18,20 @@ service SessionService {
 
 message SessionId {
     option (gogoproto.equal) = true;
-    string name = 1;
-    PrimitiveId primitive = 2 [
+    string application = 1;
+    string primitive = 2;
+    string client = 3;
+}
+
+message SessionMeta {
+    SessionId id = 1 [
+        (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
+    uint64 version = 2 [
+        (gogoproto.casttype) = "ObjectVersion"
+    ];
+    map<string, string> labels = 3;
 }
 
 message Session {
@@ -38,32 +47,14 @@ message Session {
     ];
 }
 
-message SessionMeta {
-    SessionId id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    uint64 version = 2 [
-        (gogoproto.casttype) = "ObjectVersion"
-    ];
-    map<string, string> labels = 3;
-}
-
 message SessionSpec {
     string kind = 1;
-    google.protobuf.Any config = 2;
 }
 
 message SessionStatus {
-    State state = 1;
-
-    enum State {
-        NONE = 0;
-        OPENING = 1;
-        OPENED = 2;
-        CLOSING = 3;
-        CLOSED = 4;
-    }
+    BindingId binding = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message GetSessionRequest {

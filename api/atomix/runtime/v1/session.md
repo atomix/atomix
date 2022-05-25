@@ -15,8 +15,6 @@
     - [SessionSpec](#atomix-runtime-v1-SessionSpec)
     - [SessionStatus](#atomix-runtime-v1-SessionStatus)
   
-    - [SessionStatus.State](#atomix-runtime-v1-SessionStatus-State)
-  
     - [SessionService](#atomix-runtime-v1-SessionService)
   
 - [Scalar Value Types](#scalar-value-types)
@@ -116,8 +114,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| primitive | [PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| application | [string](#string) |  |  |
+| primitive | [string](#string) |  |  |
+| client | [string](#string) |  |  |
 
 
 
@@ -166,7 +165,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | kind | [string](#string) |  |  |
-| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
 
@@ -181,28 +179,13 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| state | [SessionStatus.State](#atomix-runtime-v1-SessionStatus-State) |  |  |
+| binding | [BindingId](#atomix-runtime-v1-BindingId) |  |  |
 
 
 
 
 
  
-
-
-<a name="atomix-runtime-v1-SessionStatus-State"></a>
-
-### SessionStatus.State
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| NONE | 0 |  |
-| OPENING | 1 |  |
-| OPENED | 2 |  |
-| CLOSING | 3 |  |
-| CLOSED | 4 |  |
-
 
  
 

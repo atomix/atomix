@@ -1,0 +1,86 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.v1;
+
+import "atomix/runtime/v1/session.proto";
+import "google/protobuf/any.proto";
+import "gogoproto/gogo.proto";
+
+service ProxyService {
+    rpc GetProxy (GetProxyRequest) returns (GetProxyResponse);
+    rpc ListProxys (ListProxysRequest) returns (ListProxysResponse);
+}
+
+message ProxyId {
+    option (gogoproto.equal) = true;
+    string application = 1;
+    string primitive = 2;
+    string client = 3;
+}
+
+message Proxy {
+    ProxyMeta meta = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    ProxySpec spec = 2 [
+        (gogoproto.nullable) = false
+    ];
+    ProxyStatus status = 3 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ProxyMeta {
+    ProxyId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 version = 2 [
+        (gogoproto.casttype) = "ObjectVersion"
+    ];
+    map<string, string> labels = 3;
+}
+
+message ProxySpec {
+    string kind = 1;
+    google.protobuf.Any config = 2;
+}
+
+message ProxyStatus {
+    State state = 1;
+
+    enum State {
+        NONE = 0;
+        OPENING = 1;
+        OPENED = 2;
+        CLOSING = 3;
+        CLOSED = 4;
+    }
+}
+
+message GetProxyRequest {
+    ProxyId proxy_id = 1 [
+        (gogoproto.customname) = "ProxyID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetProxyResponse {
+    Proxy proxy = 1;
+}
+
+message ListProxysRequest {
+    string type = 1;
+    bool watch = 2;
+}
+
+message ListProxysResponse {
+    repeated Proxy proxys = 1;
+}

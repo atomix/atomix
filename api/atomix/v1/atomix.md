@@ -6,10 +6,9 @@
 - [atomix/v1/atomix.proto](#atomix_v1_atomix-proto)
     - [ClosePrimitiveRequest](#atomix-v1-ClosePrimitiveRequest)
     - [ClosePrimitiveResponse](#atomix-v1-ClosePrimitiveResponse)
-    - [OpenPrimitiveRequest](#atomix-v1-OpenPrimitiveRequest)
-    - [OpenPrimitiveResponse](#atomix-v1-OpenPrimitiveResponse)
+    - [CreatePrimitiveRequest](#atomix-v1-CreatePrimitiveRequest)
+    - [CreatePrimitiveResponse](#atomix-v1-CreatePrimitiveResponse)
     - [PrimitiveId](#atomix-v1-PrimitiveId)
-    - [SessionId](#atomix-v1-SessionId)
   
     - [Atomix](#atomix-v1-Atomix)
   
@@ -33,7 +32,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [PrimitiveId](#atomix-v1-PrimitiveId) |  |  |
-| session | [SessionId](#atomix-v1-SessionId) |  |  |
 
 
 
@@ -50,17 +48,16 @@
 
 
 
-<a name="atomix-v1-OpenPrimitiveRequest"></a>
+<a name="atomix-v1-CreatePrimitiveRequest"></a>
 
-### OpenPrimitiveRequest
+### CreatePrimitiveRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| kind | [string](#string) |  |  |
 | id | [PrimitiveId](#atomix-v1-PrimitiveId) |  |  |
-| session | [SessionId](#atomix-v1-SessionId) |  |  |
+| kind | [string](#string) |  |  |
 | config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
@@ -68,9 +65,9 @@
 
 
 
-<a name="atomix-v1-OpenPrimitiveResponse"></a>
+<a name="atomix-v1-CreatePrimitiveResponse"></a>
 
-### OpenPrimitiveResponse
+### CreatePrimitiveResponse
 
 
 
@@ -86,23 +83,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| namespace | [string](#string) |  |  |
-| name | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-v1-SessionId"></a>
-
-### SessionId
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
+| application | [string](#string) |  |  |
+| primitive | [string](#string) |  |  |
+| client | [string](#string) |  |  |
 
 
 
@@ -122,7 +105,7 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| OpenPrimitive | [OpenPrimitiveRequest](#atomix-v1-OpenPrimitiveRequest) | [OpenPrimitiveResponse](#atomix-v1-OpenPrimitiveResponse) |  |
+| CreatePrimitive | [CreatePrimitiveRequest](#atomix-v1-CreatePrimitiveRequest) | [CreatePrimitiveResponse](#atomix-v1-CreatePrimitiveResponse) |  |
 | ClosePrimitive | [ClosePrimitiveRequest](#atomix-v1-ClosePrimitiveRequest) | [ClosePrimitiveResponse](#atomix-v1-ClosePrimitiveResponse) |  |
 
  
