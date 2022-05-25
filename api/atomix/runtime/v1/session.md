@@ -3,80 +3,95 @@
 
 ## Table of Contents
 
-- [atomix/primitive/v1/session.proto](#atomix_primitive_v1_session-proto)
-    - [CloseSessionRequest](#atomix-primitive-v1-CloseSessionRequest)
-    - [CloseSessionResponse](#atomix-primitive-v1-CloseSessionResponse)
-    - [OpenSessionRequest](#atomix-primitive-v1-OpenSessionRequest)
-    - [OpenSessionResponse](#atomix-primitive-v1-OpenSessionResponse)
-    - [Session](#atomix-primitive-v1-Session)
-    - [SessionId](#atomix-primitive-v1-SessionId)
-    - [SessionMeta](#atomix-primitive-v1-SessionMeta)
-    - [SessionMeta.LabelsEntry](#atomix-primitive-v1-SessionMeta-LabelsEntry)
+- [atomix/runtime/v1/session.proto](#atomix_runtime_v1_session-proto)
+    - [GetSessionRequest](#atomix-runtime-v1-GetSessionRequest)
+    - [GetSessionResponse](#atomix-runtime-v1-GetSessionResponse)
+    - [ListSessionsRequest](#atomix-runtime-v1-ListSessionsRequest)
+    - [ListSessionsResponse](#atomix-runtime-v1-ListSessionsResponse)
+    - [Session](#atomix-runtime-v1-Session)
+    - [SessionId](#atomix-runtime-v1-SessionId)
+    - [SessionMeta](#atomix-runtime-v1-SessionMeta)
+    - [SessionMeta.LabelsEntry](#atomix-runtime-v1-SessionMeta-LabelsEntry)
+    - [SessionSpec](#atomix-runtime-v1-SessionSpec)
+    - [SessionStatus](#atomix-runtime-v1-SessionStatus)
   
-    - [SessionService](#atomix-primitive-v1-SessionService)
+    - [SessionStatus.State](#atomix-runtime-v1-SessionStatus-State)
+  
+    - [SessionService](#atomix-runtime-v1-SessionService)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_primitive_v1_session-proto"></a>
+<a name="atomix_runtime_v1_session-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/primitive/v1/session.proto
+## atomix/runtime/v1/session.proto
 
 
 
-<a name="atomix-primitive-v1-CloseSessionRequest"></a>
+<a name="atomix-runtime-v1-GetSessionRequest"></a>
 
-### CloseSessionRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| session_id | [SessionId](#atomix-primitive-v1-SessionId) |  |  |
-
-
-
-
-
-
-<a name="atomix-primitive-v1-CloseSessionResponse"></a>
-
-### CloseSessionResponse
-
-
-
-
-
-
-
-<a name="atomix-primitive-v1-OpenSessionRequest"></a>
-
-### OpenSessionRequest
+### GetSessionRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| session | [Session](#atomix-primitive-v1-Session) |  |  |
+| session_id | [SessionId](#atomix-runtime-v1-SessionId) |  |  |
 
 
 
 
 
 
-<a name="atomix-primitive-v1-OpenSessionResponse"></a>
+<a name="atomix-runtime-v1-GetSessionResponse"></a>
 
-### OpenSessionResponse
-
-
+### GetSessionResponse
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| session | [Session](#atomix-runtime-v1-Session) |  |  |
 
 
-<a name="atomix-primitive-v1-Session"></a>
+
+
+
+
+<a name="atomix-runtime-v1-ListSessionsRequest"></a>
+
+### ListSessionsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
+| watch | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ListSessionsResponse"></a>
+
+### ListSessionsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| sessions | [Session](#atomix-runtime-v1-Session) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-Session"></a>
 
 ### Session
 
@@ -84,16 +99,16 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [SessionMeta](#atomix-primitive-v1-SessionMeta) |  |  |
-| kind | [string](#string) |  |  |
-| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+| meta | [SessionMeta](#atomix-runtime-v1-SessionMeta) |  |  |
+| spec | [SessionSpec](#atomix-runtime-v1-SessionSpec) |  |  |
+| status | [SessionStatus](#atomix-runtime-v1-SessionStatus) |  |  |
 
 
 
 
 
 
-<a name="atomix-primitive-v1-SessionId"></a>
+<a name="atomix-runtime-v1-SessionId"></a>
 
 ### SessionId
 
@@ -102,14 +117,14 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  |  |
-| primitive | [PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+| primitive | [PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 
 
 
 
 
 
-<a name="atomix-primitive-v1-SessionMeta"></a>
+<a name="atomix-runtime-v1-SessionMeta"></a>
 
 ### SessionMeta
 
@@ -117,15 +132,16 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [SessionId](#atomix-primitive-v1-SessionId) |  |  |
-| labels | [SessionMeta.LabelsEntry](#atomix-primitive-v1-SessionMeta-LabelsEntry) | repeated |  |
+| id | [SessionId](#atomix-runtime-v1-SessionId) |  |  |
+| version | [uint64](#uint64) |  |  |
+| labels | [SessionMeta.LabelsEntry](#atomix-runtime-v1-SessionMeta-LabelsEntry) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-primitive-v1-SessionMeta-LabelsEntry"></a>
+<a name="atomix-runtime-v1-SessionMeta-LabelsEntry"></a>
 
 ### SessionMeta.LabelsEntry
 
@@ -140,22 +156,68 @@
 
 
 
+
+<a name="atomix-runtime-v1-SessionSpec"></a>
+
+### SessionSpec
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| kind | [string](#string) |  |  |
+| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-SessionStatus"></a>
+
+### SessionStatus
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| state | [SessionStatus.State](#atomix-runtime-v1-SessionStatus-State) |  |  |
+
+
+
+
+
+ 
+
+
+<a name="atomix-runtime-v1-SessionStatus-State"></a>
+
+### SessionStatus.State
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NONE | 0 |  |
+| OPENING | 1 |  |
+| OPENED | 2 |  |
+| CLOSING | 3 |  |
+| CLOSED | 4 |  |
+
+
  
 
  
 
- 
 
-
-<a name="atomix-primitive-v1-SessionService"></a>
+<a name="atomix-runtime-v1-SessionService"></a>
 
 ### SessionService
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| OpenSession | [OpenSessionRequest](#atomix-primitive-v1-OpenSessionRequest) | [OpenSessionResponse](#atomix-primitive-v1-OpenSessionResponse) |  |
-| CloseSession | [CloseSessionRequest](#atomix-primitive-v1-CloseSessionRequest) | [CloseSessionResponse](#atomix-primitive-v1-CloseSessionResponse) |  |
+| GetSession | [GetSessionRequest](#atomix-runtime-v1-GetSessionRequest) | [GetSessionResponse](#atomix-runtime-v1-GetSessionResponse) |  |
+| ListSessions | [ListSessionsRequest](#atomix-runtime-v1-ListSessionsRequest) | [ListSessionsResponse](#atomix-runtime-v1-ListSessionsResponse) |  |
 
  
 

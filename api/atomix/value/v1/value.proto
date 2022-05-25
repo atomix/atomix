@@ -9,7 +9,7 @@ syntax = "proto3";
 package atomix.value.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
-import "atomix/primitive/v1/headers.proto";
+import "atomix/v1/headers.proto";
 import "atomix/time/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
@@ -41,7 +41,7 @@ message ValueConfig {
 }
 
 message GetRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -57,7 +57,7 @@ message GetInput {
 }
 
 message GetResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -74,7 +74,7 @@ message GetOutput {
 }
 
 message SetRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -91,7 +91,7 @@ message SetInput {
 }
 
 message SetResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -108,7 +108,7 @@ message SetOutput {
 }
 
 message EventsRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -124,7 +124,7 @@ message EventsInput {
 }
 
 message EventsResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];

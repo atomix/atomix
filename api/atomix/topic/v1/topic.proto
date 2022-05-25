@@ -10,7 +10,7 @@ package atomix.topic.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
 import "gogoproto/gogo.proto";
-import "atomix/primitive/v1/headers.proto";
+import "atomix/v1/headers.proto";
 import "google/protobuf/timestamp.proto";
 
 service Topic {
@@ -32,7 +32,7 @@ message TopicConfig {
 }
 
 message PublishRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -48,7 +48,7 @@ message PublishInput {
 }
 
 message PublishResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -64,7 +64,7 @@ message PublishOutput {
 }
 
 message SubscribeRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -80,7 +80,7 @@ message SubscribeInput {
 }
 
 message SubscribeResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];

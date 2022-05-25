@@ -89,7 +89,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [AddInput](#atomix-set-v1-AddInput) |  |  |
 
 
@@ -105,7 +105,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [AddOutput](#atomix-set-v1-AddOutput) |  |  |
 
 
@@ -141,7 +141,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [ClearInput](#atomix-set-v1-ClearInput) |  |  |
 
 
@@ -157,7 +157,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [ClearOutput](#atomix-set-v1-ClearOutput) |  |  |
 
 
@@ -203,7 +203,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [ContainsInput](#atomix-set-v1-ContainsInput) |  |  |
 
 
@@ -219,7 +219,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [ContainsOutput](#atomix-set-v1-ContainsOutput) |  |  |
 
 
@@ -276,7 +276,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [ElementsInput](#atomix-set-v1-ElementsInput) |  |  |
 
 
@@ -292,7 +292,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [ElementsOutput](#atomix-set-v1-ElementsOutput) |  |  |
 
 
@@ -354,7 +354,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [EventsInput](#atomix-set-v1-EventsInput) |  |  |
 
 
@@ -370,7 +370,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [EventsOutput](#atomix-set-v1-EventsOutput) |  |  |
 
 
@@ -416,7 +416,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [RemoveInput](#atomix-set-v1-RemoveInput) |  |  |
 
 
@@ -432,7 +432,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [RemoveOutput](#atomix-set-v1-RemoveOutput) |  |  |
 
 
@@ -483,7 +483,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [SizeInput](#atomix-set-v1-SizeInput) |  |  |
 
 
@@ -499,7 +499,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [SizeOutput](#atomix-set-v1-SizeOutput) |  |  |
 
 

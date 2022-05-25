@@ -10,7 +10,7 @@ package atomix.indexed_map.v1;
 
 import "google/protobuf/duration.proto";
 import "atomix/primitive/v1/descriptor.proto";
-import "atomix/primitive/v1/headers.proto";
+import "atomix/v1/headers.proto";
 import "atomix/time/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
@@ -90,7 +90,7 @@ message IndexedMapConfig {
 }
 
 message SizeRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -106,7 +106,7 @@ message SizeInput {
 }
 
 message SizeResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -122,7 +122,7 @@ message SizeOutput {
 }
 
 message PutRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -143,7 +143,7 @@ message PutInput {
 }
 
 message PutResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -159,7 +159,7 @@ message PutOutput {
 }
 
 message GetRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -177,7 +177,7 @@ message GetInput {
 }
 
 message GetResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -193,7 +193,7 @@ message GetOutput {
 }
 
 message FirstEntryRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -209,7 +209,7 @@ message FirstEntryInput {
 }
 
 message FirstEntryResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -225,7 +225,7 @@ message FirstEntryOutput {
 }
 
 message LastEntryRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -241,7 +241,7 @@ message LastEntryInput {
 }
 
 message LastEntryResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -257,7 +257,7 @@ message LastEntryOutput {
 }
 
 message PrevEntryRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -273,7 +273,7 @@ message PrevEntryInput {
 }
 
 message PrevEntryResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -289,7 +289,7 @@ message PrevEntryOutput {
 }
 
 message NextEntryRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -305,7 +305,7 @@ message NextEntryInput {
 }
 
 message NextEntryResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -321,7 +321,7 @@ message NextEntryOutput {
 }
 
 message RemoveRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -341,7 +341,7 @@ message RemoveInput {
 }
 
 message RemoveResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -357,7 +357,7 @@ message RemoveOutput {
 }
 
 message ClearRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -373,7 +373,7 @@ message ClearInput {
 }
 
 message ClearResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -389,7 +389,7 @@ message ClearOutput {
 }
 
 message EntriesRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -405,7 +405,7 @@ message EntriesInput {
 }
 
 message EntriesResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -423,7 +423,7 @@ message EntriesOutput {
 }
 
 message EventsRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -442,7 +442,7 @@ message EventsInput {
 }
 
 message EventsResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];

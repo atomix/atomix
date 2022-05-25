@@ -4,25 +4,25 @@
 ## Table of Contents
 
 - [atomix/runtime/v1/binding.proto](#atomix_runtime_v1_binding-proto)
-    - [Binding](#atomix-management-v1-Binding)
-    - [BindingId](#atomix-management-v1-BindingId)
-    - [BindingMeta](#atomix-management-v1-BindingMeta)
-    - [BindingMeta.LabelsEntry](#atomix-management-v1-BindingMeta-LabelsEntry)
-    - [BindingSpec](#atomix-management-v1-BindingSpec)
-    - [BindingSpec.SelectorEntry](#atomix-management-v1-BindingSpec-SelectorEntry)
-    - [BindingStatus](#atomix-management-v1-BindingStatus)
-    - [CreateBindingRequest](#atomix-management-v1-CreateBindingRequest)
-    - [CreateBindingResponse](#atomix-management-v1-CreateBindingResponse)
-    - [DeleteBindingRequest](#atomix-management-v1-DeleteBindingRequest)
-    - [DeleteBindingResponse](#atomix-management-v1-DeleteBindingResponse)
-    - [GetBindingRequest](#atomix-management-v1-GetBindingRequest)
-    - [GetBindingResponse](#atomix-management-v1-GetBindingResponse)
-    - [ListBindingsRequest](#atomix-management-v1-ListBindingsRequest)
-    - [ListBindingsResponse](#atomix-management-v1-ListBindingsResponse)
-    - [UpdateBindingRequest](#atomix-management-v1-UpdateBindingRequest)
-    - [UpdateBindingResponse](#atomix-management-v1-UpdateBindingResponse)
+    - [Binding](#atomix-runtime-v1-Binding)
+    - [BindingId](#atomix-runtime-v1-BindingId)
+    - [BindingMeta](#atomix-runtime-v1-BindingMeta)
+    - [BindingMeta.LabelsEntry](#atomix-runtime-v1-BindingMeta-LabelsEntry)
+    - [BindingSpec](#atomix-runtime-v1-BindingSpec)
+    - [BindingSpec.SelectorEntry](#atomix-runtime-v1-BindingSpec-SelectorEntry)
+    - [BindingStatus](#atomix-runtime-v1-BindingStatus)
+    - [CreateBindingRequest](#atomix-runtime-v1-CreateBindingRequest)
+    - [CreateBindingResponse](#atomix-runtime-v1-CreateBindingResponse)
+    - [DeleteBindingRequest](#atomix-runtime-v1-DeleteBindingRequest)
+    - [DeleteBindingResponse](#atomix-runtime-v1-DeleteBindingResponse)
+    - [GetBindingRequest](#atomix-runtime-v1-GetBindingRequest)
+    - [GetBindingResponse](#atomix-runtime-v1-GetBindingResponse)
+    - [ListBindingsRequest](#atomix-runtime-v1-ListBindingsRequest)
+    - [ListBindingsResponse](#atomix-runtime-v1-ListBindingsResponse)
+    - [UpdateBindingRequest](#atomix-runtime-v1-UpdateBindingRequest)
+    - [UpdateBindingResponse](#atomix-runtime-v1-UpdateBindingResponse)
   
-    - [BindingService](#atomix-management-v1-BindingService)
+    - [BindingService](#atomix-runtime-v1-BindingService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -35,7 +35,7 @@
 
 
 
-<a name="atomix-management-v1-Binding"></a>
+<a name="atomix-runtime-v1-Binding"></a>
 
 ### Binding
 
@@ -43,16 +43,16 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [BindingMeta](#atomix-management-v1-BindingMeta) |  |  |
-| spec | [BindingSpec](#atomix-management-v1-BindingSpec) |  |  |
-| status | [BindingStatus](#atomix-management-v1-BindingStatus) |  |  |
+| meta | [BindingMeta](#atomix-runtime-v1-BindingMeta) |  |  |
+| spec | [BindingSpec](#atomix-runtime-v1-BindingSpec) |  |  |
+| status | [BindingStatus](#atomix-runtime-v1-BindingStatus) |  |  |
 
 
 
 
 
 
-<a name="atomix-management-v1-BindingId"></a>
+<a name="atomix-runtime-v1-BindingId"></a>
 
 ### BindingId
 
@@ -68,7 +68,7 @@
 
 
 
-<a name="atomix-management-v1-BindingMeta"></a>
+<a name="atomix-runtime-v1-BindingMeta"></a>
 
 ### BindingMeta
 
@@ -76,16 +76,16 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [BindingId](#atomix-management-v1-BindingId) |  |  |
+| id | [BindingId](#atomix-runtime-v1-BindingId) |  |  |
 | version | [uint64](#uint64) |  |  |
-| labels | [BindingMeta.LabelsEntry](#atomix-management-v1-BindingMeta-LabelsEntry) | repeated |  |
+| labels | [BindingMeta.LabelsEntry](#atomix-runtime-v1-BindingMeta-LabelsEntry) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-management-v1-BindingMeta-LabelsEntry"></a>
+<a name="atomix-runtime-v1-BindingMeta-LabelsEntry"></a>
 
 ### BindingMeta.LabelsEntry
 
@@ -101,7 +101,7 @@
 
 
 
-<a name="atomix-management-v1-BindingSpec"></a>
+<a name="atomix-runtime-v1-BindingSpec"></a>
 
 ### BindingSpec
 
@@ -109,15 +109,15 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| cluster_id | [ClusterId](#atomix-management-v1-ClusterId) |  |  |
-| selector | [BindingSpec.SelectorEntry](#atomix-management-v1-BindingSpec-SelectorEntry) | repeated |  |
+| cluster_id | [ClusterId](#atomix-runtime-v1-ClusterId) |  |  |
+| selector | [BindingSpec.SelectorEntry](#atomix-runtime-v1-BindingSpec-SelectorEntry) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-management-v1-BindingSpec-SelectorEntry"></a>
+<a name="atomix-runtime-v1-BindingSpec-SelectorEntry"></a>
 
 ### BindingSpec.SelectorEntry
 
@@ -133,7 +133,7 @@
 
 
 
-<a name="atomix-management-v1-BindingStatus"></a>
+<a name="atomix-runtime-v1-BindingStatus"></a>
 
 ### BindingStatus
 
@@ -143,7 +143,7 @@
 
 
 
-<a name="atomix-management-v1-CreateBindingRequest"></a>
+<a name="atomix-runtime-v1-CreateBindingRequest"></a>
 
 ### CreateBindingRequest
 
@@ -151,14 +151,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [Binding](#atomix-management-v1-Binding) |  |  |
+| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
 
 
 
 
 
 
-<a name="atomix-management-v1-CreateBindingResponse"></a>
+<a name="atomix-runtime-v1-CreateBindingResponse"></a>
 
 ### CreateBindingResponse
 
@@ -166,14 +166,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [Binding](#atomix-management-v1-Binding) |  |  |
+| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
 
 
 
 
 
 
-<a name="atomix-management-v1-DeleteBindingRequest"></a>
+<a name="atomix-runtime-v1-DeleteBindingRequest"></a>
 
 ### DeleteBindingRequest
 
@@ -181,14 +181,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [Binding](#atomix-management-v1-Binding) |  |  |
+| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
 
 
 
 
 
 
-<a name="atomix-management-v1-DeleteBindingResponse"></a>
+<a name="atomix-runtime-v1-DeleteBindingResponse"></a>
 
 ### DeleteBindingResponse
 
@@ -198,7 +198,7 @@
 
 
 
-<a name="atomix-management-v1-GetBindingRequest"></a>
+<a name="atomix-runtime-v1-GetBindingRequest"></a>
 
 ### GetBindingRequest
 
@@ -206,14 +206,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding_id | [BindingId](#atomix-management-v1-BindingId) |  |  |
+| binding_id | [BindingId](#atomix-runtime-v1-BindingId) |  |  |
 
 
 
 
 
 
-<a name="atomix-management-v1-GetBindingResponse"></a>
+<a name="atomix-runtime-v1-GetBindingResponse"></a>
 
 ### GetBindingResponse
 
@@ -221,14 +221,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [Binding](#atomix-management-v1-Binding) |  |  |
+| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
 
 
 
 
 
 
-<a name="atomix-management-v1-ListBindingsRequest"></a>
+<a name="atomix-runtime-v1-ListBindingsRequest"></a>
 
 ### ListBindingsRequest
 
@@ -243,7 +243,7 @@
 
 
 
-<a name="atomix-management-v1-ListBindingsResponse"></a>
+<a name="atomix-runtime-v1-ListBindingsResponse"></a>
 
 ### ListBindingsResponse
 
@@ -251,14 +251,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| bindings | [Binding](#atomix-management-v1-Binding) | repeated |  |
+| bindings | [Binding](#atomix-runtime-v1-Binding) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-management-v1-UpdateBindingRequest"></a>
+<a name="atomix-runtime-v1-UpdateBindingRequest"></a>
 
 ### UpdateBindingRequest
 
@@ -266,14 +266,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [Binding](#atomix-management-v1-Binding) |  |  |
+| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
 
 
 
 
 
 
-<a name="atomix-management-v1-UpdateBindingResponse"></a>
+<a name="atomix-runtime-v1-UpdateBindingResponse"></a>
 
 ### UpdateBindingResponse
 
@@ -281,7 +281,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| binding | [Binding](#atomix-management-v1-Binding) |  |  |
+| binding | [Binding](#atomix-runtime-v1-Binding) |  |  |
 
 
 
@@ -294,18 +294,18 @@
  
 
 
-<a name="atomix-management-v1-BindingService"></a>
+<a name="atomix-runtime-v1-BindingService"></a>
 
 ### BindingService
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| GetBinding | [GetBindingRequest](#atomix-management-v1-GetBindingRequest) | [GetBindingResponse](#atomix-management-v1-GetBindingResponse) |  |
-| ListBindings | [ListBindingsRequest](#atomix-management-v1-ListBindingsRequest) | [ListBindingsResponse](#atomix-management-v1-ListBindingsResponse) |  |
-| CreateBinding | [CreateBindingRequest](#atomix-management-v1-CreateBindingRequest) | [CreateBindingResponse](#atomix-management-v1-CreateBindingResponse) |  |
-| UpdateBinding | [UpdateBindingRequest](#atomix-management-v1-UpdateBindingRequest) | [UpdateBindingResponse](#atomix-management-v1-UpdateBindingResponse) |  |
-| DeleteBinding | [DeleteBindingRequest](#atomix-management-v1-DeleteBindingRequest) | [DeleteBindingResponse](#atomix-management-v1-DeleteBindingResponse) |  |
+| GetBinding | [GetBindingRequest](#atomix-runtime-v1-GetBindingRequest) | [GetBindingResponse](#atomix-runtime-v1-GetBindingResponse) |  |
+| ListBindings | [ListBindingsRequest](#atomix-runtime-v1-ListBindingsRequest) | [ListBindingsResponse](#atomix-runtime-v1-ListBindingsResponse) |  |
+| CreateBinding | [CreateBindingRequest](#atomix-runtime-v1-CreateBindingRequest) | [CreateBindingResponse](#atomix-runtime-v1-CreateBindingResponse) |  |
+| UpdateBinding | [UpdateBindingRequest](#atomix-runtime-v1-UpdateBindingRequest) | [UpdateBindingResponse](#atomix-runtime-v1-UpdateBindingResponse) |  |
+| DeleteBinding | [DeleteBindingRequest](#atomix-runtime-v1-DeleteBindingRequest) | [DeleteBindingResponse](#atomix-runtime-v1-DeleteBindingResponse) |  |
 
  
 

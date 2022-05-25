@@ -1,0 +1,78 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.v1;
+
+import "atomix/runtime/v1/binding.proto";
+import "gogoproto/gogo.proto";
+
+service PrimitiveService {
+    rpc GetPrimitive (GetPrimitiveRequest) returns (GetPrimitiveResponse);
+    rpc ListPrimitives (ListPrimitivesRequest) returns (ListPrimitivesResponse);
+}
+
+message PrimitiveId {
+    option (gogoproto.equal) = true;
+    string id = 1 [
+        (gogoproto.customname) = "ID"
+    ];
+}
+
+message PrimitiveMeta {
+    PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 version = 2 [
+        (gogoproto.casttype) = "ObjectVersion"
+    ];
+    map<string, string> labels = 3;
+}
+
+message Primitive {
+    PrimitiveMeta meta = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    PrimitiveSpec spec = 2 [
+        (gogoproto.nullable) = false
+    ];
+    PrimitiveStatus status = 3 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message PrimitiveSpec {
+    string kind = 1;
+}
+
+message PrimitiveStatus {
+    BindingId binding = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetPrimitiveRequest {
+    PrimitiveId primitive_id = 1 [
+        (gogoproto.customname) = "PrimitiveID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetPrimitiveResponse {
+    Primitive primitive = 1;
+}
+
+message ListPrimitivesRequest {
+    string type = 1;
+    bool watch = 2;
+}
+
+message ListPrimitivesResponse {
+    repeated Primitive primitives = 1;
+}

@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.management.v1;
+package atomix.runtime.v1;
 
 import "atomix/runtime/v1/driver.proto";
 import "google/protobuf/any.proto";
@@ -58,7 +58,9 @@ message ClusterSpec {
 }
 
 message ClusterStatus {
-    bool connected = 1;
+    string conn_id = 1 [
+        (gogoproto.customname) = "ConnID"
+    ];
 }
 
 message GetClusterRequest {

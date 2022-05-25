@@ -3,22 +3,22 @@
 
 ## Table of Contents
 
-- [atomix/primitive/v1/headers.proto](#atomix_primitive_v1_headers-proto)
-    - [RequestHeaders](#atomix-primitive-v1-RequestHeaders)
-    - [ResponseHeaders](#atomix-primitive-v1-ResponseHeaders)
+- [atomix/v1/headers.proto](#atomix_v1_headers-proto)
+    - [RequestHeaders](#atomix-v1-RequestHeaders)
+    - [ResponseHeaders](#atomix-v1-ResponseHeaders)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_primitive_v1_headers-proto"></a>
+<a name="atomix_v1_headers-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/primitive/v1/headers.proto
+## atomix/v1/headers.proto
 
 
 
-<a name="atomix-primitive-v1-RequestHeaders"></a>
+<a name="atomix-v1-RequestHeaders"></a>
 
 ### RequestHeaders
 
@@ -26,14 +26,15 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| session | [SessionId](#atomix-primitive-v1-SessionId) |  |  |
+| primitive | [PrimitiveId](#atomix-v1-PrimitiveId) |  |  |
+| session | [SessionId](#atomix-v1-SessionId) |  |  |
 
 
 
 
 
 
-<a name="atomix-primitive-v1-ResponseHeaders"></a>
+<a name="atomix-v1-ResponseHeaders"></a>
 
 ### ResponseHeaders
 

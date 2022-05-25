@@ -9,7 +9,7 @@ syntax = "proto3";
 package atomix.election.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
-import "atomix/primitive/v1/headers.proto";
+import "atomix/v1/headers.proto";
 import "atomix/time/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
@@ -65,7 +65,7 @@ message LeaderElectionConfig {
 }
 
 message EnterRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -83,7 +83,7 @@ message EnterInput {
 }
 
 message EnterResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -101,7 +101,7 @@ message EnterOutput {
 }
 
 message WithdrawRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -119,7 +119,7 @@ message WithdrawInput {
 }
 
 message WithdrawResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -137,7 +137,7 @@ message WithdrawOutput {
 }
 
 message AnointRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -155,7 +155,7 @@ message AnointInput {
 }
 
 message AnointResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -173,7 +173,7 @@ message AnointOutput {
 }
 
 message PromoteRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -191,7 +191,7 @@ message PromoteInput {
 }
 
 message PromoteResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -209,7 +209,7 @@ message PromoteOutput {
 }
 
 message EvictRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -227,7 +227,7 @@ message EvictInput {
 }
 
 message EvictResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -245,7 +245,7 @@ message EvictOutput {
 }
 
 message GetTermRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -261,7 +261,7 @@ message GetTermInput {
 }
 
 message GetTermResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -279,7 +279,7 @@ message GetTermOutput {
 }
 
 message EventsRequest {
-    atomix.primitive.v1.RequestHeaders headers = 1 [
+    atomix.v1.RequestHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];
@@ -295,7 +295,7 @@ message EventsInput {
 }
 
 message EventsResponse {
-    atomix.primitive.v1.ResponseHeaders headers = 1 [
+    atomix.v1.ResponseHeaders headers = 1 [
         (atomix.primitive.v1.headers) = true,
         (gogoproto.nullable) = false
     ];

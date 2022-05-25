@@ -3,21 +3,82 @@
 
 ## Table of Contents
 
-- [atomix/primitive/v1/primitive.proto](#atomix_primitive_v1_primitive-proto)
-    - [PrimitiveId](#atomix-primitive-v1-PrimitiveId)
+- [atomix/v1/atomix.proto](#atomix_v1_atomix-proto)
+    - [ClosePrimitiveRequest](#atomix-v1-ClosePrimitiveRequest)
+    - [ClosePrimitiveResponse](#atomix-v1-ClosePrimitiveResponse)
+    - [OpenPrimitiveRequest](#atomix-v1-OpenPrimitiveRequest)
+    - [OpenPrimitiveResponse](#atomix-v1-OpenPrimitiveResponse)
+    - [PrimitiveId](#atomix-v1-PrimitiveId)
+    - [SessionId](#atomix-v1-SessionId)
+  
+    - [Atomix](#atomix-v1-Atomix)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_primitive_v1_primitive-proto"></a>
+<a name="atomix_v1_atomix-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/primitive/v1/primitive.proto
+## atomix/v1/atomix.proto
 
 
 
-<a name="atomix-primitive-v1-PrimitiveId"></a>
+<a name="atomix-v1-ClosePrimitiveRequest"></a>
+
+### ClosePrimitiveRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [PrimitiveId](#atomix-v1-PrimitiveId) |  |  |
+| session | [SessionId](#atomix-v1-SessionId) |  |  |
+
+
+
+
+
+
+<a name="atomix-v1-ClosePrimitiveResponse"></a>
+
+### ClosePrimitiveResponse
+
+
+
+
+
+
+
+<a name="atomix-v1-OpenPrimitiveRequest"></a>
+
+### OpenPrimitiveRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| kind | [string](#string) |  |  |
+| id | [PrimitiveId](#atomix-v1-PrimitiveId) |  |  |
+| session | [SessionId](#atomix-v1-SessionId) |  |  |
+| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+
+
+
+
+
+
+<a name="atomix-v1-OpenPrimitiveResponse"></a>
+
+### OpenPrimitiveResponse
+
+
+
+
+
+
+
+<a name="atomix-v1-PrimitiveId"></a>
 
 ### PrimitiveId
 
@@ -32,11 +93,37 @@
 
 
 
- 
+
+<a name="atomix-v1-SessionId"></a>
+
+### SessionId
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+
+
+
+
 
  
 
  
+
+ 
+
+
+<a name="atomix-v1-Atomix"></a>
+
+### Atomix
+
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| OpenPrimitive | [OpenPrimitiveRequest](#atomix-v1-OpenPrimitiveRequest) | [OpenPrimitiveResponse](#atomix-v1-OpenPrimitiveResponse) |  |
+| ClosePrimitive | [ClosePrimitiveRequest](#atomix-v1-ClosePrimitiveRequest) | [ClosePrimitiveResponse](#atomix-v1-ClosePrimitiveResponse) |  |
 
  
 

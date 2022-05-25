@@ -1,0 +1,87 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.v1;
+
+import "atomix/runtime/v1/primitive.proto";
+import "google/protobuf/any.proto";
+import "gogoproto/gogo.proto";
+
+service SessionService {
+    rpc GetSession (GetSessionRequest) returns (GetSessionResponse);
+    rpc ListSessions (ListSessionsRequest) returns (ListSessionsResponse);
+}
+
+message SessionId {
+    option (gogoproto.equal) = true;
+    string name = 1;
+    PrimitiveId primitive = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Session {
+    SessionMeta meta = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    SessionSpec spec = 2 [
+        (gogoproto.nullable) = false
+    ];
+    SessionStatus status = 3 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message SessionMeta {
+    SessionId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 version = 2 [
+        (gogoproto.casttype) = "ObjectVersion"
+    ];
+    map<string, string> labels = 3;
+}
+
+message SessionSpec {
+    string kind = 1;
+    google.protobuf.Any config = 2;
+}
+
+message SessionStatus {
+    State state = 1;
+
+    enum State {
+        NONE = 0;
+        OPENING = 1;
+        OPENED = 2;
+        CLOSING = 3;
+        CLOSED = 4;
+    }
+}
+
+message GetSessionRequest {
+    SessionId session_id = 1 [
+        (gogoproto.customname) = "SessionID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetSessionResponse {
+    Session session = 1;
+}
+
+message ListSessionsRequest {
+    string type = 1;
+    bool watch = 2;
+}
+
+message ListSessionsResponse {
+    repeated Session sessions = 1;
+}

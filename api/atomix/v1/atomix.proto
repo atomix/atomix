@@ -1,0 +1,58 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.v1;
+
+import "google/protobuf/any.proto";
+import "gogoproto/gogo.proto";
+
+service Atomix {
+    rpc OpenPrimitive (OpenPrimitiveRequest) returns (OpenPrimitiveResponse);
+    rpc ClosePrimitive (ClosePrimitiveRequest) returns (ClosePrimitiveResponse);
+}
+
+message PrimitiveId {
+    string namespace = 1;
+    string name = 2;
+}
+
+message SessionId {
+    string id = 1 [
+        (gogoproto.customname) = "ID"
+    ];
+}
+
+message OpenPrimitiveRequest {
+    string kind = 1;
+    PrimitiveId id = 2 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    SessionId session = 3 [
+        (gogoproto.nullable) = false
+    ];
+    google.protobuf.Any config = 4;
+}
+
+message OpenPrimitiveResponse {
+
+}
+
+message ClosePrimitiveRequest {
+    PrimitiveId id = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    SessionId session = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ClosePrimitiveResponse {
+
+}

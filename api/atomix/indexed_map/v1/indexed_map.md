@@ -97,7 +97,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [ClearInput](#atomix-indexed_map-v1-ClearInput) |  |  |
 
 
@@ -113,7 +113,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [ClearOutput](#atomix-indexed_map-v1-ClearOutput) |  |  |
 
 
@@ -154,7 +154,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [EntriesInput](#atomix-indexed_map-v1-EntriesInput) |  |  |
 
 
@@ -170,7 +170,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [EntriesOutput](#atomix-indexed_map-v1-EntriesOutput) |  |  |
 
 
@@ -250,7 +250,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [EventsInput](#atomix-indexed_map-v1-EventsInput) |  |  |
 
 
@@ -266,7 +266,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [EventsOutput](#atomix-indexed_map-v1-EventsOutput) |  |  |
 
 
@@ -307,7 +307,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [FirstEntryInput](#atomix-indexed_map-v1-FirstEntryInput) |  |  |
 
 
@@ -323,7 +323,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [FirstEntryOutput](#atomix-indexed_map-v1-FirstEntryOutput) |  |  |
 
 
@@ -369,7 +369,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [GetInput](#atomix-indexed_map-v1-GetInput) |  |  |
 
 
@@ -385,7 +385,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [GetOutput](#atomix-indexed_map-v1-GetOutput) |  |  |
 
 
@@ -452,7 +452,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [LastEntryInput](#atomix-indexed_map-v1-LastEntryInput) |  |  |
 
 
@@ -468,7 +468,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [LastEntryOutput](#atomix-indexed_map-v1-LastEntryOutput) |  |  |
 
 
@@ -514,7 +514,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [NextEntryInput](#atomix-indexed_map-v1-NextEntryInput) |  |  |
 
 
@@ -530,7 +530,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [NextEntryOutput](#atomix-indexed_map-v1-NextEntryOutput) |  |  |
 
 
@@ -576,7 +576,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [PrevEntryInput](#atomix-indexed_map-v1-PrevEntryInput) |  |  |
 
 
@@ -592,7 +592,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [PrevEntryOutput](#atomix-indexed_map-v1-PrevEntryOutput) |  |  |
 
 
@@ -640,7 +640,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [PutInput](#atomix-indexed_map-v1-PutInput) |  |  |
 
 
@@ -656,7 +656,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [PutOutput](#atomix-indexed_map-v1-PutOutput) |  |  |
 
 
@@ -703,7 +703,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [RemoveInput](#atomix-indexed_map-v1-RemoveInput) |  |  |
 
 
@@ -719,7 +719,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [RemoveOutput](#atomix-indexed_map-v1-RemoveOutput) |  |  |
 
 
@@ -760,7 +760,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.RequestHeaders](#atomix-primitive-v1-RequestHeaders) |  |  |
+| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
 | input | [SizeInput](#atomix-indexed_map-v1-SizeInput) |  |  |
 
 
@@ -776,7 +776,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.primitive.v1.ResponseHeaders](#atomix-primitive-v1-ResponseHeaders) |  |  |
+| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
 | output | [SizeOutput](#atomix-indexed_map-v1-SizeOutput) |  |  |
 
 

@@ -6,14 +6,16 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.primitive.v1;
+package atomix.v1;
 
-import "atomix/primitive/v1/primitive.proto";
-import "atomix/primitive/v1/session.proto";
+import "atomix/v1/atomix.proto";
 import "gogoproto/gogo.proto";
 
 message RequestHeaders {
-    SessionId session = 1 [
+    PrimitiveId primitive = 1 [
+        (gogoproto.nullable) = false
+    ];
+    SessionId session = 2 [
         (gogoproto.nullable) = false
     ];
 }
