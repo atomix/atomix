@@ -6,8 +6,8 @@
 - [atomix/runtime/v1/proxy.proto](#atomix_runtime_v1_proxy-proto)
     - [GetProxyRequest](#atomix-runtime-v1-GetProxyRequest)
     - [GetProxyResponse](#atomix-runtime-v1-GetProxyResponse)
-    - [ListProxysRequest](#atomix-runtime-v1-ListProxysRequest)
-    - [ListProxysResponse](#atomix-runtime-v1-ListProxysResponse)
+    - [ListProxiesRequest](#atomix-runtime-v1-ListProxiesRequest)
+    - [ListProxiesResponse](#atomix-runtime-v1-ListProxiesResponse)
     - [Proxy](#atomix-runtime-v1-Proxy)
     - [ProxyId](#atomix-runtime-v1-ProxyId)
     - [ProxyMeta](#atomix-runtime-v1-ProxyMeta)
@@ -60,9 +60,9 @@
 
 
 
-<a name="atomix-runtime-v1-ListProxysRequest"></a>
+<a name="atomix-runtime-v1-ListProxiesRequest"></a>
 
-### ListProxysRequest
+### ListProxiesRequest
 
 
 
@@ -76,15 +76,15 @@
 
 
 
-<a name="atomix-runtime-v1-ListProxysResponse"></a>
+<a name="atomix-runtime-v1-ListProxiesResponse"></a>
 
-### ListProxysResponse
+### ListProxiesResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| proxys | [Proxy](#atomix-runtime-v1-Proxy) | repeated |  |
+| proxies | [Proxy](#atomix-runtime-v1-Proxy) | repeated |  |
 
 
 
@@ -218,7 +218,7 @@
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | GetProxy | [GetProxyRequest](#atomix-runtime-v1-GetProxyRequest) | [GetProxyResponse](#atomix-runtime-v1-GetProxyResponse) |  |
-| ListProxys | [ListProxysRequest](#atomix-runtime-v1-ListProxysRequest) | [ListProxysResponse](#atomix-runtime-v1-ListProxysResponse) |  |
+| ListProxies | [ListProxiesRequest](#atomix-runtime-v1-ListProxiesRequest) | [ListProxiesResponse](#atomix-runtime-v1-ListProxiesResponse) |  |
 
  
 

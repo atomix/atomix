@@ -14,7 +14,7 @@ import "gogoproto/gogo.proto";
 
 service ProxyService {
     rpc GetProxy (GetProxyRequest) returns (GetProxyResponse);
-    rpc ListProxys (ListProxysRequest) returns (ListProxysResponse);
+    rpc ListProxies (ListProxiesRequest) returns (ListProxiesResponse);
 }
 
 message ProxyId {
@@ -76,11 +76,11 @@ message GetProxyResponse {
     Proxy proxy = 1;
 }
 
-message ListProxysRequest {
+message ListProxiesRequest {
     string type = 1;
     bool watch = 2;
 }
 
-message ListProxysResponse {
-    repeated Proxy proxys = 1;
+message ListProxiesResponse {
+    repeated Proxy proxies = 1;
 }
