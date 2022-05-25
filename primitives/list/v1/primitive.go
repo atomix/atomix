@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	listv1 "github.com/atomix/runtime/api/atomix/primitive/list/v1"
+	listv1 "github.com/atomix/runtime/api/atomix/list/v1"
 	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"

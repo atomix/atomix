@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	mapv1 "github.com/atomix/runtime/api/atomix/primitive/map/v1"
+	mapv1 "github.com/atomix/runtime/api/atomix/map/v1"
 	"github.com/atomix/runtime/pkg/time"
 	lru "github.com/hashicorp/golang-lru"
 	"math"

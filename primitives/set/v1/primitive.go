@@ -6,8 +6,8 @@ package v1
 
 import (
 	"context"
-	setv1 "github.com/atomix/runtime/api/atomix/primitive/set/v1"
 	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
+	setv1 "github.com/atomix/runtime/api/atomix/set/v1"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
 	"google.golang.org/grpc"

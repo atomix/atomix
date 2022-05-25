@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	"github.com/atomix/runtime/api/atomix/primitive/topic/v1"
+	"github.com/atomix/runtime/api/atomix/topic/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/primitive"
 )

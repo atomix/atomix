@@ -1,0 +1,153 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.value.v1;
+
+import "atomix/primitive/v1/descriptor.proto";
+import "atomix/primitive/v1/headers.proto";
+import "atomix/time/v1/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+// Value is a service for a value primitive
+service Value {
+    option (atomix.primitive.v1.config) = "ValueConfig";
+
+    // Set sets the value
+    rpc Set (SetRequest) returns (SetResponse) {
+        option (atomix.primitive.v1.operation_id) = 3;
+        option (atomix.primitive.v1.operation_type) = COMMAND;
+    }
+
+    // Get gets the value
+    rpc Get (GetRequest) returns (GetResponse) {
+        option (atomix.primitive.v1.operation_id) = 4;
+        option (atomix.primitive.v1.operation_type) = QUERY;
+    }
+
+    // Events listens for value change events
+    rpc Events (EventsRequest) returns (stream EventsResponse) {
+        option (atomix.primitive.v1.operation_id) = 5;
+        option (atomix.primitive.v1.operation_type) = COMMAND;
+    }
+}
+
+message ValueConfig {
+
+}
+
+message GetRequest {
+    atomix.primitive.v1.RequestHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    GetInput input = 2 [
+        (atomix.primitive.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetInput {
+
+}
+
+message GetResponse {
+    atomix.primitive.v1.ResponseHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    GetOutput output = 2 [
+        (atomix.primitive.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetOutput {
+    bytes value = 1;
+    atomix.time.v1.Timestamp timestamp = 2;
+}
+
+message SetRequest {
+    atomix.primitive.v1.RequestHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    SetInput input = 2 [
+        (atomix.primitive.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message SetInput {
+    bytes value = 1;
+    atomix.time.v1.Timestamp timestamp = 2;
+}
+
+message SetResponse {
+    atomix.primitive.v1.ResponseHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    SetOutput output = 2 [
+        (atomix.primitive.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message SetOutput {
+    bytes value = 1;
+    atomix.time.v1.Timestamp timestamp = 2;
+}
+
+message EventsRequest {
+    atomix.primitive.v1.RequestHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EventsInput input = 2 [
+        (atomix.primitive.v1.input) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsInput {
+
+}
+
+message EventsResponse {
+    atomix.primitive.v1.ResponseHeaders headers = 1 [
+        (atomix.primitive.v1.headers) = true,
+        (gogoproto.nullable) = false
+    ];
+    EventsOutput output = 2 [
+        (atomix.primitive.v1.output) = true,
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsOutput {
+    Event event = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Event {
+    Type type = 1;
+    bytes value = 2;
+    atomix.time.v1.Timestamp timestamp = 3;
+
+    enum Type {
+        NONE = 0;
+        UPDATE = 1;
+    }
+}

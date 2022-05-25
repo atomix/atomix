@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	counterv1 "github.com/atomix/runtime/api/atomix/primitive/counter/v1"
+	counterv1 "github.com/atomix/runtime/api/atomix/counter/v1"
 	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"

@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	mapv1 "github.com/atomix/runtime/api/atomix/primitive/map/v1"
+	mapv1 "github.com/atomix/runtime/api/atomix/map/v1"
 )
 
 func newDelegatingMap(delegate Map) Map {

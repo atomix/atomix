@@ -11,7 +11,7 @@ import (
 	runtimeservice "github.com/atomix/runtime/pkg/runtime/service"
 	counterv1 "github.com/atomix/runtime/primitives/counter/v1"
 	electionv1 "github.com/atomix/runtime/primitives/election/v1"
-	indexed_mapv1 "github.com/atomix/runtime/primitives/indexed_map/v1"
+	indexedmapv1 "github.com/atomix/runtime/primitives/indexed_map/v1"
 	listv1 "github.com/atomix/runtime/primitives/list/v1"
 	lockv1 "github.com/atomix/runtime/primitives/lock/v1"
 	mapv1 "github.com/atomix/runtime/primitives/map/v1"
@@ -80,7 +80,7 @@ func main() {
 				primitiveservice.WithPrimitiveTypes(
 					counterv1.Primitive,
 					electionv1.Primitive,
-					indexed_mapv1.Primitive,
+					indexedmapv1.Primitive,
 					listv1.Primitive,
 					lockv1.Primitive,
 					mapv1.Primitive,
