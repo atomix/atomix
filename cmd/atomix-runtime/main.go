@@ -8,6 +8,7 @@ import (
 	"fmt"
 	primitiveservice "github.com/atomix/runtime/pkg/primitive/service"
 	"github.com/atomix/runtime/pkg/runtime"
+	"github.com/atomix/runtime/pkg/runtime/controller"
 	runtimeservice "github.com/atomix/runtime/pkg/runtime/service"
 	counterv1 "github.com/atomix/runtime/primitives/counter/v1"
 	electionv1 "github.com/atomix/runtime/primitives/election/v1"
@@ -64,7 +65,14 @@ func main() {
 				runtime.WithConfigFile(configFile),
 				runtime.WithCacheDir(cacheDir))
 
-			// Start the proxy service
+			// Start the runtime controller
+			runtimeController := controller.NewController(runtime)
+			if err := runtimeController.Start(); err != nil {
+				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
+				os.Exit(1)
+			}
+
+			// Start the runtime service
 			runtimeService := runtimeservice.NewService(runtime,
 				runtimeservice.WithHost(proxyHost),
 				runtimeservice.WithPort(proxyPort))
@@ -104,6 +112,12 @@ func main() {
 			}
 			if err := runtimeService.Stop(); err != nil {
 				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			// Stop the controllers
+			if err := runtimeController.Stop(); err != nil {
+				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
 		},
