@@ -17,7 +17,7 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.topic.v1.Topic"
 
-var Primitive = primitive.NewType[TopicClient, Topic, *topicv1.TopicConfig](serviceName, register, create)
+var Primitive = primitive.NewKind[TopicClient, Topic, *topicv1.TopicConfig](serviceName, register, create)
 
 func register(server *grpc.Server, sessions *primitive.SessionManager[Topic]) {
 	topicv1.RegisterTopicServer(server, newTopicServer(sessions))

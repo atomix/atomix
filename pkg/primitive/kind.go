@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Type interface {
+type Kind interface {
 	Name() string
 	Register(server *grpc.Server, registry *SessionRegistry)
 	GetProxy(client driver.Client) func(ctx context.Context, sessionID primitivev1.SessionId, rawConfig *types.Any) (Primitive, error)
@@ -32,29 +32,29 @@ type Registrar[T Primitive] func(*grpc.Server, *SessionManager[T])
 
 type Provider[P any, T Primitive, C proto.Message] func(client P) func(ctx context.Context, sessionID primitivev1.SessionId, config C) (T, error)
 
-func NewType[P any, T Primitive, C proto.Message](name string, registrar Registrar[T], provider Provider[P, T, C]) Type {
-	return &genericType[P, T, C]{
+func NewKind[P any, T Primitive, C proto.Message](name string, registrar Registrar[T], provider Provider[P, T, C]) Kind {
+	return &genericKind[P, T, C]{
 		name:      name,
 		registrar: registrar,
 		provider:  provider,
 	}
 }
 
-type genericType[P any, T Primitive, C proto.Message] struct {
+type genericKind[P any, T Primitive, C proto.Message] struct {
 	name      string
 	registrar Registrar[T]
 	provider  Provider[P, T, C]
 }
 
-func (t *genericType[P, T, C]) Name() string {
+func (t *genericKind[P, T, C]) Name() string {
 	return t.name
 }
 
-func (t *genericType[P, T, C]) Register(server *grpc.Server, registry *SessionRegistry) {
+func (t *genericKind[P, T, C]) Register(server *grpc.Server, registry *SessionRegistry) {
 	t.registrar(server, newManager[T](registry))
 }
 
-func (t *genericType[P, T, C]) GetProxy(client driver.Client) func(ctx context.Context, sessionID primitivev1.SessionId, rawConfig *types.Any) (Primitive, error) {
+func (t *genericKind[P, T, C]) GetProxy(client driver.Client) func(ctx context.Context, sessionID primitivev1.SessionId, rawConfig *types.Any) (Primitive, error) {
 	return func(ctx context.Context, sessionID primitivev1.SessionId, rawConfig *types.Any) (Primitive, error) {
 		if provider, ok := client.(P); ok {
 			var config C

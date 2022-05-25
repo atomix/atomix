@@ -22,7 +22,7 @@ message Session {
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
-    string primitive_type = 2;
+    string kind = 2;
     google.protobuf.Any config = 3;
 }
 

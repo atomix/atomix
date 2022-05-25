@@ -17,7 +17,7 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.map.v1.Map"
 
-var Primitive = primitive.NewType[MapClient, Map, *mapv1.MapConfig](serviceName, register, create)
+var Primitive = primitive.NewKind[MapClient, Map, *mapv1.MapConfig](serviceName, register, create)
 
 func register(server *grpc.Server, sessions *primitive.SessionManager[Map]) {
 	mapv1.RegisterMapServer(server, newMapServer(sessions))

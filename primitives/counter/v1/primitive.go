@@ -17,7 +17,7 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.counter.v1.Counter"
 
-var Primitive = primitive.NewType[CounterClient, Counter, *counterv1.CounterConfig](serviceName, register, create)
+var Primitive = primitive.NewKind[CounterClient, Counter, *counterv1.CounterConfig](serviceName, register, create)
 
 func register(server *grpc.Server, sessions *primitive.SessionManager[Counter]) {
 	counterv1.RegisterCounterServer(server, newCounterServer(sessions))

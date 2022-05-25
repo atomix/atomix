@@ -17,7 +17,7 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.lock.v1.Lock"
 
-var Primitive = primitive.NewType[LockClient, Lock, *lockv1.LockConfig](serviceName, register, create)
+var Primitive = primitive.NewKind[LockClient, Lock, *lockv1.LockConfig](serviceName, register, create)
 
 func register(server *grpc.Server, sessions *primitive.SessionManager[Lock]) {
 	lockv1.RegisterLockServer(server, newLockServer(sessions))

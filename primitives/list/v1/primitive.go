@@ -17,7 +17,7 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.list.v1.List"
 
-var Primitive = primitive.NewType[ListClient, List, *listv1.ListConfig](serviceName, register, create)
+var Primitive = primitive.NewKind[ListClient, List, *listv1.ListConfig](serviceName, register, create)
 
 func register(server *grpc.Server, sessions *primitive.SessionManager[List]) {
 	listv1.RegisterListServer(server, newListServer(sessions))

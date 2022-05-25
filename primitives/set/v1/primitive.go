@@ -17,7 +17,7 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.set.v1.Set"
 
-var Primitive = primitive.NewType[SetClient, Set, *setv1.SetConfig](serviceName, register, create)
+var Primitive = primitive.NewKind[SetClient, Set, *setv1.SetConfig](serviceName, register, create)
 
 func register(server *grpc.Server, sessions *primitive.SessionManager[Set]) {
 	setv1.RegisterSetServer(server, newSetServer(sessions))

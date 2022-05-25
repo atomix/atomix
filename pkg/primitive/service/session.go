@@ -15,22 +15,22 @@ import (
 	"sync"
 )
 
-func newSessionServiceServer(runtime runtime.Runtime, registry *primitive.SessionRegistry, types ...primitive.Type) primitivev1.SessionServiceServer {
-	primitiveTypes := make(map[string]primitive.Type)
-	for _, t := range types {
-		primitiveTypes[t.Name()] = t
+func newSessionServiceServer(runtime runtime.Runtime, registry *primitive.SessionRegistry, kinds ...primitive.Kind) primitivev1.SessionServiceServer {
+	primitiveKinds := make(map[string]primitive.Kind)
+	for _, kind := range kinds {
+		primitiveKinds[kind.Name()] = kind
 	}
 	return &sessionServiceServer{
 		runtime:  runtime,
 		registry: registry,
-		types:    primitiveTypes,
+		kinds:    primitiveKinds,
 	}
 }
 
 type sessionServiceServer struct {
 	runtime  runtime.Runtime
 	registry *primitive.SessionRegistry
-	types    map[string]primitive.Type
+	kinds    map[string]primitive.Kind
 	mu       sync.Mutex
 }
 
@@ -49,9 +49,9 @@ func (s *sessionServiceServer) OpenSession(ctx context.Context, request *primiti
 		return response, nil
 	}
 
-	primitiveType, ok := s.types[request.Session.PrimitiveType]
+	primitiveType, ok := s.kinds[request.Session.Kind]
 	if !ok {
-		err := errors.NewForbidden("unknown primitive type '%s'", request.Session.PrimitiveType)
+		err := errors.NewForbidden("unknown primitive type '%s'", request.Session.Kind)
 		log.Warnw("OpenSession",
 			logging.Stringer("OpenSessionRequest", request),
 			logging.Error("Error", err))

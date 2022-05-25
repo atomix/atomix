@@ -9,7 +9,7 @@ import "github.com/atomix/runtime/pkg/primitive"
 type Options struct {
 	Host           string
 	Port           int
-	PrimitiveTypes []primitive.Type
+	PrimitiveKinds []primitive.Kind
 }
 
 func (o Options) apply(opts ...Option) {
@@ -38,8 +38,8 @@ func WithPort(port int) Option {
 	}
 }
 
-func WithPrimitiveTypes(primitiveTypes ...primitive.Type) Option {
+func WithPrimitiveKinds(kinds ...primitive.Kind) Option {
 	return func(options *Options) {
-		options.PrimitiveTypes = append(options.PrimitiveTypes, primitiveTypes...)
+		options.PrimitiveKinds = append(options.PrimitiveKinds, kinds...)
 	}
 }

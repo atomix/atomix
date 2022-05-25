@@ -17,7 +17,7 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.election.v1.LeaderElection"
 
-var Primitive = primitive.NewType[LeaderElectionClient, LeaderElection, *electionv1.LeaderElectionConfig](serviceName, register, create)
+var Primitive = primitive.NewKind[LeaderElectionClient, LeaderElection, *electionv1.LeaderElectionConfig](serviceName, register, create)
 
 func register(server *grpc.Server, sessions *primitive.SessionManager[LeaderElection]) {
 	electionv1.RegisterLeaderElectionServer(server, newLeaderElectionServer(sessions))

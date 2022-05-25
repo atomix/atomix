@@ -77,7 +77,7 @@ func main() {
 			primitiveService := primitiveservice.NewService(runtime,
 				primitiveservice.WithHost(controlHost),
 				primitiveservice.WithPort(controlPort),
-				primitiveservice.WithPrimitiveTypes(
+				primitiveservice.WithPrimitiveKinds(
 					counterv1.Primitive,
 					electionv1.Primitive,
 					indexedmapv1.Primitive,

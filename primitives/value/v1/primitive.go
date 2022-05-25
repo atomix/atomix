@@ -17,7 +17,7 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.value.v1.Value"
 
-var Primitive = primitive.NewType[ValueClient, Value, *valuev1.ValueConfig](serviceName, register, create)
+var Primitive = primitive.NewKind[ValueClient, Value, *valuev1.ValueConfig](serviceName, register, create)
 
 func register(server *grpc.Server, sessions *primitive.SessionManager[Value]) {
 	valuev1.RegisterValueServer(server, newValueServer(sessions))

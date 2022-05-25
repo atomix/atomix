@@ -17,7 +17,7 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.indexed_map.v1.IndexedMap"
 
-var Primitive = primitive.NewType[IndexedMapClient, IndexedMap, *indexedmapv1.IndexedMapConfig](serviceName, register, create)
+var Primitive = primitive.NewKind[IndexedMapClient, IndexedMap, *indexedmapv1.IndexedMapConfig](serviceName, register, create)
 
 func register(server *grpc.Server, sessions *primitive.SessionManager[IndexedMap]) {
 	indexedmapv1.RegisterIndexedMapServer(server, newIndexedMapServer(sessions))

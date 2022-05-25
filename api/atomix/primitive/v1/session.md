@@ -85,7 +85,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | meta | [SessionMeta](#atomix-primitive-v1-SessionMeta) |  |  |
-| primitive_type | [string](#string) |  |  |
+| kind | [string](#string) |  |  |
 | config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
