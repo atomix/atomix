@@ -4,22 +4,18 @@
 ## Table of Contents
 
 - [atomix/counter/v1/counter.proto](#atomix_counter_v1_counter-proto)
+    - [CloseRequest](#atomix-counter-v1-CloseRequest)
+    - [CloseResponse](#atomix-counter-v1-CloseResponse)
     - [CounterConfig](#atomix-counter-v1-CounterConfig)
-    - [DecrementInput](#atomix-counter-v1-DecrementInput)
-    - [DecrementOutput](#atomix-counter-v1-DecrementOutput)
+    - [CreateRequest](#atomix-counter-v1-CreateRequest)
+    - [CreateResponse](#atomix-counter-v1-CreateResponse)
     - [DecrementRequest](#atomix-counter-v1-DecrementRequest)
     - [DecrementResponse](#atomix-counter-v1-DecrementResponse)
-    - [GetInput](#atomix-counter-v1-GetInput)
-    - [GetOutput](#atomix-counter-v1-GetOutput)
     - [GetRequest](#atomix-counter-v1-GetRequest)
     - [GetResponse](#atomix-counter-v1-GetResponse)
-    - [IncrementInput](#atomix-counter-v1-IncrementInput)
-    - [IncrementOutput](#atomix-counter-v1-IncrementOutput)
     - [IncrementRequest](#atomix-counter-v1-IncrementRequest)
     - [IncrementResponse](#atomix-counter-v1-IncrementResponse)
     - [Precondition](#atomix-counter-v1-Precondition)
-    - [SetInput](#atomix-counter-v1-SetInput)
-    - [SetOutput](#atomix-counter-v1-SetOutput)
     - [SetRequest](#atomix-counter-v1-SetRequest)
     - [SetResponse](#atomix-counter-v1-SetResponse)
     - [Value](#atomix-counter-v1-Value)
@@ -37,6 +33,26 @@
 
 
 
+<a name="atomix-counter-v1-CloseRequest"></a>
+
+### CloseRequest
+
+
+
+
+
+
+
+<a name="atomix-counter-v1-CloseResponse"></a>
+
+### CloseResponse
+
+
+
+
+
+
+
 <a name="atomix-counter-v1-CounterConfig"></a>
 
 ### CounterConfig
@@ -47,30 +63,25 @@
 
 
 
-<a name="atomix-counter-v1-DecrementInput"></a>
+<a name="atomix-counter-v1-CreateRequest"></a>
 
-### DecrementInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| delta | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="atomix-counter-v1-DecrementOutput"></a>
-
-### DecrementOutput
+### CreateRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
+| config | [CounterConfig](#atomix-counter-v1-CounterConfig) |  |  |
+
+
+
+
+
+
+<a name="atomix-counter-v1-CreateResponse"></a>
+
+### CreateResponse
+
 
 
 
@@ -85,8 +96,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [DecrementInput](#atomix-counter-v1-DecrementInput) |  |  |
+| delta | [int64](#int64) |  |  |
 
 
 
@@ -96,32 +106,6 @@
 <a name="atomix-counter-v1-DecrementResponse"></a>
 
 ### DecrementResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [DecrementOutput](#atomix-counter-v1-DecrementOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-counter-v1-GetInput"></a>
-
-### GetInput
-
-
-
-
-
-
-
-<a name="atomix-counter-v1-GetOutput"></a>
-
-### GetOutput
 
 
 
@@ -140,12 +124,6 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [GetInput](#atomix-counter-v1-GetInput) |  |  |
-
-
 
 
 
@@ -153,37 +131,6 @@
 <a name="atomix-counter-v1-GetResponse"></a>
 
 ### GetResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [GetOutput](#atomix-counter-v1-GetOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-counter-v1-IncrementInput"></a>
-
-### IncrementInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| delta | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="atomix-counter-v1-IncrementOutput"></a>
-
-### IncrementOutput
 
 
 
@@ -204,8 +151,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [IncrementInput](#atomix-counter-v1-IncrementInput) |  |  |
+| delta | [int64](#int64) |  |  |
 
 
 
@@ -220,8 +166,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [IncrementOutput](#atomix-counter-v1-IncrementOutput) |  |  |
+| value | [int64](#int64) |  |  |
 
 
 
@@ -243,37 +188,6 @@
 
 
 
-<a name="atomix-counter-v1-SetInput"></a>
-
-### SetInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
-| preconditions | [Precondition](#atomix-counter-v1-Precondition) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-counter-v1-SetOutput"></a>
-
-### SetOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
-
-
-
-
-
-
 <a name="atomix-counter-v1-SetRequest"></a>
 
 ### SetRequest
@@ -282,8 +196,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [SetInput](#atomix-counter-v1-SetInput) |  |  |
+| value | [int64](#int64) |  |  |
+| preconditions | [Precondition](#atomix-counter-v1-Precondition) | repeated |  |
 
 
 
@@ -298,8 +212,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [SetOutput](#atomix-counter-v1-SetOutput) |  |  |
+| value | [int64](#int64) |  |  |
 
 
 
@@ -334,6 +247,8 @@ Counter is a service for a counter primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-counter-v1-CreateRequest) | [CreateResponse](#atomix-counter-v1-CreateResponse) |  |
+| Close | [CloseRequest](#atomix-counter-v1-CloseRequest) | [CloseResponse](#atomix-counter-v1-CloseResponse) |  |
 | Set | [SetRequest](#atomix-counter-v1-SetRequest) | [SetResponse](#atomix-counter-v1-SetResponse) | Set sets the counter value |
 | Get | [GetRequest](#atomix-counter-v1-GetRequest) | [GetResponse](#atomix-counter-v1-GetResponse) | Get gets the current counter value |
 | Increment | [IncrementRequest](#atomix-counter-v1-IncrementRequest) | [IncrementResponse](#atomix-counter-v1-IncrementResponse) | Increment increments the counter value |

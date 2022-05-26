@@ -4,35 +4,25 @@
 ## Table of Contents
 
 - [atomix/election/v1/election.proto](#atomix_election_v1_election-proto)
-    - [AnointInput](#atomix-election-v1-AnointInput)
-    - [AnointOutput](#atomix-election-v1-AnointOutput)
     - [AnointRequest](#atomix-election-v1-AnointRequest)
     - [AnointResponse](#atomix-election-v1-AnointResponse)
-    - [EnterInput](#atomix-election-v1-EnterInput)
-    - [EnterOutput](#atomix-election-v1-EnterOutput)
+    - [CloseRequest](#atomix-election-v1-CloseRequest)
+    - [CloseResponse](#atomix-election-v1-CloseResponse)
+    - [CreateRequest](#atomix-election-v1-CreateRequest)
+    - [CreateResponse](#atomix-election-v1-CreateResponse)
     - [EnterRequest](#atomix-election-v1-EnterRequest)
     - [EnterResponse](#atomix-election-v1-EnterResponse)
     - [Event](#atomix-election-v1-Event)
-    - [EventsInput](#atomix-election-v1-EventsInput)
-    - [EventsOutput](#atomix-election-v1-EventsOutput)
     - [EventsRequest](#atomix-election-v1-EventsRequest)
     - [EventsResponse](#atomix-election-v1-EventsResponse)
-    - [EvictInput](#atomix-election-v1-EvictInput)
-    - [EvictOutput](#atomix-election-v1-EvictOutput)
     - [EvictRequest](#atomix-election-v1-EvictRequest)
     - [EvictResponse](#atomix-election-v1-EvictResponse)
-    - [GetTermInput](#atomix-election-v1-GetTermInput)
-    - [GetTermOutput](#atomix-election-v1-GetTermOutput)
     - [GetTermRequest](#atomix-election-v1-GetTermRequest)
     - [GetTermResponse](#atomix-election-v1-GetTermResponse)
     - [LeaderElectionConfig](#atomix-election-v1-LeaderElectionConfig)
-    - [PromoteInput](#atomix-election-v1-PromoteInput)
-    - [PromoteOutput](#atomix-election-v1-PromoteOutput)
     - [PromoteRequest](#atomix-election-v1-PromoteRequest)
     - [PromoteResponse](#atomix-election-v1-PromoteResponse)
     - [Term](#atomix-election-v1-Term)
-    - [WithdrawInput](#atomix-election-v1-WithdrawInput)
-    - [WithdrawOutput](#atomix-election-v1-WithdrawOutput)
     - [WithdrawRequest](#atomix-election-v1-WithdrawRequest)
     - [WithdrawResponse](#atomix-election-v1-WithdrawResponse)
   
@@ -51,36 +41,6 @@
 
 
 
-<a name="atomix-election-v1-AnointInput"></a>
-
-### AnointInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| candidate_id | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-election-v1-AnointOutput"></a>
-
-### AnointOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| term | [Term](#atomix-election-v1-Term) |  |  |
-
-
-
-
-
-
 <a name="atomix-election-v1-AnointRequest"></a>
 
 ### AnointRequest
@@ -89,8 +49,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [AnointInput](#atomix-election-v1-AnointInput) |  |  |
+| candidate_id | [string](#string) |  |  |
 
 
 
@@ -105,38 +64,52 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [AnointOutput](#atomix-election-v1-AnointOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-election-v1-EnterInput"></a>
-
-### EnterInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| candidate_id | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-election-v1-EnterOutput"></a>
-
-### EnterOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
 | term | [Term](#atomix-election-v1-Term) |  |  |
+
+
+
+
+
+
+<a name="atomix-election-v1-CloseRequest"></a>
+
+### CloseRequest
+
+
+
+
+
+
+
+<a name="atomix-election-v1-CloseResponse"></a>
+
+### CloseResponse
+
+
+
+
+
+
+
+<a name="atomix-election-v1-CreateRequest"></a>
+
+### CreateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [LeaderElectionConfig](#atomix-election-v1-LeaderElectionConfig) |  |  |
+
+
+
+
+
+
+<a name="atomix-election-v1-CreateResponse"></a>
+
+### CreateResponse
+
 
 
 
@@ -151,8 +124,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [EnterInput](#atomix-election-v1-EnterInput) |  |  |
+| candidate_id | [string](#string) |  |  |
 
 
 
@@ -167,8 +139,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [EnterOutput](#atomix-election-v1-EnterOutput) |  |  |
+| term | [Term](#atomix-election-v1-Term) |  |  |
 
 
 
@@ -191,41 +162,10 @@
 
 
 
-<a name="atomix-election-v1-EventsInput"></a>
-
-### EventsInput
-
-
-
-
-
-
-
-<a name="atomix-election-v1-EventsOutput"></a>
-
-### EventsOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| event | [Event](#atomix-election-v1-Event) |  |  |
-
-
-
-
-
-
 <a name="atomix-election-v1-EventsRequest"></a>
 
 ### EventsRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [EventsInput](#atomix-election-v1-EventsInput) |  |  |
 
 
 
@@ -240,38 +180,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [EventsOutput](#atomix-election-v1-EventsOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-election-v1-EvictInput"></a>
-
-### EvictInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| candidate_id | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-election-v1-EvictOutput"></a>
-
-### EvictOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| term | [Term](#atomix-election-v1-Term) |  |  |
+| event | [Event](#atomix-election-v1-Event) |  |  |
 
 
 
@@ -286,8 +195,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [EvictInput](#atomix-election-v1-EvictInput) |  |  |
+| candidate_id | [string](#string) |  |  |
 
 
 
@@ -297,32 +205,6 @@
 <a name="atomix-election-v1-EvictResponse"></a>
 
 ### EvictResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [EvictOutput](#atomix-election-v1-EvictOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-election-v1-GetTermInput"></a>
-
-### GetTermInput
-
-
-
-
-
-
-
-<a name="atomix-election-v1-GetTermOutput"></a>
-
-### GetTermOutput
 
 
 
@@ -341,12 +223,6 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [GetTermInput](#atomix-election-v1-GetTermInput) |  |  |
-
-
 
 
 
@@ -359,8 +235,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [GetTermOutput](#atomix-election-v1-GetTermOutput) |  |  |
+| term | [Term](#atomix-election-v1-Term) |  |  |
 
 
 
@@ -377,36 +252,6 @@
 
 
 
-<a name="atomix-election-v1-PromoteInput"></a>
-
-### PromoteInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| candidate_id | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-election-v1-PromoteOutput"></a>
-
-### PromoteOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| term | [Term](#atomix-election-v1-Term) |  |  |
-
-
-
-
-
-
 <a name="atomix-election-v1-PromoteRequest"></a>
 
 ### PromoteRequest
@@ -415,8 +260,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [PromoteInput](#atomix-election-v1-PromoteInput) |  |  |
+| candidate_id | [string](#string) |  |  |
 
 
 
@@ -431,8 +275,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [PromoteOutput](#atomix-election-v1-PromoteOutput) |  |  |
+| term | [Term](#atomix-election-v1-Term) |  |  |
 
 
 
@@ -456,36 +299,6 @@
 
 
 
-<a name="atomix-election-v1-WithdrawInput"></a>
-
-### WithdrawInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| candidate_id | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-election-v1-WithdrawOutput"></a>
-
-### WithdrawOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| term | [Term](#atomix-election-v1-Term) |  |  |
-
-
-
-
-
-
 <a name="atomix-election-v1-WithdrawRequest"></a>
 
 ### WithdrawRequest
@@ -494,8 +307,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [WithdrawInput](#atomix-election-v1-WithdrawInput) |  |  |
+| candidate_id | [string](#string) |  |  |
 
 
 
@@ -510,8 +322,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [WithdrawOutput](#atomix-election-v1-WithdrawOutput) |  |  |
+| term | [Term](#atomix-election-v1-Term) |  |  |
 
 
 
@@ -543,6 +354,8 @@ LeaderElection is a service for a leader election primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-election-v1-CreateRequest) | [CreateResponse](#atomix-election-v1-CreateResponse) |  |
+| Close | [CloseRequest](#atomix-election-v1-CloseRequest) | [CloseResponse](#atomix-election-v1-CloseResponse) |  |
 | Enter | [EnterRequest](#atomix-election-v1-EnterRequest) | [EnterResponse](#atomix-election-v1-EnterResponse) | Enter enters the leader election |
 | Withdraw | [WithdrawRequest](#atomix-election-v1-WithdrawRequest) | [WithdrawResponse](#atomix-election-v1-WithdrawResponse) | Withdraw withdraws a candidate from the leader election |
 | Anoint | [AnointRequest](#atomix-election-v1-AnointRequest) | [AnointResponse](#atomix-election-v1-AnointResponse) | Anoint anoints a candidate leader |

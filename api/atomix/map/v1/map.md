@@ -4,36 +4,26 @@
 ## Table of Contents
 
 - [atomix/map/v1/map.proto](#atomix_map_v1_map-proto)
-    - [ClearInput](#atomix-map-v1-ClearInput)
-    - [ClearOutput](#atomix-map-v1-ClearOutput)
     - [ClearRequest](#atomix-map-v1-ClearRequest)
     - [ClearResponse](#atomix-map-v1-ClearResponse)
-    - [EntriesInput](#atomix-map-v1-EntriesInput)
-    - [EntriesOutput](#atomix-map-v1-EntriesOutput)
+    - [CloseRequest](#atomix-map-v1-CloseRequest)
+    - [CloseResponse](#atomix-map-v1-CloseResponse)
+    - [CreateRequest](#atomix-map-v1-CreateRequest)
+    - [CreateResponse](#atomix-map-v1-CreateResponse)
     - [EntriesRequest](#atomix-map-v1-EntriesRequest)
     - [EntriesResponse](#atomix-map-v1-EntriesResponse)
     - [Entry](#atomix-map-v1-Entry)
     - [Event](#atomix-map-v1-Event)
-    - [EventsInput](#atomix-map-v1-EventsInput)
-    - [EventsOutput](#atomix-map-v1-EventsOutput)
     - [EventsRequest](#atomix-map-v1-EventsRequest)
     - [EventsResponse](#atomix-map-v1-EventsResponse)
-    - [GetInput](#atomix-map-v1-GetInput)
-    - [GetOutput](#atomix-map-v1-GetOutput)
     - [GetRequest](#atomix-map-v1-GetRequest)
     - [GetResponse](#atomix-map-v1-GetResponse)
     - [MapCacheConfig](#atomix-map-v1-MapCacheConfig)
     - [MapConfig](#atomix-map-v1-MapConfig)
-    - [PutInput](#atomix-map-v1-PutInput)
-    - [PutOutput](#atomix-map-v1-PutOutput)
     - [PutRequest](#atomix-map-v1-PutRequest)
     - [PutResponse](#atomix-map-v1-PutResponse)
-    - [RemoveInput](#atomix-map-v1-RemoveInput)
-    - [RemoveOutput](#atomix-map-v1-RemoveOutput)
     - [RemoveRequest](#atomix-map-v1-RemoveRequest)
     - [RemoveResponse](#atomix-map-v1-RemoveResponse)
-    - [SizeInput](#atomix-map-v1-SizeInput)
-    - [SizeOutput](#atomix-map-v1-SizeOutput)
     - [SizeRequest](#atomix-map-v1-SizeRequest)
     - [SizeResponse](#atomix-map-v1-SizeResponse)
     - [Value](#atomix-map-v1-Value)
@@ -53,41 +43,10 @@
 
 
 
-<a name="atomix-map-v1-ClearInput"></a>
-
-### ClearInput
-
-
-
-
-
-
-
-<a name="atomix-map-v1-ClearOutput"></a>
-
-### ClearOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
-
-
-
-
-
-
 <a name="atomix-map-v1-ClearRequest"></a>
 
 ### ClearRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [ClearInput](#atomix-map-v1-ClearInput) |  |  |
 
 
 
@@ -102,33 +61,52 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [ClearOutput](#atomix-map-v1-ClearOutput) |  |  |
+| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
 
 
 
 
 
-<a name="atomix-map-v1-EntriesInput"></a>
+<a name="atomix-map-v1-CloseRequest"></a>
 
-### EntriesInput
-
-
+### CloseRequest
 
 
 
 
 
-<a name="atomix-map-v1-EntriesOutput"></a>
 
-### EntriesOutput
+
+<a name="atomix-map-v1-CloseResponse"></a>
+
+### CloseResponse
+
+
+
+
+
+
+
+<a name="atomix-map-v1-CreateRequest"></a>
+
+### CreateRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-map-v1-Entry) |  |  |
+| config | [MapConfig](#atomix-map-v1-MapConfig) |  |  |
+
+
+
+
+
+
+<a name="atomix-map-v1-CreateResponse"></a>
+
+### CreateResponse
+
 
 
 
@@ -139,12 +117,6 @@
 
 ### EntriesRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [EntriesInput](#atomix-map-v1-EntriesInput) |  |  |
 
 
 
@@ -159,8 +131,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [EntriesOutput](#atomix-map-v1-EntriesOutput) |  |  |
+| entry | [Entry](#atomix-map-v1-Entry) |  |  |
 
 
 
@@ -200,37 +171,6 @@
 
 
 
-<a name="atomix-map-v1-EventsInput"></a>
-
-### EventsInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| replay | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="atomix-map-v1-EventsOutput"></a>
-
-### EventsOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| event | [Event](#atomix-map-v1-Event) |  |  |
-
-
-
-
-
-
 <a name="atomix-map-v1-EventsRequest"></a>
 
 ### EventsRequest
@@ -239,8 +179,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [EventsInput](#atomix-map-v1-EventsInput) |  |  |
+| key | [string](#string) |  |  |
+| replay | [bool](#bool) |  |  |
 
 
 
@@ -255,38 +195,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [EventsOutput](#atomix-map-v1-EventsOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-map-v1-GetInput"></a>
-
-### GetInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-map-v1-GetOutput"></a>
-
-### GetOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-map-v1-Entry) |  |  |
+| event | [Event](#atomix-map-v1-Event) |  |  |
 
 
 
@@ -301,8 +210,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [GetInput](#atomix-map-v1-GetInput) |  |  |
+| key | [string](#string) |  |  |
 
 
 
@@ -317,8 +225,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [GetOutput](#atomix-map-v1-GetOutput) |  |  |
+| entry | [Entry](#atomix-map-v1-Entry) |  |  |
 
 
 
@@ -356,9 +263,9 @@
 
 
 
-<a name="atomix-map-v1-PutInput"></a>
+<a name="atomix-map-v1-PutRequest"></a>
 
-### PutInput
+### PutRequest
 
 
 
@@ -373,72 +280,9 @@
 
 
 
-<a name="atomix-map-v1-PutOutput"></a>
-
-### PutOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-map-v1-Entry) |  |  |
-
-
-
-
-
-
-<a name="atomix-map-v1-PutRequest"></a>
-
-### PutRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [PutInput](#atomix-map-v1-PutInput) |  |  |
-
-
-
-
-
-
 <a name="atomix-map-v1-PutResponse"></a>
 
 ### PutResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [PutOutput](#atomix-map-v1-PutOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-map-v1-RemoveInput"></a>
-
-### RemoveInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
-
-
-
-
-
-
-<a name="atomix-map-v1-RemoveOutput"></a>
-
-### RemoveOutput
 
 
 
@@ -459,8 +303,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [RemoveInput](#atomix-map-v1-RemoveInput) |  |  |
+| key | [string](#string) |  |  |
+| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
 
 
@@ -475,33 +319,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [RemoveOutput](#atomix-map-v1-RemoveOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-map-v1-SizeInput"></a>
-
-### SizeInput
-
-
-
-
-
-
-
-<a name="atomix-map-v1-SizeOutput"></a>
-
-### SizeOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| size | [uint32](#uint32) |  |  |
+| entry | [Entry](#atomix-map-v1-Entry) |  |  |
 
 
 
@@ -512,12 +330,6 @@
 
 ### SizeRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [SizeInput](#atomix-map-v1-SizeInput) |  |  |
 
 
 
@@ -532,8 +344,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [SizeOutput](#atomix-map-v1-SizeOutput) |  |  |
+| size | [uint32](#uint32) |  |  |
 
 
 
@@ -584,6 +395,8 @@ Map is a service for a map primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-map-v1-CreateRequest) | [CreateResponse](#atomix-map-v1-CreateResponse) |  |
+| Close | [CloseRequest](#atomix-map-v1-CloseRequest) | [CloseResponse](#atomix-map-v1-CloseResponse) |  |
 | Size | [SizeRequest](#atomix-map-v1-SizeRequest) | [SizeResponse](#atomix-map-v1-SizeResponse) | Size returns the size of the map |
 | Put | [PutRequest](#atomix-map-v1-PutRequest) | [PutResponse](#atomix-map-v1-PutResponse) | Put puts an entry into the map |
 | Get | [GetRequest](#atomix-map-v1-GetRequest) | [GetResponse](#atomix-map-v1-GetResponse) | Get gets the entry for a key |

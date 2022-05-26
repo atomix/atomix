@@ -8,8 +8,9 @@
     - [BindingId](#atomix-runtime-v1-BindingId)
     - [BindingMeta](#atomix-runtime-v1-BindingMeta)
     - [BindingMeta.LabelsEntry](#atomix-runtime-v1-BindingMeta-LabelsEntry)
+    - [BindingRule](#atomix-runtime-v1-BindingRule)
+    - [BindingRule.HeadersEntry](#atomix-runtime-v1-BindingRule-HeadersEntry)
     - [BindingSpec](#atomix-runtime-v1-BindingSpec)
-    - [BindingSpec.SelectorEntry](#atomix-runtime-v1-BindingSpec-SelectorEntry)
     - [BindingStatus](#atomix-runtime-v1-BindingStatus)
     - [CreateBindingRequest](#atomix-runtime-v1-CreateBindingRequest)
     - [CreateBindingResponse](#atomix-runtime-v1-CreateBindingResponse)
@@ -101,6 +102,39 @@
 
 
 
+<a name="atomix-runtime-v1-BindingRule"></a>
+
+### BindingRule
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| kinds | [string](#string) | repeated |  |
+| names | [string](#string) | repeated |  |
+| headers | [BindingRule.HeadersEntry](#atomix-runtime-v1-BindingRule-HeadersEntry) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-BindingRule-HeadersEntry"></a>
+
+### BindingRule.HeadersEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="atomix-runtime-v1-BindingSpec"></a>
 
 ### BindingSpec
@@ -110,23 +144,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | cluster_id | [ClusterId](#atomix-runtime-v1-ClusterId) |  |  |
-| selector | [BindingSpec.SelectorEntry](#atomix-runtime-v1-BindingSpec-SelectorEntry) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-BindingSpec-SelectorEntry"></a>
-
-### BindingSpec.SelectorEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [string](#string) |  |  |
+| rules | [BindingRule](#atomix-runtime-v1-BindingRule) | repeated |  |
 
 
 

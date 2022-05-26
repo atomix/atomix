@@ -4,12 +4,12 @@
 ## Table of Contents
 
 - [atomix/topic/v1/topic.proto](#atomix_topic_v1_topic-proto)
-    - [PublishInput](#atomix-topic-v1-PublishInput)
-    - [PublishOutput](#atomix-topic-v1-PublishOutput)
+    - [CloseRequest](#atomix-topic-v1-CloseRequest)
+    - [CloseResponse](#atomix-topic-v1-CloseResponse)
+    - [CreateRequest](#atomix-topic-v1-CreateRequest)
+    - [CreateResponse](#atomix-topic-v1-CreateResponse)
     - [PublishRequest](#atomix-topic-v1-PublishRequest)
     - [PublishResponse](#atomix-topic-v1-PublishResponse)
-    - [SubscribeInput](#atomix-topic-v1-SubscribeInput)
-    - [SubscribeOutput](#atomix-topic-v1-SubscribeOutput)
     - [SubscribeRequest](#atomix-topic-v1-SubscribeRequest)
     - [SubscribeResponse](#atomix-topic-v1-SubscribeResponse)
     - [TopicConfig](#atomix-topic-v1-TopicConfig)
@@ -27,24 +27,44 @@
 
 
 
-<a name="atomix-topic-v1-PublishInput"></a>
+<a name="atomix-topic-v1-CloseRequest"></a>
 
-### PublishInput
+### CloseRequest
+
+
+
+
+
+
+
+<a name="atomix-topic-v1-CloseResponse"></a>
+
+### CloseResponse
+
+
+
+
+
+
+
+<a name="atomix-topic-v1-CreateRequest"></a>
+
+### CreateRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| payload | [bytes](#bytes) |  |  |
+| config | [TopicConfig](#atomix-topic-v1-TopicConfig) |  |  |
 
 
 
 
 
 
-<a name="atomix-topic-v1-PublishOutput"></a>
+<a name="atomix-topic-v1-CreateResponse"></a>
 
-### PublishOutput
+### CreateResponse
 
 
 
@@ -60,8 +80,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [PublishInput](#atomix-topic-v1-PublishInput) |  |  |
+| payload | [bytes](#bytes) |  |  |
 
 
 
@@ -74,39 +93,6 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [PublishOutput](#atomix-topic-v1-PublishOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-topic-v1-SubscribeInput"></a>
-
-### SubscribeInput
-
-
-
-
-
-
-
-<a name="atomix-topic-v1-SubscribeOutput"></a>
-
-### SubscribeOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| offset | [uint64](#uint64) |  |  |
-| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
-| payload | [bytes](#bytes) |  |  |
-
-
 
 
 
@@ -115,12 +101,6 @@
 
 ### SubscribeRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [SubscribeInput](#atomix-topic-v1-SubscribeInput) |  |  |
 
 
 
@@ -135,8 +115,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [SubscribeOutput](#atomix-topic-v1-SubscribeOutput) |  |  |
+| offset | [uint64](#uint64) |  |  |
+| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| payload | [bytes](#bytes) |  |  |
 
 
 
@@ -166,6 +147,8 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-topic-v1-CreateRequest) | [CreateResponse](#atomix-topic-v1-CreateResponse) |  |
+| Close | [CloseRequest](#atomix-topic-v1-CloseRequest) | [CloseResponse](#atomix-topic-v1-CloseResponse) |  |
 | Publish | [PublishRequest](#atomix-topic-v1-PublishRequest) | [PublishResponse](#atomix-topic-v1-PublishResponse) |  |
 | Subscribe | [SubscribeRequest](#atomix-topic-v1-SubscribeRequest) | [SubscribeResponse](#atomix-topic-v1-SubscribeResponse) stream |  |
 

@@ -4,18 +4,16 @@
 ## Table of Contents
 
 - [atomix/lock/v1/lock.proto](#atomix_lock_v1_lock-proto)
-    - [GetLockInput](#atomix-lock-v1-GetLockInput)
-    - [GetLockOutput](#atomix-lock-v1-GetLockOutput)
+    - [CloseRequest](#atomix-lock-v1-CloseRequest)
+    - [CloseResponse](#atomix-lock-v1-CloseResponse)
+    - [CreateRequest](#atomix-lock-v1-CreateRequest)
+    - [CreateResponse](#atomix-lock-v1-CreateResponse)
     - [GetLockRequest](#atomix-lock-v1-GetLockRequest)
     - [GetLockResponse](#atomix-lock-v1-GetLockResponse)
     - [LockConfig](#atomix-lock-v1-LockConfig)
-    - [LockInput](#atomix-lock-v1-LockInput)
     - [LockInstance](#atomix-lock-v1-LockInstance)
-    - [LockOutput](#atomix-lock-v1-LockOutput)
     - [LockRequest](#atomix-lock-v1-LockRequest)
     - [LockResponse](#atomix-lock-v1-LockResponse)
-    - [UnlockInput](#atomix-lock-v1-UnlockInput)
-    - [UnlockOutput](#atomix-lock-v1-UnlockOutput)
     - [UnlockRequest](#atomix-lock-v1-UnlockRequest)
     - [UnlockResponse](#atomix-lock-v1-UnlockResponse)
   
@@ -34,30 +32,45 @@
 
 
 
-<a name="atomix-lock-v1-GetLockInput"></a>
+<a name="atomix-lock-v1-CloseRequest"></a>
 
-### GetLockInput
+### CloseRequest
+
+
+
+
+
+
+
+<a name="atomix-lock-v1-CloseResponse"></a>
+
+### CloseResponse
+
+
+
+
+
+
+
+<a name="atomix-lock-v1-CreateRequest"></a>
+
+### CreateRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| lock | [LockInstance](#atomix-lock-v1-LockInstance) |  |  |
+| config | [LockConfig](#atomix-lock-v1-LockConfig) |  |  |
 
 
 
 
 
 
-<a name="atomix-lock-v1-GetLockOutput"></a>
+<a name="atomix-lock-v1-CreateResponse"></a>
 
-### GetLockOutput
+### CreateResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| lock | [LockInstance](#atomix-lock-v1-LockInstance) |  |  |
 
 
 
@@ -72,8 +85,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [GetLockInput](#atomix-lock-v1-GetLockInput) |  |  |
+| lock | [LockInstance](#atomix-lock-v1-LockInstance) |  |  |
 
 
 
@@ -88,8 +100,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [GetLockOutput](#atomix-lock-v1-GetLockOutput) |  |  |
+| lock | [LockInstance](#atomix-lock-v1-LockInstance) |  |  |
 
 
 
@@ -100,21 +111,6 @@
 
 ### LockConfig
 
-
-
-
-
-
-
-<a name="atomix-lock-v1-LockInput"></a>
-
-### LockInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| timeout | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
 
 
 
@@ -137,21 +133,6 @@
 
 
 
-<a name="atomix-lock-v1-LockOutput"></a>
-
-### LockOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| lock | [LockInstance](#atomix-lock-v1-LockInstance) |  |  |
-
-
-
-
-
-
 <a name="atomix-lock-v1-LockRequest"></a>
 
 ### LockRequest
@@ -160,8 +141,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [LockInput](#atomix-lock-v1-LockInput) |  |  |
+| timeout | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
 
 
 
@@ -171,37 +151,6 @@
 <a name="atomix-lock-v1-LockResponse"></a>
 
 ### LockResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [LockOutput](#atomix-lock-v1-LockOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-lock-v1-UnlockInput"></a>
-
-### UnlockInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| lock | [LockInstance](#atomix-lock-v1-LockInstance) |  |  |
-
-
-
-
-
-
-<a name="atomix-lock-v1-UnlockOutput"></a>
-
-### UnlockOutput
 
 
 
@@ -222,8 +171,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [UnlockInput](#atomix-lock-v1-UnlockInput) |  |  |
+| lock | [LockInstance](#atomix-lock-v1-LockInstance) |  |  |
 
 
 
@@ -238,8 +186,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [UnlockOutput](#atomix-lock-v1-UnlockOutput) |  |  |
+| lock | [LockInstance](#atomix-lock-v1-LockInstance) |  |  |
 
 
 
@@ -271,6 +218,8 @@ Lock is a service for a lock primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-lock-v1-CreateRequest) | [CreateResponse](#atomix-lock-v1-CreateResponse) |  |
+| Close | [CloseRequest](#atomix-lock-v1-CloseRequest) | [CloseResponse](#atomix-lock-v1-CloseResponse) |  |
 | Lock | [LockRequest](#atomix-lock-v1-LockRequest) | [LockResponse](#atomix-lock-v1-LockResponse) | Lock attempts to acquire the lock |
 | Unlock | [UnlockRequest](#atomix-lock-v1-UnlockRequest) | [UnlockResponse](#atomix-lock-v1-UnlockResponse) | Unlock releases the lock |
 | GetLock | [GetLockRequest](#atomix-lock-v1-GetLockRequest) | [GetLockResponse](#atomix-lock-v1-GetLockResponse) | GetLock gets the lock state |

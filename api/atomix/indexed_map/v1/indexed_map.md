@@ -4,52 +4,34 @@
 ## Table of Contents
 
 - [atomix/indexed_map/v1/indexed_map.proto](#atomix_indexed_map_v1_indexed_map-proto)
-    - [ClearInput](#atomix-indexed_map-v1-ClearInput)
-    - [ClearOutput](#atomix-indexed_map-v1-ClearOutput)
     - [ClearRequest](#atomix-indexed_map-v1-ClearRequest)
     - [ClearResponse](#atomix-indexed_map-v1-ClearResponse)
-    - [EntriesInput](#atomix-indexed_map-v1-EntriesInput)
-    - [EntriesOutput](#atomix-indexed_map-v1-EntriesOutput)
+    - [CloseRequest](#atomix-indexed_map-v1-CloseRequest)
+    - [CloseResponse](#atomix-indexed_map-v1-CloseResponse)
+    - [CreateRequest](#atomix-indexed_map-v1-CreateRequest)
+    - [CreateResponse](#atomix-indexed_map-v1-CreateResponse)
     - [EntriesRequest](#atomix-indexed_map-v1-EntriesRequest)
     - [EntriesResponse](#atomix-indexed_map-v1-EntriesResponse)
     - [Entry](#atomix-indexed_map-v1-Entry)
     - [Event](#atomix-indexed_map-v1-Event)
-    - [EventsInput](#atomix-indexed_map-v1-EventsInput)
-    - [EventsOutput](#atomix-indexed_map-v1-EventsOutput)
     - [EventsRequest](#atomix-indexed_map-v1-EventsRequest)
     - [EventsResponse](#atomix-indexed_map-v1-EventsResponse)
-    - [FirstEntryInput](#atomix-indexed_map-v1-FirstEntryInput)
-    - [FirstEntryOutput](#atomix-indexed_map-v1-FirstEntryOutput)
     - [FirstEntryRequest](#atomix-indexed_map-v1-FirstEntryRequest)
     - [FirstEntryResponse](#atomix-indexed_map-v1-FirstEntryResponse)
-    - [GetInput](#atomix-indexed_map-v1-GetInput)
-    - [GetOutput](#atomix-indexed_map-v1-GetOutput)
     - [GetRequest](#atomix-indexed_map-v1-GetRequest)
     - [GetResponse](#atomix-indexed_map-v1-GetResponse)
     - [IndexedMapConfig](#atomix-indexed_map-v1-IndexedMapConfig)
     - [Key](#atomix-indexed_map-v1-Key)
-    - [LastEntryInput](#atomix-indexed_map-v1-LastEntryInput)
-    - [LastEntryOutput](#atomix-indexed_map-v1-LastEntryOutput)
     - [LastEntryRequest](#atomix-indexed_map-v1-LastEntryRequest)
     - [LastEntryResponse](#atomix-indexed_map-v1-LastEntryResponse)
-    - [NextEntryInput](#atomix-indexed_map-v1-NextEntryInput)
-    - [NextEntryOutput](#atomix-indexed_map-v1-NextEntryOutput)
     - [NextEntryRequest](#atomix-indexed_map-v1-NextEntryRequest)
     - [NextEntryResponse](#atomix-indexed_map-v1-NextEntryResponse)
-    - [PrevEntryInput](#atomix-indexed_map-v1-PrevEntryInput)
-    - [PrevEntryOutput](#atomix-indexed_map-v1-PrevEntryOutput)
     - [PrevEntryRequest](#atomix-indexed_map-v1-PrevEntryRequest)
     - [PrevEntryResponse](#atomix-indexed_map-v1-PrevEntryResponse)
-    - [PutInput](#atomix-indexed_map-v1-PutInput)
-    - [PutOutput](#atomix-indexed_map-v1-PutOutput)
     - [PutRequest](#atomix-indexed_map-v1-PutRequest)
     - [PutResponse](#atomix-indexed_map-v1-PutResponse)
-    - [RemoveInput](#atomix-indexed_map-v1-RemoveInput)
-    - [RemoveOutput](#atomix-indexed_map-v1-RemoveOutput)
     - [RemoveRequest](#atomix-indexed_map-v1-RemoveRequest)
     - [RemoveResponse](#atomix-indexed_map-v1-RemoveResponse)
-    - [SizeInput](#atomix-indexed_map-v1-SizeInput)
-    - [SizeOutput](#atomix-indexed_map-v1-SizeOutput)
     - [SizeRequest](#atomix-indexed_map-v1-SizeRequest)
     - [SizeResponse](#atomix-indexed_map-v1-SizeResponse)
     - [Value](#atomix-indexed_map-v1-Value)
@@ -69,36 +51,10 @@
 
 
 
-<a name="atomix-indexed_map-v1-ClearInput"></a>
-
-### ClearInput
-
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-ClearOutput"></a>
-
-### ClearOutput
-
-
-
-
-
-
-
 <a name="atomix-indexed_map-v1-ClearRequest"></a>
 
 ### ClearRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [ClearInput](#atomix-indexed_map-v1-ClearInput) |  |  |
 
 
 
@@ -111,35 +67,49 @@
 
 
 
+
+
+
+
+<a name="atomix-indexed_map-v1-CloseRequest"></a>
+
+### CloseRequest
+
+
+
+
+
+
+
+<a name="atomix-indexed_map-v1-CloseResponse"></a>
+
+### CloseResponse
+
+
+
+
+
+
+
+<a name="atomix-indexed_map-v1-CreateRequest"></a>
+
+### CreateRequest
+
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [ClearOutput](#atomix-indexed_map-v1-ClearOutput) |  |  |
+| config | [IndexedMapConfig](#atomix-indexed_map-v1-IndexedMapConfig) |  |  |
 
 
 
 
 
 
-<a name="atomix-indexed_map-v1-EntriesInput"></a>
+<a name="atomix-indexed_map-v1-CreateResponse"></a>
 
-### EntriesInput
+### CreateResponse
 
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-EntriesOutput"></a>
-
-### EntriesOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-indexed_map-v1-Entry) |  |  |
 
 
 
@@ -150,12 +120,6 @@
 
 ### EntriesRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [EntriesInput](#atomix-indexed_map-v1-EntriesInput) |  |  |
 
 
 
@@ -170,8 +134,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [EntriesOutput](#atomix-indexed_map-v1-EntriesOutput) |  |  |
+| entry | [Entry](#atomix-indexed_map-v1-Entry) |  |  |
 
 
 
@@ -211,37 +174,6 @@
 
 
 
-<a name="atomix-indexed_map-v1-EventsInput"></a>
-
-### EventsInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
-| replay | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-EventsOutput"></a>
-
-### EventsOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| event | [Event](#atomix-indexed_map-v1-Event) |  |  |
-
-
-
-
-
-
 <a name="atomix-indexed_map-v1-EventsRequest"></a>
 
 ### EventsRequest
@@ -250,8 +182,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [EventsInput](#atomix-indexed_map-v1-EventsInput) |  |  |
+| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
+| replay | [bool](#bool) |  |  |
 
 
 
@@ -266,33 +198,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [EventsOutput](#atomix-indexed_map-v1-EventsOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-FirstEntryInput"></a>
-
-### FirstEntryInput
-
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-FirstEntryOutput"></a>
-
-### FirstEntryOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-indexed_map-v1-Entry) |  |  |
+| event | [Event](#atomix-indexed_map-v1-Event) |  |  |
 
 
 
@@ -305,12 +211,6 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [FirstEntryInput](#atomix-indexed_map-v1-FirstEntryInput) |  |  |
-
-
 
 
 
@@ -318,37 +218,6 @@
 <a name="atomix-indexed_map-v1-FirstEntryResponse"></a>
 
 ### FirstEntryResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [FirstEntryOutput](#atomix-indexed_map-v1-FirstEntryOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-GetInput"></a>
-
-### GetInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-GetOutput"></a>
-
-### GetOutput
 
 
 
@@ -369,8 +238,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [GetInput](#atomix-indexed_map-v1-GetInput) |  |  |
+| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
 
 
 
@@ -385,8 +253,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [GetOutput](#atomix-indexed_map-v1-GetOutput) |  |  |
+| entry | [Entry](#atomix-indexed_map-v1-Entry) |  |  |
 
 
 
@@ -419,41 +286,10 @@
 
 
 
-<a name="atomix-indexed_map-v1-LastEntryInput"></a>
-
-### LastEntryInput
-
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-LastEntryOutput"></a>
-
-### LastEntryOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-indexed_map-v1-Entry) |  |  |
-
-
-
-
-
-
 <a name="atomix-indexed_map-v1-LastEntryRequest"></a>
 
 ### LastEntryRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [LastEntryInput](#atomix-indexed_map-v1-LastEntryInput) |  |  |
 
 
 
@@ -463,37 +299,6 @@
 <a name="atomix-indexed_map-v1-LastEntryResponse"></a>
 
 ### LastEntryResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [LastEntryOutput](#atomix-indexed_map-v1-LastEntryOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-NextEntryInput"></a>
-
-### NextEntryInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| index | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-NextEntryOutput"></a>
-
-### NextEntryOutput
 
 
 
@@ -514,8 +319,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [NextEntryInput](#atomix-indexed_map-v1-NextEntryInput) |  |  |
+| index | [uint64](#uint64) |  |  |
 
 
 
@@ -525,37 +329,6 @@
 <a name="atomix-indexed_map-v1-NextEntryResponse"></a>
 
 ### NextEntryResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [NextEntryOutput](#atomix-indexed_map-v1-NextEntryOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-PrevEntryInput"></a>
-
-### PrevEntryInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| index | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-PrevEntryOutput"></a>
-
-### PrevEntryOutput
 
 
 
@@ -576,8 +349,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [PrevEntryInput](#atomix-indexed_map-v1-PrevEntryInput) |  |  |
+| index | [uint64](#uint64) |  |  |
 
 
 
@@ -587,39 +359,6 @@
 <a name="atomix-indexed_map-v1-PrevEntryResponse"></a>
 
 ### PrevEntryResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [PrevEntryOutput](#atomix-indexed_map-v1-PrevEntryOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-PutInput"></a>
-
-### PutInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
-| value | [Value](#atomix-indexed_map-v1-Value) |  |  |
-| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-PutOutput"></a>
-
-### PutOutput
 
 
 
@@ -640,8 +379,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [PutInput](#atomix-indexed_map-v1-PutInput) |  |  |
+| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
+| value | [Value](#atomix-indexed_map-v1-Value) |  |  |
+| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
 
 
@@ -651,38 +391,6 @@
 <a name="atomix-indexed_map-v1-PutResponse"></a>
 
 ### PutResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [PutOutput](#atomix-indexed_map-v1-PutOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-RemoveInput"></a>
-
-### RemoveInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
-| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-RemoveOutput"></a>
-
-### RemoveOutput
 
 
 
@@ -703,8 +411,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [RemoveInput](#atomix-indexed_map-v1-RemoveInput) |  |  |
+| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
+| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
 
 
@@ -719,33 +427,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [RemoveOutput](#atomix-indexed_map-v1-RemoveOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-SizeInput"></a>
-
-### SizeInput
-
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-SizeOutput"></a>
-
-### SizeOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| size | [uint32](#uint32) |  |  |
+| entry | [Entry](#atomix-indexed_map-v1-Entry) |  |  |
 
 
 
@@ -756,12 +438,6 @@
 
 ### SizeRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [SizeInput](#atomix-indexed_map-v1-SizeInput) |  |  |
 
 
 
@@ -776,8 +452,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [SizeOutput](#atomix-indexed_map-v1-SizeOutput) |  |  |
+| size | [uint32](#uint32) |  |  |
 
 
 
@@ -828,6 +503,8 @@ IndexedMap is a service for a sorted/indexed map primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-indexed_map-v1-CreateRequest) | [CreateResponse](#atomix-indexed_map-v1-CreateResponse) |  |
+| Close | [CloseRequest](#atomix-indexed_map-v1-CloseRequest) | [CloseResponse](#atomix-indexed_map-v1-CloseResponse) |  |
 | Size | [SizeRequest](#atomix-indexed_map-v1-SizeRequest) | [SizeResponse](#atomix-indexed_map-v1-SizeResponse) | Size returns the size of the map |
 | Put | [PutRequest](#atomix-indexed_map-v1-PutRequest) | [PutResponse](#atomix-indexed_map-v1-PutResponse) | Put puts an entry into the map |
 | Get | [GetRequest](#atomix-indexed_map-v1-GetRequest) | [GetResponse](#atomix-indexed_map-v1-GetResponse) | Get gets the entry for a key |

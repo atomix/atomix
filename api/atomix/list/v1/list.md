@@ -4,47 +4,31 @@
 ## Table of Contents
 
 - [atomix/list/v1/list.proto](#atomix_list_v1_list-proto)
-    - [AppendInput](#atomix-list-v1-AppendInput)
-    - [AppendOutput](#atomix-list-v1-AppendOutput)
     - [AppendRequest](#atomix-list-v1-AppendRequest)
     - [AppendResponse](#atomix-list-v1-AppendResponse)
-    - [ClearInput](#atomix-list-v1-ClearInput)
-    - [ClearOutput](#atomix-list-v1-ClearOutput)
     - [ClearRequest](#atomix-list-v1-ClearRequest)
     - [ClearResponse](#atomix-list-v1-ClearResponse)
-    - [ContainsInput](#atomix-list-v1-ContainsInput)
-    - [ContainsOutput](#atomix-list-v1-ContainsOutput)
+    - [CloseRequest](#atomix-list-v1-CloseRequest)
+    - [CloseResponse](#atomix-list-v1-CloseResponse)
     - [ContainsRequest](#atomix-list-v1-ContainsRequest)
     - [ContainsResponse](#atomix-list-v1-ContainsResponse)
-    - [ElementsInput](#atomix-list-v1-ElementsInput)
-    - [ElementsOutput](#atomix-list-v1-ElementsOutput)
+    - [CreateRequest](#atomix-list-v1-CreateRequest)
+    - [CreateResponse](#atomix-list-v1-CreateResponse)
     - [ElementsRequest](#atomix-list-v1-ElementsRequest)
     - [ElementsResponse](#atomix-list-v1-ElementsResponse)
     - [Event](#atomix-list-v1-Event)
-    - [EventsInput](#atomix-list-v1-EventsInput)
-    - [EventsOutput](#atomix-list-v1-EventsOutput)
     - [EventsRequest](#atomix-list-v1-EventsRequest)
     - [EventsResponse](#atomix-list-v1-EventsResponse)
-    - [GetInput](#atomix-list-v1-GetInput)
-    - [GetOutput](#atomix-list-v1-GetOutput)
     - [GetRequest](#atomix-list-v1-GetRequest)
     - [GetResponse](#atomix-list-v1-GetResponse)
-    - [InsertInput](#atomix-list-v1-InsertInput)
-    - [InsertOutput](#atomix-list-v1-InsertOutput)
     - [InsertRequest](#atomix-list-v1-InsertRequest)
     - [InsertResponse](#atomix-list-v1-InsertResponse)
     - [Item](#atomix-list-v1-Item)
     - [ListConfig](#atomix-list-v1-ListConfig)
-    - [RemoveInput](#atomix-list-v1-RemoveInput)
-    - [RemoveOutput](#atomix-list-v1-RemoveOutput)
     - [RemoveRequest](#atomix-list-v1-RemoveRequest)
     - [RemoveResponse](#atomix-list-v1-RemoveResponse)
-    - [SetInput](#atomix-list-v1-SetInput)
-    - [SetOutput](#atomix-list-v1-SetOutput)
     - [SetRequest](#atomix-list-v1-SetRequest)
     - [SetResponse](#atomix-list-v1-SetResponse)
-    - [SizeInput](#atomix-list-v1-SizeInput)
-    - [SizeOutput](#atomix-list-v1-SizeOutput)
     - [SizeRequest](#atomix-list-v1-SizeRequest)
     - [SizeResponse](#atomix-list-v1-SizeResponse)
     - [Value](#atomix-list-v1-Value)
@@ -64,9 +48,9 @@
 
 
 
-<a name="atomix-list-v1-AppendInput"></a>
+<a name="atomix-list-v1-AppendRequest"></a>
 
-### AppendInput
+### AppendRequest
 
 
 
@@ -79,61 +63,9 @@
 
 
 
-<a name="atomix-list-v1-AppendOutput"></a>
-
-### AppendOutput
-
-
-
-
-
-
-
-<a name="atomix-list-v1-AppendRequest"></a>
-
-### AppendRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [AppendInput](#atomix-list-v1-AppendInput) |  |  |
-
-
-
-
-
-
 <a name="atomix-list-v1-AppendResponse"></a>
 
 ### AppendResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [AppendOutput](#atomix-list-v1-AppendOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-ClearInput"></a>
-
-### ClearInput
-
-
-
-
-
-
-
-<a name="atomix-list-v1-ClearOutput"></a>
-
-### ClearOutput
 
 
 
@@ -147,12 +79,6 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [ClearInput](#atomix-list-v1-ClearInput) |  |  |
-
-
 
 
 
@@ -163,40 +89,24 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [ClearOutput](#atomix-list-v1-ClearOutput) |  |  |
+
+
+
+
+<a name="atomix-list-v1-CloseRequest"></a>
+
+### CloseRequest
 
 
 
 
 
 
-<a name="atomix-list-v1-ContainsInput"></a>
 
-### ContainsInput
+<a name="atomix-list-v1-CloseResponse"></a>
 
+### CloseResponse
 
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [Value](#atomix-list-v1-Value) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-ContainsOutput"></a>
-
-### ContainsOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| contains | [bool](#bool) |  |  |
 
 
 
@@ -211,8 +121,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [ContainsInput](#atomix-list-v1-ContainsInput) |  |  |
+| value | [Value](#atomix-list-v1-Value) |  |  |
 
 
 
@@ -227,33 +136,32 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [ContainsOutput](#atomix-list-v1-ContainsOutput) |  |  |
+| contains | [bool](#bool) |  |  |
 
 
 
 
 
 
-<a name="atomix-list-v1-ElementsInput"></a>
+<a name="atomix-list-v1-CreateRequest"></a>
 
-### ElementsInput
-
-
-
-
-
-
-
-<a name="atomix-list-v1-ElementsOutput"></a>
-
-### ElementsOutput
+### CreateRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| item | [Item](#atomix-list-v1-Item) |  |  |
+| config | [ListConfig](#atomix-list-v1-ListConfig) |  |  |
+
+
+
+
+
+
+<a name="atomix-list-v1-CreateResponse"></a>
+
+### CreateResponse
+
 
 
 
@@ -264,12 +172,6 @@
 
 ### ElementsRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [ElementsInput](#atomix-list-v1-ElementsInput) |  |  |
 
 
 
@@ -284,8 +186,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [ElementsOutput](#atomix-list-v1-ElementsOutput) |  |  |
+| item | [Item](#atomix-list-v1-Item) |  |  |
 
 
 
@@ -308,36 +209,6 @@
 
 
 
-<a name="atomix-list-v1-EventsInput"></a>
-
-### EventsInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| replay | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-EventsOutput"></a>
-
-### EventsOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| event | [Event](#atomix-list-v1-Event) |  |  |
-
-
-
-
-
-
 <a name="atomix-list-v1-EventsRequest"></a>
 
 ### EventsRequest
@@ -346,8 +217,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [EventsInput](#atomix-list-v1-EventsInput) |  |  |
+| replay | [bool](#bool) |  |  |
 
 
 
@@ -362,38 +232,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [EventsOutput](#atomix-list-v1-EventsOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-GetInput"></a>
-
-### GetInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| index | [uint32](#uint32) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-GetOutput"></a>
-
-### GetOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| item | [Item](#atomix-list-v1-Item) |  |  |
+| event | [Event](#atomix-list-v1-Event) |  |  |
 
 
 
@@ -408,8 +247,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [GetInput](#atomix-list-v1-GetInput) |  |  |
+| index | [uint32](#uint32) |  |  |
 
 
 
@@ -419,38 +257,6 @@
 <a name="atomix-list-v1-GetResponse"></a>
 
 ### GetResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [GetOutput](#atomix-list-v1-GetOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-InsertInput"></a>
-
-### InsertInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| index | [uint32](#uint32) |  |  |
-| value | [Value](#atomix-list-v1-Value) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-InsertOutput"></a>
-
-### InsertOutput
 
 
 
@@ -471,8 +277,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [InsertInput](#atomix-list-v1-InsertInput) |  |  |
+| index | [uint32](#uint32) |  |  |
+| value | [Value](#atomix-list-v1-Value) |  |  |
 
 
 
@@ -487,8 +293,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [InsertOutput](#atomix-list-v1-InsertOutput) |  |  |
+| item | [Item](#atomix-list-v1-Item) |  |  |
 
 
 
@@ -522,37 +327,6 @@
 
 
 
-<a name="atomix-list-v1-RemoveInput"></a>
-
-### RemoveInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| index | [uint32](#uint32) |  |  |
-| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-RemoveOutput"></a>
-
-### RemoveOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| item | [Item](#atomix-list-v1-Item) |  |  |
-
-
-
-
-
-
 <a name="atomix-list-v1-RemoveRequest"></a>
 
 ### RemoveRequest
@@ -561,8 +335,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [RemoveInput](#atomix-list-v1-RemoveInput) |  |  |
+| index | [uint32](#uint32) |  |  |
+| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
 
 
@@ -572,39 +346,6 @@
 <a name="atomix-list-v1-RemoveResponse"></a>
 
 ### RemoveResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [RemoveOutput](#atomix-list-v1-RemoveOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-SetInput"></a>
-
-### SetInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| index | [uint32](#uint32) |  |  |
-| value | [Value](#atomix-list-v1-Value) |  |  |
-| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-SetOutput"></a>
-
-### SetOutput
 
 
 
@@ -625,8 +366,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [SetInput](#atomix-list-v1-SetInput) |  |  |
+| index | [uint32](#uint32) |  |  |
+| value | [Value](#atomix-list-v1-Value) |  |  |
+| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
 
 
@@ -641,33 +383,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [SetOutput](#atomix-list-v1-SetOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-list-v1-SizeInput"></a>
-
-### SizeInput
-
-
-
-
-
-
-
-<a name="atomix-list-v1-SizeOutput"></a>
-
-### SizeOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| size | [uint32](#uint32) |  |  |
+| item | [Item](#atomix-list-v1-Item) |  |  |
 
 
 
@@ -678,12 +394,6 @@
 
 ### SizeRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [SizeInput](#atomix-list-v1-SizeInput) |  |  |
 
 
 
@@ -698,8 +408,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [SizeOutput](#atomix-list-v1-SizeOutput) |  |  |
+| size | [uint32](#uint32) |  |  |
 
 
 
@@ -748,6 +457,8 @@ List is a service for a list primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-list-v1-CreateRequest) | [CreateResponse](#atomix-list-v1-CreateResponse) |  |
+| Close | [CloseRequest](#atomix-list-v1-CloseRequest) | [CloseResponse](#atomix-list-v1-CloseResponse) |  |
 | Size | [SizeRequest](#atomix-list-v1-SizeRequest) | [SizeResponse](#atomix-list-v1-SizeResponse) | Size gets the number of elements in the list |
 | Append | [AppendRequest](#atomix-list-v1-AppendRequest) | [AppendResponse](#atomix-list-v1-AppendResponse) | Append appends a value to the list |
 | Insert | [InsertRequest](#atomix-list-v1-InsertRequest) | [InsertResponse](#atomix-list-v1-InsertResponse) | Insert inserts a value at a specific index in the list |

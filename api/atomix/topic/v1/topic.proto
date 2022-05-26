@@ -10,11 +10,18 @@ package atomix.topic.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
 import "gogoproto/gogo.proto";
-import "atomix/v1/headers.proto";
 import "google/protobuf/timestamp.proto";
 
 service Topic {
-    option (atomix.primitive.v1.config) = "TopicConfig";
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option (atomix.primitive.v1.operation_id) = 1;
+        option (atomix.primitive.v1.operation_type) = CREATE;
+    }
+
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option (atomix.primitive.v1.operation_id) = 2;
+        option (atomix.primitive.v1.operation_type) = CLOSE;
+    }
 
     rpc Publish(PublishRequest) returns (PublishResponse) {
         option (atomix.primitive.v1.operation_id) = 3;
@@ -27,71 +34,41 @@ service Topic {
     }
 }
 
+message CreateRequest {
+    TopicConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CreateResponse {
+
+}
+
+message CloseRequest {
+
+}
+
+message CloseResponse {
+
+}
+
 message TopicConfig {
 
 }
 
 message PublishRequest {
-    atomix.v1.RequestHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    PublishInput input = 2 [
-        (atomix.primitive.v1.input) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message PublishInput {
     bytes payload = 1;
 }
 
 message PublishResponse {
-    atomix.v1.ResponseHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    PublishOutput output = 2 [
-        (atomix.primitive.v1.output) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message PublishOutput {
 
 }
 
 message SubscribeRequest {
-    atomix.v1.RequestHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    SubscribeInput input = 2 [
-        (atomix.primitive.v1.input) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message SubscribeInput {
 
 }
 
 message SubscribeResponse {
-    atomix.v1.ResponseHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    SubscribeOutput output = 2 [
-        (atomix.primitive.v1.output) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message SubscribeOutput {
     uint64 offset = 1;
     google.protobuf.Timestamp timestamp = 2 [
         (gogoproto.stdtime) = true

@@ -10,16 +10,6 @@ package atomix.primitive.v1;
 
 import "google/protobuf/descriptor.proto";
 
-extend google.protobuf.ServiceOptions {
-    string config = 50001;
-}
-
-extend google.protobuf.FieldOptions {
-    bool headers = 51000;
-    bool input = 51001;
-    bool output = 51002;
-}
-
 extend google.protobuf.MethodOptions {
     uint32 operation_id = 52000;
     OperationType operation_type = 52001;

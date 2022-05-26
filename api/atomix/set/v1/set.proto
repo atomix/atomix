@@ -9,13 +9,20 @@ syntax = "proto3";
 package atomix.set.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
-import "atomix/v1/headers.proto";
 import "atomix/time/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // Set is a service for a set primitive
 service Set {
-    option (atomix.primitive.v1.config) = "SetConfig";
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option (atomix.primitive.v1.operation_id) = 1;
+        option (atomix.primitive.v1.operation_type) = CREATE;
+    }
+
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option (atomix.primitive.v1.operation_id) = 2;
+        option (atomix.primitive.v1.operation_type) = CLOSE;
+    }
 
     // Size gets the number of elements in the set
     rpc Size (SizeRequest) returns (SizeResponse) {
@@ -60,209 +67,83 @@ service Set {
     }
 }
 
+message CreateRequest {
+    SetConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CreateResponse {
+
+}
+
+message CloseRequest {
+
+}
+
+message CloseResponse {
+
+}
+
 message SetConfig {
 
 }
 
 message SizeRequest {
-    atomix.v1.RequestHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    SizeInput input = 2 [
-        (atomix.primitive.v1.input) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message SizeInput {
 
 }
 
 message SizeResponse {
-    atomix.v1.ResponseHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    SizeOutput output = 2 [
-        (atomix.primitive.v1.output) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message SizeOutput {
     uint32 size = 1;
 }
 
 message ContainsRequest {
-    atomix.v1.RequestHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    ContainsInput input = 2 [
-        (atomix.primitive.v1.input) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message ContainsInput {
     Element element = 1 [
         (gogoproto.nullable) = false
     ];
 }
 
 message ContainsResponse {
-    atomix.v1.ResponseHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    ContainsOutput output = 2 [
-        (atomix.primitive.v1.output) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message ContainsOutput {
     bool contains = 1;
 }
 
 message AddRequest {
-    atomix.v1.RequestHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    AddInput input = 2 [
-        (atomix.primitive.v1.input) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message AddInput {
     Element element = 1 [
         (gogoproto.nullable) = false
     ];
 }
 
 message AddResponse {
-    atomix.v1.ResponseHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    AddOutput output = 2 [
-        (atomix.primitive.v1.output) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message AddOutput {
     Element element = 1 [
         (gogoproto.nullable) = false
     ];
 }
 
 message RemoveRequest {
-    atomix.v1.RequestHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    RemoveInput input = 2 [
-        (atomix.primitive.v1.input) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message RemoveInput {
     Element element = 2 [
         (gogoproto.nullable) = false
     ];
 }
 
 message RemoveResponse {
-    atomix.v1.ResponseHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    RemoveOutput output = 2 [
-        (atomix.primitive.v1.output) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message RemoveOutput {
     Element element = 1 [
         (gogoproto.nullable) = false
     ];
 }
 
 message ClearRequest {
-    atomix.v1.RequestHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    ClearInput input = 2 [
-        (atomix.primitive.v1.input) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message ClearInput {
 
 }
 
 message ClearResponse {
-    atomix.v1.ResponseHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    ClearOutput output = 2 [
-        (atomix.primitive.v1.output) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message ClearOutput {
 
 }
 
 message EventsRequest {
-    atomix.v1.RequestHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    EventsInput input = 2 [
-        (atomix.primitive.v1.input) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message EventsInput {
     bool replay = 1;
 }
 
 message EventsResponse {
-    atomix.v1.ResponseHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    EventsOutput output = 2 [
-        (atomix.primitive.v1.output) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message EventsOutput {
     Event event = 1 [
         (gogoproto.nullable) = false
     ];
@@ -283,34 +164,10 @@ message Event {
 }
 
 message ElementsRequest {
-    atomix.v1.RequestHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    ElementsInput input = 2 [
-        (atomix.primitive.v1.input) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message ElementsInput {
 
 }
 
 message ElementsResponse {
-    atomix.v1.ResponseHeaders headers = 1 [
-        (atomix.primitive.v1.headers) = true,
-        (gogoproto.nullable) = false
-    ];
-    ElementsOutput output = 2 [
-        (atomix.primitive.v1.output) = true,
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-}
-
-message ElementsOutput {
     Element element = 1 [
         (gogoproto.nullable) = false
     ];

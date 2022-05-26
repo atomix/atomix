@@ -4,35 +4,25 @@
 ## Table of Contents
 
 - [atomix/set/v1/set.proto](#atomix_set_v1_set-proto)
-    - [AddInput](#atomix-set-v1-AddInput)
-    - [AddOutput](#atomix-set-v1-AddOutput)
     - [AddRequest](#atomix-set-v1-AddRequest)
     - [AddResponse](#atomix-set-v1-AddResponse)
-    - [ClearInput](#atomix-set-v1-ClearInput)
-    - [ClearOutput](#atomix-set-v1-ClearOutput)
     - [ClearRequest](#atomix-set-v1-ClearRequest)
     - [ClearResponse](#atomix-set-v1-ClearResponse)
-    - [ContainsInput](#atomix-set-v1-ContainsInput)
-    - [ContainsOutput](#atomix-set-v1-ContainsOutput)
+    - [CloseRequest](#atomix-set-v1-CloseRequest)
+    - [CloseResponse](#atomix-set-v1-CloseResponse)
     - [ContainsRequest](#atomix-set-v1-ContainsRequest)
     - [ContainsResponse](#atomix-set-v1-ContainsResponse)
+    - [CreateRequest](#atomix-set-v1-CreateRequest)
+    - [CreateResponse](#atomix-set-v1-CreateResponse)
     - [Element](#atomix-set-v1-Element)
-    - [ElementsInput](#atomix-set-v1-ElementsInput)
-    - [ElementsOutput](#atomix-set-v1-ElementsOutput)
     - [ElementsRequest](#atomix-set-v1-ElementsRequest)
     - [ElementsResponse](#atomix-set-v1-ElementsResponse)
     - [Event](#atomix-set-v1-Event)
-    - [EventsInput](#atomix-set-v1-EventsInput)
-    - [EventsOutput](#atomix-set-v1-EventsOutput)
     - [EventsRequest](#atomix-set-v1-EventsRequest)
     - [EventsResponse](#atomix-set-v1-EventsResponse)
-    - [RemoveInput](#atomix-set-v1-RemoveInput)
-    - [RemoveOutput](#atomix-set-v1-RemoveOutput)
     - [RemoveRequest](#atomix-set-v1-RemoveRequest)
     - [RemoveResponse](#atomix-set-v1-RemoveResponse)
     - [SetConfig](#atomix-set-v1-SetConfig)
-    - [SizeInput](#atomix-set-v1-SizeInput)
-    - [SizeOutput](#atomix-set-v1-SizeOutput)
     - [SizeRequest](#atomix-set-v1-SizeRequest)
     - [SizeResponse](#atomix-set-v1-SizeResponse)
   
@@ -51,36 +41,6 @@
 
 
 
-<a name="atomix-set-v1-AddInput"></a>
-
-### AddInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| element | [Element](#atomix-set-v1-Element) |  |  |
-
-
-
-
-
-
-<a name="atomix-set-v1-AddOutput"></a>
-
-### AddOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| element | [Element](#atomix-set-v1-Element) |  |  |
-
-
-
-
-
-
 <a name="atomix-set-v1-AddRequest"></a>
 
 ### AddRequest
@@ -89,8 +49,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [AddInput](#atomix-set-v1-AddInput) |  |  |
+| element | [Element](#atomix-set-v1-Element) |  |  |
 
 
 
@@ -105,28 +64,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [AddOutput](#atomix-set-v1-AddOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-set-v1-ClearInput"></a>
-
-### ClearInput
-
-
-
-
-
-
-
-<a name="atomix-set-v1-ClearOutput"></a>
-
-### ClearOutput
-
+| element | [Element](#atomix-set-v1-Element) |  |  |
 
 
 
@@ -139,12 +77,6 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [ClearInput](#atomix-set-v1-ClearInput) |  |  |
-
-
 
 
 
@@ -155,40 +87,24 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [ClearOutput](#atomix-set-v1-ClearOutput) |  |  |
+
+
+
+
+<a name="atomix-set-v1-CloseRequest"></a>
+
+### CloseRequest
 
 
 
 
 
 
-<a name="atomix-set-v1-ContainsInput"></a>
 
-### ContainsInput
+<a name="atomix-set-v1-CloseResponse"></a>
 
+### CloseResponse
 
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| element | [Element](#atomix-set-v1-Element) |  |  |
-
-
-
-
-
-
-<a name="atomix-set-v1-ContainsOutput"></a>
-
-### ContainsOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| contains | [bool](#bool) |  |  |
 
 
 
@@ -203,8 +119,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [ContainsInput](#atomix-set-v1-ContainsInput) |  |  |
+| element | [Element](#atomix-set-v1-Element) |  |  |
 
 
 
@@ -219,8 +134,32 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [ContainsOutput](#atomix-set-v1-ContainsOutput) |  |  |
+| contains | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="atomix-set-v1-CreateRequest"></a>
+
+### CreateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [SetConfig](#atomix-set-v1-SetConfig) |  |  |
+
+
+
+
+
+
+<a name="atomix-set-v1-CreateResponse"></a>
+
+### CreateResponse
+
 
 
 
@@ -243,41 +182,10 @@
 
 
 
-<a name="atomix-set-v1-ElementsInput"></a>
-
-### ElementsInput
-
-
-
-
-
-
-
-<a name="atomix-set-v1-ElementsOutput"></a>
-
-### ElementsOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| element | [Element](#atomix-set-v1-Element) |  |  |
-
-
-
-
-
-
 <a name="atomix-set-v1-ElementsRequest"></a>
 
 ### ElementsRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [ElementsInput](#atomix-set-v1-ElementsInput) |  |  |
 
 
 
@@ -292,8 +200,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [ElementsOutput](#atomix-set-v1-ElementsOutput) |  |  |
+| element | [Element](#atomix-set-v1-Element) |  |  |
 
 
 
@@ -316,36 +223,6 @@
 
 
 
-<a name="atomix-set-v1-EventsInput"></a>
-
-### EventsInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| replay | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="atomix-set-v1-EventsOutput"></a>
-
-### EventsOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| event | [Event](#atomix-set-v1-Event) |  |  |
-
-
-
-
-
-
 <a name="atomix-set-v1-EventsRequest"></a>
 
 ### EventsRequest
@@ -354,8 +231,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [EventsInput](#atomix-set-v1-EventsInput) |  |  |
+| replay | [bool](#bool) |  |  |
 
 
 
@@ -370,38 +246,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [EventsOutput](#atomix-set-v1-EventsOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-set-v1-RemoveInput"></a>
-
-### RemoveInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| element | [Element](#atomix-set-v1-Element) |  |  |
-
-
-
-
-
-
-<a name="atomix-set-v1-RemoveOutput"></a>
-
-### RemoveOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| element | [Element](#atomix-set-v1-Element) |  |  |
+| event | [Event](#atomix-set-v1-Event) |  |  |
 
 
 
@@ -416,8 +261,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [RemoveInput](#atomix-set-v1-RemoveInput) |  |  |
+| element | [Element](#atomix-set-v1-Element) |  |  |
 
 
 
@@ -432,8 +276,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [RemoveOutput](#atomix-set-v1-RemoveOutput) |  |  |
+| element | [Element](#atomix-set-v1-Element) |  |  |
 
 
 
@@ -450,41 +293,10 @@
 
 
 
-<a name="atomix-set-v1-SizeInput"></a>
-
-### SizeInput
-
-
-
-
-
-
-
-<a name="atomix-set-v1-SizeOutput"></a>
-
-### SizeOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| size | [uint32](#uint32) |  |  |
-
-
-
-
-
-
 <a name="atomix-set-v1-SizeRequest"></a>
 
 ### SizeRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [SizeInput](#atomix-set-v1-SizeInput) |  |  |
 
 
 
@@ -499,8 +311,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [SizeOutput](#atomix-set-v1-SizeOutput) |  |  |
+| size | [uint32](#uint32) |  |  |
 
 
 
@@ -534,6 +345,8 @@ Set is a service for a set primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-set-v1-CreateRequest) | [CreateResponse](#atomix-set-v1-CreateResponse) |  |
+| Close | [CloseRequest](#atomix-set-v1-CloseRequest) | [CloseResponse](#atomix-set-v1-CloseResponse) |  |
 | Size | [SizeRequest](#atomix-set-v1-SizeRequest) | [SizeResponse](#atomix-set-v1-SizeResponse) | Size gets the number of elements in the set |
 | Contains | [ContainsRequest](#atomix-set-v1-ContainsRequest) | [ContainsResponse](#atomix-set-v1-ContainsResponse) | Contains returns whether the set contains a value |
 | Add | [AddRequest](#atomix-set-v1-AddRequest) | [AddResponse](#atomix-set-v1-AddResponse) | Add adds a value to the set |

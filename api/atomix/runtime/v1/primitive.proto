@@ -11,20 +11,20 @@ package atomix.runtime.v1;
 import "atomix/runtime/v1/binding.proto";
 import "gogoproto/gogo.proto";
 
-service SessionService {
-    rpc GetSession (GetSessionRequest) returns (GetSessionResponse);
-    rpc ListSessions (ListSessionsRequest) returns (ListSessionsResponse);
+service PrimitiveService {
+    rpc GetPrimitive (GetPrimitiveRequest) returns (GetPrimitiveResponse);
+    rpc ListPrimitives (ListPrimitivesRequest) returns (ListPrimitivesResponse);
 }
 
-message SessionId {
+message PrimitiveId {
     option (gogoproto.equal) = true;
     string application = 1;
     string primitive = 2;
     string client = 3;
 }
 
-message SessionMeta {
-    SessionId id = 1 [
+message PrimitiveMeta {
+    PrimitiveId id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -34,45 +34,45 @@ message SessionMeta {
     map<string, string> labels = 3;
 }
 
-message Session {
-    SessionMeta meta = 1 [
+message Primitive {
+    PrimitiveMeta meta = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
-    SessionSpec spec = 2 [
+    PrimitiveSpec spec = 2 [
         (gogoproto.nullable) = false
     ];
-    SessionStatus status = 3 [
+    PrimitiveStatus status = 3 [
         (gogoproto.nullable) = false
     ];
 }
 
-message SessionSpec {
+message PrimitiveSpec {
     string kind = 1;
 }
 
-message SessionStatus {
+message PrimitiveStatus {
     BindingId binding = 1 [
         (gogoproto.nullable) = false
     ];
 }
 
-message GetSessionRequest {
-    SessionId session_id = 1 [
-        (gogoproto.customname) = "SessionID",
+message GetPrimitiveRequest {
+    PrimitiveId primitive_id = 1 [
+        (gogoproto.customname) = "PrimitiveID",
         (gogoproto.nullable) = false
     ];
 }
 
-message GetSessionResponse {
-    Session session = 1;
+message GetPrimitiveResponse {
+    Primitive primitive = 1;
 }
 
-message ListSessionsRequest {
+message ListPrimitivesRequest {
     string type = 1;
     bool watch = 2;
 }
 
-message ListSessionsResponse {
-    repeated Session sessions = 1;
+message ListPrimitivesResponse {
+    repeated Primitive primitives = 1;
 }

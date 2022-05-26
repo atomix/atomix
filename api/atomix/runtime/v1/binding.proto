@@ -54,7 +54,15 @@ message BindingSpec {
         (gogoproto.customname) = "ClusterID",
         (gogoproto.nullable) = false
     ];
-    map<string, string> selector = 2;
+    repeated BindingRule rules = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message BindingRule {
+    repeated string kinds = 1;
+    repeated string names = 2;
+    map<string, string> headers = 3;
 }
 
 message BindingStatus {

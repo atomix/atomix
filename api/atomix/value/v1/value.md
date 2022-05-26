@@ -4,17 +4,15 @@
 ## Table of Contents
 
 - [atomix/value/v1/value.proto](#atomix_value_v1_value-proto)
+    - [CloseRequest](#atomix-value-v1-CloseRequest)
+    - [CloseResponse](#atomix-value-v1-CloseResponse)
+    - [CreateRequest](#atomix-value-v1-CreateRequest)
+    - [CreateResponse](#atomix-value-v1-CreateResponse)
     - [Event](#atomix-value-v1-Event)
-    - [EventsInput](#atomix-value-v1-EventsInput)
-    - [EventsOutput](#atomix-value-v1-EventsOutput)
     - [EventsRequest](#atomix-value-v1-EventsRequest)
     - [EventsResponse](#atomix-value-v1-EventsResponse)
-    - [GetInput](#atomix-value-v1-GetInput)
-    - [GetOutput](#atomix-value-v1-GetOutput)
     - [GetRequest](#atomix-value-v1-GetRequest)
     - [GetResponse](#atomix-value-v1-GetResponse)
-    - [SetInput](#atomix-value-v1-SetInput)
-    - [SetOutput](#atomix-value-v1-SetOutput)
     - [SetRequest](#atomix-value-v1-SetRequest)
     - [SetResponse](#atomix-value-v1-SetResponse)
     - [ValueConfig](#atomix-value-v1-ValueConfig)
@@ -31,6 +29,51 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/value/v1/value.proto
+
+
+
+<a name="atomix-value-v1-CloseRequest"></a>
+
+### CloseRequest
+
+
+
+
+
+
+
+<a name="atomix-value-v1-CloseResponse"></a>
+
+### CloseResponse
+
+
+
+
+
+
+
+<a name="atomix-value-v1-CreateRequest"></a>
+
+### CreateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [ValueConfig](#atomix-value-v1-ValueConfig) |  |  |
+
+
+
+
+
+
+<a name="atomix-value-v1-CreateResponse"></a>
+
+### CreateResponse
+
+
+
+
 
 
 
@@ -51,41 +94,10 @@
 
 
 
-<a name="atomix-value-v1-EventsInput"></a>
-
-### EventsInput
-
-
-
-
-
-
-
-<a name="atomix-value-v1-EventsOutput"></a>
-
-### EventsOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| event | [Event](#atomix-value-v1-Event) |  |  |
-
-
-
-
-
-
 <a name="atomix-value-v1-EventsRequest"></a>
 
 ### EventsRequest
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [EventsInput](#atomix-value-v1-EventsInput) |  |  |
 
 
 
@@ -100,34 +112,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [EventsOutput](#atomix-value-v1-EventsOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-value-v1-GetInput"></a>
-
-### GetInput
-
-
-
-
-
-
-
-<a name="atomix-value-v1-GetOutput"></a>
-
-### GetOutput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [bytes](#bytes) |  |  |
-| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
+| event | [Event](#atomix-value-v1-Event) |  |  |
 
 
 
@@ -140,12 +125,6 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [GetInput](#atomix-value-v1-GetInput) |  |  |
-
-
 
 
 
@@ -153,38 +132,6 @@
 <a name="atomix-value-v1-GetResponse"></a>
 
 ### GetResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [GetOutput](#atomix-value-v1-GetOutput) |  |  |
-
-
-
-
-
-
-<a name="atomix-value-v1-SetInput"></a>
-
-### SetInput
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [bytes](#bytes) |  |  |
-| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
-
-
-
-
-
-
-<a name="atomix-value-v1-SetOutput"></a>
-
-### SetOutput
 
 
 
@@ -206,8 +153,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.RequestHeaders](#atomix-v1-RequestHeaders) |  |  |
-| input | [SetInput](#atomix-value-v1-SetInput) |  |  |
+| value | [bytes](#bytes) |  |  |
+| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
 
 
@@ -222,8 +169,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| headers | [atomix.v1.ResponseHeaders](#atomix-v1-ResponseHeaders) |  |  |
-| output | [SetOutput](#atomix-value-v1-SetOutput) |  |  |
+| value | [bytes](#bytes) |  |  |
+| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
 
 
@@ -265,6 +212,8 @@ Value is a service for a value primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-value-v1-CreateRequest) | [CreateResponse](#atomix-value-v1-CreateResponse) |  |
+| Close | [CloseRequest](#atomix-value-v1-CloseRequest) | [CloseResponse](#atomix-value-v1-CloseResponse) |  |
 | Set | [SetRequest](#atomix-value-v1-SetRequest) | [SetResponse](#atomix-value-v1-SetResponse) | Set sets the value |
 | Get | [GetRequest](#atomix-value-v1-GetRequest) | [GetResponse](#atomix-value-v1-GetResponse) | Get gets the value |
 | Events | [EventsRequest](#atomix-value-v1-EventsRequest) | [EventsResponse](#atomix-value-v1-EventsResponse) stream | Events listens for value change events |
