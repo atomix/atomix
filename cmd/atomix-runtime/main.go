@@ -86,15 +86,15 @@ func main() {
 				primitiveservice.WithHost(controlHost),
 				primitiveservice.WithPort(controlPort),
 				primitiveservice.WithPrimitiveKinds(
-					counterv1.Primitive,
-					electionv1.Primitive,
-					indexedmapv1.Primitive,
-					listv1.Primitive,
-					lockv1.Primitive,
-					mapv1.Primitive,
-					setv1.Primitive,
-					topicv1.Primitive,
-					valuev1.Primitive))
+					counterv1.Kind,
+					electionv1.Kind,
+					indexedmapv1.Kind,
+					listv1.Kind,
+					lockv1.Kind,
+					mapv1.Kind,
+					setv1.Kind,
+					topicv1.Kind,
+					valuev1.Kind))
 			if err := primitiveService.Start(); err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)

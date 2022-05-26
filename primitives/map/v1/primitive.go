@@ -7,9 +7,9 @@ package v1
 import (
 	"context"
 	mapv1 "github.com/atomix/runtime/api/atomix/map/v1"
-	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
-	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/primitive"
+	atomixv1 "github.com/atomix/runtime/api/atomix/v1"
+	"github.com/atomix/runtime/pkg/atomix/logging"
+	"github.com/atomix/runtime/pkg/atomix/primitive"
 	"google.golang.org/grpc"
 )
 
@@ -17,15 +17,15 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.map.v1.Map"
 
-var Primitive = primitive.NewKind[MapClient, Map, *mapv1.MapConfig](serviceName, register, create)
+var Kind = primitive.NewKind[MapClient, Map, *mapv1.MapConfig](serviceName, register, create)
 
-func register(server *grpc.Server, sessions *primitive.SessionManager[Map]) {
-	mapv1.RegisterMapServer(server, newMapServer(sessions))
+func register(server *grpc.Server, proxies *primitive.ProxyManager[Map]) {
+	mapv1.RegisterMapServer(server, newMapServer(proxies))
 }
 
-func create(client MapClient) func(ctx context.Context, sessionID primitivev1.SessionId, config *mapv1.MapConfig) (Map, error) {
-	return func(ctx context.Context, sessionID primitivev1.SessionId, config *mapv1.MapConfig) (Map, error) {
-		m, err := client.GetMap(ctx, sessionID)
+func create(client MapClient) func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *mapv1.MapConfig) (Map, error) {
+	return func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *mapv1.MapConfig) (Map, error) {
+		m, err := client.GetMap(ctx, primitiveID)
 		if err != nil {
 			return nil, err
 		}
@@ -40,10 +40,10 @@ func create(client MapClient) func(ctx context.Context, sessionID primitivev1.Se
 }
 
 type MapClient interface {
-	GetMap(ctx context.Context, sessionID primitivev1.SessionId) (Map, error)
+	GetMap(ctx context.Context, primitiveID atomixv1.PrimitiveId) (Map, error)
 }
 
 type Map interface {
-	primitive.Primitive
+	primitive.Proxy
 	mapv1.MapServer
 }

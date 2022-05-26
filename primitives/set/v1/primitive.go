@@ -6,10 +6,10 @@ package v1
 
 import (
 	"context"
-	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
 	setv1 "github.com/atomix/runtime/api/atomix/set/v1"
-	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/primitive"
+	atomixv1 "github.com/atomix/runtime/api/atomix/v1"
+	"github.com/atomix/runtime/pkg/atomix/logging"
+	"github.com/atomix/runtime/pkg/atomix/primitive"
 	"google.golang.org/grpc"
 )
 
@@ -17,23 +17,23 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.set.v1.Set"
 
-var Primitive = primitive.NewKind[SetClient, Set, *setv1.SetConfig](serviceName, register, create)
+var Kind = primitive.NewKind[SetClient, Set, *setv1.SetConfig](serviceName, register, create)
 
-func register(server *grpc.Server, sessions *primitive.SessionManager[Set]) {
-	setv1.RegisterSetServer(server, newSetServer(sessions))
+func register(server *grpc.Server, proxies *primitive.ProxyManager[Set]) {
+	setv1.RegisterSetServer(server, newSetServer(proxies))
 }
 
-func create(client SetClient) func(ctx context.Context, sessionID primitivev1.SessionId, config *setv1.SetConfig) (Set, error) {
-	return func(ctx context.Context, sessionID primitivev1.SessionId, config *setv1.SetConfig) (Set, error) {
-		return client.GetSet(ctx, sessionID)
+func create(client SetClient) func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *setv1.SetConfig) (Set, error) {
+	return func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *setv1.SetConfig) (Set, error) {
+		return client.GetSet(ctx, primitiveID)
 	}
 }
 
 type SetClient interface {
-	GetSet(ctx context.Context, sessionID primitivev1.SessionId) (Set, error)
+	GetSet(ctx context.Context, primitiveID atomixv1.PrimitiveId) (Set, error)
 }
 
 type Set interface {
-	primitive.Primitive
+	primitive.Proxy
 	setv1.SetServer
 }

@@ -6,8 +6,8 @@
 - [atomix/v1/atomix.proto](#atomix_v1_atomix-proto)
     - [ClosePrimitiveRequest](#atomix-v1-ClosePrimitiveRequest)
     - [ClosePrimitiveResponse](#atomix-v1-ClosePrimitiveResponse)
-    - [CreatePrimitiveRequest](#atomix-v1-CreatePrimitiveRequest)
-    - [CreatePrimitiveResponse](#atomix-v1-CreatePrimitiveResponse)
+    - [OpenPrimitiveRequest](#atomix-v1-OpenPrimitiveRequest)
+    - [OpenPrimitiveResponse](#atomix-v1-OpenPrimitiveResponse)
     - [PrimitiveId](#atomix-v1-PrimitiveId)
   
     - [Atomix](#atomix-v1-Atomix)
@@ -48,9 +48,9 @@
 
 
 
-<a name="atomix-v1-CreatePrimitiveRequest"></a>
+<a name="atomix-v1-OpenPrimitiveRequest"></a>
 
-### CreatePrimitiveRequest
+### OpenPrimitiveRequest
 
 
 
@@ -65,9 +65,9 @@
 
 
 
-<a name="atomix-v1-CreatePrimitiveResponse"></a>
+<a name="atomix-v1-OpenPrimitiveResponse"></a>
 
-### CreatePrimitiveResponse
+### OpenPrimitiveResponse
 
 
 
@@ -105,7 +105,7 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| CreatePrimitive | [CreatePrimitiveRequest](#atomix-v1-CreatePrimitiveRequest) | [CreatePrimitiveResponse](#atomix-v1-CreatePrimitiveResponse) |  |
+| OpenPrimitive | [OpenPrimitiveRequest](#atomix-v1-OpenPrimitiveRequest) | [OpenPrimitiveResponse](#atomix-v1-OpenPrimitiveResponse) |  |
 | ClosePrimitive | [ClosePrimitiveRequest](#atomix-v1-ClosePrimitiveRequest) | [ClosePrimitiveResponse](#atomix-v1-ClosePrimitiveResponse) |  |
 
  

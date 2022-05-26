@@ -7,9 +7,9 @@ package v1
 import (
 	"context"
 	lockv1 "github.com/atomix/runtime/api/atomix/lock/v1"
-	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
-	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/primitive"
+	atomixv1 "github.com/atomix/runtime/api/atomix/v1"
+	"github.com/atomix/runtime/pkg/atomix/logging"
+	"github.com/atomix/runtime/pkg/atomix/primitive"
 	"google.golang.org/grpc"
 )
 
@@ -17,23 +17,23 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.lock.v1.Lock"
 
-var Primitive = primitive.NewKind[LockClient, Lock, *lockv1.LockConfig](serviceName, register, create)
+var Kind = primitive.NewKind[LockClient, Lock, *lockv1.LockConfig](serviceName, register, create)
 
-func register(server *grpc.Server, sessions *primitive.SessionManager[Lock]) {
-	lockv1.RegisterLockServer(server, newLockServer(sessions))
+func register(server *grpc.Server, proxies *primitive.ProxyManager[Lock]) {
+	lockv1.RegisterLockServer(server, newLockServer(proxies))
 }
 
-func create(client LockClient) func(ctx context.Context, sessionID primitivev1.SessionId, config *lockv1.LockConfig) (Lock, error) {
-	return func(ctx context.Context, sessionID primitivev1.SessionId, config *lockv1.LockConfig) (Lock, error) {
-		return client.GetLock(ctx, sessionID)
+func create(client LockClient) func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *lockv1.LockConfig) (Lock, error) {
+	return func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *lockv1.LockConfig) (Lock, error) {
+		return client.GetLock(ctx, primitiveID)
 	}
 }
 
 type LockClient interface {
-	GetLock(ctx context.Context, sessionID primitivev1.SessionId) (Lock, error)
+	GetLock(ctx context.Context, primitiveID atomixv1.PrimitiveId) (Lock, error)
 }
 
 type Lock interface {
-	primitive.Primitive
+	primitive.Proxy
 	lockv1.LockServer
 }

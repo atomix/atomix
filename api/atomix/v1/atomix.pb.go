@@ -88,24 +88,24 @@ func (m *PrimitiveId) GetClient() string {
 	return ""
 }
 
-type CreatePrimitiveRequest struct {
+type OpenPrimitiveRequest struct {
 	PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3,embedded=id" json:"id"`
 	Kind        string     `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
 	Config      *types.Any `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
 }
 
-func (m *CreatePrimitiveRequest) Reset()         { *m = CreatePrimitiveRequest{} }
-func (m *CreatePrimitiveRequest) String() string { return proto.CompactTextString(m) }
-func (*CreatePrimitiveRequest) ProtoMessage()    {}
-func (*CreatePrimitiveRequest) Descriptor() ([]byte, []int) {
+func (m *OpenPrimitiveRequest) Reset()         { *m = OpenPrimitiveRequest{} }
+func (m *OpenPrimitiveRequest) String() string { return proto.CompactTextString(m) }
+func (*OpenPrimitiveRequest) ProtoMessage()    {}
+func (*OpenPrimitiveRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6d19253bc858550a, []int{1}
 }
-func (m *CreatePrimitiveRequest) XXX_Unmarshal(b []byte) error {
+func (m *OpenPrimitiveRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreatePrimitiveRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *OpenPrimitiveRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_CreatePrimitiveRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_OpenPrimitiveRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -115,47 +115,47 @@ func (m *CreatePrimitiveRequest) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *CreatePrimitiveRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreatePrimitiveRequest.Merge(m, src)
+func (m *OpenPrimitiveRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OpenPrimitiveRequest.Merge(m, src)
 }
-func (m *CreatePrimitiveRequest) XXX_Size() int {
+func (m *OpenPrimitiveRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *CreatePrimitiveRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_CreatePrimitiveRequest.DiscardUnknown(m)
+func (m *OpenPrimitiveRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_OpenPrimitiveRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_CreatePrimitiveRequest proto.InternalMessageInfo
+var xxx_messageInfo_OpenPrimitiveRequest proto.InternalMessageInfo
 
-func (m *CreatePrimitiveRequest) GetKind() string {
+func (m *OpenPrimitiveRequest) GetKind() string {
 	if m != nil {
 		return m.Kind
 	}
 	return ""
 }
 
-func (m *CreatePrimitiveRequest) GetConfig() *types.Any {
+func (m *OpenPrimitiveRequest) GetConfig() *types.Any {
 	if m != nil {
 		return m.Config
 	}
 	return nil
 }
 
-type CreatePrimitiveResponse struct {
+type OpenPrimitiveResponse struct {
 }
 
-func (m *CreatePrimitiveResponse) Reset()         { *m = CreatePrimitiveResponse{} }
-func (m *CreatePrimitiveResponse) String() string { return proto.CompactTextString(m) }
-func (*CreatePrimitiveResponse) ProtoMessage()    {}
-func (*CreatePrimitiveResponse) Descriptor() ([]byte, []int) {
+func (m *OpenPrimitiveResponse) Reset()         { *m = OpenPrimitiveResponse{} }
+func (m *OpenPrimitiveResponse) String() string { return proto.CompactTextString(m) }
+func (*OpenPrimitiveResponse) ProtoMessage()    {}
+func (*OpenPrimitiveResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6d19253bc858550a, []int{2}
 }
-func (m *CreatePrimitiveResponse) XXX_Unmarshal(b []byte) error {
+func (m *OpenPrimitiveResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreatePrimitiveResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *OpenPrimitiveResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_CreatePrimitiveResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_OpenPrimitiveResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -165,17 +165,17 @@ func (m *CreatePrimitiveResponse) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return b[:n], nil
 	}
 }
-func (m *CreatePrimitiveResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreatePrimitiveResponse.Merge(m, src)
+func (m *OpenPrimitiveResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OpenPrimitiveResponse.Merge(m, src)
 }
-func (m *CreatePrimitiveResponse) XXX_Size() int {
+func (m *OpenPrimitiveResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *CreatePrimitiveResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_CreatePrimitiveResponse.DiscardUnknown(m)
+func (m *OpenPrimitiveResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_OpenPrimitiveResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_CreatePrimitiveResponse proto.InternalMessageInfo
+var xxx_messageInfo_OpenPrimitiveResponse proto.InternalMessageInfo
 
 type ClosePrimitiveRequest struct {
 	PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3,embedded=id" json:"id"`
@@ -252,8 +252,8 @@ var xxx_messageInfo_ClosePrimitiveResponse proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*PrimitiveId)(nil), "atomix.v1.PrimitiveId")
-	proto.RegisterType((*CreatePrimitiveRequest)(nil), "atomix.v1.CreatePrimitiveRequest")
-	proto.RegisterType((*CreatePrimitiveResponse)(nil), "atomix.v1.CreatePrimitiveResponse")
+	proto.RegisterType((*OpenPrimitiveRequest)(nil), "atomix.v1.OpenPrimitiveRequest")
+	proto.RegisterType((*OpenPrimitiveResponse)(nil), "atomix.v1.OpenPrimitiveResponse")
 	proto.RegisterType((*ClosePrimitiveRequest)(nil), "atomix.v1.ClosePrimitiveRequest")
 	proto.RegisterType((*ClosePrimitiveResponse)(nil), "atomix.v1.ClosePrimitiveResponse")
 }
@@ -261,29 +261,29 @@ func init() {
 func init() { proto.RegisterFile("atomix/v1/atomix.proto", fileDescriptor_6d19253bc858550a) }
 
 var fileDescriptor_6d19253bc858550a = []byte{
-	// 347 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x50, 0xc1, 0x4e, 0xf2, 0x40,
-	0x18, 0xec, 0xf2, 0xff, 0x69, 0xe4, 0x6b, 0xa2, 0xc9, 0x06, 0x6b, 0x69, 0x4c, 0x81, 0x9e, 0x3c,
-	0x98, 0x56, 0xf0, 0x09, 0x80, 0x13, 0x37, 0xd3, 0xc4, 0xc4, 0x6b, 0xa1, 0x4b, 0xb3, 0xb1, 0xec,
-	0x56, 0xba, 0x10, 0x79, 0x07, 0x0f, 0xbe, 0x8e, 0x6f, 0xc0, 0x91, 0xa3, 0x27, 0x62, 0xe8, 0x8b,
-	0x18, 0x77, 0x0b, 0x56, 0x24, 0x9c, 0xbc, 0xcd, 0x7e, 0xdf, 0xec, 0xcc, 0x7c, 0x03, 0x66, 0x28,
-	0xf8, 0x84, 0x3e, 0xfb, 0xf3, 0xb6, 0xaf, 0x90, 0x97, 0x4e, 0xb9, 0xe0, 0xb8, 0x5a, 0xbc, 0xe6,
-	0x6d, 0xbb, 0x1e, 0x73, 0x1e, 0x27, 0xc4, 0x97, 0x8b, 0xe1, 0x6c, 0xec, 0x87, 0x6c, 0xa1, 0x58,
-	0x76, 0x2d, 0xe6, 0x31, 0x97, 0xd0, 0xff, 0x42, 0x6a, 0xea, 0x12, 0x30, 0xee, 0xa6, 0x74, 0x42,
-	0x05, 0x9d, 0x93, 0x41, 0x84, 0x9b, 0x60, 0x84, 0x69, 0x9a, 0xd0, 0x51, 0x28, 0x28, 0x67, 0x16,
-	0x6a, 0xa2, 0xab, 0x6a, 0x50, 0x1e, 0xe1, 0x4b, 0xa8, 0xa6, 0xdb, 0x0f, 0x56, 0x45, 0xee, 0xbf,
-	0x07, 0xd8, 0x04, 0x7d, 0x94, 0x50, 0xc2, 0x84, 0xf5, 0x4f, 0xae, 0x8a, 0x97, 0xfb, 0x82, 0xc0,
-	0xec, 0x4f, 0x49, 0x28, 0xc8, 0xce, 0x2d, 0x20, 0x4f, 0x33, 0x92, 0x09, 0x7c, 0x03, 0x15, 0x1a,
-	0x49, 0x27, 0xa3, 0x63, 0x7a, 0xbb, 0x53, 0xbc, 0x52, 0xac, 0xde, 0xc9, 0x72, 0xdd, 0xd0, 0x56,
-	0xeb, 0x06, 0x0a, 0x2a, 0x34, 0xc2, 0x18, 0xfe, 0x3f, 0x52, 0x16, 0x15, 0xee, 0x12, 0xe3, 0x6b,
-	0xd0, 0x47, 0x9c, 0x8d, 0x69, 0x2c, 0x8d, 0x8d, 0x4e, 0xcd, 0x53, 0x4d, 0x78, 0xdb, 0x26, 0xbc,
-	0x2e, 0x5b, 0x04, 0x05, 0xc7, 0xad, 0xc3, 0xc5, 0xaf, 0x34, 0x59, 0xca, 0x59, 0x46, 0xdc, 0x01,
-	0x9c, 0xf7, 0x13, 0x9e, 0xfd, 0x41, 0x4e, 0xd7, 0x02, 0x73, 0x5f, 0x4a, 0x99, 0x74, 0xde, 0x10,
-	0xe8, 0x5d, 0xa9, 0x80, 0x1f, 0xe0, 0x6c, 0x2f, 0x0a, 0x6e, 0x95, 0xd4, 0x0f, 0x97, 0x66, 0xbb,
-	0xc7, 0x28, 0xca, 0x04, 0xdf, 0xc3, 0xe9, 0x4f, 0x7b, 0xdc, 0x2c, 0xff, 0x3a, 0x74, 0xa4, 0xdd,
-	0x3a, 0xc2, 0x50, 0xb2, 0x3d, 0x6b, 0xb9, 0x71, 0xd0, 0x6a, 0xe3, 0xa0, 0x8f, 0x8d, 0x83, 0x5e,
-	0x73, 0x47, 0x5b, 0xe5, 0x8e, 0xf6, 0x9e, 0x3b, 0xda, 0x50, 0x97, 0x5d, 0xdf, 0x7e, 0x06, 0x00,
-	0x00, 0xff, 0xff, 0x68, 0xfc, 0x9d, 0x59, 0xa8, 0x02, 0x00, 0x00,
+	// 345 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x50, 0xc1, 0x4e, 0xea, 0x40,
+	0x14, 0xed, 0xf0, 0x5e, 0x1a, 0xb9, 0x8d, 0x2e, 0x6e, 0xa0, 0xd6, 0xc6, 0x14, 0xec, 0xca, 0x85,
+	0x69, 0x05, 0xbf, 0x00, 0x5c, 0xb1, 0xd2, 0x34, 0xf1, 0x03, 0x0a, 0x1d, 0x9a, 0x89, 0x65, 0xa6,
+	0xd2, 0x42, 0xe4, 0x17, 0x5c, 0xf9, 0x2f, 0xfe, 0x04, 0x4b, 0x96, 0xae, 0x88, 0x81, 0x1f, 0x31,
+	0xce, 0x14, 0x2c, 0x04, 0xdd, 0xb8, 0x3b, 0x73, 0xef, 0x99, 0x73, 0xce, 0x3d, 0x60, 0x86, 0xb9,
+	0x18, 0xb1, 0x67, 0x7f, 0xda, 0xf2, 0x15, 0xf2, 0xd2, 0xb1, 0xc8, 0x05, 0x56, 0x8b, 0xd7, 0xb4,
+	0x65, 0x9f, 0xc5, 0x42, 0xc4, 0x09, 0xf5, 0xe5, 0xa2, 0x3f, 0x19, 0xfa, 0x21, 0x9f, 0x29, 0x96,
+	0x5d, 0x8b, 0x45, 0x2c, 0x24, 0xf4, 0xbf, 0x90, 0x9a, 0xba, 0x14, 0x8c, 0xfb, 0x31, 0x1b, 0xb1,
+	0x9c, 0x4d, 0x69, 0x2f, 0xc2, 0x26, 0x18, 0x61, 0x9a, 0x26, 0x6c, 0x10, 0xe6, 0x4c, 0x70, 0x8b,
+	0x34, 0xc9, 0x65, 0x35, 0x28, 0x8f, 0xf0, 0x1c, 0xaa, 0xe9, 0xe6, 0x83, 0x55, 0x91, 0xfb, 0xef,
+	0x01, 0x9a, 0xa0, 0x0f, 0x12, 0x46, 0x79, 0x6e, 0xfd, 0x93, 0xab, 0xe2, 0xe5, 0xbe, 0x10, 0xa8,
+	0xdd, 0xa5, 0x94, 0x6f, 0xbd, 0x02, 0xfa, 0x34, 0xa1, 0x59, 0x8e, 0xd7, 0x50, 0x61, 0x91, 0xf4,
+	0x31, 0xda, 0xa6, 0xb7, 0x3d, 0xc4, 0x2b, 0x85, 0xea, 0x1e, 0xcd, 0x97, 0x0d, 0x6d, 0xb1, 0x6c,
+	0x90, 0xa0, 0xc2, 0x22, 0x44, 0xf8, 0xff, 0xc8, 0x78, 0x54, 0x78, 0x4b, 0x8c, 0x57, 0xa0, 0x0f,
+	0x04, 0x1f, 0xb2, 0x58, 0xda, 0x1a, 0xed, 0x9a, 0xa7, 0x7a, 0xf0, 0x36, 0x3d, 0x78, 0x1d, 0x3e,
+	0x0b, 0x0a, 0x8e, 0x7b, 0x0a, 0xf5, 0xbd, 0x2c, 0x59, 0x2a, 0x78, 0x46, 0xdd, 0x1e, 0xd4, 0x6f,
+	0x13, 0x91, 0xd1, 0xbf, 0xa7, 0x74, 0x2d, 0x30, 0xf7, 0xa5, 0x94, 0x49, 0xfb, 0x8d, 0x80, 0xde,
+	0x91, 0x0a, 0x18, 0xc0, 0xf1, 0x4e, 0x10, 0x6c, 0x94, 0xb4, 0x0f, 0xd5, 0x65, 0x37, 0x7f, 0x26,
+	0x28, 0x79, 0x7c, 0x80, 0x93, 0x5d, 0x63, 0x2c, 0xff, 0x39, 0x78, 0x9e, 0x7d, 0xf1, 0x0b, 0x43,
+	0xc9, 0x76, 0xad, 0xf9, 0xca, 0x21, 0x8b, 0x95, 0x43, 0x3e, 0x56, 0x0e, 0x79, 0x5d, 0x3b, 0xda,
+	0x62, 0xed, 0x68, 0xef, 0x6b, 0x47, 0xeb, 0xeb, 0xb2, 0xe3, 0x9b, 0xcf, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0xc7, 0x72, 0x30, 0xe2, 0x9e, 0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -298,7 +298,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AtomixClient interface {
-	CreatePrimitive(ctx context.Context, in *CreatePrimitiveRequest, opts ...grpc.CallOption) (*CreatePrimitiveResponse, error)
+	OpenPrimitive(ctx context.Context, in *OpenPrimitiveRequest, opts ...grpc.CallOption) (*OpenPrimitiveResponse, error)
 	ClosePrimitive(ctx context.Context, in *ClosePrimitiveRequest, opts ...grpc.CallOption) (*ClosePrimitiveResponse, error)
 }
 
@@ -310,9 +310,9 @@ func NewAtomixClient(cc *grpc.ClientConn) AtomixClient {
 	return &atomixClient{cc}
 }
 
-func (c *atomixClient) CreatePrimitive(ctx context.Context, in *CreatePrimitiveRequest, opts ...grpc.CallOption) (*CreatePrimitiveResponse, error) {
-	out := new(CreatePrimitiveResponse)
-	err := c.cc.Invoke(ctx, "/atomix.v1.Atomix/CreatePrimitive", in, out, opts...)
+func (c *atomixClient) OpenPrimitive(ctx context.Context, in *OpenPrimitiveRequest, opts ...grpc.CallOption) (*OpenPrimitiveResponse, error) {
+	out := new(OpenPrimitiveResponse)
+	err := c.cc.Invoke(ctx, "/atomix.v1.Atomix/OpenPrimitive", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -330,7 +330,7 @@ func (c *atomixClient) ClosePrimitive(ctx context.Context, in *ClosePrimitiveReq
 
 // AtomixServer is the server API for Atomix service.
 type AtomixServer interface {
-	CreatePrimitive(context.Context, *CreatePrimitiveRequest) (*CreatePrimitiveResponse, error)
+	OpenPrimitive(context.Context, *OpenPrimitiveRequest) (*OpenPrimitiveResponse, error)
 	ClosePrimitive(context.Context, *ClosePrimitiveRequest) (*ClosePrimitiveResponse, error)
 }
 
@@ -338,8 +338,8 @@ type AtomixServer interface {
 type UnimplementedAtomixServer struct {
 }
 
-func (*UnimplementedAtomixServer) CreatePrimitive(ctx context.Context, req *CreatePrimitiveRequest) (*CreatePrimitiveResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreatePrimitive not implemented")
+func (*UnimplementedAtomixServer) OpenPrimitive(ctx context.Context, req *OpenPrimitiveRequest) (*OpenPrimitiveResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OpenPrimitive not implemented")
 }
 func (*UnimplementedAtomixServer) ClosePrimitive(ctx context.Context, req *ClosePrimitiveRequest) (*ClosePrimitiveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClosePrimitive not implemented")
@@ -349,20 +349,20 @@ func RegisterAtomixServer(s *grpc.Server, srv AtomixServer) {
 	s.RegisterService(&_Atomix_serviceDesc, srv)
 }
 
-func _Atomix_CreatePrimitive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreatePrimitiveRequest)
+func _Atomix_OpenPrimitive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OpenPrimitiveRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AtomixServer).CreatePrimitive(ctx, in)
+		return srv.(AtomixServer).OpenPrimitive(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/atomix.v1.Atomix/CreatePrimitive",
+		FullMethod: "/atomix.v1.Atomix/OpenPrimitive",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AtomixServer).CreatePrimitive(ctx, req.(*CreatePrimitiveRequest))
+		return srv.(AtomixServer).OpenPrimitive(ctx, req.(*OpenPrimitiveRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -390,8 +390,8 @@ var _Atomix_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*AtomixServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreatePrimitive",
-			Handler:    _Atomix_CreatePrimitive_Handler,
+			MethodName: "OpenPrimitive",
+			Handler:    _Atomix_OpenPrimitive_Handler,
 		},
 		{
 			MethodName: "ClosePrimitive",
@@ -446,7 +446,7 @@ func (m *PrimitiveId) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CreatePrimitiveRequest) Marshal() (dAtA []byte, err error) {
+func (m *OpenPrimitiveRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -456,12 +456,12 @@ func (m *CreatePrimitiveRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CreatePrimitiveRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *OpenPrimitiveRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *CreatePrimitiveRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *OpenPrimitiveRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -498,7 +498,7 @@ func (m *CreatePrimitiveRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *CreatePrimitiveResponse) Marshal() (dAtA []byte, err error) {
+func (m *OpenPrimitiveResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -508,12 +508,12 @@ func (m *CreatePrimitiveResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CreatePrimitiveResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *OpenPrimitiveResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *CreatePrimitiveResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *OpenPrimitiveResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -609,7 +609,7 @@ func (m *PrimitiveId) Size() (n int) {
 	return n
 }
 
-func (m *CreatePrimitiveRequest) Size() (n int) {
+func (m *OpenPrimitiveRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -628,7 +628,7 @@ func (m *CreatePrimitiveRequest) Size() (n int) {
 	return n
 }
 
-func (m *CreatePrimitiveResponse) Size() (n int) {
+func (m *OpenPrimitiveResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -809,7 +809,7 @@ func (m *PrimitiveId) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CreatePrimitiveRequest) Unmarshal(dAtA []byte) error {
+func (m *OpenPrimitiveRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -832,10 +832,10 @@ func (m *CreatePrimitiveRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: CreatePrimitiveRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: OpenPrimitiveRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CreatePrimitiveRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: OpenPrimitiveRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -960,7 +960,7 @@ func (m *CreatePrimitiveRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CreatePrimitiveResponse) Unmarshal(dAtA []byte) error {
+func (m *OpenPrimitiveResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -983,10 +983,10 @@ func (m *CreatePrimitiveResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: CreatePrimitiveResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: OpenPrimitiveResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CreatePrimitiveResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: OpenPrimitiveResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

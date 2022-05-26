@@ -7,74 +7,74 @@ package v1
 import (
 	"context"
 	mapv1 "github.com/atomix/runtime/api/atomix/map/v1"
-	"github.com/atomix/runtime/pkg/errors"
-	"github.com/atomix/runtime/pkg/primitive"
+	"github.com/atomix/runtime/pkg/atomix/errors"
+	"github.com/atomix/runtime/pkg/atomix/primitive"
 )
 
-func newMapServer(sessions *primitive.SessionManager[Map]) mapv1.MapServer {
+func newMapServer(proxies *primitive.ProxyManager[Map]) mapv1.MapServer {
 	return &mapServer{
-		sessions: sessions,
+		proxies: proxies,
 	}
 }
 
 type mapServer struct {
-	sessions *primitive.SessionManager[Map]
+	proxies *primitive.ProxyManager[Map]
 }
 
 func (s *mapServer) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
-	session, err := s.sessions.GetSession(request.Headers.Session)
+	proxy, err := s.proxies.GetProxy(request.Headers.PrimitiveId)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	return session.Size(ctx, request)
+	return proxy.Size(ctx, request)
 }
 
 func (s *mapServer) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
-	session, err := s.sessions.GetSession(request.Headers.Session)
+	proxy, err := s.proxies.GetProxy(request.Headers.PrimitiveId)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	return session.Put(ctx, request)
+	return proxy.Put(ctx, request)
 }
 
 func (s *mapServer) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
-	session, err := s.sessions.GetSession(request.Headers.Session)
+	proxy, err := s.proxies.GetProxy(request.Headers.PrimitiveId)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	return session.Get(ctx, request)
+	return proxy.Get(ctx, request)
 }
 
 func (s *mapServer) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
-	session, err := s.sessions.GetSession(request.Headers.Session)
+	proxy, err := s.proxies.GetProxy(request.Headers.PrimitiveId)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	return session.Remove(ctx, request)
+	return proxy.Remove(ctx, request)
 }
 
 func (s *mapServer) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
-	session, err := s.sessions.GetSession(request.Headers.Session)
+	proxy, err := s.proxies.GetProxy(request.Headers.PrimitiveId)
 	if err != nil {
 		return nil, errors.ToProto(err)
 	}
-	return session.Clear(ctx, request)
+	return proxy.Clear(ctx, request)
 }
 
 func (s *mapServer) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsServer) error {
-	session, err := s.sessions.GetSession(request.Headers.Session)
+	proxy, err := s.proxies.GetProxy(request.Headers.PrimitiveId)
 	if err != nil {
 		return errors.ToProto(err)
 	}
-	return session.Events(request, server)
+	return proxy.Events(request, server)
 }
 
 func (s *mapServer) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
-	session, err := s.sessions.GetSession(request.Headers.Session)
+	proxy, err := s.proxies.GetProxy(request.Headers.PrimitiveId)
 	if err != nil {
 		return errors.ToProto(err)
 	}
-	return session.Entries(request, server)
+	return proxy.Entries(request, server)
 }
 
 var _ mapv1.MapServer = (*mapServer)(nil)

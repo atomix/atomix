@@ -6,10 +6,10 @@ package v1
 
 import (
 	"context"
-	primitivev1 "github.com/atomix/runtime/api/atomix/primitive/v1"
 	topicv1 "github.com/atomix/runtime/api/atomix/topic/v1"
-	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/primitive"
+	atomixv1 "github.com/atomix/runtime/api/atomix/v1"
+	"github.com/atomix/runtime/pkg/atomix/logging"
+	"github.com/atomix/runtime/pkg/atomix/primitive"
 	"google.golang.org/grpc"
 )
 
@@ -17,23 +17,23 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.topic.v1.Topic"
 
-var Primitive = primitive.NewKind[TopicClient, Topic, *topicv1.TopicConfig](serviceName, register, create)
+var Kind = primitive.NewKind[TopicClient, Topic, *topicv1.TopicConfig](serviceName, register, create)
 
-func register(server *grpc.Server, sessions *primitive.SessionManager[Topic]) {
-	topicv1.RegisterTopicServer(server, newTopicServer(sessions))
+func register(server *grpc.Server, proxies *primitive.ProxyManager[Topic]) {
+	topicv1.RegisterTopicServer(server, newTopicServer(proxies))
 }
 
-func create(client TopicClient) func(ctx context.Context, sessionID primitivev1.SessionId, config *topicv1.TopicConfig) (Topic, error) {
-	return func(ctx context.Context, sessionID primitivev1.SessionId, config *topicv1.TopicConfig) (Topic, error) {
-		return client.GetTopic(ctx, sessionID)
+func create(client TopicClient) func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *topicv1.TopicConfig) (Topic, error) {
+	return func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *topicv1.TopicConfig) (Topic, error) {
+		return client.GetTopic(ctx, primitiveID)
 	}
 }
 
 type TopicClient interface {
-	GetTopic(ctx context.Context, sessionID primitivev1.SessionId) (Topic, error)
+	GetTopic(ctx context.Context, primitiveID atomixv1.PrimitiveId) (Topic, error)
 }
 
 type Topic interface {
-	primitive.Primitive
+	primitive.Proxy
 	topicv1.TopicServer
 }
