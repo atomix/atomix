@@ -34,7 +34,6 @@ message ClusterMeta {
     uint64 version = 2 [
         (gogoproto.casttype) = "ObjectVersion"
     ];
-    map<string, string> labels = 3;
 }
 
 message Cluster {

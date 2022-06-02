@@ -7,7 +7,6 @@
     - [Cluster](#atomix-runtime-v1-Cluster)
     - [ClusterId](#atomix-runtime-v1-ClusterId)
     - [ClusterMeta](#atomix-runtime-v1-ClusterMeta)
-    - [ClusterMeta.LabelsEntry](#atomix-runtime-v1-ClusterMeta-LabelsEntry)
     - [ClusterSpec](#atomix-runtime-v1-ClusterSpec)
     - [ClusterStatus](#atomix-runtime-v1-ClusterStatus)
     - [CreateClusterRequest](#atomix-runtime-v1-CreateClusterRequest)
@@ -77,23 +76,6 @@
 | ----- | ---- | ----- | ----------- |
 | id | [ClusterId](#atomix-runtime-v1-ClusterId) |  |  |
 | version | [uint64](#uint64) |  |  |
-| labels | [ClusterMeta.LabelsEntry](#atomix-runtime-v1-ClusterMeta-LabelsEntry) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-ClusterMeta-LabelsEntry"></a>
-
-### ClusterMeta.LabelsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [string](#string) |  |  |
 
 
 

@@ -1,0 +1,118 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.v1;
+
+import "atomix/runtime/v1/cluster.proto";
+import "gogoproto/gogo.proto";
+
+service ApplicationService {
+    rpc GetApplication (GetApplicationRequest) returns (GetApplicationResponse);
+    rpc ListApplications (ListApplicationsRequest) returns (ListApplicationsResponse);
+    rpc CreateApplication (CreateApplicationRequest) returns (CreateApplicationResponse);
+    rpc UpdateApplication (UpdateApplicationRequest) returns (UpdateApplicationResponse);
+    rpc DeleteApplication (DeleteApplicationRequest) returns (DeleteApplicationResponse);
+}
+
+message ApplicationId {
+    option (gogoproto.equal) = true;
+    string namespace = 1;
+    string name = 2;
+}
+
+message ApplicationMeta {
+    ApplicationId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 version = 2 [
+        (gogoproto.casttype) = "ObjectVersion"
+    ];
+}
+
+message Application {
+    ApplicationMeta meta = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    ApplicationSpec spec = 2 [
+        (gogoproto.nullable) = false
+    ];
+    ApplicationStatus status = 3 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ApplicationSpec {
+    repeated Binding bindings = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Binding {
+    ClusterId cluster_id = 1 [
+        (gogoproto.customname) = "ClusterID",
+        (gogoproto.nullable) = false
+    ];
+    repeated BindingRule rules = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message BindingRule {
+    repeated string kinds = 1;
+    repeated string names = 2;
+    map<string, string> headers = 3;
+}
+
+message ApplicationStatus {
+
+}
+
+message GetApplicationRequest {
+    ApplicationId application_id = 1 [
+        (gogoproto.customname) = "ApplicationID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetApplicationResponse {
+    Application application = 1;
+}
+
+message ListApplicationsRequest {
+    bool watch = 1;
+}
+
+message ListApplicationsResponse {
+    repeated Application applications = 1;
+}
+
+message CreateApplicationRequest {
+    Application application = 1;
+}
+
+message CreateApplicationResponse {
+    Application application = 1;
+}
+
+message UpdateApplicationRequest {
+    Application application = 1;
+}
+
+message UpdateApplicationResponse {
+    Application application = 1;
+}
+
+message DeleteApplicationRequest {
+    Application application = 1;
+}
+
+message DeleteApplicationResponse {
+
+}

@@ -8,7 +8,7 @@ syntax = "proto3";
 
 package atomix.runtime.v1;
 
-import "atomix/runtime/v1/binding.proto";
+import "atomix/runtime/v1/cluster.proto";
 import "gogoproto/gogo.proto";
 
 service PrimitiveService {
@@ -20,7 +20,7 @@ message PrimitiveId {
     option (gogoproto.equal) = true;
     string application = 1;
     string primitive = 2;
-    string client = 3;
+    string session = 3;
 }
 
 message PrimitiveMeta {
@@ -31,7 +31,6 @@ message PrimitiveMeta {
     uint64 version = 2 [
         (gogoproto.casttype) = "ObjectVersion"
     ];
-    map<string, string> labels = 3;
 }
 
 message Primitive {
@@ -42,17 +41,10 @@ message Primitive {
     PrimitiveSpec spec = 2 [
         (gogoproto.nullable) = false
     ];
-    PrimitiveStatus status = 3 [
-        (gogoproto.nullable) = false
-    ];
 }
 
 message PrimitiveSpec {
-    string kind = 1;
-}
-
-message PrimitiveStatus {
-    BindingId binding = 1 [
+    ClusterId cluster = 1 [
         (gogoproto.nullable) = false
     ];
 }

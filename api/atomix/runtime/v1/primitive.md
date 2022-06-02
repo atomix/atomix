@@ -11,9 +11,7 @@
     - [Primitive](#atomix-runtime-v1-Primitive)
     - [PrimitiveId](#atomix-runtime-v1-PrimitiveId)
     - [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta)
-    - [PrimitiveMeta.LabelsEntry](#atomix-runtime-v1-PrimitiveMeta-LabelsEntry)
     - [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec)
-    - [PrimitiveStatus](#atomix-runtime-v1-PrimitiveStatus)
   
     - [PrimitiveService](#atomix-runtime-v1-PrimitiveService)
   
@@ -99,7 +97,6 @@
 | ----- | ---- | ----- | ----------- |
 | meta | [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta) |  |  |
 | spec | [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec) |  |  |
-| status | [PrimitiveStatus](#atomix-runtime-v1-PrimitiveStatus) |  |  |
 
 
 
@@ -116,7 +113,7 @@
 | ----- | ---- | ----- | ----------- |
 | application | [string](#string) |  |  |
 | primitive | [string](#string) |  |  |
-| client | [string](#string) |  |  |
+| session | [string](#string) |  |  |
 
 
 
@@ -133,23 +130,6 @@
 | ----- | ---- | ----- | ----------- |
 | id | [PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | version | [uint64](#uint64) |  |  |
-| labels | [PrimitiveMeta.LabelsEntry](#atomix-runtime-v1-PrimitiveMeta-LabelsEntry) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-PrimitiveMeta-LabelsEntry"></a>
-
-### PrimitiveMeta.LabelsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [string](#string) |  |  |
 
 
 
@@ -164,22 +144,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| kind | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-PrimitiveStatus"></a>
-
-### PrimitiveStatus
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| binding | [BindingId](#atomix-runtime-v1-BindingId) |  |  |
+| cluster | [ClusterId](#atomix-runtime-v1-ClusterId) |  |  |
 
 
 
