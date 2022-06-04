@@ -37,33 +37,45 @@ service Map {
         option (atomix.primitive.v1.operation_type) = COMMAND;
     }
 
+    // Insert inserts an entry into the map
+    rpc Insert (InsertRequest) returns (InsertResponse) {
+        option (atomix.primitive.v1.operation_id) = 5;
+        option (atomix.primitive.v1.operation_type) = COMMAND;
+    }
+
+    // Update updates an entry in the map
+    rpc Update (UpdateRequest) returns (UpdateResponse) {
+        option (atomix.primitive.v1.operation_id) = 6;
+        option (atomix.primitive.v1.operation_type) = COMMAND;
+    }
+
     // Get gets the entry for a key
     rpc Get (GetRequest) returns (GetResponse) {
-        option (atomix.primitive.v1.operation_id) = 5;
+        option (atomix.primitive.v1.operation_id) = 7;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
 
     // Remove removes an entry from the map
     rpc Remove (RemoveRequest) returns (RemoveResponse) {
-        option (atomix.primitive.v1.operation_id) = 6;
+        option (atomix.primitive.v1.operation_id) = 8;
         option (atomix.primitive.v1.operation_type) = COMMAND;
     }
 
     // Clear removes all entries from the map
     rpc Clear (ClearRequest) returns (ClearResponse) {
-        option (atomix.primitive.v1.operation_id) = 7;
+        option (atomix.primitive.v1.operation_id) = 9;
         option (atomix.primitive.v1.operation_type) = COMMAND;
     }
 
     // Events listens for change events
     rpc Events (EventsRequest) returns (stream EventsResponse) {
-        option (atomix.primitive.v1.operation_id) = 8;
+        option (atomix.primitive.v1.operation_id) = 10;
         option (atomix.primitive.v1.operation_type) = COMMAND;
     }
 
     // Entries lists all entries in the map
     rpc Entries (EntriesRequest) returns (stream EntriesResponse) {
-        option (atomix.primitive.v1.operation_id) = 9;
+        option (atomix.primitive.v1.operation_id) = 11;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
 }
@@ -106,10 +118,33 @@ message SizeResponse {
 message PutRequest {
     string key = 1;
     Value value = 2;
-    atomix.time.v1.Timestamp timestamp = 3;
+    atomix.time.v1.Timestamp if_timestamp = 3;
 }
 
 message PutResponse {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message InsertRequest {
+    string key = 1;
+    Value value = 2;
+}
+
+message InsertResponse {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message UpdateRequest {
+    string key = 1;
+    Value value = 2;
+    atomix.time.v1.Timestamp if_timestamp = 3;
+}
+
+message UpdateResponse {
     Entry entry = 1 [
         (gogoproto.nullable) = false
     ];
@@ -127,7 +162,7 @@ message GetResponse {
 
 message RemoveRequest {
     string key = 1;
-    atomix.time.v1.Timestamp timestamp = 2;
+    atomix.time.v1.Timestamp if_timestamp = 2;
 }
 
 message RemoveResponse {

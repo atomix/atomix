@@ -154,7 +154,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | value | [bytes](#bytes) |  |  |
-| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
+| if_timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
 
 

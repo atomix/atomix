@@ -4,6 +4,8 @@
 ## Table of Contents
 
 - [atomix/indexed_map/v1/indexed_map.proto](#atomix_indexed_map_v1_indexed_map-proto)
+    - [AppendRequest](#atomix-indexed_map-v1-AppendRequest)
+    - [AppendResponse](#atomix-indexed_map-v1-AppendResponse)
     - [ClearRequest](#atomix-indexed_map-v1-ClearRequest)
     - [ClearResponse](#atomix-indexed_map-v1-ClearResponse)
     - [CloseRequest](#atomix-indexed_map-v1-CloseRequest)
@@ -21,19 +23,18 @@
     - [GetRequest](#atomix-indexed_map-v1-GetRequest)
     - [GetResponse](#atomix-indexed_map-v1-GetResponse)
     - [IndexedMapConfig](#atomix-indexed_map-v1-IndexedMapConfig)
-    - [Key](#atomix-indexed_map-v1-Key)
     - [LastEntryRequest](#atomix-indexed_map-v1-LastEntryRequest)
     - [LastEntryResponse](#atomix-indexed_map-v1-LastEntryResponse)
     - [NextEntryRequest](#atomix-indexed_map-v1-NextEntryRequest)
     - [NextEntryResponse](#atomix-indexed_map-v1-NextEntryResponse)
     - [PrevEntryRequest](#atomix-indexed_map-v1-PrevEntryRequest)
     - [PrevEntryResponse](#atomix-indexed_map-v1-PrevEntryResponse)
-    - [PutRequest](#atomix-indexed_map-v1-PutRequest)
-    - [PutResponse](#atomix-indexed_map-v1-PutResponse)
     - [RemoveRequest](#atomix-indexed_map-v1-RemoveRequest)
     - [RemoveResponse](#atomix-indexed_map-v1-RemoveResponse)
     - [SizeRequest](#atomix-indexed_map-v1-SizeRequest)
     - [SizeResponse](#atomix-indexed_map-v1-SizeResponse)
+    - [UpdateRequest](#atomix-indexed_map-v1-UpdateRequest)
+    - [UpdateResponse](#atomix-indexed_map-v1-UpdateResponse)
     - [Value](#atomix-indexed_map-v1-Value)
   
     - [Event.Type](#atomix-indexed_map-v1-Event-Type)
@@ -48,6 +49,37 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/indexed_map/v1/indexed_map.proto
+
+
+
+<a name="atomix-indexed_map-v1-AppendRequest"></a>
+
+### AppendRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [Value](#atomix-indexed_map-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-indexed_map-v1-AppendResponse"></a>
+
+### AppendResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entry | [Entry](#atomix-indexed_map-v1-Entry) |  |  |
+
+
+
 
 
 
@@ -149,7 +181,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
+| key | [string](#string) |  |  |
+| index | [uint64](#uint64) |  |  |
 | value | [Value](#atomix-indexed_map-v1-Value) |  |  |
 | timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
@@ -182,7 +215,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
+| key | [string](#string) |  |  |
 | replay | [bool](#bool) |  |  |
 
 
@@ -238,7 +271,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
+| key | [string](#string) |  |  |
+| index | [uint64](#uint64) |  |  |
 
 
 
@@ -264,22 +298,6 @@
 
 ### IndexedMapConfig
 
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-Key"></a>
-
-### Key
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| index | [uint64](#uint64) |  |  |
-| key | [string](#string) |  |  |
 
 
 
@@ -371,38 +389,6 @@
 
 
 
-<a name="atomix-indexed_map-v1-PutRequest"></a>
-
-### PutRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
-| value | [Value](#atomix-indexed_map-v1-Value) |  |  |
-| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
-
-
-
-
-
-
-<a name="atomix-indexed_map-v1-PutResponse"></a>
-
-### PutResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-indexed_map-v1-Entry) |  |  |
-
-
-
-
-
-
 <a name="atomix-indexed_map-v1-RemoveRequest"></a>
 
 ### RemoveRequest
@@ -411,8 +397,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| key | [Key](#atomix-indexed_map-v1-Key) |  |  |
-| timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
+| key | [string](#string) |  |  |
+| index | [uint64](#uint64) |  |  |
+| if_timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
 
 
@@ -453,6 +440,39 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | size | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="atomix-indexed_map-v1-UpdateRequest"></a>
+
+### UpdateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| index | [uint64](#uint64) |  |  |
+| value | [Value](#atomix-indexed_map-v1-Value) |  |  |
+| if_timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
+
+
+
+
+
+
+<a name="atomix-indexed_map-v1-UpdateResponse"></a>
+
+### UpdateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entry | [Entry](#atomix-indexed_map-v1-Entry) |  |  |
 
 
 
@@ -506,7 +526,8 @@ IndexedMap is a service for a sorted/indexed map primitive
 | Create | [CreateRequest](#atomix-indexed_map-v1-CreateRequest) | [CreateResponse](#atomix-indexed_map-v1-CreateResponse) |  |
 | Close | [CloseRequest](#atomix-indexed_map-v1-CloseRequest) | [CloseResponse](#atomix-indexed_map-v1-CloseResponse) |  |
 | Size | [SizeRequest](#atomix-indexed_map-v1-SizeRequest) | [SizeResponse](#atomix-indexed_map-v1-SizeResponse) | Size returns the size of the map |
-| Put | [PutRequest](#atomix-indexed_map-v1-PutRequest) | [PutResponse](#atomix-indexed_map-v1-PutResponse) | Put puts an entry into the map |
+| Append | [AppendRequest](#atomix-indexed_map-v1-AppendRequest) | [AppendResponse](#atomix-indexed_map-v1-AppendResponse) | Append appends an entry to the map |
+| Update | [UpdateRequest](#atomix-indexed_map-v1-UpdateRequest) | [UpdateResponse](#atomix-indexed_map-v1-UpdateResponse) | Update updates an entry in the map |
 | Get | [GetRequest](#atomix-indexed_map-v1-GetRequest) | [GetResponse](#atomix-indexed_map-v1-GetResponse) | Get gets the entry for a key |
 | FirstEntry | [FirstEntryRequest](#atomix-indexed_map-v1-FirstEntryRequest) | [FirstEntryResponse](#atomix-indexed_map-v1-FirstEntryResponse) | FirstEntry gets the first entry in the map |
 | LastEntry | [LastEntryRequest](#atomix-indexed_map-v1-LastEntryRequest) | [LastEntryResponse](#atomix-indexed_map-v1-LastEntryResponse) | LastEntry gets the last entry in the map |

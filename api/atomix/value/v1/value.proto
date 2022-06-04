@@ -76,7 +76,7 @@ message GetResponse {
 
 message SetRequest {
     bytes value = 1;
-    atomix.time.v1.Timestamp timestamp = 2;
+    atomix.time.v1.Timestamp if_timestamp = 2;
 }
 
 message SetResponse {

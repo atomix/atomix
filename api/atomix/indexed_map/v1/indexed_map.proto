@@ -31,63 +31,69 @@ service IndexedMap {
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
 
-    // Put puts an entry into the map
-    rpc Put (PutRequest) returns (PutResponse) {
+    // Append appends an entry to the map
+    rpc Append (AppendRequest) returns (AppendResponse) {
         option (atomix.primitive.v1.operation_id) = 4;
+        option (atomix.primitive.v1.operation_type) = COMMAND;
+    }
+
+    // Update updates an entry in the map
+    rpc Update (UpdateRequest) returns (UpdateResponse) {
+        option (atomix.primitive.v1.operation_id) = 5;
         option (atomix.primitive.v1.operation_type) = COMMAND;
     }
 
     // Get gets the entry for a key
     rpc Get (GetRequest) returns (GetResponse) {
-        option (atomix.primitive.v1.operation_id) = 5;
+        option (atomix.primitive.v1.operation_id) = 6;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
 
     // FirstEntry gets the first entry in the map
     rpc FirstEntry (FirstEntryRequest) returns (FirstEntryResponse) {
-        option (atomix.primitive.v1.operation_id) = 6;
+        option (atomix.primitive.v1.operation_id) = 7;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
 
     // LastEntry gets the last entry in the map
     rpc LastEntry (LastEntryRequest) returns (LastEntryResponse) {
-        option (atomix.primitive.v1.operation_id) = 7;
+        option (atomix.primitive.v1.operation_id) = 8;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
 
     // PrevEntry gets the previous entry in the map
     rpc PrevEntry (PrevEntryRequest) returns (PrevEntryResponse) {
-        option (atomix.primitive.v1.operation_id) = 8;
+        option (atomix.primitive.v1.operation_id) = 9;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
 
     // NextEntry gets the next entry in the map
     rpc NextEntry (NextEntryRequest) returns (NextEntryResponse) {
-        option (atomix.primitive.v1.operation_id) = 9;
+        option (atomix.primitive.v1.operation_id) = 10;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
 
     // Remove removes an entry from the map
     rpc Remove (RemoveRequest) returns (RemoveResponse) {
-        option (atomix.primitive.v1.operation_id) = 10;
+        option (atomix.primitive.v1.operation_id) = 11;
         option (atomix.primitive.v1.operation_type) = COMMAND;
     }
 
     // Clear removes all entries from the map
     rpc Clear (ClearRequest) returns (ClearResponse) {
-        option (atomix.primitive.v1.operation_id) = 11;
+        option (atomix.primitive.v1.operation_id) = 12;
         option (atomix.primitive.v1.operation_type) = COMMAND;
     }
 
     // Events listens for change events
     rpc Events (EventsRequest) returns (stream EventsResponse) {
-        option (atomix.primitive.v1.operation_id) = 12;
+        option (atomix.primitive.v1.operation_id) = 13;
         option (atomix.primitive.v1.operation_type) = COMMAND;
     }
 
     // Entries lists all entries in the map
     rpc Entries (EntriesRequest) returns (stream EntriesResponse) {
-        option (atomix.primitive.v1.operation_id) = 13;
+        option (atomix.primitive.v1.operation_id) = 14;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
 }
@@ -122,23 +128,29 @@ message SizeResponse {
     uint32 size = 1;
 }
 
-message PutRequest {
-    Key key = 1 [
-        (gogoproto.embed) = true,
-        (gogoproto.nullable) = false
-    ];
+message AppendRequest {
+    string key = 1;
     Value value = 2;
-    atomix.time.v1.Timestamp timestamp = 3;
 }
 
-message PutResponse {
+message AppendResponse {
+    Entry entry = 1;
+}
+
+message UpdateRequest {
+    string key = 1;
+    uint64 index = 2;
+    Value value = 3;
+    atomix.time.v1.Timestamp if_timestamp = 4;
+}
+
+message UpdateResponse {
     Entry entry = 1;
 }
 
 message GetRequest {
-    Key key = 1 [
-        (gogoproto.nullable) = false
-    ];
+    string key = 1;
+    uint64 index = 2;
 }
 
 message GetResponse {
@@ -178,11 +190,9 @@ message NextEntryResponse {
 }
 
 message RemoveRequest {
-    Key key = 1 [
-        (gogoproto.embed) = true,
-        (gogoproto.nullable) = false
-    ];
-    atomix.time.v1.Timestamp timestamp = 2;
+    string key = 1;
+    uint64 index = 2;
+    atomix.time.v1.Timestamp if_timestamp = 3;
 }
 
 message RemoveResponse {
@@ -208,9 +218,7 @@ message EntriesResponse {
 }
 
 message EventsRequest {
-    Key key = 1 [
-        (gogoproto.nullable) = false
-    ];
+    string key = 1;
     bool replay = 2;
 }
 
@@ -235,11 +243,6 @@ message Event {
     }
 }
 
-message Key {
-    uint64 index = 1;
-    string key = 2;
-}
-
 message Value {
     bytes value = 1;
     google.protobuf.Duration ttl = 2 [
@@ -249,10 +252,8 @@ message Value {
 }
 
 message Entry {
-    Key key = 1 [
-        (gogoproto.embed) = true,
-        (gogoproto.nullable) = false
-    ];
-    Value value = 2;
-    atomix.time.v1.Timestamp timestamp = 3;
+    string key = 1;
+    uint64 index = 2;
+    Value value = 3;
+    atomix.time.v1.Timestamp timestamp = 4;
 }
