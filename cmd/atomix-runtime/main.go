@@ -59,6 +59,7 @@ func main() {
 
 			// Create the runtime
 			runtime := runtime.New(
+				runtime.NewNetwork(),
 				runtime.WithConfigFile(configFile),
 				runtime.WithCacheDir(cacheDir),
 				runtime.WithControlHost(controlHost),

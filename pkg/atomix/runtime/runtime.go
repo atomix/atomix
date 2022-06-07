@@ -16,11 +16,12 @@ import (
 
 var log = logging.GetLogger()
 
-func New(opts ...Option) *Runtime {
+func New(network Network, opts ...Option) *Runtime {
 	var options Options
 	options.apply(opts...)
 	return &Runtime{
 		Options:      options,
+		network:      network,
 		primitives:   store.NewStore[*runtimev1.PrimitiveId, *runtimev1.Primitive](),
 		applications: store.NewStore[*runtimev1.ApplicationId, *runtimev1.Application](),
 		clusters:     store.NewStore[*runtimev1.ClusterId, *runtimev1.Cluster](),
@@ -32,6 +33,7 @@ type Version string
 
 type Runtime struct {
 	Options
+	network          Network
 	primitives       *store.Store[*runtimev1.PrimitiveId, *runtimev1.Primitive]
 	applications     *store.Store[*runtimev1.ApplicationId, *runtimev1.Application]
 	clusters         *store.Store[*runtimev1.ClusterId, *runtimev1.Cluster]
@@ -49,7 +51,7 @@ func (r *Runtime) Start() error {
 	if err := r.controlService.Start(); err != nil {
 		return err
 	}
-	r.primitiveService = newProxyService(newClient(r), r.ProxyService)
+	r.primitiveService = newProxyService(r, r.ProxyService)
 	if err := r.primitiveService.Start(); err != nil {
 		return err
 	}

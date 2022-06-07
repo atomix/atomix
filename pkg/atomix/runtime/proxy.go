@@ -7,36 +7,35 @@ package runtime
 import (
 	"fmt"
 	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
-	"github.com/atomix/runtime/pkg/atomix/primitive"
 	"github.com/atomix/runtime/pkg/atomix/service"
 	"google.golang.org/grpc"
-	"net"
 	"os"
 )
 
-func newProxyService(client primitive.Client, options ProxyServiceOptions) service.Service {
+func newProxyService(runtime *Runtime, options ProxyServiceOptions) service.Service {
 	return &proxyService{
 		ProxyServiceOptions: options,
-		client:              client,
+		runtime:             runtime,
 		server:              grpc.NewServer(),
 	}
 }
 
 type proxyService struct {
 	ProxyServiceOptions
-	client primitive.Client
-	server *grpc.Server
+	runtime *Runtime
+	server  *grpc.Server
 }
 
 func (s *proxyService) Start() error {
 	address := fmt.Sprintf("%s:%d", s.Host, s.Port)
-	lis, err := net.Listen("tcp", address)
+	lis, err := s.runtime.network.Listen(address)
 	if err != nil {
 		return err
 	}
 
+	client := newClient(s.runtime)
 	for _, kind := range s.Kinds {
-		kind.Register(s.server, s.client)
+		kind.Register(s.server, client)
 	}
 
 	go func() {
@@ -71,7 +70,7 @@ type controlService struct {
 
 func (s *controlService) Start() error {
 	address := fmt.Sprintf("%s:%d", s.Host, s.Port)
-	lis, err := net.Listen("tcp", address)
+	lis, err := s.runtime.network.Listen(address)
 	if err != nil {
 		return err
 	}
