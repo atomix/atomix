@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-var log = logging.GetLogger("atomix", "grpc", "retry")
+var log = logging.GetLogger()
 
 var defaultOptions = &callOptions{
 	codes: []codes.Code{
