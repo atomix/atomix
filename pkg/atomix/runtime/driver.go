@@ -12,7 +12,56 @@ import (
 	"github.com/atomix/runtime/pkg/atomix/runtime/plugin"
 	"io"
 	"os"
+	"sync"
 )
+
+func newDriverRepository(cacheDir string, drivers ...driver.Driver) *driverRepository {
+	driversMap := make(map[string]map[string]driver.Driver)
+	for _, d := range drivers {
+		versionsMap, ok := driversMap[d.Name()]
+		if !ok {
+			versionsMap = make(map[string]driver.Driver)
+			driversMap[d.Name()] = versionsMap
+		}
+		versionsMap[d.Version()] = d
+	}
+	return &driverRepository{
+		plugins: plugin.NewCache[driver.Driver](cacheDir),
+		drivers: make(map[string]map[string]driver.Driver),
+	}
+}
+
+type driverRepository struct {
+	plugins *plugin.Cache[driver.Driver]
+	drivers map[string]map[string]driver.Driver
+	mu      sync.Mutex
+}
+
+func (r *driverRepository) get(name, version string) (driver.Driver, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	versions, ok := r.drivers[name]
+	if ok {
+		driver, ok := versions[version]
+		if ok {
+			return driver, nil
+		}
+	}
+
+	d, err := r.plugins.Get(name, version).Load()
+	if err != nil {
+		return nil, err
+	}
+
+	versions, ok = r.drivers[name]
+	if !ok {
+		versions = make(map[string]driver.Driver)
+		r.drivers[name] = versions
+	}
+	versions[version] = d
+	return d, nil
+}
 
 func newDriverServiceServer(plugins *plugin.Cache[driver.Driver]) runtimev1.DriverServiceServer {
 	return &driverServiceServer{

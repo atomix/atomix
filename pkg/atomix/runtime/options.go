@@ -4,16 +4,27 @@
 
 package runtime
 
-import "github.com/atomix/runtime/pkg/atomix/primitive"
+import (
+	"github.com/atomix/runtime/pkg/atomix/driver"
+	"github.com/atomix/runtime/pkg/atomix/primitive"
+)
+
+const (
+	defaultProxyPort   = 5678
+	defaultControlPort = 5679
+)
 
 type Options struct {
 	ProxyService   ProxyServiceOptions
 	ControlService ControlServiceOptions
 	ConfigFile     string
 	CacheDir       string
+	Drivers        []driver.Driver
 }
 
 func (o Options) apply(opts ...Option) {
+	o.ProxyService.Port = defaultProxyPort
+	o.ControlService.Port = defaultControlPort
 	for _, opt := range opts {
 		opt(&o)
 	}
@@ -50,6 +61,12 @@ func WithProxyHost(host string) Option {
 func WithProxyPort(port int) Option {
 	return func(options *Options) {
 		options.ProxyService.Port = port
+	}
+}
+
+func WithDrivers(drivers ...driver.Driver) Option {
+	return func(options *Options) {
+		options.Drivers = append(options.Drivers, drivers...)
 	}
 }
 

@@ -15,27 +15,33 @@ import (
 
 var log = logging.GetLogger()
 
-type Info struct {
-	Name    string
-	Version string
-}
-
-func (i Info) String() string {
-	return fmt.Sprintf("%s/%s", i.Name, i.Version)
-}
-
 type Driver interface {
+	fmt.Stringer
+	Name() string
+	Version() string
 	Connect(ctx context.Context, config *types.Any) (Conn, error)
 }
 
-func New[C proto.Message](connector Connector[C]) Driver {
+func New[C proto.Message](name, version string, connector Connector[C]) Driver {
 	return &configurableDriver[C]{
+		name:      name,
+		version:   version,
 		connector: connector,
 	}
 }
 
 type configurableDriver[C proto.Message] struct {
+	name      string
+	version   string
 	connector Connector[C]
+}
+
+func (d *configurableDriver[C]) Name() string {
+	return d.name
+}
+
+func (d *configurableDriver[C]) Version() string {
+	return d.version
 }
 
 func (d *configurableDriver[C]) Connect(ctx context.Context, rawConfig *types.Any) (Conn, error) {
@@ -47,7 +53,11 @@ func (d *configurableDriver[C]) Connect(ctx context.Context, rawConfig *types.An
 	if err != nil {
 		return nil, err
 	}
-	return newConfigurableConn[C](conn), nil
+	return newConfigurableConn[C](d, conn), nil
+}
+
+func (d *configurableDriver[C]) String() string {
+	return fmt.Sprintf("%s/%s", d.name, d.version)
 }
 
 var _ Driver = (*configurableDriver[*types.Any])(nil)

@@ -6,9 +6,7 @@ package runtime
 
 import (
 	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
-	"github.com/atomix/runtime/pkg/atomix/driver"
 	"github.com/atomix/runtime/pkg/atomix/logging"
-	"github.com/atomix/runtime/pkg/atomix/runtime/plugin"
 	"github.com/atomix/runtime/pkg/atomix/runtime/store"
 	"github.com/atomix/runtime/pkg/atomix/service"
 	"github.com/atomix/runtime/version"
@@ -25,7 +23,7 @@ func New(network Network, opts ...Option) *Runtime {
 		primitives:   store.NewStore[*runtimev1.PrimitiveId, *runtimev1.Primitive](),
 		applications: store.NewStore[*runtimev1.ApplicationId, *runtimev1.Application](),
 		clusters:     store.NewStore[*runtimev1.ClusterId, *runtimev1.Cluster](),
-		drivers:      plugin.NewCache[driver.Driver](options.CacheDir, "Driver"),
+		drivers:      newDriverRepository(options.CacheDir, options.Drivers...),
 	}
 }
 
@@ -37,9 +35,13 @@ type Runtime struct {
 	primitives       *store.Store[*runtimev1.PrimitiveId, *runtimev1.Primitive]
 	applications     *store.Store[*runtimev1.ApplicationId, *runtimev1.Application]
 	clusters         *store.Store[*runtimev1.ClusterId, *runtimev1.Cluster]
-	drivers          *plugin.Cache[driver.Driver]
+	drivers          *driverRepository
 	primitiveService service.Service
 	controlService   service.Service
+}
+
+func (r *Runtime) Network() Network {
+	return r.network
 }
 
 func (r *Runtime) Version() Version {

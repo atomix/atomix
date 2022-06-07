@@ -14,15 +14,17 @@ import (
 type Connector[C proto.Message] func(ctx context.Context, config C) (Client, error)
 
 type Conn interface {
+	Driver() Driver
 	Client() Client
 	Context() context.Context
 	Configurator[*types.Any]
 	Closer
 }
 
-func newConfigurableConn[C proto.Message](client Client) Conn {
+func newConfigurableConn[C proto.Message](driver Driver, client Client) Conn {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &configurableConn[C]{
+		driver: driver,
 		client: client,
 		ctx:    ctx,
 		cancel: cancel,
@@ -30,9 +32,14 @@ func newConfigurableConn[C proto.Message](client Client) Conn {
 }
 
 type configurableConn[C proto.Message] struct {
+	driver Driver
 	client Client
 	ctx    context.Context
 	cancel context.CancelFunc
+}
+
+func (c *configurableConn[C]) Driver() Driver {
+	return c.driver
 }
 
 func (c *configurableConn[C]) Context() context.Context {
