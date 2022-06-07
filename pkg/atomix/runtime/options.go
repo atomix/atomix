@@ -4,9 +4,13 @@
 
 package runtime
 
+import "github.com/atomix/runtime/pkg/atomix/primitive"
+
 type Options struct {
-	ConfigFile string
-	CacheDir   string
+	PrimitiveService PrimitiveServiceOptions
+	ControlService   ControlServiceOptions
+	ConfigFile       string
+	CacheDir         string
 }
 
 func (o Options) apply(opts ...Option) {
@@ -17,9 +21,47 @@ func (o Options) apply(opts ...Option) {
 
 type Option func(*Options)
 
+type ServerOptions struct {
+	Host string
+	Port int
+}
+
+type PrimitiveServiceOptions struct {
+	ServerOptions
+	Kinds []primitive.Kind
+}
+
+type ControlServiceOptions struct {
+	ServerOptions
+}
+
 func WithOptions(opts Options) Option {
 	return func(options *Options) {
 		*options = opts
+	}
+}
+
+func WithPrimitiveHost(host string) Option {
+	return func(options *Options) {
+		options.PrimitiveService.Host = host
+	}
+}
+
+func WithPrimitivePort(port int) Option {
+	return func(options *Options) {
+		options.PrimitiveService.Port = port
+	}
+}
+
+func WithControlHost(host string) Option {
+	return func(options *Options) {
+		options.ControlService.Host = host
+	}
+}
+
+func WithControlPort(port int) Option {
+	return func(options *Options) {
+		options.ControlService.Port = port
 	}
 }
 

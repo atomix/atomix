@@ -2,24 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package service
+package runtime
 
 import (
 	"context"
 	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"github.com/atomix/runtime/pkg/atomix/errors"
 	"github.com/atomix/runtime/pkg/atomix/logging"
-	"github.com/atomix/runtime/pkg/atomix/store"
+	"github.com/atomix/runtime/pkg/atomix/runtime/store"
 )
 
-func newPrimitiveServiceServer(store store.Store[*runtimev1.PrimitiveId, *runtimev1.Primitive]) runtimev1.PrimitiveServiceServer {
+func newPrimitiveServiceServer(store *store.Store[*runtimev1.PrimitiveId, *runtimev1.Primitive]) runtimev1.PrimitiveServiceServer {
 	return &primitiveServiceServer{
 		store: store,
 	}
 }
 
 type primitiveServiceServer struct {
-	store store.Store[*runtimev1.PrimitiveId, *runtimev1.Primitive]
+	store *store.Store[*runtimev1.PrimitiveId, *runtimev1.Primitive]
 }
 
 func (s *primitiveServiceServer) GetPrimitive(ctx context.Context, request *runtimev1.GetPrimitiveRequest) (*runtimev1.GetPrimitiveResponse, error) {

@@ -2,31 +2,31 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package service
+package runtime
 
 import (
 	"context"
 	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"github.com/atomix/runtime/pkg/atomix/errors"
 	"github.com/atomix/runtime/pkg/atomix/logging"
-	"github.com/atomix/runtime/pkg/atomix/store"
+	"github.com/atomix/runtime/pkg/atomix/runtime/store"
 )
 
-func newClusterServiceServer(store store.Store[*runtimev1.ClusterId, *runtimev1.Cluster]) runtimev1.ClusterServiceServer {
+func newClusterServiceServer(clusters *store.Store[*runtimev1.ClusterId, *runtimev1.Cluster]) runtimev1.ClusterServiceServer {
 	return &clusterServiceServer{
-		store: store,
+		clusters: clusters,
 	}
 }
 
 type clusterServiceServer struct {
-	store store.Store[*runtimev1.ClusterId, *runtimev1.Cluster]
+	clusters *store.Store[*runtimev1.ClusterId, *runtimev1.Cluster]
 }
 
 func (s *clusterServiceServer) GetCluster(ctx context.Context, request *runtimev1.GetClusterRequest) (*runtimev1.GetClusterResponse, error) {
 	log.Debugw("GetCluster",
 		logging.Stringer("GetClusterRequest", request))
 
-	cluster, ok := s.store.Get(&request.ClusterID)
+	cluster, ok := s.clusters.Get(&request.ClusterID)
 	if !ok {
 		err := errors.NewNotFound("cluster '%s' not found", request.ClusterID)
 		log.Warnw("GetCluster",
@@ -47,7 +47,7 @@ func (s *clusterServiceServer) ListClusters(ctx context.Context, request *runtim
 	log.Debugw("ListClusters",
 		logging.Stringer("ListClustersRequest", request))
 
-	clusters := s.store.List()
+	clusters := s.clusters.List()
 	response := &runtimev1.ListClustersResponse{
 		Clusters: clusters,
 	}
@@ -61,7 +61,7 @@ func (s *clusterServiceServer) CreateCluster(ctx context.Context, request *runti
 		logging.Stringer("CreateClusterRequest", request))
 
 	cluster := request.Cluster
-	err := s.store.Create(cluster)
+	err := s.clusters.Create(cluster)
 	if err != nil {
 		log.Warnw("CreateCluster",
 			logging.Stringer("CreateClusterRequest", request),
@@ -82,7 +82,7 @@ func (s *clusterServiceServer) UpdateCluster(ctx context.Context, request *runti
 		logging.Stringer("UpdateClusterRequest", request))
 
 	cluster := request.Cluster
-	err := s.store.Update(cluster)
+	err := s.clusters.Update(cluster)
 	if err != nil {
 		log.Warnw("UpdateCluster",
 			logging.Stringer("UpdateClusterRequest", request),
@@ -103,7 +103,7 @@ func (s *clusterServiceServer) DeleteCluster(ctx context.Context, request *runti
 		logging.Stringer("DeleteClusterRequest", request))
 
 	cluster := request.Cluster
-	err := s.store.Delete(cluster)
+	err := s.clusters.Delete(cluster)
 	if err != nil {
 		log.Warnw("DeleteCluster",
 			logging.Stringer("DeleteClusterRequest", request),
