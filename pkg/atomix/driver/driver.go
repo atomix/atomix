@@ -6,6 +6,7 @@ package driver
 
 import (
 	"context"
+	"fmt"
 	"github.com/atomix/runtime/pkg/atomix/logging"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
@@ -15,17 +16,25 @@ import (
 var log = logging.GetLogger()
 
 type Driver interface {
+	fmt.Stringer
+	Name() string
 	Connect(ctx context.Context, config *types.Any) (Conn, error)
 }
 
-func New[C proto.Message](connector Connector[C]) Driver {
+func New[C proto.Message](name string, connector Connector[C]) Driver {
 	return &configurableDriver[C]{
+		name:      name,
 		connector: connector,
 	}
 }
 
 type configurableDriver[C proto.Message] struct {
+	name      string
 	connector Connector[C]
+}
+
+func (d *configurableDriver[C]) Name() string {
+	return d.name
 }
 
 func (d *configurableDriver[C]) Connect(ctx context.Context, rawConfig *types.Any) (Conn, error) {
@@ -37,7 +46,11 @@ func (d *configurableDriver[C]) Connect(ctx context.Context, rawConfig *types.An
 	if err != nil {
 		return nil, err
 	}
-	return newConfigurableConn[C](conn), nil
+	return newConfigurableConn[C](d, conn), nil
+}
+
+func (d *configurableDriver[C]) String() string {
+	return d.Name()
 }
 
 var _ Driver = (*configurableDriver[*types.Any])(nil)
