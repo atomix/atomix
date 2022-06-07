@@ -39,6 +39,11 @@ func (k *genericKind[T]) Register(server *grpc.Server, client Client) {
 var _ Kind = (*genericKind[any])(nil)
 
 type Client interface {
-	Connect(ctx context.Context, id ID) (driver.Conn, error)
+	Connect(ctx context.Context, id ID) (Conn, error)
 	Close(ctx context.Context, id ID) error
+}
+
+type Conn interface {
+	driver.Conn
+	Driver() driver.Info
 }

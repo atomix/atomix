@@ -18,16 +18,17 @@ import (
 func newClient(runtime *Runtime) primitive.Client {
 	return &runtimeClient{
 		runtime: runtime,
+		conns:   make(map[runtimev1.ClusterId]primitive.Conn),
 	}
 }
 
 type runtimeClient struct {
 	runtime *Runtime
-	conns   map[runtimev1.ClusterId]driver.Conn
+	conns   map[runtimev1.ClusterId]primitive.Conn
 	mu      sync.RWMutex
 }
 
-func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Conn, error) {
+func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (primitive.Conn, error) {
 	primitiveID := &runtimev1.PrimitiveId{
 		Application: id.Application,
 		Primitive:   id.Primitive,
@@ -72,15 +73,21 @@ func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Co
 			return nil, errors.NewUnavailable("cluster %s not found", primitive.Spec.Cluster)
 		}
 
-		driver, err := c.runtime.drivers.Get(cluster.Spec.Driver.Name, cluster.Spec.Driver.Version).Load()
+		driverInfo := driver.Info{
+			Name:    cluster.Spec.Driver.Name,
+			Version: cluster.Spec.Driver.Version,
+		}
+
+		driver, err := c.runtime.drivers.Get(driverInfo.Name, driverInfo.Version).Load()
 		if err != nil {
 			return nil, err
 		}
 
-		conn, err := driver.Connect(ctx, cluster.Spec.Config)
+		driverConn, err := driver.Connect(ctx, cluster.Spec.Config)
 		if err != nil {
 			return nil, err
 		}
+		conn = newConn(driverInfo, driverConn)
 		c.conns[primitive.Spec.Cluster] = conn
 	}
 	return conn, nil
@@ -125,3 +132,21 @@ func (c *runtimeClient) Close(ctx context.Context, id primitive.ID) error {
 }
 
 var _ primitive.Client = (*runtimeClient)(nil)
+
+func newConn(driver driver.Info, conn driver.Conn) primitive.Conn {
+	return &runtimeConn{
+		Conn:   conn,
+		driver: driver,
+	}
+}
+
+type runtimeConn struct {
+	driver.Conn
+	driver driver.Info
+}
+
+func (c *runtimeConn) Driver() driver.Info {
+	return c.driver
+}
+
+var _ primitive.Conn = (*runtimeConn)(nil)
