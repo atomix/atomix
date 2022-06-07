@@ -8,7 +8,6 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.1.2
-	github.com/hashicorp/golang-lru v0.5.4
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/rogpeppe/go-internal v1.8.1
 	github.com/spf13/cobra v1.4.0
