@@ -46,8 +46,10 @@ func (d *configurableDriver[C]) Version() string {
 
 func (d *configurableDriver[C]) Connect(ctx context.Context, rawConfig *types.Any) (Conn, error) {
 	var config C
-	if err := jsonpb.UnmarshalString(string(rawConfig.Value), config); err != nil {
-		return nil, err
+	if rawConfig != nil {
+		if err := jsonpb.UnmarshalString(string(rawConfig.Value), config); err != nil {
+			return nil, err
+		}
 	}
 	conn, err := d.connector(ctx, config)
 	if err != nil {

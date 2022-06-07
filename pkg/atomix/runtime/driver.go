@@ -27,7 +27,7 @@ func newDriverRepository(cacheDir string, drivers ...driver.Driver) *driverRepos
 	}
 	return &driverRepository{
 		plugins: plugin.NewCache[driver.Driver](cacheDir),
-		drivers: make(map[string]map[string]driver.Driver),
+		drivers: driversMap,
 	}
 }
 

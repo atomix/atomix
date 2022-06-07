@@ -79,7 +79,7 @@ func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Co
 			return nil, err
 		}
 
-		conn, err := driver.Connect(ctx, cluster.Spec.Config)
+		conn, err = driver.Connect(ctx, cluster.Spec.Config)
 		if err != nil {
 			return nil, err
 		}

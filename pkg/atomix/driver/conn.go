@@ -53,8 +53,10 @@ func (c *configurableConn[C]) Client() Client {
 func (c *configurableConn[C]) Configure(ctx context.Context, rawConfig *types.Any) error {
 	if configurator, ok := c.client.(Configurator[C]); ok {
 		var config C
-		if err := jsonpb.UnmarshalString(string(rawConfig.Value), config); err != nil {
-			return err
+		if rawConfig != nil {
+			if err := jsonpb.UnmarshalString(string(rawConfig.Value), config); err != nil {
+				return err
+			}
 		}
 		return configurator.Configure(ctx, config)
 	}
