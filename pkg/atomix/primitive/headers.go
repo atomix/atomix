@@ -7,9 +7,9 @@ package primitive
 import (
 	"context"
 	"fmt"
+	"github.com/atomix/runtime/pkg/atomix/env"
 	"github.com/atomix/runtime/pkg/atomix/errors"
 	"google.golang.org/grpc/metadata"
-	"os"
 )
 
 const (
@@ -17,19 +17,6 @@ const (
 	PrimitiveIDHeader   = "Primitive-ID"
 	SessionIDHeader     = "Session-ID"
 )
-
-const (
-	applicationIDEnv = "APPLICATION_ID"
-	nodeIDEnv        = "NODE_ID"
-)
-
-func newID(application, primitive, session string) ID {
-	return ID{
-		Application: application,
-		Primitive:   primitive,
-		Session:     session,
-	}
-}
 
 type ID struct {
 	Application string
@@ -58,24 +45,16 @@ func getIDFromContext(ctx context.Context) (ID, error) {
 
 	appIDs := md.Get(ApplicationIDHeader)
 	if len(appIDs) == 0 {
-		id.Application = getDefaultApplicationID()
+		id.Application = env.GetApplicationID()
 	} else {
 		id.Application = appIDs[0]
 	}
 
 	sessionIDs := md.Get(SessionIDHeader)
 	if len(sessionIDs) == 0 {
-		id.Session = getDefaultSessionID()
+		id.Session = env.GetNodeID()
 	} else {
 		id.Session = sessionIDs[0]
 	}
 	return id, nil
-}
-
-func getDefaultApplicationID() string {
-	return os.Getenv(applicationIDEnv)
-}
-
-func getDefaultSessionID() string {
-	return os.Getenv(nodeIDEnv)
 }

@@ -8,10 +8,10 @@ import (
 	"context"
 	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"github.com/atomix/runtime/pkg/atomix/driver"
+	"github.com/atomix/runtime/pkg/atomix/env"
 	"github.com/atomix/runtime/pkg/atomix/errors"
 	"github.com/atomix/runtime/pkg/atomix/primitive"
 	"google.golang.org/grpc/metadata"
-	"os"
 	"sync"
 )
 
@@ -36,7 +36,7 @@ func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Co
 	primitive, ok := c.runtime.primitives.Get(primitiveID)
 	if !ok {
 		applicationID := &runtimev1.ApplicationId{
-			Namespace: os.Getenv("NAMESPACE"),
+			Namespace: env.GetNamespace(),
 			Name:      id.Application,
 		}
 		application, ok := c.runtime.applications.Get(applicationID)
@@ -44,46 +44,9 @@ func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Co
 			return nil, errors.NewUnavailable("application %s not found", applicationID)
 		}
 
-		var clusterID *runtimev1.ClusterId
-		for _, binding := range application.Spec.Bindings {
-			var matches bool
-			for _, rule := range binding.Rules {
-				nameMatches := false
-				for _, name := range rule.Names {
-					if name == id.Primitive {
-						nameMatches = true
-						break
-					}
-				}
-				if nameMatches {
-					matches = true
-					break
-				}
-
-				md, _ := metadata.FromIncomingContext(ctx)
-				headersMatch := true
-				for key, value := range rule.Headers {
-					headerMatches := false
-					for _, v := range md[key] {
-						if v == value {
-							headerMatches = true
-							break
-						}
-					}
-					if !headerMatches {
-						headersMatch = false
-						break
-					}
-				}
-				if headersMatch {
-					matches = true
-					break
-				}
-			}
-			if matches {
-				clusterID = &binding.ClusterID
-				break
-			}
+		clusterID, ok := c.getClusterID(ctx, application, id)
+		if !ok {
+			return nil, errors.NewUnavailable("cluster binding not found in application %s", applicationID)
 		}
 
 		primitive = &runtimev1.Primitive{
@@ -91,7 +54,7 @@ func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Co
 				ID: *primitiveID,
 			},
 			Spec: runtimev1.PrimitiveSpec{
-				Cluster: *clusterID,
+				Cluster: clusterID,
 			},
 		}
 		if err := c.runtime.primitives.Create(primitive); err != nil {
@@ -101,6 +64,7 @@ func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Co
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	conn, ok := c.conns[primitive.Spec.Cluster]
 	if !ok {
 		cluster, ok := c.runtime.clusters.Get(&primitive.Spec.Cluster)
@@ -120,6 +84,28 @@ func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Co
 		c.conns[primitive.Spec.Cluster] = conn
 	}
 	return conn, nil
+}
+
+func (c *runtimeClient) getClusterID(ctx context.Context, app *runtimev1.Application, id primitive.ID) (runtimev1.ClusterId, bool) {
+	for _, binding := range app.Spec.Bindings {
+		for _, rule := range binding.Rules {
+			for _, name := range rule.Names {
+				if name == id.Primitive {
+					return binding.ClusterID, true
+				}
+			}
+
+			md, _ := metadata.FromIncomingContext(ctx)
+			for key, value := range rule.Headers {
+				for _, v := range md[key] {
+					if v == value {
+						return binding.ClusterID, true
+					}
+				}
+			}
+		}
+	}
+	return runtimev1.ClusterId{}, false
 }
 
 func (c *runtimeClient) Close(ctx context.Context, id primitive.ID) error {
