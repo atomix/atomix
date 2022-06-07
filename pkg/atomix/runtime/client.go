@@ -10,6 +10,7 @@ import (
 	"github.com/atomix/runtime/pkg/atomix/driver"
 	"github.com/atomix/runtime/pkg/atomix/errors"
 	"github.com/atomix/runtime/pkg/atomix/primitive"
+	"github.com/atomix/runtime/pkg/atomix/runtime/store"
 	"google.golang.org/grpc/metadata"
 	"sync"
 )
@@ -17,16 +18,36 @@ import (
 const wildcard = "*"
 
 func newClient(runtime *Runtime) primitive.Client {
-	return &runtimeClient{
+	client := &runtimeClient{
 		runtime: runtime,
 		conns:   make(map[runtimev1.ClusterId]driver.Conn),
 	}
+	client.open()
+	return client
 }
 
 type runtimeClient struct {
 	runtime *Runtime
 	conns   map[runtimev1.ClusterId]driver.Conn
 	mu      sync.RWMutex
+	watchID store.WatchID
+}
+
+func (c *runtimeClient) open() {
+	watchCh := make(chan *runtimev1.Cluster)
+	c.watchID = c.runtime.clusters.Watch(watchCh)
+	go func() {
+		for cluster := range watchCh {
+			c.mu.RLock()
+			conn, ok := c.conns[cluster.ID]
+			c.mu.RUnlock()
+			if ok {
+				if err := conn.Configure(context.Background(), cluster.Spec.Config); err != nil {
+					log.Error(err)
+				}
+			}
+		}
+	}()
 }
 
 func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Conn, error) {
@@ -83,7 +104,18 @@ func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Co
 		if err != nil {
 			return nil, err
 		}
+
 		c.conns[primitive.Spec.Cluster] = conn
+
+		go func() {
+			<-conn.Context().Done()
+			c.mu.Lock()
+			delete(c.conns, primitive.Spec.Cluster)
+			c.mu.Unlock()
+			if err := conn.Close(context.Background()); err != nil {
+				log.Error(err)
+			}
+		}()
 	}
 	return conn, nil
 }
@@ -163,6 +195,11 @@ func (c *runtimeClient) Close(ctx context.Context, id primitive.ID) error {
 	if err := c.runtime.primitives.Delete(primitive); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (c *runtimeClient) close() error {
+	c.runtime.clusters.Unwatch(c.watchID)
 	return nil
 }
 
