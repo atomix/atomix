@@ -5,9 +5,8 @@
 package v1
 
 import (
-	"context"
 	counterv1 "github.com/atomix/runtime/api/atomix/counter/v1"
-	atomixv1 "github.com/atomix/runtime/api/atomix/v1"
+	"github.com/atomix/runtime/pkg/atomix/driver"
 	"github.com/atomix/runtime/pkg/atomix/logging"
 	"github.com/atomix/runtime/pkg/atomix/primitive"
 	"google.golang.org/grpc"
@@ -15,25 +14,19 @@ import (
 
 var log = logging.GetLogger()
 
-const serviceName = "atomix.counter.v1.Counter"
+var Kind = primitive.NewKind[counterv1.CounterServer](register, resolve)
 
-var Kind = primitive.NewKind[CounterClient, Counter, *counterv1.CounterConfig](serviceName, register, create)
-
-func register(server *grpc.Server, proxies *primitive.ProxyManager[Counter]) {
+func register(server *grpc.Server, proxies *primitive.Manager[counterv1.CounterServer]) {
 	counterv1.RegisterCounterServer(server, newCounterServer(proxies))
 }
 
-func create(client CounterClient) func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *counterv1.CounterConfig) (Counter, error) {
-	return func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *counterv1.CounterConfig) (Counter, error) {
-		return client.GetCounter(ctx, primitiveID)
+func resolve(client driver.Client) (primitive.Factory[counterv1.CounterServer], bool) {
+	if counter, ok := client.(CounterProvider); ok {
+		return counter.GetCounter, true
 	}
+	return nil, false
 }
 
-type CounterClient interface {
-	GetCounter(ctx context.Context, primitiveID atomixv1.PrimitiveId) (Counter, error)
-}
-
-type Counter interface {
-	primitive.Proxy
-	counterv1.CounterServer
+type CounterProvider interface {
+	GetCounter(primitive.ID) counterv1.CounterServer
 }

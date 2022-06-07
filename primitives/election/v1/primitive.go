@@ -5,9 +5,8 @@
 package v1
 
 import (
-	"context"
 	electionv1 "github.com/atomix/runtime/api/atomix/election/v1"
-	atomixv1 "github.com/atomix/runtime/api/atomix/v1"
+	"github.com/atomix/runtime/pkg/atomix/driver"
 	"github.com/atomix/runtime/pkg/atomix/logging"
 	"github.com/atomix/runtime/pkg/atomix/primitive"
 	"google.golang.org/grpc"
@@ -15,25 +14,19 @@ import (
 
 var log = logging.GetLogger()
 
-const serviceName = "atomix.election.v1.LeaderElection"
+var Kind = primitive.NewKind[electionv1.LeaderElectionServer](register, resolve)
 
-var Kind = primitive.NewKind[LeaderElectionClient, LeaderElection, *electionv1.LeaderElectionConfig](serviceName, register, create)
-
-func register(server *grpc.Server, proxies *primitive.ProxyManager[LeaderElection]) {
+func register(server *grpc.Server, proxies *primitive.Manager[electionv1.LeaderElectionServer]) {
 	electionv1.RegisterLeaderElectionServer(server, newLeaderElectionServer(proxies))
 }
 
-func create(client LeaderElectionClient) func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *electionv1.LeaderElectionConfig) (LeaderElection, error) {
-	return func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *electionv1.LeaderElectionConfig) (LeaderElection, error) {
-		return client.GetLeaderElection(ctx, primitiveID)
+func resolve(client driver.Client) (primitive.Factory[electionv1.LeaderElectionServer], bool) {
+	if election, ok := client.(LeaderElectionProvider); ok {
+		return election.GetLeaderElection, true
 	}
+	return nil, false
 }
 
-type LeaderElectionClient interface {
-	GetLeaderElection(ctx context.Context, primitiveID atomixv1.PrimitiveId) (LeaderElection, error)
-}
-
-type LeaderElection interface {
-	primitive.Proxy
-	electionv1.LeaderElectionServer
+type LeaderElectionProvider interface {
+	GetLeaderElection(primitive.ID) electionv1.LeaderElectionServer
 }

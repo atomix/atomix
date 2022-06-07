@@ -5,9 +5,8 @@
 package v1
 
 import (
-	"context"
 	listv1 "github.com/atomix/runtime/api/atomix/list/v1"
-	atomixv1 "github.com/atomix/runtime/api/atomix/v1"
+	"github.com/atomix/runtime/pkg/atomix/driver"
 	"github.com/atomix/runtime/pkg/atomix/logging"
 	"github.com/atomix/runtime/pkg/atomix/primitive"
 	"google.golang.org/grpc"
@@ -15,25 +14,19 @@ import (
 
 var log = logging.GetLogger()
 
-const serviceName = "atomix.list.v1.List"
+var Kind = primitive.NewKind[listv1.ListServer](register, resolve)
 
-var Kind = primitive.NewKind[ListClient, List, *listv1.ListConfig](serviceName, register, create)
-
-func register(server *grpc.Server, proxies *primitive.ProxyManager[List]) {
+func register(server *grpc.Server, proxies *primitive.Manager[listv1.ListServer]) {
 	listv1.RegisterListServer(server, newListServer(proxies))
 }
 
-func create(client ListClient) func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *listv1.ListConfig) (List, error) {
-	return func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *listv1.ListConfig) (List, error) {
-		return client.GetList(ctx, primitiveID)
+func resolve(client driver.Client) (primitive.Factory[listv1.ListServer], bool) {
+	if counter, ok := client.(ListProvider); ok {
+		return counter.GetList, true
 	}
+	return nil, false
 }
 
-type ListClient interface {
-	GetList(ctx context.Context, primitiveID atomixv1.PrimitiveId) (List, error)
-}
-
-type List interface {
-	primitive.Proxy
-	listv1.ListServer
+type ListProvider interface {
+	GetList(primitive.ID) listv1.ListServer
 }

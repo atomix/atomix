@@ -6,63 +6,39 @@ package primitive
 
 import (
 	"context"
-	atomixv1 "github.com/atomix/runtime/api/atomix/v1"
 	"github.com/atomix/runtime/pkg/atomix/driver"
-	"github.com/atomix/runtime/pkg/atomix/errors"
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
 )
 
 type Kind interface {
-	Name() string
-	Register(server *grpc.Server, registry *Registry)
-	GetProxy(client driver.Client) func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *types.Any) (Proxy, error)
+	Register(server *grpc.Server, client Client)
 }
 
-type Closer interface {
-	Close(ctx context.Context) error
-}
+type Registrar[T any] func(*grpc.Server, *Manager[T])
 
-type Proxy interface {
-	Closer
-}
+type Resolver[T any] func(driver.Client) (Factory[T], bool)
 
-type Registrar[T Proxy] func(*grpc.Server, *ProxyManager[T])
+type Factory[T any] func(ID) T
 
-type Provider[P any, T Proxy, C proto.Message] func(client P) func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config C) (T, error)
-
-func NewKind[P any, T Proxy, C proto.Message](name string, registrar Registrar[T], provider Provider[P, T, C]) Kind {
-	return &genericKind[P, T, C]{
-		name:      name,
+func NewKind[T any](registrar Registrar[T], resolver Resolver[T]) Kind {
+	return &genericKind[T]{
 		registrar: registrar,
-		provider:  provider,
+		resolver:  resolver,
 	}
 }
 
-type genericKind[P any, T Proxy, C proto.Message] struct {
-	name      string
+type genericKind[T any] struct {
 	registrar Registrar[T]
-	provider  Provider[P, T, C]
+	resolver  Resolver[T]
 }
 
-func (t *genericKind[P, T, C]) Name() string {
-	return t.name
+func (k *genericKind[T]) Register(server *grpc.Server, client Client) {
+	k.registrar(server, NewManager[T](client, k.resolver))
 }
 
-func (t *genericKind[P, T, C]) Register(server *grpc.Server, registry *Registry) {
-	t.registrar(server, newProxyManager[T](registry))
-}
+var _ Kind = (*genericKind[any])(nil)
 
-func (t *genericKind[P, T, C]) GetProxy(client driver.Client) func(ctx context.Context, primitiveID atomixv1.PrimitiveId, rawConfig *types.Any) (Proxy, error) {
-	return func(ctx context.Context, primitiveID atomixv1.PrimitiveId, rawConfig *types.Any) (Proxy, error) {
-		if provider, ok := client.(P); ok {
-			var config C
-			if err := types.UnmarshalAny(rawConfig, config); err != nil {
-				return nil, err
-			}
-			return t.provider(provider)(ctx, primitiveID, config)
-		}
-		return nil, errors.NewNotSupported("primitive type '%s' not supported by driver", t.name)
-	}
+type Client interface {
+	Connect(ctx context.Context, id ID) (driver.Conn, error)
+	Close(ctx context.Context, id ID) error
 }

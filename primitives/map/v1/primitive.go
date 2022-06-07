@@ -5,9 +5,8 @@
 package v1
 
 import (
-	"context"
 	mapv1 "github.com/atomix/runtime/api/atomix/map/v1"
-	atomixv1 "github.com/atomix/runtime/api/atomix/v1"
+	"github.com/atomix/runtime/pkg/atomix/driver"
 	"github.com/atomix/runtime/pkg/atomix/logging"
 	"github.com/atomix/runtime/pkg/atomix/primitive"
 	"google.golang.org/grpc"
@@ -15,35 +14,19 @@ import (
 
 var log = logging.GetLogger()
 
-const serviceName = "atomix.map.v1.Map"
+var Kind = primitive.NewKind[mapv1.MapServer](register, resolve)
 
-var Kind = primitive.NewKind[MapClient, Map, *mapv1.MapConfig](serviceName, register, create)
-
-func register(server *grpc.Server, proxies *primitive.ProxyManager[Map]) {
+func register(server *grpc.Server, proxies *primitive.Manager[mapv1.MapServer]) {
 	mapv1.RegisterMapServer(server, newMapServer(proxies))
 }
 
-func create(client MapClient) func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *mapv1.MapConfig) (Map, error) {
-	return func(ctx context.Context, primitiveID atomixv1.PrimitiveId, config *mapv1.MapConfig) (Map, error) {
-		m, err := client.GetMap(ctx, primitiveID)
-		if err != nil {
-			return nil, err
-		}
-		if config.Cache != nil && config.Cache.Enabled {
-			m, err = newCachingMap(m, *config.Cache)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return m, nil
+func resolve(client driver.Client) (primitive.Factory[mapv1.MapServer], bool) {
+	if counter, ok := client.(MapProvider); ok {
+		return counter.GetMap, true
 	}
+	return nil, false
 }
 
-type MapClient interface {
-	GetMap(ctx context.Context, primitiveID atomixv1.PrimitiveId) (Map, error)
-}
-
-type Map interface {
-	primitive.Proxy
-	mapv1.MapServer
+type MapProvider interface {
+	GetMap(primitive.ID) mapv1.MapServer
 }
