@@ -21,8 +21,8 @@ func register(server *grpc.Server, proxies *primitive.Manager[setv1.SetServer]) 
 }
 
 func resolve(client driver.Client) (primitive.Factory[setv1.SetServer], bool) {
-	if counter, ok := client.(SetProvider); ok {
-		return counter.GetSet, true
+	if set, ok := client.(SetProvider); ok {
+		return set.GetSet, true
 	}
 	return nil, false
 }

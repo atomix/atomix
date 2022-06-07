@@ -21,8 +21,8 @@ func register(server *grpc.Server, proxies *primitive.Manager[topicv1.TopicServe
 }
 
 func resolve(client driver.Client) (primitive.Factory[topicv1.TopicServer], bool) {
-	if counter, ok := client.(TopicProvider); ok {
-		return counter.GetTopic, true
+	if topic, ok := client.(TopicProvider); ok {
+		return topic.GetTopic, true
 	}
 	return nil, false
 }

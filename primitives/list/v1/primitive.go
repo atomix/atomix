@@ -21,8 +21,8 @@ func register(server *grpc.Server, proxies *primitive.Manager[listv1.ListServer]
 }
 
 func resolve(client driver.Client) (primitive.Factory[listv1.ListServer], bool) {
-	if counter, ok := client.(ListProvider); ok {
-		return counter.GetList, true
+	if list, ok := client.(ListProvider); ok {
+		return list.GetList, true
 	}
 	return nil, false
 }

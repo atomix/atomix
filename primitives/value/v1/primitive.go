@@ -21,8 +21,8 @@ func register(server *grpc.Server, proxies *primitive.Manager[valuev1.ValueServe
 }
 
 func resolve(client driver.Client) (primitive.Factory[valuev1.ValueServer], bool) {
-	if counter, ok := client.(ValueProvider); ok {
-		return counter.GetValue, true
+	if value, ok := client.(ValueProvider); ok {
+		return value.GetValue, true
 	}
 	return nil, false
 }

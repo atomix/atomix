@@ -21,8 +21,8 @@ func register(server *grpc.Server, proxies *primitive.Manager[indexedmapv1.Index
 }
 
 func resolve(client driver.Client) (primitive.Factory[indexedmapv1.IndexedMapServer], bool) {
-	if counter, ok := client.(IndexedMapProvider); ok {
-		return counter.GetIndexedMap, true
+	if indexedMap, ok := client.(IndexedMapProvider); ok {
+		return indexedMap.GetIndexedMap, true
 	}
 	return nil, false
 }

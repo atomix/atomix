@@ -21,8 +21,8 @@ func register(server *grpc.Server, proxies *primitive.Manager[lockv1.LockServer]
 }
 
 func resolve(client driver.Client) (primitive.Factory[lockv1.LockServer], bool) {
-	if counter, ok := client.(LockProvider); ok {
-		return counter.GetLock, true
+	if lock, ok := client.(LockProvider); ok {
+		return lock.GetLock, true
 	}
 	return nil, false
 }

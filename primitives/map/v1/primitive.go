@@ -21,8 +21,8 @@ func register(server *grpc.Server, proxies *primitive.Manager[mapv1.MapServer]) 
 }
 
 func resolve(client driver.Client) (primitive.Factory[mapv1.MapServer], bool) {
-	if counter, ok := client.(MapProvider); ok {
-		return counter.GetMap, true
+	if _map, ok := client.(MapProvider); ok {
+		return _map.GetMap, true
 	}
 	return nil, false
 }
