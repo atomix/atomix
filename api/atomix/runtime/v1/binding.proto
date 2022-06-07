@@ -1,0 +1,105 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.v1;
+
+import "atomix/runtime/v1/cluster.proto";
+import "gogoproto/gogo.proto";
+
+service BindingService {
+    rpc GetBinding (GetBindingRequest) returns (GetBindingResponse);
+    rpc ListBindings (ListBindingsRequest) returns (ListBindingsResponse);
+    rpc CreateBinding (CreateBindingRequest) returns (CreateBindingResponse);
+    rpc UpdateBinding (UpdateBindingRequest) returns (UpdateBindingResponse);
+    rpc DeleteBinding (DeleteBindingRequest) returns (DeleteBindingResponse);
+}
+
+message BindingId {
+    option (gogoproto.equal) = true;
+    string namespace = 1;
+    string name = 2;
+}
+
+message BindingMeta {
+    BindingId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 version = 2 [
+        (gogoproto.casttype) = "ObjectVersion"
+    ];
+}
+
+message Binding {
+    BindingMeta meta = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    BindingSpec spec = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message BindingSpec {
+    ClusterId cluster_id = 1 [
+        (gogoproto.customname) = "ClusterID",
+        (gogoproto.nullable) = false
+    ];
+    repeated BindingRule rules = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message BindingRule {
+    repeated string kinds = 1;
+    repeated string names = 2;
+    map<string, string> metadata = 3;
+}
+
+message GetBindingRequest {
+    BindingId binding_id = 1 [
+        (gogoproto.customname) = "BindingID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetBindingResponse {
+    Binding binding = 1;
+}
+
+message ListBindingsRequest {
+    bool watch = 1;
+}
+
+message ListBindingsResponse {
+    repeated Binding bindings = 1;
+}
+
+message CreateBindingRequest {
+    Binding binding = 1;
+}
+
+message CreateBindingResponse {
+    Binding binding = 1;
+}
+
+message UpdateBindingRequest {
+    Binding binding = 1;
+}
+
+message UpdateBindingResponse {
+    Binding binding = 1;
+}
+
+message DeleteBindingRequest {
+    Binding binding = 1;
+}
+
+message DeleteBindingResponse {
+
+}

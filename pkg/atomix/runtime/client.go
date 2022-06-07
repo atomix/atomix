@@ -58,18 +58,9 @@ func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Co
 	}
 	primitive, ok := c.runtime.primitives.Get(primitiveID)
 	if !ok {
-		applicationID := &runtimev1.ApplicationId{
-			Namespace: c.runtime.Namespace,
-			Name:      id.Application,
-		}
-		application, ok := c.runtime.applications.Get(applicationID)
+		clusterID, ok := c.getClusterID(ctx, id)
 		if !ok {
-			return nil, errors.NewUnavailable("application %s not found", applicationID)
-		}
-
-		clusterID, ok := c.getClusterID(ctx, application, id)
-		if !ok {
-			return nil, errors.NewUnavailable("cluster binding not found in application %s", applicationID)
+			return nil, errors.NewUnavailable("primitive %s not bound to any cluster", id.Primitive)
 		}
 
 		primitive = &runtimev1.Primitive{
@@ -120,11 +111,11 @@ func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Co
 	return conn, nil
 }
 
-func (c *runtimeClient) getClusterID(ctx context.Context, app *runtimev1.Application, id primitive.ID) (runtimev1.ClusterId, bool) {
-	for _, binding := range app.Spec.Bindings {
-		for _, rule := range binding.Rules {
+func (c *runtimeClient) getClusterID(ctx context.Context, id primitive.ID) (runtimev1.ClusterId, bool) {
+	for _, binding := range c.runtime.bindings.List() {
+		for _, rule := range binding.Spec.Rules {
 			if c.isRuleMatch(ctx, id, rule) {
-				return binding.ClusterID, true
+				return binding.Spec.ClusterID, true
 			}
 		}
 	}
@@ -132,7 +123,7 @@ func (c *runtimeClient) getClusterID(ctx context.Context, app *runtimev1.Applica
 }
 
 func (c *runtimeClient) isRuleMatch(ctx context.Context, id primitive.ID, rule runtimev1.BindingRule) bool {
-	if rule.Kinds == nil && rule.Names == nil && rule.Headers == nil {
+	if rule.Kinds == nil && rule.Names == nil && rule.Metadata == nil {
 		return false
 	}
 	return c.isKindMatch(id, rule) && c.isNameMatch(id, rule) && c.isHeadersMatch(ctx, id, rule)
@@ -165,16 +156,16 @@ func (c *runtimeClient) isNameMatch(id primitive.ID, rule runtimev1.BindingRule)
 }
 
 func (c *runtimeClient) isHeadersMatch(ctx context.Context, id primitive.ID, rule runtimev1.BindingRule) bool {
-	if rule.Headers == nil {
+	if rule.Metadata == nil {
 		return true
 	}
 
 	md, _ := metadata.FromIncomingContext(ctx)
-headers:
-	for key, value := range rule.Headers {
+mdLoop:
+	for key, value := range rule.Metadata {
 		for _, v := range md.Get(key) {
 			if value == wildcard || v == value {
-				continue headers
+				continue mdLoop
 			}
 		}
 		return false

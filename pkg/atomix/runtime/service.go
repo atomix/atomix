@@ -77,7 +77,7 @@ func (s *controlService) Start() error {
 
 	runtimev1.RegisterRuntimeServer(s.server, newRuntimeServer(s.runtime))
 	runtimev1.RegisterPrimitiveServiceServer(s.server, newPrimitiveServiceServer(s.runtime.primitives))
-	runtimev1.RegisterApplicationServiceServer(s.server, newApplicationServiceServer(s.runtime.applications))
+	runtimev1.RegisterBindingServiceServer(s.server, newBindingServiceServer(s.runtime.bindings))
 	runtimev1.RegisterClusterServiceServer(s.server, newClusterServiceServer(s.runtime.clusters))
 	runtimev1.RegisterDriverServiceServer(s.server, newDriverServiceServer(s.runtime.drivers.plugins))
 

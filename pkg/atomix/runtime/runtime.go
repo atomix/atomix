@@ -18,12 +18,12 @@ func New(network Network, opts ...Option) *Runtime {
 	var options Options
 	options.apply(opts...)
 	return &Runtime{
-		Options:      options,
-		network:      network,
-		primitives:   store.NewStore[*runtimev1.PrimitiveId, *runtimev1.Primitive](),
-		applications: store.NewStore[*runtimev1.ApplicationId, *runtimev1.Application](),
-		clusters:     store.NewStore[*runtimev1.ClusterId, *runtimev1.Cluster](),
-		drivers:      newDriverRepository(options.CacheDir, options.Drivers...),
+		Options:    options,
+		network:    network,
+		primitives: store.NewStore[*runtimev1.PrimitiveId, *runtimev1.Primitive](),
+		bindings:   store.NewStore[*runtimev1.BindingId, *runtimev1.Binding](),
+		clusters:   store.NewStore[*runtimev1.ClusterId, *runtimev1.Cluster](),
+		drivers:    newDriverRepository(options.CacheDir, options.Drivers...),
 	}
 }
 
@@ -33,7 +33,7 @@ type Runtime struct {
 	Options
 	network          Network
 	primitives       *store.Store[*runtimev1.PrimitiveId, *runtimev1.Primitive]
-	applications     *store.Store[*runtimev1.ApplicationId, *runtimev1.Application]
+	bindings         *store.Store[*runtimev1.BindingId, *runtimev1.Binding]
 	clusters         *store.Store[*runtimev1.ClusterId, *runtimev1.Cluster]
 	drivers          *driverRepository
 	primitiveService service.Service
