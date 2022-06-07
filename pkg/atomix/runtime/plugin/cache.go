@@ -14,15 +14,17 @@ type Service[T any] interface {
 	Plugins() *Cache[T]
 }
 
-func NewCache[T any](path string) *Cache[T] {
+func NewCache[T any](path string, symbol string) *Cache[T] {
 	return &Cache[T]{
 		Path:    path,
+		symbol:  symbol,
 		plugins: make(map[string]*Plugin[T]),
 	}
 }
 
 type Cache[T any] struct {
 	Path    string
+	symbol  string
 	plugins map[string]*Plugin[T]
 	mu      sync.RWMutex
 }
@@ -44,7 +46,7 @@ func (c *Cache[T]) Get(name, version string) *Plugin[T] {
 	}
 
 	path := filepath.Join(c.Path, fmt.Sprintf("%s@%s.so", name, version))
-	plugin = newPlugin[T](name, version, path)
+	plugin = newPlugin[T](name, version, path, c.symbol)
 	c.plugins[key] = plugin
 	return plugin
 }

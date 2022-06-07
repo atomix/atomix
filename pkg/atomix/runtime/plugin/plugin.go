@@ -13,13 +13,12 @@ import (
 	"plugin"
 )
 
-const pluginSymbol = "Plugin"
-
-func newPlugin[T any](name, version, path string) *Plugin[T] {
+func newPlugin[T any](name, version, path, symbol string) *Plugin[T] {
 	return &Plugin[T]{
 		Name:    name,
 		Version: version,
 		Path:    path,
+		symbol:  symbol,
 		lock:    flock.New(fmt.Sprintf("%s.lock", path)),
 	}
 }
@@ -28,6 +27,7 @@ type Plugin[T any] struct {
 	Name    string
 	Version string
 	Path    string
+	symbol  string
 	lock    *flock.Flock
 }
 
@@ -58,7 +58,7 @@ func (p *Plugin[T]) Load() (T, error) {
 	if err != nil {
 		return t, err
 	}
-	symbol, err := plugin.Lookup(pluginSymbol)
+	symbol, err := plugin.Lookup(p.symbol)
 	if err != nil {
 		return t, err
 	}

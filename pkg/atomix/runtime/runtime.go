@@ -25,7 +25,7 @@ func New(network Network, opts ...Option) *Runtime {
 		primitives:   store.NewStore[*runtimev1.PrimitiveId, *runtimev1.Primitive](),
 		applications: store.NewStore[*runtimev1.ApplicationId, *runtimev1.Application](),
 		clusters:     store.NewStore[*runtimev1.ClusterId, *runtimev1.Cluster](),
-		drivers:      plugin.NewCache[driver.Driver](options.CacheDir),
+		drivers:      plugin.NewCache[driver.Driver](options.CacheDir, "Driver"),
 	}
 }
 
