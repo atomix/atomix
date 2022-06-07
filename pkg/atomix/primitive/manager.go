@@ -17,6 +17,7 @@ func NewManager[T any](kind Kind, client Client, resolver Resolver[T]) *Manager[
 		kind:     kind,
 		client:   client,
 		resolver: resolver,
+		proxies:  make(map[ID]T),
 	}
 }
 
