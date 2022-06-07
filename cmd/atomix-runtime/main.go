@@ -6,10 +6,7 @@ package main
 
 import (
 	"fmt"
-	primitiveservice "github.com/atomix/runtime/pkg/primitive/service"
-	"github.com/atomix/runtime/pkg/runtime"
-	"github.com/atomix/runtime/pkg/runtime/controller"
-	runtimeservice "github.com/atomix/runtime/pkg/runtime/service"
+	"github.com/atomix/runtime/pkg/atomix/runtime"
 	counterv1 "github.com/atomix/runtime/primitives/counter/v1"
 	electionv1 "github.com/atomix/runtime/primitives/election/v1"
 	indexedmapv1 "github.com/atomix/runtime/primitives/indexed_map/v1"
@@ -63,29 +60,12 @@ func main() {
 			// Create the runtime
 			runtime := runtime.New(
 				runtime.WithConfigFile(configFile),
-				runtime.WithCacheDir(cacheDir))
-
-			// Start the runtime controller
-			runtimeController := controller.NewController(runtime)
-			if err := runtimeController.Start(); err != nil {
-				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-				os.Exit(1)
-			}
-
-			// Start the runtime service
-			runtimeService := runtimeservice.NewService(runtime,
-				runtimeservice.WithHost(proxyHost),
-				runtimeservice.WithPort(proxyPort))
-			if err := runtimeService.Start(); err != nil {
-				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-				os.Exit(1)
-			}
-
-			// Start the primitive service
-			primitiveService := primitiveservice.NewService(runtime,
-				primitiveservice.WithHost(controlHost),
-				primitiveservice.WithPort(controlPort),
-				primitiveservice.WithPrimitiveKinds(
+				runtime.WithCacheDir(cacheDir),
+				runtime.WithControlHost(controlHost),
+				runtime.WithControlPort(controlPort),
+				runtime.WithProxyHost(proxyHost),
+				runtime.WithProxyPort(proxyPort),
+				runtime.WithProxyKinds(
 					counterv1.Kind,
 					electionv1.Kind,
 					indexedmapv1.Kind,
@@ -95,7 +75,9 @@ func main() {
 					setv1.Kind,
 					topicv1.Kind,
 					valuev1.Kind))
-			if err := primitiveService.Start(); err != nil {
+
+			// Start the runtime
+			if err := runtime.Start(); err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
@@ -105,19 +87,9 @@ func main() {
 			signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 			<-ch
 
-			// Stop the services
-			if err := primitiveService.Stop(); err != nil {
+			// Stop the runtime
+			if err := runtime.Stop(); err != nil {
 				fmt.Println(err)
-				os.Exit(1)
-			}
-			if err := runtimeService.Stop(); err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-
-			// Stop the controllers
-			if err := runtimeController.Stop(); err != nil {
-				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
 		},

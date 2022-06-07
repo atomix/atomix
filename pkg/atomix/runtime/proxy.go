@@ -14,21 +14,21 @@ import (
 	"os"
 )
 
-func newPrimitiveService(client primitive.Client, options PrimitiveServiceOptions) service.Service {
-	return &primitiveService{
-		PrimitiveServiceOptions: options,
-		client:                  client,
-		server:                  grpc.NewServer(),
+func newProxyService(client primitive.Client, options ProxyServiceOptions) service.Service {
+	return &proxyService{
+		ProxyServiceOptions: options,
+		client:              client,
+		server:              grpc.NewServer(),
 	}
 }
 
-type primitiveService struct {
-	PrimitiveServiceOptions
+type proxyService struct {
+	ProxyServiceOptions
 	client primitive.Client
 	server *grpc.Server
 }
 
-func (s *primitiveService) Start() error {
+func (s *proxyService) Start() error {
 	address := fmt.Sprintf("%s:%d", s.Host, s.Port)
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
@@ -48,12 +48,12 @@ func (s *primitiveService) Start() error {
 	return nil
 }
 
-func (s *primitiveService) Stop() error {
+func (s *proxyService) Stop() error {
 	s.server.Stop()
 	return nil
 }
 
-var _ service.Service = (*primitiveService)(nil)
+var _ service.Service = (*proxyService)(nil)
 
 func newControlService(runtime *Runtime, options ControlServiceOptions) service.Service {
 	return &controlService{

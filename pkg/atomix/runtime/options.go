@@ -7,10 +7,10 @@ package runtime
 import "github.com/atomix/runtime/pkg/atomix/primitive"
 
 type Options struct {
-	PrimitiveService PrimitiveServiceOptions
-	ControlService   ControlServiceOptions
-	ConfigFile       string
-	CacheDir         string
+	ProxyService   ProxyServiceOptions
+	ControlService ControlServiceOptions
+	ConfigFile     string
+	CacheDir       string
 }
 
 func (o Options) apply(opts ...Option) {
@@ -26,7 +26,7 @@ type ServerOptions struct {
 	Port int
 }
 
-type PrimitiveServiceOptions struct {
+type ProxyServiceOptions struct {
 	ServerOptions
 	Kinds []primitive.Kind
 }
@@ -41,15 +41,21 @@ func WithOptions(opts Options) Option {
 	}
 }
 
-func WithPrimitiveHost(host string) Option {
+func WithProxyHost(host string) Option {
 	return func(options *Options) {
-		options.PrimitiveService.Host = host
+		options.ProxyService.Host = host
 	}
 }
 
-func WithPrimitivePort(port int) Option {
+func WithProxyPort(port int) Option {
 	return func(options *Options) {
-		options.PrimitiveService.Port = port
+		options.ProxyService.Port = port
+	}
+}
+
+func WithProxyKinds(kinds ...primitive.Kind) Option {
+	return func(options *Options) {
+		options.ProxyService.Kinds = append(options.ProxyService.Kinds, kinds...)
 	}
 }
 

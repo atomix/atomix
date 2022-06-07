@@ -49,7 +49,7 @@ func (r *Runtime) Start() error {
 	if err := r.controlService.Start(); err != nil {
 		return err
 	}
-	r.primitiveService = newPrimitiveService(newClient(r), r.PrimitiveService)
+	r.primitiveService = newProxyService(newClient(r), r.ProxyService)
 	if err := r.primitiveService.Start(); err != nil {
 		return err
 	}
