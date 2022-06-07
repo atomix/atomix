@@ -6,18 +6,22 @@ package primitive
 
 import (
 	"context"
+	"github.com/atomix/runtime/pkg/atomix/env"
 	"github.com/atomix/runtime/pkg/atomix/errors"
+	"google.golang.org/grpc/metadata"
 	"sync"
 )
 
-func NewManager[T any](client Client, resolver Resolver[T]) *Manager[T] {
+func NewManager[T any](kind Kind, client Client, resolver Resolver[T]) *Manager[T] {
 	return &Manager[T]{
+		kind:     kind,
 		client:   client,
 		resolver: resolver,
 	}
 }
 
 type Manager[T any] struct {
+	kind     Kind
 	client   Client
 	resolver Resolver[T]
 	proxies  map[ID]T
@@ -26,7 +30,7 @@ type Manager[T any] struct {
 
 func (m *Manager[T]) Connect(ctx context.Context) (T, error) {
 	var proxy T
-	id, err := getIDFromContext(ctx)
+	id, err := m.getIDFromContext(ctx)
 	if err != nil {
 		return proxy, err
 	}
@@ -56,7 +60,7 @@ func (m *Manager[T]) Connect(ctx context.Context) (T, error) {
 
 func (m *Manager[T]) Get(ctx context.Context) (T, error) {
 	var proxy T
-	id, err := getIDFromContext(ctx)
+	id, err := m.getIDFromContext(ctx)
 	if err != nil {
 		return proxy, err
 	}
@@ -71,7 +75,7 @@ func (m *Manager[T]) Get(ctx context.Context) (T, error) {
 
 func (m *Manager[T]) Close(ctx context.Context) (T, error) {
 	var proxy T
-	id, err := getIDFromContext(ctx)
+	id, err := m.getIDFromContext(ctx)
 	if err != nil {
 		return proxy, err
 	}
@@ -98,4 +102,35 @@ func (m *Manager[T]) getProxy(id ID) (T, bool) {
 	defer m.mu.RUnlock()
 	proxy, ok := m.proxies[id]
 	return proxy, ok
+}
+
+func (m *Manager[T]) getIDFromContext(ctx context.Context) (ID, error) {
+	id := ID{Service: m.kind.Service()}
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return id, errors.NewInvalid("missing metadata in context")
+	}
+
+	primitiveIDs := md.Get(PrimitiveIDHeader)
+	if len(primitiveIDs) == 0 {
+		return id, errors.NewInvalid("missing %s header in metadata", PrimitiveIDHeader)
+	}
+
+	id.Primitive = primitiveIDs[0]
+
+	appIDs := md.Get(ApplicationIDHeader)
+	if len(appIDs) == 0 {
+		id.Application = env.GetApplicationID()
+	} else {
+		id.Application = appIDs[0]
+	}
+
+	sessionIDs := md.Get(SessionIDHeader)
+	if len(sessionIDs) == 0 {
+		id.Session = env.GetNodeID()
+	} else {
+		id.Session = sessionIDs[0]
+	}
+	return id, nil
 }

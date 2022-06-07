@@ -14,7 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-var Kind = primitive.NewKind[counterv1.CounterServer](register, resolve)
+const serviceName = "atomix.counter.v1.Counter"
+
+var Kind = primitive.NewKind[counterv1.CounterServer](serviceName, register, resolve)
 
 func register(server *grpc.Server, proxies *primitive.Manager[counterv1.CounterServer]) {
 	counterv1.RegisterCounterServer(server, newCounterServer(proxies))

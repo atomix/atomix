@@ -14,7 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-var Kind = primitive.NewKind[lockv1.LockServer](register, resolve)
+const serviceName = "atomix.lock.v1.Lock"
+
+var Kind = primitive.NewKind[lockv1.LockServer](serviceName, register, resolve)
 
 func register(server *grpc.Server, proxies *primitive.Manager[lockv1.LockServer]) {
 	lockv1.RegisterLockServer(server, newLockServer(proxies))

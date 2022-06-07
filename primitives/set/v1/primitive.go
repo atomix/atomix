@@ -14,7 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-var Kind = primitive.NewKind[setv1.SetServer](register, resolve)
+const serviceName = "atomix.set.v1.Set"
+
+var Kind = primitive.NewKind[setv1.SetServer](serviceName, register, resolve)
 
 func register(server *grpc.Server, proxies *primitive.Manager[setv1.SetServer]) {
 	setv1.RegisterSetServer(server, newSetServer(proxies))

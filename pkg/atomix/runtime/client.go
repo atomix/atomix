@@ -14,6 +14,8 @@ import (
 	"sync"
 )
 
+const wildcard = "*"
+
 func newClient(runtime *Runtime) primitive.Client {
 	return &runtimeClient{
 		runtime: runtime,
@@ -89,23 +91,63 @@ func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Co
 func (c *runtimeClient) getClusterID(ctx context.Context, app *runtimev1.Application, id primitive.ID) (runtimev1.ClusterId, bool) {
 	for _, binding := range app.Spec.Bindings {
 		for _, rule := range binding.Rules {
-			for _, name := range rule.Names {
-				if name == id.Primitive {
-					return binding.ClusterID, true
-				}
-			}
-
-			md, _ := metadata.FromIncomingContext(ctx)
-			for key, value := range rule.Headers {
-				for _, v := range md[key] {
-					if v == value {
-						return binding.ClusterID, true
-					}
-				}
+			if c.isRuleMatch(ctx, id, rule) {
+				return binding.ClusterID, true
 			}
 		}
 	}
 	return runtimev1.ClusterId{}, false
+}
+
+func (c *runtimeClient) isRuleMatch(ctx context.Context, id primitive.ID, rule runtimev1.BindingRule) bool {
+	if rule.Kinds == nil && rule.Names == nil && rule.Headers == nil {
+		return false
+	}
+	return c.isKindMatch(id, rule) && c.isNameMatch(id, rule) && c.isHeadersMatch(ctx, id, rule)
+}
+
+func (c *runtimeClient) isKindMatch(id primitive.ID, rule runtimev1.BindingRule) bool {
+	if rule.Kinds == nil {
+		return true
+	}
+
+	for _, kind := range rule.Kinds {
+		if kind == wildcard || kind == id.Service {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *runtimeClient) isNameMatch(id primitive.ID, rule runtimev1.BindingRule) bool {
+	if rule.Names == nil {
+		return true
+	}
+
+	for _, name := range rule.Names {
+		if name == wildcard || name == id.Primitive {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *runtimeClient) isHeadersMatch(ctx context.Context, id primitive.ID, rule runtimev1.BindingRule) bool {
+	if rule.Headers == nil {
+		return true
+	}
+
+	md, _ := metadata.FromIncomingContext(ctx)
+headers:
+	for key, value := range rule.Headers {
+		for _, v := range md.Get(key) {
+			if value == wildcard || v == value {
+				continue headers
+			}
+		}
+		return false
+	}
+	return true
 }
 
 func (c *runtimeClient) Close(ctx context.Context, id primitive.ID) error {

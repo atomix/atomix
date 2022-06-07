@@ -14,7 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-var Kind = primitive.NewKind[electionv1.LeaderElectionServer](register, resolve)
+const serviceName = "atomix.election.v1.LeaderElection"
+
+var Kind = primitive.NewKind[electionv1.LeaderElectionServer](serviceName, register, resolve)
 
 func register(server *grpc.Server, proxies *primitive.Manager[electionv1.LeaderElectionServer]) {
 	electionv1.RegisterLeaderElectionServer(server, newLeaderElectionServer(proxies))

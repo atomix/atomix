@@ -14,7 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-var Kind = primitive.NewKind[indexedmapv1.IndexedMapServer](register, resolve)
+const serviceName = "atomix.indexed_map.v1.IndexedMap"
+
+var Kind = primitive.NewKind[indexedmapv1.IndexedMapServer](serviceName, register, resolve)
 
 func register(server *grpc.Server, proxies *primitive.Manager[indexedmapv1.IndexedMapServer]) {
 	indexedmapv1.RegisterIndexedMapServer(server, newIndexedMapServer(proxies))

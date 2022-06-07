@@ -14,7 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-var Kind = primitive.NewKind[valuev1.ValueServer](register, resolve)
+const serviceName = "atomix.value.v1.Value"
+
+var Kind = primitive.NewKind[valuev1.ValueServer](serviceName, register, resolve)
 
 func register(server *grpc.Server, proxies *primitive.Manager[valuev1.ValueServer]) {
 	valuev1.RegisterValueServer(server, newValueServer(proxies))
