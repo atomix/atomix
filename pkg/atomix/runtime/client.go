@@ -8,7 +8,6 @@ import (
 	"context"
 	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"github.com/atomix/runtime/pkg/atomix/driver"
-	"github.com/atomix/runtime/pkg/atomix/env"
 	"github.com/atomix/runtime/pkg/atomix/errors"
 	"github.com/atomix/runtime/pkg/atomix/primitive"
 	"google.golang.org/grpc/metadata"
@@ -37,7 +36,7 @@ func (c *runtimeClient) Connect(ctx context.Context, id primitive.ID) (driver.Co
 	primitive, ok := c.runtime.primitives.Get(primitiveID)
 	if !ok {
 		applicationID := &runtimev1.ApplicationId{
-			Namespace: env.GetNamespace(),
+			Namespace: c.runtime.Namespace,
 			Name:      id.Application,
 		}
 		application, ok := c.runtime.applications.Get(applicationID)

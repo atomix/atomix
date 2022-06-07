@@ -6,6 +6,7 @@ package runtime
 
 import (
 	"github.com/atomix/runtime/pkg/atomix/driver"
+	"github.com/atomix/runtime/pkg/atomix/env"
 	"github.com/atomix/runtime/pkg/atomix/primitive"
 )
 
@@ -15,6 +16,7 @@ const (
 )
 
 type Options struct {
+	Namespace      string
 	ProxyService   ProxyServiceOptions
 	ControlService ControlServiceOptions
 	ConfigFile     string
@@ -22,11 +24,12 @@ type Options struct {
 	Drivers        []driver.Driver
 }
 
-func (o Options) apply(opts ...Option) {
+func (o *Options) apply(opts ...Option) {
+	o.Namespace = env.GetNamespace()
 	o.ProxyService.Port = defaultProxyPort
 	o.ControlService.Port = defaultControlPort
 	for _, opt := range opts {
-		opt(&o)
+		opt(o)
 	}
 }
 
@@ -49,6 +52,12 @@ type ControlServiceOptions struct {
 func WithOptions(opts Options) Option {
 	return func(options *Options) {
 		*options = opts
+	}
+}
+
+func WithNamespace(namespace string) Option {
+	return func(options *Options) {
+		options.Namespace = namespace
 	}
 }
 
