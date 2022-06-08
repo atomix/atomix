@@ -53,7 +53,7 @@ func (c *configurableConn[C]) Configure(ctx context.Context, data []byte) error 
 	if configurator, ok := c.client.(Configurator[C]); ok {
 		var config C
 		if data != nil {
-			if err := json.Unmarshal(data, config); err != nil {
+			if err := json.Unmarshal(data, &config); err != nil {
 				return err
 			}
 		}

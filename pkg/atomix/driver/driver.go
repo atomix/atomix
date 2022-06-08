@@ -45,7 +45,7 @@ func (d *configurableDriver[C]) Version() string {
 func (d *configurableDriver[C]) Connect(ctx context.Context, data []byte) (Conn, error) {
 	var config C
 	if data != nil {
-		if err := json.Unmarshal(data, config); err != nil {
+		if err := json.Unmarshal(data, &config); err != nil {
 			return nil, err
 		}
 	}
