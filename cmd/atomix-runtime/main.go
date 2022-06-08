@@ -95,8 +95,8 @@ func main() {
 			}
 		},
 	}
-	cmd.Flags().StringP("proxy-host", "h", "", "the host to which to bind the proxy server")
-	cmd.Flags().IntP("proxy-port", "p", 5678, "the port to which to bind the proxy server")
+	cmd.Flags().String("proxy-host", "", "the host to which to bind the proxy server")
+	cmd.Flags().Int("proxy-port", 5678, "the port to which to bind the proxy server")
 	cmd.Flags().String("control-host", "", "the host to which to bind the runtime server")
 	cmd.Flags().Int("control-port", 5679, "the port to which to bind the runtime server")
 	cmd.Flags().StringP("config", "c", "~/.atomix/config.yaml", "the path to the Atomix configuration file")
