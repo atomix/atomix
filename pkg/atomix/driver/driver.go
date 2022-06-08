@@ -6,11 +6,9 @@ package driver
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/atomix/runtime/pkg/atomix/logging"
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 )
 
 var log = logging.GetLogger()
@@ -19,10 +17,10 @@ type Driver interface {
 	fmt.Stringer
 	Name() string
 	Version() string
-	Connect(ctx context.Context, config *types.Any) (Conn, error)
+	Connect(ctx context.Context, config []byte) (Conn, error)
 }
 
-func New[C proto.Message](name, version string, connector Connector[C]) Driver {
+func New[C any](name, version string, connector Connector[C]) Driver {
 	return &configurableDriver[C]{
 		name:      name,
 		version:   version,
@@ -30,7 +28,7 @@ func New[C proto.Message](name, version string, connector Connector[C]) Driver {
 	}
 }
 
-type configurableDriver[C proto.Message] struct {
+type configurableDriver[C any] struct {
 	name      string
 	version   string
 	connector Connector[C]
@@ -44,10 +42,10 @@ func (d *configurableDriver[C]) Version() string {
 	return d.version
 }
 
-func (d *configurableDriver[C]) Connect(ctx context.Context, rawConfig *types.Any) (Conn, error) {
+func (d *configurableDriver[C]) Connect(ctx context.Context, data []byte) (Conn, error) {
 	var config C
-	if rawConfig != nil {
-		if err := jsonpb.UnmarshalString(string(rawConfig.Value), config); err != nil {
+	if data != nil {
+		if err := json.Unmarshal(data, config); err != nil {
 			return nil, err
 		}
 	}
@@ -62,4 +60,4 @@ func (d *configurableDriver[C]) String() string {
 	return fmt.Sprintf("%s/%s", d.name, d.version)
 }
 
-var _ Driver = (*configurableDriver[*types.Any])(nil)
+var _ Driver = (*configurableDriver[any])(nil)

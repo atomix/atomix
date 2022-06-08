@@ -91,7 +91,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | driver | [DriverId](#atomix-runtime-v1-DriverId) |  |  |
-| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+| config | [bytes](#bytes) |  |  |
 
 
 

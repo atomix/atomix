@@ -6,22 +6,21 @@ package driver
 
 import (
 	"context"
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
+	"encoding/json"
 	"github.com/gogo/protobuf/types"
 )
 
-type Connector[C proto.Message] func(ctx context.Context, config C) (Client, error)
+type Connector[C any] func(ctx context.Context, config C) (Client, error)
 
 type Conn interface {
 	Driver() Driver
 	Client() Client
 	Context() context.Context
-	Configurator[*types.Any]
+	Configurator[[]byte]
 	Closer
 }
 
-func newConfigurableConn[C proto.Message](driver Driver, client Client) Conn {
+func newConfigurableConn[C any](driver Driver, client Client) Conn {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &configurableConn[C]{
 		driver: driver,
@@ -31,7 +30,7 @@ func newConfigurableConn[C proto.Message](driver Driver, client Client) Conn {
 	}
 }
 
-type configurableConn[C proto.Message] struct {
+type configurableConn[C any] struct {
 	driver Driver
 	client Client
 	ctx    context.Context
@@ -50,11 +49,11 @@ func (c *configurableConn[C]) Client() Client {
 	return c.client
 }
 
-func (c *configurableConn[C]) Configure(ctx context.Context, rawConfig *types.Any) error {
+func (c *configurableConn[C]) Configure(ctx context.Context, data []byte) error {
 	if configurator, ok := c.client.(Configurator[C]); ok {
 		var config C
-		if rawConfig != nil {
-			if err := jsonpb.UnmarshalString(string(rawConfig.Value), config); err != nil {
+		if data != nil {
+			if err := json.Unmarshal(data, config); err != nil {
 				return err
 			}
 		}
