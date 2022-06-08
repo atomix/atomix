@@ -27,6 +27,7 @@ type proxyService struct {
 }
 
 func (s *proxyService) Start() error {
+	log.Info("Starting proxy service")
 	address := fmt.Sprintf("%s:%d", s.Host, s.Port)
 	lis, err := s.runtime.network.Listen(address)
 	if err != nil {
@@ -48,6 +49,7 @@ func (s *proxyService) Start() error {
 }
 
 func (s *proxyService) Stop() error {
+	log.Info("Shutting down proxy service")
 	s.server.Stop()
 	return nil
 }
@@ -69,6 +71,7 @@ type controlService struct {
 }
 
 func (s *controlService) Start() error {
+	log.Info("Starting control service")
 	address := fmt.Sprintf("%s:%d", s.Host, s.Port)
 	lis, err := s.runtime.network.Listen(address)
 	if err != nil {
@@ -91,6 +94,7 @@ func (s *controlService) Start() error {
 }
 
 func (s *controlService) Stop() error {
+	log.Info("Shutting down control service")
 	s.server.Stop()
 	return nil
 }

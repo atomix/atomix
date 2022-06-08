@@ -31,13 +31,13 @@ type Version string
 
 type Runtime struct {
 	Options
-	network          Network
-	primitives       *store.Store[*runtimev1.PrimitiveId, *runtimev1.Primitive]
-	bindings         *store.Store[*runtimev1.BindingId, *runtimev1.Binding]
-	clusters         *store.Store[*runtimev1.ClusterId, *runtimev1.Cluster]
-	drivers          *driverRepository
-	primitiveService service.Service
-	controlService   service.Service
+	network        Network
+	primitives     *store.Store[*runtimev1.PrimitiveId, *runtimev1.Primitive]
+	bindings       *store.Store[*runtimev1.BindingId, *runtimev1.Binding]
+	clusters       *store.Store[*runtimev1.ClusterId, *runtimev1.Cluster]
+	drivers        *driverRepository
+	proxyService   service.Service
+	controlService service.Service
 }
 
 func (r *Runtime) Network() Network {
@@ -49,19 +49,21 @@ func (r *Runtime) Version() Version {
 }
 
 func (r *Runtime) Start() error {
+	log.Info("Starting Atomix runtime")
 	r.controlService = newControlService(r, r.ControlService)
 	if err := r.controlService.Start(); err != nil {
 		return err
 	}
-	r.primitiveService = newProxyService(r, r.ProxyService)
-	if err := r.primitiveService.Start(); err != nil {
+	r.proxyService = newProxyService(r, r.ProxyService)
+	if err := r.proxyService.Start(); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *Runtime) Stop() error {
-	if err := r.primitiveService.Stop(); err != nil {
+	log.Info("Shutting down Atomix runtime")
+	if err := r.proxyService.Stop(); err != nil {
 		return err
 	}
 	if err := r.controlService.Stop(); err != nil {

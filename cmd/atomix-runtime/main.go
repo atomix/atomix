@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/atomix/runtime/pkg/atomix/logging"
 	"github.com/atomix/runtime/pkg/atomix/runtime"
 	counterv1 "github.com/atomix/runtime/primitives/counter/v1"
 	electionv1 "github.com/atomix/runtime/primitives/election/v1"
@@ -21,6 +22,10 @@ import (
 	"os/signal"
 	"syscall"
 )
+
+func init() {
+	logging.SetLevel(logging.DebugLevel)
+}
 
 func main() {
 	cmd := &cobra.Command{
