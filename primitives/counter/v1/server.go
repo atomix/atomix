@@ -7,9 +7,9 @@ package v1
 import (
 	"context"
 	counterv1 "github.com/atomix/runtime/api/atomix/counter/v1"
-	"github.com/atomix/runtime/pkg/atomix/errors"
-	"github.com/atomix/runtime/pkg/atomix/logging"
-	"github.com/atomix/runtime/pkg/atomix/primitive"
+	"github.com/atomix/runtime/pkg/errors"
+	"github.com/atomix/runtime/pkg/logging"
+	"github.com/atomix/runtime/pkg/primitive"
 )
 
 func newCounterServer(proxies *primitive.Manager[counterv1.CounterServer]) counterv1.CounterServer {

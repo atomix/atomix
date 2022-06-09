@@ -7,7 +7,7 @@ package primitive
 import (
 	"context"
 	"fmt"
-	"github.com/atomix/runtime/pkg/atomix/driver"
+	"github.com/atomix/runtime/pkg/driver"
 	"google.golang.org/grpc"
 )
 

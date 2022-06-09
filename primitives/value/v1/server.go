@@ -7,9 +7,9 @@ package v1
 import (
 	"context"
 	valuev1 "github.com/atomix/runtime/api/atomix/value/v1"
-	"github.com/atomix/runtime/pkg/atomix/errors"
-	"github.com/atomix/runtime/pkg/atomix/logging"
-	"github.com/atomix/runtime/pkg/atomix/primitive"
+	"github.com/atomix/runtime/pkg/errors"
+	"github.com/atomix/runtime/pkg/logging"
+	"github.com/atomix/runtime/pkg/primitive"
 )
 
 func newValueServer(proxies *primitive.Manager[valuev1.ValueServer]) valuev1.ValueServer {

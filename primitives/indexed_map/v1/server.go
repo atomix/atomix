@@ -7,9 +7,9 @@ package v1
 import (
 	"context"
 	indexedmapv1 "github.com/atomix/runtime/api/atomix/indexed_map/v1"
-	"github.com/atomix/runtime/pkg/atomix/errors"
-	"github.com/atomix/runtime/pkg/atomix/logging"
-	"github.com/atomix/runtime/pkg/atomix/primitive"
+	"github.com/atomix/runtime/pkg/errors"
+	"github.com/atomix/runtime/pkg/logging"
+	"github.com/atomix/runtime/pkg/primitive"
 )
 
 func newIndexedMapServer(proxies *primitive.Manager[indexedmapv1.IndexedMapServer]) indexedmapv1.IndexedMapServer {

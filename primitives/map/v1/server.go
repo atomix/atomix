@@ -7,9 +7,9 @@ package v1
 import (
 	"context"
 	mapv1 "github.com/atomix/runtime/api/atomix/map/v1"
-	"github.com/atomix/runtime/pkg/atomix/errors"
-	"github.com/atomix/runtime/pkg/atomix/logging"
-	"github.com/atomix/runtime/pkg/atomix/primitive"
+	"github.com/atomix/runtime/pkg/errors"
+	"github.com/atomix/runtime/pkg/logging"
+	"github.com/atomix/runtime/pkg/primitive"
 )
 
 func newMapServer(proxies *primitive.Manager[mapv1.MapServer]) mapv1.MapServer {

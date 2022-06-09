@@ -6,8 +6,8 @@ package primitive
 
 import (
 	"context"
-	"github.com/atomix/runtime/pkg/atomix/env"
-	"github.com/atomix/runtime/pkg/atomix/errors"
+	"github.com/atomix/runtime/pkg/env"
+	"github.com/atomix/runtime/pkg/errors"
 	"google.golang.org/grpc/metadata"
 	"sync"
 )

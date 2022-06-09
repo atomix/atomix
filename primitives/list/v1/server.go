@@ -7,9 +7,9 @@ package v1
 import (
 	"context"
 	listv1 "github.com/atomix/runtime/api/atomix/list/v1"
-	"github.com/atomix/runtime/pkg/atomix/errors"
-	"github.com/atomix/runtime/pkg/atomix/logging"
-	"github.com/atomix/runtime/pkg/atomix/primitive"
+	"github.com/atomix/runtime/pkg/errors"
+	"github.com/atomix/runtime/pkg/logging"
+	"github.com/atomix/runtime/pkg/primitive"
 )
 
 func newListServer(proxies *primitive.Manager[listv1.ListServer]) listv1.ListServer {

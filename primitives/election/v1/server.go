@@ -7,9 +7,9 @@ package v1
 import (
 	"context"
 	electionv1 "github.com/atomix/runtime/api/atomix/election/v1"
-	"github.com/atomix/runtime/pkg/atomix/errors"
-	"github.com/atomix/runtime/pkg/atomix/logging"
-	"github.com/atomix/runtime/pkg/atomix/primitive"
+	"github.com/atomix/runtime/pkg/errors"
+	"github.com/atomix/runtime/pkg/logging"
+	"github.com/atomix/runtime/pkg/primitive"
 )
 
 func newLeaderElectionServer(proxies *primitive.Manager[electionv1.LeaderElectionServer]) electionv1.LeaderElectionServer {
