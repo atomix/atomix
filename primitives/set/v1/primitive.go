@@ -16,13 +16,13 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.set.v1.Set"
 
-var Kind = primitive.NewKind[setv1.SetServer](serviceName, register, resolve)
+var Kind = primitive.NewKind[setv1.SetClient](serviceName, register, resolve)
 
-func register(server *grpc.Server, proxies *primitive.Manager[setv1.SetServer]) {
+func register(server *grpc.Server, proxies *primitive.Manager[setv1.SetClient]) {
 	setv1.RegisterSetServer(server, newSetServer(proxies))
 }
 
-func resolve(client driver.Client) (primitive.Factory[setv1.SetServer], bool) {
+func resolve(client driver.Client) (primitive.Factory[setv1.SetClient], bool) {
 	if set, ok := client.(SetProvider); ok {
 		return set.GetSet, true
 	}
@@ -30,5 +30,5 @@ func resolve(client driver.Client) (primitive.Factory[setv1.SetServer], bool) {
 }
 
 type SetProvider interface {
-	GetSet(primitive.ID) setv1.SetServer
+	GetSet(primitive.ID) setv1.SetClient
 }

@@ -16,13 +16,13 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.topic.v1.Topic"
 
-var Kind = primitive.NewKind[topicv1.TopicServer](serviceName, register, resolve)
+var Kind = primitive.NewKind[topicv1.TopicClient](serviceName, register, resolve)
 
-func register(server *grpc.Server, proxies *primitive.Manager[topicv1.TopicServer]) {
+func register(server *grpc.Server, proxies *primitive.Manager[topicv1.TopicClient]) {
 	topicv1.RegisterTopicServer(server, newTopicServer(proxies))
 }
 
-func resolve(client driver.Client) (primitive.Factory[topicv1.TopicServer], bool) {
+func resolve(client driver.Client) (primitive.Factory[topicv1.TopicClient], bool) {
 	if topic, ok := client.(TopicProvider); ok {
 		return topic.GetTopic, true
 	}
@@ -30,5 +30,5 @@ func resolve(client driver.Client) (primitive.Factory[topicv1.TopicServer], bool
 }
 
 type TopicProvider interface {
-	GetTopic(primitive.ID) topicv1.TopicServer
+	GetTopic(primitive.ID) topicv1.TopicClient
 }

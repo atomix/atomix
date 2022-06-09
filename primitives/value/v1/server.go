@@ -10,16 +10,17 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
+	"io"
 )
 
-func newValueServer(proxies *primitive.Manager[valuev1.ValueServer]) valuev1.ValueServer {
+func newValueServer(proxies *primitive.Manager[valuev1.ValueClient]) valuev1.ValueServer {
 	return &valueServer{
 		proxies: proxies,
 	}
 }
 
 type valueServer struct {
-	proxies *primitive.Manager[valuev1.ValueServer]
+	proxies *primitive.Manager[valuev1.ValueClient]
 }
 
 func (s *valueServer) Create(ctx context.Context, request *valuev1.CreateRequest) (*valuev1.CreateResponse, error) {
@@ -116,7 +117,8 @@ func (s *valueServer) Get(ctx context.Context, request *valuev1.GetRequest) (*va
 
 func (s *valueServer) Events(request *valuev1.EventsRequest, server valuev1.Value_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", request))
+		logging.Stringer("EventsRequest", request),
+		logging.String("State", "started"))
 	proxy, err := s.proxies.Get(server.Context())
 	if err != nil {
 		err = errors.ToProto(err)
@@ -125,14 +127,40 @@ func (s *valueServer) Events(request *valuev1.EventsRequest, server valuev1.Valu
 			logging.Error("Error", err))
 		return err
 	}
-	err = proxy.Events(request, server)
+	client, err := proxy.Events(server.Context(), request)
 	if err != nil {
+		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	return nil
+	for {
+		response, err := client.Recv()
+		if err == io.EOF {
+			log.Debugw("Events",
+				logging.Stringer("EventsRequest", request),
+				logging.String("State", "complete"))
+			return nil
+		}
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Events",
+				logging.Stringer("EventsRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+		log.Warnw("Events",
+			logging.Stringer("EventsResponse", response))
+		err = server.Send(response)
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Events",
+				logging.Stringer("EventsRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+	}
 }
 
 var _ valuev1.ValueServer = (*valueServer)(nil)

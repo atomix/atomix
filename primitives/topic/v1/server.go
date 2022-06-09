@@ -10,16 +10,17 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
+	"io"
 )
 
-func newTopicServer(proxies *primitive.Manager[topicv1.TopicServer]) topicv1.TopicServer {
+func newTopicServer(proxies *primitive.Manager[topicv1.TopicClient]) topicv1.TopicServer {
 	return &topicServer{
 		proxies: proxies,
 	}
 }
 
 type topicServer struct {
-	proxies *primitive.Manager[topicv1.TopicServer]
+	proxies *primitive.Manager[topicv1.TopicClient]
 }
 
 func (s *topicServer) Create(ctx context.Context, request *topicv1.CreateRequest) (*topicv1.CreateResponse, error) {
@@ -93,7 +94,8 @@ func (s *topicServer) Publish(ctx context.Context, request *topicv1.PublishReque
 
 func (s *topicServer) Subscribe(request *topicv1.SubscribeRequest, server topicv1.Topic_SubscribeServer) error {
 	log.Debugw("Subscribe",
-		logging.Stringer("SubscribeRequest", request))
+		logging.Stringer("SubscribeRequest", request),
+		logging.String("State", "started"))
 	proxy, err := s.proxies.Get(server.Context())
 	if err != nil {
 		err = errors.ToProto(err)
@@ -102,14 +104,40 @@ func (s *topicServer) Subscribe(request *topicv1.SubscribeRequest, server topicv
 			logging.Error("Error", err))
 		return err
 	}
-	err = proxy.Subscribe(request, server)
+	client, err := proxy.Subscribe(server.Context(), request)
 	if err != nil {
+		err = errors.ToProto(err)
 		log.Warnw("Subscribe",
 			logging.Stringer("SubscribeRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	return nil
+	for {
+		response, err := client.Recv()
+		if err == io.EOF {
+			log.Debugw("Subscribe",
+				logging.Stringer("SubscribeRequest", request),
+				logging.String("State", "complete"))
+			return nil
+		}
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Subscribe",
+				logging.Stringer("SubscribeRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+		log.Warnw("Subscribe",
+			logging.Stringer("SubscribeResponse", response))
+		err = server.Send(response)
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Subscribe",
+				logging.Stringer("SubscribeRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+	}
 }
 
 var _ topicv1.TopicServer = (*topicServer)(nil)

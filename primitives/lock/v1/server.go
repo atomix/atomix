@@ -12,14 +12,14 @@ import (
 	"github.com/atomix/runtime/pkg/primitive"
 )
 
-func newLockServer(proxies *primitive.Manager[lockv1.LockServer]) lockv1.LockServer {
+func newLockServer(proxies *primitive.Manager[lockv1.LockClient]) lockv1.LockServer {
 	return &lockServer{
 		proxies: proxies,
 	}
 }
 
 type lockServer struct {
-	proxies *primitive.Manager[lockv1.LockServer]
+	proxies *primitive.Manager[lockv1.LockClient]
 }
 
 func (s *lockServer) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {

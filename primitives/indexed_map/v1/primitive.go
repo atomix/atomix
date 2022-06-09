@@ -16,13 +16,13 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.indexed_map.v1.IndexedMap"
 
-var Kind = primitive.NewKind[indexedmapv1.IndexedMapServer](serviceName, register, resolve)
+var Kind = primitive.NewKind[indexedmapv1.IndexedMapClient](serviceName, register, resolve)
 
-func register(server *grpc.Server, proxies *primitive.Manager[indexedmapv1.IndexedMapServer]) {
+func register(server *grpc.Server, proxies *primitive.Manager[indexedmapv1.IndexedMapClient]) {
 	indexedmapv1.RegisterIndexedMapServer(server, newIndexedMapServer(proxies))
 }
 
-func resolve(client driver.Client) (primitive.Factory[indexedmapv1.IndexedMapServer], bool) {
+func resolve(client driver.Client) (primitive.Factory[indexedmapv1.IndexedMapClient], bool) {
 	if indexedMap, ok := client.(IndexedMapProvider); ok {
 		return indexedMap.GetIndexedMap, true
 	}
@@ -30,5 +30,5 @@ func resolve(client driver.Client) (primitive.Factory[indexedmapv1.IndexedMapSer
 }
 
 type IndexedMapProvider interface {
-	GetIndexedMap(primitive.ID) indexedmapv1.IndexedMapServer
+	GetIndexedMap(primitive.ID) indexedmapv1.IndexedMapClient
 }

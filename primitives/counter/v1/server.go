@@ -12,14 +12,14 @@ import (
 	"github.com/atomix/runtime/pkg/primitive"
 )
 
-func newCounterServer(proxies *primitive.Manager[counterv1.CounterServer]) counterv1.CounterServer {
+func newCounterServer(proxies *primitive.Manager[counterv1.CounterClient]) counterv1.CounterServer {
 	return &counterServer{
 		proxies: proxies,
 	}
 }
 
 type counterServer struct {
-	proxies *primitive.Manager[counterv1.CounterServer]
+	proxies *primitive.Manager[counterv1.CounterClient]
 }
 
 func (s *counterServer) Create(ctx context.Context, request *counterv1.CreateRequest) (*counterv1.CreateResponse, error) {

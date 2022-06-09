@@ -16,13 +16,13 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.lock.v1.Lock"
 
-var Kind = primitive.NewKind[lockv1.LockServer](serviceName, register, resolve)
+var Kind = primitive.NewKind[lockv1.LockClient](serviceName, register, resolve)
 
-func register(server *grpc.Server, proxies *primitive.Manager[lockv1.LockServer]) {
+func register(server *grpc.Server, proxies *primitive.Manager[lockv1.LockClient]) {
 	lockv1.RegisterLockServer(server, newLockServer(proxies))
 }
 
-func resolve(client driver.Client) (primitive.Factory[lockv1.LockServer], bool) {
+func resolve(client driver.Client) (primitive.Factory[lockv1.LockClient], bool) {
 	if lock, ok := client.(LockProvider); ok {
 		return lock.GetLock, true
 	}
@@ -30,5 +30,5 @@ func resolve(client driver.Client) (primitive.Factory[lockv1.LockServer], bool) 
 }
 
 type LockProvider interface {
-	GetLock(primitive.ID) lockv1.LockServer
+	GetLock(primitive.ID) lockv1.LockClient
 }

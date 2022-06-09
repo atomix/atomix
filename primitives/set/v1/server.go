@@ -10,16 +10,17 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
+	"io"
 )
 
-func newSetServer(proxies *primitive.Manager[setv1.SetServer]) setv1.SetServer {
+func newSetServer(proxies *primitive.Manager[setv1.SetClient]) setv1.SetServer {
 	return &setServer{
 		proxies: proxies,
 	}
 }
 
 type setServer struct {
-	proxies *primitive.Manager[setv1.SetServer]
+	proxies *primitive.Manager[setv1.SetClient]
 }
 
 func (s *setServer) Create(ctx context.Context, request *setv1.CreateRequest) (*setv1.CreateResponse, error) {
@@ -185,7 +186,8 @@ func (s *setServer) Clear(ctx context.Context, request *setv1.ClearRequest) (*se
 
 func (s *setServer) Events(request *setv1.EventsRequest, server setv1.Set_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", request))
+		logging.Stringer("EventsRequest", request),
+		logging.String("State", "started"))
 	proxy, err := s.proxies.Get(server.Context())
 	if err != nil {
 		err = errors.ToProto(err)
@@ -194,19 +196,46 @@ func (s *setServer) Events(request *setv1.EventsRequest, server setv1.Set_Events
 			logging.Error("Error", err))
 		return err
 	}
-	err = proxy.Events(request, server)
+	client, err := proxy.Events(server.Context(), request)
 	if err != nil {
+		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	return nil
+	for {
+		response, err := client.Recv()
+		if err == io.EOF {
+			log.Debugw("Events",
+				logging.Stringer("EventsRequest", request),
+				logging.String("State", "complete"))
+			return nil
+		}
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Events",
+				logging.Stringer("EventsRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+		log.Warnw("Events",
+			logging.Stringer("EventsResponse", response))
+		err = server.Send(response)
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Events",
+				logging.Stringer("EventsRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+	}
 }
 
 func (s *setServer) Elements(request *setv1.ElementsRequest, server setv1.Set_ElementsServer) error {
 	log.Debugw("Elements",
-		logging.Stringer("ElementsRequest", request))
+		logging.Stringer("ElementsRequest", request),
+		logging.String("State", "started"))
 	proxy, err := s.proxies.Get(server.Context())
 	if err != nil {
 		err = errors.ToProto(err)
@@ -215,14 +244,40 @@ func (s *setServer) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 			logging.Error("Error", err))
 		return err
 	}
-	err = proxy.Elements(request, server)
+	client, err := proxy.Elements(server.Context(), request)
 	if err != nil {
+		err = errors.ToProto(err)
 		log.Warnw("Elements",
 			logging.Stringer("ElementsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	return nil
+	for {
+		response, err := client.Recv()
+		if err == io.EOF {
+			log.Debugw("Elements",
+				logging.Stringer("ElementsRequest", request),
+				logging.String("State", "complete"))
+			return nil
+		}
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Elements",
+				logging.Stringer("ElementsRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+		log.Warnw("Elements",
+			logging.Stringer("ElementsResponse", response))
+		err = server.Send(response)
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Elements",
+				logging.Stringer("ElementsRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+	}
 }
 
 var _ setv1.SetServer = (*setServer)(nil)

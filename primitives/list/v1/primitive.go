@@ -16,13 +16,13 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.list.v1.List"
 
-var Kind = primitive.NewKind[listv1.ListServer](serviceName, register, resolve)
+var Kind = primitive.NewKind[listv1.ListClient](serviceName, register, resolve)
 
-func register(server *grpc.Server, proxies *primitive.Manager[listv1.ListServer]) {
+func register(server *grpc.Server, proxies *primitive.Manager[listv1.ListClient]) {
 	listv1.RegisterListServer(server, newListServer(proxies))
 }
 
-func resolve(client driver.Client) (primitive.Factory[listv1.ListServer], bool) {
+func resolve(client driver.Client) (primitive.Factory[listv1.ListClient], bool) {
 	if list, ok := client.(ListProvider); ok {
 		return list.GetList, true
 	}
@@ -30,5 +30,5 @@ func resolve(client driver.Client) (primitive.Factory[listv1.ListServer], bool) 
 }
 
 type ListProvider interface {
-	GetList(primitive.ID) listv1.ListServer
+	GetList(primitive.ID) listv1.ListClient
 }

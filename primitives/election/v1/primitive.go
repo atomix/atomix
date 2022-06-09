@@ -16,13 +16,13 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.election.v1.LeaderElection"
 
-var Kind = primitive.NewKind[electionv1.LeaderElectionServer](serviceName, register, resolve)
+var Kind = primitive.NewKind[electionv1.LeaderElectionClient](serviceName, register, resolve)
 
-func register(server *grpc.Server, proxies *primitive.Manager[electionv1.LeaderElectionServer]) {
+func register(server *grpc.Server, proxies *primitive.Manager[electionv1.LeaderElectionClient]) {
 	electionv1.RegisterLeaderElectionServer(server, newLeaderElectionServer(proxies))
 }
 
-func resolve(client driver.Client) (primitive.Factory[electionv1.LeaderElectionServer], bool) {
+func resolve(client driver.Client) (primitive.Factory[electionv1.LeaderElectionClient], bool) {
 	if election, ok := client.(LeaderElectionProvider); ok {
 		return election.GetLeaderElection, true
 	}
@@ -30,5 +30,5 @@ func resolve(client driver.Client) (primitive.Factory[electionv1.LeaderElectionS
 }
 
 type LeaderElectionProvider interface {
-	GetLeaderElection(primitive.ID) electionv1.LeaderElectionServer
+	GetLeaderElection(primitive.ID) electionv1.LeaderElectionClient
 }

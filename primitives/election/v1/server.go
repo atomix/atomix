@@ -10,16 +10,17 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
+	"io"
 )
 
-func newLeaderElectionServer(proxies *primitive.Manager[electionv1.LeaderElectionServer]) electionv1.LeaderElectionServer {
+func newLeaderElectionServer(proxies *primitive.Manager[electionv1.LeaderElectionClient]) electionv1.LeaderElectionServer {
 	return &leaderElectionServer{
 		proxies: proxies,
 	}
 }
 
 type leaderElectionServer struct {
-	proxies *primitive.Manager[electionv1.LeaderElectionServer]
+	proxies *primitive.Manager[electionv1.LeaderElectionClient]
 }
 
 func (s *leaderElectionServer) Create(ctx context.Context, request *electionv1.CreateRequest) (*electionv1.CreateResponse, error) {
@@ -208,7 +209,8 @@ func (s *leaderElectionServer) GetTerm(ctx context.Context, request *electionv1.
 
 func (s *leaderElectionServer) Events(request *electionv1.EventsRequest, server electionv1.LeaderElection_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", request))
+		logging.Stringer("EventsRequest", request),
+		logging.String("State", "started"))
 	proxy, err := s.proxies.Get(server.Context())
 	if err != nil {
 		err = errors.ToProto(err)
@@ -217,14 +219,40 @@ func (s *leaderElectionServer) Events(request *electionv1.EventsRequest, server 
 			logging.Error("Error", err))
 		return err
 	}
-	err = proxy.Events(request, server)
+	client, err := proxy.Events(server.Context(), request)
 	if err != nil {
+		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	return nil
+	for {
+		response, err := client.Recv()
+		if err == io.EOF {
+			log.Debugw("Events",
+				logging.Stringer("EventsRequest", request),
+				logging.String("State", "complete"))
+			return nil
+		}
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Events",
+				logging.Stringer("EventsRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+		log.Warnw("Events",
+			logging.Stringer("EventsResponse", response))
+		err = server.Send(response)
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Events",
+				logging.Stringer("EventsRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+	}
 }
 
 var _ electionv1.LeaderElectionServer = (*leaderElectionServer)(nil)

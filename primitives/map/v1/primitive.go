@@ -16,13 +16,13 @@ var log = logging.GetLogger()
 
 const serviceName = "atomix.map.v1.Map"
 
-var Kind = primitive.NewKind[mapv1.MapServer](serviceName, register, resolve)
+var Kind = primitive.NewKind[mapv1.MapClient](serviceName, register, resolve)
 
-func register(server *grpc.Server, proxies *primitive.Manager[mapv1.MapServer]) {
+func register(server *grpc.Server, proxies *primitive.Manager[mapv1.MapClient]) {
 	mapv1.RegisterMapServer(server, newMapServer(proxies))
 }
 
-func resolve(client driver.Client) (primitive.Factory[mapv1.MapServer], bool) {
+func resolve(client driver.Client) (primitive.Factory[mapv1.MapClient], bool) {
 	if _map, ok := client.(MapProvider); ok {
 		return _map.GetMap, true
 	}
@@ -30,5 +30,5 @@ func resolve(client driver.Client) (primitive.Factory[mapv1.MapServer], bool) {
 }
 
 type MapProvider interface {
-	GetMap(primitive.ID) mapv1.MapServer
+	GetMap(primitive.ID) mapv1.MapClient
 }

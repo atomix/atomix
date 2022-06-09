@@ -10,16 +10,17 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
+	"io"
 )
 
-func newIndexedMapServer(proxies *primitive.Manager[indexedmapv1.IndexedMapServer]) indexedmapv1.IndexedMapServer {
+func newIndexedMapServer(proxies *primitive.Manager[indexedmapv1.IndexedMapClient]) indexedmapv1.IndexedMapServer {
 	return &indexedMapServer{
 		proxies: proxies,
 	}
 }
 
 type indexedMapServer struct {
-	proxies *primitive.Manager[indexedmapv1.IndexedMapServer]
+	proxies *primitive.Manager[indexedmapv1.IndexedMapClient]
 }
 
 func (s *indexedMapServer) Create(ctx context.Context, request *indexedmapv1.CreateRequest) (*indexedmapv1.CreateResponse, error) {
@@ -300,7 +301,8 @@ func (s *indexedMapServer) Clear(ctx context.Context, request *indexedmapv1.Clea
 
 func (s *indexedMapServer) Events(request *indexedmapv1.EventsRequest, server indexedmapv1.IndexedMap_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", request))
+		logging.Stringer("EventsRequest", request),
+		logging.String("State", "started"))
 	proxy, err := s.proxies.Get(server.Context())
 	if err != nil {
 		err = errors.ToProto(err)
@@ -309,19 +311,46 @@ func (s *indexedMapServer) Events(request *indexedmapv1.EventsRequest, server in
 			logging.Error("Error", err))
 		return err
 	}
-	err = proxy.Events(request, server)
+	client, err := proxy.Events(server.Context(), request)
 	if err != nil {
+		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	return nil
+	for {
+		response, err := client.Recv()
+		if err == io.EOF {
+			log.Debugw("Events",
+				logging.Stringer("EventsRequest", request),
+				logging.String("State", "complete"))
+			return nil
+		}
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Events",
+				logging.Stringer("EventsRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+		log.Warnw("Events",
+			logging.Stringer("EventsResponse", response))
+		err = server.Send(response)
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Events",
+				logging.Stringer("EventsRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+	}
 }
 
 func (s *indexedMapServer) Entries(request *indexedmapv1.EntriesRequest, server indexedmapv1.IndexedMap_EntriesServer) error {
 	log.Debugw("Entries",
-		logging.Stringer("EntriesRequest", request))
+		logging.Stringer("EntriesRequest", request),
+		logging.String("State", "started"))
 	proxy, err := s.proxies.Get(server.Context())
 	if err != nil {
 		err = errors.ToProto(err)
@@ -330,14 +359,40 @@ func (s *indexedMapServer) Entries(request *indexedmapv1.EntriesRequest, server 
 			logging.Error("Error", err))
 		return err
 	}
-	err = proxy.Entries(request, server)
+	client, err := proxy.Entries(server.Context(), request)
 	if err != nil {
+		err = errors.ToProto(err)
 		log.Warnw("Entries",
 			logging.Stringer("EntriesRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	return nil
+	for {
+		response, err := client.Recv()
+		if err == io.EOF {
+			log.Debugw("Entries",
+				logging.Stringer("EntriesRequest", request),
+				logging.String("State", "complete"))
+			return nil
+		}
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Entries",
+				logging.Stringer("EntriesRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+		log.Warnw("Entries",
+			logging.Stringer("EntriesResponse", response))
+		err = server.Send(response)
+		if err != nil {
+			err = errors.ToProto(err)
+			log.Warnw("Entries",
+				logging.Stringer("EntriesRequest", request),
+				logging.Error("Error", err))
+			return err
+		}
+	}
 }
 
 var _ indexedmapv1.IndexedMapServer = (*indexedMapServer)(nil)
