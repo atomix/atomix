@@ -26,7 +26,7 @@ type valueServer struct {
 func (s *valueServer) Create(ctx context.Context, request *valuev1.CreateRequest) (*valuev1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", request))
-	proxy, err := s.proxies.Connect(ctx)
+	proxy, err := s.proxies.Create(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",

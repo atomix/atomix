@@ -26,7 +26,7 @@ type topicServer struct {
 func (s *topicServer) Create(ctx context.Context, request *topicv1.CreateRequest) (*topicv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", request))
-	proxy, err := s.proxies.Connect(ctx)
+	proxy, err := s.proxies.Create(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",

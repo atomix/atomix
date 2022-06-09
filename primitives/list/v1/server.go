@@ -26,7 +26,7 @@ type listServer struct {
 func (s *listServer) Create(ctx context.Context, request *listv1.CreateRequest) (*listv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", request))
-	proxy, err := s.proxies.Connect(ctx)
+	proxy, err := s.proxies.Create(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",

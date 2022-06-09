@@ -6,7 +6,6 @@ package primitive
 
 import (
 	"context"
-	"github.com/atomix/runtime/pkg/env"
 	"github.com/atomix/runtime/pkg/errors"
 	"google.golang.org/grpc/metadata"
 	"sync"
@@ -29,7 +28,7 @@ type Manager[T any] struct {
 	mu       sync.RWMutex
 }
 
-func (m *Manager[T]) Connect(ctx context.Context) (T, error) {
+func (m *Manager[T]) Create(ctx context.Context) (T, error) {
 	var proxy T
 	id, err := m.getIDFromContext(ctx)
 	if err != nil {
@@ -121,16 +120,12 @@ func (m *Manager[T]) getIDFromContext(ctx context.Context) (ID, error) {
 	id.Primitive = primitiveIDs[0]
 
 	appIDs := md.Get(ApplicationIDHeader)
-	if len(appIDs) == 0 {
-		id.Application = env.GetApplicationID()
-	} else {
+	if len(appIDs) > 0 {
 		id.Application = appIDs[0]
 	}
 
 	sessionIDs := md.Get(SessionIDHeader)
-	if len(sessionIDs) == 0 {
-		id.Session = env.GetNodeID()
-	} else {
+	if len(sessionIDs) > 0 {
 		id.Session = sessionIDs[0]
 	}
 	return id, nil

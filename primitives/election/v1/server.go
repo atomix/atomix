@@ -26,7 +26,7 @@ type leaderElectionServer struct {
 func (s *leaderElectionServer) Create(ctx context.Context, request *electionv1.CreateRequest) (*electionv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", request))
-	proxy, err := s.proxies.Connect(ctx)
+	proxy, err := s.proxies.Create(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",
