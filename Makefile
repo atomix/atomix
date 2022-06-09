@@ -4,54 +4,11 @@
 
 GOLANG_CROSS_VERSION := v1.18.2-v1.8.3
 
-build: build-bin build-docker
+.PHONY: build
+build:
+	go build ./...
 
-build-bin:
-	docker run \
-		--rm \
-		--privileged \
-		-e CGO_ENABLED=1 \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v `pwd`:/build \
-		-w /build \
-		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		release -f ./build/bin.yaml --snapshot --rm-dist
-
-build-docker:
-	docker run \
-		--rm \
-		--privileged \
-		-e CGO_ENABLED=1 \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v `pwd`:/build \
-		-w /build \
-		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		release -f ./build/docker.yaml --snapshot --rm-dist
-
-release: release-bin release-docker
-
-release-bin:
-	docker run \
-		--rm \
-		--privileged \
-		-e CGO_ENABLED=1 \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v `pwd`:/build \
-		-w /build \
-		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		release -f ./build/bin.yaml --rm-dist
-
-release-docker:
-	docker run \
-		--rm \
-		--privileged \
-		-e CGO_ENABLED=1 \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v `pwd`:/build \
-		-w /build \
-		goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
-		release -f ./build/docker.yaml --rm-dist
-
+.PHONY: api
 api: go docs
 
 go:
