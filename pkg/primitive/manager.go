@@ -119,11 +119,6 @@ func (m *Manager[T]) getIDFromContext(ctx context.Context) (ID, error) {
 
 	id.Primitive = primitiveIDs[0]
 
-	appIDs := md.Get(ApplicationIDHeader)
-	if len(appIDs) > 0 {
-		id.Application = appIDs[0]
-	}
-
 	sessionIDs := md.Get(SessionIDHeader)
 	if len(sessionIDs) > 0 {
 		id.Session = sessionIDs[0]

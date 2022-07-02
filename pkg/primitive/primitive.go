@@ -12,20 +12,18 @@ import (
 )
 
 const (
-	ApplicationIDHeader = "Application-ID"
-	PrimitiveIDHeader   = "Primitive-ID"
-	SessionIDHeader     = "Session-ID"
+	PrimitiveIDHeader = "Primitive-ID"
+	SessionIDHeader   = "Session-ID"
 )
 
 type ID struct {
-	Service     string
-	Application string
-	Primitive   string
-	Session     string
+	Service   string
+	Primitive string
+	Session   string
 }
 
 func (i ID) String() string {
-	return fmt.Sprintf("%s/%s.%s.%s", i.Service, i.Application, i.Primitive, i.Session)
+	return fmt.Sprintf("%s/%s.%s.%s", i.Service, i.Primitive, i.Session)
 }
 
 type Kind interface {
