@@ -7,7 +7,7 @@
     - [CloseRequest](#atomix-lock-v1-CloseRequest)
     - [CloseResponse](#atomix-lock-v1-CloseResponse)
     - [CreateRequest](#atomix-lock-v1-CreateRequest)
-    - [CreateRequest.LabelsEntry](#atomix-lock-v1-CreateRequest-LabelsEntry)
+    - [CreateRequest.TagsEntry](#atomix-lock-v1-CreateRequest-TagsEntry)
     - [CreateResponse](#atomix-lock-v1-CreateResponse)
     - [GetLockRequest](#atomix-lock-v1-GetLockRequest)
     - [GetLockResponse](#atomix-lock-v1-GetLockResponse)
@@ -66,16 +66,16 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
-| labels | [CreateRequest.LabelsEntry](#atomix-lock-v1-CreateRequest-LabelsEntry) | repeated |  |
+| tags | [CreateRequest.TagsEntry](#atomix-lock-v1-CreateRequest-TagsEntry) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-lock-v1-CreateRequest-LabelsEntry"></a>
+<a name="atomix-lock-v1-CreateRequest-TagsEntry"></a>
 
-### CreateRequest.LabelsEntry
+### CreateRequest.TagsEntry
 
 
 

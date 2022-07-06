@@ -44,7 +44,7 @@ message CreateRequest {
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
-    map<string, string> labels = 2;
+    map<string, string> tags = 2;
 }
 
 message CreateResponse {

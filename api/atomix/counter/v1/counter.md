@@ -7,7 +7,7 @@
     - [CloseRequest](#atomix-counter-v1-CloseRequest)
     - [CloseResponse](#atomix-counter-v1-CloseResponse)
     - [CreateRequest](#atomix-counter-v1-CreateRequest)
-    - [CreateRequest.LabelsEntry](#atomix-counter-v1-CreateRequest-LabelsEntry)
+    - [CreateRequest.TagsEntry](#atomix-counter-v1-CreateRequest-TagsEntry)
     - [CreateResponse](#atomix-counter-v1-CreateResponse)
     - [DecrementRequest](#atomix-counter-v1-DecrementRequest)
     - [DecrementResponse](#atomix-counter-v1-DecrementResponse)
@@ -67,16 +67,16 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
-| labels | [CreateRequest.LabelsEntry](#atomix-counter-v1-CreateRequest-LabelsEntry) | repeated |  |
+| tags | [CreateRequest.TagsEntry](#atomix-counter-v1-CreateRequest-TagsEntry) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-counter-v1-CreateRequest-LabelsEntry"></a>
+<a name="atomix-counter-v1-CreateRequest-TagsEntry"></a>
 
-### CreateRequest.LabelsEntry
+### CreateRequest.TagsEntry
 
 
 
