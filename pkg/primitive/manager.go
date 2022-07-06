@@ -9,12 +9,10 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc/metadata"
-	"os"
 	"sync"
 )
 
 const (
-	namespaceEnv        = "POD_NAMESPACE"
 	primitiveNameHeader = "Primitive"
 )
 
@@ -37,7 +35,7 @@ type Manager[T any] struct {
 
 func (m *Manager[T]) GetClient(ctx context.Context) (T, error) {
 	var client T
-	id, err := getIDFromContext(ctx)
+	id, err := m.getIDFromContext(ctx)
 	if err != nil {
 		return client, err
 	}
@@ -80,7 +78,7 @@ func (m *Manager[T]) newClient(ctx context.Context, id runtime.ID) (T, error) {
 	return client, nil
 }
 
-func getIDFromContext(ctx context.Context) (runtime.ID, error) {
+func (m *Manager[T]) getIDFromContext(ctx context.Context) (runtime.ID, error) {
 	var id runtime.ID
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -91,7 +89,7 @@ func getIDFromContext(ctx context.Context) (runtime.ID, error) {
 		return id, errors.NewInvalid("missing %s header in metadata", primitiveNameHeader)
 	}
 	return runtime.ID{
-		Namespace: os.Getenv(namespaceEnv),
+		Namespace: m.runtime.Namespace(),
 		Name:      primitiveNames[0],
 	}, nil
 }

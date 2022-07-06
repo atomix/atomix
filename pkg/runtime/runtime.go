@@ -45,6 +45,7 @@ func (k Kind) String() string {
 }
 
 type Runtime interface {
+	Namespace() string
 	GetClient(ctx context.Context, kind Kind, id ID) (Client, error)
 }
 
