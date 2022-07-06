@@ -9,24 +9,72 @@ import (
 	listv1 "github.com/atomix/runtime/api/atomix/list/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/primitive"
+	runtime "github.com/atomix/runtime/pkg/runtime"
 	"io"
 )
 
-func newListServer(manager *primitive.Manager[listv1.ListClient]) listv1.ListServer {
+var log = logging.GetLogger()
+
+func newListServer(delegate *runtime.Delegate[listv1.ListClient]) listv1.ListServer {
 	return &listServer{
-		manager: manager,
+		delegate: delegate,
 	}
 }
 
 type listServer struct {
-	manager *primitive.Manager[listv1.ListClient]
+	delegate *runtime.Delegate[listv1.ListClient]
+}
+
+func (s *listServer) Create(ctx context.Context, request *listv1.CreateRequest) (*listv1.CreateResponse, error) {
+	log.Debugw("Create",
+		logging.Stringer("CreateRequest", request))
+	client, err := s.delegate.Create(request.ID.Name, request.Labels)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Create",
+			logging.Stringer("CreateRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Create(ctx, request)
+	if err != nil {
+		log.Warnw("Create",
+			logging.Stringer("CreateRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Create",
+		logging.Stringer("CreateResponse", response))
+	return response, nil
+}
+
+func (s *listServer) Close(ctx context.Context, request *listv1.CloseRequest) (*listv1.CloseResponse, error) {
+	log.Debugw("Close",
+		logging.Stringer("CloseRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Close",
+			logging.Stringer("CloseRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Close(ctx, request)
+	if err != nil {
+		log.Warnw("Close",
+			logging.Stringer("CloseRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Close",
+		logging.Stringer("CloseResponse", response))
+	return response, nil
 }
 
 func (s *listServer) Size(ctx context.Context, request *listv1.SizeRequest) (*listv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Stringer("SizeRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Size",
@@ -49,7 +97,7 @@ func (s *listServer) Size(ctx context.Context, request *listv1.SizeRequest) (*li
 func (s *listServer) Append(ctx context.Context, request *listv1.AppendRequest) (*listv1.AppendResponse, error) {
 	log.Debugw("Append",
 		logging.Stringer("AppendRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Append",
@@ -72,7 +120,7 @@ func (s *listServer) Append(ctx context.Context, request *listv1.AppendRequest) 
 func (s *listServer) Insert(ctx context.Context, request *listv1.InsertRequest) (*listv1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Stringer("InsertRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Insert",
@@ -95,7 +143,7 @@ func (s *listServer) Insert(ctx context.Context, request *listv1.InsertRequest) 
 func (s *listServer) Get(ctx context.Context, request *listv1.GetRequest) (*listv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
@@ -118,7 +166,7 @@ func (s *listServer) Get(ctx context.Context, request *listv1.GetRequest) (*list
 func (s *listServer) Set(ctx context.Context, request *listv1.SetRequest) (*listv1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Stringer("SetRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Set",
@@ -141,7 +189,7 @@ func (s *listServer) Set(ctx context.Context, request *listv1.SetRequest) (*list
 func (s *listServer) Remove(ctx context.Context, request *listv1.RemoveRequest) (*listv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Stringer("RemoveRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Remove",
@@ -164,7 +212,7 @@ func (s *listServer) Remove(ctx context.Context, request *listv1.RemoveRequest) 
 func (s *listServer) Clear(ctx context.Context, request *listv1.ClearRequest) (*listv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Stringer("ClearRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Clear",
@@ -188,7 +236,7 @@ func (s *listServer) Events(request *listv1.EventsRequest, server listv1.List_Ev
 	log.Debugw("Events",
 		logging.Stringer("EventsRequest", request),
 		logging.String("State", "started"))
-	client, err := s.manager.GetClient(server.Context())
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
@@ -236,7 +284,7 @@ func (s *listServer) Elements(request *listv1.ElementsRequest, server listv1.Lis
 	log.Debugw("Elements",
 		logging.Stringer("ElementsRequest", request),
 		logging.String("State", "started"))
-	client, err := s.manager.GetClient(server.Context())
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Elements",

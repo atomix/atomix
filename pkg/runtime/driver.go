@@ -2,38 +2,46 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package driver
+package runtime
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/runtime"
 )
 
-var log = logging.GetLogger()
+type DriverID struct {
+	Name    string
+	Version string
+}
+
+func (i DriverID) String() string {
+	return fmt.Sprintf("%s/%s", i.Name, i.Version)
+}
 
 type Driver interface {
 	fmt.Stringer
-	Kind() runtime.Kind
+	ID() DriverID
 	Connect(ctx context.Context, config []byte) (Conn, error)
 }
 
-func New[C any](name, version string, connector Connector[C]) Driver {
+func NewDriver[C any](name, version string, connector Connector[C]) Driver {
 	return &configurableDriver[C]{
-		kind:      runtime.NewKind(name, version),
+		id: DriverID{
+			Name:    name,
+			Version: version,
+		},
 		connector: connector,
 	}
 }
 
 type configurableDriver[C any] struct {
-	kind      runtime.Kind
+	id        DriverID
 	connector Connector[C]
 }
 
-func (d *configurableDriver[C]) Kind() runtime.Kind {
-	return d.kind
+func (d *configurableDriver[C]) ID() DriverID {
+	return d.id
 }
 
 func (d *configurableDriver[C]) Connect(ctx context.Context, data []byte) (Conn, error) {
@@ -51,7 +59,7 @@ func (d *configurableDriver[C]) Connect(ctx context.Context, data []byte) (Conn,
 }
 
 func (d *configurableDriver[C]) String() string {
-	return d.kind.String()
+	return d.id.String()
 }
 
 var _ Driver = (*configurableDriver[any])(nil)

@@ -6,32 +6,28 @@ package v1
 
 import (
 	listv1 "github.com/atomix/runtime/api/atomix/list/v1"
-	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/primitive"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
-
-var log = logging.GetLogger()
 
 const (
 	Name       = "List"
 	APIVersion = "v1"
 )
 
-var Type = primitive.NewType[listv1.ListClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[listv1.ListClient](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, manager *primitive.Manager[listv1.ListClient]) {
-	listv1.RegisterListServer(server, newListServer(manager))
+func register(server *grpc.Server, delegate *runtime.Delegate[listv1.ListClient]) {
+	listv1.RegisterListServer(server, newListServer(delegate))
 }
 
-func resolve(client runtime.Client) (primitive.Factory[listv1.ListClient], bool) {
-	if list, ok := client.(ListProvider); ok {
-		return list.GetList, true
+func resolve(client runtime.Client) (listv1.ListClient, bool) {
+	if provider, ok := client.(ListProvider); ok {
+		return provider.List(), true
 	}
 	return nil, false
 }
 
 type ListProvider interface {
-	GetList(runtime.ID) listv1.ListClient
+	List() listv1.ListClient
 }

@@ -9,24 +9,72 @@ import (
 	indexedmapv1 "github.com/atomix/runtime/api/atomix/indexed_map/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/primitive"
+	runtime "github.com/atomix/runtime/pkg/runtime"
 	"io"
 )
 
-func newIndexedMapServer(manager *primitive.Manager[indexedmapv1.IndexedMapClient]) indexedmapv1.IndexedMapServer {
+var log = logging.GetLogger()
+
+func newIndexedMapServer(delegate *runtime.Delegate[indexedmapv1.IndexedMapClient]) indexedmapv1.IndexedMapServer {
 	return &indexedMapServer{
-		manager: manager,
+		delegate: delegate,
 	}
 }
 
 type indexedMapServer struct {
-	manager *primitive.Manager[indexedmapv1.IndexedMapClient]
+	delegate *runtime.Delegate[indexedmapv1.IndexedMapClient]
+}
+
+func (s *indexedMapServer) Create(ctx context.Context, request *indexedmapv1.CreateRequest) (*indexedmapv1.CreateResponse, error) {
+	log.Debugw("Create",
+		logging.Stringer("CreateRequest", request))
+	client, err := s.delegate.Create(request.ID.Name, request.Labels)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Create",
+			logging.Stringer("CreateRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Create(ctx, request)
+	if err != nil {
+		log.Warnw("Create",
+			logging.Stringer("CreateRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Create",
+		logging.Stringer("CreateResponse", response))
+	return response, nil
+}
+
+func (s *indexedMapServer) Close(ctx context.Context, request *indexedmapv1.CloseRequest) (*indexedmapv1.CloseResponse, error) {
+	log.Debugw("Close",
+		logging.Stringer("CloseRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Close",
+			logging.Stringer("CloseRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Close(ctx, request)
+	if err != nil {
+		log.Warnw("Close",
+			logging.Stringer("CloseRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Close",
+		logging.Stringer("CloseResponse", response))
+	return response, nil
 }
 
 func (s *indexedMapServer) Size(ctx context.Context, request *indexedmapv1.SizeRequest) (*indexedmapv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Stringer("SizeRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Size",
@@ -49,7 +97,7 @@ func (s *indexedMapServer) Size(ctx context.Context, request *indexedmapv1.SizeR
 func (s *indexedMapServer) Append(ctx context.Context, request *indexedmapv1.AppendRequest) (*indexedmapv1.AppendResponse, error) {
 	log.Debugw("Append",
 		logging.Stringer("AppendRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Append",
@@ -72,7 +120,7 @@ func (s *indexedMapServer) Append(ctx context.Context, request *indexedmapv1.App
 func (s *indexedMapServer) Update(ctx context.Context, request *indexedmapv1.UpdateRequest) (*indexedmapv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Stringer("UpdateRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Update",
@@ -95,7 +143,7 @@ func (s *indexedMapServer) Update(ctx context.Context, request *indexedmapv1.Upd
 func (s *indexedMapServer) Get(ctx context.Context, request *indexedmapv1.GetRequest) (*indexedmapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
@@ -118,7 +166,7 @@ func (s *indexedMapServer) Get(ctx context.Context, request *indexedmapv1.GetReq
 func (s *indexedMapServer) FirstEntry(ctx context.Context, request *indexedmapv1.FirstEntryRequest) (*indexedmapv1.FirstEntryResponse, error) {
 	log.Debugw("FirstEntry",
 		logging.Stringer("FirstEntryRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("FirstEntry",
@@ -141,7 +189,7 @@ func (s *indexedMapServer) FirstEntry(ctx context.Context, request *indexedmapv1
 func (s *indexedMapServer) LastEntry(ctx context.Context, request *indexedmapv1.LastEntryRequest) (*indexedmapv1.LastEntryResponse, error) {
 	log.Debugw("LastEntry",
 		logging.Stringer("LastEntryRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("LastEntry",
@@ -164,7 +212,7 @@ func (s *indexedMapServer) LastEntry(ctx context.Context, request *indexedmapv1.
 func (s *indexedMapServer) PrevEntry(ctx context.Context, request *indexedmapv1.PrevEntryRequest) (*indexedmapv1.PrevEntryResponse, error) {
 	log.Debugw("PrevEntry",
 		logging.Stringer("PrevEntryRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("PrevEntry",
@@ -187,7 +235,7 @@ func (s *indexedMapServer) PrevEntry(ctx context.Context, request *indexedmapv1.
 func (s *indexedMapServer) NextEntry(ctx context.Context, request *indexedmapv1.NextEntryRequest) (*indexedmapv1.NextEntryResponse, error) {
 	log.Debugw("NextEntry",
 		logging.Stringer("NextEntryRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("NextEntry",
@@ -210,7 +258,7 @@ func (s *indexedMapServer) NextEntry(ctx context.Context, request *indexedmapv1.
 func (s *indexedMapServer) Remove(ctx context.Context, request *indexedmapv1.RemoveRequest) (*indexedmapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Stringer("RemoveRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Remove",
@@ -233,7 +281,7 @@ func (s *indexedMapServer) Remove(ctx context.Context, request *indexedmapv1.Rem
 func (s *indexedMapServer) Clear(ctx context.Context, request *indexedmapv1.ClearRequest) (*indexedmapv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Stringer("ClearRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Clear",
@@ -257,7 +305,7 @@ func (s *indexedMapServer) Events(request *indexedmapv1.EventsRequest, server in
 	log.Debugw("Events",
 		logging.Stringer("EventsRequest", request),
 		logging.String("State", "started"))
-	client, err := s.manager.GetClient(server.Context())
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
@@ -305,7 +353,7 @@ func (s *indexedMapServer) Entries(request *indexedmapv1.EntriesRequest, server 
 	log.Debugw("Entries",
 		logging.Stringer("EntriesRequest", request),
 		logging.String("State", "started"))
-	client, err := s.manager.GetClient(server.Context())
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Entries",

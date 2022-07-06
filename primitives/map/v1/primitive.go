@@ -6,32 +6,28 @@ package v1
 
 import (
 	mapv1 "github.com/atomix/runtime/api/atomix/map/v1"
-	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/primitive"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
-
-var log = logging.GetLogger()
 
 const (
 	Name       = "Map"
 	APIVersion = "v1"
 )
 
-var Type = primitive.NewType[mapv1.MapClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[mapv1.MapClient](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, manager *primitive.Manager[mapv1.MapClient]) {
-	mapv1.RegisterMapServer(server, newMapServer(manager))
+func register(server *grpc.Server, delegate *runtime.Delegate[mapv1.MapClient]) {
+	mapv1.RegisterMapServer(server, newMapServer(delegate))
 }
 
-func resolve(client runtime.Client) (primitive.Factory[mapv1.MapClient], bool) {
-	if _map, ok := client.(MapProvider); ok {
-		return _map.GetMap, true
+func resolve(client runtime.Client) (mapv1.MapClient, bool) {
+	if provider, ok := client.(MapProvider); ok {
+		return provider.Map(), true
 	}
 	return nil, false
 }
 
 type MapProvider interface {
-	GetMap(runtime.ID) mapv1.MapClient
+	Map() mapv1.MapClient
 }

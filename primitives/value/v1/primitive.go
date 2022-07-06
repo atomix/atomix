@@ -6,32 +6,28 @@ package v1
 
 import (
 	valuev1 "github.com/atomix/runtime/api/atomix/value/v1"
-	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/primitive"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
-
-var log = logging.GetLogger()
 
 const (
 	Name       = "Value"
 	APIVersion = "v1"
 )
 
-var Type = primitive.NewType[valuev1.ValueClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[valuev1.ValueClient](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, manager *primitive.Manager[valuev1.ValueClient]) {
-	valuev1.RegisterValueServer(server, newValueServer(manager))
+func register(server *grpc.Server, delegate *runtime.Delegate[valuev1.ValueClient]) {
+	valuev1.RegisterValueServer(server, newValueServer(delegate))
 }
 
-func resolve(client runtime.Client) (primitive.Factory[valuev1.ValueClient], bool) {
-	if value, ok := client.(ValueProvider); ok {
-		return value.GetValue, true
+func resolve(client runtime.Client) (valuev1.ValueClient, bool) {
+	if provider, ok := client.(ValueProvider); ok {
+		return provider.Value(), true
 	}
 	return nil, false
 }
 
 type ValueProvider interface {
-	GetValue(runtime.ID) valuev1.ValueClient
+	Value() valuev1.ValueClient
 }

@@ -6,32 +6,28 @@ package v1
 
 import (
 	lockv1 "github.com/atomix/runtime/api/atomix/lock/v1"
-	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/primitive"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
-
-var log = logging.GetLogger()
 
 const (
 	Name       = "Lock"
 	APIVersion = "v1"
 )
 
-var Type = primitive.NewType[lockv1.LockClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[lockv1.LockClient](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, manager *primitive.Manager[lockv1.LockClient]) {
-	lockv1.RegisterLockServer(server, newLockServer(manager))
+func register(server *grpc.Server, delegate *runtime.Delegate[lockv1.LockClient]) {
+	lockv1.RegisterLockServer(server, newLockServer(delegate))
 }
 
-func resolve(client runtime.Client) (primitive.Factory[lockv1.LockClient], bool) {
-	if lock, ok := client.(LockProvider); ok {
-		return lock.GetLock, true
+func resolve(client runtime.Client) (lockv1.LockClient, bool) {
+	if provider, ok := client.(LockProvider); ok {
+		return provider.Lock(), true
 	}
 	return nil, false
 }
 
 type LockProvider interface {
-	GetLock(runtime.ID) lockv1.LockClient
+	Lock() lockv1.LockClient
 }

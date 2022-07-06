@@ -9,23 +9,71 @@ import (
 	counterv1 "github.com/atomix/runtime/api/atomix/counter/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/primitive"
+	"github.com/atomix/runtime/pkg/runtime"
 )
 
-func newCounterServer(manager *primitive.Manager[counterv1.CounterClient]) counterv1.CounterServer {
+var log = logging.GetLogger()
+
+func newCounterServer(delegate *runtime.Delegate[counterv1.CounterClient]) counterv1.CounterServer {
 	return &counterServer{
-		manager: manager,
+		delegate: delegate,
 	}
 }
 
 type counterServer struct {
-	manager *primitive.Manager[counterv1.CounterClient]
+	delegate *runtime.Delegate[counterv1.CounterClient]
+}
+
+func (s *counterServer) Create(ctx context.Context, request *counterv1.CreateRequest) (*counterv1.CreateResponse, error) {
+	log.Debugw("Create",
+		logging.Stringer("CreateRequest", request))
+	client, err := s.delegate.Create(request.ID.Name, request.Labels)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Create",
+			logging.Stringer("CreateRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Create(ctx, request)
+	if err != nil {
+		log.Warnw("Create",
+			logging.Stringer("CreateRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Create",
+		logging.Stringer("CreateResponse", response))
+	return response, nil
+}
+
+func (s *counterServer) Close(ctx context.Context, request *counterv1.CloseRequest) (*counterv1.CloseResponse, error) {
+	log.Debugw("Close",
+		logging.Stringer("CloseRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Close",
+			logging.Stringer("CloseRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Close(ctx, request)
+	if err != nil {
+		log.Warnw("Close",
+			logging.Stringer("CloseRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Close",
+		logging.Stringer("CloseResponse", response))
+	return response, nil
 }
 
 func (s *counterServer) Set(ctx context.Context, request *counterv1.SetRequest) (*counterv1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Stringer("SetRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Set",
@@ -48,7 +96,7 @@ func (s *counterServer) Set(ctx context.Context, request *counterv1.SetRequest) 
 func (s *counterServer) Get(ctx context.Context, request *counterv1.GetRequest) (*counterv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
@@ -71,7 +119,7 @@ func (s *counterServer) Get(ctx context.Context, request *counterv1.GetRequest) 
 func (s *counterServer) Increment(ctx context.Context, request *counterv1.IncrementRequest) (*counterv1.IncrementResponse, error) {
 	log.Debugw("Increment",
 		logging.Stringer("IncrementRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Increment",
@@ -94,7 +142,7 @@ func (s *counterServer) Increment(ctx context.Context, request *counterv1.Increm
 func (s *counterServer) Decrement(ctx context.Context, request *counterv1.DecrementRequest) (*counterv1.DecrementResponse, error) {
 	log.Debugw("Decrement",
 		logging.Stringer("DecrementRequest", request))
-	client, err := s.manager.GetClient(ctx)
+	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Decrement",

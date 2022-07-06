@@ -2,15 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package driver
+package runtime
 
 import (
 	"context"
-	"github.com/atomix/runtime/pkg/runtime"
 )
 
 type Client interface {
-	runtime.Client
 	Closer
 }
 

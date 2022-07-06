@@ -6,32 +6,28 @@ package v1
 
 import (
 	electionv1 "github.com/atomix/runtime/api/atomix/election/v1"
-	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/pkg/primitive"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
-
-var log = logging.GetLogger()
 
 const (
 	Name       = "LeaderElection"
 	APIVersion = "v1"
 )
 
-var Type = primitive.NewType[electionv1.LeaderElectionClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[electionv1.LeaderElectionClient](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, manager *primitive.Manager[electionv1.LeaderElectionClient]) {
-	electionv1.RegisterLeaderElectionServer(server, newLeaderElectionServer(manager))
+func register(server *grpc.Server, delegate *runtime.Delegate[electionv1.LeaderElectionClient]) {
+	electionv1.RegisterLeaderElectionServer(server, newLeaderElectionServer(delegate))
 }
 
-func resolve(client runtime.Client) (primitive.Factory[electionv1.LeaderElectionClient], bool) {
-	if election, ok := client.(LeaderElectionProvider); ok {
-		return election.GetLeaderElection, true
+func resolve(client runtime.Client) (electionv1.LeaderElectionClient, bool) {
+	if provider, ok := client.(LeaderElectionProvider); ok {
+		return provider.LeaderElection(), true
 	}
 	return nil, false
 }
 
 type LeaderElectionProvider interface {
-	GetLeaderElection(runtime.ID) electionv1.LeaderElectionClient
+	LeaderElection() electionv1.LeaderElectionClient
 }
