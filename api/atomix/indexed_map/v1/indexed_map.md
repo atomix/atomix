@@ -11,6 +11,7 @@
     - [CloseRequest](#atomix-indexed_map-v1-CloseRequest)
     - [CloseResponse](#atomix-indexed_map-v1-CloseResponse)
     - [CreateRequest](#atomix-indexed_map-v1-CreateRequest)
+    - [CreateRequest.LabelsEntry](#atomix-indexed_map-v1-CreateRequest-LabelsEntry)
     - [CreateResponse](#atomix-indexed_map-v1-CreateResponse)
     - [EntriesRequest](#atomix-indexed_map-v1-EntriesRequest)
     - [EntriesResponse](#atomix-indexed_map-v1-EntriesResponse)
@@ -142,6 +143,23 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+| labels | [CreateRequest.LabelsEntry](#atomix-indexed_map-v1-CreateRequest-LabelsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-indexed_map-v1-CreateRequest-LabelsEntry"></a>
+
+### CreateRequest.LabelsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
 
 
 

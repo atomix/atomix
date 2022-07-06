@@ -9,6 +9,7 @@
     - [CloseRequest](#atomix-election-v1-CloseRequest)
     - [CloseResponse](#atomix-election-v1-CloseResponse)
     - [CreateRequest](#atomix-election-v1-CreateRequest)
+    - [CreateRequest.LabelsEntry](#atomix-election-v1-CreateRequest-LabelsEntry)
     - [CreateResponse](#atomix-election-v1-CreateResponse)
     - [EnterRequest](#atomix-election-v1-EnterRequest)
     - [EnterResponse](#atomix-election-v1-EnterResponse)
@@ -105,6 +106,23 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+| labels | [CreateRequest.LabelsEntry](#atomix-election-v1-CreateRequest-LabelsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-election-v1-CreateRequest-LabelsEntry"></a>
+
+### CreateRequest.LabelsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
 
 
 

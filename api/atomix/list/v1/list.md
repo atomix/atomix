@@ -13,6 +13,7 @@
     - [ContainsRequest](#atomix-list-v1-ContainsRequest)
     - [ContainsResponse](#atomix-list-v1-ContainsResponse)
     - [CreateRequest](#atomix-list-v1-CreateRequest)
+    - [CreateRequest.LabelsEntry](#atomix-list-v1-CreateRequest-LabelsEntry)
     - [CreateResponse](#atomix-list-v1-CreateResponse)
     - [ElementsRequest](#atomix-list-v1-ElementsRequest)
     - [ElementsResponse](#atomix-list-v1-ElementsResponse)
@@ -163,6 +164,23 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+| labels | [CreateRequest.LabelsEntry](#atomix-list-v1-CreateRequest-LabelsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-list-v1-CreateRequest-LabelsEntry"></a>
+
+### CreateRequest.LabelsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
 
 
 

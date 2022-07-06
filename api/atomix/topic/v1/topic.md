@@ -7,6 +7,7 @@
     - [CloseRequest](#atomix-topic-v1-CloseRequest)
     - [CloseResponse](#atomix-topic-v1-CloseResponse)
     - [CreateRequest](#atomix-topic-v1-CreateRequest)
+    - [CreateRequest.LabelsEntry](#atomix-topic-v1-CreateRequest-LabelsEntry)
     - [CreateResponse](#atomix-topic-v1-CreateResponse)
     - [PublishRequest](#atomix-topic-v1-PublishRequest)
     - [PublishResponse](#atomix-topic-v1-PublishResponse)
@@ -60,6 +61,23 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+| labels | [CreateRequest.LabelsEntry](#atomix-topic-v1-CreateRequest-LabelsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-topic-v1-CreateRequest-LabelsEntry"></a>
+
+### CreateRequest.LabelsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
 
 
 
