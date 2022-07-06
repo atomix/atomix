@@ -14,12 +14,15 @@ import (
 
 var log = logging.GetLogger()
 
-const serviceName = "atomix.lock.v1.Lock"
+const (
+	Name       = "Lock"
+	APIVersion = "v1"
+)
 
-var Kind = primitive.NewKind[lockv1.LockClient](serviceName, register, resolve)
+var Type = primitive.NewType[lockv1.LockClient](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, proxies *primitive.Manager[lockv1.LockClient]) {
-	lockv1.RegisterLockServer(server, newLockServer(proxies))
+func register(server *grpc.Server, manager *primitive.Manager[lockv1.LockClient]) {
+	lockv1.RegisterLockServer(server, newLockServer(manager))
 }
 
 func resolve(client driver.Client) (primitive.Factory[lockv1.LockClient], bool) {
@@ -30,5 +33,5 @@ func resolve(client driver.Client) (primitive.Factory[lockv1.LockClient], bool) 
 }
 
 type LockProvider interface {
-	GetLock(primitive.ID) lockv1.LockClient
+	GetLock(string) lockv1.LockClient
 }

@@ -4,13 +4,8 @@
 ## Table of Contents
 
 - [atomix/lock/v1/lock.proto](#atomix_lock_v1_lock-proto)
-    - [CloseRequest](#atomix-lock-v1-CloseRequest)
-    - [CloseResponse](#atomix-lock-v1-CloseResponse)
-    - [CreateRequest](#atomix-lock-v1-CreateRequest)
-    - [CreateResponse](#atomix-lock-v1-CreateResponse)
     - [GetLockRequest](#atomix-lock-v1-GetLockRequest)
     - [GetLockResponse](#atomix-lock-v1-GetLockResponse)
-    - [LockConfig](#atomix-lock-v1-LockConfig)
     - [LockInstance](#atomix-lock-v1-LockInstance)
     - [LockRequest](#atomix-lock-v1-LockRequest)
     - [LockResponse](#atomix-lock-v1-LockResponse)
@@ -29,51 +24,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/lock/v1/lock.proto
-
-
-
-<a name="atomix-lock-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-
-
-
-
-<a name="atomix-lock-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-lock-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [LockConfig](#atomix-lock-v1-LockConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-lock-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-
 
 
 
@@ -101,16 +51,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | lock | [LockInstance](#atomix-lock-v1-LockInstance) |  |  |
-
-
-
-
-
-
-<a name="atomix-lock-v1-LockConfig"></a>
-
-### LockConfig
-
 
 
 
@@ -218,8 +158,6 @@ Lock is a service for a lock primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-lock-v1-CreateRequest) | [CreateResponse](#atomix-lock-v1-CreateResponse) |  |
-| Close | [CloseRequest](#atomix-lock-v1-CloseRequest) | [CloseResponse](#atomix-lock-v1-CloseResponse) |  |
 | Lock | [LockRequest](#atomix-lock-v1-LockRequest) | [LockResponse](#atomix-lock-v1-LockResponse) | Lock attempts to acquire the lock |
 | Unlock | [UnlockRequest](#atomix-lock-v1-UnlockRequest) | [UnlockResponse](#atomix-lock-v1-UnlockResponse) | Unlock releases the lock |
 | GetLock | [GetLockRequest](#atomix-lock-v1-GetLockRequest) | [GetLockResponse](#atomix-lock-v1-GetLockResponse) | GetLock gets the lock state |

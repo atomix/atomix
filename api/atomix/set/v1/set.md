@@ -8,12 +8,8 @@
     - [AddResponse](#atomix-set-v1-AddResponse)
     - [ClearRequest](#atomix-set-v1-ClearRequest)
     - [ClearResponse](#atomix-set-v1-ClearResponse)
-    - [CloseRequest](#atomix-set-v1-CloseRequest)
-    - [CloseResponse](#atomix-set-v1-CloseResponse)
     - [ContainsRequest](#atomix-set-v1-ContainsRequest)
     - [ContainsResponse](#atomix-set-v1-ContainsResponse)
-    - [CreateRequest](#atomix-set-v1-CreateRequest)
-    - [CreateResponse](#atomix-set-v1-CreateResponse)
     - [Element](#atomix-set-v1-Element)
     - [ElementsRequest](#atomix-set-v1-ElementsRequest)
     - [ElementsResponse](#atomix-set-v1-ElementsResponse)
@@ -22,7 +18,6 @@
     - [EventsResponse](#atomix-set-v1-EventsResponse)
     - [RemoveRequest](#atomix-set-v1-RemoveRequest)
     - [RemoveResponse](#atomix-set-v1-RemoveResponse)
-    - [SetConfig](#atomix-set-v1-SetConfig)
     - [SizeRequest](#atomix-set-v1-SizeRequest)
     - [SizeResponse](#atomix-set-v1-SizeResponse)
   
@@ -91,26 +86,6 @@
 
 
 
-<a name="atomix-set-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-
-
-
-
-<a name="atomix-set-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
 <a name="atomix-set-v1-ContainsRequest"></a>
 
 ### ContainsRequest
@@ -135,31 +110,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | contains | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="atomix-set-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [SetConfig](#atomix-set-v1-SetConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-set-v1-CreateResponse"></a>
-
-### CreateResponse
-
 
 
 
@@ -283,16 +233,6 @@
 
 
 
-<a name="atomix-set-v1-SetConfig"></a>
-
-### SetConfig
-
-
-
-
-
-
-
 <a name="atomix-set-v1-SizeRequest"></a>
 
 ### SizeRequest
@@ -345,8 +285,6 @@ Set is a service for a set primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-set-v1-CreateRequest) | [CreateResponse](#atomix-set-v1-CreateResponse) |  |
-| Close | [CloseRequest](#atomix-set-v1-CloseRequest) | [CloseResponse](#atomix-set-v1-CloseResponse) |  |
 | Size | [SizeRequest](#atomix-set-v1-SizeRequest) | [SizeResponse](#atomix-set-v1-SizeResponse) | Size gets the number of elements in the set |
 | Contains | [ContainsRequest](#atomix-set-v1-ContainsRequest) | [ContainsResponse](#atomix-set-v1-ContainsResponse) | Contains returns whether the set contains a value |
 | Add | [AddRequest](#atomix-set-v1-AddRequest) | [AddResponse](#atomix-set-v1-AddResponse) | Add adds a value to the set |

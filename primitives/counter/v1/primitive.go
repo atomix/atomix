@@ -14,12 +14,15 @@ import (
 
 var log = logging.GetLogger()
 
-const serviceName = "atomix.counter.v1.Counter"
+const (
+	Name       = "Counter"
+	APIVersion = "v1"
+)
 
-var Kind = primitive.NewKind[counterv1.CounterClient](serviceName, register, resolve)
+var Type = primitive.NewType[counterv1.CounterClient](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, proxies *primitive.Manager[counterv1.CounterClient]) {
-	counterv1.RegisterCounterServer(server, newCounterServer(proxies))
+func register(server *grpc.Server, manager *primitive.Manager[counterv1.CounterClient]) {
+	counterv1.RegisterCounterServer(server, newCounterServer(manager))
 }
 
 func resolve(client driver.Client) (primitive.Factory[counterv1.CounterClient], bool) {
@@ -30,5 +33,5 @@ func resolve(client driver.Client) (primitive.Factory[counterv1.CounterClient], 
 }
 
 type CounterProvider interface {
-	GetCounter(primitive.ID) counterv1.CounterClient
+	GetCounter(string) counterv1.CounterClient
 }

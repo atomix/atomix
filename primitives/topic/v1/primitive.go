@@ -14,12 +14,15 @@ import (
 
 var log = logging.GetLogger()
 
-const serviceName = "atomix.topic.v1.Topic"
+const (
+	Name       = "Topic"
+	APIVersion = "v1"
+)
 
-var Kind = primitive.NewKind[topicv1.TopicClient](serviceName, register, resolve)
+var Type = primitive.NewType[topicv1.TopicClient](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, proxies *primitive.Manager[topicv1.TopicClient]) {
-	topicv1.RegisterTopicServer(server, newTopicServer(proxies))
+func register(server *grpc.Server, manager *primitive.Manager[topicv1.TopicClient]) {
+	topicv1.RegisterTopicServer(server, newTopicServer(manager))
 }
 
 func resolve(client driver.Client) (primitive.Factory[topicv1.TopicClient], bool) {
@@ -30,5 +33,5 @@ func resolve(client driver.Client) (primitive.Factory[topicv1.TopicClient], bool
 }
 
 type TopicProvider interface {
-	GetTopic(primitive.ID) topicv1.TopicClient
+	GetTopic(string) topicv1.TopicClient
 }

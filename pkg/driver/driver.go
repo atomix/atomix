@@ -9,40 +9,34 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/atomix/runtime/pkg/logging"
+	"github.com/atomix/runtime/pkg/runtime"
 )
 
 var log = logging.GetLogger()
 
 type Driver interface {
 	fmt.Stringer
-	Name() string
-	Version() string
-	Connect(ctx context.Context, config []byte) (Conn, error)
+	Kind() runtime.Kind
+	Connect(ctx context.Context, id ConnID, config []byte) (Conn, error)
 }
 
 func New[C any](name, version string, connector Connector[C]) Driver {
 	return &configurableDriver[C]{
-		name:      name,
-		version:   version,
+		kind:      runtime.NewKind(name, version),
 		connector: connector,
 	}
 }
 
 type configurableDriver[C any] struct {
-	name      string
-	version   string
+	kind      runtime.Kind
 	connector Connector[C]
 }
 
-func (d *configurableDriver[C]) Name() string {
-	return d.name
+func (d *configurableDriver[C]) Kind() runtime.Kind {
+	return d.kind
 }
 
-func (d *configurableDriver[C]) Version() string {
-	return d.version
-}
-
-func (d *configurableDriver[C]) Connect(ctx context.Context, data []byte) (Conn, error) {
+func (d *configurableDriver[C]) Connect(ctx context.Context, id ConnID, data []byte) (Conn, error) {
 	var config C
 	if data != nil {
 		if err := json.Unmarshal(data, &config); err != nil {
@@ -53,11 +47,11 @@ func (d *configurableDriver[C]) Connect(ctx context.Context, data []byte) (Conn,
 	if err != nil {
 		return nil, err
 	}
-	return newConfigurableConn[C](d, conn), nil
+	return newConfigurableConn[C](id, d, conn), nil
 }
 
 func (d *configurableDriver[C]) String() string {
-	return fmt.Sprintf("%s/%s", d.name, d.version)
+	return d.kind.String()
 }
 
 var _ Driver = (*configurableDriver[any])(nil)

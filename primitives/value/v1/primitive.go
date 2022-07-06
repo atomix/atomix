@@ -14,12 +14,15 @@ import (
 
 var log = logging.GetLogger()
 
-const serviceName = "atomix.value.v1.Value"
+const (
+	Name       = "Value"
+	APIVersion = "v1"
+)
 
-var Kind = primitive.NewKind[valuev1.ValueClient](serviceName, register, resolve)
+var Type = primitive.NewType[valuev1.ValueClient](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, proxies *primitive.Manager[valuev1.ValueClient]) {
-	valuev1.RegisterValueServer(server, newValueServer(proxies))
+func register(server *grpc.Server, manager *primitive.Manager[valuev1.ValueClient]) {
+	valuev1.RegisterValueServer(server, newValueServer(manager))
 }
 
 func resolve(client driver.Client) (primitive.Factory[valuev1.ValueClient], bool) {
@@ -30,5 +33,5 @@ func resolve(client driver.Client) (primitive.Factory[valuev1.ValueClient], bool
 }
 
 type ValueProvider interface {
-	GetValue(primitive.ID) valuev1.ValueClient
+	GetValue(string) valuev1.ValueClient
 }

@@ -14,12 +14,15 @@ import (
 
 var log = logging.GetLogger()
 
-const serviceName = "atomix.set.v1.Set"
+const (
+	Name       = "Set"
+	APIVersion = "v1"
+)
 
-var Kind = primitive.NewKind[setv1.SetClient](serviceName, register, resolve)
+var Type = primitive.NewType[setv1.SetClient](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, proxies *primitive.Manager[setv1.SetClient]) {
-	setv1.RegisterSetServer(server, newSetServer(proxies))
+func register(server *grpc.Server, manager *primitive.Manager[setv1.SetClient]) {
+	setv1.RegisterSetServer(server, newSetServer(manager))
 }
 
 func resolve(client driver.Client) (primitive.Factory[setv1.SetClient], bool) {
@@ -30,5 +33,5 @@ func resolve(client driver.Client) (primitive.Factory[setv1.SetClient], bool) {
 }
 
 type SetProvider interface {
-	GetSet(primitive.ID) setv1.SetClient
+	GetSet(string) setv1.SetClient
 }

@@ -6,10 +6,6 @@
 - [atomix/election/v1/election.proto](#atomix_election_v1_election-proto)
     - [AnointRequest](#atomix-election-v1-AnointRequest)
     - [AnointResponse](#atomix-election-v1-AnointResponse)
-    - [CloseRequest](#atomix-election-v1-CloseRequest)
-    - [CloseResponse](#atomix-election-v1-CloseResponse)
-    - [CreateRequest](#atomix-election-v1-CreateRequest)
-    - [CreateResponse](#atomix-election-v1-CreateResponse)
     - [EnterRequest](#atomix-election-v1-EnterRequest)
     - [EnterResponse](#atomix-election-v1-EnterResponse)
     - [Event](#atomix-election-v1-Event)
@@ -19,7 +15,6 @@
     - [EvictResponse](#atomix-election-v1-EvictResponse)
     - [GetTermRequest](#atomix-election-v1-GetTermRequest)
     - [GetTermResponse](#atomix-election-v1-GetTermResponse)
-    - [LeaderElectionConfig](#atomix-election-v1-LeaderElectionConfig)
     - [PromoteRequest](#atomix-election-v1-PromoteRequest)
     - [PromoteResponse](#atomix-election-v1-PromoteResponse)
     - [Term](#atomix-election-v1-Term)
@@ -65,51 +60,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | term | [Term](#atomix-election-v1-Term) |  |  |
-
-
-
-
-
-
-<a name="atomix-election-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-
-
-
-
-<a name="atomix-election-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-election-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [LeaderElectionConfig](#atomix-election-v1-LeaderElectionConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-election-v1-CreateResponse"></a>
-
-### CreateResponse
-
 
 
 
@@ -242,16 +192,6 @@
 
 
 
-<a name="atomix-election-v1-LeaderElectionConfig"></a>
-
-### LeaderElectionConfig
-
-
-
-
-
-
-
 <a name="atomix-election-v1-PromoteRequest"></a>
 
 ### PromoteRequest
@@ -354,8 +294,6 @@ LeaderElection is a service for a leader election primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-election-v1-CreateRequest) | [CreateResponse](#atomix-election-v1-CreateResponse) |  |
-| Close | [CloseRequest](#atomix-election-v1-CloseRequest) | [CloseResponse](#atomix-election-v1-CloseResponse) |  |
 | Enter | [EnterRequest](#atomix-election-v1-EnterRequest) | [EnterResponse](#atomix-election-v1-EnterResponse) | Enter enters the leader election |
 | Withdraw | [WithdrawRequest](#atomix-election-v1-WithdrawRequest) | [WithdrawResponse](#atomix-election-v1-WithdrawResponse) | Withdraw withdraws a candidate from the leader election |
 | Anoint | [AnointRequest](#atomix-election-v1-AnointRequest) | [AnointResponse](#atomix-election-v1-AnointResponse) | Anoint anoints a candidate leader |

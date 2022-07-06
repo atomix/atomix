@@ -4,10 +4,6 @@
 ## Table of Contents
 
 - [atomix/value/v1/value.proto](#atomix_value_v1_value-proto)
-    - [CloseRequest](#atomix-value-v1-CloseRequest)
-    - [CloseResponse](#atomix-value-v1-CloseResponse)
-    - [CreateRequest](#atomix-value-v1-CreateRequest)
-    - [CreateResponse](#atomix-value-v1-CreateResponse)
     - [Event](#atomix-value-v1-Event)
     - [EventsRequest](#atomix-value-v1-EventsRequest)
     - [EventsResponse](#atomix-value-v1-EventsResponse)
@@ -15,7 +11,6 @@
     - [GetResponse](#atomix-value-v1-GetResponse)
     - [SetRequest](#atomix-value-v1-SetRequest)
     - [SetResponse](#atomix-value-v1-SetResponse)
-    - [ValueConfig](#atomix-value-v1-ValueConfig)
   
     - [Event.Type](#atomix-value-v1-Event-Type)
   
@@ -29,51 +24,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/value/v1/value.proto
-
-
-
-<a name="atomix-value-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-
-
-
-
-<a name="atomix-value-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-value-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [ValueConfig](#atomix-value-v1-ValueConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-value-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-
 
 
 
@@ -176,16 +126,6 @@
 
 
 
-
-<a name="atomix-value-v1-ValueConfig"></a>
-
-### ValueConfig
-
-
-
-
-
-
  
 
 
@@ -212,8 +152,6 @@ Value is a service for a value primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-value-v1-CreateRequest) | [CreateResponse](#atomix-value-v1-CreateResponse) |  |
-| Close | [CloseRequest](#atomix-value-v1-CloseRequest) | [CloseResponse](#atomix-value-v1-CloseResponse) |  |
 | Set | [SetRequest](#atomix-value-v1-SetRequest) | [SetResponse](#atomix-value-v1-SetResponse) | Set sets the value |
 | Get | [GetRequest](#atomix-value-v1-GetRequest) | [GetResponse](#atomix-value-v1-GetResponse) | Get gets the value |
 | Events | [EventsRequest](#atomix-value-v1-EventsRequest) | [EventsResponse](#atomix-value-v1-EventsResponse) stream | Events listens for value change events |

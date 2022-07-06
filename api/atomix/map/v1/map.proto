@@ -15,16 +15,6 @@ import "gogoproto/gogo.proto";
 
 // Map is a service for a map primitive
 service Map {
-    rpc Create (CreateRequest) returns (CreateResponse) {
-        option (atomix.primitive.v1.operation_id) = 1;
-        option (atomix.primitive.v1.operation_type) = CREATE;
-    }
-
-    rpc Close (CloseRequest) returns (CloseResponse) {
-        option (atomix.primitive.v1.operation_id) = 2;
-        option (atomix.primitive.v1.operation_type) = CLOSE;
-    }
-
     // Size returns the size of the map
     rpc Size (SizeRequest) returns (SizeResponse) {
         option (atomix.primitive.v1.operation_id) = 3;
@@ -78,28 +68,6 @@ service Map {
         option (atomix.primitive.v1.operation_id) = 11;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
-}
-
-message CreateRequest {
-    MapConfig config = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CreateResponse {
-
-}
-
-message CloseRequest {
-
-}
-
-message CloseResponse {
-
-}
-
-message MapConfig {
-    MapCacheConfig cache = 1;
 }
 
 message MapCacheConfig {

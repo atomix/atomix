@@ -13,66 +13,20 @@ import (
 	"io"
 )
 
-func newMapServer(proxies *primitive.Manager[mapv1.MapClient]) mapv1.MapServer {
+func newMapServer(manager *primitive.Manager[mapv1.MapClient]) mapv1.MapServer {
 	return &mapServer{
-		proxies: proxies,
+		manager: manager,
 	}
 }
 
 type mapServer struct {
-	proxies *primitive.Manager[mapv1.MapClient]
-}
-
-func (s *mapServer) Create(ctx context.Context, request *mapv1.CreateRequest) (*mapv1.CreateResponse, error) {
-	log.Debugw("Create",
-		logging.Stringer("CreateRequest", request))
-	proxy, err := s.proxies.Create(ctx)
-	if err != nil {
-		err = errors.ToProto(err)
-		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := proxy.Create(ctx, request)
-	if err != nil {
-		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Create",
-		logging.Stringer("CreateResponse", response))
-	return response, nil
-}
-
-func (s *mapServer) Close(ctx context.Context, request *mapv1.CloseRequest) (*mapv1.CloseResponse, error) {
-	log.Debugw("Close",
-		logging.Stringer("CloseRequest", request))
-	proxy, err := s.proxies.Close(ctx)
-	if err != nil {
-		err = errors.ToProto(err)
-		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := proxy.Close(ctx, request)
-	if err != nil {
-		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Close",
-		logging.Stringer("CloseResponse", response))
-	return response, nil
+	manager *primitive.Manager[mapv1.MapClient]
 }
 
 func (s *mapServer) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Stringer("SizeRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Size",
@@ -80,7 +34,7 @@ func (s *mapServer) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Size(ctx, request)
+	response, err := client.Size(ctx, request)
 	if err != nil {
 		log.Warnw("Size",
 			logging.Stringer("SizeRequest", request),
@@ -95,7 +49,7 @@ func (s *mapServer) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv
 func (s *mapServer) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
 	log.Debugw("Put",
 		logging.Stringer("PutRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Put",
@@ -103,7 +57,7 @@ func (s *mapServer) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Put(ctx, request)
+	response, err := client.Put(ctx, request)
 	if err != nil {
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
@@ -118,7 +72,7 @@ func (s *mapServer) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.
 func (s *mapServer) Insert(ctx context.Context, request *mapv1.InsertRequest) (*mapv1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Stringer("InsertRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Insert",
@@ -126,7 +80,7 @@ func (s *mapServer) Insert(ctx context.Context, request *mapv1.InsertRequest) (*
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Insert(ctx, request)
+	response, err := client.Insert(ctx, request)
 	if err != nil {
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
@@ -141,7 +95,7 @@ func (s *mapServer) Insert(ctx context.Context, request *mapv1.InsertRequest) (*
 func (s *mapServer) Update(ctx context.Context, request *mapv1.UpdateRequest) (*mapv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Stringer("UpdateRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Update",
@@ -149,7 +103,7 @@ func (s *mapServer) Update(ctx context.Context, request *mapv1.UpdateRequest) (*
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Update(ctx, request)
+	response, err := client.Update(ctx, request)
 	if err != nil {
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
@@ -164,7 +118,7 @@ func (s *mapServer) Update(ctx context.Context, request *mapv1.UpdateRequest) (*
 func (s *mapServer) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
@@ -172,7 +126,7 @@ func (s *mapServer) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Get(ctx, request)
+	response, err := client.Get(ctx, request)
 	if err != nil {
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
@@ -187,7 +141,7 @@ func (s *mapServer) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.
 func (s *mapServer) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Stringer("RemoveRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Remove",
@@ -195,7 +149,7 @@ func (s *mapServer) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Remove(ctx, request)
+	response, err := client.Remove(ctx, request)
 	if err != nil {
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
@@ -210,7 +164,7 @@ func (s *mapServer) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*
 func (s *mapServer) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Stringer("ClearRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Clear",
@@ -218,7 +172,7 @@ func (s *mapServer) Clear(ctx context.Context, request *mapv1.ClearRequest) (*ma
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Clear(ctx, request)
+	response, err := client.Clear(ctx, request)
 	if err != nil {
 		log.Warnw("Clear",
 			logging.Stringer("ClearRequest", request),
@@ -234,7 +188,7 @@ func (s *mapServer) Events(request *mapv1.EventsRequest, server mapv1.Map_Events
 	log.Debugw("Events",
 		logging.Stringer("EventsRequest", request),
 		logging.String("State", "started"))
-	proxy, err := s.proxies.Get(server.Context())
+	client, err := s.manager.GetClient(server.Context())
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
@@ -242,7 +196,7 @@ func (s *mapServer) Events(request *mapv1.EventsRequest, server mapv1.Map_Events
 			logging.Error("Error", err))
 		return err
 	}
-	client, err := proxy.Events(server.Context(), request)
+	stream, err := client.Events(server.Context(), request)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
@@ -251,7 +205,7 @@ func (s *mapServer) Events(request *mapv1.EventsRequest, server mapv1.Map_Events
 		return err
 	}
 	for {
-		response, err := client.Recv()
+		response, err := stream.Recv()
 		if err == io.EOF {
 			log.Debugw("Events",
 				logging.Stringer("EventsRequest", request),
@@ -282,7 +236,7 @@ func (s *mapServer) Entries(request *mapv1.EntriesRequest, server mapv1.Map_Entr
 	log.Debugw("Entries",
 		logging.Stringer("EntriesRequest", request),
 		logging.String("State", "started"))
-	proxy, err := s.proxies.Get(server.Context())
+	client, err := s.manager.GetClient(server.Context())
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Entries",
@@ -290,7 +244,7 @@ func (s *mapServer) Entries(request *mapv1.EntriesRequest, server mapv1.Map_Entr
 			logging.Error("Error", err))
 		return err
 	}
-	client, err := proxy.Entries(server.Context(), request)
+	stream, err := client.Entries(server.Context(), request)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Entries",
@@ -299,7 +253,7 @@ func (s *mapServer) Entries(request *mapv1.EntriesRequest, server mapv1.Map_Entr
 		return err
 	}
 	for {
-		response, err := client.Recv()
+		response, err := stream.Recv()
 		if err == io.EOF {
 			log.Debugw("Entries",
 				logging.Stringer("EntriesRequest", request),

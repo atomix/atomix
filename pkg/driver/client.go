@@ -6,18 +6,16 @@ package driver
 
 import (
 	"context"
+	"github.com/atomix/runtime/pkg/runtime"
 )
 
 type Client interface {
+	runtime.Client
 	Closer
 }
 
 type Configurator[C any] interface {
 	Configure(ctx context.Context, config C) error
-}
-
-type Creator interface {
-	Create(ctx context.Context) error
 }
 
 type Closer interface {

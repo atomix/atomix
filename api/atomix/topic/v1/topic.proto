@@ -13,16 +13,6 @@ import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
 service Topic {
-    rpc Create (CreateRequest) returns (CreateResponse) {
-        option (atomix.primitive.v1.operation_id) = 1;
-        option (atomix.primitive.v1.operation_type) = CREATE;
-    }
-
-    rpc Close (CloseRequest) returns (CloseResponse) {
-        option (atomix.primitive.v1.operation_id) = 2;
-        option (atomix.primitive.v1.operation_type) = CLOSE;
-    }
-
     rpc Publish(PublishRequest) returns (PublishResponse) {
         option (atomix.primitive.v1.operation_id) = 3;
         option (atomix.primitive.v1.operation_type) = COMMAND;
@@ -32,28 +22,6 @@ service Topic {
         option (atomix.primitive.v1.operation_id) = 4;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
-}
-
-message CreateRequest {
-    TopicConfig config = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CreateResponse {
-
-}
-
-message CloseRequest {
-
-}
-
-message CloseResponse {
-
-}
-
-message TopicConfig {
-
 }
 
 message PublishRequest {

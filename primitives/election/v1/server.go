@@ -13,66 +13,20 @@ import (
 	"io"
 )
 
-func newLeaderElectionServer(proxies *primitive.Manager[electionv1.LeaderElectionClient]) electionv1.LeaderElectionServer {
+func newLeaderElectionServer(manager *primitive.Manager[electionv1.LeaderElectionClient]) electionv1.LeaderElectionServer {
 	return &leaderElectionServer{
-		proxies: proxies,
+		manager: manager,
 	}
 }
 
 type leaderElectionServer struct {
-	proxies *primitive.Manager[electionv1.LeaderElectionClient]
-}
-
-func (s *leaderElectionServer) Create(ctx context.Context, request *electionv1.CreateRequest) (*electionv1.CreateResponse, error) {
-	log.Debugw("Create",
-		logging.Stringer("CreateRequest", request))
-	proxy, err := s.proxies.Create(ctx)
-	if err != nil {
-		err = errors.ToProto(err)
-		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := proxy.Create(ctx, request)
-	if err != nil {
-		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Create",
-		logging.Stringer("CreateResponse", response))
-	return response, nil
-}
-
-func (s *leaderElectionServer) Close(ctx context.Context, request *electionv1.CloseRequest) (*electionv1.CloseResponse, error) {
-	log.Debugw("Close",
-		logging.Stringer("CloseRequest", request))
-	proxy, err := s.proxies.Close(ctx)
-	if err != nil {
-		err = errors.ToProto(err)
-		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := proxy.Close(ctx, request)
-	if err != nil {
-		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Close",
-		logging.Stringer("CloseResponse", response))
-	return response, nil
+	manager *primitive.Manager[electionv1.LeaderElectionClient]
 }
 
 func (s *leaderElectionServer) Enter(ctx context.Context, request *electionv1.EnterRequest) (*electionv1.EnterResponse, error) {
 	log.Debugw("Enter",
 		logging.Stringer("EnterRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Enter",
@@ -80,7 +34,7 @@ func (s *leaderElectionServer) Enter(ctx context.Context, request *electionv1.En
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Enter(ctx, request)
+	response, err := client.Enter(ctx, request)
 	if err != nil {
 		log.Warnw("Enter",
 			logging.Stringer("EnterRequest", request),
@@ -95,7 +49,7 @@ func (s *leaderElectionServer) Enter(ctx context.Context, request *electionv1.En
 func (s *leaderElectionServer) Withdraw(ctx context.Context, request *electionv1.WithdrawRequest) (*electionv1.WithdrawResponse, error) {
 	log.Debugw("Withdraw",
 		logging.Stringer("WithdrawRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Withdraw",
@@ -103,7 +57,7 @@ func (s *leaderElectionServer) Withdraw(ctx context.Context, request *electionv1
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Withdraw(ctx, request)
+	response, err := client.Withdraw(ctx, request)
 	if err != nil {
 		log.Warnw("Withdraw",
 			logging.Stringer("WithdrawRequest", request),
@@ -118,7 +72,7 @@ func (s *leaderElectionServer) Withdraw(ctx context.Context, request *electionv1
 func (s *leaderElectionServer) Anoint(ctx context.Context, request *electionv1.AnointRequest) (*electionv1.AnointResponse, error) {
 	log.Debugw("Anoint",
 		logging.Stringer("AnointRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Anoint",
@@ -126,7 +80,7 @@ func (s *leaderElectionServer) Anoint(ctx context.Context, request *electionv1.A
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Anoint(ctx, request)
+	response, err := client.Anoint(ctx, request)
 	if err != nil {
 		log.Warnw("Anoint",
 			logging.Stringer("AnointRequest", request),
@@ -141,7 +95,7 @@ func (s *leaderElectionServer) Anoint(ctx context.Context, request *electionv1.A
 func (s *leaderElectionServer) Promote(ctx context.Context, request *electionv1.PromoteRequest) (*electionv1.PromoteResponse, error) {
 	log.Debugw("Promote",
 		logging.Stringer("PromoteRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Promote",
@@ -149,7 +103,7 @@ func (s *leaderElectionServer) Promote(ctx context.Context, request *electionv1.
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Promote(ctx, request)
+	response, err := client.Promote(ctx, request)
 	if err != nil {
 		log.Warnw("Promote",
 			logging.Stringer("PromoteRequest", request),
@@ -164,7 +118,7 @@ func (s *leaderElectionServer) Promote(ctx context.Context, request *electionv1.
 func (s *leaderElectionServer) Evict(ctx context.Context, request *electionv1.EvictRequest) (*electionv1.EvictResponse, error) {
 	log.Debugw("Evict",
 		logging.Stringer("EvictRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Evict",
@@ -172,7 +126,7 @@ func (s *leaderElectionServer) Evict(ctx context.Context, request *electionv1.Ev
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Evict(ctx, request)
+	response, err := client.Evict(ctx, request)
 	if err != nil {
 		log.Warnw("Evict",
 			logging.Stringer("EvictRequest", request),
@@ -187,7 +141,7 @@ func (s *leaderElectionServer) Evict(ctx context.Context, request *electionv1.Ev
 func (s *leaderElectionServer) GetTerm(ctx context.Context, request *electionv1.GetTermRequest) (*electionv1.GetTermResponse, error) {
 	log.Debugw("GetTerm",
 		logging.Stringer("GetTermRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("GetTerm",
@@ -195,7 +149,7 @@ func (s *leaderElectionServer) GetTerm(ctx context.Context, request *electionv1.
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.GetTerm(ctx, request)
+	response, err := client.GetTerm(ctx, request)
 	if err != nil {
 		log.Warnw("GetTerm",
 			logging.Stringer("GetTermRequest", request),
@@ -211,7 +165,7 @@ func (s *leaderElectionServer) Events(request *electionv1.EventsRequest, server 
 	log.Debugw("Events",
 		logging.Stringer("EventsRequest", request),
 		logging.String("State", "started"))
-	proxy, err := s.proxies.Get(server.Context())
+	client, err := s.manager.GetClient(server.Context())
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
@@ -219,7 +173,7 @@ func (s *leaderElectionServer) Events(request *electionv1.EventsRequest, server 
 			logging.Error("Error", err))
 		return err
 	}
-	client, err := proxy.Events(server.Context(), request)
+	stream, err := client.Events(server.Context(), request)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
@@ -228,7 +182,7 @@ func (s *leaderElectionServer) Events(request *electionv1.EventsRequest, server 
 		return err
 	}
 	for {
-		response, err := client.Recv()
+		response, err := stream.Recv()
 		if err == io.EOF {
 			log.Debugw("Events",
 				logging.Stringer("EventsRequest", request),

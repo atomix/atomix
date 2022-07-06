@@ -6,10 +6,6 @@
 - [atomix/map/v1/map.proto](#atomix_map_v1_map-proto)
     - [ClearRequest](#atomix-map-v1-ClearRequest)
     - [ClearResponse](#atomix-map-v1-ClearResponse)
-    - [CloseRequest](#atomix-map-v1-CloseRequest)
-    - [CloseResponse](#atomix-map-v1-CloseResponse)
-    - [CreateRequest](#atomix-map-v1-CreateRequest)
-    - [CreateResponse](#atomix-map-v1-CreateResponse)
     - [EntriesRequest](#atomix-map-v1-EntriesRequest)
     - [EntriesResponse](#atomix-map-v1-EntriesResponse)
     - [Entry](#atomix-map-v1-Entry)
@@ -21,7 +17,6 @@
     - [InsertRequest](#atomix-map-v1-InsertRequest)
     - [InsertResponse](#atomix-map-v1-InsertResponse)
     - [MapCacheConfig](#atomix-map-v1-MapCacheConfig)
-    - [MapConfig](#atomix-map-v1-MapConfig)
     - [PutRequest](#atomix-map-v1-PutRequest)
     - [PutResponse](#atomix-map-v1-PutResponse)
     - [RemoveRequest](#atomix-map-v1-RemoveRequest)
@@ -66,51 +61,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
-
-
-
-
-
-
-<a name="atomix-map-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-
-
-
-
-<a name="atomix-map-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-map-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [MapConfig](#atomix-map-v1-MapConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-map-v1-CreateResponse"></a>
-
-### CreateResponse
-
 
 
 
@@ -283,21 +233,6 @@
 
 
 
-<a name="atomix-map-v1-MapConfig"></a>
-
-### MapConfig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| cache | [MapCacheConfig](#atomix-map-v1-MapCacheConfig) |  |  |
-
-
-
-
-
-
 <a name="atomix-map-v1-PutRequest"></a>
 
 ### PutRequest
@@ -462,8 +397,6 @@ Map is a service for a map primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-map-v1-CreateRequest) | [CreateResponse](#atomix-map-v1-CreateResponse) |  |
-| Close | [CloseRequest](#atomix-map-v1-CloseRequest) | [CloseResponse](#atomix-map-v1-CloseResponse) |  |
 | Size | [SizeRequest](#atomix-map-v1-SizeRequest) | [SizeResponse](#atomix-map-v1-SizeResponse) | Size returns the size of the map |
 | Put | [PutRequest](#atomix-map-v1-PutRequest) | [PutResponse](#atomix-map-v1-PutResponse) | Put puts an entry into the map |
 | Insert | [InsertRequest](#atomix-map-v1-InsertRequest) | [InsertResponse](#atomix-map-v1-InsertResponse) | Insert inserts an entry into the map |

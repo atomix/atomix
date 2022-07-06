@@ -7,12 +7,23 @@ package driver
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/gogo/protobuf/types"
 )
 
 type Connector[C any] func(ctx context.Context, config C) (Client, error)
 
+type ConnID struct {
+	Namespace string
+	Name      string
+}
+
+func (i ConnID) String() string {
+	return fmt.Sprintf("%s.%s", i.Namespace, i.Name)
+}
+
 type Conn interface {
+	ID() ConnID
 	Driver() Driver
 	Client() Client
 	Context() context.Context
@@ -20,9 +31,10 @@ type Conn interface {
 	Closer
 }
 
-func newConfigurableConn[C any](driver Driver, client Client) Conn {
+func newConfigurableConn[C any](id ConnID, driver Driver, client Client) Conn {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &configurableConn[C]{
+		id:     id,
 		driver: driver,
 		client: client,
 		ctx:    ctx,
@@ -31,10 +43,15 @@ func newConfigurableConn[C any](driver Driver, client Client) Conn {
 }
 
 type configurableConn[C any] struct {
+	id     ConnID
 	driver Driver
 	client Client
 	ctx    context.Context
 	cancel context.CancelFunc
+}
+
+func (c *configurableConn[C]) ID() ConnID {
+	return c.id
 }
 
 func (c *configurableConn[C]) Driver() Driver {

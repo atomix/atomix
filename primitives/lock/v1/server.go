@@ -12,66 +12,20 @@ import (
 	"github.com/atomix/runtime/pkg/primitive"
 )
 
-func newLockServer(proxies *primitive.Manager[lockv1.LockClient]) lockv1.LockServer {
+func newLockServer(manager *primitive.Manager[lockv1.LockClient]) lockv1.LockServer {
 	return &lockServer{
-		proxies: proxies,
+		manager: manager,
 	}
 }
 
 type lockServer struct {
-	proxies *primitive.Manager[lockv1.LockClient]
-}
-
-func (s *lockServer) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {
-	log.Debugw("Create",
-		logging.Stringer("CreateRequest", request))
-	proxy, err := s.proxies.Create(ctx)
-	if err != nil {
-		err = errors.ToProto(err)
-		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := proxy.Create(ctx, request)
-	if err != nil {
-		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Create",
-		logging.Stringer("CreateResponse", response))
-	return response, nil
-}
-
-func (s *lockServer) Close(ctx context.Context, request *lockv1.CloseRequest) (*lockv1.CloseResponse, error) {
-	log.Debugw("Close",
-		logging.Stringer("CloseRequest", request))
-	proxy, err := s.proxies.Close(ctx)
-	if err != nil {
-		err = errors.ToProto(err)
-		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := proxy.Close(ctx, request)
-	if err != nil {
-		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Close",
-		logging.Stringer("CloseResponse", response))
-	return response, nil
+	manager *primitive.Manager[lockv1.LockClient]
 }
 
 func (s *lockServer) Lock(ctx context.Context, request *lockv1.LockRequest) (*lockv1.LockResponse, error) {
 	log.Debugw("Lock",
 		logging.Stringer("LockRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Lock",
@@ -79,7 +33,7 @@ func (s *lockServer) Lock(ctx context.Context, request *lockv1.LockRequest) (*lo
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Lock(ctx, request)
+	response, err := client.Lock(ctx, request)
 	if err != nil {
 		log.Warnw("Lock",
 			logging.Stringer("LockRequest", request),
@@ -94,7 +48,7 @@ func (s *lockServer) Lock(ctx context.Context, request *lockv1.LockRequest) (*lo
 func (s *lockServer) Unlock(ctx context.Context, request *lockv1.UnlockRequest) (*lockv1.UnlockResponse, error) {
 	log.Debugw("Unlock",
 		logging.Stringer("UnlockRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Unlock",
@@ -102,7 +56,7 @@ func (s *lockServer) Unlock(ctx context.Context, request *lockv1.UnlockRequest) 
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.Unlock(ctx, request)
+	response, err := client.Unlock(ctx, request)
 	if err != nil {
 		log.Warnw("Unlock",
 			logging.Stringer("UnlockRequest", request),
@@ -117,7 +71,7 @@ func (s *lockServer) Unlock(ctx context.Context, request *lockv1.UnlockRequest) 
 func (s *lockServer) GetLock(ctx context.Context, request *lockv1.GetLockRequest) (*lockv1.GetLockResponse, error) {
 	log.Debugw("GetLock",
 		logging.Stringer("GetLockRequest", request))
-	proxy, err := s.proxies.Get(ctx)
+	client, err := s.manager.GetClient(ctx)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("GetLock",
@@ -125,7 +79,7 @@ func (s *lockServer) GetLock(ctx context.Context, request *lockv1.GetLockRequest
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := proxy.GetLock(ctx, request)
+	response, err := client.GetLock(ctx, request)
 	if err != nil {
 		log.Warnw("GetLock",
 			logging.Stringer("GetLockRequest", request),
