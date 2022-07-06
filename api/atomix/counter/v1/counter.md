@@ -4,6 +4,10 @@
 ## Table of Contents
 
 - [atomix/counter/v1/counter.proto](#atomix_counter_v1_counter-proto)
+    - [CloseRequest](#atomix-counter-v1-CloseRequest)
+    - [CloseResponse](#atomix-counter-v1-CloseResponse)
+    - [CreateRequest](#atomix-counter-v1-CreateRequest)
+    - [CreateResponse](#atomix-counter-v1-CreateResponse)
     - [DecrementRequest](#atomix-counter-v1-DecrementRequest)
     - [DecrementResponse](#atomix-counter-v1-DecrementResponse)
     - [GetRequest](#atomix-counter-v1-GetRequest)
@@ -25,6 +29,56 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/counter/v1/counter.proto
+
+
+
+<a name="atomix-counter-v1-CloseRequest"></a>
+
+### CloseRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-counter-v1-CloseResponse"></a>
+
+### CloseResponse
+
+
+
+
+
+
+
+<a name="atomix-counter-v1-CreateRequest"></a>
+
+### CreateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-counter-v1-CreateResponse"></a>
+
+### CreateResponse
+
+
+
+
 
 
 
@@ -195,6 +249,8 @@ Counter is a service for a counter primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-counter-v1-CreateRequest) | [CreateResponse](#atomix-counter-v1-CreateResponse) | Create creates the counter |
+| Close | [CloseRequest](#atomix-counter-v1-CloseRequest) | [CloseResponse](#atomix-counter-v1-CloseResponse) | Close closes the counter |
 | Set | [SetRequest](#atomix-counter-v1-SetRequest) | [SetResponse](#atomix-counter-v1-SetResponse) | Set sets the counter value |
 | Get | [GetRequest](#atomix-counter-v1-GetRequest) | [GetResponse](#atomix-counter-v1-GetResponse) | Get gets the current counter value |
 | Increment | [IncrementRequest](#atomix-counter-v1-IncrementRequest) | [IncrementResponse](#atomix-counter-v1-IncrementResponse) | Increment increments the counter value |

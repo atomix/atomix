@@ -15,6 +15,18 @@ import "gogoproto/gogo.proto";
 
 // Set is a service for a set primitive
 service Set {
+    // Create creates the set
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option (atomix.primitive.v1.operation_id) = 1;
+        option (atomix.primitive.v1.operation_type) = CREATE;
+    }
+
+    // Close closes the set
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option (atomix.primitive.v1.operation_id) = 2;
+        option (atomix.primitive.v1.operation_type) = CLOSE;
+    }
+
     // Size gets the number of elements in the set
     rpc Size (SizeRequest) returns (SizeResponse) {
         option (atomix.primitive.v1.operation_id) = 3;
@@ -56,6 +68,28 @@ service Set {
         option (atomix.primitive.v1.operation_id) = 9;
         option (atomix.primitive.v1.operation_type) = QUERY;
     }
+}
+
+message CreateRequest {
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CreateResponse {
+
+}
+
+message CloseRequest {
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
 }
 
 message SizeRequest {

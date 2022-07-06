@@ -8,6 +8,10 @@
     - [AppendResponse](#atomix-indexed_map-v1-AppendResponse)
     - [ClearRequest](#atomix-indexed_map-v1-ClearRequest)
     - [ClearResponse](#atomix-indexed_map-v1-ClearResponse)
+    - [CloseRequest](#atomix-indexed_map-v1-CloseRequest)
+    - [CloseResponse](#atomix-indexed_map-v1-CloseResponse)
+    - [CreateRequest](#atomix-indexed_map-v1-CreateRequest)
+    - [CreateResponse](#atomix-indexed_map-v1-CreateResponse)
     - [EntriesRequest](#atomix-indexed_map-v1-EntriesRequest)
     - [EntriesResponse](#atomix-indexed_map-v1-EntriesResponse)
     - [Entry](#atomix-indexed_map-v1-Entry)
@@ -97,6 +101,56 @@
 <a name="atomix-indexed_map-v1-ClearResponse"></a>
 
 ### ClearResponse
+
+
+
+
+
+
+
+<a name="atomix-indexed_map-v1-CloseRequest"></a>
+
+### CloseRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-indexed_map-v1-CloseResponse"></a>
+
+### CloseResponse
+
+
+
+
+
+
+
+<a name="atomix-indexed_map-v1-CreateRequest"></a>
+
+### CreateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-indexed_map-v1-CreateResponse"></a>
+
+### CreateResponse
 
 
 
@@ -495,6 +549,8 @@ IndexedMap is a service for a sorted/indexed map primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-indexed_map-v1-CreateRequest) | [CreateResponse](#atomix-indexed_map-v1-CreateResponse) | Create creates the map |
+| Close | [CloseRequest](#atomix-indexed_map-v1-CloseRequest) | [CloseResponse](#atomix-indexed_map-v1-CloseResponse) | Close closes the map |
 | Size | [SizeRequest](#atomix-indexed_map-v1-SizeRequest) | [SizeResponse](#atomix-indexed_map-v1-SizeResponse) | Size returns the size of the map |
 | Append | [AppendRequest](#atomix-indexed_map-v1-AppendRequest) | [AppendResponse](#atomix-indexed_map-v1-AppendResponse) | Append appends an entry to the map |
 | Update | [UpdateRequest](#atomix-indexed_map-v1-UpdateRequest) | [UpdateResponse](#atomix-indexed_map-v1-UpdateResponse) | Update updates an entry in the map |

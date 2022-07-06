@@ -64,7 +64,7 @@ func (x Event_Type) String() string {
 }
 
 func (Event_Type) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{24, 0}
+	return fileDescriptor_a8aa26a9b70a5401, []int{28, 0}
 }
 
 type SizeRequest struct {
@@ -111,6 +111,166 @@ func (m *SizeRequest) GetID() v1.PrimitiveId {
 	return v1.PrimitiveId{}
 }
 
+type CreateRequest struct {
+	ID v1.PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
+}
+
+func (m *CreateRequest) Reset()         { *m = CreateRequest{} }
+func (m *CreateRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateRequest) ProtoMessage()    {}
+func (*CreateRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a8aa26a9b70a5401, []int{1}
+}
+func (m *CreateRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CreateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CreateRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CreateRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateRequest.Merge(m, src)
+}
+func (m *CreateRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *CreateRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateRequest proto.InternalMessageInfo
+
+func (m *CreateRequest) GetID() v1.PrimitiveId {
+	if m != nil {
+		return m.ID
+	}
+	return v1.PrimitiveId{}
+}
+
+type CreateResponse struct {
+}
+
+func (m *CreateResponse) Reset()         { *m = CreateResponse{} }
+func (m *CreateResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateResponse) ProtoMessage()    {}
+func (*CreateResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a8aa26a9b70a5401, []int{2}
+}
+func (m *CreateResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CreateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CreateResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CreateResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateResponse.Merge(m, src)
+}
+func (m *CreateResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *CreateResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateResponse proto.InternalMessageInfo
+
+type CloseRequest struct {
+	ID v1.PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
+}
+
+func (m *CloseRequest) Reset()         { *m = CloseRequest{} }
+func (m *CloseRequest) String() string { return proto.CompactTextString(m) }
+func (*CloseRequest) ProtoMessage()    {}
+func (*CloseRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a8aa26a9b70a5401, []int{3}
+}
+func (m *CloseRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CloseRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CloseRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CloseRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CloseRequest.Merge(m, src)
+}
+func (m *CloseRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *CloseRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CloseRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CloseRequest proto.InternalMessageInfo
+
+func (m *CloseRequest) GetID() v1.PrimitiveId {
+	if m != nil {
+		return m.ID
+	}
+	return v1.PrimitiveId{}
+}
+
+type CloseResponse struct {
+}
+
+func (m *CloseResponse) Reset()         { *m = CloseResponse{} }
+func (m *CloseResponse) String() string { return proto.CompactTextString(m) }
+func (*CloseResponse) ProtoMessage()    {}
+func (*CloseResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a8aa26a9b70a5401, []int{4}
+}
+func (m *CloseResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CloseResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CloseResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CloseResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CloseResponse.Merge(m, src)
+}
+func (m *CloseResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *CloseResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CloseResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CloseResponse proto.InternalMessageInfo
+
 type SizeResponse struct {
 	Size_ uint32 `protobuf:"varint,1,opt,name=size,proto3" json:"size,omitempty"`
 }
@@ -119,7 +279,7 @@ func (m *SizeResponse) Reset()         { *m = SizeResponse{} }
 func (m *SizeResponse) String() string { return proto.CompactTextString(m) }
 func (*SizeResponse) ProtoMessage()    {}
 func (*SizeResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{1}
+	return fileDescriptor_a8aa26a9b70a5401, []int{5}
 }
 func (m *SizeResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -165,7 +325,7 @@ func (m *AppendRequest) Reset()         { *m = AppendRequest{} }
 func (m *AppendRequest) String() string { return proto.CompactTextString(m) }
 func (*AppendRequest) ProtoMessage()    {}
 func (*AppendRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{2}
+	return fileDescriptor_a8aa26a9b70a5401, []int{6}
 }
 func (m *AppendRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -223,7 +383,7 @@ func (m *AppendResponse) Reset()         { *m = AppendResponse{} }
 func (m *AppendResponse) String() string { return proto.CompactTextString(m) }
 func (*AppendResponse) ProtoMessage()    {}
 func (*AppendResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{3}
+	return fileDescriptor_a8aa26a9b70a5401, []int{7}
 }
 func (m *AppendResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -271,7 +431,7 @@ func (m *UpdateRequest) Reset()         { *m = UpdateRequest{} }
 func (m *UpdateRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateRequest) ProtoMessage()    {}
 func (*UpdateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{4}
+	return fileDescriptor_a8aa26a9b70a5401, []int{8}
 }
 func (m *UpdateRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -343,7 +503,7 @@ func (m *UpdateResponse) Reset()         { *m = UpdateResponse{} }
 func (m *UpdateResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateResponse) ProtoMessage()    {}
 func (*UpdateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{5}
+	return fileDescriptor_a8aa26a9b70a5401, []int{9}
 }
 func (m *UpdateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -389,7 +549,7 @@ func (m *GetRequest) Reset()         { *m = GetRequest{} }
 func (m *GetRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRequest) ProtoMessage()    {}
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{6}
+	return fileDescriptor_a8aa26a9b70a5401, []int{10}
 }
 func (m *GetRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -447,7 +607,7 @@ func (m *GetResponse) Reset()         { *m = GetResponse{} }
 func (m *GetResponse) String() string { return proto.CompactTextString(m) }
 func (*GetResponse) ProtoMessage()    {}
 func (*GetResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{7}
+	return fileDescriptor_a8aa26a9b70a5401, []int{11}
 }
 func (m *GetResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -491,7 +651,7 @@ func (m *FirstEntryRequest) Reset()         { *m = FirstEntryRequest{} }
 func (m *FirstEntryRequest) String() string { return proto.CompactTextString(m) }
 func (*FirstEntryRequest) ProtoMessage()    {}
 func (*FirstEntryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{8}
+	return fileDescriptor_a8aa26a9b70a5401, []int{12}
 }
 func (m *FirstEntryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -535,7 +695,7 @@ func (m *FirstEntryResponse) Reset()         { *m = FirstEntryResponse{} }
 func (m *FirstEntryResponse) String() string { return proto.CompactTextString(m) }
 func (*FirstEntryResponse) ProtoMessage()    {}
 func (*FirstEntryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{9}
+	return fileDescriptor_a8aa26a9b70a5401, []int{13}
 }
 func (m *FirstEntryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -579,7 +739,7 @@ func (m *LastEntryRequest) Reset()         { *m = LastEntryRequest{} }
 func (m *LastEntryRequest) String() string { return proto.CompactTextString(m) }
 func (*LastEntryRequest) ProtoMessage()    {}
 func (*LastEntryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{10}
+	return fileDescriptor_a8aa26a9b70a5401, []int{14}
 }
 func (m *LastEntryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -623,7 +783,7 @@ func (m *LastEntryResponse) Reset()         { *m = LastEntryResponse{} }
 func (m *LastEntryResponse) String() string { return proto.CompactTextString(m) }
 func (*LastEntryResponse) ProtoMessage()    {}
 func (*LastEntryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{11}
+	return fileDescriptor_a8aa26a9b70a5401, []int{15}
 }
 func (m *LastEntryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -668,7 +828,7 @@ func (m *PrevEntryRequest) Reset()         { *m = PrevEntryRequest{} }
 func (m *PrevEntryRequest) String() string { return proto.CompactTextString(m) }
 func (*PrevEntryRequest) ProtoMessage()    {}
 func (*PrevEntryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{12}
+	return fileDescriptor_a8aa26a9b70a5401, []int{16}
 }
 func (m *PrevEntryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -719,7 +879,7 @@ func (m *PrevEntryResponse) Reset()         { *m = PrevEntryResponse{} }
 func (m *PrevEntryResponse) String() string { return proto.CompactTextString(m) }
 func (*PrevEntryResponse) ProtoMessage()    {}
 func (*PrevEntryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{13}
+	return fileDescriptor_a8aa26a9b70a5401, []int{17}
 }
 func (m *PrevEntryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -764,7 +924,7 @@ func (m *NextEntryRequest) Reset()         { *m = NextEntryRequest{} }
 func (m *NextEntryRequest) String() string { return proto.CompactTextString(m) }
 func (*NextEntryRequest) ProtoMessage()    {}
 func (*NextEntryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{14}
+	return fileDescriptor_a8aa26a9b70a5401, []int{18}
 }
 func (m *NextEntryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -815,7 +975,7 @@ func (m *NextEntryResponse) Reset()         { *m = NextEntryResponse{} }
 func (m *NextEntryResponse) String() string { return proto.CompactTextString(m) }
 func (*NextEntryResponse) ProtoMessage()    {}
 func (*NextEntryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{15}
+	return fileDescriptor_a8aa26a9b70a5401, []int{19}
 }
 func (m *NextEntryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -862,7 +1022,7 @@ func (m *RemoveRequest) Reset()         { *m = RemoveRequest{} }
 func (m *RemoveRequest) String() string { return proto.CompactTextString(m) }
 func (*RemoveRequest) ProtoMessage()    {}
 func (*RemoveRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{16}
+	return fileDescriptor_a8aa26a9b70a5401, []int{20}
 }
 func (m *RemoveRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -927,7 +1087,7 @@ func (m *RemoveResponse) Reset()         { *m = RemoveResponse{} }
 func (m *RemoveResponse) String() string { return proto.CompactTextString(m) }
 func (*RemoveResponse) ProtoMessage()    {}
 func (*RemoveResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{17}
+	return fileDescriptor_a8aa26a9b70a5401, []int{21}
 }
 func (m *RemoveResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -971,7 +1131,7 @@ func (m *ClearRequest) Reset()         { *m = ClearRequest{} }
 func (m *ClearRequest) String() string { return proto.CompactTextString(m) }
 func (*ClearRequest) ProtoMessage()    {}
 func (*ClearRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{18}
+	return fileDescriptor_a8aa26a9b70a5401, []int{22}
 }
 func (m *ClearRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1014,7 +1174,7 @@ func (m *ClearResponse) Reset()         { *m = ClearResponse{} }
 func (m *ClearResponse) String() string { return proto.CompactTextString(m) }
 func (*ClearResponse) ProtoMessage()    {}
 func (*ClearResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{19}
+	return fileDescriptor_a8aa26a9b70a5401, []int{23}
 }
 func (m *ClearResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1051,7 +1211,7 @@ func (m *EntriesRequest) Reset()         { *m = EntriesRequest{} }
 func (m *EntriesRequest) String() string { return proto.CompactTextString(m) }
 func (*EntriesRequest) ProtoMessage()    {}
 func (*EntriesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{20}
+	return fileDescriptor_a8aa26a9b70a5401, []int{24}
 }
 func (m *EntriesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1095,7 +1255,7 @@ func (m *EntriesResponse) Reset()         { *m = EntriesResponse{} }
 func (m *EntriesResponse) String() string { return proto.CompactTextString(m) }
 func (*EntriesResponse) ProtoMessage()    {}
 func (*EntriesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{21}
+	return fileDescriptor_a8aa26a9b70a5401, []int{25}
 }
 func (m *EntriesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1141,7 +1301,7 @@ func (m *EventsRequest) Reset()         { *m = EventsRequest{} }
 func (m *EventsRequest) String() string { return proto.CompactTextString(m) }
 func (*EventsRequest) ProtoMessage()    {}
 func (*EventsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{22}
+	return fileDescriptor_a8aa26a9b70a5401, []int{26}
 }
 func (m *EventsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1199,7 +1359,7 @@ func (m *EventsResponse) Reset()         { *m = EventsResponse{} }
 func (m *EventsResponse) String() string { return proto.CompactTextString(m) }
 func (*EventsResponse) ProtoMessage()    {}
 func (*EventsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{23}
+	return fileDescriptor_a8aa26a9b70a5401, []int{27}
 }
 func (m *EventsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1244,7 +1404,7 @@ func (m *Event) Reset()         { *m = Event{} }
 func (m *Event) String() string { return proto.CompactTextString(m) }
 func (*Event) ProtoMessage()    {}
 func (*Event) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{24}
+	return fileDescriptor_a8aa26a9b70a5401, []int{28}
 }
 func (m *Event) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1296,7 +1456,7 @@ func (m *Value) Reset()         { *m = Value{} }
 func (m *Value) String() string { return proto.CompactTextString(m) }
 func (*Value) ProtoMessage()    {}
 func (*Value) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{25}
+	return fileDescriptor_a8aa26a9b70a5401, []int{29}
 }
 func (m *Value) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1350,7 +1510,7 @@ func (m *Entry) Reset()         { *m = Entry{} }
 func (m *Entry) String() string { return proto.CompactTextString(m) }
 func (*Entry) ProtoMessage()    {}
 func (*Entry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a8aa26a9b70a5401, []int{26}
+	return fileDescriptor_a8aa26a9b70a5401, []int{30}
 }
 func (m *Entry) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1410,6 +1570,10 @@ func (m *Entry) GetTimestamp() *v11.Timestamp {
 func init() {
 	proto.RegisterEnum("atomix.indexed_map.v1.Event_Type", Event_Type_name, Event_Type_value)
 	proto.RegisterType((*SizeRequest)(nil), "atomix.indexed_map.v1.SizeRequest")
+	proto.RegisterType((*CreateRequest)(nil), "atomix.indexed_map.v1.CreateRequest")
+	proto.RegisterType((*CreateResponse)(nil), "atomix.indexed_map.v1.CreateResponse")
+	proto.RegisterType((*CloseRequest)(nil), "atomix.indexed_map.v1.CloseRequest")
+	proto.RegisterType((*CloseResponse)(nil), "atomix.indexed_map.v1.CloseResponse")
 	proto.RegisterType((*SizeResponse)(nil), "atomix.indexed_map.v1.SizeResponse")
 	proto.RegisterType((*AppendRequest)(nil), "atomix.indexed_map.v1.AppendRequest")
 	proto.RegisterType((*AppendResponse)(nil), "atomix.indexed_map.v1.AppendResponse")
@@ -1443,71 +1607,76 @@ func init() {
 }
 
 var fileDescriptor_a8aa26a9b70a5401 = []byte{
-	// 1020 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x56, 0x4d, 0x73, 0xdb, 0x44,
-	0x18, 0xb6, 0x6c, 0xd9, 0x8d, 0x5f, 0x7f, 0xd4, 0xd9, 0x29, 0x8c, 0xad, 0x61, 0x9c, 0xa0, 0xa6,
-	0x34, 0x5c, 0xe4, 0xc6, 0x0c, 0x43, 0x0f, 0x3d, 0x90, 0x10, 0x13, 0x42, 0x53, 0xd7, 0xa8, 0x6e,
-	0x98, 0xce, 0x30, 0x93, 0x51, 0xd1, 0x26, 0x68, 0x6a, 0x5b, 0x42, 0xda, 0x98, 0xb8, 0x27, 0x8e,
-	0x3d, 0x32, 0xc3, 0x85, 0x03, 0xbf, 0x22, 0x70, 0xe2, 0x17, 0xf4, 0xd8, 0x23, 0xa7, 0xc0, 0x38,
-	0x07, 0xfe, 0x06, 0xb3, 0xbb, 0x92, 0xb5, 0x4e, 0xb2, 0x4e, 0x3c, 0x76, 0x72, 0xd2, 0xee, 0xea,
-	0xd9, 0xf7, 0x79, 0xde, 0xfd, 0x7a, 0x1f, 0xb8, 0x6f, 0x11, 0xb7, 0xeb, 0x1c, 0xd5, 0x9c, 0x9e,
-	0x8d, 0x8f, 0xb0, 0xbd, 0xd7, 0xb5, 0xbc, 0x5a, 0x7f, 0x4d, 0xec, 0x1a, 0x9e, 0xef, 0x12, 0x17,
-	0xbd, 0xc7, 0x81, 0x86, 0xf8, 0xa7, 0xbf, 0xa6, 0x55, 0x0f, 0x5c, 0xf7, 0xa0, 0x83, 0x6b, 0x0c,
-	0xf4, 0xf2, 0x70, 0xbf, 0x66, 0x1f, 0xfa, 0x16, 0x71, 0xdc, 0x1e, 0x9f, 0xa6, 0xad, 0x84, 0xf1,
-	0x3d, 0xdf, 0xe9, 0x3a, 0xc4, 0xe9, 0x63, 0x1a, 0xdd, 0xc6, 0xc1, 0xf7, 0xbe, 0xe3, 0x11, 0xd7,
-	0x0f, 0x51, 0x77, 0x2f, 0x42, 0x8d, 0x3a, 0x21, 0xa8, 0x1a, 0x82, 0x88, 0xd3, 0x65, 0xff, 0xe9,
-	0x37, 0x20, 0x56, 0x37, 0x54, 0xa8, 0xdd, 0x39, 0x70, 0x0f, 0x5c, 0xd6, 0xac, 0xd1, 0x16, 0x1f,
-	0xd5, 0x1f, 0x43, 0xee, 0x99, 0xf3, 0x1a, 0x9b, 0xf8, 0xc7, 0x43, 0x1c, 0x10, 0xf4, 0x08, 0x92,
-	0x8e, 0x5d, 0x56, 0x96, 0x95, 0xd5, 0x5c, 0x7d, 0xd9, 0x08, 0x73, 0x8a, 0x99, 0xfa, 0x6b, 0x46,
-	0x2b, 0xea, 0x6c, 0xdb, 0x1b, 0xf0, 0xf6, 0x64, 0x29, 0x31, 0x3c, 0x59, 0x4a, 0x6e, 0x6f, 0x9a,
-	0x49, 0xc7, 0xd6, 0x75, 0xc8, 0xf3, 0x60, 0x81, 0xe7, 0xf6, 0x02, 0x8c, 0x10, 0xa8, 0x81, 0xf3,
-	0x1a, 0xb3, 0x78, 0x05, 0x93, 0xb5, 0xf5, 0x5f, 0x15, 0x28, 0xac, 0x7b, 0x1e, 0xee, 0xd9, 0x73,
-	0xe1, 0x44, 0x25, 0x48, 0xbd, 0xc2, 0x83, 0x72, 0x72, 0x59, 0x59, 0xcd, 0x9a, 0xb4, 0x89, 0xea,
-	0x90, 0xee, 0x5b, 0x9d, 0x43, 0x5c, 0x4e, 0xb1, 0x90, 0x1f, 0x18, 0x17, 0x6e, 0x8d, 0xb1, 0x4b,
-	0x31, 0x26, 0x87, 0xea, 0x9b, 0x50, 0x8c, 0x44, 0x85, 0xda, 0xeb, 0x90, 0xc6, 0x3d, 0xe2, 0x0f,
-	0x42, 0x61, 0xb2, 0x28, 0x0d, 0x8a, 0x31, 0x39, 0x54, 0xff, 0x4f, 0x81, 0xc2, 0x73, 0xcf, 0xb6,
-	0x08, 0xbe, 0xae, 0xdc, 0xee, 0x40, 0x9a, 0x09, 0x60, 0xb9, 0xa9, 0x26, 0xef, 0xc4, 0x19, 0xab,
-	0x57, 0xce, 0x18, 0x3d, 0x82, 0xbc, 0xb3, 0xbf, 0x37, 0x3a, 0x24, 0xe5, 0x34, 0x9b, 0x5a, 0x89,
-	0xa6, 0xd2, 0x1f, 0x74, 0x4e, 0x3b, 0x02, 0x98, 0x39, 0x67, 0x7f, 0xd4, 0xa1, 0xeb, 0x15, 0x25,
-	0x3a, 0xc3, 0x7a, 0xf9, 0x00, 0x5b, 0x98, 0xdc, 0xe8, 0x5a, 0xe9, 0xeb, 0x90, 0x63, 0x9c, 0x33,
-	0xc8, 0xfe, 0x06, 0x16, 0xbf, 0x74, 0xfc, 0x80, 0xf0, 0xc1, 0xb9, 0xdc, 0x9c, 0xaf, 0x00, 0x89,
-	0x21, 0x67, 0x10, 0xd7, 0x82, 0xd2, 0x8e, 0x35, 0x57, 0x6d, 0x5b, 0xb0, 0x28, 0x44, 0x9c, 0x41,
-	0xda, 0x3e, 0x94, 0x5a, 0x3e, 0xee, 0xcf, 0x4f, 0x5a, 0xbc, 0xc5, 0x49, 0x71, 0x8b, 0xb7, 0x60,
-	0x51, 0xe0, 0x99, 0x4d, 0x70, 0x13, 0x1f, 0x91, 0x9b, 0x10, 0x2c, 0xf0, 0xcc, 0x20, 0xf8, 0x0f,
-	0x05, 0x0a, 0x26, 0xee, 0xba, 0xfd, 0x1b, 0x7e, 0x80, 0xce, 0x3e, 0x26, 0xea, 0xb4, 0x8f, 0x49,
-	0x24, 0x7a, 0x86, 0xdc, 0x77, 0x20, 0xff, 0x45, 0x07, 0x5b, 0xfe, 0x7c, 0x0e, 0xfd, 0x6d, 0x28,
-	0x84, 0xd1, 0xb8, 0x24, 0xbd, 0x09, 0x45, 0x4a, 0xe7, 0xe0, 0x60, 0x3e, 0x04, 0x8f, 0xe1, 0xf6,
-	0x28, 0x5e, 0x98, 0xf5, 0xc3, 0x29, 0xb2, 0xde, 0x50, 0x69, 0xbc, 0x28, 0xf7, 0x9f, 0xa0, 0xd0,
-	0xe8, 0xe3, 0x1e, 0x09, 0xae, 0x6b, 0xdb, 0xdf, 0x87, 0x8c, 0x8f, 0xbd, 0x8e, 0x35, 0x60, 0xfb,
-	0xbe, 0x60, 0x86, 0x3d, 0xfd, 0x6b, 0x28, 0x46, 0xc4, 0x42, 0x12, 0x74, 0xe4, 0xb2, 0x24, 0x28,
-	0x66, 0x94, 0x04, 0xed, 0xe8, 0x7f, 0x29, 0x90, 0x66, 0xc3, 0xe8, 0x53, 0x50, 0xc9, 0xc0, 0xe3,
-	0xbe, 0xa1, 0x58, 0xff, 0x70, 0x52, 0x08, 0xa3, 0x3d, 0xf0, 0xb0, 0xc9, 0xe0, 0xf1, 0xfa, 0x25,
-	0xa7, 0x5d, 0xbf, 0xcf, 0x41, 0xa5, 0x71, 0xd0, 0x02, 0xa8, 0xcd, 0xa7, 0xcd, 0x46, 0x29, 0x81,
-	0x00, 0x32, 0xdb, 0xcd, 0x67, 0x0d, 0xb3, 0x5d, 0x52, 0x68, 0xfb, 0x79, 0x6b, 0x73, 0xbd, 0xdd,
-	0x28, 0x25, 0x69, 0xdb, 0x6c, 0x3c, 0x79, 0xba, 0xdb, 0x28, 0xa5, 0x78, 0xbb, 0xb5, 0xb3, 0xfe,
-	0xa2, 0xa4, 0xea, 0xdf, 0x42, 0x9a, 0x95, 0x57, 0x7a, 0x41, 0x78, 0x2d, 0xa6, 0xe2, 0xf3, 0x51,
-	0xb5, 0x7d, 0x08, 0x29, 0x42, 0x3a, 0xa1, 0xb0, 0x8a, 0xc1, 0x5d, 0xa1, 0x11, 0xb9, 0x42, 0x63,
-	0x33, 0x74, 0x85, 0x1b, 0xb9, 0xe1, 0xc9, 0x52, 0xaa, 0xdd, 0xde, 0xf9, 0xed, 0x9f, 0x25, 0xc5,
-	0xa4, 0x53, 0xf4, 0xdf, 0xe9, 0xaa, 0x50, 0x91, 0xd1, 0xae, 0x28, 0x17, 0x5c, 0xc6, 0xe4, 0x85,
-	0x6e, 0xe0, 0xea, 0xfe, 0x07, 0x7d, 0x06, 0xd9, 0x29, 0x6e, 0x6f, 0x8c, 0xad, 0xff, 0x99, 0x05,
-	0xd8, 0xe6, 0x81, 0x9f, 0x58, 0x1e, 0x7a, 0x01, 0x2a, 0x75, 0x80, 0x48, 0x97, 0x90, 0x0a, 0x5e,
-	0x53, 0xbb, 0x3b, 0x11, 0x13, 0x5e, 0xbb, 0x85, 0x9f, 0x8f, 0x2b, 0xa9, 0x37, 0xc7, 0x15, 0x05,
-	0xed, 0x41, 0x86, 0x5b, 0x34, 0xb4, 0x22, 0x99, 0x38, 0x66, 0x2b, 0xb5, 0x7b, 0x97, 0xa0, 0x04,
-	0x02, 0xf5, 0xcd, 0x71, 0x25, 0x41, 0x09, 0xb8, 0xa7, 0x91, 0x12, 0x8c, 0x79, 0x3b, 0x29, 0xc1,
-	0xb8, 0x31, 0x62, 0x04, 0x69, 0x46, 0xb0, 0x0b, 0xa9, 0x2d, 0x4c, 0x90, 0xec, 0x3c, 0xc7, 0x56,
-	0x48, 0xd3, 0x27, 0x41, 0x84, 0xb8, 0x19, 0xb6, 0x32, 0xaf, 0x00, 0x62, 0xf3, 0x80, 0x56, 0x25,
-	0x73, 0xcf, 0x59, 0x16, 0xed, 0xe3, 0x2b, 0x20, 0x05, 0xb2, 0x5b, 0x8c, 0xec, 0x07, 0xc8, 0x8e,
-	0xdc, 0x00, 0xba, 0x2f, 0x89, 0x70, 0xd6, 0x81, 0x68, 0xab, 0x97, 0x03, 0x05, 0xa6, 0x85, 0x88,
-	0x69, 0x54, 0xc6, 0xa5, 0x4c, 0x67, 0x0d, 0x85, 0x94, 0xe9, 0x9c, 0x23, 0x60, 0x4c, 0xd9, 0x88,
-	0x69, 0x54, 0x7f, 0xa5, 0x4c, 0x67, 0x9d, 0x80, 0x94, 0xe9, 0x5c, 0x29, 0x67, 0x4c, 0x10, 0x1d,
-	0x62, 0x5e, 0xea, 0xa4, 0x67, 0x6c, 0xac, 0x7c, 0x4b, 0xcf, 0xd8, 0x78, 0xbd, 0x64, 0x04, 0x39,
-	0x76, 0xc6, 0xbe, 0x83, 0x34, 0xab, 0x5b, 0x48, 0x76, 0xbb, 0xc4, 0x1a, 0xa9, 0xad, 0x4c, 0x06,
-	0x09, 0xd1, 0xf3, 0x2c, 0xba, 0x05, 0x19, 0xfe, 0xdc, 0x4b, 0xe5, 0x8f, 0x95, 0x21, 0xa9, 0xfc,
-	0xf1, 0x9a, 0xc1, 0x08, 0x0a, 0x94, 0xe0, 0x81, 0x82, 0x6c, 0xb8, 0x15, 0xd6, 0x45, 0x74, 0x6f,
-	0xc2, 0x03, 0x1e, 0xd7, 0x61, 0xed, 0xa3, 0xcb, 0x60, 0x02, 0x4b, 0x91, 0xee, 0xc2, 0x03, 0x65,
-	0xa3, 0xfc, 0x76, 0x58, 0x55, 0xde, 0x0d, 0xab, 0xca, 0xbf, 0xc3, 0xaa, 0xf2, 0xcb, 0x69, 0x35,
-	0xf1, 0xee, 0xb4, 0x9a, 0xf8, 0xfb, 0xb4, 0x9a, 0x78, 0x99, 0x61, 0x8f, 0xf2, 0x27, 0xff, 0x07,
-	0x00, 0x00, 0xff, 0xff, 0x7f, 0x08, 0x9d, 0x20, 0xfa, 0x0f, 0x00, 0x00,
+	// 1089 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x56, 0x41, 0x73, 0xdb, 0x44,
+	0x14, 0xb6, 0x64, 0xd9, 0x4d, 0x9e, 0x63, 0xd7, 0xd9, 0x29, 0x8c, 0xad, 0x61, 0x9c, 0xa0, 0xa4,
+	0x34, 0x5c, 0xe4, 0xc6, 0x0c, 0x43, 0x0f, 0x3d, 0x90, 0x34, 0x26, 0x84, 0x26, 0xae, 0x51, 0xdd,
+	0x30, 0x9d, 0x61, 0x26, 0xa3, 0xa2, 0x4d, 0xd0, 0xd4, 0xb6, 0x84, 0xb4, 0x31, 0x71, 0x4f, 0x1c,
+	0x73, 0x64, 0x86, 0x0b, 0x07, 0x7e, 0x85, 0xb9, 0xf1, 0x0b, 0x7a, 0xec, 0x91, 0x53, 0x60, 0x9c,
+	0x03, 0x3f, 0x80, 0x3f, 0xc0, 0xec, 0xae, 0x64, 0x4b, 0x89, 0xd7, 0x49, 0xc6, 0x22, 0x27, 0xef,
+	0xae, 0xbf, 0xfd, 0xbe, 0xf7, 0xde, 0xee, 0xea, 0x7d, 0xf0, 0xc0, 0x24, 0x4e, 0xc7, 0x3e, 0xa9,
+	0xda, 0x5d, 0x0b, 0x9f, 0x60, 0xeb, 0xa0, 0x63, 0xba, 0xd5, 0xde, 0x7a, 0x74, 0xaa, 0xbb, 0x9e,
+	0x43, 0x1c, 0xf4, 0x1e, 0x07, 0xea, 0xd1, 0x7f, 0x7a, 0xeb, 0x6a, 0xe5, 0xc8, 0x71, 0x8e, 0xda,
+	0xb8, 0xca, 0x40, 0xaf, 0x8e, 0x0f, 0xab, 0xd6, 0xb1, 0x67, 0x12, 0xdb, 0xe9, 0xf2, 0x6d, 0xea,
+	0x6a, 0xc0, 0xef, 0x7a, 0x76, 0xc7, 0x26, 0x76, 0x0f, 0x53, 0x76, 0x0b, 0xfb, 0xdf, 0x79, 0xb6,
+	0x4b, 0x1c, 0x2f, 0x40, 0xad, 0x4c, 0x42, 0x8d, 0x26, 0x01, 0xa8, 0x12, 0x80, 0x88, 0xdd, 0x61,
+	0xff, 0xd3, 0x5f, 0x9f, 0x98, 0x9d, 0x20, 0x42, 0xf5, 0xde, 0x91, 0x73, 0xe4, 0xb0, 0x61, 0x95,
+	0x8e, 0xf8, 0xaa, 0xf6, 0x14, 0x72, 0xcf, 0xed, 0x37, 0xd8, 0xc0, 0x3f, 0x1c, 0x63, 0x9f, 0xa0,
+	0xc7, 0x20, 0xdb, 0x56, 0x49, 0x5a, 0x96, 0xd6, 0x72, 0xb5, 0x65, 0x3d, 0xc8, 0x69, 0xac, 0xd4,
+	0x5b, 0xd7, 0x9b, 0xe1, 0x64, 0xc7, 0xda, 0x84, 0xb7, 0x67, 0x4b, 0xa9, 0xe1, 0xd9, 0x92, 0xbc,
+	0xb3, 0x65, 0xc8, 0xb6, 0xa5, 0xed, 0x41, 0xfe, 0x89, 0x87, 0x4d, 0x92, 0x10, 0x5d, 0x11, 0x0a,
+	0x21, 0x9d, 0xef, 0x3a, 0x5d, 0x1f, 0x6b, 0xbb, 0xb0, 0xf0, 0xa4, 0xed, 0xf8, 0x09, 0xf1, 0xdf,
+	0x85, 0x7c, 0xc0, 0x16, 0xd0, 0x6b, 0xb0, 0xc0, 0x8b, 0xc1, 0xe7, 0x08, 0x81, 0xe2, 0xdb, 0x6f,
+	0x30, 0x13, 0xc8, 0x1b, 0x6c, 0xac, 0xfd, 0x22, 0x41, 0x7e, 0xc3, 0x75, 0x71, 0xd7, 0x4a, 0x24,
+	0x08, 0x54, 0x84, 0xf4, 0x6b, 0xdc, 0x2f, 0xc9, 0xcb, 0xd2, 0xda, 0xbc, 0x41, 0x87, 0xa8, 0x06,
+	0x99, 0x9e, 0xd9, 0x3e, 0xc6, 0xa5, 0x34, 0xa3, 0xfc, 0x40, 0x9f, 0x78, 0xb5, 0xf4, 0x7d, 0x8a,
+	0x31, 0x38, 0x54, 0xdb, 0x82, 0x42, 0x18, 0x54, 0x10, 0x7b, 0x0d, 0x32, 0xb8, 0x4b, 0xbc, 0x7e,
+	0x10, 0x98, 0x88, 0xa5, 0x4e, 0x31, 0x06, 0x87, 0x6a, 0xff, 0x48, 0x90, 0x7f, 0xe1, 0x5a, 0x49,
+	0x1d, 0xe0, 0x84, 0xdc, 0xee, 0x41, 0x86, 0x05, 0xc0, 0x72, 0x53, 0x0c, 0x3e, 0x19, 0x67, 0xac,
+	0x5c, 0x3b, 0x63, 0xf4, 0x18, 0x16, 0xec, 0xc3, 0x83, 0xd1, 0x25, 0x2f, 0x65, 0xd8, 0xd6, 0x72,
+	0xb8, 0x95, 0xfe, 0x41, 0xf7, 0xb4, 0x42, 0x80, 0x91, 0xb3, 0x0f, 0x47, 0x13, 0x5a, 0xaf, 0x30,
+	0xd1, 0x19, 0xea, 0xe5, 0x01, 0x6c, 0x63, 0x72, 0xab, 0xb5, 0xd2, 0x36, 0x20, 0xc7, 0x34, 0x67,
+	0x08, 0xfb, 0x6b, 0x58, 0xfc, 0xc2, 0xf6, 0x7c, 0xc2, 0x17, 0x13, 0x79, 0x4a, 0x5f, 0x02, 0x8a,
+	0x52, 0xce, 0x10, 0x5c, 0x13, 0x8a, 0xbb, 0x66, 0xa2, 0xb1, 0x6d, 0xc3, 0x62, 0x84, 0x71, 0x86,
+	0xd0, 0x0e, 0xa1, 0xd8, 0xf4, 0x70, 0x2f, 0xb9, 0xd0, 0xc6, 0x47, 0x2c, 0x47, 0x8f, 0x78, 0x1b,
+	0x16, 0x23, 0x3a, 0xb3, 0x05, 0xdc, 0xc0, 0x27, 0xe4, 0x36, 0x02, 0x8e, 0xe8, 0xcc, 0x10, 0xf0,
+	0xef, 0x12, 0xe4, 0x0d, 0xdc, 0x71, 0x7a, 0xb7, 0xfc, 0x01, 0xba, 0xf8, 0x31, 0x51, 0x6e, 0xfa,
+	0x31, 0x09, 0x83, 0x9e, 0x21, 0x77, 0xd6, 0xdb, 0xb0, 0xe9, 0x25, 0xd8, 0xdb, 0x18, 0x5b, 0xd0,
+	0xdb, 0x1a, 0x50, 0xa0, 0x72, 0x36, 0xf6, 0x93, 0x11, 0x78, 0x0a, 0x77, 0x47, 0x7c, 0x41, 0xd6,
+	0x8f, 0x6e, 0x90, 0xf5, 0xa6, 0x42, 0xf9, 0xc2, 0xdc, 0x7f, 0x84, 0x7c, 0xbd, 0x87, 0xbb, 0xc4,
+	0xff, 0xbf, 0x8e, 0xfd, 0x7d, 0xc8, 0x7a, 0xd8, 0x6d, 0x9b, 0x7d, 0x76, 0xee, 0x73, 0x46, 0x30,
+	0xd3, 0xbe, 0x82, 0x42, 0x28, 0x1c, 0x49, 0x82, 0xae, 0x5c, 0x95, 0x04, 0xc5, 0x8c, 0x92, 0xa0,
+	0x13, 0xed, 0x0f, 0x09, 0x32, 0x6c, 0x19, 0x7d, 0x0a, 0x0a, 0xe9, 0xbb, 0xdc, 0x37, 0x14, 0x6a,
+	0x1f, 0x4e, 0xa3, 0xd0, 0x5b, 0x7d, 0x17, 0x1b, 0x0c, 0x3e, 0xae, 0x9f, 0x7c, 0xd3, 0xfa, 0x7d,
+	0x0e, 0x0a, 0xe5, 0x41, 0x73, 0xa0, 0x34, 0x9e, 0x35, 0xea, 0xc5, 0x14, 0x02, 0xc8, 0xee, 0x34,
+	0x9e, 0xd7, 0x8d, 0x56, 0x51, 0xa2, 0xe3, 0x17, 0xcd, 0xad, 0x8d, 0x56, 0xbd, 0x28, 0xd3, 0xb1,
+	0x51, 0xdf, 0x7b, 0xb6, 0x5f, 0x2f, 0xa6, 0xf9, 0xb8, 0xb9, 0xbb, 0xf1, 0xb2, 0xa8, 0x68, 0xdf,
+	0x40, 0x86, 0xb5, 0x57, 0xfa, 0x40, 0x78, 0x2f, 0xa6, 0xc1, 0x2f, 0x84, 0xdd, 0xf6, 0x11, 0xa4,
+	0x09, 0x69, 0x07, 0x81, 0x95, 0x75, 0xee, 0x6a, 0xf5, 0xd0, 0xd5, 0xea, 0x5b, 0x81, 0xab, 0xdd,
+	0xcc, 0x0d, 0xcf, 0x96, 0xd2, 0xad, 0xd6, 0xee, 0xaf, 0x7f, 0x2d, 0x49, 0x06, 0xdd, 0xa2, 0xfd,
+	0x46, 0xab, 0x42, 0x83, 0x0c, 0x4f, 0x45, 0x9a, 0xf0, 0x18, 0xe5, 0x89, 0x6e, 0xe0, 0xfa, 0xfe,
+	0x07, 0x7d, 0x06, 0xf3, 0x37, 0x78, 0xbd, 0x63, 0x6c, 0xed, 0x5f, 0x00, 0xd8, 0xe1, 0xc4, 0x7b,
+	0xa6, 0x8b, 0x0e, 0x20, 0xcb, 0x2d, 0x27, 0x5a, 0x15, 0xc8, 0xc6, 0x0c, 0xae, 0x7a, 0xff, 0x0a,
+	0x54, 0xf0, 0xf8, 0xe6, 0x7e, 0x1a, 0x94, 0xa5, 0xd3, 0x41, 0x59, 0x46, 0xdf, 0x42, 0x86, 0x79,
+	0x4e, 0xb4, 0x22, 0xda, 0x19, 0xf1, 0xb7, 0xea, 0xea, 0x74, 0x50, 0x84, 0x5d, 0x3e, 0x1d, 0x94,
+	0xd3, 0xe8, 0x25, 0x28, 0xd4, 0xc0, 0x22, 0x4d, 0xb0, 0x2f, 0x62, 0xf5, 0xd5, 0x95, 0xa9, 0x98,
+	0x08, 0x75, 0xfa, 0x74, 0x50, 0x96, 0x68, 0x65, 0xb8, 0xc3, 0x14, 0x56, 0x26, 0xe6, 0x8a, 0x85,
+	0x95, 0x89, 0xdb, 0x54, 0x26, 0xa0, 0x9c, 0x0e, 0xca, 0x29, 0x2a, 0xc0, 0x2d, 0x99, 0x50, 0x20,
+	0x66, 0x4d, 0x85, 0x02, 0x71, 0x5f, 0xc7, 0x04, 0x32, 0x4c, 0x60, 0x1f, 0xd2, 0xdb, 0x98, 0x20,
+	0xd1, 0x73, 0x1c, 0x3b, 0x39, 0x55, 0x9b, 0x06, 0x89, 0xf0, 0x66, 0x59, 0x65, 0x5e, 0x03, 0x8c,
+	0xbd, 0x0f, 0x5a, 0x13, 0xec, 0xbd, 0xe4, 0xb8, 0xd4, 0x8f, 0xaf, 0x81, 0x8c, 0x88, 0xdd, 0x61,
+	0x62, 0xdf, 0xc3, 0xfc, 0xc8, 0xcc, 0xa0, 0x07, 0x02, 0x86, 0x8b, 0x06, 0x4a, 0x5d, 0xbb, 0x1a,
+	0x18, 0x51, 0x9a, 0x0b, 0x95, 0x46, 0x2e, 0x44, 0xa8, 0x74, 0xd1, 0x0f, 0x09, 0x95, 0x2e, 0x19,
+	0x1a, 0xa6, 0x34, 0x1f, 0x2a, 0x8d, 0xec, 0x83, 0x50, 0xe9, 0xa2, 0x91, 0x11, 0x2a, 0x5d, 0x72,
+	0x22, 0x4c, 0x09, 0xc2, 0x4b, 0xcc, 0x3b, 0xb5, 0xf0, 0x8e, 0xc5, 0xdc, 0x87, 0xf0, 0x8e, 0xc5,
+	0xdb, 0x3d, 0x13, 0xc8, 0xb1, 0x3b, 0xc6, 0x9e, 0x37, 0x36, 0xbd, 0x29, 0xcf, 0x7b, 0xdc, 0xe2,
+	0xa7, 0x3c, 0xef, 0x68, 0xe7, 0xa6, 0xec, 0x0b, 0x8c, 0xdd, 0x84, 0x2c, 0xef, 0x56, 0xc2, 0xf0,
+	0x63, 0x5d, 0x54, 0x18, 0x7e, 0xbc, 0xe5, 0x31, 0x81, 0x3c, 0x15, 0x78, 0x28, 0x21, 0x0b, 0xee,
+	0x04, 0x6d, 0x1d, 0xdd, 0x9f, 0xd2, 0x7f, 0xc6, 0x36, 0x42, 0xfd, 0xe8, 0x2a, 0x58, 0x44, 0xa5,
+	0x40, 0x4f, 0xe1, 0xa1, 0xb4, 0x59, 0x7a, 0x3b, 0xac, 0x48, 0xef, 0x86, 0x15, 0xe9, 0xef, 0x61,
+	0x45, 0xfa, 0xf9, 0xbc, 0x92, 0x7a, 0x77, 0x5e, 0x49, 0xfd, 0x79, 0x5e, 0x49, 0xbd, 0xca, 0xb2,
+	0x9e, 0xf2, 0xc9, 0x7f, 0x01, 0x00, 0x00, 0xff, 0xff, 0xd4, 0xd1, 0x30, 0xf8, 0x79, 0x11, 0x00,
+	0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1522,6 +1691,10 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type IndexedMapClient interface {
+	// Create creates the map
+	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error)
+	// Close closes the map
+	Close(ctx context.Context, in *CloseRequest, opts ...grpc.CallOption) (*CloseResponse, error)
 	// Size returns the size of the map
 	Size(ctx context.Context, in *SizeRequest, opts ...grpc.CallOption) (*SizeResponse, error)
 	// Append appends an entry to the map
@@ -1554,6 +1727,24 @@ type indexedMapClient struct {
 
 func NewIndexedMapClient(cc *grpc.ClientConn) IndexedMapClient {
 	return &indexedMapClient{cc}
+}
+
+func (c *indexedMapClient) Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error) {
+	out := new(CreateResponse)
+	err := c.cc.Invoke(ctx, "/atomix.indexed_map.v1.IndexedMap/Create", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *indexedMapClient) Close(ctx context.Context, in *CloseRequest, opts ...grpc.CallOption) (*CloseResponse, error) {
+	out := new(CloseResponse)
+	err := c.cc.Invoke(ctx, "/atomix.indexed_map.v1.IndexedMap/Close", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *indexedMapClient) Size(ctx context.Context, in *SizeRequest, opts ...grpc.CallOption) (*SizeResponse, error) {
@@ -1712,6 +1903,10 @@ func (x *indexedMapEntriesClient) Recv() (*EntriesResponse, error) {
 
 // IndexedMapServer is the server API for IndexedMap service.
 type IndexedMapServer interface {
+	// Create creates the map
+	Create(context.Context, *CreateRequest) (*CreateResponse, error)
+	// Close closes the map
+	Close(context.Context, *CloseRequest) (*CloseResponse, error)
 	// Size returns the size of the map
 	Size(context.Context, *SizeRequest) (*SizeResponse, error)
 	// Append appends an entry to the map
@@ -1742,6 +1937,12 @@ type IndexedMapServer interface {
 type UnimplementedIndexedMapServer struct {
 }
 
+func (*UnimplementedIndexedMapServer) Create(ctx context.Context, req *CreateRequest) (*CreateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+}
+func (*UnimplementedIndexedMapServer) Close(ctx context.Context, req *CloseRequest) (*CloseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Close not implemented")
+}
 func (*UnimplementedIndexedMapServer) Size(ctx context.Context, req *SizeRequest) (*SizeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Size not implemented")
 }
@@ -1781,6 +1982,42 @@ func (*UnimplementedIndexedMapServer) Entries(req *EntriesRequest, srv IndexedMa
 
 func RegisterIndexedMapServer(s *grpc.Server, srv IndexedMapServer) {
 	s.RegisterService(&_IndexedMap_serviceDesc, srv)
+}
+
+func _IndexedMap_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexedMapServer).Create(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/atomix.indexed_map.v1.IndexedMap/Create",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexedMapServer).Create(ctx, req.(*CreateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IndexedMap_Close_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CloseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexedMapServer).Close(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/atomix.indexed_map.v1.IndexedMap/Close",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexedMapServer).Close(ctx, req.(*CloseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _IndexedMap_Size_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -2010,6 +2247,14 @@ var _IndexedMap_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*IndexedMapServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "Create",
+			Handler:    _IndexedMap_Create_Handler,
+		},
+		{
+			MethodName: "Close",
+			Handler:    _IndexedMap_Close_Handler,
+		},
+		{
 			MethodName: "Size",
 			Handler:    _IndexedMap_Size_Handler,
 		},
@@ -2095,6 +2340,118 @@ func (m *SizeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *CreateRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CreateRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CreateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintIndexedMap(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *CreateResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CreateResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CreateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *CloseRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CloseRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CloseRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintIndexedMap(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *CloseResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CloseResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CloseResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
 	return len(dAtA) - i, nil
 }
 
@@ -3035,12 +3392,12 @@ func (m *Value) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	if m.TTL != nil {
-		n28, err28 := github_com_gogo_protobuf_types.StdDurationMarshalTo(*m.TTL, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdDuration(*m.TTL):])
-		if err28 != nil {
-			return 0, err28
+		n30, err30 := github_com_gogo_protobuf_types.StdDurationMarshalTo(*m.TTL, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdDuration(*m.TTL):])
+		if err30 != nil {
+			return 0, err30
 		}
-		i -= n28
-		i = encodeVarintIndexedMap(dAtA, i, uint64(n28))
+		i -= n30
+		i = encodeVarintIndexedMap(dAtA, i, uint64(n30))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -3132,6 +3489,46 @@ func (m *SizeRequest) Size() (n int) {
 	_ = l
 	l = m.ID.Size()
 	n += 1 + l + sovIndexedMap(uint64(l))
+	return n
+}
+
+func (m *CreateRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ID.Size()
+	n += 1 + l + sovIndexedMap(uint64(l))
+	return n
+}
+
+func (m *CreateResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *CloseRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ID.Size()
+	n += 1 + l + sovIndexedMap(uint64(l))
+	return n
+}
+
+func (m *CloseResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	return n
 }
 
@@ -3580,6 +3977,272 @@ func (m *SizeRequest) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipIndexedMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthIndexedMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CreateRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowIndexedMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CreateRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CreateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowIndexedMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthIndexedMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthIndexedMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipIndexedMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthIndexedMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CreateResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowIndexedMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CreateResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CreateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipIndexedMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthIndexedMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CloseRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowIndexedMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CloseRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CloseRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowIndexedMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthIndexedMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthIndexedMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipIndexedMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthIndexedMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CloseResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowIndexedMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CloseResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CloseResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipIndexedMap(dAtA[iNdEx:])

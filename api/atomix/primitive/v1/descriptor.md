@@ -31,6 +31,8 @@ OperationType is an enum for specifying the type of operation
 | ---- | ------ | ----------- |
 | COMMAND | 0 |  |
 | QUERY | 1 |  |
+| CREATE | 2 |  |
+| CLOSE | 3 |  |
 
 
  

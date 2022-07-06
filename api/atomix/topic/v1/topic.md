@@ -4,6 +4,10 @@
 ## Table of Contents
 
 - [atomix/topic/v1/topic.proto](#atomix_topic_v1_topic-proto)
+    - [CloseRequest](#atomix-topic-v1-CloseRequest)
+    - [CloseResponse](#atomix-topic-v1-CloseResponse)
+    - [CreateRequest](#atomix-topic-v1-CreateRequest)
+    - [CreateResponse](#atomix-topic-v1-CreateResponse)
     - [PublishRequest](#atomix-topic-v1-PublishRequest)
     - [PublishResponse](#atomix-topic-v1-PublishResponse)
     - [SubscribeRequest](#atomix-topic-v1-SubscribeRequest)
@@ -19,6 +23,56 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/topic/v1/topic.proto
+
+
+
+<a name="atomix-topic-v1-CloseRequest"></a>
+
+### CloseRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-topic-v1-CloseResponse"></a>
+
+### CloseResponse
+
+
+
+
+
+
+
+<a name="atomix-topic-v1-CreateRequest"></a>
+
+### CreateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-topic-v1-CreateResponse"></a>
+
+### CreateResponse
+
+
+
+
 
 
 
@@ -93,8 +147,10 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Publish | [PublishRequest](#atomix-topic-v1-PublishRequest) | [PublishResponse](#atomix-topic-v1-PublishResponse) |  |
-| Subscribe | [SubscribeRequest](#atomix-topic-v1-SubscribeRequest) | [SubscribeResponse](#atomix-topic-v1-SubscribeResponse) stream |  |
+| Create | [CreateRequest](#atomix-topic-v1-CreateRequest) | [CreateResponse](#atomix-topic-v1-CreateResponse) | Create creates the topic |
+| Close | [CloseRequest](#atomix-topic-v1-CloseRequest) | [CloseResponse](#atomix-topic-v1-CloseResponse) | Close closes the topic |
+| Publish | [PublishRequest](#atomix-topic-v1-PublishRequest) | [PublishResponse](#atomix-topic-v1-PublishResponse) | Publish publishes a message to the topic |
+| Subscribe | [SubscribeRequest](#atomix-topic-v1-SubscribeRequest) | [SubscribeResponse](#atomix-topic-v1-SubscribeResponse) stream | Subscribe subscribes to receive messages from the topic |
 
  
 

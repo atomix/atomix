@@ -55,8 +55,168 @@ func (x LockInstance_State) String() string {
 }
 
 func (LockInstance_State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_00b1f35b77f59686, []int{6, 0}
+	return fileDescriptor_00b1f35b77f59686, []int{10, 0}
 }
+
+type CreateRequest struct {
+	ID v1.PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
+}
+
+func (m *CreateRequest) Reset()         { *m = CreateRequest{} }
+func (m *CreateRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateRequest) ProtoMessage()    {}
+func (*CreateRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00b1f35b77f59686, []int{0}
+}
+func (m *CreateRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CreateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CreateRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CreateRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateRequest.Merge(m, src)
+}
+func (m *CreateRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *CreateRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateRequest proto.InternalMessageInfo
+
+func (m *CreateRequest) GetID() v1.PrimitiveId {
+	if m != nil {
+		return m.ID
+	}
+	return v1.PrimitiveId{}
+}
+
+type CreateResponse struct {
+}
+
+func (m *CreateResponse) Reset()         { *m = CreateResponse{} }
+func (m *CreateResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateResponse) ProtoMessage()    {}
+func (*CreateResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00b1f35b77f59686, []int{1}
+}
+func (m *CreateResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CreateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CreateResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CreateResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateResponse.Merge(m, src)
+}
+func (m *CreateResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *CreateResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateResponse proto.InternalMessageInfo
+
+type CloseRequest struct {
+	ID v1.PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
+}
+
+func (m *CloseRequest) Reset()         { *m = CloseRequest{} }
+func (m *CloseRequest) String() string { return proto.CompactTextString(m) }
+func (*CloseRequest) ProtoMessage()    {}
+func (*CloseRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00b1f35b77f59686, []int{2}
+}
+func (m *CloseRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CloseRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CloseRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CloseRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CloseRequest.Merge(m, src)
+}
+func (m *CloseRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *CloseRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CloseRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CloseRequest proto.InternalMessageInfo
+
+func (m *CloseRequest) GetID() v1.PrimitiveId {
+	if m != nil {
+		return m.ID
+	}
+	return v1.PrimitiveId{}
+}
+
+type CloseResponse struct {
+}
+
+func (m *CloseResponse) Reset()         { *m = CloseResponse{} }
+func (m *CloseResponse) String() string { return proto.CompactTextString(m) }
+func (*CloseResponse) ProtoMessage()    {}
+func (*CloseResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00b1f35b77f59686, []int{3}
+}
+func (m *CloseResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CloseResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CloseResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CloseResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CloseResponse.Merge(m, src)
+}
+func (m *CloseResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *CloseResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CloseResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CloseResponse proto.InternalMessageInfo
 
 type LockRequest struct {
 	ID      v1.PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
@@ -67,7 +227,7 @@ func (m *LockRequest) Reset()         { *m = LockRequest{} }
 func (m *LockRequest) String() string { return proto.CompactTextString(m) }
 func (*LockRequest) ProtoMessage()    {}
 func (*LockRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00b1f35b77f59686, []int{0}
+	return fileDescriptor_00b1f35b77f59686, []int{4}
 }
 func (m *LockRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -118,7 +278,7 @@ func (m *LockResponse) Reset()         { *m = LockResponse{} }
 func (m *LockResponse) String() string { return proto.CompactTextString(m) }
 func (*LockResponse) ProtoMessage()    {}
 func (*LockResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00b1f35b77f59686, []int{1}
+	return fileDescriptor_00b1f35b77f59686, []int{5}
 }
 func (m *LockResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -163,7 +323,7 @@ func (m *UnlockRequest) Reset()         { *m = UnlockRequest{} }
 func (m *UnlockRequest) String() string { return proto.CompactTextString(m) }
 func (*UnlockRequest) ProtoMessage()    {}
 func (*UnlockRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00b1f35b77f59686, []int{2}
+	return fileDescriptor_00b1f35b77f59686, []int{6}
 }
 func (m *UnlockRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -214,7 +374,7 @@ func (m *UnlockResponse) Reset()         { *m = UnlockResponse{} }
 func (m *UnlockResponse) String() string { return proto.CompactTextString(m) }
 func (*UnlockResponse) ProtoMessage()    {}
 func (*UnlockResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00b1f35b77f59686, []int{3}
+	return fileDescriptor_00b1f35b77f59686, []int{7}
 }
 func (m *UnlockResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -259,7 +419,7 @@ func (m *GetLockRequest) Reset()         { *m = GetLockRequest{} }
 func (m *GetLockRequest) String() string { return proto.CompactTextString(m) }
 func (*GetLockRequest) ProtoMessage()    {}
 func (*GetLockRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00b1f35b77f59686, []int{4}
+	return fileDescriptor_00b1f35b77f59686, []int{8}
 }
 func (m *GetLockRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -310,7 +470,7 @@ func (m *GetLockResponse) Reset()         { *m = GetLockResponse{} }
 func (m *GetLockResponse) String() string { return proto.CompactTextString(m) }
 func (*GetLockResponse) ProtoMessage()    {}
 func (*GetLockResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00b1f35b77f59686, []int{5}
+	return fileDescriptor_00b1f35b77f59686, []int{9}
 }
 func (m *GetLockResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -355,7 +515,7 @@ func (m *LockInstance) Reset()         { *m = LockInstance{} }
 func (m *LockInstance) String() string { return proto.CompactTextString(m) }
 func (*LockInstance) ProtoMessage()    {}
 func (*LockInstance) Descriptor() ([]byte, []int) {
-	return fileDescriptor_00b1f35b77f59686, []int{6}
+	return fileDescriptor_00b1f35b77f59686, []int{10}
 }
 func (m *LockInstance) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -400,6 +560,10 @@ func (m *LockInstance) GetState() LockInstance_State {
 
 func init() {
 	proto.RegisterEnum("atomix.lock.v1.LockInstance_State", LockInstance_State_name, LockInstance_State_value)
+	proto.RegisterType((*CreateRequest)(nil), "atomix.lock.v1.CreateRequest")
+	proto.RegisterType((*CreateResponse)(nil), "atomix.lock.v1.CreateResponse")
+	proto.RegisterType((*CloseRequest)(nil), "atomix.lock.v1.CloseRequest")
+	proto.RegisterType((*CloseResponse)(nil), "atomix.lock.v1.CloseResponse")
 	proto.RegisterType((*LockRequest)(nil), "atomix.lock.v1.LockRequest")
 	proto.RegisterType((*LockResponse)(nil), "atomix.lock.v1.LockResponse")
 	proto.RegisterType((*UnlockRequest)(nil), "atomix.lock.v1.UnlockRequest")
@@ -412,39 +576,44 @@ func init() {
 func init() { proto.RegisterFile("atomix/lock/v1/lock.proto", fileDescriptor_00b1f35b77f59686) }
 
 var fileDescriptor_00b1f35b77f59686 = []byte{
-	// 507 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x53, 0xcb, 0x6e, 0xd3, 0x40,
-	0x14, 0xf5, 0x04, 0x27, 0x2d, 0xb7, 0x25, 0xa0, 0x11, 0x8b, 0xd8, 0x14, 0xa7, 0x18, 0x16, 0xac,
-	0xc6, 0x4a, 0x90, 0x78, 0x48, 0xac, 0x42, 0x78, 0x44, 0x8d, 0x78, 0x98, 0xf6, 0x03, 0xdc, 0x78,
-	0x88, 0x46, 0x4d, 0x3c, 0xc6, 0x9e, 0x44, 0x2c, 0xd9, 0x50, 0x75, 0xc9, 0x92, 0x0f, 0xe0, 0x0b,
-	0xf2, 0x15, 0x5d, 0x76, 0xc9, 0xaa, 0xa0, 0xe4, 0x37, 0x58, 0xa0, 0x79, 0x38, 0x6d, 0x20, 0x45,
-	0x42, 0x45, 0xea, 0x6a, 0x66, 0x7c, 0xce, 0x9c, 0x39, 0xf7, 0xdc, 0x6b, 0x70, 0x22, 0xc1, 0x87,
-	0xec, 0x43, 0x30, 0xe0, 0xbd, 0xbd, 0x60, 0xdc, 0x50, 0x2b, 0x49, 0x33, 0x2e, 0x38, 0xae, 0x6a,
-	0x88, 0xa8, 0x4f, 0xe3, 0x86, 0xeb, 0xf5, 0x39, 0xef, 0x0f, 0x68, 0xa0, 0xd0, 0xdd, 0xd1, 0xbb,
-	0x20, 0x1e, 0x65, 0x91, 0x60, 0x3c, 0xd1, 0x7c, 0xf7, 0x8e, 0x91, 0x4a, 0x33, 0x36, 0x64, 0x82,
-	0x8d, 0xa9, 0xd4, 0x8b, 0x69, 0xde, 0xcb, 0x58, 0x2a, 0x78, 0x66, 0x58, 0xb7, 0x97, 0xb1, 0xe6,
-	0x07, 0x43, 0xf2, 0x0c, 0x49, 0xb0, 0xa1, 0xc2, 0xe5, 0x9a, 0x8b, 0x68, 0x98, 0x1a, 0xfc, 0x7a,
-	0x9f, 0xf7, 0xb9, 0xda, 0x06, 0x72, 0xa7, 0xbf, 0xfa, 0xfb, 0x08, 0xd6, 0xba, 0xbc, 0xb7, 0x17,
-	0xd2, 0xf7, 0x23, 0x9a, 0x0b, 0xfc, 0x18, 0x4a, 0x2c, 0xae, 0xa1, 0x4d, 0x74, 0x77, 0xad, 0xb9,
-	0x49, 0x4c, 0x35, 0x27, 0x4f, 0x8d, 0x1b, 0xe4, 0x75, 0x71, 0xe8, 0xc4, 0x2d, 0x38, 0x3c, 0xae,
-	0x5b, 0xd3, 0xe3, 0x7a, 0xa9, 0xd3, 0x0e, 0x4b, 0x2c, 0xc6, 0x8f, 0x60, 0x45, 0x3e, 0xcb, 0x47,
-	0xa2, 0x56, 0x52, 0x12, 0x0e, 0xd1, 0x01, 0x90, 0x22, 0x00, 0xd2, 0x36, 0x01, 0xb4, 0xec, 0x2f,
-	0xdf, 0xeb, 0x28, 0x2c, 0xf8, 0xfe, 0x33, 0x58, 0xd7, 0x3e, 0xf2, 0x94, 0x27, 0x39, 0xc5, 0xf7,
-	0xc1, 0x96, 0x21, 0x1a, 0x2b, 0x1b, 0x64, 0x31, 0x58, 0x22, 0xb9, 0x9d, 0x24, 0x17, 0x51, 0xd2,
-	0xa3, 0x2d, 0x5b, 0xda, 0x08, 0x15, 0xdf, 0xff, 0x84, 0xe0, 0xca, 0x4e, 0x32, 0xf8, 0x6f, 0x25,
-	0x15, 0x3e, 0x4a, 0xff, 0xe8, 0xe3, 0x05, 0x54, 0x0b, 0x1b, 0xe7, 0xac, 0x68, 0x1f, 0x41, 0xf5,
-	0x39, 0x15, 0xdd, 0x0b, 0x2f, 0xa9, 0x03, 0x57, 0xe7, 0x3e, 0xce, 0x59, 0xd3, 0x57, 0xa4, 0xdb,
-	0x5d, 0x80, 0xf8, 0x01, 0x5c, 0x9e, 0x0f, 0xac, 0x51, 0x73, 0x0a, 0x35, 0x09, 0x48, 0xb5, 0xed,
-	0x82, 0x10, 0x9e, 0x70, 0xf1, 0x43, 0x28, 0xe7, 0x22, 0x12, 0x54, 0x55, 0x53, 0x6d, 0xfa, 0x7f,
-	0xb3, 0x40, 0xde, 0x4a, 0x66, 0xa8, 0x2f, 0xf8, 0xb7, 0xa0, 0xac, 0xce, 0x78, 0x1d, 0x56, 0x77,
-	0x5e, 0x76, 0x5f, 0x3d, 0xd9, 0x7a, 0xda, 0xbe, 0x66, 0x61, 0x80, 0x8a, 0xd9, 0xa3, 0xe6, 0x4f,
-	0x04, 0xb6, 0x14, 0xc0, 0x5b, 0x66, 0xbd, 0xb1, 0x4c, 0xde, 0x74, 0xc5, 0xdd, 0x58, 0x0e, 0xea,
-	0xa8, 0xfc, 0xd5, 0x8f, 0x13, 0xe7, 0xd2, 0xc1, 0xc4, 0xb1, 0xf0, 0x1b, 0xa8, 0xe8, 0xd1, 0xc0,
-	0x37, 0x7f, 0xbf, 0xb1, 0x30, 0xb9, 0xae, 0x77, 0x16, 0x7c, 0x4a, 0xd2, 0x56, 0x92, 0xdb, 0xb0,
-	0x62, 0x5a, 0x83, 0xff, 0xb8, 0xb4, 0x38, 0x3b, 0x6e, 0xfd, 0x4c, 0xfc, 0x94, 0x6a, 0xf9, 0x60,
-	0xe2, 0xa0, 0x56, 0xed, 0x70, 0xea, 0xa1, 0xa3, 0xa9, 0x87, 0x7e, 0x4c, 0x3d, 0xf4, 0x79, 0xe6,
-	0x59, 0x47, 0x33, 0xcf, 0xfa, 0x36, 0xf3, 0xac, 0xdd, 0x8a, 0xfa, 0x9f, 0xef, 0xfd, 0x0a, 0x00,
-	0x00, 0xff, 0xff, 0x35, 0xc3, 0xa9, 0x64, 0x0b, 0x05, 0x00, 0x00,
+	// 578 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x94, 0x4d, 0x6f, 0x12, 0x41,
+	0x18, 0xc7, 0x77, 0x96, 0x97, 0xd6, 0xa7, 0x40, 0x9b, 0x89, 0x07, 0x16, 0xdb, 0xa5, 0xae, 0x1e,
+	0x3c, 0x2d, 0x01, 0x13, 0x5f, 0x12, 0x4f, 0x80, 0x2f, 0xa4, 0x58, 0x75, 0x6d, 0x3f, 0xc0, 0x16,
+	0x46, 0xb2, 0x29, 0x30, 0xb8, 0x3b, 0x10, 0x8f, 0x5e, 0x6c, 0x38, 0x7a, 0xf4, 0xe6, 0xc5, 0x4f,
+	0xc0, 0xa7, 0xe8, 0xb1, 0x47, 0x4f, 0xd5, 0xc0, 0x17, 0x31, 0xf3, 0x46, 0x41, 0xc0, 0xc4, 0x94,
+	0xa4, 0x27, 0x66, 0xf6, 0xff, 0xdf, 0xdf, 0xfe, 0x9f, 0x99, 0xe7, 0x01, 0x2c, 0x9f, 0xd1, 0x4e,
+	0xf0, 0xa9, 0xd0, 0xa6, 0x8d, 0xd3, 0xc2, 0xa0, 0x28, 0x7e, 0xdd, 0x5e, 0x48, 0x19, 0xc5, 0x19,
+	0x29, 0xb9, 0xe2, 0xd1, 0xa0, 0x98, 0xb3, 0x5b, 0x94, 0xb6, 0xda, 0xa4, 0x20, 0xd4, 0x93, 0xfe,
+	0x87, 0x42, 0xb3, 0x1f, 0xfa, 0x2c, 0xa0, 0x5d, 0xe9, 0xcf, 0xdd, 0x57, 0xa8, 0x5e, 0x18, 0x74,
+	0x02, 0x16, 0x0c, 0x08, 0xe7, 0x35, 0x49, 0xd4, 0x08, 0x83, 0x1e, 0xa3, 0xa1, 0x72, 0xdd, 0x5b,
+	0xe6, 0x9a, 0x6e, 0x94, 0xc9, 0x56, 0x26, 0x16, 0x74, 0x84, 0xce, 0x7f, 0x23, 0xe6, 0x77, 0x7a,
+	0x4a, 0xbf, 0xdd, 0xa2, 0x2d, 0x2a, 0x96, 0x05, 0xbe, 0x92, 0x4f, 0x9d, 0xd7, 0x90, 0xae, 0x84,
+	0xc4, 0x67, 0xc4, 0x23, 0x1f, 0xfb, 0x24, 0x62, 0xf8, 0x19, 0x98, 0x41, 0x33, 0x8b, 0xf6, 0xd1,
+	0x83, 0xad, 0xd2, 0xbe, 0xab, 0xca, 0xb9, 0xfa, 0xd6, 0xa0, 0xe8, 0xbe, 0xd5, 0x9b, 0x5a, 0xb3,
+	0x0c, 0xe7, 0x97, 0x79, 0x63, 0x7c, 0x99, 0x37, 0x6b, 0x55, 0xcf, 0x0c, 0x9a, 0xce, 0x0e, 0x64,
+	0x34, 0x2e, 0xea, 0xd1, 0x6e, 0x44, 0x9c, 0x3a, 0xa4, 0x2a, 0x6d, 0x1a, 0xad, 0x89, 0xbf, 0x0d,
+	0x69, 0x45, 0x53, 0xf8, 0x33, 0x04, 0x5b, 0x75, 0xda, 0x38, 0x5d, 0x0b, 0x1e, 0x3f, 0x85, 0x0d,
+	0x7e, 0x6c, 0xb4, 0xcf, 0xb2, 0xa6, 0x40, 0x58, 0xae, 0xbc, 0x40, 0x57, 0x5f, 0xa0, 0x5b, 0x55,
+	0x17, 0x58, 0x8e, 0x7f, 0xfb, 0x95, 0x47, 0x9e, 0xf6, 0x3b, 0x2f, 0x20, 0x25, 0x73, 0xc8, 0x60,
+	0xf8, 0x11, 0xc4, 0x79, 0x13, 0xa8, 0x28, 0xbb, 0xee, 0x7c, 0x63, 0xb8, 0xdc, 0x5b, 0xeb, 0x46,
+	0xcc, 0xef, 0x36, 0x48, 0x39, 0xce, 0x63, 0x78, 0xc2, 0xef, 0x7c, 0x41, 0x90, 0x3e, 0xee, 0xb6,
+	0xd7, 0x56, 0x92, 0xce, 0x61, 0xfe, 0x67, 0x8e, 0x57, 0x90, 0xd1, 0x31, 0xae, 0x59, 0xd1, 0x19,
+	0x82, 0xcc, 0x4b, 0xc2, 0xea, 0x37, 0x5e, 0x52, 0x0d, 0xb6, 0xa7, 0x39, 0xae, 0x59, 0xd3, 0x0f,
+	0x24, 0xaf, 0x5b, 0x8b, 0xf8, 0x31, 0xdc, 0x9a, 0x0e, 0x9c, 0xa2, 0x59, 0x9a, 0xc6, 0x05, 0x4e,
+	0x3b, 0xd2, 0x06, 0xef, 0xca, 0x8b, 0x9f, 0x40, 0x22, 0x62, 0x3e, 0x23, 0xa2, 0x9a, 0x4c, 0xc9,
+	0xf9, 0x57, 0x04, 0xf7, 0x3d, 0x77, 0x7a, 0xf2, 0x05, 0xe7, 0x2e, 0x24, 0xc4, 0x1e, 0xa7, 0x60,
+	0xf3, 0xf8, 0xb0, 0xfe, 0xa6, 0x72, 0xf0, 0xbc, 0xba, 0x63, 0x60, 0x80, 0xa4, 0x5a, 0xa3, 0xd2,
+	0xf7, 0x18, 0xc4, 0x39, 0x00, 0xbf, 0x83, 0xa4, 0x9c, 0x4b, 0xbc, 0xf7, 0xf7, 0x07, 0xe6, 0xc6,
+	0x3f, 0x67, 0xaf, 0x92, 0xd5, 0xbc, 0x6d, 0x7e, 0x1e, 0x59, 0x68, 0x38, 0xb2, 0x4c, 0x7c, 0x08,
+	0x09, 0x31, 0x8a, 0x78, 0xe1, 0xd4, 0x66, 0xe7, 0x3d, 0xb7, 0xb7, 0x42, 0x9d, 0xe1, 0x99, 0xc3,
+	0x91, 0x15, 0xc3, 0x07, 0x2a, 0xea, 0x9d, 0x65, 0x27, 0xa0, 0x69, 0xbb, 0xcb, 0xc5, 0x19, 0x58,
+	0x6c, 0x38, 0xb2, 0x0c, 0x5e, 0xaf, 0xec, 0xde, 0xc5, 0x7a, 0xe7, 0x86, 0x6b, 0xb1, 0xde, 0xf9,
+	0xa6, 0x17, 0xc8, 0xb8, 0x40, 0x1e, 0xc1, 0x86, 0xea, 0x1e, 0xbc, 0xf0, 0xd2, 0x7c, 0x7b, 0xe7,
+	0xf2, 0x2b, 0xf5, 0x19, 0x6a, 0x62, 0x38, 0xb2, 0x50, 0x39, 0x7b, 0x3e, 0xb6, 0xd1, 0xc5, 0xd8,
+	0x46, 0xbf, 0xc7, 0x36, 0xfa, 0x3a, 0xb1, 0x8d, 0x8b, 0x89, 0x6d, 0xfc, 0x9c, 0xd8, 0xc6, 0x49,
+	0x52, 0xfc, 0xe5, 0x3c, 0xfc, 0x13, 0x00, 0x00, 0xff, 0xff, 0x38, 0xd6, 0x78, 0xc6, 0x6e, 0x06,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -459,6 +628,10 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type LockClient interface {
+	// Create creates the lock
+	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error)
+	// Close closes the lock
+	Close(ctx context.Context, in *CloseRequest, opts ...grpc.CallOption) (*CloseResponse, error)
 	// Lock attempts to acquire the lock
 	Lock(ctx context.Context, in *LockRequest, opts ...grpc.CallOption) (*LockResponse, error)
 	// Unlock releases the lock
@@ -473,6 +646,24 @@ type lockClient struct {
 
 func NewLockClient(cc *grpc.ClientConn) LockClient {
 	return &lockClient{cc}
+}
+
+func (c *lockClient) Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error) {
+	out := new(CreateResponse)
+	err := c.cc.Invoke(ctx, "/atomix.lock.v1.Lock/Create", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lockClient) Close(ctx context.Context, in *CloseRequest, opts ...grpc.CallOption) (*CloseResponse, error) {
+	out := new(CloseResponse)
+	err := c.cc.Invoke(ctx, "/atomix.lock.v1.Lock/Close", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *lockClient) Lock(ctx context.Context, in *LockRequest, opts ...grpc.CallOption) (*LockResponse, error) {
@@ -504,6 +695,10 @@ func (c *lockClient) GetLock(ctx context.Context, in *GetLockRequest, opts ...gr
 
 // LockServer is the server API for Lock service.
 type LockServer interface {
+	// Create creates the lock
+	Create(context.Context, *CreateRequest) (*CreateResponse, error)
+	// Close closes the lock
+	Close(context.Context, *CloseRequest) (*CloseResponse, error)
 	// Lock attempts to acquire the lock
 	Lock(context.Context, *LockRequest) (*LockResponse, error)
 	// Unlock releases the lock
@@ -516,6 +711,12 @@ type LockServer interface {
 type UnimplementedLockServer struct {
 }
 
+func (*UnimplementedLockServer) Create(ctx context.Context, req *CreateRequest) (*CreateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+}
+func (*UnimplementedLockServer) Close(ctx context.Context, req *CloseRequest) (*CloseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Close not implemented")
+}
 func (*UnimplementedLockServer) Lock(ctx context.Context, req *LockRequest) (*LockResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Lock not implemented")
 }
@@ -528,6 +729,42 @@ func (*UnimplementedLockServer) GetLock(ctx context.Context, req *GetLockRequest
 
 func RegisterLockServer(s *grpc.Server, srv LockServer) {
 	s.RegisterService(&_Lock_serviceDesc, srv)
+}
+
+func _Lock_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LockServer).Create(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/atomix.lock.v1.Lock/Create",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LockServer).Create(ctx, req.(*CreateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Lock_Close_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CloseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LockServer).Close(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/atomix.lock.v1.Lock/Close",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LockServer).Close(ctx, req.(*CloseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Lock_Lock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -589,6 +826,14 @@ var _Lock_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*LockServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "Create",
+			Handler:    _Lock_Create_Handler,
+		},
+		{
+			MethodName: "Close",
+			Handler:    _Lock_Close_Handler,
+		},
+		{
 			MethodName: "Lock",
 			Handler:    _Lock_Lock_Handler,
 		},
@@ -603,6 +848,118 @@ var _Lock_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "atomix/lock/v1/lock.proto",
+}
+
+func (m *CreateRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CreateRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CreateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintLock(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *CreateResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CreateResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CreateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *CloseRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CloseRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CloseRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintLock(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *CloseResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CloseResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CloseResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
 }
 
 func (m *LockRequest) Marshal() (dAtA []byte, err error) {
@@ -626,12 +983,12 @@ func (m *LockRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	if m.Timeout != nil {
-		n1, err1 := github_com_gogo_protobuf_types.StdDurationMarshalTo(*m.Timeout, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdDuration(*m.Timeout):])
-		if err1 != nil {
-			return 0, err1
+		n3, err3 := github_com_gogo_protobuf_types.StdDurationMarshalTo(*m.Timeout, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdDuration(*m.Timeout):])
+		if err3 != nil {
+			return 0, err3
 		}
-		i -= n1
-		i = encodeVarintLock(dAtA, i, uint64(n1))
+		i -= n3
+		i = encodeVarintLock(dAtA, i, uint64(n3))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -884,6 +1241,46 @@ func encodeVarintLock(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *CreateRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ID.Size()
+	n += 1 + l + sovLock(uint64(l))
+	return n
+}
+
+func (m *CreateResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *CloseRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ID.Size()
+	n += 1 + l + sovLock(uint64(l))
+	return n
+}
+
+func (m *CloseResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func (m *LockRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -979,6 +1376,272 @@ func sovLock(x uint64) (n int) {
 }
 func sozLock(x uint64) (n int) {
 	return sovLock(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *CreateRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLock
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CreateRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CreateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLock
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLock
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthLock
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLock(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthLock
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CreateResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLock
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CreateResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CreateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLock(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthLock
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CloseRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLock
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CloseRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CloseRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLock
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLock
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthLock
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLock(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthLock
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CloseResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLock
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CloseResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CloseResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLock(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthLock
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *LockRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)

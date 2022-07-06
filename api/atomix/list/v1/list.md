@@ -8,8 +8,12 @@
     - [AppendResponse](#atomix-list-v1-AppendResponse)
     - [ClearRequest](#atomix-list-v1-ClearRequest)
     - [ClearResponse](#atomix-list-v1-ClearResponse)
+    - [CloseRequest](#atomix-list-v1-CloseRequest)
+    - [CloseResponse](#atomix-list-v1-CloseResponse)
     - [ContainsRequest](#atomix-list-v1-ContainsRequest)
     - [ContainsResponse](#atomix-list-v1-ContainsResponse)
+    - [CreateRequest](#atomix-list-v1-CreateRequest)
+    - [CreateResponse](#atomix-list-v1-CreateResponse)
     - [ElementsRequest](#atomix-list-v1-ElementsRequest)
     - [ElementsResponse](#atomix-list-v1-ElementsResponse)
     - [Event](#atomix-list-v1-Event)
@@ -94,6 +98,31 @@
 
 
 
+<a name="atomix-list-v1-CloseRequest"></a>
+
+### CloseRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-list-v1-CloseResponse"></a>
+
+### CloseResponse
+
+
+
+
+
+
+
 <a name="atomix-list-v1-ContainsRequest"></a>
 
 ### ContainsRequest
@@ -119,6 +148,31 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | contains | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="atomix-list-v1-CreateRequest"></a>
+
+### CreateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-list-v1-CreateResponse"></a>
+
+### CreateResponse
+
 
 
 
@@ -419,6 +473,8 @@ List is a service for a list primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-list-v1-CreateRequest) | [CreateResponse](#atomix-list-v1-CreateResponse) | Create creates the list |
+| Close | [CloseRequest](#atomix-list-v1-CloseRequest) | [CloseResponse](#atomix-list-v1-CloseResponse) | Close closes the list |
 | Size | [SizeRequest](#atomix-list-v1-SizeRequest) | [SizeResponse](#atomix-list-v1-SizeResponse) | Size gets the number of elements in the list |
 | Append | [AppendRequest](#atomix-list-v1-AppendRequest) | [AppendResponse](#atomix-list-v1-AppendResponse) | Append appends a value to the list |
 | Insert | [InsertRequest](#atomix-list-v1-InsertRequest) | [InsertResponse](#atomix-list-v1-InsertResponse) | Insert inserts a value at a specific index in the list |

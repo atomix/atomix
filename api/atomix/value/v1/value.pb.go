@@ -51,8 +51,168 @@ func (x Event_Type) String() string {
 }
 
 func (Event_Type) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_677aec3673c54cd8, []int{6, 0}
+	return fileDescriptor_677aec3673c54cd8, []int{10, 0}
 }
+
+type CreateRequest struct {
+	ID v1.PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
+}
+
+func (m *CreateRequest) Reset()         { *m = CreateRequest{} }
+func (m *CreateRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateRequest) ProtoMessage()    {}
+func (*CreateRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_677aec3673c54cd8, []int{0}
+}
+func (m *CreateRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CreateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CreateRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CreateRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateRequest.Merge(m, src)
+}
+func (m *CreateRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *CreateRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateRequest proto.InternalMessageInfo
+
+func (m *CreateRequest) GetID() v1.PrimitiveId {
+	if m != nil {
+		return m.ID
+	}
+	return v1.PrimitiveId{}
+}
+
+type CreateResponse struct {
+}
+
+func (m *CreateResponse) Reset()         { *m = CreateResponse{} }
+func (m *CreateResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateResponse) ProtoMessage()    {}
+func (*CreateResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_677aec3673c54cd8, []int{1}
+}
+func (m *CreateResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CreateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CreateResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CreateResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateResponse.Merge(m, src)
+}
+func (m *CreateResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *CreateResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateResponse proto.InternalMessageInfo
+
+type CloseRequest struct {
+	ID v1.PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
+}
+
+func (m *CloseRequest) Reset()         { *m = CloseRequest{} }
+func (m *CloseRequest) String() string { return proto.CompactTextString(m) }
+func (*CloseRequest) ProtoMessage()    {}
+func (*CloseRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_677aec3673c54cd8, []int{2}
+}
+func (m *CloseRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CloseRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CloseRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CloseRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CloseRequest.Merge(m, src)
+}
+func (m *CloseRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *CloseRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CloseRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CloseRequest proto.InternalMessageInfo
+
+func (m *CloseRequest) GetID() v1.PrimitiveId {
+	if m != nil {
+		return m.ID
+	}
+	return v1.PrimitiveId{}
+}
+
+type CloseResponse struct {
+}
+
+func (m *CloseResponse) Reset()         { *m = CloseResponse{} }
+func (m *CloseResponse) String() string { return proto.CompactTextString(m) }
+func (*CloseResponse) ProtoMessage()    {}
+func (*CloseResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_677aec3673c54cd8, []int{3}
+}
+func (m *CloseResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CloseResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CloseResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CloseResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CloseResponse.Merge(m, src)
+}
+func (m *CloseResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *CloseResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CloseResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CloseResponse proto.InternalMessageInfo
 
 type GetRequest struct {
 	ID v1.PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
@@ -62,7 +222,7 @@ func (m *GetRequest) Reset()         { *m = GetRequest{} }
 func (m *GetRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRequest) ProtoMessage()    {}
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_677aec3673c54cd8, []int{0}
+	return fileDescriptor_677aec3673c54cd8, []int{4}
 }
 func (m *GetRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -107,7 +267,7 @@ func (m *GetResponse) Reset()         { *m = GetResponse{} }
 func (m *GetResponse) String() string { return proto.CompactTextString(m) }
 func (*GetResponse) ProtoMessage()    {}
 func (*GetResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_677aec3673c54cd8, []int{1}
+	return fileDescriptor_677aec3673c54cd8, []int{5}
 }
 func (m *GetResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -160,7 +320,7 @@ func (m *SetRequest) Reset()         { *m = SetRequest{} }
 func (m *SetRequest) String() string { return proto.CompactTextString(m) }
 func (*SetRequest) ProtoMessage()    {}
 func (*SetRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_677aec3673c54cd8, []int{2}
+	return fileDescriptor_677aec3673c54cd8, []int{6}
 }
 func (m *SetRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -219,7 +379,7 @@ func (m *SetResponse) Reset()         { *m = SetResponse{} }
 func (m *SetResponse) String() string { return proto.CompactTextString(m) }
 func (*SetResponse) ProtoMessage()    {}
 func (*SetResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_677aec3673c54cd8, []int{3}
+	return fileDescriptor_677aec3673c54cd8, []int{7}
 }
 func (m *SetResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -270,7 +430,7 @@ func (m *EventsRequest) Reset()         { *m = EventsRequest{} }
 func (m *EventsRequest) String() string { return proto.CompactTextString(m) }
 func (*EventsRequest) ProtoMessage()    {}
 func (*EventsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_677aec3673c54cd8, []int{4}
+	return fileDescriptor_677aec3673c54cd8, []int{8}
 }
 func (m *EventsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -314,7 +474,7 @@ func (m *EventsResponse) Reset()         { *m = EventsResponse{} }
 func (m *EventsResponse) String() string { return proto.CompactTextString(m) }
 func (*EventsResponse) ProtoMessage()    {}
 func (*EventsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_677aec3673c54cd8, []int{5}
+	return fileDescriptor_677aec3673c54cd8, []int{9}
 }
 func (m *EventsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -360,7 +520,7 @@ func (m *Event) Reset()         { *m = Event{} }
 func (m *Event) String() string { return proto.CompactTextString(m) }
 func (*Event) ProtoMessage()    {}
 func (*Event) Descriptor() ([]byte, []int) {
-	return fileDescriptor_677aec3673c54cd8, []int{6}
+	return fileDescriptor_677aec3673c54cd8, []int{10}
 }
 func (m *Event) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -412,6 +572,10 @@ func (m *Event) GetTimestamp() *v11.Timestamp {
 
 func init() {
 	proto.RegisterEnum("atomix.value.v1.Event_Type", Event_Type_name, Event_Type_value)
+	proto.RegisterType((*CreateRequest)(nil), "atomix.value.v1.CreateRequest")
+	proto.RegisterType((*CreateResponse)(nil), "atomix.value.v1.CreateResponse")
+	proto.RegisterType((*CloseRequest)(nil), "atomix.value.v1.CloseRequest")
+	proto.RegisterType((*CloseResponse)(nil), "atomix.value.v1.CloseResponse")
 	proto.RegisterType((*GetRequest)(nil), "atomix.value.v1.GetRequest")
 	proto.RegisterType((*GetResponse)(nil), "atomix.value.v1.GetResponse")
 	proto.RegisterType((*SetRequest)(nil), "atomix.value.v1.SetRequest")
@@ -424,37 +588,42 @@ func init() {
 func init() { proto.RegisterFile("atomix/value/v1/value.proto", fileDescriptor_677aec3673c54cd8) }
 
 var fileDescriptor_677aec3673c54cd8 = []byte{
-	// 480 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x53, 0x31, 0x6f, 0xd3, 0x40,
-	0x14, 0xf6, 0x39, 0x76, 0x54, 0x5e, 0x4a, 0xa9, 0x4e, 0x15, 0x4a, 0xd2, 0xea, 0x52, 0x19, 0x06,
-	0x26, 0x9b, 0x98, 0x81, 0xa5, 0x0b, 0x51, 0x22, 0xab, 0x95, 0x28, 0x95, 0x93, 0x32, 0x21, 0xa1,
-	0x80, 0xaf, 0xd5, 0x49, 0xb8, 0x36, 0xf6, 0xd5, 0xa2, 0x1b, 0x63, 0x47, 0x7e, 0x01, 0x1b, 0x7f,
-	0x20, 0xbf, 0xa2, 0x63, 0x47, 0xa6, 0x0a, 0x39, 0xff, 0x81, 0x19, 0xdd, 0x9d, 0x1d, 0x97, 0xe2,
-	0x82, 0x90, 0xd2, 0xc9, 0xf7, 0xde, 0xf7, 0xdd, 0xf7, 0xbe, 0xf7, 0xde, 0x19, 0x36, 0xa7, 0x3c,
-	0x0a, 0xd9, 0x27, 0x27, 0x9b, 0x7e, 0x38, 0xa5, 0x4e, 0xd6, 0x57, 0x07, 0x3b, 0x4e, 0x22, 0x1e,
-	0xe1, 0x07, 0x0a, 0xb4, 0x55, 0x2e, 0xeb, 0x77, 0x1f, 0x17, 0xec, 0x38, 0x61, 0x21, 0xe3, 0x2c,
-	0x93, 0x37, 0x02, 0x9a, 0xbe, 0x4f, 0x58, 0xcc, 0xa3, 0x44, 0x5d, 0xeb, 0x3e, 0xaa, 0x63, 0x2d,
-	0x82, 0x82, 0x44, 0x0a, 0x12, 0x67, 0xa1, 0xc4, 0xc5, 0x37, 0xe5, 0xd3, 0x30, 0x2e, 0xf0, 0x8d,
-	0xe3, 0xe8, 0x38, 0x92, 0x47, 0x47, 0x9c, 0x54, 0xd6, 0xda, 0x03, 0xf0, 0x28, 0xf7, 0xe9, 0xc7,
-	0x53, 0x9a, 0x72, 0xbc, 0x03, 0x3a, 0x0b, 0xda, 0x68, 0x1b, 0x3d, 0x69, 0xb9, 0xdb, 0x76, 0x61,
-	0xb6, 0x2a, 0x94, 0xf5, 0xed, 0x83, 0x32, 0xd8, 0x0d, 0x06, 0x70, 0x71, 0xd5, 0xd3, 0xf2, 0xab,
-	0x9e, 0xbe, 0x3b, 0xf4, 0x75, 0x16, 0x58, 0x6f, 0xa0, 0x25, 0xb5, 0xd2, 0x38, 0x3a, 0x49, 0x29,
-	0xde, 0x00, 0x53, 0xf6, 0x29, 0xf5, 0x56, 0x7d, 0x15, 0xe0, 0xe7, 0x70, 0x6f, 0xe1, 0xac, 0xad,
-	0xcb, 0x4a, 0x9d, 0xb2, 0x92, 0x00, 0x44, 0x91, 0x49, 0x49, 0xf0, 0x2b, 0xae, 0xf5, 0x15, 0x01,
-	0x8c, 0x97, 0x64, 0xb5, 0xf2, 0xa6, 0x5f, 0xf7, 0xb6, 0x03, 0xab, 0xec, 0xe8, 0x6d, 0x65, 0xaf,
-	0xf1, 0x2f, 0x7b, 0x2d, 0x76, 0xb4, 0x08, 0x44, 0xfb, 0xe3, 0xbb, 0x6b, 0xff, 0x25, 0xdc, 0x1f,
-	0x65, 0xf4, 0x84, 0xa7, 0xcb, 0xd9, 0xd5, 0x10, 0xd6, 0x4a, 0xb9, 0xc2, 0xaf, 0x0b, 0x26, 0x15,
-	0x99, 0x42, 0xf2, 0xa1, 0x7d, 0xe3, 0xad, 0xda, 0x92, 0x3f, 0x30, 0x84, 0x90, 0xaf, 0xa8, 0xd6,
-	0x37, 0x04, 0xa6, 0x4c, 0x63, 0x07, 0x0c, 0x7e, 0x16, 0xab, 0x66, 0xd7, 0xdc, 0xcd, 0xfa, 0xcb,
-	0xf6, 0xe4, 0x2c, 0xa6, 0xbe, 0x24, 0xde, 0xb2, 0x81, 0xdf, 0xc6, 0xd3, 0xf8, 0x8f, 0xf1, 0x6c,
-	0x81, 0x21, 0xc4, 0xf1, 0x0a, 0x18, 0xfb, 0xaf, 0xf6, 0x47, 0xeb, 0x1a, 0x06, 0x68, 0x1e, 0x1e,
-	0x0c, 0x5f, 0x4c, 0x46, 0xeb, 0xc8, 0xfd, 0x89, 0xc0, 0x7c, 0x2d, 0x0b, 0xec, 0x41, 0x63, 0x4c,
-	0x39, 0xfe, 0xd3, 0x60, 0xf5, 0xb4, 0xba, 0x5b, 0xf5, 0xa0, 0x9a, 0x93, 0xb5, 0xf2, 0x79, 0xd6,
-	0x69, 0x9c, 0xcf, 0x3a, 0x9a, 0xd0, 0xf2, 0x6a, 0xb5, 0xbc, 0xbf, 0x69, 0x79, 0x37, 0xb4, 0x8c,
-	0xf3, 0x59, 0x07, 0xe1, 0x43, 0x68, 0xaa, 0x7d, 0x60, 0x52, 0x3f, 0xbb, 0x72, 0xef, 0xdd, 0xde,
-	0xad, 0xf8, 0x35, 0x51, 0x53, 0x18, 0x7c, 0x8a, 0x06, 0xed, 0x8b, 0x9c, 0xa0, 0xcb, 0x9c, 0xa0,
-	0x1f, 0x39, 0x41, 0x5f, 0xe6, 0x44, 0xbb, 0x9c, 0x13, 0xed, 0xfb, 0x9c, 0x68, 0xef, 0x9a, 0xf2,
-	0xff, 0x7f, 0xf6, 0x2b, 0x00, 0x00, 0xff, 0xff, 0xb2, 0x8f, 0x1b, 0x21, 0xb0, 0x04, 0x00, 0x00,
+	// 555 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x94, 0xcd, 0x6e, 0xda, 0x4c,
+	0x14, 0x86, 0x3d, 0x36, 0x46, 0xf9, 0x0e, 0x3f, 0x41, 0xa3, 0xe8, 0x13, 0x26, 0xa9, 0x89, 0x68,
+	0x17, 0x5d, 0x99, 0x42, 0x17, 0xdd, 0x64, 0x53, 0x02, 0x42, 0x89, 0x9a, 0x14, 0x19, 0xd2, 0x55,
+	0xa5, 0x8a, 0x96, 0x49, 0x34, 0x52, 0x88, 0x5d, 0x3c, 0xb1, 0x9a, 0x5d, 0x97, 0x2c, 0x7b, 0x03,
+	0xed, 0xae, 0x37, 0xc0, 0x55, 0x64, 0x99, 0x65, 0x57, 0x51, 0x05, 0x37, 0x52, 0xcd, 0x8f, 0x31,
+	0x04, 0xd3, 0xaa, 0x12, 0x5d, 0x79, 0x66, 0xce, 0x3b, 0xcf, 0x79, 0xe7, 0xcc, 0x1c, 0xc3, 0x6e,
+	0x9f, 0x79, 0x43, 0xfa, 0xa9, 0x1a, 0xf6, 0x2f, 0xaf, 0x49, 0x35, 0xac, 0xc9, 0x81, 0xe3, 0x8f,
+	0x3c, 0xe6, 0xe1, 0x6d, 0x19, 0x74, 0xe4, 0x5a, 0x58, 0x2b, 0x3d, 0x51, 0x6a, 0x7f, 0x44, 0x87,
+	0x94, 0xd1, 0x50, 0xec, 0x18, 0x90, 0xe0, 0xc3, 0x88, 0xfa, 0xcc, 0x1b, 0xc9, 0x6d, 0xa5, 0xc7,
+	0x49, 0xaa, 0xf9, 0x44, 0x89, 0x6c, 0x25, 0x62, 0x74, 0x28, 0xe2, 0xfc, 0x1b, 0xb0, 0xfe, 0xd0,
+	0x57, 0xf1, 0x9d, 0x0b, 0xef, 0xc2, 0x13, 0xc3, 0x2a, 0x1f, 0xc9, 0xd5, 0xca, 0x09, 0xe4, 0x0e,
+	0x47, 0xa4, 0xcf, 0x88, 0x4b, 0x3e, 0x5e, 0x93, 0x80, 0xe1, 0x03, 0xd0, 0xe9, 0xa0, 0x88, 0xf6,
+	0xd1, 0xd3, 0x4c, 0x7d, 0xdf, 0x51, 0x7e, 0xe3, 0x5c, 0x61, 0xcd, 0xe9, 0x44, 0x93, 0xa3, 0x41,
+	0x03, 0x6e, 0xef, 0xcb, 0xda, 0xf4, 0xbe, 0xac, 0x1f, 0x35, 0x5d, 0x9d, 0x0e, 0x2a, 0x05, 0xc8,
+	0x47, 0xb8, 0xc0, 0xf7, 0xae, 0x02, 0x52, 0x79, 0x05, 0xd9, 0xc3, 0x4b, 0x2f, 0xd8, 0x10, 0x7f,
+	0x1b, 0x72, 0x8a, 0xa6, 0xf0, 0xc7, 0x00, 0x6d, 0xc2, 0x36, 0x03, 0x7f, 0x0b, 0x19, 0xc1, 0x92,
+	0x68, 0xbc, 0x03, 0xa6, 0xb8, 0x27, 0xc1, 0xcb, 0xba, 0x72, 0x82, 0x5f, 0xc0, 0x7f, 0xf3, 0xca,
+	0x16, 0x75, 0x91, 0xc9, 0x8a, 0x32, 0xf1, 0x00, 0x4f, 0xd2, 0x8b, 0x04, 0x6e, 0xac, 0xad, 0x7c,
+	0x43, 0x00, 0xdd, 0x0d, 0x59, 0x8d, 0xbd, 0xe9, 0x8b, 0xde, 0x0e, 0x20, 0x4b, 0xcf, 0xdf, 0xc5,
+	0xf6, 0x8c, 0x3f, 0xd9, 0xcb, 0xd0, 0xf3, 0xf9, 0x84, 0x1f, 0xbf, 0xfb, 0xef, 0x8e, 0x7f, 0x02,
+	0xb9, 0x56, 0x48, 0xae, 0x58, 0xb0, 0x99, 0xbb, 0x6a, 0x42, 0x3e, 0xc2, 0x29, 0xbf, 0x75, 0x30,
+	0x09, 0x5f, 0x51, 0xc8, 0xff, 0x9d, 0x07, 0xbd, 0xe6, 0x08, 0x7d, 0x23, 0xc5, 0x41, 0xae, 0x94,
+	0x56, 0xbe, 0x23, 0x30, 0xc5, 0x32, 0xae, 0x42, 0x8a, 0xdd, 0xf8, 0xf2, 0xb0, 0xf9, 0xfa, 0x6e,
+	0xf2, 0x66, 0xa7, 0x77, 0xe3, 0x13, 0x57, 0x08, 0xd7, 0xdc, 0xc0, 0x52, 0x79, 0x8c, 0xbf, 0x28,
+	0xcf, 0x1e, 0xa4, 0x38, 0x1c, 0x6f, 0x41, 0xea, 0xf4, 0xf5, 0x69, 0xab, 0xa0, 0x61, 0x80, 0xf4,
+	0x59, 0xa7, 0xf9, 0xb2, 0xd7, 0x2a, 0xa0, 0xfa, 0x57, 0x03, 0xcc, 0x37, 0x22, 0x41, 0x17, 0xd2,
+	0xb2, 0xc1, 0xb0, 0xbd, 0xe2, 0x71, 0xa9, 0x91, 0x4b, 0xe5, 0xb5, 0x71, 0xd5, 0x3a, 0x5b, 0x9f,
+	0x27, 0x16, 0x1a, 0x4f, 0x2c, 0x1d, 0x77, 0xc0, 0x14, 0x5d, 0x85, 0x1f, 0xad, 0xee, 0x59, 0xe8,
+	0xdd, 0x92, 0xbd, 0x2e, 0xbc, 0x40, 0xd4, 0xc7, 0x13, 0xcb, 0xc0, 0xc7, 0x60, 0x74, 0x09, 0xc3,
+	0xab, 0x75, 0x8c, 0x3b, 0xa0, 0xb4, 0x97, 0x1c, 0x5c, 0x60, 0x19, 0xe3, 0x89, 0xa5, 0x71, 0x56,
+	0x3b, 0x91, 0xd5, 0xfe, 0x1d, 0xab, 0xfd, 0x80, 0x95, 0x1a, 0x4f, 0x2c, 0x84, 0xcf, 0x20, 0x2d,
+	0x9f, 0x4d, 0x42, 0xf9, 0x96, 0x9e, 0x67, 0x42, 0xf9, 0x96, 0xdf, 0x9b, 0x80, 0x9a, 0xdc, 0xe0,
+	0x33, 0xd4, 0x28, 0xde, 0x4e, 0x6d, 0x74, 0x37, 0xb5, 0xd1, 0xcf, 0xa9, 0x8d, 0xbe, 0xcc, 0x6c,
+	0xed, 0x6e, 0x66, 0x6b, 0x3f, 0x66, 0xb6, 0xf6, 0x3e, 0x2d, 0x7e, 0xb3, 0xcf, 0x7f, 0x05, 0x00,
+	0x00, 0xff, 0xff, 0xee, 0x5a, 0xf7, 0x90, 0x17, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -469,6 +638,10 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ValueClient interface {
+	// Create creates the value
+	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error)
+	// Close closes the value
+	Close(ctx context.Context, in *CloseRequest, opts ...grpc.CallOption) (*CloseResponse, error)
 	// Set sets the value
 	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error)
 	// Get gets the value
@@ -483,6 +656,24 @@ type valueClient struct {
 
 func NewValueClient(cc *grpc.ClientConn) ValueClient {
 	return &valueClient{cc}
+}
+
+func (c *valueClient) Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error) {
+	out := new(CreateResponse)
+	err := c.cc.Invoke(ctx, "/atomix.value.v1.Value/Create", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *valueClient) Close(ctx context.Context, in *CloseRequest, opts ...grpc.CallOption) (*CloseResponse, error) {
+	out := new(CloseResponse)
+	err := c.cc.Invoke(ctx, "/atomix.value.v1.Value/Close", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *valueClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error) {
@@ -537,6 +728,10 @@ func (x *valueEventsClient) Recv() (*EventsResponse, error) {
 
 // ValueServer is the server API for Value service.
 type ValueServer interface {
+	// Create creates the value
+	Create(context.Context, *CreateRequest) (*CreateResponse, error)
+	// Close closes the value
+	Close(context.Context, *CloseRequest) (*CloseResponse, error)
 	// Set sets the value
 	Set(context.Context, *SetRequest) (*SetResponse, error)
 	// Get gets the value
@@ -549,6 +744,12 @@ type ValueServer interface {
 type UnimplementedValueServer struct {
 }
 
+func (*UnimplementedValueServer) Create(ctx context.Context, req *CreateRequest) (*CreateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+}
+func (*UnimplementedValueServer) Close(ctx context.Context, req *CloseRequest) (*CloseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Close not implemented")
+}
 func (*UnimplementedValueServer) Set(ctx context.Context, req *SetRequest) (*SetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
 }
@@ -561,6 +762,42 @@ func (*UnimplementedValueServer) Events(req *EventsRequest, srv Value_EventsServ
 
 func RegisterValueServer(s *grpc.Server, srv ValueServer) {
 	s.RegisterService(&_Value_serviceDesc, srv)
+}
+
+func _Value_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ValueServer).Create(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/atomix.value.v1.Value/Create",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ValueServer).Create(ctx, req.(*CreateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Value_Close_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CloseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ValueServer).Close(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/atomix.value.v1.Value/Close",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ValueServer).Close(ctx, req.(*CloseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Value_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -625,6 +862,14 @@ var _Value_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*ValueServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "Create",
+			Handler:    _Value_Create_Handler,
+		},
+		{
+			MethodName: "Close",
+			Handler:    _Value_Close_Handler,
+		},
+		{
 			MethodName: "Set",
 			Handler:    _Value_Set_Handler,
 		},
@@ -641,6 +886,118 @@ var _Value_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Metadata: "atomix/value/v1/value.proto",
+}
+
+func (m *CreateRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CreateRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CreateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintValue(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *CreateResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CreateResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CreateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *CloseRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CloseRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CloseRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintValue(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *CloseResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CloseResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CloseResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
 }
 
 func (m *GetRequest) Marshal() (dAtA []byte, err error) {
@@ -936,6 +1293,46 @@ func encodeVarintValue(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *CreateRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ID.Size()
+	n += 1 + l + sovValue(uint64(l))
+	return n
+}
+
+func (m *CreateResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *CloseRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ID.Size()
+	n += 1 + l + sovValue(uint64(l))
+	return n
+}
+
+func (m *CloseResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func (m *GetRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1047,6 +1444,272 @@ func sovValue(x uint64) (n int) {
 }
 func sozValue(x uint64) (n int) {
 	return sovValue(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *CreateRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowValue
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CreateRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CreateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowValue
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthValue
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthValue
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipValue(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthValue
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CreateResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowValue
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CreateResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CreateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipValue(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthValue
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CloseRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowValue
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CloseRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CloseRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowValue
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthValue
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthValue
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipValue(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthValue
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CloseResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowValue
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CloseResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CloseResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipValue(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthValue
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *GetRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)

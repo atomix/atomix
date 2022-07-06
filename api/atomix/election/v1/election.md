@@ -6,6 +6,10 @@
 - [atomix/election/v1/election.proto](#atomix_election_v1_election-proto)
     - [AnointRequest](#atomix-election-v1-AnointRequest)
     - [AnointResponse](#atomix-election-v1-AnointResponse)
+    - [CloseRequest](#atomix-election-v1-CloseRequest)
+    - [CloseResponse](#atomix-election-v1-CloseResponse)
+    - [CreateRequest](#atomix-election-v1-CreateRequest)
+    - [CreateResponse](#atomix-election-v1-CreateResponse)
     - [EnterRequest](#atomix-election-v1-EnterRequest)
     - [EnterResponse](#atomix-election-v1-EnterResponse)
     - [Event](#atomix-election-v1-Event)
@@ -61,6 +65,56 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | term | [Term](#atomix-election-v1-Term) |  |  |
+
+
+
+
+
+
+<a name="atomix-election-v1-CloseRequest"></a>
+
+### CloseRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-election-v1-CloseResponse"></a>
+
+### CloseResponse
+
+
+
+
+
+
+
+<a name="atomix-election-v1-CreateRequest"></a>
+
+### CreateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-election-v1-CreateResponse"></a>
+
+### CreateResponse
+
 
 
 
@@ -309,6 +363,8 @@ LeaderElection is a service for a leader election primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| Create | [CreateRequest](#atomix-election-v1-CreateRequest) | [CreateResponse](#atomix-election-v1-CreateResponse) | Create creates the leader election |
+| Close | [CloseRequest](#atomix-election-v1-CloseRequest) | [CloseResponse](#atomix-election-v1-CloseResponse) | Close closes the leader election |
 | Enter | [EnterRequest](#atomix-election-v1-EnterRequest) | [EnterResponse](#atomix-election-v1-EnterResponse) | Enter enters the leader election |
 | Withdraw | [WithdrawRequest](#atomix-election-v1-WithdrawRequest) | [WithdrawResponse](#atomix-election-v1-WithdrawResponse) | Withdraw withdraws a candidate from the leader election |
 | Anoint | [AnointRequest](#atomix-election-v1-AnointRequest) | [AnointResponse](#atomix-election-v1-AnointResponse) | Anoint anoints a candidate leader |
