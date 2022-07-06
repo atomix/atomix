@@ -33,5 +33,5 @@ func resolve(client runtime.Client) (primitive.Factory[counterv1.CounterClient],
 }
 
 type CounterProvider interface {
-	GetCounter(string) counterv1.CounterClient
+	GetCounter(runtime.ID) counterv1.CounterClient
 }

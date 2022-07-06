@@ -33,5 +33,5 @@ func resolve(client runtime.Client) (primitive.Factory[topicv1.TopicClient], boo
 }
 
 type TopicProvider interface {
-	GetTopic(string) topicv1.TopicClient
+	GetTopic(runtime.ID) topicv1.TopicClient
 }

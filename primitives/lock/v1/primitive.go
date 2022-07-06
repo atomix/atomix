@@ -33,5 +33,5 @@ func resolve(client runtime.Client) (primitive.Factory[lockv1.LockClient], bool)
 }
 
 type LockProvider interface {
-	GetLock(string) lockv1.LockClient
+	GetLock(runtime.ID) lockv1.LockClient
 }

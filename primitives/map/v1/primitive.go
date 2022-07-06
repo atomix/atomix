@@ -33,5 +33,5 @@ func resolve(client runtime.Client) (primitive.Factory[mapv1.MapClient], bool) {
 }
 
 type MapProvider interface {
-	GetMap(string) mapv1.MapClient
+	GetMap(runtime.ID) mapv1.MapClient
 }

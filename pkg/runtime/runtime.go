@@ -9,6 +9,25 @@ import (
 	"fmt"
 )
 
+func NewID(namespace, name string) ID {
+	return ID{
+		Namespace: namespace,
+		Name:      name,
+	}
+}
+
+type ID struct {
+	Namespace string
+	Name      string
+}
+
+func (i ID) String() string {
+	if i.Namespace == "" {
+		return i.Name
+	}
+	return fmt.Sprintf("%s.%s", i.Namespace, i.Name)
+}
+
 func NewKind(name, apiVersion string) Kind {
 	return Kind{
 		Name:       name,
@@ -26,7 +45,7 @@ func (k Kind) String() string {
 }
 
 type Runtime interface {
-	GetClient(ctx context.Context, kind Kind, name string) (Client, error)
+	GetClient(ctx context.Context, kind Kind, id ID) (Client, error)
 }
 
 type Client interface{}

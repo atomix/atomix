@@ -18,7 +18,7 @@ type Registrar[T any] func(*grpc.Server, *Manager[T])
 
 type Resolver[T any] func(runtime.Client) (Factory[T], bool)
 
-type Factory[T any] func(name string) T
+type Factory[T any] func(id runtime.ID) T
 
 func NewType[T any](name string, version string, registrar Registrar[T], resolver Resolver[T]) Type {
 	return &genericType[T]{

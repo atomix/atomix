@@ -33,5 +33,5 @@ func resolve(client runtime.Client) (primitive.Factory[electionv1.LeaderElection
 }
 
 type LeaderElectionProvider interface {
-	GetLeaderElection(string) electionv1.LeaderElectionClient
+	GetLeaderElection(runtime.ID) electionv1.LeaderElectionClient
 }

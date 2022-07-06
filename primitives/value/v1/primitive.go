@@ -33,5 +33,5 @@ func resolve(client runtime.Client) (primitive.Factory[valuev1.ValueClient], boo
 }
 
 type ValueProvider interface {
-	GetValue(string) valuev1.ValueClient
+	GetValue(runtime.ID) valuev1.ValueClient
 }

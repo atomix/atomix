@@ -33,5 +33,5 @@ func resolve(client runtime.Client) (primitive.Factory[indexedmapv1.IndexedMapCl
 }
 
 type IndexedMapProvider interface {
-	GetIndexedMap(string) indexedmapv1.IndexedMapClient
+	GetIndexedMap(runtime.ID) indexedmapv1.IndexedMapClient
 }

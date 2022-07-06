@@ -17,7 +17,7 @@ var log = logging.GetLogger()
 type Driver interface {
 	fmt.Stringer
 	Kind() runtime.Kind
-	Connect(ctx context.Context, id ConnID, config []byte) (Conn, error)
+	Connect(ctx context.Context, config []byte) (Conn, error)
 }
 
 func New[C any](name, version string, connector Connector[C]) Driver {
@@ -36,7 +36,7 @@ func (d *configurableDriver[C]) Kind() runtime.Kind {
 	return d.kind
 }
 
-func (d *configurableDriver[C]) Connect(ctx context.Context, id ConnID, data []byte) (Conn, error) {
+func (d *configurableDriver[C]) Connect(ctx context.Context, data []byte) (Conn, error) {
 	var config C
 	if data != nil {
 		if err := json.Unmarshal(data, &config); err != nil {
@@ -47,7 +47,7 @@ func (d *configurableDriver[C]) Connect(ctx context.Context, id ConnID, data []b
 	if err != nil {
 		return nil, err
 	}
-	return newConfigurableConn[C](id, d, conn), nil
+	return newConfigurableConn[C](d, conn), nil
 }
 
 func (d *configurableDriver[C]) String() string {

@@ -12,14 +12,17 @@ import (
 	"sync"
 )
 
-const primitiveIDHeader = "Primitive-ID"
+const (
+	primitiveNamespaceHeader = "Primitive-Namespace"
+	primitiveNameHeader      = "Primitive-Name"
+)
 
-func NewManager[T any](primitiveType Type, runtime runtime.Runtime, resolver Resolver[T]) *Manager[T] {
+func NewManager[T any](primitiveType Type, r runtime.Runtime, resolver Resolver[T]) *Manager[T] {
 	return &Manager[T]{
 		primitiveType: primitiveType,
-		runtime:       runtime,
+		runtime:       r,
 		resolver:      resolver,
-		clients:       make(map[string]T),
+		clients:       make(map[runtime.ID]T),
 	}
 }
 
@@ -27,41 +30,41 @@ type Manager[T any] struct {
 	primitiveType Type
 	runtime       runtime.Runtime
 	resolver      Resolver[T]
-	clients       map[string]T
+	clients       map[runtime.ID]T
 	mu            sync.RWMutex
 }
 
 func (m *Manager[T]) GetClient(ctx context.Context) (T, error) {
 	var client T
-	name, err := getIDFromContext(ctx)
+	id, err := getIDFromContext(ctx)
 	if err != nil {
 		return client, err
 	}
 
-	client, ok := m.getClient(name)
+	client, ok := m.getClient(id)
 	if ok {
 		return client, nil
 	}
-	return m.newClient(ctx, name)
+	return m.newClient(ctx, id)
 }
 
-func (m *Manager[T]) getClient(name string) (T, bool) {
+func (m *Manager[T]) getClient(id runtime.ID) (T, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	client, ok := m.clients[name]
+	client, ok := m.clients[id]
 	return client, ok
 }
 
-func (m *Manager[T]) newClient(ctx context.Context, name string) (T, error) {
+func (m *Manager[T]) newClient(ctx context.Context, id runtime.ID) (T, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	client, ok := m.clients[name]
+	client, ok := m.clients[id]
 	if ok {
 		return client, nil
 	}
 
-	conn, err := m.runtime.GetClient(ctx, m.primitiveType.Kind(), name)
+	conn, err := m.runtime.GetClient(ctx, m.primitiveType.Kind(), id)
 	if err != nil {
 		return client, err
 	}
@@ -71,19 +74,24 @@ func (m *Manager[T]) newClient(ctx context.Context, name string) (T, error) {
 		return client, errors.NewNotSupported("primitive type not supported by client")
 	}
 
-	client = provider(name)
-	m.clients[name] = client
+	client = provider(id)
+	m.clients[id] = client
 	return client, nil
 }
 
-func getIDFromContext(ctx context.Context) (string, error) {
+func getIDFromContext(ctx context.Context) (runtime.ID, error) {
+	var id runtime.ID
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return "", errors.NewInvalid("missing metadata in context")
+		return id, errors.NewInvalid("missing metadata in context")
 	}
-	primitiveIDs := md.Get(primitiveIDHeader)
-	if len(primitiveIDs) == 0 {
-		return "", errors.NewInvalid("missing %s header in metadata", primitiveIDHeader)
+	primitiveNamespaces := md.Get(primitiveNamespaceHeader)
+	if len(primitiveNamespaces) > 0 {
+		id.Namespace = primitiveNamespaces[0]
 	}
-	return primitiveIDs[0], nil
+	primitiveNames := md.Get(primitiveNameHeader)
+	if len(primitiveNames) == 0 {
+		return id, errors.NewInvalid("missing %s header in metadata", primitiveNameHeader)
+	}
+	return id, nil
 }

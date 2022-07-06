@@ -33,5 +33,5 @@ func resolve(client runtime.Client) (primitive.Factory[setv1.SetClient], bool) {
 }
 
 type SetProvider interface {
-	GetSet(string) setv1.SetClient
+	GetSet(runtime.ID) setv1.SetClient
 }

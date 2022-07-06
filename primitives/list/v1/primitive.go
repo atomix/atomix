@@ -33,5 +33,5 @@ func resolve(client runtime.Client) (primitive.Factory[listv1.ListClient], bool)
 }
 
 type ListProvider interface {
-	GetList(string) listv1.ListClient
+	GetList(runtime.ID) listv1.ListClient
 }
