@@ -9,5 +9,5 @@ import "github.com/atomix/runtime/pkg/logging"
 var log = logging.GetLogger()
 
 type Runtime interface {
-	Connect(primitive PrimitiveMeta) (Conn, error)
+	GetConn(primitive PrimitiveMeta) (Conn, error)
 }

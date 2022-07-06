@@ -41,7 +41,7 @@ func (p *Delegate[T]) Create(name string, tags map[string]string) (T, error) {
 		Tags: tags,
 	}
 
-	conn, err := p.runtime.Connect(meta)
+	conn, err := p.runtime.GetConn(meta)
 	if err != nil {
 		return client, err
 	}
