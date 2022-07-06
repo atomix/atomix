@@ -27,7 +27,7 @@ type lockServer struct {
 func (s *lockServer) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", request))
-	client, err := s.delegate.Create(request.ID.Name, request.Labels)
+	client, err := s.delegate.Create(request.ID.Name, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",

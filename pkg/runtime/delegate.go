@@ -26,7 +26,7 @@ type Delegate[T any] struct {
 	mu       sync.RWMutex
 }
 
-func (p *Delegate[T]) Create(name string, labels map[string]string) (T, error) {
+func (p *Delegate[T]) Create(name string, tags map[string]string) (T, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -36,9 +36,9 @@ func (p *Delegate[T]) Create(name string, labels map[string]string) (T, error) {
 	}
 
 	meta := PrimitiveMeta{
-		Name:   name,
-		Kind:   p.kind,
-		Labels: labels,
+		Name: name,
+		Kind: p.kind,
+		Tags: tags,
 	}
 
 	conn, err := p.runtime.Connect(meta)

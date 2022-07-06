@@ -28,7 +28,7 @@ type valueServer struct {
 func (s *valueServer) Create(ctx context.Context, request *valuev1.CreateRequest) (*valuev1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", request))
-	client, err := s.delegate.Create(request.ID.Name, request.Labels)
+	client, err := s.delegate.Create(request.ID.Name, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",

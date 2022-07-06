@@ -19,9 +19,9 @@ func (k Kind) String() string {
 }
 
 type PrimitiveMeta struct {
-	Name   string
-	Kind   Kind
-	Labels map[string]string
+	Name string
+	Kind Kind
+	Tags map[string]string
 }
 
 type Type interface {

@@ -28,7 +28,7 @@ type listServer struct {
 func (s *listServer) Create(ctx context.Context, request *listv1.CreateRequest) (*listv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", request))
-	client, err := s.delegate.Create(request.ID.Name, request.Labels)
+	client, err := s.delegate.Create(request.ID.Name, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",
