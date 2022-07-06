@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-GOLANG_CROSS_VERSION := v1.18.2-v1.8.3
-
 .PHONY: build
 build:
 	go build ./...
