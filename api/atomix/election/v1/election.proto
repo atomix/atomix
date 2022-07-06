@@ -9,6 +9,7 @@ syntax = "proto3";
 package atomix.election.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
+import "atomix/primitive/v1/primitive.proto";
 import "atomix/time/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
@@ -58,9 +59,11 @@ service LeaderElection {
 }
 
 message EnterRequest {
-    string candidate_id = 1 [
-        (gogoproto.customname) = "CandidateID"
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
     ];
+    string candidate = 2;
 }
 
 message EnterResponse {
@@ -70,9 +73,11 @@ message EnterResponse {
 }
 
 message WithdrawRequest {
-    string candidate_id = 1 [
-        (gogoproto.customname) = "CandidateID"
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
     ];
+    string candidate = 2;
 }
 
 message WithdrawResponse {
@@ -82,9 +87,11 @@ message WithdrawResponse {
 }
 
 message AnointRequest {
-    string candidate_id = 1 [
-        (gogoproto.customname) = "CandidateID"
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
     ];
+    string candidate = 2;
 }
 
 message AnointResponse {
@@ -94,9 +101,11 @@ message AnointResponse {
 }
 
 message PromoteRequest {
-    string candidate_id = 1 [
-        (gogoproto.customname) = "CandidateID"
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
     ];
+    string candidate = 2;
 }
 
 message PromoteResponse {
@@ -106,9 +115,11 @@ message PromoteResponse {
 }
 
 message EvictRequest {
-    string candidate_id = 1 [
-        (gogoproto.customname) = "CandidateID"
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
     ];
+    string candidate = 2;
 }
 
 message EvictResponse {
@@ -118,7 +129,10 @@ message EvictResponse {
 }
 
 message GetTermRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message GetTermResponse {
@@ -128,7 +142,10 @@ message GetTermResponse {
 }
 
 message EventsRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message EventsResponse {
@@ -150,9 +167,7 @@ message Event {
 }
 
 message Term {
-    string leader_id = 1 [
-        (gogoproto.customname) = "CandidateID"
-    ];
+    string leader = 1;
     repeated string candidates = 2;
     atomix.time.v1.Timestamp timestamp = 3;
 }

@@ -9,6 +9,7 @@ syntax = "proto3";
 package atomix.counter.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
+import "atomix/primitive/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 
 // Counter is a service for a counter primitive
@@ -39,7 +40,11 @@ service Counter {
 }
 
 message IncrementRequest {
-    int64 delta = 1;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    int64 delta = 2;
 }
 
 message IncrementResponse {
@@ -47,7 +52,11 @@ message IncrementResponse {
 }
 
 message DecrementRequest {
-    int64 delta = 1;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    int64 delta = 2;
 }
 
 message DecrementResponse {
@@ -55,7 +64,10 @@ message DecrementResponse {
 }
 
 message GetRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message GetResponse {
@@ -69,8 +81,12 @@ message Precondition {
 }
 
 message SetRequest {
-    int64 value = 1;
-    repeated Precondition preconditions = 2 [
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    int64 value = 2;
+    repeated Precondition preconditions = 3 [
         (gogoproto.nullable) = false
     ];
 }

@@ -3,77 +3,29 @@
 
 ## Table of Contents
 
-- [atomix/topic/v1/topic.proto](#atomix_topic_v1_topic-proto)
-    - [PublishRequest](#atomix-topic-v1-PublishRequest)
-    - [PublishResponse](#atomix-topic-v1-PublishResponse)
-    - [SubscribeRequest](#atomix-topic-v1-SubscribeRequest)
-    - [SubscribeResponse](#atomix-topic-v1-SubscribeResponse)
-  
-    - [Topic](#atomix-topic-v1-Topic)
+- [atomix/primitive/v1/primitive.proto](#atomix_primitive_v1_primitive-proto)
+    - [PrimitiveId](#atomix-primitive-v1-PrimitiveId)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_topic_v1_topic-proto"></a>
+<a name="atomix_primitive_v1_primitive-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/topic/v1/topic.proto
+## atomix/primitive/v1/primitive.proto
 
 
 
-<a name="atomix-topic-v1-PublishRequest"></a>
+<a name="atomix-primitive-v1-PrimitiveId"></a>
 
-### PublishRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
-| payload | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="atomix-topic-v1-PublishResponse"></a>
-
-### PublishResponse
-
-
-
-
-
-
-
-<a name="atomix-topic-v1-SubscribeRequest"></a>
-
-### SubscribeRequest
+### PrimitiveId
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
-
-
-
-
-
-
-<a name="atomix-topic-v1-SubscribeResponse"></a>
-
-### SubscribeResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| offset | [uint64](#uint64) |  |  |
-| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
-| payload | [bytes](#bytes) |  |  |
+| name | [string](#string) |  |  |
 
 
 
@@ -84,17 +36,6 @@
  
 
  
-
-
-<a name="atomix-topic-v1-Topic"></a>
-
-### Topic
-
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| Publish | [PublishRequest](#atomix-topic-v1-PublishRequest) | [PublishResponse](#atomix-topic-v1-PublishResponse) |  |
-| Subscribe | [SubscribeRequest](#atomix-topic-v1-SubscribeRequest) | [SubscribeResponse](#atomix-topic-v1-SubscribeResponse) stream |  |
 
  
 

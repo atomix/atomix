@@ -9,6 +9,7 @@ syntax = "proto3";
 package atomix.set.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
+import "atomix/primitive/v1/primitive.proto";
 import "atomix/time/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
@@ -58,7 +59,10 @@ service Set {
 }
 
 message SizeRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message SizeResponse {
@@ -66,7 +70,11 @@ message SizeResponse {
 }
 
 message ContainsRequest {
-    Element element = 1 [
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    Element element = 2 [
         (gogoproto.nullable) = false
     ];
 }
@@ -76,7 +84,11 @@ message ContainsResponse {
 }
 
 message AddRequest {
-    Element element = 1 [
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    Element element = 2 [
         (gogoproto.nullable) = false
     ];
 }
@@ -88,6 +100,10 @@ message AddResponse {
 }
 
 message RemoveRequest {
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
     Element element = 2 [
         (gogoproto.nullable) = false
     ];
@@ -100,7 +116,10 @@ message RemoveResponse {
 }
 
 message ClearRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message ClearResponse {
@@ -108,7 +127,11 @@ message ClearResponse {
 }
 
 message EventsRequest {
-    bool replay = 1;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    bool replay = 2;
 }
 
 message EventsResponse {
@@ -132,7 +155,10 @@ message Event {
 }
 
 message ElementsRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message ElementsResponse {

@@ -10,6 +10,7 @@ package atomix.lock.v1;
 
 import "google/protobuf/duration.proto";
 import "atomix/primitive/v1/descriptor.proto";
+import "atomix/primitive/v1/primitive.proto";
 import "atomix/time/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
@@ -35,7 +36,11 @@ service Lock {
 }
 
 message LockRequest {
-    google.protobuf.Duration timeout = 1 [
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    google.protobuf.Duration timeout = 2 [
         (gogoproto.stdduration) = true
     ];
 }
@@ -47,7 +52,11 @@ message LockResponse {
 }
 
 message UnlockRequest {
-    LockInstance lock = 1 [
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    LockInstance lock = 2 [
         (gogoproto.nullable) = false
     ];
 }
@@ -59,7 +68,11 @@ message UnlockResponse {
 }
 
 message GetLockRequest {
-    LockInstance lock = 1 [
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    LockInstance lock = 2 [
         (gogoproto.nullable) = false
     ];
 }

@@ -11,6 +11,7 @@ package atomix.map.v1;
 import "google/protobuf/duration.proto";
 import "atomix/time/v1/timestamp.proto";
 import "atomix/primitive/v1/descriptor.proto";
+import "atomix/primitive/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 
 // Map is a service for a map primitive
@@ -70,13 +71,11 @@ service Map {
     }
 }
 
-message MapCacheConfig {
-    bool enabled = 1;
-    int32 size = 2;
-}
-
 message SizeRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message SizeResponse {
@@ -84,9 +83,13 @@ message SizeResponse {
 }
 
 message PutRequest {
-    string key = 1;
-    Value value = 2;
-    atomix.time.v1.Timestamp if_timestamp = 3;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    Value value = 3;
+    atomix.time.v1.Timestamp if_timestamp = 4;
 }
 
 message PutResponse {
@@ -96,8 +99,12 @@ message PutResponse {
 }
 
 message InsertRequest {
-    string key = 1;
-    Value value = 2;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    Value value = 3;
 }
 
 message InsertResponse {
@@ -107,9 +114,13 @@ message InsertResponse {
 }
 
 message UpdateRequest {
-    string key = 1;
-    Value value = 2;
-    atomix.time.v1.Timestamp if_timestamp = 3;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    Value value = 3;
+    atomix.time.v1.Timestamp if_timestamp = 4;
 }
 
 message UpdateResponse {
@@ -119,7 +130,11 @@ message UpdateResponse {
 }
 
 message GetRequest {
-    string key = 1;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
 }
 
 message GetResponse {
@@ -129,8 +144,12 @@ message GetResponse {
 }
 
 message RemoveRequest {
-    string key = 1;
-    atomix.time.v1.Timestamp if_timestamp = 2;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    atomix.time.v1.Timestamp if_timestamp = 3;
 }
 
 message RemoveResponse {
@@ -140,7 +159,10 @@ message RemoveResponse {
 }
 
 message ClearRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message ClearResponse {
@@ -148,7 +170,10 @@ message ClearResponse {
 }
 
 message EntriesRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message EntriesResponse {
@@ -158,8 +183,12 @@ message EntriesResponse {
 }
 
 message EventsRequest {
-    string key = 1;
-    bool replay = 2;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    bool replay = 3;
 }
 
 message EventsResponse {

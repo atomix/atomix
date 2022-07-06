@@ -9,6 +9,7 @@ syntax = "proto3";
 package atomix.value.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
+import "atomix/primitive/v1/primitive.proto";
 import "atomix/time/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
@@ -34,7 +35,10 @@ service Value {
 }
 
 message GetRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message GetResponse {
@@ -43,8 +47,12 @@ message GetResponse {
 }
 
 message SetRequest {
-    bytes value = 1;
-    atomix.time.v1.Timestamp if_timestamp = 2;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    bytes value = 2;
+    atomix.time.v1.Timestamp if_timestamp = 3;
 }
 
 message SetResponse {
@@ -53,7 +61,10 @@ message SetResponse {
 }
 
 message EventsRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message EventsResponse {

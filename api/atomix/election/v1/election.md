@@ -44,7 +44,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| candidate_id | [string](#string) |  |  |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+| candidate | [string](#string) |  |  |
 
 
 
@@ -74,7 +75,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| candidate_id | [string](#string) |  |  |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+| candidate | [string](#string) |  |  |
 
 
 
@@ -118,6 +120,11 @@
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
 
 
 
@@ -145,7 +152,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| candidate_id | [string](#string) |  |  |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+| candidate | [string](#string) |  |  |
 
 
 
@@ -171,6 +179,11 @@
 
 ### GetTermRequest
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 
 
 
@@ -200,7 +213,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| candidate_id | [string](#string) |  |  |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+| candidate | [string](#string) |  |  |
 
 
 
@@ -230,7 +244,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| leader_id | [string](#string) |  |  |
+| leader | [string](#string) |  |  |
 | candidates | [string](#string) | repeated |  |
 | timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
@@ -247,7 +261,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| candidate_id | [string](#string) |  |  |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+| candidate | [string](#string) |  |  |
 
 
 

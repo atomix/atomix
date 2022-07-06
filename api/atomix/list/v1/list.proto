@@ -9,6 +9,7 @@ syntax = "proto3";
 package atomix.list.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
+import "atomix/primitive/v1/primitive.proto";
 import "atomix/time/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
@@ -70,7 +71,10 @@ service List {
 }
 
 message SizeRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message SizeResponse {
@@ -78,7 +82,11 @@ message SizeResponse {
 }
 
 message ContainsRequest {
-    Value value = 1 [
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    Value value = 2 [
         (gogoproto.nullable) = false
     ];
 }
@@ -88,7 +96,11 @@ message ContainsResponse {
 }
 
 message AppendRequest {
-    Value value = 1 [
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    Value value = 2 [
         (gogoproto.nullable) = false
     ];
 }
@@ -98,7 +110,11 @@ message AppendResponse {
 }
 
 message GetRequest {
-    uint32 index = 1;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint32 index = 2;
 }
 
 message GetResponse {
@@ -108,12 +124,16 @@ message GetResponse {
 }
 
 message SetRequest {
-    uint32 index = 1;
-    Value value = 2 [
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint32 index = 2;
+    Value value = 3 [
         (gogoproto.embed) = true,
         (gogoproto.nullable) = false
     ];
-    atomix.time.v1.Timestamp timestamp = 3;
+    atomix.time.v1.Timestamp timestamp = 4;
 }
 
 message SetResponse {
@@ -123,8 +143,12 @@ message SetResponse {
 }
 
 message InsertRequest {
-    uint32 index = 1;
-    Value value = 2 [
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint32 index = 2;
+    Value value = 3 [
         (gogoproto.embed) = true,
         (gogoproto.nullable) = false
     ];
@@ -137,8 +161,12 @@ message InsertResponse {
 }
 
 message RemoveRequest {
-    uint32 index = 1;
-    atomix.time.v1.Timestamp timestamp = 2;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint32 index = 2;
+    atomix.time.v1.Timestamp timestamp = 3;
 }
 
 message RemoveResponse {
@@ -148,7 +176,10 @@ message RemoveResponse {
 }
 
 message ClearRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message ClearResponse {
@@ -156,7 +187,11 @@ message ClearResponse {
 }
 
 message EventsRequest {
-    bool replay = 1;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    bool replay = 2;
 }
 
 message EventsResponse {
@@ -180,7 +215,10 @@ message Event {
 }
 
 message ElementsRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message ElementsResponse {

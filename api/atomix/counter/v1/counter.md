@@ -36,6 +36,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | delta | [int64](#int64) |  |  |
 
 
@@ -62,6 +63,11 @@
 
 ### GetRequest
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 
 
 
@@ -91,6 +97,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | delta | [int64](#int64) |  |  |
 
 
@@ -136,6 +143,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | value | [int64](#int64) |  |  |
 | preconditions | [Precondition](#atomix-counter-v1-Precondition) | repeated |  |
 

@@ -10,6 +10,7 @@ package atomix.indexed_map.v1;
 
 import "google/protobuf/duration.proto";
 import "atomix/primitive/v1/descriptor.proto";
+import "atomix/primitive/v1/primitive.proto";
 import "atomix/time/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
@@ -89,7 +90,10 @@ service IndexedMap {
 }
 
 message SizeRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message SizeResponse {
@@ -97,8 +101,12 @@ message SizeResponse {
 }
 
 message AppendRequest {
-    string key = 1;
-    Value value = 2;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    Value value = 3;
 }
 
 message AppendResponse {
@@ -106,10 +114,14 @@ message AppendResponse {
 }
 
 message UpdateRequest {
-    string key = 1;
-    uint64 index = 2;
-    Value value = 3;
-    atomix.time.v1.Timestamp if_timestamp = 4;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    uint64 index = 3;
+    Value value = 4;
+    atomix.time.v1.Timestamp if_timestamp = 5;
 }
 
 message UpdateResponse {
@@ -117,8 +129,12 @@ message UpdateResponse {
 }
 
 message GetRequest {
-    string key = 1;
-    uint64 index = 2;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    uint64 index = 3;
 }
 
 message GetResponse {
@@ -126,7 +142,10 @@ message GetResponse {
 }
 
 message FirstEntryRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message FirstEntryResponse {
@@ -134,7 +153,10 @@ message FirstEntryResponse {
 }
 
 message LastEntryRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message LastEntryResponse {
@@ -142,7 +164,11 @@ message LastEntryResponse {
 }
 
 message PrevEntryRequest {
-    uint64 index = 1;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 index = 2;
 }
 
 message PrevEntryResponse {
@@ -150,7 +176,11 @@ message PrevEntryResponse {
 }
 
 message NextEntryRequest {
-    uint64 index = 1;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 index = 2;
 }
 
 message NextEntryResponse {
@@ -158,9 +188,13 @@ message NextEntryResponse {
 }
 
 message RemoveRequest {
-    string key = 1;
-    uint64 index = 2;
-    atomix.time.v1.Timestamp if_timestamp = 3;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    uint64 index = 3;
+    atomix.time.v1.Timestamp if_timestamp = 4;
 }
 
 message RemoveResponse {
@@ -168,7 +202,10 @@ message RemoveResponse {
 }
 
 message ClearRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message ClearResponse {
@@ -176,7 +213,10 @@ message ClearResponse {
 }
 
 message EntriesRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message EntriesResponse {
@@ -186,8 +226,12 @@ message EntriesResponse {
 }
 
 message EventsRequest {
-    string key = 1;
-    bool replay = 2;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    bool replay = 3;
 }
 
 message EventsResponse {

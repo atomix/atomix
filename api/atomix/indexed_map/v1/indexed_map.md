@@ -55,6 +55,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 | value | [Value](#atomix-indexed_map-v1-Value) |  |  |
 
@@ -84,6 +85,11 @@
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
 
 
 
@@ -102,6 +108,11 @@
 
 ### EntriesRequest
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 
 
 
@@ -165,6 +176,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 | replay | [bool](#bool) |  |  |
 
@@ -194,6 +206,11 @@
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
 
 
 
@@ -221,6 +238,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 | index | [uint64](#uint64) |  |  |
 
@@ -250,6 +268,11 @@
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
 
 
 
@@ -277,6 +300,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | index | [uint64](#uint64) |  |  |
 
 
@@ -307,6 +331,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | index | [uint64](#uint64) |  |  |
 
 
@@ -337,6 +362,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 | index | [uint64](#uint64) |  |  |
 | if_timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
@@ -367,6 +393,11 @@
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
 
 
 
@@ -394,6 +425,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 | index | [uint64](#uint64) |  |  |
 | value | [Value](#atomix-indexed_map-v1-Value) |  |  |

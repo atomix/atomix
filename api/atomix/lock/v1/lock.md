@@ -35,6 +35,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | lock | [LockInstance](#atomix-lock-v1-LockInstance) |  |  |
 
 
@@ -81,6 +82,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | timeout | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
 
 
@@ -111,6 +113,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | lock | [LockInstance](#atomix-lock-v1-LockInstance) |  |  |
 
 

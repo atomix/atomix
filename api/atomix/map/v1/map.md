@@ -16,7 +16,6 @@
     - [GetResponse](#atomix-map-v1-GetResponse)
     - [InsertRequest](#atomix-map-v1-InsertRequest)
     - [InsertResponse](#atomix-map-v1-InsertResponse)
-    - [MapCacheConfig](#atomix-map-v1-MapCacheConfig)
     - [PutRequest](#atomix-map-v1-PutRequest)
     - [PutResponse](#atomix-map-v1-PutResponse)
     - [RemoveRequest](#atomix-map-v1-RemoveRequest)
@@ -48,6 +47,11 @@
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
 
 
 
@@ -71,6 +75,11 @@
 
 ### EntriesRequest
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 
 
 
@@ -133,6 +142,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 | replay | [bool](#bool) |  |  |
 
@@ -164,6 +174,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 
 
@@ -194,6 +205,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 | value | [Value](#atomix-map-v1-Value) |  |  |
 
@@ -217,22 +229,6 @@
 
 
 
-<a name="atomix-map-v1-MapCacheConfig"></a>
-
-### MapCacheConfig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| enabled | [bool](#bool) |  |  |
-| size | [int32](#int32) |  |  |
-
-
-
-
-
-
 <a name="atomix-map-v1-PutRequest"></a>
 
 ### PutRequest
@@ -241,6 +237,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 | value | [Value](#atomix-map-v1-Value) |  |  |
 | if_timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
@@ -273,6 +270,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 | if_timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |
 
@@ -302,6 +300,11 @@
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
+
+
 
 
 
@@ -329,6 +332,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [atomix.primitive.v1.PrimitiveId](#atomix-primitive-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 | value | [Value](#atomix-map-v1-Value) |  |  |
 | if_timestamp | [atomix.time.v1.Timestamp](#atomix-time-v1-Timestamp) |  |  |

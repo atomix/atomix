@@ -1,0 +1,15 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.primitive.v1;
+
+import "gogoproto/gogo.proto";
+
+message PrimitiveId {
+    string name = 1;
+}

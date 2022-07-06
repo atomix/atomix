@@ -9,6 +9,7 @@ syntax = "proto3";
 package atomix.topic.v1;
 
 import "atomix/primitive/v1/descriptor.proto";
+import "atomix/primitive/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -25,7 +26,11 @@ service Topic {
 }
 
 message PublishRequest {
-    bytes payload = 1;
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    bytes payload = 2;
 }
 
 message PublishResponse {
@@ -33,7 +38,10 @@ message PublishResponse {
 }
 
 message SubscribeRequest {
-
+    atomix.primitive.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message SubscribeResponse {
