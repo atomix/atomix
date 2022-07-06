@@ -6,9 +6,9 @@ package v1
 
 import (
 	mapv1 "github.com/atomix/runtime/api/atomix/map/v1"
-	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
+	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
 
@@ -25,7 +25,7 @@ func register(server *grpc.Server, manager *primitive.Manager[mapv1.MapClient]) 
 	mapv1.RegisterMapServer(server, newMapServer(manager))
 }
 
-func resolve(client driver.Client) (primitive.Factory[mapv1.MapClient], bool) {
+func resolve(client runtime.Client) (primitive.Factory[mapv1.MapClient], bool) {
 	if _map, ok := client.(MapProvider); ok {
 		return _map.GetMap, true
 	}

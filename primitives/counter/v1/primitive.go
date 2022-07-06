@@ -6,9 +6,9 @@ package v1
 
 import (
 	counterv1 "github.com/atomix/runtime/api/atomix/counter/v1"
-	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
+	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
 
@@ -25,7 +25,7 @@ func register(server *grpc.Server, manager *primitive.Manager[counterv1.CounterC
 	counterv1.RegisterCounterServer(server, newCounterServer(manager))
 }
 
-func resolve(client driver.Client) (primitive.Factory[counterv1.CounterClient], bool) {
+func resolve(client runtime.Client) (primitive.Factory[counterv1.CounterClient], bool) {
 	if counter, ok := client.(CounterProvider); ok {
 		return counter.GetCounter, true
 	}

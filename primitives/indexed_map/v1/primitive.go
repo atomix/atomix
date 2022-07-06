@@ -6,9 +6,9 @@ package v1
 
 import (
 	indexedmapv1 "github.com/atomix/runtime/api/atomix/indexed_map/v1"
-	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
+	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
 
@@ -25,7 +25,7 @@ func register(server *grpc.Server, manager *primitive.Manager[indexedmapv1.Index
 	indexedmapv1.RegisterIndexedMapServer(server, newIndexedMapServer(manager))
 }
 
-func resolve(client driver.Client) (primitive.Factory[indexedmapv1.IndexedMapClient], bool) {
+func resolve(client runtime.Client) (primitive.Factory[indexedmapv1.IndexedMapClient], bool) {
 	if indexedMap, ok := client.(IndexedMapProvider); ok {
 		return indexedMap.GetIndexedMap, true
 	}

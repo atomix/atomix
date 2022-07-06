@@ -6,9 +6,9 @@ package v1
 
 import (
 	setv1 "github.com/atomix/runtime/api/atomix/set/v1"
-	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
+	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
 
@@ -25,7 +25,7 @@ func register(server *grpc.Server, manager *primitive.Manager[setv1.SetClient]) 
 	setv1.RegisterSetServer(server, newSetServer(manager))
 }
 
-func resolve(client driver.Client) (primitive.Factory[setv1.SetClient], bool) {
+func resolve(client runtime.Client) (primitive.Factory[setv1.SetClient], bool) {
 	if set, ok := client.(SetProvider); ok {
 		return set.GetSet, true
 	}

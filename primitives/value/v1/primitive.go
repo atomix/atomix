@@ -6,9 +6,9 @@ package v1
 
 import (
 	valuev1 "github.com/atomix/runtime/api/atomix/value/v1"
-	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
+	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
 
@@ -25,7 +25,7 @@ func register(server *grpc.Server, manager *primitive.Manager[valuev1.ValueClien
 	valuev1.RegisterValueServer(server, newValueServer(manager))
 }
 
-func resolve(client driver.Client) (primitive.Factory[valuev1.ValueClient], bool) {
+func resolve(client runtime.Client) (primitive.Factory[valuev1.ValueClient], bool) {
 	if value, ok := client.(ValueProvider); ok {
 		return value.GetValue, true
 	}

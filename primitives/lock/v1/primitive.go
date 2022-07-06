@@ -6,9 +6,9 @@ package v1
 
 import (
 	lockv1 "github.com/atomix/runtime/api/atomix/lock/v1"
-	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
+	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
 
@@ -25,7 +25,7 @@ func register(server *grpc.Server, manager *primitive.Manager[lockv1.LockClient]
 	lockv1.RegisterLockServer(server, newLockServer(manager))
 }
 
-func resolve(client driver.Client) (primitive.Factory[lockv1.LockClient], bool) {
+func resolve(client runtime.Client) (primitive.Factory[lockv1.LockClient], bool) {
 	if lock, ok := client.(LockProvider); ok {
 		return lock.GetLock, true
 	}

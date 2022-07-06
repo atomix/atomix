@@ -6,9 +6,9 @@ package v1
 
 import (
 	listv1 "github.com/atomix/runtime/api/atomix/list/v1"
-	"github.com/atomix/runtime/pkg/driver"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/primitive"
+	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
 
@@ -25,7 +25,7 @@ func register(server *grpc.Server, manager *primitive.Manager[listv1.ListClient]
 	listv1.RegisterListServer(server, newListServer(manager))
 }
 
-func resolve(client driver.Client) (primitive.Factory[listv1.ListClient], bool) {
+func resolve(client runtime.Client) (primitive.Factory[listv1.ListClient], bool) {
 	if list, ok := client.(ListProvider); ok {
 		return list.GetList, true
 	}
