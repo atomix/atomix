@@ -9,12 +9,13 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc/metadata"
+	"os"
 	"sync"
 )
 
 const (
-	primitiveNamespaceHeader = "Primitive-Namespace"
-	primitiveNameHeader      = "Primitive-Name"
+	namespaceEnv        = "POD_NAMESPACE"
+	primitiveNameHeader = "Primitive"
 )
 
 func NewManager[T any](primitiveType Type, r runtime.Runtime, resolver Resolver[T]) *Manager[T] {
@@ -85,13 +86,12 @@ func getIDFromContext(ctx context.Context) (runtime.ID, error) {
 	if !ok {
 		return id, errors.NewInvalid("missing metadata in context")
 	}
-	primitiveNamespaces := md.Get(primitiveNamespaceHeader)
-	if len(primitiveNamespaces) > 0 {
-		id.Namespace = primitiveNamespaces[0]
-	}
 	primitiveNames := md.Get(primitiveNameHeader)
 	if len(primitiveNames) == 0 {
 		return id, errors.NewInvalid("missing %s header in metadata", primitiveNameHeader)
 	}
-	return id, nil
+	return runtime.ID{
+		Namespace: os.Getenv(namespaceEnv),
+		Name:      primitiveNames[0],
+	}, nil
 }
