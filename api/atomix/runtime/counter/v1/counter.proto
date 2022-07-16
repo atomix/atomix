@@ -22,6 +22,9 @@ service Counter {
     // Set sets the counter value
     rpc Set (SetRequest) returns (SetResponse);
 
+    // CompareAndSet compares and updates the counter value
+    rpc CompareAndSet (CompareAndSetRequest) returns (CompareAndSetResponse);
+
     // Get gets the current counter value
     rpc Get (GetRequest) returns (GetResponse);
 
@@ -102,12 +105,22 @@ message SetRequest {
         (gogoproto.nullable) = false
     ];
     int64 value = 2;
-    repeated Precondition preconditions = 3 [
-        (gogoproto.nullable) = false
-    ];
 }
 
 message SetResponse {
+    int64 value = 1;
+}
+
+message CompareAndSetRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    int64 check = 2;
+    int64 update = 3;
+}
+
+message CompareAndSetResponse {
     int64 value = 1;
 }
 

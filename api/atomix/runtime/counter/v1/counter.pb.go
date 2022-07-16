@@ -549,9 +549,8 @@ func (*Precondition) XXX_OneofWrappers() []interface{} {
 }
 
 type SetRequest struct {
-	ID            v1.PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
-	Value         int64          `protobuf:"varint,2,opt,name=value,proto3" json:"value,omitempty"`
-	Preconditions []Precondition `protobuf:"bytes,3,rep,name=preconditions,proto3" json:"preconditions"`
+	ID    v1.PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
+	Value int64          `protobuf:"varint,2,opt,name=value,proto3" json:"value,omitempty"`
 }
 
 func (m *SetRequest) Reset()         { *m = SetRequest{} }
@@ -601,13 +600,6 @@ func (m *SetRequest) GetValue() int64 {
 	return 0
 }
 
-func (m *SetRequest) GetPreconditions() []Precondition {
-	if m != nil {
-		return m.Preconditions
-	}
-	return nil
-}
-
 type SetResponse struct {
 	Value int64 `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
 }
@@ -652,6 +644,110 @@ func (m *SetResponse) GetValue() int64 {
 	return 0
 }
 
+type CompareAndSetRequest struct {
+	ID     v1.PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
+	Check  int64          `protobuf:"varint,2,opt,name=check,proto3" json:"check,omitempty"`
+	Update int64          `protobuf:"varint,3,opt,name=update,proto3" json:"update,omitempty"`
+}
+
+func (m *CompareAndSetRequest) Reset()         { *m = CompareAndSetRequest{} }
+func (m *CompareAndSetRequest) String() string { return proto.CompactTextString(m) }
+func (*CompareAndSetRequest) ProtoMessage()    {}
+func (*CompareAndSetRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_223803040237ec9a, []int{13}
+}
+func (m *CompareAndSetRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CompareAndSetRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CompareAndSetRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CompareAndSetRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CompareAndSetRequest.Merge(m, src)
+}
+func (m *CompareAndSetRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *CompareAndSetRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CompareAndSetRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CompareAndSetRequest proto.InternalMessageInfo
+
+func (m *CompareAndSetRequest) GetID() v1.PrimitiveId {
+	if m != nil {
+		return m.ID
+	}
+	return v1.PrimitiveId{}
+}
+
+func (m *CompareAndSetRequest) GetCheck() int64 {
+	if m != nil {
+		return m.Check
+	}
+	return 0
+}
+
+func (m *CompareAndSetRequest) GetUpdate() int64 {
+	if m != nil {
+		return m.Update
+	}
+	return 0
+}
+
+type CompareAndSetResponse struct {
+	Value int64 `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
+}
+
+func (m *CompareAndSetResponse) Reset()         { *m = CompareAndSetResponse{} }
+func (m *CompareAndSetResponse) String() string { return proto.CompactTextString(m) }
+func (*CompareAndSetResponse) ProtoMessage()    {}
+func (*CompareAndSetResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_223803040237ec9a, []int{14}
+}
+func (m *CompareAndSetResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CompareAndSetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CompareAndSetResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CompareAndSetResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CompareAndSetResponse.Merge(m, src)
+}
+func (m *CompareAndSetResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *CompareAndSetResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CompareAndSetResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CompareAndSetResponse proto.InternalMessageInfo
+
+func (m *CompareAndSetResponse) GetValue() int64 {
+	if m != nil {
+		return m.Value
+	}
+	return 0
+}
+
 type Value struct {
 	Value int64 `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
 }
@@ -660,7 +756,7 @@ func (m *Value) Reset()         { *m = Value{} }
 func (m *Value) String() string { return proto.CompactTextString(m) }
 func (*Value) ProtoMessage()    {}
 func (*Value) Descriptor() ([]byte, []int) {
-	return fileDescriptor_223803040237ec9a, []int{13}
+	return fileDescriptor_223803040237ec9a, []int{15}
 }
 func (m *Value) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -711,6 +807,8 @@ func init() {
 	proto.RegisterType((*Precondition)(nil), "atomix.runtime.counter.v1.Precondition")
 	proto.RegisterType((*SetRequest)(nil), "atomix.runtime.counter.v1.SetRequest")
 	proto.RegisterType((*SetResponse)(nil), "atomix.runtime.counter.v1.SetResponse")
+	proto.RegisterType((*CompareAndSetRequest)(nil), "atomix.runtime.counter.v1.CompareAndSetRequest")
+	proto.RegisterType((*CompareAndSetResponse)(nil), "atomix.runtime.counter.v1.CompareAndSetResponse")
 	proto.RegisterType((*Value)(nil), "atomix.runtime.counter.v1.Value")
 }
 
@@ -719,41 +817,44 @@ func init() {
 }
 
 var fileDescriptor_223803040237ec9a = []byte{
-	// 543 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x55, 0xc1, 0x8e, 0xd2, 0x50,
-	0x14, 0xa5, 0x2d, 0x8c, 0xe1, 0x02, 0x23, 0xbe, 0x10, 0x53, 0x9b, 0xd8, 0x19, 0x6b, 0x74, 0x98,
-	0x68, 0xda, 0x80, 0x89, 0x9a, 0x59, 0xc2, 0x28, 0x83, 0xab, 0x49, 0x99, 0xb8, 0x30, 0x71, 0x51,
-	0xe9, 0x95, 0x34, 0x42, 0x1f, 0xb6, 0x8f, 0xc6, 0xf9, 0x0b, 0xff, 0xc5, 0x1f, 0x70, 0x39, 0x0b,
-	0x17, 0xb3, 0x74, 0x35, 0x31, 0xf0, 0x23, 0xa6, 0xaf, 0x2d, 0x2d, 0xa8, 0x85, 0x05, 0x71, 0x77,
-	0xdf, 0xeb, 0xb9, 0xe7, 0x9c, 0x7b, 0xe9, 0x29, 0x70, 0x64, 0x31, 0x3a, 0x71, 0xbe, 0x18, 0xde,
-	0xcc, 0x65, 0xce, 0x04, 0x8d, 0x21, 0x9d, 0xb9, 0x0c, 0x3d, 0x23, 0x68, 0x25, 0xa5, 0x3e, 0xf5,
-	0x28, 0xa3, 0xe4, 0x5e, 0x04, 0xd4, 0x63, 0xa0, 0x9e, 0x3c, 0x0d, 0x5a, 0xca, 0x83, 0x35, 0x8e,
-	0xa0, 0x65, 0x4c, 0x3d, 0x67, 0xe2, 0x30, 0x27, 0xc0, 0xa8, 0x5b, 0x69, 0x8c, 0xe8, 0x88, 0xf2,
-	0xd2, 0x08, 0xab, 0xe8, 0x56, 0xfb, 0x21, 0x40, 0xad, 0xeb, 0xa1, 0xc5, 0xd0, 0xc4, 0xcf, 0x33,
-	0xf4, 0x19, 0x39, 0x01, 0xd1, 0xb1, 0x65, 0xe1, 0x50, 0x68, 0x56, 0xda, 0xaa, 0xbe, 0x26, 0x19,
-	0xb4, 0xf4, 0xf3, 0x84, 0xb7, 0x6f, 0x77, 0xe0, 0xea, 0xe6, 0xa0, 0x30, 0xbf, 0x39, 0x10, 0xfb,
-	0xa7, 0xa6, 0xe8, 0xd8, 0xe4, 0x35, 0x14, 0x99, 0x35, 0xf2, 0x65, 0xf1, 0x50, 0x6a, 0x56, 0xda,
-	0x6d, 0xfd, 0x9f, 0x86, 0xf5, 0x15, 0x4d, 0xfd, 0xc2, 0x1a, 0xf9, 0xaf, 0x5c, 0xe6, 0x5d, 0x9a,
-	0xbc, 0x5f, 0x79, 0x01, 0xe5, 0xe5, 0x15, 0xa9, 0x83, 0xf4, 0x09, 0x2f, 0xb9, 0xa3, 0xb2, 0x19,
-	0x96, 0xa4, 0x01, 0xa5, 0xc0, 0x1a, 0xcf, 0x50, 0x16, 0xf9, 0x5d, 0x74, 0x38, 0x11, 0x5f, 0x0a,
-	0x5a, 0x1d, 0xf6, 0x13, 0x66, 0x7f, 0x4a, 0x5d, 0x1f, 0xb5, 0x37, 0x50, 0xed, 0x8e, 0xa9, 0xbf,
-	0x8b, 0xf1, 0xb4, 0xdb, 0x50, 0x8b, 0xb9, 0x62, 0x72, 0x1b, 0xea, 0x7d, 0x77, 0xe8, 0xe1, 0x04,
-	0x5d, 0xb6, 0x8b, 0xfd, 0x35, 0xa0, 0x64, 0xe3, 0x98, 0x59, 0x7c, 0x30, 0xc9, 0x8c, 0x0e, 0xda,
-	0x31, 0xdc, 0xc9, 0xa8, 0x44, 0xd2, 0xe9, 0x0e, 0x84, 0x08, 0xca, 0x0f, 0xa1, 0xa1, 0x53, 0xfc,
-	0x1f, 0x86, 0x32, 0x2a, 0xb9, 0x86, 0xce, 0x00, 0x7a, 0xb8, 0x0b, 0x2b, 0xda, 0x43, 0xa8, 0x70,
-	0xa6, 0x5c, 0xb9, 0xe7, 0x50, 0x3d, 0xf7, 0x70, 0x48, 0x5d, 0xdb, 0x61, 0x0e, 0x75, 0xc9, 0xdd,
-	0x15, 0xd4, 0x59, 0x21, 0xc6, 0x75, 0xf6, 0xa1, 0x3a, 0xcd, 0xe0, 0xb4, 0x6f, 0x02, 0xc0, 0x00,
-	0x77, 0xb5, 0xb2, 0xf4, 0xe5, 0x4c, 0x8c, 0x91, 0x01, 0xd4, 0xb2, 0x82, 0xbe, 0x2c, 0xf1, 0x88,
-	0x1c, 0xe5, 0x44, 0x24, 0x3b, 0x48, 0xa7, 0x18, 0xaa, 0x98, 0xab, 0x1c, 0xe1, 0x4a, 0x06, 0x1b,
-	0x57, 0x72, 0x1f, 0x4a, 0x6f, 0xb9, 0x85, 0xbf, 0x3e, 0x6e, 0x7f, 0x2f, 0xc2, 0xad, 0x6e, 0x24,
-	0x4a, 0xde, 0xc3, 0x5e, 0x94, 0x1e, 0xd2, 0xdc, 0x36, 0xba, 0xca, 0xf1, 0x16, 0xc8, 0xd8, 0xdf,
-	0x3b, 0x28, 0xf1, 0xf8, 0x90, 0xbc, 0xa9, 0xb3, 0x61, 0x55, 0x9a, 0x9b, 0x81, 0x31, 0xf7, 0x05,
-	0x48, 0x03, 0x64, 0xe4, 0x51, 0x4e, 0x43, 0xfa, 0xfb, 0x2a, 0x8f, 0x37, 0xc1, 0x52, 0xd6, 0xde,
-	0x06, 0xd6, 0xde, 0x76, 0xac, 0xd9, 0x57, 0xf7, 0x23, 0x94, 0x97, 0x79, 0x26, 0x4f, 0x72, 0x9a,
-	0xd6, 0xbf, 0x2d, 0xca, 0xd3, 0xed, 0xc0, 0xa9, 0xce, 0x32, 0xa6, 0xb9, 0x3a, 0xeb, 0x9f, 0x8c,
-	0x5c, 0x9d, 0x3f, 0x92, 0xdf, 0x91, 0xaf, 0xe6, 0xaa, 0x70, 0x3d, 0x57, 0x85, 0x5f, 0x73, 0x55,
-	0xf8, 0xba, 0x50, 0x0b, 0xd7, 0x0b, 0xb5, 0xf0, 0x73, 0xa1, 0x16, 0x3e, 0xec, 0xf1, 0x3f, 0x99,
-	0x67, 0xbf, 0x03, 0x00, 0x00, 0xff, 0xff, 0x4d, 0x4b, 0xb5, 0xc8, 0xe3, 0x06, 0x00, 0x00,
+	// 585 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x55, 0xcf, 0x6e, 0xd3, 0x4e,
+	0x10, 0x8e, 0x9d, 0x5f, 0xf2, 0x53, 0x26, 0x49, 0x09, 0xab, 0x50, 0x05, 0x4b, 0xb8, 0xc5, 0x15,
+	0x34, 0x15, 0x60, 0x93, 0x20, 0x01, 0xea, 0x8d, 0xa4, 0x90, 0x86, 0x53, 0x95, 0x54, 0x1c, 0x90,
+	0x40, 0x32, 0xf1, 0x10, 0xac, 0x26, 0x5e, 0xb3, 0xde, 0x58, 0xf4, 0xc6, 0x23, 0xf0, 0x30, 0x3c,
+	0x44, 0x0f, 0x1c, 0x7a, 0xe4, 0x54, 0xa1, 0xe4, 0x45, 0x50, 0xd6, 0xce, 0x5f, 0x8a, 0xe3, 0x83,
+	0xc5, 0x6d, 0x66, 0xfd, 0xcd, 0xf7, 0x7d, 0xb3, 0xd9, 0x99, 0xc0, 0xbe, 0xc9, 0xe9, 0xd0, 0xfe,
+	0x62, 0xb0, 0x91, 0xc3, 0xed, 0x21, 0x1a, 0x3d, 0x3a, 0x72, 0x38, 0x32, 0xc3, 0xaf, 0xcd, 0x42,
+	0xdd, 0x65, 0x94, 0x53, 0x72, 0x3b, 0x00, 0xea, 0x21, 0x50, 0x9f, 0x7d, 0xf5, 0x6b, 0xca, 0xdd,
+	0x35, 0x0e, 0xbf, 0x66, 0xb8, 0xcc, 0x1e, 0xda, 0xdc, 0xf6, 0x31, 0xa8, 0x56, 0xca, 0x7d, 0xda,
+	0xa7, 0x22, 0x34, 0xa6, 0x51, 0x70, 0xaa, 0xfd, 0x90, 0xa0, 0xd8, 0x64, 0x68, 0x72, 0xec, 0xe0,
+	0xe7, 0x11, 0x7a, 0x9c, 0x1c, 0x82, 0x6c, 0x5b, 0x15, 0x69, 0x57, 0xaa, 0xe6, 0xeb, 0xaa, 0xbe,
+	0x26, 0xe9, 0xd7, 0xf4, 0x93, 0x19, 0x6f, 0xdb, 0x6a, 0xc0, 0xc5, 0xd5, 0x4e, 0x6a, 0x7c, 0xb5,
+	0x23, 0xb7, 0x8f, 0x3a, 0xb2, 0x6d, 0x91, 0x57, 0xf0, 0x1f, 0x37, 0xfb, 0x5e, 0x45, 0xde, 0x4d,
+	0x57, 0xf3, 0xf5, 0xba, 0xfe, 0x57, 0xc3, 0xfa, 0x8a, 0xa6, 0x7e, 0x6a, 0xf6, 0xbd, 0x97, 0x0e,
+	0x67, 0xe7, 0x1d, 0x51, 0xaf, 0x3c, 0x83, 0xdc, 0xfc, 0x88, 0x94, 0x20, 0x7d, 0x86, 0xe7, 0xc2,
+	0x51, 0xae, 0x33, 0x0d, 0x49, 0x19, 0x32, 0xbe, 0x39, 0x18, 0x61, 0x45, 0x16, 0x67, 0x41, 0x72,
+	0x28, 0x3f, 0x97, 0xb4, 0x12, 0x6c, 0xcd, 0x98, 0x3d, 0x97, 0x3a, 0x1e, 0x6a, 0xaf, 0xa1, 0xd0,
+	0x1c, 0x50, 0x2f, 0x89, 0xf6, 0xb4, 0x1b, 0x50, 0x0c, 0xb9, 0x42, 0x72, 0x0b, 0x4a, 0x6d, 0xa7,
+	0xc7, 0x70, 0x88, 0x0e, 0x4f, 0xe2, 0xfe, 0xca, 0x90, 0xb1, 0x70, 0xc0, 0x4d, 0xd1, 0x58, 0xba,
+	0x13, 0x24, 0xda, 0x01, 0xdc, 0x5c, 0x52, 0x09, 0xa4, 0x17, 0x77, 0x20, 0x05, 0x50, 0x91, 0x4c,
+	0x0d, 0x1d, 0xe1, 0xbf, 0x30, 0xb4, 0xa4, 0x12, 0x69, 0xe8, 0x18, 0xa0, 0x85, 0x49, 0x58, 0xd1,
+	0xf6, 0x20, 0x2f, 0x98, 0x22, 0xe5, 0x9e, 0x42, 0xe1, 0x84, 0x61, 0x8f, 0x3a, 0x96, 0xcd, 0x6d,
+	0xea, 0x90, 0xed, 0x15, 0xd4, 0x71, 0x2a, 0xc4, 0x35, 0xb6, 0xa0, 0xe0, 0x2e, 0xe1, 0xb4, 0xf7,
+	0x00, 0x5d, 0x4c, 0xea, 0xc6, 0x16, 0x6f, 0x73, 0xee, 0x6b, 0x0f, 0xf2, 0xdd, 0x8d, 0xe6, 0xbf,
+	0x4a, 0x50, 0x6e, 0xd2, 0xa1, 0x6b, 0x32, 0x7c, 0xe1, 0x58, 0xc9, 0xf9, 0xe9, 0x7d, 0xc2, 0xde,
+	0xd9, 0xcc, 0x8f, 0x48, 0xc8, 0x36, 0x64, 0x47, 0xae, 0x65, 0x72, 0xac, 0xa4, 0xc5, 0x71, 0x98,
+	0x69, 0x8f, 0xe0, 0xd6, 0x9a, 0x83, 0x48, 0xc7, 0x77, 0x20, 0xf3, 0x66, 0x1a, 0x5c, 0xff, 0xb9,
+	0xfe, 0x3d, 0x03, 0xff, 0x37, 0x83, 0x99, 0x27, 0xef, 0x20, 0x1b, 0x4c, 0x26, 0xa9, 0xc6, 0x5d,
+	0x0b, 0xca, 0x41, 0x0c, 0x64, 0xe8, 0xef, 0x2d, 0x64, 0xc4, 0x68, 0x92, 0xfd, 0xa8, 0x9a, 0xa5,
+	0x45, 0xa0, 0x54, 0x37, 0x03, 0x43, 0xee, 0x53, 0x48, 0x77, 0x91, 0x93, 0x7b, 0x11, 0x05, 0x8b,
+	0x1f, 0x4b, 0xb9, 0xbf, 0x09, 0x16, 0xb2, 0x32, 0x28, 0xae, 0x5c, 0x35, 0x31, 0xa2, 0x0c, 0x5d,
+	0xf3, 0x2c, 0x94, 0xc7, 0xf1, 0x0b, 0x16, 0x9d, 0xb4, 0x36, 0x74, 0xd2, 0x8a, 0xd7, 0xc9, 0xf2,
+	0x28, 0x7e, 0x84, 0xdc, 0x7c, 0x3f, 0x91, 0x07, 0x11, 0x45, 0xeb, 0xbb, 0x52, 0x79, 0x18, 0x0f,
+	0xbc, 0xd0, 0x99, 0xaf, 0x9d, 0x48, 0x9d, 0xf5, 0x15, 0x18, 0xa9, 0xf3, 0xc7, 0x26, 0x6b, 0x54,
+	0x2e, 0xc6, 0xaa, 0x74, 0x39, 0x56, 0xa5, 0x5f, 0x63, 0x55, 0xfa, 0x36, 0x51, 0x53, 0x97, 0x13,
+	0x35, 0xf5, 0x73, 0xa2, 0xa6, 0x3e, 0x64, 0xc5, 0x9f, 0xe6, 0x93, 0xdf, 0x01, 0x00, 0x00, 0xff,
+	0xff, 0x10, 0x4a, 0xc0, 0x96, 0xb3, 0x07, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -774,6 +875,8 @@ type CounterClient interface {
 	Close(ctx context.Context, in *CloseRequest, opts ...grpc.CallOption) (*CloseResponse, error)
 	// Set sets the counter value
 	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error)
+	// CompareAndSet compares and updates the counter value
+	CompareAndSet(ctx context.Context, in *CompareAndSetRequest, opts ...grpc.CallOption) (*CompareAndSetResponse, error)
 	// Get gets the current counter value
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	// Increment increments the counter value
@@ -817,6 +920,15 @@ func (c *counterClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.Ca
 	return out, nil
 }
 
+func (c *counterClient) CompareAndSet(ctx context.Context, in *CompareAndSetRequest, opts ...grpc.CallOption) (*CompareAndSetResponse, error) {
+	out := new(CompareAndSetResponse)
+	err := c.cc.Invoke(ctx, "/atomix.runtime.counter.v1.Counter/CompareAndSet", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *counterClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
 	out := new(GetResponse)
 	err := c.cc.Invoke(ctx, "/atomix.runtime.counter.v1.Counter/Get", in, out, opts...)
@@ -852,6 +964,8 @@ type CounterServer interface {
 	Close(context.Context, *CloseRequest) (*CloseResponse, error)
 	// Set sets the counter value
 	Set(context.Context, *SetRequest) (*SetResponse, error)
+	// CompareAndSet compares and updates the counter value
+	CompareAndSet(context.Context, *CompareAndSetRequest) (*CompareAndSetResponse, error)
 	// Get gets the current counter value
 	Get(context.Context, *GetRequest) (*GetResponse, error)
 	// Increment increments the counter value
@@ -872,6 +986,9 @@ func (*UnimplementedCounterServer) Close(ctx context.Context, req *CloseRequest)
 }
 func (*UnimplementedCounterServer) Set(ctx context.Context, req *SetRequest) (*SetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
+}
+func (*UnimplementedCounterServer) CompareAndSet(ctx context.Context, req *CompareAndSetRequest) (*CompareAndSetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CompareAndSet not implemented")
 }
 func (*UnimplementedCounterServer) Get(ctx context.Context, req *GetRequest) (*GetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
@@ -937,6 +1054,24 @@ func _Counter_Set_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CounterServer).Set(ctx, req.(*SetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Counter_CompareAndSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompareAndSetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CounterServer).CompareAndSet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/atomix.runtime.counter.v1.Counter/CompareAndSet",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CounterServer).CompareAndSet(ctx, req.(*CompareAndSetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1010,6 +1145,10 @@ var _Counter_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Set",
 			Handler:    _Counter_Set_Handler,
+		},
+		{
+			MethodName: "CompareAndSet",
+			Handler:    _Counter_CompareAndSet_Handler,
 		},
 		{
 			MethodName: "Get",
@@ -1416,20 +1555,6 @@ func (m *SetRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.Preconditions) > 0 {
-		for iNdEx := len(m.Preconditions) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Preconditions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintCounter(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x1a
-		}
-	}
 	if m.Value != 0 {
 		i = encodeVarintCounter(dAtA, i, uint64(m.Value))
 		i--
@@ -1464,6 +1589,77 @@ func (m *SetResponse) MarshalTo(dAtA []byte) (int, error) {
 }
 
 func (m *SetResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Value != 0 {
+		i = encodeVarintCounter(dAtA, i, uint64(m.Value))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CompareAndSetRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CompareAndSetRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CompareAndSetRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Update != 0 {
+		i = encodeVarintCounter(dAtA, i, uint64(m.Update))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Check != 0 {
+		i = encodeVarintCounter(dAtA, i, uint64(m.Check))
+		i--
+		dAtA[i] = 0x10
+	}
+	{
+		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintCounter(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *CompareAndSetResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CompareAndSetResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CompareAndSetResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1670,16 +1866,39 @@ func (m *SetRequest) Size() (n int) {
 	if m.Value != 0 {
 		n += 1 + sovCounter(uint64(m.Value))
 	}
-	if len(m.Preconditions) > 0 {
-		for _, e := range m.Preconditions {
-			l = e.Size()
-			n += 1 + l + sovCounter(uint64(l))
-		}
-	}
 	return n
 }
 
 func (m *SetResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Value != 0 {
+		n += 1 + sovCounter(uint64(m.Value))
+	}
+	return n
+}
+
+func (m *CompareAndSetRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ID.Size()
+	n += 1 + l + sovCounter(uint64(l))
+	if m.Check != 0 {
+		n += 1 + sovCounter(uint64(m.Check))
+	}
+	if m.Update != 0 {
+		n += 1 + sovCounter(uint64(m.Update))
+	}
+	return n
+}
+
+func (m *CompareAndSetResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2747,40 +2966,6 @@ func (m *SetRequest) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Preconditions", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowCounter
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthCounter
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthCounter
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Preconditions = append(m.Preconditions, Precondition{})
-			if err := m.Preconditions[len(m.Preconditions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipCounter(dAtA[iNdEx:])
@@ -2829,6 +3014,196 @@ func (m *SetResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: SetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			m.Value = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCounter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Value |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCounter(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCounter
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CompareAndSetRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCounter
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CompareAndSetRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CompareAndSetRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCounter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCounter
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCounter
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Check", wireType)
+			}
+			m.Check = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCounter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Check |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Update", wireType)
+			}
+			m.Update = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCounter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Update |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCounter(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCounter
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CompareAndSetResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCounter
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CompareAndSetResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CompareAndSetResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
