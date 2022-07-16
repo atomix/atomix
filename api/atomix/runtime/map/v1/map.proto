@@ -1,0 +1,228 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.map.v1;
+
+import "google/protobuf/duration.proto";
+import "atomix/runtime/v1/primitive.proto";
+import "atomix/runtime/time/v1/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+// Map is a service for a map primitive
+service Map {
+    // Create creates the map
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the map
+    rpc Close (CloseRequest) returns (CloseResponse);
+
+    // Size returns the size of the map
+    rpc Size (SizeRequest) returns (SizeResponse);
+
+    // Put puts an entry into the map
+    rpc Put (PutRequest) returns (PutResponse);
+
+    // Insert inserts an entry into the map
+    rpc Insert (InsertRequest) returns (InsertResponse);
+
+    // Update updates an entry in the map
+    rpc Update (UpdateRequest) returns (UpdateResponse);
+
+    // Get gets the entry for a key
+    rpc Get (GetRequest) returns (GetResponse);
+
+    // Remove removes an entry from the map
+    rpc Remove (RemoveRequest) returns (RemoveResponse);
+
+    // Clear removes all entries from the map
+    rpc Clear (ClearRequest) returns (ClearResponse);
+
+    // Events listens for change events
+    rpc Events (EventsRequest) returns (stream EventsResponse);
+
+    // Entries lists all entries in the map
+    rpc Entries (EntriesRequest) returns (stream EntriesResponse);
+}
+
+message CreateRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    map<string, string> tags = 2;
+}
+
+message CreateResponse {
+
+}
+
+message CloseRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}
+
+message SizeRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message SizeResponse {
+    uint32 size = 1;
+}
+
+message PutRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    Value value = 3;
+    atomix.runtime.time.v1.Timestamp if_timestamp = 4;
+}
+
+message PutResponse {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message InsertRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    Value value = 3;
+}
+
+message InsertResponse {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message UpdateRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    Value value = 3;
+    atomix.runtime.time.v1.Timestamp if_timestamp = 4;
+}
+
+message UpdateResponse {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+}
+
+message GetResponse {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message RemoveRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    atomix.runtime.time.v1.Timestamp if_timestamp = 3;
+}
+
+message RemoveResponse {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ClearRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ClearResponse {
+    atomix.runtime.time.v1.Timestamp timestamp = 1;
+}
+
+message EntriesRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EntriesResponse {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EventsRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    bool replay = 3;
+}
+
+message EventsResponse {
+    Event event = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Event {
+    Type type = 1;
+    Entry entry = 2 [
+        (gogoproto.nullable) = false
+    ];
+
+    enum Type {
+        NONE = 0;
+        INSERT = 1;
+        UPDATE = 2;
+        REMOVE = 3;
+        REPLAY = 4;
+    }
+}
+
+message Entry {
+    string key = 1;
+    Value value = 2;
+    atomix.runtime.time.v1.Timestamp timestamp = 3;
+}
+
+message Value {
+    bytes value = 1;
+    google.protobuf.Duration ttl = 2 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
+}

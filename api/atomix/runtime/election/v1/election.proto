@@ -1,0 +1,180 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.election.v1;
+
+import "atomix/runtime/v1/primitive.proto";
+import "atomix/runtime/time/v1/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+// LeaderElection is a service for a leader election primitive
+service LeaderElection {
+    // Create creates the leader election
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the leader election
+    rpc Close (CloseRequest) returns (CloseResponse);
+
+    // Enter enters the leader election
+    rpc Enter (EnterRequest) returns (EnterResponse);
+
+    // Withdraw withdraws a candidate from the leader election
+    rpc Withdraw (WithdrawRequest) returns (WithdrawResponse);
+
+    // Anoint anoints a candidate leader
+    rpc Anoint (AnointRequest) returns (AnointResponse);
+
+    // Promote promotes a candidate
+    rpc Promote (PromoteRequest) returns (PromoteResponse);
+
+    // Evict evicts a candidate from the election
+    rpc Evict (EvictRequest) returns (EvictResponse);
+
+    // GetTerm gets the current leadership term
+    rpc GetTerm (GetTermRequest) returns (GetTermResponse);
+
+    // Events listens for leadership events
+    rpc Events (EventsRequest) returns (stream EventsResponse);
+}
+
+message CreateRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    map<string, string> tags = 2;
+}
+
+message CreateResponse {
+
+}
+
+message CloseRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}
+
+message EnterRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string candidate = 2;
+}
+
+message EnterResponse {
+    Term term = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message WithdrawRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string candidate = 2;
+}
+
+message WithdrawResponse {
+    Term term = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message AnointRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string candidate = 2;
+}
+
+message AnointResponse {
+    Term term = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message PromoteRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string candidate = 2;
+}
+
+message PromoteResponse {
+    Term term = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EvictRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string candidate = 2;
+}
+
+message EvictResponse {
+    Term term = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetTermRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetTermResponse {
+    Term term = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EventsRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EventsResponse {
+    Event event = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Event {
+    Type type = 1;
+    Term term = 2 [
+        (gogoproto.nullable) = false
+    ];
+
+    enum Type {
+        NONE = 0;
+        CHANGED = 1;
+    }
+}
+
+message Term {
+    string leader = 1;
+    repeated string candidates = 2;
+    atomix.runtime.time.v1.Timestamp timestamp = 3;
+}

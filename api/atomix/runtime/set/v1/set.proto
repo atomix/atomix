@@ -1,0 +1,180 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.set.v1;
+
+import "atomix/runtime/v1/primitive.proto";
+import "atomix/runtime/time/v1/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+// Set is a service for a set primitive
+service Set {
+    // Create creates the set
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the set
+    rpc Close (CloseRequest) returns (CloseResponse);
+
+    // Size gets the number of elements in the set
+    rpc Size (SizeRequest) returns (SizeResponse);
+
+    // Contains returns whether the set contains a value
+    rpc Contains (ContainsRequest) returns (ContainsResponse);
+
+    // Add adds a value to the set
+    rpc Add (AddRequest) returns (AddResponse);
+
+    // Remove removes a value from the set
+    rpc Remove (RemoveRequest) returns (RemoveResponse);
+
+    // Clear removes all values from the set
+    rpc Clear (ClearRequest) returns (ClearResponse);
+
+    // Events listens for set change events
+    rpc Events (EventsRequest) returns (stream EventsResponse);
+
+    // Elements lists all elements in the set
+    rpc Elements (ElementsRequest) returns (stream ElementsResponse);
+}
+
+message CreateRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    map<string, string> tags = 2;
+}
+
+message CreateResponse {
+
+}
+
+message CloseRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}
+
+message SizeRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message SizeResponse {
+    uint32 size = 1;
+}
+
+message ContainsRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    Element element = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ContainsResponse {
+    bool contains = 1;
+}
+
+message AddRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    Element element = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message AddResponse {
+    Element element = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message RemoveRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    Element element = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message RemoveResponse {
+    Element element = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ClearRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ClearResponse {
+
+}
+
+message EventsRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    bool replay = 2;
+}
+
+message EventsResponse {
+    Event event = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Event {
+    Type type = 1;
+    Element element = 2 [
+        (gogoproto.nullable) = false
+    ];
+
+    enum Type {
+        NONE = 0;
+        ADD = 1;
+        REMOVE = 2;
+        REPLAY = 3;
+    }
+}
+
+message ElementsRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ElementsResponse {
+    Element element = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Element {
+    string value = 1;
+    atomix.runtime.time.v1.Timestamp timestamp = 2;
+}

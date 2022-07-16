@@ -1,0 +1,104 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.value.v1;
+
+import "atomix/runtime/v1/primitive.proto";
+import "atomix/runtime/time/v1/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+// Value is a service for a value primitive
+service Value {
+    // Create creates the value
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the value
+    rpc Close (CloseRequest) returns (CloseResponse);
+
+    // Set sets the value
+    rpc Set (SetRequest) returns (SetResponse);
+
+    // Get gets the value
+    rpc Get (GetRequest) returns (GetResponse);
+
+    // Events listens for value change events
+    rpc Events (EventsRequest) returns (stream EventsResponse);
+}
+
+message CreateRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    map<string, string> tags = 2;
+}
+
+message CreateResponse {
+
+}
+
+message CloseRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}
+
+message GetRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetResponse {
+    bytes value = 1;
+    atomix.runtime.time.v1.Timestamp timestamp = 2;
+}
+
+message SetRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    bytes value = 2;
+    atomix.runtime.time.v1.Timestamp if_timestamp = 3;
+}
+
+message SetResponse {
+    bytes value = 1;
+    atomix.runtime.time.v1.Timestamp timestamp = 2;
+}
+
+message EventsRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EventsResponse {
+    Event event = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Event {
+    Type type = 1;
+    bytes value = 2;
+    atomix.runtime.time.v1.Timestamp timestamp = 3;
+
+    enum Type {
+        NONE = 0;
+        UPDATE = 1;
+    }
+}
