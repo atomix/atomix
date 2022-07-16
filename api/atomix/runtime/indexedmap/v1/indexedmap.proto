@@ -10,7 +10,7 @@ package atomix.runtime.indexedmap.v1;
 
 import "google/protobuf/duration.proto";
 import "atomix/runtime/v1/primitive.proto";
-import "atomix/runtime/time/v1/timestamp.proto";
+import "atomix/runtime/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // IndexedMap is a service for a sorted/indexed map primitive
@@ -113,7 +113,7 @@ message UpdateRequest {
     string key = 2;
     uint64 index = 3;
     Value value = 4;
-    atomix.runtime.time.v1.Timestamp if_timestamp = 5;
+    atomix.runtime.v1.Timestamp if_timestamp = 5;
 }
 
 message UpdateResponse {
@@ -186,7 +186,7 @@ message RemoveRequest {
     ];
     string key = 2;
     uint64 index = 3;
-    atomix.runtime.time.v1.Timestamp if_timestamp = 4;
+    atomix.runtime.v1.Timestamp if_timestamp = 4;
 }
 
 message RemoveResponse {
@@ -259,5 +259,5 @@ message Entry {
     string key = 1;
     uint64 index = 2;
     Value value = 3;
-    atomix.runtime.time.v1.Timestamp timestamp = 4;
+    atomix.runtime.v1.Timestamp timestamp = 4;
 }

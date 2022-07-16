@@ -9,7 +9,7 @@ syntax = "proto3";
 package atomix.runtime.set.v1;
 
 import "atomix/runtime/v1/primitive.proto";
-import "atomix/runtime/time/v1/timestamp.proto";
+import "atomix/runtime/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // Set is a service for a set primitive
@@ -176,5 +176,5 @@ message ElementsResponse {
 
 message Element {
     string value = 1;
-    atomix.runtime.time.v1.Timestamp timestamp = 2;
+    atomix.runtime.v1.Timestamp timestamp = 2;
 }

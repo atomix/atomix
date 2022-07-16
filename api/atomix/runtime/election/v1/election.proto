@@ -9,7 +9,7 @@ syntax = "proto3";
 package atomix.runtime.election.v1;
 
 import "atomix/runtime/v1/primitive.proto";
-import "atomix/runtime/time/v1/timestamp.proto";
+import "atomix/runtime/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // LeaderElection is a service for a leader election primitive
@@ -176,5 +176,5 @@ message Event {
 message Term {
     string leader = 1;
     repeated string candidates = 2;
-    atomix.runtime.time.v1.Timestamp timestamp = 3;
+    atomix.runtime.v1.Timestamp timestamp = 3;
 }

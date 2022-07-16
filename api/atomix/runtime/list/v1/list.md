@@ -347,7 +347,7 @@
 | ----- | ---- | ----- | ----------- |
 | index | [uint32](#uint32) |  |  |
 | value | [Value](#atomix-runtime-list-v1-Value) |  |  |
-| timestamp | [atomix.runtime.time.v1.Timestamp](#atomix-runtime-time-v1-Timestamp) |  |  |
+| timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 
@@ -364,7 +364,7 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | index | [uint32](#uint32) |  |  |
-| timestamp | [atomix.runtime.time.v1.Timestamp](#atomix-runtime-time-v1-Timestamp) |  |  |
+| timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 
@@ -397,7 +397,7 @@
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | index | [uint32](#uint32) |  |  |
 | value | [Value](#atomix-runtime-list-v1-Value) |  |  |
-| timestamp | [atomix.runtime.time.v1.Timestamp](#atomix-runtime-time-v1-Timestamp) |  |  |
+| timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 

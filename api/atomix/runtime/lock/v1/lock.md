@@ -138,7 +138,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamp | [atomix.runtime.time.v1.Timestamp](#atomix-runtime-time-v1-Timestamp) |  |  |
+| timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 | state | [LockInstance.State](#atomix-runtime-lock-v1-LockInstance-State) |  |  |
 
 

@@ -3,26 +3,26 @@
 
 ## Table of Contents
 
-- [atomix/runtime/time/v1/timestamp.proto](#atomix_runtime_time_v1_timestamp-proto)
-    - [CompositeTimestamp](#atomix-runtime-time-v1-CompositeTimestamp)
-    - [EpochTimestamp](#atomix-runtime-time-v1-EpochTimestamp)
-    - [LogicalTimestamp](#atomix-runtime-time-v1-LogicalTimestamp)
-    - [PhysicalTimestamp](#atomix-runtime-time-v1-PhysicalTimestamp)
-    - [Timestamp](#atomix-runtime-time-v1-Timestamp)
-    - [VectorTimestamp](#atomix-runtime-time-v1-VectorTimestamp)
+- [atomix/runtime/v1/timestamp.proto](#atomix_runtime_v1_timestamp-proto)
+    - [CompositeTimestamp](#atomix-runtime-v1-CompositeTimestamp)
+    - [EpochTimestamp](#atomix-runtime-v1-EpochTimestamp)
+    - [LogicalTimestamp](#atomix-runtime-v1-LogicalTimestamp)
+    - [PhysicalTimestamp](#atomix-runtime-v1-PhysicalTimestamp)
+    - [Timestamp](#atomix-runtime-v1-Timestamp)
+    - [VectorTimestamp](#atomix-runtime-v1-VectorTimestamp)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_runtime_time_v1_timestamp-proto"></a>
+<a name="atomix_runtime_v1_timestamp-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/runtime/time/v1/timestamp.proto
+## atomix/runtime/v1/timestamp.proto
 
 
 
-<a name="atomix-runtime-time-v1-CompositeTimestamp"></a>
+<a name="atomix-runtime-v1-CompositeTimestamp"></a>
 
 ### CompositeTimestamp
 
@@ -30,14 +30,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamps | [Timestamp](#atomix-runtime-time-v1-Timestamp) | repeated |  |
+| timestamps | [Timestamp](#atomix-runtime-v1-Timestamp) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-time-v1-EpochTimestamp"></a>
+<a name="atomix-runtime-v1-EpochTimestamp"></a>
 
 ### EpochTimestamp
 
@@ -53,7 +53,7 @@
 
 
 
-<a name="atomix-runtime-time-v1-LogicalTimestamp"></a>
+<a name="atomix-runtime-v1-LogicalTimestamp"></a>
 
 ### LogicalTimestamp
 
@@ -68,7 +68,7 @@
 
 
 
-<a name="atomix-runtime-time-v1-PhysicalTimestamp"></a>
+<a name="atomix-runtime-v1-PhysicalTimestamp"></a>
 
 ### PhysicalTimestamp
 
@@ -83,7 +83,7 @@
 
 
 
-<a name="atomix-runtime-time-v1-Timestamp"></a>
+<a name="atomix-runtime-v1-Timestamp"></a>
 
 ### Timestamp
 
@@ -91,18 +91,18 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| physical_timestamp | [PhysicalTimestamp](#atomix-runtime-time-v1-PhysicalTimestamp) |  |  |
-| logical_timestamp | [LogicalTimestamp](#atomix-runtime-time-v1-LogicalTimestamp) |  |  |
-| vector_timestamp | [VectorTimestamp](#atomix-runtime-time-v1-VectorTimestamp) |  |  |
-| epoch_timestamp | [EpochTimestamp](#atomix-runtime-time-v1-EpochTimestamp) |  |  |
-| composite_timestamp | [CompositeTimestamp](#atomix-runtime-time-v1-CompositeTimestamp) |  |  |
+| physical_timestamp | [PhysicalTimestamp](#atomix-runtime-v1-PhysicalTimestamp) |  |  |
+| logical_timestamp | [LogicalTimestamp](#atomix-runtime-v1-LogicalTimestamp) |  |  |
+| vector_timestamp | [VectorTimestamp](#atomix-runtime-v1-VectorTimestamp) |  |  |
+| epoch_timestamp | [EpochTimestamp](#atomix-runtime-v1-EpochTimestamp) |  |  |
+| composite_timestamp | [CompositeTimestamp](#atomix-runtime-v1-CompositeTimestamp) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-time-v1-VectorTimestamp"></a>
+<a name="atomix-runtime-v1-VectorTimestamp"></a>
 
 ### VectorTimestamp
 

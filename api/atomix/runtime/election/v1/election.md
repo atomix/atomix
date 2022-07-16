@@ -318,7 +318,7 @@
 | ----- | ---- | ----- | ----------- |
 | leader | [string](#string) |  |  |
 | candidates | [string](#string) | repeated |  |
-| timestamp | [atomix.runtime.time.v1.Timestamp](#atomix-runtime-time-v1-Timestamp) |  |  |
+| timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 

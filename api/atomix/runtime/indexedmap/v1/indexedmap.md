@@ -217,7 +217,7 @@
 | key | [string](#string) |  |  |
 | index | [uint64](#uint64) |  |  |
 | value | [Value](#atomix-runtime-indexedmap-v1-Value) |  |  |
-| timestamp | [atomix.runtime.time.v1.Timestamp](#atomix-runtime-time-v1-Timestamp) |  |  |
+| timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 
@@ -437,7 +437,7 @@
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 | index | [uint64](#uint64) |  |  |
-| if_timestamp | [atomix.runtime.time.v1.Timestamp](#atomix-runtime-time-v1-Timestamp) |  |  |
+| if_timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 
@@ -501,7 +501,7 @@
 | key | [string](#string) |  |  |
 | index | [uint64](#uint64) |  |  |
 | value | [Value](#atomix-runtime-indexedmap-v1-Value) |  |  |
-| if_timestamp | [atomix.runtime.time.v1.Timestamp](#atomix-runtime-time-v1-Timestamp) |  |  |
+| if_timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 

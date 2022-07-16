@@ -10,7 +10,7 @@ package atomix.runtime.lock.v1;
 
 import "google/protobuf/duration.proto";
 import "atomix/runtime/v1/primitive.proto";
-import "atomix/runtime/time/v1/timestamp.proto";
+import "atomix/runtime/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // Lock is a service for a lock primitive
@@ -103,7 +103,7 @@ message GetLockResponse {
 }
 
 message LockInstance {
-    atomix.runtime.time.v1.Timestamp timestamp = 1;
+    atomix.runtime.v1.Timestamp timestamp = 1;
     State state = 2;
 
     enum State {

@@ -10,7 +10,7 @@ package atomix.runtime.map.v1;
 
 import "google/protobuf/duration.proto";
 import "atomix/runtime/v1/primitive.proto";
-import "atomix/runtime/time/v1/timestamp.proto";
+import "atomix/runtime/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // Map is a service for a map primitive
@@ -90,7 +90,7 @@ message PutRequest {
     ];
     string key = 2;
     Value value = 3;
-    atomix.runtime.time.v1.Timestamp if_timestamp = 4;
+    atomix.runtime.v1.Timestamp if_timestamp = 4;
 }
 
 message PutResponse {
@@ -121,7 +121,7 @@ message UpdateRequest {
     ];
     string key = 2;
     Value value = 3;
-    atomix.runtime.time.v1.Timestamp if_timestamp = 4;
+    atomix.runtime.v1.Timestamp if_timestamp = 4;
 }
 
 message UpdateResponse {
@@ -150,7 +150,7 @@ message RemoveRequest {
         (gogoproto.nullable) = false
     ];
     string key = 2;
-    atomix.runtime.time.v1.Timestamp if_timestamp = 3;
+    atomix.runtime.v1.Timestamp if_timestamp = 3;
 }
 
 message RemoveResponse {
@@ -167,7 +167,7 @@ message ClearRequest {
 }
 
 message ClearResponse {
-    atomix.runtime.time.v1.Timestamp timestamp = 1;
+    atomix.runtime.v1.Timestamp timestamp = 1;
 }
 
 message EntriesRequest {
@@ -216,7 +216,7 @@ message Event {
 message Entry {
     string key = 1;
     Value value = 2;
-    atomix.runtime.time.v1.Timestamp timestamp = 3;
+    atomix.runtime.v1.Timestamp timestamp = 3;
 }
 
 message Value {

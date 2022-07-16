@@ -9,7 +9,7 @@ syntax = "proto3";
 package atomix.runtime.value.v1;
 
 import "atomix/runtime/v1/primitive.proto";
-import "atomix/runtime/time/v1/timestamp.proto";
+import "atomix/runtime/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // Value is a service for a value primitive
@@ -62,7 +62,7 @@ message GetRequest {
 
 message GetResponse {
     bytes value = 1;
-    atomix.runtime.time.v1.Timestamp timestamp = 2;
+    atomix.runtime.v1.Timestamp timestamp = 2;
 }
 
 message SetRequest {
@@ -71,12 +71,12 @@ message SetRequest {
         (gogoproto.nullable) = false
     ];
     bytes value = 2;
-    atomix.runtime.time.v1.Timestamp if_timestamp = 3;
+    atomix.runtime.v1.Timestamp if_timestamp = 3;
 }
 
 message SetResponse {
     bytes value = 1;
-    atomix.runtime.time.v1.Timestamp timestamp = 2;
+    atomix.runtime.v1.Timestamp timestamp = 2;
 }
 
 message EventsRequest {
@@ -95,7 +95,7 @@ message EventsResponse {
 message Event {
     Type type = 1;
     bytes value = 2;
-    atomix.runtime.time.v1.Timestamp timestamp = 3;
+    atomix.runtime.v1.Timestamp timestamp = 3;
 
     enum Type {
         NONE = 0;

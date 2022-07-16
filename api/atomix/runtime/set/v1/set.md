@@ -204,7 +204,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | value | [string](#string) |  |  |
-| timestamp | [atomix.runtime.time.v1.Timestamp](#atomix-runtime-time-v1-Timestamp) |  |  |
+| timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 
