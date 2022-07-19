@@ -15,13 +15,13 @@ const (
 	APIVersion = "v1"
 )
 
-var Type = runtime.NewType[mapv1.MapClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[mapv1.MapServer](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, delegate *runtime.Delegate[mapv1.MapClient]) {
+func register(server *grpc.Server, delegate *runtime.Delegate[mapv1.MapServer]) {
 	mapv1.RegisterMapServer(server, newMapServer(delegate))
 }
 
-func resolve(client runtime.Client) (mapv1.MapClient, bool) {
+func resolve(client runtime.Client) (mapv1.MapServer, bool) {
 	if provider, ok := client.(MapProvider); ok {
 		return provider.Map(), true
 	}
@@ -29,5 +29,5 @@ func resolve(client runtime.Client) (mapv1.MapClient, bool) {
 }
 
 type MapProvider interface {
-	Map() mapv1.MapClient
+	Map() mapv1.MapServer
 }

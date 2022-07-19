@@ -15,13 +15,13 @@ const (
 	APIVersion = "v1"
 )
 
-var Type = runtime.NewType[counterv1.CounterClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[counterv1.CounterServer](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, delegate *runtime.Delegate[counterv1.CounterClient]) {
+func register(server *grpc.Server, delegate *runtime.Delegate[counterv1.CounterServer]) {
 	counterv1.RegisterCounterServer(server, newCounterServer(delegate))
 }
 
-func resolve(client runtime.Client) (counterv1.CounterClient, bool) {
+func resolve(client runtime.Client) (counterv1.CounterServer, bool) {
 	if counter, ok := client.(CounterProvider); ok {
 		return counter.Counter(), true
 	}
@@ -29,5 +29,5 @@ func resolve(client runtime.Client) (counterv1.CounterClient, bool) {
 }
 
 type CounterProvider interface {
-	Counter() counterv1.CounterClient
+	Counter() counterv1.CounterServer
 }

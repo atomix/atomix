@@ -10,19 +10,18 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/runtime/pkg/runtime"
-	"io"
 )
 
 var log = logging.GetLogger()
 
-func newIndexedMapServer(delegate *runtime.Delegate[indexedmapv1.IndexedMapClient]) indexedmapv1.IndexedMapServer {
+func newIndexedMapServer(delegate *runtime.Delegate[indexedmapv1.IndexedMapServer]) indexedmapv1.IndexedMapServer {
 	return &indexedMapServer{
 		delegate: delegate,
 	}
 }
 
 type indexedMapServer struct {
-	delegate *runtime.Delegate[indexedmapv1.IndexedMapClient]
+	delegate *runtime.Delegate[indexedmapv1.IndexedMapServer]
 }
 
 func (s *indexedMapServer) Create(ctx context.Context, request *indexedmapv1.CreateRequest) (*indexedmapv1.CreateResponse, error) {
@@ -313,40 +312,14 @@ func (s *indexedMapServer) Events(request *indexedmapv1.EventsRequest, server in
 			logging.Error("Error", err))
 		return err
 	}
-	stream, err := client.Events(server.Context(), request)
+	err = client.Events(request, server)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	for {
-		response, err := stream.Recv()
-		if err == io.EOF {
-			log.Debugw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.String("State", "complete"))
-			return nil
-		}
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-		log.Warnw("Events",
-			logging.Stringer("EventsResponse", response))
-		err = server.Send(response)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-	}
+	return nil
 }
 
 func (s *indexedMapServer) Entries(request *indexedmapv1.EntriesRequest, server indexedmapv1.IndexedMap_EntriesServer) error {
@@ -361,40 +334,14 @@ func (s *indexedMapServer) Entries(request *indexedmapv1.EntriesRequest, server 
 			logging.Error("Error", err))
 		return err
 	}
-	stream, err := client.Entries(server.Context(), request)
+	err = client.Entries(request, server)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Entries",
 			logging.Stringer("EntriesRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	for {
-		response, err := stream.Recv()
-		if err == io.EOF {
-			log.Debugw("Entries",
-				logging.Stringer("EntriesRequest", request),
-				logging.String("State", "complete"))
-			return nil
-		}
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-		log.Warnw("Entries",
-			logging.Stringer("EntriesResponse", response))
-		err = server.Send(response)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-	}
+	return nil
 }
 
 var _ indexedmapv1.IndexedMapServer = (*indexedMapServer)(nil)

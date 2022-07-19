@@ -10,19 +10,18 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/runtime/pkg/runtime"
-	"io"
 )
 
 var log = logging.GetLogger()
 
-func newTopicServer(delegate *runtime.Delegate[topicv1.TopicClient]) topicv1.TopicServer {
+func newTopicServer(delegate *runtime.Delegate[topicv1.TopicServer]) topicv1.TopicServer {
 	return &topicServer{
 		delegate: delegate,
 	}
 }
 
 type topicServer struct {
-	delegate *runtime.Delegate[topicv1.TopicClient]
+	delegate *runtime.Delegate[topicv1.TopicServer]
 }
 
 func (s *topicServer) Create(ctx context.Context, request *topicv1.CreateRequest) (*topicv1.CreateResponse, error) {
@@ -106,40 +105,14 @@ func (s *topicServer) Subscribe(request *topicv1.SubscribeRequest, server topicv
 			logging.Error("Error", err))
 		return err
 	}
-	stream, err := client.Subscribe(server.Context(), request)
+	err = client.Subscribe(request, server)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Subscribe",
 			logging.Stringer("SubscribeRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	for {
-		response, err := stream.Recv()
-		if err == io.EOF {
-			log.Debugw("Subscribe",
-				logging.Stringer("SubscribeRequest", request),
-				logging.String("State", "complete"))
-			return nil
-		}
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Subscribe",
-				logging.Stringer("SubscribeRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-		log.Warnw("Subscribe",
-			logging.Stringer("SubscribeResponse", response))
-		err = server.Send(response)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Subscribe",
-				logging.Stringer("SubscribeRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-	}
+	return nil
 }
 
 var _ topicv1.TopicServer = (*topicServer)(nil)

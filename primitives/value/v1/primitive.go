@@ -15,13 +15,13 @@ const (
 	APIVersion = "v1"
 )
 
-var Type = runtime.NewType[valuev1.ValueClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[valuev1.ValueServer](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, delegate *runtime.Delegate[valuev1.ValueClient]) {
+func register(server *grpc.Server, delegate *runtime.Delegate[valuev1.ValueServer]) {
 	valuev1.RegisterValueServer(server, newValueServer(delegate))
 }
 
-func resolve(client runtime.Client) (valuev1.ValueClient, bool) {
+func resolve(client runtime.Client) (valuev1.ValueServer, bool) {
 	if provider, ok := client.(ValueProvider); ok {
 		return provider.Value(), true
 	}
@@ -29,5 +29,5 @@ func resolve(client runtime.Client) (valuev1.ValueClient, bool) {
 }
 
 type ValueProvider interface {
-	Value() valuev1.ValueClient
+	Value() valuev1.ValueServer
 }

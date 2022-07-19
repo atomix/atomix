@@ -10,19 +10,18 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/runtime/pkg/runtime"
-	"io"
 )
 
 var log = logging.GetLogger()
 
-func newListServer(delegate *runtime.Delegate[listv1.ListClient]) listv1.ListServer {
+func newListServer(delegate *runtime.Delegate[listv1.ListServer]) listv1.ListServer {
 	return &listServer{
 		delegate: delegate,
 	}
 }
 
 type listServer struct {
-	delegate *runtime.Delegate[listv1.ListClient]
+	delegate *runtime.Delegate[listv1.ListServer]
 }
 
 func (s *listServer) Create(ctx context.Context, request *listv1.CreateRequest) (*listv1.CreateResponse, error) {
@@ -244,40 +243,14 @@ func (s *listServer) Events(request *listv1.EventsRequest, server listv1.List_Ev
 			logging.Error("Error", err))
 		return err
 	}
-	stream, err := client.Events(server.Context(), request)
+	err = client.Events(request, server)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	for {
-		response, err := stream.Recv()
-		if err == io.EOF {
-			log.Debugw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.String("State", "complete"))
-			return nil
-		}
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-		log.Warnw("Events",
-			logging.Stringer("EventsResponse", response))
-		err = server.Send(response)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-	}
+	return nil
 }
 
 func (s *listServer) Elements(request *listv1.ElementsRequest, server listv1.List_ElementsServer) error {
@@ -292,40 +265,14 @@ func (s *listServer) Elements(request *listv1.ElementsRequest, server listv1.Lis
 			logging.Error("Error", err))
 		return err
 	}
-	stream, err := client.Elements(server.Context(), request)
+	err = client.Elements(request, server)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Elements",
 			logging.Stringer("ElementsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	for {
-		response, err := stream.Recv()
-		if err == io.EOF {
-			log.Debugw("Elements",
-				logging.Stringer("ElementsRequest", request),
-				logging.String("State", "complete"))
-			return nil
-		}
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Elements",
-				logging.Stringer("ElementsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-		log.Warnw("Elements",
-			logging.Stringer("ElementsResponse", response))
-		err = server.Send(response)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Elements",
-				logging.Stringer("ElementsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-	}
+	return nil
 }
 
 var _ listv1.ListServer = (*listServer)(nil)

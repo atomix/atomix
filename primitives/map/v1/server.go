@@ -10,19 +10,18 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/runtime/pkg/runtime"
-	"io"
 )
 
 var log = logging.GetLogger()
 
-func newMapServer(delegate *runtime.Delegate[mapv1.MapClient]) mapv1.MapServer {
+func newMapServer(delegate *runtime.Delegate[mapv1.MapServer]) mapv1.MapServer {
 	return &mapServer{
 		delegate: delegate,
 	}
 }
 
 type mapServer struct {
-	delegate *runtime.Delegate[mapv1.MapClient]
+	delegate *runtime.Delegate[mapv1.MapServer]
 }
 
 func (s *mapServer) Create(ctx context.Context, request *mapv1.CreateRequest) (*mapv1.CreateResponse, error) {
@@ -244,40 +243,14 @@ func (s *mapServer) Events(request *mapv1.EventsRequest, server mapv1.Map_Events
 			logging.Error("Error", err))
 		return err
 	}
-	stream, err := client.Events(server.Context(), request)
+	err = client.Events(request, server)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	for {
-		response, err := stream.Recv()
-		if err == io.EOF {
-			log.Debugw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.String("State", "complete"))
-			return nil
-		}
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-		log.Warnw("Events",
-			logging.Stringer("EventsResponse", response))
-		err = server.Send(response)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-	}
+	return nil
 }
 
 func (s *mapServer) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
@@ -292,40 +265,14 @@ func (s *mapServer) Entries(request *mapv1.EntriesRequest, server mapv1.Map_Entr
 			logging.Error("Error", err))
 		return err
 	}
-	stream, err := client.Entries(server.Context(), request)
+	err = client.Entries(request, server)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Entries",
 			logging.Stringer("EntriesRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	for {
-		response, err := stream.Recv()
-		if err == io.EOF {
-			log.Debugw("Entries",
-				logging.Stringer("EntriesRequest", request),
-				logging.String("State", "complete"))
-			return nil
-		}
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-		log.Warnw("Entries",
-			logging.Stringer("EntriesResponse", response))
-		err = server.Send(response)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-	}
+	return nil
 }
 
 var _ mapv1.MapServer = (*mapServer)(nil)

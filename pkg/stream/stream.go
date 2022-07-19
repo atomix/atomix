@@ -227,7 +227,8 @@ func (s *channelStream[T]) Value(value T) {
 }
 
 func (s *channelStream[T]) Error(err error) {
-	s.Result(nil, err)
+	var t T
+	s.Result(t, err)
 }
 
 func (s *channelStream[T]) Close() {
@@ -308,7 +309,8 @@ func (s *transcodingStream[T, U]) Value(value T) {
 }
 
 func (s *transcodingStream[T, U]) Error(err error) {
-	u, err := s.transcoder(nil, err)
+	var t T
+	u, err := s.transcoder(t, err)
 	if err != nil {
 		s.stream.Error(err)
 	} else {
@@ -356,7 +358,8 @@ func (s *closerStream[T]) Value(value T) {
 }
 
 func (s *closerStream[T]) Error(err error) {
-	s.Result(nil, err)
+	var t T
+	s.Result(t, err)
 }
 
 func (s *closerStream[T]) Close() {

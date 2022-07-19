@@ -10,19 +10,18 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/runtime/pkg/runtime"
-	"io"
 )
 
 var log = logging.GetLogger()
 
-func newLeaderElectionServer(delegate *runtime.Delegate[electionv1.LeaderElectionClient]) electionv1.LeaderElectionServer {
+func newLeaderElectionServer(delegate *runtime.Delegate[electionv1.LeaderElectionServer]) electionv1.LeaderElectionServer {
 	return &leaderElectionServer{
 		delegate: delegate,
 	}
 }
 
 type leaderElectionServer struct {
-	delegate *runtime.Delegate[electionv1.LeaderElectionClient]
+	delegate *runtime.Delegate[electionv1.LeaderElectionServer]
 }
 
 func (s *leaderElectionServer) Create(ctx context.Context, request *electionv1.CreateRequest) (*electionv1.CreateResponse, error) {
@@ -221,40 +220,14 @@ func (s *leaderElectionServer) Events(request *electionv1.EventsRequest, server 
 			logging.Error("Error", err))
 		return err
 	}
-	stream, err := client.Events(server.Context(), request)
+	err = client.Events(request, server)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	for {
-		response, err := stream.Recv()
-		if err == io.EOF {
-			log.Debugw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.String("State", "complete"))
-			return nil
-		}
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-		log.Warnw("Events",
-			logging.Stringer("EventsResponse", response))
-		err = server.Send(response)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-	}
+	return nil
 }
 
 var _ electionv1.LeaderElectionServer = (*leaderElectionServer)(nil)

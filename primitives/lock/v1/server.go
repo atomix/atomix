@@ -14,14 +14,14 @@ import (
 
 var log = logging.GetLogger()
 
-func newLockServer(delegate *runtime.Delegate[lockv1.LockClient]) lockv1.LockServer {
+func newLockServer(delegate *runtime.Delegate[lockv1.LockServer]) lockv1.LockServer {
 	return &lockServer{
 		delegate: delegate,
 	}
 }
 
 type lockServer struct {
-	delegate *runtime.Delegate[lockv1.LockClient]
+	delegate *runtime.Delegate[lockv1.LockServer]
 }
 
 func (s *lockServer) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {

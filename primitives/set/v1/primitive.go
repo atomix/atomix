@@ -15,13 +15,13 @@ const (
 	APIVersion = "v1"
 )
 
-var Type = runtime.NewType[setv1.SetClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[setv1.SetServer](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, delegate *runtime.Delegate[setv1.SetClient]) {
+func register(server *grpc.Server, delegate *runtime.Delegate[setv1.SetServer]) {
 	setv1.RegisterSetServer(server, newSetServer(delegate))
 }
 
-func resolve(client runtime.Client) (setv1.SetClient, bool) {
+func resolve(client runtime.Client) (setv1.SetServer, bool) {
 	if provider, ok := client.(SetProvider); ok {
 		return provider.Set(), true
 	}
@@ -29,5 +29,5 @@ func resolve(client runtime.Client) (setv1.SetClient, bool) {
 }
 
 type SetProvider interface {
-	Set() setv1.SetClient
+	Set() setv1.SetServer
 }

@@ -15,13 +15,13 @@ const (
 	APIVersion = "v1"
 )
 
-var Type = runtime.NewType[indexedmapv1.IndexedMapClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[indexedmapv1.IndexedMapServer](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, delegate *runtime.Delegate[indexedmapv1.IndexedMapClient]) {
+func register(server *grpc.Server, delegate *runtime.Delegate[indexedmapv1.IndexedMapServer]) {
 	indexedmapv1.RegisterIndexedMapServer(server, newIndexedMapServer(delegate))
 }
 
-func resolve(client runtime.Client) (indexedmapv1.IndexedMapClient, bool) {
+func resolve(client runtime.Client) (indexedmapv1.IndexedMapServer, bool) {
 	if provider, ok := client.(IndexedMapProvider); ok {
 		return provider.IndexedMap(), true
 	}
@@ -29,5 +29,5 @@ func resolve(client runtime.Client) (indexedmapv1.IndexedMapClient, bool) {
 }
 
 type IndexedMapProvider interface {
-	IndexedMap() indexedmapv1.IndexedMapClient
+	IndexedMap() indexedmapv1.IndexedMapServer
 }

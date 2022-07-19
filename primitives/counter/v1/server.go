@@ -14,14 +14,14 @@ import (
 
 var log = logging.GetLogger()
 
-func newCounterServer(delegate *runtime.Delegate[counterv1.CounterClient]) counterv1.CounterServer {
+func newCounterServer(delegate *runtime.Delegate[counterv1.CounterServer]) counterv1.CounterServer {
 	return &counterServer{
 		delegate: delegate,
 	}
 }
 
 type counterServer struct {
-	delegate *runtime.Delegate[counterv1.CounterClient]
+	delegate *runtime.Delegate[counterv1.CounterServer]
 }
 
 func (s *counterServer) Create(ctx context.Context, request *counterv1.CreateRequest) (*counterv1.CreateResponse, error) {

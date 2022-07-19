@@ -10,19 +10,18 @@ import (
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/runtime/pkg/runtime"
-	"io"
 )
 
 var log = logging.GetLogger()
 
-func newSetServer(delegate *runtime.Delegate[setv1.SetClient]) setv1.SetServer {
+func newSetServer(delegate *runtime.Delegate[setv1.SetServer]) setv1.SetServer {
 	return &setServer{
 		delegate: delegate,
 	}
 }
 
 type setServer struct {
-	delegate *runtime.Delegate[setv1.SetClient]
+	delegate *runtime.Delegate[setv1.SetServer]
 }
 
 func (s *setServer) Create(ctx context.Context, request *setv1.CreateRequest) (*setv1.CreateResponse, error) {
@@ -198,40 +197,14 @@ func (s *setServer) Events(request *setv1.EventsRequest, server setv1.Set_Events
 			logging.Error("Error", err))
 		return err
 	}
-	stream, err := client.Events(server.Context(), request)
+	err = client.Events(request, server)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	for {
-		response, err := stream.Recv()
-		if err == io.EOF {
-			log.Debugw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.String("State", "complete"))
-			return nil
-		}
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-		log.Warnw("Events",
-			logging.Stringer("EventsResponse", response))
-		err = server.Send(response)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-	}
+	return nil
 }
 
 func (s *setServer) Elements(request *setv1.ElementsRequest, server setv1.Set_ElementsServer) error {
@@ -246,40 +219,14 @@ func (s *setServer) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 			logging.Error("Error", err))
 		return err
 	}
-	stream, err := client.Elements(server.Context(), request)
+	err = client.Elements(request, server)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Elements",
 			logging.Stringer("ElementsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	for {
-		response, err := stream.Recv()
-		if err == io.EOF {
-			log.Debugw("Elements",
-				logging.Stringer("ElementsRequest", request),
-				logging.String("State", "complete"))
-			return nil
-		}
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Elements",
-				logging.Stringer("ElementsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-		log.Warnw("Elements",
-			logging.Stringer("ElementsResponse", response))
-		err = server.Send(response)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Elements",
-				logging.Stringer("ElementsRequest", request),
-				logging.Error("Error", err))
-			return err
-		}
-	}
+	return nil
 }
 
 var _ setv1.SetServer = (*setServer)(nil)

@@ -15,13 +15,13 @@ const (
 	APIVersion = "v1"
 )
 
-var Type = runtime.NewType[electionv1.LeaderElectionClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[electionv1.LeaderElectionServer](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, delegate *runtime.Delegate[electionv1.LeaderElectionClient]) {
+func register(server *grpc.Server, delegate *runtime.Delegate[electionv1.LeaderElectionServer]) {
 	electionv1.RegisterLeaderElectionServer(server, newLeaderElectionServer(delegate))
 }
 
-func resolve(client runtime.Client) (electionv1.LeaderElectionClient, bool) {
+func resolve(client runtime.Client) (electionv1.LeaderElectionServer, bool) {
 	if provider, ok := client.(LeaderElectionProvider); ok {
 		return provider.LeaderElection(), true
 	}
@@ -29,5 +29,5 @@ func resolve(client runtime.Client) (electionv1.LeaderElectionClient, bool) {
 }
 
 type LeaderElectionProvider interface {
-	LeaderElection() electionv1.LeaderElectionClient
+	LeaderElection() electionv1.LeaderElectionServer
 }

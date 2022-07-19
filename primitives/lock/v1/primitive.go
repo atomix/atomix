@@ -15,13 +15,13 @@ const (
 	APIVersion = "v1"
 )
 
-var Type = runtime.NewType[lockv1.LockClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[lockv1.LockServer](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, delegate *runtime.Delegate[lockv1.LockClient]) {
+func register(server *grpc.Server, delegate *runtime.Delegate[lockv1.LockServer]) {
 	lockv1.RegisterLockServer(server, newLockServer(delegate))
 }
 
-func resolve(client runtime.Client) (lockv1.LockClient, bool) {
+func resolve(client runtime.Client) (lockv1.LockServer, bool) {
 	if provider, ok := client.(LockProvider); ok {
 		return provider.Lock(), true
 	}
@@ -29,5 +29,5 @@ func resolve(client runtime.Client) (lockv1.LockClient, bool) {
 }
 
 type LockProvider interface {
-	Lock() lockv1.LockClient
+	Lock() lockv1.LockServer
 }

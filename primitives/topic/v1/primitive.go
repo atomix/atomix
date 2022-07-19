@@ -15,13 +15,13 @@ const (
 	APIVersion = "v1"
 )
 
-var Type = runtime.NewType[topicv1.TopicClient](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[topicv1.TopicServer](Name, APIVersion, register, resolve)
 
-func register(server *grpc.Server, delegate *runtime.Delegate[topicv1.TopicClient]) {
+func register(server *grpc.Server, delegate *runtime.Delegate[topicv1.TopicServer]) {
 	topicv1.RegisterTopicServer(server, newTopicServer(delegate))
 }
 
-func resolve(client runtime.Client) (topicv1.TopicClient, bool) {
+func resolve(client runtime.Client) (topicv1.TopicServer, bool) {
 	if provider, ok := client.(TopicProvider); ok {
 		return provider.Topic(), true
 	}
@@ -29,5 +29,5 @@ func resolve(client runtime.Client) (topicv1.TopicClient, bool) {
 }
 
 type TopicProvider interface {
-	Topic() topicv1.TopicClient
+	Topic() topicv1.TopicServer
 }
