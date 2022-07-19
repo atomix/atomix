@@ -8,6 +8,6 @@ import "os"
 
 const namespaceEnv = "ATOMIX_NAMESPACE"
 
-func GetNapespace() string {
+func GetNamespace() string {
 	return os.Getenv(namespaceEnv)
 }
