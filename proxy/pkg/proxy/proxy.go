@@ -9,7 +9,7 @@ import "github.com/atomix/runtime/sdk/pkg/service"
 func New(network Network, opts ...Option) *Proxy {
 	var options Options
 	options.apply(opts...)
-	runtime := newRuntime(options.RouterConfig, options.Drivers...)
+	runtime := newRuntime(options)
 	return &Proxy{
 		Options: options,
 		runtime: newRuntimeService(runtime, network, options.RuntimeService),

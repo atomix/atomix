@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/atomix/runtime/proxy/pkg/proxy"
 	"github.com/atomix/runtime/sdk/pkg/logging"
-	"github.com/atomix/runtime/sdk/pkg/runtime"
 	counterv1 "github.com/atomix/runtime/sdk/primitives/counter/v1"
 	electionv1 "github.com/atomix/runtime/sdk/primitives/election/v1"
 	indexedmapv1 "github.com/atomix/runtime/sdk/primitives/indexed_map/v1"
@@ -20,12 +19,9 @@ import (
 	valuev1 "github.com/atomix/runtime/sdk/primitives/value/v1"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
-	"io/fs"
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"plugin"
 	"syscall"
 )
 
@@ -78,36 +74,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			driversDir, err := cmd.Flags().GetString("drivers")
-			if err != nil {
-				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-				os.Exit(1)
-			}
-
-			var drivers []runtime.Driver
-			err = filepath.WalkDir(driversDir, func(path string, entry fs.DirEntry, err error) error {
-				if err != nil {
-					fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-					return nil
-				}
-				if entry.IsDir() {
-					return nil
-				}
-
-				log.Infof("Loading plugin %s", path)
-				driverPlugin, err := plugin.Open(path)
-				if err != nil {
-					fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-					os.Exit(1)
-				}
-				driverSym, err := driverPlugin.Lookup("Plugin")
-				if err != nil {
-					fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-					os.Exit(1)
-				}
-				drivers = append(drivers, *driverSym.(*runtime.Driver))
-				return nil
-			})
+			pluginsDir, err := cmd.Flags().GetString("plugins")
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
@@ -116,8 +83,8 @@ func main() {
 			// Create the runtime
 			service := proxy.New(
 				proxy.NewNetwork(),
+				proxy.WithPluginsDir(pluginsDir),
 				proxy.WithRouterConfig(routerConfig),
-				proxy.WithDrivers(drivers...),
 				proxy.WithRuntimeHost(runtimeHost),
 				proxy.WithRuntimePort(runtimePort),
 				proxy.WithProxyHost(proxyHost),
@@ -156,7 +123,7 @@ func main() {
 	cmd.Flags().Int("runtime-port", 5678, "the port to which to bind the runtime server")
 	cmd.Flags().String("proxy-host", "", "the host to which to bind the proxy server")
 	cmd.Flags().Int("proxy-port", 5679, "the port to which to bind the proxy server")
-	cmd.Flags().StringP("drivers", "d", "/var/atomix/plugins", "the path to the drivers directory")
+	cmd.Flags().StringP("plugins", "p", "/var/atomix/plugins", "the path to the plugins directory")
 
 	_ = cmd.MarkFlagRequired("config")
 	_ = cmd.MarkFlagFilename("config")

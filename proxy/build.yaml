@@ -1,5 +1,6 @@
 plugins:
-  - name: multiraft
+  - name: MultiRaft
+    apiVersion: v1beta1
     path: github.com/atomix/multi-raft/driver
     version: 6c700ad
   #- name: memory

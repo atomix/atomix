@@ -6,27 +6,28 @@ package proxy
 
 import (
 	"context"
+	"fmt"
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/logging"
 	"github.com/atomix/runtime/sdk/pkg/runtime"
+	"path/filepath"
+	"plugin"
 	"sync"
 )
 
 var log = logging.GetLogger()
 
-func newRuntime(config RouterConfig, drivers ...runtime.Driver) *Runtime {
-	driverIDs := make(map[runtime.DriverID]runtime.Driver)
-	for _, driver := range drivers {
-		driverIDs[driver.ID()] = driver
-	}
+func newRuntime(options Options) *Runtime {
 	return &Runtime{
-		router:  newRouter(config),
-		drivers: driverIDs,
+		Options: options,
+		router:  newRouter(options.RouterConfig),
+		drivers: make(map[runtime.DriverID]runtime.Driver),
 		conns:   make(map[StoreID]runtime.Conn),
 	}
 }
 
 type Runtime struct {
+	Options
 	router  *Router
 	drivers map[runtime.DriverID]runtime.Driver
 	conns   map[StoreID]runtime.Conn
@@ -57,7 +58,18 @@ func (r *Runtime) connect(ctx context.Context, storeID StoreID, driverID runtime
 
 	driver, ok := r.drivers[driverID]
 	if !ok {
-		return errors.NewNotSupported("driver '%s' not found", driverID)
+		log.Infof("Loading plugin %s", driverID)
+		path := filepath.Join(r.PluginsDir, fmt.Sprintf("%s@%s.so", driverID.Name, driverID.Version))
+		driverPlugin, err := plugin.Open(path)
+		if err != nil {
+			return errors.NewInternal("failed loading driver '%s': %v", driverID, err)
+		}
+		driverSym, err := driverPlugin.Lookup("Plugin")
+		if err != nil {
+			return errors.NewInternal("failed loading driver '%s': %v", driverID, err)
+		}
+		driver = driverSym.(runtime.Driver)
+		r.drivers[driverID] = driver
 	}
 
 	conn, err := driver.Connect(ctx, config)
