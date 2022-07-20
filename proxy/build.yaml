@@ -1,0 +1,7 @@
+plugins:
+  - name: multiraft
+    path: github.com/atomix/multi-raft/driver
+    version: 6b23a6d
+  #- name: memory
+  #  path: github.com/atomix/drivers/memory
+  #  version: latest
