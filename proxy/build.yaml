@@ -2,6 +2,6 @@ plugins:
   - name: MultiRaft
     version: v1beta1
     path: github.com/atomix/multi-raft-storage/driver@8692853d829d5dfcc74f5a62beefad4752409a9b
-  #- name: memory
-  #  version: v1beta1
-  #  path: github.com/atomix/drivers/memory@latest
+  - name: Gossip
+    version: v1beta1
+    path: github.com/atomix/gossip-storage/driver@latest

@@ -65,18 +65,18 @@ func Build(cmd *cobra.Command, config Config) error {
 	return nil
 }
 
-func newPluginBuilder(cmd *cobra.Command, proxyModFile *modfile.File, runtimeVersion string) *Builder {
+func newPluginBuilder(cmd *cobra.Command, proxyModFile *modfile.File, sdkVersion string) *Builder {
 	return &Builder{
-		cmd:            cmd,
-		runtimeVersion: runtimeVersion,
-		proxyModFile:   proxyModFile,
+		cmd:          cmd,
+		sdkVersion:   sdkVersion,
+		proxyModFile: proxyModFile,
 	}
 }
 
 type Builder struct {
-	cmd            *cobra.Command
-	runtimeVersion string
-	proxyModFile   *modfile.File
+	cmd          *cobra.Command
+	sdkVersion   string
+	proxyModFile *modfile.File
 }
 
 func (b *Builder) Build(plugin PluginConfig) error {
@@ -130,7 +130,7 @@ func (b *Builder) downloadPluginMod(plugin PluginConfig) (*modfile.File, string,
 }
 
 func (b *Builder) validatePluginModFile(plugin PluginConfig, pluginModFile *modfile.File) error {
-	fmt.Fprintln(b.cmd.OutOrStdout(), "Validating dependencies for module", plugin.Path+"@"+plugin.Version)
+	fmt.Fprintln(b.cmd.OutOrStdout(), "Validating dependencies for module", plugin.Path)
 	proxyModRequires := make(map[string]string)
 	for _, require := range b.proxyModFile.Require {
 		proxyModRequires[require.Mod.Path] = require.Mod.Version
@@ -140,8 +140,8 @@ func (b *Builder) validatePluginModFile(plugin PluginConfig, pluginModFile *modf
 		if proxyVersion, ok := proxyModRequires[require.Mod.Path]; ok {
 			if require.Mod.Version != proxyVersion {
 				fmt.Fprintln(b.cmd.OutOrStderr(), "Incompatible dependency", require.Mod.Path, require.Mod.Version)
-				return errors.NewInvalid("plugin module %s@%s has incompatible dependency %s %s != %s",
-					plugin.Path, plugin.Version, require.Mod.Path, require.Mod.Version, proxyVersion)
+				return errors.NewInvalid("plugin module %s has incompatible dependency %s %s != %s",
+					plugin.Path, require.Mod.Path, require.Mod.Version, proxyVersion)
 			}
 		}
 	}
@@ -156,7 +156,7 @@ func (b *Builder) buildPlugin(plugin PluginConfig, dir string) error {
 		"-trimpath",
 		"-buildmode=plugin",
 		"-gcflags='all=-N -l'",
-		fmt.Sprintf("-ldflags='-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s'", b.runtimeVersion),
+		fmt.Sprintf("-ldflags='-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s'", b.sdkVersion),
 		"-o", fmt.Sprintf("/build/dist/plugins/%s@%s.so", plugin.Name, plugin.Version),
 		"./plugin")
 	if err != nil {
