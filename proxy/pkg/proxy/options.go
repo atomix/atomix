@@ -17,6 +17,7 @@ type Options struct {
 	RouterConfig   RouterConfig
 	RuntimeService RuntimeServiceOptions
 	ProxyService   ProxyServiceOptions
+	Drivers        []runtime.Driver
 	PluginsDir     string
 }
 
@@ -47,6 +48,12 @@ type ProxyServiceOptions struct {
 func WithOptions(opts Options) Option {
 	return func(options *Options) {
 		*options = opts
+	}
+}
+
+func WithDrivers(drivers ...runtime.Driver) Option {
+	return func(options *Options) {
+		options.Drivers = append(options.Drivers, drivers...)
 	}
 }
 

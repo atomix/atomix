@@ -18,10 +18,14 @@ import (
 var log = logging.GetLogger()
 
 func newRuntime(options Options) *Runtime {
+	drivers := make(map[runtime.DriverID]runtime.Driver)
+	for _, driver := range options.Drivers {
+		drivers[driver.ID()] = driver
+	}
 	return &Runtime{
 		Options: options,
 		router:  newRouter(options.RouterConfig),
-		drivers: make(map[runtime.DriverID]runtime.Driver),
+		drivers: drivers,
 		conns:   make(map[StoreID]runtime.Conn),
 	}
 }
