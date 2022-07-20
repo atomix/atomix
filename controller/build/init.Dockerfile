@@ -12,7 +12,7 @@ COPY ./go.sum /build
 COPY ./cmd /build/cmd
 COPY ./pkg /build/pkg
 
-RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix-runtime-controller ./cmd/atomix-runtime-controller
+RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix-runtime-controller-init ./cmd/atomix-runtime-controller-init
 
 FROM alpine:3.15
 
