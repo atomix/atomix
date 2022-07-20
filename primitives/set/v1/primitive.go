@@ -5,7 +5,7 @@
 package v1
 
 import (
-	setv1 "github.com/atomix/runtime/api/atomix/set/v1"
+	setv1 "github.com/atomix/runtime/api/atomix/runtime/set/v1"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )

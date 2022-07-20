@@ -5,7 +5,7 @@
 package v1
 
 import (
-	topicv1 "github.com/atomix/runtime/api/atomix/topic/v1"
+	topicv1 "github.com/atomix/runtime/api/atomix/runtime/topic/v1"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )

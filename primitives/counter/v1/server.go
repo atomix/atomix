@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	counterv1 "github.com/atomix/runtime/api/atomix/counter/v1"
+	counterv1 "github.com/atomix/runtime/api/atomix/runtime/counter/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/pkg/runtime"
@@ -90,6 +90,29 @@ func (s *counterServer) Set(ctx context.Context, request *counterv1.SetRequest) 
 	}
 	log.Debugw("Set",
 		logging.Stringer("SetResponse", response))
+	return response, nil
+}
+
+func (s *counterServer) CompareAndSet(ctx context.Context, request *counterv1.CompareAndSetRequest) (*counterv1.CompareAndSetResponse, error) {
+	log.Debugw("CompareAndSet",
+		logging.Stringer("CompareAndSetRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("CompareAndSet",
+			logging.Stringer("CompareAndSetRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.CompareAndSet(ctx, request)
+	if err != nil {
+		log.Warnw("CompareAndSet",
+			logging.Stringer("CompareAndSetRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("CompareAndSet",
+		logging.Stringer("CompareAndSetResponse", response))
 	return response, nil
 }
 

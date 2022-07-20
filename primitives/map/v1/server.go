@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	mapv1 "github.com/atomix/runtime/api/atomix/map/v1"
+	mapv1 "github.com/atomix/runtime/api/atomix/runtime/map/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/runtime/pkg/runtime"

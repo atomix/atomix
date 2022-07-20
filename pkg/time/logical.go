@@ -5,7 +5,7 @@
 package time
 
 import (
-	timev1 "github.com/atomix/runtime/api/atomix/time/v1"
+	runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 	"sync"
 )
 
@@ -143,20 +143,20 @@ func (t LogicalTimestamp) Equal(u Timestamp) bool {
 // LogicalTimestampCodec is a codec for logical timestamps
 type LogicalTimestampCodec struct{}
 
-func (c LogicalTimestampCodec) EncodeTimestamp(timestamp Timestamp) timev1.Timestamp {
+func (c LogicalTimestampCodec) EncodeTimestamp(timestamp Timestamp) runtimev1.Timestamp {
 	t, ok := timestamp.(LogicalTimestamp)
 	if !ok {
 		panic("expected LogicalTimestamp")
 	}
-	return timev1.Timestamp{
-		Timestamp: &timev1.Timestamp_LogicalTimestamp{
-			LogicalTimestamp: &timev1.LogicalTimestamp{
-				Time: timev1.LogicalTime(t.Time),
+	return runtimev1.Timestamp{
+		Timestamp: &runtimev1.Timestamp_LogicalTimestamp{
+			LogicalTimestamp: &runtimev1.LogicalTimestamp{
+				Time: runtimev1.LogicalTime(t.Time),
 			},
 		},
 	}
 }
 
-func (c LogicalTimestampCodec) DecodeTimestamp(timestamp timev1.Timestamp) (Timestamp, error) {
+func (c LogicalTimestampCodec) DecodeTimestamp(timestamp runtimev1.Timestamp) (Timestamp, error) {
 	return NewLogicalTimestamp(LogicalTime(timestamp.GetLogicalTimestamp().Time)), nil
 }

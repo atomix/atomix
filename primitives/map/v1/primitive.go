@@ -5,7 +5,7 @@
 package v1
 
 import (
-	mapv1 "github.com/atomix/runtime/api/atomix/map/v1"
+	mapv1 "github.com/atomix/runtime/api/atomix/runtime/map/v1"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )

@@ -4,18 +4,18 @@
 
 package time
 
-import timev1 "github.com/atomix/runtime/api/atomix/time/v1"
+import runtimev1 "github.com/atomix/runtime/api/atomix/runtime/v1"
 
 // NewTimestamp creates new object timestamp from the given proto timestamp
-func NewTimestamp(meta timev1.Timestamp) Timestamp {
+func NewTimestamp(meta runtimev1.Timestamp) Timestamp {
 	switch t := meta.Timestamp.(type) {
-	case *timev1.Timestamp_PhysicalTimestamp:
+	case *runtimev1.Timestamp_PhysicalTimestamp:
 		return NewPhysicalTimestamp(PhysicalTime(t.PhysicalTimestamp.Time))
-	case *timev1.Timestamp_LogicalTimestamp:
+	case *runtimev1.Timestamp_LogicalTimestamp:
 		return NewLogicalTimestamp(LogicalTime(t.LogicalTimestamp.Time))
-	case *timev1.Timestamp_EpochTimestamp:
+	case *runtimev1.Timestamp_EpochTimestamp:
 		return NewEpochTimestamp(Epoch(t.EpochTimestamp.Epoch), LogicalTime(t.EpochTimestamp.Time))
-	case *timev1.Timestamp_CompositeTimestamp:
+	case *runtimev1.Timestamp_CompositeTimestamp:
 		timestamps := make([]Timestamp, 0, len(t.CompositeTimestamp.Timestamps))
 		for _, timestamp := range t.CompositeTimestamp.Timestamps {
 			timestamps = append(timestamps, NewTimestamp(timestamp))
@@ -52,8 +52,8 @@ type Clock interface {
 
 // Codec is a time codec
 type Codec interface {
-	EncodeTimestamp(Timestamp) timev1.Timestamp
-	DecodeTimestamp(timev1.Timestamp) (Timestamp, error)
+	EncodeTimestamp(Timestamp) runtimev1.Timestamp
+	DecodeTimestamp(runtimev1.Timestamp) (Timestamp, error)
 }
 
 // Timestamp is a timestamp

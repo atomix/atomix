@@ -5,7 +5,7 @@
 package v1
 
 import (
-	counterv1 "github.com/atomix/runtime/api/atomix/counter/v1"
+	counterv1 "github.com/atomix/runtime/api/atomix/runtime/counter/v1"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )

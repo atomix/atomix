@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	indexedmapv1 "github.com/atomix/runtime/api/atomix/indexed_map/v1"
+	indexedmapv1 "github.com/atomix/runtime/api/atomix/runtime/indexedmap/v1"
 	"github.com/atomix/runtime/pkg/errors"
 	"github.com/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/runtime/pkg/runtime"

@@ -5,7 +5,7 @@
 package v1
 
 import (
-	lockv1 "github.com/atomix/runtime/api/atomix/lock/v1"
+	lockv1 "github.com/atomix/runtime/api/atomix/runtime/lock/v1"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )

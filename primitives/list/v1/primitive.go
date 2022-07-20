@@ -5,7 +5,7 @@
 package v1
 
 import (
-	listv1 "github.com/atomix/runtime/api/atomix/list/v1"
+	listv1 "github.com/atomix/runtime/api/atomix/runtime/list/v1"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )

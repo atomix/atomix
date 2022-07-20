@@ -5,7 +5,7 @@
 package v1
 
 import (
-	electionv1 "github.com/atomix/runtime/api/atomix/election/v1"
+	electionv1 "github.com/atomix/runtime/api/atomix/runtime/election/v1"
 	"github.com/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
