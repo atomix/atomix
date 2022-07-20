@@ -100,35 +100,30 @@ func (b *Builder) downloadPluginMod(plugin PluginConfig) (*modfile.File, string,
 		return nil, "", err
 	}
 
-	modPathVersion := plugin.Path
-	if plugin.Version != "" {
-		modPathVersion = fmt.Sprintf("%s@%s", plugin.Path, plugin.Version)
-	}
-
-	fmt.Fprintln(b.cmd.OutOrStdout(), "Downloading module", modPathVersion)
-	output, err := run(".", "go", "mod", "download", "-json", modPathVersion)
+	fmt.Fprintln(b.cmd.OutOrStdout(), "Downloading module", plugin.Path)
+	output, err := run(".", "go", "mod", "download", "-json", plugin.Path)
 	if err != nil {
-		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", modPathVersion, err)
+		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", plugin.Path, err)
 		return nil, "", err
 	}
 	println(output)
 
 	var modInfo goModInfo
 	if err := json.Unmarshal([]byte(output), &modInfo); err != nil {
-		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", modPathVersion, err)
+		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", plugin.Path, err)
 		return nil, "", err
 	}
 
 	fmt.Fprintln(b.cmd.OutOrStdout(), "Parsing", modInfo.GoMod)
 	goModBytes, err := ioutil.ReadFile(modInfo.GoMod)
 	if err != nil {
-		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", modPathVersion, err)
+		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", plugin.Path, err)
 		return nil, "", err
 	}
 
 	goModFile, err := modfile.Parse(modInfo.GoMod, goModBytes, nil)
 	if err != nil {
-		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", modPathVersion, err)
+		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", plugin.Path, err)
 		return nil, "", err
 	}
 	return goModFile, modInfo.Dir, nil

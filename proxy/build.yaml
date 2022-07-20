@@ -1,8 +1,7 @@
 plugins:
   - name: MultiRaft
-    apiVersion: v1beta1
-    path: github.com/atomix/multi-raft/driver
-    version: 6c700ad
+    version: v1beta1
+    path: github.com/atomix/multi-raft-storage/driver@8692853d829d5dfcc74f5a62beefad4752409a9b
   #- name: memory
   #  path: github.com/atomix/drivers/memory
   #  version: latest
