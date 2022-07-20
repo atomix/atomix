@@ -37,7 +37,7 @@ func init() {
 
 func main() {
 	cmd := &cobra.Command{
-		Use: "atomix-proxy",
+		Use: "atomix-runtime-proxy",
 		Run: func(cmd *cobra.Command, args []string) {
 			runtimeHost, err := cmd.Flags().GetString("runtime-host")
 			if err != nil {

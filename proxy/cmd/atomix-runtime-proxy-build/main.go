@@ -7,7 +7,7 @@ package main
 import (
 	"fmt"
 	"github.com/atomix/runtime/pkg/logging"
-	"github.com/atomix/runtime/proxy/cmd/atomix-proxy-build/build"
+	"github.com/atomix/runtime/proxy/cmd/atomix-runtime-proxy-build/build"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -20,7 +20,7 @@ func init() {
 
 func main() {
 	cmd := &cobra.Command{
-		Use: "atomix-proxy-build",
+		Use: "atomix-runtime-proxy-build",
 		Run: func(cmd *cobra.Command, args []string) {
 			configFile, err := cmd.Flags().GetString("config")
 			if err != nil {

@@ -15,7 +15,7 @@ import (
 	"os/exec"
 )
 
-const runtimePath = "github.com/atomix/runtime"
+const sdkPath = "github.com/atomix/runtime/sdk"
 
 func Build(cmd *cobra.Command, config Config) error {
 	proxyModBytes, err := ioutil.ReadFile("go.mod")
@@ -28,10 +28,10 @@ func Build(cmd *cobra.Command, config Config) error {
 		return err
 	}
 
-	var runtimeVersion string
+	var sdkVersion string
 	for _, require := range proxyModFile.Require {
-		if require.Mod.Path == runtimePath {
-			runtimeVersion = require.Mod.Version
+		if require.Mod.Path == sdkPath {
+			sdkVersion = require.Mod.Version
 			break
 		}
 	}
@@ -43,20 +43,20 @@ func Build(cmd *cobra.Command, config Config) error {
 		return err
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout(), "Building github.com/atomix/proxy")
+	fmt.Fprintln(cmd.OutOrStdout(), "Building github.com/atomix/runtime/proxy")
 	_, err = run(".",
 		"go", "build",
 		"-mod=readonly",
 		"-trimpath",
 		"-gcflags='all=-N -l'",
-		fmt.Sprintf("-ldflags='-s -w -X github.com/atomix/runtime/pkg/version.version=%s'", runtimeVersion),
-		"-o", "/build/dist/bin/atomix-proxy",
-		"./cmd/atomix-proxy")
+		fmt.Sprintf("-ldflags='-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s'", sdkVersion),
+		"-o", "/build/dist/bin/atomix-runtime-proxy",
+		"./cmd/atomix-runtime-proxy")
 	if err != nil {
 		return err
 	}
 
-	builder := newPluginBuilder(cmd, proxyModFile, runtimeVersion)
+	builder := newPluginBuilder(cmd, proxyModFile, sdkVersion)
 	for _, plugin := range config.Plugins {
 		if err := builder.Build(plugin); err != nil {
 			return err
@@ -161,7 +161,7 @@ func (b *Builder) buildPlugin(plugin PluginConfig, dir string) error {
 		"-trimpath",
 		"-buildmode=plugin",
 		"-gcflags='all=-N -l'",
-		fmt.Sprintf("-ldflags='-s -w -X github.com/atomix/runtime/pkg/version.version=%s'", b.runtimeVersion),
+		fmt.Sprintf("-ldflags='-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s'", b.runtimeVersion),
 		"-o", fmt.Sprintf("/build/dist/plugins/%s@%s.so", plugin.Name, plugin.Version),
 		"./plugin")
 	if err != nil {

@@ -9,7 +9,6 @@ WORKDIR /build
 
 COPY ./go.mod /build
 COPY ./go.sum /build
-COPY ./api /build/api
 COPY ./cmd /build/cmd
 COPY ./pkg /build/pkg
 
@@ -17,7 +16,7 @@ RUN go mod download
 
 COPY ./build.yaml /build
 
-RUN go run ./cmd/atomix-proxy-build --config build.yaml
+RUN go run ./cmd/atomix-runtime-proxy-build --config build.yaml
 
 FROM alpine:3.15
 
@@ -27,7 +26,7 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 
 USER atomix
 
-COPY --from=build /build/dist/bin/atomix-proxy /usr/local/bin/atomix-proxy
+COPY --from=build /build/dist/bin/atomix-runtime-proxy /usr/local/bin/atomix-runtime-proxy
 COPY --from=build /build/dist/plugins/ /var/atomix/plugins/
 
 ENTRYPOINT ["atomix-proxy"]

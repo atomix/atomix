@@ -6,17 +6,17 @@ VERSION := latest
 
 .PHONY: build
 build:
-	docker build . -t atomix/proxy:latest
+	docker build . -t atomix/runtime-proxy:latest
 
 .PHONY: release
 release: build
-	docker tag atomix/proxy:latest atomix/proxy:$(VERSION)
-	docker push atomix/proxy:latest
-	docker push atomix/proxy:$(VERSION)
+	docker tag atomix/runtime-proxy:latest atomix/runtime-proxy:$(VERSION)
+	docker push atomix/runtime-proxy:latest
+	docker push atomix/runtime-proxy:$(VERSION)
 
 kind: build
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
-	kind load docker-image atomix/proxy:latest
+	kind load docker-image atomix/runtime-proxy:latest
 
 .PHONY: api
 api:
