@@ -3,15 +3,20 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build:
-	go build ./...
+build: api controller proxy sdk
 
 .PHONY: api
 api:
-	$(MAKE) -C api
+	$(MAKE) -C api build
 
-reuse-tool: # @HELP install reuse if not present
-	command -v reuse || python3 -m pip install reuse
+.PHONY: controller
+controller:
+	$(MAKE) -C controller build
 
-license: reuse-tool # @HELP run license checks
-	reuse lint
+.PHONY: proxy
+proxy:
+	$(MAKE) -C proxy build
+
+.PHONY: sdk
+sdk:
+	$(MAKE) -C sdk build
