@@ -1,0 +1,21 @@
+apiVersion: atomix.io/v1beta1
+kind: Profile
+metadata:
+  name: example-profile
+  namespace: default
+spec:
+  bindings:
+    - name: eventually-consistent
+      store:
+        namespace: default
+        name: example-store
+      primitives:
+        - kinds:
+            - Map
+          apiVersions:
+            - v1
+          names:
+            - '*'
+          tags:
+            foo: bar
+            bar: baz

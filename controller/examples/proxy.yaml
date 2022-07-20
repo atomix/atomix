@@ -1,0 +1,18 @@
+apiVersion: atomix.io/v1beta1
+kind: Proxy
+metadata:
+  name: example-proxy
+  namespace: default
+spec:
+  pod:
+    name: example-pod
+    namespace: default
+  profile:
+    name: example-profile
+    namespace: default
+status:
+  ready: true | false
+  bindings:
+    - name: eventually-consistent
+      state: Unbound | Bound
+      version: abcd

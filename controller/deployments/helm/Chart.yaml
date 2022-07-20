@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v2
+name: atomix-controller
+description: The core Atomix runtime controller implements the Atomix Cloud runtime API
+kubeVersion: ">=1.17.0"
+type: application
+version: 0.6.9
+appVersion: v0.6.2
+keywords:
+- atomix
+home: https://atomix.io
+maintainers:
+- name: Jordan Halterman
+  email: jordan.halterman@intel.com

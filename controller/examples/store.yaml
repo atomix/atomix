@@ -1,0 +1,12 @@
+apiVersion: atomix.io/v1beta1
+kind: Store
+metadata:
+  name: example-store
+  namespace: default
+spec:
+  driver:
+    name: memory
+    version: v1beta1
+  config:
+    foo: bar
+    bar: baz

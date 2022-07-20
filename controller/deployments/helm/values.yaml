@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+replicas: 1
+
+controller:
+  image:
+    registry: ""
+    repository: atomix/controller
+    tag: latest
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+
+init:
+  image:
+    registry: ""
+    repository: atomix/controller-init-certs
+    tag: latest
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+
+proxy:
+  image:
+    registry: ""
+    repository: atomix/proxy
+    tag: latest
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+  runtimeVersion: v0.0.0
