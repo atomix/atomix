@@ -7,7 +7,7 @@ replicas: 1
 controller:
   image:
     registry: ""
-    repository: atomix/controller
+    repository: atomix/runtime-controller
     tag: latest
     pullPolicy: IfNotPresent
     pullSecrets: []
@@ -15,7 +15,7 @@ controller:
 init:
   image:
     registry: ""
-    repository: atomix/controller-init-certs
+    repository: atomix/runtime-controller-init
     tag: latest
     pullPolicy: IfNotPresent
     pullSecrets: []
@@ -23,7 +23,7 @@ init:
 proxy:
   image:
     registry: ""
-    repository: atomix/proxy
+    repository: atomix/runtime-proxy
     tag: latest
     pullPolicy: IfNotPresent
     pullSecrets: []

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 apiVersion: v2
-name: atomix-controller
+name: atomix-runtime-controller
 description: The core Atomix runtime controller implements the Atomix Cloud runtime API
 kubeVersion: ">=1.17.0"
 type: application

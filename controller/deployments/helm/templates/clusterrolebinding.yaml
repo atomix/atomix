@@ -5,12 +5,12 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "atomix-controller.fullname" . }}
+  name: {{ template "atomix-runtime-controller.fullname" . }}
 subjects:
 - kind: ServiceAccount
-  name: {{ template "atomix-controller.fullname" . }}
+  name: {{ template "atomix-runtime-controller.fullname" . }}
   namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: {{ template "atomix-controller.fullname" . }}
+  name: {{ template "atomix-runtime-controller.fullname" . }}
   apiGroup: rbac.authorization.k8s.io
