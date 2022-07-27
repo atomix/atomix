@@ -59,7 +59,7 @@ spec:
           exec:
             command:
             - stat
-            - /tmp/atomix-runtime-controller-ready
+            - /tmp/atomix-controller-ready
           initialDelaySeconds: 4
           periodSeconds: 10
           failureThreshold: 1

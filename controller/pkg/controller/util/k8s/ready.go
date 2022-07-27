@@ -6,7 +6,7 @@ package k8s
 
 import "os"
 
-const fileName = "/tmp/atomix-runtime-controller-ready"
+const fileName = "/tmp/atomix-controller-ready"
 
 // Ready holds state about whether the operator is ready and communicates that
 // to a Kubernetes readiness probe.
