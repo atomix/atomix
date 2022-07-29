@@ -71,8 +71,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkY
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
 github.com/atomix/runtime/api v0.1.0 h1:a69urodDoEVD5t7aRL4bpzGdHSkLEuIR5frUutRddAQ=
 github.com/atomix/runtime/api v0.1.0/go.mod h1:X16epZsQDGX+SI+atLVMMXW/qn8F9IPXQ49Hp2qTkZE=
-github.com/atomix/runtime/proxy v0.1.0 h1:I/a9iz5DmugBFBFTcsqtd1MiUUWYWtDQX/UL/Afggew=
-github.com/atomix/runtime/proxy v0.1.0/go.mod h1:RX21B1tbTs+HwVde+eAv9ZTAVxgwh5X6kaFWsa+CBac=
+github.com/atomix/runtime/proxy v0.1.1 h1:y7OCe6Zx3cd3eh+VBY7rDcJonQZGqcgLC5pBu/dtS6o=
+github.com/atomix/runtime/proxy v0.1.1/go.mod h1:0IFIcipKidd2BWp6VohIBKdpn1gZuCAqP8A8lHxvRIc=
 github.com/atomix/runtime/sdk v0.1.0 h1:KRlaimBBLPcoMJ6wY6yGtxNE0o9pEddaULnPINvTbSU=
 github.com/atomix/runtime/sdk v0.1.0/go.mod h1:ULoq8ombjqD1WgAXOXoTkDW3zENdwIcoSLoddPPj22E=
 github.com/benbjohnson/clock v1.0.3/go.mod h1:bGMdMPoPVvcYyt1gHDf4J2KE153Yf9BuiUKYMaxlTDM=

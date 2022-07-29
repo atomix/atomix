@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/atomix/runtime/api v0.1.0
-	github.com/atomix/runtime/proxy v0.1.0
+	github.com/atomix/runtime/proxy v0.1.1
 	github.com/atomix/runtime/sdk v0.1.0
 	github.com/go-logr/logr v1.2.0
 	github.com/spf13/cobra v1.4.0
