@@ -39,8 +39,6 @@ dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/atomix/runtime v0.0.0-20220720010104-14e74804e877 h1:ARETTps8TXYBpNfXdXNi5FQgCINLAa5vxF0KD7WO57c=
-github.com/atomix/runtime v0.0.0-20220720010104-14e74804e877/go.mod h1:GJbsO/TtrCWEVoqZV3TxyxdRirYw6PE4yJ8agBau3wk=
 github.com/atomix/runtime/api v0.1.0 h1:a69urodDoEVD5t7aRL4bpzGdHSkLEuIR5frUutRddAQ=
 github.com/atomix/runtime/api v0.1.0/go.mod h1:X16epZsQDGX+SI+atLVMMXW/qn8F9IPXQ49Hp2qTkZE=
 github.com/atomix/runtime/sdk v0.1.0 h1:KRlaimBBLPcoMJ6wY6yGtxNE0o9pEddaULnPINvTbSU=

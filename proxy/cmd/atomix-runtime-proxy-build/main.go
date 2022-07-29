@@ -6,8 +6,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/atomix/runtime/pkg/logging"
 	"github.com/atomix/runtime/proxy/cmd/atomix-runtime-proxy-build/build"
+	"github.com/atomix/runtime/sdk/pkg/logging"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
