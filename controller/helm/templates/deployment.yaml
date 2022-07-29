@@ -80,8 +80,6 @@ spec:
               fieldPath: metadata.namespace
         - name: PROXY_IMAGE
           value: {{ include "atomix-runtime-controller.imagename" .Values.proxy.image | quote }}
-        - name: RUNTIME_VERSION
-          value: {{ .Values.proxy.runtimeVersion }}
         volumeMounts:
         - name: certs
           mountPath: /tmp/k8s-webhook-server/serving-certs

@@ -27,4 +27,3 @@ proxy:
     tag: latest
     pullPolicy: IfNotPresent
     pullSecrets: []
-  runtimeVersion: v0.0.0
