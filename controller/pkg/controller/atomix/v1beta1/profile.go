@@ -6,8 +6,8 @@ package v1beta1
 
 import (
 	"context"
-	"github.com/atomix/proxy/pkg/proxy"
 	atomixv1beta1 "github.com/atomix/runtime/controller/pkg/apis/atomix/v1beta1"
+	"github.com/atomix/runtime/proxy/pkg/proxy"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

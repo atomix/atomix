@@ -5,7 +5,7 @@
 package v1beta1
 
 import (
-	"github.com/atomix/runtime/pkg/logging"
+	"github.com/atomix/runtime/sdk/pkg/logging"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"

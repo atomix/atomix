@@ -7,7 +7,7 @@ package v1beta1
 import (
 	"context"
 	"fmt"
-	proxyv1 "github.com/atomix/proxy/api/atomix/proxy/v1"
+	proxyv1 "github.com/atomix/runtime/api/atomix/proxy/v1"
 	atomixv1beta1 "github.com/atomix/runtime/controller/pkg/apis/atomix/v1beta1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

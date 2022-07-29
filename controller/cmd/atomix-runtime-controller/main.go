@@ -10,7 +10,7 @@ import (
 	"github.com/atomix/runtime/controller/pkg/apis"
 	corev1beta1 "github.com/atomix/runtime/controller/pkg/controller/atomix/v1beta1"
 	"github.com/atomix/runtime/controller/pkg/controller/util/k8s"
-	"github.com/atomix/runtime/pkg/logging"
+	"github.com/atomix/runtime/sdk/pkg/logging"
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 	"os"

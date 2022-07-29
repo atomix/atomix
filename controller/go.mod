@@ -3,9 +3,9 @@ module github.com/atomix/runtime/controller
 go 1.18
 
 require (
-	github.com/atomix/proxy v0.0.0-20220706102839-cca18a01c5a5
-	github.com/atomix/proxy/api v0.0.0-20220706021812-1ee94c6dc73c
-	github.com/atomix/runtime v0.0.0-20220706102709-8e80cf86d1f5
+	github.com/atomix/runtime/api v0.1.0
+	github.com/atomix/runtime/proxy v0.1.0
+	github.com/atomix/runtime/sdk v0.1.0
 	github.com/go-logr/logr v1.2.0
 	github.com/spf13/cobra v1.4.0
 	google.golang.org/grpc v1.46.0
@@ -19,7 +19,6 @@ require (
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/atomix/runtime/api v0.0.0-20220706095609-037e0d309067 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
