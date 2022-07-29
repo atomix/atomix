@@ -11,7 +11,7 @@ webhooks:
     rules:
       - operations: ["CREATE"]
         apiGroups: ["atomix.io"]
-        apiVersions: ["v1beta1"]
+        apiVersions: ["v3beta1"]
         resources: ["stores"]
         scope: Namespaced
     clientConfig:

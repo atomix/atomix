@@ -7,7 +7,7 @@ name: atomix-runtime-controller
 description: The core Atomix runtime controller implements the Atomix Cloud runtime API
 kubeVersion: ">=1.17.0"
 type: application
-version: 1.0.0
+version: 1.1.0
 appVersion: v0.1.1
 keywords:
 - atomix

@@ -7,7 +7,7 @@ package v1beta1
 import (
 	"context"
 	"fmt"
-	atomixv1beta1 "github.com/atomix/runtime/controller/pkg/apis/atomix/v1beta1"
+	atomixv3beta1 "github.com/atomix/runtime/controller/pkg/apis/atomix/v3beta1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,7 +48,7 @@ func addPodController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to Proxies
-	err = c.Watch(&source.Kind{Type: &atomixv1beta1.Proxy{}}, &handler.EnqueueRequestForOwner{
+	err = c.Watch(&source.Kind{Type: &atomixv3beta1.Proxy{}}, &handler.EnqueueRequestForOwner{
 		OwnerType: &corev1.Pod{},
 	})
 	if err != nil {
@@ -56,7 +56,7 @@ func addPodController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to Profiles
-	err = c.Watch(&source.Kind{Type: &atomixv1beta1.Profile{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+	err = c.Watch(&source.Kind{Type: &atomixv3beta1.Profile{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
 		podList := &corev1.PodList{}
 		if err := mgr.GetClient().List(context.Background(), podList, &client.ListOptions{Namespace: object.GetNamespace()}); err != nil {
 			log.Error(err)
@@ -111,7 +111,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 		Namespace: pod.Namespace,
 		Name:      profileName,
 	}
-	profile := &atomixv1beta1.Profile{}
+	profile := &atomixv3beta1.Profile{}
 	if err := r.client.Get(ctx, profileNamespacedName, profile); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err)
@@ -124,14 +124,14 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 		Namespace: pod.Namespace,
 		Name:      pod.Name,
 	}
-	proxy := &atomixv1beta1.Proxy{}
+	proxy := &atomixv3beta1.Proxy{}
 	if err := r.client.Get(ctx, proxyNamespacedName, proxy); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err)
 			return reconcile.Result{}, err
 		}
 
-		proxy = &atomixv1beta1.Proxy{
+		proxy = &atomixv3beta1.Proxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: proxyNamespacedName.Namespace,
 				Name:      proxyNamespacedName.Name,
@@ -167,7 +167,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 	}
 
 	for _, binding := range proxy.Status.Bindings {
-		if binding.State != atomixv1beta1.BindingBound {
+		if binding.State != atomixv3beta1.BindingBound {
 			if ok, err := r.setAtomixCondition(pod, corev1.ConditionFalse, "Configuring", fmt.Sprintf("Configuring binding '%s'", binding.Name)); err != nil {
 				log.Error(err)
 				return reconcile.Result{}, err

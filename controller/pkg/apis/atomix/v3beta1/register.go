@@ -4,10 +4,10 @@
 
 // NOTE: Boilerplate only.  Ignore this file.
 
-// Package v1beta1 contains API Schema definitions for the cloud v1beta1 API group
+// Package v3beta1 contains API Schema definitions for the cloud v3beta1 API group
 // +k8s:deepcopy-gen=package,register
 // +groupName=atomix.io
-package v1beta1
+package v3beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +16,7 @@ import (
 )
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: "atomix.io", Version: "v1beta1"}
+var SchemeGroupVersion = schema.GroupVersion{Group: "atomix.io", Version: "v3beta1"}
 
 // Kind takes an unqualified kind and returns back a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {

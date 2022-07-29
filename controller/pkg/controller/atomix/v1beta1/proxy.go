@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 	proxyv1 "github.com/atomix/runtime/api/atomix/proxy/v1"
-	atomixv1beta1 "github.com/atomix/runtime/controller/pkg/apis/atomix/v1beta1"
+	atomixv3beta1 "github.com/atomix/runtime/controller/pkg/apis/atomix/v3beta1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	corev1 "k8s.io/api/core/v1"
@@ -90,14 +90,14 @@ func addProxyController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to Proxies
-	err = c.Watch(&source.Kind{Type: &atomixv1beta1.Proxy{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &atomixv3beta1.Proxy{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to Profiles
-	err = c.Watch(&source.Kind{Type: &atomixv1beta1.Profile{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
-		proxyList := &atomixv1beta1.ProxyList{}
+	err = c.Watch(&source.Kind{Type: &atomixv3beta1.Profile{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+		proxyList := &atomixv3beta1.ProxyList{}
 		if err := mgr.GetClient().List(context.Background(), proxyList, &client.ListOptions{Namespace: object.GetNamespace()}); err != nil {
 			log.Error(err)
 			return nil
@@ -121,8 +121,8 @@ func addProxyController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to Stores
-	err = c.Watch(&source.Kind{Type: &atomixv1beta1.Store{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
-		proxyList := &atomixv1beta1.ProxyList{}
+	err = c.Watch(&source.Kind{Type: &atomixv3beta1.Store{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+		proxyList := &atomixv3beta1.ProxyList{}
 		if err := mgr.GetClient().List(context.Background(), proxyList); err != nil {
 			log.Error(err)
 			return nil
@@ -156,7 +156,7 @@ type ProxyReconciler struct {
 // Reconcile reconciles Proxy resources
 func (r *ProxyReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Infof("Reconciling Proxy '%s'", request.NamespacedName)
-	proxy := &atomixv1beta1.Proxy{}
+	proxy := &atomixv3beta1.Proxy{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, proxy)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -183,7 +183,7 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, request reconcile.Reque
 		Namespace: proxy.Namespace,
 		Name:      proxy.Profile.Name,
 	}
-	profile := &atomixv1beta1.Profile{}
+	profile := &atomixv3beta1.Profile{}
 	if err := r.client.Get(ctx, profileNamespacedName, profile); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err)
@@ -202,10 +202,10 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, request reconcile.Reque
 	return reconcile.Result{}, nil
 }
 
-func (r *ProxyReconciler) setStatus(ctx context.Context, proxy *atomixv1beta1.Proxy) error {
+func (r *ProxyReconciler) setStatus(ctx context.Context, proxy *atomixv3beta1.Proxy) error {
 	ready := true
 	for _, status := range proxy.Status.Bindings {
-		if status.State != atomixv1beta1.BindingBound {
+		if status.State != atomixv3beta1.BindingBound {
 			ready = false
 			break
 		}
@@ -214,7 +214,7 @@ func (r *ProxyReconciler) setStatus(ctx context.Context, proxy *atomixv1beta1.Pr
 	return r.client.Status().Update(ctx, proxy)
 }
 
-func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod, proxy *atomixv1beta1.Proxy, binding atomixv1beta1.ProfileBinding) (bool, error) {
+func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod, proxy *atomixv3beta1.Proxy, binding atomixv3beta1.ProfileBinding) (bool, error) {
 	storeNamespace := binding.Store.Namespace
 	if storeNamespace == "" {
 		storeNamespace = proxy.Namespace
@@ -223,7 +223,7 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 		Namespace: storeNamespace,
 		Name:      binding.Store.Name,
 	}
-	store := &atomixv1beta1.Store{}
+	store := &atomixv3beta1.Store{}
 	if err := r.client.Get(ctx, storeNamespacedName, store); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err)
@@ -233,7 +233,7 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 		for i, status := range proxy.Status.Bindings {
 			if status.Name == binding.Name {
 				switch status.State {
-				case atomixv1beta1.BindingBound:
+				case atomixv3beta1.BindingBound:
 					// Disconnect the binding in the pod
 					conn, err := connect(ctx, pod)
 					if err != nil {
@@ -258,7 +258,7 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 					r.events.Eventf(pod, "Normal", "DisconnectStoreSucceeded", "Successfully disconnected from store '%s'", storeNamespacedName)
 
 					// Update the binding status
-					status.State = atomixv1beta1.BindingUnbound
+					status.State = atomixv3beta1.BindingUnbound
 					status.Version = ""
 					proxy.Status.Bindings[i] = status
 					if err := r.setStatus(ctx, proxy); err != nil {
@@ -276,7 +276,7 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 	for i, status := range proxy.Status.Bindings {
 		if status.Name == binding.Name {
 			switch status.State {
-			case atomixv1beta1.BindingUnbound:
+			case atomixv3beta1.BindingUnbound:
 				// Connect the binding in the pod
 				conn, err := connect(ctx, pod)
 				if err != nil {
@@ -306,7 +306,7 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 				r.events.Eventf(pod, "Normal", "ConnectStoreSucceeded", "Successfully connected to store '%s'", storeNamespacedName)
 
 				// Update the binding status
-				status.State = atomixv1beta1.BindingBound
+				status.State = atomixv3beta1.BindingBound
 				status.Version = store.ResourceVersion
 				proxy.Status.Bindings[i] = status
 				if err := r.setStatus(ctx, proxy); err != nil {
@@ -314,7 +314,7 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 					return false, err
 				}
 				return true, nil
-			case atomixv1beta1.BindingBound:
+			case atomixv3beta1.BindingBound:
 				if status.Version != store.ResourceVersion {
 					// Configure the binding in the pod
 					conn, err := connect(ctx, pod)
@@ -354,9 +354,9 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 		}
 	}
 
-	status := atomixv1beta1.BindingStatus{
+	status := atomixv3beta1.BindingStatus{
 		Name:  binding.Name,
-		State: atomixv1beta1.BindingUnbound,
+		State: atomixv3beta1.BindingUnbound,
 	}
 	proxy.Status.Bindings = append(proxy.Status.Bindings, status)
 	if err := r.setStatus(ctx, proxy); err != nil {

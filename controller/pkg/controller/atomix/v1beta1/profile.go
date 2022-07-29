@@ -6,7 +6,7 @@ package v1beta1
 
 import (
 	"context"
-	atomixv1beta1 "github.com/atomix/runtime/controller/pkg/apis/atomix/v1beta1"
+	atomixv3beta1 "github.com/atomix/runtime/controller/pkg/apis/atomix/v3beta1"
 	"github.com/atomix/runtime/proxy/pkg/proxy"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -42,14 +42,14 @@ func addProfileController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to Profiles
-	err = c.Watch(&source.Kind{Type: &atomixv1beta1.Profile{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &atomixv3beta1.Profile{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to ConfigMap
 	err = c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForOwner{
-		OwnerType: &atomixv1beta1.Profile{},
+		OwnerType: &atomixv3beta1.Profile{},
 	})
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ type ProfileReconciler struct {
 // Reconcile reconciles Profile resources
 func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Infof("Reconciling Profile '%s'", request.NamespacedName)
-	profile := &atomixv1beta1.Profile{}
+	profile := &atomixv3beta1.Profile{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, profile)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {

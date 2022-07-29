@@ -1,4 +1,4 @@
-apiVersion: atomix.io/v1beta1
+apiVersion: atomix.io/v3beta1
 kind: Proxy
 metadata:
   name: example-proxy
