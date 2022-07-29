@@ -2,7 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-VERSION ?= latest
+ifdef TAG
+VERSION := $(word 2, $(subst /, , $(TAG)))
+endif
 
 .PHONY: build
 build: build-controller build-controller-init
@@ -17,14 +19,18 @@ build-controller-init:
 release: build release-controller release-controller-init
 
 release-controller:
-	docker tag atomix/runtime-controller:latest atomix/runtime-controller:$(VERSION)
 	docker push atomix/runtime-controller:latest
+ifdef TAG
+	docker tag atomix/runtime-controller:latest atomix/runtime-controller:$(VERSION)
 	docker push atomix/runtime-controller:$(VERSION)
+endif
 
 release-controller-init:
-	docker tag atomix/runtime-controller-init:latest atomix/runtime-controller-init:$(VERSION)
 	docker push atomix/runtime-controller-init:latest
+ifdef TAG
+	docker tag atomix/runtime-controller-init:latest atomix/runtime-controller-init:$(VERSION)
 	docker push atomix/runtime-controller-init:$(VERSION)
+endif
 
 kind: build
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi

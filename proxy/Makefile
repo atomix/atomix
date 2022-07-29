@@ -2,7 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-VERSION ?= latest
+ifdef TAG
+VERSION := $(word 2, $(subst /, , $(TAG)))
+endif
 
 .PHONY: build
 build:
@@ -10,9 +12,11 @@ build:
 
 .PHONY: release
 release: build
-	docker tag atomix/runtime-proxy:latest atomix/runtime-proxy:$(VERSION)
 	docker push atomix/runtime-proxy:latest
+ifdef TAG
+	docker tag atomix/runtime-proxy:latest atomix/runtime-proxy:$(VERSION)
 	docker push atomix/runtime-proxy:$(VERSION)
+endif
 
 kind: build
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
