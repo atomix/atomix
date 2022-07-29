@@ -15,4 +15,5 @@ jobs:
         with:
           fetch-depth: 0
       - name: Build
-        run: make proxy
+        working-directory: proxy
+        run: make build

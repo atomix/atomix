@@ -26,4 +26,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Build
-        run: make api
+        working-directory: api
+        run: make build
