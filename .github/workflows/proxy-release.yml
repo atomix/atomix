@@ -6,7 +6,7 @@ on:
       - 'proxy/v*'
 
 jobs:
-  release:
+  push-docker-images:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout

@@ -6,7 +6,7 @@ on:
       - 'controller/v*'
 
 jobs:
-  release:
+  push-docker-images:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -23,7 +23,8 @@ jobs:
         run: make release
         env:
           TAG: ${{ github.ref_name }}
-  publish:
+  publish-helm-chart:
+    needs: push-docker-images
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
