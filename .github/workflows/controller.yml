@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'master'
+    paths:
+      - 'controller/**'
   pull_request:
 
 jobs:
