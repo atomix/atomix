@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	github.com/atomix/runtime v0.0.0-20220720010104-14e74804e877
-	github.com/atomix/runtime/api v0.0.0-20220720013020-6146e7ecb7cb
-	github.com/atomix/runtime/sdk v0.0.0-20220720012556-f7cb9963f38a
+	github.com/atomix/runtime/api v0.1.0
+	github.com/atomix/runtime/sdk v0.1.0
 	github.com/rogpeppe/go-internal v1.8.1
 	github.com/spf13/cobra v1.4.0
 	google.golang.org/grpc v1.46.0
