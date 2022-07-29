@@ -22,5 +22,4 @@ jobs:
         working-directory: controller
         run: make release
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          VERSION: ${{ github.ref }}
+          VERSION: ${{ github.ref_name }}
