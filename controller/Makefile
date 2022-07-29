@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+VERSION ?= latest
+
 .PHONY: build
 build: build-controller build-controller-init
 

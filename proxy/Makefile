@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-VERSION := latest
+VERSION ?= latest
 
 .PHONY: build
 build:
