@@ -6,15 +6,14 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.runtime.indexedmap.v1;
+package atomix.runtime.atomic.map.v1;
 
 import "google/protobuf/duration.proto";
 import "atomix/runtime/v1/primitive.proto";
-import "atomix/runtime/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
-// IndexedMap is a service for a sorted/indexed map primitive
-service IndexedMap {
+// AtomicMap is a service for a map primitive
+service AtomicMap {
     // Create creates the map
     rpc Create (CreateRequest) returns (CreateResponse);
 
@@ -24,8 +23,11 @@ service IndexedMap {
     // Size returns the size of the map
     rpc Size (SizeRequest) returns (SizeResponse);
 
-    // Append appends an entry to the map
-    rpc Append (AppendRequest) returns (AppendResponse);
+    // Put puts an entry into the map
+    rpc Put (PutRequest) returns (PutResponse);
+
+    // Insert inserts an entry into the map
+    rpc Insert (InsertRequest) returns (InsertResponse);
 
     // Update updates an entry in the map
     rpc Update (UpdateRequest) returns (UpdateResponse);
@@ -33,36 +35,23 @@ service IndexedMap {
     // Get gets the entry for a key
     rpc Get (GetRequest) returns (GetResponse);
 
-    // FirstEntry gets the first entry in the map
-    rpc FirstEntry (FirstEntryRequest) returns (FirstEntryResponse);
-
-    // LastEntry gets the last entry in the map
-    rpc LastEntry (LastEntryRequest) returns (LastEntryResponse);
-
-    // PrevEntry gets the previous entry in the map
-    rpc PrevEntry (PrevEntryRequest) returns (PrevEntryResponse);
-
-    // NextEntry gets the next entry in the map
-    rpc NextEntry (NextEntryRequest) returns (NextEntryResponse);
-
     // Remove removes an entry from the map
     rpc Remove (RemoveRequest) returns (RemoveResponse);
 
     // Clear removes all entries from the map
     rpc Clear (ClearRequest) returns (ClearResponse);
 
+    // Lock locks a key in the map
+    rpc Lock(LockRequest) returns (LockResponse);
+
+    // Unlock unlocks a key in the map
+    rpc Unlock(UnlockRequest) returns (UnlockResponse);
+
     // Events listens for change events
     rpc Events (EventsRequest) returns (stream EventsResponse);
 
     // Entries lists all entries in the map
     rpc Entries (EntriesRequest) returns (stream EntriesResponse);
-}
-
-message SizeRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
 }
 
 message CreateRequest {
@@ -88,11 +77,32 @@ message CloseResponse {
 
 }
 
+message SizeRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
 message SizeResponse {
     uint32 size = 1;
 }
 
-message AppendRequest {
+message PutRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    Value value = 3;
+    uint64 version = 4;
+}
+
+message PutResponse {
+    uint64 version = 1;
+}
+
+message InsertRequest {
     atomix.runtime.v1.PrimitiveId id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
@@ -101,8 +111,8 @@ message AppendRequest {
     Value value = 3;
 }
 
-message AppendResponse {
-    Entry entry = 1;
+message InsertResponse {
+    uint64 version = 1;
 }
 
 message UpdateRequest {
@@ -111,13 +121,12 @@ message UpdateRequest {
         (gogoproto.nullable) = false
     ];
     string key = 2;
-    uint64 index = 3;
-    Value value = 4;
-    atomix.runtime.v1.Timestamp if_timestamp = 5;
+    Value value = 3;
+    uint64 version = 4;
 }
 
 message UpdateResponse {
-    Entry entry = 1;
+    uint64 version = 1;
 }
 
 message GetRequest {
@@ -126,57 +135,12 @@ message GetRequest {
         (gogoproto.nullable) = false
     ];
     string key = 2;
-    uint64 index = 3;
 }
 
 message GetResponse {
-    Entry entry = 1;
-}
-
-message FirstEntryRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
-        (gogoproto.customname) = "ID",
+    Entry entry = 1 [
         (gogoproto.nullable) = false
     ];
-}
-
-message FirstEntryResponse {
-    Entry entry = 1;
-}
-
-message LastEntryRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-}
-
-message LastEntryResponse {
-    Entry entry = 1;
-}
-
-message PrevEntryRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    uint64 index = 2;
-}
-
-message PrevEntryResponse {
-    Entry entry = 1;
-}
-
-message NextEntryRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    uint64 index = 2;
-}
-
-message NextEntryResponse {
-    Entry entry = 1;
 }
 
 message RemoveRequest {
@@ -185,12 +149,14 @@ message RemoveRequest {
         (gogoproto.nullable) = false
     ];
     string key = 2;
-    uint64 index = 3;
-    atomix.runtime.v1.Timestamp if_timestamp = 4;
+    uint64 version = 3;
 }
 
 message RemoveResponse {
-    Entry entry = 1;
+    Value value = 1 [
+        (gogoproto.nullable) = false
+    ];
+    uint64 version = 2;
 }
 
 message ClearRequest {
@@ -202,6 +168,33 @@ message ClearRequest {
 
 message ClearResponse {
 
+}
+
+message LockRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated string keys = 2;
+    google.protobuf.Duration timeout = 3 [
+        (gogoproto.stdduration) = true
+    ];
+}
+
+message LockResponse {
+    uint64 version = 1;
+}
+
+message UnlockRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated string keys = 2;
+}
+
+message UnlockResponse {
+    uint64 version = 1;
 }
 
 message EntriesRequest {
@@ -227,7 +220,7 @@ message EventsRequest {
 }
 
 message EventsResponse {
-    Event event = 1 [
+    Event event = 2 [
         (gogoproto.nullable) = false
     ];
 }
@@ -243,8 +236,13 @@ message Event {
         INSERT = 1;
         UPDATE = 2;
         REMOVE = 3;
-        REPLAY = 4;
     }
+}
+
+message Entry {
+    string key = 1;
+    Value value = 2;
+    uint64 version = 3;
 }
 
 message Value {
@@ -253,11 +251,4 @@ message Value {
         (gogoproto.customname) = "TTL",
         (gogoproto.stdduration) = true
     ];
-}
-
-message Entry {
-    string key = 1;
-    uint64 index = 2;
-    Value value = 3;
-    atomix.runtime.v1.Timestamp timestamp = 4;
 }

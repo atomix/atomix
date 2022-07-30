@@ -6,13 +6,13 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.runtime.value.v1;
+package atomix.runtime.atomic.value.v1;
 
 import "atomix/runtime/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 
-// Value is a service for a value primitive
-service Value {
+// AtomicValue is a service for a value primitive
+service AtomicValue {
     // Create creates the value
     rpc Create (CreateRequest) returns (CreateResponse);
 
@@ -21,6 +21,9 @@ service Value {
 
     // Set sets the value
     rpc Set (SetRequest) returns (SetResponse);
+
+    // Update updates the value
+    rpc Update (UpdateRequest) returns (UpdateResponse);
 
     // Get gets the value
     rpc Get (GetRequest) returns (GetResponse);
@@ -60,7 +63,7 @@ message GetRequest {
 }
 
 message GetResponse {
-    bytes value = 1;
+    Value value = 1;
 }
 
 message SetRequest {
@@ -72,7 +75,20 @@ message SetRequest {
 }
 
 message SetResponse {
-    bytes value = 1;
+    uint64 version = 1;
+}
+
+message UpdateRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    bytes value = 2;
+    uint64 version = 3;
+}
+
+message UpdateResponse {
+    uint64 version = 1;
 }
 
 message EventsRequest {
@@ -88,9 +104,14 @@ message EventsResponse {
     ];
 }
 
+message Value {
+    bytes value = 1;
+    uint64 version = 2;
+}
+
 message Event {
     Type type = 1;
-    bytes value = 2;
+    Value value = 2;
 
     enum Type {
         NONE = 0;

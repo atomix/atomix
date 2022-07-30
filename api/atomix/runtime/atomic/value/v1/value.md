@@ -3,35 +3,39 @@
 
 ## Table of Contents
 
-- [atomix/runtime/counter/v1/counter.proto](#atomix_runtime_counter_v1_counter-proto)
-    - [CloseRequest](#atomix-runtime-counter-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-counter-v1-CloseResponse)
-    - [CreateRequest](#atomix-runtime-counter-v1-CreateRequest)
-    - [CreateRequest.TagsEntry](#atomix-runtime-counter-v1-CreateRequest-TagsEntry)
-    - [CreateResponse](#atomix-runtime-counter-v1-CreateResponse)
-    - [DecrementRequest](#atomix-runtime-counter-v1-DecrementRequest)
-    - [DecrementResponse](#atomix-runtime-counter-v1-DecrementResponse)
-    - [GetRequest](#atomix-runtime-counter-v1-GetRequest)
-    - [GetResponse](#atomix-runtime-counter-v1-GetResponse)
-    - [IncrementRequest](#atomix-runtime-counter-v1-IncrementRequest)
-    - [IncrementResponse](#atomix-runtime-counter-v1-IncrementResponse)
-    - [SetRequest](#atomix-runtime-counter-v1-SetRequest)
-    - [SetResponse](#atomix-runtime-counter-v1-SetResponse)
+- [atomix/runtime/atomic/value/v1/value.proto](#atomix_runtime_atomic_value_v1_value-proto)
+    - [CloseRequest](#atomix-runtime-atomic-value-v1-CloseRequest)
+    - [CloseResponse](#atomix-runtime-atomic-value-v1-CloseResponse)
+    - [CreateRequest](#atomix-runtime-atomic-value-v1-CreateRequest)
+    - [CreateRequest.TagsEntry](#atomix-runtime-atomic-value-v1-CreateRequest-TagsEntry)
+    - [CreateResponse](#atomix-runtime-atomic-value-v1-CreateResponse)
+    - [Event](#atomix-runtime-atomic-value-v1-Event)
+    - [EventsRequest](#atomix-runtime-atomic-value-v1-EventsRequest)
+    - [EventsResponse](#atomix-runtime-atomic-value-v1-EventsResponse)
+    - [GetRequest](#atomix-runtime-atomic-value-v1-GetRequest)
+    - [GetResponse](#atomix-runtime-atomic-value-v1-GetResponse)
+    - [SetRequest](#atomix-runtime-atomic-value-v1-SetRequest)
+    - [SetResponse](#atomix-runtime-atomic-value-v1-SetResponse)
+    - [UpdateRequest](#atomix-runtime-atomic-value-v1-UpdateRequest)
+    - [UpdateResponse](#atomix-runtime-atomic-value-v1-UpdateResponse)
+    - [Value](#atomix-runtime-atomic-value-v1-Value)
   
-    - [Counter](#atomix-runtime-counter-v1-Counter)
+    - [Event.Type](#atomix-runtime-atomic-value-v1-Event-Type)
+  
+    - [AtomicValue](#atomix-runtime-atomic-value-v1-AtomicValue)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_runtime_counter_v1_counter-proto"></a>
+<a name="atomix_runtime_atomic_value_v1_value-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/runtime/counter/v1/counter.proto
+## atomix/runtime/atomic/value/v1/value.proto
 
 
 
-<a name="atomix-runtime-counter-v1-CloseRequest"></a>
+<a name="atomix-runtime-atomic-value-v1-CloseRequest"></a>
 
 ### CloseRequest
 
@@ -46,7 +50,7 @@
 
 
 
-<a name="atomix-runtime-counter-v1-CloseResponse"></a>
+<a name="atomix-runtime-atomic-value-v1-CloseResponse"></a>
 
 ### CloseResponse
 
@@ -56,7 +60,7 @@
 
 
 
-<a name="atomix-runtime-counter-v1-CreateRequest"></a>
+<a name="atomix-runtime-atomic-value-v1-CreateRequest"></a>
 
 ### CreateRequest
 
@@ -65,14 +69,14 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| tags | [CreateRequest.TagsEntry](#atomix-runtime-counter-v1-CreateRequest-TagsEntry) | repeated |  |
+| tags | [CreateRequest.TagsEntry](#atomix-runtime-atomic-value-v1-CreateRequest-TagsEntry) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-counter-v1-CreateRequest-TagsEntry"></a>
+<a name="atomix-runtime-atomic-value-v1-CreateRequest-TagsEntry"></a>
 
 ### CreateRequest.TagsEntry
 
@@ -88,7 +92,7 @@
 
 
 
-<a name="atomix-runtime-counter-v1-CreateResponse"></a>
+<a name="atomix-runtime-atomic-value-v1-CreateResponse"></a>
 
 ### CreateResponse
 
@@ -98,38 +102,53 @@
 
 
 
-<a name="atomix-runtime-counter-v1-DecrementRequest"></a>
+<a name="atomix-runtime-atomic-value-v1-Event"></a>
 
-### DecrementRequest
+### Event
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [Event.Type](#atomix-runtime-atomic-value-v1-Event-Type) |  |  |
+| value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-value-v1-EventsRequest"></a>
+
+### EventsRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| delta | [int64](#int64) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-counter-v1-DecrementResponse"></a>
+<a name="atomix-runtime-atomic-value-v1-EventsResponse"></a>
 
-### DecrementResponse
+### EventsResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
+| event | [Event](#atomix-runtime-atomic-value-v1-Event) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-counter-v1-GetRequest"></a>
+<a name="atomix-runtime-atomic-value-v1-GetRequest"></a>
 
 ### GetRequest
 
@@ -144,7 +163,7 @@
 
 
 
-<a name="atomix-runtime-counter-v1-GetResponse"></a>
+<a name="atomix-runtime-atomic-value-v1-GetResponse"></a>
 
 ### GetResponse
 
@@ -152,45 +171,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
+| value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-counter-v1-IncrementRequest"></a>
-
-### IncrementRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| delta | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-counter-v1-IncrementResponse"></a>
-
-### IncrementResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-counter-v1-SetRequest"></a>
+<a name="atomix-runtime-atomic-value-v1-SetRequest"></a>
 
 ### SetRequest
 
@@ -199,14 +187,14 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| value | [int64](#int64) |  |  |
+| value | [bytes](#bytes) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-counter-v1-SetResponse"></a>
+<a name="atomix-runtime-atomic-value-v1-SetResponse"></a>
 
 ### SetResponse
 
@@ -214,7 +202,55 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
+| version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-value-v1-UpdateRequest"></a>
+
+### UpdateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| value | [bytes](#bytes) |  |  |
+| version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-value-v1-UpdateResponse"></a>
+
+### UpdateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-value-v1-Value"></a>
+
+### Value
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [bytes](#bytes) |  |  |
+| version | [uint64](#uint64) |  |  |
 
 
 
@@ -222,24 +258,36 @@
 
  
 
- 
+
+<a name="atomix-runtime-atomic-value-v1-Event-Type"></a>
+
+### Event.Type
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NONE | 0 |  |
+| UPDATE | 1 |  |
+
 
  
 
+ 
 
-<a name="atomix-runtime-counter-v1-Counter"></a>
 
-### Counter
-Counter is a service for a counter primitive
+<a name="atomix-runtime-atomic-value-v1-AtomicValue"></a>
+
+### AtomicValue
+AtomicValue is a service for a value primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-counter-v1-CreateRequest) | [CreateResponse](#atomix-runtime-counter-v1-CreateResponse) | Create creates the counter |
-| Close | [CloseRequest](#atomix-runtime-counter-v1-CloseRequest) | [CloseResponse](#atomix-runtime-counter-v1-CloseResponse) | Close closes the counter |
-| Set | [SetRequest](#atomix-runtime-counter-v1-SetRequest) | [SetResponse](#atomix-runtime-counter-v1-SetResponse) | Set sets the counter value |
-| Get | [GetRequest](#atomix-runtime-counter-v1-GetRequest) | [GetResponse](#atomix-runtime-counter-v1-GetResponse) | Get gets the current counter value |
-| Increment | [IncrementRequest](#atomix-runtime-counter-v1-IncrementRequest) | [IncrementResponse](#atomix-runtime-counter-v1-IncrementResponse) | Increment increments the counter value |
-| Decrement | [DecrementRequest](#atomix-runtime-counter-v1-DecrementRequest) | [DecrementResponse](#atomix-runtime-counter-v1-DecrementResponse) | Decrement decrements the counter value |
+| Create | [CreateRequest](#atomix-runtime-atomic-value-v1-CreateRequest) | [CreateResponse](#atomix-runtime-atomic-value-v1-CreateResponse) | Create creates the value |
+| Close | [CloseRequest](#atomix-runtime-atomic-value-v1-CloseRequest) | [CloseResponse](#atomix-runtime-atomic-value-v1-CloseResponse) | Close closes the value |
+| Set | [SetRequest](#atomix-runtime-atomic-value-v1-SetRequest) | [SetResponse](#atomix-runtime-atomic-value-v1-SetResponse) | Set sets the value |
+| Update | [UpdateRequest](#atomix-runtime-atomic-value-v1-UpdateRequest) | [UpdateResponse](#atomix-runtime-atomic-value-v1-UpdateResponse) | Update updates the value |
+| Get | [GetRequest](#atomix-runtime-atomic-value-v1-GetRequest) | [GetResponse](#atomix-runtime-atomic-value-v1-GetResponse) | Get gets the value |
+| Events | [EventsRequest](#atomix-runtime-atomic-value-v1-EventsRequest) | [EventsResponse](#atomix-runtime-atomic-value-v1-EventsResponse) stream | Events listens for value change events |
 
  
 

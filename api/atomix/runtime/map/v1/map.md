@@ -19,16 +19,12 @@
     - [EventsResponse](#atomix-runtime-map-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-map-v1-GetRequest)
     - [GetResponse](#atomix-runtime-map-v1-GetResponse)
-    - [InsertRequest](#atomix-runtime-map-v1-InsertRequest)
-    - [InsertResponse](#atomix-runtime-map-v1-InsertResponse)
     - [PutRequest](#atomix-runtime-map-v1-PutRequest)
     - [PutResponse](#atomix-runtime-map-v1-PutResponse)
     - [RemoveRequest](#atomix-runtime-map-v1-RemoveRequest)
     - [RemoveResponse](#atomix-runtime-map-v1-RemoveResponse)
     - [SizeRequest](#atomix-runtime-map-v1-SizeRequest)
     - [SizeResponse](#atomix-runtime-map-v1-SizeResponse)
-    - [UpdateRequest](#atomix-runtime-map-v1-UpdateRequest)
-    - [UpdateResponse](#atomix-runtime-map-v1-UpdateResponse)
     - [Value](#atomix-runtime-map-v1-Value)
   
     - [Event.Type](#atomix-runtime-map-v1-Event-Type)
@@ -65,11 +61,6 @@
 
 ### ClearResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 
@@ -183,7 +174,6 @@
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [Value](#atomix-runtime-map-v1-Value) |  |  |
-| timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 
@@ -269,38 +259,6 @@
 
 
 
-<a name="atomix-runtime-map-v1-InsertRequest"></a>
-
-### InsertRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| key | [string](#string) |  |  |
-| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-map-v1-InsertResponse"></a>
-
-### InsertResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-runtime-map-v1-Entry) |  |  |
-
-
-
-
-
-
 <a name="atomix-runtime-map-v1-PutRequest"></a>
 
 ### PutRequest
@@ -312,7 +270,6 @@
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
 | value | [Value](#atomix-runtime-map-v1-Value) |  |  |
-| if_timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 
@@ -323,11 +280,6 @@
 
 ### PutResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-runtime-map-v1-Entry) |  |  |
 
 
 
@@ -344,7 +296,6 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
-| if_timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 
@@ -355,11 +306,6 @@
 
 ### RemoveResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-runtime-map-v1-Entry) |  |  |
 
 
 
@@ -396,39 +342,6 @@
 
 
 
-<a name="atomix-runtime-map-v1-UpdateRequest"></a>
-
-### UpdateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| key | [string](#string) |  |  |
-| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
-| if_timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-map-v1-UpdateResponse"></a>
-
-### UpdateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-runtime-map-v1-Entry) |  |  |
-
-
-
-
-
-
 <a name="atomix-runtime-map-v1-Value"></a>
 
 ### Value
@@ -458,7 +371,6 @@
 | INSERT | 1 |  |
 | UPDATE | 2 |  |
 | REMOVE | 3 |  |
-| REPLAY | 4 |  |
 
 
  
@@ -477,8 +389,6 @@ Map is a service for a map primitive
 | Close | [CloseRequest](#atomix-runtime-map-v1-CloseRequest) | [CloseResponse](#atomix-runtime-map-v1-CloseResponse) | Close closes the map |
 | Size | [SizeRequest](#atomix-runtime-map-v1-SizeRequest) | [SizeResponse](#atomix-runtime-map-v1-SizeResponse) | Size returns the size of the map |
 | Put | [PutRequest](#atomix-runtime-map-v1-PutRequest) | [PutResponse](#atomix-runtime-map-v1-PutResponse) | Put puts an entry into the map |
-| Insert | [InsertRequest](#atomix-runtime-map-v1-InsertRequest) | [InsertResponse](#atomix-runtime-map-v1-InsertResponse) | Insert inserts an entry into the map |
-| Update | [UpdateRequest](#atomix-runtime-map-v1-UpdateRequest) | [UpdateResponse](#atomix-runtime-map-v1-UpdateResponse) | Update updates an entry in the map |
 | Get | [GetRequest](#atomix-runtime-map-v1-GetRequest) | [GetResponse](#atomix-runtime-map-v1-GetResponse) | Get gets the entry for a key |
 | Remove | [RemoveRequest](#atomix-runtime-map-v1-RemoveRequest) | [RemoveResponse](#atomix-runtime-map-v1-RemoveResponse) | Remove removes an entry from the map |
 | Clear | [ClearRequest](#atomix-runtime-map-v1-ClearRequest) | [ClearResponse](#atomix-runtime-map-v1-ClearResponse) | Clear removes all entries from the map |

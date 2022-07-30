@@ -9,15 +9,12 @@
     - [CreateRequest](#atomix-runtime-lock-v1-CreateRequest)
     - [CreateRequest.TagsEntry](#atomix-runtime-lock-v1-CreateRequest-TagsEntry)
     - [CreateResponse](#atomix-runtime-lock-v1-CreateResponse)
-    - [GetLockRequest](#atomix-runtime-lock-v1-GetLockRequest)
-    - [GetLockResponse](#atomix-runtime-lock-v1-GetLockResponse)
-    - [LockInstance](#atomix-runtime-lock-v1-LockInstance)
+    - [IsLockedRequest](#atomix-runtime-lock-v1-IsLockedRequest)
+    - [IsLockedResponse](#atomix-runtime-lock-v1-IsLockedResponse)
     - [LockRequest](#atomix-runtime-lock-v1-LockRequest)
     - [LockResponse](#atomix-runtime-lock-v1-LockResponse)
     - [UnlockRequest](#atomix-runtime-lock-v1-UnlockRequest)
     - [UnlockResponse](#atomix-runtime-lock-v1-UnlockResponse)
-  
-    - [LockInstance.State](#atomix-runtime-lock-v1-LockInstance-State)
   
     - [Lock](#atomix-runtime-lock-v1-Lock)
   
@@ -99,47 +96,30 @@
 
 
 
-<a name="atomix-runtime-lock-v1-GetLockRequest"></a>
+<a name="atomix-runtime-lock-v1-IsLockedRequest"></a>
 
-### GetLockRequest
+### IsLockedRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| lock | [LockInstance](#atomix-runtime-lock-v1-LockInstance) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-lock-v1-GetLockResponse"></a>
+<a name="atomix-runtime-lock-v1-IsLockedResponse"></a>
 
-### GetLockResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| lock | [LockInstance](#atomix-runtime-lock-v1-LockInstance) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-lock-v1-LockInstance"></a>
-
-### LockInstance
+### IsLockedResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
-| state | [LockInstance.State](#atomix-runtime-lock-v1-LockInstance-State) |  |  |
+| locked | [bool](#bool) |  |  |
 
 
 
@@ -168,11 +148,6 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| lock | [LockInstance](#atomix-runtime-lock-v1-LockInstance) |  |  |
-
-
 
 
 
@@ -186,7 +161,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| lock | [LockInstance](#atomix-runtime-lock-v1-LockInstance) |  |  |
 
 
 
@@ -199,27 +173,10 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| lock | [LockInstance](#atomix-runtime-lock-v1-LockInstance) |  |  |
-
-
 
 
 
  
-
-
-<a name="atomix-runtime-lock-v1-LockInstance-State"></a>
-
-### LockInstance.State
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| UNLOCKED | 0 |  |
-| LOCKED | 1 |  |
-
 
  
 
@@ -237,7 +194,7 @@ Lock is a service for a lock primitive
 | Close | [CloseRequest](#atomix-runtime-lock-v1-CloseRequest) | [CloseResponse](#atomix-runtime-lock-v1-CloseResponse) | Close closes the lock |
 | Lock | [LockRequest](#atomix-runtime-lock-v1-LockRequest) | [LockResponse](#atomix-runtime-lock-v1-LockResponse) | Lock attempts to acquire the lock |
 | Unlock | [UnlockRequest](#atomix-runtime-lock-v1-UnlockRequest) | [UnlockResponse](#atomix-runtime-lock-v1-UnlockResponse) | Unlock releases the lock |
-| GetLock | [GetLockRequest](#atomix-runtime-lock-v1-GetLockRequest) | [GetLockResponse](#atomix-runtime-lock-v1-GetLockResponse) | GetLock gets the lock state |
+| IsLocked | [IsLockedRequest](#atomix-runtime-lock-v1-IsLockedRequest) | [IsLockedResponse](#atomix-runtime-lock-v1-IsLockedResponse) | IsLocked checks if the lock is locked |
 
  
 

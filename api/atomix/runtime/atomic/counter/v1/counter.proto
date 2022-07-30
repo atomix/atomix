@@ -6,13 +6,13 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.runtime.counter.v1;
+package atomix.runtime.atomic.counter.v1;
 
 import "atomix/runtime/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 
-// Counter is a service for a counter primitive
-service Counter {
+// AtomicCounter is a service for a counter primitive
+service AtomicCounter {
     // Create creates the counter
     rpc Create (CreateRequest) returns (CreateResponse);
 
@@ -21,6 +21,9 @@ service Counter {
 
     // Set sets the counter value
     rpc Set (SetRequest) returns (SetResponse);
+
+    // Update compares and updates the counter value
+    rpc Update (UpdateRequest) returns (UpdateResponse);
 
     // Get gets the current counter value
     rpc Get (GetRequest) returns (GetResponse);
@@ -90,6 +93,12 @@ message GetResponse {
     int64 value = 1;
 }
 
+message Precondition {
+    oneof precondition {
+        int64 value = 1;
+    }
+}
+
 message SetRequest {
     atomix.runtime.v1.PrimitiveId id = 1 [
         (gogoproto.customname) = "ID",
@@ -99,5 +108,22 @@ message SetRequest {
 }
 
 message SetResponse {
+    int64 value = 1;
+}
+
+message UpdateRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    int64 check = 2;
+    int64 update = 3;
+}
+
+message UpdateResponse {
+    int64 value = 1;
+}
+
+message Value {
     int64 value = 1;
 }

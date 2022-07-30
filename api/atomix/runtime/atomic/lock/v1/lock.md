@@ -3,35 +3,36 @@
 
 ## Table of Contents
 
-- [atomix/runtime/counter/v1/counter.proto](#atomix_runtime_counter_v1_counter-proto)
-    - [CloseRequest](#atomix-runtime-counter-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-counter-v1-CloseResponse)
-    - [CreateRequest](#atomix-runtime-counter-v1-CreateRequest)
-    - [CreateRequest.TagsEntry](#atomix-runtime-counter-v1-CreateRequest-TagsEntry)
-    - [CreateResponse](#atomix-runtime-counter-v1-CreateResponse)
-    - [DecrementRequest](#atomix-runtime-counter-v1-DecrementRequest)
-    - [DecrementResponse](#atomix-runtime-counter-v1-DecrementResponse)
-    - [GetRequest](#atomix-runtime-counter-v1-GetRequest)
-    - [GetResponse](#atomix-runtime-counter-v1-GetResponse)
-    - [IncrementRequest](#atomix-runtime-counter-v1-IncrementRequest)
-    - [IncrementResponse](#atomix-runtime-counter-v1-IncrementResponse)
-    - [SetRequest](#atomix-runtime-counter-v1-SetRequest)
-    - [SetResponse](#atomix-runtime-counter-v1-SetResponse)
+- [atomix/runtime/atomic/lock/v1/lock.proto](#atomix_runtime_atomic_lock_v1_lock-proto)
+    - [CloseRequest](#atomix-runtime-atomic-lock-v1-CloseRequest)
+    - [CloseResponse](#atomix-runtime-atomic-lock-v1-CloseResponse)
+    - [CreateRequest](#atomix-runtime-atomic-lock-v1-CreateRequest)
+    - [CreateRequest.TagsEntry](#atomix-runtime-atomic-lock-v1-CreateRequest-TagsEntry)
+    - [CreateResponse](#atomix-runtime-atomic-lock-v1-CreateResponse)
+    - [GetLockRequest](#atomix-runtime-atomic-lock-v1-GetLockRequest)
+    - [GetLockResponse](#atomix-runtime-atomic-lock-v1-GetLockResponse)
+    - [LockInstance](#atomix-runtime-atomic-lock-v1-LockInstance)
+    - [LockRequest](#atomix-runtime-atomic-lock-v1-LockRequest)
+    - [LockResponse](#atomix-runtime-atomic-lock-v1-LockResponse)
+    - [UnlockRequest](#atomix-runtime-atomic-lock-v1-UnlockRequest)
+    - [UnlockResponse](#atomix-runtime-atomic-lock-v1-UnlockResponse)
   
-    - [Counter](#atomix-runtime-counter-v1-Counter)
+    - [LockInstance.State](#atomix-runtime-atomic-lock-v1-LockInstance-State)
+  
+    - [AtomicLock](#atomix-runtime-atomic-lock-v1-AtomicLock)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_runtime_counter_v1_counter-proto"></a>
+<a name="atomix_runtime_atomic_lock_v1_lock-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/runtime/counter/v1/counter.proto
+## atomix/runtime/atomic/lock/v1/lock.proto
 
 
 
-<a name="atomix-runtime-counter-v1-CloseRequest"></a>
+<a name="atomix-runtime-atomic-lock-v1-CloseRequest"></a>
 
 ### CloseRequest
 
@@ -46,7 +47,7 @@
 
 
 
-<a name="atomix-runtime-counter-v1-CloseResponse"></a>
+<a name="atomix-runtime-atomic-lock-v1-CloseResponse"></a>
 
 ### CloseResponse
 
@@ -56,7 +57,7 @@
 
 
 
-<a name="atomix-runtime-counter-v1-CreateRequest"></a>
+<a name="atomix-runtime-atomic-lock-v1-CreateRequest"></a>
 
 ### CreateRequest
 
@@ -65,14 +66,14 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| tags | [CreateRequest.TagsEntry](#atomix-runtime-counter-v1-CreateRequest-TagsEntry) | repeated |  |
+| tags | [CreateRequest.TagsEntry](#atomix-runtime-atomic-lock-v1-CreateRequest-TagsEntry) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-counter-v1-CreateRequest-TagsEntry"></a>
+<a name="atomix-runtime-atomic-lock-v1-CreateRequest-TagsEntry"></a>
 
 ### CreateRequest.TagsEntry
 
@@ -88,7 +89,7 @@
 
 
 
-<a name="atomix-runtime-counter-v1-CreateResponse"></a>
+<a name="atomix-runtime-atomic-lock-v1-CreateResponse"></a>
 
 ### CreateResponse
 
@@ -98,123 +99,109 @@
 
 
 
-<a name="atomix-runtime-counter-v1-DecrementRequest"></a>
+<a name="atomix-runtime-atomic-lock-v1-GetLockRequest"></a>
 
-### DecrementRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| delta | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-counter-v1-DecrementResponse"></a>
-
-### DecrementResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-counter-v1-GetRequest"></a>
-
-### GetRequest
+### GetLockRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| lock | [LockInstance](#atomix-runtime-atomic-lock-v1-LockInstance) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-counter-v1-GetResponse"></a>
+<a name="atomix-runtime-atomic-lock-v1-GetLockResponse"></a>
 
-### GetResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-counter-v1-IncrementRequest"></a>
-
-### IncrementRequest
+### GetLockResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| delta | [int64](#int64) |  |  |
+| lock | [LockInstance](#atomix-runtime-atomic-lock-v1-LockInstance) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-counter-v1-IncrementResponse"></a>
+<a name="atomix-runtime-atomic-lock-v1-LockInstance"></a>
 
-### IncrementResponse
+### LockInstance
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
+| version | [uint64](#uint64) |  |  |
+| state | [LockInstance.State](#atomix-runtime-atomic-lock-v1-LockInstance-State) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-counter-v1-SetRequest"></a>
+<a name="atomix-runtime-atomic-lock-v1-LockRequest"></a>
 
-### SetRequest
+### LockRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| value | [int64](#int64) |  |  |
+| timeout | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-counter-v1-SetResponse"></a>
+<a name="atomix-runtime-atomic-lock-v1-LockResponse"></a>
 
-### SetResponse
+### LockResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
+| lock | [LockInstance](#atomix-runtime-atomic-lock-v1-LockInstance) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-lock-v1-UnlockRequest"></a>
+
+### UnlockRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| lock | [LockInstance](#atomix-runtime-atomic-lock-v1-LockInstance) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-lock-v1-UnlockResponse"></a>
+
+### UnlockResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| lock | [LockInstance](#atomix-runtime-atomic-lock-v1-LockInstance) |  |  |
 
 
 
@@ -222,24 +209,35 @@
 
  
 
- 
+
+<a name="atomix-runtime-atomic-lock-v1-LockInstance-State"></a>
+
+### LockInstance.State
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNLOCKED | 0 |  |
+| LOCKED | 1 |  |
+
 
  
 
+ 
 
-<a name="atomix-runtime-counter-v1-Counter"></a>
 
-### Counter
-Counter is a service for a counter primitive
+<a name="atomix-runtime-atomic-lock-v1-AtomicLock"></a>
+
+### AtomicLock
+AtomicLock is a service for a lock primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-counter-v1-CreateRequest) | [CreateResponse](#atomix-runtime-counter-v1-CreateResponse) | Create creates the counter |
-| Close | [CloseRequest](#atomix-runtime-counter-v1-CloseRequest) | [CloseResponse](#atomix-runtime-counter-v1-CloseResponse) | Close closes the counter |
-| Set | [SetRequest](#atomix-runtime-counter-v1-SetRequest) | [SetResponse](#atomix-runtime-counter-v1-SetResponse) | Set sets the counter value |
-| Get | [GetRequest](#atomix-runtime-counter-v1-GetRequest) | [GetResponse](#atomix-runtime-counter-v1-GetResponse) | Get gets the current counter value |
-| Increment | [IncrementRequest](#atomix-runtime-counter-v1-IncrementRequest) | [IncrementResponse](#atomix-runtime-counter-v1-IncrementResponse) | Increment increments the counter value |
-| Decrement | [DecrementRequest](#atomix-runtime-counter-v1-DecrementRequest) | [DecrementResponse](#atomix-runtime-counter-v1-DecrementResponse) | Decrement decrements the counter value |
+| Create | [CreateRequest](#atomix-runtime-atomic-lock-v1-CreateRequest) | [CreateResponse](#atomix-runtime-atomic-lock-v1-CreateResponse) | Create creates the lock |
+| Close | [CloseRequest](#atomix-runtime-atomic-lock-v1-CloseRequest) | [CloseResponse](#atomix-runtime-atomic-lock-v1-CloseResponse) | Close closes the lock |
+| Lock | [LockRequest](#atomix-runtime-atomic-lock-v1-LockRequest) | [LockResponse](#atomix-runtime-atomic-lock-v1-LockResponse) | Lock attempts to acquire the lock |
+| Unlock | [UnlockRequest](#atomix-runtime-atomic-lock-v1-UnlockRequest) | [UnlockResponse](#atomix-runtime-atomic-lock-v1-UnlockResponse) | Unlock releases the lock |
+| GetLock | [GetLockRequest](#atomix-runtime-atomic-lock-v1-GetLockRequest) | [GetLockResponse](#atomix-runtime-atomic-lock-v1-GetLockResponse) | GetLock gets the lock state |
 
  
 

@@ -6,14 +6,14 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.runtime.lock.v1;
+package atomix.runtime.atomic.lock.v1;
 
 import "google/protobuf/duration.proto";
 import "atomix/runtime/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 
-// Lock is a service for a lock primitive
-service Lock {
+// AtomicLock is a service for a lock primitive
+service AtomicLock {
     // Create creates the lock
     rpc Create (CreateRequest) returns (CreateResponse);
 
@@ -26,8 +26,8 @@ service Lock {
     // Unlock releases the lock
     rpc Unlock (UnlockRequest) returns (UnlockResponse);
 
-    // IsLocked checks if the lock is locked
-    rpc IsLocked (IsLockedRequest) returns (IsLockedResponse);
+    // GetLock gets the lock state
+    rpc GetLock (GetLockRequest) returns (GetLockResponse);
 }
 
 message CreateRequest {
@@ -64,7 +64,9 @@ message LockRequest {
 }
 
 message LockResponse {
-
+    LockInstance lock = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message UnlockRequest {
@@ -72,19 +74,39 @@ message UnlockRequest {
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
-}
-
-message UnlockResponse {
-
-}
-
-message IsLockedRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
-        (gogoproto.customname) = "ID",
+    LockInstance lock = 2 [
         (gogoproto.nullable) = false
     ];
 }
 
-message IsLockedResponse {
-    bool locked = 1;
+message UnlockResponse {
+    LockInstance lock = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetLockRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    LockInstance lock = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetLockResponse {
+    LockInstance lock = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message LockInstance {
+    uint64 version = 1;
+    State state = 2;
+
+    enum State {
+        UNLOCKED = 0;
+        LOCKED = 1;
+    }
 }
