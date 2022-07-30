@@ -6,25 +6,25 @@ package v1
 
 import (
 	"context"
-	counterv1 "github.com/atomix/runtime/api/atomix/runtime/counter/v1"
+	valuev1 "github.com/atomix/runtime/api/atomix/runtime/atomic/value/v1"
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/logging"
-	"github.com/atomix/runtime/sdk/pkg/runtime"
+	runtime "github.com/atomix/runtime/sdk/pkg/runtime"
 )
 
 var log = logging.GetLogger()
 
-func newCounterServer(delegate *runtime.Delegate[counterv1.CounterServer]) counterv1.CounterServer {
-	return &counterServer{
+func newAtomicValueServer(delegate *runtime.Delegate[valuev1.AtomicValueServer]) valuev1.AtomicValueServer {
+	return &valueServer{
 		delegate: delegate,
 	}
 }
 
-type counterServer struct {
-	delegate *runtime.Delegate[counterv1.CounterServer]
+type valueServer struct {
+	delegate *runtime.Delegate[valuev1.AtomicValueServer]
 }
 
-func (s *counterServer) Create(ctx context.Context, request *counterv1.CreateRequest) (*counterv1.CreateResponse, error) {
+func (s *valueServer) Create(ctx context.Context, request *valuev1.CreateRequest) (*valuev1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", request))
 	client, err := s.delegate.Create(request.ID.Name, request.Tags)
@@ -47,7 +47,7 @@ func (s *counterServer) Create(ctx context.Context, request *counterv1.CreateReq
 	return response, nil
 }
 
-func (s *counterServer) Close(ctx context.Context, request *counterv1.CloseRequest) (*counterv1.CloseResponse, error) {
+func (s *valueServer) Close(ctx context.Context, request *valuev1.CloseRequest) (*valuev1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Stringer("CloseRequest", request))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -70,7 +70,7 @@ func (s *counterServer) Close(ctx context.Context, request *counterv1.CloseReque
 	return response, nil
 }
 
-func (s *counterServer) Set(ctx context.Context, request *counterv1.SetRequest) (*counterv1.SetResponse, error) {
+func (s *valueServer) Set(ctx context.Context, request *valuev1.SetRequest) (*valuev1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Stringer("SetRequest", request))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -93,7 +93,30 @@ func (s *counterServer) Set(ctx context.Context, request *counterv1.SetRequest) 
 	return response, nil
 }
 
-func (s *counterServer) Get(ctx context.Context, request *counterv1.GetRequest) (*counterv1.GetResponse, error) {
+func (s *valueServer) Update(ctx context.Context, request *valuev1.UpdateRequest) (*valuev1.UpdateResponse, error) {
+	log.Debugw("Update",
+		logging.Stringer("UpdateRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Update",
+			logging.Stringer("UpdateRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Update(ctx, request)
+	if err != nil {
+		log.Warnw("Update",
+			logging.Stringer("UpdateRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Update",
+		logging.Stringer("UpdateResponse", response))
+	return response, nil
+}
+
+func (s *valueServer) Get(ctx context.Context, request *valuev1.GetRequest) (*valuev1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", request))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -116,50 +139,26 @@ func (s *counterServer) Get(ctx context.Context, request *counterv1.GetRequest) 
 	return response, nil
 }
 
-func (s *counterServer) Increment(ctx context.Context, request *counterv1.IncrementRequest) (*counterv1.IncrementResponse, error) {
-	log.Debugw("Increment",
-		logging.Stringer("IncrementRequest", request))
+func (s *valueServer) Events(request *valuev1.EventsRequest, server valuev1.AtomicValue_EventsServer) error {
+	log.Debugw("Events",
+		logging.Stringer("EventsRequest", request),
+		logging.String("State", "started"))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
-		log.Warnw("Increment",
-			logging.Stringer("IncrementRequest", request),
+		log.Warnw("Events",
+			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response, err := client.Increment(ctx, request)
+	err = client.Events(request, server)
 	if err != nil {
-		log.Warnw("Increment",
-			logging.Stringer("IncrementRequest", request),
+		log.Warnw("Events",
+			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	log.Debugw("Increment",
-		logging.Stringer("IncrementResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *counterServer) Decrement(ctx context.Context, request *counterv1.DecrementRequest) (*counterv1.DecrementResponse, error) {
-	log.Debugw("Decrement",
-		logging.Stringer("DecrementRequest", request))
-	client, err := s.delegate.Get(request.ID.Name)
-	if err != nil {
-		err = errors.ToProto(err)
-		log.Warnw("Decrement",
-			logging.Stringer("DecrementRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := client.Decrement(ctx, request)
-	if err != nil {
-		log.Warnw("Decrement",
-			logging.Stringer("DecrementRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Decrement",
-		logging.Stringer("DecrementResponse", response))
-	return response, nil
-}
-
-var _ counterv1.CounterServer = (*counterServer)(nil)
+var _ valuev1.AtomicValueServer = (*valueServer)(nil)

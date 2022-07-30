@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	lockv1 "github.com/atomix/runtime/api/atomix/runtime/lock/v1"
+	lockv1 "github.com/atomix/runtime/api/atomix/runtime/atomic/lock/v1"
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/logging"
 	runtime "github.com/atomix/runtime/sdk/pkg/runtime"
@@ -14,14 +14,14 @@ import (
 
 var log = logging.GetLogger()
 
-func newLockServer(delegate *runtime.Delegate[lockv1.LockServer]) lockv1.LockServer {
+func newAtomicLockServer(delegate *runtime.Delegate[lockv1.AtomicLockServer]) lockv1.AtomicLockServer {
 	return &lockServer{
 		delegate: delegate,
 	}
 }
 
 type lockServer struct {
-	delegate *runtime.Delegate[lockv1.LockServer]
+	delegate *runtime.Delegate[lockv1.AtomicLockServer]
 }
 
 func (s *lockServer) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {
@@ -116,27 +116,27 @@ func (s *lockServer) Unlock(ctx context.Context, request *lockv1.UnlockRequest) 
 	return response, nil
 }
 
-func (s *lockServer) IsLocked(ctx context.Context, request *lockv1.IsLockedRequest) (*lockv1.IsLockedResponse, error) {
-	log.Debugw("IsLocked",
-		logging.Stringer("IsLockedRequest", request))
+func (s *lockServer) GetLock(ctx context.Context, request *lockv1.GetLockRequest) (*lockv1.GetLockResponse, error) {
+	log.Debugw("GetLock",
+		logging.Stringer("GetLockRequest", request))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
-		log.Warnw("IsLocked",
-			logging.Stringer("IsLockedRequest", request),
+		log.Warnw("GetLock",
+			logging.Stringer("GetLockRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := client.IsLocked(ctx, request)
+	response, err := client.GetLock(ctx, request)
 	if err != nil {
-		log.Warnw("IsLocked",
-			logging.Stringer("IsLockedRequest", request),
+		log.Warnw("GetLock",
+			logging.Stringer("GetLockRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
-	log.Debugw("IsLocked",
-		logging.Stringer("IsLockedResponse", response))
+	log.Debugw("GetLock",
+		logging.Stringer("GetLockResponse", response))
 	return response, nil
 }
 
-var _ lockv1.LockServer = (*lockServer)(nil)
+var _ lockv1.AtomicLockServer = (*lockServer)(nil)

@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	counterv1 "github.com/atomix/runtime/api/atomix/runtime/counter/v1"
+	counterv1 "github.com/atomix/runtime/api/atomix/runtime/atomic/counter/v1"
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/logging"
 	"github.com/atomix/runtime/sdk/pkg/runtime"
@@ -14,14 +14,14 @@ import (
 
 var log = logging.GetLogger()
 
-func newCounterServer(delegate *runtime.Delegate[counterv1.CounterServer]) counterv1.CounterServer {
+func newAtomicCounterServer(delegate *runtime.Delegate[counterv1.AtomicCounterServer]) counterv1.AtomicCounterServer {
 	return &counterServer{
 		delegate: delegate,
 	}
 }
 
 type counterServer struct {
-	delegate *runtime.Delegate[counterv1.CounterServer]
+	delegate *runtime.Delegate[counterv1.AtomicCounterServer]
 }
 
 func (s *counterServer) Create(ctx context.Context, request *counterv1.CreateRequest) (*counterv1.CreateResponse, error) {
@@ -90,6 +90,29 @@ func (s *counterServer) Set(ctx context.Context, request *counterv1.SetRequest) 
 	}
 	log.Debugw("Set",
 		logging.Stringer("SetResponse", response))
+	return response, nil
+}
+
+func (s *counterServer) Update(ctx context.Context, request *counterv1.UpdateRequest) (*counterv1.UpdateResponse, error) {
+	log.Debugw("Update",
+		logging.Stringer("UpdateRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Update",
+			logging.Stringer("UpdateRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Update(ctx, request)
+	if err != nil {
+		log.Warnw("Update",
+			logging.Stringer("UpdateRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Update",
+		logging.Stringer("UpdateResponse", response))
 	return response, nil
 }
 
@@ -162,4 +185,4 @@ func (s *counterServer) Decrement(ctx context.Context, request *counterv1.Decrem
 	return response, nil
 }
 
-var _ counterv1.CounterServer = (*counterServer)(nil)
+var _ counterv1.AtomicCounterServer = (*counterServer)(nil)
