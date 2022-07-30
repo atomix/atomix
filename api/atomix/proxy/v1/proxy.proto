@@ -8,6 +8,9 @@ syntax = "proto3";
 
 package atomix.proxy.v1;
 
+option java_package = "io.atomix.api.proxy";
+option java_outer_classname = "ProxyV1";
+
 import "gogoproto/gogo.proto";
 
 service Proxy {

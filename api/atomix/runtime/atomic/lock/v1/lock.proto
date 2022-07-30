@@ -8,7 +8,7 @@ syntax = "proto3";
 
 package atomix.runtime.atomic.lock.v1;
 
-option java_package = "io.atomix.api.atomic.lock";
+option java_package = "io.atomix.api.runtime.atomic.lock";
 option java_outer_classname = "AtomicLockV1";
 
 import "google/protobuf/duration.proto";
