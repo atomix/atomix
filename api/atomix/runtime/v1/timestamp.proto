@@ -8,6 +8,9 @@ syntax = "proto3";
 
 package atomix.runtime.v1;
 
+option java_package = "io.atomix.api";
+option java_outer_classname = "TimestampV1";
+
 import "google/protobuf/timestamp.proto";
 import "gogoproto/gogo.proto";
 

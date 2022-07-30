@@ -8,6 +8,9 @@ syntax = "proto3";
 
 package atomix.runtime.value.v1;
 
+option java_package = "io.atomix.api.value";
+option java_outer_classname = "ValueV1";
+
 import "atomix/runtime/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 

@@ -8,6 +8,9 @@ syntax = "proto3";
 
 package atomix.runtime.election.v1;
 
+option java_package = "io.atomix.api.election";
+option java_outer_classname = "LeaderElectionV1";
+
 import "atomix/runtime/v1/primitive.proto";
 import "atomix/runtime/v1/timestamp.proto";
 import "gogoproto/gogo.proto";

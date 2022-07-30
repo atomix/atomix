@@ -8,6 +8,9 @@ syntax = "proto3";
 
 package atomix.runtime.atomic.indexedmap.v1;
 
+option java_package = "io.atomix.api.atomic.indexedmap";
+option java_outer_classname = "AtomicIndexedMapV1";
+
 import "google/protobuf/duration.proto";
 import "atomix/runtime/v1/primitive.proto";
 import "gogoproto/gogo.proto";
