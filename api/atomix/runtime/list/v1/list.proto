@@ -8,8 +8,9 @@ syntax = "proto3";
 
 package atomix.runtime.list.v1;
 
-option java_package = "io.atomix.api.runtime.list";
+option java_package = "io.atomix.api.runtime.list.v1";
 option java_outer_classname = "ListV1";
+option java_multiple_files = true;
 
 import "atomix/runtime/v1/primitive.proto";
 import "atomix/runtime/v1/timestamp.proto";

@@ -8,8 +8,9 @@ syntax = "proto3";
 
 package atomix.runtime.counter.v1;
 
-option java_package = "io.atomix.api.runtime.counter";
+option java_package = "io.atomix.api.runtime.counter.v1";
 option java_outer_classname = "Counterv1";
+option java_multiple_files = true;
 
 import "atomix/runtime/v1/primitive.proto";
 import "gogoproto/gogo.proto";
