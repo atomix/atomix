@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/atomix/runtime/api v0.1.1-0.20220731065539-c3d767efc511
-	github.com/atomix/runtime/proxy v0.1.2-0.20220731070654-d916fbfe6b04
+	github.com/atomix/runtime/proxy v0.1.2-0.20220731073324-0a1c4e643147
 	github.com/atomix/runtime/sdk v0.1.1-0.20220731065920-23e72239b306
 	github.com/go-logr/logr v1.2.0
 	github.com/spf13/cobra v1.4.0
@@ -86,9 +86,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/atomix/runtime/api => ../api
-
-replace github.com/atomix/runtime/sdk => ../sdk
-
-replace github.com/atomix/runtime/proxy => ../proxy
