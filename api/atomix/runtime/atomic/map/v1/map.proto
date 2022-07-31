@@ -160,7 +160,6 @@ message RemoveResponse {
     Value value = 1 [
         (gogoproto.nullable) = false
     ];
-    uint64 version = 2;
 }
 
 message ClearRequest {
@@ -186,7 +185,7 @@ message LockRequest {
 }
 
 message LockResponse {
-    uint64 version = 1;
+
 }
 
 message UnlockRequest {
@@ -198,7 +197,7 @@ message UnlockRequest {
 }
 
 message UnlockResponse {
-    uint64 version = 1;
+
 }
 
 message EntriesRequest {

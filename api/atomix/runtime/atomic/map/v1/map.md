@@ -323,11 +323,6 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| version | [uint64](#uint64) |  |  |
-
-
 
 
 
@@ -391,7 +386,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | value | [Value](#atomix-runtime-atomic-map-v1-Value) |  |  |
-| version | [uint64](#uint64) |  |  |
 
 
 
@@ -448,11 +442,6 @@
 
 ### UnlockResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| version | [uint64](#uint64) |  |  |
 
 
 
