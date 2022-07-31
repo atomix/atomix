@@ -78,7 +78,7 @@ func (r *Runtime) connect(ctx context.Context, storeID StoreID, driverID runtime
 		if err != nil {
 			return errors.NewInternal("failed loading driver '%s': %v", driverID, err)
 		}
-		driver = driverSym.(runtime.Driver)
+		driver = *driverSym.(*runtime.Driver)
 		r.drivers[driverID] = driver
 	}
 
