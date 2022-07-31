@@ -10,24 +10,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	Name       = "AtomicMap"
-	APIVersion = "v1"
-)
+const Service = "atomix.runtime.atomic.map.v1.AtomicMap"
 
-var Type = runtime.NewType[mapv1.AtomicMapServer](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[mapv1.AtomicMapServer](Service, register, resolve)
 
 func register(server *grpc.Server, delegate *runtime.Delegate[mapv1.AtomicMapServer]) {
 	mapv1.RegisterAtomicMapServer(server, newAtomicMapServer(delegate))
 }
 
-func resolve(client runtime.Client) (mapv1.AtomicMapServer, bool) {
-	if provider, ok := client.(AtomicMapProvider); ok {
-		return provider.AtomicMap(), true
-	}
-	return nil, false
-}
-
-type AtomicMapProvider interface {
-	AtomicMap() mapv1.AtomicMapServer
+func resolve(conn runtime.Conn, config []byte) (mapv1.AtomicMapServer, error) {
+	return conn.AtomicMap(config)
 }

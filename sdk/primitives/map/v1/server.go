@@ -9,7 +9,7 @@ import (
 	mapv1 "github.com/atomix/runtime/api/atomix/runtime/map/v1"
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/logging"
-	runtime "github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/runtime/sdk/pkg/runtime"
 )
 
 var log = logging.GetLogger()

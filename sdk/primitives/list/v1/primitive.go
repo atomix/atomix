@@ -10,24 +10,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	Name       = "List"
-	APIVersion = "v1"
-)
+const Service = "atomix.runtime.list.v1.List"
 
-var Type = runtime.NewType[listv1.ListServer](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[listv1.ListServer](Service, register, resolve)
 
 func register(server *grpc.Server, delegate *runtime.Delegate[listv1.ListServer]) {
 	listv1.RegisterListServer(server, newListServer(delegate))
 }
 
-func resolve(client runtime.Client) (listv1.ListServer, bool) {
-	if provider, ok := client.(ListProvider); ok {
-		return provider.List(), true
-	}
-	return nil, false
-}
-
-type ListProvider interface {
-	List() listv1.ListServer
+func resolve(conn runtime.Conn, config []byte) (listv1.ListServer, error) {
+	return conn.List(config)
 }

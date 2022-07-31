@@ -10,24 +10,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	Name       = "AtomicLock"
-	APIVersion = "v1"
-)
+const Service = "atomix.runtime.atomic.lock.v1.AtomicLock"
 
-var Type = runtime.NewType[lockv1.AtomicLockServer](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[lockv1.AtomicLockServer](Service, register, resolve)
 
 func register(server *grpc.Server, delegate *runtime.Delegate[lockv1.AtomicLockServer]) {
 	lockv1.RegisterAtomicLockServer(server, newAtomicLockServer(delegate))
 }
 
-func resolve(client runtime.Client) (lockv1.AtomicLockServer, bool) {
-	if provider, ok := client.(AtomicLockProvider); ok {
-		return provider.AtomicLock(), true
-	}
-	return nil, false
-}
-
-type AtomicLockProvider interface {
-	AtomicLock() lockv1.AtomicLockServer
+func resolve(conn runtime.Conn, config []byte) (lockv1.AtomicLockServer, error) {
+	return conn.AtomicLock(config)
 }

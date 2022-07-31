@@ -10,24 +10,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	Name       = "Set"
-	APIVersion = "v1"
-)
+const Service = "atomix.runtime.set.v1.Set"
 
-var Type = runtime.NewType[setv1.SetServer](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[setv1.SetServer](Service, register, resolve)
 
 func register(server *grpc.Server, delegate *runtime.Delegate[setv1.SetServer]) {
 	setv1.RegisterSetServer(server, newSetServer(delegate))
 }
 
-func resolve(client runtime.Client) (setv1.SetServer, bool) {
-	if provider, ok := client.(SetProvider); ok {
-		return provider.Set(), true
-	}
-	return nil, false
-}
-
-type SetProvider interface {
-	Set() setv1.SetServer
+func resolve(conn runtime.Conn, config []byte) (setv1.SetServer, error) {
+	return conn.Set(config)
 }

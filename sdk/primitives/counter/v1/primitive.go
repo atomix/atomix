@@ -10,24 +10,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	Name       = "Counter"
-	APIVersion = "v1"
-)
+const Service = "atomix.runtime.counter.v1.Counter"
 
-var Type = runtime.NewType[counterv1.CounterServer](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[counterv1.CounterServer](Service, register, resolve)
 
 func register(server *grpc.Server, delegate *runtime.Delegate[counterv1.CounterServer]) {
 	counterv1.RegisterCounterServer(server, newCounterServer(delegate))
 }
 
-func resolve(client runtime.Client) (counterv1.CounterServer, bool) {
-	if counter, ok := client.(CounterProvider); ok {
-		return counter.Counter(), true
-	}
-	return nil, false
-}
-
-type CounterProvider interface {
-	Counter() counterv1.CounterServer
+func resolve(conn runtime.Conn, config []byte) (counterv1.CounterServer, error) {
+	return conn.Counter(config)
 }

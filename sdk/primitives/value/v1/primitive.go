@@ -10,24 +10,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	Name       = "Value"
-	APIVersion = "v1"
-)
+const Service = "atomix.runtime.value.v1.Value"
 
-var Type = runtime.NewType[valuev1.ValueServer](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[valuev1.ValueServer](Service, register, resolve)
 
 func register(server *grpc.Server, delegate *runtime.Delegate[valuev1.ValueServer]) {
 	valuev1.RegisterValueServer(server, newValueServer(delegate))
 }
 
-func resolve(client runtime.Client) (valuev1.ValueServer, bool) {
-	if provider, ok := client.(ValueProvider); ok {
-		return provider.Value(), true
-	}
-	return nil, false
-}
-
-type ValueProvider interface {
-	Value() valuev1.ValueServer
+func resolve(conn runtime.Conn, config []byte) (valuev1.ValueServer, error) {
+	return conn.Value(config)
 }

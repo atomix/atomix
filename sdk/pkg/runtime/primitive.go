@@ -19,45 +19,42 @@ func (k Kind) String() string {
 }
 
 type PrimitiveMeta struct {
-	Name string
-	Kind Kind
-	Tags map[string]string
+	Service string
+	Name    string
+	Tags    map[string]string
 }
 
 type Type interface {
-	Kind() Kind
+	Service() string
 	Register(server *grpc.Server, runtime Runtime)
 }
 
 type Registrar[T any] func(*grpc.Server, *Delegate[T])
 
-type Resolver[T any] func(Client) (T, bool)
+type Resolver[T any] func(Conn, []byte) (T, error)
 
-func NewType[T any](name string, version string, registrar Registrar[T], resolver Resolver[T]) Type {
+func NewType[T any](service string, registrar Registrar[T], resolver Resolver[T]) Type {
 	return &genericType[T]{
-		kind: Kind{
-			Name:       name,
-			APIVersion: version,
-		},
+		service:   service,
 		registrar: registrar,
 		resolver:  resolver,
 	}
 }
 
 type genericType[T any] struct {
-	kind      Kind
+	service   string
 	registrar Registrar[T]
 	resolver  Resolver[T]
 }
 
-func (t *genericType[T]) Kind() Kind {
-	return t.kind
+func (t *genericType[T]) Service() string {
+	return t.service
 }
 
 func (t *genericType[T]) Register(server *grpc.Server, runtime Runtime) {
-	t.registrar(server, newDelegate[T](t.kind, runtime, t.resolver))
+	t.registrar(server, newDelegate[T](t.service, runtime, t.resolver))
 }
 
 func (t *genericType[T]) String() string {
-	return t.kind.String()
+	return t.service
 }

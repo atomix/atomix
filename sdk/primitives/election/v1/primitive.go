@@ -10,24 +10,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	Name       = "LeaderElection"
-	APIVersion = "v1"
-)
+const Service = "atomix.runtime.election.v1.LeaderElection"
 
-var Type = runtime.NewType[electionv1.LeaderElectionServer](Name, APIVersion, register, resolve)
+var Type = runtime.NewType[electionv1.LeaderElectionServer](Service, register, resolve)
 
 func register(server *grpc.Server, delegate *runtime.Delegate[electionv1.LeaderElectionServer]) {
 	electionv1.RegisterLeaderElectionServer(server, newLeaderElectionServer(delegate))
 }
 
-func resolve(client runtime.Client) (electionv1.LeaderElectionServer, bool) {
-	if provider, ok := client.(LeaderElectionProvider); ok {
-		return provider.LeaderElection(), true
-	}
-	return nil, false
-}
-
-type LeaderElectionProvider interface {
-	LeaderElection() electionv1.LeaderElectionServer
+func resolve(conn runtime.Conn, config []byte) (electionv1.LeaderElectionServer, error) {
+	return conn.LeaderElection(config)
 }

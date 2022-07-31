@@ -51,11 +51,7 @@ func (d *configurableDriver[C]) Connect(ctx context.Context, data []byte) (Conn,
 			return nil, err
 		}
 	}
-	conn, err := d.connector(ctx, config)
-	if err != nil {
-		return nil, err
-	}
-	return newConfigurableConn[C](d, conn), nil
+	return d.connector(ctx, config)
 }
 
 func (d *configurableDriver[C]) String() string {

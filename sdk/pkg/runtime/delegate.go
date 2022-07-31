@@ -9,9 +9,9 @@ import (
 	"sync"
 )
 
-func newDelegate[T any](kind Kind, runtime Runtime, resolver Resolver[T]) *Delegate[T] {
+func newDelegate[T any](service string, runtime Runtime, resolver Resolver[T]) *Delegate[T] {
 	return &Delegate[T]{
-		kind:     kind,
+		service:  service,
 		runtime:  runtime,
 		resolver: resolver,
 		clients:  make(map[string]T),
@@ -19,7 +19,7 @@ func newDelegate[T any](kind Kind, runtime Runtime, resolver Resolver[T]) *Deleg
 }
 
 type Delegate[T any] struct {
-	kind     Kind
+	service  string
 	runtime  Runtime
 	resolver Resolver[T]
 	clients  map[string]T
@@ -36,19 +36,19 @@ func (p *Delegate[T]) Create(name string, tags map[string]string) (T, error) {
 	}
 
 	meta := PrimitiveMeta{
-		Name: name,
-		Kind: p.kind,
-		Tags: tags,
+		Name:    name,
+		Service: p.service,
+		Tags:    tags,
 	}
 
-	conn, err := p.runtime.GetConn(meta)
+	conn, config, err := p.runtime.GetConn(meta)
 	if err != nil {
 		return client, err
 	}
 
-	client, ok = p.resolver(conn.Client())
-	if !ok {
-		return client, errors.NewNotSupported("primitive kind '%s' not supported by driver", p.kind)
+	client, err = p.resolver(conn, config)
+	if err != nil {
+		return client, err
 	}
 
 	p.clients[name] = client
