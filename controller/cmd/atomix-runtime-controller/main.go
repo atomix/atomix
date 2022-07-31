@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/atomix/runtime/controller/pkg/apis"
-	corev1beta1 "github.com/atomix/runtime/controller/pkg/controller/atomix/v1beta1"
+	corev1beta1 "github.com/atomix/runtime/controller/pkg/controller/atomix/v3beta1"
 	"github.com/atomix/runtime/controller/pkg/controller/util/k8s"
 	"github.com/atomix/runtime/sdk/pkg/logging"
 	"github.com/go-logr/logr"
