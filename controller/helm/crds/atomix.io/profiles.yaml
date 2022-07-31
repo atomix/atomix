@@ -29,19 +29,16 @@ spec:
                 The specification for the profile.
               type: object
               required:
-                - bindings
+                - routes
               properties:
-                bindings:
+                routes:
                   type: array
                   items:
                     type: object
                     required:
-                      - name
                       - store
-                      - primitives
+                      - bindings
                     properties:
-                      name:
-                        type: string
                       store:
                         type: object
                         required:
@@ -51,28 +48,36 @@ spec:
                             type: string
                           name:
                             type: string
-                      primitives:
+                      bindings:
                         type: array
                         items:
                           type: object
                           required:
-                            - kinds
-                            - apiVersions
+                            - matchRules
                           properties:
-                            kinds:
+                            services:
                               type: array
                               items:
-                                type: string
-                            apiVersions:
+                                type: object
+                                required:
+                                  - name
+                                properties:
+                                  name:
+                                    type: string
+                                  config:
+                                    type: object
+                                    x-kubernetes-preserve-unknown-fields: true
+                            matchRules:
                               type: array
                               items:
-                                type: string
-                            names:
-                              type: array
-                              items:
-                                type: string
-                            tags:
-                              type: object
-                              additionalProperties:
-                                type: string
+                                type: object
+                                properties:
+                                  names:
+                                    type: array
+                                    items:
+                                      type: string
+                                  tags:
+                                    type: object
+                                    additionalProperties:
+                                      type: string
       additionalPrinterColumns: [ ]

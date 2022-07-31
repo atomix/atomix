@@ -156,8 +156,8 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 		return reconcile.Result{}, nil
 	}
 
-	if len(proxy.Status.Bindings) == 0 {
-		if ok, err := r.setAtomixCondition(pod, corev1.ConditionFalse, "Configuring", "Configuring bindings"); err != nil {
+	if len(proxy.Status.Routes) == 0 {
+		if ok, err := r.setAtomixCondition(pod, corev1.ConditionFalse, "Configuring", "Configuring routes"); err != nil {
 			log.Error(err)
 			return reconcile.Result{}, err
 		} else if ok {
@@ -166,9 +166,9 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 		return reconcile.Result{}, nil
 	}
 
-	for _, binding := range proxy.Status.Bindings {
-		if binding.State != atomixv3beta1.BindingBound {
-			if ok, err := r.setAtomixCondition(pod, corev1.ConditionFalse, "Configuring", fmt.Sprintf("Configuring binding '%s'", binding.Name)); err != nil {
+	for _, route := range proxy.Status.Routes {
+		if route.State != atomixv3beta1.RouteConnected {
+			if ok, err := r.setAtomixCondition(pod, corev1.ConditionFalse, "Configuring", fmt.Sprintf("Configuring route to '%s'", route.Store.Name)); err != nil {
 				log.Error(err)
 				return reconcile.Result{}, err
 			} else if ok {

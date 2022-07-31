@@ -27,7 +27,6 @@ type ProfileSpec struct {
 }
 
 type ProfileRoute struct {
-	Name     string                 `json:"name"`
 	Store    corev1.ObjectReference `json:"store"`
 	Bindings []ProfileBinding       `json:"bindings"`
 }

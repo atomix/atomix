@@ -23,21 +23,21 @@ type Proxy struct {
 }
 
 type ProxyStatus struct {
-	Ready    bool            `json:"ready"`
-	Bindings []BindingStatus `json:"bindings"`
+	Ready  bool          `json:"ready"`
+	Routes []RouteStatus `json:"routes"`
 }
 
-type BindingState string
+type RouteState string
 
 const (
-	BindingUnbound BindingState = "Unbound"
-	BindingBound   BindingState = "Bound"
+	RoutePending   RouteState = "Pending"
+	RouteConnected RouteState = "Connected"
 )
 
-type BindingStatus struct {
-	Name    string       `json:"name"`
-	State   BindingState `json:"state"`
-	Version string       `json:"version"`
+type RouteStatus struct {
+	Store   corev1.ObjectReference `json:"store"`
+	State   RouteState             `json:"state"`
+	Version string                 `json:"version"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

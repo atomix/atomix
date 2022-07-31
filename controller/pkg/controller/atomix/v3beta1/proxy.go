@@ -192,8 +192,8 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, request reconcile.Reque
 		return reconcile.Result{}, nil
 	}
 
-	for _, binding := range profile.Spec.Bindings {
-		if ok, err := r.reconcileBinding(ctx, pod, proxy, binding); err != nil {
+	for _, route := range profile.Spec.Routes {
+		if ok, err := r.reconcileRoute(ctx, pod, proxy, route); err != nil {
 			return reconcile.Result{}, err
 		} else if ok {
 			return reconcile.Result{}, nil
@@ -204,8 +204,8 @@ func (r *ProxyReconciler) Reconcile(ctx context.Context, request reconcile.Reque
 
 func (r *ProxyReconciler) setStatus(ctx context.Context, proxy *atomixv3beta1.Proxy) error {
 	ready := true
-	for _, status := range proxy.Status.Bindings {
-		if status.State != atomixv3beta1.BindingBound {
+	for _, status := range proxy.Status.Routes {
+		if status.State != atomixv3beta1.RouteConnected {
 			ready = false
 			break
 		}
@@ -214,14 +214,14 @@ func (r *ProxyReconciler) setStatus(ctx context.Context, proxy *atomixv3beta1.Pr
 	return r.client.Status().Update(ctx, proxy)
 }
 
-func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod, proxy *atomixv3beta1.Proxy, binding atomixv3beta1.ProfileBinding) (bool, error) {
-	storeNamespace := binding.Store.Namespace
+func (r *ProxyReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, proxy *atomixv3beta1.Proxy, route atomixv3beta1.ProfileRoute) (bool, error) {
+	storeNamespace := route.Store.Namespace
 	if storeNamespace == "" {
 		storeNamespace = proxy.Namespace
 	}
 	storeNamespacedName := types.NamespacedName{
 		Namespace: storeNamespace,
-		Name:      binding.Store.Name,
+		Name:      route.Store.Name,
 	}
 	store := &atomixv3beta1.Store{}
 	if err := r.client.Get(ctx, storeNamespacedName, store); err != nil {
@@ -230,10 +230,10 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 			return false, err
 		}
 
-		for i, status := range proxy.Status.Bindings {
-			if status.Name == binding.Name {
+		for i, status := range proxy.Status.Routes {
+			if status.Store.Namespace == route.Store.Namespace && status.Store.Name == route.Store.Name {
 				switch status.State {
-				case atomixv3beta1.BindingBound:
+				case atomixv3beta1.RouteConnected:
 					// Disconnect the binding in the pod
 					conn, err := connect(ctx, pod)
 					if err != nil {
@@ -258,9 +258,9 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 					r.events.Eventf(pod, "Normal", "DisconnectStoreSucceeded", "Successfully disconnected from store '%s'", storeNamespacedName)
 
 					// Update the binding status
-					status.State = atomixv3beta1.BindingUnbound
+					status.State = atomixv3beta1.RoutePending
 					status.Version = ""
-					proxy.Status.Bindings[i] = status
+					proxy.Status.Routes[i] = status
 					if err := r.setStatus(ctx, proxy); err != nil {
 						log.Error(err)
 						return false, err
@@ -273,10 +273,10 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 		return false, nil
 	}
 
-	for i, status := range proxy.Status.Bindings {
-		if status.Name == binding.Name {
+	for i, status := range proxy.Status.Routes {
+		if status.Store.Namespace == route.Store.Namespace && status.Store.Name == route.Store.Name {
 			switch status.State {
-			case atomixv3beta1.BindingUnbound:
+			case atomixv3beta1.RoutePending:
 				// Connect the binding in the pod
 				conn, err := connect(ctx, pod)
 				if err != nil {
@@ -306,15 +306,15 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 				r.events.Eventf(pod, "Normal", "ConnectStoreSucceeded", "Successfully connected to store '%s'", storeNamespacedName)
 
 				// Update the binding status
-				status.State = atomixv3beta1.BindingBound
+				status.State = atomixv3beta1.RouteConnected
 				status.Version = store.ResourceVersion
-				proxy.Status.Bindings[i] = status
+				proxy.Status.Routes[i] = status
 				if err := r.setStatus(ctx, proxy); err != nil {
 					log.Error(err)
 					return false, err
 				}
 				return true, nil
-			case atomixv3beta1.BindingBound:
+			case atomixv3beta1.RouteConnected:
 				if status.Version != store.ResourceVersion {
 					// Configure the binding in the pod
 					conn, err := connect(ctx, pod)
@@ -342,7 +342,7 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 
 					// Update the binding status
 					status.Version = store.ResourceVersion
-					proxy.Status.Bindings[i] = status
+					proxy.Status.Routes[i] = status
 					if err := r.setStatus(ctx, proxy); err != nil {
 						log.Error(err)
 						return false, err
@@ -354,11 +354,11 @@ func (r *ProxyReconciler) reconcileBinding(ctx context.Context, pod *corev1.Pod,
 		}
 	}
 
-	status := atomixv3beta1.BindingStatus{
-		Name:  binding.Name,
-		State: atomixv3beta1.BindingUnbound,
+	status := atomixv3beta1.RouteStatus{
+		Store: route.Store,
+		State: atomixv3beta1.RoutePending,
 	}
-	proxy.Status.Bindings = append(proxy.Status.Bindings, status)
+	proxy.Status.Routes = append(proxy.Status.Routes, status)
 	if err := r.setStatus(ctx, proxy); err != nil {
 		log.Error(err)
 		return false, err
