@@ -8,15 +8,19 @@ import (
 	"fmt"
 	"github.com/atomix/runtime/proxy/pkg/proxy"
 	"github.com/atomix/runtime/sdk/pkg/logging"
-	counterv1 "github.com/atomix/runtime/sdk/primitives/counter/v1"
-	electionv1 "github.com/atomix/runtime/sdk/primitives/election/v1"
-	indexedmapv1 "github.com/atomix/runtime/sdk/primitives/indexed_map/v1"
-	listv1 "github.com/atomix/runtime/sdk/primitives/list/v1"
-	lockv1 "github.com/atomix/runtime/sdk/primitives/lock/v1"
-	mapv1 "github.com/atomix/runtime/sdk/primitives/map/v1"
-	setv1 "github.com/atomix/runtime/sdk/primitives/set/v1"
-	topicv1 "github.com/atomix/runtime/sdk/primitives/topic/v1"
-	valuev1 "github.com/atomix/runtime/sdk/primitives/value/v1"
+	atomiccounterv1 "github.com/atomix/runtime/sdk/pkg/runtime/atomic/counter/v1"
+	atomicindexedmapv1 "github.com/atomix/runtime/sdk/pkg/runtime/atomic/indexedmap/v1"
+	atomiclockv1 "github.com/atomix/runtime/sdk/pkg/runtime/atomic/lock/v1"
+	atomicmapv1 "github.com/atomix/runtime/sdk/pkg/runtime/atomic/map/v1"
+	atomicvaluev1 "github.com/atomix/runtime/sdk/pkg/runtime/atomic/value/v1"
+	counterv1 "github.com/atomix/runtime/sdk/pkg/runtime/counter/v1"
+	electionv1 "github.com/atomix/runtime/sdk/pkg/runtime/election/v1"
+	listv1 "github.com/atomix/runtime/sdk/pkg/runtime/list/v1"
+	lockv1 "github.com/atomix/runtime/sdk/pkg/runtime/lock/v1"
+	mapv1 "github.com/atomix/runtime/sdk/pkg/runtime/map/v1"
+	setv1 "github.com/atomix/runtime/sdk/pkg/runtime/set/v1"
+	topicv1 "github.com/atomix/runtime/sdk/pkg/runtime/topic/v1"
+	valuev1 "github.com/atomix/runtime/sdk/pkg/runtime/value/v1"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -90,9 +94,13 @@ func main() {
 				proxy.WithProxyHost(proxyHost),
 				proxy.WithProxyPort(proxyPort),
 				proxy.WithTypes(
+					atomiccounterv1.Type,
+					atomicindexedmapv1.Type,
+					atomiclockv1.Type,
+					atomicmapv1.Type,
+					atomicvaluev1.Type,
 					counterv1.Type,
 					electionv1.Type,
-					indexedmapv1.Type,
 					listv1.Type,
 					lockv1.Type,
 					mapv1.Type,

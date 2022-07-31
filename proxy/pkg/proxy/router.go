@@ -21,15 +21,23 @@ type StoreID struct {
 }
 
 type RouteConfig struct {
-	Store StoreID      `json:"store" yaml:"store"`
-	Rules []RuleConfig `json:"rules" yaml:"rules"`
+	Store    StoreID         `json:"store" yaml:"store"`
+	Bindings []BindingConfig `json:"bindings" yaml:"bindings"`
 }
 
-type RuleConfig struct {
-	Kinds       []string          `json:"kinds" yaml:"kinds"`
-	APIVersions []string          `json:"apiVersions" yaml:"apiVersions"`
-	Names       []string          `json:"names" yaml:"names"`
-	Tags        map[string]string `json:"tags" yaml:"tags"`
+type BindingConfig struct {
+	Services   []ServiceConfig   `json:"services" yaml:"services"`
+	MatchRules []MatchRuleConfig `json:"matchRules" yaml:"matchRules"`
+}
+
+type ServiceConfig struct {
+	Name   string                 `json:"name" yaml:"name"`
+	Config map[string]interface{} `json:"config" yaml:"config"`
+}
+
+type MatchRuleConfig struct {
+	Names []string          `json:"names" yaml:"names"`
+	Tags  map[string]string `json:"tags" yaml:"tags"`
 }
 
 func newRouter(config RouterConfig) *Router {
@@ -46,57 +54,85 @@ type Router struct {
 	routes []*Route
 }
 
-func (r *Router) Route(primitive runtime.PrimitiveMeta) (StoreID, error) {
+func (r *Router) Route(primitive runtime.PrimitiveMeta) (StoreID, map[string]interface{}, error) {
 	for _, route := range r.routes {
-		if route.Matches(primitive) {
-			return route.Store, nil
+		if config, ok := route.GetConfig(primitive); ok {
+			return route.Store, config, nil
 		}
 	}
-	return StoreID{}, errors.NewForbidden("no route found for '%s'", primitive.Name)
+	return StoreID{}, nil, errors.NewForbidden("no route found for '%s'", primitive.Name)
 }
 
-func newRoute(binding RouteConfig) *Route {
-	rules := make([]*Rule, len(binding.Rules))
-	for i, rule := range binding.Rules {
-		rules[i] = newRule(rule)
+func newRoute(route RouteConfig) *Route {
+	bindings := make([]*Binding, len(route.Bindings))
+	for i, binding := range route.Bindings {
+		bindings[i] = newBinding(binding)
 	}
 	return &Route{
-		RouteConfig: binding,
-		rules:       rules,
+		RouteConfig: route,
+		bindings:    bindings,
 	}
 }
 
 type Route struct {
 	RouteConfig
-	rules []*Rule
+	bindings []*Binding
 }
 
-func (r *Route) Matches(primitive runtime.PrimitiveMeta) bool {
-	for _, rule := range r.rules {
-		if rule.Matches(primitive) {
-			return true
+func (r *Route) GetConfig(primitive runtime.PrimitiveMeta) (map[string]interface{}, bool) {
+	for _, binding := range r.bindings {
+		if config, ok := binding.GetConfig(primitive); ok {
+			return config, true
 		}
 	}
-	return false
+	return nil, false
 }
 
-func newRule(rule RuleConfig) *Rule {
-	return &Rule{
-		RuleConfig: rule,
+func newBinding(config BindingConfig) *Binding {
+	rules := make([]*MatchRule, len(config.MatchRules))
+	for i, rule := range config.MatchRules {
+		rules[i] = newMatchRule(rule)
+	}
+	return &Binding{
+		BindingConfig: config,
+		rules:         rules,
 	}
 }
 
-type Rule struct {
-	RuleConfig
+type Binding struct {
+	BindingConfig
+	rules []*MatchRule
 }
 
-func (r *Rule) Matches(primitive runtime.PrimitiveMeta) bool {
-	if !r.matchesKind(primitive.Kind.Name) {
-		return false
+func (b *Binding) GetConfig(primitive runtime.PrimitiveMeta) (map[string]interface{}, bool) {
+	for _, rule := range b.rules {
+		if rule.Matches(primitive) {
+			config := make(map[string]interface{})
+			for _, service := range b.Services {
+				if service.Name == primitive.Service {
+					if service.Config != nil {
+						config = service.Config
+						break
+					}
+				}
+			}
+			return config, true
+		}
 	}
-	if !r.matchesAPIVersion(primitive.Kind.APIVersion) {
-		return false
+	return nil, false
+}
+
+func newMatchRule(config MatchRuleConfig) *MatchRule {
+	return &MatchRule{
+		MatchRuleConfig: config,
 	}
+}
+
+type MatchRule struct {
+	MatchRuleConfig
+}
+
+func (r *MatchRule) Matches(primitive runtime.PrimitiveMeta) bool {
 	if !r.matchesName(primitive.Name) {
 		return false
 	}
@@ -106,19 +142,11 @@ func (r *Rule) Matches(primitive runtime.PrimitiveMeta) bool {
 	return true
 }
 
-func (r *Rule) matchesKind(kind string) bool {
-	return matches(r.Kinds, kind)
-}
-
-func (r *Rule) matchesAPIVersion(version string) bool {
-	return matches(r.APIVersions, version)
-}
-
-func (r *Rule) matchesName(name string) bool {
+func (r *MatchRule) matchesName(name string) bool {
 	return matches(r.Names, name)
 }
 
-func (r *Rule) matchesTags(tags map[string]string) bool {
+func (r *MatchRule) matchesTags(tags map[string]string) bool {
 	for matchKey, matchValue := range r.Tags {
 		if tags[matchKey] != matchValue {
 			return false

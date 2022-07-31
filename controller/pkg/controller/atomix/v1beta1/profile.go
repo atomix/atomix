@@ -6,6 +6,7 @@ package v1beta1
 
 import (
 	"context"
+	"encoding/json"
 	atomixv3beta1 "github.com/atomix/runtime/controller/pkg/apis/atomix/v3beta1"
 	"github.com/atomix/runtime/proxy/pkg/proxy"
 	"gopkg.in/yaml.v3"
@@ -85,26 +86,39 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		}
 
 		var routerConfig proxy.RouterConfig
-		for _, binding := range profile.Spec.Bindings {
-			var route proxy.RouteConfig
-			storeNamespace := binding.Store.Namespace
+		for _, route := range profile.Spec.Routes {
+			var routeConfig proxy.RouteConfig
+			storeNamespace := route.Store.Namespace
 			if storeNamespace == "" {
 				storeNamespace = profile.Namespace
 			}
-			route.Store = proxy.StoreID{
+			routeConfig.Store = proxy.StoreID{
 				Namespace: storeNamespace,
-				Name:      binding.Store.Name,
+				Name:      route.Store.Name,
 			}
-			for _, primitive := range binding.Primitives {
-				rule := proxy.RuleConfig{
-					Kinds:       primitive.Kinds,
-					APIVersions: primitive.APIVersions,
-					Names:       primitive.Names,
-					Tags:        primitive.Tags,
+			for _, binding := range route.Bindings {
+				var bindingConfig proxy.BindingConfig
+				for _, service := range binding.Services {
+					config := make(map[string]interface{})
+					if err := json.Unmarshal(service.Config.Raw, &config); err != nil {
+						return reconcile.Result{}, err
+					}
+					serviceConfig := proxy.ServiceConfig{
+						Name:   service.Name,
+						Config: config,
+					}
+					bindingConfig.Services = append(bindingConfig.Services, serviceConfig)
 				}
-				route.Rules = append(route.Rules, rule)
+				for _, rule := range binding.MatchRules {
+					ruleConfig := proxy.MatchRuleConfig{
+						Names: rule.Names,
+						Tags:  rule.Tags,
+					}
+					bindingConfig.MatchRules = append(bindingConfig.MatchRules, ruleConfig)
+				}
+				routeConfig.Bindings = append(routeConfig.Bindings, bindingConfig)
 			}
-			routerConfig.Routes = append(routerConfig.Routes, route)
+			routerConfig.Routes = append(routerConfig.Routes, routeConfig)
 		}
 
 		configBytes, err := yaml.Marshal(routerConfig)

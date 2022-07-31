@@ -6,6 +6,7 @@ package proxy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/logging"
@@ -38,17 +39,22 @@ type Runtime struct {
 	mu      sync.RWMutex
 }
 
-func (r *Runtime) GetConn(primitive runtime.PrimitiveMeta) (runtime.Conn, error) {
-	storeID, err := r.router.Route(primitive)
+func (r *Runtime) GetConn(primitive runtime.PrimitiveMeta) (runtime.Conn, []byte, error) {
+	storeID, config, err := r.router.Route(primitive)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	conn, ok := r.conns[storeID]
 	if !ok {
-		return nil, errors.NewUnavailable("connection to store '%s' not found", storeID)
+		return nil, nil, errors.NewUnavailable("connection to store '%s' not found", storeID)
 	}
-	return conn, nil
+
+	bytes, err := json.Marshal(config)
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, bytes, nil
 }
 
 func (r *Runtime) connect(ctx context.Context, storeID StoreID, driverID runtime.DriverID, config []byte) error {

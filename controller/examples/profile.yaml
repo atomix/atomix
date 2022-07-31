@@ -4,18 +4,19 @@ metadata:
   name: example-profile
   namespace: default
 spec:
-  bindings:
-    - name: eventually-consistent
-      store:
+  routes:
+    - store:
         namespace: default
         name: example-store
-      primitives:
-        - kinds:
-            - Map
-          apiVersions:
-            - v1
-          names:
-            - '*'
-          tags:
-            foo: bar
-            bar: baz
+      bindings:
+        - services:
+            - name: atomix.runtime.map.v1.Map
+              config:
+                cache:
+                  enabled: true
+          matchRules:
+            - names:
+                - '*'
+              tags:
+                foo: bar
+                bar: baz
