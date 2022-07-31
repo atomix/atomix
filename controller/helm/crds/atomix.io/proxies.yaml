@@ -50,20 +50,27 @@ spec:
               properties:
                 ready:
                   type: boolean
-                bindings:
+                routes:
                   type: array
                   items:
                     type: object
                     required:
-                      - name
+                      - store
                     properties:
-                      name:
-                        type: string
+                      store:
+                        type: object
+                        required:
+                          - name
+                        properties:
+                          name:
+                            type: string
+                          namespace:
+                            type: string
                       state:
                         type: string
-                        default: Unbound
+                        default: Pending
                         enum:
-                          - Unbound
-                          - Bound
+                          - Pending
+                          - Connected
                       version:
                         type: string
