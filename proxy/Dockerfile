@@ -29,4 +29,4 @@ USER atomix
 COPY --from=build /build/dist/bin/atomix-runtime-proxy /usr/local/bin/atomix-runtime-proxy
 COPY --from=build /build/dist/plugins/ /var/atomix/plugins/
 
-ENTRYPOINT ["atomix-proxy"]
+ENTRYPOINT ["atomix-runtime-proxy"]
