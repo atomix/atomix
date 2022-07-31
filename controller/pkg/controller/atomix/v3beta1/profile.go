@@ -100,8 +100,10 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 				var bindingConfig proxy.BindingConfig
 				for _, service := range binding.Services {
 					config := make(map[string]interface{})
-					if err := json.Unmarshal(service.Config.Raw, &config); err != nil {
-						return reconcile.Result{}, err
+					if service.Config.Raw != nil {
+						if err := json.Unmarshal(service.Config.Raw, &config); err != nil {
+							return reconcile.Result{}, err
+						}
 					}
 					serviceConfig := proxy.ServiceConfig{
 						Name:   service.Name,
