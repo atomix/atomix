@@ -3,7 +3,7 @@ module github.com/atomix/runtime/sdk
 go 1.18
 
 require (
-	github.com/atomix/runtime/api v0.2.0
+	github.com/atomix/runtime/api v0.2.1-0.20220812211256-0c62708a16f6
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/gogo/protobuf v1.3.2
 	github.com/mitchellh/go-homedir v1.1.0
@@ -42,5 +42,3 @@ require (
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
-
-replace github.com/atomix/runtime/api => ../api
