@@ -16,7 +16,6 @@ import (
 	counterv1 "github.com/atomix/runtime/sdk/pkg/runtime/counter/v1"
 	electionv1 "github.com/atomix/runtime/sdk/pkg/runtime/election/v1"
 	listv1 "github.com/atomix/runtime/sdk/pkg/runtime/list/v1"
-	lockv1 "github.com/atomix/runtime/sdk/pkg/runtime/lock/v1"
 	mapv1 "github.com/atomix/runtime/sdk/pkg/runtime/map/v1"
 	setv1 "github.com/atomix/runtime/sdk/pkg/runtime/set/v1"
 	topicv1 "github.com/atomix/runtime/sdk/pkg/runtime/topic/v1"
@@ -102,7 +101,6 @@ func main() {
 					counterv1.Type,
 					electionv1.Type,
 					listv1.Type,
-					lockv1.Type,
 					mapv1.Type,
 					setv1.Type,
 					topicv1.Type,
