@@ -41,8 +41,12 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/atomix/runtime/api v0.2.0 h1:OoUpO7gl9zuu55Z+FWQmAYceMd6TQoRG39mH2tzuC+0=
 github.com/atomix/runtime/api v0.2.0/go.mod h1:X16epZsQDGX+SI+atLVMMXW/qn8F9IPXQ49Hp2qTkZE=
+github.com/atomix/runtime/api v0.2.1-0.20220812231828-c809d2bc7419 h1:fjD/iDYMChUGYqLoRkm/JoZq3cWpjEtNbm/7DZZLjTg=
+github.com/atomix/runtime/api v0.2.1-0.20220812231828-c809d2bc7419/go.mod h1:X16epZsQDGX+SI+atLVMMXW/qn8F9IPXQ49Hp2qTkZE=
 github.com/atomix/runtime/sdk v0.2.0 h1:2MF+3uCF6KX2WuSwOA1ESBGJK9iFWfPsgvYNb2dYueE=
 github.com/atomix/runtime/sdk v0.2.0/go.mod h1:gBB5A6oehyGA3Ez43N0vuSxjpSz0GP1AzQ8SC9KE2QM=
+github.com/atomix/runtime/sdk v0.2.1-0.20220812231828-c809d2bc7419 h1:huEJBLcbwgMjkMmlUQ960oq2njcIQFBGQyf0qXqYL/w=
+github.com/atomix/runtime/sdk v0.2.1-0.20220812231828-c809d2bc7419/go.mod h1:SKsk7pq53lUK2DzklgvYzEBlPjGg5F7kfR+b2dRhPOw=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
