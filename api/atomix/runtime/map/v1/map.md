@@ -15,6 +15,9 @@
     - [EntriesResponse](#atomix-runtime-map-v1-EntriesResponse)
     - [Entry](#atomix-runtime-map-v1-Entry)
     - [Event](#atomix-runtime-map-v1-Event)
+    - [Event.Inserted](#atomix-runtime-map-v1-Event-Inserted)
+    - [Event.Removed](#atomix-runtime-map-v1-Event-Removed)
+    - [Event.Updated](#atomix-runtime-map-v1-Event-Updated)
     - [EventsRequest](#atomix-runtime-map-v1-EventsRequest)
     - [EventsResponse](#atomix-runtime-map-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-map-v1-GetRequest)
@@ -26,8 +29,6 @@
     - [SizeRequest](#atomix-runtime-map-v1-SizeRequest)
     - [SizeResponse](#atomix-runtime-map-v1-SizeResponse)
     - [Value](#atomix-runtime-map-v1-Value)
-  
-    - [Event.Type](#atomix-runtime-map-v1-Event-Type)
   
     - [Map](#atomix-runtime-map-v1-Map)
   
@@ -143,6 +144,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| watch | [bool](#bool) |  |  |
 
 
 
@@ -188,8 +190,56 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| type | [Event.Type](#atomix-runtime-map-v1-Event-Type) |  |  |
-| entry | [Entry](#atomix-runtime-map-v1-Entry) |  |  |
+| key | [string](#string) |  |  |
+| inserted | [Event.Inserted](#atomix-runtime-map-v1-Event-Inserted) |  |  |
+| updated | [Event.Updated](#atomix-runtime-map-v1-Event-Updated) |  |  |
+| removed | [Event.Removed](#atomix-runtime-map-v1-Event-Removed) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-Event-Inserted"></a>
+
+### Event.Inserted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-Event-Removed"></a>
+
+### Event.Removed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-Event-Updated"></a>
+
+### Event.Updated
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| new_value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+| prev_value | [Value](#atomix-runtime-map-v1-Value) |  |  |
 
 
 
@@ -358,20 +408,6 @@
 
 
  
-
-
-<a name="atomix-runtime-map-v1-Event-Type"></a>
-
-### Event.Type
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| NONE | 0 |  |
-| INSERT | 1 |  |
-| UPDATE | 2 |  |
-| REMOVE | 3 |  |
-
 
  
 

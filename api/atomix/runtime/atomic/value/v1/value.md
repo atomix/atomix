@@ -9,7 +9,12 @@
     - [CreateRequest](#atomix-runtime-atomic-value-v1-CreateRequest)
     - [CreateRequest.TagsEntry](#atomix-runtime-atomic-value-v1-CreateRequest-TagsEntry)
     - [CreateResponse](#atomix-runtime-atomic-value-v1-CreateResponse)
+    - [DeleteRequest](#atomix-runtime-atomic-value-v1-DeleteRequest)
+    - [DeleteResponse](#atomix-runtime-atomic-value-v1-DeleteResponse)
     - [Event](#atomix-runtime-atomic-value-v1-Event)
+    - [Event.Created](#atomix-runtime-atomic-value-v1-Event-Created)
+    - [Event.Deleted](#atomix-runtime-atomic-value-v1-Event-Deleted)
+    - [Event.Updated](#atomix-runtime-atomic-value-v1-Event-Updated)
     - [EventsRequest](#atomix-runtime-atomic-value-v1-EventsRequest)
     - [EventsResponse](#atomix-runtime-atomic-value-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-atomic-value-v1-GetRequest)
@@ -19,8 +24,8 @@
     - [UpdateRequest](#atomix-runtime-atomic-value-v1-UpdateRequest)
     - [UpdateResponse](#atomix-runtime-atomic-value-v1-UpdateResponse)
     - [Value](#atomix-runtime-atomic-value-v1-Value)
-  
-    - [Event.Type](#atomix-runtime-atomic-value-v1-Event-Type)
+    - [WatchRequest](#atomix-runtime-atomic-value-v1-WatchRequest)
+    - [WatchResponse](#atomix-runtime-atomic-value-v1-WatchResponse)
   
     - [AtomicValue](#atomix-runtime-atomic-value-v1-AtomicValue)
   
@@ -102,6 +107,32 @@
 
 
 
+<a name="atomix-runtime-atomic-value-v1-DeleteRequest"></a>
+
+### DeleteRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| prev_version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-value-v1-DeleteResponse"></a>
+
+### DeleteResponse
+
+
+
+
+
+
+
 <a name="atomix-runtime-atomic-value-v1-Event"></a>
 
 ### Event
@@ -110,8 +141,55 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| type | [Event.Type](#atomix-runtime-atomic-value-v1-Event-Type) |  |  |
+| created | [Event.Created](#atomix-runtime-atomic-value-v1-Event-Created) |  |  |
+| updated | [Event.Updated](#atomix-runtime-atomic-value-v1-Event-Updated) |  |  |
+| deleted | [Event.Deleted](#atomix-runtime-atomic-value-v1-Event-Deleted) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-value-v1-Event-Created"></a>
+
+### Event.Created
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
 | value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-value-v1-Event-Deleted"></a>
+
+### Event.Deleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-value-v1-Event-Updated"></a>
+
+### Event.Updated
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| new_value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
+| prev_value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
 
 
 
@@ -202,7 +280,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| version | [uint64](#uint64) |  |  |
+| new_version | [uint64](#uint64) |  |  |
 
 
 
@@ -219,7 +297,7 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | value | [bytes](#bytes) |  |  |
-| version | [uint64](#uint64) |  |  |
+| prev_version | [uint64](#uint64) |  |  |
 
 
 
@@ -234,7 +312,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| version | [uint64](#uint64) |  |  |
+| new_version | [uint64](#uint64) |  |  |
 
 
 
@@ -256,19 +334,37 @@
 
 
 
+
+<a name="atomix-runtime-atomic-value-v1-WatchRequest"></a>
+
+### WatchRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-value-v1-WatchResponse"></a>
+
+### WatchResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
+
+
+
+
+
  
-
-
-<a name="atomix-runtime-atomic-value-v1-Event-Type"></a>
-
-### Event.Type
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| NONE | 0 |  |
-| UPDATE | 1 |  |
-
 
  
 
@@ -287,7 +383,9 @@ AtomicValue is a service for a value primitive
 | Set | [SetRequest](#atomix-runtime-atomic-value-v1-SetRequest) | [SetResponse](#atomix-runtime-atomic-value-v1-SetResponse) | Set sets the value |
 | Update | [UpdateRequest](#atomix-runtime-atomic-value-v1-UpdateRequest) | [UpdateResponse](#atomix-runtime-atomic-value-v1-UpdateResponse) | Update updates the value |
 | Get | [GetRequest](#atomix-runtime-atomic-value-v1-GetRequest) | [GetResponse](#atomix-runtime-atomic-value-v1-GetResponse) | Get gets the value |
-| Events | [EventsRequest](#atomix-runtime-atomic-value-v1-EventsRequest) | [EventsResponse](#atomix-runtime-atomic-value-v1-EventsResponse) stream | Events listens for value change events |
+| Delete | [DeleteRequest](#atomix-runtime-atomic-value-v1-DeleteRequest) | [DeleteResponse](#atomix-runtime-atomic-value-v1-DeleteResponse) | Delete deletes the value |
+| Watch | [WatchRequest](#atomix-runtime-atomic-value-v1-WatchRequest) | [WatchResponse](#atomix-runtime-atomic-value-v1-WatchResponse) stream | Watch watches the value |
+| Events | [EventsRequest](#atomix-runtime-atomic-value-v1-EventsRequest) | [EventsResponse](#atomix-runtime-atomic-value-v1-EventsResponse) stream | Events watches for value change events |
 
  
 

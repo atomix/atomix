@@ -48,8 +48,8 @@ service List {
     // Events listens for change events
     rpc Events (EventsRequest) returns (stream EventsResponse);
 
-    // Elements streams all elements in the list
-    rpc Elements (ElementsRequest) returns (stream ElementsResponse);
+    // Items streams all items in the list
+    rpc Items (ItemsRequest) returns (stream ItemsResponse);
 }
 
 message CreateRequest {
@@ -206,26 +206,52 @@ message EventsResponse {
 }
 
 message Event {
-    Type type = 1;
-    Item item = 2 [
-        (gogoproto.nullable) = false
-    ];
+    uint32 index = 1;
 
-    enum Type {
-        NONE = 0;
-        ADD = 1;
-        REMOVE = 2;
+    oneof event {
+        Appended appended = 2;
+        Inserted inserted = 3;
+        Updated updated = 4;
+        Removed removed = 5;
+    }
+
+    message Appended {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Inserted {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Updated {
+        Value new_value = 1 [
+            (gogoproto.nullable) = false
+        ];
+        Value prev_value = 2 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Removed {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
     }
 }
 
-message ElementsRequest {
+message ItemsRequest {
     atomix.runtime.v1.PrimitiveId id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
+    bool watch = 2;
 }
 
-message ElementsResponse {
+message ItemsResponse {
     Item item = 1 [
         (gogoproto.nullable) = false
     ];
@@ -241,5 +267,5 @@ message Item {
 }
 
 message Value {
-    string value = 1;
+    bytes value = 1;
 }

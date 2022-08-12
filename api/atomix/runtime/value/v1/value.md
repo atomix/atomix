@@ -9,15 +9,12 @@
     - [CreateRequest](#atomix-runtime-value-v1-CreateRequest)
     - [CreateRequest.TagsEntry](#atomix-runtime-value-v1-CreateRequest-TagsEntry)
     - [CreateResponse](#atomix-runtime-value-v1-CreateResponse)
-    - [Event](#atomix-runtime-value-v1-Event)
-    - [EventsRequest](#atomix-runtime-value-v1-EventsRequest)
-    - [EventsResponse](#atomix-runtime-value-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-value-v1-GetRequest)
     - [GetResponse](#atomix-runtime-value-v1-GetResponse)
     - [SetRequest](#atomix-runtime-value-v1-SetRequest)
     - [SetResponse](#atomix-runtime-value-v1-SetResponse)
-  
-    - [Event.Type](#atomix-runtime-value-v1-Event-Type)
+    - [WatchRequest](#atomix-runtime-value-v1-WatchRequest)
+    - [WatchResponse](#atomix-runtime-value-v1-WatchResponse)
   
     - [Value](#atomix-runtime-value-v1-Value)
   
@@ -99,52 +96,6 @@
 
 
 
-<a name="atomix-runtime-value-v1-Event"></a>
-
-### Event
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| type | [Event.Type](#atomix-runtime-value-v1-Event-Type) |  |  |
-| value | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-value-v1-EventsRequest"></a>
-
-### EventsRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-value-v1-EventsResponse"></a>
-
-### EventsResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| event | [Event](#atomix-runtime-value-v1-Event) |  |  |
-
-
-
-
-
-
 <a name="atomix-runtime-value-v1-GetRequest"></a>
 
 ### GetRequest
@@ -205,19 +156,37 @@
 
 
 
+
+<a name="atomix-runtime-value-v1-WatchRequest"></a>
+
+### WatchRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-value-v1-WatchResponse"></a>
+
+### WatchResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [bytes](#bytes) |  |  |
+
+
+
+
+
  
-
-
-<a name="atomix-runtime-value-v1-Event-Type"></a>
-
-### Event.Type
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| NONE | 0 |  |
-| UPDATE | 1 |  |
-
 
  
 
@@ -235,7 +204,7 @@ Value is a service for a value primitive
 | Close | [CloseRequest](#atomix-runtime-value-v1-CloseRequest) | [CloseResponse](#atomix-runtime-value-v1-CloseResponse) | Close closes the value |
 | Set | [SetRequest](#atomix-runtime-value-v1-SetRequest) | [SetResponse](#atomix-runtime-value-v1-SetResponse) | Set sets the value |
 | Get | [GetRequest](#atomix-runtime-value-v1-GetRequest) | [GetResponse](#atomix-runtime-value-v1-GetResponse) | Get gets the value |
-| Events | [EventsRequest](#atomix-runtime-value-v1-EventsRequest) | [EventsResponse](#atomix-runtime-value-v1-EventsResponse) stream | Events listens for value change events |
+| Watch | [WatchRequest](#atomix-runtime-value-v1-WatchRequest) | [WatchResponse](#atomix-runtime-value-v1-WatchResponse) stream | Watch watches the value for changes |
 
  
 

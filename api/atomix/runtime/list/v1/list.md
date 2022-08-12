@@ -15,9 +15,11 @@
     - [CreateRequest](#atomix-runtime-list-v1-CreateRequest)
     - [CreateRequest.TagsEntry](#atomix-runtime-list-v1-CreateRequest-TagsEntry)
     - [CreateResponse](#atomix-runtime-list-v1-CreateResponse)
-    - [ElementsRequest](#atomix-runtime-list-v1-ElementsRequest)
-    - [ElementsResponse](#atomix-runtime-list-v1-ElementsResponse)
     - [Event](#atomix-runtime-list-v1-Event)
+    - [Event.Appended](#atomix-runtime-list-v1-Event-Appended)
+    - [Event.Inserted](#atomix-runtime-list-v1-Event-Inserted)
+    - [Event.Removed](#atomix-runtime-list-v1-Event-Removed)
+    - [Event.Updated](#atomix-runtime-list-v1-Event-Updated)
     - [EventsRequest](#atomix-runtime-list-v1-EventsRequest)
     - [EventsResponse](#atomix-runtime-list-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-list-v1-GetRequest)
@@ -25,6 +27,8 @@
     - [InsertRequest](#atomix-runtime-list-v1-InsertRequest)
     - [InsertResponse](#atomix-runtime-list-v1-InsertResponse)
     - [Item](#atomix-runtime-list-v1-Item)
+    - [ItemsRequest](#atomix-runtime-list-v1-ItemsRequest)
+    - [ItemsResponse](#atomix-runtime-list-v1-ItemsResponse)
     - [RemoveRequest](#atomix-runtime-list-v1-RemoveRequest)
     - [RemoveResponse](#atomix-runtime-list-v1-RemoveResponse)
     - [SetRequest](#atomix-runtime-list-v1-SetRequest)
@@ -32,8 +36,6 @@
     - [SizeRequest](#atomix-runtime-list-v1-SizeRequest)
     - [SizeResponse](#atomix-runtime-list-v1-SizeResponse)
     - [Value](#atomix-runtime-list-v1-Value)
-  
-    - [Event.Type](#atomix-runtime-list-v1-Event-Type)
   
     - [List](#atomix-runtime-list-v1-List)
   
@@ -197,36 +199,6 @@
 
 
 
-<a name="atomix-runtime-list-v1-ElementsRequest"></a>
-
-### ElementsRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-list-v1-ElementsResponse"></a>
-
-### ElementsResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| item | [Item](#atomix-runtime-list-v1-Item) |  |  |
-
-
-
-
-
-
 <a name="atomix-runtime-list-v1-Event"></a>
 
 ### Event
@@ -235,8 +207,72 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| type | [Event.Type](#atomix-runtime-list-v1-Event-Type) |  |  |
-| item | [Item](#atomix-runtime-list-v1-Item) |  |  |
+| index | [uint32](#uint32) |  |  |
+| appended | [Event.Appended](#atomix-runtime-list-v1-Event-Appended) |  |  |
+| inserted | [Event.Inserted](#atomix-runtime-list-v1-Event-Inserted) |  |  |
+| updated | [Event.Updated](#atomix-runtime-list-v1-Event-Updated) |  |  |
+| removed | [Event.Removed](#atomix-runtime-list-v1-Event-Removed) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-list-v1-Event-Appended"></a>
+
+### Event.Appended
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [Value](#atomix-runtime-list-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-list-v1-Event-Inserted"></a>
+
+### Event.Inserted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [Value](#atomix-runtime-list-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-list-v1-Event-Removed"></a>
+
+### Event.Removed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [Value](#atomix-runtime-list-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-list-v1-Event-Updated"></a>
+
+### Event.Updated
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| new_value | [Value](#atomix-runtime-list-v1-Value) |  |  |
+| prev_value | [Value](#atomix-runtime-list-v1-Value) |  |  |
 
 
 
@@ -354,6 +390,37 @@
 
 
 
+<a name="atomix-runtime-list-v1-ItemsRequest"></a>
+
+### ItemsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| watch | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-list-v1-ItemsResponse"></a>
+
+### ItemsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| item | [Item](#atomix-runtime-list-v1-Item) |  |  |
+
+
+
+
+
+
 <a name="atomix-runtime-list-v1-RemoveRequest"></a>
 
 ### RemoveRequest
@@ -457,26 +524,13 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [string](#string) |  |  |
+| value | [bytes](#bytes) |  |  |
 
 
 
 
 
  
-
-
-<a name="atomix-runtime-list-v1-Event-Type"></a>
-
-### Event.Type
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| NONE | 0 |  |
-| ADD | 1 |  |
-| REMOVE | 2 |  |
-
 
  
 
@@ -500,7 +554,7 @@ List is a service for a list primitive
 | Remove | [RemoveRequest](#atomix-runtime-list-v1-RemoveRequest) | [RemoveResponse](#atomix-runtime-list-v1-RemoveResponse) | Remove removes an element from the list |
 | Clear | [ClearRequest](#atomix-runtime-list-v1-ClearRequest) | [ClearResponse](#atomix-runtime-list-v1-ClearResponse) | Clear removes all elements from the list |
 | Events | [EventsRequest](#atomix-runtime-list-v1-EventsRequest) | [EventsResponse](#atomix-runtime-list-v1-EventsResponse) stream | Events listens for change events |
-| Elements | [ElementsRequest](#atomix-runtime-list-v1-ElementsRequest) | [ElementsResponse](#atomix-runtime-list-v1-ElementsResponse) stream | Elements streams all elements in the list |
+| Items | [ItemsRequest](#atomix-runtime-list-v1-ItemsRequest) | [ItemsResponse](#atomix-runtime-list-v1-ItemsResponse) stream | Items streams all items in the list |
 
  
 

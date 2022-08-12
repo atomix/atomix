@@ -19,14 +19,14 @@
     - [ElementsRequest](#atomix-runtime-set-v1-ElementsRequest)
     - [ElementsResponse](#atomix-runtime-set-v1-ElementsResponse)
     - [Event](#atomix-runtime-set-v1-Event)
+    - [Event.Added](#atomix-runtime-set-v1-Event-Added)
+    - [Event.Removed](#atomix-runtime-set-v1-Event-Removed)
     - [EventsRequest](#atomix-runtime-set-v1-EventsRequest)
     - [EventsResponse](#atomix-runtime-set-v1-EventsResponse)
     - [RemoveRequest](#atomix-runtime-set-v1-RemoveRequest)
     - [RemoveResponse](#atomix-runtime-set-v1-RemoveResponse)
     - [SizeRequest](#atomix-runtime-set-v1-SizeRequest)
     - [SizeResponse](#atomix-runtime-set-v1-SizeResponse)
-  
-    - [Event.Type](#atomix-runtime-set-v1-Event-Type)
   
     - [Set](#atomix-runtime-set-v1-Set)
   
@@ -204,7 +204,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | value | [string](#string) |  |  |
-| timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 
@@ -220,6 +219,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| watch | [bool](#bool) |  |  |
 
 
 
@@ -249,7 +249,37 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| type | [Event.Type](#atomix-runtime-set-v1-Event-Type) |  |  |
+| added | [Event.Added](#atomix-runtime-set-v1-Event-Added) |  |  |
+| removed | [Event.Removed](#atomix-runtime-set-v1-Event-Removed) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-set-v1-Event-Added"></a>
+
+### Event.Added
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| element | [Element](#atomix-runtime-set-v1-Element) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-set-v1-Event-Removed"></a>
+
+### Event.Removed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
 | element | [Element](#atomix-runtime-set-v1-Element) |  |  |
 
 
@@ -266,7 +296,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| replay | [bool](#bool) |  |  |
 
 
 
@@ -349,20 +378,6 @@
 
 
  
-
-
-<a name="atomix-runtime-set-v1-Event-Type"></a>
-
-### Event.Type
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| NONE | 0 |  |
-| ADD | 1 |  |
-| REMOVE | 2 |  |
-| REPLAY | 3 |  |
-
 
  
 

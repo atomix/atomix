@@ -142,7 +142,6 @@ message EventsRequest {
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
-    bool replay = 2;
 }
 
 message EventsResponse {
@@ -152,16 +151,21 @@ message EventsResponse {
 }
 
 message Event {
-    Type type = 1;
-    Element element = 2 [
-        (gogoproto.nullable) = false
-    ];
+    oneof event {
+        Added added = 1;
+        Removed removed = 2;
+    }
 
-    enum Type {
-        NONE = 0;
-        ADD = 1;
-        REMOVE = 2;
-        REPLAY = 3;
+    message Added {
+        Element element = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Removed {
+        Element element = 1 [
+            (gogoproto.nullable) = false
+        ];
     }
 }
 
@@ -170,6 +174,7 @@ message ElementsRequest {
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
+    bool watch = 2;
 }
 
 message ElementsResponse {
@@ -180,5 +185,4 @@ message ElementsResponse {
 
 message Element {
     string value = 1;
-    atomix.runtime.v1.Timestamp timestamp = 2;
 }

@@ -135,6 +135,7 @@ message EntriesRequest {
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
+    bool watch = 2;
 }
 
 message EntriesResponse {
@@ -159,16 +160,33 @@ message EventsResponse {
 }
 
 message Event {
-    Type type = 1;
-    Entry entry = 2 [
-        (gogoproto.nullable) = false
-    ];
+    string key = 1;
 
-    enum Type {
-        NONE = 0;
-        INSERT = 1;
-        UPDATE = 2;
-        REMOVE = 3;
+    oneof event {
+        Inserted inserted = 2;
+        Updated updated = 3;
+        Removed removed = 4;
+    }
+
+    message Inserted {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Updated {
+        Value new_value = 1 [
+            (gogoproto.nullable) = false
+        ];
+        Value prev_value = 2 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Removed {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
     }
 }
 

@@ -32,7 +32,13 @@ service AtomicValue {
     // Get gets the value
     rpc Get (GetRequest) returns (GetResponse);
 
-    // Events listens for value change events
+    // Delete deletes the value
+    rpc Delete (DeleteRequest) returns (DeleteResponse);
+
+    // Watch watches the value
+    rpc Watch (WatchRequest) returns (stream WatchResponse);
+
+    // Events watches for value change events
     rpc Events (EventsRequest) returns (stream EventsResponse);
 }
 
@@ -79,7 +85,7 @@ message SetRequest {
 }
 
 message SetResponse {
-    uint64 version = 1;
+    uint64 new_version = 1;
 }
 
 message UpdateRequest {
@@ -88,11 +94,34 @@ message UpdateRequest {
         (gogoproto.nullable) = false
     ];
     bytes value = 2;
-    uint64 version = 3;
+    uint64 prev_version = 3;
 }
 
 message UpdateResponse {
-    uint64 version = 1;
+    uint64 new_version = 1;
+}
+
+message DeleteRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 prev_version = 2;
+}
+
+message DeleteResponse {
+
+}
+
+message WatchRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message WatchResponse {
+    Value value = 1;
 }
 
 message EventsRequest {
@@ -114,11 +143,30 @@ message Value {
 }
 
 message Event {
-    Type type = 1;
-    Value value = 2;
+    oneof event {
+        Created created = 1;
+        Updated updated = 2;
+        Deleted deleted = 3;
+    }
 
-    enum Type {
-        NONE = 0;
-        UPDATE = 1;
+    message Created {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Updated {
+        Value new_value = 1 [
+            (gogoproto.nullable) = false
+        ];
+        Value prev_value = 2 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Deleted {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
     }
 }

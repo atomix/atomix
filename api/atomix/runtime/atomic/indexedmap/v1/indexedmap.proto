@@ -101,7 +101,11 @@ message AppendRequest {
         (gogoproto.nullable) = false
     ];
     string key = 2;
-    Value value = 3;
+    bytes value = 3;
+    google.protobuf.Duration ttl = 4 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
 }
 
 message AppendResponse {
@@ -115,8 +119,12 @@ message UpdateRequest {
     ];
     string key = 2;
     uint64 index = 3;
-    Value value = 4;
-    uint64 version = 5;
+    bytes value = 4;
+    google.protobuf.Duration ttl = 5 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
+    uint64 prev_version = 6;
 }
 
 message UpdateResponse {
@@ -189,7 +197,7 @@ message RemoveRequest {
     ];
     string key = 2;
     uint64 index = 3;
-    uint64 version = 4;
+    uint64 prev_version = 4;
 }
 
 message RemoveResponse {
@@ -212,6 +220,7 @@ message EntriesRequest {
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
+    bool watch = 2;
 }
 
 message EntriesResponse {
@@ -226,7 +235,6 @@ message EventsRequest {
         (gogoproto.nullable) = false
     ];
     string key = 2;
-    bool replay = 3;
 }
 
 message EventsResponse {
@@ -236,22 +244,41 @@ message EventsResponse {
 }
 
 message Event {
-    Type type = 1;
-    Entry entry = 2 [
-        (gogoproto.nullable) = false
-    ];
+    string key = 1;
+    uint64 index = 2;
 
-    enum Type {
-        NONE = 0;
-        INSERT = 1;
-        UPDATE = 2;
-        REMOVE = 3;
+    oneof event {
+        Inserted inserted = 3;
+        Updated updated = 4;
+        Removed removed = 5;
+    }
+
+    message Inserted {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Updated {
+        Value new_value = 1 [
+            (gogoproto.nullable) = false
+        ];
+        Value prev_value = 2 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Removed {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
     }
 }
 
 message Value {
     bytes value = 1;
-    google.protobuf.Duration ttl = 2 [
+    uint64 version = 2;
+    google.protobuf.Duration ttl = 3 [
         (gogoproto.customname) = "TTL",
         (gogoproto.stdduration) = true
     ];
@@ -261,5 +288,4 @@ message Entry {
     string key = 1;
     uint64 index = 2;
     Value value = 3;
-    uint64 version = 4;
 }

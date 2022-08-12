@@ -11,15 +11,12 @@
     - [CreateResponse](#atomix-runtime-atomic-lock-v1-CreateResponse)
     - [GetLockRequest](#atomix-runtime-atomic-lock-v1-GetLockRequest)
     - [GetLockResponse](#atomix-runtime-atomic-lock-v1-GetLockResponse)
-    - [LockInstance](#atomix-runtime-atomic-lock-v1-LockInstance)
     - [LockRequest](#atomix-runtime-atomic-lock-v1-LockRequest)
     - [LockResponse](#atomix-runtime-atomic-lock-v1-LockResponse)
     - [UnlockRequest](#atomix-runtime-atomic-lock-v1-UnlockRequest)
     - [UnlockResponse](#atomix-runtime-atomic-lock-v1-UnlockResponse)
   
-    - [LockInstance.State](#atomix-runtime-atomic-lock-v1-LockInstance-State)
-  
-    - [AtomicLock](#atomix-runtime-atomic-lock-v1-AtomicLock)
+    - [Lock](#atomix-runtime-atomic-lock-v1-Lock)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -108,7 +105,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| lock | [LockInstance](#atomix-runtime-atomic-lock-v1-LockInstance) |  |  |
 
 
 
@@ -123,23 +119,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| lock | [LockInstance](#atomix-runtime-atomic-lock-v1-LockInstance) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-atomic-lock-v1-LockInstance"></a>
-
-### LockInstance
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
 | version | [uint64](#uint64) |  |  |
-| state | [LockInstance.State](#atomix-runtime-atomic-lock-v1-LockInstance-State) |  |  |
 
 
 
@@ -170,7 +150,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| lock | [LockInstance](#atomix-runtime-atomic-lock-v1-LockInstance) |  |  |
+| version | [uint64](#uint64) |  |  |
 
 
 
@@ -186,7 +166,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| lock | [LockInstance](#atomix-runtime-atomic-lock-v1-LockInstance) |  |  |
+| version | [uint64](#uint64) |  |  |
 
 
 
@@ -199,37 +179,20 @@
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| lock | [LockInstance](#atomix-runtime-atomic-lock-v1-LockInstance) |  |  |
-
-
 
 
 
  
-
-
-<a name="atomix-runtime-atomic-lock-v1-LockInstance-State"></a>
-
-### LockInstance.State
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| UNLOCKED | 0 |  |
-| LOCKED | 1 |  |
-
 
  
 
  
 
 
-<a name="atomix-runtime-atomic-lock-v1-AtomicLock"></a>
+<a name="atomix-runtime-atomic-lock-v1-Lock"></a>
 
-### AtomicLock
-AtomicLock is a service for a lock primitive
+### Lock
+Lock is a service for a lock primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|

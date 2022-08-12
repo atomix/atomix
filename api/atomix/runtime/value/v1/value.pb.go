@@ -28,31 +28,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type Event_Type int32
-
-const (
-	Event_NONE   Event_Type = 0
-	Event_UPDATE Event_Type = 1
-)
-
-var Event_Type_name = map[int32]string{
-	0: "NONE",
-	1: "UPDATE",
-}
-
-var Event_Type_value = map[string]int32{
-	"NONE":   0,
-	"UPDATE": 1,
-}
-
-func (x Event_Type) String() string {
-	return proto.EnumName(Event_Type_name, int32(x))
-}
-
-func (Event_Type) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_8d64dc099e6a9600, []int{10, 0}
-}
-
 type CreateRequest struct {
 	ID   v1.PrimitiveId    `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
 	Tags map[string]string `protobuf:"bytes,2,rep,name=tags,proto3" json:"tags,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
@@ -405,22 +380,22 @@ func (m *SetResponse) GetValue() []byte {
 	return nil
 }
 
-type EventsRequest struct {
+type WatchRequest struct {
 	ID v1.PrimitiveId `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
 }
 
-func (m *EventsRequest) Reset()         { *m = EventsRequest{} }
-func (m *EventsRequest) String() string { return proto.CompactTextString(m) }
-func (*EventsRequest) ProtoMessage()    {}
-func (*EventsRequest) Descriptor() ([]byte, []int) {
+func (m *WatchRequest) Reset()         { *m = WatchRequest{} }
+func (m *WatchRequest) String() string { return proto.CompactTextString(m) }
+func (*WatchRequest) ProtoMessage()    {}
+func (*WatchRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_8d64dc099e6a9600, []int{8}
 }
-func (m *EventsRequest) XXX_Unmarshal(b []byte) error {
+func (m *WatchRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EventsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *WatchRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_EventsRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_WatchRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -430,41 +405,41 @@ func (m *EventsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error
 		return b[:n], nil
 	}
 }
-func (m *EventsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventsRequest.Merge(m, src)
+func (m *WatchRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WatchRequest.Merge(m, src)
 }
-func (m *EventsRequest) XXX_Size() int {
+func (m *WatchRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *EventsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventsRequest.DiscardUnknown(m)
+func (m *WatchRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_WatchRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_EventsRequest proto.InternalMessageInfo
+var xxx_messageInfo_WatchRequest proto.InternalMessageInfo
 
-func (m *EventsRequest) GetID() v1.PrimitiveId {
+func (m *WatchRequest) GetID() v1.PrimitiveId {
 	if m != nil {
 		return m.ID
 	}
 	return v1.PrimitiveId{}
 }
 
-type EventsResponse struct {
-	Event Event `protobuf:"bytes,1,opt,name=event,proto3" json:"event"`
+type WatchResponse struct {
+	Value []byte `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
 }
 
-func (m *EventsResponse) Reset()         { *m = EventsResponse{} }
-func (m *EventsResponse) String() string { return proto.CompactTextString(m) }
-func (*EventsResponse) ProtoMessage()    {}
-func (*EventsResponse) Descriptor() ([]byte, []int) {
+func (m *WatchResponse) Reset()         { *m = WatchResponse{} }
+func (m *WatchResponse) String() string { return proto.CompactTextString(m) }
+func (*WatchResponse) ProtoMessage()    {}
+func (*WatchResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_8d64dc099e6a9600, []int{9}
 }
-func (m *EventsResponse) XXX_Unmarshal(b []byte) error {
+func (m *WatchResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EventsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *WatchResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_EventsResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_WatchResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -474,71 +449,19 @@ func (m *EventsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, erro
 		return b[:n], nil
 	}
 }
-func (m *EventsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventsResponse.Merge(m, src)
+func (m *WatchResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WatchResponse.Merge(m, src)
 }
-func (m *EventsResponse) XXX_Size() int {
+func (m *WatchResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *EventsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventsResponse.DiscardUnknown(m)
+func (m *WatchResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_WatchResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_EventsResponse proto.InternalMessageInfo
+var xxx_messageInfo_WatchResponse proto.InternalMessageInfo
 
-func (m *EventsResponse) GetEvent() Event {
-	if m != nil {
-		return m.Event
-	}
-	return Event{}
-}
-
-type Event struct {
-	Type  Event_Type `protobuf:"varint,1,opt,name=type,proto3,enum=atomix.runtime.value.v1.Event_Type" json:"type,omitempty"`
-	Value []byte     `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
-}
-
-func (m *Event) Reset()         { *m = Event{} }
-func (m *Event) String() string { return proto.CompactTextString(m) }
-func (*Event) ProtoMessage()    {}
-func (*Event) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8d64dc099e6a9600, []int{10}
-}
-func (m *Event) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Event) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_Event.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *Event) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Event.Merge(m, src)
-}
-func (m *Event) XXX_Size() int {
-	return m.Size()
-}
-func (m *Event) XXX_DiscardUnknown() {
-	xxx_messageInfo_Event.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Event proto.InternalMessageInfo
-
-func (m *Event) GetType() Event_Type {
-	if m != nil {
-		return m.Type
-	}
-	return Event_NONE
-}
-
-func (m *Event) GetValue() []byte {
+func (m *WatchResponse) GetValue() []byte {
 	if m != nil {
 		return m.Value
 	}
@@ -546,7 +469,6 @@ func (m *Event) GetValue() []byte {
 }
 
 func init() {
-	proto.RegisterEnum("atomix.runtime.value.v1.Event_Type", Event_Type_name, Event_Type_value)
 	proto.RegisterType((*CreateRequest)(nil), "atomix.runtime.value.v1.CreateRequest")
 	proto.RegisterMapType((map[string]string)(nil), "atomix.runtime.value.v1.CreateRequest.TagsEntry")
 	proto.RegisterType((*CreateResponse)(nil), "atomix.runtime.value.v1.CreateResponse")
@@ -556,9 +478,8 @@ func init() {
 	proto.RegisterType((*GetResponse)(nil), "atomix.runtime.value.v1.GetResponse")
 	proto.RegisterType((*SetRequest)(nil), "atomix.runtime.value.v1.SetRequest")
 	proto.RegisterType((*SetResponse)(nil), "atomix.runtime.value.v1.SetResponse")
-	proto.RegisterType((*EventsRequest)(nil), "atomix.runtime.value.v1.EventsRequest")
-	proto.RegisterType((*EventsResponse)(nil), "atomix.runtime.value.v1.EventsResponse")
-	proto.RegisterType((*Event)(nil), "atomix.runtime.value.v1.Event")
+	proto.RegisterType((*WatchRequest)(nil), "atomix.runtime.value.v1.WatchRequest")
+	proto.RegisterType((*WatchResponse)(nil), "atomix.runtime.value.v1.WatchResponse")
 }
 
 func init() {
@@ -566,40 +487,36 @@ func init() {
 }
 
 var fileDescriptor_8d64dc099e6a9600 = []byte{
-	// 523 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x94, 0x5d, 0x6f, 0xd2, 0x50,
-	0x18, 0xc7, 0x7b, 0x4a, 0x8b, 0xee, 0x61, 0x43, 0x72, 0xb2, 0x44, 0xd2, 0x98, 0x6e, 0x16, 0x9d,
-	0xbb, 0x6a, 0x57, 0xbc, 0x98, 0xe1, 0x4e, 0x5e, 0x82, 0x53, 0x33, 0x49, 0x41, 0x12, 0x63, 0x62,
-	0x52, 0xc3, 0x09, 0x39, 0x71, 0xd0, 0xda, 0x1e, 0x1a, 0xf9, 0x16, 0x7e, 0x1f, 0xbf, 0xc0, 0xe2,
-	0xd5, 0x2e, 0xbd, 0x5a, 0x0c, 0x7c, 0x11, 0xd3, 0x73, 0xda, 0x31, 0x66, 0x5a, 0x76, 0xc1, 0xdd,
-	0xc3, 0xc3, 0xf3, 0xff, 0x3d, 0x2f, 0xfd, 0xb7, 0x50, 0x73, 0x99, 0x37, 0xa1, 0x3f, 0xac, 0x60,
-	0x36, 0x65, 0x74, 0x42, 0xac, 0xc8, 0xbd, 0x98, 0x11, 0x2b, 0xb2, 0x45, 0x60, 0xfa, 0x81, 0xc7,
-	0x3c, 0xfc, 0x58, 0x14, 0x99, 0x49, 0x91, 0x29, 0xfe, 0x8b, 0x6c, 0xed, 0xe9, 0x5d, 0xb5, 0x6d,
-	0xf9, 0x01, 0x9d, 0x50, 0x46, 0xa3, 0x44, 0xab, 0xed, 0x8f, 0xbd, 0xb1, 0xc7, 0x43, 0x2b, 0x8e,
-	0x44, 0xd6, 0xf8, 0x8d, 0x60, 0xaf, 0x15, 0x10, 0x97, 0x11, 0x87, 0x7c, 0x9f, 0x91, 0x90, 0xe1,
-	0x06, 0xc8, 0x74, 0x54, 0x45, 0x87, 0xe8, 0xb8, 0x54, 0xd7, 0xcd, 0xbb, 0x0d, 0x6d, 0xb3, 0x97,
-	0x72, 0xcf, 0x46, 0x4d, 0xb8, 0xbc, 0x3e, 0x90, 0x16, 0xd7, 0x07, 0xf2, 0x59, 0xdb, 0x91, 0xe9,
-	0x08, 0xb7, 0x41, 0x61, 0xee, 0x38, 0xac, 0xca, 0x87, 0x85, 0xe3, 0x52, 0xfd, 0xc4, 0xcc, 0x18,
-	0xd7, 0x5c, 0xeb, 0x68, 0x0e, 0xdc, 0x71, 0xd8, 0x99, 0xb2, 0x60, 0xee, 0x70, 0xb5, 0x76, 0x0a,
-	0x3b, 0x37, 0x29, 0x5c, 0x81, 0xc2, 0x37, 0x32, 0xe7, 0xf3, 0xec, 0x38, 0x71, 0x88, 0xf7, 0x41,
-	0xe5, 0xa0, 0xaa, 0xcc, 0x73, 0xe2, 0x47, 0x43, 0x7e, 0x85, 0x8c, 0x0a, 0x94, 0x53, 0x72, 0xe8,
-	0x7b, 0xd3, 0x90, 0x18, 0x6f, 0x61, 0xb7, 0x75, 0xe1, 0x85, 0xdb, 0x58, 0xce, 0x78, 0x04, 0x7b,
-	0x09, 0x2b, 0x81, 0xbf, 0x01, 0xe8, 0x12, 0xb6, 0x0d, 0x74, 0x0d, 0x4a, 0x9c, 0x24, 0xc0, 0xab,
-	0x0d, 0x63, 0xda, 0x6e, 0xb2, 0xa1, 0xf1, 0x05, 0xa0, 0xbf, 0x95, 0x76, 0xeb, 0x17, 0xbc, 0xe1,
-	0xd7, 0xa0, 0xd4, 0xdf, 0x38, 0xc4, 0x3b, 0xd8, 0xeb, 0x44, 0x64, 0xca, 0xc2, 0x6d, 0xac, 0xfd,
-	0x1e, 0xca, 0x29, 0x2c, 0x69, 0xda, 0x00, 0x95, 0xc4, 0x99, 0x4c, 0x60, 0xea, 0x20, 0xae, 0x6b,
-	0x2a, 0x31, 0xd0, 0x11, 0x12, 0x83, 0x81, 0xca, 0xb3, 0xf8, 0x14, 0x14, 0x36, 0xf7, 0xc5, 0xe0,
-	0xe5, 0x7a, 0x2d, 0x9f, 0x61, 0x0e, 0xe6, 0x3e, 0x71, 0xb8, 0x20, 0xe3, 0x2e, 0x4f, 0x40, 0x89,
-	0x6b, 0xf0, 0x43, 0x50, 0xce, 0x3f, 0x9c, 0x77, 0x2a, 0x12, 0x06, 0x28, 0x7e, 0xec, 0xb5, 0x5f,
-	0x0f, 0x3a, 0x15, 0x54, 0xff, 0x55, 0x00, 0x75, 0x18, 0xd7, 0xe1, 0x4f, 0x50, 0x14, 0xee, 0xc3,
-	0x47, 0xf7, 0x33, 0xbe, 0xf6, 0x62, 0x63, 0x5d, 0x72, 0x96, 0x21, 0xa8, 0xdc, 0x7a, 0xf8, 0x79,
-	0xb6, 0xe2, 0x96, 0xcd, 0xb5, 0xa3, 0x4d, 0x65, 0x09, 0xb7, 0x07, 0x85, 0x3e, 0x61, 0x38, 0xfb,
-	0x44, 0x2b, 0xc3, 0x69, 0xcf, 0xf2, 0x8b, 0x56, 0xc4, 0x6e, 0x2e, 0xb1, 0x7b, 0x1f, 0xe2, 0xed,
-	0x97, 0xe1, 0x33, 0x14, 0x85, 0x49, 0x72, 0xce, 0xba, 0x66, 0xc9, 0x9c, 0xb3, 0xae, 0xbb, 0xed,
-	0x04, 0x35, 0x5b, 0x97, 0x0b, 0x1d, 0x5d, 0x2d, 0x74, 0xf4, 0x77, 0xa1, 0xa3, 0x9f, 0x4b, 0x5d,
-	0xba, 0x5a, 0xea, 0xd2, 0x9f, 0xa5, 0x2e, 0x81, 0x4e, 0xbd, 0x14, 0xe3, 0xfa, 0xf4, 0x3f, 0x54,
-	0xf3, 0x01, 0x7f, 0xe8, 0x43, 0xbb, 0x87, 0xbe, 0x16, 0xf9, 0xa7, 0xf4, 0xe5, 0xbf, 0x00, 0x00,
-	0x00, 0xff, 0xff, 0x20, 0x47, 0xd6, 0x13, 0xc3, 0x05, 0x00, 0x00,
+	// 456 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x94, 0xc1, 0x6e, 0xd3, 0x40,
+	0x10, 0x86, 0xb3, 0x0e, 0x29, 0xea, 0x24, 0x81, 0x6a, 0x55, 0x89, 0xc8, 0x87, 0x6d, 0xb1, 0x69,
+	0xe9, 0x69, 0x5d, 0x87, 0x03, 0xa8, 0xc7, 0xa4, 0x28, 0xb4, 0xa7, 0xc8, 0x41, 0x01, 0x2e, 0x48,
+	0x86, 0xac, 0xcc, 0x8a, 0x26, 0x6b, 0xec, 0x8d, 0x45, 0xdf, 0x82, 0xc7, 0xe1, 0x11, 0x2a, 0x4e,
+	0x3d, 0x72, 0xaa, 0x90, 0xf3, 0x22, 0xc8, 0xeb, 0x4d, 0x93, 0xb4, 0x8a, 0xd3, 0x83, 0x6f, 0xe3,
+	0xf5, 0x3f, 0xdf, 0xec, 0xef, 0x7f, 0x64, 0xb0, 0x7d, 0x29, 0xc6, 0xfc, 0xa7, 0x13, 0x4d, 0x27,
+	0x92, 0x8f, 0x99, 0x93, 0xf8, 0x17, 0x53, 0xe6, 0x24, 0x6e, 0x5e, 0xd0, 0x30, 0x12, 0x52, 0xe0,
+	0x67, 0xb9, 0x88, 0x6a, 0x11, 0xcd, 0xdf, 0x25, 0xae, 0xf9, 0xfc, 0x6e, 0xb7, 0xeb, 0x84, 0x11,
+	0x1f, 0x73, 0xc9, 0x13, 0xdd, 0x6b, 0xee, 0x06, 0x22, 0x10, 0xaa, 0x74, 0xb2, 0x2a, 0x3f, 0xb5,
+	0xfe, 0x20, 0x68, 0x76, 0x23, 0xe6, 0x4b, 0xe6, 0xb1, 0x1f, 0x53, 0x16, 0x4b, 0x7c, 0x02, 0x06,
+	0x1f, 0xb5, 0xd0, 0x3e, 0x3a, 0xaa, 0xb7, 0x09, 0xbd, 0x3b, 0xd0, 0xa5, 0xfd, 0x39, 0xf7, 0x6c,
+	0xd4, 0x81, 0xab, 0x9b, 0xbd, 0x4a, 0x7a, 0xb3, 0x67, 0x9c, 0x9d, 0x7a, 0x06, 0x1f, 0xe1, 0x53,
+	0x78, 0x24, 0xfd, 0x20, 0x6e, 0x19, 0xfb, 0xd5, 0xa3, 0x7a, 0xfb, 0x98, 0xae, 0xb9, 0x2e, 0x5d,
+	0x99, 0x48, 0xdf, 0xfb, 0x41, 0xfc, 0x76, 0x22, 0xa3, 0x4b, 0x4f, 0x75, 0x9b, 0xaf, 0x61, 0xfb,
+	0xf6, 0x08, 0xef, 0x40, 0xf5, 0x3b, 0xbb, 0x54, 0xf7, 0xd9, 0xf6, 0xb2, 0x12, 0xef, 0x42, 0x4d,
+	0x81, 0x5a, 0x86, 0x3a, 0xcb, 0x1f, 0x4e, 0x8c, 0x37, 0xc8, 0xda, 0x81, 0x27, 0x73, 0x72, 0x1c,
+	0x8a, 0x49, 0xcc, 0xac, 0x73, 0x68, 0x74, 0x2f, 0x44, 0x5c, 0x86, 0x39, 0xeb, 0x29, 0x34, 0x35,
+	0x4b, 0xc3, 0xdf, 0x01, 0xf4, 0x98, 0x2c, 0x03, 0x6d, 0x43, 0x5d, 0x91, 0x72, 0xf0, 0xc2, 0x61,
+	0x46, 0x6b, 0x68, 0x87, 0xd6, 0x67, 0x80, 0x41, 0x29, 0xe3, 0x56, 0xbf, 0xe0, 0x2d, 0xdf, 0x86,
+	0xfa, 0x60, 0xe3, 0x25, 0xce, 0xa1, 0xf1, 0xc1, 0x97, 0x5f, 0xbf, 0x95, 0xe1, 0xfa, 0x00, 0x9a,
+	0x9a, 0x55, 0x34, 0xb2, 0xfd, 0xbb, 0x0a, 0xb5, 0x61, 0x56, 0xe1, 0x4f, 0xb0, 0x95, 0xe7, 0x8b,
+	0x0f, 0x1f, 0xb6, 0x5a, 0xe6, 0xcb, 0x8d, 0x3a, 0x3d, 0x7a, 0x08, 0x35, 0x15, 0x2e, 0x3e, 0x58,
+	0xdf, 0xb1, 0xb4, 0x48, 0xe6, 0xe1, 0x26, 0x99, 0xe6, 0xf6, 0xa1, 0x3a, 0x60, 0x12, 0xdb, 0x6b,
+	0xe5, 0x8b, 0x48, 0xcd, 0x17, 0xc5, 0xa2, 0x05, 0xb1, 0x57, 0x48, 0xec, 0x3d, 0x84, 0xb8, 0xbc,
+	0x6e, 0x1f, 0xa1, 0xa6, 0x72, 0x28, 0xf0, 0xbe, 0x9c, 0x79, 0x81, 0xf7, 0x95, 0x38, 0x8f, 0x51,
+	0xa7, 0x7b, 0x95, 0x12, 0x74, 0x9d, 0x12, 0xf4, 0x2f, 0x25, 0xe8, 0xd7, 0x8c, 0x54, 0xae, 0x67,
+	0xa4, 0xf2, 0x77, 0x46, 0x2a, 0x40, 0xb8, 0x98, 0x53, 0xfc, 0x90, 0xdf, 0x23, 0x75, 0x1e, 0xab,
+	0xc4, 0x87, 0x6e, 0x1f, 0x7d, 0xd9, 0x52, 0x7f, 0xaa, 0x57, 0xff, 0x03, 0x00, 0x00, 0xff, 0xff,
+	0xac, 0x57, 0xdb, 0xb6, 0x22, 0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -622,8 +539,8 @@ type ValueClient interface {
 	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error)
 	// Get gets the value
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
-	// Events listens for value change events
-	Events(ctx context.Context, in *EventsRequest, opts ...grpc.CallOption) (Value_EventsClient, error)
+	// Watch watches the value for changes
+	Watch(ctx context.Context, in *WatchRequest, opts ...grpc.CallOption) (Value_WatchClient, error)
 }
 
 type valueClient struct {
@@ -670,12 +587,12 @@ func (c *valueClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.Call
 	return out, nil
 }
 
-func (c *valueClient) Events(ctx context.Context, in *EventsRequest, opts ...grpc.CallOption) (Value_EventsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Value_serviceDesc.Streams[0], "/atomix.runtime.value.v1.Value/Events", opts...)
+func (c *valueClient) Watch(ctx context.Context, in *WatchRequest, opts ...grpc.CallOption) (Value_WatchClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Value_serviceDesc.Streams[0], "/atomix.runtime.value.v1.Value/Watch", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &valueEventsClient{stream}
+	x := &valueWatchClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -685,17 +602,17 @@ func (c *valueClient) Events(ctx context.Context, in *EventsRequest, opts ...grp
 	return x, nil
 }
 
-type Value_EventsClient interface {
-	Recv() (*EventsResponse, error)
+type Value_WatchClient interface {
+	Recv() (*WatchResponse, error)
 	grpc.ClientStream
 }
 
-type valueEventsClient struct {
+type valueWatchClient struct {
 	grpc.ClientStream
 }
 
-func (x *valueEventsClient) Recv() (*EventsResponse, error) {
-	m := new(EventsResponse)
+func (x *valueWatchClient) Recv() (*WatchResponse, error) {
+	m := new(WatchResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -712,8 +629,8 @@ type ValueServer interface {
 	Set(context.Context, *SetRequest) (*SetResponse, error)
 	// Get gets the value
 	Get(context.Context, *GetRequest) (*GetResponse, error)
-	// Events listens for value change events
-	Events(*EventsRequest, Value_EventsServer) error
+	// Watch watches the value for changes
+	Watch(*WatchRequest, Value_WatchServer) error
 }
 
 // UnimplementedValueServer can be embedded to have forward compatible implementations.
@@ -732,8 +649,8 @@ func (*UnimplementedValueServer) Set(ctx context.Context, req *SetRequest) (*Set
 func (*UnimplementedValueServer) Get(ctx context.Context, req *GetRequest) (*GetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (*UnimplementedValueServer) Events(req *EventsRequest, srv Value_EventsServer) error {
-	return status.Errorf(codes.Unimplemented, "method Events not implemented")
+func (*UnimplementedValueServer) Watch(req *WatchRequest, srv Value_WatchServer) error {
+	return status.Errorf(codes.Unimplemented, "method Watch not implemented")
 }
 
 func RegisterValueServer(s *grpc.Server, srv ValueServer) {
@@ -812,24 +729,24 @@ func _Value_Get_Handler(srv interface{}, ctx context.Context, dec func(interface
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Value_Events_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(EventsRequest)
+func _Value_Watch_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(WatchRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ValueServer).Events(m, &valueEventsServer{stream})
+	return srv.(ValueServer).Watch(m, &valueWatchServer{stream})
 }
 
-type Value_EventsServer interface {
-	Send(*EventsResponse) error
+type Value_WatchServer interface {
+	Send(*WatchResponse) error
 	grpc.ServerStream
 }
 
-type valueEventsServer struct {
+type valueWatchServer struct {
 	grpc.ServerStream
 }
 
-func (x *valueEventsServer) Send(m *EventsResponse) error {
+func (x *valueWatchServer) Send(m *WatchResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -856,8 +773,8 @@ var _Value_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Events",
-			Handler:       _Value_Events_Handler,
+			StreamName:    "Watch",
+			Handler:       _Value_Watch_Handler,
 			ServerStreams: true,
 		},
 	},
@@ -1128,7 +1045,7 @@ func (m *SetResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *EventsRequest) Marshal() (dAtA []byte, err error) {
+func (m *WatchRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1138,12 +1055,12 @@ func (m *EventsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *EventsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *WatchRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *EventsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *WatchRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1161,7 +1078,7 @@ func (m *EventsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *EventsResponse) Marshal() (dAtA []byte, err error) {
+func (m *WatchResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1171,45 +1088,12 @@ func (m *EventsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *EventsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *WatchResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *EventsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size, err := m.Event.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintValue(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *Event) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Event) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Event) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *WatchResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1219,12 +1103,7 @@ func (m *Event) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.Value)
 		i = encodeVarintValue(dAtA, i, uint64(len(m.Value)))
 		i--
-		dAtA[i] = 0x12
-	}
-	if m.Type != 0 {
-		i = encodeVarintValue(dAtA, i, uint64(m.Type))
-		i--
-		dAtA[i] = 0x8
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -1340,7 +1219,7 @@ func (m *SetResponse) Size() (n int) {
 	return n
 }
 
-func (m *EventsRequest) Size() (n int) {
+func (m *WatchRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1351,26 +1230,12 @@ func (m *EventsRequest) Size() (n int) {
 	return n
 }
 
-func (m *EventsResponse) Size() (n int) {
+func (m *WatchResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.Event.Size()
-	n += 1 + l + sovValue(uint64(l))
-	return n
-}
-
-func (m *Event) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Type != 0 {
-		n += 1 + sovValue(uint64(m.Type))
-	}
 	l = len(m.Value)
 	if l > 0 {
 		n += 1 + l + sovValue(uint64(l))
@@ -2145,7 +2010,7 @@ func (m *SetResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EventsRequest) Unmarshal(dAtA []byte) error {
+func (m *WatchRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2168,10 +2033,10 @@ func (m *EventsRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: EventsRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: WatchRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: WatchRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2228,7 +2093,7 @@ func (m *EventsRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EventsResponse) Unmarshal(dAtA []byte) error {
+func (m *WatchResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2251,115 +2116,13 @@ func (m *EventsResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: EventsResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: WatchResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: WatchResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Event", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowValue
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthValue
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthValue
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Event.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipValue(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthValue
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Event) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowValue
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Event: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Event: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
-			}
-			m.Type = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowValue
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Type |= Event_Type(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
 			}

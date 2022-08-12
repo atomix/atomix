@@ -9,15 +9,15 @@ syntax = "proto3";
 package atomix.runtime.atomic.lock.v1;
 
 option java_package = "io.atomix.api.runtime.atomic.lock.v1";
-option java_outer_classname = "AtomicLockV1";
+option java_outer_classname = "LockV1";
 option java_multiple_files = true;
 
 import "google/protobuf/duration.proto";
 import "atomix/runtime/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 
-// AtomicLock is a service for a lock primitive
-service AtomicLock {
+// Lock is a service for a lock primitive
+service Lock {
     // Create creates the lock
     rpc Create (CreateRequest) returns (CreateResponse);
 
@@ -68,9 +68,7 @@ message LockRequest {
 }
 
 message LockResponse {
-    LockInstance lock = 1 [
-        (gogoproto.nullable) = false
-    ];
+    uint64 version = 1;
 }
 
 message UnlockRequest {
@@ -78,15 +76,11 @@ message UnlockRequest {
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
-    LockInstance lock = 2 [
-        (gogoproto.nullable) = false
-    ];
+    uint64 version = 2;
 }
 
 message UnlockResponse {
-    LockInstance lock = 1 [
-        (gogoproto.nullable) = false
-    ];
+
 }
 
 message GetLockRequest {
@@ -94,23 +88,8 @@ message GetLockRequest {
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
-    LockInstance lock = 2 [
-        (gogoproto.nullable) = false
-    ];
 }
 
 message GetLockResponse {
-    LockInstance lock = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message LockInstance {
     uint64 version = 1;
-    State state = 2;
-
-    enum State {
-        UNLOCKED = 0;
-        LOCKED = 1;
-    }
 }

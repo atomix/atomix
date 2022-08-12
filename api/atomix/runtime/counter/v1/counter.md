@@ -15,8 +15,6 @@
     - [GetResponse](#atomix-runtime-counter-v1-GetResponse)
     - [IncrementRequest](#atomix-runtime-counter-v1-IncrementRequest)
     - [IncrementResponse](#atomix-runtime-counter-v1-IncrementResponse)
-    - [SetRequest](#atomix-runtime-counter-v1-SetRequest)
-    - [SetResponse](#atomix-runtime-counter-v1-SetResponse)
   
     - [Counter](#atomix-runtime-counter-v1-Counter)
   
@@ -189,37 +187,6 @@
 
 
 
-
-<a name="atomix-runtime-counter-v1-SetRequest"></a>
-
-### SetRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| value | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-counter-v1-SetResponse"></a>
-
-### SetResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [int64](#int64) |  |  |
-
-
-
-
-
  
 
  
@@ -236,7 +203,6 @@ Counter is a service for a counter primitive
 | ----------- | ------------ | ------------- | ------------|
 | Create | [CreateRequest](#atomix-runtime-counter-v1-CreateRequest) | [CreateResponse](#atomix-runtime-counter-v1-CreateResponse) | Create creates the counter |
 | Close | [CloseRequest](#atomix-runtime-counter-v1-CloseRequest) | [CloseResponse](#atomix-runtime-counter-v1-CloseResponse) | Close closes the counter |
-| Set | [SetRequest](#atomix-runtime-counter-v1-SetRequest) | [SetResponse](#atomix-runtime-counter-v1-SetResponse) | Set sets the counter value |
 | Get | [GetRequest](#atomix-runtime-counter-v1-GetRequest) | [GetResponse](#atomix-runtime-counter-v1-GetResponse) | Get gets the current counter value |
 | Increment | [IncrementRequest](#atomix-runtime-counter-v1-IncrementRequest) | [IncrementResponse](#atomix-runtime-counter-v1-IncrementResponse) | Increment increments the counter value |
 | Decrement | [DecrementRequest](#atomix-runtime-counter-v1-DecrementRequest) | [DecrementResponse](#atomix-runtime-counter-v1-DecrementResponse) | Decrement decrements the counter value |

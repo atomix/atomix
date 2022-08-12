@@ -42,8 +42,8 @@ service LeaderElection {
     // GetTerm gets the current leadership term
     rpc GetTerm (GetTermRequest) returns (GetTermResponse);
 
-    // Events listens for leadership events
-    rpc Events (EventsRequest) returns (stream EventsResponse);
+    // Watch watches the election for events
+    rpc Watch (WatchRequest) returns (stream WatchResponse);
 }
 
 message CreateRequest {
@@ -152,29 +152,17 @@ message GetTermResponse {
     ];
 }
 
-message EventsRequest {
+message WatchRequest {
     atomix.runtime.v1.PrimitiveId id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
 }
 
-message EventsResponse {
-    Event event = 1 [
+message WatchResponse {
+    Term term = 1 [
         (gogoproto.nullable) = false
     ];
-}
-
-message Event {
-    Type type = 1;
-    Term term = 2 [
-        (gogoproto.nullable) = false
-    ];
-
-    enum Type {
-        NONE = 0;
-        CHANGED = 1;
-    }
 }
 
 message Term {

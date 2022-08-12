@@ -29,8 +29,8 @@ service Value {
     // Get gets the value
     rpc Get (GetRequest) returns (GetResponse);
 
-    // Events listens for value change events
-    rpc Events (EventsRequest) returns (stream EventsResponse);
+    // Watch watches the value for changes
+    rpc Watch (WatchRequest) returns (stream WatchResponse);
 }
 
 message CreateRequest {
@@ -79,25 +79,13 @@ message SetResponse {
     bytes value = 1;
 }
 
-message EventsRequest {
+message WatchRequest {
     atomix.runtime.v1.PrimitiveId id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
 }
 
-message EventsResponse {
-    Event event = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message Event {
-    Type type = 1;
-    bytes value = 2;
-
-    enum Type {
-        NONE = 0;
-        UPDATE = 1;
-    }
+message WatchResponse {
+    bytes value = 1;
 }

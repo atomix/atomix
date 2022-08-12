@@ -16,3 +16,5 @@
 # vendor/
 
 dist/
+.release
+.cr-release-packages

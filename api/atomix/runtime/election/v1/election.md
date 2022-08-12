@@ -13,9 +13,6 @@
     - [CreateResponse](#atomix-runtime-election-v1-CreateResponse)
     - [EnterRequest](#atomix-runtime-election-v1-EnterRequest)
     - [EnterResponse](#atomix-runtime-election-v1-EnterResponse)
-    - [Event](#atomix-runtime-election-v1-Event)
-    - [EventsRequest](#atomix-runtime-election-v1-EventsRequest)
-    - [EventsResponse](#atomix-runtime-election-v1-EventsResponse)
     - [EvictRequest](#atomix-runtime-election-v1-EvictRequest)
     - [EvictResponse](#atomix-runtime-election-v1-EvictResponse)
     - [GetTermRequest](#atomix-runtime-election-v1-GetTermRequest)
@@ -23,10 +20,10 @@
     - [PromoteRequest](#atomix-runtime-election-v1-PromoteRequest)
     - [PromoteResponse](#atomix-runtime-election-v1-PromoteResponse)
     - [Term](#atomix-runtime-election-v1-Term)
+    - [WatchRequest](#atomix-runtime-election-v1-WatchRequest)
+    - [WatchResponse](#atomix-runtime-election-v1-WatchResponse)
     - [WithdrawRequest](#atomix-runtime-election-v1-WithdrawRequest)
     - [WithdrawResponse](#atomix-runtime-election-v1-WithdrawResponse)
-  
-    - [Event.Type](#atomix-runtime-election-v1-Event-Type)
   
     - [LeaderElection](#atomix-runtime-election-v1-LeaderElection)
   
@@ -170,52 +167,6 @@
 
 
 
-<a name="atomix-runtime-election-v1-Event"></a>
-
-### Event
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| type | [Event.Type](#atomix-runtime-election-v1-Event-Type) |  |  |
-| term | [Term](#atomix-runtime-election-v1-Term) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-election-v1-EventsRequest"></a>
-
-### EventsRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-election-v1-EventsResponse"></a>
-
-### EventsResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| event | [Event](#atomix-runtime-election-v1-Event) |  |  |
-
-
-
-
-
-
 <a name="atomix-runtime-election-v1-EvictRequest"></a>
 
 ### EvictRequest
@@ -325,6 +276,36 @@
 
 
 
+<a name="atomix-runtime-election-v1-WatchRequest"></a>
+
+### WatchRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-election-v1-WatchResponse"></a>
+
+### WatchResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| term | [Term](#atomix-runtime-election-v1-Term) |  |  |
+
+
+
+
+
+
 <a name="atomix-runtime-election-v1-WithdrawRequest"></a>
 
 ### WithdrawRequest
@@ -357,18 +338,6 @@
 
  
 
-
-<a name="atomix-runtime-election-v1-Event-Type"></a>
-
-### Event.Type
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| NONE | 0 |  |
-| CHANGED | 1 |  |
-
-
  
 
  
@@ -389,7 +358,7 @@ LeaderElection is a service for a leader election primitive
 | Promote | [PromoteRequest](#atomix-runtime-election-v1-PromoteRequest) | [PromoteResponse](#atomix-runtime-election-v1-PromoteResponse) | Promote promotes a candidate |
 | Evict | [EvictRequest](#atomix-runtime-election-v1-EvictRequest) | [EvictResponse](#atomix-runtime-election-v1-EvictResponse) | Evict evicts a candidate from the election |
 | GetTerm | [GetTermRequest](#atomix-runtime-election-v1-GetTermRequest) | [GetTermResponse](#atomix-runtime-election-v1-GetTermResponse) | GetTerm gets the current leadership term |
-| Events | [EventsRequest](#atomix-runtime-election-v1-EventsRequest) | [EventsResponse](#atomix-runtime-election-v1-EventsResponse) stream | Events listens for leadership events |
+| Watch | [WatchRequest](#atomix-runtime-election-v1-WatchRequest) | [WatchResponse](#atomix-runtime-election-v1-WatchResponse) stream | Watch watches the election for events |
 
  
 

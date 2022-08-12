@@ -15,6 +15,9 @@
     - [EntriesResponse](#atomix-runtime-atomic-map-v1-EntriesResponse)
     - [Entry](#atomix-runtime-atomic-map-v1-Entry)
     - [Event](#atomix-runtime-atomic-map-v1-Event)
+    - [Event.Inserted](#atomix-runtime-atomic-map-v1-Event-Inserted)
+    - [Event.Removed](#atomix-runtime-atomic-map-v1-Event-Removed)
+    - [Event.Updated](#atomix-runtime-atomic-map-v1-Event-Updated)
     - [EventsRequest](#atomix-runtime-atomic-map-v1-EventsRequest)
     - [EventsResponse](#atomix-runtime-atomic-map-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-atomic-map-v1-GetRequest)
@@ -34,8 +37,6 @@
     - [UpdateRequest](#atomix-runtime-atomic-map-v1-UpdateRequest)
     - [UpdateResponse](#atomix-runtime-atomic-map-v1-UpdateResponse)
     - [Value](#atomix-runtime-atomic-map-v1-Value)
-  
-    - [Event.Type](#atomix-runtime-atomic-map-v1-Event-Type)
   
     - [AtomicMap](#atomix-runtime-atomic-map-v1-AtomicMap)
   
@@ -151,6 +152,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| watch | [bool](#bool) |  |  |
 
 
 
@@ -182,7 +184,6 @@
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [Value](#atomix-runtime-atomic-map-v1-Value) |  |  |
-| version | [uint64](#uint64) |  |  |
 
 
 
@@ -197,8 +198,56 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| type | [Event.Type](#atomix-runtime-atomic-map-v1-Event-Type) |  |  |
-| entry | [Entry](#atomix-runtime-atomic-map-v1-Entry) |  |  |
+| key | [string](#string) |  |  |
+| inserted | [Event.Inserted](#atomix-runtime-atomic-map-v1-Event-Inserted) |  |  |
+| updated | [Event.Updated](#atomix-runtime-atomic-map-v1-Event-Updated) |  |  |
+| removed | [Event.Removed](#atomix-runtime-atomic-map-v1-Event-Removed) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-map-v1-Event-Inserted"></a>
+
+### Event.Inserted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [Value](#atomix-runtime-atomic-map-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-map-v1-Event-Removed"></a>
+
+### Event.Removed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [Value](#atomix-runtime-atomic-map-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-map-v1-Event-Updated"></a>
+
+### Event.Updated
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| new_value | [Value](#atomix-runtime-atomic-map-v1-Value) |  |  |
+| prev_value | [Value](#atomix-runtime-atomic-map-v1-Value) |  |  |
 
 
 
@@ -215,7 +264,6 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
-| replay | [bool](#bool) |  |  |
 
 
 
@@ -261,7 +309,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-runtime-atomic-map-v1-Entry) |  |  |
+| value | [Value](#atomix-runtime-atomic-map-v1-Value) |  |  |
 
 
 
@@ -278,7 +326,8 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
-| value | [Value](#atomix-runtime-atomic-map-v1-Value) |  |  |
+| value | [bytes](#bytes) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
 
 
 
@@ -293,7 +342,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| version | [uint64](#uint64) |  |  |
+| new_version | [uint64](#uint64) |  |  |
 
 
 
@@ -337,8 +386,9 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
-| value | [Value](#atomix-runtime-atomic-map-v1-Value) |  |  |
-| version | [uint64](#uint64) |  |  |
+| value | [bytes](#bytes) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+| prev_version | [uint64](#uint64) |  |  |
 
 
 
@@ -353,7 +403,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| version | [uint64](#uint64) |  |  |
+| new_version | [uint64](#uint64) |  |  |
+| prev_value | [Value](#atomix-runtime-atomic-map-v1-Value) |  |  |
 
 
 
@@ -370,7 +421,7 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
-| version | [uint64](#uint64) |  |  |
+| prev_version | [uint64](#uint64) |  |  |
 
 
 
@@ -458,8 +509,9 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
-| value | [Value](#atomix-runtime-atomic-map-v1-Value) |  |  |
-| version | [uint64](#uint64) |  |  |
+| value | [bytes](#bytes) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+| prev_version | [uint64](#uint64) |  |  |
 
 
 
@@ -474,7 +526,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| version | [uint64](#uint64) |  |  |
+| new_version | [uint64](#uint64) |  |  |
+| prev_value | [Value](#atomix-runtime-atomic-map-v1-Value) |  |  |
 
 
 
@@ -490,6 +543,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | value | [bytes](#bytes) |  |  |
+| version | [uint64](#uint64) |  |  |
 | ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
 
 
@@ -497,20 +551,6 @@
 
 
  
-
-
-<a name="atomix-runtime-atomic-map-v1-Event-Type"></a>
-
-### Event.Type
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| NONE | 0 |  |
-| INSERT | 1 |  |
-| UPDATE | 2 |  |
-| REMOVE | 3 |  |
-
 
  
 
