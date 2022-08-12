@@ -70,29 +70,6 @@ func (s *counterServer) Close(ctx context.Context, request *counterv1.CloseReque
 	return response, nil
 }
 
-func (s *counterServer) Set(ctx context.Context, request *counterv1.SetRequest) (*counterv1.SetResponse, error) {
-	log.Debugw("Set",
-		logging.Stringer("SetRequest", request))
-	client, err := s.delegate.Get(request.ID.Name)
-	if err != nil {
-		err = errors.ToProto(err)
-		log.Warnw("Set",
-			logging.Stringer("SetRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := client.Set(ctx, request)
-	if err != nil {
-		log.Warnw("Set",
-			logging.Stringer("SetRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Set",
-		logging.Stringer("SetResponse", response))
-	return response, nil
-}
-
 func (s *counterServer) Get(ctx context.Context, request *counterv1.GetRequest) (*counterv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", request))

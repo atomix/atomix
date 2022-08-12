@@ -208,22 +208,22 @@ func (s *leaderElectionServer) GetTerm(ctx context.Context, request *electionv1.
 	return response, nil
 }
 
-func (s *leaderElectionServer) Events(request *electionv1.EventsRequest, server electionv1.LeaderElection_EventsServer) error {
-	log.Debugw("Events",
-		logging.Stringer("EventsRequest", request),
+func (s *leaderElectionServer) Watch(request *electionv1.WatchRequest, server electionv1.LeaderElection_WatchServer) error {
+	log.Debugw("Watch",
+		logging.Stringer("WatchRequest", request),
 		logging.String("State", "started"))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
-		log.Warnw("Events",
-			logging.Stringer("EventsRequest", request),
+		log.Warnw("Watch",
+			logging.Stringer("WatchRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	err = client.Events(request, server)
+	err = client.Watch(request, server)
 	if err != nil {
-		log.Warnw("Events",
-			logging.Stringer("EventsRequest", request),
+		log.Warnw("Watch",
+			logging.Stringer("WatchRequest", request),
 			logging.Error("Error", err))
 		return err
 	}

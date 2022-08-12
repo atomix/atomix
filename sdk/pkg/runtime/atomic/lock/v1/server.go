@@ -14,14 +14,14 @@ import (
 
 var log = logging.GetLogger()
 
-func newAtomicLockServer(delegate *runtime.Delegate[lockv1.AtomicLockServer]) lockv1.AtomicLockServer {
+func newAtomicLockServer(delegate *runtime.Delegate[lockv1.LockServer]) lockv1.LockServer {
 	return &lockServer{
 		delegate: delegate,
 	}
 }
 
 type lockServer struct {
-	delegate *runtime.Delegate[lockv1.AtomicLockServer]
+	delegate *runtime.Delegate[lockv1.LockServer]
 }
 
 func (s *lockServer) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {
@@ -139,4 +139,4 @@ func (s *lockServer) GetLock(ctx context.Context, request *lockv1.GetLockRequest
 	return response, nil
 }
 
-var _ lockv1.AtomicLockServer = (*lockServer)(nil)
+var _ lockv1.LockServer = (*lockServer)(nil)

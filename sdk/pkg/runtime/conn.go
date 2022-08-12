@@ -15,7 +15,6 @@ import (
 	counterv1 "github.com/atomix/runtime/api/atomix/runtime/counter/v1"
 	electionv1 "github.com/atomix/runtime/api/atomix/runtime/election/v1"
 	listv1 "github.com/atomix/runtime/api/atomix/runtime/list/v1"
-	lockv1 "github.com/atomix/runtime/api/atomix/runtime/lock/v1"
 	mapv1 "github.com/atomix/runtime/api/atomix/runtime/map/v1"
 	setv1 "github.com/atomix/runtime/api/atomix/runtime/set/v1"
 	topicv1 "github.com/atomix/runtime/api/atomix/runtime/topic/v1"
@@ -29,13 +28,12 @@ type Conn interface {
 	Configurator[[]byte]
 	AtomicCounter(config []byte) (atomiccounterv1.AtomicCounterServer, error)
 	AtomicIndexedMap(config []byte) (atomicindexedmapv1.AtomicIndexedMapServer, error)
-	AtomicLock(config []byte) (atomiclockv1.AtomicLockServer, error)
 	AtomicMap(config []byte) (atomicmapv1.AtomicMapServer, error)
 	AtomicValue(config []byte) (atomicvaluev1.AtomicValueServer, error)
 	Counter(config []byte) (counterv1.CounterServer, error)
 	LeaderElection(config []byte) (electionv1.LeaderElectionServer, error)
 	List(config []byte) (listv1.ListServer, error)
-	Lock(config []byte) (lockv1.LockServer, error)
+	Lock(config []byte) (atomiclockv1.LockServer, error)
 	Map(config []byte) (mapv1.MapServer, error)
 	Set(config []byte) (setv1.SetServer, error)
 	Topic(config []byte) (topicv1.TopicServer, error)
@@ -48,13 +46,12 @@ type Connector[C any] func(ctx context.Context, config C) (Conn, error)
 type ConnOptions struct {
 	AtomicCounterFactory    func([]byte) (atomiccounterv1.AtomicCounterServer, error)
 	AtomicIndexedMapFactory func([]byte) (atomicindexedmapv1.AtomicIndexedMapServer, error)
-	AtomicLockFactory       func([]byte) (atomiclockv1.AtomicLockServer, error)
 	AtomicMapFactory        func([]byte) (atomicmapv1.AtomicMapServer, error)
 	AtomicValueFactory      func([]byte) (atomicvaluev1.AtomicValueServer, error)
 	CounterFactory          func([]byte) (counterv1.CounterServer, error)
 	LeaderElectionFactory   func([]byte) (electionv1.LeaderElectionServer, error)
 	ListFactory             func([]byte) (listv1.ListServer, error)
-	LockFactory             func([]byte) (lockv1.LockServer, error)
+	LockFactory             func([]byte) (atomiclockv1.LockServer, error)
 	MapFactory              func([]byte) (mapv1.MapServer, error)
 	SetFactory              func([]byte) (setv1.SetServer, error)
 	TopicFactory            func([]byte) (topicv1.TopicServer, error)
@@ -86,20 +83,6 @@ func WithAtomicCounterFactory[C any](f func(C) (atomiccounterv1.AtomicCounterSer
 func WithAtomicIndexedMapFactory[C any](f func(C) (atomicindexedmapv1.AtomicIndexedMapServer, error)) ConnOption {
 	return func(options *ConnOptions) {
 		options.AtomicIndexedMapFactory = func(data []byte) (atomicindexedmapv1.AtomicIndexedMapServer, error) {
-			var config C
-			if data != nil {
-				if err := json.Unmarshal(data, &config); err != nil {
-					return nil, err
-				}
-			}
-			return f(config)
-		}
-	}
-}
-
-func WithAtomicLockFactory[C any](f func(C) (atomiclockv1.AtomicLockServer, error)) ConnOption {
-	return func(options *ConnOptions) {
-		options.AtomicLockFactory = func(data []byte) (atomiclockv1.AtomicLockServer, error) {
 			var config C
 			if data != nil {
 				if err := json.Unmarshal(data, &config); err != nil {
@@ -181,9 +164,9 @@ func WithListFactory[C any](f func(C) (listv1.ListServer, error)) ConnOption {
 	}
 }
 
-func WithLockFactory[C any](f func(C) (lockv1.LockServer, error)) ConnOption {
+func WithLockFactory[C any](f func(C) (atomiclockv1.LockServer, error)) ConnOption {
 	return func(options *ConnOptions) {
-		options.LockFactory = func(data []byte) (lockv1.LockServer, error) {
+		options.LockFactory = func(data []byte) (atomiclockv1.LockServer, error) {
 			var config C
 			if data != nil {
 				if err := json.Unmarshal(data, &config); err != nil {
@@ -288,13 +271,6 @@ func (c *configurableConn[C]) AtomicIndexedMap(config []byte) (atomicindexedmapv
 	return c.options.AtomicIndexedMapFactory(config)
 }
 
-func (c *configurableConn[C]) AtomicLock(config []byte) (atomiclockv1.AtomicLockServer, error) {
-	if c.options.AtomicLockFactory == nil {
-		return nil, errors.NewNotSupported("primitive type not supported by driver")
-	}
-	return c.options.AtomicLockFactory(config)
-}
-
 func (c *configurableConn[C]) AtomicMap(config []byte) (atomicmapv1.AtomicMapServer, error) {
 	if c.options.AtomicMapFactory == nil {
 		return nil, errors.NewNotSupported("primitive type not supported by driver")
@@ -330,7 +306,7 @@ func (c *configurableConn[C]) List(config []byte) (listv1.ListServer, error) {
 	return c.options.ListFactory(config)
 }
 
-func (c *configurableConn[C]) Lock(config []byte) (lockv1.LockServer, error) {
+func (c *configurableConn[C]) Lock(config []byte) (atomiclockv1.LockServer, error) {
 	if c.options.LockFactory == nil {
 		return nil, errors.NewNotSupported("primitive type not supported by driver")
 	}

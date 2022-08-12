@@ -139,6 +139,51 @@ func (s *valueServer) Get(ctx context.Context, request *valuev1.GetRequest) (*va
 	return response, nil
 }
 
+func (s *valueServer) Delete(ctx context.Context, request *valuev1.DeleteRequest) (*valuev1.DeleteResponse, error) {
+	log.Debugw("Delete",
+		logging.Stringer("DeleteRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Delete",
+			logging.Stringer("DeleteRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Delete(ctx, request)
+	if err != nil {
+		log.Warnw("Delete",
+			logging.Stringer("DeleteRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Delete",
+		logging.Stringer("DeleteResponse", response))
+	return response, nil
+}
+
+func (s *valueServer) Watch(request *valuev1.WatchRequest, server valuev1.AtomicValue_WatchServer) error {
+	log.Debugw("Watch",
+		logging.Stringer("WatchRequest", request),
+		logging.String("State", "started"))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Watch",
+			logging.Stringer("WatchRequest", request),
+			logging.Error("Error", err))
+		return err
+	}
+	err = client.Watch(request, server)
+	if err != nil {
+		log.Warnw("Watch",
+			logging.Stringer("WatchRequest", request),
+			logging.Error("Error", err))
+		return err
+	}
+	return nil
+}
+
 func (s *valueServer) Events(request *valuev1.EventsRequest, server valuev1.AtomicValue_EventsServer) error {
 	log.Debugw("Events",
 		logging.Stringer("EventsRequest", request),

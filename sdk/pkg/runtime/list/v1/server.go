@@ -253,22 +253,22 @@ func (s *listServer) Events(request *listv1.EventsRequest, server listv1.List_Ev
 	return nil
 }
 
-func (s *listServer) Elements(request *listv1.ElementsRequest, server listv1.List_ElementsServer) error {
-	log.Debugw("Elements",
-		logging.Stringer("ElementsRequest", request),
+func (s *listServer) Items(request *listv1.ItemsRequest, server listv1.List_ItemsServer) error {
+	log.Debugw("Items",
+		logging.Stringer("ItemsRequest", request),
 		logging.String("State", "started"))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
-		log.Warnw("Elements",
-			logging.Stringer("ElementsRequest", request),
+		log.Warnw("Items",
+			logging.Stringer("ItemsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	err = client.Elements(request, server)
+	err = client.Items(request, server)
 	if err != nil {
-		log.Warnw("Elements",
-			logging.Stringer("ElementsRequest", request),
+		log.Warnw("Items",
+			logging.Stringer("ItemsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}

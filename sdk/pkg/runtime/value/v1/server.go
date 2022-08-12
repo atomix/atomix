@@ -116,22 +116,22 @@ func (s *valueServer) Get(ctx context.Context, request *valuev1.GetRequest) (*va
 	return response, nil
 }
 
-func (s *valueServer) Events(request *valuev1.EventsRequest, server valuev1.Value_EventsServer) error {
-	log.Debugw("Events",
-		logging.Stringer("EventsRequest", request),
+func (s *valueServer) Watch(request *valuev1.WatchRequest, server valuev1.Value_WatchServer) error {
+	log.Debugw("Watch",
+		logging.Stringer("WatchRequest", request),
 		logging.String("State", "started"))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
-		log.Warnw("Events",
-			logging.Stringer("EventsRequest", request),
+		log.Warnw("Watch",
+			logging.Stringer("WatchRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
-	err = client.Events(request, server)
+	err = client.Watch(request, server)
 	if err != nil {
-		log.Warnw("Events",
-			logging.Stringer("EventsRequest", request),
+		log.Warnw("Watch",
+			logging.Stringer("WatchRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
