@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/atomix/runtime/controller/pkg/apis"
-	corev1beta1 "github.com/atomix/runtime/controller/pkg/controller/atomix/v3beta1"
+	storagev3beta1 "github.com/atomix/runtime/controller/pkg/controller/storage/v3beta1"
 	"github.com/atomix/runtime/controller/pkg/controller/util/k8s"
 	"github.com/atomix/runtime/sdk/pkg/logging"
 	"github.com/go-logr/logr"
@@ -80,7 +80,7 @@ func getCommand() *cobra.Command {
 			}
 
 			// Add all the controllers
-			if err := corev1beta1.AddControllers(mgr); err != nil {
+			if err := storagev3beta1.AddControllers(mgr); err != nil {
 				log.Error(err)
 				os.Exit(1)
 			}

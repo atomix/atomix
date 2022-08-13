@@ -7,7 +7,7 @@ package v3beta1
 import (
 	"context"
 	"fmt"
-	atomixv3beta1 "github.com/atomix/runtime/controller/pkg/apis/atomix/v3beta1"
+	atomixv3beta1 "github.com/atomix/runtime/controller/pkg/apis/storage/v3beta1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

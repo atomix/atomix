@@ -14,8 +14,8 @@ spec:
       labels:
         app: example
       annotations:
-        proxy.atomix.io/inject: "true"
-        proxy.atomix.io/profile: example-profile
+        proxy.storage.atomix.io/inject: "true"
+        proxy.storage.atomix.io/profile: example-profile
     spec:
       containers:
         - name: sleep

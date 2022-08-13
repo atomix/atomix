@@ -7,7 +7,7 @@ package v3beta1
 import (
 	"context"
 	"encoding/json"
-	atomixv3beta1 "github.com/atomix/runtime/controller/pkg/apis/atomix/v3beta1"
+	atomixv3beta1 "github.com/atomix/runtime/controller/pkg/apis/storage/v3beta1"
 	"github.com/atomix/runtime/proxy/pkg/proxy"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"

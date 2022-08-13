@@ -6,7 +6,7 @@
 
 // Package v3beta1 contains API Schema definitions for the cloud v3beta1 API group
 // +k8s:deepcopy-gen=package,register
-// +groupName=atomix.io
+// +groupName=storage.atomix.io
 package v3beta1
 
 import (
@@ -16,9 +16,9 @@ import (
 )
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: "atomix.io", Version: "v3beta1"}
+var SchemeGroupVersion = schema.GroupVersion{Group: "storage.atomix.io", Version: "v3beta1"}
 
-// Kind takes an unqualified kind and returns back a Group qualified GroupKind
+// Kind takes an unqualified kind and returns a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {
 	return SchemeGroupVersion.WithKind(kind).GroupKind()
 }

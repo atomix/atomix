@@ -1,18 +1,10 @@
-apiVersion: atomix.io/v3beta1
+apiVersion: storage.atomix.io/v3beta1
 kind: Proxy
 metadata:
   name: example-proxy
   namespace: default
-spec:
-  pod:
-    name: example-pod
-    namespace: default
-  profile:
-    name: example-profile
-    namespace: default
-status:
-  ready: true | false
-  bindings:
-    - name: eventually-consistent
-      state: Unbound | Bound
-      version: abcd
+pod:
+  name: example-pod
+profile:
+  name: example-profile
+

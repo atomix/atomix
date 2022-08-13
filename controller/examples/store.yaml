@@ -1,4 +1,4 @@
-apiVersion: atomix.io/v3beta1
+apiVersion: storage.atomix.io/v3beta1
 kind: Store
 metadata:
   name: example-store

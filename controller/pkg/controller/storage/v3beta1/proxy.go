@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 	proxyv1 "github.com/atomix/runtime/api/atomix/proxy/v1"
-	atomixv3beta1 "github.com/atomix/runtime/controller/pkg/apis/atomix/v3beta1"
+	atomixv3beta1 "github.com/atomix/runtime/controller/pkg/apis/storage/v3beta1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	corev1 "k8s.io/api/core/v1"
@@ -43,16 +43,16 @@ const (
 
 const (
 	proxyInjectPath             = "/inject-proxy"
-	proxyInjectAnnotation       = "proxy.atomix.io/inject"
-	proxyInjectStatusAnnotation = "proxy.atomix.io/status"
-	proxyProfileAnnotation      = "proxy.atomix.io/profile"
+	proxyInjectAnnotation       = "proxy.storage.atomix.io/inject"
+	proxyInjectStatusAnnotation = "proxy.storage.atomix.io/status"
+	proxyProfileAnnotation      = "proxy.storage.atomix.io/profile"
 	injectedStatus              = "injected"
 	proxyContainerName          = "atomix-proxy"
 )
 
 const (
 	proxyImageEnv     = "PROXY_IMAGE"
-	defaultProxyImage = "atomix/proxy:latest"
+	defaultProxyImage = "atomix/runtime-proxy:latest"
 )
 
 const (
