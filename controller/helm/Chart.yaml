@@ -8,7 +8,7 @@ description: The core Atomix runtime controller implements the Atomix Cloud runt
 kubeVersion: ">=1.17.0"
 type: application
 version: 1.3.0
-appVersion: v0.3.3
+appVersion: v0.4.0
 keywords:
 - atomix
 home: https://atomix.io
