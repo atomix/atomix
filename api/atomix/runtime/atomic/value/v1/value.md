@@ -188,7 +188,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| new_value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
+| value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
 | prev_value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
 
 
@@ -280,7 +280,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| new_version | [uint64](#uint64) |  |  |
+| version | [uint64](#uint64) |  |  |
 
 
 
@@ -312,7 +312,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| new_version | [uint64](#uint64) |  |  |
+| version | [uint64](#uint64) |  |  |
 
 
 

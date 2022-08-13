@@ -283,7 +283,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| new_value | [Value](#atomix-runtime-atomic-indexedmap-v1-Value) |  |  |
+| value | [Value](#atomix-runtime-atomic-indexedmap-v1-Value) |  |  |
 | prev_value | [Value](#atomix-runtime-atomic-indexedmap-v1-Value) |  |  |
 
 

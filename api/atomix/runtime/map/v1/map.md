@@ -238,7 +238,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| new_value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
 | prev_value | [Value](#atomix-runtime-map-v1-Value) |  |  |
 
 
@@ -302,7 +302,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| entry | [Entry](#atomix-runtime-map-v1-Entry) |  |  |
+| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
 
 
 
@@ -332,6 +332,11 @@
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| prev_value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+
+
 
 
 
@@ -356,6 +361,11 @@
 
 ### RemoveResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
 
 
 

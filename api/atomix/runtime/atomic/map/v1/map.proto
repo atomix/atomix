@@ -107,7 +107,7 @@ message PutRequest {
 }
 
 message PutResponse {
-    uint64 new_version = 1;
+    uint64 version = 1;
     Value prev_value = 2;
 }
 
@@ -125,7 +125,7 @@ message InsertRequest {
 }
 
 message InsertResponse {
-    uint64 new_version = 1;
+    uint64 version = 1;
 }
 
 message UpdateRequest {
@@ -143,7 +143,7 @@ message UpdateRequest {
 }
 
 message UpdateResponse {
-    uint64 new_version = 1;
+    uint64 version = 1;
     Value prev_value = 2 [
         (gogoproto.nullable) = false
     ];
@@ -260,7 +260,7 @@ message Event {
     }
 
     message Updated {
-        Value new_value = 1 [
+        Value value = 1 [
             (gogoproto.nullable) = false
         ];
         Value prev_value = 2 [

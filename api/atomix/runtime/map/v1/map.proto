@@ -90,7 +90,7 @@ message PutRequest {
 }
 
 message PutResponse {
-
+    Value prev_value = 1;
 }
 
 message GetRequest {
@@ -102,7 +102,7 @@ message GetRequest {
 }
 
 message GetResponse {
-    Entry entry = 1 [
+    Value value = 1 [
         (gogoproto.nullable) = false
     ];
 }
@@ -116,7 +116,7 @@ message RemoveRequest {
 }
 
 message RemoveResponse {
-
+    Value value = 1;
 }
 
 message ClearRequest {
@@ -175,7 +175,7 @@ message Event {
     }
 
     message Updated {
-        Value new_value = 1 [
+        Value value = 1 [
             (gogoproto.nullable) = false
         ];
         Value prev_value = 2 [

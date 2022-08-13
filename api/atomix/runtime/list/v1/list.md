@@ -271,7 +271,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| new_value | [Value](#atomix-runtime-list-v1-Value) |  |  |
+| value | [Value](#atomix-runtime-list-v1-Value) |  |  |
 | prev_value | [Value](#atomix-runtime-list-v1-Value) |  |  |
 
 
