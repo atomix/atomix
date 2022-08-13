@@ -9,33 +9,33 @@ metadata:
 webhooks:
   - name: validator.store.atomix.io
     rules:
-      - operations: ["CREATE"]
-        apiGroups: ["atomix.io"]
-        apiVersions: ["v3beta1"]
-        resources: ["stores"]
+      - operations: [ "CREATE" ]
+        apiGroups: [ "atomix.io" ]
+        apiVersions: [ "v3beta1" ]
+        resources: [ "stores" ]
         scope: Namespaced
     clientConfig:
       service:
         name: atomix-runtime-controller
         namespace: kube-system
         path: /validate-store
-    admissionReviewVersions: ["v1beta1"]
+    admissionReviewVersions: [ "v1beta1" ]
     sideEffects: None
     failurePolicy: Ignore
     timeoutSeconds: 10
   - name: injector.proxy.atomix.io
     rules:
-      - operations: ["CREATE"]
-        apiGroups: [""]
-        apiVersions: ["v1"]
-        resources: ["pods"]
+      - operations: [ "CREATE" ]
+        apiGroups: [ "" ]
+        apiVersions: [ "v1" ]
+        resources: [ "pods" ]
         scope: Namespaced
     clientConfig:
       service:
         name: atomix-runtime-controller
         namespace: kube-system
         path: /inject-proxy
-    admissionReviewVersions: ["v1beta1"]
+    admissionReviewVersions: [ "v1beta1" ]
     sideEffects: None
     failurePolicy: Ignore
     timeoutSeconds: 10

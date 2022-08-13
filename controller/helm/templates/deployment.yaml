@@ -18,78 +18,78 @@ spec:
     spec:
       serviceAccountName: {{ template "atomix-runtime-controller.fullname" . }}
       initContainers:
-      - name: init-certs
-        image: {{ include "atomix-runtime-controller.imagename" .Values.init.image | quote }}
-        imagePullPolicy: IfNotPresent
-        securityContext:
-          allowPrivilegeEscalation: false
-          runAsUser: 0
-        env:
-        - name: CONTROLLER_NAME
-          value: {{ template "atomix-runtime-controller.fullname" . }}
-        - name: CONTROLLER_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        volumeMounts:
-        - name: config
-          mountPath: /etc/atomix/config
-          readOnly: true
-        - name: certs
-          mountPath: /etc/webhook/certs
+        - name: init-certs
+          image: {{ include "atomix-runtime-controller.imagename" .Values.init.image | quote }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          env:
+            - name: CONTROLLER_NAME
+              value: {{ template "atomix-runtime-controller.fullname" . }}
+            - name: CONTROLLER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: config
+              mountPath: /etc/atomix/config
+              readOnly: true
+            - name: certs
+              mountPath: /etc/webhook/certs
       containers:
-      - name: atomix-runtime-controller
-        image: {{ include "atomix-runtime-controller.imagename" .Values.controller.image | quote }}
-        securityContext:
-          allowPrivilegeEscalation: false
-          runAsUser: 0
-        ports:
-        - containerPort: 443
-          name: webhook-server
-        imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
-        readinessProbe:
-          exec:
-            command:
-            - stat
-            - /tmp/atomix-controller-ready
-          initialDelaySeconds: 4
-          periodSeconds: 10
-          failureThreshold: 1
-        env:
-        - name: CONTROLLER_NAME
-          value: {{ template "atomix-runtime-controller.fullname" . }}
-        - name: CONTROLLER_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: PROXY_IMAGE
-          value: {{ include "atomix-runtime-controller.imagename" .Values.proxy.image | quote }}
-        volumeMounts:
-        - name: certs
-          mountPath: /tmp/k8s-webhook-server/serving-certs
-          readOnly: true
-        - name: config
-          mountPath: /etc/atomix/config
-          readOnly: true
+        - name: atomix-runtime-controller
+          image: {{ include "atomix-runtime-controller.imagename" .Values.controller.image | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          ports:
+            - containerPort: 443
+              name: webhook-server
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+          readinessProbe:
+            exec:
+              command:
+                - stat
+                - /tmp/atomix-controller-ready
+            initialDelaySeconds: 4
+            periodSeconds: 10
+            failureThreshold: 1
+          env:
+            - name: CONTROLLER_NAME
+              value: {{ template "atomix-runtime-controller.fullname" . }}
+            - name: CONTROLLER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: PROXY_IMAGE
+              value: {{ include "atomix-runtime-controller.imagename" .Values.proxy.image | quote }}
+          volumeMounts:
+            - name: certs
+              mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
+            - name: config
+              mountPath: /etc/atomix/config
+              readOnly: true
       volumes:
-      - name: certs
-        emptyDir: {}
-      - name: config
-        configMap:
-          name: {{ template "atomix-runtime-controller.fullname" . }}-config
+        - name: certs
+          emptyDir: { }
+        - name: config
+          configMap:
+            name: {{ template "atomix-runtime-controller.fullname" . }}-config
