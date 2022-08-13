@@ -108,9 +108,7 @@ message PutRequest {
 
 message PutResponse {
     uint64 new_version = 1;
-    Value prev_value = 2 [
-        (gogoproto.nullable) = false
-    ];
+    Value prev_value = 2;
 }
 
 message InsertRequest {
