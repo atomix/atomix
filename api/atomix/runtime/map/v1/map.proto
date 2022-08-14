@@ -166,6 +166,7 @@ message Event {
         Inserted inserted = 2;
         Updated updated = 3;
         Removed removed = 4;
+        Expired expired = 5;
     }
 
     message Inserted {
@@ -184,6 +185,12 @@ message Event {
     }
 
     message Removed {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Expired {
         Value value = 1 [
             (gogoproto.nullable) = false
         ];
