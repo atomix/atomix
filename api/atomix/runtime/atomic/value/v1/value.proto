@@ -13,6 +13,7 @@ option java_outer_classname = "AtomicValueV1";
 option java_multiple_files = true;
 
 import "atomix/runtime/v1/primitive.proto";
+import "google/protobuf/duration.proto";
 import "gogoproto/gogo.proto";
 
 // AtomicValue is a service for a value primitive
@@ -82,6 +83,10 @@ message SetRequest {
         (gogoproto.nullable) = false
     ];
     bytes value = 2;
+    google.protobuf.Duration ttl = 3 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
 }
 
 message SetResponse {
@@ -95,6 +100,10 @@ message UpdateRequest {
     ];
     bytes value = 2;
     uint64 prev_version = 3;
+    google.protobuf.Duration ttl = 4 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
 }
 
 message UpdateResponse {
@@ -147,6 +156,7 @@ message Event {
         Created created = 1;
         Updated updated = 2;
         Deleted deleted = 3;
+        Expired expired = 4;
     }
 
     message Created {
@@ -165,6 +175,12 @@ message Event {
     }
 
     message Deleted {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Expired {
         Value value = 1 [
             (gogoproto.nullable) = false
         ];

@@ -12,6 +12,7 @@ option java_package = "io.atomix.api.runtime.set.v1";
 option java_outer_classname = "SetV1";
 option java_multiple_files = true;
 
+import "google/protobuf/duration.proto";
 import "atomix/runtime/v1/primitive.proto";
 import "atomix/runtime/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
@@ -102,6 +103,10 @@ message AddRequest {
     Element element = 2 [
         (gogoproto.nullable) = false
     ];
+    google.protobuf.Duration ttl = 3 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
 }
 
 message AddResponse {
@@ -154,6 +159,7 @@ message Event {
     oneof event {
         Added added = 1;
         Removed removed = 2;
+        Expired expired = 3;
     }
 
     message Added {
@@ -163,6 +169,12 @@ message Event {
     }
 
     message Removed {
+        Element element = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Expired {
         Element element = 1 [
             (gogoproto.nullable) = false
         ];

@@ -20,6 +20,7 @@
     - [ElementsResponse](#atomix-runtime-set-v1-ElementsResponse)
     - [Event](#atomix-runtime-set-v1-Event)
     - [Event.Added](#atomix-runtime-set-v1-Event-Added)
+    - [Event.Expired](#atomix-runtime-set-v1-Event-Expired)
     - [Event.Removed](#atomix-runtime-set-v1-Event-Removed)
     - [EventsRequest](#atomix-runtime-set-v1-EventsRequest)
     - [EventsResponse](#atomix-runtime-set-v1-EventsResponse)
@@ -51,6 +52,7 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | element | [Element](#atomix-runtime-set-v1-Element) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
 
 
 
@@ -251,6 +253,7 @@
 | ----- | ---- | ----- | ----------- |
 | added | [Event.Added](#atomix-runtime-set-v1-Event-Added) |  |  |
 | removed | [Event.Removed](#atomix-runtime-set-v1-Event-Removed) |  |  |
+| expired | [Event.Expired](#atomix-runtime-set-v1-Event-Expired) |  |  |
 
 
 
@@ -260,6 +263,21 @@
 <a name="atomix-runtime-set-v1-Event-Added"></a>
 
 ### Event.Added
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| element | [Element](#atomix-runtime-set-v1-Element) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-set-v1-Event-Expired"></a>
+
+### Event.Expired
 
 
 

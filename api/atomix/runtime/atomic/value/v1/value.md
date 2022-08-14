@@ -14,6 +14,7 @@
     - [Event](#atomix-runtime-atomic-value-v1-Event)
     - [Event.Created](#atomix-runtime-atomic-value-v1-Event-Created)
     - [Event.Deleted](#atomix-runtime-atomic-value-v1-Event-Deleted)
+    - [Event.Expired](#atomix-runtime-atomic-value-v1-Event-Expired)
     - [Event.Updated](#atomix-runtime-atomic-value-v1-Event-Updated)
     - [EventsRequest](#atomix-runtime-atomic-value-v1-EventsRequest)
     - [EventsResponse](#atomix-runtime-atomic-value-v1-EventsResponse)
@@ -144,6 +145,7 @@
 | created | [Event.Created](#atomix-runtime-atomic-value-v1-Event-Created) |  |  |
 | updated | [Event.Updated](#atomix-runtime-atomic-value-v1-Event-Updated) |  |  |
 | deleted | [Event.Deleted](#atomix-runtime-atomic-value-v1-Event-Deleted) |  |  |
+| expired | [Event.Expired](#atomix-runtime-atomic-value-v1-Event-Expired) |  |  |
 
 
 
@@ -168,6 +170,21 @@
 <a name="atomix-runtime-atomic-value-v1-Event-Deleted"></a>
 
 ### Event.Deleted
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-value-v1-Event-Expired"></a>
+
+### Event.Expired
 
 
 
@@ -266,6 +283,7 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | value | [bytes](#bytes) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
 
 
 
@@ -298,6 +316,7 @@
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | value | [bytes](#bytes) |  |  |
 | prev_version | [uint64](#uint64) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
 
 
 
