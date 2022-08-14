@@ -156,7 +156,6 @@ message Event {
         Created created = 1;
         Updated updated = 2;
         Deleted deleted = 3;
-        Expired expired = 4;
     }
 
     message Created {
@@ -178,11 +177,6 @@ message Event {
         Value value = 1 [
             (gogoproto.nullable) = false
         ];
-    }
-
-    message Expired {
-        Value value = 1 [
-            (gogoproto.nullable) = false
-        ];
+        bool expired = 2;
     }
 }

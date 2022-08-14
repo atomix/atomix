@@ -14,7 +14,6 @@
     - [Event](#atomix-runtime-atomic-value-v1-Event)
     - [Event.Created](#atomix-runtime-atomic-value-v1-Event-Created)
     - [Event.Deleted](#atomix-runtime-atomic-value-v1-Event-Deleted)
-    - [Event.Expired](#atomix-runtime-atomic-value-v1-Event-Expired)
     - [Event.Updated](#atomix-runtime-atomic-value-v1-Event-Updated)
     - [EventsRequest](#atomix-runtime-atomic-value-v1-EventsRequest)
     - [EventsResponse](#atomix-runtime-atomic-value-v1-EventsResponse)
@@ -145,7 +144,6 @@
 | created | [Event.Created](#atomix-runtime-atomic-value-v1-Event-Created) |  |  |
 | updated | [Event.Updated](#atomix-runtime-atomic-value-v1-Event-Updated) |  |  |
 | deleted | [Event.Deleted](#atomix-runtime-atomic-value-v1-Event-Deleted) |  |  |
-| expired | [Event.Expired](#atomix-runtime-atomic-value-v1-Event-Expired) |  |  |
 
 
 
@@ -176,21 +174,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-atomic-value-v1-Event-Expired"></a>
-
-### Event.Expired
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
+| expired | [bool](#bool) |  |  |
 
 
 

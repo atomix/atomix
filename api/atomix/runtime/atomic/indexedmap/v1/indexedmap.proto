@@ -251,7 +251,6 @@ message Event {
         Inserted inserted = 3;
         Updated updated = 4;
         Removed removed = 5;
-        Expired expired = 6;
     }
 
     message Inserted {
@@ -273,12 +272,7 @@ message Event {
         Value value = 1 [
             (gogoproto.nullable) = false
         ];
-    }
-
-    message Expired {
-        Value value = 1 [
-            (gogoproto.nullable) = false
-        ];
+        bool expired = 2;
     }
 }
 

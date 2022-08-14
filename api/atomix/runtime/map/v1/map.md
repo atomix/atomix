@@ -15,7 +15,6 @@
     - [EntriesResponse](#atomix-runtime-map-v1-EntriesResponse)
     - [Entry](#atomix-runtime-map-v1-Entry)
     - [Event](#atomix-runtime-map-v1-Event)
-    - [Event.Expired](#atomix-runtime-map-v1-Event-Expired)
     - [Event.Inserted](#atomix-runtime-map-v1-Event-Inserted)
     - [Event.Removed](#atomix-runtime-map-v1-Event-Removed)
     - [Event.Updated](#atomix-runtime-map-v1-Event-Updated)
@@ -195,22 +194,6 @@
 | inserted | [Event.Inserted](#atomix-runtime-map-v1-Event-Inserted) |  |  |
 | updated | [Event.Updated](#atomix-runtime-map-v1-Event-Updated) |  |  |
 | removed | [Event.Removed](#atomix-runtime-map-v1-Event-Removed) |  |  |
-| expired | [Event.Expired](#atomix-runtime-map-v1-Event-Expired) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-map-v1-Event-Expired"></a>
-
-### Event.Expired
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
 
 
 
@@ -241,6 +224,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+| expired | [bool](#bool) |  |  |
 
 
 

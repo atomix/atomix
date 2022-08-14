@@ -159,7 +159,6 @@ message Event {
     oneof event {
         Added added = 1;
         Removed removed = 2;
-        Expired expired = 3;
     }
 
     message Added {
@@ -172,12 +171,7 @@ message Event {
         Element element = 1 [
             (gogoproto.nullable) = false
         ];
-    }
-
-    message Expired {
-        Element element = 1 [
-            (gogoproto.nullable) = false
-        ];
+        bool expired = 2;
     }
 }
 
