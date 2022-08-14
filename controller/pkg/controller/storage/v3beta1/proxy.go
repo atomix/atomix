@@ -48,6 +48,7 @@ const (
 	proxyProfileAnnotation      = "proxy.storage.atomix.io/profile"
 	injectedStatus              = "injected"
 	proxyContainerName          = "atomix-proxy"
+	configVolumeName            = "atomix-config"
 )
 
 const (
@@ -482,14 +483,14 @@ func (i *ProxyInjector) Handle(ctx context.Context, request admission.Request) a
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{
-				Name:      "config",
+				Name:      configVolumeName,
 				ReadOnly:  true,
 				MountPath: "/etc/atomix",
 			},
 		},
 	})
 	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-		Name: "config",
+		Name: configVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
