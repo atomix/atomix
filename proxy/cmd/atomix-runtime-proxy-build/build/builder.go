@@ -48,8 +48,8 @@ func Build(cmd *cobra.Command, config Config) error {
 		"go", "build",
 		"-mod=readonly",
 		"-trimpath",
-		"-gcflags='all=-N -l'",
-		fmt.Sprintf("-ldflags='-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s'", sdkVersion),
+		"-gcflags=all=-N -l",
+		fmt.Sprintf("-ldflags=-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s", sdkVersion),
 		"-o", "/build/dist/bin/atomix-runtime-proxy",
 		"./cmd/atomix-runtime-proxy")
 	if err != nil {
@@ -155,8 +155,8 @@ func (b *Builder) buildPlugin(plugin PluginConfig, dir string) error {
 		"-mod=readonly",
 		"-trimpath",
 		"-buildmode=plugin",
-		"-gcflags='all=-N -l'",
-		fmt.Sprintf("-ldflags='-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s'", b.sdkVersion),
+		"-gcflags=all=-N -l",
+		fmt.Sprintf("-ldflags=-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s", b.sdkVersion),
 		"-o", fmt.Sprintf("/build/dist/plugins/%s@%s.so", plugin.Name, plugin.Version),
 		"./plugin")
 	if err != nil {
