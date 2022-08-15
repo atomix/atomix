@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-FROM goreleaser/goreleaser-cross:v1.18.2-v1.9.0 AS build
+FROM goreleaser/goreleaser-cross:v1.19 AS build
 
 RUN mkdir /build
 WORKDIR /build

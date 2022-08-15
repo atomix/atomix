@@ -4,6 +4,9 @@
 
 ifdef TAG
 VERSION := $(word 2, $(subst /, , $(TAG)))
+MAJOR := $(word 1, $(subst ., , $(VERSION)))
+MINOR := $(word 2, $(subst ., , $(VERSION)))
+PATCH := $(word 3, $(subst ., , $(VERSION)))
 endif
 
 .PHONY: build
@@ -21,15 +24,19 @@ release: build release-controller release-controller-init
 release-controller:
 	docker push atomix/runtime-controller:latest
 ifdef TAG
-	docker tag atomix/runtime-controller:latest atomix/runtime-controller:$(VERSION)
-	docker push atomix/runtime-controller:$(VERSION)
+	docker tag atomix/runtime-controller:latest atomix/runtime-controller:${MAJOR}.${MINOR}.${PATCH}
+	docker tag atomix/runtime-controller:latest atomix/runtime-controller:${MAJOR}.${MINOR}
+	docker push atomix/runtime-controller:${MAJOR}.${MINOR}.${PATCH}
+	docker push atomix/runtime-controller:${MAJOR}.${MINOR}
 endif
 
 release-controller-init:
 	docker push atomix/runtime-controller-init:latest
 ifdef TAG
-	docker tag atomix/runtime-controller-init:latest atomix/runtime-controller-init:$(VERSION)
-	docker push atomix/runtime-controller-init:$(VERSION)
+	docker tag atomix/runtime-controller-init:latest atomix/runtime-controller-init:${MAJOR}.${MINOR}.${PATCH}
+	docker tag atomix/runtime-controller-init:latest atomix/runtime-controller-init:${MAJOR}.${MINOR}
+	docker push atomix/runtime-controller-init:${MAJOR}.${MINOR}.${PATCH}
+	docker push atomix/runtime-controller-init:${MAJOR}.${MINOR}
 endif
 
 kind: build

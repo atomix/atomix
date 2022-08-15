@@ -4,6 +4,9 @@
 
 ifdef TAG
 VERSION := $(word 2, $(subst /, , $(TAG)))
+MAJOR := $(word 1, $(subst ., , $(VERSION)))
+MINOR := $(word 2, $(subst ., , $(VERSION)))
+PATCH := $(word 3, $(subst ., , $(VERSION)))
 endif
 
 .PHONY: build
@@ -14,8 +17,10 @@ build:
 release: build
 	docker push atomix/runtime-proxy:latest
 ifdef TAG
-	docker tag atomix/runtime-proxy:latest atomix/runtime-proxy:$(VERSION)
-	docker push atomix/runtime-proxy:$(VERSION)
+	docker tag atomix/runtime-proxy:latest atomix/runtime-proxy:${MAJOR}.${MINOR}.${PATCH}
+	docker tag atomix/runtime-proxy:latest atomix/runtime-proxy:${MAJOR}.${MINOR}
+	docker push atomix/runtime-proxy:${MAJOR}.${MINOR}.${PATCH}
+	docker push atomix/runtime-proxy:${MAJOR}.${MINOR}
 endif
 
 kind: build

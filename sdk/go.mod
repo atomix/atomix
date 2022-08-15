@@ -1,6 +1,6 @@
 module github.com/atomix/runtime/sdk
 
-go 1.18
+go 1.19
 
 require (
 	github.com/atomix/runtime/api v0.3.4
