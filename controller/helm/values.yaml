@@ -9,7 +9,7 @@ controller:
     registry: ""
     repository: atomix/runtime-controller
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     pullSecrets: []
 
 init:
@@ -17,7 +17,7 @@ init:
     registry: ""
     repository: atomix/runtime-controller-init
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     pullSecrets: []
 
 proxy:
@@ -25,5 +25,5 @@ proxy:
     registry: ""
     repository: atomix/runtime-proxy
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     pullSecrets: []
