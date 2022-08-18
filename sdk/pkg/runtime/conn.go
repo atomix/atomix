@@ -16,6 +16,7 @@ import (
 	electionv1 "github.com/atomix/runtime/api/atomix/runtime/election/v1"
 	listv1 "github.com/atomix/runtime/api/atomix/runtime/list/v1"
 	mapv1 "github.com/atomix/runtime/api/atomix/runtime/map/v1"
+	multimapv1 "github.com/atomix/runtime/api/atomix/runtime/multimap/v1"
 	setv1 "github.com/atomix/runtime/api/atomix/runtime/set/v1"
 	topicv1 "github.com/atomix/runtime/api/atomix/runtime/topic/v1"
 	valuev1 "github.com/atomix/runtime/api/atomix/runtime/value/v1"
@@ -35,6 +36,7 @@ type Conn interface {
 	List(config []byte) (listv1.ListServer, error)
 	Lock(config []byte) (atomiclockv1.LockServer, error)
 	Map(config []byte) (mapv1.MapServer, error)
+	MultiMap(config []byte) (multimapv1.MultiMapServer, error)
 	Set(config []byte) (setv1.SetServer, error)
 	Topic(config []byte) (topicv1.TopicServer, error)
 	Value(config []byte) (valuev1.ValueServer, error)
@@ -53,6 +55,7 @@ type ConnOptions struct {
 	ListFactory             func([]byte) (listv1.ListServer, error)
 	LockFactory             func([]byte) (atomiclockv1.LockServer, error)
 	MapFactory              func([]byte) (mapv1.MapServer, error)
+	MultiMapFactory         func([]byte) (multimapv1.MultiMapServer, error)
 	SetFactory              func([]byte) (setv1.SetServer, error)
 	TopicFactory            func([]byte) (topicv1.TopicServer, error)
 	ValueFactory            func([]byte) (valuev1.ValueServer, error)
@@ -192,6 +195,20 @@ func WithMapFactory[C any](f func(C) (mapv1.MapServer, error)) ConnOption {
 	}
 }
 
+func WithMultiMapFactory[C any](f func(C) (multimapv1.MultiMapServer, error)) ConnOption {
+	return func(options *ConnOptions) {
+		options.MultiMapFactory = func(data []byte) (multimapv1.MultiMapServer, error) {
+			var config C
+			if data != nil {
+				if err := json.Unmarshal(data, &config); err != nil {
+					return nil, err
+				}
+			}
+			return f(config)
+		}
+	}
+}
+
 func WithSetFactory[C any](f func(C) (setv1.SetServer, error)) ConnOption {
 	return func(options *ConnOptions) {
 		options.SetFactory = func(data []byte) (setv1.SetServer, error) {
@@ -318,6 +335,13 @@ func (c *configurableConn[C]) Map(config []byte) (mapv1.MapServer, error) {
 		return nil, errors.NewNotSupported("primitive type not supported by driver")
 	}
 	return c.options.MapFactory(config)
+}
+
+func (c *configurableConn[C]) MultiMap(config []byte) (multimapv1.MultiMapServer, error) {
+	if c.options.MultiMapFactory == nil {
+		return nil, errors.NewNotSupported("primitive type not supported by driver")
+	}
+	return c.options.MultiMapFactory(config)
 }
 
 func (c *configurableConn[C]) Set(config []byte) (setv1.SetServer, error) {
