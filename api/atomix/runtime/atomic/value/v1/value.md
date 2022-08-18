@@ -288,7 +288,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | version | [uint64](#uint64) |  |  |
-| prev_value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
 
 
 
@@ -322,6 +321,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | version | [uint64](#uint64) |  |  |
+| prev_value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
 
 
 

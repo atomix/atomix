@@ -91,7 +91,6 @@ message SetRequest {
 
 message SetResponse {
     uint64 version = 1;
-    Value prev_value = 2;
 }
 
 message UpdateRequest {
@@ -109,6 +108,7 @@ message UpdateRequest {
 
 message UpdateResponse {
     uint64 version = 1;
+    Value prev_value = 2;
 }
 
 message DeleteRequest {

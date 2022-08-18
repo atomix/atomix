@@ -41,8 +41,11 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/atomix/runtime/api v0.3.6 h1:7Hbvrj0uIw3XYeUQ8G5fAzE5TE3SyEq2cfMrJAa0ths=
 github.com/atomix/runtime/api v0.3.6/go.mod h1:tjbd3w4yij89ZHCYdQUbmvZMC0HoHQQ/3/gVzQuOCH0=
+github.com/atomix/runtime/api v0.3.7/go.mod h1:tjbd3w4yij89ZHCYdQUbmvZMC0HoHQQ/3/gVzQuOCH0=
 github.com/atomix/runtime/sdk v0.3.6 h1:+QflG99KNeXnJrXB8WSQBip0xwhcyMA/pe7SQv+UUBk=
 github.com/atomix/runtime/sdk v0.3.6/go.mod h1:smuX9Xd2KLd2y1vd9DYbeVxXMZQyusyY8HFvwZ3rDrw=
+github.com/atomix/runtime/sdk v0.3.7 h1:EAHLpUaJGI0yo0IZX3ACl6t64XUO32K7AJpSRtKPIwM=
+github.com/atomix/runtime/sdk v0.3.7/go.mod h1:PaRrXQcAXWSkm59nE4+/UTedOUJtdLSUFWcACFobmJk=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
