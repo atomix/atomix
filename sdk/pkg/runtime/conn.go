@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	atomiccounterv1 "github.com/atomix/runtime/api/atomix/runtime/atomic/counter/v1"
+	atomiccountermapv1 "github.com/atomix/runtime/api/atomix/runtime/atomic/countermap/v1"
 	atomicindexedmapv1 "github.com/atomix/runtime/api/atomix/runtime/atomic/indexedmap/v1"
 	atomiclockv1 "github.com/atomix/runtime/api/atomix/runtime/atomic/lock/v1"
 	atomicmapv1 "github.com/atomix/runtime/api/atomix/runtime/atomic/map/v1"
@@ -28,6 +29,7 @@ type Conn interface {
 	Context() context.Context
 	Configurator[[]byte]
 	AtomicCounter(config []byte) (atomiccounterv1.AtomicCounterServer, error)
+	AtomicCounterMap(config []byte) (atomiccountermapv1.AtomicCounterMapServer, error)
 	AtomicIndexedMap(config []byte) (atomicindexedmapv1.AtomicIndexedMapServer, error)
 	AtomicMap(config []byte) (atomicmapv1.AtomicMapServer, error)
 	AtomicValue(config []byte) (atomicvaluev1.AtomicValueServer, error)
@@ -47,6 +49,7 @@ type Connector[C any] func(ctx context.Context, config C) (Conn, error)
 
 type ConnOptions struct {
 	AtomicCounterFactory    func([]byte) (atomiccounterv1.AtomicCounterServer, error)
+	AtomicCounterMapFactory func([]byte) (atomiccountermapv1.AtomicCounterMapServer, error)
 	AtomicIndexedMapFactory func([]byte) (atomicindexedmapv1.AtomicIndexedMapServer, error)
 	AtomicMapFactory        func([]byte) (atomicmapv1.AtomicMapServer, error)
 	AtomicValueFactory      func([]byte) (atomicvaluev1.AtomicValueServer, error)
@@ -72,6 +75,20 @@ type ConnOption func(*ConnOptions)
 func WithAtomicCounterFactory[C any](f func(C) (atomiccounterv1.AtomicCounterServer, error)) ConnOption {
 	return func(options *ConnOptions) {
 		options.AtomicCounterFactory = func(data []byte) (atomiccounterv1.AtomicCounterServer, error) {
+			var config C
+			if data != nil {
+				if err := json.Unmarshal(data, &config); err != nil {
+					return nil, err
+				}
+			}
+			return f(config)
+		}
+	}
+}
+
+func WithAtomicCounterMapFactory[C any](f func(C) (atomiccountermapv1.AtomicCounterMapServer, error)) ConnOption {
+	return func(options *ConnOptions) {
+		options.AtomicCounterMapFactory = func(data []byte) (atomiccountermapv1.AtomicCounterMapServer, error) {
 			var config C
 			if data != nil {
 				if err := json.Unmarshal(data, &config); err != nil {
@@ -279,6 +296,13 @@ func (c *configurableConn[C]) AtomicCounter(config []byte) (atomiccounterv1.Atom
 		return nil, errors.NewNotSupported("primitive type not supported by driver")
 	}
 	return c.options.AtomicCounterFactory(config)
+}
+
+func (c *configurableConn[C]) AtomicCounterMap(config []byte) (atomiccountermapv1.AtomicCounterMapServer, error) {
+	if c.options.AtomicCounterMapFactory == nil {
+		return nil, errors.NewNotSupported("primitive type not supported by driver")
+	}
+	return c.options.AtomicCounterMapFactory(config)
 }
 
 func (c *configurableConn[C]) AtomicIndexedMap(config []byte) (atomicindexedmapv1.AtomicIndexedMapServer, error) {
