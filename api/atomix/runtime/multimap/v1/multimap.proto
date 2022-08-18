@@ -6,18 +6,18 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.runtime.atomic.countermap.v1;
+package atomix.runtime.multimap.v1;
 
-option java_package = "io.atomix.api.runtime.atomic.countermap.v1";
-option java_outer_classname = "AtomicCounterMapV1";
+option java_package = "io.atomix.api.runtime.multimap.v1";
+option java_outer_classname = "AtomicMultiMapV1";
 option java_multiple_files = true;
 
 import "google/protobuf/duration.proto";
 import "atomix/runtime/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 
-// AtomicCounterMap is a service for a counter map primitive
-service AtomicCounterMap {
+// MultiMap is a service for a multimap primitive
+service MultiMap {
     // Create creates the map
     rpc Create (CreateRequest) returns (CreateResponse);
 
@@ -27,20 +27,8 @@ service AtomicCounterMap {
     // Size returns the size of the map
     rpc Size (SizeRequest) returns (SizeResponse);
 
-    // Set sets an entry into the map
-    rpc Set (SetRequest) returns (SetResponse);
-
-    // Insert inserts an entry into the map
-    rpc Insert (InsertRequest) returns (InsertResponse);
-
-    // Update updates an entry in the map
-    rpc Update (UpdateRequest) returns (UpdateResponse);
-
-    // Increment increments a counter in the map
-    rpc Increment (IncrementRequest) returns (IncrementResponse);
-
-    // Decrement decrements a counter in the map
-    rpc Decrement (DecrementRequest) returns (DecrementResponse);
+    // Add adds a value to an entry in the map
+    rpc Add (AddRequest) returns (AddResponse);
 
     // Get gets the entry for a key
     rpc Get (GetRequest) returns (GetResponse);
@@ -98,70 +86,17 @@ message SizeResponse {
     uint32 size = 1;
 }
 
-message SetRequest {
+message AddRequest {
     atomix.runtime.v1.PrimitiveId id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
     string key = 2;
-    int64 value = 3;
+    repeated string values = 3;
 }
 
-message SetResponse {
-    int64 prev_value = 1;
-}
-
-message InsertRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    string key = 2;
-    int64 value = 3;
-}
-
-message InsertResponse {
-
-}
-
-message UpdateRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    string key = 2;
-    int64 value = 3;
-    int64 prev_value = 4;
-}
-
-message UpdateResponse {
-    int64 prev_value = 1;
-}
-
-message IncrementRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    string key = 2;
-    int64 delta = 3;
-}
-
-message IncrementResponse {
-    int64 prev_value = 1;
-}
-
-message DecrementRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    string key = 2;
-    int64 delta = 3;
-}
-
-message DecrementResponse {
-    int64 prev_value = 1;
+message AddResponse {
+    bool added = 1;
 }
 
 message GetRequest {
@@ -173,7 +108,7 @@ message GetRequest {
 }
 
 message GetResponse {
-    int64 value = 1;
+    repeated string values = 1;
 }
 
 message RemoveRequest {
@@ -182,11 +117,11 @@ message RemoveRequest {
         (gogoproto.nullable) = false
     ];
     string key = 2;
-    int64 prev_value = 3;
+    repeated string values = 3;
 }
 
 message RemoveResponse {
-    int64 value = 1;
+    bool removed = 1;
 }
 
 message ClearRequest {
@@ -265,20 +200,20 @@ message Event {
     }
 
     message Inserted {
-        int64 value = 1;
+        repeated string values = 1;
     }
 
     message Updated {
-        int64 value = 1;
-        int64 prev_value = 2;
+        repeated string values = 1;
+        repeated string prev_values = 2;
     }
 
     message Removed {
-        int64 value = 1;
+        repeated string values = 1;
     }
 }
 
 message Entry {
     string key = 1;
-    int64 value = 2;
+    repeated string values = 2;
 }

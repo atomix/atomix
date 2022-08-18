@@ -267,7 +267,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | value | [int64](#int64) |  |  |
-| expired | [bool](#bool) |  |  |
 
 
 
