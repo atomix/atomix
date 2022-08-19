@@ -8,15 +8,12 @@ import (
 	"fmt"
 	"github.com/atomix/runtime/proxy/pkg/proxy"
 	"github.com/atomix/runtime/sdk/pkg/logging"
-	atomiccounterv1 "github.com/atomix/runtime/sdk/pkg/runtime/atomic/counter/v1"
-	atomiccountermapv1 "github.com/atomix/runtime/sdk/pkg/runtime/atomic/countermap/v1"
-	atomicindexedmapv1 "github.com/atomix/runtime/sdk/pkg/runtime/atomic/indexedmap/v1"
-	atomiclockv1 "github.com/atomix/runtime/sdk/pkg/runtime/atomic/lock/v1"
-	atomicmapv1 "github.com/atomix/runtime/sdk/pkg/runtime/atomic/map/v1"
-	atomicvaluev1 "github.com/atomix/runtime/sdk/pkg/runtime/atomic/value/v1"
 	counterv1 "github.com/atomix/runtime/sdk/pkg/runtime/counter/v1"
+	countermapv1 "github.com/atomix/runtime/sdk/pkg/runtime/countermap/v1"
 	electionv1 "github.com/atomix/runtime/sdk/pkg/runtime/election/v1"
+	indexedmapv1 "github.com/atomix/runtime/sdk/pkg/runtime/indexedmap/v1"
 	listv1 "github.com/atomix/runtime/sdk/pkg/runtime/list/v1"
+	lockv1 "github.com/atomix/runtime/sdk/pkg/runtime/lock/v1"
 	mapv1 "github.com/atomix/runtime/sdk/pkg/runtime/map/v1"
 	multimapv1 "github.com/atomix/runtime/sdk/pkg/runtime/multimap/v1"
 	setv1 "github.com/atomix/runtime/sdk/pkg/runtime/set/v1"
@@ -95,14 +92,11 @@ func main() {
 				proxy.WithProxyHost(proxyHost),
 				proxy.WithProxyPort(proxyPort),
 				proxy.WithTypes(
-					atomiccounterv1.Type,
-					atomiccountermapv1.Type,
-					atomicindexedmapv1.Type,
-					atomiclockv1.Type,
-					atomicmapv1.Type,
-					atomicvaluev1.Type,
 					counterv1.Type,
+					countermapv1.Type,
+					indexedmapv1.Type,
 					electionv1.Type,
+					lockv1.Type,
 					listv1.Type,
 					mapv1.Type,
 					multimapv1.Type,
