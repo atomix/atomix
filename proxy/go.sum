@@ -39,13 +39,10 @@ dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/atomix/runtime/api v0.3.6 h1:7Hbvrj0uIw3XYeUQ8G5fAzE5TE3SyEq2cfMrJAa0ths=
-github.com/atomix/runtime/api v0.3.6/go.mod h1:tjbd3w4yij89ZHCYdQUbmvZMC0HoHQQ/3/gVzQuOCH0=
-github.com/atomix/runtime/api v0.3.7/go.mod h1:tjbd3w4yij89ZHCYdQUbmvZMC0HoHQQ/3/gVzQuOCH0=
-github.com/atomix/runtime/sdk v0.3.6 h1:+QflG99KNeXnJrXB8WSQBip0xwhcyMA/pe7SQv+UUBk=
-github.com/atomix/runtime/sdk v0.3.6/go.mod h1:smuX9Xd2KLd2y1vd9DYbeVxXMZQyusyY8HFvwZ3rDrw=
-github.com/atomix/runtime/sdk v0.3.7 h1:EAHLpUaJGI0yo0IZX3ACl6t64XUO32K7AJpSRtKPIwM=
-github.com/atomix/runtime/sdk v0.3.7/go.mod h1:PaRrXQcAXWSkm59nE4+/UTedOUJtdLSUFWcACFobmJk=
+github.com/atomix/runtime/api v0.3.8 h1:yiRn/F+VUbQuzYNTikyB7EtF2DuJYNOIclPAOHT9mMM=
+github.com/atomix/runtime/api v0.3.8/go.mod h1:tjbd3w4yij89ZHCYdQUbmvZMC0HoHQQ/3/gVzQuOCH0=
+github.com/atomix/runtime/sdk v0.3.8 h1:ZON7BeE9kAQIIKuZJSilDfZFgIle7oTKcgM3GVhjk8w=
+github.com/atomix/runtime/sdk v0.3.8/go.mod h1:nt7G63p6oaaqVs0WtrAXx9agbt4YowlQ64+W9iiIyII=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=

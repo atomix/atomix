@@ -4,8 +4,6 @@
 ## Table of Contents
 
 - [atomix/runtime/multimap/v1/multimap.proto](#atomix_runtime_multimap_v1_multimap-proto)
-    - [AddRequest](#atomix-runtime-multimap-v1-AddRequest)
-    - [AddResponse](#atomix-runtime-multimap-v1-AddResponse)
     - [ClearRequest](#atomix-runtime-multimap-v1-ClearRequest)
     - [ClearResponse](#atomix-runtime-multimap-v1-ClearResponse)
     - [CloseRequest](#atomix-runtime-multimap-v1-CloseRequest)
@@ -24,14 +22,12 @@
     - [EventsResponse](#atomix-runtime-multimap-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-multimap-v1-GetRequest)
     - [GetResponse](#atomix-runtime-multimap-v1-GetResponse)
-    - [LockRequest](#atomix-runtime-multimap-v1-LockRequest)
-    - [LockResponse](#atomix-runtime-multimap-v1-LockResponse)
+    - [PutRequest](#atomix-runtime-multimap-v1-PutRequest)
+    - [PutResponse](#atomix-runtime-multimap-v1-PutResponse)
     - [RemoveRequest](#atomix-runtime-multimap-v1-RemoveRequest)
     - [RemoveResponse](#atomix-runtime-multimap-v1-RemoveResponse)
     - [SizeRequest](#atomix-runtime-multimap-v1-SizeRequest)
     - [SizeResponse](#atomix-runtime-multimap-v1-SizeResponse)
-    - [UnlockRequest](#atomix-runtime-multimap-v1-UnlockRequest)
-    - [UnlockResponse](#atomix-runtime-multimap-v1-UnlockResponse)
   
     - [MultiMap](#atomix-runtime-multimap-v1-MultiMap)
   
@@ -43,38 +39,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## atomix/runtime/multimap/v1/multimap.proto
-
-
-
-<a name="atomix-runtime-multimap-v1-AddRequest"></a>
-
-### AddRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| key | [string](#string) |  |  |
-| values | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-multimap-v1-AddResponse"></a>
-
-### AddResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| added | [bool](#bool) |  |  |
-
-
-
 
 
 
@@ -343,26 +307,26 @@
 
 
 
-<a name="atomix-runtime-multimap-v1-LockRequest"></a>
+<a name="atomix-runtime-multimap-v1-PutRequest"></a>
 
-### LockRequest
+### PutRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| keys | [string](#string) | repeated |  |
-| timeout | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+| key | [string](#string) |  |  |
+| values | [string](#string) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-multimap-v1-LockResponse"></a>
+<a name="atomix-runtime-multimap-v1-PutResponse"></a>
 
-### LockResponse
+### PutResponse
 
 
 
@@ -391,11 +355,6 @@
 
 ### RemoveResponse
 
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| removed | [bool](#bool) |  |  |
 
 
 
@@ -431,32 +390,6 @@
 
 
 
-
-<a name="atomix-runtime-multimap-v1-UnlockRequest"></a>
-
-### UnlockRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| keys | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-multimap-v1-UnlockResponse"></a>
-
-### UnlockResponse
-
-
-
-
-
-
  
 
  
@@ -474,12 +407,10 @@ MultiMap is a service for a multimap primitive
 | Create | [CreateRequest](#atomix-runtime-multimap-v1-CreateRequest) | [CreateResponse](#atomix-runtime-multimap-v1-CreateResponse) | Create creates the map |
 | Close | [CloseRequest](#atomix-runtime-multimap-v1-CloseRequest) | [CloseResponse](#atomix-runtime-multimap-v1-CloseResponse) | Close closes the map |
 | Size | [SizeRequest](#atomix-runtime-multimap-v1-SizeRequest) | [SizeResponse](#atomix-runtime-multimap-v1-SizeResponse) | Size returns the size of the map |
-| Add | [AddRequest](#atomix-runtime-multimap-v1-AddRequest) | [AddResponse](#atomix-runtime-multimap-v1-AddResponse) | Add adds a value to an entry in the map |
+| Put | [PutRequest](#atomix-runtime-multimap-v1-PutRequest) | [PutResponse](#atomix-runtime-multimap-v1-PutResponse) | Put adds a value to an entry in the map |
 | Get | [GetRequest](#atomix-runtime-multimap-v1-GetRequest) | [GetResponse](#atomix-runtime-multimap-v1-GetResponse) | Get gets the entry for a key |
 | Remove | [RemoveRequest](#atomix-runtime-multimap-v1-RemoveRequest) | [RemoveResponse](#atomix-runtime-multimap-v1-RemoveResponse) | Remove removes an entry from the map |
 | Clear | [ClearRequest](#atomix-runtime-multimap-v1-ClearRequest) | [ClearResponse](#atomix-runtime-multimap-v1-ClearResponse) | Clear removes all entries from the map |
-| Lock | [LockRequest](#atomix-runtime-multimap-v1-LockRequest) | [LockResponse](#atomix-runtime-multimap-v1-LockResponse) | Lock locks a key in the map |
-| Unlock | [UnlockRequest](#atomix-runtime-multimap-v1-UnlockRequest) | [UnlockResponse](#atomix-runtime-multimap-v1-UnlockResponse) | Unlock unlocks a key in the map |
 | Events | [EventsRequest](#atomix-runtime-multimap-v1-EventsRequest) | [EventsResponse](#atomix-runtime-multimap-v1-EventsResponse) stream | Events listens for change events |
 | Entries | [EntriesRequest](#atomix-runtime-multimap-v1-EntriesRequest) | [EntriesResponse](#atomix-runtime-multimap-v1-EntriesResponse) stream | Entries lists all entries in the map |
 

@@ -27,6 +27,9 @@ service AtomicValue {
     // Set sets the value
     rpc Set (SetRequest) returns (SetResponse);
 
+    // Insert inserts the value
+    rpc Insert (InsertRequest) returns (InsertResponse);
+
     // Update updates the value
     rpc Update (UpdateRequest) returns (UpdateResponse);
 
@@ -91,6 +94,23 @@ message SetRequest {
 
 message SetResponse {
     uint64 version = 1;
+    Value prev_value = 2;
+}
+
+message InsertRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    bytes value = 2;
+    google.protobuf.Duration ttl = 3 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
+}
+
+message InsertResponse {
+    uint64 version = 1;
 }
 
 message UpdateRequest {
@@ -108,7 +128,9 @@ message UpdateRequest {
 
 message UpdateResponse {
     uint64 version = 1;
-    Value prev_value = 2;
+    Value prev_value = 2 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message DeleteRequest {

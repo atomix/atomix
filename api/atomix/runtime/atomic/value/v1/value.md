@@ -19,6 +19,8 @@
     - [EventsResponse](#atomix-runtime-atomic-value-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-atomic-value-v1-GetRequest)
     - [GetResponse](#atomix-runtime-atomic-value-v1-GetResponse)
+    - [InsertRequest](#atomix-runtime-atomic-value-v1-InsertRequest)
+    - [InsertResponse](#atomix-runtime-atomic-value-v1-InsertResponse)
     - [SetRequest](#atomix-runtime-atomic-value-v1-SetRequest)
     - [SetResponse](#atomix-runtime-atomic-value-v1-SetResponse)
     - [UpdateRequest](#atomix-runtime-atomic-value-v1-UpdateRequest)
@@ -262,6 +264,38 @@
 
 
 
+<a name="atomix-runtime-atomic-value-v1-InsertRequest"></a>
+
+### InsertRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| value | [bytes](#bytes) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-atomic-value-v1-InsertResponse"></a>
+
+### InsertResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="atomix-runtime-atomic-value-v1-SetRequest"></a>
 
 ### SetRequest
@@ -288,6 +322,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | version | [uint64](#uint64) |  |  |
+| prev_value | [Value](#atomix-runtime-atomic-value-v1-Value) |  |  |
 
 
 
@@ -390,6 +425,7 @@ AtomicValue is a service for a value primitive
 | Create | [CreateRequest](#atomix-runtime-atomic-value-v1-CreateRequest) | [CreateResponse](#atomix-runtime-atomic-value-v1-CreateResponse) | Create creates the value |
 | Close | [CloseRequest](#atomix-runtime-atomic-value-v1-CloseRequest) | [CloseResponse](#atomix-runtime-atomic-value-v1-CloseResponse) | Close closes the value |
 | Set | [SetRequest](#atomix-runtime-atomic-value-v1-SetRequest) | [SetResponse](#atomix-runtime-atomic-value-v1-SetResponse) | Set sets the value |
+| Insert | [InsertRequest](#atomix-runtime-atomic-value-v1-InsertRequest) | [InsertResponse](#atomix-runtime-atomic-value-v1-InsertResponse) | Insert inserts the value |
 | Update | [UpdateRequest](#atomix-runtime-atomic-value-v1-UpdateRequest) | [UpdateResponse](#atomix-runtime-atomic-value-v1-UpdateResponse) | Update updates the value |
 | Get | [GetRequest](#atomix-runtime-atomic-value-v1-GetRequest) | [GetResponse](#atomix-runtime-atomic-value-v1-GetResponse) | Get gets the value |
 | Delete | [DeleteRequest](#atomix-runtime-atomic-value-v1-DeleteRequest) | [DeleteResponse](#atomix-runtime-atomic-value-v1-DeleteResponse) | Delete deletes the value |

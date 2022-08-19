@@ -27,8 +27,8 @@ service MultiMap {
     // Size returns the size of the map
     rpc Size (SizeRequest) returns (SizeResponse);
 
-    // Add adds a value to an entry in the map
-    rpc Add (AddRequest) returns (AddResponse);
+    // Put adds a value to an entry in the map
+    rpc Put (PutRequest) returns (PutResponse);
 
     // Get gets the entry for a key
     rpc Get (GetRequest) returns (GetResponse);
@@ -38,12 +38,6 @@ service MultiMap {
 
     // Clear removes all entries from the map
     rpc Clear (ClearRequest) returns (ClearResponse);
-
-    // Lock locks a key in the map
-    rpc Lock(LockRequest) returns (LockResponse);
-
-    // Unlock unlocks a key in the map
-    rpc Unlock(UnlockRequest) returns (UnlockResponse);
 
     // Events listens for change events
     rpc Events (EventsRequest) returns (stream EventsResponse);
@@ -86,7 +80,7 @@ message SizeResponse {
     uint32 size = 1;
 }
 
-message AddRequest {
+message PutRequest {
     atomix.runtime.v1.PrimitiveId id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
@@ -95,8 +89,8 @@ message AddRequest {
     repeated string values = 3;
 }
 
-message AddResponse {
-    bool added = 1;
+message PutResponse {
+
 }
 
 message GetRequest {
@@ -121,7 +115,7 @@ message RemoveRequest {
 }
 
 message RemoveResponse {
-    bool removed = 1;
+
 }
 
 message ClearRequest {
@@ -132,33 +126,6 @@ message ClearRequest {
 }
 
 message ClearResponse {
-
-}
-
-message LockRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    repeated string keys = 2;
-    google.protobuf.Duration timeout = 3 [
-        (gogoproto.stdduration) = true
-    ];
-}
-
-message LockResponse {
-
-}
-
-message UnlockRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    repeated string keys = 2;
-}
-
-message UnlockResponse {
 
 }
 
