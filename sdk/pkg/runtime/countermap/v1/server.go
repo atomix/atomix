@@ -6,22 +6,22 @@ package v1
 
 import (
 	"context"
-	atomiccountermapv1 "github.com/atomix/runtime/api/atomix/runtime/atomic/countermap/v1"
+	atomiccountermapv1 "github.com/atomix/runtime/api/atomix/runtime/countermap/v1"
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/logging"
-	runtime "github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/runtime/sdk/pkg/runtime"
 )
 
 var log = logging.GetLogger()
 
-func newAtomicCounterMapServer(delegate *runtime.Delegate[atomiccountermapv1.AtomicCounterMapServer]) atomiccountermapv1.AtomicCounterMapServer {
+func newCounterMapServer(delegate *runtime.Delegate[atomiccountermapv1.CounterMapServer]) atomiccountermapv1.CounterMapServer {
 	return &counterMapServer{
 		delegate: delegate,
 	}
 }
 
 type counterMapServer struct {
-	delegate *runtime.Delegate[atomiccountermapv1.AtomicCounterMapServer]
+	delegate *runtime.Delegate[atomiccountermapv1.CounterMapServer]
 }
 
 func (s *counterMapServer) Create(ctx context.Context, request *atomiccountermapv1.CreateRequest) (*atomiccountermapv1.CreateResponse, error) {
@@ -323,7 +323,7 @@ func (s *counterMapServer) Unlock(ctx context.Context, request *atomiccountermap
 	return response, nil
 }
 
-func (s *counterMapServer) Events(request *atomiccountermapv1.EventsRequest, server atomiccountermapv1.AtomicCounterMap_EventsServer) error {
+func (s *counterMapServer) Events(request *atomiccountermapv1.EventsRequest, server atomiccountermapv1.CounterMap_EventsServer) error {
 	log.Debugw("Events",
 		logging.Stringer("EventsRequest", request),
 		logging.String("State", "started"))
@@ -345,7 +345,7 @@ func (s *counterMapServer) Events(request *atomiccountermapv1.EventsRequest, ser
 	return nil
 }
 
-func (s *counterMapServer) Entries(request *atomiccountermapv1.EntriesRequest, server atomiccountermapv1.AtomicCounterMap_EntriesServer) error {
+func (s *counterMapServer) Entries(request *atomiccountermapv1.EntriesRequest, server atomiccountermapv1.CounterMap_EntriesServer) error {
 	log.Debugw("Entries",
 		logging.Stringer("EntriesRequest", request),
 		logging.String("State", "started"))
@@ -367,4 +367,4 @@ func (s *counterMapServer) Entries(request *atomiccountermapv1.EntriesRequest, s
 	return nil
 }
 
-var _ atomiccountermapv1.AtomicCounterMapServer = (*counterMapServer)(nil)
+var _ atomiccountermapv1.CounterMapServer = (*counterMapServer)(nil)

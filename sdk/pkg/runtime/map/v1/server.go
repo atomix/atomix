@@ -116,6 +116,52 @@ func (s *mapServer) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.
 	return response, nil
 }
 
+func (s *mapServer) Insert(ctx context.Context, request *mapv1.InsertRequest) (*mapv1.InsertResponse, error) {
+	log.Debugw("Insert",
+		logging.Stringer("InsertRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Insert",
+			logging.Stringer("InsertRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Insert(ctx, request)
+	if err != nil {
+		log.Warnw("Insert",
+			logging.Stringer("InsertRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Insert",
+		logging.Stringer("InsertResponse", response))
+	return response, nil
+}
+
+func (s *mapServer) Update(ctx context.Context, request *mapv1.UpdateRequest) (*mapv1.UpdateResponse, error) {
+	log.Debugw("Update",
+		logging.Stringer("UpdateRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Update",
+			logging.Stringer("UpdateRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Update(ctx, request)
+	if err != nil {
+		log.Warnw("Update",
+			logging.Stringer("UpdateRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Update",
+		logging.Stringer("UpdateResponse", response))
+	return response, nil
+}
+
 func (s *mapServer) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", request))
@@ -182,6 +228,52 @@ func (s *mapServer) Clear(ctx context.Context, request *mapv1.ClearRequest) (*ma
 	}
 	log.Debugw("Clear",
 		logging.Stringer("ClearResponse", response))
+	return response, nil
+}
+
+func (s *mapServer) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1.LockResponse, error) {
+	log.Debugw("Lock",
+		logging.Stringer("LockRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Lock",
+			logging.Stringer("LockRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Lock(ctx, request)
+	if err != nil {
+		log.Warnw("Lock",
+			logging.Stringer("LockRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Lock",
+		logging.Stringer("LockResponse", response))
+	return response, nil
+}
+
+func (s *mapServer) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*mapv1.UnlockResponse, error) {
+	log.Debugw("Unlock",
+		logging.Stringer("UnlockRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Unlock",
+			logging.Stringer("UnlockRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Unlock(ctx, request)
+	if err != nil {
+		log.Warnw("Unlock",
+			logging.Stringer("UnlockRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Unlock",
+		logging.Stringer("UnlockResponse", response))
 	return response, nil
 }
 

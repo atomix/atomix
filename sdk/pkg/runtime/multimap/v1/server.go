@@ -93,26 +93,26 @@ func (s *multiMapServer) Size(ctx context.Context, request *multimapv1.SizeReque
 	return response, nil
 }
 
-func (s *multiMapServer) Add(ctx context.Context, request *multimapv1.AddRequest) (*multimapv1.AddResponse, error) {
-	log.Debugw("Add",
-		logging.Stringer("AddRequest", request))
+func (s *multiMapServer) Put(ctx context.Context, request *multimapv1.PutRequest) (*multimapv1.PutResponse, error) {
+	log.Debugw("Put",
+		logging.Stringer("PutRequest", request))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
-		log.Warnw("Add",
-			logging.Stringer("AddRequest", request),
+		log.Warnw("Put",
+			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response, err := client.Add(ctx, request)
+	response, err := client.Put(ctx, request)
 	if err != nil {
-		log.Warnw("Add",
-			logging.Stringer("AddRequest", request),
+		log.Warnw("Put",
+			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
-	log.Debugw("Add",
-		logging.Stringer("AddResponse", response))
+	log.Debugw("Put",
+		logging.Stringer("PutResponse", response))
 	return response, nil
 }
 
@@ -182,52 +182,6 @@ func (s *multiMapServer) Clear(ctx context.Context, request *multimapv1.ClearReq
 	}
 	log.Debugw("Clear",
 		logging.Stringer("ClearResponse", response))
-	return response, nil
-}
-
-func (s *multiMapServer) Lock(ctx context.Context, request *multimapv1.LockRequest) (*multimapv1.LockResponse, error) {
-	log.Debugw("Lock",
-		logging.Stringer("LockRequest", request))
-	client, err := s.delegate.Get(request.ID.Name)
-	if err != nil {
-		err = errors.ToProto(err)
-		log.Warnw("Lock",
-			logging.Stringer("LockRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := client.Lock(ctx, request)
-	if err != nil {
-		log.Warnw("Lock",
-			logging.Stringer("LockRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Lock",
-		logging.Stringer("LockResponse", response))
-	return response, nil
-}
-
-func (s *multiMapServer) Unlock(ctx context.Context, request *multimapv1.UnlockRequest) (*multimapv1.UnlockResponse, error) {
-	log.Debugw("Unlock",
-		logging.Stringer("UnlockRequest", request))
-	client, err := s.delegate.Get(request.ID.Name)
-	if err != nil {
-		err = errors.ToProto(err)
-		log.Warnw("Unlock",
-			logging.Stringer("UnlockRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := client.Unlock(ctx, request)
-	if err != nil {
-		log.Warnw("Unlock",
-			logging.Stringer("UnlockRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Unlock",
-		logging.Stringer("UnlockResponse", response))
 	return response, nil
 }
 

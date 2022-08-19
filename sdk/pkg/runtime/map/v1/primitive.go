@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.map.v1.Map"
+const Service = "atomix.runtime.atomic.map.v1.Map"
 
 var Type = runtime.NewType[mapv1.MapServer](Service, register, resolve)
 

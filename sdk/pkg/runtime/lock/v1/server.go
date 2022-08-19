@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	lockv1 "github.com/atomix/runtime/api/atomix/runtime/atomic/lock/v1"
+	lockv1 "github.com/atomix/runtime/api/atomix/runtime/lock/v1"
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/logging"
 	runtime "github.com/atomix/runtime/sdk/pkg/runtime"
@@ -14,7 +14,7 @@ import (
 
 var log = logging.GetLogger()
 
-func newAtomicLockServer(delegate *runtime.Delegate[lockv1.LockServer]) lockv1.LockServer {
+func newLockServer(delegate *runtime.Delegate[lockv1.LockServer]) lockv1.LockServer {
 	return &lockServer{
 		delegate: delegate,
 	}
