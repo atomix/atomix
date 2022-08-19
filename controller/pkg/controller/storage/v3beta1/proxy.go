@@ -422,9 +422,8 @@ func (i *ProxyInjector) Handle(ctx context.Context, request admission.Request) a
 	}
 
 	pod.Spec.Containers = append(pod.Spec.Containers, corev1.Container{
-		Name:            proxyContainerName,
-		Image:           getProxyImage(),
-		ImagePullPolicy: corev1.PullIfNotPresent,
+		Name:  proxyContainerName,
+		Image: getProxyImage(),
 		Args: []string{
 			"--config",
 			fmt.Sprintf("/etc/atomix/%s", configFile),
