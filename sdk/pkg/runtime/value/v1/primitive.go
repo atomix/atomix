@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.atomic.value.v1.Value"
+const Service = "atomix.runtime.value.v1.Value"
 
 var Type = runtime.NewType[valuev1.ValueServer](Service, register, resolve)
 

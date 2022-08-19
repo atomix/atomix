@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.atomic.indexedmap.v1.IndexedMap"
+const Service = "atomix.runtime.indexedmap.v1.IndexedMap"
 
 var Type = runtime.NewType[indexedmapv1.IndexedMapServer](Service, register, resolve)
 

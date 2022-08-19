@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.atomic.lock.v1.Lock"
+const Service = "atomix.runtime.lock.v1.Lock"
 
 var Type = runtime.NewType[lockv1.LockServer](Service, register, resolve)
 

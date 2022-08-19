@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.atomic.counter.v1.AtomicCounter"
+const Service = "atomix.runtime.counter.v1.Counter"
 
 var Type = runtime.NewType[counterv1.CounterServer](Service, register, resolve)
 
