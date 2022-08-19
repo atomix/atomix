@@ -22,13 +22,21 @@
     - [EventsResponse](#atomix-runtime-map-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-map-v1-GetRequest)
     - [GetResponse](#atomix-runtime-map-v1-GetResponse)
+    - [InsertRequest](#atomix-runtime-map-v1-InsertRequest)
+    - [InsertResponse](#atomix-runtime-map-v1-InsertResponse)
+    - [LockRequest](#atomix-runtime-map-v1-LockRequest)
+    - [LockResponse](#atomix-runtime-map-v1-LockResponse)
     - [PutRequest](#atomix-runtime-map-v1-PutRequest)
     - [PutResponse](#atomix-runtime-map-v1-PutResponse)
     - [RemoveRequest](#atomix-runtime-map-v1-RemoveRequest)
     - [RemoveResponse](#atomix-runtime-map-v1-RemoveResponse)
     - [SizeRequest](#atomix-runtime-map-v1-SizeRequest)
     - [SizeResponse](#atomix-runtime-map-v1-SizeResponse)
-    - [Value](#atomix-runtime-map-v1-Value)
+    - [UnlockRequest](#atomix-runtime-map-v1-UnlockRequest)
+    - [UnlockResponse](#atomix-runtime-map-v1-UnlockResponse)
+    - [UpdateRequest](#atomix-runtime-map-v1-UpdateRequest)
+    - [UpdateResponse](#atomix-runtime-map-v1-UpdateResponse)
+    - [VersionedValue](#atomix-runtime-map-v1-VersionedValue)
   
     - [Map](#atomix-runtime-map-v1-Map)
   
@@ -175,7 +183,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
-| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+| value | [VersionedValue](#atomix-runtime-map-v1-VersionedValue) |  |  |
 
 
 
@@ -208,7 +216,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+| value | [VersionedValue](#atomix-runtime-map-v1-VersionedValue) |  |  |
 
 
 
@@ -223,7 +231,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+| value | [VersionedValue](#atomix-runtime-map-v1-VersionedValue) |  |  |
 | expired | [bool](#bool) |  |  |
 
 
@@ -239,8 +247,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
-| prev_value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+| value | [VersionedValue](#atomix-runtime-map-v1-VersionedValue) |  |  |
+| prev_value | [VersionedValue](#atomix-runtime-map-v1-VersionedValue) |  |  |
 
 
 
@@ -257,7 +265,6 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
-| replay | [bool](#bool) |  |  |
 
 
 
@@ -303,7 +310,67 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+| value | [VersionedValue](#atomix-runtime-map-v1-VersionedValue) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-InsertRequest"></a>
+
+### InsertRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| key | [string](#string) |  |  |
+| value | [bytes](#bytes) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-InsertResponse"></a>
+
+### InsertResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-LockRequest"></a>
+
+### LockRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| keys | [string](#string) | repeated |  |
+| timeout | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-LockResponse"></a>
+
+### LockResponse
+
 
 
 
@@ -320,7 +387,9 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
-| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+| value | [bytes](#bytes) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+| prev_version | [uint64](#uint64) |  |  |
 
 
 
@@ -335,7 +404,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| prev_value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+| version | [uint64](#uint64) |  |  |
+| prev_value | [VersionedValue](#atomix-runtime-map-v1-VersionedValue) |  |  |
 
 
 
@@ -352,6 +422,7 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
+| prev_version | [uint64](#uint64) |  |  |
 
 
 
@@ -366,7 +437,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [Value](#atomix-runtime-map-v1-Value) |  |  |
+| value | [VersionedValue](#atomix-runtime-map-v1-VersionedValue) |  |  |
 
 
 
@@ -403,16 +474,77 @@
 
 
 
-<a name="atomix-runtime-map-v1-Value"></a>
+<a name="atomix-runtime-map-v1-UnlockRequest"></a>
 
-### Value
+### UnlockRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| keys | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-UnlockResponse"></a>
+
+### UnlockResponse
+
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-UpdateRequest"></a>
+
+### UpdateRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| key | [string](#string) |  |  |
+| value | [bytes](#bytes) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+| prev_version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-UpdateResponse"></a>
+
+### UpdateResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [uint64](#uint64) |  |  |
+| prev_value | [VersionedValue](#atomix-runtime-map-v1-VersionedValue) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-VersionedValue"></a>
+
+### VersionedValue
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | value | [bytes](#bytes) |  |  |
-| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+| version | [uint64](#uint64) |  |  |
 
 
 
@@ -436,9 +568,13 @@ Map is a service for a map primitive
 | Close | [CloseRequest](#atomix-runtime-map-v1-CloseRequest) | [CloseResponse](#atomix-runtime-map-v1-CloseResponse) | Close closes the map |
 | Size | [SizeRequest](#atomix-runtime-map-v1-SizeRequest) | [SizeResponse](#atomix-runtime-map-v1-SizeResponse) | Size returns the size of the map |
 | Put | [PutRequest](#atomix-runtime-map-v1-PutRequest) | [PutResponse](#atomix-runtime-map-v1-PutResponse) | Put puts an entry into the map |
+| Insert | [InsertRequest](#atomix-runtime-map-v1-InsertRequest) | [InsertResponse](#atomix-runtime-map-v1-InsertResponse) | Insert inserts an entry into the map |
+| Update | [UpdateRequest](#atomix-runtime-map-v1-UpdateRequest) | [UpdateResponse](#atomix-runtime-map-v1-UpdateResponse) | Update updates an entry in the map |
 | Get | [GetRequest](#atomix-runtime-map-v1-GetRequest) | [GetResponse](#atomix-runtime-map-v1-GetResponse) | Get gets the entry for a key |
 | Remove | [RemoveRequest](#atomix-runtime-map-v1-RemoveRequest) | [RemoveResponse](#atomix-runtime-map-v1-RemoveResponse) | Remove removes an entry from the map |
 | Clear | [ClearRequest](#atomix-runtime-map-v1-ClearRequest) | [ClearResponse](#atomix-runtime-map-v1-ClearResponse) | Clear removes all entries from the map |
+| Lock | [LockRequest](#atomix-runtime-map-v1-LockRequest) | [LockResponse](#atomix-runtime-map-v1-LockResponse) | Lock locks a key in the map |
+| Unlock | [UnlockRequest](#atomix-runtime-map-v1-UnlockRequest) | [UnlockResponse](#atomix-runtime-map-v1-UnlockResponse) | Unlock unlocks a key in the map |
 | Events | [EventsRequest](#atomix-runtime-map-v1-EventsRequest) | [EventsResponse](#atomix-runtime-map-v1-EventsResponse) stream | Events listens for change events |
 | Entries | [EntriesRequest](#atomix-runtime-map-v1-EntriesRequest) | [EntriesResponse](#atomix-runtime-map-v1-EntriesResponse) stream | Entries lists all entries in the map |
 

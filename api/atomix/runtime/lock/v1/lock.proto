@@ -6,9 +6,9 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.runtime.atomic.lock.v1;
+package atomix.runtime.lock.v1;
 
-option java_package = "io.atomix.api.runtime.atomic.lock.v1";
+option java_package = "io.atomix.api.runtime.lock.v1";
 option java_outer_classname = "LockV1";
 option java_multiple_files = true;
 

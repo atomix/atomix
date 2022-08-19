@@ -3,33 +3,33 @@
 
 ## Table of Contents
 
-- [atomix/runtime/atomic/lock/v1/lock.proto](#atomix_runtime_atomic_lock_v1_lock-proto)
-    - [CloseRequest](#atomix-runtime-atomic-lock-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-atomic-lock-v1-CloseResponse)
-    - [CreateRequest](#atomix-runtime-atomic-lock-v1-CreateRequest)
-    - [CreateRequest.TagsEntry](#atomix-runtime-atomic-lock-v1-CreateRequest-TagsEntry)
-    - [CreateResponse](#atomix-runtime-atomic-lock-v1-CreateResponse)
-    - [GetLockRequest](#atomix-runtime-atomic-lock-v1-GetLockRequest)
-    - [GetLockResponse](#atomix-runtime-atomic-lock-v1-GetLockResponse)
-    - [LockRequest](#atomix-runtime-atomic-lock-v1-LockRequest)
-    - [LockResponse](#atomix-runtime-atomic-lock-v1-LockResponse)
-    - [UnlockRequest](#atomix-runtime-atomic-lock-v1-UnlockRequest)
-    - [UnlockResponse](#atomix-runtime-atomic-lock-v1-UnlockResponse)
+- [atomix/runtime/lock/v1/lock.proto](#atomix_runtime_lock_v1_lock-proto)
+    - [CloseRequest](#atomix-runtime-lock-v1-CloseRequest)
+    - [CloseResponse](#atomix-runtime-lock-v1-CloseResponse)
+    - [CreateRequest](#atomix-runtime-lock-v1-CreateRequest)
+    - [CreateRequest.TagsEntry](#atomix-runtime-lock-v1-CreateRequest-TagsEntry)
+    - [CreateResponse](#atomix-runtime-lock-v1-CreateResponse)
+    - [GetLockRequest](#atomix-runtime-lock-v1-GetLockRequest)
+    - [GetLockResponse](#atomix-runtime-lock-v1-GetLockResponse)
+    - [LockRequest](#atomix-runtime-lock-v1-LockRequest)
+    - [LockResponse](#atomix-runtime-lock-v1-LockResponse)
+    - [UnlockRequest](#atomix-runtime-lock-v1-UnlockRequest)
+    - [UnlockResponse](#atomix-runtime-lock-v1-UnlockResponse)
   
-    - [Lock](#atomix-runtime-atomic-lock-v1-Lock)
+    - [Lock](#atomix-runtime-lock-v1-Lock)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="atomix_runtime_atomic_lock_v1_lock-proto"></a>
+<a name="atomix_runtime_lock_v1_lock-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## atomix/runtime/atomic/lock/v1/lock.proto
+## atomix/runtime/lock/v1/lock.proto
 
 
 
-<a name="atomix-runtime-atomic-lock-v1-CloseRequest"></a>
+<a name="atomix-runtime-lock-v1-CloseRequest"></a>
 
 ### CloseRequest
 
@@ -44,7 +44,7 @@
 
 
 
-<a name="atomix-runtime-atomic-lock-v1-CloseResponse"></a>
+<a name="atomix-runtime-lock-v1-CloseResponse"></a>
 
 ### CloseResponse
 
@@ -54,7 +54,7 @@
 
 
 
-<a name="atomix-runtime-atomic-lock-v1-CreateRequest"></a>
+<a name="atomix-runtime-lock-v1-CreateRequest"></a>
 
 ### CreateRequest
 
@@ -63,14 +63,14 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| tags | [CreateRequest.TagsEntry](#atomix-runtime-atomic-lock-v1-CreateRequest-TagsEntry) | repeated |  |
+| tags | [CreateRequest.TagsEntry](#atomix-runtime-lock-v1-CreateRequest-TagsEntry) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-atomic-lock-v1-CreateRequest-TagsEntry"></a>
+<a name="atomix-runtime-lock-v1-CreateRequest-TagsEntry"></a>
 
 ### CreateRequest.TagsEntry
 
@@ -86,7 +86,7 @@
 
 
 
-<a name="atomix-runtime-atomic-lock-v1-CreateResponse"></a>
+<a name="atomix-runtime-lock-v1-CreateResponse"></a>
 
 ### CreateResponse
 
@@ -96,7 +96,7 @@
 
 
 
-<a name="atomix-runtime-atomic-lock-v1-GetLockRequest"></a>
+<a name="atomix-runtime-lock-v1-GetLockRequest"></a>
 
 ### GetLockRequest
 
@@ -111,7 +111,7 @@
 
 
 
-<a name="atomix-runtime-atomic-lock-v1-GetLockResponse"></a>
+<a name="atomix-runtime-lock-v1-GetLockResponse"></a>
 
 ### GetLockResponse
 
@@ -126,7 +126,7 @@
 
 
 
-<a name="atomix-runtime-atomic-lock-v1-LockRequest"></a>
+<a name="atomix-runtime-lock-v1-LockRequest"></a>
 
 ### LockRequest
 
@@ -142,7 +142,7 @@
 
 
 
-<a name="atomix-runtime-atomic-lock-v1-LockResponse"></a>
+<a name="atomix-runtime-lock-v1-LockResponse"></a>
 
 ### LockResponse
 
@@ -157,7 +157,7 @@
 
 
 
-<a name="atomix-runtime-atomic-lock-v1-UnlockRequest"></a>
+<a name="atomix-runtime-lock-v1-UnlockRequest"></a>
 
 ### UnlockRequest
 
@@ -173,7 +173,7 @@
 
 
 
-<a name="atomix-runtime-atomic-lock-v1-UnlockResponse"></a>
+<a name="atomix-runtime-lock-v1-UnlockResponse"></a>
 
 ### UnlockResponse
 
@@ -189,18 +189,18 @@
  
 
 
-<a name="atomix-runtime-atomic-lock-v1-Lock"></a>
+<a name="atomix-runtime-lock-v1-Lock"></a>
 
 ### Lock
 Lock is a service for a lock primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-atomic-lock-v1-CreateRequest) | [CreateResponse](#atomix-runtime-atomic-lock-v1-CreateResponse) | Create creates the lock |
-| Close | [CloseRequest](#atomix-runtime-atomic-lock-v1-CloseRequest) | [CloseResponse](#atomix-runtime-atomic-lock-v1-CloseResponse) | Close closes the lock |
-| Lock | [LockRequest](#atomix-runtime-atomic-lock-v1-LockRequest) | [LockResponse](#atomix-runtime-atomic-lock-v1-LockResponse) | Lock attempts to acquire the lock |
-| Unlock | [UnlockRequest](#atomix-runtime-atomic-lock-v1-UnlockRequest) | [UnlockResponse](#atomix-runtime-atomic-lock-v1-UnlockResponse) | Unlock releases the lock |
-| GetLock | [GetLockRequest](#atomix-runtime-atomic-lock-v1-GetLockRequest) | [GetLockResponse](#atomix-runtime-atomic-lock-v1-GetLockResponse) | GetLock gets the lock state |
+| Create | [CreateRequest](#atomix-runtime-lock-v1-CreateRequest) | [CreateResponse](#atomix-runtime-lock-v1-CreateResponse) | Create creates the lock |
+| Close | [CloseRequest](#atomix-runtime-lock-v1-CloseRequest) | [CloseResponse](#atomix-runtime-lock-v1-CloseResponse) | Close closes the lock |
+| Lock | [LockRequest](#atomix-runtime-lock-v1-LockRequest) | [LockResponse](#atomix-runtime-lock-v1-LockResponse) | Lock attempts to acquire the lock |
+| Unlock | [UnlockRequest](#atomix-runtime-lock-v1-UnlockRequest) | [UnlockResponse](#atomix-runtime-lock-v1-UnlockResponse) | Unlock releases the lock |
+| GetLock | [GetLockRequest](#atomix-runtime-lock-v1-GetLockRequest) | [GetLockResponse](#atomix-runtime-lock-v1-GetLockResponse) | GetLock gets the lock state |
 
  
 

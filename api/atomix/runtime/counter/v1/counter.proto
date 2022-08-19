@@ -9,7 +9,7 @@ syntax = "proto3";
 package atomix.runtime.counter.v1;
 
 option java_package = "io.atomix.api.runtime.counter.v1";
-option java_outer_classname = "Counterv1";
+option java_outer_classname = "CounterV1";
 option java_multiple_files = true;
 
 import "atomix/runtime/v1/primitive.proto";
@@ -22,6 +22,12 @@ service Counter {
 
     // Close closes the counter
     rpc Close (CloseRequest) returns (CloseResponse);
+
+    // Set sets the counter value
+    rpc Set (SetRequest) returns (SetResponse);
+
+    // Update compares and updates the counter value
+    rpc Update (UpdateRequest) returns (UpdateResponse);
 
     // Get gets the current counter value
     rpc Get (GetRequest) returns (GetResponse);
@@ -88,5 +94,36 @@ message GetRequest {
 }
 
 message GetResponse {
+    int64 value = 1;
+}
+
+message Precondition {
+    oneof precondition {
+        int64 value = 1;
+    }
+}
+
+message SetRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    int64 value = 2;
+}
+
+message SetResponse {
+    int64 value = 1;
+}
+
+message UpdateRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    int64 check = 2;
+    int64 update = 3;
+}
+
+message UpdateResponse {
     int64 value = 1;
 }

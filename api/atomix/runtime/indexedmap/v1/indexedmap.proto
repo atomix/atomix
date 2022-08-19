@@ -6,18 +6,18 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.runtime.atomic.indexedmap.v1;
+package atomix.runtime.indexedmap.v1;
 
-option java_package = "io.atomix.api.runtime.atomic.indexedmap.v1";
-option java_outer_classname = "AtomicIndexedMapV1";
+option java_package = "io.atomix.api.runtime.indexedmap.v1";
+option java_outer_classname = "IndexedMapV1";
 option java_multiple_files = true;
 
 import "google/protobuf/duration.proto";
 import "atomix/runtime/v1/primitive.proto";
 import "gogoproto/gogo.proto";
 
-// AtomicIndexedMap is a service for a sorted/indexed map primitive
-service AtomicIndexedMap {
+// IndexedMap is a service for a sorted/indexed map primitive
+service IndexedMap {
     // Create creates the map
     rpc Create (CreateRequest) returns (CreateResponse);
 
@@ -254,39 +254,35 @@ message Event {
     }
 
     message Inserted {
-        Value value = 1 [
+        VersionedValue value = 1 [
             (gogoproto.nullable) = false
         ];
     }
 
     message Updated {
-        Value value = 1 [
+        VersionedValue value = 1 [
             (gogoproto.nullable) = false
         ];
-        Value prev_value = 2 [
+        VersionedValue prev_value = 2 [
             (gogoproto.nullable) = false
         ];
     }
 
     message Removed {
-        Value value = 1 [
+        VersionedValue value = 1 [
             (gogoproto.nullable) = false
         ];
         bool expired = 2;
     }
 }
 
-message Value {
+message VersionedValue {
     bytes value = 1;
     uint64 version = 2;
-    google.protobuf.Duration ttl = 3 [
-        (gogoproto.customname) = "TTL",
-        (gogoproto.stdduration) = true
-    ];
 }
 
 message Entry {
     string key = 1;
     uint64 index = 2;
-    Value value = 3;
+    VersionedValue value = 3;
 }
