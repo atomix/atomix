@@ -39,10 +39,10 @@ dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/atomix/runtime/api v0.4.0 h1:4f2acij1GX6l9nmuROkKgqMP7uZEdjEveWoBFhkPY3Q=
-github.com/atomix/runtime/api v0.4.0/go.mod h1:tjbd3w4yij89ZHCYdQUbmvZMC0HoHQQ/3/gVzQuOCH0=
-github.com/atomix/runtime/sdk v0.4.1 h1:WDXmuISBDImHgPEKKH5tnqDpkGbm1kMMkB/KviKjvMY=
-github.com/atomix/runtime/sdk v0.4.1/go.mod h1:+8PoA1ObQgruxnw68tQYGxVi3f4PPFu5lYYY7wx0H18=
+github.com/atomix/runtime/api v0.5.0 h1:mr5JbeJQIzv70OvZEk+Z8whYzfN84phHDKnOPjp7Sps=
+github.com/atomix/runtime/api v0.5.0/go.mod h1:tjbd3w4yij89ZHCYdQUbmvZMC0HoHQQ/3/gVzQuOCH0=
+github.com/atomix/runtime/sdk v0.5.0 h1:n7Ns+a1Gj1LlOYhojo37fRHmmJk3ZXCtJapbw1eGCzg=
+github.com/atomix/runtime/sdk v0.5.0/go.mod h1:iLv4il8Nr+gIl3J81jIJdA26bf0ZVoFEetyM/cw8vFw=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
