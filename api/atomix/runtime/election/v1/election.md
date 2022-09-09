@@ -267,9 +267,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| term | [uint64](#uint64) |  |  |
 | leader | [string](#string) |  |  |
 | candidates | [string](#string) | repeated |  |
-| timestamp | [atomix.runtime.v1.Timestamp](#atomix-runtime-v1-Timestamp) |  |  |
 
 
 

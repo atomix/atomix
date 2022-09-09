@@ -13,7 +13,6 @@ option java_outer_classname = "ListV1";
 option java_multiple_files = true;
 
 import "atomix/runtime/v1/primitive.proto";
-import "atomix/runtime/v1/timestamp.proto";
 import "gogoproto/gogo.proto";
 
 // List is a service for a list primitive
@@ -138,7 +137,6 @@ message SetRequest {
         (gogoproto.embed) = true,
         (gogoproto.nullable) = false
     ];
-    atomix.runtime.v1.Timestamp timestamp = 4;
 }
 
 message SetResponse {
@@ -171,7 +169,6 @@ message RemoveRequest {
         (gogoproto.nullable) = false
     ];
     uint32 index = 2;
-    atomix.runtime.v1.Timestamp timestamp = 3;
 }
 
 message RemoveResponse {
@@ -263,7 +260,6 @@ message Item {
         (gogoproto.embed) = true,
         (gogoproto.nullable) = false
     ];
-    atomix.runtime.v1.Timestamp timestamp = 3;
 }
 
 message Value {
