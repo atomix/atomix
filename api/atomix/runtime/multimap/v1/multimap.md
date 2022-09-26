@@ -8,6 +8,8 @@
     - [ClearResponse](#atomix-runtime-multimap-v1-ClearResponse)
     - [CloseRequest](#atomix-runtime-multimap-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-multimap-v1-CloseResponse)
+    - [ContainsRequest](#atomix-runtime-multimap-v1-ContainsRequest)
+    - [ContainsResponse](#atomix-runtime-multimap-v1-ContainsResponse)
     - [CreateRequest](#atomix-runtime-multimap-v1-CreateRequest)
     - [CreateRequest.TagsEntry](#atomix-runtime-multimap-v1-CreateRequest-TagsEntry)
     - [CreateResponse](#atomix-runtime-multimap-v1-CreateResponse)
@@ -22,10 +24,16 @@
     - [EventsResponse](#atomix-runtime-multimap-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-multimap-v1-GetRequest)
     - [GetResponse](#atomix-runtime-multimap-v1-GetResponse)
+    - [PutAllRequest](#atomix-runtime-multimap-v1-PutAllRequest)
+    - [PutAllResponse](#atomix-runtime-multimap-v1-PutAllResponse)
     - [PutRequest](#atomix-runtime-multimap-v1-PutRequest)
     - [PutResponse](#atomix-runtime-multimap-v1-PutResponse)
+    - [RemoveAllRequest](#atomix-runtime-multimap-v1-RemoveAllRequest)
+    - [RemoveAllResponse](#atomix-runtime-multimap-v1-RemoveAllResponse)
     - [RemoveRequest](#atomix-runtime-multimap-v1-RemoveRequest)
     - [RemoveResponse](#atomix-runtime-multimap-v1-RemoveResponse)
+    - [ReplaceRequest](#atomix-runtime-multimap-v1-ReplaceRequest)
+    - [ReplaceResponse](#atomix-runtime-multimap-v1-ReplaceResponse)
     - [SizeRequest](#atomix-runtime-multimap-v1-SizeRequest)
     - [SizeResponse](#atomix-runtime-multimap-v1-SizeResponse)
   
@@ -86,6 +94,38 @@
 
 ### CloseResponse
 
+
+
+
+
+
+
+<a name="atomix-runtime-multimap-v1-ContainsRequest"></a>
+
+### ContainsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-multimap-v1-ContainsResponse"></a>
+
+### ContainsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| result | [bool](#bool) |  |  |
 
 
 
@@ -307,6 +347,38 @@
 
 
 
+<a name="atomix-runtime-multimap-v1-PutAllRequest"></a>
+
+### PutAllRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| key | [string](#string) |  |  |
+| values | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-runtime-multimap-v1-PutAllResponse"></a>
+
+### PutAllResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| updated | [bool](#bool) |  |  |
+
+
+
+
+
+
 <a name="atomix-runtime-multimap-v1-PutRequest"></a>
 
 ### PutRequest
@@ -317,7 +389,7 @@
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 | key | [string](#string) |  |  |
-| values | [string](#string) | repeated |  |
+| value | [string](#string) |  |  |
 
 
 
@@ -334,9 +406,67 @@
 
 
 
+<a name="atomix-runtime-multimap-v1-RemoveAllRequest"></a>
+
+### RemoveAllRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| key | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-multimap-v1-RemoveAllResponse"></a>
+
+### RemoveAllResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| values | [string](#string) | repeated |  |
+
+
+
+
+
+
 <a name="atomix-runtime-multimap-v1-RemoveRequest"></a>
 
 ### RemoveRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-multimap-v1-RemoveResponse"></a>
+
+### RemoveResponse
+
+
+
+
+
+
+
+<a name="atomix-runtime-multimap-v1-ReplaceRequest"></a>
+
+### ReplaceRequest
 
 
 
@@ -351,10 +481,15 @@
 
 
 
-<a name="atomix-runtime-multimap-v1-RemoveResponse"></a>
+<a name="atomix-runtime-multimap-v1-ReplaceResponse"></a>
 
-### RemoveResponse
+### ReplaceResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| prev_values | [string](#string) | repeated |  |
 
 
 
@@ -408,8 +543,12 @@ MultiMap is a service for a multimap primitive
 | Close | [CloseRequest](#atomix-runtime-multimap-v1-CloseRequest) | [CloseResponse](#atomix-runtime-multimap-v1-CloseResponse) | Close closes the map |
 | Size | [SizeRequest](#atomix-runtime-multimap-v1-SizeRequest) | [SizeResponse](#atomix-runtime-multimap-v1-SizeResponse) | Size returns the size of the map |
 | Put | [PutRequest](#atomix-runtime-multimap-v1-PutRequest) | [PutResponse](#atomix-runtime-multimap-v1-PutResponse) | Put adds a value to an entry in the map |
+| PutAll | [PutAllRequest](#atomix-runtime-multimap-v1-PutAllRequest) | [PutAllResponse](#atomix-runtime-multimap-v1-PutAllResponse) | PutAll adds values to an entry in the map |
+| Replace | [ReplaceRequest](#atomix-runtime-multimap-v1-ReplaceRequest) | [ReplaceResponse](#atomix-runtime-multimap-v1-ReplaceResponse) | Replace replaces the values of an entry in the map |
+| Contains | [ContainsRequest](#atomix-runtime-multimap-v1-ContainsRequest) | [ContainsResponse](#atomix-runtime-multimap-v1-ContainsResponse) | Contains checks if an entry exists in the map |
 | Get | [GetRequest](#atomix-runtime-multimap-v1-GetRequest) | [GetResponse](#atomix-runtime-multimap-v1-GetResponse) | Get gets the entry for a key |
 | Remove | [RemoveRequest](#atomix-runtime-multimap-v1-RemoveRequest) | [RemoveResponse](#atomix-runtime-multimap-v1-RemoveResponse) | Remove removes an entry from the map |
+| RemoveAll | [RemoveAllRequest](#atomix-runtime-multimap-v1-RemoveAllRequest) | [RemoveAllResponse](#atomix-runtime-multimap-v1-RemoveAllResponse) | RemoveAll removes a key from the map |
 | Clear | [ClearRequest](#atomix-runtime-multimap-v1-ClearRequest) | [ClearResponse](#atomix-runtime-multimap-v1-ClearResponse) | Clear removes all entries from the map |
 | Events | [EventsRequest](#atomix-runtime-multimap-v1-EventsRequest) | [EventsResponse](#atomix-runtime-multimap-v1-EventsResponse) stream | Events listens for change events |
 | Entries | [EntriesRequest](#atomix-runtime-multimap-v1-EntriesRequest) | [EntriesResponse](#atomix-runtime-multimap-v1-EntriesResponse) stream | Entries lists all entries in the map |

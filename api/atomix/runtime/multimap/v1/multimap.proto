@@ -30,11 +30,23 @@ service MultiMap {
     // Put adds a value to an entry in the map
     rpc Put (PutRequest) returns (PutResponse);
 
+    // PutAll adds values to an entry in the map
+    rpc PutAll (PutAllRequest) returns (PutAllResponse);
+
+    // Replace replaces the values of an entry in the map
+    rpc Replace (ReplaceRequest) returns (ReplaceResponse);
+
+    // Contains checks if an entry exists in the map
+    rpc Contains (ContainsRequest) returns (ContainsResponse);
+
     // Get gets the entry for a key
     rpc Get (GetRequest) returns (GetResponse);
 
     // Remove removes an entry from the map
     rpc Remove (RemoveRequest) returns (RemoveResponse);
+
+    // RemoveAll removes a key from the map
+    rpc RemoveAll (RemoveAllRequest) returns (RemoveAllResponse);
 
     // Clear removes all entries from the map
     rpc Clear (ClearRequest) returns (ClearResponse);
@@ -86,11 +98,37 @@ message PutRequest {
         (gogoproto.nullable) = false
     ];
     string key = 2;
-    repeated string values = 3;
+    string value = 3;
 }
 
 message PutResponse {
 
+}
+
+message PutAllRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    repeated string values = 3;
+}
+
+message PutAllResponse {
+    bool updated = 1;
+}
+
+message ReplaceRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    repeated string values = 3;
+}
+
+message ReplaceResponse {
+    repeated string prev_values = 1;
 }
 
 message GetRequest {
@@ -105,17 +143,42 @@ message GetResponse {
     repeated string values = 1;
 }
 
+message ContainsRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    string value = 3;
+}
+
+message ContainsResponse {
+    bool result = 1;
+}
+
 message RemoveRequest {
     atomix.runtime.v1.PrimitiveId id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
     string key = 2;
-    repeated string values = 3;
+    string value = 3;
 }
 
 message RemoveResponse {
 
+}
+
+message RemoveAllRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+}
+
+message RemoveAllResponse {
+    repeated string values = 1;
 }
 
 message ClearRequest {
