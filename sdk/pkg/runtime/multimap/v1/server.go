@@ -116,6 +116,75 @@ func (s *multiMapServer) Put(ctx context.Context, request *multimapv1.PutRequest
 	return response, nil
 }
 
+func (s *multiMapServer) PutAll(ctx context.Context, request *multimapv1.PutAllRequest) (*multimapv1.PutAllResponse, error) {
+	log.Debugw("PutAll",
+		logging.Stringer("PutAllRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("PutAll",
+			logging.Stringer("PutAllRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.PutAll(ctx, request)
+	if err != nil {
+		log.Warnw("PutAll",
+			logging.Stringer("PutAllRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("PutAll",
+		logging.Stringer("PutAllResponse", response))
+	return response, nil
+}
+
+func (s *multiMapServer) Replace(ctx context.Context, request *multimapv1.ReplaceRequest) (*multimapv1.ReplaceResponse, error) {
+	log.Debugw("Replace",
+		logging.Stringer("ReplaceRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Replace",
+			logging.Stringer("ReplaceRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Replace(ctx, request)
+	if err != nil {
+		log.Warnw("Replace",
+			logging.Stringer("ReplaceRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Replace",
+		logging.Stringer("ReplaceResponse", response))
+	return response, nil
+}
+
+func (s *multiMapServer) Contains(ctx context.Context, request *multimapv1.ContainsRequest) (*multimapv1.ContainsResponse, error) {
+	log.Debugw("Contains",
+		logging.Stringer("ContainsRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("Contains",
+			logging.Stringer("ContainsRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Contains(ctx, request)
+	if err != nil {
+		log.Warnw("Contains",
+			logging.Stringer("ContainsRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Contains",
+		logging.Stringer("ContainsResponse", response))
+	return response, nil
+}
+
 func (s *multiMapServer) Get(ctx context.Context, request *multimapv1.GetRequest) (*multimapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", request))
@@ -159,6 +228,29 @@ func (s *multiMapServer) Remove(ctx context.Context, request *multimapv1.RemoveR
 	}
 	log.Debugw("Remove",
 		logging.Stringer("RemoveResponse", response))
+	return response, nil
+}
+
+func (s *multiMapServer) RemoveAll(ctx context.Context, request *multimapv1.RemoveAllRequest) (*multimapv1.RemoveAllResponse, error) {
+	log.Debugw("RemoveAll",
+		logging.Stringer("RemoveAllRequest", request))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("RemoveAll",
+			logging.Stringer("RemoveAllRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.RemoveAll(ctx, request)
+	if err != nil {
+		log.Warnw("RemoveAll",
+			logging.Stringer("RemoveAllRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("RemoveAll",
+		logging.Stringer("RemoveAllResponse", response))
 	return response, nil
 }
 
