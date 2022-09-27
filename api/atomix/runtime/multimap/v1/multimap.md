@@ -17,9 +17,8 @@
     - [EntriesResponse](#atomix-runtime-multimap-v1-EntriesResponse)
     - [Entry](#atomix-runtime-multimap-v1-Entry)
     - [Event](#atomix-runtime-multimap-v1-Event)
-    - [Event.Inserted](#atomix-runtime-multimap-v1-Event-Inserted)
+    - [Event.Added](#atomix-runtime-multimap-v1-Event-Added)
     - [Event.Removed](#atomix-runtime-multimap-v1-Event-Removed)
-    - [Event.Updated](#atomix-runtime-multimap-v1-Event-Updated)
     - [EventsRequest](#atomix-runtime-multimap-v1-EventsRequest)
     - [EventsResponse](#atomix-runtime-multimap-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-multimap-v1-GetRequest)
@@ -230,8 +229,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
-| inserted | [Event.Inserted](#atomix-runtime-multimap-v1-Event-Inserted) |  |  |
-| updated | [Event.Updated](#atomix-runtime-multimap-v1-Event-Updated) |  |  |
+| added | [Event.Added](#atomix-runtime-multimap-v1-Event-Added) |  |  |
 | removed | [Event.Removed](#atomix-runtime-multimap-v1-Event-Removed) |  |  |
 
 
@@ -239,15 +237,15 @@
 
 
 
-<a name="atomix-runtime-multimap-v1-Event-Inserted"></a>
+<a name="atomix-runtime-multimap-v1-Event-Added"></a>
 
-### Event.Inserted
+### Event.Added
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| values | [string](#string) | repeated |  |
+| value | [string](#string) |  |  |
 
 
 
@@ -262,23 +260,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| values | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-multimap-v1-Event-Updated"></a>
-
-### Event.Updated
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| values | [string](#string) | repeated |  |
-| prev_values | [string](#string) | repeated |  |
+| value | [string](#string) |  |  |
 
 
 

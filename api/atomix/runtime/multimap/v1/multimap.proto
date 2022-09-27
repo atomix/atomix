@@ -224,22 +224,16 @@ message Event {
     string key = 1;
 
     oneof event {
-        Inserted inserted = 2;
-        Updated updated = 3;
-        Removed removed = 4;
+        Added added = 2;
+        Removed removed = 3;
     }
 
-    message Inserted {
-        repeated string values = 1;
-    }
-
-    message Updated {
-        repeated string values = 1;
-        repeated string prev_values = 2;
+    message Added {
+        string value = 1;
     }
 
     message Removed {
-        repeated string values = 1;
+        string value = 1;
     }
 }
 
