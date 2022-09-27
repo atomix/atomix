@@ -245,5 +245,5 @@ message Event {
 
 message Entry {
     string key = 1;
-    repeated string values = 2;
+    string value = 2;
 }
