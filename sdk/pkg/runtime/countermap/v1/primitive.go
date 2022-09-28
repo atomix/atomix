@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.map.v1.CounterMap"
+const Service = "atomix.runtime.countermap.v1.CounterMap"
 
 var Type = runtime.NewType[atomiccountermapv1.CounterMapServer](Service, register, resolve)
 
