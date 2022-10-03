@@ -76,7 +76,6 @@ message UnlockRequest {
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
-    uint64 version = 2;
 }
 
 message UnlockResponse {
