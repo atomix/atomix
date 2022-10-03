@@ -11,6 +11,8 @@
     - [CreateRequest](#atomix-runtime-election-v1-CreateRequest)
     - [CreateRequest.TagsEntry](#atomix-runtime-election-v1-CreateRequest-TagsEntry)
     - [CreateResponse](#atomix-runtime-election-v1-CreateResponse)
+    - [DemoteRequest](#atomix-runtime-election-v1-DemoteRequest)
+    - [DemoteResponse](#atomix-runtime-election-v1-DemoteResponse)
     - [EnterRequest](#atomix-runtime-election-v1-EnterRequest)
     - [EnterResponse](#atomix-runtime-election-v1-EnterResponse)
     - [EvictRequest](#atomix-runtime-election-v1-EvictRequest)
@@ -130,6 +132,37 @@
 
 ### CreateResponse
 
+
+
+
+
+
+
+<a name="atomix-runtime-election-v1-DemoteRequest"></a>
+
+### DemoteRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| candidate | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-election-v1-DemoteResponse"></a>
+
+### DemoteResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| term | [Term](#atomix-runtime-election-v1-Term) |  |  |
 
 
 
@@ -356,6 +389,7 @@ LeaderElection is a service for a leader election primitive
 | Withdraw | [WithdrawRequest](#atomix-runtime-election-v1-WithdrawRequest) | [WithdrawResponse](#atomix-runtime-election-v1-WithdrawResponse) | Withdraw withdraws a candidate from the leader election |
 | Anoint | [AnointRequest](#atomix-runtime-election-v1-AnointRequest) | [AnointResponse](#atomix-runtime-election-v1-AnointResponse) | Anoint anoints a candidate leader |
 | Promote | [PromoteRequest](#atomix-runtime-election-v1-PromoteRequest) | [PromoteResponse](#atomix-runtime-election-v1-PromoteResponse) | Promote promotes a candidate |
+| Demote | [DemoteRequest](#atomix-runtime-election-v1-DemoteRequest) | [DemoteResponse](#atomix-runtime-election-v1-DemoteResponse) | Demote demotes a candidate |
 | Evict | [EvictRequest](#atomix-runtime-election-v1-EvictRequest) | [EvictResponse](#atomix-runtime-election-v1-EvictResponse) | Evict evicts a candidate from the election |
 | GetTerm | [GetTermRequest](#atomix-runtime-election-v1-GetTermRequest) | [GetTermResponse](#atomix-runtime-election-v1-GetTermResponse) | GetTerm gets the current leadership term |
 | Watch | [WatchRequest](#atomix-runtime-election-v1-WatchRequest) | [WatchResponse](#atomix-runtime-election-v1-WatchResponse) stream | Watch watches the election for events |

@@ -35,6 +35,9 @@ service LeaderElection {
     // Promote promotes a candidate
     rpc Promote (PromoteRequest) returns (PromoteResponse);
 
+    // Demote demotes a candidate
+    rpc Demote (DemoteRequest) returns (DemoteResponse);
+
     // Evict evicts a candidate from the election
     rpc Evict (EvictRequest) returns (EvictResponse);
 
@@ -119,6 +122,20 @@ message PromoteRequest {
 }
 
 message PromoteResponse {
+    Term term = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message DemoteRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string candidate = 2;
+}
+
+message DemoteResponse {
     Term term = 1 [
         (gogoproto.nullable) = false
     ];
