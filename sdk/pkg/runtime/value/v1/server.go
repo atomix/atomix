@@ -9,10 +9,13 @@ import (
 	valuev1 "github.com/atomix/runtime/api/atomix/runtime/value/v1"
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/logging"
-	runtime "github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/runtime/sdk/pkg/stringer"
 )
 
 var log = logging.GetLogger()
+
+const truncLen = 250
 
 func newValueServer(delegate *runtime.Delegate[valuev1.ValueServer]) valuev1.ValueServer {
 	return &valueServer{
@@ -26,181 +29,181 @@ type valueServer struct {
 
 func (s *valueServer) Create(ctx context.Context, request *valuev1.CreateRequest) (*valuev1.CreateResponse, error) {
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", request))
+		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Create(request.ID.Name, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
+			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
+			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Create",
-		logging.Stringer("CreateResponse", response))
+		logging.Stringer("CreateResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *valueServer) Close(ctx context.Context, request *valuev1.CloseRequest) (*valuev1.CloseResponse, error) {
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", request))
+		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
+			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
+			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Close",
-		logging.Stringer("CloseResponse", response))
+		logging.Stringer("CloseResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *valueServer) Set(ctx context.Context, request *valuev1.SetRequest) (*valuev1.SetResponse, error) {
 	log.Debugw("Set",
-		logging.Stringer("SetRequest", request))
+		logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", request),
+			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Set(ctx, request)
 	if err != nil {
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", request),
+			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Set",
-		logging.Stringer("SetResponse", response))
+		logging.Stringer("SetResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *valueServer) Insert(ctx context.Context, request *valuev1.InsertRequest) (*valuev1.InsertResponse, error) {
 	log.Debugw("Insert",
-		logging.Stringer("InsertRequest", request))
+		logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Insert",
-			logging.Stringer("InsertRequest", request),
+			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Insert(ctx, request)
 	if err != nil {
 		log.Warnw("Insert",
-			logging.Stringer("InsertRequest", request),
+			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Insert",
-		logging.Stringer("InsertResponse", response))
+		logging.Stringer("InsertResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *valueServer) Update(ctx context.Context, request *valuev1.UpdateRequest) (*valuev1.UpdateResponse, error) {
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", request))
+		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", request),
+			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Update(ctx, request)
 	if err != nil {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", request),
+			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Update",
-		logging.Stringer("UpdateResponse", response))
+		logging.Stringer("UpdateResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *valueServer) Get(ctx context.Context, request *valuev1.GetRequest) (*valuev1.GetResponse, error) {
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", request))
+		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", request),
+			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Get(ctx, request)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", request),
+			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Get",
-		logging.Stringer("GetResponse", response))
+		logging.Stringer("GetResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *valueServer) Delete(ctx context.Context, request *valuev1.DeleteRequest) (*valuev1.DeleteResponse, error) {
 	log.Debugw("Delete",
-		logging.Stringer("DeleteRequest", request))
+		logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Delete",
-			logging.Stringer("DeleteRequest", request),
+			logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Delete(ctx, request)
 	if err != nil {
 		log.Warnw("Delete",
-			logging.Stringer("DeleteRequest", request),
+			logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Delete",
-		logging.Stringer("DeleteResponse", response))
+		logging.Stringer("DeleteResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *valueServer) Watch(request *valuev1.WatchRequest, server valuev1.Value_WatchServer) error {
 	log.Debugw("Watch",
-		logging.Stringer("WatchRequest", request),
+		logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
 		logging.String("State", "started"))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Watch",
-			logging.Stringer("WatchRequest", request),
+			logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
 	}
 	err = client.Watch(request, server)
 	if err != nil {
 		log.Warnw("Watch",
-			logging.Stringer("WatchRequest", request),
+			logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
 	}
@@ -209,20 +212,20 @@ func (s *valueServer) Watch(request *valuev1.WatchRequest, server valuev1.Value_
 
 func (s *valueServer) Events(request *valuev1.EventsRequest, server valuev1.Value_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", request),
+		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 		logging.String("State", "started"))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", request),
+			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
 	}
 	err = client.Events(request, server)
 	if err != nil {
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", request),
+			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
 	}

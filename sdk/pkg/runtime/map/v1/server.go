@@ -10,9 +10,12 @@ import (
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/logging"
 	"github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/runtime/sdk/pkg/stringer"
 )
 
 var log = logging.GetLogger()
+
+const truncLen = 250
 
 func newMapServer(delegate *runtime.Delegate[mapv1.MapServer]) mapv1.MapServer {
 	return &mapServer{
@@ -26,273 +29,273 @@ type mapServer struct {
 
 func (s *mapServer) Create(ctx context.Context, request *mapv1.CreateRequest) (*mapv1.CreateResponse, error) {
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", request))
+		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Create(request.ID.Name, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
+			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
+			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Create",
-		logging.Stringer("CreateResponse", response))
+		logging.Stringer("CreateResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *mapServer) Close(ctx context.Context, request *mapv1.CloseRequest) (*mapv1.CloseResponse, error) {
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", request))
+		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
+			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
+			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Close",
-		logging.Stringer("CloseResponse", response))
+		logging.Stringer("CloseResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *mapServer) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", request))
+		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Size",
-			logging.Stringer("SizeRequest", request),
+			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Size(ctx, request)
 	if err != nil {
 		log.Warnw("Size",
-			logging.Stringer("SizeRequest", request),
+			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Size",
-		logging.Stringer("SizeResponse", response))
+		logging.Stringer("SizeResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *mapServer) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
 	log.Debugw("Put",
-		logging.Stringer("PutRequest", request))
+		logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Put(ctx, request)
 	if err != nil {
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Put",
-		logging.Stringer("PutResponse", response))
+		logging.Stringer("PutResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *mapServer) Insert(ctx context.Context, request *mapv1.InsertRequest) (*mapv1.InsertResponse, error) {
 	log.Debugw("Insert",
-		logging.Stringer("InsertRequest", request))
+		logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Insert",
-			logging.Stringer("InsertRequest", request),
+			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Insert(ctx, request)
 	if err != nil {
 		log.Warnw("Insert",
-			logging.Stringer("InsertRequest", request),
+			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Insert",
-		logging.Stringer("InsertResponse", response))
+		logging.Stringer("InsertResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *mapServer) Update(ctx context.Context, request *mapv1.UpdateRequest) (*mapv1.UpdateResponse, error) {
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", request))
+		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", request),
+			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Update(ctx, request)
 	if err != nil {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", request),
+			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Update",
-		logging.Stringer("UpdateResponse", response))
+		logging.Stringer("UpdateResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *mapServer) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", request))
+		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", request),
+			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Get(ctx, request)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", request),
+			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Get",
-		logging.Stringer("GetResponse", response))
+		logging.Stringer("GetResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *mapServer) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", request))
+		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", request),
+			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Remove(ctx, request)
 	if err != nil {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", request),
+			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Remove",
-		logging.Stringer("RemoveResponse", response))
+		logging.Stringer("RemoveResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *mapServer) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", request))
+		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Clear",
-			logging.Stringer("ClearRequest", request),
+			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Clear(ctx, request)
 	if err != nil {
 		log.Warnw("Clear",
-			logging.Stringer("ClearRequest", request),
+			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Clear",
-		logging.Stringer("ClearResponse", response))
+		logging.Stringer("ClearResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *mapServer) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1.LockResponse, error) {
 	log.Debugw("Lock",
-		logging.Stringer("LockRequest", request))
+		logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Lock",
-			logging.Stringer("LockRequest", request),
+			logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Lock(ctx, request)
 	if err != nil {
 		log.Warnw("Lock",
-			logging.Stringer("LockRequest", request),
+			logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Lock",
-		logging.Stringer("LockResponse", response))
+		logging.Stringer("LockResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *mapServer) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*mapv1.UnlockResponse, error) {
 	log.Debugw("Unlock",
-		logging.Stringer("UnlockRequest", request))
+		logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Unlock",
-			logging.Stringer("UnlockRequest", request),
+			logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Unlock(ctx, request)
 	if err != nil {
 		log.Warnw("Unlock",
-			logging.Stringer("UnlockRequest", request),
+			logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Unlock",
-		logging.Stringer("UnlockResponse", response))
+		logging.Stringer("UnlockResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
 func (s *mapServer) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", request),
+		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 		logging.String("State", "started"))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", request),
+			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
 	}
 	err = client.Events(request, server)
 	if err != nil {
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", request),
+			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
 	}
@@ -301,20 +304,20 @@ func (s *mapServer) Events(request *mapv1.EventsRequest, server mapv1.Map_Events
 
 func (s *mapServer) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
 	log.Debugw("Entries",
-		logging.Stringer("EntriesRequest", request),
+		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
 		logging.String("State", "started"))
 	client, err := s.delegate.Get(request.ID.Name)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Entries",
-			logging.Stringer("EntriesRequest", request),
+			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
 	}
 	err = client.Entries(request, server)
 	if err != nil {
 		log.Warnw("Entries",
-			logging.Stringer("EntriesRequest", request),
+			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
 	}
