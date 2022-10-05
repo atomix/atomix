@@ -9,9 +9,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-const configDir = ".onos"
-
-// SinkType is the type of a sink
+// SinkType is a type of sink
 type SinkType string
 
 func (t SinkType) String() string {
@@ -269,9 +267,9 @@ func load(config *Config) error {
 	viper.SetConfigName("logging")
 
 	// Set the path to look for the configurations file
-	viper.AddConfigPath("./" + configDir + "/config")
-	viper.AddConfigPath(home + "/" + configDir + "/config")
-	viper.AddConfigPath("/etc/onos/config")
+	viper.AddConfigPath(".atomix")
+	viper.AddConfigPath(home + "/.atomix")
+	viper.AddConfigPath("/etc/atomix")
 	viper.AddConfigPath(".")
 
 	viper.SetConfigType("yaml")
