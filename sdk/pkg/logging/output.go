@@ -5,11 +5,8 @@
 package logging
 
 import (
-	"bytes"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"net/url"
-	"strings"
 	"sync"
 )
 
@@ -45,21 +42,6 @@ func newZapOutput(logger LoggerConfig, output OutputConfig, sink SinkConfig) (*z
 		path = StderrSinkType.String()
 	case FileSinkType:
 		path = sink.GetFileSinkConfig().Path
-	case KafkaSinkType:
-		kafkaConfig := sink.GetKafkaSinkConfig()
-		var rawQuery bytes.Buffer
-		if kafkaConfig.Topic != "" {
-			rawQuery.WriteString("topic=")
-			rawQuery.WriteString(kafkaConfig.Topic)
-		}
-
-		if kafkaConfig.Key != "" {
-			rawQuery.WriteString("&")
-			rawQuery.WriteString("key=")
-			rawQuery.WriteString(kafkaConfig.Key)
-		}
-		kafkaURL := url.URL{Scheme: KafkaSinkType.String(), Host: strings.Join(kafkaConfig.Brokers, ","), RawQuery: rawQuery.String()}
-		path = kafkaURL.String()
 	}
 
 	writer, err := getWriter(path)

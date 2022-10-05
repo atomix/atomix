@@ -25,8 +25,6 @@ const (
 	StderrSinkType SinkType = "stderr"
 	// FileSinkType is the type for a file sink
 	FileSinkType SinkType = "file"
-	// KafkaSinkType is the sink type for the Kafka sink
-	KafkaSinkType SinkType = "kafka"
 )
 
 // SinkEncoding is the encoding for a sink
@@ -198,7 +196,6 @@ type SinkConfig struct {
 	Stdout   *StdoutSinkConfig `json:"stdout,omitempty" yaml:"stdout,omitempty"`
 	Stderr   *StderrSinkConfig `json:"stderr,omitempty" yaml:"stderr,omitempty"`
 	File     *FileSinkConfig   `json:"file,omitempty" yaml:"file,omitempty"`
-	Kafka    *KafkaSinkConfig  `json:"kafka,omitempty" yaml:"kafka,omitempty"`
 }
 
 // GetType returns the sink type
@@ -246,15 +243,6 @@ func (c SinkConfig) GetFileSinkConfig() FileSinkConfig {
 	return FileSinkConfig{}
 }
 
-// GetKafkaSinkConfig returns the Kafka sink configuration
-func (c SinkConfig) GetKafkaSinkConfig() KafkaSinkConfig {
-	config := c.Kafka
-	if config != nil {
-		return *config
-	}
-	return KafkaSinkConfig{}
-}
-
 // StdoutSinkConfig is the configuration for an stdout sink
 type StdoutSinkConfig struct {
 }
@@ -266,13 +254,6 @@ type StderrSinkConfig struct {
 // FileSinkConfig is the configuration for a file sink
 type FileSinkConfig struct {
 	Path string `json:"path" yaml:"path"`
-}
-
-// KafkaSinkConfig is the configuration for a Kafka sink
-type KafkaSinkConfig struct {
-	Topic   string   `json:"topic" yaml:"topic"`
-	Key     string   `json:"key" yaml:"key"`
-	Brokers []string `json:"brokers" yaml:"brokers"`
 }
 
 // load loads the configuration
