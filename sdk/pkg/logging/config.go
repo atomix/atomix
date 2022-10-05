@@ -6,7 +6,9 @@ package logging
 
 import (
 	"github.com/mitchellh/go-homedir"
-	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
+	"os"
+	"path/filepath"
 )
 
 // SinkType is a type of sink
@@ -258,28 +260,34 @@ type FileSinkConfig struct {
 
 // load loads the configuration
 func load(config *Config) error {
-	home, err := homedir.Dir()
-	if err != nil {
+	bytes, err := os.ReadFile("logging.yaml")
+	if err == nil {
+		return yaml.Unmarshal(bytes, config)
+	} else if !os.IsNotExist(err) {
 		return err
 	}
 
-	// Set the file name of the configurations file
-	viper.SetConfigName("logging")
-
-	// Set the path to look for the configurations file
-	viper.AddConfigPath(".atomix")
-	viper.AddConfigPath(home + "/.atomix")
-	viper.AddConfigPath("/etc/atomix")
-	viper.AddConfigPath(".")
-
-	viper.SetConfigType("yaml")
-
-	if err := viper.ReadInConfig(); err != nil {
-		return nil
+	bytes, err = os.ReadFile(".atomix/logging.yaml")
+	if err == nil {
+		return yaml.Unmarshal(bytes, config)
+	} else if !os.IsNotExist(err) {
+		return err
 	}
 
-	err = viper.Unmarshal(config)
-	if err != nil {
+	home, err := homedir.Dir()
+	if err == nil {
+		bytes, err = os.ReadFile(filepath.Join(home, ".atomix/logging.yaml"))
+		if err == nil {
+			return yaml.Unmarshal(bytes, config)
+		} else if !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	bytes, err = os.ReadFile("/etc/atomix/logging.yaml")
+	if err == nil {
+		return yaml.Unmarshal(bytes, config)
+	} else if !os.IsNotExist(err) {
 		return err
 	}
 	return nil
