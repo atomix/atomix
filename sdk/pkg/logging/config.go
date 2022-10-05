@@ -191,18 +191,20 @@ func (c OutputConfig) GetLevel() Level {
 // SinkConfig is the configuration for a sink
 type SinkConfig struct {
 	Name     string            `json:"name" yaml:"name"`
-	Type     *SinkType         `json:"type,omitempty" yaml:"type,omitempty"`
 	Encoding *SinkEncoding     `json:"encoding,omitempty" yaml:"encoding,omitempty"`
-	Stdout   *StdoutSinkConfig `json:"stdout,omitempty" yaml:"stdout,omitempty"`
-	Stderr   *StderrSinkConfig `json:"stderr,omitempty" yaml:"stderr,omitempty"`
-	File     *FileSinkConfig   `json:"file,omitempty" yaml:"file,omitempty"`
+	Stdout   *StdoutSinkConfig `json:"stdout" yaml:"stdout,omitempty"`
+	Stderr   *StderrSinkConfig `json:"stderr" yaml:"stderr,omitempty"`
+	File     *FileSinkConfig   `json:"file" yaml:"file,omitempty"`
 }
 
 // GetType returns the sink type
 func (c SinkConfig) GetType() SinkType {
-	sinkType := c.Type
-	if sinkType != nil {
-		return *sinkType
+	if c.Stdout != nil {
+		return StdoutSinkType
+	} else if c.Stderr != nil {
+		return StderrSinkType
+	} else if c.File != nil {
+		return FileSinkType
 	}
 	return StdoutSinkType
 }

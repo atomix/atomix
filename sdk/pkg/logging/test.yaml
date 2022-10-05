@@ -31,23 +31,12 @@ loggers:
         sink: kafka-1
 sinks:
   stdout:
-    type: stdout
     encoding: console
     stdout: {}
-  kafka-1:
-    type: kafka
-    encoding: json
-    kafka:
-      brokers:
-      - "127.0.0.1:9092"
-      topic: "traces"
-      key: "test"
   stdout-1:
-    type: stdout
     encoding: json
     stdout: {}
   file:
-    type: file
     encoding: json
     file:
       path: test.log
