@@ -49,8 +49,8 @@ const (
 
 // Config logging configuration
 type Config struct {
-	Loggers map[string]LoggerConfig `yaml:"loggers"`
-	Sinks   map[string]SinkConfig   `yaml:"sinks"`
+	Loggers map[string]LoggerConfig `json:"loggers" yaml:"loggers"`
+	Sinks   map[string]SinkConfig   `json:"sinks" yaml:"sinks"`
 }
 
 // GetRootLogger returns the root logger configuration
@@ -130,9 +130,9 @@ func (c Config) GetSink(name string) (SinkConfig, bool) {
 
 // LoggerConfig is the configuration for a logger
 type LoggerConfig struct {
-	Name   string                  `yaml:"name"`
-	Level  *string                 `yaml:"level,omitempty"`
-	Output map[string]OutputConfig `yaml:"output"`
+	Name   string                  `json:"name" yaml:"name"`
+	Level  *string                 `json:"level,omitempty" yaml:"level,omitempty"`
+	Output map[string]OutputConfig `json:"output" yaml:"output"`
 }
 
 // GetLevel returns the logger level
@@ -167,9 +167,9 @@ func (c LoggerConfig) GetOutput(name string) (OutputConfig, bool) {
 
 // OutputConfig is the configuration for a sink output
 type OutputConfig struct {
-	Name  string  `yaml:"name"`
-	Sink  *string `yaml:"sink"`
-	Level *string `yaml:"level,omitempty"`
+	Name  string  `json:"name" yaml:"name"`
+	Sink  *string `json:"sink,omitempty" yaml:"sink,omitempty"`
+	Level *string `json:"level,omitempty" yaml:"level,omitempty"`
 }
 
 // GetSink returns the output sink
@@ -192,13 +192,13 @@ func (c OutputConfig) GetLevel() Level {
 
 // SinkConfig is the configuration for a sink
 type SinkConfig struct {
-	Name     string            `yaml:"name"`
-	Type     *SinkType         `yaml:"type,omitempty"`
-	Encoding *SinkEncoding     `yaml:"encoding,omitempty"`
-	Stdout   *StdoutSinkConfig `yaml:"stdout,omitempty"`
-	Stderr   *StderrSinkConfig `yaml:"stderr,omitempty"`
-	File     *FileSinkConfig   `yaml:"file,omitempty"`
-	Kafka    *KafkaSinkConfig  `yaml:"kafka,omitempty"`
+	Name     string            `json:"name" yaml:"name"`
+	Type     *SinkType         `json:"type,omitempty" yaml:"type,omitempty"`
+	Encoding *SinkEncoding     `json:"encoding,omitempty" yaml:"encoding,omitempty"`
+	Stdout   *StdoutSinkConfig `json:"stdout,omitempty" yaml:"stdout,omitempty"`
+	Stderr   *StderrSinkConfig `json:"stderr,omitempty" yaml:"stderr,omitempty"`
+	File     *FileSinkConfig   `json:"file,omitempty" yaml:"file,omitempty"`
+	Kafka    *KafkaSinkConfig  `json:"kafka,omitempty" yaml:"kafka,omitempty"`
 }
 
 // GetType returns the sink type
@@ -265,14 +265,14 @@ type StderrSinkConfig struct {
 
 // FileSinkConfig is the configuration for a file sink
 type FileSinkConfig struct {
-	Path string `yaml:"path"`
+	Path string `json:"path" yaml:"path"`
 }
 
 // KafkaSinkConfig is the configuration for a Kafka sink
 type KafkaSinkConfig struct {
-	Topic   string   `yaml:"topic"`
-	Key     string   `yaml:"key"`
-	Brokers []string `yaml:"brokers"`
+	Topic   string   `json:"topic" yaml:"topic"`
+	Key     string   `json:"key" yaml:"key"`
+	Brokers []string `json:"brokers" yaml:"brokers"`
 }
 
 // load loads the configuration
