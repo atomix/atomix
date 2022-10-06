@@ -184,7 +184,7 @@ func (r *PodReconciler) reconcileProfile(ctx context.Context, pod *corev1.Pod, p
 
 func (r *PodReconciler) reconcileRoutes(ctx context.Context, pod *corev1.Pod, profile *atomixv3beta2.Profile, status *atomixv3beta2.PodStatus) (bool, error) {
 	if len(status.Proxy.Routes) == 0 {
-		if ok, err := r.setReadyCondition(pod, corev1.ConditionFalse, "Configuring", "Configuring routes"); err != nil {
+		if ok, err := r.setReadyCondition(pod, corev1.ConditionFalse, "ConfiguringRoutes", "Configuring routes"); err != nil {
 			return false, err
 		} else if ok {
 			return false, nil
@@ -227,7 +227,7 @@ func (r *PodReconciler) reconcileRoutes(ctx context.Context, pod *corev1.Pod, pr
 func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, route atomixv3beta2.ProfileRoute, status *atomixv3beta2.RouteStatus) (bool, error) {
 	storeNamespace := route.Store.Namespace
 	if storeNamespace == "" {
-		storeNamespace = route.Store.Namespace
+		storeNamespace = pod.Namespace
 	}
 	storeNamespacedName := types.NamespacedName{
 		Namespace: storeNamespace,
@@ -346,7 +346,7 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, rou
 func (r *PodReconciler) setReadyCondition(pod *corev1.Pod, status corev1.ConditionStatus, reason string, message string) (bool, error) {
 	for i, condition := range pod.Status.Conditions {
 		if condition.Type == proxyReadyCondition {
-			if condition.Status == status && condition.Reason == reason && condition.Message == message {
+			if condition.Status == status && condition.Reason == reason {
 				return false, nil
 			}
 			log.Infof("Updating Pod %s condition: status=%s, reason=%s, message=%s",
