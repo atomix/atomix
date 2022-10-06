@@ -15,7 +15,7 @@ spec:
     plural: stores
     singular: store
   versions:
-    - name: v3beta1
+    - name: v3beta2
       served: true
       storage: true
       schema:

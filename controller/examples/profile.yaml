@@ -1,4 +1,4 @@
-apiVersion: storage.atomix.io/v3beta1
+apiVersion: storage.atomix.io/v3beta2
 kind: Profile
 metadata:
   name: example-profile

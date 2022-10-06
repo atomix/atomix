@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v3beta1
+package v3beta2
 
 import (
 	"context"
 	"encoding/json"
-	atomixv3beta1 "github.com/atomix/runtime/controller/pkg/apis/storage/v3beta1"
+	atomixv3beta2 "github.com/atomix/runtime/controller/pkg/apis/storage/v3beta2"
 	"github.com/atomix/runtime/proxy/pkg/proxy"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +27,7 @@ import (
 )
 
 const configFile = "config.yaml"
+const loggingFile = "logging.yaml"
 
 func addProfileController(mgr manager.Manager) error {
 	// Create a new controller
@@ -43,14 +44,14 @@ func addProfileController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to Profiles
-	err = c.Watch(&source.Kind{Type: &atomixv3beta1.Profile{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &atomixv3beta2.Profile{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to ConfigMap
 	err = c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForOwner{
-		OwnerType: &atomixv3beta1.Profile{},
+		OwnerType: &atomixv3beta2.Profile{},
 	})
 	if err != nil {
 		return err
@@ -68,7 +69,7 @@ type ProfileReconciler struct {
 // Reconcile reconciles Profile resources
 func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Infof("Reconciling Profile '%s'", request.NamespacedName)
-	profile := &atomixv3beta1.Profile{}
+	profile := &atomixv3beta2.Profile{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, profile)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -129,13 +130,20 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			return reconcile.Result{}, err
 		}
 
+		loggingBytes, err := yaml.Marshal(&profile.Spec.Proxy.Logging)
+		if err != nil {
+			log.Error(err)
+			return reconcile.Result{}, err
+		}
+
 		configMap = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: profile.Namespace,
 				Name:      profile.Name,
 			},
-			BinaryData: map[string][]byte{
-				configFile: configBytes,
+			Data: map[string]string{
+				configFile:  string(configBytes),
+				loggingFile: string(loggingBytes),
 			},
 		}
 

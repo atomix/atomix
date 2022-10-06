@@ -15,9 +15,11 @@ spec:
     plural: profiles
     singular: profile
   versions:
-    - name: v3beta1
+    - name: v3beta2
       served: true
       storage: true
+      subresources:
+        status: {}
       schema:
         openAPIV3Schema:
           type: object
@@ -31,6 +33,79 @@ spec:
               required:
                 - routes
               properties:
+                proxy:
+                  type: object
+                  properties:
+                    image:
+                      type: string
+                    imagePullPolicy:
+                      type: string
+                      enum:
+                        - Never
+                        - IfNotPresent
+                        - Always
+                    securityContext:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    logging:
+                      type: object
+                      properties:
+                        loggers:
+                          type: object
+                          additionalProperties:
+                            type: object
+                            properties:
+                              level:
+                                type: string
+                                nullable: true
+                                enum:
+                                  - debug
+                                  - info
+                                  - warn
+                                  - error
+                                  - fatal
+                                  - panic
+                              output:
+                                type: object
+                                additionalProperties:
+                                  type: object
+                                  properties:
+                                    sink:
+                                      type: string
+                                    level:
+                                      type: string
+                                      nullable: true
+                                      enum:
+                                        - debug
+                                        - info
+                                        - warn
+                                        - error
+                                        - fatal
+                                        - panic
+                        sinks:
+                          type: object
+                          additionalProperties:
+                            type: object
+                            properties:
+                              encoding:
+                                type: string
+                                nullable: true
+                                enum:
+                                  - console
+                                  - json
+                              stdout:
+                                type: object
+                                properties: {}
+                              stderr:
+                                type: object
+                                properties: {}
+                              file:
+                                type: object
+                                properties:
+                                  path:
+                                    type: string
+                                required:
+                                  - path
                 routes:
                   type: array
                   items:
@@ -80,4 +155,41 @@ spec:
                                     type: object
                                     additionalProperties:
                                       type: string
-      additionalPrinterColumns: [ ]
+            status:
+              type: object
+              properties:
+                podStatuses:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                      proxy:
+                        type: object
+                        properties:
+                          ready:
+                            type: boolean
+                          routes:
+                            type: array
+                            items:
+                              type: object
+                              required:
+                                - store
+                              properties:
+                                store:
+                                  type: object
+                                  required:
+                                    - name
+                                  properties:
+                                    name:
+                                      type: string
+                                    namespace:
+                                      type: string
+                                ready:
+                                  type: boolean
+                                version:
+                                  type: string
+      additionalPrinterColumns: []

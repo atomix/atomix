@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v3beta1
+package v3beta2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

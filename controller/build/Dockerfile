@@ -9,6 +9,9 @@ WORKDIR /build
 
 COPY ./go.mod /build
 COPY ./go.sum /build
+
+RUN go mod download -x
+
 COPY ./cmd /build/cmd
 COPY ./pkg /build/pkg
 
