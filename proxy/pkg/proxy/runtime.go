@@ -68,24 +68,46 @@ func (r *Runtime) connect(ctx context.Context, storeID StoreID, driverID runtime
 
 	driver, ok := r.drivers[driverID]
 	if !ok {
-		log.Infof("Loading plugin %s", driverID)
+		log.Infow("Loading driver",
+			logging.String("Driver", driverID.Name),
+			logging.String("Version", driverID.Version))
 		path := filepath.Join(r.PluginsDir, fmt.Sprintf("%s@%s.so", driverID.Name, driverID.Version))
 		driverPlugin, err := plugin.Open(path)
 		if err != nil {
-			return errors.NewInternal("failed loading driver '%s': %v", driverID, err)
+			err = errors.NewInternal("failed loading driver '%s': %v", driverID, err)
+			log.Warnw("Loading driver failed",
+				logging.String("Driver", driverID.Name),
+				logging.String("Version", driverID.Version),
+				logging.Error("Error", err))
+			return err
 		}
 		driverSym, err := driverPlugin.Lookup("Plugin")
 		if err != nil {
-			return errors.NewInternal("failed loading driver '%s': %v", driverID, err)
+			err = errors.NewInternal("failed loading driver '%s': %v", driverID, err)
+			log.Warnw("Loading driver failed",
+				logging.String("Driver", driverID.Name),
+				logging.String("Version", driverID.Version),
+				logging.Error("Error", err))
+			return err
 		}
 		driver = *driverSym.(*runtime.Driver)
 		r.drivers[driverID] = driver
 	}
 
+	log.Infow("Establishing connection to store",
+		logging.String("Name", storeID.Name),
+		logging.String("Namespace", storeID.Namespace))
 	conn, err := driver.Connect(ctx, config)
 	if err != nil {
+		log.Warnw("Connecting to store failed",
+			logging.String("Name", storeID.Name),
+			logging.String("Namespace", storeID.Namespace),
+			logging.Error("Error", err))
 		return err
 	}
+	log.Infow("Connected to store",
+		logging.String("Name", storeID.Name),
+		logging.String("Namespace", storeID.Namespace))
 	r.conns[storeID] = conn
 	return nil
 }
@@ -98,7 +120,20 @@ func (r *Runtime) configure(ctx context.Context, storeID StoreID, config []byte)
 	if !ok {
 		return errors.NewForbidden("connection '%s' not found", storeID)
 	}
-	return conn.Configure(ctx, config)
+	log.Infow("Reconfiguring connection to store",
+		logging.String("Name", storeID.Name),
+		logging.String("Namespace", storeID.Namespace))
+	if err := conn.Configure(ctx, config); err != nil {
+		log.Warnw("Reconfiguring connection to store failed",
+			logging.String("Name", storeID.Name),
+			logging.String("Namespace", storeID.Namespace),
+			logging.Error("Error", err))
+		return err
+	}
+	log.Infow("Reconfigured connection to store",
+		logging.String("Name", storeID.Name),
+		logging.String("Namespace", storeID.Namespace))
+	return nil
 }
 
 func (r *Runtime) disconnect(ctx context.Context, storeID StoreID) error {
@@ -110,7 +145,21 @@ func (r *Runtime) disconnect(ctx context.Context, storeID StoreID) error {
 		return errors.NewForbidden("connection '%s' not found", storeID)
 	}
 	defer delete(r.conns, storeID)
-	return conn.Close(ctx)
+
+	log.Infow("Disconnecting from store",
+		logging.String("Name", storeID.Name),
+		logging.String("Namespace", storeID.Namespace))
+	if err := conn.Close(ctx); err != nil {
+		log.Warnw("Failed disconnecting from store",
+			logging.String("Name", storeID.Name),
+			logging.String("Namespace", storeID.Namespace),
+			logging.Error("Error", err))
+		return err
+	}
+	log.Infow("Connection to store closed",
+		logging.String("Name", storeID.Name),
+		logging.String("Namespace", storeID.Namespace))
+	return nil
 }
 
 var _ runtime.Runtime = (*Runtime)(nil)
