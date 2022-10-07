@@ -4,19 +4,15 @@ metadata:
   name: example-profile
   namespace: default
 spec:
-  routes:
+  bindings:
     - store:
-        namespace: default
         name: example-store
-      bindings:
-        - services:
-            - name: atomix.runtime.map.v1.Map
-              config:
-                cache:
-                  enabled: true
-          matchRules:
-            - names:
-                - '*'
-              tags:
-                foo: bar
-                bar: baz
+      priority: 1
+      selector:
+        foo: bar
+        bar: baz
+      services:
+        - name: atomix.runtime.map.v1.Map
+          config:
+            cache:
+              enabled: true

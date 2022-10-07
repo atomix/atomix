@@ -31,7 +31,7 @@ spec:
                 The specification for the profile.
               type: object
               required:
-                - routes
+                - bindings
               properties:
                 proxy:
                   type: object
@@ -95,10 +95,8 @@ spec:
                                   - json
                               stdout:
                                 type: object
-                                properties: {}
                               stderr:
                                 type: object
-                                properties: {}
                               file:
                                 type: object
                                 properties:
@@ -106,13 +104,12 @@ spec:
                                     type: string
                                 required:
                                   - path
-                routes:
+                bindings:
                   type: array
                   items:
                     type: object
                     required:
                       - store
-                      - bindings
                     properties:
                       store:
                         type: object
@@ -123,38 +120,26 @@ spec:
                             type: string
                           name:
                             type: string
-                      bindings:
+                      priority:
+                        type: integer
+                        minimum: 0
+                        default: 0
+                      selector:
+                        type: object
+                        additionalProperties:
+                          type: string
+                      services:
                         type: array
                         items:
                           type: object
                           required:
-                            - matchRules
+                            - name
                           properties:
-                            services:
-                              type: array
-                              items:
-                                type: object
-                                required:
-                                  - name
-                                properties:
-                                  name:
-                                    type: string
-                                  config:
-                                    type: object
-                                    x-kubernetes-preserve-unknown-fields: true
-                            matchRules:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  names:
-                                    type: array
-                                    items:
-                                      type: string
-                                  tags:
-                                    type: object
-                                    additionalProperties:
-                                      type: string
+                            name:
+                              type: string
+                            config:
+                              type: object
+                              x-kubernetes-preserve-unknown-fields: true
             status:
               type: object
               properties:
@@ -172,7 +157,7 @@ spec:
                         properties:
                           ready:
                             type: boolean
-                          routes:
+                          bindings:
                             type: array
                             items:
                               type: object

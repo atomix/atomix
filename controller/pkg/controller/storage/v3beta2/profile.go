@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"sort"
 	"time"
 )
 
@@ -86,41 +87,48 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			return reconcile.Result{}, err
 		}
 
+		// Sort the bindings in priority order
+		bindings := profile.Spec.Bindings
+		sort.Slice(bindings, func(i, j int) bool {
+			var p1, p2 uint32
+			if bindings[i].Priority != nil {
+				p1 = *bindings[i].Priority
+			}
+			if bindings[j].Priority != nil {
+				p2 = *bindings[j].Priority
+			}
+			return p1 < p2
+		})
+
 		var routerConfig proxy.RouterConfig
-		for _, route := range profile.Spec.Routes {
-			var routeConfig proxy.RouteConfig
-			storeNamespace := route.Store.Namespace
-			if storeNamespace == "" {
-				storeNamespace = profile.Namespace
+		for _, binding := range bindings {
+			storeID := proxy.StoreID{
+				Namespace: binding.Store.Namespace,
+				Name:      binding.Store.Name,
 			}
-			routeConfig.Store = proxy.StoreID{
-				Namespace: storeNamespace,
-				Name:      route.Store.Name,
+			if storeID.Namespace == "" {
+				storeID.Namespace = profile.Namespace
 			}
-			for _, binding := range route.Bindings {
-				var bindingConfig proxy.BindingConfig
-				for _, service := range binding.Services {
+
+			routeConfig := proxy.RouteConfig{
+				Store:    storeID,
+				Selector: binding.Selector,
+			}
+
+			for _, service := range binding.Services {
+				serviceConfig := proxy.ServiceConfig{
+					Name: service.Name,
+				}
+				if service.Config.Raw != nil {
 					config := make(map[string]interface{})
-					if service.Config.Raw != nil {
-						if err := json.Unmarshal(service.Config.Raw, &config); err != nil {
-							return reconcile.Result{}, err
-						}
+					if err := json.Unmarshal(service.Config.Raw, &config); err != nil {
+						return reconcile.Result{}, err
 					}
-					serviceConfig := proxy.ServiceConfig{
-						Name:   service.Name,
-						Config: config,
-					}
-					bindingConfig.Services = append(bindingConfig.Services, serviceConfig)
+					serviceConfig.Config = config
 				}
-				for _, rule := range binding.MatchRules {
-					ruleConfig := proxy.MatchRuleConfig{
-						Names: rule.Names,
-						Tags:  rule.Tags,
-					}
-					bindingConfig.MatchRules = append(bindingConfig.MatchRules, ruleConfig)
-				}
-				routeConfig.Bindings = append(routeConfig.Bindings, bindingConfig)
+				routeConfig.Services = append(routeConfig.Services, serviceConfig)
 			}
+
 			routerConfig.Routes = append(routerConfig.Routes, routeConfig)
 		}
 

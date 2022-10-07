@@ -24,8 +24,8 @@ type Profile struct {
 
 // ProfileSpec is the spec for a Profile resource
 type ProfileSpec struct {
-	Proxy  ProxySpec      `json:"proxy"`
-	Routes []ProfileRoute `json:"routes"`
+	Proxy    ProxySpec `json:"proxy"`
+	Bindings []Binding `json:"bindings"`
 }
 
 type ProxySpec struct {
@@ -42,24 +42,16 @@ type ProxySpec struct {
 	Logging LoggingConfig `json:"logging,omitempty"`
 }
 
-type ProfileRoute struct {
+type Binding struct {
 	Store    corev1.ObjectReference `json:"store"`
-	Bindings []ProfileBinding       `json:"bindings"`
+	Priority *uint32                `json:"priority"`
+	Selector map[string]string      `json:"selector"`
+	Services []ServiceBinding       `json:"services"`
 }
 
-type ProfileBinding struct {
-	Services   []ServiceConfig      `json:"services"`
-	MatchRules []ProfileBindingRule `json:"matchRules"`
-}
-
-type ServiceConfig struct {
+type ServiceBinding struct {
 	Name   string               `json:"name"`
 	Config runtime.RawExtension `json:"config"`
-}
-
-type ProfileBindingRule struct {
-	Names []string          `json:"names"`
-	Tags  map[string]string `json:"tags"`
 }
 
 // LoggingConfig logging configuration

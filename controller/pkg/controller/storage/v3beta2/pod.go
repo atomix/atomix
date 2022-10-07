@@ -107,7 +107,7 @@ func setPodStatus(profile *atomixv3beta2.Profile, podStatus atomixv3beta2.PodSta
 	profile.Status.PodStatuses = append(profile.Status.PodStatuses, podStatus)
 }
 
-func getRouteStatus(podStatus *atomixv3beta2.PodStatus, route atomixv3beta2.ProfileRoute) atomixv3beta2.RouteStatus {
+func getRouteStatus(podStatus *atomixv3beta2.PodStatus, route atomixv3beta2.Binding) atomixv3beta2.RouteStatus {
 	for _, routeStatus := range podStatus.Proxy.Routes {
 		if routeStatus.Store.Namespace == route.Store.Namespace && routeStatus.Store.Name == route.Store.Name {
 			return routeStatus
@@ -192,16 +192,16 @@ func (r *PodReconciler) reconcileRoutes(ctx context.Context, pod *corev1.Pod, pr
 	}
 
 	ready := true
-	for _, route := range profile.Spec.Routes {
-		routeStatus := getRouteStatus(status, route)
-		if ok, err := r.reconcileRoute(ctx, pod, route, &routeStatus); err != nil {
+	for _, binding := range profile.Spec.Bindings {
+		routeStatus := getRouteStatus(status, binding)
+		if ok, err := r.reconcileRoute(ctx, pod, binding, &routeStatus); err != nil {
 			return false, err
 		} else if ok {
 			setRouteStatus(status, routeStatus)
 			return true, nil
 		} else if ready && !routeStatus.Ready {
 			ready = false
-			if ok, err := r.setReadyCondition(pod, corev1.ConditionFalse, "ConfiguringRoutes", fmt.Sprintf("Configuring route to '%s'", route.Store.Name)); err != nil {
+			if ok, err := r.setReadyCondition(pod, corev1.ConditionFalse, "ConfiguringRoutes", fmt.Sprintf("Configuring route to '%s'", binding.Store.Name)); err != nil {
 				return false, err
 			} else if ok {
 				return false, nil
@@ -224,7 +224,7 @@ func (r *PodReconciler) reconcileRoutes(ctx context.Context, pod *corev1.Pod, pr
 	return false, nil
 }
 
-func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, route atomixv3beta2.ProfileRoute, status *atomixv3beta2.RouteStatus) (bool, error) {
+func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, route atomixv3beta2.Binding, status *atomixv3beta2.RouteStatus) (bool, error) {
 	storeNamespace := route.Store.Namespace
 	if storeNamespace == "" {
 		storeNamespace = pod.Namespace
