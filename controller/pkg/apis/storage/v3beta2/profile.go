@@ -103,13 +103,23 @@ type PodStatus struct {
 }
 
 type ProxyStatus struct {
-	Ready  bool          `json:"ready"`
 	Routes []RouteStatus `json:"routes"`
 }
 
+type RouteState string
+
+const (
+	RoutePending       RouteState = "Pending"
+	RouteConnecting    RouteState = "Connecting"
+	RouteConnected     RouteState = "Connected"
+	RouteConfiguring   RouteState = "Configuring"
+	RouteDisconnecting RouteState = "Disconnecting"
+	RouteDisconnected  RouteState = "Disconnected"
+)
+
 type RouteStatus struct {
 	Store   corev1.ObjectReference `json:"store"`
-	Ready   bool                   `json:"ready"`
+	State   RouteState             `json:"state"`
 	Version string                 `json:"version"`
 }
 

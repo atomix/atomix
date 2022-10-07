@@ -155,9 +155,7 @@ spec:
                       proxy:
                         type: object
                         properties:
-                          ready:
-                            type: boolean
-                          bindings:
+                          routes:
                             type: array
                             items:
                               type: object
@@ -173,8 +171,16 @@ spec:
                                       type: string
                                     namespace:
                                       type: string
-                                ready:
-                                  type: boolean
+                                state:
+                                  type: string
+                                  default: Pending
+                                  enum:
+                                    - Pending
+                                    - Connecting
+                                    - Connected
+                                    - Configuring
+                                    - Disconnecting
+                                    - Disconnected
                                 version:
                                   type: string
       additionalPrinterColumns: []
