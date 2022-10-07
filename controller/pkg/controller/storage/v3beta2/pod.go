@@ -61,7 +61,32 @@ func addPodController(mgr manager.Manager) error {
 
 		var requests []reconcile.Request
 		for _, pod := range podList.Items {
-			if pod.Annotations[proxyProfileAnnotation] == object.GetName() {
+			if pod.Annotations[proxyInjectStatusAnnotation] == injectedStatus && pod.Annotations[proxyProfileAnnotation] == object.GetName() {
+				requests = append(requests, reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Namespace: pod.Namespace,
+						Name:      pod.Name,
+					},
+				})
+			}
+		}
+		return requests
+	}))
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to Stores
+	err = c.Watch(&source.Kind{Type: &atomixv3beta2.Store{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+		podList := &corev1.PodList{}
+		if err := mgr.GetClient().List(context.Background(), podList, &client.ListOptions{Namespace: object.GetNamespace()}); err != nil {
+			log.Error(err)
+			return nil
+		}
+
+		var requests []reconcile.Request
+		for _, pod := range podList.Items {
+			if pod.Annotations[proxyInjectStatusAnnotation] == injectedStatus {
 				requests = append(requests, reconcile.Request{
 					NamespacedName: types.NamespacedName{
 						Namespace: pod.Namespace,
