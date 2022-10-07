@@ -45,7 +45,9 @@ func (r *Runtime) GetConn(primitive runtime.PrimitiveMeta) (runtime.Conn, []byte
 		return nil, nil, err
 	}
 
+	r.mu.RLock()
 	conn, ok := r.conns[storeID]
+	r.mu.RUnlock()
 	if !ok {
 		return nil, nil, errors.NewUnavailable("connection to store '%s' not found", storeID)
 	}
