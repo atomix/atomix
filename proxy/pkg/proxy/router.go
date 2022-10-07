@@ -65,21 +65,29 @@ type Route struct {
 }
 
 func (r *Route) GetConfig(primitive runtime.PrimitiveMeta) (map[string]interface{}, bool) {
-	for key, value := range r.Selector {
-		if value == wildcard {
-			if _, ok := primitive.Tags[key]; !ok {
-				return nil, false
-			}
-		} else {
-			if primitive.Tags[key] != value {
-				return nil, false
+	if r.Selector != nil && len(r.Selector) > 0 {
+		if primitive.Tags == nil {
+			return nil, false
+		}
+		for key, value := range r.Selector {
+			if value == wildcard {
+				if _, ok := primitive.Tags[key]; !ok {
+					return nil, false
+				}
+			} else {
+				if primitive.Tags[key] != value {
+					return nil, false
+				}
 			}
 		}
 	}
 
 	for _, service := range r.Services {
 		if service.Name == primitive.Service {
-			return service.Config, true
+			if service.Config != nil {
+				return service.Config, true
+			}
+			return map[string]interface{}{}, true
 		}
 	}
 	return map[string]interface{}{}, true
