@@ -81,7 +81,6 @@ func (r *Route) GetConfig(primitive runtime.PrimitiveMeta) (map[string]interface
 		if service.Name == primitive.Service {
 			return service.Config, true
 		}
-		return map[string]interface{}{}, true
 	}
-	return nil, false
+	return map[string]interface{}{}, true
 }
