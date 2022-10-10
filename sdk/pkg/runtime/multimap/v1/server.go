@@ -142,6 +142,29 @@ func (s *multiMapServer) PutAll(ctx context.Context, request *multimapv1.PutAllR
 	return response, nil
 }
 
+func (s *multiMapServer) PutEntries(ctx context.Context, request *multimapv1.PutEntriesRequest) (*multimapv1.PutEntriesResponse, error) {
+	log.Debugw("PutEntries",
+		logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("PutEntries",
+			logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.PutEntries(ctx, request)
+	if err != nil {
+		log.Warnw("PutEntries",
+			logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("PutEntries",
+		logging.Stringer("PutEntriesResponse", stringer.Truncate(response, truncLen)))
+	return response, nil
+}
+
 func (s *multiMapServer) Replace(ctx context.Context, request *multimapv1.ReplaceRequest) (*multimapv1.ReplaceResponse, error) {
 	log.Debugw("Replace",
 		logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)))
@@ -254,6 +277,29 @@ func (s *multiMapServer) RemoveAll(ctx context.Context, request *multimapv1.Remo
 	}
 	log.Debugw("RemoveAll",
 		logging.Stringer("RemoveAllResponse", stringer.Truncate(response, truncLen)))
+	return response, nil
+}
+
+func (s *multiMapServer) RemoveEntries(ctx context.Context, request *multimapv1.RemoveEntriesRequest) (*multimapv1.RemoveEntriesResponse, error) {
+	log.Debugw("RemoveEntries",
+		logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)))
+	client, err := s.delegate.Get(request.ID.Name)
+	if err != nil {
+		err = errors.ToProto(err)
+		log.Warnw("RemoveEntries",
+			logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.RemoveEntries(ctx, request)
+	if err != nil {
+		log.Warnw("RemoveEntries",
+			logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("RemoveEntries",
+		logging.Stringer("RemoveEntriesResponse", stringer.Truncate(response, truncLen)))
 	return response, nil
 }
 
