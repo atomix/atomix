@@ -33,6 +33,9 @@ service MultiMap {
     // PutAll adds values to an entry in the map
     rpc PutAll (PutAllRequest) returns (PutAllResponse);
 
+    // PutEntries adds entries to the map
+    rpc PutEntries (PutEntriesRequest) returns (PutEntriesResponse);
+
     // Replace replaces the values of an entry in the map
     rpc Replace (ReplaceRequest) returns (ReplaceResponse);
 
@@ -47,6 +50,9 @@ service MultiMap {
 
     // RemoveAll removes a key from the map
     rpc RemoveAll (RemoveAllRequest) returns (RemoveAllResponse);
+
+    // RemoveEntries removes entries from the map
+    rpc RemoveEntries (RemoveEntriesRequest) returns (RemoveEntriesResponse);
 
     // Clear removes all entries from the map
     rpc Clear (ClearRequest) returns (ClearResponse);
@@ -118,6 +124,20 @@ message PutAllResponse {
     bool updated = 1;
 }
 
+message PutEntriesRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated Entry entries = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message PutEntriesResponse {
+    bool updated = 1;
+}
+
 message ReplaceRequest {
     atomix.runtime.v1.PrimitiveId id = 1 [
         (gogoproto.customname) = "ID",
@@ -166,7 +186,7 @@ message RemoveRequest {
 }
 
 message RemoveResponse {
-
+    repeated string values = 1;
 }
 
 message RemoveAllRequest {
@@ -175,10 +195,25 @@ message RemoveAllRequest {
         (gogoproto.nullable) = false
     ];
     string key = 2;
+    repeated string values = 3;
 }
 
 message RemoveAllResponse {
-    repeated string values = 1;
+    bool updated = 2;
+}
+
+message RemoveEntriesRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated Entry entries = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message RemoveEntriesResponse {
+    bool updated = 1;
 }
 
 message ClearRequest {
@@ -239,5 +274,5 @@ message Event {
 
 message Entry {
     string key = 1;
-    string value = 2;
+    repeated string values = 3;
 }
