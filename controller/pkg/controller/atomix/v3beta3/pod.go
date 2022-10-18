@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v3beta2
+package v3beta3
 
 import (
 	"context"
 	"fmt"
 	proxyv1 "github.com/atomix/runtime/api/atomix/proxy/v1"
-	atomixv3beta2 "github.com/atomix/runtime/controller/pkg/apis/storage/v3beta2"
+	atomixv3beta2 "github.com/atomix/runtime/controller/pkg/apis/atomix/v3beta3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	corev1 "k8s.io/api/core/v1"
@@ -28,7 +28,7 @@ import (
 	"time"
 )
 
-const proxyReadyCondition = "proxy.storage.atomix.io/ready"
+const proxyReadyCondition = "proxy.atomix.io/ready"
 
 func addPodController(mgr manager.Manager) error {
 	// Create a new controller
@@ -52,7 +52,7 @@ func addPodController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to Profiles
-	err = c.Watch(&source.Kind{Type: &atomixv3beta2.Profile{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+	err = c.Watch(&source.Kind{Type: &atomixv3beta2.StorageProfile{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
 		podList := &corev1.PodList{}
 		if err := mgr.GetClient().List(context.Background(), podList, &client.ListOptions{Namespace: object.GetNamespace()}); err != nil {
 			log.Error(err)
@@ -77,7 +77,7 @@ func addPodController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to Stores
-	err = c.Watch(&source.Kind{Type: &atomixv3beta2.Store{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+	err = c.Watch(&source.Kind{Type: &atomixv3beta2.DataStore{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
 		podList := &corev1.PodList{}
 		if err := mgr.GetClient().List(context.Background(), podList, &client.ListOptions{}); err != nil {
 			log.Error(err)
@@ -111,7 +111,7 @@ type PodReconciler struct {
 	events record.EventRecorder
 }
 
-func getPodStatus(profile *atomixv3beta2.Profile, pod *corev1.Pod) atomixv3beta2.PodStatus {
+func getPodStatus(profile *atomixv3beta2.StorageProfile, pod *corev1.Pod) atomixv3beta2.PodStatus {
 	for _, podStatus := range profile.Status.PodStatuses {
 		if podStatus.Name == pod.Name {
 			return podStatus
@@ -122,7 +122,7 @@ func getPodStatus(profile *atomixv3beta2.Profile, pod *corev1.Pod) atomixv3beta2
 	}
 }
 
-func setPodStatus(profile *atomixv3beta2.Profile, podStatus atomixv3beta2.PodStatus) {
+func setPodStatus(profile *atomixv3beta2.StorageProfile, podStatus atomixv3beta2.PodStatus) {
 	for i, status := range profile.Status.PodStatuses {
 		if status.Name == podStatus.Name {
 			profile.Status.PodStatuses[i] = podStatus
@@ -153,7 +153,7 @@ func setRouteStatus(podStatus *atomixv3beta2.PodStatus, routeStatus atomixv3beta
 	podStatus.Proxy.Routes = append(podStatus.Proxy.Routes, routeStatus)
 }
 
-// Reconcile reconciles Profile resources
+// Reconcile reconciles StorageProfile resources
 func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Infof("Reconciling Pod '%s'", request.NamespacedName)
 	pod := &corev1.Pod{}
@@ -175,7 +175,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 		Namespace: pod.Namespace,
 		Name:      profileName,
 	}
-	profile := &atomixv3beta2.Profile{}
+	profile := &atomixv3beta2.StorageProfile{}
 	if err := r.client.Get(ctx, profileNamespacedName, profile); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err)
@@ -192,7 +192,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 	return reconcile.Result{}, nil
 }
 
-func (r *PodReconciler) reconcileProfile(ctx context.Context, pod *corev1.Pod, profile *atomixv3beta2.Profile) (bool, error) {
+func (r *PodReconciler) reconcileProfile(ctx context.Context, pod *corev1.Pod, profile *atomixv3beta2.StorageProfile) (bool, error) {
 	ready := true
 	podStatus := r.getPodStatus(profile, pod)
 	for _, binding := range profile.Spec.Bindings {
@@ -262,7 +262,7 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 	}
 
 	// If the route is ready but the store has been removed, disconnect the route
-	store := &atomixv3beta2.Store{}
+	store := &atomixv3beta2.DataStore{}
 	if err := r.client.Get(ctx, storeNamespacedName, store); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err)
@@ -393,7 +393,7 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 	return false, nil
 }
 
-func (r *PodReconciler) getPodStatus(profile *atomixv3beta2.Profile, pod *corev1.Pod) atomixv3beta2.PodStatus {
+func (r *PodReconciler) getPodStatus(profile *atomixv3beta2.StorageProfile, pod *corev1.Pod) atomixv3beta2.PodStatus {
 	for _, podStatus := range profile.Status.PodStatuses {
 		if podStatus.Name == pod.Name {
 			return podStatus
@@ -404,16 +404,16 @@ func (r *PodReconciler) getPodStatus(profile *atomixv3beta2.Profile, pod *corev1
 	}
 }
 
-func (r *PodReconciler) setPodStatus(ctx context.Context, profile *atomixv3beta2.Profile, status atomixv3beta2.PodStatus) error {
+func (r *PodReconciler) setPodStatus(ctx context.Context, profile *atomixv3beta2.StorageProfile, status atomixv3beta2.PodStatus) error {
 	for i, podStatus := range profile.Status.PodStatuses {
 		if podStatus.Name == status.Name {
-			log.Infof("Updating Profile %s PodStatus %s", getNamespacedName(profile), status)
+			log.Infof("Updating StorageProfile %s PodStatus %s", getNamespacedName(profile), status)
 			profile.Status.PodStatuses[i] = status
 			return r.client.Status().Update(ctx, profile)
 		}
 	}
 
-	log.Infof("Initializing Profile %s PodStatus %s", getNamespacedName(profile), status)
+	log.Infof("Initializing StorageProfile %s PodStatus %s", getNamespacedName(profile), status)
 	profile.Status.PodStatuses = append(profile.Status.PodStatuses, status)
 	return r.client.Status().Update(ctx, profile)
 }

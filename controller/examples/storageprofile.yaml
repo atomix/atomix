@@ -1,5 +1,5 @@
-apiVersion: storage.atomix.io/v3beta2
-kind: Profile
+apiVersion: atomix.io/v3beta3
+kind: StorageProfile
 metadata:
   name: example-profile
   namespace: default

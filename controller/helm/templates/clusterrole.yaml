@@ -44,7 +44,7 @@ rules:
       - list
       - watch
   - apiGroups:
-      - storage.atomix.io
+      - atomix.io
     resources:
       - '*'
     verbs:

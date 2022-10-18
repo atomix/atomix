@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Package v3beta2 contains API Schema definitions for the cloud v3beta2 API group
+// Package v3beta3 contains API Schema definitions for the cloud v3beta3 API group
 // +k8s:deepcopy-gen=package,register
-// +groupName=storage.atomix.io
-package v3beta2
+// +groupName=atomix.io
+package v3beta3

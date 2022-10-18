@@ -4,10 +4,10 @@
 
 // NOTE: Boilerplate only.  Ignore this file.
 
-// Package v3beta2 contains API Schema definitions for the cloud v3beta2 API group
+// Package v3beta3 contains API Schema definitions for the cloud v3beta3 API group
 // +k8s:deepcopy-gen=package,register
-// +groupName=storage.atomix.io
-package v3beta2
+// +groupName=atomix.io
+package v3beta3
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +16,7 @@ import (
 )
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: "storage.atomix.io", Version: "v3beta2"}
+var SchemeGroupVersion = schema.GroupVersion{Group: "atomix.io", Version: "v3beta3"}
 
 // Kind takes an unqualified kind and returns a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {
@@ -37,8 +37,8 @@ var (
 
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(SchemeGroupVersion, &Store{}, &StoreList{})
-	scheme.AddKnownTypes(SchemeGroupVersion, &Profile{}, &ProfileList{})
+	scheme.AddKnownTypes(SchemeGroupVersion, &DataStore{}, &DataStoreList{})
+	scheme.AddKnownTypes(SchemeGroupVersion, &StorageProfile{}, &StorageProfileList{})
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }

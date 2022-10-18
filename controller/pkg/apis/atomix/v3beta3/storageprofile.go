@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v3beta2
+package v3beta3
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -13,22 +13,22 @@ import (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Profile is a specification for a Profile resource
-type Profile struct {
+// StorageProfile is a specification for a StorageProfile resource
+type StorageProfile struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ProfileSpec   `json:"spec"`
-	Status ProfileStatus `json:"status"`
+	Spec   StorageProfileSpec   `json:"spec"`
+	Status StorageProfileStatus `json:"status"`
 }
 
-// ProfileSpec is the spec for a Profile resource
-type ProfileSpec struct {
-	Proxy    ProxySpec `json:"proxy"`
-	Bindings []Binding `json:"bindings"`
+// StorageProfileSpec is the spec for a StorageProfile resource
+type StorageProfileSpec struct {
+	Proxy    StorageProxySpec `json:"proxy"`
+	Bindings []Binding        `json:"bindings"`
 }
 
-type ProxySpec struct {
+type StorageProxySpec struct {
 	// Image is the proxy image
 	Image string `json:"image,omitempty"`
 
@@ -93,7 +93,7 @@ type FileSinkConfig struct {
 	Path string `json:"path" yaml:"path"`
 }
 
-type ProfileStatus struct {
+type StorageProfileStatus struct {
 	PodStatuses []PodStatus `json:"podStatuses,omitempty"`
 }
 
@@ -125,10 +125,10 @@ type RouteStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ProfileList is a list of Profile resources
-type ProfileList struct {
+// StorageProfileList is a list of StorageProfile resources
+type StorageProfileList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []Profile `json:"items"`
+	Items []StorageProfile `json:"items"`
 }

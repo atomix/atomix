@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v3beta2
+package v3beta3
 
 import (
 	"github.com/atomix/runtime/sdk/pkg/logging"

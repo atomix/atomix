@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v3beta2
+package v3beta3
 
 import (
 	"context"
 	"encoding/json"
-	atomixv3beta2 "github.com/atomix/runtime/controller/pkg/apis/storage/v3beta2"
+	atomixv3beta2 "github.com/atomix/runtime/controller/pkg/apis/atomix/v3beta3"
 	"github.com/atomix/runtime/proxy/pkg/proxy"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -45,14 +45,14 @@ func addProfileController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to Profiles
-	err = c.Watch(&source.Kind{Type: &atomixv3beta2.Profile{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &atomixv3beta2.StorageProfile{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to ConfigMap
 	err = c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForOwner{
-		OwnerType: &atomixv3beta2.Profile{},
+		OwnerType: &atomixv3beta2.StorageProfile{},
 	})
 	if err != nil {
 		return err
@@ -67,10 +67,10 @@ type ProfileReconciler struct {
 	config *rest.Config
 }
 
-// Reconcile reconciles Profile resources
+// Reconcile reconciles StorageProfile resources
 func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log.Infof("Reconciling Profile '%s'", request.NamespacedName)
-	profile := &atomixv3beta2.Profile{}
+	log.Infof("Reconciling StorageProfile '%s'", request.NamespacedName)
+	profile := &atomixv3beta2.StorageProfile{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, profile)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {

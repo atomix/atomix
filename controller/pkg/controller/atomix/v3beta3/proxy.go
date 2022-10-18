@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v3beta2
+package v3beta3
 
 import (
 	"context"
 	"fmt"
-	atomixv3beta2 "github.com/atomix/runtime/controller/pkg/apis/storage/v3beta2"
+	atomixv3beta2 "github.com/atomix/runtime/controller/pkg/apis/atomix/v3beta3"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,9 +32,9 @@ const (
 
 const (
 	proxyInjectPath             = "/inject-proxy"
-	proxyInjectAnnotation       = "proxy.storage.atomix.io/inject"
-	proxyInjectStatusAnnotation = "proxy.storage.atomix.io/status"
-	proxyProfileAnnotation      = "proxy.storage.atomix.io/profile"
+	proxyInjectAnnotation       = "proxy.atomix.io/inject"
+	proxyInjectStatusAnnotation = "proxy.atomix.io/status"
+	proxyProfileAnnotation      = "proxy.atomix.io/profile"
 	injectedStatus              = "injected"
 	proxyContainerName          = "atomix-proxy"
 	configVolumeName            = "atomix-config"
@@ -119,7 +119,7 @@ func (i *ProxyInjector) Handle(ctx context.Context, request admission.Request) a
 		return admission.Denied(fmt.Sprintf("'%s' annotation not found", proxyProfileAnnotation))
 	}
 
-	profile := &atomixv3beta2.Profile{}
+	profile := &atomixv3beta2.StorageProfile{}
 	profileNamespacedName := types.NamespacedName{
 		Namespace: request.Namespace,
 		Name:      profileName,

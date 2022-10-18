@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v3beta2
+package v3beta3
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,16 +12,16 @@ import (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Store is a specification for a Store resource
-type Store struct {
+// DataStore is a specification for a DataStore resource
+type DataStore struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec StoreSpec `json:"spec"`
+	Spec DataStoreSpec `json:"spec"`
 }
 
-// StoreSpec is the spec for a Store resource
-type StoreSpec struct {
+// DataStoreSpec is the spec for a DataStore resource
+type DataStoreSpec struct {
 	Driver Driver               `json:"driver"`
 	Config runtime.RawExtension `json:"config"`
 }
@@ -33,10 +33,10 @@ type Driver struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// StoreList is a list of Store resources
-type StoreList struct {
+// DataStoreList is a list of DataStore resources
+type DataStoreList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []Store `json:"items"`
+	Items []DataStore `json:"items"`
 }

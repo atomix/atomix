@@ -1,5 +1,5 @@
-apiVersion: storage.atomix.io/v3beta2
-kind: Store
+apiVersion: atomix.io/v3beta3
+kind: DataStore
 metadata:
   name: example-store
   namespace: default
