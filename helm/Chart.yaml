@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v2
+name: atomix-runtime
+description: Umbrella chart for deploying Atomix runtime controllers
+kubeVersion: ">=1.17.0"
+type: application
+version: 0.1.0
+appVersion: v0.1.0
+keywords:
+- atomix
+home: https://atomix.io
+maintainers:
+- name: Jordan Halterman
+  email: jordan.halterman@intel.com
+dependencies:
+  - name: atomix-runtime-controller
+    version: 1.4.3
+    repository: https://charts.atomix.io
+    alias: runtime-controller
+  - name: atomix-multi-raft-controller
+    version: 1.2.3
+    repository: https://charts.atomix.io
+    condition: plugins.multi-raft.enabled
+    alias: multi-raft-controller

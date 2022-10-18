@@ -18,3 +18,7 @@
 dist/
 .release
 .cr-release-packages
+
+# Helm files
+Chart.lock
+charts/
