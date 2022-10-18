@@ -28,6 +28,7 @@ const (
 	podNameEnv         = "POD_NAME"
 	nodeIDEnv          = "NODE_ID"
 	atomixNamespaceEnv = "ATOMIX_NAMESPACE"
+	atomixProfileEnv   = "ATOMIX_PROFILE"
 )
 
 const (
@@ -181,6 +182,10 @@ func (i *ProxyInjector) Handle(ctx context.Context, request admission.Request) a
 						FieldPath: "metadata.namespace",
 					},
 				},
+			},
+			{
+				Name:  atomixProfileEnv,
+				Value: profileName,
 			},
 		},
 		Ports: []corev1.ContainerPort{

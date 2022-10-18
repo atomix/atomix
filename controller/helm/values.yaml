@@ -8,7 +8,7 @@ controller:
   image:
     registry: ""
     repository: atomix/runtime-controller
-    tag: v0.6.2
+    tag: v0.6.3
     pullPolicy: Always
     pullSecrets: []
 
@@ -16,7 +16,7 @@ init:
   image:
     registry: ""
     repository: atomix/runtime-controller-init
-    tag: v0.6.2
+    tag: v0.6.3
     pullPolicy: Always
     pullSecrets: []
 
