@@ -14,7 +14,7 @@ const (
 )
 
 type Options struct {
-	RouterConfig   RouterConfig
+	Config         Config
 	RuntimeService RuntimeServiceOptions
 	ProxyService   ProxyServiceOptions
 	Drivers        []runtime.Driver
@@ -51,15 +51,15 @@ func WithOptions(opts Options) Option {
 	}
 }
 
-func WithDrivers(drivers ...runtime.Driver) Option {
+func WithConfig(config Config) Option {
 	return func(options *Options) {
-		options.Drivers = append(options.Drivers, drivers...)
+		options.Config = config
 	}
 }
 
-func WithRouterConfig(config RouterConfig) Option {
+func WithDrivers(drivers ...runtime.Driver) Option {
 	return func(options *Options) {
-		options.RouterConfig = config
+		options.Drivers = append(options.Drivers, drivers...)
 	}
 }
 

@@ -12,12 +12,31 @@ import (
 	"os"
 )
 
-func newRuntimeService(runtime *Runtime, network Network, options RuntimeServiceOptions) service.Service {
+func newRuntimeService(runtime *Runtime, network Network, config ServerConfig, options RuntimeServiceOptions) service.Service {
+	var opts []grpc.ServerOption
+	if config.ReadBufferSize != nil {
+		opts = append(opts, grpc.ReadBufferSize(*config.ReadBufferSize))
+	}
+	if config.WriteBufferSize != nil {
+		opts = append(opts, grpc.WriteBufferSize(*config.WriteBufferSize))
+	}
+	if config.MaxSendMsgSize != nil {
+		opts = append(opts, grpc.MaxSendMsgSize(*config.MaxSendMsgSize))
+	}
+	if config.MaxRecvMsgSize != nil {
+		opts = append(opts, grpc.MaxRecvMsgSize(*config.MaxRecvMsgSize))
+	}
+	if config.NumStreamWorkers != nil {
+		opts = append(opts, grpc.NumStreamWorkers(*config.NumStreamWorkers))
+	}
+	if config.MaxConcurrentStreams != nil {
+		opts = append(opts, grpc.MaxConcurrentStreams(*config.MaxConcurrentStreams))
+	}
 	return &runtimeService{
 		RuntimeServiceOptions: options,
 		runtime:               runtime,
 		network:               network,
-		server:                grpc.NewServer(),
+		server:                grpc.NewServer(opts...),
 	}
 }
 

@@ -25,7 +25,7 @@ func newRuntime(options Options) *Runtime {
 	}
 	return &Runtime{
 		Options: options,
-		router:  newRouter(options.RouterConfig),
+		router:  newRouter(options.Config.Router),
 		drivers: drivers,
 		conns:   make(map[StoreID]runtime.Conn),
 	}

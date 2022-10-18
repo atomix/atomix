@@ -51,20 +51,20 @@ func main() {
 				os.Exit(1)
 			}
 
-			routerConfigFile, err := cmd.Flags().GetString("config")
+			configFile, err := cmd.Flags().GetString("config")
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
 
-			routerConfigBytes, err := ioutil.ReadFile(routerConfigFile)
+			configBytes, err := ioutil.ReadFile(configFile)
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
 
-			var routerConfig proxy.RouterConfig
-			if err := yaml.Unmarshal(routerConfigBytes, &routerConfig); err != nil {
+			var config proxy.Config
+			if err := yaml.Unmarshal(configBytes, &config); err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
@@ -79,7 +79,7 @@ func main() {
 			service := proxy.New(
 				proxy.NewNetwork(),
 				proxy.WithPluginsDir(pluginsDir),
-				proxy.WithRouterConfig(routerConfig),
+				proxy.WithConfig(config),
 				proxy.WithRuntimeHost(runtimeHost),
 				proxy.WithRuntimePort(runtimePort),
 				proxy.WithProxyHost(proxyHost),

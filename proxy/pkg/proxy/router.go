@@ -11,26 +11,6 @@ import (
 
 const wildcard = "*"
 
-type RouterConfig struct {
-	Routes []RouteConfig `json:"routes" yaml:"routes"`
-}
-
-type StoreID struct {
-	Namespace string `json:"namespace" yaml:"namespace"`
-	Name      string `json:"name" yaml:"name"`
-}
-
-type RouteConfig struct {
-	Store    StoreID           `json:"store" yaml:"store"`
-	Selector map[string]string `json:"selector" yaml:"selector"`
-	Services []ServiceConfig   `json:"services" yaml:"services"`
-}
-
-type ServiceConfig struct {
-	Name   string                 `json:"name" yaml:"name"`
-	Config map[string]interface{} `json:"config" yaml:"config"`
-}
-
 func newRouter(config RouterConfig) *Router {
 	routes := make([]*Route, len(config.Routes))
 	for i, binding := range config.Routes {

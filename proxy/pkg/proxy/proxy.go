@@ -12,7 +12,7 @@ func New(network Network, opts ...Option) *Proxy {
 	runtime := newRuntime(options)
 	return &Proxy{
 		Options: options,
-		runtime: newRuntimeService(runtime, network, options.RuntimeService),
+		runtime: newRuntimeService(runtime, network, options.Config.Server, options.RuntimeService),
 		service: newProxyService(runtime, network, options.ProxyService),
 	}
 }
