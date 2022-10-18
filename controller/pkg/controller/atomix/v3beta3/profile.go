@@ -100,7 +100,7 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			return p1 < p2
 		})
 
-		var routerConfig proxy.RouterConfig
+		routes := make([]proxy.RouteConfig, 0, len(bindings))
 		for _, binding := range bindings {
 			storeID := proxy.StoreID{
 				Namespace: binding.Store.Namespace,
@@ -129,10 +129,29 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 				routeConfig.Services = append(routeConfig.Services, serviceConfig)
 			}
 
-			routerConfig.Routes = append(routerConfig.Routes, routeConfig)
+			routes = append(routes, routeConfig)
 		}
 
-		configBytes, err := yaml.Marshal(routerConfig)
+		var config proxy.Config
+		config.Router = proxy.RouterConfig{
+			Routes: routes,
+		}
+		config.Server = proxy.ServerConfig{
+			ReadBufferSize:       profile.Spec.Proxy.Config.Server.ReadBufferSize,
+			WriteBufferSize:      profile.Spec.Proxy.Config.Server.WriteBufferSize,
+			NumStreamWorkers:     profile.Spec.Proxy.Config.Server.NumStreamWorkers,
+			MaxConcurrentStreams: profile.Spec.Proxy.Config.Server.MaxConcurrentStreams,
+		}
+		if profile.Spec.Proxy.Config.Server.MaxRecvMsgSize != nil {
+			maxRecvMsgSize := int(profile.Spec.Proxy.Config.Server.MaxRecvMsgSize.Value())
+			config.Server.MaxRecvMsgSize = &maxRecvMsgSize
+		}
+		if profile.Spec.Proxy.Config.Server.MaxSendMsgSize != nil {
+			maxSendMsgSize := int(profile.Spec.Proxy.Config.Server.MaxSendMsgSize.Value())
+			config.Server.MaxSendMsgSize = &maxSendMsgSize
+		}
+
+		configBytes, err := yaml.Marshal(config)
 		if err != nil {
 			log.Error(err)
 			return reconcile.Result{}, err

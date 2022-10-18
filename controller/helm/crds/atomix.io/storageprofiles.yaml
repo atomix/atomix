@@ -51,6 +51,30 @@ spec:
                     securityContext:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
+                    config:
+                      type: object
+                      properties:
+                        server:
+                          type: object
+                          properties:
+                            readBufferSize:
+                              type: integer
+                              nullable: true
+                            writeBufferSize:
+                              type: integer
+                              nullable: true
+                            maxSendMsgSize:
+                              type: string
+                              nullable: true
+                            maxRecvMsgSize:
+                              type: string
+                              nullable: true
+                            numStreamWorkers:
+                              type: integer
+                              nullable: true
+                            maxConcurrentStreams:
+                              type: integer
+                              nullable: true
                     logging:
                       type: object
                       properties:

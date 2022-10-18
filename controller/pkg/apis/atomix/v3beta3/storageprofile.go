@@ -6,6 +6,7 @@ package v3beta3
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -40,6 +41,22 @@ type StorageProxySpec struct {
 
 	// Logging is the proxy logging configuration
 	Logging LoggingConfig `json:"logging,omitempty"`
+
+	// Config is the proxy configuration
+	Config StorageProxyConfig `json:"config,omitempty"`
+}
+
+type StorageProxyConfig struct {
+	Server StorageProxyServerConfig `json:"server,omitempty"`
+}
+
+type StorageProxyServerConfig struct {
+	ReadBufferSize       *int               `json:"readBufferSize"`
+	WriteBufferSize      *int               `json:"writeBufferSize"`
+	MaxRecvMsgSize       *resource.Quantity `json:"maxRecvMsgSize"`
+	MaxSendMsgSize       *resource.Quantity `json:"maxSendMsgSize"`
+	NumStreamWorkers     *uint32            `json:"numStreamWorkers"`
+	MaxConcurrentStreams *uint32            `json:"maxConcurrentStreams"`
 }
 
 type Binding struct {
