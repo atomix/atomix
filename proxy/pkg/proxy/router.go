@@ -11,6 +11,12 @@ import (
 
 const wildcard = "*"
 
+type routerContext struct {
+	service string
+	name    string
+	tags    map[string]string
+}
+
 func newRouter(config RouterConfig) *Router {
 	routes := make([]*Route, len(config.Routes))
 	for i, binding := range config.Routes {
@@ -25,13 +31,16 @@ type Router struct {
 	routes []*Route
 }
 
-func (r *Router) Route(primitive runtime.PrimitiveMeta) (StoreID, map[string]interface{}, error) {
+func (r *Router) Route(context routerContext) (runtime.StoreID, map[string]interface{}, error) {
 	for _, route := range r.routes {
-		if config, ok := route.GetConfig(primitive); ok {
-			return route.Store, config, nil
+		if config, ok := route.GetConfig(context); ok {
+			return runtime.StoreID{
+				Namespace: route.Store.Namespace,
+				Name:      route.Store.Name,
+			}, config, nil
 		}
 	}
-	return StoreID{}, nil, errors.NewForbidden("no route found for '%s'", primitive.Name)
+	return runtime.StoreID{}, nil, errors.NewForbidden("no route found for '%s'", context.name)
 }
 
 func newRoute(route RouteConfig) *Route {
@@ -44,18 +53,18 @@ type Route struct {
 	RouteConfig
 }
 
-func (r *Route) GetConfig(primitive runtime.PrimitiveMeta) (map[string]interface{}, bool) {
+func (r *Route) GetConfig(context routerContext) (map[string]interface{}, bool) {
 	if r.Selector != nil && len(r.Selector) > 0 {
-		if primitive.Tags == nil {
+		if context.tags == nil {
 			return nil, false
 		}
 		for key, value := range r.Selector {
 			if value == wildcard {
-				if _, ok := primitive.Tags[key]; !ok {
+				if _, ok := context.tags[key]; !ok {
 					return nil, false
 				}
 			} else {
-				if primitive.Tags[key] != value {
+				if context.tags[key] != value {
 					return nil, false
 				}
 			}
@@ -63,7 +72,7 @@ func (r *Route) GetConfig(primitive runtime.PrimitiveMeta) (map[string]interface
 	}
 
 	for _, service := range r.Services {
-		if service.Name == primitive.Service {
+		if service.Name == context.service {
 			if service.Config != nil {
 				return service.Config, true
 			}

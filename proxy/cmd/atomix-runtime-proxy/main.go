@@ -7,17 +7,18 @@ package main
 import (
 	"fmt"
 	"github.com/atomix/runtime/proxy/pkg/proxy"
-	counterv1 "github.com/atomix/runtime/sdk/pkg/runtime/counter/v1"
-	countermapv1 "github.com/atomix/runtime/sdk/pkg/runtime/countermap/v1"
-	electionv1 "github.com/atomix/runtime/sdk/pkg/runtime/election/v1"
-	indexedmapv1 "github.com/atomix/runtime/sdk/pkg/runtime/indexedmap/v1"
-	listv1 "github.com/atomix/runtime/sdk/pkg/runtime/list/v1"
-	lockv1 "github.com/atomix/runtime/sdk/pkg/runtime/lock/v1"
-	mapv1 "github.com/atomix/runtime/sdk/pkg/runtime/map/v1"
-	multimapv1 "github.com/atomix/runtime/sdk/pkg/runtime/multimap/v1"
-	setv1 "github.com/atomix/runtime/sdk/pkg/runtime/set/v1"
-	topicv1 "github.com/atomix/runtime/sdk/pkg/runtime/topic/v1"
-	valuev1 "github.com/atomix/runtime/sdk/pkg/runtime/value/v1"
+	counterv1 "github.com/atomix/runtime/proxy/pkg/proxy/counter/v1"
+	countermapv1 "github.com/atomix/runtime/proxy/pkg/proxy/countermap/v1"
+	electionv1 "github.com/atomix/runtime/proxy/pkg/proxy/election/v1"
+	indexedmapv1 "github.com/atomix/runtime/proxy/pkg/proxy/indexedmap/v1"
+	listv1 "github.com/atomix/runtime/proxy/pkg/proxy/list/v1"
+	lockv1 "github.com/atomix/runtime/proxy/pkg/proxy/lock/v1"
+	mapv1 "github.com/atomix/runtime/proxy/pkg/proxy/map/v1"
+	multimapv1 "github.com/atomix/runtime/proxy/pkg/proxy/multimap/v1"
+	setv1 "github.com/atomix/runtime/proxy/pkg/proxy/set/v1"
+	topicv1 "github.com/atomix/runtime/proxy/pkg/proxy/topic/v1"
+	valuev1 "github.com/atomix/runtime/proxy/pkg/proxy/value/v1"
+	"github.com/atomix/runtime/sdk/pkg/network"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -77,7 +78,7 @@ func main() {
 
 			// Create the runtime
 			service := proxy.New(
-				proxy.NewNetwork(),
+				network.NewNetwork(),
 				proxy.WithPluginsDir(pluginsDir),
 				proxy.WithConfig(config),
 				proxy.WithRuntimeHost(runtimeHost),

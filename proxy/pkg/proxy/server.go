@@ -25,15 +25,18 @@ type proxyServer struct {
 func (s *proxyServer) Connect(ctx context.Context, request *proxyv1.ConnectRequest) (*proxyv1.ConnectResponse, error) {
 	log.Debugw("Connect",
 		logging.Stringer("ConnectRequest", request))
-	storeID := StoreID{
-		Namespace: request.StoreID.Namespace,
-		Name:      request.StoreID.Name,
-	}
 	driverID := runtime.DriverID{
 		Name:    request.DriverID.Name,
 		Version: request.DriverID.Version,
 	}
-	if err := s.runtime.connect(ctx, storeID, driverID, request.Config); err != nil {
+	spec := runtime.ConnSpec{
+		StoreID: runtime.StoreID{
+			Namespace: request.StoreID.Namespace,
+			Name:      request.StoreID.Name,
+		},
+		Config: request.Config,
+	}
+	if err := s.runtime.connect(ctx, driverID, spec); err != nil {
 		err = errors.ToProto(err)
 		log.Debugw("Connect",
 			logging.Stringer("ConnectRequest", request),
@@ -50,11 +53,14 @@ func (s *proxyServer) Connect(ctx context.Context, request *proxyv1.ConnectReque
 func (s *proxyServer) Configure(ctx context.Context, request *proxyv1.ConfigureRequest) (*proxyv1.ConfigureResponse, error) {
 	log.Debugw("Configure",
 		logging.Stringer("ConfigureRequest", request))
-	storeID := StoreID{
-		Namespace: request.StoreID.Namespace,
-		Name:      request.StoreID.Name,
+	spec := runtime.ConnSpec{
+		StoreID: runtime.StoreID{
+			Namespace: request.StoreID.Namespace,
+			Name:      request.StoreID.Name,
+		},
+		Config: request.Config,
 	}
-	if err := s.runtime.configure(ctx, storeID, request.Config); err != nil {
+	if err := s.runtime.configure(ctx, spec); err != nil {
 		err = errors.ToProto(err)
 		log.Debugw("Configure",
 			logging.Stringer("ConfigureRequest", request),
@@ -71,7 +77,7 @@ func (s *proxyServer) Configure(ctx context.Context, request *proxyv1.ConfigureR
 func (s *proxyServer) Disconnect(ctx context.Context, request *proxyv1.DisconnectRequest) (*proxyv1.DisconnectResponse, error) {
 	log.Debugw("Disconnect",
 		logging.Stringer("DisconnectRequest", request))
-	storeID := StoreID{
+	storeID := runtime.StoreID{
 		Namespace: request.StoreID.Namespace,
 		Name:      request.StoreID.Name,
 	}

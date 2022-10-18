@@ -4,9 +4,12 @@
 
 package proxy
 
-import "github.com/atomix/runtime/sdk/pkg/service"
+import (
+	"github.com/atomix/runtime/sdk/pkg/network"
+	"github.com/atomix/runtime/sdk/pkg/service"
+)
 
-func New(network Network, opts ...Option) *Proxy {
+func New(network network.Network, opts ...Option) *Proxy {
 	var options Options
 	options.apply(opts...)
 	runtime := newRuntime(options)

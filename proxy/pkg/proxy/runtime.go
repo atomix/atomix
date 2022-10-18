@@ -27,7 +27,7 @@ func newRuntime(options Options) *Runtime {
 		Options: options,
 		router:  newRouter(options.Config.Router),
 		drivers: drivers,
-		conns:   make(map[StoreID]runtime.Conn),
+		conns:   make(map[runtime.StoreID]runtime.Conn),
 	}
 }
 
@@ -35,12 +35,12 @@ type Runtime struct {
 	Options
 	router  *Router
 	drivers map[runtime.DriverID]runtime.Driver
-	conns   map[StoreID]runtime.Conn
+	conns   map[runtime.StoreID]runtime.Conn
 	mu      sync.RWMutex
 }
 
-func (r *Runtime) GetConn(primitive runtime.PrimitiveMeta) (runtime.Conn, []byte, error) {
-	storeID, config, err := r.router.Route(primitive)
+func (r *Runtime) getConn(context routerContext) (runtime.Conn, []byte, error) {
+	storeID, config, err := r.router.Route(context)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -59,11 +59,11 @@ func (r *Runtime) GetConn(primitive runtime.PrimitiveMeta) (runtime.Conn, []byte
 	return conn, bytes, nil
 }
 
-func (r *Runtime) connect(ctx context.Context, storeID StoreID, driverID runtime.DriverID, config []byte) error {
+func (r *Runtime) connect(ctx context.Context, driverID runtime.DriverID, spec runtime.ConnSpec) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	conn, ok := r.conns[storeID]
+	conn, ok := r.conns[spec.StoreID]
 	if ok {
 		return nil
 	}
@@ -97,48 +97,51 @@ func (r *Runtime) connect(ctx context.Context, storeID StoreID, driverID runtime
 	}
 
 	log.Infow("Establishing connection to store",
-		logging.String("Name", storeID.Name),
-		logging.String("Namespace", storeID.Namespace))
-	conn, err := driver.Connect(ctx, config)
+		logging.String("Name", spec.StoreID.Name),
+		logging.String("Namespace", spec.StoreID.Namespace))
+	conn, err := driver.Connect(ctx, spec)
 	if err != nil {
 		log.Warnw("Connecting to store failed",
-			logging.String("Name", storeID.Name),
-			logging.String("Namespace", storeID.Namespace),
+			logging.String("Name", spec.StoreID.Name),
+			logging.String("Namespace", spec.StoreID.Namespace),
 			logging.Error("Error", err))
 		return err
 	}
 	log.Infow("Connected to store",
-		logging.String("Name", storeID.Name),
-		logging.String("Namespace", storeID.Namespace))
-	r.conns[storeID] = conn
+		logging.String("Name", spec.StoreID.Name),
+		logging.String("Namespace", spec.StoreID.Namespace))
+	r.conns[spec.StoreID] = conn
 	return nil
 }
 
-func (r *Runtime) configure(ctx context.Context, storeID StoreID, config []byte) error {
+func (r *Runtime) configure(ctx context.Context, spec runtime.ConnSpec) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	conn, ok := r.conns[storeID]
+	conn, ok := r.conns[spec.StoreID]
 	if !ok {
-		return errors.NewForbidden("connection '%s' not found", storeID)
+		return errors.NewForbidden("connection '%s' not found", spec.StoreID)
 	}
+
 	log.Infow("Reconfiguring connection to store",
-		logging.String("Name", storeID.Name),
-		logging.String("Namespace", storeID.Namespace))
-	if err := conn.Configure(ctx, config); err != nil {
-		log.Warnw("Reconfiguring connection to store failed",
-			logging.String("Name", storeID.Name),
-			logging.String("Namespace", storeID.Namespace),
-			logging.Error("Error", err))
-		return err
+		logging.String("Name", spec.StoreID.Name),
+		logging.String("Namespace", spec.StoreID.Namespace))
+	if configurator, ok := conn.(runtime.Configurator); ok {
+		if err := configurator.Configure(ctx, spec); err != nil {
+			log.Warnw("Reconfiguring connection to store failed",
+				logging.String("Name", spec.StoreID.Name),
+				logging.String("Namespace", spec.StoreID.Namespace),
+				logging.Error("Error", err))
+			return err
+		}
 	}
 	log.Infow("Reconfigured connection to store",
-		logging.String("Name", storeID.Name),
-		logging.String("Namespace", storeID.Namespace))
+		logging.String("Name", spec.StoreID.Name),
+		logging.String("Namespace", spec.StoreID.Namespace))
 	return nil
 }
 
-func (r *Runtime) disconnect(ctx context.Context, storeID StoreID) error {
+func (r *Runtime) disconnect(ctx context.Context, storeID runtime.StoreID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -163,5 +166,3 @@ func (r *Runtime) disconnect(ctx context.Context, storeID StoreID) error {
 		logging.String("Namespace", storeID.Namespace))
 	return nil
 }
-
-var _ runtime.Runtime = (*Runtime)(nil)

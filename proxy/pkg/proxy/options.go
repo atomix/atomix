@@ -38,7 +38,7 @@ type ServerOptions struct {
 
 type RuntimeServiceOptions struct {
 	ServerOptions
-	Types []runtime.Type
+	Types []Type
 }
 
 type ProxyServiceOptions struct {
@@ -69,7 +69,7 @@ func WithPluginsDir(pluginsDir string) Option {
 	}
 }
 
-func WithTypes(types ...runtime.Type) Option {
+func WithTypes(types ...Type) Option {
 	return func(options *Options) {
 		options.RuntimeService.Types = append(options.RuntimeService.Types, types...)
 	}

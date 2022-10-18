@@ -7,12 +7,13 @@ package proxy
 import (
 	"fmt"
 	proxyv1 "github.com/atomix/runtime/api/atomix/proxy/v1"
+	"github.com/atomix/runtime/sdk/pkg/network"
 	"github.com/atomix/runtime/sdk/pkg/service"
 	"google.golang.org/grpc"
 	"os"
 )
 
-func newRuntimeService(runtime *Runtime, network Network, config ServerConfig, options RuntimeServiceOptions) service.Service {
+func newRuntimeService(runtime *Runtime, network network.Network, config ServerConfig, options RuntimeServiceOptions) service.Service {
 	var opts []grpc.ServerOption
 	if config.ReadBufferSize != nil {
 		opts = append(opts, grpc.ReadBufferSize(*config.ReadBufferSize))
@@ -43,7 +44,7 @@ func newRuntimeService(runtime *Runtime, network Network, config ServerConfig, o
 type runtimeService struct {
 	RuntimeServiceOptions
 	runtime *Runtime
-	network Network
+	network network.Network
 	server  *grpc.Server
 }
 
@@ -76,7 +77,7 @@ func (s *runtimeService) Stop() error {
 
 var _ service.Service = (*runtimeService)(nil)
 
-func newProxyService(runtime *Runtime, network Network, options ProxyServiceOptions) service.Service {
+func newProxyService(runtime *Runtime, network network.Network, options ProxyServiceOptions) service.Service {
 	return &proxyService{
 		ProxyServiceOptions: options,
 		runtime:             runtime,
@@ -88,7 +89,7 @@ func newProxyService(runtime *Runtime, network Network, options ProxyServiceOpti
 type proxyService struct {
 	ProxyServiceOptions
 	runtime *Runtime
-	network Network
+	network network.Network
 	server  *grpc.Server
 }
 
