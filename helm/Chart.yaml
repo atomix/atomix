@@ -17,11 +17,11 @@ maintainers:
   email: jordan.halterman@intel.com
 dependencies:
   - name: atomix-runtime-controller
-    version: 1.4.3
+    version: 1.5.0
     repository: https://charts.atomix.io
     alias: runtime-controller
   - name: atomix-multi-raft-controller
-    version: 1.2.3
+    version: 1.3.0
     repository: https://charts.atomix.io
     condition: plugins.multi-raft.enabled
     alias: multi-raft-controller
