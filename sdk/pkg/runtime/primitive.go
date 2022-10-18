@@ -4,57 +4,19 @@
 
 package runtime
 
-import (
-	"fmt"
-	"google.golang.org/grpc"
-)
+import "encoding/json"
 
-type Kind struct {
-	Name       string
-	APIVersion string
+type PrimitiveSpec struct {
+	Service   string `json:"service"`
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	Profile   string `json:"profile"`
+	Config    []byte `json:"config"`
 }
 
-func (k Kind) String() string {
-	return fmt.Sprintf("%s/%s", k.Name, k.APIVersion)
-}
-
-type PrimitiveMeta struct {
-	Service string
-	Name    string
-	Tags    map[string]string
-}
-
-type Type interface {
-	Service() string
-	Register(server *grpc.Server, runtime Runtime)
-}
-
-type Registrar[T any] func(*grpc.Server, *Delegate[T])
-
-type Resolver[T any] func(Conn, []byte) (T, error)
-
-func NewType[T any](service string, registrar Registrar[T], resolver Resolver[T]) Type {
-	return &genericType[T]{
-		service:   service,
-		registrar: registrar,
-		resolver:  resolver,
+func (s PrimitiveSpec) UnmarshalConfig(config any) error {
+	if s.Config == nil {
+		return nil
 	}
-}
-
-type genericType[T any] struct {
-	service   string
-	registrar Registrar[T]
-	resolver  Resolver[T]
-}
-
-func (t *genericType[T]) Service() string {
-	return t.service
-}
-
-func (t *genericType[T]) Register(server *grpc.Server, runtime Runtime) {
-	t.registrar(server, newDelegate[T](t.service, runtime, t.resolver))
-}
-
-func (t *genericType[T]) String() string {
-	return t.service
+	return json.Unmarshal(s.Config, config)
 }
