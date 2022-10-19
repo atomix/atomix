@@ -9,6 +9,15 @@ import (
 	"github.com/atomix/runtime/sdk/pkg/protocol/statemachine"
 )
 
+func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
+	statemachine.RegisterPrimitiveType[*CounterInput, *CounterOutput](registry)(PrimitiveType)
+}
+
+var PrimitiveType = statemachine.NewPrimitiveType[*CounterInput, *CounterOutput](Service, stateMachineCodec,
+	func(context statemachine.PrimitiveContext[*CounterInput, *CounterOutput]) statemachine.Executor[*CounterInput, *CounterOutput] {
+		return newExecutor(newStateMachine(context))
+	})
+
 type CounterStateMachine interface {
 	statemachine.PrimitiveContext[*CounterInput, *CounterOutput]
 	statemachine.Recoverable
@@ -19,7 +28,7 @@ type CounterStateMachine interface {
 	Get(query statemachine.Query[*GetInput, *GetOutput])
 }
 
-func NewStateMachine(ctx statemachine.PrimitiveContext[*CounterInput, *CounterOutput]) CounterStateMachine {
+func newStateMachine(ctx statemachine.PrimitiveContext[*CounterInput, *CounterOutput]) CounterStateMachine {
 	return &counterStateMachine{
 		PrimitiveContext: ctx,
 	}

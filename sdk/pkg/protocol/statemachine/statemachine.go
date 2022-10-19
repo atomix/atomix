@@ -30,11 +30,18 @@ type Context[I, O any] interface {
 }
 
 type StateMachine interface {
+	Recoverable
 	Propose(input *protocol.ProposalInput, stream streams.WriteStream[*protocol.ProposalOutput])
 	Query(input *protocol.QueryInput, stream streams.WriteStream[*protocol.QueryOutput])
 }
 
-func NewStateMachine(factory func(Context[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) PrimitiveManager) StateMachine {
+func NewStateMachine(registry *PrimitiveTypeRegistry) StateMachine {
+	return newStateMachine(func(ctx Context[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) PrimitiveManager {
+		return newPrimitiveManager(ctx, registry)
+	})
+}
+
+func newStateMachine(factory func(Context[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) PrimitiveManager) StateMachine {
 	return (&sessionManager{factory: factory}).init()
 }
 

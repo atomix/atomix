@@ -22,7 +22,7 @@ type PrimitiveType[I, O any] interface {
 
 type AnyType PrimitiveType[any, any]
 
-func NewType[I, O any](service string, codec Codec[I, O], factory func(PrimitiveContext[I, O]) Executor[I, O]) PrimitiveType[I, O] {
+func NewPrimitiveType[I, O any](service string, codec Codec[I, O], factory func(PrimitiveContext[I, O]) Executor[I, O]) PrimitiveType[I, O] {
 	return &primitiveType[I, O]{
 		service: service,
 		codec:   codec,

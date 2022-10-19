@@ -22,7 +22,7 @@ var stateMachineCodec = statemachine.NewCodec[*CounterInput, *CounterOutput](
 		return proto.Marshal(output)
 	})
 
-func NewExecutor(stateMachine CounterStateMachine) statemachine.Executor[*CounterInput, *CounterOutput] {
+func newExecutor(stateMachine CounterStateMachine) statemachine.Executor[*CounterInput, *CounterOutput] {
 	executor := &counterExecutor{
 		CounterStateMachine: stateMachine,
 	}
