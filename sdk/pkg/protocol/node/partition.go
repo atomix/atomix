@@ -11,23 +11,31 @@ import (
 	streams "github.com/atomix/runtime/sdk/pkg/stream"
 )
 
-func NewPartition(id protocol.PartitionID, executor Executor) *Partition {
-	return &Partition{
+type Partition interface {
+	ID() protocol.PartitionID
+	Propose(ctx context.Context, input *protocol.ProposalInput) (*protocol.ProposalOutput, error)
+	StreamPropose(ctx context.Context, input *protocol.ProposalInput, stream streams.WriteStream[*protocol.ProposalOutput]) error
+	Query(ctx context.Context, input *protocol.QueryInput) (*protocol.QueryOutput, error)
+	StreamQuery(ctx context.Context, input *protocol.QueryInput, stream streams.WriteStream[*protocol.QueryOutput]) error
+}
+
+func NewPartition(id protocol.PartitionID, executor Executor) Partition {
+	return &nodePartition{
 		id:       id,
 		executor: executor,
 	}
 }
 
-type Partition struct {
+type nodePartition struct {
 	id       protocol.PartitionID
 	executor Executor
 }
 
-func (p *Partition) ID() protocol.PartitionID {
+func (p *nodePartition) ID() protocol.PartitionID {
 	return p.id
 }
 
-func (p *Partition) Propose(ctx context.Context, input *protocol.ProposalInput) (*protocol.ProposalOutput, error) {
+func (p *nodePartition) Propose(ctx context.Context, input *protocol.ProposalInput) (*protocol.ProposalOutput, error) {
 	resultCh := make(chan streams.Result[*protocol.ProposalOutput], 1)
 	errCh := make(chan error, 1)
 	go func() {
@@ -55,7 +63,7 @@ func (p *Partition) Propose(ctx context.Context, input *protocol.ProposalInput) 
 	}
 }
 
-func (p *Partition) StreamPropose(ctx context.Context, input *protocol.ProposalInput, stream streams.WriteStream[*protocol.ProposalOutput]) error {
+func (p *nodePartition) StreamPropose(ctx context.Context, input *protocol.ProposalInput, stream streams.WriteStream[*protocol.ProposalOutput]) error {
 	resultCh := make(chan streams.Result[*protocol.ProposalOutput])
 	go func() {
 		if err := p.executor.Propose(ctx, input, streams.NewChannelStream[*protocol.ProposalOutput](resultCh)); err != nil {
@@ -73,7 +81,7 @@ func (p *Partition) StreamPropose(ctx context.Context, input *protocol.ProposalI
 	return nil
 }
 
-func (p *Partition) Query(ctx context.Context, input *protocol.QueryInput) (*protocol.QueryOutput, error) {
+func (p *nodePartition) Query(ctx context.Context, input *protocol.QueryInput) (*protocol.QueryOutput, error) {
 	resultCh := make(chan streams.Result[*protocol.QueryOutput], 1)
 	errCh := make(chan error, 1)
 	go func() {
@@ -101,7 +109,7 @@ func (p *Partition) Query(ctx context.Context, input *protocol.QueryInput) (*pro
 	}
 }
 
-func (p *Partition) StreamQuery(ctx context.Context, input *protocol.QueryInput, stream streams.WriteStream[*protocol.QueryOutput]) error {
+func (p *nodePartition) StreamQuery(ctx context.Context, input *protocol.QueryInput, stream streams.WriteStream[*protocol.QueryOutput]) error {
 	resultCh := make(chan streams.Result[*protocol.QueryOutput])
 	go func() {
 		if err := p.executor.Query(ctx, input, streams.NewChannelStream[*protocol.QueryOutput](resultCh)); err != nil {
