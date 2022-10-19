@@ -6,10 +6,6 @@ package protocol
 
 type PartitionID uint32
 
-type MemberID uint32
-
-type GroupID uint32
-
 type SessionID uint64
 
 type PrimitiveID uint64
