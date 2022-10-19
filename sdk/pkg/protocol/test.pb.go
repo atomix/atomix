@@ -27,22 +27,22 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type TestCommandRequest struct {
-	Headers *CommandRequestHeaders `protobuf:"bytes,1,opt,name=headers,proto3" json:"headers,omitempty"`
+type TestProposalRequest struct {
+	Headers *ProposalRequestHeaders `protobuf:"bytes,1,opt,name=headers,proto3" json:"headers,omitempty"`
 }
 
-func (m *TestCommandRequest) Reset()         { *m = TestCommandRequest{} }
-func (m *TestCommandRequest) String() string { return proto.CompactTextString(m) }
-func (*TestCommandRequest) ProtoMessage()    {}
-func (*TestCommandRequest) Descriptor() ([]byte, []int) {
+func (m *TestProposalRequest) Reset()         { *m = TestProposalRequest{} }
+func (m *TestProposalRequest) String() string { return proto.CompactTextString(m) }
+func (*TestProposalRequest) ProtoMessage()    {}
+func (*TestProposalRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f29716374461e55a, []int{0}
 }
-func (m *TestCommandRequest) XXX_Unmarshal(b []byte) error {
+func (m *TestProposalRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestCommandRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestProposalRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_TestCommandRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_TestProposalRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -52,41 +52,41 @@ func (m *TestCommandRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *TestCommandRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TestCommandRequest.Merge(m, src)
+func (m *TestProposalRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TestProposalRequest.Merge(m, src)
 }
-func (m *TestCommandRequest) XXX_Size() int {
+func (m *TestProposalRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *TestCommandRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_TestCommandRequest.DiscardUnknown(m)
+func (m *TestProposalRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_TestProposalRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TestCommandRequest proto.InternalMessageInfo
+var xxx_messageInfo_TestProposalRequest proto.InternalMessageInfo
 
-func (m *TestCommandRequest) GetHeaders() *CommandRequestHeaders {
+func (m *TestProposalRequest) GetHeaders() *ProposalRequestHeaders {
 	if m != nil {
 		return m.Headers
 	}
 	return nil
 }
 
-type TestCommandResponse struct {
-	Headers *CommandResponseHeaders `protobuf:"bytes,1,opt,name=headers,proto3" json:"headers,omitempty"`
+type TestProposalResponse struct {
+	Headers *ProposalResponseHeaders `protobuf:"bytes,1,opt,name=headers,proto3" json:"headers,omitempty"`
 }
 
-func (m *TestCommandResponse) Reset()         { *m = TestCommandResponse{} }
-func (m *TestCommandResponse) String() string { return proto.CompactTextString(m) }
-func (*TestCommandResponse) ProtoMessage()    {}
-func (*TestCommandResponse) Descriptor() ([]byte, []int) {
+func (m *TestProposalResponse) Reset()         { *m = TestProposalResponse{} }
+func (m *TestProposalResponse) String() string { return proto.CompactTextString(m) }
+func (*TestProposalResponse) ProtoMessage()    {}
+func (*TestProposalResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f29716374461e55a, []int{1}
 }
-func (m *TestCommandResponse) XXX_Unmarshal(b []byte) error {
+func (m *TestProposalResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestCommandResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestProposalResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_TestCommandResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_TestProposalResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -96,19 +96,19 @@ func (m *TestCommandResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return b[:n], nil
 	}
 }
-func (m *TestCommandResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TestCommandResponse.Merge(m, src)
+func (m *TestProposalResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TestProposalResponse.Merge(m, src)
 }
-func (m *TestCommandResponse) XXX_Size() int {
+func (m *TestProposalResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *TestCommandResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_TestCommandResponse.DiscardUnknown(m)
+func (m *TestProposalResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_TestProposalResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TestCommandResponse proto.InternalMessageInfo
+var xxx_messageInfo_TestProposalResponse proto.InternalMessageInfo
 
-func (m *TestCommandResponse) GetHeaders() *CommandResponseHeaders {
+func (m *TestProposalResponse) GetHeaders() *ProposalResponseHeaders {
 	if m != nil {
 		return m.Headers
 	}
@@ -204,8 +204,8 @@ func (m *TestQueryResponse) GetHeaders() *QueryResponseHeaders {
 }
 
 func init() {
-	proto.RegisterType((*TestCommandRequest)(nil), "atomix.runtime.sdk.protocol.v1.TestCommandRequest")
-	proto.RegisterType((*TestCommandResponse)(nil), "atomix.runtime.sdk.protocol.v1.TestCommandResponse")
+	proto.RegisterType((*TestProposalRequest)(nil), "atomix.runtime.sdk.protocol.v1.TestProposalRequest")
+	proto.RegisterType((*TestProposalResponse)(nil), "atomix.runtime.sdk.protocol.v1.TestProposalResponse")
 	proto.RegisterType((*TestQueryRequest)(nil), "atomix.runtime.sdk.protocol.v1.TestQueryRequest")
 	proto.RegisterType((*TestQueryResponse)(nil), "atomix.runtime.sdk.protocol.v1.TestQueryResponse")
 }
@@ -213,27 +213,27 @@ func init() {
 func init() { proto.RegisterFile("protocol/test.proto", fileDescriptor_f29716374461e55a) }
 
 var fileDescriptor_f29716374461e55a = []byte{
-	// 310 bytes of a gzipped FileDescriptorProto
+	// 312 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2e, 0x28, 0xca, 0x2f,
 	0xc9, 0x4f, 0xce, 0xcf, 0xd1, 0x2f, 0x49, 0x2d, 0x2e, 0xd1, 0x03, 0xf3, 0x84, 0xe4, 0x12, 0x4b,
 	0xf2, 0x73, 0x33, 0x2b, 0xf4, 0x8a, 0x4a, 0xf3, 0x4a, 0x32, 0x73, 0x53, 0xf5, 0x8a, 0x53, 0xb2,
 	0xf5, 0x60, 0xea, 0xf4, 0xca, 0x0c, 0xa5, 0xc4, 0xe0, 0x9a, 0x32, 0x52, 0x13, 0x53, 0x52, 0x8b,
 	0x8a, 0x21, 0xb2, 0x52, 0x22, 0xe9, 0xf9, 0xe9, 0xf9, 0x60, 0xa6, 0x3e, 0x88, 0x05, 0x11, 0x55,
-	0x4a, 0xe5, 0x12, 0x0a, 0x49, 0x2d, 0x2e, 0x71, 0xce, 0xcf, 0xcd, 0x4d, 0xcc, 0x4b, 0x09, 0x4a,
-	0x2d, 0x2c, 0x4d, 0x2d, 0x2e, 0x11, 0xf2, 0xe7, 0x62, 0x87, 0x6a, 0x96, 0x60, 0x54, 0x60, 0xd4,
-	0xe0, 0x36, 0x32, 0xd5, 0xc3, 0x6f, 0xab, 0x1e, 0xaa, 0x01, 0x1e, 0x10, 0xcd, 0x41, 0x30, 0x53,
-	0x94, 0xd2, 0xb9, 0x84, 0x51, 0xac, 0x29, 0x2e, 0xc8, 0xcf, 0x2b, 0x4e, 0x15, 0x0a, 0x40, 0xb7,
-	0xc7, 0x8c, 0x68, 0x7b, 0x20, 0x26, 0x60, 0x58, 0x94, 0xc8, 0x25, 0x00, 0xb2, 0x28, 0xb0, 0x34,
-	0xb5, 0xa8, 0x12, 0xe6, 0x1b, 0x5f, 0x74, 0x5b, 0x8c, 0x09, 0xd9, 0x82, 0xac, 0x1d, 0xc3, 0x8a,
-	0x64, 0x2e, 0x41, 0x24, 0x2b, 0xa0, 0x3e, 0xf1, 0x43, 0xb7, 0xc3, 0x84, 0x48, 0x3b, 0xb0, 0xfb,
-	0xc3, 0xe8, 0x15, 0x33, 0x17, 0x0b, 0xc8, 0x16, 0xa1, 0x32, 0x2e, 0x6e, 0xa4, 0x90, 0x13, 0x32,
-	0x22, 0x64, 0x2c, 0x66, 0x6c, 0x4a, 0x19, 0x93, 0xa4, 0x07, 0xea, 0xa1, 0x3a, 0x88, 0x2f, 0x83,
-	0x4b, 0x8a, 0x52, 0x13, 0x73, 0xe9, 0x6d, 0xbb, 0x01, 0xa3, 0x50, 0x01, 0x17, 0x27, 0x3c, 0x94,
-	0x85, 0x0c, 0x88, 0x31, 0x03, 0x39, 0xd2, 0xa4, 0x0c, 0x49, 0xd0, 0x01, 0xf5, 0x71, 0x05, 0x17,
-	0x3f, 0xc2, 0xc7, 0xf4, 0xb3, 0xd7, 0x80, 0xd1, 0x49, 0xe2, 0xc4, 0x23, 0x39, 0xc6, 0x0b, 0x8f,
-	0xe4, 0x18, 0x1f, 0x3c, 0x92, 0x63, 0x9c, 0xf0, 0x58, 0x8e, 0xe1, 0xc2, 0x63, 0x39, 0x86, 0x1b,
-	0x8f, 0xe5, 0x18, 0x92, 0xd8, 0xc0, 0x5a, 0x8d, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0xb1, 0xdd,
-	0xc0, 0x05, 0x0a, 0x04, 0x00, 0x00,
+	0x4a, 0xe7, 0x12, 0x0e, 0x49, 0x2d, 0x2e, 0x09, 0x28, 0xca, 0x2f, 0xc8, 0x2f, 0x4e, 0xcc, 0x09,
+	0x4a, 0x2d, 0x2c, 0x4d, 0x2d, 0x2e, 0x11, 0x0a, 0xe0, 0x62, 0x87, 0xea, 0x96, 0x60, 0x54, 0x60,
+	0xd4, 0xe0, 0x36, 0x32, 0xd3, 0xc3, 0x6f, 0xad, 0x1e, 0x9a, 0x09, 0x1e, 0x10, 0xdd, 0x41, 0x30,
+	0x63, 0x94, 0x32, 0xb9, 0x44, 0x50, 0x2d, 0x2a, 0x2e, 0xc8, 0xcf, 0x2b, 0x4e, 0x15, 0x0a, 0x44,
+	0xb7, 0xc9, 0x9c, 0x78, 0x9b, 0x20, 0x46, 0x60, 0x58, 0x95, 0xc8, 0x25, 0x00, 0xb2, 0x2a, 0xb0,
+	0x34, 0xb5, 0xa8, 0x12, 0xe6, 0x21, 0x5f, 0x74, 0x6b, 0x8c, 0x09, 0x59, 0x83, 0xac, 0x1d, 0xc3,
+	0x8a, 0x64, 0x2e, 0x41, 0x24, 0x2b, 0xa0, 0x5e, 0xf1, 0x43, 0xb7, 0xc3, 0x84, 0x48, 0x3b, 0xb0,
+	0xfb, 0xc3, 0xe8, 0x3d, 0x33, 0x17, 0x0b, 0xc8, 0x16, 0xa1, 0x0a, 0x2e, 0x6e, 0x44, 0xd8, 0xa5,
+	0x0a, 0x11, 0x74, 0x3a, 0x96, 0x18, 0x95, 0x32, 0x21, 0x4d, 0x13, 0xd4, 0x4b, 0x0d, 0x8c, 0x10,
+	0x8f, 0x06, 0x97, 0x14, 0xa5, 0x26, 0xe6, 0xd2, 0xdf, 0x01, 0x06, 0x8c, 0x42, 0x05, 0x5c, 0x9c,
+	0xf0, 0xa0, 0x16, 0x32, 0x20, 0xc6, 0x10, 0xe4, 0x98, 0x93, 0x32, 0x24, 0x41, 0x07, 0xd4, 0xd3,
+	0x15, 0x5c, 0xfc, 0x08, 0x3f, 0xd3, 0xcf, 0x5e, 0x03, 0x46, 0x27, 0x89, 0x13, 0x8f, 0xe4, 0x18,
+	0x2f, 0x3c, 0x92, 0x63, 0x7c, 0xf0, 0x48, 0x8e, 0x71, 0xc2, 0x63, 0x39, 0x86, 0x0b, 0x8f, 0xe5,
+	0x18, 0x6e, 0x3c, 0x96, 0x63, 0x48, 0x62, 0x03, 0x6b, 0x35, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff,
+	0x71, 0x9e, 0x1b, 0x9b, 0x13, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -248,8 +248,8 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type TestClient interface {
-	TestCommand(ctx context.Context, in *TestCommandRequest, opts ...grpc.CallOption) (*TestCommandResponse, error)
-	TestStreamCommand(ctx context.Context, in *TestCommandRequest, opts ...grpc.CallOption) (Test_TestStreamCommandClient, error)
+	TestPropose(ctx context.Context, in *TestProposalRequest, opts ...grpc.CallOption) (*TestProposalResponse, error)
+	TestStreamPropose(ctx context.Context, in *TestProposalRequest, opts ...grpc.CallOption) (Test_TestStreamProposeClient, error)
 	TestQuery(ctx context.Context, in *TestQueryRequest, opts ...grpc.CallOption) (*TestQueryResponse, error)
 	TestStreamQuery(ctx context.Context, in *TestQueryRequest, opts ...grpc.CallOption) (Test_TestStreamQueryClient, error)
 }
@@ -262,21 +262,21 @@ func NewTestClient(cc *grpc.ClientConn) TestClient {
 	return &testClient{cc}
 }
 
-func (c *testClient) TestCommand(ctx context.Context, in *TestCommandRequest, opts ...grpc.CallOption) (*TestCommandResponse, error) {
-	out := new(TestCommandResponse)
-	err := c.cc.Invoke(ctx, "/atomix.runtime.sdk.protocol.v1.Test/TestCommand", in, out, opts...)
+func (c *testClient) TestPropose(ctx context.Context, in *TestProposalRequest, opts ...grpc.CallOption) (*TestProposalResponse, error) {
+	out := new(TestProposalResponse)
+	err := c.cc.Invoke(ctx, "/atomix.runtime.sdk.protocol.v1.Test/TestPropose", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *testClient) TestStreamCommand(ctx context.Context, in *TestCommandRequest, opts ...grpc.CallOption) (Test_TestStreamCommandClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Test_serviceDesc.Streams[0], "/atomix.runtime.sdk.protocol.v1.Test/TestStreamCommand", opts...)
+func (c *testClient) TestStreamPropose(ctx context.Context, in *TestProposalRequest, opts ...grpc.CallOption) (Test_TestStreamProposeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Test_serviceDesc.Streams[0], "/atomix.runtime.sdk.protocol.v1.Test/TestStreamPropose", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &testTestStreamCommandClient{stream}
+	x := &testTestStreamProposeClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -286,17 +286,17 @@ func (c *testClient) TestStreamCommand(ctx context.Context, in *TestCommandReque
 	return x, nil
 }
 
-type Test_TestStreamCommandClient interface {
-	Recv() (*TestCommandResponse, error)
+type Test_TestStreamProposeClient interface {
+	Recv() (*TestProposalResponse, error)
 	grpc.ClientStream
 }
 
-type testTestStreamCommandClient struct {
+type testTestStreamProposeClient struct {
 	grpc.ClientStream
 }
 
-func (x *testTestStreamCommandClient) Recv() (*TestCommandResponse, error) {
-	m := new(TestCommandResponse)
+func (x *testTestStreamProposeClient) Recv() (*TestProposalResponse, error) {
+	m := new(TestProposalResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -346,8 +346,8 @@ func (x *testTestStreamQueryClient) Recv() (*TestQueryResponse, error) {
 
 // TestServer is the server API for Test service.
 type TestServer interface {
-	TestCommand(context.Context, *TestCommandRequest) (*TestCommandResponse, error)
-	TestStreamCommand(*TestCommandRequest, Test_TestStreamCommandServer) error
+	TestPropose(context.Context, *TestProposalRequest) (*TestProposalResponse, error)
+	TestStreamPropose(*TestProposalRequest, Test_TestStreamProposeServer) error
 	TestQuery(context.Context, *TestQueryRequest) (*TestQueryResponse, error)
 	TestStreamQuery(*TestQueryRequest, Test_TestStreamQueryServer) error
 }
@@ -356,11 +356,11 @@ type TestServer interface {
 type UnimplementedTestServer struct {
 }
 
-func (*UnimplementedTestServer) TestCommand(ctx context.Context, req *TestCommandRequest) (*TestCommandResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TestCommand not implemented")
+func (*UnimplementedTestServer) TestPropose(ctx context.Context, req *TestProposalRequest) (*TestProposalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TestPropose not implemented")
 }
-func (*UnimplementedTestServer) TestStreamCommand(req *TestCommandRequest, srv Test_TestStreamCommandServer) error {
-	return status.Errorf(codes.Unimplemented, "method TestStreamCommand not implemented")
+func (*UnimplementedTestServer) TestStreamPropose(req *TestProposalRequest, srv Test_TestStreamProposeServer) error {
+	return status.Errorf(codes.Unimplemented, "method TestStreamPropose not implemented")
 }
 func (*UnimplementedTestServer) TestQuery(ctx context.Context, req *TestQueryRequest) (*TestQueryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TestQuery not implemented")
@@ -373,42 +373,42 @@ func RegisterTestServer(s *grpc.Server, srv TestServer) {
 	s.RegisterService(&_Test_serviceDesc, srv)
 }
 
-func _Test_TestCommand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TestCommandRequest)
+func _Test_TestPropose_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TestProposalRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TestServer).TestCommand(ctx, in)
+		return srv.(TestServer).TestPropose(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/atomix.runtime.sdk.protocol.v1.Test/TestCommand",
+		FullMethod: "/atomix.runtime.sdk.protocol.v1.Test/TestPropose",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestServer).TestCommand(ctx, req.(*TestCommandRequest))
+		return srv.(TestServer).TestPropose(ctx, req.(*TestProposalRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Test_TestStreamCommand_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(TestCommandRequest)
+func _Test_TestStreamPropose_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(TestProposalRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(TestServer).TestStreamCommand(m, &testTestStreamCommandServer{stream})
+	return srv.(TestServer).TestStreamPropose(m, &testTestStreamProposeServer{stream})
 }
 
-type Test_TestStreamCommandServer interface {
-	Send(*TestCommandResponse) error
+type Test_TestStreamProposeServer interface {
+	Send(*TestProposalResponse) error
 	grpc.ServerStream
 }
 
-type testTestStreamCommandServer struct {
+type testTestStreamProposeServer struct {
 	grpc.ServerStream
 }
 
-func (x *testTestStreamCommandServer) Send(m *TestCommandResponse) error {
+func (x *testTestStreamProposeServer) Send(m *TestProposalResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -456,8 +456,8 @@ var _Test_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*TestServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "TestCommand",
-			Handler:    _Test_TestCommand_Handler,
+			MethodName: "TestPropose",
+			Handler:    _Test_TestPropose_Handler,
 		},
 		{
 			MethodName: "TestQuery",
@@ -466,8 +466,8 @@ var _Test_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "TestStreamCommand",
-			Handler:       _Test_TestStreamCommand_Handler,
+			StreamName:    "TestStreamPropose",
+			Handler:       _Test_TestStreamPropose_Handler,
 			ServerStreams: true,
 		},
 		{
@@ -479,7 +479,7 @@ var _Test_serviceDesc = grpc.ServiceDesc{
 	Metadata: "protocol/test.proto",
 }
 
-func (m *TestCommandRequest) Marshal() (dAtA []byte, err error) {
+func (m *TestProposalRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -489,12 +489,12 @@ func (m *TestCommandRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestCommandRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestProposalRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TestCommandRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TestProposalRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -514,7 +514,7 @@ func (m *TestCommandRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestCommandResponse) Marshal() (dAtA []byte, err error) {
+func (m *TestProposalResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -524,12 +524,12 @@ func (m *TestCommandResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestCommandResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestProposalResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TestCommandResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TestProposalResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -630,7 +630,7 @@ func encodeVarintTest(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *TestCommandRequest) Size() (n int) {
+func (m *TestProposalRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -643,7 +643,7 @@ func (m *TestCommandRequest) Size() (n int) {
 	return n
 }
 
-func (m *TestCommandResponse) Size() (n int) {
+func (m *TestProposalResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -688,7 +688,7 @@ func sovTest(x uint64) (n int) {
 func sozTest(x uint64) (n int) {
 	return sovTest(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *TestCommandRequest) Unmarshal(dAtA []byte) error {
+func (m *TestProposalRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -711,10 +711,10 @@ func (m *TestCommandRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TestCommandRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: TestProposalRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TestCommandRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TestProposalRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -747,7 +747,7 @@ func (m *TestCommandRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Headers == nil {
-				m.Headers = &CommandRequestHeaders{}
+				m.Headers = &ProposalRequestHeaders{}
 			}
 			if err := m.Headers.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -774,7 +774,7 @@ func (m *TestCommandRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestCommandResponse) Unmarshal(dAtA []byte) error {
+func (m *TestProposalResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -797,10 +797,10 @@ func (m *TestCommandResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TestCommandResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: TestProposalResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TestCommandResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TestProposalResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -833,7 +833,7 @@ func (m *TestCommandResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Headers == nil {
-				m.Headers = &CommandResponseHeaders{}
+				m.Headers = &ProposalResponseHeaders{}
 			}
 			if err := m.Headers.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

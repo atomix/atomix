@@ -13,18 +13,18 @@ import "gogoproto/gogo.proto";
 
 // Test is a test service
 service Test {
-    rpc TestCommand (TestCommandRequest) returns (TestCommandResponse);
-    rpc TestStreamCommand (TestCommandRequest) returns (stream TestCommandResponse);
+    rpc TestPropose (TestProposalRequest) returns (TestProposalResponse);
+    rpc TestStreamPropose (TestProposalRequest) returns (stream TestProposalResponse);
     rpc TestQuery (TestQueryRequest) returns (TestQueryResponse);
     rpc TestStreamQuery (TestQueryRequest) returns (stream TestQueryResponse);
 }
 
-message TestCommandRequest {
-    CommandRequestHeaders headers = 1;
+message TestProposalRequest {
+    ProposalRequestHeaders headers = 1;
 }
 
-message TestCommandResponse {
-    CommandResponseHeaders headers = 1;
+message TestProposalResponse {
+    ProposalResponseHeaders headers = 1;
 }
 
 message TestQueryRequest {

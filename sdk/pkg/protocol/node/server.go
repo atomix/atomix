@@ -41,7 +41,7 @@ func (s *nodeServer) OpenSession(ctx context.Context, request *protocol.OpenSess
 			OpenSession: request.OpenSessionInput,
 		},
 	}
-	output, err := partition.Command(ctx, input)
+	output, err := partition.Propose(ctx, input)
 	if err != nil {
 		log.Warnw("OpenSession",
 			logging.Stringer("OpenSessionRequest", request),
@@ -79,7 +79,7 @@ func (s *nodeServer) KeepAlive(ctx context.Context, request *protocol.KeepAliveR
 			KeepAlive: request.KeepAliveInput,
 		},
 	}
-	output, err := partition.Command(ctx, command)
+	output, err := partition.Propose(ctx, command)
 	if err != nil {
 		log.Warnw("KeepAlive",
 			logging.Stringer("KeepAliveRequest", request),
@@ -117,7 +117,7 @@ func (s *nodeServer) CloseSession(ctx context.Context, request *protocol.CloseSe
 			CloseSession: request.CloseSessionInput,
 		},
 	}
-	output, err := partition.Command(ctx, command)
+	output, err := partition.Propose(ctx, command)
 	if err != nil {
 		log.Warnw("CloseSession",
 			logging.Stringer("CloseSessionRequest", request),
@@ -161,7 +161,7 @@ func (s *nodeServer) CreatePrimitive(ctx context.Context, request *protocol.Crea
 			},
 		},
 	}
-	output, err := partition.Command(ctx, command)
+	output, err := partition.Propose(ctx, command)
 	if err != nil {
 		log.Warnw("CreatePrimitive",
 			logging.Stringer("CreatePrimitiveRequest", request),
@@ -170,8 +170,8 @@ func (s *nodeServer) CreatePrimitive(ctx context.Context, request *protocol.Crea
 	}
 
 	response := &protocol.CreatePrimitiveResponse{
-		Headers: &protocol.CommandResponseHeaders{
-			OperationResponseHeaders: protocol.OperationResponseHeaders{
+		Headers: &protocol.ProposalResponseHeaders{
+			CallResponseHeaders: protocol.CallResponseHeaders{
 				PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 					SessionResponseHeaders: protocol.SessionResponseHeaders{
 						PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -216,7 +216,7 @@ func (s *nodeServer) ClosePrimitive(ctx context.Context, request *protocol.Close
 			},
 		},
 	}
-	output, err := partition.Command(ctx, command)
+	output, err := partition.Propose(ctx, command)
 	if err != nil {
 		log.Warnw("ClosePrimitive",
 			logging.Stringer("ClosePrimitiveRequest", request),
@@ -225,8 +225,8 @@ func (s *nodeServer) ClosePrimitive(ctx context.Context, request *protocol.Close
 	}
 
 	response := &protocol.ClosePrimitiveResponse{
-		Headers: &protocol.CommandResponseHeaders{
-			OperationResponseHeaders: protocol.OperationResponseHeaders{
+		Headers: &protocol.ProposalResponseHeaders{
+			CallResponseHeaders: protocol.CallResponseHeaders{
 				PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 					SessionResponseHeaders: protocol.SessionResponseHeaders{
 						PartitionResponseHeaders: protocol.PartitionResponseHeaders{

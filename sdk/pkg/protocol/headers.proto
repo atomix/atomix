@@ -59,14 +59,14 @@ message PrimitiveResponseHeaders {
     ];
 }
 
-message OperationRequestHeaders {
+message CallRequestHeaders {
     PrimitiveRequestHeaders primitive = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
 }
 
-message OperationResponseHeaders {
+message CallResponseHeaders {
     PrimitiveResponseHeaders session = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
@@ -93,8 +93,8 @@ message OperationResponseHeaders {
     }
 }
 
-message CommandRequestHeaders {
-    OperationRequestHeaders operation = 1 [
+message ProposalRequestHeaders {
+    CallRequestHeaders operation = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -103,8 +103,8 @@ message CommandRequestHeaders {
     ];
 }
 
-message CommandResponseHeaders {
-    OperationResponseHeaders operation = 1 [
+message ProposalResponseHeaders {
+    CallResponseHeaders operation = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -114,7 +114,7 @@ message CommandResponseHeaders {
 }
 
 message QueryRequestHeaders {
-    OperationRequestHeaders operation = 1 [
+    CallRequestHeaders operation = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
@@ -127,7 +127,7 @@ message QueryRequestHeaders {
 }
 
 message QueryResponseHeaders {
-    OperationResponseHeaders operation = 1 [
+    CallResponseHeaders operation = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];

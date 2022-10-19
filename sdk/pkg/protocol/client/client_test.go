@@ -72,8 +72,8 @@ func TestPrimitiveCreateClose(t *testing.T) {
 			assert.Equal(t, protocol.SessionID(1), request.Headers.SessionID)
 			assert.Equal(t, protocol.SequenceNum(1), request.Headers.SequenceNum)
 			return &protocol.CreatePrimitiveResponse{
-				Headers: &protocol.CommandResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+				Headers: &protocol.ProposalResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -81,7 +81,7 @@ func TestPrimitiveCreateClose(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 					OutputSequenceNum: 1,
 				},
@@ -96,16 +96,16 @@ func TestPrimitiveCreateClose(t *testing.T) {
 	primitive, err := session.GetPrimitive("name")
 	assert.NoError(t, err)
 
-	command := Command[*protocol.TestCommandResponse](primitive)
-	testServer.EXPECT().TestCommand(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, request *protocol.TestCommandRequest) (*protocol.TestCommandResponse, error) {
+	command := Proposal[*protocol.TestProposalResponse](primitive)
+	testServer.EXPECT().TestPropose(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, request *protocol.TestProposalRequest) (*protocol.TestProposalResponse, error) {
 			assert.Equal(t, protocol.PartitionID(1), request.Headers.PartitionID)
 			assert.Equal(t, protocol.SessionID(1), request.Headers.SessionID)
 			assert.Equal(t, protocol.SequenceNum(2), request.Headers.SequenceNum)
 			assert.Equal(t, protocol.PrimitiveID(2), request.Headers.PrimitiveID)
-			return &protocol.TestCommandResponse{
-				Headers: &protocol.CommandResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+			return &protocol.TestProposalResponse{
+				Headers: &protocol.ProposalResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -113,14 +113,14 @@ func TestPrimitiveCreateClose(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 					OutputSequenceNum: 1,
 				},
 			}, nil
 		})
-	commandResponse, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.CommandRequestHeaders) (*protocol.TestCommandResponse, error) {
-		return protocol.NewTestClient(conn).TestCommand(context.TODO(), &protocol.TestCommandRequest{
+	commandResponse, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*protocol.TestProposalResponse, error) {
+		return protocol.NewTestClient(conn).TestPropose(context.TODO(), &protocol.TestProposalRequest{
 			Headers: headers,
 		})
 	})
@@ -136,7 +136,7 @@ func TestPrimitiveCreateClose(t *testing.T) {
 			assert.Equal(t, protocol.PrimitiveID(2), request.Headers.PrimitiveID)
 			return &protocol.TestQueryResponse{
 				Headers: &protocol.QueryResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -144,7 +144,7 @@ func TestPrimitiveCreateClose(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 				},
 			}, nil
@@ -164,8 +164,8 @@ func TestPrimitiveCreateClose(t *testing.T) {
 			assert.Equal(t, protocol.PrimitiveID(2), request.PrimitiveID)
 			assert.Equal(t, protocol.SequenceNum(4), request.Headers.SequenceNum)
 			return &protocol.ClosePrimitiveResponse{
-				Headers: &protocol.CommandResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+				Headers: &protocol.ProposalResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -173,7 +173,7 @@ func TestPrimitiveCreateClose(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 					OutputSequenceNum: 1,
 				},
@@ -194,7 +194,7 @@ func TestPrimitiveCreateClose(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestUnaryCommand(t *testing.T) {
+func TestUnaryProposal(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -247,8 +247,8 @@ func TestUnaryCommand(t *testing.T) {
 			assert.Equal(t, protocol.SessionID(1), request.Headers.SessionID)
 			assert.Equal(t, protocol.SequenceNum(1), request.Headers.SequenceNum)
 			return &protocol.CreatePrimitiveResponse{
-				Headers: &protocol.CommandResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+				Headers: &protocol.ProposalResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -256,7 +256,7 @@ func TestUnaryCommand(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 					OutputSequenceNum: 1,
 				},
@@ -271,18 +271,18 @@ func TestUnaryCommand(t *testing.T) {
 	primitive, err := session.GetPrimitive("name")
 	assert.NoError(t, err)
 
-	command := Command[*protocol.TestCommandResponse](primitive)
-	testServer.EXPECT().TestCommand(gomock.Any(), gomock.Any()).
+	command := Proposal[*protocol.TestProposalResponse](primitive)
+	testServer.EXPECT().TestPropose(gomock.Any(), gomock.Any()).
 		Return(nil, errors.ToProto(errors.NewUnavailable("unavailable")))
-	testServer.EXPECT().TestCommand(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, request *protocol.TestCommandRequest) (*protocol.TestCommandResponse, error) {
+	testServer.EXPECT().TestPropose(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, request *protocol.TestProposalRequest) (*protocol.TestProposalResponse, error) {
 			assert.Equal(t, protocol.PartitionID(1), request.Headers.PartitionID)
 			assert.Equal(t, protocol.SessionID(1), request.Headers.SessionID)
 			assert.Equal(t, protocol.SequenceNum(2), request.Headers.SequenceNum)
 			assert.Equal(t, protocol.PrimitiveID(2), request.Headers.PrimitiveID)
-			return &protocol.TestCommandResponse{
-				Headers: &protocol.CommandResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+			return &protocol.TestProposalResponse{
+				Headers: &protocol.ProposalResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -290,14 +290,14 @@ func TestUnaryCommand(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 					OutputSequenceNum: 1,
 				},
 			}, nil
 		})
-	commandResponse, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.CommandRequestHeaders) (*protocol.TestCommandResponse, error) {
-		return protocol.NewTestClient(conn).TestCommand(context.TODO(), &protocol.TestCommandRequest{
+	commandResponse, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*protocol.TestProposalResponse, error) {
+		return protocol.NewTestClient(conn).TestPropose(context.TODO(), &protocol.TestProposalRequest{
 			Headers: headers,
 		})
 	})
@@ -343,7 +343,7 @@ func TestUnaryCommand(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestStreamCommand(t *testing.T) {
+func TestStreamPropose(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -396,8 +396,8 @@ func TestStreamCommand(t *testing.T) {
 			assert.Equal(t, protocol.SessionID(1), request.Headers.SessionID)
 			assert.Equal(t, protocol.SequenceNum(1), request.Headers.SequenceNum)
 			return &protocol.CreatePrimitiveResponse{
-				Headers: &protocol.CommandResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+				Headers: &protocol.ProposalResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -405,7 +405,7 @@ func TestStreamCommand(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 					OutputSequenceNum: 1,
 				},
@@ -420,12 +420,12 @@ func TestStreamCommand(t *testing.T) {
 	primitive, err := session.GetPrimitive("name")
 	assert.NoError(t, err)
 
-	command := StreamCommand[*protocol.TestCommandResponse](primitive)
+	command := StreamProposal[*protocol.TestProposalResponse](primitive)
 	sendResponseCh := make(chan struct{})
-	testServer.EXPECT().TestStreamCommand(gomock.Any(), gomock.Any()).
+	testServer.EXPECT().TestStreamPropose(gomock.Any(), gomock.Any()).
 		Return(errors.ToProto(errors.NewUnavailable("unavailable")))
-	testServer.EXPECT().TestStreamCommand(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(request *protocol.TestCommandRequest, stream protocol.Test_TestStreamCommandServer) error {
+	testServer.EXPECT().TestStreamPropose(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(request *protocol.TestProposalRequest, stream protocol.Test_TestStreamProposeServer) error {
 			assert.Equal(t, protocol.PartitionID(1), request.Headers.PartitionID)
 			assert.Equal(t, protocol.SessionID(1), request.Headers.SessionID)
 			assert.Equal(t, protocol.SequenceNum(2), request.Headers.SequenceNum)
@@ -433,9 +433,9 @@ func TestStreamCommand(t *testing.T) {
 			var outputSequenceNum protocol.SequenceNum
 			for range sendResponseCh {
 				outputSequenceNum++
-				assert.Nil(t, stream.Send(&protocol.TestCommandResponse{
-					Headers: &protocol.CommandResponseHeaders{
-						OperationResponseHeaders: protocol.OperationResponseHeaders{
+				assert.Nil(t, stream.Send(&protocol.TestProposalResponse{
+					Headers: &protocol.ProposalResponseHeaders{
+						CallResponseHeaders: protocol.CallResponseHeaders{
 							PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 								SessionResponseHeaders: protocol.SessionResponseHeaders{
 									PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -443,7 +443,7 @@ func TestStreamCommand(t *testing.T) {
 									},
 								},
 							},
-							Status: protocol.OperationResponseHeaders_OK,
+							Status: protocol.CallResponseHeaders_OK,
 						},
 						OutputSequenceNum: outputSequenceNum,
 					},
@@ -451,8 +451,8 @@ func TestStreamCommand(t *testing.T) {
 			}
 			return nil
 		})
-	stream, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.CommandRequestHeaders) (CommandStream[*protocol.TestCommandResponse], error) {
-		return protocol.NewTestClient(conn).TestStreamCommand(context.TODO(), &protocol.TestCommandRequest{
+	stream, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (ProposalStream[*protocol.TestProposalResponse], error) {
+		return protocol.NewTestClient(conn).TestStreamPropose(context.TODO(), &protocol.TestProposalRequest{
 			Headers: headers,
 		})
 	})
@@ -581,7 +581,7 @@ func TestStreamCommand(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestStreamCommandCancel(t *testing.T) {
+func TestStreamProposeCancel(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -634,8 +634,8 @@ func TestStreamCommandCancel(t *testing.T) {
 			assert.Equal(t, protocol.SessionID(1), request.Headers.SessionID)
 			assert.Equal(t, protocol.SequenceNum(1), request.Headers.SequenceNum)
 			return &protocol.CreatePrimitiveResponse{
-				Headers: &protocol.CommandResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+				Headers: &protocol.ProposalResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -643,7 +643,7 @@ func TestStreamCommandCancel(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 					OutputSequenceNum: 1,
 				},
@@ -658,18 +658,18 @@ func TestStreamCommandCancel(t *testing.T) {
 	primitive, err := session.GetPrimitive("name")
 	assert.NoError(t, err)
 
-	command := StreamCommand[*protocol.TestCommandResponse](primitive)
-	testServer.EXPECT().TestStreamCommand(gomock.Any(), gomock.Any()).
+	command := StreamProposal[*protocol.TestProposalResponse](primitive)
+	testServer.EXPECT().TestStreamPropose(gomock.Any(), gomock.Any()).
 		Return(errors.ToProto(errors.NewUnavailable("unavailable")))
-	testServer.EXPECT().TestStreamCommand(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(request *protocol.TestCommandRequest, stream protocol.Test_TestStreamCommandServer) error {
+	testServer.EXPECT().TestStreamPropose(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(request *protocol.TestProposalRequest, stream protocol.Test_TestStreamProposeServer) error {
 			assert.Equal(t, protocol.PartitionID(1), request.Headers.PartitionID)
 			assert.Equal(t, protocol.SessionID(1), request.Headers.SessionID)
 			assert.Equal(t, protocol.SequenceNum(2), request.Headers.SequenceNum)
 			assert.Equal(t, protocol.PrimitiveID(2), request.Headers.PrimitiveID)
-			assert.Nil(t, stream.Send(&protocol.TestCommandResponse{
-				Headers: &protocol.CommandResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+			assert.Nil(t, stream.Send(&protocol.TestProposalResponse{
+				Headers: &protocol.ProposalResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -677,14 +677,14 @@ func TestStreamCommandCancel(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 					OutputSequenceNum: 1,
 				},
 			}))
-			assert.Nil(t, stream.Send(&protocol.TestCommandResponse{
-				Headers: &protocol.CommandResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+			assert.Nil(t, stream.Send(&protocol.TestProposalResponse{
+				Headers: &protocol.ProposalResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -692,7 +692,7 @@ func TestStreamCommandCancel(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 					OutputSequenceNum: 2,
 				},
@@ -702,8 +702,8 @@ func TestStreamCommandCancel(t *testing.T) {
 		})
 
 	ctx, cancel := context.WithCancel(context.Background())
-	stream, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.CommandRequestHeaders) (CommandStream[*protocol.TestCommandResponse], error) {
-		return protocol.NewTestClient(conn).TestStreamCommand(ctx, &protocol.TestCommandRequest{
+	stream, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (ProposalStream[*protocol.TestProposalResponse], error) {
+		return protocol.NewTestClient(conn).TestStreamPropose(ctx, &protocol.TestProposalRequest{
 			Headers: headers,
 		})
 	})
@@ -870,8 +870,8 @@ func TestUnaryQuery(t *testing.T) {
 			assert.Equal(t, protocol.SessionID(1), request.Headers.SessionID)
 			assert.Equal(t, protocol.SequenceNum(1), request.Headers.SequenceNum)
 			return &protocol.CreatePrimitiveResponse{
-				Headers: &protocol.CommandResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+				Headers: &protocol.ProposalResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -879,7 +879,7 @@ func TestUnaryQuery(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 					OutputSequenceNum: 1,
 				},
@@ -905,7 +905,7 @@ func TestUnaryQuery(t *testing.T) {
 			assert.Equal(t, protocol.PrimitiveID(2), request.Headers.PrimitiveID)
 			return &protocol.TestQueryResponse{
 				Headers: &protocol.QueryResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -913,7 +913,7 @@ func TestUnaryQuery(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 				},
 			}, nil
@@ -1018,8 +1018,8 @@ func TestStreamQuery(t *testing.T) {
 			assert.Equal(t, protocol.SessionID(1), request.Headers.SessionID)
 			assert.Equal(t, protocol.SequenceNum(1), request.Headers.SequenceNum)
 			return &protocol.CreatePrimitiveResponse{
-				Headers: &protocol.CommandResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+				Headers: &protocol.ProposalResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -1027,7 +1027,7 @@ func TestStreamQuery(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 					OutputSequenceNum: 1,
 				},
@@ -1055,7 +1055,7 @@ func TestStreamQuery(t *testing.T) {
 			for range sendResponseCh {
 				assert.Nil(t, stream.Send(&protocol.TestQueryResponse{
 					Headers: &protocol.QueryResponseHeaders{
-						OperationResponseHeaders: protocol.OperationResponseHeaders{
+						CallResponseHeaders: protocol.CallResponseHeaders{
 							PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 								SessionResponseHeaders: protocol.SessionResponseHeaders{
 									PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -1063,7 +1063,7 @@ func TestStreamQuery(t *testing.T) {
 									},
 								},
 							},
-							Status: protocol.OperationResponseHeaders_OK,
+							Status: protocol.CallResponseHeaders_OK,
 						},
 					},
 				}))
@@ -1251,8 +1251,8 @@ func TestStreamQueryCancel(t *testing.T) {
 			assert.Equal(t, protocol.SessionID(1), request.Headers.SessionID)
 			assert.Equal(t, protocol.SequenceNum(1), request.Headers.SequenceNum)
 			return &protocol.CreatePrimitiveResponse{
-				Headers: &protocol.CommandResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+				Headers: &protocol.ProposalResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -1260,7 +1260,7 @@ func TestStreamQueryCancel(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 					OutputSequenceNum: 1,
 				},
@@ -1286,7 +1286,7 @@ func TestStreamQueryCancel(t *testing.T) {
 			assert.Equal(t, protocol.PrimitiveID(2), request.Headers.PrimitiveID)
 			assert.Nil(t, stream.Send(&protocol.TestQueryResponse{
 				Headers: &protocol.QueryResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -1294,13 +1294,13 @@ func TestStreamQueryCancel(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 				},
 			}))
 			assert.Nil(t, stream.Send(&protocol.TestQueryResponse{
 				Headers: &protocol.QueryResponseHeaders{
-					OperationResponseHeaders: protocol.OperationResponseHeaders{
+					CallResponseHeaders: protocol.CallResponseHeaders{
 						PrimitiveResponseHeaders: protocol.PrimitiveResponseHeaders{
 							SessionResponseHeaders: protocol.SessionResponseHeaders{
 								PartitionResponseHeaders: protocol.PartitionResponseHeaders{
@@ -1308,7 +1308,7 @@ func TestStreamQueryCancel(t *testing.T) {
 								},
 							},
 						},
-						Status: protocol.OperationResponseHeaders_OK,
+						Status: protocol.CallResponseHeaders_OK,
 					},
 				},
 			}))

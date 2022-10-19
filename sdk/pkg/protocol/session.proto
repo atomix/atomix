@@ -20,7 +20,7 @@ service Session {
 }
 
 message CreatePrimitiveRequest {
-    CommandRequestHeaders headers = 1;
+    ProposalRequestHeaders headers = 1;
     CreatePrimitiveInput input = 2 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
@@ -28,14 +28,14 @@ message CreatePrimitiveRequest {
 }
 
 message CreatePrimitiveResponse {
-    CommandResponseHeaders headers = 1;
+    ProposalResponseHeaders headers = 1;
     CreatePrimitiveOutput output = 2 [
         (gogoproto.embed) = true
     ];
 }
 
 message ClosePrimitiveRequest {
-    CommandRequestHeaders headers = 1;
+    ProposalRequestHeaders headers = 1;
     ClosePrimitiveInput input = 2 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
@@ -43,7 +43,7 @@ message ClosePrimitiveRequest {
 }
 
 message ClosePrimitiveResponse {
-    CommandResponseHeaders headers = 1;
+    ProposalResponseHeaders headers = 1;
     ClosePrimitiveOutput output = 2 [
         (gogoproto.embed) = true
     ];

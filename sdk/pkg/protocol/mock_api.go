@@ -155,19 +155,19 @@ func (m *MockTestServer) EXPECT() *MockTestServerMockRecorder {
 	return m.recorder
 }
 
-// TestCommand mocks base method.
-func (m *MockTestServer) TestCommand(arg0 context.Context, arg1 *TestCommandRequest) (*TestCommandResponse, error) {
+// TestProposal mocks base method.
+func (m *MockTestServer) TestPropose(arg0 context.Context, arg1 *TestProposalRequest) (*TestProposalResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TestCommand", arg0, arg1)
-	ret0, _ := ret[0].(*TestCommandResponse)
+	ret := m.ctrl.Call(m, "TestPropose", arg0, arg1)
+	ret0, _ := ret[0].(*TestProposalResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// TestCommand indicates an expected call of TestCommand.
-func (mr *MockTestServerMockRecorder) TestCommand(arg0, arg1 interface{}) *gomock.Call {
+// TestPropose indicates an expected call of TestPropose.
+func (mr *MockTestServerMockRecorder) TestPropose(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TestCommand", reflect.TypeOf((*MockTestServer)(nil).TestCommand), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TestPropose", reflect.TypeOf((*MockTestServer)(nil).TestPropose), arg0, arg1)
 }
 
 // TestQuery mocks base method.
@@ -185,18 +185,18 @@ func (mr *MockTestServerMockRecorder) TestQuery(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TestQuery", reflect.TypeOf((*MockTestServer)(nil).TestQuery), arg0, arg1)
 }
 
-// TestStreamCommand mocks base method.
-func (m *MockTestServer) TestStreamCommand(arg0 *TestCommandRequest, arg1 Test_TestStreamCommandServer) error {
+// TestStreamPropose mocks base method.
+func (m *MockTestServer) TestStreamPropose(arg0 *TestProposalRequest, arg1 Test_TestStreamProposeServer) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TestStreamCommand", arg0, arg1)
+	ret := m.ctrl.Call(m, "TestStreamPropose", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// TestStreamCommand indicates an expected call of TestStreamCommand.
-func (mr *MockTestServerMockRecorder) TestStreamCommand(arg0, arg1 interface{}) *gomock.Call {
+// TestStreamPropose indicates an expected call of TestStreamPropose.
+func (mr *MockTestServerMockRecorder) TestStreamPropose(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TestStreamCommand", reflect.TypeOf((*MockTestServer)(nil).TestStreamCommand), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TestStreamPropose", reflect.TypeOf((*MockTestServer)(nil).TestStreamPropose), arg0, arg1)
 }
 
 // TestStreamQuery mocks base method.

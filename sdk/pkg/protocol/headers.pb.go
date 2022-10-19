@@ -23,27 +23,27 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type OperationResponseHeaders_Status int32
+type CallResponseHeaders_Status int32
 
 const (
-	OperationResponseHeaders_OK             OperationResponseHeaders_Status = 0
-	OperationResponseHeaders_ERROR          OperationResponseHeaders_Status = 1
-	OperationResponseHeaders_UNKNOWN        OperationResponseHeaders_Status = 2
-	OperationResponseHeaders_CANCELED       OperationResponseHeaders_Status = 3
-	OperationResponseHeaders_NOT_FOUND      OperationResponseHeaders_Status = 4
-	OperationResponseHeaders_ALREADY_EXISTS OperationResponseHeaders_Status = 5
-	OperationResponseHeaders_UNAUTHORIZED   OperationResponseHeaders_Status = 6
-	OperationResponseHeaders_FORBIDDEN      OperationResponseHeaders_Status = 7
-	OperationResponseHeaders_CONFLICT       OperationResponseHeaders_Status = 8
-	OperationResponseHeaders_INVALID        OperationResponseHeaders_Status = 9
-	OperationResponseHeaders_UNAVAILABLE    OperationResponseHeaders_Status = 10
-	OperationResponseHeaders_NOT_SUPPORTED  OperationResponseHeaders_Status = 11
-	OperationResponseHeaders_TIMEOUT        OperationResponseHeaders_Status = 12
-	OperationResponseHeaders_INTERNAL       OperationResponseHeaders_Status = 13
-	OperationResponseHeaders_FAULT          OperationResponseHeaders_Status = 14
+	CallResponseHeaders_OK             CallResponseHeaders_Status = 0
+	CallResponseHeaders_ERROR          CallResponseHeaders_Status = 1
+	CallResponseHeaders_UNKNOWN        CallResponseHeaders_Status = 2
+	CallResponseHeaders_CANCELED       CallResponseHeaders_Status = 3
+	CallResponseHeaders_NOT_FOUND      CallResponseHeaders_Status = 4
+	CallResponseHeaders_ALREADY_EXISTS CallResponseHeaders_Status = 5
+	CallResponseHeaders_UNAUTHORIZED   CallResponseHeaders_Status = 6
+	CallResponseHeaders_FORBIDDEN      CallResponseHeaders_Status = 7
+	CallResponseHeaders_CONFLICT       CallResponseHeaders_Status = 8
+	CallResponseHeaders_INVALID        CallResponseHeaders_Status = 9
+	CallResponseHeaders_UNAVAILABLE    CallResponseHeaders_Status = 10
+	CallResponseHeaders_NOT_SUPPORTED  CallResponseHeaders_Status = 11
+	CallResponseHeaders_TIMEOUT        CallResponseHeaders_Status = 12
+	CallResponseHeaders_INTERNAL       CallResponseHeaders_Status = 13
+	CallResponseHeaders_FAULT          CallResponseHeaders_Status = 14
 )
 
-var OperationResponseHeaders_Status_name = map[int32]string{
+var CallResponseHeaders_Status_name = map[int32]string{
 	0:  "OK",
 	1:  "ERROR",
 	2:  "UNKNOWN",
@@ -61,7 +61,7 @@ var OperationResponseHeaders_Status_name = map[int32]string{
 	14: "FAULT",
 }
 
-var OperationResponseHeaders_Status_value = map[string]int32{
+var CallResponseHeaders_Status_value = map[string]int32{
 	"OK":             0,
 	"ERROR":          1,
 	"UNKNOWN":        2,
@@ -79,11 +79,11 @@ var OperationResponseHeaders_Status_value = map[string]int32{
 	"FAULT":          14,
 }
 
-func (x OperationResponseHeaders_Status) String() string {
-	return proto.EnumName(OperationResponseHeaders_Status_name, int32(x))
+func (x CallResponseHeaders_Status) String() string {
+	return proto.EnumName(CallResponseHeaders_Status_name, int32(x))
 }
 
-func (OperationResponseHeaders_Status) EnumDescriptor() ([]byte, []int) {
+func (CallResponseHeaders_Status) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_d3c35b5903feed1c, []int{7, 0}
 }
 
@@ -339,22 +339,22 @@ func (m *PrimitiveResponseHeaders) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_PrimitiveResponseHeaders proto.InternalMessageInfo
 
-type OperationRequestHeaders struct {
+type CallRequestHeaders struct {
 	PrimitiveRequestHeaders `protobuf:"bytes,1,opt,name=primitive,proto3,embedded=primitive" json:"primitive"`
 }
 
-func (m *OperationRequestHeaders) Reset()         { *m = OperationRequestHeaders{} }
-func (m *OperationRequestHeaders) String() string { return proto.CompactTextString(m) }
-func (*OperationRequestHeaders) ProtoMessage()    {}
-func (*OperationRequestHeaders) Descriptor() ([]byte, []int) {
+func (m *CallRequestHeaders) Reset()         { *m = CallRequestHeaders{} }
+func (m *CallRequestHeaders) String() string { return proto.CompactTextString(m) }
+func (*CallRequestHeaders) ProtoMessage()    {}
+func (*CallRequestHeaders) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d3c35b5903feed1c, []int{6}
 }
-func (m *OperationRequestHeaders) XXX_Unmarshal(b []byte) error {
+func (m *CallRequestHeaders) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *OperationRequestHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CallRequestHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_OperationRequestHeaders.Marshal(b, m, deterministic)
+		return xxx_messageInfo_CallRequestHeaders.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -364,36 +364,36 @@ func (m *OperationRequestHeaders) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return b[:n], nil
 	}
 }
-func (m *OperationRequestHeaders) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OperationRequestHeaders.Merge(m, src)
+func (m *CallRequestHeaders) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CallRequestHeaders.Merge(m, src)
 }
-func (m *OperationRequestHeaders) XXX_Size() int {
+func (m *CallRequestHeaders) XXX_Size() int {
 	return m.Size()
 }
-func (m *OperationRequestHeaders) XXX_DiscardUnknown() {
-	xxx_messageInfo_OperationRequestHeaders.DiscardUnknown(m)
+func (m *CallRequestHeaders) XXX_DiscardUnknown() {
+	xxx_messageInfo_CallRequestHeaders.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_OperationRequestHeaders proto.InternalMessageInfo
+var xxx_messageInfo_CallRequestHeaders proto.InternalMessageInfo
 
-type OperationResponseHeaders struct {
+type CallResponseHeaders struct {
 	PrimitiveResponseHeaders `protobuf:"bytes,1,opt,name=session,proto3,embedded=session" json:"session"`
-	Status                   OperationResponseHeaders_Status `protobuf:"varint,2,opt,name=status,proto3,enum=atomix.runtime.sdk.protocol.v1.OperationResponseHeaders_Status" json:"status,omitempty"`
-	Message                  string                          `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	Status                   CallResponseHeaders_Status `protobuf:"varint,2,opt,name=status,proto3,enum=atomix.runtime.sdk.protocol.v1.CallResponseHeaders_Status" json:"status,omitempty"`
+	Message                  string                     `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 }
 
-func (m *OperationResponseHeaders) Reset()         { *m = OperationResponseHeaders{} }
-func (m *OperationResponseHeaders) String() string { return proto.CompactTextString(m) }
-func (*OperationResponseHeaders) ProtoMessage()    {}
-func (*OperationResponseHeaders) Descriptor() ([]byte, []int) {
+func (m *CallResponseHeaders) Reset()         { *m = CallResponseHeaders{} }
+func (m *CallResponseHeaders) String() string { return proto.CompactTextString(m) }
+func (*CallResponseHeaders) ProtoMessage()    {}
+func (*CallResponseHeaders) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d3c35b5903feed1c, []int{7}
 }
-func (m *OperationResponseHeaders) XXX_Unmarshal(b []byte) error {
+func (m *CallResponseHeaders) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *OperationResponseHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CallResponseHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_OperationResponseHeaders.Marshal(b, m, deterministic)
+		return xxx_messageInfo_CallResponseHeaders.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -403,49 +403,49 @@ func (m *OperationResponseHeaders) XXX_Marshal(b []byte, deterministic bool) ([]
 		return b[:n], nil
 	}
 }
-func (m *OperationResponseHeaders) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OperationResponseHeaders.Merge(m, src)
+func (m *CallResponseHeaders) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CallResponseHeaders.Merge(m, src)
 }
-func (m *OperationResponseHeaders) XXX_Size() int {
+func (m *CallResponseHeaders) XXX_Size() int {
 	return m.Size()
 }
-func (m *OperationResponseHeaders) XXX_DiscardUnknown() {
-	xxx_messageInfo_OperationResponseHeaders.DiscardUnknown(m)
+func (m *CallResponseHeaders) XXX_DiscardUnknown() {
+	xxx_messageInfo_CallResponseHeaders.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_OperationResponseHeaders proto.InternalMessageInfo
+var xxx_messageInfo_CallResponseHeaders proto.InternalMessageInfo
 
-func (m *OperationResponseHeaders) GetStatus() OperationResponseHeaders_Status {
+func (m *CallResponseHeaders) GetStatus() CallResponseHeaders_Status {
 	if m != nil {
 		return m.Status
 	}
-	return OperationResponseHeaders_OK
+	return CallResponseHeaders_OK
 }
 
-func (m *OperationResponseHeaders) GetMessage() string {
+func (m *CallResponseHeaders) GetMessage() string {
 	if m != nil {
 		return m.Message
 	}
 	return ""
 }
 
-type CommandRequestHeaders struct {
-	OperationRequestHeaders `protobuf:"bytes,1,opt,name=operation,proto3,embedded=operation" json:"operation"`
-	SequenceNum             SequenceNum `protobuf:"varint,2,opt,name=sequence_num,json=sequenceNum,proto3,casttype=SequenceNum" json:"sequence_num,omitempty"`
+type ProposalRequestHeaders struct {
+	CallRequestHeaders `protobuf:"bytes,1,opt,name=operation,proto3,embedded=operation" json:"operation"`
+	SequenceNum        SequenceNum `protobuf:"varint,2,opt,name=sequence_num,json=sequenceNum,proto3,casttype=SequenceNum" json:"sequence_num,omitempty"`
 }
 
-func (m *CommandRequestHeaders) Reset()         { *m = CommandRequestHeaders{} }
-func (m *CommandRequestHeaders) String() string { return proto.CompactTextString(m) }
-func (*CommandRequestHeaders) ProtoMessage()    {}
-func (*CommandRequestHeaders) Descriptor() ([]byte, []int) {
+func (m *ProposalRequestHeaders) Reset()         { *m = ProposalRequestHeaders{} }
+func (m *ProposalRequestHeaders) String() string { return proto.CompactTextString(m) }
+func (*ProposalRequestHeaders) ProtoMessage()    {}
+func (*ProposalRequestHeaders) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d3c35b5903feed1c, []int{8}
 }
-func (m *CommandRequestHeaders) XXX_Unmarshal(b []byte) error {
+func (m *ProposalRequestHeaders) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CommandRequestHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProposalRequestHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_CommandRequestHeaders.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ProposalRequestHeaders.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -455,42 +455,42 @@ func (m *CommandRequestHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return b[:n], nil
 	}
 }
-func (m *CommandRequestHeaders) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CommandRequestHeaders.Merge(m, src)
+func (m *ProposalRequestHeaders) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProposalRequestHeaders.Merge(m, src)
 }
-func (m *CommandRequestHeaders) XXX_Size() int {
+func (m *ProposalRequestHeaders) XXX_Size() int {
 	return m.Size()
 }
-func (m *CommandRequestHeaders) XXX_DiscardUnknown() {
-	xxx_messageInfo_CommandRequestHeaders.DiscardUnknown(m)
+func (m *ProposalRequestHeaders) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProposalRequestHeaders.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_CommandRequestHeaders proto.InternalMessageInfo
+var xxx_messageInfo_ProposalRequestHeaders proto.InternalMessageInfo
 
-func (m *CommandRequestHeaders) GetSequenceNum() SequenceNum {
+func (m *ProposalRequestHeaders) GetSequenceNum() SequenceNum {
 	if m != nil {
 		return m.SequenceNum
 	}
 	return 0
 }
 
-type CommandResponseHeaders struct {
-	OperationResponseHeaders `protobuf:"bytes,1,opt,name=operation,proto3,embedded=operation" json:"operation"`
-	OutputSequenceNum        SequenceNum `protobuf:"varint,2,opt,name=output_sequence_num,json=outputSequenceNum,proto3,casttype=SequenceNum" json:"output_sequence_num,omitempty"`
+type ProposalResponseHeaders struct {
+	CallResponseHeaders `protobuf:"bytes,1,opt,name=operation,proto3,embedded=operation" json:"operation"`
+	OutputSequenceNum   SequenceNum `protobuf:"varint,2,opt,name=output_sequence_num,json=outputSequenceNum,proto3,casttype=SequenceNum" json:"output_sequence_num,omitempty"`
 }
 
-func (m *CommandResponseHeaders) Reset()         { *m = CommandResponseHeaders{} }
-func (m *CommandResponseHeaders) String() string { return proto.CompactTextString(m) }
-func (*CommandResponseHeaders) ProtoMessage()    {}
-func (*CommandResponseHeaders) Descriptor() ([]byte, []int) {
+func (m *ProposalResponseHeaders) Reset()         { *m = ProposalResponseHeaders{} }
+func (m *ProposalResponseHeaders) String() string { return proto.CompactTextString(m) }
+func (*ProposalResponseHeaders) ProtoMessage()    {}
+func (*ProposalResponseHeaders) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d3c35b5903feed1c, []int{9}
 }
-func (m *CommandResponseHeaders) XXX_Unmarshal(b []byte) error {
+func (m *ProposalResponseHeaders) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CommandResponseHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProposalResponseHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_CommandResponseHeaders.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ProposalResponseHeaders.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -500,19 +500,19 @@ func (m *CommandResponseHeaders) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *CommandResponseHeaders) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CommandResponseHeaders.Merge(m, src)
+func (m *ProposalResponseHeaders) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProposalResponseHeaders.Merge(m, src)
 }
-func (m *CommandResponseHeaders) XXX_Size() int {
+func (m *ProposalResponseHeaders) XXX_Size() int {
 	return m.Size()
 }
-func (m *CommandResponseHeaders) XXX_DiscardUnknown() {
-	xxx_messageInfo_CommandResponseHeaders.DiscardUnknown(m)
+func (m *ProposalResponseHeaders) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProposalResponseHeaders.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_CommandResponseHeaders proto.InternalMessageInfo
+var xxx_messageInfo_ProposalResponseHeaders proto.InternalMessageInfo
 
-func (m *CommandResponseHeaders) GetOutputSequenceNum() SequenceNum {
+func (m *ProposalResponseHeaders) GetOutputSequenceNum() SequenceNum {
 	if m != nil {
 		return m.OutputSequenceNum
 	}
@@ -520,9 +520,9 @@ func (m *CommandResponseHeaders) GetOutputSequenceNum() SequenceNum {
 }
 
 type QueryRequestHeaders struct {
-	OperationRequestHeaders `protobuf:"bytes,1,opt,name=operation,proto3,embedded=operation" json:"operation"`
-	SequenceNum             SequenceNum `protobuf:"varint,2,opt,name=sequence_num,json=sequenceNum,proto3,casttype=SequenceNum" json:"sequence_num,omitempty"`
-	MaxReceivedIndex        Index       `protobuf:"varint,3,opt,name=max_received_index,json=maxReceivedIndex,proto3,casttype=Index" json:"max_received_index,omitempty"`
+	CallRequestHeaders `protobuf:"bytes,1,opt,name=operation,proto3,embedded=operation" json:"operation"`
+	SequenceNum        SequenceNum `protobuf:"varint,2,opt,name=sequence_num,json=sequenceNum,proto3,casttype=SequenceNum" json:"sequence_num,omitempty"`
+	MaxReceivedIndex   Index       `protobuf:"varint,3,opt,name=max_received_index,json=maxReceivedIndex,proto3,casttype=Index" json:"max_received_index,omitempty"`
 }
 
 func (m *QueryRequestHeaders) Reset()         { *m = QueryRequestHeaders{} }
@@ -573,7 +573,7 @@ func (m *QueryRequestHeaders) GetMaxReceivedIndex() Index {
 }
 
 type QueryResponseHeaders struct {
-	OperationResponseHeaders `protobuf:"bytes,1,opt,name=operation,proto3,embedded=operation" json:"operation"`
+	CallResponseHeaders `protobuf:"bytes,1,opt,name=operation,proto3,embedded=operation" json:"operation"`
 }
 
 func (m *QueryResponseHeaders) Reset()         { *m = QueryResponseHeaders{} }
@@ -610,17 +610,17 @@ func (m *QueryResponseHeaders) XXX_DiscardUnknown() {
 var xxx_messageInfo_QueryResponseHeaders proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterEnum("atomix.runtime.sdk.protocol.v1.OperationResponseHeaders_Status", OperationResponseHeaders_Status_name, OperationResponseHeaders_Status_value)
+	proto.RegisterEnum("atomix.runtime.sdk.protocol.v1.CallResponseHeaders_Status", CallResponseHeaders_Status_name, CallResponseHeaders_Status_value)
 	proto.RegisterType((*PartitionRequestHeaders)(nil), "atomix.runtime.sdk.protocol.v1.PartitionRequestHeaders")
 	proto.RegisterType((*PartitionResponseHeaders)(nil), "atomix.runtime.sdk.protocol.v1.PartitionResponseHeaders")
 	proto.RegisterType((*SessionRequestHeaders)(nil), "atomix.runtime.sdk.protocol.v1.SessionRequestHeaders")
 	proto.RegisterType((*SessionResponseHeaders)(nil), "atomix.runtime.sdk.protocol.v1.SessionResponseHeaders")
 	proto.RegisterType((*PrimitiveRequestHeaders)(nil), "atomix.runtime.sdk.protocol.v1.PrimitiveRequestHeaders")
 	proto.RegisterType((*PrimitiveResponseHeaders)(nil), "atomix.runtime.sdk.protocol.v1.PrimitiveResponseHeaders")
-	proto.RegisterType((*OperationRequestHeaders)(nil), "atomix.runtime.sdk.protocol.v1.OperationRequestHeaders")
-	proto.RegisterType((*OperationResponseHeaders)(nil), "atomix.runtime.sdk.protocol.v1.OperationResponseHeaders")
-	proto.RegisterType((*CommandRequestHeaders)(nil), "atomix.runtime.sdk.protocol.v1.CommandRequestHeaders")
-	proto.RegisterType((*CommandResponseHeaders)(nil), "atomix.runtime.sdk.protocol.v1.CommandResponseHeaders")
+	proto.RegisterType((*CallRequestHeaders)(nil), "atomix.runtime.sdk.protocol.v1.CallRequestHeaders")
+	proto.RegisterType((*CallResponseHeaders)(nil), "atomix.runtime.sdk.protocol.v1.CallResponseHeaders")
+	proto.RegisterType((*ProposalRequestHeaders)(nil), "atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders")
+	proto.RegisterType((*ProposalResponseHeaders)(nil), "atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders")
 	proto.RegisterType((*QueryRequestHeaders)(nil), "atomix.runtime.sdk.protocol.v1.QueryRequestHeaders")
 	proto.RegisterType((*QueryResponseHeaders)(nil), "atomix.runtime.sdk.protocol.v1.QueryResponseHeaders")
 }
@@ -628,57 +628,57 @@ func init() {
 func init() { proto.RegisterFile("protocol/headers.proto", fileDescriptor_d3c35b5903feed1c) }
 
 var fileDescriptor_d3c35b5903feed1c = []byte{
-	// 785 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x55, 0x4d, 0x8f, 0xdb, 0x64,
-	0x10, 0x8e, 0x77, 0xbb, 0xc9, 0x7a, 0x9c, 0x6c, 0xdf, 0xbe, 0x6d, 0x77, 0xa3, 0x1e, 0x9c, 0xca,
-	0xa7, 0x9e, 0x5c, 0xb1, 0x08, 0xba, 0x88, 0x43, 0xe5, 0xc4, 0x8e, 0x6a, 0xd5, 0xd8, 0xe1, 0x8d,
-	0xdd, 0x52, 0x54, 0x61, 0xcc, 0xfa, 0xd5, 0x62, 0x81, 0xe3, 0xe0, 0x8f, 0x55, 0xe8, 0xaf, 0xe0,
-	0x87, 0x70, 0xe3, 0xc0, 0x81, 0x3f, 0xd0, 0x0b, 0xd2, 0x1e, 0x39, 0x05, 0x94, 0xfc, 0x8b, 0x9e,
-	0x90, 0x3f, 0xf3, 0xcd, 0x6e, 0x39, 0x20, 0x71, 0xcb, 0x8c, 0x67, 0x9e, 0xe7, 0x99, 0x99, 0xc7,
-	0x31, 0x1c, 0x8f, 0xc3, 0x20, 0x0e, 0xce, 0x83, 0xef, 0x1f, 0x7f, 0x4b, 0x1d, 0x97, 0x86, 0x91,
-	0x98, 0x25, 0x30, 0xef, 0xc4, 0x81, 0xef, 0x4d, 0xc4, 0x30, 0x19, 0xc5, 0x9e, 0x4f, 0xc5, 0xc8,
-	0xfd, 0x4e, 0x2c, 0x4b, 0xc5, 0xcb, 0x0f, 0x1e, 0xdc, 0xbb, 0x08, 0x2e, 0x82, 0x2c, 0xf1, 0x38,
-	0xfd, 0x95, 0x3f, 0x13, 0x5e, 0xc3, 0xc9, 0xc0, 0x09, 0x63, 0x2f, 0xf6, 0x82, 0x11, 0xa1, 0x3f,
-	0x24, 0x34, 0x8a, 0x9f, 0xe5, 0xb0, 0x58, 0x82, 0xe6, 0xb8, 0x7c, 0x64, 0x7b, 0x6e, 0x9b, 0x79,
-	0xc8, 0x3c, 0x6a, 0x75, 0xf9, 0xd9, 0xb4, 0xc3, 0x55, 0x2d, 0xaa, 0xfc, 0x6e, 0x35, 0x24, 0x5c,
-	0xd5, 0xa3, 0xba, 0xc2, 0xa7, 0xd0, 0x5e, 0x42, 0x8f, 0xc6, 0xc1, 0x28, 0xa2, 0x25, 0x7c, 0x07,
-	0x0e, 0xbc, 0x91, 0x4b, 0x27, 0x19, 0xee, 0xad, 0x2e, 0xfb, 0x6e, 0xda, 0x39, 0x50, 0xd3, 0x04,
-	0xc9, 0xf3, 0xc2, 0x2f, 0x0c, 0xdc, 0x1f, 0xd2, 0x28, 0xda, 0x54, 0x66, 0x03, 0x5b, 0xb1, 0x64,
-	0xed, 0xdc, 0xe9, 0x13, 0xf1, 0x9f, 0xc7, 0x17, 0x77, 0x4c, 0xd9, 0x3d, 0x7c, 0x3b, 0xed, 0xd4,
-	0xae, 0xa6, 0x1d, 0x86, 0x2c, 0x30, 0xf1, 0x27, 0x00, 0x51, 0xce, 0x9c, 0x0e, 0xbe, 0x97, 0x09,
-	0x7c, 0x30, 0x9b, 0x76, 0xd8, 0x42, 0x4f, 0x36, 0xf6, 0x22, 0x20, 0x6c, 0x51, 0xad, 0xba, 0xc2,
-	0x1b, 0x38, 0xae, 0x44, 0xaf, 0x0e, 0xfc, 0xf5, 0xa6, 0xea, 0xb3, 0xf7, 0x50, 0xbd, 0x02, 0xb6,
-	0x55, 0xb6, 0xf0, 0x2b, 0x03, 0x27, 0x83, 0xd0, 0xf3, 0xbd, 0xd8, 0xbb, 0xa4, 0x6b, 0x3b, 0x7b,
-	0x05, 0x8d, 0x42, 0x64, 0xc1, 0xfd, 0xd1, 0x75, 0xdc, 0x5b, 0x77, 0xbf, 0x44, 0x5c, 0xe2, 0x65,
-	0x46, 0x29, 0x59, 0x17, 0xfb, 0xca, 0x8d, 0x52, 0xe6, 0x0b, 0xa3, 0x2c, 0x42, 0xc2, 0x55, 0x3d,
-	0xd9, 0xd6, 0xda, 0x4b, 0xc2, 0x57, 0xf7, 0xf6, 0x15, 0xb0, 0x55, 0x69, 0xa1, 0xfd, 0xe3, 0x1b,
-	0x6b, 0xdf, 0xbd, 0xb5, 0x12, 0x52, 0x78, 0x03, 0x27, 0xc6, 0x98, 0x86, 0x4e, 0xbc, 0xdd, 0x68,
-	0x6b, 0xd4, 0xd7, 0x1b, 0x6d, 0xfb, 0x01, 0xb6, 0x73, 0xff, 0xbe, 0x0f, 0xed, 0x25, 0xf2, 0xd5,
-	0xc1, 0x5f, 0xaf, 0x9f, 0xec, 0xec, 0x3d, 0xb8, 0x77, 0x0d, 0x5e, 0x5d, 0xed, 0x25, 0xd4, 0xa3,
-	0xd8, 0x89, 0x93, 0x28, 0xbb, 0xd7, 0xd1, 0xe9, 0xd3, 0xeb, 0xc0, 0x77, 0xe9, 0x14, 0x87, 0x19,
-	0x0c, 0x29, 0xe0, 0x70, 0x1b, 0x1a, 0x3e, 0x8d, 0x22, 0xe7, 0x82, 0xb6, 0xf7, 0x1f, 0x32, 0x8f,
-	0x58, 0x52, 0x86, 0xc2, 0x9f, 0x0c, 0xd4, 0xf3, 0x62, 0x5c, 0x87, 0x3d, 0xe3, 0x39, 0xaa, 0x61,
-	0x16, 0x0e, 0x14, 0x42, 0x0c, 0x82, 0x18, 0xcc, 0x41, 0xc3, 0xd2, 0x9f, 0xeb, 0xc6, 0x4b, 0x1d,
-	0xed, 0xe1, 0x26, 0x1c, 0xf6, 0x24, 0xbd, 0xa7, 0x68, 0x8a, 0x8c, 0xf6, 0x71, 0x0b, 0x58, 0xdd,
-	0x30, 0xed, 0xbe, 0x61, 0xe9, 0x32, 0xba, 0x85, 0x31, 0x1c, 0x49, 0x1a, 0x51, 0x24, 0xf9, 0x95,
-	0xad, 0x7c, 0xa1, 0x0e, 0xcd, 0x21, 0x3a, 0xc0, 0x08, 0x9a, 0x96, 0x2e, 0x59, 0xe6, 0x33, 0x83,
-	0xa8, 0x5f, 0x2a, 0x32, 0xaa, 0xa7, 0x4d, 0x7d, 0x83, 0x74, 0x55, 0x59, 0x56, 0x74, 0xd4, 0xc8,
-	0x10, 0x0d, 0xbd, 0xaf, 0xa9, 0x3d, 0x13, 0x1d, 0xa6, 0x64, 0xaa, 0xfe, 0x42, 0xd2, 0x54, 0x19,
-	0xb1, 0xf8, 0x36, 0x70, 0x96, 0x2e, 0xbd, 0x90, 0x54, 0x4d, 0xea, 0x6a, 0x0a, 0x02, 0x7c, 0x07,
-	0x5a, 0x29, 0xdf, 0xd0, 0x1a, 0x0c, 0x0c, 0x62, 0x2a, 0x32, 0xe2, 0xd2, 0x06, 0x53, 0xfd, 0x4c,
-	0x31, 0x2c, 0x13, 0x35, 0x53, 0x2c, 0x55, 0x37, 0x15, 0xa2, 0x4b, 0x1a, 0x6a, 0xa5, 0x33, 0xf4,
-	0x25, 0x4b, 0x33, 0xd1, 0x91, 0xf0, 0x33, 0x03, 0xf7, 0x7b, 0x81, 0xef, 0x3b, 0x23, 0x77, 0xd3,
-	0x4a, 0x41, 0xb9, 0xc0, 0x9b, 0x5a, 0x69, 0x87, 0x2d, 0x97, 0xad, 0x54, 0x61, 0xe2, 0x53, 0x68,
-	0x46, 0x69, 0xd9, 0xe8, 0x9c, 0xda, 0xa3, 0xc4, 0x2f, 0xde, 0xc2, 0xdb, 0xe9, 0x6b, 0x37, 0x2c,
-	0xf2, 0x7a, 0xe2, 0x13, 0x2e, 0x5a, 0x04, 0xc2, 0x6f, 0x0c, 0x1c, 0x57, 0x72, 0x37, 0xfe, 0xad,
-	0xd6, 0xf5, 0x9e, 0xfd, 0x5b, 0x87, 0x6c, 0x17, 0xfc, 0x14, 0xee, 0x06, 0x49, 0x3c, 0x4e, 0x62,
-	0xfb, 0x26, 0xba, 0xef, 0xe4, 0xb5, 0x4b, 0x29, 0x61, 0xce, 0xc0, 0xdd, 0xcf, 0x13, 0x1a, 0xfe,
-	0xf8, 0x3f, 0x58, 0x35, 0x7e, 0x02, 0xd8, 0x77, 0x26, 0x76, 0x48, 0xcf, 0xa9, 0x77, 0x49, 0x5d,
-	0x3b, 0xff, 0xf6, 0xed, 0xaf, 0x7f, 0xfb, 0x90, 0xef, 0x4c, 0x48, 0x51, 0x93, 0x65, 0x84, 0x09,
-	0xdc, 0x2b, 0x86, 0xfc, 0x8f, 0x0f, 0xd4, 0x6d, 0xbf, 0x9d, 0xf1, 0xcc, 0xd5, 0x8c, 0x67, 0xfe,
-	0x9a, 0xf1, 0xcc, 0x4f, 0x73, 0xbe, 0x76, 0x35, 0xe7, 0x6b, 0x7f, 0xcc, 0xf9, 0xda, 0x37, 0xf5,
-	0x0c, 0xf4, 0xc3, 0xbf, 0x03, 0x00, 0x00, 0xff, 0xff, 0xb6, 0x14, 0xf2, 0x44, 0x8c, 0x08, 0x00,
-	0x00,
+	// 786 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x55, 0xcd, 0x72, 0xdb, 0x54,
+	0x14, 0xb6, 0x92, 0xc6, 0x89, 0x8e, 0xec, 0xf4, 0xf6, 0xa6, 0xa4, 0x9e, 0x2e, 0xe4, 0x8e, 0x56,
+	0x5d, 0xa9, 0x83, 0x3b, 0xd0, 0x02, 0x0b, 0x46, 0xb6, 0xe4, 0xa9, 0xa6, 0x42, 0x32, 0xd7, 0x52,
+	0xa1, 0xa5, 0x83, 0x10, 0xf1, 0x9d, 0xa0, 0x21, 0xb2, 0x8c, 0xae, 0x94, 0x31, 0x3c, 0x05, 0x8f,
+	0xc1, 0x9e, 0x05, 0x0f, 0xc0, 0xa6, 0xcb, 0x2c, 0x59, 0x19, 0xc6, 0x79, 0x8b, 0xae, 0x18, 0xfd,
+	0xfa, 0x27, 0x36, 0x49, 0x59, 0x30, 0xec, 0x7c, 0x8e, 0xce, 0xf9, 0xbe, 0xef, 0x9c, 0xfb, 0x5d,
+	0x5f, 0x38, 0x9e, 0x44, 0x61, 0x1c, 0x9e, 0x84, 0x67, 0x8f, 0xbe, 0xa3, 0xde, 0x88, 0x46, 0x4c,
+	0xce, 0x12, 0x58, 0xf4, 0xe2, 0x30, 0xf0, 0xa7, 0x72, 0x94, 0x8c, 0x63, 0x3f, 0xa0, 0x32, 0x1b,
+	0x7d, 0x2f, 0x97, 0xa5, 0xf2, 0xf9, 0xfb, 0xf7, 0xef, 0x9e, 0x86, 0xa7, 0x61, 0x96, 0x78, 0x94,
+	0xfe, 0xca, 0xbf, 0x49, 0xaf, 0xe1, 0xde, 0xc0, 0x8b, 0x62, 0x3f, 0xf6, 0xc3, 0x31, 0xa1, 0x3f,
+	0x24, 0x94, 0xc5, 0xcf, 0x72, 0x58, 0xac, 0x40, 0x63, 0x52, 0x7e, 0x72, 0xfd, 0x51, 0x8b, 0x7b,
+	0xc0, 0x3d, 0x6c, 0x76, 0xc5, 0xf9, 0xac, 0x2d, 0x54, 0x2d, 0xba, 0xfa, 0x76, 0x35, 0x24, 0x42,
+	0xd5, 0xa3, 0x8f, 0xa4, 0x4f, 0xa0, 0xb5, 0x84, 0xce, 0x26, 0xe1, 0x98, 0xd1, 0x12, 0xbe, 0x0d,
+	0x7b, 0xfe, 0x78, 0x44, 0xa7, 0x19, 0xee, 0xad, 0x2e, 0xff, 0x76, 0xd6, 0xde, 0xd3, 0xd3, 0x04,
+	0xc9, 0xf3, 0xd2, 0xaf, 0x1c, 0xbc, 0x37, 0xa4, 0x8c, 0x5d, 0x55, 0xe6, 0x02, 0x5f, 0xb1, 0x64,
+	0xed, 0x42, 0xe7, 0x89, 0xfc, 0xcf, 0xe3, 0xcb, 0x5b, 0xa6, 0xec, 0x1e, 0xbc, 0x99, 0xb5, 0x6b,
+	0x17, 0xb3, 0x36, 0x47, 0x16, 0x98, 0xf8, 0x23, 0x00, 0x96, 0x33, 0xa7, 0x83, 0xef, 0x64, 0x02,
+	0xef, 0xcf, 0x67, 0x6d, 0xbe, 0xd0, 0x93, 0x8d, 0xbd, 0x08, 0x08, 0x5f, 0x54, 0xeb, 0x23, 0xe9,
+	0x27, 0x38, 0xae, 0x44, 0xaf, 0x0e, 0xfc, 0xcd, 0x55, 0xd5, 0x4f, 0xdf, 0x41, 0xf5, 0x0a, 0xd8,
+	0x46, 0xd9, 0xd2, 0x6f, 0x1c, 0xdc, 0x1b, 0x44, 0x7e, 0xe0, 0xc7, 0xfe, 0x39, 0x5d, 0xdb, 0xd9,
+	0x4b, 0xd8, 0x2f, 0x44, 0x16, 0xdc, 0x1f, 0x5c, 0xc7, 0xbd, 0x71, 0xf7, 0x4b, 0xc4, 0x25, 0x5e,
+	0x66, 0x94, 0x92, 0x75, 0xb1, 0xaf, 0xdc, 0x28, 0x65, 0xbe, 0x30, 0xca, 0x22, 0x24, 0x42, 0xd5,
+	0x93, 0x6d, 0xad, 0xb5, 0x24, 0x7c, 0x75, 0x6f, 0x5f, 0x03, 0x5f, 0x95, 0x16, 0xda, 0x3f, 0xbc,
+	0xb1, 0xf6, 0xed, 0x5b, 0x2b, 0x21, 0xa5, 0x04, 0x70, 0xcf, 0x3b, 0x3b, 0xdb, 0xe0, 0xb1, 0x35,
+	0xd6, 0xeb, 0x3d, 0xb6, 0x79, 0xf7, 0x9b, 0x69, 0x7f, 0xdf, 0x85, 0xa3, 0x9c, 0x77, 0x75, 0xdc,
+	0xd7, 0xeb, 0x07, 0xf5, 0xf4, 0x1d, 0x68, 0xb7, 0x8d, 0x5b, 0x9d, 0x15, 0x81, 0x3a, 0x8b, 0xbd,
+	0x38, 0x61, 0xd9, 0x29, 0x1d, 0x76, 0x3e, 0xbe, 0x0e, 0x7c, 0x83, 0x44, 0x79, 0x98, 0x21, 0x90,
+	0x02, 0x09, 0xb7, 0x60, 0x3f, 0xa0, 0x8c, 0x79, 0xa7, 0xb4, 0xb5, 0xfb, 0x80, 0x7b, 0xc8, 0x93,
+	0x32, 0x94, 0xfe, 0xe4, 0xa0, 0x9e, 0x17, 0xe3, 0x3a, 0xec, 0x58, 0xcf, 0x51, 0x0d, 0xf3, 0xb0,
+	0xa7, 0x11, 0x62, 0x11, 0xc4, 0x61, 0x01, 0xf6, 0x1d, 0xf3, 0xb9, 0x69, 0x7d, 0x61, 0xa2, 0x1d,
+	0xdc, 0x80, 0x83, 0x9e, 0x62, 0xf6, 0x34, 0x43, 0x53, 0xd1, 0x2e, 0x6e, 0x02, 0x6f, 0x5a, 0xb6,
+	0xdb, 0xb7, 0x1c, 0x53, 0x45, 0xb7, 0x30, 0x86, 0x43, 0xc5, 0x20, 0x9a, 0xa2, 0xbe, 0x74, 0xb5,
+	0x2f, 0xf5, 0xa1, 0x3d, 0x44, 0x7b, 0x18, 0x41, 0xc3, 0x31, 0x15, 0xc7, 0x7e, 0x66, 0x11, 0xfd,
+	0x95, 0xa6, 0xa2, 0x7a, 0xda, 0xd4, 0xb7, 0x48, 0x57, 0x57, 0x55, 0xcd, 0x44, 0xfb, 0x19, 0xa2,
+	0x65, 0xf6, 0x0d, 0xbd, 0x67, 0xa3, 0x83, 0x94, 0x4c, 0x37, 0x5f, 0x28, 0x86, 0xae, 0x22, 0x1e,
+	0xdf, 0x06, 0xc1, 0x31, 0x95, 0x17, 0x8a, 0x6e, 0x28, 0x5d, 0x43, 0x43, 0x80, 0xef, 0x40, 0x33,
+	0xe5, 0x1b, 0x3a, 0x83, 0x81, 0x45, 0x6c, 0x4d, 0x45, 0x42, 0xda, 0x60, 0xeb, 0x9f, 0x69, 0x96,
+	0x63, 0xa3, 0x46, 0x8a, 0xa5, 0x9b, 0xb6, 0x46, 0x4c, 0xc5, 0x40, 0xcd, 0x74, 0x86, 0xbe, 0xe2,
+	0x18, 0x36, 0x3a, 0x94, 0x7e, 0xe1, 0xe0, 0x78, 0x10, 0x85, 0x93, 0x90, 0x79, 0xeb, 0x0e, 0x7a,
+	0x05, 0x7c, 0x38, 0xa1, 0x91, 0xb7, 0x74, 0xdf, 0x3b, 0x37, 0xdb, 0xf6, 0x36, 0xf3, 0x54, 0x70,
+	0xb8, 0x03, 0x0d, 0x96, 0x96, 0x8d, 0x4f, 0xa8, 0x3b, 0x4e, 0x82, 0xe2, 0xca, 0xdd, 0x4e, 0xef,
+	0xd8, 0xb0, 0xc8, 0x9b, 0x49, 0x40, 0x04, 0xb6, 0x08, 0x8a, 0x7f, 0x87, 0x52, 0xea, 0xaa, 0xe9,
+	0xbe, 0xba, 0xaa, 0xf5, 0xf1, 0xbf, 0x70, 0xc6, 0x66, 0xb1, 0x9f, 0xc2, 0x51, 0x98, 0xc4, 0x93,
+	0x24, 0x76, 0x6f, 0xa2, 0xf9, 0x4e, 0x5e, 0xbb, 0x94, 0x92, 0x66, 0x1c, 0x1c, 0x7d, 0x9e, 0xd0,
+	0xe8, 0xc7, 0xff, 0xf7, 0x86, 0xf1, 0x13, 0xc0, 0x81, 0x37, 0x75, 0x23, 0x7a, 0x42, 0xfd, 0x73,
+	0x3a, 0x72, 0xf3, 0xf7, 0x6d, 0x77, 0xfd, 0x7d, 0x43, 0x81, 0x37, 0x25, 0x45, 0x4d, 0x96, 0x91,
+	0x18, 0xdc, 0x2d, 0xe6, 0xfb, 0xef, 0x8e, 0xa5, 0xdb, 0x7a, 0x33, 0x17, 0xb9, 0x8b, 0xb9, 0xc8,
+	0xfd, 0x35, 0x17, 0xb9, 0x9f, 0x2f, 0xc5, 0xda, 0xc5, 0xa5, 0x58, 0xfb, 0xe3, 0x52, 0xac, 0x7d,
+	0x5b, 0xcf, 0xf0, 0x1e, 0xff, 0x1d, 0x00, 0x00, 0xff, 0xff, 0x9d, 0x19, 0x54, 0xf8, 0x6b, 0x08,
+	0x00, 0x00,
 }
 
 func (m *PartitionRequestHeaders) Marshal() (dAtA []byte, err error) {
@@ -879,7 +879,7 @@ func (m *PrimitiveResponseHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *OperationRequestHeaders) Marshal() (dAtA []byte, err error) {
+func (m *CallRequestHeaders) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -889,12 +889,12 @@ func (m *OperationRequestHeaders) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *OperationRequestHeaders) MarshalTo(dAtA []byte) (int, error) {
+func (m *CallRequestHeaders) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *OperationRequestHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *CallRequestHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -912,7 +912,7 @@ func (m *OperationRequestHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *OperationResponseHeaders) Marshal() (dAtA []byte, err error) {
+func (m *CallResponseHeaders) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -922,12 +922,12 @@ func (m *OperationResponseHeaders) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *OperationResponseHeaders) MarshalTo(dAtA []byte) (int, error) {
+func (m *CallResponseHeaders) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *OperationResponseHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *CallResponseHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -957,7 +957,7 @@ func (m *OperationResponseHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *CommandRequestHeaders) Marshal() (dAtA []byte, err error) {
+func (m *ProposalRequestHeaders) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -967,12 +967,12 @@ func (m *CommandRequestHeaders) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CommandRequestHeaders) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProposalRequestHeaders) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *CommandRequestHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ProposalRequestHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -983,7 +983,7 @@ func (m *CommandRequestHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.OperationRequestHeaders.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.CallRequestHeaders.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -995,7 +995,7 @@ func (m *CommandRequestHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CommandResponseHeaders) Marshal() (dAtA []byte, err error) {
+func (m *ProposalResponseHeaders) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1005,12 +1005,12 @@ func (m *CommandResponseHeaders) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CommandResponseHeaders) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProposalResponseHeaders) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *CommandResponseHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ProposalResponseHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1021,7 +1021,7 @@ func (m *CommandResponseHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.OperationResponseHeaders.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.CallResponseHeaders.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1064,7 +1064,7 @@ func (m *QueryRequestHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.OperationRequestHeaders.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.CallRequestHeaders.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1097,7 +1097,7 @@ func (m *QueryResponseHeaders) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	{
-		size, err := m.OperationResponseHeaders.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.CallResponseHeaders.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1194,7 +1194,7 @@ func (m *PrimitiveResponseHeaders) Size() (n int) {
 	return n
 }
 
-func (m *OperationRequestHeaders) Size() (n int) {
+func (m *CallRequestHeaders) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1205,7 +1205,7 @@ func (m *OperationRequestHeaders) Size() (n int) {
 	return n
 }
 
-func (m *OperationResponseHeaders) Size() (n int) {
+func (m *CallResponseHeaders) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1223,13 +1223,13 @@ func (m *OperationResponseHeaders) Size() (n int) {
 	return n
 }
 
-func (m *CommandRequestHeaders) Size() (n int) {
+func (m *ProposalRequestHeaders) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.OperationRequestHeaders.Size()
+	l = m.CallRequestHeaders.Size()
 	n += 1 + l + sovHeaders(uint64(l))
 	if m.SequenceNum != 0 {
 		n += 1 + sovHeaders(uint64(m.SequenceNum))
@@ -1237,13 +1237,13 @@ func (m *CommandRequestHeaders) Size() (n int) {
 	return n
 }
 
-func (m *CommandResponseHeaders) Size() (n int) {
+func (m *ProposalResponseHeaders) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.OperationResponseHeaders.Size()
+	l = m.CallResponseHeaders.Size()
 	n += 1 + l + sovHeaders(uint64(l))
 	if m.OutputSequenceNum != 0 {
 		n += 1 + sovHeaders(uint64(m.OutputSequenceNum))
@@ -1257,7 +1257,7 @@ func (m *QueryRequestHeaders) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.OperationRequestHeaders.Size()
+	l = m.CallRequestHeaders.Size()
 	n += 1 + l + sovHeaders(uint64(l))
 	if m.SequenceNum != 0 {
 		n += 1 + sovHeaders(uint64(m.SequenceNum))
@@ -1274,7 +1274,7 @@ func (m *QueryResponseHeaders) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.OperationResponseHeaders.Size()
+	l = m.CallResponseHeaders.Size()
 	n += 1 + l + sovHeaders(uint64(l))
 	return n
 }
@@ -1793,7 +1793,7 @@ func (m *PrimitiveResponseHeaders) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *OperationRequestHeaders) Unmarshal(dAtA []byte) error {
+func (m *CallRequestHeaders) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1816,10 +1816,10 @@ func (m *OperationRequestHeaders) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: OperationRequestHeaders: wiretype end group for non-group")
+			return fmt.Errorf("proto: CallRequestHeaders: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: OperationRequestHeaders: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: CallRequestHeaders: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1876,7 +1876,7 @@ func (m *OperationRequestHeaders) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *OperationResponseHeaders) Unmarshal(dAtA []byte) error {
+func (m *CallResponseHeaders) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1899,10 +1899,10 @@ func (m *OperationResponseHeaders) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: OperationResponseHeaders: wiretype end group for non-group")
+			return fmt.Errorf("proto: CallResponseHeaders: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: OperationResponseHeaders: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: CallResponseHeaders: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1952,7 +1952,7 @@ func (m *OperationResponseHeaders) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Status |= OperationResponseHeaders_Status(b&0x7F) << shift
+				m.Status |= CallResponseHeaders_Status(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -2010,7 +2010,7 @@ func (m *OperationResponseHeaders) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CommandRequestHeaders) Unmarshal(dAtA []byte) error {
+func (m *ProposalRequestHeaders) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2033,15 +2033,15 @@ func (m *CommandRequestHeaders) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: CommandRequestHeaders: wiretype end group for non-group")
+			return fmt.Errorf("proto: ProposalRequestHeaders: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CommandRequestHeaders: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ProposalRequestHeaders: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OperationRequestHeaders", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CallRequestHeaders", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -2068,7 +2068,7 @@ func (m *CommandRequestHeaders) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.OperationRequestHeaders.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CallRequestHeaders.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2112,7 +2112,7 @@ func (m *CommandRequestHeaders) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CommandResponseHeaders) Unmarshal(dAtA []byte) error {
+func (m *ProposalResponseHeaders) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2135,15 +2135,15 @@ func (m *CommandResponseHeaders) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: CommandResponseHeaders: wiretype end group for non-group")
+			return fmt.Errorf("proto: ProposalResponseHeaders: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CommandResponseHeaders: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ProposalResponseHeaders: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OperationResponseHeaders", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CallResponseHeaders", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -2170,7 +2170,7 @@ func (m *CommandResponseHeaders) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.OperationResponseHeaders.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CallResponseHeaders.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2245,7 +2245,7 @@ func (m *QueryRequestHeaders) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OperationRequestHeaders", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CallRequestHeaders", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -2272,7 +2272,7 @@ func (m *QueryRequestHeaders) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.OperationRequestHeaders.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CallRequestHeaders.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2366,7 +2366,7 @@ func (m *QueryResponseHeaders) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OperationResponseHeaders", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CallResponseHeaders", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -2393,7 +2393,7 @@ func (m *QueryResponseHeaders) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.OperationResponseHeaders.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CallResponseHeaders.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

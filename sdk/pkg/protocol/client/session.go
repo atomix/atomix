@@ -264,14 +264,14 @@ func (r *Recorder) Start(sequenceNum protocol.SequenceNum) {
 	}
 }
 
-func (r *Recorder) StreamOpen(headers *protocol.CommandRequestHeaders) {
+func (r *Recorder) StreamOpen(headers *protocol.ProposalRequestHeaders) {
 	r.session.requestCh <- sessionRequestEvent{
 		eventType:  sessionStreamEventOpen,
 		requestNum: headers.SequenceNum,
 	}
 }
 
-func (r *Recorder) StreamReceive(request *protocol.CommandRequestHeaders, response *protocol.CommandResponseHeaders) {
+func (r *Recorder) StreamReceive(request *protocol.ProposalRequestHeaders, response *protocol.ProposalResponseHeaders) {
 	r.session.requestCh <- sessionRequestEvent{
 		eventType:   sessionStreamEventReceive,
 		requestNum:  request.SequenceNum,
@@ -279,7 +279,7 @@ func (r *Recorder) StreamReceive(request *protocol.CommandRequestHeaders, respon
 	}
 }
 
-func (r *Recorder) StreamClose(headers *protocol.CommandRequestHeaders) {
+func (r *Recorder) StreamClose(headers *protocol.ProposalRequestHeaders) {
 	r.session.requestCh <- sessionRequestEvent{
 		eventType:  sessionStreamEventClose,
 		requestNum: headers.SequenceNum,

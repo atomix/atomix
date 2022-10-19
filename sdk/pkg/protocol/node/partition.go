@@ -27,11 +27,11 @@ func (p *Partition) ID() protocol.PartitionID {
 	return p.id
 }
 
-func (p *Partition) Command(ctx context.Context, command *protocol.ProposalInput) (*protocol.ProposalOutput, error) {
+func (p *Partition) Propose(ctx context.Context, input *protocol.ProposalInput) (*protocol.ProposalOutput, error) {
 	resultCh := make(chan streams.Result[*protocol.ProposalOutput], 1)
 	errCh := make(chan error, 1)
 	go func() {
-		if err := p.executor.Propose(ctx, command, streams.NewChannelStream[*protocol.ProposalOutput](resultCh)); err != nil {
+		if err := p.executor.Propose(ctx, input, streams.NewChannelStream[*protocol.ProposalOutput](resultCh)); err != nil {
 			errCh <- err
 		}
 	}()
@@ -55,7 +55,7 @@ func (p *Partition) Command(ctx context.Context, command *protocol.ProposalInput
 	}
 }
 
-func (p *Partition) StreamCommand(ctx context.Context, input *protocol.ProposalInput, stream streams.WriteStream[*protocol.ProposalOutput]) error {
+func (p *Partition) StreamPropose(ctx context.Context, input *protocol.ProposalInput, stream streams.WriteStream[*protocol.ProposalOutput]) error {
 	resultCh := make(chan streams.Result[*protocol.ProposalOutput])
 	go func() {
 		if err := p.executor.Propose(ctx, input, streams.NewChannelStream[*protocol.ProposalOutput](resultCh)); err != nil {
