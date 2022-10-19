@@ -11,13 +11,13 @@ import (
 	"time"
 )
 
-type Caller[T ManagedCall[U, I, O], U CallID, I, O any] interface {
+type Caller[T Call[U, I, O], U CallID, I, O any] interface {
 	Call(T)
 }
 
 type Proposer[I1, O1, I2, O2 any] interface {
-	Caller[ManagedProposal[I1, O1], ProposalID, I1, O1]
-	Proposals() ManagedProposals[I2, O2]
+	Caller[Proposal[I1, O1], ProposalID, I1, O1]
+	Proposals() Proposals[I2, O2]
 }
 
 func NewProposer[I1, O1, I2, O2 proto.Message](ctx PrimitiveContext[I1, O1]) *ProposerBuilder[I1, O1, I2, O2] {
@@ -48,7 +48,7 @@ func (b *ProposerBuilder[I1, O1, I2, O2]) Encoder(f func(O2) O1) *ProposerBuilde
 	return b
 }
 
-func (b *ProposerBuilder[I1, O1, I2, O2]) Build(f func(ManagedProposal[I2, O2])) Proposer[I1, O1, I2, O2] {
+func (b *ProposerBuilder[I1, O1, I2, O2]) Build(f func(Proposal[I2, O2])) Proposer[I1, O1, I2, O2] {
 	return &transcodingProposer[I1, O1, I2, O2]{
 		ctx:     b.ctx,
 		decoder: b.decoder,
@@ -59,14 +59,14 @@ func (b *ProposerBuilder[I1, O1, I2, O2]) Build(f func(ManagedProposal[I2, O2]))
 }
 
 var _ CallerBuilder[
-	ManagedProposal[proto.Message, proto.Message],
+	Proposal[proto.Message, proto.Message],
 	ProposalID,
 	proto.Message,
 	proto.Message,
 	Proposer[proto.Message, proto.Message, proto.Message, proto.Message]] = (*ProposerBuilder[proto.Message, proto.Message, proto.Message, proto.Message])(nil)
 
 type CallerBuilder[
-	T ManagedCall[U, I, O],
+	T Call[U, I, O],
 	U CallID,
 	I proto.Message,
 	O proto.Message,
@@ -75,7 +75,7 @@ type CallerBuilder[
 }
 
 type Querier[I1, O1, I2, O2 any] interface {
-	Caller[ManagedQuery[I1, O1], QueryID, I1, O1]
+	Caller[Query[I1, O1], QueryID, I1, O1]
 }
 
 func NewQuerier[I1, O1, I2, O2 proto.Message](ctx PrimitiveContext[I1, O1]) *QuerierBuilder[I1, O1, I2, O2] {
@@ -106,7 +106,7 @@ func (b *QuerierBuilder[I1, O1, I2, O2]) Encoder(f func(O2) O1) *QuerierBuilder[
 	return b
 }
 
-func (b *QuerierBuilder[I1, O1, I2, O2]) Build(f func(ManagedQuery[I2, O2])) Querier[I1, O1, I2, O2] {
+func (b *QuerierBuilder[I1, O1, I2, O2]) Build(f func(Query[I2, O2])) Querier[I1, O1, I2, O2] {
 	return &transcodingQuerier[I1, O1, I2, O2]{
 		ctx:     b.ctx,
 		decoder: b.decoder,
@@ -117,7 +117,7 @@ func (b *QuerierBuilder[I1, O1, I2, O2]) Build(f func(ManagedQuery[I2, O2])) Que
 }
 
 var _ CallerBuilder[
-	ManagedQuery[proto.Message, proto.Message],
+	Query[proto.Message, proto.Message],
 	QueryID,
 	proto.Message,
 	proto.Message,
@@ -128,14 +128,14 @@ type transcodingProposer[I1, O1, I2, O2 proto.Message] struct {
 	decoder func(I1) (I2, bool)
 	encoder func(O2) O1
 	name    string
-	f       func(ManagedProposal[I2, O2])
+	f       func(Proposal[I2, O2])
 }
 
-func (p *transcodingProposer[I1, O1, I2, O2]) Proposals() ManagedProposals[I2, O2] {
+func (p *transcodingProposer[I1, O1, I2, O2]) Proposals() Proposals[I2, O2] {
 	return newTranscodingProposals[I1, O1, I2, O2](p.ctx.Proposals(), p.decoder, p.encoder)
 }
 
-func (p *transcodingProposer[I1, O1, I2, O2]) Call(parent ManagedProposal[I1, O1]) {
+func (p *transcodingProposer[I1, O1, I2, O2]) Call(parent Proposal[I1, O1]) {
 	input, ok := p.decoder(parent.Input())
 	if !ok {
 		return
@@ -150,10 +150,10 @@ type transcodingQuerier[I1, O1, I2, O2 proto.Message] struct {
 	decoder func(I1) (I2, bool)
 	encoder func(O2) O1
 	name    string
-	f       func(ManagedQuery[I2, O2])
+	f       func(Query[I2, O2])
 }
 
-func (q *transcodingQuerier[I1, O1, I2, O2]) Call(parent ManagedQuery[I1, O1]) {
+func (q *transcodingQuerier[I1, O1, I2, O2]) Call(parent Query[I1, O1]) {
 	input, ok := q.decoder(parent.Input())
 	if !ok {
 		return
@@ -163,7 +163,7 @@ func (q *transcodingQuerier[I1, O1, I2, O2]) Call(parent ManagedQuery[I1, O1]) {
 	q.f(query)
 }
 
-func newTranscodingProposals[I1, O1, I2, O2 any](parent ManagedProposals[I1, O1], decoder func(I1) (I2, bool), encoder func(O2) O1) ManagedProposals[I2, O2] {
+func newTranscodingProposals[I1, O1, I2, O2 any](parent Proposals[I1, O1], decoder func(I1) (I2, bool), encoder func(O2) O1) Proposals[I2, O2] {
 	return &transcodingProposals[I1, O1, I2, O2]{
 		parent:  parent,
 		decoder: decoder,
@@ -172,12 +172,12 @@ func newTranscodingProposals[I1, O1, I2, O2 any](parent ManagedProposals[I1, O1]
 }
 
 type transcodingProposals[I1, O1, I2, O2 any] struct {
-	parent  ManagedProposals[I1, O1]
+	parent  Proposals[I1, O1]
 	decoder func(I1) (I2, bool)
 	encoder func(O2) O1
 }
 
-func (p *transcodingProposals[I1, O1, I2, O2]) Get(id ProposalID) (ManagedProposal[I2, O2], bool) {
+func (p *transcodingProposals[I1, O1, I2, O2]) Get(id ProposalID) (Proposal[I2, O2], bool) {
 	parent, ok := p.parent.Get(id)
 	if !ok {
 		return nil, false
@@ -188,9 +188,9 @@ func (p *transcodingProposals[I1, O1, I2, O2]) Get(id ProposalID) (ManagedPropos
 	return nil, false
 }
 
-func (p *transcodingProposals[I1, O1, I2, O2]) List() []ManagedProposal[I2, O2] {
+func (p *transcodingProposals[I1, O1, I2, O2]) List() []Proposal[I2, O2] {
 	parents := p.parent.List()
-	proposals := make([]ManagedProposal[I2, O2], 0, len(parents))
+	proposals := make([]Proposal[I2, O2], 0, len(parents))
 	for _, parent := range parents {
 		if input, ok := p.decoder(parent.Input()); ok {
 			proposal := newTranscodingProposal[I1, O1, I2, O2](parent, input, p.decoder, p.encoder, parent.Log())
@@ -201,11 +201,11 @@ func (p *transcodingProposals[I1, O1, I2, O2]) List() []ManagedProposal[I2, O2] 
 }
 
 func newTranscodingCall[T CallID, I1, O1, I2, O2 any](
-	parent ManagedCall[T, I1, O1],
+	parent Call[T, I1, O1],
 	input I2,
 	decoder func(I1) (I2, bool),
 	encoder func(O2) O1,
-	log logging.Logger) ManagedCall[T, I2, O2] {
+	log logging.Logger) Call[T, I2, O2] {
 	return &transcodingCall[T, I1, O1, I2, O2]{
 		parent:  parent,
 		input:   input,
@@ -216,7 +216,7 @@ func newTranscodingCall[T CallID, I1, O1, I2, O2 any](
 }
 
 type transcodingCall[T CallID, I1, O1, I2, O2 any] struct {
-	parent  ManagedCall[T, I1, O1]
+	parent  Call[T, I1, O1]
 	input   I2
 	decoder func(I1) (I2, bool)
 	encoder func(O2) O1
@@ -268,19 +268,19 @@ func (p *transcodingCall[T, I1, O1, I2, O2]) Close() {
 }
 
 func newTranscodingProposal[I1, O1, I2, O2 any](
-	parent ManagedProposal[I1, O1],
+	parent Proposal[I1, O1],
 	input I2,
 	decoder func(I1) (I2, bool),
 	encoder func(O2) O1,
-	log logging.Logger) ManagedProposal[I2, O2] {
+	log logging.Logger) Proposal[I2, O2] {
 	return newTranscodingCall[ProposalID, I1, O1, I2, O2](parent, input, decoder, encoder, log)
 }
 
 func newTranscodingQuery[I1, O1, I2, O2 any](
-	parent ManagedQuery[I1, O1],
+	parent Query[I1, O1],
 	input I2,
 	decoder func(I1) (I2, bool),
 	encoder func(O2) O1,
-	log logging.Logger) ManagedQuery[I2, O2] {
+	log logging.Logger) Query[I2, O2] {
 	return newTranscodingCall[QueryID, I1, O1, I2, O2](parent, input, decoder, encoder, log)
 }

@@ -50,7 +50,7 @@ func (t *primitiveType[I, O]) NewStateMachine(context PrimitiveContext[I, O]) Ex
 
 func RegisterPrimitiveType[I, O any](registry *PrimitiveTypeRegistry) func(primitiveType PrimitiveType[I, O]) {
 	return func(primitiveType PrimitiveType[I, O]) {
-		registry.register(primitiveType.Service(), func(context PrimitiveManagerContext, id protocol.PrimitiveID, spec protocol.PrimitiveSpec) managedPrimitive {
+		registry.register(primitiveType.Service(), func(context SessionContext, id protocol.PrimitiveID, spec protocol.PrimitiveSpec) managedPrimitive {
 			return newPrimitive[I, O](context, id, spec, primitiveType)
 		})
 	}
@@ -58,22 +58,22 @@ func RegisterPrimitiveType[I, O any](registry *PrimitiveTypeRegistry) func(primi
 
 func NewPrimitiveTypeRegistry() *PrimitiveTypeRegistry {
 	return &PrimitiveTypeRegistry{
-		types: make(map[string]func(PrimitiveManagerContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive),
+		types: make(map[string]func(SessionContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive),
 	}
 }
 
 type PrimitiveTypeRegistry struct {
-	types map[string]func(PrimitiveManagerContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive
+	types map[string]func(SessionContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive
 	mu    sync.RWMutex
 }
 
-func (r *PrimitiveTypeRegistry) register(service string, factory func(PrimitiveManagerContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive) {
+func (r *PrimitiveTypeRegistry) register(service string, factory func(SessionContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.types[service] = factory
 }
 
-func (r *PrimitiveTypeRegistry) lookup(service string) (func(PrimitiveManagerContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive, bool) {
+func (r *PrimitiveTypeRegistry) lookup(service string) (func(SessionContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	factory, ok := r.types[service]
@@ -81,26 +81,14 @@ func (r *PrimitiveTypeRegistry) lookup(service string) (func(PrimitiveManagerCon
 }
 
 type PrimitiveContext[I, O any] interface {
-	SessionManagerContext
+	Context[I, O]
 	Info
-	// Sessions returns the open sessions
-	Sessions() Sessions
-	// Proposals returns the pending proposals
-	Proposals() ManagedProposals[I, O]
 }
 
 type Executor[I, O any] interface {
 	Recoverable
-	Propose(proposal ManagedProposal[I, O])
-	Query(query ManagedQuery[I, O])
-}
-
-type PrimitiveManagerContext interface {
-	SessionManagerContext
-	// Sessions returns the open sessions
-	Sessions() Sessions
-	// Proposals returns the pending proposals
-	Proposals() ManagedProposals[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]
+	Propose(proposal Proposal[I, O])
+	Query(query Query[I, O])
 }
 
 type PrimitiveManager interface {
@@ -111,21 +99,21 @@ type PrimitiveManager interface {
 	Query(query PrimitiveQuery)
 }
 
-type CreatePrimitiveProposal ManagedProposal[*protocol.CreatePrimitiveInput, *protocol.CreatePrimitiveOutput]
-type ClosePrimitiveProposal ManagedProposal[*protocol.ClosePrimitiveInput, *protocol.ClosePrimitiveOutput]
-type PrimitiveProposal ManagedProposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]
-type PrimitiveQuery ManagedQuery[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput]
+type CreatePrimitiveProposal Proposal[*protocol.CreatePrimitiveInput, *protocol.CreatePrimitiveOutput]
+type ClosePrimitiveProposal Proposal[*protocol.ClosePrimitiveInput, *protocol.ClosePrimitiveOutput]
+type PrimitiveProposal Proposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]
+type PrimitiveQuery Query[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput]
 
-func newPrimitiveManager(ctx PrimitiveManagerContext, registry *PrimitiveTypeRegistry) PrimitiveManager {
+func newPrimitiveManager(ctx SessionContext, registry *PrimitiveTypeRegistry) PrimitiveManager {
 	return &primitiveManager{
-		PrimitiveManagerContext: ctx,
-		registry:                registry,
-		primitives:              make(map[protocol.PrimitiveID]managedPrimitive),
+		SessionContext: ctx,
+		registry:       registry,
+		primitives:     make(map[protocol.PrimitiveID]managedPrimitive),
 	}
 }
 
 type primitiveManager struct {
-	PrimitiveManagerContext
+	SessionContext
 	registry   *PrimitiveTypeRegistry
 	primitives map[protocol.PrimitiveID]managedPrimitive
 }
@@ -168,7 +156,7 @@ func (m *primitiveManager) Recover(reader *SnapshotReader) error {
 			return errors.NewFault("primitive type not found")
 		}
 		primitiveID := snapshot.PrimitiveID
-		primitive := factory(m.PrimitiveManagerContext, primitiveID, snapshot.Spec)
+		primitive := factory(m.SessionContext, primitiveID, snapshot.Spec)
 		m.primitives[primitiveID] = primitive
 		if err := primitive.Recover(reader); err != nil {
 			return err
@@ -211,7 +199,7 @@ func (m *primitiveManager) CreatePrimitive(proposal CreatePrimitiveProposal) {
 			return
 		} else {
 			primitiveID := protocol.PrimitiveID(proposal.ID())
-			primitive = factory(m.PrimitiveManagerContext, primitiveID, proposal.Input().PrimitiveSpec)
+			primitive = factory(m.SessionContext, primitiveID, proposal.Input().PrimitiveSpec)
 			m.primitives[primitiveID] = primitive
 		}
 	}
@@ -257,20 +245,20 @@ type Info interface {
 type managedPrimitive interface {
 	Recoverable
 	Info
-	open(proposal ManagedProposal[*protocol.CreatePrimitiveInput, *protocol.CreatePrimitiveOutput])
-	close(proposal ManagedProposal[*protocol.ClosePrimitiveInput, *protocol.ClosePrimitiveOutput])
-	propose(proposal ManagedProposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput])
-	query(query ManagedQuery[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput])
+	open(proposal Proposal[*protocol.CreatePrimitiveInput, *protocol.CreatePrimitiveOutput])
+	close(proposal Proposal[*protocol.ClosePrimitiveInput, *protocol.ClosePrimitiveOutput])
+	propose(proposal Proposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput])
+	query(query Query[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput])
 }
 
-func newPrimitiveContext[I, O any](parent PrimitiveManagerContext, id protocol.PrimitiveID, spec protocol.PrimitiveSpec, primitiveType PrimitiveType[I, O]) *primitiveContext[I, O] {
+func newPrimitiveContext[I, O any](parent SessionContext, id protocol.PrimitiveID, spec protocol.PrimitiveSpec, primitiveType PrimitiveType[I, O]) *primitiveContext[I, O] {
 	return &primitiveContext[I, O]{
-		PrimitiveManagerContext: parent,
-		id:                      id,
-		spec:                    spec,
-		sessions:                newPrimitiveSessions[I, O](),
-		proposals:               newPrimitiveProposals[I, O](),
-		codec:                   primitiveType.Codec(),
+		SessionContext: parent,
+		id:             id,
+		spec:           spec,
+		sessions:       newPrimitiveSessions[I, O](),
+		proposals:      newPrimitiveProposals[I, O](),
+		codec:          primitiveType.Codec(),
 		log: log.WithFields(
 			logging.String("Service", primitiveType.Service()),
 			logging.Uint64("Primitive", uint64(id)),
@@ -281,7 +269,7 @@ func newPrimitiveContext[I, O any](parent PrimitiveManagerContext, id protocol.P
 }
 
 type primitiveContext[I, O any] struct {
-	PrimitiveManagerContext
+	SessionContext
 	id        protocol.PrimitiveID
 	spec      protocol.PrimitiveSpec
 	codec     Codec[I, O]
@@ -318,11 +306,11 @@ func (c *primitiveContext[I, O]) Sessions() Sessions {
 	return c.sessions
 }
 
-func (c *primitiveContext[I, O]) Proposals() ManagedProposals[I, O] {
+func (c *primitiveContext[I, O]) Proposals() Proposals[I, O] {
 	return c.proposals
 }
 
-func newPrimitive[I, O any](parent PrimitiveManagerContext, id protocol.PrimitiveID, spec protocol.PrimitiveSpec, primitiveType PrimitiveType[I, O]) managedPrimitive {
+func newPrimitive[I, O any](parent SessionContext, id protocol.PrimitiveID, spec protocol.PrimitiveSpec, primitiveType PrimitiveType[I, O]) managedPrimitive {
 	context := newPrimitiveContext[I, O](parent, id, spec, primitiveType)
 	return &primitiveExecutor[I, O]{
 		primitiveContext: context,
@@ -362,7 +350,7 @@ func (p *primitiveExecutor[I, O]) Recover(reader *SnapshotReader) error {
 	return p.sm.Recover(reader)
 }
 
-func (p *primitiveExecutor[I, O]) open(proposal ManagedProposal[*protocol.CreatePrimitiveInput, *protocol.CreatePrimitiveOutput]) {
+func (p *primitiveExecutor[I, O]) open(proposal Proposal[*protocol.CreatePrimitiveInput, *protocol.CreatePrimitiveOutput]) {
 	session := newPrimitiveSession[I, O](p)
 	session.open(proposal.Session())
 	proposal.Output(&protocol.CreatePrimitiveOutput{
@@ -371,7 +359,7 @@ func (p *primitiveExecutor[I, O]) open(proposal ManagedProposal[*protocol.Create
 	proposal.Close()
 }
 
-func (p *primitiveExecutor[I, O]) close(proposal ManagedProposal[*protocol.ClosePrimitiveInput, *protocol.ClosePrimitiveOutput]) {
+func (p *primitiveExecutor[I, O]) close(proposal Proposal[*protocol.ClosePrimitiveInput, *protocol.ClosePrimitiveOutput]) {
 	session, ok := p.sessions.get(proposal.Session().ID())
 	if !ok {
 		proposal.Error(errors.NewForbidden("session not found"))
@@ -383,7 +371,7 @@ func (p *primitiveExecutor[I, O]) close(proposal ManagedProposal[*protocol.Close
 	}
 }
 
-func (p *primitiveExecutor[I, O]) propose(proposal ManagedProposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) {
+func (p *primitiveExecutor[I, O]) propose(proposal Proposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) {
 	session, ok := p.sessions.get(proposal.Session().ID())
 	if !ok {
 		proposal.Error(errors.NewForbidden("session not found"))
@@ -393,7 +381,7 @@ func (p *primitiveExecutor[I, O]) propose(proposal ManagedProposal[*protocol.Pri
 	}
 }
 
-func (p *primitiveExecutor[I, O]) query(query ManagedQuery[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput]) {
+func (p *primitiveExecutor[I, O]) query(query Query[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput]) {
 	session, ok := p.sessions.get(query.Session().ID())
 	if !ok {
 		query.Error(errors.NewForbidden("session not found"))
@@ -457,12 +445,12 @@ func (s *primitiveSession[I, O]) Recover(reader *SnapshotReader) error {
 	if err != nil {
 		return err
 	}
-	parent, ok := s.primitive.PrimitiveManagerContext.Sessions().Get(SessionID(sessionID))
+	parent, ok := s.primitive.SessionContext.Sessions().Get(SessionID(sessionID))
 	if !ok {
 		return errors.NewFault("session not found")
 	}
 	s.open(parent)
-	for _, sessionProposal := range s.primitive.PrimitiveManagerContext.Proposals().List() {
+	for _, sessionProposal := range s.primitive.SessionContext.Proposals().List() {
 		if sessionProposal.Input().PrimitiveID == s.primitive.ID() {
 			proposal := newPrimitiveProposal[I, O](s)
 			if proposal.init(sessionProposal) {
@@ -505,12 +493,12 @@ func (s *primitiveSession[I, O]) open(parent Session) {
 	s.primitive.sessions.add(s)
 }
 
-func (s *primitiveSession[I, O]) propose(parent ManagedProposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) {
+func (s *primitiveSession[I, O]) propose(parent Proposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) {
 	proposal := newPrimitiveProposal[I, O](s)
 	proposal.execute(parent)
 }
 
-func (s *primitiveSession[I, O]) query(parent ManagedQuery[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput]) {
+func (s *primitiveSession[I, O]) query(parent Query[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput]) {
 	query := newPrimitiveQuery[I, O](s)
 	query.execute(parent)
 }
@@ -587,7 +575,7 @@ func newPrimitiveProposal[I, O any](session *primitiveSession[I, O]) *primitiveP
 }
 
 type primitiveProposal[I, O any] struct {
-	parent   ManagedProposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]
+	parent   Proposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]
 	session  *primitiveSession[I, O]
 	input    I
 	state    CallState
@@ -631,7 +619,7 @@ func (p *primitiveProposal[I, O]) Session() Session {
 	return p.session
 }
 
-func (p *primitiveProposal[I, O]) init(parent ManagedProposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) bool {
+func (p *primitiveProposal[I, O]) init(parent Proposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) bool {
 	input, err := p.session.primitive.codec.DecodeInput(parent.Input().Payload)
 	if err != nil {
 		p.Log().Errorw("Failed decoding proposal", logging.Error("Error", err))
@@ -659,7 +647,7 @@ func (p *primitiveProposal[I, O]) init(parent ManagedProposal[*protocol.Primitiv
 	return true
 }
 
-func (p *primitiveProposal[I, O]) execute(parent ManagedProposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) {
+func (p *primitiveProposal[I, O]) execute(parent Proposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) {
 	if p.state != Pending {
 		return
 	}
@@ -738,13 +726,13 @@ type primitiveProposals[I, O any] struct {
 	proposals map[ProposalID]*primitiveProposal[I, O]
 }
 
-func (p *primitiveProposals[I, O]) Get(id ProposalID) (ManagedProposal[I, O], bool) {
+func (p *primitiveProposals[I, O]) Get(id ProposalID) (Proposal[I, O], bool) {
 	proposal, ok := p.proposals[id]
 	return proposal, ok
 }
 
-func (p *primitiveProposals[I, O]) List() []ManagedProposal[I, O] {
-	proposals := make([]ManagedProposal[I, O], 0, len(p.proposals))
+func (p *primitiveProposals[I, O]) List() []Proposal[I, O] {
+	proposals := make([]Proposal[I, O], 0, len(p.proposals))
 	for _, proposal := range p.proposals {
 		proposals = append(proposals, proposal)
 	}
@@ -759,7 +747,7 @@ func (p *primitiveProposals[I, O]) remove(id ProposalID) {
 	delete(p.proposals, id)
 }
 
-var _ ManagedProposals[any, any] = (*primitiveProposals[any, any])(nil)
+var _ Proposals[any, any] = (*primitiveProposals[any, any])(nil)
 
 func newPrimitiveQuery[I, O any](session *primitiveSession[I, O]) *primitiveQuery[I, O] {
 	return &primitiveQuery[I, O]{
@@ -768,7 +756,7 @@ func newPrimitiveQuery[I, O any](session *primitiveSession[I, O]) *primitiveQuer
 }
 
 type primitiveQuery[I, O any] struct {
-	parent     ManagedQuery[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput]
+	parent     Query[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput]
 	session    *primitiveSession[I, O]
 	input      I
 	state      CallState
@@ -813,7 +801,7 @@ func (q *primitiveQuery[I, O]) Session() Session {
 	return q.session
 }
 
-func (q *primitiveQuery[I, O]) init(parent ManagedQuery[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput]) error {
+func (q *primitiveQuery[I, O]) init(parent Query[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput]) error {
 	input, err := q.session.primitive.codec.DecodeInput(parent.Input().Payload)
 	if err != nil {
 		return err
@@ -837,7 +825,7 @@ func (q *primitiveQuery[I, O]) init(parent ManagedQuery[*protocol.PrimitiveQuery
 	return nil
 }
 
-func (q *primitiveQuery[I, O]) execute(parent ManagedQuery[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput]) {
+func (q *primitiveQuery[I, O]) execute(parent Query[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput]) {
 	if q.state != Pending {
 		return
 	}

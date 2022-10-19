@@ -11,6 +11,7 @@ import (
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/logging"
 	"github.com/atomix/runtime/sdk/pkg/protocol"
+	streams "github.com/atomix/runtime/sdk/pkg/stream"
 	"github.com/bits-and-blooms/bloom/v3"
 	"github.com/google/uuid"
 	"sync"
@@ -27,9 +28,20 @@ const (
 	Canceled
 )
 
-// ManagedCall is a proposal or query call
-type ManagedCall[T CallID, I, O any] interface {
-	Call[T, I, O]
+type CallID interface {
+	ProposalID | QueryID
+}
+
+type ProposalID uint64
+
+type QueryID uint64
+
+// Call is a proposal or query call context
+type Call[T CallID, I, O any] interface {
+	// ID returns the execution identifier
+	ID() T
+	// Log returns the operation log
+	Log() logging.Logger
 	// Time returns the state machine time at the time of the call
 	Time() time.Time
 	// Session returns the call session
@@ -38,28 +50,36 @@ type ManagedCall[T CallID, I, O any] interface {
 	State() CallState
 	// Watch watches the call state for changes
 	Watch(watcher func(CallState)) CancelFunc
+	// Input returns the input
+	Input() I
+	// Output returns the output
+	Output(O)
+	// Error returns a failure error
+	Error(error)
 	// Cancel cancels the call
 	Cancel()
+	// Close closes the execution
+	Close()
 }
 
 type ProposalState = CallState
 
-type ManagedProposal[I, O any] interface {
-	ManagedCall[ProposalID, I, O]
+type Proposal[I, O any] interface {
+	Call[ProposalID, I, O]
 }
 
 type QueryState = CallState
 
-type ManagedQuery[I, O any] interface {
-	ManagedCall[QueryID, I, O]
+type Query[I, O any] interface {
+	Call[QueryID, I, O]
 }
 
-// ManagedProposals provides access to pending proposals
-type ManagedProposals[I, O any] interface {
+// Proposals provides access to pending proposals
+type Proposals[I, O any] interface {
 	// Get gets a proposal by ID
-	Get(id ProposalID) (ManagedProposal[I, O], bool)
+	Get(id ProposalID) (Proposal[I, O], bool)
 	// List lists all open proposals
-	List() []ManagedProposal[I, O]
+	List() []Proposal[I, O]
 }
 
 type SessionID uint64
@@ -70,6 +90,8 @@ const (
 	Open State = iota
 	Closed
 )
+
+type SessionContext Context[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]
 
 // Session is a service session
 type Session interface {
@@ -91,128 +113,13 @@ type Sessions interface {
 	List() []Session
 }
 
-type OpenSessionProposal Proposal[*protocol.OpenSessionInput, *protocol.OpenSessionOutput]
-type KeepAliveProposal Proposal[*protocol.KeepAliveInput, *protocol.KeepAliveOutput]
-type CloseSessionProposal Proposal[*protocol.CloseSessionInput, *protocol.CloseSessionOutput]
-type SessionProposal Proposal[*protocol.SessionProposalInput, *protocol.SessionProposalOutput]
-type SessionQuery Query[*protocol.SessionQueryInput, *protocol.SessionQueryOutput]
-
-type SessionManagerContext interface {
-	Context
-	// Time returns the current service time
-	Time() time.Time
-	// Scheduler returns the service scheduler
-	Scheduler() Scheduler
-}
-
 type SessionManager interface {
 	Recoverable
-	OpenSession(proposal OpenSessionProposal)
-	KeepAlive(proposal KeepAliveProposal)
-	CloseSession(proposal CloseSessionProposal)
-	Propose(proposal SessionProposal)
-	Query(query SessionQuery)
-}
-
-func newSessionManager(ctx SessionManagerContext, factory func(PrimitiveManagerContext) PrimitiveManager) SessionManager {
-	sm := &sessionManager{
-		SessionManagerContext: ctx,
-		sessions:              newManagedSessions(),
-		proposals:             newSessionPrimitiveProposals(),
-	}
-	sm.sm = factory(sm)
-	return sm
-}
-
-type sessionManager struct {
-	SessionManagerContext
-	sm        PrimitiveManager
-	sessions  *managedSessions
-	proposals *sessionPrimitiveProposals
-}
-
-func (m *sessionManager) Sessions() Sessions {
-	return m.sessions
-}
-
-func (m *sessionManager) Proposals() ManagedProposals[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput] {
-	return m.proposals
-}
-
-func (m *sessionManager) Snapshot(writer *SnapshotWriter) error {
-	sessions := m.sessions.list()
-	if err := writer.WriteVarInt(len(sessions)); err != nil {
-		return err
-	}
-	for _, session := range sessions {
-		if err := session.Snapshot(writer); err != nil {
-			return err
-		}
-	}
-	return m.sm.Snapshot(writer)
-}
-
-func (m *sessionManager) Recover(reader *SnapshotReader) error {
-	n, err := reader.ReadVarInt()
-	if err != nil {
-		return err
-	}
-	for i := 0; i < n; i++ {
-		session := newManagedSession(m)
-		if err := session.Recover(reader); err != nil {
-			return err
-		}
-	}
-	return m.sm.Recover(reader)
-}
-
-func (m *sessionManager) OpenSession(openSession OpenSessionProposal) {
-	session := newManagedSession(m)
-	session.open(openSession)
-}
-
-func (m *sessionManager) KeepAlive(keepAlive KeepAliveProposal) {
-	sessionID := SessionID(keepAlive.Input().SessionID)
-	session, ok := m.sessions.get(sessionID)
-	if !ok {
-		keepAlive.Error(errors.NewForbidden("session not found"))
-		keepAlive.Close()
-	} else {
-		session.keepAlive(keepAlive)
-	}
-}
-
-func (m *sessionManager) CloseSession(closeSession CloseSessionProposal) {
-	sessionID := SessionID(closeSession.Input().SessionID)
-	session, ok := m.sessions.get(sessionID)
-	if !ok {
-		closeSession.Error(errors.NewForbidden("session not found"))
-		closeSession.Close()
-	} else {
-		session.close(closeSession)
-	}
-}
-
-func (m *sessionManager) Propose(proposal SessionProposal) {
-	sessionID := SessionID(proposal.Input().SessionID)
-	session, ok := m.sessions.get(sessionID)
-	if !ok {
-		proposal.Error(errors.NewForbidden("session not found"))
-		proposal.Close()
-	} else {
-		session.propose(proposal)
-	}
-}
-
-func (m *sessionManager) Query(query SessionQuery) {
-	sessionID := SessionID(query.Input().SessionID)
-	session, ok := m.sessions.get(sessionID)
-	if !ok {
-		query.Error(errors.NewForbidden("session not found"))
-		query.Close()
-	} else {
-		session.query(query)
-	}
+	OpenSession(input *protocol.OpenSessionInput, stream streams.WriteStream[*protocol.OpenSessionOutput])
+	KeepAlive(input *protocol.KeepAliveInput, stream streams.WriteStream[*protocol.KeepAliveOutput])
+	CloseSession(input *protocol.CloseSessionInput, stream streams.WriteStream[*protocol.CloseSessionOutput])
+	Propose(input *protocol.SessionProposalInput, stream streams.WriteStream[*protocol.SessionProposalOutput])
+	Query(input *protocol.SessionQueryInput, stream streams.WriteStream[*protocol.SessionQueryOutput])
 }
 
 func newManagedSession(manager *sessionManager) *managedSession {
@@ -258,19 +165,19 @@ func (s *managedSession) Watch(f func(State)) CancelFunc {
 	}
 }
 
-func (s *managedSession) propose(parent Proposal[*protocol.SessionProposalInput, *protocol.SessionProposalOutput]) {
-	if proposal, ok := s.proposals[parent.Input().SequenceNum]; ok {
-		proposal.replay(parent)
+func (s *managedSession) propose(input *protocol.SessionProposalInput, stream streams.WriteStream[*protocol.SessionProposalOutput]) {
+	if proposal, ok := s.proposals[input.SequenceNum]; ok {
+		proposal.replay(stream)
 	} else {
 		proposal := newSessionProposal(s)
-		s.proposals[parent.Input().SequenceNum] = proposal
-		proposal.execute(parent)
+		s.proposals[input.SequenceNum] = proposal
+		proposal.execute(input, stream)
 	}
 }
 
-func (s *managedSession) query(parent Query[*protocol.SessionQueryInput, *protocol.SessionQueryOutput]) {
+func (s *managedSession) query(input *protocol.SessionQueryInput, stream streams.WriteStream[*protocol.SessionQueryOutput]) {
 	query := newSessionQuery(s)
-	query.execute(parent)
+	query.execute(input, stream)
 	if query.state == Running {
 		s.queriesMu.Lock()
 		s.queries[query.Input().SequenceNum] = query
@@ -360,34 +267,34 @@ func (s *managedSession) scheduleExpireTimer() {
 	s.Log().Debugw("Scheduled expire time", logging.Time("Expire", expireTime))
 }
 
-func (s *managedSession) open(open Proposal[*protocol.OpenSessionInput, *protocol.OpenSessionOutput]) {
-	defer open.Close()
-	s.id = SessionID(open.ID())
+func (s *managedSession) open(input *protocol.OpenSessionInput, stream streams.WriteStream[*protocol.OpenSessionOutput]) {
+	defer stream.Close()
+	s.id = SessionID(s.manager.Index())
 	s.state = Open
 	s.lastUpdated = s.manager.Time()
-	s.timeout = open.Input().Timeout
+	s.timeout = input.Timeout
 	s.log = log.WithFields(logging.Uint64("Session", uint64(s.id)))
 	s.manager.sessions.add(s)
 	s.scheduleExpireTimer()
 	s.Log().Infow("Opened session", logging.Duration("Timeout", s.timeout))
-	open.Output(&protocol.OpenSessionOutput{
+	stream.Value(&protocol.OpenSessionOutput{
 		SessionID: protocol.SessionID(s.ID()),
 	})
 }
 
-func (s *managedSession) keepAlive(keepAlive Proposal[*protocol.KeepAliveInput, *protocol.KeepAliveOutput]) {
-	defer keepAlive.Close()
+func (s *managedSession) keepAlive(input *protocol.KeepAliveInput, stream streams.WriteStream[*protocol.KeepAliveOutput]) {
+	defer stream.Close()
 
 	openInputs := &bloom.BloomFilter{}
-	if err := json.Unmarshal(keepAlive.Input().InputFilter, openInputs); err != nil {
+	if err := json.Unmarshal(input.InputFilter, openInputs); err != nil {
 		s.Log().Warn("Failed to decode request filter", err)
-		keepAlive.Error(errors.NewInvalid("invalid request filter", err))
+		stream.Error(errors.NewInvalid("invalid request filter", err))
 		return
 	}
 
 	s.Log().Debug("Processing keep-alive")
 	for _, proposal := range s.proposals {
-		if keepAlive.Input().LastInputSequenceNum < proposal.Input().SequenceNum {
+		if input.LastInputSequenceNum < proposal.Input().SequenceNum {
 			continue
 		}
 		sequenceNumBytes := make([]byte, 8)
@@ -396,7 +303,7 @@ func (s *managedSession) keepAlive(keepAlive Proposal[*protocol.KeepAliveInput, 
 			proposal.Cancel()
 			delete(s.proposals, proposal.Input().SequenceNum)
 		} else {
-			if outputSequenceNum, ok := keepAlive.Input().LastOutputSequenceNums[proposal.Input().SequenceNum]; ok {
+			if outputSequenceNum, ok := input.LastOutputSequenceNums[proposal.Input().SequenceNum]; ok {
 				proposal.ack(outputSequenceNum)
 			}
 		}
@@ -404,7 +311,7 @@ func (s *managedSession) keepAlive(keepAlive Proposal[*protocol.KeepAliveInput, 
 
 	s.queriesMu.Lock()
 	for sn, query := range s.queries {
-		if keepAlive.Input().LastInputSequenceNum < query.Input().SequenceNum {
+		if input.LastInputSequenceNum < query.Input().SequenceNum {
 			continue
 		}
 		sequenceNumBytes := make([]byte, 8)
@@ -416,16 +323,16 @@ func (s *managedSession) keepAlive(keepAlive Proposal[*protocol.KeepAliveInput, 
 	}
 	s.queriesMu.Unlock()
 
-	keepAlive.Output(&protocol.KeepAliveOutput{})
+	stream.Value(&protocol.KeepAliveOutput{})
 
 	s.lastUpdated = s.manager.Time()
 	s.scheduleExpireTimer()
 }
 
-func (s *managedSession) close(close Proposal[*protocol.CloseSessionInput, *protocol.CloseSessionOutput]) {
-	defer close.Close()
+func (s *managedSession) close(input *protocol.CloseSessionInput, stream streams.WriteStream[*protocol.CloseSessionOutput]) {
+	defer stream.Close()
 	s.destroy()
-	close.Output(&protocol.CloseSessionOutput{})
+	stream.Value(&protocol.CloseSessionOutput{})
 }
 
 func (s *managedSession) destroy() {
@@ -497,34 +404,34 @@ func (s *managedSessions) list() []*managedSession {
 	return sessions
 }
 
-func newSessionPrimitiveProposals() *sessionPrimitiveProposals {
-	return &sessionPrimitiveProposals{
+func newSessionProposals() *sessionProposals {
+	return &sessionProposals{
 		proposals: make(map[ProposalID]*sessionPrimitiveProposal),
 	}
 }
 
-type sessionPrimitiveProposals struct {
+type sessionProposals struct {
 	proposals map[ProposalID]*sessionPrimitiveProposal
 }
 
-func (p *sessionPrimitiveProposals) Get(id ProposalID) (ManagedProposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput], bool) {
+func (p *sessionProposals) Get(id ProposalID) (Proposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput], bool) {
 	proposal, ok := p.proposals[id]
 	return proposal, ok
 }
 
-func (p *sessionPrimitiveProposals) List() []ManagedProposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput] {
-	proposals := make([]ManagedProposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput], 0, len(p.proposals))
+func (p *sessionProposals) List() []Proposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput] {
+	proposals := make([]Proposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput], 0, len(p.proposals))
 	for _, proposal := range p.proposals {
 		proposals = append(proposals, proposal)
 	}
 	return proposals
 }
 
-func (p *sessionPrimitiveProposals) add(proposal *sessionPrimitiveProposal) {
+func (p *sessionProposals) add(proposal *sessionPrimitiveProposal) {
 	p.proposals[proposal.ID()] = proposal
 }
 
-func (p *sessionPrimitiveProposals) remove(id ProposalID) {
+func (p *sessionProposals) remove(id ProposalID) {
 	delete(p.proposals, id)
 }
 
@@ -541,7 +448,7 @@ type sessionProposal struct {
 	input        *protocol.SessionProposalInput
 	timestamp    time.Time
 	state        ProposalState
-	parent       Proposal[*protocol.SessionProposalInput, *protocol.SessionProposalOutput]
+	stream       streams.WriteStream[*protocol.SessionProposalOutput]
 	watchers     map[uuid.UUID]func(ProposalState)
 	outputs      *list.List
 	outputSeqNum protocol.SequenceNum
@@ -579,39 +486,39 @@ func (p *sessionProposal) Watch(watcher func(ProposalState)) CancelFunc {
 	}
 }
 
-func (p *sessionProposal) execute(parent Proposal[*protocol.SessionProposalInput, *protocol.SessionProposalOutput]) {
-	p.id = parent.ID()
-	p.input = parent.Input()
+func (p *sessionProposal) execute(input *protocol.SessionProposalInput, stream streams.WriteStream[*protocol.SessionProposalOutput]) {
+	p.id = ProposalID(p.session.manager.Index())
+	p.input = input
 	p.timestamp = p.session.manager.Time()
 	p.state = Running
-	p.log = p.session.Log().WithFields(logging.Uint64("ProposalID", uint64(parent.ID())))
-	p.parent = parent
+	p.log = p.session.Log().WithFields(logging.Uint64("ProposalID", uint64(p.id)))
+	p.stream = stream
 
-	switch parent.Input().Input.(type) {
+	switch input.Input.(type) {
 	case *protocol.SessionProposalInput_Proposal:
 		proposal := newSessionPrimitiveProposal(p)
 		p.session.manager.proposals.add(proposal)
-		p.session.manager.sm.Propose(proposal)
+		p.session.manager.primitives.Propose(proposal)
 	case *protocol.SessionProposalInput_CreatePrimitive:
-		p.session.manager.sm.CreatePrimitive(newCreatePrimitiveProposal(p))
+		p.session.manager.primitives.CreatePrimitive(newCreatePrimitiveProposal(p))
 	case *protocol.SessionProposalInput_ClosePrimitive:
-		p.session.manager.sm.ClosePrimitive(newClosePrimitiveProposal(p))
+		p.session.manager.primitives.ClosePrimitive(newClosePrimitiveProposal(p))
 	}
 }
 
-func (p *sessionProposal) replay(parent Proposal[*protocol.SessionProposalInput, *protocol.SessionProposalOutput]) {
-	p.parent = parent
+func (p *sessionProposal) replay(stream streams.WriteStream[*protocol.SessionProposalOutput]) {
+	p.stream = stream
 	if p.outputs.Len() > 0 {
 		p.Log().Debug("Replaying proposal outputs")
 		elem := p.outputs.Front()
 		for elem != nil {
 			output := elem.Value.(*protocol.SessionProposalOutput)
-			p.parent.Output(output)
+			p.stream.Value(output)
 			elem = elem.Next()
 		}
 	}
 	if p.state == Complete {
-		p.parent.Close()
+		p.stream.Close()
 	}
 }
 
@@ -708,8 +615,8 @@ func (p *sessionProposal) Output(output *protocol.SessionProposalOutput) {
 	}
 	p.Log().Debugw("Cached command output", logging.Uint64("SequenceNum", uint64(output.SequenceNum)))
 	p.outputs.PushBack(output)
-	if p.parent != nil {
-		p.parent.Output(output)
+	if p.stream != nil {
+		p.stream.Value(output)
 	}
 }
 
@@ -736,8 +643,8 @@ func (p *sessionProposal) close(phase ProposalState) {
 	if p.state != Running {
 		return
 	}
-	if p.parent != nil {
-		p.parent.Close()
+	if p.stream != nil {
+		p.stream.Close()
 	}
 	p.state = phase
 	p.session.manager.proposals.remove(p.id)
@@ -771,7 +678,7 @@ func (p *sessionPrimitiveProposal) Output(output *protocol.PrimitiveProposalOutp
 	})
 }
 
-var _ ManagedProposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput] = (*sessionPrimitiveProposal)(nil)
+var _ Proposal[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput] = (*sessionPrimitiveProposal)(nil)
 
 func newCreatePrimitiveProposal(parent *sessionProposal) *createPrimitiveProposal {
 	return &createPrimitiveProposal{
@@ -831,7 +738,9 @@ func newSessionQuery(session *managedSession) *sessionQuery {
 
 type sessionQuery struct {
 	session   *managedSession
-	parent    Query[*protocol.SessionQueryInput, *protocol.SessionQueryOutput]
+	id        QueryID
+	input     *protocol.SessionQueryInput
+	stream    streams.WriteStream[*protocol.SessionQueryOutput]
 	timestamp time.Time
 	state     QueryState
 	watching  atomic.Bool
@@ -841,7 +750,7 @@ type sessionQuery struct {
 }
 
 func (q *sessionQuery) ID() QueryID {
-	return q.parent.ID()
+	return q.id
 }
 
 func (q *sessionQuery) Log() logging.Logger {
@@ -876,34 +785,36 @@ func (q *sessionQuery) Watch(watcher func(QueryState)) CancelFunc {
 	}
 }
 
-func (q *sessionQuery) execute(parent Query[*protocol.SessionQueryInput, *protocol.SessionQueryOutput]) {
-	q.state = Running
-	q.parent = parent
+func (q *sessionQuery) execute(input *protocol.SessionQueryInput, stream streams.WriteStream[*protocol.SessionQueryOutput]) {
+	q.id = QueryID(q.session.manager.sequenceNum.Add(1))
+	q.input = input
+	q.stream = stream
 	q.timestamp = q.session.manager.Time()
-	q.log = q.session.Log().WithFields(logging.Uint64("QueryID", uint64(parent.ID())))
-	switch parent.Input().Input.(type) {
+	q.log = q.session.Log().WithFields(logging.Uint64("QueryID", uint64(q.id)))
+	q.state = Running
+	switch input.Input.(type) {
 	case *protocol.SessionQueryInput_Query:
 		query := newSessionPrimitiveQuery(q)
-		q.session.manager.sm.Query(query)
+		q.session.manager.primitives.Query(query)
 	}
 }
 
 func (q *sessionQuery) Input() *protocol.SessionQueryInput {
-	return q.parent.Input()
+	return q.input
 }
 
 func (q *sessionQuery) Output(output *protocol.SessionQueryOutput) {
 	if q.state != Running {
 		return
 	}
-	q.parent.Output(output)
+	q.stream.Value(output)
 }
 
 func (q *sessionQuery) Error(err error) {
 	if q.state != Running {
 		return
 	}
-	q.parent.Error(err)
+	q.stream.Error(err)
 	q.Close()
 }
 
@@ -920,7 +831,7 @@ func (q *sessionQuery) close(phase QueryState) {
 		return
 	}
 	q.state = phase
-	q.parent.Close()
+	q.stream.Close()
 	if q.watching.Load() {
 		q.mu.RLock()
 		watchers := make([]func(QueryState), 0, len(q.watchers))

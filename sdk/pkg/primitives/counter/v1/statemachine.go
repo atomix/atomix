@@ -12,11 +12,11 @@ import (
 type CounterStateMachine interface {
 	statemachine.PrimitiveContext[*CounterInput, *CounterOutput]
 	statemachine.Recoverable
-	Set(proposal statemachine.ManagedProposal[*SetInput, *SetOutput])
-	Update(proposal statemachine.ManagedProposal[*UpdateInput, *UpdateOutput])
-	Increment(proposal statemachine.ManagedProposal[*IncrementInput, *IncrementOutput])
-	Decrement(proposal statemachine.ManagedProposal[*DecrementInput, *DecrementOutput])
-	Get(query statemachine.ManagedQuery[*GetInput, *GetOutput])
+	Set(proposal statemachine.Proposal[*SetInput, *SetOutput])
+	Update(proposal statemachine.Proposal[*UpdateInput, *UpdateOutput])
+	Increment(proposal statemachine.Proposal[*IncrementInput, *IncrementOutput])
+	Decrement(proposal statemachine.Proposal[*DecrementInput, *DecrementOutput])
+	Get(query statemachine.Query[*GetInput, *GetOutput])
 }
 
 func NewStateMachine(ctx statemachine.PrimitiveContext[*CounterInput, *CounterOutput]) CounterStateMachine {
@@ -43,7 +43,7 @@ func (s *counterStateMachine) Recover(reader *statemachine.SnapshotReader) error
 	return nil
 }
 
-func (s *counterStateMachine) Set(proposal statemachine.ManagedProposal[*SetInput, *SetOutput]) {
+func (s *counterStateMachine) Set(proposal statemachine.Proposal[*SetInput, *SetOutput]) {
 	defer proposal.Close()
 	s.value = proposal.Input().Value
 	proposal.Output(&SetOutput{
@@ -51,7 +51,7 @@ func (s *counterStateMachine) Set(proposal statemachine.ManagedProposal[*SetInpu
 	})
 }
 
-func (s *counterStateMachine) Update(proposal statemachine.ManagedProposal[*UpdateInput, *UpdateOutput]) {
+func (s *counterStateMachine) Update(proposal statemachine.Proposal[*UpdateInput, *UpdateOutput]) {
 	defer proposal.Close()
 	if s.value != proposal.Input().Compare {
 		proposal.Error(errors.NewConflict("optimistic lock failure"))
@@ -63,7 +63,7 @@ func (s *counterStateMachine) Update(proposal statemachine.ManagedProposal[*Upda
 	}
 }
 
-func (s *counterStateMachine) Increment(proposal statemachine.ManagedProposal[*IncrementInput, *IncrementOutput]) {
+func (s *counterStateMachine) Increment(proposal statemachine.Proposal[*IncrementInput, *IncrementOutput]) {
 	defer proposal.Close()
 	s.value += proposal.Input().Delta
 	proposal.Output(&IncrementOutput{
@@ -71,7 +71,7 @@ func (s *counterStateMachine) Increment(proposal statemachine.ManagedProposal[*I
 	})
 }
 
-func (s *counterStateMachine) Decrement(proposal statemachine.ManagedProposal[*DecrementInput, *DecrementOutput]) {
+func (s *counterStateMachine) Decrement(proposal statemachine.Proposal[*DecrementInput, *DecrementOutput]) {
 	defer proposal.Close()
 	s.value -= proposal.Input().Delta
 	proposal.Output(&DecrementOutput{
@@ -79,7 +79,7 @@ func (s *counterStateMachine) Decrement(proposal statemachine.ManagedProposal[*D
 	})
 }
 
-func (s *counterStateMachine) Get(query statemachine.ManagedQuery[*GetInput, *GetOutput]) {
+func (s *counterStateMachine) Get(query statemachine.Query[*GetInput, *GetOutput]) {
 	defer query.Close()
 	query.Output(&GetOutput{
 		Value: s.value,

@@ -6,13 +6,14 @@ package statemachine
 
 import (
 	"container/list"
+	"github.com/atomix/runtime/sdk/pkg/protocol"
 	"sync/atomic"
 	"time"
 )
 
 type Scheduler interface {
 	Time() time.Time
-	Await(index Index, f func()) CancelFunc
+	Await(index protocol.Index, f func()) CancelFunc
 	Delay(d time.Duration, f func()) CancelFunc
 	Schedule(t time.Time, f func()) CancelFunc
 }
@@ -22,7 +23,7 @@ type CancelFunc func()
 func newScheduler() *stateMachineScheduler {
 	scheduler := &stateMachineScheduler{
 		scheduledTasks: list.New(),
-		indexedTasks:   make(map[Index]*list.List),
+		indexedTasks:   make(map[protocol.Index]*list.List),
 	}
 	scheduler.time.Store(time.UnixMilli(0))
 	return scheduler
@@ -30,7 +31,7 @@ func newScheduler() *stateMachineScheduler {
 
 type stateMachineScheduler struct {
 	scheduledTasks *list.List
-	indexedTasks   map[Index]*list.List
+	indexedTasks   map[protocol.Index]*list.List
 	time           atomic.Value
 }
 
@@ -38,7 +39,7 @@ func (s *stateMachineScheduler) Time() time.Time {
 	return s.time.Load().(time.Time)
 }
 
-func (s *stateMachineScheduler) Await(index Index, f func()) CancelFunc {
+func (s *stateMachineScheduler) Await(index protocol.Index, f func()) CancelFunc {
 	task := &indexTask{
 		scheduler: s,
 		index:     index,
@@ -85,7 +86,7 @@ func (s *stateMachineScheduler) tick(time time.Time) {
 }
 
 // tock runs the scheduled index-based tasks
-func (s *stateMachineScheduler) tock(index Index) {
+func (s *stateMachineScheduler) tock(index protocol.Index) {
 	if tasks, ok := s.indexedTasks[index]; ok {
 		elem := tasks.Front()
 		for elem != nil {
@@ -140,7 +141,7 @@ func (t *timeTask) cancel() {
 type indexTask struct {
 	scheduler *stateMachineScheduler
 	callback  func()
-	index     Index
+	index     protocol.Index
 	elem      *list.Element
 }
 

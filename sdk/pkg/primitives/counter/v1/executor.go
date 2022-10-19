@@ -122,7 +122,7 @@ func (s *counterExecutor) init() {
 		Build(s.Get)
 }
 
-func (s *counterExecutor) Propose(proposal statemachine.ManagedProposal[*CounterInput, *CounterOutput]) {
+func (s *counterExecutor) Propose(proposal statemachine.Proposal[*CounterInput, *CounterOutput]) {
 	switch proposal.Input().Input.(type) {
 	case *CounterInput_Set:
 		s.set.Call(proposal)
@@ -137,7 +137,7 @@ func (s *counterExecutor) Propose(proposal statemachine.ManagedProposal[*Counter
 	}
 }
 
-func (s *counterExecutor) Query(query statemachine.ManagedQuery[*CounterInput, *CounterOutput]) {
+func (s *counterExecutor) Query(query statemachine.Query[*CounterInput, *CounterOutput]) {
 	switch query.Input().Input.(type) {
 	case *CounterInput_Get:
 		s.get.Call(query)
