@@ -1,0 +1,101 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.sdk.protocol.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+message CreatePrimitiveInput {
+    PrimitiveSpec spec = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message CreatePrimitiveOutput {
+    uint64 primitive_id = 1 [
+        (gogoproto.customname) = "PrimitiveID",
+        (gogoproto.casttype) = "PrimitiveID"
+    ];
+}
+
+message ClosePrimitiveInput {
+    uint64 primitive_id = 1 [
+        (gogoproto.customname) = "PrimitiveID",
+        (gogoproto.casttype) = "PrimitiveID"
+    ];
+}
+
+message ClosePrimitiveOutput {
+
+}
+
+message PrimitiveProposalInput {
+    uint64 primitive_id = 1 [
+        (gogoproto.customname) = "PrimitiveID",
+        (gogoproto.casttype) = "PrimitiveID"
+    ];
+    bytes payload = 2;
+}
+
+message PrimitiveProposalOutput {
+    bytes payload = 1;
+}
+
+message PrimitiveQueryInput {
+    uint64 primitive_id = 1 [
+        (gogoproto.customname) = "PrimitiveID",
+        (gogoproto.casttype) = "PrimitiveID"
+    ];
+    bytes payload = 2;
+}
+
+message PrimitiveQueryOutput {
+    bytes payload = 1;
+}
+
+message Failure {
+    Status status = 1;
+    string message = 2;
+
+    enum Status {
+        UNKNOWN = 0;
+        ERROR = 1;
+        CANCELED = 2;
+        NOT_FOUND = 3;
+        ALREADY_EXISTS = 4;
+        UNAUTHORIZED = 5;
+        FORBIDDEN = 6;
+        CONFLICT = 7;
+        INVALID = 8;
+        UNAVAILABLE = 9;
+        NOT_SUPPORTED = 10;
+        TIMEOUT = 11;
+        FAULT = 12;
+        INTERNAL = 13;
+    }
+}
+
+message PrimitiveSnapshot {
+    uint64 primitive_id = 1 [
+        (gogoproto.customname) = "PrimitiveID",
+        (gogoproto.casttype) = "PrimitiveID"
+    ];
+    PrimitiveSpec spec = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message PrimitiveSpec {
+    string service = 1;
+    string namespace = 2;
+    string name = 3;
+    string profile = 4;
+}

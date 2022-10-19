@@ -1,0 +1,158 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.sdk.protocol.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+import "protocol/headers.proto";
+import "protocol/session.proto";
+
+service Partition {
+    rpc OpenSession(OpenSessionRequest) returns (OpenSessionResponse);
+    rpc KeepAlive(KeepAliveRequest) returns (KeepAliveResponse);
+    rpc CloseSession(CloseSessionRequest) returns (CloseSessionResponse);
+}
+
+message OpenSessionRequest {
+    PartitionRequestHeaders headers = 1;
+    OpenSessionInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message OpenSessionResponse {
+    PartitionResponseHeaders headers = 1;
+    OpenSessionOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message KeepAliveRequest {
+    PartitionRequestHeaders headers = 1;
+    KeepAliveInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message KeepAliveResponse {
+    PartitionResponseHeaders headers = 1;
+    KeepAliveOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message CloseSessionRequest {
+    PartitionRequestHeaders headers = 1;
+    CloseSessionInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message CloseSessionResponse {
+    PartitionResponseHeaders headers = 1;
+    CloseSessionOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ProposalInput {
+    google.protobuf.Timestamp timestamp = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.stdtime) = true
+    ];
+    oneof input {
+        OpenSessionInput open_session = 2;
+        KeepAliveInput keep_alive = 3;
+        CloseSessionInput close_session = 4;
+        SessionProposalInput proposal = 5;
+    }
+}
+
+message ProposalOutput {
+    uint64 index = 1 [
+        (gogoproto.casttype) = "Index"
+    ];
+    oneof output {
+        OpenSessionOutput open_session = 2;
+        KeepAliveOutput keep_alive = 3;
+        CloseSessionOutput close_session = 4;
+        SessionProposalOutput proposal = 5;
+    }
+}
+
+message QueryInput {
+    uint64 max_received_index = 1 [
+        (gogoproto.casttype) = "Index"
+    ];
+    oneof input {
+        SessionQueryInput query = 2;
+    }
+}
+
+message QueryOutput {
+    uint64 index = 1 [
+        (gogoproto.casttype) = "Index"
+    ];
+    oneof output {
+        SessionQueryOutput query = 2;
+    }
+}
+
+message OpenSessionInput {
+    google.protobuf.Duration timeout = 1 [
+        (gogoproto.stdduration) = true,
+        (gogoproto.nullable) = false
+    ];
+}
+
+message OpenSessionOutput {
+    uint64 session_id = 1 [
+        (gogoproto.customname) = "SessionID",
+        (gogoproto.casttype) = "SessionID"
+    ];
+}
+
+message KeepAliveInput {
+    uint64 session_id = 1 [
+        (gogoproto.customname) = "SessionID",
+        (gogoproto.casttype) = "SessionID"
+    ];
+    bytes input_filter = 2;
+    uint64 last_input_sequence_num = 3 [
+        (gogoproto.casttype) = "SequenceNum"
+    ];
+    map<uint64, uint64> last_output_sequence_nums = 4 [
+        (gogoproto.castkey) = "SequenceNum",
+        (gogoproto.castvalue) = "SequenceNum"
+    ];
+}
+
+message KeepAliveOutput {
+
+}
+
+message CloseSessionInput {
+    uint64 session_id = 1 [
+        (gogoproto.customname) = "SessionID",
+        (gogoproto.casttype) = "SessionID"
+    ];
+}
+
+message CloseSessionOutput {
+
+}
+
+message Snapshot {
+    uint64 index = 1 [(gogoproto.casttype) = "Index"];
+    google.protobuf.Timestamp timestamp = 2 [
+        (gogoproto.stdtime) = true,
+        (gogoproto.nullable) = false
+    ];
+}
