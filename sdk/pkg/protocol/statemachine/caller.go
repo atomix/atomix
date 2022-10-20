@@ -42,7 +42,7 @@ func (b *ProposalsBuilder[I1, O1, I2, O2]) Encoder(f func(O2) O1) *ProposalsBuil
 	return b
 }
 
-func (b *ProposalsBuilder[I1, O1, I2, O2]) Build(f func(Proposal[I2, O2])) Proposals[I2, O2] {
+func (b *ProposalsBuilder[I1, O1, I2, O2]) Build() Proposals[I2, O2] {
 	return &transcodingProposals[I1, O1, I2, O2]{
 		parent:  b.ctx.Proposals(),
 		decoder: b.decoder,
