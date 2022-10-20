@@ -45,14 +45,11 @@ func (b *ProposalsBuilder[I1, O1, I2, O2]) Build() Proposals[I2, O2] {
 	}
 }
 
-func NewProposer[I1, O1, I2, O2 proto.Message](ctx PrimitiveContext[I1, O1]) *ProposerBuilder[I1, O1, I2, O2] {
-	return &ProposerBuilder[I1, O1, I2, O2]{
-		ctx: ctx,
-	}
+func NewProposer[I1, O1, I2, O2 proto.Message]() *ProposerBuilder[I1, O1, I2, O2] {
+	return &ProposerBuilder[I1, O1, I2, O2]{}
 }
 
 type ProposerBuilder[I1, O1, I2, O2 proto.Message] struct {
-	ctx     PrimitiveContext[I1, O1]
 	name    string
 	decoder func(I1) (I2, bool)
 	encoder func(O2) O1
@@ -88,14 +85,11 @@ func (b *ProposerBuilder[I1, O1, I2, O2]) Build(f func(Proposal[I2, O2])) Propos
 
 type Querier[I1, O1, I2, O2 any] Caller[Query[I1, O1], QueryID, I1, O1]
 
-func NewQuerier[I1, O1, I2, O2 proto.Message](ctx PrimitiveContext[I1, O1]) *QuerierBuilder[I1, O1, I2, O2] {
-	return &QuerierBuilder[I1, O1, I2, O2]{
-		ctx: ctx,
-	}
+func NewQuerier[I1, O1, I2, O2 proto.Message]() *QuerierBuilder[I1, O1, I2, O2] {
+	return &QuerierBuilder[I1, O1, I2, O2]{}
 }
 
 type QuerierBuilder[I1, O1, I2, O2 proto.Message] struct {
-	ctx     PrimitiveContext[I1, O1]
 	name    string
 	decoder func(I1) (I2, bool)
 	encoder func(O2) O1
