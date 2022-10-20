@@ -20,6 +20,10 @@ var PrimitiveType = statemachine.NewPrimitiveType[*CounterInput, *CounterOutput]
 		return newExecutor(NewCounterStateMachine(context))
 	})
 
+type CounterContext interface {
+	statemachine.PrimitiveContext[*CounterInput, *CounterOutput]
+}
+
 type CounterStateMachine interface {
 	statemachine.Context[*CounterInput, *CounterOutput]
 	statemachine.Recoverable
@@ -32,12 +36,12 @@ type CounterStateMachine interface {
 
 func NewCounterStateMachine(ctx statemachine.PrimitiveContext[*CounterInput, *CounterOutput]) CounterStateMachine {
 	return &counterStateMachine{
-		PrimitiveContext: ctx,
+		CounterContext: ctx,
 	}
 }
 
 type counterStateMachine struct {
-	statemachine.PrimitiveContext[*CounterInput, *CounterOutput]
+	CounterContext
 	value int64
 }
 

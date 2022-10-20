@@ -153,7 +153,7 @@ func (s *indexedMapProxy) Append(ctx context.Context, request *indexedmapv1.Appe
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.AppendResponse{
-		Entry: newEntry(output.Entry),
+		Entry: newProxyEntry(output.Entry),
 	}
 	log.Debugw("Append",
 		logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
@@ -199,7 +199,7 @@ func (s *indexedMapProxy) Update(ctx context.Context, request *indexedmapv1.Upda
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.UpdateResponse{
-		Entry: newEntry(output.Entry),
+		Entry: newProxyEntry(output.Entry),
 	}
 	log.Debugw("Update",
 		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
@@ -242,7 +242,7 @@ func (s *indexedMapProxy) Get(ctx context.Context, request *indexedmapv1.GetRequ
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.GetResponse{
-		Entry: newEntry(output.Entry),
+		Entry: newProxyEntry(output.Entry),
 	}
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
@@ -282,7 +282,7 @@ func (s *indexedMapProxy) FirstEntry(ctx context.Context, request *indexedmapv1.
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.FirstEntryResponse{
-		Entry: newEntry(output.Entry),
+		Entry: newProxyEntry(output.Entry),
 	}
 	log.Debugw("FirstEntry",
 		logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)),
@@ -322,7 +322,7 @@ func (s *indexedMapProxy) LastEntry(ctx context.Context, request *indexedmapv1.L
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.LastEntryResponse{
-		Entry: newEntry(output.Entry),
+		Entry: newProxyEntry(output.Entry),
 	}
 	log.Debugw("LastEntry",
 		logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)),
@@ -364,7 +364,7 @@ func (s *indexedMapProxy) NextEntry(ctx context.Context, request *indexedmapv1.N
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.NextEntryResponse{
-		Entry: newEntry(output.Entry),
+		Entry: newProxyEntry(output.Entry),
 	}
 	log.Debugw("NextEntry",
 		logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)),
@@ -406,7 +406,7 @@ func (s *indexedMapProxy) PrevEntry(ctx context.Context, request *indexedmapv1.P
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.PrevEntryResponse{
-		Entry: newEntry(output.Entry),
+		Entry: newProxyEntry(output.Entry),
 	}
 	log.Debugw("PrevEntry",
 		logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)),
@@ -450,7 +450,7 @@ func (s *indexedMapProxy) Remove(ctx context.Context, request *indexedmapv1.Remo
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.RemoveResponse{
-		Entry: newEntry(output.Entry),
+		Entry: newProxyEntry(output.Entry),
 	}
 	log.Debugw("Remove",
 		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
@@ -541,7 +541,7 @@ func (s *indexedMapProxy) Entries(request *indexedmapv1.EntriesRequest, server i
 			return errors.ToProto(err)
 		}
 		response := &indexedmapv1.EntriesResponse{
-			Entry: *newEntry(&output.Entry),
+			Entry: *newProxyEntry(&output.Entry),
 		}
 		log.Debugw("Entries",
 			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
@@ -611,7 +611,7 @@ func (s *indexedMapProxy) Events(request *indexedmapv1.EventsRequest, server ind
 				Event: indexedmapv1.Event{
 					Event: &indexedmapv1.Event_Inserted_{
 						Inserted: &indexedmapv1.Event_Inserted{
-							Value: *newValue(&e.Inserted.Value),
+							Value: *newProxyValue(&e.Inserted.Value),
 						},
 					},
 				},
@@ -621,8 +621,8 @@ func (s *indexedMapProxy) Events(request *indexedmapv1.EventsRequest, server ind
 				Event: indexedmapv1.Event{
 					Event: &indexedmapv1.Event_Updated_{
 						Updated: &indexedmapv1.Event_Updated{
-							Value:     *newValue(&e.Updated.Value),
-							PrevValue: *newValue(&e.Updated.PrevValue),
+							Value:     *newProxyValue(&e.Updated.Value),
+							PrevValue: *newProxyValue(&e.Updated.PrevValue),
 						},
 					},
 				},
@@ -632,7 +632,7 @@ func (s *indexedMapProxy) Events(request *indexedmapv1.EventsRequest, server ind
 				Event: indexedmapv1.Event{
 					Event: &indexedmapv1.Event_Removed_{
 						Removed: &indexedmapv1.Event_Removed{
-							Value:   *newValue(&e.Removed.Value),
+							Value:   *newProxyValue(&e.Removed.Value),
 							Expired: e.Removed.Expired,
 						},
 					},
@@ -652,18 +652,18 @@ func (s *indexedMapProxy) Events(request *indexedmapv1.EventsRequest, server ind
 	}
 }
 
-func newEntry(entry *Entry) *indexedmapv1.Entry {
+func newProxyEntry(entry *Entry) *indexedmapv1.Entry {
 	if entry == nil {
 		return nil
 	}
 	return &indexedmapv1.Entry{
 		Key:   entry.Key,
 		Index: entry.Index,
-		Value: newValue(entry.Value),
+		Value: newProxyValue(entry.Value),
 	}
 }
 
-func newValue(value *Value) *indexedmapv1.VersionedValue {
+func newProxyValue(value *Value) *indexedmapv1.VersionedValue {
 	if value == nil {
 		return nil
 	}
