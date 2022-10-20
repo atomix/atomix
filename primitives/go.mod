@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/atomix/runtime/api v0.6.0
-	github.com/atomix/runtime/sdk v0.6.0
+	github.com/atomix/runtime/sdk v0.6.1-0.20221020071228-8e807aa7c782
 	github.com/gogo/protobuf v1.3.2
 	google.golang.org/grpc v1.46.0
 )
@@ -28,5 +28,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
-
-replace github.com/atomix/runtime/sdk => ../sdk
