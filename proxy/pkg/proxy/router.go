@@ -14,7 +14,7 @@ const wildcard = "*"
 type routerContext struct {
 	service string
 	name    string
-	tags    map[string]string
+	tags    []string
 }
 
 func newRouter(config RouterConfig) *Router {
@@ -54,17 +54,13 @@ type Route struct {
 }
 
 func (r *Route) GetConfig(context routerContext) (map[string]interface{}, bool) {
-	if r.Selector != nil && len(r.Selector) > 0 {
+	if len(r.Tags) > 0 {
 		if context.tags == nil {
 			return nil, false
 		}
-		for key, value := range r.Selector {
-			if value == wildcard {
-				if _, ok := context.tags[key]; !ok {
-					return nil, false
-				}
-			} else {
-				if context.tags[key] != value {
+		for _, tag := range r.Tags {
+			for _, value := range context.tags {
+				if tag != value {
 					return nil, false
 				}
 			}

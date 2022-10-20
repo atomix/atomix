@@ -27,7 +27,7 @@ type Delegate[T any] struct {
 	mu       sync.RWMutex
 }
 
-func (p *Delegate[T]) Create(name string, tags map[string]string) (T, error) {
+func (p *Delegate[T]) Create(name string, tags []string) (T, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 

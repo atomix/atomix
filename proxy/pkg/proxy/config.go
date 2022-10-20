@@ -28,9 +28,9 @@ type StoreID struct {
 }
 
 type RouteConfig struct {
-	Store    StoreID           `json:"store" yaml:"store"`
-	Selector map[string]string `json:"selector" yaml:"selector"`
-	Services []ServiceConfig   `json:"services" yaml:"services"`
+	Store    StoreID         `json:"store" yaml:"store"`
+	Tags     []string        `json:"tags" yaml:"tags"`
+	Services []ServiceConfig `json:"services" yaml:"services"`
 }
 
 type ServiceConfig struct {
