@@ -7,7 +7,6 @@
     - [CloseRequest](#atomix-runtime-lock-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-lock-v1-CloseResponse)
     - [CreateRequest](#atomix-runtime-lock-v1-CreateRequest)
-    - [CreateRequest.TagsEntry](#atomix-runtime-lock-v1-CreateRequest-TagsEntry)
     - [CreateResponse](#atomix-runtime-lock-v1-CreateResponse)
     - [GetLockRequest](#atomix-runtime-lock-v1-GetLockRequest)
     - [GetLockResponse](#atomix-runtime-lock-v1-GetLockResponse)
@@ -63,23 +62,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| tags | [CreateRequest.TagsEntry](#atomix-runtime-lock-v1-CreateRequest-TagsEntry) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-lock-v1-CreateRequest-TagsEntry"></a>
-
-### CreateRequest.TagsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [string](#string) |  |  |
+| tags | [string](#string) | repeated |  |
 
 
 

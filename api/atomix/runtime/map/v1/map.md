@@ -9,7 +9,6 @@
     - [CloseRequest](#atomix-runtime-map-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-map-v1-CloseResponse)
     - [CreateRequest](#atomix-runtime-map-v1-CreateRequest)
-    - [CreateRequest.TagsEntry](#atomix-runtime-map-v1-CreateRequest-TagsEntry)
     - [CreateResponse](#atomix-runtime-map-v1-CreateResponse)
     - [EntriesRequest](#atomix-runtime-map-v1-EntriesRequest)
     - [EntriesResponse](#atomix-runtime-map-v1-EntriesResponse)
@@ -110,23 +109,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| tags | [CreateRequest.TagsEntry](#atomix-runtime-map-v1-CreateRequest-TagsEntry) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-map-v1-CreateRequest-TagsEntry"></a>
-
-### CreateRequest.TagsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [string](#string) |  |  |
+| tags | [string](#string) | repeated |  |
 
 
 

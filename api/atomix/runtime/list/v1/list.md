@@ -13,7 +13,6 @@
     - [ContainsRequest](#atomix-runtime-list-v1-ContainsRequest)
     - [ContainsResponse](#atomix-runtime-list-v1-ContainsResponse)
     - [CreateRequest](#atomix-runtime-list-v1-CreateRequest)
-    - [CreateRequest.TagsEntry](#atomix-runtime-list-v1-CreateRequest-TagsEntry)
     - [CreateResponse](#atomix-runtime-list-v1-CreateResponse)
     - [Event](#atomix-runtime-list-v1-Event)
     - [Event.Appended](#atomix-runtime-list-v1-Event-Appended)
@@ -166,23 +165,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
-| tags | [CreateRequest.TagsEntry](#atomix-runtime-list-v1-CreateRequest-TagsEntry) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-list-v1-CreateRequest-TagsEntry"></a>
-
-### CreateRequest.TagsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [string](#string) |  |  |
+| tags | [string](#string) | repeated |  |
 
 
 
