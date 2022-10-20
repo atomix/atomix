@@ -13,6 +13,10 @@ api:
 controller:
 	$(MAKE) -C controller build
 
+.PHONY: primitives
+primitives:
+	$(MAKE) -C primitives build
+
 .PHONY: proxy
 proxy:
 	$(MAKE) -C proxy build
