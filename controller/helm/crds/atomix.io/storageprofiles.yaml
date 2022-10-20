@@ -152,9 +152,9 @@ spec:
                         type: integer
                         minimum: 0
                         default: 0
-                      selector:
-                        type: object
-                        additionalProperties:
+                      tags:
+                        type: array
+                        items:
                           type: string
                       services:
                         type: array

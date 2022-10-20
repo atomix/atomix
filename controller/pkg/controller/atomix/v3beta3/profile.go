@@ -111,8 +111,8 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			}
 
 			routeConfig := proxy.RouteConfig{
-				Store:    storeID,
-				Selector: binding.Selector,
+				Store: storeID,
+				Tags:  binding.Tags,
 			}
 
 			for _, service := range binding.Services {

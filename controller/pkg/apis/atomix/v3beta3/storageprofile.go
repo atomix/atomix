@@ -62,7 +62,7 @@ type StorageProxyServerConfig struct {
 type Binding struct {
 	Store    corev1.ObjectReference `json:"store"`
 	Priority *uint32                `json:"priority"`
-	Selector map[string]string      `json:"selector"`
+	Tags     []string               `json:"tags"`
 	Services []ServiceBinding       `json:"services"`
 }
 

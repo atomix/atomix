@@ -3,9 +3,9 @@ module github.com/atomix/runtime/controller
 go 1.18
 
 require (
-	github.com/atomix/runtime/api v0.6.0
-	github.com/atomix/runtime/proxy v0.9.0
-	github.com/atomix/runtime/sdk v0.6.0
+	github.com/atomix/runtime/api v0.6.1-0.20221020225827-ce1f253375d1
+	github.com/atomix/runtime/proxy v0.9.1-0.20221020230504-061132626224
+	github.com/atomix/runtime/sdk v0.6.1-0.20221020225919-6acafc7cdab8
 	github.com/go-logr/logr v1.2.0
 	github.com/spf13/cobra v1.4.0
 	google.golang.org/grpc v1.46.0

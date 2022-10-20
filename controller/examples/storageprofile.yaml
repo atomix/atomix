@@ -8,9 +8,9 @@ spec:
     - store:
         name: example-store
       priority: 1
-      selector:
-        foo: bar
-        bar: baz
+      tags:
+        - foo
+        - bar
       services:
         - name: atomix.runtime.map.v1.Map
           config:
