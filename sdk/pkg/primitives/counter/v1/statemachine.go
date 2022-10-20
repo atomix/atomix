@@ -9,6 +9,8 @@ import (
 	"github.com/atomix/runtime/sdk/pkg/protocol/statemachine"
 )
 
+const Service = "atomix.runtime.counter.v1.Counter"
+
 func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
 	statemachine.RegisterPrimitiveType[*CounterInput, *CounterOutput](registry)(PrimitiveType)
 }

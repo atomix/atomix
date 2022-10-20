@@ -20,27 +20,27 @@ func NewNode(network network.Network, protocol Protocol, opts ...Option) *Node {
 	options.apply(opts...)
 	return &Node{
 		Options:  options,
+		Protocol: protocol,
 		network:  network,
-		protocol: protocol,
 		server:   grpc.NewServer(),
 	}
 }
 
+type Service func(*grpc.Server)
+
 type Node struct {
 	Options
+	Protocol
 	network  network.Network
-	protocol Protocol
 	server   *grpc.Server
+	services []Service
+}
+
+func (n *Node) RegisterService(service Service) {
+	n.services = append(n.services, service)
 }
 
 func (n *Node) Start() error {
-	log.Infow("Starting Protocol")
-	if err := n.protocol.Start(); err != nil {
-		log.Errorw("Error starting Protocol",
-			logging.Error("Error", err))
-		return err
-	}
-
 	log.Infow("Starting Node")
 	address := fmt.Sprintf("%s:%d", n.Host, n.Port)
 	lis, err := n.network.Listen(address)
@@ -50,7 +50,7 @@ func (n *Node) Start() error {
 		return err
 	}
 
-	server := newServer(n.protocol)
+	server := newServer(n)
 	protocol.RegisterPartitionServer(n.server, server)
 	protocol.RegisterSessionServer(n.server, server)
 
@@ -66,11 +66,5 @@ func (n *Node) Start() error {
 func (n *Node) Stop() error {
 	log.Infow("Stopping Node")
 	n.server.Stop()
-	log.Infow("Stopping Protocol")
-	if err := n.protocol.Stop(); err != nil {
-		log.Errorw("Error stopping Protocol",
-			logging.Error("Error", err))
-		return err
-	}
 	return nil
 }

@@ -11,7 +11,18 @@ import (
 	"github.com/atomix/runtime/sdk/pkg/protocol/node"
 	"github.com/atomix/runtime/sdk/pkg/stringer"
 	"github.com/gogo/protobuf/proto"
+	"google.golang.org/grpc"
 )
+
+var log = logging.GetLogger()
+
+const truncLen = 200
+
+func RegisterServer(node *node.Node) {
+	node.RegisterService(func(server *grpc.Server) {
+		RegisterCounterServer(server, NewCounterServer(node))
+	})
+}
 
 var serverCodec = node.NewCodec[*CounterInput, *CounterOutput](
 	func(input *CounterInput) ([]byte, error) {

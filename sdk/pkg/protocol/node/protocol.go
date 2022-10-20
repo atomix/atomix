@@ -9,6 +9,4 @@ import "github.com/atomix/runtime/sdk/pkg/protocol"
 type Protocol interface {
 	Partitions() []Partition
 	Partition(partitionID protocol.PartitionID) (Partition, bool)
-	Start() error
-	Stop() error
 }
