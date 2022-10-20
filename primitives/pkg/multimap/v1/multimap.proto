@@ -1,0 +1,424 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.primitives.multimap.v1;
+
+import "protocol/headers.proto";
+import "gogoproto/gogo.proto";
+
+// MultiMap is a service for a multimap primitive
+service MultiMap {
+    // Size returns the size of the multimap
+    rpc Size (SizeRequest) returns (SizeResponse);
+
+    // Put puts an entry into the multimap
+    rpc Put (PutRequest) returns (PutResponse);
+
+    // PutAll puts an entry into the multimap
+    rpc PutAll (PutAllRequest) returns (PutAllResponse);
+
+    // PutEntries puts a set of entries into the multimap
+    rpc PutEntries (PutEntriesRequest) returns (PutEntriesResponse);
+
+    // Replace replaces an entry in the multimap
+    rpc Replace (ReplaceRequest) returns (ReplaceResponse);
+
+    // Contains checks if the multimap contains an entry
+    rpc Contains (ContainsRequest) returns (ContainsResponse);
+
+    // Get gets the entry for a key
+    rpc Get (GetRequest) returns (GetResponse);
+
+    // Remove removes an entry from the multimap
+    rpc Remove (RemoveRequest) returns (RemoveResponse);
+
+    // RemoveAll removes a key from the multimap
+    rpc RemoveAll (RemoveAllRequest) returns (RemoveAllResponse);
+
+    // RemoveEntries removes a set of entries from the multimap
+    rpc RemoveEntries (RemoveEntriesRequest) returns (RemoveEntriesResponse);
+
+    // Clear removes all entries from the multimap
+    rpc Clear (ClearRequest) returns (ClearResponse);
+
+    // Events listens for change events
+    rpc Events (EventsRequest) returns (stream EventsResponse);
+
+    // Entries lists all entries in the multimap
+    rpc Entries (EntriesRequest) returns (stream EntriesResponse);
+}
+
+message SizeRequest {
+    atomix.runtime.sdk.protocol.v1.QueryRequestHeaders headers = 1;
+    SizeInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message SizeResponse {
+    atomix.runtime.sdk.protocol.v1.QueryResponseHeaders headers = 1;
+    SizeOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message PutRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    PutInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message PutResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    PutOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message PutAllRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    PutAllInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message PutAllResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    PutAllOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message PutEntriesRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    PutEntriesInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message PutEntriesResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    PutEntriesOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ReplaceRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    ReplaceInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ReplaceResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    ReplaceOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetRequest {
+    atomix.runtime.sdk.protocol.v1.QueryRequestHeaders headers = 1;
+    GetInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ContainsResponse {
+    atomix.runtime.sdk.protocol.v1.QueryResponseHeaders headers = 1;
+    ContainsOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ContainsRequest {
+    atomix.runtime.sdk.protocol.v1.QueryRequestHeaders headers = 1;
+    ContainsInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetResponse {
+    atomix.runtime.sdk.protocol.v1.QueryResponseHeaders headers = 1;
+    GetOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message RemoveRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    RemoveInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message RemoveResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    RemoveOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message RemoveAllRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    RemoveAllInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message RemoveAllResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    RemoveAllOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message RemoveEntriesRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    RemoveEntriesInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message RemoveEntriesResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    RemoveEntriesOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ClearRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    ClearInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ClearResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    ClearOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message EntriesRequest {
+    atomix.runtime.sdk.protocol.v1.QueryRequestHeaders headers = 1;
+    EntriesInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message EntriesResponse {
+    atomix.runtime.sdk.protocol.v1.QueryResponseHeaders headers = 1;
+    EntriesOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    EventsInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    EventsOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message MultiMapListener {
+    uint64 index = 1 [
+        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+    ];
+    string key = 2;
+}
+
+message MultiMapEntry {
+    string key = 1;
+    repeated string values = 2;
+}
+
+message MultiMapInput {
+    oneof input {
+        SizeInput size = 1;
+        PutInput put = 2;
+        PutAllInput put_all = 3;
+        PutEntriesInput put_entries = 12;
+        ReplaceInput replace = 4;
+        ContainsInput contains = 5;
+        GetInput get = 6;
+        RemoveInput remove = 7;
+        RemoveAllInput remove_all = 8;
+        RemoveEntriesInput remove_entries = 13;
+        ClearInput clear = 9;
+        EntriesInput entries = 10;
+        EventsInput events = 11;
+    }
+}
+
+message MultiMapOutput {
+    oneof output {
+        SizeOutput size = 1;
+        PutOutput put = 2;
+        PutAllOutput put_all = 3;
+        PutEntriesOutput put_entries = 12;
+        ReplaceOutput replace = 4;
+        ContainsOutput contains = 5;
+        GetOutput get = 6;
+        RemoveOutput remove = 7;
+        RemoveAllOutput remove_all = 8;
+        RemoveEntriesOutput remove_entries = 13;
+        ClearOutput clear = 9;
+        EntriesOutput entries = 10;
+        EventsOutput events = 11;
+    }
+}
+
+message SizeInput {
+
+}
+
+message SizeOutput {
+    uint32 size = 1;
+}
+
+message PutInput {
+    string key = 1;
+    string value = 2;
+}
+
+message PutOutput {
+
+}
+
+message PutAllInput {
+    string key = 1;
+    repeated string values = 2;
+}
+
+message PutAllOutput {
+    bool updated = 1;
+}
+
+message PutEntriesInput {
+    repeated Entry entries = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message PutEntriesOutput {
+    bool updated = 1;
+}
+
+message ReplaceInput {
+    string key = 1;
+    repeated string values = 2;
+}
+
+message ReplaceOutput {
+    repeated string prev_values = 1;
+}
+
+message GetInput {
+    string key = 1;
+}
+
+message GetOutput {
+    repeated string values = 1;
+}
+
+message ContainsInput {
+    string key = 1;
+    string value = 2;
+}
+
+message ContainsOutput {
+    bool result = 1;
+}
+
+message RemoveInput {
+    string key = 1;
+    string value = 2;
+}
+
+message RemoveOutput {
+    repeated string values = 1;
+}
+
+message RemoveAllInput {
+    string key = 1;
+    repeated string values = 2;
+}
+
+message RemoveAllOutput {
+    bool updated = 2;
+}
+
+message RemoveEntriesInput {
+    repeated Entry entries = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message RemoveEntriesOutput {
+    bool updated = 1;
+}
+
+message ClearInput {
+
+}
+
+message ClearOutput {
+
+}
+
+message EntriesInput {
+    bool watch = 1;
+}
+
+message EntriesOutput {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EventsInput {
+    string key = 1;
+}
+
+message EventsOutput {
+    Event event = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Event {
+    string key = 1;
+
+    oneof event {
+        Added added = 2;
+        Removed removed = 3;
+    }
+
+    message Added {
+        string value = 1;
+    }
+
+    message Removed {
+        string value = 1;
+    }
+}
+
+message Entry {
+    string key = 1;
+    repeated string values = 3;
+}

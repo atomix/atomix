@@ -1,0 +1,291 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.primitives.value.v1;
+
+import "protocol/headers.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+// Value is a service for a map primitive
+service Value {
+    // Set sets the value
+    rpc Set (SetRequest) returns (SetResponse);
+
+    // Insert inserts the value
+    rpc Insert (InsertRequest) returns (InsertResponse);
+
+    // Update updates the value
+    rpc Update (UpdateRequest) returns (UpdateResponse);
+
+    // Get gets the value
+    rpc Get (GetRequest) returns (GetResponse);
+
+    // Delete deletes the value
+    rpc Delete (DeleteRequest) returns (DeleteResponse);
+
+    // Watch watches the value
+    rpc Watch (WatchRequest) returns (stream WatchResponse);
+
+    // Events watches for value change events
+    rpc Events (EventsRequest) returns (stream EventsResponse);
+}
+
+message GetRequest {
+    atomix.runtime.sdk.protocol.v1.QueryRequestHeaders headers = 1;
+    GetInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetResponse {
+    atomix.runtime.sdk.protocol.v1.QueryResponseHeaders headers = 1;
+    GetOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message SetRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    SetInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message SetResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    SetOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message InsertRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    InsertInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message InsertResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    InsertOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message UpdateRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    UpdateInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message UpdateResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    UpdateOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message DeleteRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    DeleteInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message DeleteResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    DeleteOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message WatchRequest {
+    atomix.runtime.sdk.protocol.v1.QueryRequestHeaders headers = 1;
+    WatchInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message WatchResponse {
+    atomix.runtime.sdk.protocol.v1.QueryResponseHeaders headers = 1;
+    WatchOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsRequest {
+    atomix.runtime.sdk.protocol.v1.ProposalRequestHeaders headers = 1;
+    EventsInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsResponse {
+    atomix.runtime.sdk.protocol.v1.ProposalResponseHeaders headers = 1;
+    EventsOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ValueState {
+    IndexedValue value = 1;
+    google.protobuf.Timestamp expire = 2 [
+        (gogoproto.stdtime) = true
+    ];
+}
+
+message ValueInput {
+    oneof input {
+        GetInput get = 1;
+        SetInput set = 2;
+        InsertInput insert = 3;
+        UpdateInput update = 4;
+        DeleteInput delete = 5;
+        WatchInput watch = 6;
+        EventsInput events = 7;
+    }
+}
+
+message ValueOutput {
+    oneof output {
+        GetOutput get = 1;
+        SetOutput set = 2;
+        InsertOutput insert = 3;
+        UpdateOutput update = 4;
+        DeleteOutput delete = 5;
+        WatchOutput watch = 6;
+        EventsOutput events = 7;
+    }
+}
+
+message GetInput {
+
+}
+
+message GetOutput {
+    IndexedValue value = 1;
+}
+
+message SetInput {
+    bytes value = 1;
+    google.protobuf.Duration ttl = 2 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
+}
+
+message SetOutput {
+    uint64 index = 1 [
+        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+    ];
+    IndexedValue prev_value = 2;
+}
+
+message InsertInput {
+    bytes value = 1;
+    google.protobuf.Duration ttl = 2 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
+}
+
+message InsertOutput {
+    uint64 index = 1 [
+        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+    ];
+}
+
+message UpdateInput {
+    bytes value = 1;
+    uint64 prev_index = 2 [
+        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+    ];
+    google.protobuf.Duration ttl = 3 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
+}
+
+message UpdateOutput {
+    uint64 index = 1 [
+        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+    ];
+    IndexedValue prev_value = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message DeleteInput {
+    uint64 prev_index = 1 [
+        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+    ];
+}
+
+message DeleteOutput {
+    IndexedValue value = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message WatchInput {
+
+}
+
+message WatchOutput {
+    IndexedValue value = 1;
+}
+
+message EventsInput {
+
+}
+
+message EventsOutput {
+    Event event = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message IndexedValue {
+    bytes value = 1;
+    uint64 index = 2 [
+        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+    ];
+}
+
+message Event {
+    oneof event {
+        Created created = 1;
+        Updated updated = 2;
+        Deleted deleted = 3;
+    }
+
+    message Created {
+        IndexedValue value = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Updated {
+        IndexedValue value = 1 [
+            (gogoproto.nullable) = false
+        ];
+        IndexedValue prev_value = 2 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Deleted {
+        IndexedValue value = 1 [
+            (gogoproto.nullable) = false
+        ];
+        bool expired = 2;
+    }
+}
