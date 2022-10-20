@@ -21,7 +21,7 @@ var PrimitiveType = statemachine.NewPrimitiveType[*CounterInput, *CounterOutput]
 	})
 
 type CounterStateMachine interface {
-	statemachine.PrimitiveContext[*CounterInput, *CounterOutput]
+	statemachine.Context[*CounterInput, *CounterOutput]
 	statemachine.Recoverable
 	Set(proposal statemachine.Proposal[*SetInput, *SetOutput])
 	Update(proposal statemachine.Proposal[*UpdateInput, *UpdateOutput])

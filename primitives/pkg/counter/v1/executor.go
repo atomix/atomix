@@ -40,8 +40,7 @@ type counterExecutor struct {
 }
 
 func (s *counterExecutor) init() {
-	s.set = statemachine.NewProposer[*CounterInput, *CounterOutput, *SetInput, *SetOutput](s).
-		Name("Set").
+	s.set = statemachine.NewProposer[*CounterInput, *CounterOutput, *SetInput, *SetOutput]("Set").
 		Decoder(func(input *CounterInput) (*SetInput, bool) {
 			if set, ok := input.Input.(*CounterInput_Set); ok {
 				return set.Set, true
@@ -56,8 +55,7 @@ func (s *counterExecutor) init() {
 			}
 		}).
 		Build(s.Set)
-	s.update = statemachine.NewProposer[*CounterInput, *CounterOutput, *UpdateInput, *UpdateOutput](s).
-		Name("Update").
+	s.update = statemachine.NewProposer[*CounterInput, *CounterOutput, *UpdateInput, *UpdateOutput]("Update").
 		Decoder(func(input *CounterInput) (*UpdateInput, bool) {
 			if set, ok := input.Input.(*CounterInput_Update); ok {
 				return set.Update, true
@@ -72,8 +70,7 @@ func (s *counterExecutor) init() {
 			}
 		}).
 		Build(s.Update)
-	s.increment = statemachine.NewProposer[*CounterInput, *CounterOutput, *IncrementInput, *IncrementOutput](s).
-		Name("Increment").
+	s.increment = statemachine.NewProposer[*CounterInput, *CounterOutput, *IncrementInput, *IncrementOutput]("Increment").
 		Decoder(func(input *CounterInput) (*IncrementInput, bool) {
 			if set, ok := input.Input.(*CounterInput_Increment); ok {
 				return set.Increment, true
@@ -88,8 +85,7 @@ func (s *counterExecutor) init() {
 			}
 		}).
 		Build(s.Increment)
-	s.decrement = statemachine.NewProposer[*CounterInput, *CounterOutput, *DecrementInput, *DecrementOutput](s).
-		Name("Decrement").
+	s.decrement = statemachine.NewProposer[*CounterInput, *CounterOutput, *DecrementInput, *DecrementOutput]("Decrement").
 		Decoder(func(input *CounterInput) (*DecrementInput, bool) {
 			if set, ok := input.Input.(*CounterInput_Decrement); ok {
 				return set.Decrement, true
@@ -104,8 +100,7 @@ func (s *counterExecutor) init() {
 			}
 		}).
 		Build(s.Decrement)
-	s.get = statemachine.NewQuerier[*CounterInput, *CounterOutput, *GetInput, *GetOutput](s).
-		Name("Get").
+	s.get = statemachine.NewQuerier[*CounterInput, *CounterOutput, *GetInput, *GetOutput]("Get").
 		Decoder(func(input *CounterInput) (*GetInput, bool) {
 			if set, ok := input.Input.(*CounterInput_Get); ok {
 				return set.Get, true
@@ -125,13 +120,13 @@ func (s *counterExecutor) init() {
 func (s *counterExecutor) Propose(proposal statemachine.Proposal[*CounterInput, *CounterOutput]) {
 	switch proposal.Input().Input.(type) {
 	case *CounterInput_Set:
-		s.set.Call(proposal)
+		s.set(proposal)
 	case *CounterInput_Update:
-		s.update.Call(proposal)
+		s.update(proposal)
 	case *CounterInput_Increment:
-		s.increment.Call(proposal)
+		s.increment(proposal)
 	case *CounterInput_Decrement:
-		s.decrement.Call(proposal)
+		s.decrement(proposal)
 	default:
 		proposal.Error(errors.NewNotSupported("proposal not supported"))
 	}
@@ -140,7 +135,7 @@ func (s *counterExecutor) Propose(proposal statemachine.Proposal[*CounterInput, 
 func (s *counterExecutor) Query(query statemachine.Query[*CounterInput, *CounterOutput]) {
 	switch query.Input().Input.(type) {
 	case *CounterInput_Get:
-		s.get.Call(query)
+		s.get(query)
 	default:
 		query.Error(errors.NewNotSupported("query not supported"))
 	}

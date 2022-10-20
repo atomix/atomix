@@ -44,8 +44,7 @@ type mapExecutor struct {
 }
 
 func (s *mapExecutor) init() {
-	s.put = statemachine.NewProposer[*MapInput, *MapOutput, *PutInput, *PutOutput](s.sm).
-		Name("Put").
+	s.put = statemachine.NewProposer[*MapInput, *MapOutput, *PutInput, *PutOutput]("Put").
 		Decoder(func(input *MapInput) (*PutInput, bool) {
 			if put, ok := input.Input.(*MapInput_Put); ok {
 				return put.Put, true
@@ -60,8 +59,7 @@ func (s *mapExecutor) init() {
 			}
 		}).
 		Build(s.sm.Put)
-	s.insert = statemachine.NewProposer[*MapInput, *MapOutput, *InsertInput, *InsertOutput](s.sm).
-		Name("Insert").
+	s.insert = statemachine.NewProposer[*MapInput, *MapOutput, *InsertInput, *InsertOutput]("Insert").
 		Decoder(func(input *MapInput) (*InsertInput, bool) {
 			if insert, ok := input.Input.(*MapInput_Insert); ok {
 				return insert.Insert, true
@@ -76,8 +74,7 @@ func (s *mapExecutor) init() {
 			}
 		}).
 		Build(s.sm.Insert)
-	s.update = statemachine.NewProposer[*MapInput, *MapOutput, *UpdateInput, *UpdateOutput](s.sm).
-		Name("Update").
+	s.update = statemachine.NewProposer[*MapInput, *MapOutput, *UpdateInput, *UpdateOutput]("Update").
 		Decoder(func(input *MapInput) (*UpdateInput, bool) {
 			if update, ok := input.Input.(*MapInput_Update); ok {
 				return update.Update, true
@@ -92,8 +89,7 @@ func (s *mapExecutor) init() {
 			}
 		}).
 		Build(s.sm.Update)
-	s.remove = statemachine.NewProposer[*MapInput, *MapOutput, *RemoveInput, *RemoveOutput](s.sm).
-		Name("Remove").
+	s.remove = statemachine.NewProposer[*MapInput, *MapOutput, *RemoveInput, *RemoveOutput]("Remove").
 		Decoder(func(input *MapInput) (*RemoveInput, bool) {
 			if remove, ok := input.Input.(*MapInput_Remove); ok {
 				return remove.Remove, true
@@ -108,8 +104,7 @@ func (s *mapExecutor) init() {
 			}
 		}).
 		Build(s.sm.Remove)
-	s.clear = statemachine.NewProposer[*MapInput, *MapOutput, *ClearInput, *ClearOutput](s.sm).
-		Name("Clear").
+	s.clear = statemachine.NewProposer[*MapInput, *MapOutput, *ClearInput, *ClearOutput]("Clear").
 		Decoder(func(input *MapInput) (*ClearInput, bool) {
 			if clear, ok := input.Input.(*MapInput_Clear); ok {
 				return clear.Clear, true
@@ -124,8 +119,7 @@ func (s *mapExecutor) init() {
 			}
 		}).
 		Build(s.sm.Clear)
-	s.events = statemachine.NewProposer[*MapInput, *MapOutput, *EventsInput, *EventsOutput](s.sm).
-		Name("Events").
+	s.events = statemachine.NewProposer[*MapInput, *MapOutput, *EventsInput, *EventsOutput]("Events").
 		Decoder(func(input *MapInput) (*EventsInput, bool) {
 			if events, ok := input.Input.(*MapInput_Events); ok {
 				return events.Events, true
@@ -140,8 +134,7 @@ func (s *mapExecutor) init() {
 			}
 		}).
 		Build(s.sm.Events)
-	s.size = statemachine.NewQuerier[*MapInput, *MapOutput, *SizeInput, *SizeOutput](s.sm).
-		Name("Size").
+	s.size = statemachine.NewQuerier[*MapInput, *MapOutput, *SizeInput, *SizeOutput]("Size").
 		Decoder(func(input *MapInput) (*SizeInput, bool) {
 			if size, ok := input.Input.(*MapInput_Size_); ok {
 				return size.Size_, true
@@ -156,8 +149,7 @@ func (s *mapExecutor) init() {
 			}
 		}).
 		Build(s.sm.Size)
-	s.get = statemachine.NewQuerier[*MapInput, *MapOutput, *GetInput, *GetOutput](s.sm).
-		Name("Get").
+	s.get = statemachine.NewQuerier[*MapInput, *MapOutput, *GetInput, *GetOutput]("Get").
 		Decoder(func(input *MapInput) (*GetInput, bool) {
 			if get, ok := input.Input.(*MapInput_Get); ok {
 				return get.Get, true
@@ -172,8 +164,7 @@ func (s *mapExecutor) init() {
 			}
 		}).
 		Build(s.sm.Get)
-	s.list = statemachine.NewQuerier[*MapInput, *MapOutput, *EntriesInput, *EntriesOutput](s.sm).
-		Name("Entries").
+	s.list = statemachine.NewQuerier[*MapInput, *MapOutput, *EntriesInput, *EntriesOutput]("Entries").
 		Decoder(func(input *MapInput) (*EntriesInput, bool) {
 			if entries, ok := input.Input.(*MapInput_Entries); ok {
 				return entries.Entries, true
@@ -201,17 +192,17 @@ func (s *mapExecutor) Recover(reader *statemachine.SnapshotReader) error {
 func (s *mapExecutor) Propose(proposal statemachine.Proposal[*MapInput, *MapOutput]) {
 	switch proposal.Input().Input.(type) {
 	case *MapInput_Put:
-		s.put.Call(proposal)
+		s.put(proposal)
 	case *MapInput_Insert:
-		s.insert.Call(proposal)
+		s.insert(proposal)
 	case *MapInput_Update:
-		s.update.Call(proposal)
+		s.update(proposal)
 	case *MapInput_Remove:
-		s.remove.Call(proposal)
+		s.remove(proposal)
 	case *MapInput_Clear:
-		s.clear.Call(proposal)
+		s.clear(proposal)
 	case *MapInput_Events:
-		s.events.Call(proposal)
+		s.events(proposal)
 	default:
 		proposal.Error(errors.NewNotSupported("proposal not supported"))
 		proposal.Close()
@@ -221,11 +212,11 @@ func (s *mapExecutor) Propose(proposal statemachine.Proposal[*MapInput, *MapOutp
 func (s *mapExecutor) Query(query statemachine.Query[*MapInput, *MapOutput]) {
 	switch query.Input().Input.(type) {
 	case *MapInput_Size_:
-		s.size.Call(query)
+		s.size(query)
 	case *MapInput_Get:
-		s.get.Call(query)
+		s.get(query)
 	case *MapInput_Entries:
-		s.list.Call(query)
+		s.list(query)
 	default:
 		query.Error(errors.NewNotSupported("query not supported"))
 	}

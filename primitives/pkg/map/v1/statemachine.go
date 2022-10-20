@@ -23,7 +23,7 @@ var PrimitiveType = statemachine.NewPrimitiveType[*MapInput, *MapOutput](Service
 	})
 
 type MapStateMachine interface {
-	statemachine.PrimitiveContext[*MapInput, *MapOutput]
+	statemachine.Context[*MapInput, *MapOutput]
 	statemachine.Recoverable
 	Put(proposal statemachine.Proposal[*PutInput, *PutOutput])
 	Insert(proposal statemachine.Proposal[*InsertInput, *InsertOutput])
