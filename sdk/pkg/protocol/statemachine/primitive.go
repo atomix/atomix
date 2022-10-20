@@ -631,7 +631,7 @@ func (p *primitiveProposal[I, O]) init(parent Proposal[*protocol.PrimitivePropos
 	p.parent = parent
 	p.input = input
 	p.state = Running
-	p.log = p.Log().WithFields(logging.Uint64("ProposalID", uint64(parent.ID())))
+	p.log = p.session.Log().WithFields(logging.Uint64("ProposalID", uint64(parent.ID())))
 	p.cancel = parent.Watch(func(state ProposalState) {
 		if p.state != Running {
 			return
@@ -810,7 +810,7 @@ func (q *primitiveQuery[I, O]) init(parent Query[*protocol.PrimitiveQueryInput, 
 	q.parent = parent
 	q.input = input
 	q.state = Running
-	q.log = q.Log().WithFields(logging.Uint64("QueryID", uint64(parent.ID())))
+	q.log = q.session.Log().WithFields(logging.Uint64("QueryID", uint64(parent.ID())))
 	q.cancel = parent.Watch(func(state QueryState) {
 		if q.state != Running {
 			return
