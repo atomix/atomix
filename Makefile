@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: api controller proxy sdk
+build: api controller primitives proxy sdk
 
 .PHONY: api
 api:
