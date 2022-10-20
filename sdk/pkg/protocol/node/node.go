@@ -54,6 +54,10 @@ func (n *Node) Start() error {
 	protocol.RegisterPartitionServer(n.server, server)
 	protocol.RegisterSessionServer(n.server, server)
 
+	for _, service := range n.services {
+		service(n.server)
+	}
+
 	go func() {
 		if err := n.server.Serve(lis); err != nil {
 			fmt.Println(err)
