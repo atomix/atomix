@@ -11,14 +11,9 @@ import (
 	"time"
 )
 
-type Caller[T Call[U, I, O], U CallID, I, O any] interface {
-	Call(T)
-}
+type Caller[T Call[U, I, O], U CallID, I, O any] func(T)
 
-type Proposer[I1, O1, I2, O2 any] interface {
-	Caller[Proposal[I1, O1], ProposalID, I1, O1]
-	Proposals() Proposals[I2, O2]
-}
+type Proposer[I1, O1, I2, O2 any] Caller[Proposal[I1, O1], ProposalID, I1, O1]
 
 func NewProposals[I1, O1, I2, O2 proto.Message](ctx PrimitiveContext[I1, O1]) *ProposalsBuilder[I1, O1, I2, O2] {
 	return &ProposalsBuilder[I1, O1, I2, O2]{
@@ -79,34 +74,19 @@ func (b *ProposerBuilder[I1, O1, I2, O2]) Encoder(f func(O2) O1) *ProposerBuilde
 }
 
 func (b *ProposerBuilder[I1, O1, I2, O2]) Build(f func(Proposal[I2, O2])) Proposer[I1, O1, I2, O2] {
-	return &transcodingProposer[I1, O1, I2, O2]{
-		ctx:     b.ctx,
-		decoder: b.decoder,
-		encoder: b.encoder,
-		name:    b.name,
-		f:       f,
+	return func(parent Proposal[I1, O1]) {
+		input, ok := b.decoder(parent.Input())
+		if !ok {
+			return
+		}
+		proposal := newTranscodingProposal[I1, O1, I2, O2](
+			parent, input, b.decoder, b.encoder, parent.Log().WithFields(logging.String("Method", b.name)))
+		proposal.Log().Debugw("Applying proposal", logging.Stringer("Input", stringer.Truncate(proposal.Input(), truncLen)))
+		f(proposal)
 	}
 }
 
-var _ CallerBuilder[
-	Proposal[proto.Message, proto.Message],
-	ProposalID,
-	proto.Message,
-	proto.Message,
-	Proposer[proto.Message, proto.Message, proto.Message, proto.Message]] = (*ProposerBuilder[proto.Message, proto.Message, proto.Message, proto.Message])(nil)
-
-type CallerBuilder[
-	T Call[U, I, O],
-	U CallID,
-	I proto.Message,
-	O proto.Message,
-	E Caller[T, U, I, O]] interface {
-	Build(f func(T)) E
-}
-
-type Querier[I1, O1, I2, O2 any] interface {
-	Caller[Query[I1, O1], QueryID, I1, O1]
-}
+type Querier[I1, O1, I2, O2 any] Caller[Query[I1, O1], QueryID, I1, O1]
 
 func NewQuerier[I1, O1, I2, O2 proto.Message](ctx PrimitiveContext[I1, O1]) *QuerierBuilder[I1, O1, I2, O2] {
 	return &QuerierBuilder[I1, O1, I2, O2]{
@@ -137,21 +117,17 @@ func (b *QuerierBuilder[I1, O1, I2, O2]) Encoder(f func(O2) O1) *QuerierBuilder[
 }
 
 func (b *QuerierBuilder[I1, O1, I2, O2]) Build(f func(Query[I2, O2])) Querier[I1, O1, I2, O2] {
-	return &transcodingQuerier[I1, O1, I2, O2]{
-		ctx:     b.ctx,
-		decoder: b.decoder,
-		encoder: b.encoder,
-		name:    b.name,
-		f:       f,
+	return func(parent Query[I1, O1]) {
+		input, ok := b.decoder(parent.Input())
+		if !ok {
+			return
+		}
+		query := newTranscodingQuery[I1, O1, I2, O2](
+			parent, input, b.decoder, b.encoder, parent.Log().WithFields(logging.String("Method", b.name)))
+		query.Log().Debugw("Applying query", logging.Stringer("Input", stringer.Truncate(query.Input(), truncLen)))
+		f(query)
 	}
 }
-
-var _ CallerBuilder[
-	Query[proto.Message, proto.Message],
-	QueryID,
-	proto.Message,
-	proto.Message,
-	Querier[proto.Message, proto.Message, proto.Message, proto.Message]] = (*QuerierBuilder[proto.Message, proto.Message, proto.Message, proto.Message])(nil)
 
 type transcodingProposer[I1, O1, I2, O2 proto.Message] struct {
 	ctx     PrimitiveContext[I1, O1]
