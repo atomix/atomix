@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.runtime.sdk.protocol.counter.v1;
+package atomix.runtime.primitives.counter.v1;
 
 import "protocol/headers.proto";
 import "gogoproto/gogo.proto";

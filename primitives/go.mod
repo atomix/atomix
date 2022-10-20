@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/atomix/runtime/api v0.6.0
-	github.com/atomix/runtime/sdk v0.6.1-0.20221020071228-8e807aa7c782
+	github.com/atomix/runtime/sdk v0.6.1-0.20221020083213-1bd06a020155
 	github.com/gogo/protobuf v1.3.2
 	google.golang.org/grpc v1.46.0
 )

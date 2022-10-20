@@ -17,7 +17,7 @@ func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
 
 var PrimitiveType = statemachine.NewPrimitiveType[*CounterInput, *CounterOutput](Service, stateMachineCodec,
 	func(context statemachine.PrimitiveContext[*CounterInput, *CounterOutput]) statemachine.Executor[*CounterInput, *CounterOutput] {
-		return newExecutor(newStateMachine(context))
+		return newExecutor(NewCounterStateMachine(context))
 	})
 
 type CounterStateMachine interface {
@@ -30,7 +30,7 @@ type CounterStateMachine interface {
 	Get(query statemachine.Query[*GetInput, *GetOutput])
 }
 
-func newStateMachine(ctx statemachine.PrimitiveContext[*CounterInput, *CounterOutput]) CounterStateMachine {
+func NewCounterStateMachine(ctx statemachine.PrimitiveContext[*CounterInput, *CounterOutput]) CounterStateMachine {
 	return &counterStateMachine{
 		PrimitiveContext: ctx,
 	}
