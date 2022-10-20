@@ -20,6 +20,36 @@ type Proposer[I1, O1, I2, O2 any] interface {
 	Proposals() Proposals[I2, O2]
 }
 
+func NewProposals[I1, O1, I2, O2 proto.Message](ctx PrimitiveContext[I1, O1]) *ProposalsBuilder[I1, O1, I2, O2] {
+	return &ProposalsBuilder[I1, O1, I2, O2]{
+		ctx: ctx,
+	}
+}
+
+type ProposalsBuilder[I1, O1, I2, O2 proto.Message] struct {
+	ctx     PrimitiveContext[I1, O1]
+	decoder func(I1) (I2, bool)
+	encoder func(O2) O1
+}
+
+func (b *ProposalsBuilder[I1, O1, I2, O2]) Decoder(f func(I1) (I2, bool)) *ProposalsBuilder[I1, O1, I2, O2] {
+	b.decoder = f
+	return b
+}
+
+func (b *ProposalsBuilder[I1, O1, I2, O2]) Encoder(f func(O2) O1) *ProposalsBuilder[I1, O1, I2, O2] {
+	b.encoder = f
+	return b
+}
+
+func (b *ProposalsBuilder[I1, O1, I2, O2]) Build(f func(Proposal[I2, O2])) Proposals[I2, O2] {
+	return &transcodingProposals[I1, O1, I2, O2]{
+		parent:  b.ctx.Proposals(),
+		decoder: b.decoder,
+		encoder: b.encoder,
+	}
+}
+
 func NewProposer[I1, O1, I2, O2 proto.Message](ctx PrimitiveContext[I1, O1]) *ProposerBuilder[I1, O1, I2, O2] {
 	return &ProposerBuilder[I1, O1, I2, O2]{
 		ctx: ctx,
