@@ -622,7 +622,8 @@ func (s *indexedMapProxy) Events(request *indexedmapv1.EventsRequest, server ind
 		}
 		response := &indexedmapv1.EventsResponse{
 			Event: indexedmapv1.Event{
-				Key: output.Event.Key,
+				Key:   output.Event.Key,
+				Index: output.Event.Index,
 			},
 		}
 		switch e := output.Event.Event.(type) {
