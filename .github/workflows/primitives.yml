@@ -5,7 +5,7 @@ on:
     branches:
       - 'master'
     paths:
-      - 'sdk/**'
+      - 'primitives/**'
   pull_request:
 
 jobs:
@@ -28,5 +28,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Build
-        working-directory: sdk
+        working-directory: primitives
         run: make build
