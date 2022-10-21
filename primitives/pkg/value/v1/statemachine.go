@@ -321,6 +321,9 @@ func (s *valueStateMachine) Delete(proposal statemachine.Proposal[*DeleteInput, 
 
 func (s *valueStateMachine) Events(proposal statemachine.Proposal[*EventsInput, *EventsOutput]) {
 	s.listeners[proposal.ID()] = true
+	proposal.Output(&EventsOutput{
+		Event: Event{},
+	})
 	proposal.Watch(func(state statemachine.ProposalState) {
 		if state != statemachine.Running {
 			delete(s.listeners, proposal.ID())

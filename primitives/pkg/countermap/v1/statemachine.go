@@ -407,6 +407,11 @@ func (s *counterMapStateMachine) Events(proposal statemachine.Proposal[*EventsIn
 		Key: proposal.Input().Key,
 	}
 	s.listeners[proposal.ID()] = listener
+	proposal.Output(&EventsOutput{
+		Event: Event{
+			Key: proposal.Input().Key,
+		},
+	})
 	proposal.Watch(func(state statemachine.ProposalState) {
 		if state != statemachine.Running {
 			delete(s.listeners, proposal.ID())

@@ -343,6 +343,11 @@ func (s *leaderElectionStateMachine) Watch(query statemachine.Query[*WatchInput,
 	s.mu.Lock()
 	s.watchers[query.ID()] = query
 	s.mu.Unlock()
+	if s.Term > 0 {
+		query.Output(&WatchOutput{
+			Term: s.term(),
+		})
+	}
 }
 
 func (s *leaderElectionStateMachine) notify(term Term) {

@@ -473,6 +473,11 @@ func (s *indexedMapStateMachine) Events(proposal statemachine.Proposal[*EventsIn
 		Key: proposal.Input().Key,
 	}
 	s.streams[proposal.ID()] = listener
+	proposal.Output(&EventsOutput{
+		Event: Event{
+			Key: proposal.Input().Key,
+		},
+	})
 	proposal.Watch(func(state statemachine.ProposalState) {
 		if state != statemachine.Running {
 			delete(s.streams, proposal.ID())
