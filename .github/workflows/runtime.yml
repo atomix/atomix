@@ -1,4 +1,4 @@
-name: runtime
+name: Runtime
 
 on:
   push:

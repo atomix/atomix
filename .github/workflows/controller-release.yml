@@ -1,4 +1,4 @@
-name: controller-release
+name: Controller Release
 
 on:
   push:

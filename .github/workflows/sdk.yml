@@ -1,4 +1,4 @@
-name: sdk
+name: SDK
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: proxy-release
+name: Proxy Release
 
 on:
   push:

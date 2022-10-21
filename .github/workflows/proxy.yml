@@ -1,4 +1,4 @@
-name: proxy
+name: Proxy
 
 on:
   push:

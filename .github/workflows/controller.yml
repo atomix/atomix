@@ -1,4 +1,4 @@
-name: controller
+name: Controller
 
 on:
   push:
