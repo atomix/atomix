@@ -356,31 +356,25 @@ func (s *setProxy) Events(request *setv1.EventsRequest, server setv1.Set_EventsS
 					logging.Error("Error", err))
 				return errors.ToProto(err)
 			}
-			var response *setv1.EventsResponse
+			response := &setv1.EventsResponse{
+				Event: setv1.Event{},
+			}
 			switch e := output.Event.Event.(type) {
 			case *Event_Added_:
-				response = &setv1.EventsResponse{
-					Event: setv1.Event{
-						Event: &setv1.Event_Added_{
-							Added: &setv1.Event_Added{
-								Element: setv1.Element{
-									Value: e.Added.Element.Value,
-								},
-							},
+				response.Event.Event = &setv1.Event_Added_{
+					Added: &setv1.Event_Added{
+						Element: setv1.Element{
+							Value: e.Added.Element.Value,
 						},
 					},
 				}
 			case *Event_Removed_:
-				response = &setv1.EventsResponse{
-					Event: setv1.Event{
-						Event: &setv1.Event_Removed_{
-							Removed: &setv1.Event_Removed{
-								Element: setv1.Element{
-									Value: e.Removed.Element.Value,
-								},
-								Expired: e.Removed.Expired,
-							},
+				response.Event.Event = &setv1.Event_Removed_{
+					Removed: &setv1.Event_Removed{
+						Element: setv1.Element{
+							Value: e.Removed.Element.Value,
 						},
+						Expired: e.Removed.Expired,
 					},
 				}
 			}

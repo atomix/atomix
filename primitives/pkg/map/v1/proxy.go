@@ -589,53 +589,42 @@ func (s *mapProxy) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsS
 					logging.Error("Error", err))
 				return errors.ToProto(err)
 			}
-			var response *mapv1.EventsResponse
+			response := &mapv1.EventsResponse{
+				Event: mapv1.Event{
+					Key: output.Event.Key,
+				},
+			}
 			switch e := output.Event.Event.(type) {
 			case *Event_Inserted_:
-				response = &mapv1.EventsResponse{
-					Event: mapv1.Event{
-						Key: output.Event.Key,
-						Event: &mapv1.Event_Inserted_{
-							Inserted: &mapv1.Event_Inserted{
-								Value: mapv1.VersionedValue{
-									Value:   e.Inserted.Value.Value,
-									Version: uint64(e.Inserted.Value.Index),
-								},
-							},
+				response.Event.Event = &mapv1.Event_Inserted_{
+					Inserted: &mapv1.Event_Inserted{
+						Value: mapv1.VersionedValue{
+							Value:   e.Inserted.Value.Value,
+							Version: uint64(e.Inserted.Value.Index),
 						},
 					},
 				}
 			case *Event_Updated_:
-				response = &mapv1.EventsResponse{
-					Event: mapv1.Event{
-						Key: output.Event.Key,
-						Event: &mapv1.Event_Updated_{
-							Updated: &mapv1.Event_Updated{
-								Value: mapv1.VersionedValue{
-									Value:   e.Updated.Value.Value,
-									Version: uint64(e.Updated.Value.Index),
-								},
-								PrevValue: mapv1.VersionedValue{
-									Value:   e.Updated.PrevValue.Value,
-									Version: uint64(e.Updated.PrevValue.Index),
-								},
-							},
+				response.Event.Event = &mapv1.Event_Updated_{
+					Updated: &mapv1.Event_Updated{
+						Value: mapv1.VersionedValue{
+							Value:   e.Updated.Value.Value,
+							Version: uint64(e.Updated.Value.Index),
+						},
+						PrevValue: mapv1.VersionedValue{
+							Value:   e.Updated.PrevValue.Value,
+							Version: uint64(e.Updated.PrevValue.Index),
 						},
 					},
 				}
 			case *Event_Removed_:
-				response = &mapv1.EventsResponse{
-					Event: mapv1.Event{
-						Key: output.Event.Key,
-						Event: &mapv1.Event_Removed_{
-							Removed: &mapv1.Event_Removed{
-								Value: mapv1.VersionedValue{
-									Value:   e.Removed.Value.Value,
-									Version: uint64(e.Removed.Value.Index),
-								},
-								Expired: e.Removed.Expired,
-							},
+				response.Event.Event = &mapv1.Event_Removed_{
+					Removed: &mapv1.Event_Removed{
+						Value: mapv1.VersionedValue{
+							Value:   e.Removed.Value.Value,
+							Version: uint64(e.Removed.Value.Index),
 						},
+						Expired: e.Removed.Expired,
 					},
 				}
 			}

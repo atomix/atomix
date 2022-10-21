@@ -666,28 +666,22 @@ func (s *multiMapProxy) Events(request *multimapv1.EventsRequest, server multima
 					logging.Error("Error", err))
 				return errors.ToProto(err)
 			}
-			var response *multimapv1.EventsResponse
+			response := &multimapv1.EventsResponse{
+				Event: multimapv1.Event{
+					Key: output.Event.Key,
+				},
+			}
 			switch e := output.Event.Event.(type) {
 			case *Event_Added_:
-				response = &multimapv1.EventsResponse{
-					Event: multimapv1.Event{
-						Key: output.Event.Key,
-						Event: &multimapv1.Event_Added_{
-							Added: &multimapv1.Event_Added{
-								Value: e.Added.Value,
-							},
-						},
+				response.Event.Event = &multimapv1.Event_Added_{
+					Added: &multimapv1.Event_Added{
+						Value: e.Added.Value,
 					},
 				}
 			case *Event_Removed_:
-				response = &multimapv1.EventsResponse{
-					Event: multimapv1.Event{
-						Key: output.Event.Key,
-						Event: &multimapv1.Event_Removed_{
-							Removed: &multimapv1.Event_Removed{
-								Value: e.Removed.Value,
-							},
-						},
+				response.Event.Event = &multimapv1.Event_Removed_{
+					Removed: &multimapv1.Event_Removed{
+						Value: e.Removed.Value,
 					},
 				}
 			}

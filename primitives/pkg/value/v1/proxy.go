@@ -343,50 +343,40 @@ func (s *valueProxy) Events(request *valuev1.EventsRequest, server valuev1.Value
 				logging.Error("Error", err))
 			return errors.ToProto(err)
 		}
-		var response *valuev1.EventsResponse
+		response := &valuev1.EventsResponse{
+			Event: valuev1.Event{},
+		}
 		switch e := output.Event.Event.(type) {
 		case *Event_Created_:
-			response = &valuev1.EventsResponse{
-				Event: valuev1.Event{
-					Event: &valuev1.Event_Created_{
-						Created: &valuev1.Event_Created{
-							Value: valuev1.VersionedValue{
-								Value:   e.Created.Value.Value,
-								Version: uint64(e.Created.Value.Index),
-							},
-						},
+			response.Event.Event = &valuev1.Event_Created_{
+				Created: &valuev1.Event_Created{
+					Value: valuev1.VersionedValue{
+						Value:   e.Created.Value.Value,
+						Version: uint64(e.Created.Value.Index),
 					},
 				},
 			}
 		case *Event_Updated_:
-			response = &valuev1.EventsResponse{
-				Event: valuev1.Event{
-					Event: &valuev1.Event_Updated_{
-						Updated: &valuev1.Event_Updated{
-							Value: valuev1.VersionedValue{
-								Value:   e.Updated.Value.Value,
-								Version: uint64(e.Updated.Value.Index),
-							},
-							PrevValue: valuev1.VersionedValue{
-								Value:   e.Updated.PrevValue.Value,
-								Version: uint64(e.Updated.PrevValue.Index),
-							},
-						},
+			response.Event.Event = &valuev1.Event_Updated_{
+				Updated: &valuev1.Event_Updated{
+					Value: valuev1.VersionedValue{
+						Value:   e.Updated.Value.Value,
+						Version: uint64(e.Updated.Value.Index),
+					},
+					PrevValue: valuev1.VersionedValue{
+						Value:   e.Updated.PrevValue.Value,
+						Version: uint64(e.Updated.PrevValue.Index),
 					},
 				},
 			}
 		case *Event_Deleted_:
-			response = &valuev1.EventsResponse{
-				Event: valuev1.Event{
-					Event: &valuev1.Event_Deleted_{
-						Deleted: &valuev1.Event_Deleted{
-							Value: valuev1.VersionedValue{
-								Value:   e.Deleted.Value.Value,
-								Version: uint64(e.Deleted.Value.Index),
-							},
-							Expired: e.Deleted.Expired,
-						},
+			response.Event.Event = &valuev1.Event_Deleted_{
+				Deleted: &valuev1.Event_Deleted{
+					Value: valuev1.VersionedValue{
+						Value:   e.Deleted.Value.Value,
+						Version: uint64(e.Deleted.Value.Index),
 					},
+					Expired: e.Deleted.Expired,
 				},
 			}
 		}

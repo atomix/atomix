@@ -637,40 +637,29 @@ func (s *counterMapProxy) Events(request *countermapv1.EventsRequest, server cou
 					logging.Error("Error", err))
 				return errors.ToProto(err)
 			}
-			var response *countermapv1.EventsResponse
+			response := &countermapv1.EventsResponse{
+				Event: countermapv1.Event{
+					Key: output.Event.Key,
+				},
+			}
 			switch e := output.Event.Event.(type) {
 			case *Event_Inserted_:
-				response = &countermapv1.EventsResponse{
-					Event: countermapv1.Event{
-						Key: output.Event.Key,
-						Event: &countermapv1.Event_Inserted_{
-							Inserted: &countermapv1.Event_Inserted{
-								Value: e.Inserted.Value,
-							},
-						},
+				response.Event.Event = &countermapv1.Event_Inserted_{
+					Inserted: &countermapv1.Event_Inserted{
+						Value: e.Inserted.Value,
 					},
 				}
 			case *Event_Updated_:
-				response = &countermapv1.EventsResponse{
-					Event: countermapv1.Event{
-						Key: output.Event.Key,
-						Event: &countermapv1.Event_Updated_{
-							Updated: &countermapv1.Event_Updated{
-								Value:     e.Updated.Value,
-								PrevValue: e.Updated.PrevValue,
-							},
-						},
+				response.Event.Event = &countermapv1.Event_Updated_{
+					Updated: &countermapv1.Event_Updated{
+						Value:     e.Updated.Value,
+						PrevValue: e.Updated.PrevValue,
 					},
 				}
 			case *Event_Removed_:
-				response = &countermapv1.EventsResponse{
-					Event: countermapv1.Event{
-						Key: output.Event.Key,
-						Event: &countermapv1.Event_Removed_{
-							Removed: &countermapv1.Event_Removed{
-								Value: e.Removed.Value,
-							},
-						},
+				response.Event.Event = &countermapv1.Event_Removed_{
+					Removed: &countermapv1.Event_Removed{
+						Value: e.Removed.Value,
 					},
 				}
 			}

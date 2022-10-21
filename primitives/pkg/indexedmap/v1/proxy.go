@@ -604,38 +604,30 @@ func (s *indexedMapProxy) Events(request *indexedmapv1.EventsRequest, server ind
 				logging.Error("Error", err))
 			return errors.ToProto(err)
 		}
-		var response *indexedmapv1.EventsResponse
+		response := &indexedmapv1.EventsResponse{
+			Event: indexedmapv1.Event{
+				Key: output.Event.Key,
+			},
+		}
 		switch e := output.Event.Event.(type) {
 		case *Event_Inserted_:
-			response = &indexedmapv1.EventsResponse{
-				Event: indexedmapv1.Event{
-					Event: &indexedmapv1.Event_Inserted_{
-						Inserted: &indexedmapv1.Event_Inserted{
-							Value: *newProxyValue(&e.Inserted.Value),
-						},
-					},
+			response.Event.Event = &indexedmapv1.Event_Inserted_{
+				Inserted: &indexedmapv1.Event_Inserted{
+					Value: *newProxyValue(&e.Inserted.Value),
 				},
 			}
 		case *Event_Updated_:
-			response = &indexedmapv1.EventsResponse{
-				Event: indexedmapv1.Event{
-					Event: &indexedmapv1.Event_Updated_{
-						Updated: &indexedmapv1.Event_Updated{
-							Value:     *newProxyValue(&e.Updated.Value),
-							PrevValue: *newProxyValue(&e.Updated.PrevValue),
-						},
-					},
+			response.Event.Event = &indexedmapv1.Event_Updated_{
+				Updated: &indexedmapv1.Event_Updated{
+					Value:     *newProxyValue(&e.Updated.Value),
+					PrevValue: *newProxyValue(&e.Updated.PrevValue),
 				},
 			}
 		case *Event_Removed_:
-			response = &indexedmapv1.EventsResponse{
-				Event: indexedmapv1.Event{
-					Event: &indexedmapv1.Event_Removed_{
-						Removed: &indexedmapv1.Event_Removed{
-							Value:   *newProxyValue(&e.Removed.Value),
-							Expired: e.Removed.Expired,
-						},
-					},
+			response.Event.Event = &indexedmapv1.Event_Removed_{
+				Removed: &indexedmapv1.Event_Removed{
+					Value:   *newProxyValue(&e.Removed.Value),
+					Expired: e.Removed.Expired,
 				},
 			}
 		}
