@@ -522,46 +522,50 @@ func (s *indexedMapStateMachine) LastEntry(query statemachine.Query[*LastEntryIn
 
 func (s *indexedMapStateMachine) NextEntry(query statemachine.Query[*NextEntryInput, *NextEntryOutput]) {
 	defer query.Close()
-	entry, ok := s.indexes[query.Input().Index]
-	if !ok {
+	var nextEntry *LinkedMapEntryValue
+	if entry, ok := s.indexes[query.Input().Index]; ok {
+		nextEntry = entry.Next
+	} else {
 		entry = s.firstEntry
-		if entry == nil {
-			query.Error(errors.NewNotFound("map is empty"))
-			return
-		}
-		for entry != nil && entry.Index >= query.Input().Index {
+		for entry != nil {
+			if entry.Index > query.Input().Index {
+				nextEntry = entry
+				break
+			}
 			entry = entry.Next
 		}
 	}
-	entry = entry.Next
-	if entry == nil {
-		query.Error(errors.NewNotFound("no entry found after index %d", query.Input().Index))
+	if nextEntry == nil {
+		query.Error(errors.NewNotFound("map is empty"))
+		return
 	} else {
 		query.Output(&NextEntryOutput{
-			Entry: newStateMachineEntry(entry.IndexedMapEntry),
+			Entry: newStateMachineEntry(nextEntry.IndexedMapEntry),
 		})
 	}
 }
 
 func (s *indexedMapStateMachine) PrevEntry(query statemachine.Query[*PrevEntryInput, *PrevEntryOutput]) {
 	defer query.Close()
-	entry, ok := s.indexes[query.Input().Index]
-	if !ok {
+	var prevEntry *LinkedMapEntryValue
+	if entry, ok := s.indexes[query.Input().Index]; ok {
+		prevEntry = entry.Prev
+	} else {
 		entry = s.lastEntry
-		if entry == nil {
-			query.Error(errors.NewNotFound("map is empty"))
-			return
-		}
-		for entry != nil && entry.Index >= query.Input().Index {
+		for entry != nil {
+			if entry.Index < query.Input().Index {
+				prevEntry = entry
+				break
+			}
 			entry = entry.Prev
 		}
 	}
-	entry = entry.Prev
-	if entry == nil {
-		query.Error(errors.NewNotFound("no entry found prior to index %d", query.Input().Index))
+	if prevEntry == nil {
+		query.Error(errors.NewNotFound("map is empty"))
+		return
 	} else {
 		query.Output(&PrevEntryOutput{
-			Entry: newStateMachineEntry(entry.IndexedMapEntry),
+			Entry: newStateMachineEntry(prevEntry.IndexedMapEntry),
 		})
 	}
 }
