@@ -737,9 +737,14 @@ func (s *cachingMapServer) Create(ctx context.Context, request *mapv1.CreateRequ
 	if err != nil {
 		return nil, err
 	}
-	err = s.MapServer.Events(&mapv1.EventsRequest{
-		ID: request.ID,
-	}, newCachingEventsServer(s))
+	go func() {
+		err = s.MapServer.Events(&mapv1.EventsRequest{
+			ID: request.ID,
+		}, newCachingEventsServer(s))
+		if err != nil {
+			log.Error(err)
+		}
+	}()
 	go func() {
 		interval := s.config.EvictionInterval
 		if interval == nil {
@@ -751,9 +756,6 @@ func (s *cachingMapServer) Create(ctx context.Context, request *mapv1.CreateRequ
 			s.evict()
 		}
 	}()
-	if err != nil {
-		return nil, err
-	}
 	return response, nil
 }
 

@@ -5,6 +5,7 @@
 package v1
 
 import (
+	"container/list"
 	"context"
 	indexedmapv1 "github.com/atomix/runtime/api/atomix/runtime/indexedmap/v1"
 	"github.com/atomix/runtime/sdk/pkg/errors"
@@ -13,15 +14,30 @@ import (
 	"github.com/atomix/runtime/sdk/pkg/protocol/client"
 	"github.com/atomix/runtime/sdk/pkg/runtime"
 	"github.com/atomix/runtime/sdk/pkg/stringer"
+	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc"
 	"io"
+	"sync"
+	"time"
 )
 
 func NewIndexedMapProxy(protocol *client.Protocol, spec runtime.PrimitiveSpec) (indexedmapv1.IndexedMapServer, error) {
+	proxy := newIndexedMapProxy(protocol, spec)
+	var config IndexedMapConfig
+	if err := spec.UnmarshalConfig(&config); err != nil {
+		return nil, err
+	}
+	if config.Cache.Enabled {
+		proxy = newCachingIndexedMapProxy(proxy, config.Cache)
+	}
+	return proxy, nil
+}
+
+func newIndexedMapProxy(protocol *client.Protocol, spec runtime.PrimitiveSpec) indexedmapv1.IndexedMapServer {
 	return &indexedMapProxy{
 		Protocol:      protocol,
 		PrimitiveSpec: spec,
-	}, nil
+	}
 }
 
 type indexedMapProxy struct {
@@ -666,3 +682,241 @@ func newProxyValue(value *Value) *indexedmapv1.VersionedValue {
 }
 
 var _ indexedmapv1.IndexedMapServer = (*indexedMapProxy)(nil)
+
+func newCachingIndexedMapProxy(m indexedmapv1.IndexedMapServer, config CacheConfig) indexedmapv1.IndexedMapServer {
+	return &cachingIndexedMapProxy{
+		IndexedMapServer: m,
+		config:           config,
+		entries:          make(map[string]*list.Element),
+		aged:             list.New(),
+	}
+}
+
+type cachingIndexedMapProxy struct {
+	indexedmapv1.IndexedMapServer
+	config  CacheConfig
+	entries map[string]*list.Element
+	aged    *list.List
+	mu      sync.RWMutex
+}
+
+func (s *cachingIndexedMapProxy) Create(ctx context.Context, request *indexedmapv1.CreateRequest) (*indexedmapv1.CreateResponse, error) {
+	response, err := s.IndexedMapServer.Create(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		err = s.IndexedMapServer.Events(&indexedmapv1.EventsRequest{
+			ID: request.ID,
+		}, newCachingEventsServer(s))
+		if err != nil {
+			log.Error(err)
+		}
+	}()
+	go func() {
+		interval := s.config.EvictionInterval
+		if interval == nil {
+			i := time.Minute
+			interval = &i
+		}
+		ticker := time.NewTicker(*interval)
+		for range ticker.C {
+			s.evict()
+		}
+	}()
+	return response, nil
+}
+
+func (s *cachingIndexedMapProxy) Append(ctx context.Context, request *indexedmapv1.AppendRequest) (*indexedmapv1.AppendResponse, error) {
+	response, err := s.IndexedMapServer.Append(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	s.update(response.Entry)
+	return response, nil
+}
+
+func (s *cachingIndexedMapProxy) Update(ctx context.Context, request *indexedmapv1.UpdateRequest) (*indexedmapv1.UpdateResponse, error) {
+	response, err := s.IndexedMapServer.Update(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	s.update(response.Entry)
+	return response, nil
+}
+
+func (s *cachingIndexedMapProxy) Get(ctx context.Context, request *indexedmapv1.GetRequest) (*indexedmapv1.GetResponse, error) {
+	s.mu.RLock()
+	elem, ok := s.entries[request.Key]
+	s.mu.RUnlock()
+	if ok {
+		return &indexedmapv1.GetResponse{
+			Entry: elem.Value.(*cachedEntry).entry,
+		}, nil
+	}
+	return s.IndexedMapServer.Get(ctx, request)
+}
+
+func (s *cachingIndexedMapProxy) Remove(ctx context.Context, request *indexedmapv1.RemoveRequest) (*indexedmapv1.RemoveResponse, error) {
+	response, err := s.IndexedMapServer.Remove(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	s.delete(request.Key)
+	return response, nil
+}
+
+func (s *cachingIndexedMapProxy) Clear(ctx context.Context, request *indexedmapv1.ClearRequest) (*indexedmapv1.ClearResponse, error) {
+	response, err := s.IndexedMapServer.Clear(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	s.entries = make(map[string]*list.Element)
+	s.aged = list.New()
+	s.mu.Unlock()
+	return response, nil
+}
+
+func (s *cachingIndexedMapProxy) update(update *indexedmapv1.Entry) {
+	s.mu.RLock()
+	check, ok := s.entries[update.Key]
+	s.mu.RUnlock()
+	if ok && check.Value.(*cachedEntry).entry.Value.Version >= update.Value.Version {
+		return
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	check, ok = s.entries[update.Key]
+	if ok && check.Value.(*cachedEntry).entry.Value.Version >= update.Value.Version {
+		return
+	}
+
+	entry := newCachedEntry(update)
+	if elem, ok := s.entries[update.Key]; ok {
+		s.aged.Remove(elem)
+	}
+	s.entries[update.Key] = s.aged.PushBack(entry)
+}
+
+func (s *cachingIndexedMapProxy) delete(key string) {
+	s.mu.RLock()
+	_, ok := s.entries[key]
+	s.mu.RUnlock()
+	if !ok {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if elem, ok := s.entries[key]; ok {
+		delete(s.entries, key)
+		s.aged.Remove(elem)
+	}
+}
+
+func (s *cachingIndexedMapProxy) evict() {
+	t := time.Now()
+	evictionDuration := time.Hour
+	if s.config.EvictAfter != nil {
+		evictionDuration = *s.config.EvictAfter
+	}
+
+	s.mu.RLock()
+	size := uint64(len(s.entries))
+	entry := s.aged.Front()
+	s.mu.RUnlock()
+	if (entry == nil || t.Sub(entry.Value.(*cachedEntry).timestamp) < evictionDuration) && size <= s.config.Size_ {
+		return
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	size = uint64(len(s.entries))
+	entry = s.aged.Front()
+	if (entry == nil || t.Sub(entry.Value.(*cachedEntry).timestamp) < evictionDuration) && size <= s.config.Size_ {
+		return
+	}
+
+	for i := s.aged.Len(); i > int(s.config.Size_); i-- {
+		if entry := s.aged.Front(); entry != nil {
+			s.aged.Remove(entry)
+		}
+	}
+
+	entry = s.aged.Front()
+	for entry != nil {
+		if t.Sub(entry.Value.(*cachedEntry).timestamp) < evictionDuration {
+			break
+		}
+		s.aged.Remove(entry)
+		entry = s.aged.Front()
+	}
+}
+
+var _ indexedmapv1.IndexedMapServer = (*cachingIndexedMapProxy)(nil)
+
+func newChannelServer[T proto.Message](ch chan<- T) *channelServer[T] {
+	return &channelServer[T]{
+		ch: ch,
+	}
+}
+
+type channelServer[T proto.Message] struct {
+	grpc.ServerStream
+	ch chan<- T
+}
+
+func (s *channelServer[T]) Send(response T) error {
+	s.ch <- response
+	return nil
+}
+
+func newCachingEventsServer(server *cachingIndexedMapProxy) indexedmapv1.IndexedMap_EventsServer {
+	return &cachingEventsServer{
+		server: server,
+	}
+}
+
+type cachingEventsServer struct {
+	grpc.ServerStream
+	server *cachingIndexedMapProxy
+}
+
+func (s *cachingEventsServer) Send(response *indexedmapv1.EventsResponse) error {
+	switch e := response.Event.Event.(type) {
+	case *indexedmapv1.Event_Inserted_:
+		s.server.update(&indexedmapv1.Entry{
+			Key:   response.Event.Key,
+			Index: response.Event.Index,
+			Value: &indexedmapv1.VersionedValue{
+				Value:   e.Inserted.Value.Value,
+				Version: e.Inserted.Value.Version,
+			},
+		})
+	case *indexedmapv1.Event_Updated_:
+		s.server.update(&indexedmapv1.Entry{
+			Key:   response.Event.Key,
+			Index: response.Event.Index,
+			Value: &indexedmapv1.VersionedValue{
+				Value:   e.Updated.Value.Value,
+				Version: e.Updated.Value.Version,
+			},
+		})
+	case *indexedmapv1.Event_Removed_:
+		s.server.delete(response.Event.Key)
+	}
+	return nil
+}
+
+func newCachedEntry(entry *indexedmapv1.Entry) *cachedEntry {
+	return &cachedEntry{
+		entry:     entry,
+		timestamp: time.Now(),
+	}
+}
+
+type cachedEntry struct {
+	entry     *indexedmapv1.Entry
+	timestamp time.Time
+}

@@ -13,6 +13,23 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "gogoproto/gogo.proto";
 
+message IndexedMapConfig {
+    CacheConfig cache = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CacheConfig {
+    bool enabled = 1;
+    uint64 size = 2;
+    google.protobuf.Duration evict_after = 3 [
+        (gogoproto.stdduration) = true
+    ];
+    google.protobuf.Duration eviction_interval = 4 [
+        (gogoproto.stdduration) = true
+    ];
+}
+
 // IndexedMap is a service for an indexed map primitive
 service IndexedMap {
     // Size returns the size of the map
