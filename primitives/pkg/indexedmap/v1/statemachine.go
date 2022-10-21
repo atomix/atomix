@@ -77,6 +77,11 @@ type IndexedMapStateMachine interface {
 func NewIndexedMapStateMachine(context statemachine.PrimitiveContext[*IndexedMapInput, *IndexedMapOutput]) IndexedMapStateMachine {
 	return &indexedMapStateMachine{
 		IndexedMapContext: newContext(context),
+		keys:              make(map[string]*LinkedMapEntryValue),
+		indexes:           make(map[uint64]*LinkedMapEntryValue),
+		streams:           make(map[statemachine.ProposalID]*IndexedMapListener),
+		timers:            make(map[string]statemachine.CancelFunc),
+		watchers:          make(map[statemachine.QueryID]statemachine.Query[*EntriesInput, *EntriesOutput]),
 	}
 }
 
@@ -98,26 +103,6 @@ type indexedMapStateMachine struct {
 	timers     map[string]statemachine.CancelFunc
 	watchers   map[statemachine.QueryID]statemachine.Query[*EntriesInput, *EntriesOutput]
 	mu         sync.RWMutex
-}
-
-func (s *indexedMapStateMachine) reset() {
-	if s.timers != nil {
-		for _, cancel := range s.timers {
-			cancel()
-		}
-	}
-	s.timers = make(map[string]statemachine.CancelFunc)
-	if s.watchers != nil {
-		for _, watcher := range s.watchers {
-			watcher.Cancel()
-		}
-	}
-	s.watchers = make(map[statemachine.QueryID]statemachine.Query[*EntriesInput, *EntriesOutput])
-	s.streams = make(map[statemachine.ProposalID]*IndexedMapListener)
-	s.keys = make(map[string]*LinkedMapEntryValue)
-	s.indexes = make(map[uint64]*LinkedMapEntryValue)
-	s.firstEntry = nil
-	s.lastEntry = nil
 }
 
 func (s *indexedMapStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
@@ -165,7 +150,6 @@ func (s *indexedMapStateMachine) snapshotStreams(writer *statemachine.SnapshotWr
 
 func (s *indexedMapStateMachine) Recover(reader *statemachine.SnapshotReader) error {
 	s.Log().Infow("Recovering IndexedMap from snapshot")
-	s.reset()
 	if err := s.recoverEntries(reader); err != nil {
 		return err
 	}
