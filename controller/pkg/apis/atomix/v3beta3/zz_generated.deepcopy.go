@@ -494,6 +494,7 @@ func (in *StorageProfileStatus) DeepCopy() *StorageProfileStatus {
 func (in *StorageProxyConfig) DeepCopyInto(out *StorageProxyConfig) {
 	*out = *in
 	in.Server.DeepCopyInto(&out.Server)
+	in.Logging.DeepCopyInto(&out.Logging)
 	return
 }
 
@@ -561,7 +562,6 @@ func (in *StorageProxySpec) DeepCopyInto(out *StorageProxySpec) {
 		*out = new(v1.SecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
-	in.Logging.DeepCopyInto(&out.Logging)
 	in.Config.DeepCopyInto(&out.Config)
 	return
 }

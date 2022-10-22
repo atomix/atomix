@@ -75,63 +75,63 @@ spec:
                             maxConcurrentStreams:
                               type: integer
                               nullable: true
-                    logging:
-                      type: object
-                      properties:
-                        loggers:
+                        logging:
                           type: object
-                          additionalProperties:
-                            type: object
-                            properties:
-                              level:
-                                type: string
-                                nullable: true
-                                enum:
-                                  - debug
-                                  - info
-                                  - warn
-                                  - error
-                                  - fatal
-                                  - panic
-                              output:
-                                type: object
-                                additionalProperties:
-                                  type: object
-                                  properties:
-                                    sink:
-                                      type: string
-                                    level:
-                                      type: string
-                                      nullable: true
-                                      enum:
-                                        - debug
-                                        - info
-                                        - warn
-                                        - error
-                                        - fatal
-                                        - panic
-                        sinks:
-                          type: object
-                          additionalProperties:
-                            type: object
-                            properties:
-                              encoding:
-                                type: string
-                                nullable: true
-                                enum:
-                                  - console
-                                  - json
-                              stdout:
-                                type: object
-                              stderr:
-                                type: object
-                              file:
+                          properties:
+                            loggers:
+                              type: object
+                              additionalProperties:
                                 type: object
                                 properties:
-                                  path:
+                                  level:
                                     type: string
-                                required:
-                                  - path
+                                    nullable: true
+                                    enum:
+                                      - debug
+                                      - info
+                                      - warn
+                                      - error
+                                      - fatal
+                                      - panic
+                                  output:
+                                    type: object
+                                    additionalProperties:
+                                      type: object
+                                      properties:
+                                        sink:
+                                          type: string
+                                        level:
+                                          type: string
+                                          nullable: true
+                                          enum:
+                                            - debug
+                                            - info
+                                            - warn
+                                            - error
+                                            - fatal
+                                            - panic
+                            sinks:
+                              type: object
+                              additionalProperties:
+                                type: object
+                                properties:
+                                  encoding:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - console
+                                      - json
+                                  stdout:
+                                    type: object
+                                  stderr:
+                                    type: object
+                                  file:
+                                    type: object
+                                    properties:
+                                      path:
+                                        type: string
+                                    required:
+                                      - path
                 bindings:
                   type: array
                   items:

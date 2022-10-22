@@ -157,7 +157,7 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			return reconcile.Result{}, err
 		}
 
-		loggingBytes, err := yaml.Marshal(&profile.Spec.Proxy.Logging)
+		loggingBytes, err := yaml.Marshal(&profile.Spec.Proxy.Config.Logging)
 		if err != nil {
 			log.Error(err)
 			return reconcile.Result{}, err

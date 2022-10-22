@@ -39,15 +39,15 @@ type StorageProxySpec struct {
 	// SecurityContext is a pod security context
 	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 
-	// Logging is the proxy logging configuration
-	Logging LoggingConfig `json:"logging,omitempty"`
-
 	// Config is the proxy configuration
 	Config StorageProxyConfig `json:"config,omitempty"`
 }
 
 type StorageProxyConfig struct {
+	// Server is the proxy server configuration
 	Server StorageProxyServerConfig `json:"server,omitempty"`
+	// Logging is the proxy logging configuration
+	Logging LoggingConfig `json:"logging,omitempty"`
 }
 
 type StorageProxyServerConfig struct {
