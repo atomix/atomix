@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/grpc/retry"
-	"github.com/atomix/runtime/sdk/pkg/network"
 	"github.com/atomix/runtime/sdk/pkg/protocol"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -18,16 +17,16 @@ import (
 	"time"
 )
 
-func newPartition(id protocol.PartitionID, network network.Network, sessionTimeout time.Duration) *PartitionClient {
+func newPartition(id protocol.PartitionID, client *ProtocolClient, sessionTimeout time.Duration) *PartitionClient {
 	return &PartitionClient{
-		network:        network,
+		client:         client,
 		id:             id,
 		sessionTimeout: sessionTimeout,
 	}
 }
 
 type PartitionClient struct {
-	network        network.Network
+	client         *ProtocolClient
 	id             protocol.PartitionID
 	sessionTimeout time.Duration
 	state          *PartitionState
@@ -85,14 +84,18 @@ func (p *PartitionClient) connect(ctx context.Context, config *protocol.Partitio
 	defer p.mu.Unlock()
 
 	address := fmt.Sprintf("%s:///%d", resolverName, p.id)
-	p.resolver = newResolver(config)
-	conn, err := grpc.DialContext(ctx, address,
+	dialOptions := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"loadBalancingPolicy":"%s"}`, resolverName)),
 		grpc.WithResolvers(p.resolver),
-		grpc.WithContextDialer(p.network.Connect),
+		grpc.WithContextDialer(p.client.network.Connect),
 		grpc.WithUnaryInterceptor(retry.RetryingUnaryClientInterceptor(retry.WithRetryOn(codes.Unavailable))),
-		grpc.WithStreamInterceptor(retry.RetryingStreamClientInterceptor(retry.WithRetryOn(codes.Unavailable))))
+		grpc.WithStreamInterceptor(retry.RetryingStreamClientInterceptor(retry.WithRetryOn(codes.Unavailable))),
+	}
+	dialOptions = append(dialOptions, p.client.GRPCDialOptions...)
+
+	p.resolver = newResolver(config)
+	conn, err := grpc.DialContext(ctx, address, dialOptions...)
 	if err != nil {
 		return errors.FromProto(err)
 	}

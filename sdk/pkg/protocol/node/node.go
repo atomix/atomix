@@ -22,7 +22,7 @@ func NewNode(network network.Network, protocol Protocol, opts ...Option) *Node {
 		Options:  options,
 		Protocol: protocol,
 		network:  network,
-		server:   grpc.NewServer(),
+		server:   grpc.NewServer(options.GRPCServerOptions...),
 	}
 }
 

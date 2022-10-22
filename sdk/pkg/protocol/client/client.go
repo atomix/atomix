@@ -15,14 +15,18 @@ import (
 
 var log = logging.GetLogger()
 
-func NewClient(network network.Network) *ProtocolClient {
+func NewClient(network network.Network, opts ...Option) *ProtocolClient {
+	var options Options
+	options.apply(opts...)
 	return &ProtocolClient{
+		Options:  options,
 		Protocol: NewProtocol(),
 		network:  network,
 	}
 }
 
 type ProtocolClient struct {
+	Options
 	*Protocol
 	config  protocol.ProtocolConfig
 	network network.Network
@@ -42,7 +46,7 @@ func (c *ProtocolClient) Connect(ctx context.Context, config protocol.ProtocolCo
 	}
 
 	for _, partitionConfig := range config.Partitions {
-		partition := newPartition(partitionConfig.PartitionID, c.network, sessionTimeout)
+		partition := newPartition(partitionConfig.PartitionID, c, sessionTimeout)
 		if err := partition.connect(ctx, &partitionConfig); err != nil {
 			return err
 		}

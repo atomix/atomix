@@ -4,12 +4,16 @@
 
 package node
 
+import "google.golang.org/grpc"
+
 const (
 	defaultPort = 8080
 )
 
 type Options struct {
-	ServerOptions
+	Host              string
+	Port              int
+	GRPCServerOptions []grpc.ServerOption
 }
 
 func (o *Options) apply(opts ...Option) {
@@ -20,11 +24,6 @@ func (o *Options) apply(opts ...Option) {
 }
 
 type Option func(*Options)
-
-type ServerOptions struct {
-	Host string
-	Port int
-}
 
 func WithOptions(opts Options) Option {
 	return func(options *Options) {
@@ -41,5 +40,11 @@ func WithHost(host string) Option {
 func WithPort(port int) Option {
 	return func(options *Options) {
 		options.Port = port
+	}
+}
+
+func WithGRPCServerOptions(opts ...grpc.ServerOption) Option {
+	return func(options *Options) {
+		options.GRPCServerOptions = append(options.GRPCServerOptions, opts...)
 	}
 }
