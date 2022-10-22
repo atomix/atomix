@@ -16,8 +16,8 @@ webhooks:
         scope: Namespaced
     clientConfig:
       service:
-        name: atomix-runtime-controller
-        namespace: kube-system
+        name: {{ template "atomix-runtime-controller.fullname" . }}
+        namespace: {{ .Release.Namespace }}
         path: /inject-proxy
     admissionReviewVersions: [ "v1beta1" ]
     sideEffects: None
