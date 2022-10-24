@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/serviceconfig"
 )
 
-const resolverName = "raft"
+const resolverName = "atomix"
 
 func newResolver(config *protocol.PartitionConfig) *partitionResolver {
 	return &partitionResolver{

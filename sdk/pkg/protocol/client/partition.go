@@ -84,6 +84,7 @@ func (p *PartitionClient) connect(ctx context.Context, config *protocol.Partitio
 	defer p.mu.Unlock()
 
 	address := fmt.Sprintf("%s:///%d", resolverName, p.id)
+	p.resolver = newResolver(config)
 	dialOptions := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"loadBalancingPolicy":"%s"}`, resolverName)),
@@ -93,8 +94,6 @@ func (p *PartitionClient) connect(ctx context.Context, config *protocol.Partitio
 		grpc.WithStreamInterceptor(retry.RetryingStreamClientInterceptor(retry.WithRetryOn(codes.Unavailable))),
 	}
 	dialOptions = append(dialOptions, p.client.GRPCDialOptions...)
-
-	p.resolver = newResolver(config)
 	conn, err := grpc.DialContext(ctx, address, dialOptions...)
 	if err != nil {
 		return errors.FromProto(err)
