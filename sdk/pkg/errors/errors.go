@@ -119,7 +119,7 @@ func ToProto(err error) error {
 
 	typed, ok := err.(*TypedError)
 	if !ok {
-		return status.Error(codes.Internal, err.Error())
+		return err
 	}
 
 	switch typed.Type {
