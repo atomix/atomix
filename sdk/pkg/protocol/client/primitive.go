@@ -25,7 +25,7 @@ type PrimitiveClient struct {
 
 func (p *PrimitiveClient) open(ctx context.Context) error {
 	command := Proposal[*protocol.CreatePrimitiveResponse](p)
-	response, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*protocol.CreatePrimitiveResponse, error) {
+	response, _, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*protocol.CreatePrimitiveResponse, error) {
 		return protocol.NewSessionClient(conn).CreatePrimitive(ctx, &protocol.CreatePrimitiveRequest{
 			Headers: headers,
 			CreatePrimitiveInput: protocol.CreatePrimitiveInput{
@@ -42,7 +42,7 @@ func (p *PrimitiveClient) open(ctx context.Context) error {
 
 func (p *PrimitiveClient) close(ctx context.Context) error {
 	command := Proposal[*protocol.ClosePrimitiveResponse](p)
-	_, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*protocol.ClosePrimitiveResponse, error) {
+	_, _, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*protocol.ClosePrimitiveResponse, error) {
 		return protocol.NewSessionClient(conn).ClosePrimitive(ctx, &protocol.ClosePrimitiveRequest{
 			Headers: headers,
 			ClosePrimitiveInput: protocol.ClosePrimitiveInput{
@@ -87,19 +87,19 @@ type ProposalContext[T ProposalResponse] struct {
 	headers *protocol.ProposalRequestHeaders
 }
 
-func (c *ProposalContext[T]) Run(f func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (T, error)) (T, error) {
+func (c *ProposalContext[T]) Run(f func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (T, error)) (T, bool, error) {
 	c.session.recorder.Start(c.headers.SequenceNum)
 	defer c.session.recorder.End(c.headers.SequenceNum)
 	response, err := f(c.session.conn, c.headers)
 	if err != nil {
-		return response, err
+		return response, false, err
 	}
 	headers := response.GetHeaders()
 	c.session.lastIndex.Update(headers.Index)
 	if headers.Status != protocol.CallResponseHeaders_OK {
-		return response, getErrorFromStatus(headers.Status, headers.Message)
+		return response, true, getErrorFromStatus(headers.Status, headers.Message)
 	}
-	return response, nil
+	return response, true, nil
 }
 
 type ProposalStream[T ProposalResponse] interface {
@@ -132,12 +132,12 @@ type StreamProposalContext[T ProposalResponse] struct {
 	headers *protocol.ProposalRequestHeaders
 }
 
-func (c *StreamProposalContext[T]) Run(f func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (ProposalStream[T], error)) (ProposalStream[T], error) {
+func (c *StreamProposalContext[T]) Run(f func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (ProposalStream[T], error)) (*ProposalStreamContext[T], error) {
 	c.session.recorder.Start(c.headers.SequenceNum)
 	stream, err := f(c.session.conn, c.headers)
 	if err != nil {
 		c.session.recorder.End(c.headers.SequenceNum)
-		return stream, err
+		return nil, err
 	}
 	c.session.recorder.StreamOpen(c.headers)
 	return &ProposalStreamContext[T]{
@@ -152,13 +152,13 @@ type ProposalStreamContext[T ProposalResponse] struct {
 	lastResponseSequenceNum protocol.SequenceNum
 }
 
-func (s *ProposalStreamContext[T]) Recv() (T, error) {
+func (s *ProposalStreamContext[T]) Recv() (T, bool, error) {
 	for {
 		response, err := s.stream.Recv()
 		if err != nil {
 			s.session.recorder.StreamClose(s.headers)
 			s.session.recorder.End(s.headers.SequenceNum)
-			return response, err
+			return response, false, err
 		}
 		headers := response.GetHeaders()
 		s.session.lastIndex.Update(headers.Index)
@@ -166,9 +166,9 @@ func (s *ProposalStreamContext[T]) Recv() (T, error) {
 			s.lastResponseSequenceNum++
 			s.session.recorder.StreamReceive(s.headers, headers)
 			if headers.Status != protocol.CallResponseHeaders_OK {
-				return response, getErrorFromStatus(headers.Status, headers.Message)
+				return response, true, getErrorFromStatus(headers.Status, headers.Message)
 			}
-			return response, nil
+			return response, true, nil
 		}
 	}
 }
@@ -200,19 +200,19 @@ type QueryContext[T QueryResponse] struct {
 	headers *protocol.QueryRequestHeaders
 }
 
-func (c *QueryContext[T]) Run(f func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (T, error)) (T, error) {
+func (c *QueryContext[T]) Run(f func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (T, error)) (T, bool, error) {
 	c.session.recorder.Start(c.headers.SequenceNum)
 	defer c.session.recorder.End(c.headers.SequenceNum)
 	response, err := f(c.session.conn, c.headers)
 	if err != nil {
-		return response, err
+		return response, false, err
 	}
 	headers := response.GetHeaders()
 	c.session.lastIndex.Update(headers.Index)
 	if headers.Status != protocol.CallResponseHeaders_OK {
-		return response, getErrorFromStatus(headers.Status, headers.Message)
+		return response, true, getErrorFromStatus(headers.Status, headers.Message)
 	}
-	return response, nil
+	return response, true, nil
 }
 
 type QueryStream[T QueryResponse] interface {
@@ -246,7 +246,7 @@ type StreamQueryContext[T QueryResponse] struct {
 	headers *protocol.QueryRequestHeaders
 }
 
-func (c *StreamQueryContext[T]) Run(f func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (QueryStream[T], error)) (QueryStream[T], error) {
+func (c *StreamQueryContext[T]) Run(f func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (QueryStream[T], error)) (*QueryStreamContext[T], error) {
 	c.session.recorder.Start(c.headers.SequenceNum)
 	stream, err := f(c.session.conn, c.headers)
 	if err != nil {
@@ -264,18 +264,18 @@ type QueryStreamContext[T QueryResponse] struct {
 	stream QueryStream[T]
 }
 
-func (c *QueryStreamContext[T]) Recv() (T, error) {
+func (c *QueryStreamContext[T]) Recv() (T, bool, error) {
 	for {
 		response, err := c.stream.Recv()
 		if err != nil {
 			c.session.recorder.End(c.headers.SequenceNum)
-			return response, err
+			return response, false, err
 		}
 		headers := response.GetHeaders()
 		c.session.lastIndex.Update(headers.Index)
 		if headers.Status != protocol.CallResponseHeaders_OK {
-			return response, getErrorFromStatus(headers.Status, headers.Message)
+			return response, true, getErrorFromStatus(headers.Status, headers.Message)
 		}
-		return response, nil
+		return response, true, nil
 	}
 }
