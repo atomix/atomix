@@ -96,7 +96,7 @@ func (s *electionProxy) Enter(ctx context.Context, request *electionv1.EnterRequ
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*EnterResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*EnterResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*EnterResponse, error) {
 		return NewLeaderElectionClient(conn).Enter(ctx, &EnterRequest{
 			Headers: headers,
 			EnterInput: &EnterInput{
@@ -104,9 +104,14 @@ func (s *electionProxy) Enter(ctx context.Context, request *electionv1.EnterRequ
 			},
 		})
 	})
-	if err != nil {
-		log.Warnw("Enter",
-			logging.Stringer("EnterRequest", stringer.Truncate(request, truncLen)),
+	if !ok {
+		log.Warnw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -142,7 +147,7 @@ func (s *electionProxy) Withdraw(ctx context.Context, request *electionv1.Withdr
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*WithdrawResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*WithdrawResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*WithdrawResponse, error) {
 		return NewLeaderElectionClient(conn).Withdraw(ctx, &WithdrawRequest{
 			Headers: headers,
 			WithdrawInput: &WithdrawInput{
@@ -150,9 +155,14 @@ func (s *electionProxy) Withdraw(ctx context.Context, request *electionv1.Withdr
 			},
 		})
 	})
-	if err != nil {
-		log.Warnw("Withdraw",
-			logging.Stringer("WithdrawRequest", stringer.Truncate(request, truncLen)),
+	if !ok {
+		log.Warnw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -188,7 +198,7 @@ func (s *electionProxy) Anoint(ctx context.Context, request *electionv1.AnointRe
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*AnointResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*AnointResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*AnointResponse, error) {
 		return NewLeaderElectionClient(conn).Anoint(ctx, &AnointRequest{
 			Headers: headers,
 			AnointInput: &AnointInput{
@@ -196,9 +206,14 @@ func (s *electionProxy) Anoint(ctx context.Context, request *electionv1.AnointRe
 			},
 		})
 	})
-	if err != nil {
-		log.Warnw("Anoint",
-			logging.Stringer("AnointRequest", stringer.Truncate(request, truncLen)),
+	if !ok {
+		log.Warnw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -234,7 +249,7 @@ func (s *electionProxy) Promote(ctx context.Context, request *electionv1.Promote
 		return nil, errors.ToProto(err)
 	}
 	query := client.Proposal[*PromoteResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*PromoteResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*PromoteResponse, error) {
 		return NewLeaderElectionClient(conn).Promote(ctx, &PromoteRequest{
 			Headers: headers,
 			PromoteInput: &PromoteInput{
@@ -242,9 +257,14 @@ func (s *electionProxy) Promote(ctx context.Context, request *electionv1.Promote
 			},
 		})
 	})
-	if err != nil {
-		log.Warnw("Promote",
-			logging.Stringer("PromoteRequest", stringer.Truncate(request, truncLen)),
+	if !ok {
+		log.Warnw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -280,7 +300,7 @@ func (s *electionProxy) Demote(ctx context.Context, request *electionv1.DemoteRe
 		return nil, errors.ToProto(err)
 	}
 	query := client.Proposal[*DemoteResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*DemoteResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*DemoteResponse, error) {
 		return NewLeaderElectionClient(conn).Demote(ctx, &DemoteRequest{
 			Headers: headers,
 			DemoteInput: &DemoteInput{
@@ -288,9 +308,14 @@ func (s *electionProxy) Demote(ctx context.Context, request *electionv1.DemoteRe
 			},
 		})
 	})
-	if err != nil {
-		log.Warnw("Demote",
-			logging.Stringer("DemoteRequest", stringer.Truncate(request, truncLen)),
+	if !ok {
+		log.Warnw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -326,7 +351,7 @@ func (s *electionProxy) Evict(ctx context.Context, request *electionv1.EvictRequ
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*EvictResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*EvictResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*EvictResponse, error) {
 		return NewLeaderElectionClient(conn).Evict(ctx, &EvictRequest{
 			Headers: headers,
 			EvictInput: &EvictInput{
@@ -334,9 +359,14 @@ func (s *electionProxy) Evict(ctx context.Context, request *electionv1.EvictRequ
 			},
 		})
 	})
-	if err != nil {
-		log.Warnw("Evict",
-			logging.Stringer("EvictRequest", stringer.Truncate(request, truncLen)),
+	if !ok {
+		log.Warnw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -372,15 +402,20 @@ func (s *electionProxy) GetTerm(ctx context.Context, request *electionv1.GetTerm
 		return nil, errors.ToProto(err)
 	}
 	query := client.Query[*GetTermResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetTermResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetTermResponse, error) {
 		return NewLeaderElectionClient(conn).GetTerm(ctx, &GetTermRequest{
 			Headers:      headers,
 			GetTermInput: &GetTermInput{},
 		})
 	})
-	if err != nil {
-		log.Warnw("GetTerm",
-			logging.Stringer("GetTermRequest", stringer.Truncate(request, truncLen)),
+	if !ok {
+		log.Warnw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -429,13 +464,18 @@ func (s *electionProxy) Watch(request *electionv1.WatchRequest, server electionv
 		return errors.ToProto(err)
 	}
 	for {
-		output, err := stream.Recv()
+		output, ok, err := stream.Recv()
 		if err == io.EOF {
 			return nil
 		}
-		if err != nil {
-			log.Warnw("Watch",
-				logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
+		if !ok {
+			log.Warnw("Put",
+				logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return errors.ToProto(err)
+		} else if err != nil {
+			log.Debugw("Put",
+				logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return errors.ToProto(err)
 		}

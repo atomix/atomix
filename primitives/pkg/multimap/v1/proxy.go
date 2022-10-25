@@ -13,9 +13,11 @@ import (
 	"github.com/atomix/runtime/sdk/pkg/protocol"
 	"github.com/atomix/runtime/sdk/pkg/protocol/client"
 	"github.com/atomix/runtime/sdk/pkg/runtime"
+	streams "github.com/atomix/runtime/sdk/pkg/stream"
 	"github.com/atomix/runtime/sdk/pkg/stringer"
 	"google.golang.org/grpc"
 	"io"
+	"sync"
 )
 
 func NewMultiMapProxy(protocol *client.Protocol, spec runtime.PrimitiveSpec) (multimapv1.MultiMapServer, error) {
@@ -99,14 +101,19 @@ func (s *multiMapProxy) Size(ctx context.Context, request *multimapv1.SizeReques
 			return 0, err
 		}
 		query := client.Query[*SizeResponse](primitive)
-		output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*SizeResponse, error) {
+		output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*SizeResponse, error) {
 			return NewMultiMapClient(conn).Size(ctx, &SizeRequest{
 				Headers:   headers,
 				SizeInput: &SizeInput{},
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("Size",
+				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return 0, err
+		} else if err != nil {
+			log.Debugw("Size",
 				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return 0, err
@@ -148,7 +155,7 @@ func (s *multiMapProxy) Put(ctx context.Context, request *multimapv1.PutRequest)
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*PutResponse](primitive)
-	_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*PutResponse, error) {
+	_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*PutResponse, error) {
 		input := &PutRequest{
 			Headers: headers,
 			PutInput: &PutInput{
@@ -158,8 +165,13 @@ func (s *multiMapProxy) Put(ctx context.Context, request *multimapv1.PutRequest)
 		}
 		return NewMultiMapClient(conn).Put(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Put",
 			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -190,7 +202,7 @@ func (s *multiMapProxy) PutAll(ctx context.Context, request *multimapv1.PutAllRe
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*PutAllResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*PutAllResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*PutAllResponse, error) {
 		input := &PutAllRequest{
 			Headers: headers,
 			PutAllInput: &PutAllInput{
@@ -200,8 +212,13 @@ func (s *multiMapProxy) PutAll(ctx context.Context, request *multimapv1.PutAllRe
 		}
 		return NewMultiMapClient(conn).PutAll(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("PutAll",
+			logging.Stringer("PutAllRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("PutAll",
 			logging.Stringer("PutAllRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -255,14 +272,19 @@ func (s *multiMapProxy) PutEntries(ctx context.Context, request *multimapv1.PutE
 		input := &PutEntriesInput{
 			Entries: entries[index],
 		}
-		output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*PutEntriesResponse, error) {
+		output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*PutEntriesResponse, error) {
 			return NewMultiMapClient(conn).PutEntries(ctx, &PutEntriesRequest{
 				Headers:         headers,
 				PutEntriesInput: input,
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("PutEntries",
+				logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return false, err
+		} else if err != nil {
+			log.Debugw("PutEntries",
 				logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return false, err
@@ -303,7 +325,7 @@ func (s *multiMapProxy) Replace(ctx context.Context, request *multimapv1.Replace
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*ReplaceResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ReplaceResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ReplaceResponse, error) {
 		input := &ReplaceRequest{
 			Headers: headers,
 			ReplaceInput: &ReplaceInput{
@@ -313,8 +335,13 @@ func (s *multiMapProxy) Replace(ctx context.Context, request *multimapv1.Replace
 		}
 		return NewMultiMapClient(conn).Replace(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Replace",
+			logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Replace",
 			logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -347,7 +374,7 @@ func (s *multiMapProxy) Contains(ctx context.Context, request *multimapv1.Contai
 		return nil, errors.ToProto(err)
 	}
 	query := client.Query[*ContainsResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*ContainsResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*ContainsResponse, error) {
 		return NewMultiMapClient(conn).Contains(ctx, &ContainsRequest{
 			Headers: headers,
 			ContainsInput: &ContainsInput{
@@ -355,8 +382,13 @@ func (s *multiMapProxy) Contains(ctx context.Context, request *multimapv1.Contai
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Contains",
+			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Contains",
 			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -389,7 +421,7 @@ func (s *multiMapProxy) Get(ctx context.Context, request *multimapv1.GetRequest)
 		return nil, errors.ToProto(err)
 	}
 	query := client.Query[*GetResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
 		return NewMultiMapClient(conn).Get(ctx, &GetRequest{
 			Headers: headers,
 			GetInput: &GetInput{
@@ -397,8 +429,13 @@ func (s *multiMapProxy) Get(ctx context.Context, request *multimapv1.GetRequest)
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Get",
+			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Get",
 			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -431,7 +468,7 @@ func (s *multiMapProxy) Remove(ctx context.Context, request *multimapv1.RemoveRe
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*RemoveResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveResponse, error) {
 		input := &RemoveRequest{
 			Headers: headers,
 			RemoveInput: &RemoveInput{
@@ -441,8 +478,13 @@ func (s *multiMapProxy) Remove(ctx context.Context, request *multimapv1.RemoveRe
 		}
 		return NewMultiMapClient(conn).Remove(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Remove",
+			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -475,7 +517,7 @@ func (s *multiMapProxy) RemoveAll(ctx context.Context, request *multimapv1.Remov
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*RemoveAllResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveAllResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveAllResponse, error) {
 		input := &RemoveAllRequest{
 			Headers: headers,
 			RemoveAllInput: &RemoveAllInput{
@@ -485,8 +527,13 @@ func (s *multiMapProxy) RemoveAll(ctx context.Context, request *multimapv1.Remov
 		}
 		return NewMultiMapClient(conn).RemoveAll(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("RemoveAll",
+			logging.Stringer("RemoveAllRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("RemoveAll",
 			logging.Stringer("RemoveAllRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -540,14 +587,19 @@ func (s *multiMapProxy) RemoveEntries(ctx context.Context, request *multimapv1.R
 		input := &RemoveEntriesInput{
 			Entries: entries[index],
 		}
-		output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveEntriesResponse, error) {
+		output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveEntriesResponse, error) {
 			return NewMultiMapClient(conn).RemoveEntries(ctx, &RemoveEntriesRequest{
 				Headers:            headers,
 				RemoveEntriesInput: input,
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("RemoveEntries",
+				logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return false, err
+		} else if err != nil {
+			log.Debugw("RemoveEntries",
 				logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return false, err
@@ -590,14 +642,19 @@ func (s *multiMapProxy) Clear(ctx context.Context, request *multimapv1.ClearRequ
 			return err
 		}
 		command := client.Proposal[*ClearResponse](primitive)
-		_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ClearResponse, error) {
+		_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ClearResponse, error) {
 			return NewMultiMapClient(conn).Clear(ctx, &ClearRequest{
 				Headers:    headers,
 				ClearInput: &ClearInput{},
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("Clear",
+				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return err
+		} else if err != nil {
+			log.Debugw("Clear",
 				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return err
@@ -615,154 +672,224 @@ func (s *multiMapProxy) Clear(ctx context.Context, request *multimapv1.ClearRequ
 }
 
 func (s *multiMapProxy) Events(request *multimapv1.EventsRequest, server multimapv1.MultiMap_EventsServer) error {
-	log.Debugw("Events",
+	log.Debugw("Events received",
 		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
-	return async.IterAsync(len(partitions), func(i int) error {
-		partition := partitions[i]
-		session, err := partition.GetSession(server.Context())
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return err
-		}
-		primitive, err := session.GetPrimitive(request.ID.Name)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return err
-		}
-		command := client.StreamProposal[*EventsResponse](primitive)
-		stream, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (client.ProposalStream[*EventsResponse], error) {
-			return NewMultiMapClient(conn).Events(server.Context(), &EventsRequest{
-				Headers: headers,
-				EventsInput: &EventsInput{
-					Key: request.Key,
-				},
-			})
-		})
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return err
-		}
-		for {
-			output, err := stream.Recv()
-			if err == io.EOF {
-				log.Debugw("Events",
-					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-					logging.String("State", "Done"))
-				return nil
-			}
+	ch := make(chan streams.Result[*multimapv1.EventsResponse])
+	wg := &sync.WaitGroup{}
+	for i := 0; i < len(partitions); i++ {
+		wg.Add(1)
+		go func(partition *client.PartitionClient) {
+			defer wg.Done()
+			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Events",
 					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 					logging.Error("Error", err))
-				return errors.ToProto(err)
-			}
-			response := &multimapv1.EventsResponse{
-				Event: multimapv1.Event{
-					Key: output.Event.Key,
-				},
-			}
-			switch e := output.Event.Event.(type) {
-			case *Event_Added_:
-				response.Event.Event = &multimapv1.Event_Added_{
-					Added: &multimapv1.Event_Added{
-						Value: e.Added.Value,
-					},
+				ch <- streams.Result[*multimapv1.EventsResponse]{
+					Error: err,
 				}
-			case *Event_Removed_:
-				response.Event.Event = &multimapv1.Event_Removed_{
-					Removed: &multimapv1.Event_Removed{
-						Value: e.Removed.Value,
-					},
-				}
+				return
 			}
-			log.Debugw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
-			if err := server.Send(response); err != nil {
+			primitive, err := session.GetPrimitive(request.ID.Name)
+			if err != nil {
 				log.Warnw("Events",
 					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-					logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)),
 					logging.Error("Error", err))
-				return err
+				ch <- streams.Result[*multimapv1.EventsResponse]{
+					Error: err,
+				}
+				return
 			}
+			proposal := client.StreamProposal[*EventsResponse](primitive)
+			stream, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (client.ProposalStream[*EventsResponse], error) {
+				return NewMultiMapClient(conn).Events(server.Context(), &EventsRequest{
+					Headers: headers,
+					EventsInput: &EventsInput{
+						Key: request.Key,
+					},
+				})
+			})
+			if err != nil {
+				log.Warnw("Events",
+					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+					logging.Error("Error", err))
+				ch <- streams.Result[*multimapv1.EventsResponse]{
+					Error: err,
+				}
+				return
+			}
+			for {
+				output, ok, err := stream.Recv()
+				if !ok {
+					if err != io.EOF {
+						log.Warnw("Events",
+							logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+							logging.Error("Error", err))
+						ch <- streams.Result[*multimapv1.EventsResponse]{
+							Error: err,
+						}
+					}
+					return
+				}
+				if err != nil {
+					log.Debugw("Events",
+						logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+						logging.Error("Error", err))
+					ch <- streams.Result[*multimapv1.EventsResponse]{
+						Error: errors.ToProto(err),
+					}
+				} else {
+					response := &multimapv1.EventsResponse{
+						Event: multimapv1.Event{
+							Key: output.Event.Key,
+						},
+					}
+					switch e := output.Event.Event.(type) {
+					case *Event_Added_:
+						response.Event.Event = &multimapv1.Event_Added_{
+							Added: &multimapv1.Event_Added{
+								Value: e.Added.Value,
+							},
+						}
+					case *Event_Removed_:
+						response.Event.Event = &multimapv1.Event_Removed_{
+							Removed: &multimapv1.Event_Removed{
+								Value: e.Removed.Value,
+							},
+						}
+					}
+					log.Debugw("Events",
+						logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+						logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
+					ch <- streams.Result[*multimapv1.EventsResponse]{
+						Value: response,
+					}
+				}
+			}
+		}(partitions[i])
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for result := range ch {
+		if result.Failed() {
+			return result.Error
 		}
-	})
+		if err := server.Send(result.Value); err != nil {
+			return err
+		}
+	}
+	log.Debugw("Events complete",
+		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+	return nil
 }
 
 func (s *multiMapProxy) Entries(request *multimapv1.EntriesRequest, server multimapv1.MultiMap_EntriesServer) error {
-	log.Debugw("Entries",
+	log.Debugw("Entries received",
 		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
-	return async.IterAsync(len(partitions), func(i int) error {
-		partition := partitions[i]
-		session, err := partition.GetSession(server.Context())
-		if err != nil {
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return errors.ToProto(err)
-		}
-		primitive, err := session.GetPrimitive(request.ID.Name)
-		if err != nil {
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return errors.ToProto(err)
-		}
-		query := client.StreamQuery[*EntriesResponse](primitive)
-		stream, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (client.QueryStream[*EntriesResponse], error) {
-			return NewMultiMapClient(conn).Entries(server.Context(), &EntriesRequest{
-				Headers: headers,
-				EntriesInput: &EntriesInput{
-					Watch: request.Watch,
-				},
-			})
-		})
-		if err != nil {
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return errors.ToProto(err)
-		}
-		for {
-			output, err := stream.Recv()
-			if err == io.EOF {
-				return nil
-			}
+	ch := make(chan streams.Result[*multimapv1.EntriesResponse])
+	wg := &sync.WaitGroup{}
+	for i := 0; i < len(partitions); i++ {
+		wg.Add(1)
+		go func(partition *client.PartitionClient) {
+			defer wg.Done()
+			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Entries",
 					logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
 					logging.Error("Error", err))
-				return errors.ToProto(err)
+				ch <- streams.Result[*multimapv1.EntriesResponse]{
+					Error: err,
+				}
+				return
 			}
-			response := &multimapv1.EntriesResponse{
-				Entry: multimapv1.Entry{
-					Key:    output.Entry.Key,
-					Values: output.Entry.Values,
-				},
-			}
-			log.Debugw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)))
-			if err := server.Send(response); err != nil {
+			primitive, err := session.GetPrimitive(request.ID.Name)
+			if err != nil {
 				log.Warnw("Entries",
 					logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-					logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)),
 					logging.Error("Error", err))
-				return err
+				ch <- streams.Result[*multimapv1.EntriesResponse]{
+					Error: err,
+				}
+				return
 			}
+			query := client.StreamQuery[*EntriesResponse](primitive)
+			stream, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (client.QueryStream[*EntriesResponse], error) {
+				return NewMultiMapClient(conn).Entries(server.Context(), &EntriesRequest{
+					Headers: headers,
+					EntriesInput: &EntriesInput{
+						Watch: request.Watch,
+					},
+				})
+			})
+			if err != nil {
+				log.Warnw("Entries",
+					logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+					logging.Error("Error", err))
+				ch <- streams.Result[*multimapv1.EntriesResponse]{
+					Error: err,
+				}
+				return
+			}
+			for {
+				output, ok, err := stream.Recv()
+				if !ok {
+					if err != io.EOF {
+						log.Warnw("Entries",
+							logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+							logging.Error("Error", err))
+						ch <- streams.Result[*multimapv1.EntriesResponse]{
+							Error: err,
+						}
+					}
+					return
+				}
+				if err != nil {
+					log.Debugw("Entries",
+						logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+						logging.Error("Error", err))
+					ch <- streams.Result[*multimapv1.EntriesResponse]{
+						Error: errors.ToProto(err),
+					}
+				} else {
+					response := &multimapv1.EntriesResponse{
+						Entry: multimapv1.Entry{
+							Key:    output.Entry.Key,
+							Values: output.Entry.Values,
+						},
+					}
+					log.Debugw("Entries",
+						logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+						logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)))
+					ch <- streams.Result[*multimapv1.EntriesResponse]{
+						Value: response,
+					}
+				}
+			}
+		}(partitions[i])
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for result := range ch {
+		if result.Failed() {
+			return result.Error
 		}
-	})
+		if err := server.Send(result.Value); err != nil {
+			return err
+		}
+	}
+	log.Debugw("Entries complete",
+		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
+	return nil
 }
 
 var _ multimapv1.MultiMapServer = (*multiMapProxy)(nil)

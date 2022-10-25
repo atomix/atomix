@@ -13,9 +13,11 @@ import (
 	"github.com/atomix/runtime/sdk/pkg/protocol"
 	"github.com/atomix/runtime/sdk/pkg/protocol/client"
 	"github.com/atomix/runtime/sdk/pkg/runtime"
+	streams "github.com/atomix/runtime/sdk/pkg/stream"
 	"github.com/atomix/runtime/sdk/pkg/stringer"
 	"google.golang.org/grpc"
 	"io"
+	"sync"
 )
 
 func NewCounterMapProxy(protocol *client.Protocol, spec runtime.PrimitiveSpec) (countermapv1.CounterMapServer, error) {
@@ -99,14 +101,19 @@ func (s *counterMapProxy) Size(ctx context.Context, request *countermapv1.SizeRe
 			return 0, err
 		}
 		query := client.Query[*SizeResponse](primitive)
-		output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*SizeResponse, error) {
+		output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*SizeResponse, error) {
 			return NewCounterMapClient(conn).Size(ctx, &SizeRequest{
 				Headers:   headers,
 				SizeInput: &SizeInput{},
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("Size",
+				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return 0, err
+		} else if err != nil {
+			log.Debugw("Size",
 				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return 0, err
@@ -148,7 +155,7 @@ func (s *counterMapProxy) Set(ctx context.Context, request *countermapv1.SetRequ
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*SetResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*SetResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*SetResponse, error) {
 		input := &SetRequest{
 			Headers: headers,
 			SetInput: &SetInput{
@@ -158,8 +165,13 @@ func (s *counterMapProxy) Set(ctx context.Context, request *countermapv1.SetRequ
 		}
 		return NewCounterMapClient(conn).Set(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Set",
+			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Set",
 			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -192,7 +204,7 @@ func (s *counterMapProxy) Insert(ctx context.Context, request *countermapv1.Inse
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*InsertResponse](primitive)
-	_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*InsertResponse, error) {
+	_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*InsertResponse, error) {
 		return NewCounterMapClient(conn).Insert(ctx, &InsertRequest{
 			Headers: headers,
 			InsertInput: &InsertInput{
@@ -201,8 +213,13 @@ func (s *counterMapProxy) Insert(ctx context.Context, request *countermapv1.Inse
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Insert",
+			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Insert",
 			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -233,7 +250,7 @@ func (s *counterMapProxy) Update(ctx context.Context, request *countermapv1.Upda
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*UpdateResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UpdateResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UpdateResponse, error) {
 		input := &UpdateRequest{
 			Headers: headers,
 			UpdateInput: &UpdateInput{
@@ -243,8 +260,13 @@ func (s *counterMapProxy) Update(ctx context.Context, request *countermapv1.Upda
 		}
 		return NewCounterMapClient(conn).Update(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Update",
+			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -277,7 +299,7 @@ func (s *counterMapProxy) Increment(ctx context.Context, request *countermapv1.I
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*IncrementResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*IncrementResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*IncrementResponse, error) {
 		input := &IncrementRequest{
 			Headers: headers,
 			IncrementInput: &IncrementInput{
@@ -287,8 +309,13 @@ func (s *counterMapProxy) Increment(ctx context.Context, request *countermapv1.I
 		}
 		return NewCounterMapClient(conn).Increment(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Increment",
+			logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Increment",
 			logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -321,7 +348,7 @@ func (s *counterMapProxy) Decrement(ctx context.Context, request *countermapv1.D
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*DecrementResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*DecrementResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*DecrementResponse, error) {
 		input := &DecrementRequest{
 			Headers: headers,
 			DecrementInput: &DecrementInput{
@@ -331,8 +358,13 @@ func (s *counterMapProxy) Decrement(ctx context.Context, request *countermapv1.D
 		}
 		return NewCounterMapClient(conn).Decrement(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Decrement",
+			logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Decrement",
 			logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -365,7 +397,7 @@ func (s *counterMapProxy) Get(ctx context.Context, request *countermapv1.GetRequ
 		return nil, errors.ToProto(err)
 	}
 	query := client.Query[*GetResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
 		return NewCounterMapClient(conn).Get(ctx, &GetRequest{
 			Headers: headers,
 			GetInput: &GetInput{
@@ -373,8 +405,13 @@ func (s *counterMapProxy) Get(ctx context.Context, request *countermapv1.GetRequ
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Get",
+			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Get",
 			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -407,7 +444,7 @@ func (s *counterMapProxy) Remove(ctx context.Context, request *countermapv1.Remo
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*RemoveResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveResponse, error) {
 		input := &RemoveRequest{
 			Headers: headers,
 			RemoveInput: &RemoveInput{
@@ -417,8 +454,13 @@ func (s *counterMapProxy) Remove(ctx context.Context, request *countermapv1.Remo
 		}
 		return NewCounterMapClient(conn).Remove(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Remove",
+			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -453,14 +495,19 @@ func (s *counterMapProxy) Clear(ctx context.Context, request *countermapv1.Clear
 			return err
 		}
 		command := client.Proposal[*ClearResponse](primitive)
-		_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ClearResponse, error) {
+		_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ClearResponse, error) {
 			return NewCounterMapClient(conn).Clear(ctx, &ClearRequest{
 				Headers:    headers,
 				ClearInput: &ClearInput{},
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("Clear",
+				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return err
+		} else if err != nil {
+			log.Debugw("Clear",
 				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return err
@@ -513,7 +560,7 @@ func (s *counterMapProxy) Lock(ctx context.Context, request *countermapv1.LockRe
 			return err
 		}
 		command := client.Proposal[*LockResponse](primitive)
-		_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*LockResponse, error) {
+		_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*LockResponse, error) {
 			return NewCounterMapClient(conn).Lock(ctx, &LockRequest{
 				Headers: headers,
 				LockInput: &LockInput{
@@ -522,8 +569,13 @@ func (s *counterMapProxy) Lock(ctx context.Context, request *countermapv1.LockRe
 				},
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("Lock",
+				logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return err
+		} else if err != nil {
+			log.Debugw("Lock",
 				logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return err
@@ -561,14 +613,19 @@ func (s *counterMapProxy) Unlock(ctx context.Context, request *countermapv1.Unlo
 			return err
 		}
 		command := client.Proposal[*UnlockResponse](primitive)
-		_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UnlockResponse, error) {
+		_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UnlockResponse, error) {
 			return NewCounterMapClient(conn).Unlock(ctx, &UnlockRequest{
 				Headers:     headers,
 				UnlockInput: &UnlockInput{},
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("Unlock",
+				logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return err
+		} else if err != nil {
+			log.Debugw("Unlock",
 				logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return err
@@ -586,161 +643,231 @@ func (s *counterMapProxy) Unlock(ctx context.Context, request *countermapv1.Unlo
 }
 
 func (s *counterMapProxy) Events(request *countermapv1.EventsRequest, server countermapv1.CounterMap_EventsServer) error {
-	log.Debugw("Events",
+	log.Debugw("Events received",
 		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
-	return async.IterAsync(len(partitions), func(i int) error {
-		partition := partitions[i]
-		session, err := partition.GetSession(server.Context())
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return err
-		}
-		primitive, err := session.GetPrimitive(request.ID.Name)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return err
-		}
-		command := client.StreamProposal[*EventsResponse](primitive)
-		stream, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (client.ProposalStream[*EventsResponse], error) {
-			return NewCounterMapClient(conn).Events(server.Context(), &EventsRequest{
-				Headers: headers,
-				EventsInput: &EventsInput{
-					Key: request.Key,
-				},
-			})
-		})
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return err
-		}
-		for {
-			output, err := stream.Recv()
-			if err == io.EOF {
-				log.Debugw("Events",
-					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-					logging.String("State", "Done"))
-				return nil
-			}
+	ch := make(chan streams.Result[*countermapv1.EventsResponse])
+	wg := &sync.WaitGroup{}
+	for i := 0; i < len(partitions); i++ {
+		wg.Add(1)
+		go func(partition *client.PartitionClient) {
+			defer wg.Done()
+			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Events",
 					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 					logging.Error("Error", err))
-				return errors.ToProto(err)
-			}
-			response := &countermapv1.EventsResponse{
-				Event: countermapv1.Event{
-					Key: output.Event.Key,
-				},
-			}
-			switch e := output.Event.Event.(type) {
-			case *Event_Inserted_:
-				response.Event.Event = &countermapv1.Event_Inserted_{
-					Inserted: &countermapv1.Event_Inserted{
-						Value: e.Inserted.Value,
-					},
+				ch <- streams.Result[*countermapv1.EventsResponse]{
+					Error: err,
 				}
-			case *Event_Updated_:
-				response.Event.Event = &countermapv1.Event_Updated_{
-					Updated: &countermapv1.Event_Updated{
-						Value:     e.Updated.Value,
-						PrevValue: e.Updated.PrevValue,
-					},
-				}
-			case *Event_Removed_:
-				response.Event.Event = &countermapv1.Event_Removed_{
-					Removed: &countermapv1.Event_Removed{
-						Value: e.Removed.Value,
-					},
-				}
+				return
 			}
-			log.Debugw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
-			if err := server.Send(response); err != nil {
+			primitive, err := session.GetPrimitive(request.ID.Name)
+			if err != nil {
 				log.Warnw("Events",
 					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-					logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)),
 					logging.Error("Error", err))
-				return err
+				ch <- streams.Result[*countermapv1.EventsResponse]{
+					Error: err,
+				}
+				return
 			}
+			proposal := client.StreamProposal[*EventsResponse](primitive)
+			stream, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (client.ProposalStream[*EventsResponse], error) {
+				return NewCounterMapClient(conn).Events(server.Context(), &EventsRequest{
+					Headers: headers,
+					EventsInput: &EventsInput{
+						Key: request.Key,
+					},
+				})
+			})
+			if err != nil {
+				log.Warnw("Events",
+					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+					logging.Error("Error", err))
+				ch <- streams.Result[*countermapv1.EventsResponse]{
+					Error: err,
+				}
+				return
+			}
+			for {
+				output, ok, err := stream.Recv()
+				if !ok {
+					if err != io.EOF {
+						log.Warnw("Events",
+							logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+							logging.Error("Error", err))
+						ch <- streams.Result[*countermapv1.EventsResponse]{
+							Error: err,
+						}
+					}
+					return
+				}
+				if err != nil {
+					log.Debugw("Events",
+						logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+						logging.Error("Error", err))
+					ch <- streams.Result[*countermapv1.EventsResponse]{
+						Error: errors.ToProto(err),
+					}
+				} else {
+					response := &countermapv1.EventsResponse{
+						Event: countermapv1.Event{
+							Key: output.Event.Key,
+						},
+					}
+					switch e := output.Event.Event.(type) {
+					case *Event_Inserted_:
+						response.Event.Event = &countermapv1.Event_Inserted_{
+							Inserted: &countermapv1.Event_Inserted{
+								Value: e.Inserted.Value,
+							},
+						}
+					case *Event_Updated_:
+						response.Event.Event = &countermapv1.Event_Updated_{
+							Updated: &countermapv1.Event_Updated{
+								Value:     e.Updated.Value,
+								PrevValue: e.Updated.PrevValue,
+							},
+						}
+					case *Event_Removed_:
+						response.Event.Event = &countermapv1.Event_Removed_{
+							Removed: &countermapv1.Event_Removed{
+								Value: e.Removed.Value,
+							},
+						}
+					}
+					log.Debugw("Events",
+						logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+						logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
+					ch <- streams.Result[*countermapv1.EventsResponse]{
+						Value: response,
+					}
+				}
+			}
+		}(partitions[i])
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for result := range ch {
+		if result.Failed() {
+			return result.Error
 		}
-	})
+		if err := server.Send(result.Value); err != nil {
+			return err
+		}
+	}
+	log.Debugw("Events complete",
+		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+	return nil
 }
 
 func (s *counterMapProxy) Entries(request *countermapv1.EntriesRequest, server countermapv1.CounterMap_EntriesServer) error {
-	log.Debugw("Entries",
+	log.Debugw("Entries received",
 		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
-	return async.IterAsync(len(partitions), func(i int) error {
-		partition := partitions[i]
-		session, err := partition.GetSession(server.Context())
-		if err != nil {
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return errors.ToProto(err)
-		}
-		primitive, err := session.GetPrimitive(request.ID.Name)
-		if err != nil {
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return errors.ToProto(err)
-		}
-		query := client.StreamQuery[*EntriesResponse](primitive)
-		stream, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (client.QueryStream[*EntriesResponse], error) {
-			return NewCounterMapClient(conn).Entries(server.Context(), &EntriesRequest{
-				Headers: headers,
-				EntriesInput: &EntriesInput{
-					Watch: request.Watch,
-				},
-			})
-		})
-		if err != nil {
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return errors.ToProto(err)
-		}
-		for {
-			output, err := stream.Recv()
-			if err == io.EOF {
-				return nil
-			}
+	ch := make(chan streams.Result[*countermapv1.EntriesResponse])
+	wg := &sync.WaitGroup{}
+	for i := 0; i < len(partitions); i++ {
+		wg.Add(1)
+		go func(partition *client.PartitionClient) {
+			defer wg.Done()
+			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Entries",
 					logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
 					logging.Error("Error", err))
-				return errors.ToProto(err)
+				ch <- streams.Result[*countermapv1.EntriesResponse]{
+					Error: err,
+				}
+				return
 			}
-			response := &countermapv1.EntriesResponse{
-				Entry: countermapv1.Entry{
-					Key:   output.Entry.Key,
-					Value: output.Entry.Value,
-				},
-			}
-			log.Debugw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)))
-			if err := server.Send(response); err != nil {
+			primitive, err := session.GetPrimitive(request.ID.Name)
+			if err != nil {
 				log.Warnw("Entries",
 					logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-					logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)),
 					logging.Error("Error", err))
-				return err
+				ch <- streams.Result[*countermapv1.EntriesResponse]{
+					Error: err,
+				}
+				return
 			}
+			query := client.StreamQuery[*EntriesResponse](primitive)
+			stream, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (client.QueryStream[*EntriesResponse], error) {
+				return NewCounterMapClient(conn).Entries(server.Context(), &EntriesRequest{
+					Headers: headers,
+					EntriesInput: &EntriesInput{
+						Watch: request.Watch,
+					},
+				})
+			})
+			if err != nil {
+				log.Warnw("Entries",
+					logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+					logging.Error("Error", err))
+				ch <- streams.Result[*countermapv1.EntriesResponse]{
+					Error: err,
+				}
+				return
+			}
+			for {
+				output, ok, err := stream.Recv()
+				if !ok {
+					if err != io.EOF {
+						log.Warnw("Entries",
+							logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+							logging.Error("Error", err))
+						ch <- streams.Result[*countermapv1.EntriesResponse]{
+							Error: err,
+						}
+					}
+					return
+				}
+				if err != nil {
+					log.Debugw("Entries",
+						logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+						logging.Error("Error", err))
+					ch <- streams.Result[*countermapv1.EntriesResponse]{
+						Error: errors.ToProto(err),
+					}
+				} else {
+					response := &countermapv1.EntriesResponse{
+						Entry: countermapv1.Entry{
+							Key:   output.Entry.Key,
+							Value: output.Entry.Value,
+						},
+					}
+					log.Debugw("Entries",
+						logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+						logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)))
+					ch <- streams.Result[*countermapv1.EntriesResponse]{
+						Value: response,
+					}
+				}
+			}
+		}(partitions[i])
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for result := range ch {
+		if result.Failed() {
+			return result.Error
 		}
-	})
+		if err := server.Send(result.Value); err != nil {
+			return err
+		}
+	}
+	log.Debugw("Entries complete",
+		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
+	return nil
 }
 
 var _ countermapv1.CounterMapServer = (*counterMapProxy)(nil)

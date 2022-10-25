@@ -112,14 +112,19 @@ func (s *indexedMapProxy) Size(ctx context.Context, request *indexedmapv1.SizeRe
 		return nil, errors.ToProto(err)
 	}
 	query := client.Query[*SizeResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*SizeResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*SizeResponse, error) {
 		return NewIndexedMapClient(conn).Size(ctx, &SizeRequest{
 			Headers:   headers,
 			SizeInput: &SizeInput{},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Size",
+			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Size",
 			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -152,7 +157,7 @@ func (s *indexedMapProxy) Append(ctx context.Context, request *indexedmapv1.Appe
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*AppendResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*AppendResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*AppendResponse, error) {
 		return NewIndexedMapClient(conn).Append(ctx, &AppendRequest{
 			Headers: headers,
 			AppendInput: &AppendInput{
@@ -162,8 +167,13 @@ func (s *indexedMapProxy) Append(ctx context.Context, request *indexedmapv1.Appe
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Append",
+			logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Append",
 			logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -196,7 +206,7 @@ func (s *indexedMapProxy) Update(ctx context.Context, request *indexedmapv1.Upda
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*UpdateResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UpdateResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UpdateResponse, error) {
 		return NewIndexedMapClient(conn).Update(ctx, &UpdateRequest{
 			Headers: headers,
 			UpdateInput: &UpdateInput{
@@ -208,8 +218,13 @@ func (s *indexedMapProxy) Update(ctx context.Context, request *indexedmapv1.Upda
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Update",
+			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -242,7 +257,7 @@ func (s *indexedMapProxy) Get(ctx context.Context, request *indexedmapv1.GetRequ
 		return nil, errors.ToProto(err)
 	}
 	query := client.Query[*GetResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
 		return NewIndexedMapClient(conn).Get(ctx, &GetRequest{
 			Headers: headers,
 			GetInput: &GetInput{
@@ -251,8 +266,13 @@ func (s *indexedMapProxy) Get(ctx context.Context, request *indexedmapv1.GetRequ
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Get",
+			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Get",
 			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -285,14 +305,19 @@ func (s *indexedMapProxy) FirstEntry(ctx context.Context, request *indexedmapv1.
 		return nil, errors.ToProto(err)
 	}
 	query := client.Query[*FirstEntryResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*FirstEntryResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*FirstEntryResponse, error) {
 		return NewIndexedMapClient(conn).FirstEntry(ctx, &FirstEntryRequest{
 			Headers:         headers,
 			FirstEntryInput: &FirstEntryInput{},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("FirstEntry",
+			logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("FirstEntry",
 			logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -325,14 +350,19 @@ func (s *indexedMapProxy) LastEntry(ctx context.Context, request *indexedmapv1.L
 		return nil, errors.ToProto(err)
 	}
 	query := client.Query[*LastEntryResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*LastEntryResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*LastEntryResponse, error) {
 		return NewIndexedMapClient(conn).LastEntry(ctx, &LastEntryRequest{
 			Headers:        headers,
 			LastEntryInput: &LastEntryInput{},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("LastEntry",
+			logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("LastEntry",
 			logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -365,7 +395,7 @@ func (s *indexedMapProxy) NextEntry(ctx context.Context, request *indexedmapv1.N
 		return nil, errors.ToProto(err)
 	}
 	query := client.Query[*NextEntryResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*NextEntryResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*NextEntryResponse, error) {
 		return NewIndexedMapClient(conn).NextEntry(ctx, &NextEntryRequest{
 			Headers: headers,
 			NextEntryInput: &NextEntryInput{
@@ -373,8 +403,13 @@ func (s *indexedMapProxy) NextEntry(ctx context.Context, request *indexedmapv1.N
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("NextEntry",
+			logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("NextEntry",
 			logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -407,7 +442,7 @@ func (s *indexedMapProxy) PrevEntry(ctx context.Context, request *indexedmapv1.P
 		return nil, errors.ToProto(err)
 	}
 	query := client.Query[*PrevEntryResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*PrevEntryResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*PrevEntryResponse, error) {
 		return NewIndexedMapClient(conn).PrevEntry(ctx, &PrevEntryRequest{
 			Headers: headers,
 			PrevEntryInput: &PrevEntryInput{
@@ -415,8 +450,13 @@ func (s *indexedMapProxy) PrevEntry(ctx context.Context, request *indexedmapv1.P
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("PrevEntry",
+			logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("PrevEntry",
 			logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -449,7 +489,7 @@ func (s *indexedMapProxy) Remove(ctx context.Context, request *indexedmapv1.Remo
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*RemoveResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveResponse, error) {
 		return NewIndexedMapClient(conn).Remove(ctx, &RemoveRequest{
 			Headers: headers,
 			RemoveInput: &RemoveInput{
@@ -459,8 +499,13 @@ func (s *indexedMapProxy) Remove(ctx context.Context, request *indexedmapv1.Remo
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Remove",
+			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -493,14 +538,19 @@ func (s *indexedMapProxy) Clear(ctx context.Context, request *indexedmapv1.Clear
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*ClearResponse](primitive)
-	_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ClearResponse, error) {
+	_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ClearResponse, error) {
 		return NewIndexedMapClient(conn).Clear(ctx, &ClearRequest{
 			Headers:    headers,
 			ClearInput: &ClearInput{},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Clear",
+			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Clear",
 			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -546,12 +596,17 @@ func (s *indexedMapProxy) Entries(request *indexedmapv1.EntriesRequest, server i
 		return errors.ToProto(err)
 	}
 	for {
-		output, err := stream.Recv()
+		output, ok, err := stream.Recv()
 		if err == io.EOF {
 			return nil
 		}
-		if err != nil {
+		if !ok {
 			log.Warnw("Entries",
+				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return errors.ToProto(err)
+		} else if err != nil {
+			log.Debugw("Entries",
 				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return errors.ToProto(err)
@@ -607,15 +662,20 @@ func (s *indexedMapProxy) Events(request *indexedmapv1.EventsRequest, server ind
 		return err
 	}
 	for {
-		output, err := stream.Recv()
+		output, ok, err := stream.Recv()
 		if err == io.EOF {
 			log.Debugw("Events",
 				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 				logging.String("State", "Done"))
 			return nil
 		}
-		if err != nil {
+		if !ok {
 			log.Warnw("Events",
+				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return errors.ToProto(err)
+		} else if err != nil {
+			log.Debugw("Events",
 				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return errors.ToProto(err)

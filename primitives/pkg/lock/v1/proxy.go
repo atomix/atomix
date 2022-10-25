@@ -95,7 +95,7 @@ func (s *lockProxy) Lock(ctx context.Context, request *lockv1.LockRequest) (*loc
 		return nil, errors.ToProto(err)
 	}
 	query := client.Proposal[*AcquireResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*AcquireResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*AcquireResponse, error) {
 		return NewLockClient(conn).Acquire(ctx, &AcquireRequest{
 			Headers: headers,
 			AcquireInput: &AcquireInput{
@@ -103,8 +103,13 @@ func (s *lockProxy) Lock(ctx context.Context, request *lockv1.LockRequest) (*loc
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Lock",
+			logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, err
+	} else if err != nil {
+		log.Debugw("Lock",
 			logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -137,14 +142,19 @@ func (s *lockProxy) Unlock(ctx context.Context, request *lockv1.UnlockRequest) (
 		return nil, errors.ToProto(err)
 	}
 	query := client.Proposal[*ReleaseResponse](primitive)
-	_, err = query.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ReleaseResponse, error) {
+	_, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ReleaseResponse, error) {
 		return NewLockClient(conn).Release(ctx, &ReleaseRequest{
 			Headers:      headers,
 			ReleaseInput: &ReleaseInput{},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Unlock",
+			logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, err
+	} else if err != nil {
+		log.Debugw("Unlock",
 			logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -175,14 +185,19 @@ func (s *lockProxy) GetLock(ctx context.Context, request *lockv1.GetLockRequest)
 		return nil, errors.ToProto(err)
 	}
 	query := client.Query[*GetResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
 		return NewLockClient(conn).Get(ctx, &GetRequest{
 			Headers:  headers,
 			GetInput: &GetInput{},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("GetLock",
+			logging.Stringer("GetLockRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, err
+	} else if err != nil {
+		log.Debugw("GetLock",
 			logging.Stringer("GetLockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)

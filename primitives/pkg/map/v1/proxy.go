@@ -14,6 +14,7 @@ import (
 	"github.com/atomix/runtime/sdk/pkg/protocol"
 	"github.com/atomix/runtime/sdk/pkg/protocol/client"
 	"github.com/atomix/runtime/sdk/pkg/runtime"
+	streams "github.com/atomix/runtime/sdk/pkg/stream"
 	"github.com/atomix/runtime/sdk/pkg/stringer"
 	"google.golang.org/grpc"
 	"io"
@@ -116,14 +117,19 @@ func (s *mapProxy) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1
 			return 0, err
 		}
 		query := client.Query[*SizeResponse](primitive)
-		output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*SizeResponse, error) {
+		output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*SizeResponse, error) {
 			return NewMapClient(conn).Size(ctx, &SizeRequest{
 				Headers:   headers,
 				SizeInput: &SizeInput{},
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("Size",
+				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return 0, err
+		} else if err != nil {
+			log.Debugw("Size",
 				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return 0, err
@@ -165,7 +171,7 @@ func (s *mapProxy) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.P
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*PutResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*PutResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*PutResponse, error) {
 		input := &PutRequest{
 			Headers: headers,
 			PutInput: &PutInput{
@@ -177,8 +183,13 @@ func (s *mapProxy) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.P
 		}
 		return NewMapClient(conn).Put(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Put",
+			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Put",
 			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -217,7 +228,7 @@ func (s *mapProxy) Insert(ctx context.Context, request *mapv1.InsertRequest) (*m
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*InsertResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*InsertResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*InsertResponse, error) {
 		return NewMapClient(conn).Insert(ctx, &InsertRequest{
 			Headers: headers,
 			InsertInput: &InsertInput{
@@ -227,8 +238,13 @@ func (s *mapProxy) Insert(ctx context.Context, request *mapv1.InsertRequest) (*m
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Insert",
+			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Insert",
 			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -261,7 +277,7 @@ func (s *mapProxy) Update(ctx context.Context, request *mapv1.UpdateRequest) (*m
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*UpdateResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UpdateResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UpdateResponse, error) {
 		input := &UpdateRequest{
 			Headers: headers,
 			UpdateInput: &UpdateInput{
@@ -273,8 +289,13 @@ func (s *mapProxy) Update(ctx context.Context, request *mapv1.UpdateRequest) (*m
 		}
 		return NewMapClient(conn).Update(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Update",
+			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -311,7 +332,7 @@ func (s *mapProxy) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.G
 		return nil, errors.ToProto(err)
 	}
 	query := client.Query[*GetResponse](primitive)
-	output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
+	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
 		return NewMapClient(conn).Get(ctx, &GetRequest{
 			Headers: headers,
 			GetInput: &GetInput{
@@ -319,8 +340,13 @@ func (s *mapProxy) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.G
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Get",
+			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Get",
 			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -356,7 +382,7 @@ func (s *mapProxy) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*m
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*RemoveResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveResponse, error) {
 		input := &RemoveRequest{
 			Headers: headers,
 			RemoveInput: &RemoveInput{
@@ -366,8 +392,13 @@ func (s *mapProxy) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*m
 		}
 		return NewMapClient(conn).Remove(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Remove",
+			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -405,14 +436,19 @@ func (s *mapProxy) Clear(ctx context.Context, request *mapv1.ClearRequest) (*map
 			return err
 		}
 		command := client.Proposal[*ClearResponse](primitive)
-		_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ClearResponse, error) {
+		_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ClearResponse, error) {
 			return NewMapClient(conn).Clear(ctx, &ClearRequest{
 				Headers:    headers,
 				ClearInput: &ClearInput{},
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("Clear",
+				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return err
+		} else if err != nil {
+			log.Debugw("Clear",
 				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return err
@@ -465,7 +501,7 @@ func (s *mapProxy) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1
 			return err
 		}
 		command := client.Proposal[*LockResponse](primitive)
-		_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*LockResponse, error) {
+		_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*LockResponse, error) {
 			return NewMapClient(conn).Lock(ctx, &LockRequest{
 				Headers: headers,
 				LockInput: &LockInput{
@@ -474,8 +510,13 @@ func (s *mapProxy) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1
 				},
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("Lock",
+				logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return err
+		} else if err != nil {
+			log.Debugw("Lock",
 				logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return err
@@ -513,14 +554,19 @@ func (s *mapProxy) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*m
 			return err
 		}
 		command := client.Proposal[*UnlockResponse](primitive)
-		_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UnlockResponse, error) {
+		_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UnlockResponse, error) {
 			return NewMapClient(conn).Unlock(ctx, &UnlockRequest{
 				Headers:     headers,
 				UnlockInput: &UnlockInput{},
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("Unlock",
+				logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return err
+		} else if err != nil {
+			log.Debugw("Unlock",
 				logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return err
@@ -538,179 +584,249 @@ func (s *mapProxy) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*m
 }
 
 func (s *mapProxy) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsServer) error {
-	log.Debugw("Events",
+	log.Debugw("Events received",
 		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
-	return async.IterAsync(len(partitions), func(i int) error {
-		partition := partitions[i]
-		session, err := partition.GetSession(server.Context())
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return err
-		}
-		primitive, err := session.GetPrimitive(request.ID.Name)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return err
-		}
-		command := client.StreamProposal[*EventsResponse](primitive)
-		stream, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (client.ProposalStream[*EventsResponse], error) {
-			return NewMapClient(conn).Events(server.Context(), &EventsRequest{
-				Headers: headers,
-				EventsInput: &EventsInput{
-					Key: request.Key,
-				},
-			})
-		})
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return err
-		}
-		for {
-			output, err := stream.Recv()
-			if err == io.EOF {
-				log.Debugw("Events",
-					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-					logging.String("State", "Done"))
-				return nil
-			}
+	ch := make(chan streams.Result[*mapv1.EventsResponse])
+	wg := &sync.WaitGroup{}
+	for i := 0; i < len(partitions); i++ {
+		wg.Add(1)
+		go func(partition *client.PartitionClient) {
+			defer wg.Done()
+			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Events",
 					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 					logging.Error("Error", err))
-				return errors.ToProto(err)
-			}
-			response := &mapv1.EventsResponse{
-				Event: mapv1.Event{
-					Key: output.Event.Key,
-				},
-			}
-			switch e := output.Event.Event.(type) {
-			case *Event_Inserted_:
-				response.Event.Event = &mapv1.Event_Inserted_{
-					Inserted: &mapv1.Event_Inserted{
-						Value: mapv1.VersionedValue{
-							Value:   e.Inserted.Value.Value,
-							Version: uint64(e.Inserted.Value.Index),
-						},
-					},
+				ch <- streams.Result[*mapv1.EventsResponse]{
+					Error: err,
 				}
-			case *Event_Updated_:
-				response.Event.Event = &mapv1.Event_Updated_{
-					Updated: &mapv1.Event_Updated{
-						Value: mapv1.VersionedValue{
-							Value:   e.Updated.Value.Value,
-							Version: uint64(e.Updated.Value.Index),
-						},
-						PrevValue: mapv1.VersionedValue{
-							Value:   e.Updated.PrevValue.Value,
-							Version: uint64(e.Updated.PrevValue.Index),
-						},
-					},
-				}
-			case *Event_Removed_:
-				response.Event.Event = &mapv1.Event_Removed_{
-					Removed: &mapv1.Event_Removed{
-						Value: mapv1.VersionedValue{
-							Value:   e.Removed.Value.Value,
-							Version: uint64(e.Removed.Value.Index),
-						},
-						Expired: e.Removed.Expired,
-					},
-				}
+				return
 			}
-			log.Debugw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
-			if err := server.Send(response); err != nil {
+			primitive, err := session.GetPrimitive(request.ID.Name)
+			if err != nil {
 				log.Warnw("Events",
 					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-					logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)),
 					logging.Error("Error", err))
-				return err
+				ch <- streams.Result[*mapv1.EventsResponse]{
+					Error: err,
+				}
+				return
 			}
+			proposal := client.StreamProposal[*EventsResponse](primitive)
+			stream, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (client.ProposalStream[*EventsResponse], error) {
+				return NewMapClient(conn).Events(server.Context(), &EventsRequest{
+					Headers: headers,
+					EventsInput: &EventsInput{
+						Key: request.Key,
+					},
+				})
+			})
+			if err != nil {
+				log.Warnw("Events",
+					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+					logging.Error("Error", err))
+				ch <- streams.Result[*mapv1.EventsResponse]{
+					Error: err,
+				}
+				return
+			}
+			for {
+				output, ok, err := stream.Recv()
+				if !ok {
+					if err != io.EOF {
+						log.Warnw("Events",
+							logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+							logging.Error("Error", err))
+						ch <- streams.Result[*mapv1.EventsResponse]{
+							Error: err,
+						}
+					}
+					return
+				}
+				if err != nil {
+					log.Debugw("Events",
+						logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+						logging.Error("Error", err))
+					ch <- streams.Result[*mapv1.EventsResponse]{
+						Error: errors.ToProto(err),
+					}
+				} else {
+					response := &mapv1.EventsResponse{
+						Event: mapv1.Event{
+							Key: output.Event.Key,
+						},
+					}
+					switch e := output.Event.Event.(type) {
+					case *Event_Inserted_:
+						response.Event.Event = &mapv1.Event_Inserted_{
+							Inserted: &mapv1.Event_Inserted{
+								Value: mapv1.VersionedValue{
+									Value:   e.Inserted.Value.Value,
+									Version: uint64(e.Inserted.Value.Index),
+								},
+							},
+						}
+					case *Event_Updated_:
+						response.Event.Event = &mapv1.Event_Updated_{
+							Updated: &mapv1.Event_Updated{
+								Value: mapv1.VersionedValue{
+									Value:   e.Updated.Value.Value,
+									Version: uint64(e.Updated.Value.Index),
+								},
+								PrevValue: mapv1.VersionedValue{
+									Value:   e.Updated.PrevValue.Value,
+									Version: uint64(e.Updated.PrevValue.Index),
+								},
+							},
+						}
+					case *Event_Removed_:
+						response.Event.Event = &mapv1.Event_Removed_{
+							Removed: &mapv1.Event_Removed{
+								Value: mapv1.VersionedValue{
+									Value:   e.Removed.Value.Value,
+									Version: uint64(e.Removed.Value.Index),
+								},
+								Expired: e.Removed.Expired,
+							},
+						}
+					}
+					log.Debugw("Events",
+						logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+						logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
+					ch <- streams.Result[*mapv1.EventsResponse]{
+						Value: response,
+					}
+				}
+			}
+		}(partitions[i])
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for result := range ch {
+		if result.Failed() {
+			return result.Error
 		}
-	})
+		if err := server.Send(result.Value); err != nil {
+			return err
+		}
+	}
+	log.Debugw("Events complete",
+		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+	return nil
 }
 
 func (s *mapProxy) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
-	log.Debugw("Entries",
+	log.Debugw("Entries received",
 		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
-	return async.IterAsync(len(partitions), func(i int) error {
-		partition := partitions[i]
-		session, err := partition.GetSession(server.Context())
-		if err != nil {
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return errors.ToProto(err)
-		}
-		primitive, err := session.GetPrimitive(request.ID.Name)
-		if err != nil {
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return errors.ToProto(err)
-		}
-		query := client.StreamQuery[*EntriesResponse](primitive)
-		stream, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (client.QueryStream[*EntriesResponse], error) {
-			return NewMapClient(conn).Entries(server.Context(), &EntriesRequest{
-				Headers: headers,
-				EntriesInput: &EntriesInput{
-					Watch: request.Watch,
-				},
-			})
-		})
-		if err != nil {
-			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return errors.ToProto(err)
-		}
-		for {
-			output, err := stream.Recv()
-			if err == io.EOF {
-				return nil
-			}
+	ch := make(chan streams.Result[*mapv1.EntriesResponse])
+	wg := &sync.WaitGroup{}
+	for i := 0; i < len(partitions); i++ {
+		wg.Add(1)
+		go func(partition *client.PartitionClient) {
+			defer wg.Done()
+			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Entries",
 					logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
 					logging.Error("Error", err))
-				return errors.ToProto(err)
-			}
-			response := &mapv1.EntriesResponse{
-				Entry: mapv1.Entry{
-					Key: output.Entry.Key,
-				},
-			}
-			if output.Entry.Value != nil {
-				response.Entry.Value = &mapv1.VersionedValue{
-					Value:   output.Entry.Value.Value,
-					Version: uint64(output.Entry.Value.Index),
+				ch <- streams.Result[*mapv1.EntriesResponse]{
+					Error: err,
 				}
+				return
 			}
-			log.Debugw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)))
-			if err := server.Send(response); err != nil {
+			primitive, err := session.GetPrimitive(request.ID.Name)
+			if err != nil {
 				log.Warnw("Entries",
 					logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-					logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)),
 					logging.Error("Error", err))
-				return err
+				ch <- streams.Result[*mapv1.EntriesResponse]{
+					Error: err,
+				}
+				return
 			}
+			query := client.StreamQuery[*EntriesResponse](primitive)
+			stream, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (client.QueryStream[*EntriesResponse], error) {
+				return NewMapClient(conn).Entries(server.Context(), &EntriesRequest{
+					Headers: headers,
+					EntriesInput: &EntriesInput{
+						Watch: request.Watch,
+					},
+				})
+			})
+			if err != nil {
+				log.Warnw("Entries",
+					logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+					logging.Error("Error", err))
+				ch <- streams.Result[*mapv1.EntriesResponse]{
+					Error: err,
+				}
+				return
+			}
+			for {
+				output, ok, err := stream.Recv()
+				if !ok {
+					if err != io.EOF {
+						log.Warnw("Entries",
+							logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+							logging.Error("Error", err))
+						ch <- streams.Result[*mapv1.EntriesResponse]{
+							Error: err,
+						}
+					}
+					return
+				}
+				if err != nil {
+					log.Debugw("Entries",
+						logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+						logging.Error("Error", err))
+					ch <- streams.Result[*mapv1.EntriesResponse]{
+						Error: errors.ToProto(err),
+					}
+				} else {
+					response := &mapv1.EntriesResponse{
+						Entry: mapv1.Entry{
+							Key: output.Entry.Key,
+						},
+					}
+					if output.Entry.Value != nil {
+						response.Entry.Value = &mapv1.VersionedValue{
+							Value:   output.Entry.Value.Value,
+							Version: uint64(output.Entry.Value.Index),
+						}
+					}
+					log.Debugw("Entries",
+						logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+						logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)))
+					ch <- streams.Result[*mapv1.EntriesResponse]{
+						Value: response,
+					}
+				}
+			}
+		}(partitions[i])
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for result := range ch {
+		if result.Failed() {
+			return result.Error
 		}
-	})
+		if err := server.Send(result.Value); err != nil {
+			return err
+		}
+	}
+	log.Debugw("Entries complete",
+		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
+	return nil
 }
 
 var _ mapv1.MapServer = (*mapProxy)(nil)

@@ -96,7 +96,7 @@ func (s *valueProxy) Set(ctx context.Context, request *valuev1.SetRequest) (*val
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*SetResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*SetResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*SetResponse, error) {
 		return NewValueClient(conn).Set(ctx, &SetRequest{
 			Headers: headers,
 			SetInput: &SetInput{
@@ -104,8 +104,13 @@ func (s *valueProxy) Set(ctx context.Context, request *valuev1.SetRequest) (*val
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Set",
+			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Set",
 			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -138,7 +143,7 @@ func (s *valueProxy) Insert(ctx context.Context, request *valuev1.InsertRequest)
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*InsertResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*InsertResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*InsertResponse, error) {
 		return NewValueClient(conn).Insert(ctx, &InsertRequest{
 			Headers: headers,
 			InsertInput: &InsertInput{
@@ -146,8 +151,13 @@ func (s *valueProxy) Insert(ctx context.Context, request *valuev1.InsertRequest)
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Insert",
+			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Insert",
 			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -180,14 +190,19 @@ func (s *valueProxy) Get(ctx context.Context, request *valuev1.GetRequest) (*val
 		return nil, errors.ToProto(err)
 	}
 	command := client.Query[*GetResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
 		return NewValueClient(conn).Get(ctx, &GetRequest{
 			Headers:  headers,
 			GetInput: &GetInput{},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Get",
+			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Get",
 			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -223,7 +238,7 @@ func (s *valueProxy) Update(ctx context.Context, request *valuev1.UpdateRequest)
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*UpdateResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UpdateResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UpdateResponse, error) {
 		return NewValueClient(conn).Update(ctx, &UpdateRequest{
 			Headers: headers,
 			UpdateInput: &UpdateInput{
@@ -233,8 +248,13 @@ func (s *valueProxy) Update(ctx context.Context, request *valuev1.UpdateRequest)
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Update",
+			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -271,7 +291,7 @@ func (s *valueProxy) Delete(ctx context.Context, request *valuev1.DeleteRequest)
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*DeleteResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*DeleteResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*DeleteResponse, error) {
 		return NewValueClient(conn).Delete(ctx, &DeleteRequest{
 			Headers: headers,
 			DeleteInput: &DeleteInput{
@@ -279,8 +299,13 @@ func (s *valueProxy) Delete(ctx context.Context, request *valuev1.DeleteRequest)
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Delete",
+			logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Delete",
 			logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -330,15 +355,20 @@ func (s *valueProxy) Events(request *valuev1.EventsRequest, server valuev1.Value
 		return err
 	}
 	for {
-		output, err := stream.Recv()
+		output, ok, err := stream.Recv()
 		if err == io.EOF {
 			log.Debugw("Events",
 				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 				logging.String("State", "Done"))
 			return nil
 		}
-		if err != nil {
+		if !ok {
 			log.Warnw("Events",
+				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return errors.ToProto(err)
+		} else if err != nil {
+			log.Debugw("Events",
 				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return errors.ToProto(err)
@@ -425,12 +455,17 @@ func (s *valueProxy) Watch(request *valuev1.WatchRequest, server valuev1.Value_W
 		return errors.ToProto(err)
 	}
 	for {
-		output, err := stream.Recv()
+		output, ok, err := stream.Recv()
 		if err == io.EOF {
 			return nil
 		}
-		if err != nil {
+		if !ok {
 			log.Warnw("Watch",
+				logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return errors.ToProto(err)
+		} else if err != nil {
+			log.Debugw("Watch",
 				logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return errors.ToProto(err)

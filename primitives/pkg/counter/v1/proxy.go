@@ -95,7 +95,7 @@ func (s *counterProxy) Set(ctx context.Context, request *counterv1.SetRequest) (
 		return nil, errors.ToProto(err)
 	}
 	proposal := client.Proposal[*SetResponse](primitive)
-	output, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*SetResponse, error) {
+	output, ok, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*SetResponse, error) {
 		return NewCounterClient(conn).Set(ctx, &SetRequest{
 			Headers: headers,
 			SetInput: &SetInput{
@@ -103,8 +103,13 @@ func (s *counterProxy) Set(ctx context.Context, request *counterv1.SetRequest) (
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Set",
+			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Set",
 			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -137,14 +142,19 @@ func (s *counterProxy) Get(ctx context.Context, request *counterv1.GetRequest) (
 		return nil, errors.ToProto(err)
 	}
 	proposal := client.Query[*GetResponse](primitive)
-	output, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
+	output, ok, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*GetResponse, error) {
 		return NewCounterClient(conn).Get(ctx, &GetRequest{
 			Headers:  headers,
 			GetInput: &GetInput{},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Get",
+			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Get",
 			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -177,7 +187,7 @@ func (s *counterProxy) Increment(ctx context.Context, request *counterv1.Increme
 		return nil, errors.ToProto(err)
 	}
 	proposal := client.Proposal[*IncrementResponse](primitive)
-	output, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*IncrementResponse, error) {
+	output, ok, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*IncrementResponse, error) {
 		return NewCounterClient(conn).Increment(ctx, &IncrementRequest{
 			Headers: headers,
 			IncrementInput: &IncrementInput{
@@ -185,8 +195,13 @@ func (s *counterProxy) Increment(ctx context.Context, request *counterv1.Increme
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Increment",
+			logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Increment",
 			logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -219,7 +234,7 @@ func (s *counterProxy) Decrement(ctx context.Context, request *counterv1.Decreme
 		return nil, errors.ToProto(err)
 	}
 	proposal := client.Proposal[*DecrementResponse](primitive)
-	output, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*DecrementResponse, error) {
+	output, ok, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*DecrementResponse, error) {
 		return NewCounterClient(conn).Decrement(ctx, &DecrementRequest{
 			Headers: headers,
 			DecrementInput: &DecrementInput{
@@ -227,8 +242,13 @@ func (s *counterProxy) Decrement(ctx context.Context, request *counterv1.Decreme
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Decrement",
+			logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Decrement",
 			logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -261,7 +281,7 @@ func (s *counterProxy) Update(ctx context.Context, request *counterv1.UpdateRequ
 		return nil, errors.ToProto(err)
 	}
 	proposal := client.Proposal[*UpdateResponse](primitive)
-	output, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UpdateResponse, error) {
+	output, ok, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*UpdateResponse, error) {
 		return NewCounterClient(conn).Update(ctx, &UpdateRequest{
 			Headers: headers,
 			UpdateInput: &UpdateInput{
@@ -270,8 +290,13 @@ func (s *counterProxy) Update(ctx context.Context, request *counterv1.UpdateRequ
 			},
 		})
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Update",
+			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)

@@ -13,9 +13,11 @@ import (
 	"github.com/atomix/runtime/sdk/pkg/protocol"
 	"github.com/atomix/runtime/sdk/pkg/protocol/client"
 	"github.com/atomix/runtime/sdk/pkg/runtime"
+	streams "github.com/atomix/runtime/sdk/pkg/stream"
 	"github.com/atomix/runtime/sdk/pkg/stringer"
 	"google.golang.org/grpc"
 	"io"
+	"sync"
 )
 
 func NewSetProxy(protocol *client.Protocol, spec runtime.PrimitiveSpec) (setv1.SetServer, error) {
@@ -99,14 +101,19 @@ func (s *setProxy) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1
 			return 0, err
 		}
 		query := client.Query[*SizeResponse](primitive)
-		output, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*SizeResponse, error) {
+		output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*SizeResponse, error) {
 			return NewSetClient(conn).Size(ctx, &SizeRequest{
 				Headers:   headers,
 				SizeInput: &SizeInput{},
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("Size",
+				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return 0, err
+		} else if err != nil {
+			log.Debugw("Size",
 				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return 0, err
@@ -148,7 +155,7 @@ func (s *setProxy) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.A
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*AddResponse](primitive)
-	_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*AddResponse, error) {
+	_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*AddResponse, error) {
 		input := &AddRequest{
 			Headers: headers,
 			AddInput: &AddInput{
@@ -160,8 +167,13 @@ func (s *setProxy) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.A
 		}
 		return NewSetClient(conn).Add(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Add",
+			logging.Stringer("AddRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Add",
 			logging.Stringer("AddRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -192,7 +204,7 @@ func (s *setProxy) Contains(ctx context.Context, request *setv1.ContainsRequest)
 		return nil, errors.ToProto(err)
 	}
 	command := client.Query[*ContainsResponse](primitive)
-	output, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*ContainsResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*ContainsResponse, error) {
 		input := &ContainsRequest{
 			Headers: headers,
 			ContainsInput: &ContainsInput{
@@ -203,8 +215,13 @@ func (s *setProxy) Contains(ctx context.Context, request *setv1.ContainsRequest)
 		}
 		return NewSetClient(conn).Contains(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Contains",
+			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Contains",
 			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -237,7 +254,7 @@ func (s *setProxy) Remove(ctx context.Context, request *setv1.RemoveRequest) (*s
 		return nil, errors.ToProto(err)
 	}
 	command := client.Proposal[*RemoveResponse](primitive)
-	_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveResponse, error) {
+	_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*RemoveResponse, error) {
 		input := &RemoveRequest{
 			Headers: headers,
 			RemoveInput: &RemoveInput{
@@ -248,8 +265,13 @@ func (s *setProxy) Remove(ctx context.Context, request *setv1.RemoveRequest) (*s
 		}
 		return NewSetClient(conn).Remove(ctx, input)
 	})
-	if err != nil {
+	if !ok {
 		log.Warnw("Remove",
+			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Error("Error", err))
+		return nil, errors.ToProto(err)
+	} else if err != nil {
+		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
@@ -282,14 +304,19 @@ func (s *setProxy) Clear(ctx context.Context, request *setv1.ClearRequest) (*set
 			return err
 		}
 		command := client.Proposal[*ClearResponse](primitive)
-		_, err = command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ClearResponse, error) {
+		_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*ClearResponse, error) {
 			return NewSetClient(conn).Clear(ctx, &ClearRequest{
 				Headers:    headers,
 				ClearInput: &ClearInput{},
 			})
 		})
-		if err != nil {
+		if !ok {
 			log.Warnw("Clear",
+				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+				logging.Error("Error", err))
+			return err
+		} else if err != nil {
+			log.Debugw("Clear",
 				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
 				logging.Error("Error", err))
 			return err
@@ -307,154 +334,224 @@ func (s *setProxy) Clear(ctx context.Context, request *setv1.ClearRequest) (*set
 }
 
 func (s *setProxy) Events(request *setv1.EventsRequest, server setv1.Set_EventsServer) error {
-	log.Debugw("Events",
+	log.Debugw("Events received",
 		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
-	return async.IterAsync(len(partitions), func(i int) error {
-		partition := partitions[i]
-		session, err := partition.GetSession(server.Context())
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return err
-		}
-		primitive, err := session.GetPrimitive(request.ID.Name)
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return err
-		}
-		command := client.StreamProposal[*EventsResponse](primitive)
-		stream, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (client.ProposalStream[*EventsResponse], error) {
-			return NewSetClient(conn).Events(server.Context(), &EventsRequest{
-				Headers:     headers,
-				EventsInput: &EventsInput{},
-			})
-		})
-		if err != nil {
-			err = errors.ToProto(err)
-			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return err
-		}
-		for {
-			output, err := stream.Recv()
-			if err == io.EOF {
-				log.Debugw("Events",
-					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-					logging.String("State", "Done"))
-				return nil
-			}
+	ch := make(chan streams.Result[*setv1.EventsResponse])
+	wg := &sync.WaitGroup{}
+	for i := 0; i < len(partitions); i++ {
+		wg.Add(1)
+		go func(partition *client.PartitionClient) {
+			defer wg.Done()
+			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Events",
 					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 					logging.Error("Error", err))
-				return errors.ToProto(err)
-			}
-			response := &setv1.EventsResponse{
-				Event: setv1.Event{},
-			}
-			switch e := output.Event.Event.(type) {
-			case *Event_Added_:
-				response.Event.Event = &setv1.Event_Added_{
-					Added: &setv1.Event_Added{
-						Element: setv1.Element{
-							Value: e.Added.Element.Value,
-						},
-					},
+				ch <- streams.Result[*setv1.EventsResponse]{
+					Error: err,
 				}
-			case *Event_Removed_:
-				response.Event.Event = &setv1.Event_Removed_{
-					Removed: &setv1.Event_Removed{
-						Element: setv1.Element{
-							Value: e.Removed.Element.Value,
-						},
-						Expired: e.Removed.Expired,
-					},
-				}
+				return
 			}
-			log.Debugw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
-			if err := server.Send(response); err != nil {
+			primitive, err := session.GetPrimitive(request.ID.Name)
+			if err != nil {
 				log.Warnw("Events",
 					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-					logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)),
 					logging.Error("Error", err))
-				return err
+				ch <- streams.Result[*setv1.EventsResponse]{
+					Error: err,
+				}
+				return
 			}
+			proposal := client.StreamProposal[*EventsResponse](primitive)
+			stream, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (client.ProposalStream[*EventsResponse], error) {
+				return NewSetClient(conn).Events(server.Context(), &EventsRequest{
+					Headers:     headers,
+					EventsInput: &EventsInput{},
+				})
+			})
+			if err != nil {
+				log.Warnw("Events",
+					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+					logging.Error("Error", err))
+				ch <- streams.Result[*setv1.EventsResponse]{
+					Error: err,
+				}
+				return
+			}
+			for {
+				output, ok, err := stream.Recv()
+				if !ok {
+					if err != io.EOF {
+						log.Warnw("Events",
+							logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+							logging.Error("Error", err))
+						ch <- streams.Result[*setv1.EventsResponse]{
+							Error: err,
+						}
+					}
+					return
+				}
+				if err != nil {
+					log.Debugw("Events",
+						logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+						logging.Error("Error", err))
+					ch <- streams.Result[*setv1.EventsResponse]{
+						Error: errors.ToProto(err),
+					}
+				} else {
+					response := &setv1.EventsResponse{
+						Event: setv1.Event{},
+					}
+					switch e := output.Event.Event.(type) {
+					case *Event_Added_:
+						response.Event.Event = &setv1.Event_Added_{
+							Added: &setv1.Event_Added{
+								Element: setv1.Element{
+									Value: e.Added.Element.Value,
+								},
+							},
+						}
+					case *Event_Removed_:
+						response.Event.Event = &setv1.Event_Removed_{
+							Removed: &setv1.Event_Removed{
+								Element: setv1.Element{
+									Value: e.Removed.Element.Value,
+								},
+								Expired: e.Removed.Expired,
+							},
+						}
+					}
+					log.Debugw("Events",
+						logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+						logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
+					ch <- streams.Result[*setv1.EventsResponse]{
+						Value: response,
+					}
+				}
+			}
+		}(partitions[i])
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for result := range ch {
+		if result.Failed() {
+			return result.Error
 		}
-	})
+		if err := server.Send(result.Value); err != nil {
+			return err
+		}
+	}
+	log.Debugw("Events complete",
+		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+	return nil
 }
 
 func (s *setProxy) Elements(request *setv1.ElementsRequest, server setv1.Set_ElementsServer) error {
-	log.Debugw("Elements",
+	log.Debugw("Elements received",
 		logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
-	return async.IterAsync(len(partitions), func(i int) error {
-		partition := partitions[i]
-		session, err := partition.GetSession(server.Context())
-		if err != nil {
-			log.Warnw("Elements",
-				logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return errors.ToProto(err)
-		}
-		primitive, err := session.GetPrimitive(request.ID.Name)
-		if err != nil {
-			log.Warnw("Elements",
-				logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return errors.ToProto(err)
-		}
-		query := client.StreamQuery[*ElementsResponse](primitive)
-		stream, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (client.QueryStream[*ElementsResponse], error) {
-			return NewSetClient(conn).Elements(server.Context(), &ElementsRequest{
-				Headers: headers,
-				ElementsInput: &ElementsInput{
-					Watch: request.Watch,
-				},
-			})
-		})
-		if err != nil {
-			log.Warnw("Elements",
-				logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
-				logging.Error("Error", err))
-			return errors.ToProto(err)
-		}
-		for {
-			output, err := stream.Recv()
-			if err == io.EOF {
-				return nil
-			}
+	ch := make(chan streams.Result[*setv1.ElementsResponse])
+	wg := &sync.WaitGroup{}
+	for i := 0; i < len(partitions); i++ {
+		wg.Add(1)
+		go func(partition *client.PartitionClient) {
+			defer wg.Done()
+			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Elements",
 					logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
 					logging.Error("Error", err))
-				return errors.ToProto(err)
+				ch <- streams.Result[*setv1.ElementsResponse]{
+					Error: err,
+				}
+				return
 			}
-			response := &setv1.ElementsResponse{
-				Element: setv1.Element{
-					Value: output.Element.Value,
-				},
-			}
-			log.Debugw("Elements",
-				logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
-				logging.Stringer("ElementsResponse", stringer.Truncate(response, truncLen)))
-			if err := server.Send(response); err != nil {
+			primitive, err := session.GetPrimitive(request.ID.Name)
+			if err != nil {
 				log.Warnw("Elements",
 					logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
-					logging.Stringer("ElementsResponse", stringer.Truncate(response, truncLen)),
 					logging.Error("Error", err))
-				return err
+				ch <- streams.Result[*setv1.ElementsResponse]{
+					Error: err,
+				}
+				return
 			}
+			query := client.StreamQuery[*ElementsResponse](primitive)
+			stream, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (client.QueryStream[*ElementsResponse], error) {
+				return NewSetClient(conn).Elements(server.Context(), &ElementsRequest{
+					Headers: headers,
+					ElementsInput: &ElementsInput{
+						Watch: request.Watch,
+					},
+				})
+			})
+			if err != nil {
+				log.Warnw("Elements",
+					logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
+					logging.Error("Error", err))
+				ch <- streams.Result[*setv1.ElementsResponse]{
+					Error: err,
+				}
+				return
+			}
+			for {
+				output, ok, err := stream.Recv()
+				if !ok {
+					if err != io.EOF {
+						log.Warnw("Elements",
+							logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
+							logging.Error("Error", err))
+						ch <- streams.Result[*setv1.ElementsResponse]{
+							Error: err,
+						}
+					}
+					return
+				}
+				if err != nil {
+					log.Debugw("Elements",
+						logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
+						logging.Error("Error", err))
+					ch <- streams.Result[*setv1.ElementsResponse]{
+						Error: errors.ToProto(err),
+					}
+				} else {
+					response := &setv1.ElementsResponse{
+						Element: setv1.Element{
+							Value: output.Element.Value,
+						},
+					}
+					log.Debugw("Elements",
+						logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
+						logging.Stringer("ElementsResponse", stringer.Truncate(response, truncLen)))
+					ch <- streams.Result[*setv1.ElementsResponse]{
+						Value: response,
+					}
+				}
+			}
+		}(partitions[i])
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for result := range ch {
+		if result.Failed() {
+			return result.Error
 		}
-	})
+		if err := server.Send(result.Value); err != nil {
+			return err
+		}
+	}
+	log.Debugw("Elements complete",
+		logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)))
+	return nil
 }
 
 var _ setv1.SetServer = (*setProxy)(nil)
