@@ -15,25 +15,25 @@ COPY ./pkg /build/pkg
 RUN go mod download
 
 # Build the proxy binary
-FROM builder AS build
+FROM builder AS build-proxy
 RUN go run ./cmd/atomix-build proxy /build/bin/atomix-runtime-proxy
 
 # Build the consensus storage driver
-FROM builder AS build-consensus
+FROM builder AS build-consensus-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/consensus-storage/driver@b69ccea \
+    github.com/atomix/consensus-storage/driver@v0.13.0 \
     /build/bin/Consensus@v1beta1.so
 
 # Build the shared memory storage driver
-FROM builder AS build-shared-memory
+FROM builder AS build-shared-memory-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/shared-memory-storage/driver@d5df7b2 \
+    github.com/atomix/shared-memory-storage/driver@v0.1.0 \
     /build/bin/SharedMemory@v1beta1.so
 
 # Build the pod memory storage driver
-FROM builder AS build-pod-memory
+FROM builder AS build-pod-memory-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/pod-memory-storage/driver@cfd2b6a \
+    github.com/atomix/pod-memory-storage/driver@v0.1.0 \
     /build/bin/PodMemory@v1beta1.so
 
 # Pull binaries and plugins into the Alpine image
@@ -45,9 +45,9 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 
 USER atomix
 
-COPY --from=build /build/bin/atomix-runtime-proxy /usr/local/bin/atomix-runtime-proxy
-COPY --from=build-consensus /build/bin/Consensus@v1beta1.so /var/atomix/plugins/
-COPY --from=build-shared-memory /build/bin/SharedMemory@v1beta1.so /var/atomix/plugins/
-COPY --from=build-pod-memory /build/bin/PodMemory@v1beta1.so /var/atomix/plugins/
+COPY --from=build-proxy /build/bin/atomix-runtime-proxy /usr/local/bin/atomix-runtime-proxy
+COPY --from=build-consensus-driver /build/bin/Consensus@v1beta1.so /var/atomix/plugins/
+COPY --from=build-shared-memory-driver /build/bin/SharedMemory@v1beta1.so /var/atomix/plugins/
+COPY --from=build-pod-memory-driver /build/bin/PodMemory@v1beta1.so /var/atomix/plugins/
 
 ENTRYPOINT ["atomix-runtime-proxy"]
