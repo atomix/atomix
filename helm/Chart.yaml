@@ -7,8 +7,8 @@ name: atomix-runtime
 description: Umbrella chart for deploying Atomix runtime controllers
 kubeVersion: ">=1.17.0"
 type: application
-version: 0.1.3
-appVersion: v0.1.3
+version: 0.1.4
+appVersion: v0.1.4
 keywords:
 - atomix
 home: https://atomix.io
@@ -17,11 +17,21 @@ maintainers:
   email: jordan.halterman@intel.com
 dependencies:
   - name: atomix-runtime-controller
-    version: 1.6.3
+    version: 1.6.4
     repository: https://charts.atomix.io
     alias: runtime
   - name: atomix-consensus-controller
-    version: 1.4.0
+    version: 1.5.0
     repository: https://charts.atomix.io
     condition: storage.consensus.enabled
     alias: consensus
+  - name: atomix-shared-memory-controller
+    version: 1.0.0
+    repository: https://charts.atomix.io
+    condition: storage.sharedMemory.enabled
+    alias: sharedMemory
+  - name: atomix-pod-memory-controller
+    version: 1.0.0
+    repository: https://charts.atomix.io
+    condition: storage.podMemory.enabled
+    alias: podMemory

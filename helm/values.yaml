@@ -5,3 +5,7 @@
 storage:
   consensus:
     enabled: true
+  sharedMemory:
+    enabled: true
+  podMemory:
+    enabled: true
