@@ -2,30 +2,70 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package build
+package main
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/atomix/runtime/sdk/pkg/errors"
+	"github.com/atomix/runtime/sdk/pkg/logging"
 	"github.com/rogpeppe/go-internal/modfile"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 const sdkPath = "github.com/atomix/runtime/sdk"
 
-func Build(cmd *cobra.Command, config Config) error {
+func init() {
+	logging.SetLevel(logging.DebugLevel)
+}
+
+func main() {
+	cmd := &cobra.Command{
+		Use: "atomix-build",
+	}
+	cmd.AddCommand(&cobra.Command{
+		Use:  "proxy",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			outputPath := args[0]
+			builder, err := newBuilder(cmd)
+			if err != nil {
+				return err
+			}
+			return builder.buildProxy(outputPath)
+		},
+	})
+	cmd.AddCommand(&cobra.Command{
+		Use:  "driver",
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			inputPath, outputPath := args[0], args[1]
+			builder, err := newBuilder(cmd)
+			if err != nil {
+				return err
+			}
+			return builder.buildDriver(inputPath, outputPath)
+		},
+	})
+
+	if err := cmd.Execute(); err != nil {
+		panic(err)
+	}
+}
+
+func newBuilder(cmd *cobra.Command) (*atomixBuilder, error) {
 	proxyModBytes, err := ioutil.ReadFile("go.mod")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	proxyModFile, err := modfile.Parse("go.mod", proxyModBytes, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var sdkVersion string
@@ -36,101 +76,84 @@ func Build(cmd *cobra.Command, config Config) error {
 		}
 	}
 
-	if err := os.MkdirAll("/build/dist/bin", os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.MkdirAll("/build/dist/plugins", os.ModePerm); err != nil {
-		return err
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), "Building github.com/atomix/runtime/proxy")
-	_, err = run(".",
-		"go", "build",
-		"-mod=readonly",
-		"-trimpath",
-		"-gcflags=all=-N -l",
-		fmt.Sprintf("-ldflags=-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s", sdkVersion),
-		"-o", "/build/dist/bin/atomix-runtime-proxy",
-		"./cmd/atomix-runtime-proxy")
-	if err != nil {
-		return err
-	}
-
-	builder := newPluginBuilder(cmd, proxyModFile, sdkVersion)
-	for _, plugin := range config.Plugins {
-		if err := builder.Build(plugin); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func newPluginBuilder(cmd *cobra.Command, proxyModFile *modfile.File, sdkVersion string) *Builder {
-	return &Builder{
+	return &atomixBuilder{
 		cmd:          cmd,
 		sdkVersion:   sdkVersion,
 		proxyModFile: proxyModFile,
-	}
+	}, nil
 }
 
-type Builder struct {
+type atomixBuilder struct {
 	cmd          *cobra.Command
 	sdkVersion   string
 	proxyModFile *modfile.File
 }
 
-func (b *Builder) Build(plugin PluginConfig) error {
-	pluginModFile, pluginModDir, err := b.downloadPluginMod(plugin)
+func (b *atomixBuilder) buildProxy(outputPath string) error {
+	fmt.Fprintln(b.cmd.OutOrStdout(), "Building github.com/atomix/runtime/proxy")
+	_, err := run(".",
+		"go", "build",
+		"-mod=readonly",
+		"-trimpath",
+		"-gcflags=all=-N -l",
+		fmt.Sprintf("-ldflags=-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s", b.sdkVersion),
+		"-o", outputPath,
+		"./cmd/atomix-runtime-proxy")
+	return err
+}
+
+func (b *atomixBuilder) buildDriver(inputPath, outputPath string) error {
+	pluginModFile, pluginModDir, err := b.downloadPluginMod(inputPath)
 	if err != nil {
 		return err
 	}
-	if err := b.validatePluginModFile(plugin, pluginModFile); err != nil {
+	if err := b.validatePluginModFile(inputPath, pluginModFile); err != nil {
 		return err
 	}
-	if err := b.buildPlugin(plugin, pluginModDir); err != nil {
+	if err := b.buildPlugin(outputPath, pluginModDir); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (b *Builder) downloadPluginMod(plugin PluginConfig) (*modfile.File, string, error) {
-	if plugin.Path == "" {
+func (b *atomixBuilder) downloadPluginMod(inputPath string) (*modfile.File, string, error) {
+	if inputPath == "" {
 		err := errors.NewInvalid("no plugin module path configured")
 		fmt.Fprintln(b.cmd.OutOrStderr(), "Plugin configuration is invalid", err)
 		return nil, "", err
 	}
 
-	fmt.Fprintln(b.cmd.OutOrStdout(), "Downloading module", plugin.Path)
-	output, err := run(".", "go", "mod", "download", "-json", plugin.Path)
+	fmt.Fprintln(b.cmd.OutOrStdout(), "Downloading module", inputPath)
+	output, err := run(".", "go", "mod", "download", "-json", inputPath)
 	if err != nil {
-		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", plugin.Path, err)
+		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", inputPath, err)
 		return nil, "", err
 	}
 	println(output)
 
 	var modInfo goModInfo
 	if err := json.Unmarshal([]byte(output), &modInfo); err != nil {
-		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", plugin.Path, err)
+		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", inputPath, err)
 		return nil, "", err
 	}
 
 	fmt.Fprintln(b.cmd.OutOrStdout(), "Parsing", modInfo.GoMod)
 	goModBytes, err := ioutil.ReadFile(modInfo.GoMod)
 	if err != nil {
-		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", plugin.Path, err)
+		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", inputPath, err)
 		return nil, "", err
 	}
 
 	goModFile, err := modfile.Parse(modInfo.GoMod, goModBytes, nil)
 	if err != nil {
-		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", plugin.Path, err)
+		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", inputPath, err)
 		return nil, "", err
 	}
 	return goModFile, modInfo.Dir, nil
 }
 
-func (b *Builder) validatePluginModFile(plugin PluginConfig, pluginModFile *modfile.File) error {
-	fmt.Fprintln(b.cmd.OutOrStdout(), "Validating dependencies for module", plugin.Path)
+func (b *atomixBuilder) validatePluginModFile(inputPath string, pluginModFile *modfile.File) error {
+	fmt.Fprintln(b.cmd.OutOrStdout(), "Validating dependencies for module", inputPath)
 	proxyModRequires := make(map[string]string)
 	for _, require := range b.proxyModFile.Require {
 		proxyModRequires[require.Mod.Path] = require.Mod.Version
@@ -141,15 +164,15 @@ func (b *Builder) validatePluginModFile(plugin PluginConfig, pluginModFile *modf
 			if require.Mod.Version != proxyVersion {
 				fmt.Fprintln(b.cmd.OutOrStderr(), "Incompatible dependency", require.Mod.Path, require.Mod.Version)
 				return errors.NewInvalid("plugin module %s has incompatible dependency %s %s != %s",
-					plugin.Path, require.Mod.Path, require.Mod.Version, proxyVersion)
+					inputPath, require.Mod.Path, require.Mod.Version, proxyVersion)
 			}
 		}
 	}
 	return nil
 }
 
-func (b *Builder) buildPlugin(plugin PluginConfig, dir string) error {
-	fmt.Fprintln(b.cmd.OutOrStdout(), "Building plugin", plugin.Name)
+func (b *atomixBuilder) buildPlugin(outputPath string, dir string) error {
+	fmt.Fprintln(b.cmd.OutOrStdout(), "Building plugin", filepath.Base(outputPath))
 	_, err := run(dir,
 		"go", "build",
 		"-mod=readonly",
@@ -157,7 +180,7 @@ func (b *Builder) buildPlugin(plugin PluginConfig, dir string) error {
 		"-buildmode=plugin",
 		"-gcflags=all=-N -l",
 		fmt.Sprintf("-ldflags=-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s", b.sdkVersion),
-		"-o", fmt.Sprintf("/build/dist/plugins/%s@%s.so", plugin.Name, plugin.Version),
+		"-o", outputPath,
 		"./plugin")
 	if err != nil {
 		return err

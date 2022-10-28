@@ -1,7 +1,0 @@
-plugins:
-  - name: Consensus
-    version: v1beta1
-    path: github.com/atomix/consensus/driver@v0.12.0
-  #- name: Gossip
-  #  version: v1beta1
-  #  path: github.com/atomix/gossip-storage/driver@d37ebcc
