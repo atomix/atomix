@@ -28,7 +28,7 @@ func (s *nodeServer) OpenSession(ctx context.Context, request *protocol.OpenSess
 
 	partition, ok := s.Partition(request.Headers.PartitionID)
 	if !ok {
-		err := errors.NewForbidden("unknown partition %d", request.Headers.PartitionID)
+		err := errors.NewUnavailable("unknown partition %d", request.Headers.PartitionID)
 		log.Warnw("OpenSession",
 			logging.Stringer("OpenSessionRequest", request),
 			logging.Error("Error", err))
@@ -66,7 +66,7 @@ func (s *nodeServer) KeepAlive(ctx context.Context, request *protocol.KeepAliveR
 
 	partition, ok := s.Partition(request.Headers.PartitionID)
 	if !ok {
-		err := errors.NewForbidden("unknown partition %d", request.Headers.PartitionID)
+		err := errors.NewUnavailable("unknown partition %d", request.Headers.PartitionID)
 		log.Warnw("KeepAlive",
 			logging.Stringer("KeepAliveRequest", request),
 			logging.Error("Error", err))
@@ -104,7 +104,7 @@ func (s *nodeServer) CloseSession(ctx context.Context, request *protocol.CloseSe
 
 	partition, ok := s.Partition(request.Headers.PartitionID)
 	if !ok {
-		err := errors.NewForbidden("unknown partition %d", request.Headers.PartitionID)
+		err := errors.NewUnavailable("unknown partition %d", request.Headers.PartitionID)
 		log.Warnw("CloseSession",
 			logging.Stringer("CloseSessionRequest", request),
 			logging.Error("Error", err))
@@ -142,7 +142,7 @@ func (s *nodeServer) CreatePrimitive(ctx context.Context, request *protocol.Crea
 
 	partition, ok := s.Partition(request.Headers.PartitionID)
 	if !ok {
-		err := errors.NewForbidden("unknown partition %d", request.Headers.PartitionID)
+		err := errors.NewUnavailable("unknown partition %d", request.Headers.PartitionID)
 		log.Warnw("CreatePrimitive",
 			logging.Stringer("CreatePrimitiveRequest", request),
 			logging.Error("Error", err))
@@ -197,7 +197,7 @@ func (s *nodeServer) ClosePrimitive(ctx context.Context, request *protocol.Close
 
 	partition, ok := s.Partition(request.Headers.PartitionID)
 	if !ok {
-		err := errors.NewForbidden("unknown partition %d", request.Headers.PartitionID)
+		err := errors.NewUnavailable("unknown partition %d", request.Headers.PartitionID)
 		log.Warnw("ClosePrimitive",
 			logging.Stringer("ClosePrimitiveRequest", request),
 			logging.Error("Error", err))

@@ -50,7 +50,7 @@ func (p *nodeHandler[I, O]) Propose(ctx context.Context, input I, inputHeaders *
 
 	partition, ok := p.protocol.Partition(inputHeaders.PartitionID)
 	if !ok {
-		return output, nil, errors.NewForbidden("unknown partition %d", inputHeaders.PartitionID)
+		return output, nil, errors.NewUnavailable("unknown partition %d", inputHeaders.PartitionID)
 	}
 
 	proposalInput := &protocol.ProposalInput{
@@ -108,7 +108,7 @@ func (p *nodeHandler[I, O]) StreamPropose(ctx context.Context, input I, inputHea
 
 	partition, ok := p.protocol.Partition(inputHeaders.PartitionID)
 	if !ok {
-		return errors.NewForbidden("unknown partition %d", inputHeaders.PartitionID)
+		return errors.NewUnavailable("unknown partition %d", inputHeaders.PartitionID)
 	}
 
 	proposalInput := &protocol.ProposalInput{
@@ -169,7 +169,7 @@ func (p *nodeHandler[I, O]) Query(ctx context.Context, input I, inputHeaders *pr
 
 	partition, ok := p.protocol.Partition(inputHeaders.PartitionID)
 	if !ok {
-		return output, nil, errors.NewForbidden("unknown partition %d", inputHeaders.PartitionID)
+		return output, nil, errors.NewUnavailable("unknown partition %d", inputHeaders.PartitionID)
 	}
 
 	queryInput := &protocol.QueryInput{
@@ -226,7 +226,7 @@ func (p *nodeHandler[I, O]) StreamQuery(ctx context.Context, input I, inputHeade
 
 	partition, ok := p.protocol.Partition(inputHeaders.PartitionID)
 	if !ok {
-		return errors.NewForbidden("unknown partition %d", inputHeaders.PartitionID)
+		return errors.NewUnavailable("unknown partition %d", inputHeaders.PartitionID)
 	}
 
 	queryInput := &protocol.QueryInput{
