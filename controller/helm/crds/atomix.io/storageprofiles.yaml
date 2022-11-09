@@ -177,8 +177,16 @@ spec:
                     type: object
                     required:
                       - name
+                      - uid
+                      - resourceVersion
                     properties:
                       name:
+                        type: string
+                      namespace:
+                        type: string
+                      uid:
+                        type: string
+                      resourceVersion:
                         type: string
                       proxy:
                         type: object

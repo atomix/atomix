@@ -115,8 +115,8 @@ type StorageProfileStatus struct {
 }
 
 type PodStatus struct {
-	Name  string      `json:"name"`
-	Proxy ProxyStatus `json:"proxy"`
+	corev1.ObjectReference `json:",inline"`
+	Proxy                  ProxyStatus `json:"proxy"`
 }
 
 type ProxyStatus struct {

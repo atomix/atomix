@@ -9,6 +9,7 @@ import (
 	"fmt"
 	proxyv1 "github.com/atomix/runtime/api/atomix/proxy/v1"
 	atomixv3beta2 "github.com/atomix/runtime/controller/pkg/apis/atomix/v3beta3"
+	"github.com/atomix/runtime/sdk/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	corev1 "k8s.io/api/core/v1"
@@ -152,7 +153,28 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 
 func (r *PodReconciler) reconcileProfile(ctx context.Context, pod *corev1.Pod, profile *atomixv3beta2.StorageProfile) (bool, error) {
 	ready := true
+
+	// Get the profile's pod status
 	podStatus := r.getPodStatus(profile, pod)
+
+	// If the pod resource version has changed, reset all the Connected routes to the Configuring state
+	if podStatus.ResourceVersion != pod.ResourceVersion {
+		for i, routeStatus := range podStatus.Proxy.Routes {
+			switch routeStatus.State {
+			case atomixv3beta2.RouteConnected:
+				routeStatus.State = atomixv3beta2.RouteConfiguring
+			}
+			podStatus.Proxy.Routes[i] = routeStatus
+		}
+		podStatus.ResourceVersion = pod.ResourceVersion
+		if err := r.setPodStatus(ctx, profile, podStatus); err != nil {
+			log.Error(err)
+			return false, err
+		}
+		return true, nil
+	}
+
+	// Iterate through the profile's bindings and inject the routes into the pod
 	for _, binding := range profile.Spec.Bindings {
 		var routeStatus *atomixv3beta2.RouteStatus
 		var routeIndex int
@@ -242,7 +264,6 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 				return false, err
 			}
 
-			r.events.Eventf(pod, "Normal", "DisconnectStore", "Disconnecting store '%s'", storeNamespacedName)
 			client := proxyv1.NewProxyClient(conn)
 			request := &proxyv1.DisconnectRequest{
 				StoreID: proxyv1.StoreId{
@@ -252,12 +273,15 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 			}
 			_, err = client.Disconnect(ctx, request)
 			if err != nil {
-				log.Error(err)
-				r.events.Eventf(pod, "Warning", "DisconnectStoreFailed", "Failed disconnecting from store '%s': %s", storeNamespacedName, err)
-				return false, err
+				err = errors.FromProto(err)
+				if !errors.IsNotFound(err) {
+					log.Error(err)
+					r.events.Eventf(pod, "Warning", "DisconnectStoreFailed", "Failed disconnecting from store '%s': %s", storeNamespacedName, err)
+					return false, err
+				}
 			}
-			r.events.Eventf(pod, "Normal", "DisconnectStoreSucceeded", "Successfully disconnected from store '%s'", storeNamespacedName)
 
+			r.events.Eventf(pod, "Normal", "DisconnectedStore", "Successfully disconnected from store '%s'", storeNamespacedName)
 			status.State = atomixv3beta2.RouteDisconnected
 			status.Version = ""
 			return true, nil
@@ -283,7 +307,6 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 			return false, err
 		}
 
-		r.events.Eventf(pod, "Normal", "ConnectStore", "Connecting store '%s'", storeNamespacedName)
 		client := proxyv1.NewProxyClient(conn)
 		request := &proxyv1.ConnectRequest{
 			StoreID: proxyv1.StoreId{
@@ -298,12 +321,15 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 		}
 		_, err = client.Connect(ctx, request)
 		if err != nil {
-			log.Error(err)
-			r.events.Eventf(pod, "Warning", "ConnectStoreFailed", "Failed connecting to store '%s': %s", storeNamespacedName, err)
-			return false, err
+			err = errors.FromProto(err)
+			if !errors.IsAlreadyExists(err) {
+				log.Error(err)
+				r.events.Eventf(pod, "Warning", "ConnectStoreFailed", "Failed connecting to store '%s': %s", storeNamespacedName, err)
+				return false, err
+			}
 		}
-		r.events.Eventf(pod, "Normal", "ConnectStoreSucceeded", "Successfully connected to store '%s'", storeNamespacedName)
 
+		r.events.Eventf(pod, "Normal", "ConnectedStore", "Successfully connected to store '%s'", storeNamespacedName)
 		status.State = atomixv3beta2.RouteConnected
 		return true, nil
 	case atomixv3beta2.RouteConnected:
@@ -324,7 +350,6 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 			return false, err
 		}
 
-		r.events.Eventf(pod, "Normal", "ConfigureStore", "Configuring store '%s'", storeNamespacedName)
 		client := proxyv1.NewProxyClient(conn)
 		request := &proxyv1.ConfigureRequest{
 			StoreID: proxyv1.StoreId{
@@ -335,11 +360,17 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 		}
 		_, err = client.Configure(ctx, request)
 		if err != nil {
-			r.events.Eventf(pod, "Warning", "ConfigureStoreFailed", "Failed reconfiguring store '%s': %s", storeNamespacedName, err)
-			log.Error(err)
-			return false, err
+			err = errors.FromProto(err)
+			if !errors.IsNotFound(err) {
+				r.events.Eventf(pod, "Warning", "ConfigureStoreFailed", "Failed reconfiguring store '%s': %s", storeNamespacedName, err)
+				log.Error(err)
+				return false, err
+			}
+			// If the proxy returned a NotFound error, set the route to Connecting to establish the connection.
+			status.State = atomixv3beta2.RouteConnecting
+			return true, nil
 		}
-		r.events.Eventf(pod, "Normal", "ConfigureStoreSucceeded", "Successfully configured store '%s'", storeNamespacedName)
+		r.events.Eventf(pod, "Normal", "ConfiguredStore", "Configured store '%s'", storeNamespacedName)
 
 		status.State = atomixv3beta2.RouteConnected
 		return true, nil
@@ -353,12 +384,17 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 
 func (r *PodReconciler) getPodStatus(profile *atomixv3beta2.StorageProfile, pod *corev1.Pod) atomixv3beta2.PodStatus {
 	for _, podStatus := range profile.Status.PodStatuses {
-		if podStatus.Name == pod.Name {
+		if podStatus.Name == pod.Name && podStatus.UID == pod.UID {
 			return podStatus
 		}
 	}
 	return atomixv3beta2.PodStatus{
-		Name: pod.Name,
+		ObjectReference: corev1.ObjectReference{
+			Namespace:       pod.Namespace,
+			Name:            pod.Name,
+			UID:             pod.UID,
+			ResourceVersion: pod.ResourceVersion,
+		},
 	}
 }
 
