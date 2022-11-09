@@ -8,6 +8,7 @@ import (
 	"container/list"
 	"context"
 	indexedmapv1 "github.com/atomix/runtime/api/atomix/runtime/indexedmap/v1"
+	"github.com/atomix/runtime/sdk/pkg/async"
 	"github.com/atomix/runtime/sdk/pkg/errors"
 	"github.com/atomix/runtime/sdk/pkg/logging"
 	"github.com/atomix/runtime/sdk/pkg/protocol"
@@ -48,15 +49,16 @@ type indexedMapProxy struct {
 func (s *indexedMapProxy) Create(ctx context.Context, request *indexedmapv1.CreateRequest) (*indexedmapv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
-	partition := s.PartitionBy([]byte(request.ID.Name))
-	session, err := partition.GetSession(ctx)
+	partitions := s.Partitions()
+	err := async.IterAsync(len(partitions), func(i int) error {
+		partition := partitions[i]
+		session, err := partition.GetSession(ctx)
+		if err != nil {
+			return err
+		}
+		return session.CreatePrimitive(ctx, s.PrimitiveSpec)
+	})
 	if err != nil {
-		log.Warnw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
-			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
-	}
-	if err := session.CreatePrimitive(ctx, s.PrimitiveSpec); err != nil {
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
@@ -72,15 +74,16 @@ func (s *indexedMapProxy) Create(ctx context.Context, request *indexedmapv1.Crea
 func (s *indexedMapProxy) Close(ctx context.Context, request *indexedmapv1.CloseRequest) (*indexedmapv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
-	partition := s.PartitionBy([]byte(request.ID.Name))
-	session, err := partition.GetSession(ctx)
+	partitions := s.Partitions()
+	err := async.IterAsync(len(partitions), func(i int) error {
+		partition := partitions[i]
+		session, err := partition.GetSession(ctx)
+		if err != nil {
+			return err
+		}
+		return session.ClosePrimitive(ctx, request.ID.Name)
+	})
 	if err != nil {
-		log.Warnw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
-			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
-	}
-	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
