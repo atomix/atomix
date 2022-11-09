@@ -111,48 +111,6 @@ type PodReconciler struct {
 	events record.EventRecorder
 }
 
-func getPodStatus(profile *atomixv3beta2.StorageProfile, pod *corev1.Pod) atomixv3beta2.PodStatus {
-	for _, podStatus := range profile.Status.PodStatuses {
-		if podStatus.Name == pod.Name {
-			return podStatus
-		}
-	}
-	return atomixv3beta2.PodStatus{
-		Name: pod.Name,
-	}
-}
-
-func setPodStatus(profile *atomixv3beta2.StorageProfile, podStatus atomixv3beta2.PodStatus) {
-	for i, status := range profile.Status.PodStatuses {
-		if status.Name == podStatus.Name {
-			profile.Status.PodStatuses[i] = podStatus
-			return
-		}
-	}
-	profile.Status.PodStatuses = append(profile.Status.PodStatuses, podStatus)
-}
-
-func getRouteStatus(podStatus *atomixv3beta2.PodStatus, route atomixv3beta2.Binding) atomixv3beta2.RouteStatus {
-	for _, routeStatus := range podStatus.Proxy.Routes {
-		if routeStatus.Store.Namespace == route.Store.Namespace && routeStatus.Store.Name == route.Store.Name {
-			return routeStatus
-		}
-	}
-	return atomixv3beta2.RouteStatus{
-		Store: route.Store,
-	}
-}
-
-func setRouteStatus(podStatus *atomixv3beta2.PodStatus, routeStatus atomixv3beta2.RouteStatus) {
-	for i, status := range podStatus.Proxy.Routes {
-		if status.Store.Namespace == routeStatus.Store.Namespace && status.Store.Name == routeStatus.Store.Name {
-			podStatus.Proxy.Routes[i] = routeStatus
-			return
-		}
-	}
-	podStatus.Proxy.Routes = append(podStatus.Proxy.Routes, routeStatus)
-}
-
 // Reconcile reconciles StorageProfile resources
 func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Infof("Reconciling Pod '%s'", request.NamespacedName)
