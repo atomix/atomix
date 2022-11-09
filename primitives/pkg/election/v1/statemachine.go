@@ -84,7 +84,7 @@ func (s *leaderElectionStateMachine) watchSession(sessionID statemachine.Session
 	s.cancel = session.Watch(func(state statemachine.State) {
 		if state == statemachine.Closed {
 			s.Leader = nil
-			for s.Candidates != nil {
+			for len(s.Candidates) > 0 {
 				candidate := s.Candidates[0]
 				s.Candidates = s.Candidates[1:]
 				if statemachine.SessionID(candidate.SessionID) != session.ID() {
