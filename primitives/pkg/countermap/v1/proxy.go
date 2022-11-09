@@ -35,15 +35,16 @@ type counterMapProxy struct {
 func (s *counterMapProxy) Create(ctx context.Context, request *countermapv1.CreateRequest) (*countermapv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
-	partition := s.PartitionBy([]byte(request.ID.Name))
-	session, err := partition.GetSession(ctx)
+	partitions := s.Partitions()
+	err := async.IterAsync(len(partitions), func(i int) error {
+		partition := partitions[i]
+		session, err := partition.GetSession(ctx)
+		if err != nil {
+			return err
+		}
+		return session.CreatePrimitive(ctx, s.PrimitiveSpec)
+	})
 	if err != nil {
-		log.Warnw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
-			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
-	}
-	if err := session.CreatePrimitive(ctx, s.PrimitiveSpec); err != nil {
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
@@ -59,15 +60,16 @@ func (s *counterMapProxy) Create(ctx context.Context, request *countermapv1.Crea
 func (s *counterMapProxy) Close(ctx context.Context, request *countermapv1.CloseRequest) (*countermapv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
-	partition := s.PartitionBy([]byte(request.ID.Name))
-	session, err := partition.GetSession(ctx)
+	partitions := s.Partitions()
+	err := async.IterAsync(len(partitions), func(i int) error {
+		partition := partitions[i]
+		session, err := partition.GetSession(ctx)
+		if err != nil {
+			return err
+		}
+		return session.ClosePrimitive(ctx, request.ID.Name)
+	})
 	if err != nil {
-		log.Warnw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
-			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
-	}
-	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
