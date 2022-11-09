@@ -7,8 +7,8 @@ name: atomix-runtime
 description: Umbrella chart for deploying Atomix runtime controllers
 kubeVersion: ">=1.17.0"
 type: application
-version: 0.1.5
-appVersion: v0.1.5
+version: 0.1.6
+appVersion: v0.1.6
 keywords:
 - atomix
 home: https://atomix.io
@@ -17,7 +17,7 @@ maintainers:
   email: jordan.halterman@intel.com
 dependencies:
   - name: atomix-runtime-controller
-    version: 1.6.4
+    version: 1.6.5
     repository: https://charts.atomix.io
     alias: controller
   - name: atomix-consensus-controller
