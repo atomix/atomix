@@ -65,7 +65,7 @@ func (r *Runtime) connect(ctx context.Context, driverID runtime.DriverID, spec r
 
 	conn, ok := r.conns[spec.StoreID]
 	if ok {
-		return nil
+		return errors.NewAlreadyExists("connection '%s' already exists", spec.StoreID)
 	}
 
 	driver, ok := r.drivers[driverID]
@@ -120,7 +120,7 @@ func (r *Runtime) configure(ctx context.Context, spec runtime.ConnSpec) error {
 
 	conn, ok := r.conns[spec.StoreID]
 	if !ok {
-		return errors.NewForbidden("connection '%s' not found", spec.StoreID)
+		return errors.NewNotFound("connection '%s' not found", spec.StoreID)
 	}
 
 	log.Infow("Reconfiguring connection to store",
@@ -147,7 +147,7 @@ func (r *Runtime) disconnect(ctx context.Context, storeID runtime.StoreID) error
 
 	conn, ok := r.conns[storeID]
 	if !ok {
-		return errors.NewForbidden("connection '%s' not found", storeID)
+		return errors.NewNotFound("connection '%s' not found", storeID)
 	}
 	defer delete(r.conns, storeID)
 
