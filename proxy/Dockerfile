@@ -21,19 +21,19 @@ RUN go run ./cmd/atomix-build proxy /build/bin/atomix-runtime-proxy
 # Build the consensus storage driver
 FROM builder AS build-consensus-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/consensus-storage/driver@v0.13.2 \
+    github.com/atomix/consensus-storage/driver@v0.13.3 \
     /build/bin/Consensus@v1beta1.so
 
 # Build the shared memory storage driver
 FROM builder AS build-shared-memory-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/shared-memory-storage/driver@v0.1.2 \
+    github.com/atomix/shared-memory-storage/driver@v0.1.3 \
     /build/bin/SharedMemory@v1beta1.so
 
 # Build the pod memory storage driver
 FROM builder AS build-pod-memory-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/pod-memory-storage/driver@v0.1.2 \
+    github.com/atomix/pod-memory-storage/driver@v0.1.3 \
     /build/bin/PodMemory@v1beta1.so
 
 # Pull binaries and plugins into the Alpine image
