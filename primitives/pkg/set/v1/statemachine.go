@@ -100,7 +100,10 @@ func (s *setStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
 	if err := writer.WriteVarInt(len(s.entries)); err != nil {
 		return err
 	}
-	for _, entry := range s.entries {
+	for key, entry := range s.entries {
+		if err := writer.WriteString(key); err != nil {
+			return err
+		}
 		if err := writer.WriteMessage(entry); err != nil {
 			return err
 		}

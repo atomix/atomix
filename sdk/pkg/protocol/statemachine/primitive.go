@@ -124,7 +124,7 @@ func (m *primitiveManager) Snapshot(writer *SnapshotWriter) error {
 	}
 	for _, primitive := range m.primitives {
 		snapshot := &protocol.PrimitiveSnapshot{
-			PrimitiveID: protocol.PrimitiveID(primitive.ID()),
+			PrimitiveID: primitive.ID(),
 			Spec: protocol.PrimitiveSpec{
 				Service:   primitive.Service(),
 				Namespace: primitive.Namespace(),
