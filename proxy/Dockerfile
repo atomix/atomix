@@ -33,7 +33,7 @@ RUN go run ./cmd/atomix-build driver \
 # Build the pod memory storage driver
 FROM builder AS build-pod-memory-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/pod-memory-storage/driver@v0.1.4 \
+    github.com/atomix/pod-memory-storage/driver@v0.1.5 \
     /build/bin/PodMemory@v1beta1.so
 
 # Pull binaries and plugins into the Alpine image
