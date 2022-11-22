@@ -40,7 +40,7 @@ func (s *listServer) Create(ctx context.Context, request *listv1.CreateRequest) 
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
-		log.Warnw("Create",
+		log.Debugw("Create",
 			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -63,7 +63,7 @@ func (s *listServer) Close(ctx context.Context, request *listv1.CloseRequest) (*
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
-		log.Warnw("Close",
+		log.Debugw("Close",
 			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -86,7 +86,7 @@ func (s *listServer) Size(ctx context.Context, request *listv1.SizeRequest) (*li
 	}
 	response, err := client.Size(ctx, request)
 	if err != nil {
-		log.Warnw("Size",
+		log.Debugw("Size",
 			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -109,7 +109,7 @@ func (s *listServer) Append(ctx context.Context, request *listv1.AppendRequest) 
 	}
 	response, err := client.Append(ctx, request)
 	if err != nil {
-		log.Warnw("Append",
+		log.Debugw("Append",
 			logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -132,7 +132,7 @@ func (s *listServer) Insert(ctx context.Context, request *listv1.InsertRequest) 
 	}
 	response, err := client.Insert(ctx, request)
 	if err != nil {
-		log.Warnw("Insert",
+		log.Debugw("Insert",
 			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -155,7 +155,7 @@ func (s *listServer) Get(ctx context.Context, request *listv1.GetRequest) (*list
 	}
 	response, err := client.Get(ctx, request)
 	if err != nil {
-		log.Warnw("Get",
+		log.Debugw("Get",
 			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -178,7 +178,7 @@ func (s *listServer) Set(ctx context.Context, request *listv1.SetRequest) (*list
 	}
 	response, err := client.Set(ctx, request)
 	if err != nil {
-		log.Warnw("Set",
+		log.Debugw("Set",
 			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -201,7 +201,7 @@ func (s *listServer) Remove(ctx context.Context, request *listv1.RemoveRequest) 
 	}
 	response, err := client.Remove(ctx, request)
 	if err != nil {
-		log.Warnw("Remove",
+		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -224,7 +224,7 @@ func (s *listServer) Clear(ctx context.Context, request *listv1.ClearRequest) (*
 	}
 	response, err := client.Clear(ctx, request)
 	if err != nil {
-		log.Warnw("Clear",
+		log.Debugw("Clear",
 			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -248,7 +248,7 @@ func (s *listServer) Events(request *listv1.EventsRequest, server listv1.List_Ev
 	}
 	err = client.Events(request, server)
 	if err != nil {
-		log.Warnw("Events",
+		log.Debugw("Events",
 			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
@@ -270,7 +270,7 @@ func (s *listServer) Items(request *listv1.ItemsRequest, server listv1.List_Item
 	}
 	err = client.Items(request, server)
 	if err != nil {
-		log.Warnw("Items",
+		log.Debugw("Items",
 			logging.Stringer("ItemsRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err

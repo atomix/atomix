@@ -40,7 +40,7 @@ func (s *counterServer) Create(ctx context.Context, request *counterv1.CreateReq
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
-		log.Warnw("Create",
+		log.Debugw("Create",
 			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -63,7 +63,7 @@ func (s *counterServer) Close(ctx context.Context, request *counterv1.CloseReque
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
-		log.Warnw("Close",
+		log.Debugw("Close",
 			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -86,7 +86,7 @@ func (s *counterServer) Set(ctx context.Context, request *counterv1.SetRequest) 
 	}
 	response, err := client.Set(ctx, request)
 	if err != nil {
-		log.Warnw("Set",
+		log.Debugw("Set",
 			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -109,7 +109,7 @@ func (s *counterServer) Update(ctx context.Context, request *counterv1.UpdateReq
 	}
 	response, err := client.Update(ctx, request)
 	if err != nil {
-		log.Warnw("Update",
+		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -132,7 +132,7 @@ func (s *counterServer) Get(ctx context.Context, request *counterv1.GetRequest) 
 	}
 	response, err := client.Get(ctx, request)
 	if err != nil {
-		log.Warnw("Get",
+		log.Debugw("Get",
 			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -155,7 +155,7 @@ func (s *counterServer) Increment(ctx context.Context, request *counterv1.Increm
 	}
 	response, err := client.Increment(ctx, request)
 	if err != nil {
-		log.Warnw("Increment",
+		log.Debugw("Increment",
 			logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -178,7 +178,7 @@ func (s *counterServer) Decrement(ctx context.Context, request *counterv1.Decrem
 	}
 	response, err := client.Decrement(ctx, request)
 	if err != nil {
-		log.Warnw("Decrement",
+		log.Debugw("Decrement",
 			logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err

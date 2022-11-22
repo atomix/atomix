@@ -40,7 +40,7 @@ func (s *indexedMapServer) Create(ctx context.Context, request *indexedmapv1.Cre
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
-		log.Warnw("Create",
+		log.Debugw("Create",
 			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -63,7 +63,7 @@ func (s *indexedMapServer) Close(ctx context.Context, request *indexedmapv1.Clos
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
-		log.Warnw("Close",
+		log.Debugw("Close",
 			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -86,7 +86,7 @@ func (s *indexedMapServer) Size(ctx context.Context, request *indexedmapv1.SizeR
 	}
 	response, err := client.Size(ctx, request)
 	if err != nil {
-		log.Warnw("Size",
+		log.Debugw("Size",
 			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -109,7 +109,7 @@ func (s *indexedMapServer) Append(ctx context.Context, request *indexedmapv1.App
 	}
 	response, err := client.Append(ctx, request)
 	if err != nil {
-		log.Warnw("Append",
+		log.Debugw("Append",
 			logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -132,7 +132,7 @@ func (s *indexedMapServer) Update(ctx context.Context, request *indexedmapv1.Upd
 	}
 	response, err := client.Update(ctx, request)
 	if err != nil {
-		log.Warnw("Update",
+		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -155,7 +155,7 @@ func (s *indexedMapServer) Get(ctx context.Context, request *indexedmapv1.GetReq
 	}
 	response, err := client.Get(ctx, request)
 	if err != nil {
-		log.Warnw("Get",
+		log.Debugw("Get",
 			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -178,7 +178,7 @@ func (s *indexedMapServer) FirstEntry(ctx context.Context, request *indexedmapv1
 	}
 	response, err := client.FirstEntry(ctx, request)
 	if err != nil {
-		log.Warnw("FirstEntry",
+		log.Debugw("FirstEntry",
 			logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -201,7 +201,7 @@ func (s *indexedMapServer) LastEntry(ctx context.Context, request *indexedmapv1.
 	}
 	response, err := client.LastEntry(ctx, request)
 	if err != nil {
-		log.Warnw("LastEntry",
+		log.Debugw("LastEntry",
 			logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -224,7 +224,7 @@ func (s *indexedMapServer) PrevEntry(ctx context.Context, request *indexedmapv1.
 	}
 	response, err := client.PrevEntry(ctx, request)
 	if err != nil {
-		log.Warnw("PrevEntry",
+		log.Debugw("PrevEntry",
 			logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -247,7 +247,7 @@ func (s *indexedMapServer) NextEntry(ctx context.Context, request *indexedmapv1.
 	}
 	response, err := client.NextEntry(ctx, request)
 	if err != nil {
-		log.Warnw("NextEntry",
+		log.Debugw("NextEntry",
 			logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -270,7 +270,7 @@ func (s *indexedMapServer) Remove(ctx context.Context, request *indexedmapv1.Rem
 	}
 	response, err := client.Remove(ctx, request)
 	if err != nil {
-		log.Warnw("Remove",
+		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -293,7 +293,7 @@ func (s *indexedMapServer) Clear(ctx context.Context, request *indexedmapv1.Clea
 	}
 	response, err := client.Clear(ctx, request)
 	if err != nil {
-		log.Warnw("Clear",
+		log.Debugw("Clear",
 			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -317,7 +317,7 @@ func (s *indexedMapServer) Events(request *indexedmapv1.EventsRequest, server in
 	}
 	err = client.Events(request, server)
 	if err != nil {
-		log.Warnw("Events",
+		log.Debugw("Events",
 			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
@@ -339,7 +339,7 @@ func (s *indexedMapServer) Entries(request *indexedmapv1.EntriesRequest, server 
 	}
 	err = client.Entries(request, server)
 	if err != nil {
-		log.Warnw("Entries",
+		log.Debugw("Entries",
 			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err

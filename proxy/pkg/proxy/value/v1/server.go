@@ -40,7 +40,7 @@ func (s *valueServer) Create(ctx context.Context, request *valuev1.CreateRequest
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
-		log.Warnw("Create",
+		log.Debugw("Create",
 			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -63,7 +63,7 @@ func (s *valueServer) Close(ctx context.Context, request *valuev1.CloseRequest) 
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
-		log.Warnw("Close",
+		log.Debugw("Close",
 			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -86,7 +86,7 @@ func (s *valueServer) Set(ctx context.Context, request *valuev1.SetRequest) (*va
 	}
 	response, err := client.Set(ctx, request)
 	if err != nil {
-		log.Warnw("Set",
+		log.Debugw("Set",
 			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -109,7 +109,7 @@ func (s *valueServer) Insert(ctx context.Context, request *valuev1.InsertRequest
 	}
 	response, err := client.Insert(ctx, request)
 	if err != nil {
-		log.Warnw("Insert",
+		log.Debugw("Insert",
 			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -132,7 +132,7 @@ func (s *valueServer) Update(ctx context.Context, request *valuev1.UpdateRequest
 	}
 	response, err := client.Update(ctx, request)
 	if err != nil {
-		log.Warnw("Update",
+		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -155,7 +155,7 @@ func (s *valueServer) Get(ctx context.Context, request *valuev1.GetRequest) (*va
 	}
 	response, err := client.Get(ctx, request)
 	if err != nil {
-		log.Warnw("Get",
+		log.Debugw("Get",
 			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -178,7 +178,7 @@ func (s *valueServer) Delete(ctx context.Context, request *valuev1.DeleteRequest
 	}
 	response, err := client.Delete(ctx, request)
 	if err != nil {
-		log.Warnw("Delete",
+		log.Debugw("Delete",
 			logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -202,7 +202,7 @@ func (s *valueServer) Watch(request *valuev1.WatchRequest, server valuev1.Value_
 	}
 	err = client.Watch(request, server)
 	if err != nil {
-		log.Warnw("Watch",
+		log.Debugw("Watch",
 			logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
@@ -224,7 +224,7 @@ func (s *valueServer) Events(request *valuev1.EventsRequest, server valuev1.Valu
 	}
 	err = client.Events(request, server)
 	if err != nil {
-		log.Warnw("Events",
+		log.Debugw("Events",
 			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err

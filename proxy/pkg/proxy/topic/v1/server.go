@@ -40,7 +40,7 @@ func (s *topicServer) Create(ctx context.Context, request *topicv1.CreateRequest
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
-		log.Warnw("Create",
+		log.Debugw("Create",
 			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -63,7 +63,7 @@ func (s *topicServer) Close(ctx context.Context, request *topicv1.CloseRequest) 
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
-		log.Warnw("Close",
+		log.Debugw("Close",
 			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -86,7 +86,7 @@ func (s *topicServer) Publish(ctx context.Context, request *topicv1.PublishReque
 	}
 	response, err := client.Publish(ctx, request)
 	if err != nil {
-		log.Warnw("Publish",
+		log.Debugw("Publish",
 			logging.Stringer("PublishRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -110,7 +110,7 @@ func (s *topicServer) Subscribe(request *topicv1.SubscribeRequest, server topicv
 	}
 	err = client.Subscribe(request, server)
 	if err != nil {
-		log.Warnw("Subscribe",
+		log.Debugw("Subscribe",
 			logging.Stringer("SubscribeRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err

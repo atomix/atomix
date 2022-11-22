@@ -40,7 +40,7 @@ func (s *lockServer) Create(ctx context.Context, request *lockv1.CreateRequest) 
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
-		log.Warnw("Create",
+		log.Debugw("Create",
 			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -63,7 +63,7 @@ func (s *lockServer) Close(ctx context.Context, request *lockv1.CloseRequest) (*
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
-		log.Warnw("Close",
+		log.Debugw("Close",
 			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -86,7 +86,7 @@ func (s *lockServer) Lock(ctx context.Context, request *lockv1.LockRequest) (*lo
 	}
 	response, err := client.Lock(ctx, request)
 	if err != nil {
-		log.Warnw("Lock",
+		log.Debugw("Lock",
 			logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -109,7 +109,7 @@ func (s *lockServer) Unlock(ctx context.Context, request *lockv1.UnlockRequest) 
 	}
 	response, err := client.Unlock(ctx, request)
 	if err != nil {
-		log.Warnw("Unlock",
+		log.Debugw("Unlock",
 			logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -132,7 +132,7 @@ func (s *lockServer) GetLock(ctx context.Context, request *lockv1.GetLockRequest
 	}
 	response, err := client.GetLock(ctx, request)
 	if err != nil {
-		log.Warnw("GetLock",
+		log.Debugw("GetLock",
 			logging.Stringer("GetLockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err

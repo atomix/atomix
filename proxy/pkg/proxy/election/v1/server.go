@@ -40,7 +40,7 @@ func (s *leaderElectionServer) Create(ctx context.Context, request *electionv1.C
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
-		log.Warnw("Create",
+		log.Debugw("Create",
 			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -63,7 +63,7 @@ func (s *leaderElectionServer) Close(ctx context.Context, request *electionv1.Cl
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
-		log.Warnw("Close",
+		log.Debugw("Close",
 			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -86,7 +86,7 @@ func (s *leaderElectionServer) Enter(ctx context.Context, request *electionv1.En
 	}
 	response, err := client.Enter(ctx, request)
 	if err != nil {
-		log.Warnw("Enter",
+		log.Debugw("Enter",
 			logging.Stringer("EnterRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -109,7 +109,7 @@ func (s *leaderElectionServer) Withdraw(ctx context.Context, request *electionv1
 	}
 	response, err := client.Withdraw(ctx, request)
 	if err != nil {
-		log.Warnw("Withdraw",
+		log.Debugw("Withdraw",
 			logging.Stringer("WithdrawRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -132,7 +132,7 @@ func (s *leaderElectionServer) Anoint(ctx context.Context, request *electionv1.A
 	}
 	response, err := client.Anoint(ctx, request)
 	if err != nil {
-		log.Warnw("Anoint",
+		log.Debugw("Anoint",
 			logging.Stringer("AnointRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -155,7 +155,7 @@ func (s *leaderElectionServer) Promote(ctx context.Context, request *electionv1.
 	}
 	response, err := client.Promote(ctx, request)
 	if err != nil {
-		log.Warnw("Promote",
+		log.Debugw("Promote",
 			logging.Stringer("PromoteRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -178,7 +178,7 @@ func (s *leaderElectionServer) Demote(ctx context.Context, request *electionv1.D
 	}
 	response, err := client.Demote(ctx, request)
 	if err != nil {
-		log.Warnw("Demote",
+		log.Debugw("Demote",
 			logging.Stringer("DemoteRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -201,7 +201,7 @@ func (s *leaderElectionServer) Evict(ctx context.Context, request *electionv1.Ev
 	}
 	response, err := client.Evict(ctx, request)
 	if err != nil {
-		log.Warnw("Evict",
+		log.Debugw("Evict",
 			logging.Stringer("EvictRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -224,7 +224,7 @@ func (s *leaderElectionServer) GetTerm(ctx context.Context, request *electionv1.
 	}
 	response, err := client.GetTerm(ctx, request)
 	if err != nil {
-		log.Warnw("GetTerm",
+		log.Debugw("GetTerm",
 			logging.Stringer("GetTermRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -248,7 +248,7 @@ func (s *leaderElectionServer) Watch(request *electionv1.WatchRequest, server el
 	}
 	err = client.Watch(request, server)
 	if err != nil {
-		log.Warnw("Watch",
+		log.Debugw("Watch",
 			logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err

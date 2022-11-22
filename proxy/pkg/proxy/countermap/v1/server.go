@@ -40,7 +40,7 @@ func (s *counterMapServer) Create(ctx context.Context, request *atomiccountermap
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
-		log.Warnw("Create",
+		log.Debugw("Create",
 			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -63,7 +63,7 @@ func (s *counterMapServer) Close(ctx context.Context, request *atomiccountermapv
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
-		log.Warnw("Close",
+		log.Debugw("Close",
 			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -86,7 +86,7 @@ func (s *counterMapServer) Size(ctx context.Context, request *atomiccountermapv1
 	}
 	response, err := client.Size(ctx, request)
 	if err != nil {
-		log.Warnw("Size",
+		log.Debugw("Size",
 			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -109,7 +109,7 @@ func (s *counterMapServer) Set(ctx context.Context, request *atomiccountermapv1.
 	}
 	response, err := client.Set(ctx, request)
 	if err != nil {
-		log.Warnw("Set",
+		log.Debugw("Set",
 			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -132,7 +132,7 @@ func (s *counterMapServer) Increment(ctx context.Context, request *atomiccounter
 	}
 	response, err := client.Increment(ctx, request)
 	if err != nil {
-		log.Warnw("Increment",
+		log.Debugw("Increment",
 			logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -155,7 +155,7 @@ func (s *counterMapServer) Decrement(ctx context.Context, request *atomiccounter
 	}
 	response, err := client.Decrement(ctx, request)
 	if err != nil {
-		log.Warnw("Decrement",
+		log.Debugw("Decrement",
 			logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -178,7 +178,7 @@ func (s *counterMapServer) Insert(ctx context.Context, request *atomiccountermap
 	}
 	response, err := client.Insert(ctx, request)
 	if err != nil {
-		log.Warnw("Insert",
+		log.Debugw("Insert",
 			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -201,7 +201,7 @@ func (s *counterMapServer) Update(ctx context.Context, request *atomiccountermap
 	}
 	response, err := client.Update(ctx, request)
 	if err != nil {
-		log.Warnw("Update",
+		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -224,7 +224,7 @@ func (s *counterMapServer) Get(ctx context.Context, request *atomiccountermapv1.
 	}
 	response, err := client.Get(ctx, request)
 	if err != nil {
-		log.Warnw("Get",
+		log.Debugw("Get",
 			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -247,7 +247,7 @@ func (s *counterMapServer) Remove(ctx context.Context, request *atomiccountermap
 	}
 	response, err := client.Remove(ctx, request)
 	if err != nil {
-		log.Warnw("Remove",
+		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -270,7 +270,7 @@ func (s *counterMapServer) Clear(ctx context.Context, request *atomiccountermapv
 	}
 	response, err := client.Clear(ctx, request)
 	if err != nil {
-		log.Warnw("Clear",
+		log.Debugw("Clear",
 			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -293,7 +293,7 @@ func (s *counterMapServer) Lock(ctx context.Context, request *atomiccountermapv1
 	}
 	response, err := client.Lock(ctx, request)
 	if err != nil {
-		log.Warnw("Lock",
+		log.Debugw("Lock",
 			logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -316,7 +316,7 @@ func (s *counterMapServer) Unlock(ctx context.Context, request *atomiccountermap
 	}
 	response, err := client.Unlock(ctx, request)
 	if err != nil {
-		log.Warnw("Unlock",
+		log.Debugw("Unlock",
 			logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -340,7 +340,7 @@ func (s *counterMapServer) Events(request *atomiccountermapv1.EventsRequest, ser
 	}
 	err = client.Events(request, server)
 	if err != nil {
-		log.Warnw("Events",
+		log.Debugw("Events",
 			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
@@ -362,7 +362,7 @@ func (s *counterMapServer) Entries(request *atomiccountermapv1.EntriesRequest, s
 	}
 	err = client.Entries(request, server)
 	if err != nil {
-		log.Warnw("Entries",
+		log.Debugw("Entries",
 			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err

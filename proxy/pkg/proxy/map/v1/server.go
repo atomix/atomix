@@ -40,7 +40,7 @@ func (s *mapServer) Create(ctx context.Context, request *mapv1.CreateRequest) (*
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
-		log.Warnw("Create",
+		log.Debugw("Create",
 			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -63,7 +63,7 @@ func (s *mapServer) Close(ctx context.Context, request *mapv1.CloseRequest) (*ma
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
-		log.Warnw("Close",
+		log.Debugw("Close",
 			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -86,7 +86,7 @@ func (s *mapServer) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv
 	}
 	response, err := client.Size(ctx, request)
 	if err != nil {
-		log.Warnw("Size",
+		log.Debugw("Size",
 			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -109,7 +109,7 @@ func (s *mapServer) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.
 	}
 	response, err := client.Put(ctx, request)
 	if err != nil {
-		log.Warnw("Put",
+		log.Debugw("Put",
 			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -132,7 +132,7 @@ func (s *mapServer) Insert(ctx context.Context, request *mapv1.InsertRequest) (*
 	}
 	response, err := client.Insert(ctx, request)
 	if err != nil {
-		log.Warnw("Insert",
+		log.Debugw("Insert",
 			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -155,7 +155,7 @@ func (s *mapServer) Update(ctx context.Context, request *mapv1.UpdateRequest) (*
 	}
 	response, err := client.Update(ctx, request)
 	if err != nil {
-		log.Warnw("Update",
+		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -178,7 +178,7 @@ func (s *mapServer) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.
 	}
 	response, err := client.Get(ctx, request)
 	if err != nil {
-		log.Warnw("Get",
+		log.Debugw("Get",
 			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -201,7 +201,7 @@ func (s *mapServer) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*
 	}
 	response, err := client.Remove(ctx, request)
 	if err != nil {
-		log.Warnw("Remove",
+		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -224,7 +224,7 @@ func (s *mapServer) Clear(ctx context.Context, request *mapv1.ClearRequest) (*ma
 	}
 	response, err := client.Clear(ctx, request)
 	if err != nil {
-		log.Warnw("Clear",
+		log.Debugw("Clear",
 			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -247,7 +247,7 @@ func (s *mapServer) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv
 	}
 	response, err := client.Lock(ctx, request)
 	if err != nil {
-		log.Warnw("Lock",
+		log.Debugw("Lock",
 			logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -270,7 +270,7 @@ func (s *mapServer) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*
 	}
 	response, err := client.Unlock(ctx, request)
 	if err != nil {
-		log.Warnw("Unlock",
+		log.Debugw("Unlock",
 			logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return nil, err
@@ -294,7 +294,7 @@ func (s *mapServer) Events(request *mapv1.EventsRequest, server mapv1.Map_Events
 	}
 	err = client.Events(request, server)
 	if err != nil {
-		log.Warnw("Events",
+		log.Debugw("Events",
 			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
@@ -316,7 +316,7 @@ func (s *mapServer) Entries(request *mapv1.EntriesRequest, server mapv1.Map_Entr
 	}
 	err = client.Entries(request, server)
 	if err != nil {
-		log.Warnw("Entries",
+		log.Debugw("Entries",
 			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
 			logging.Error("Error", err))
 		return err
