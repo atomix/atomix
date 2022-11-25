@@ -292,7 +292,7 @@ func (s *mapStateMachine) Update(proposal statemachine.Proposal[*UpdateInput, *U
 	}
 
 	if proposal.Input().PrevIndex > 0 && oldEntry.Value.Index != proposal.Input().PrevIndex {
-		proposal.Error(errors.NewConflict("entry index %d does not match remove index %d", oldEntry.Value.Index, proposal.Input().PrevIndex))
+		proposal.Error(errors.NewConflict("entry index %d does not match update index %d", oldEntry.Value.Index, proposal.Input().PrevIndex))
 		return
 	}
 
