@@ -8,6 +8,11 @@ metadata:
   name: {{ template "atomix-runtime-controller.fullname" . }}
 webhooks:
   - name: injector.proxy.atomix.io
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: ["kube-system"]
     rules:
       - operations: [ "CREATE" ]
         apiGroups: [ "" ]
