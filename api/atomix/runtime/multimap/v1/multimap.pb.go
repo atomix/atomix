@@ -6,7 +6,7 @@ package v1
 import (
 	context "context"
 	fmt "fmt"
-	v1 "github.com/atomix/runtime/api/atomix/runtime/v1"
+	v1 "github.com/atomix/atomix/api/atomix/runtime/v1"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"

@@ -1,4 +1,4 @@
-module github.com/atomix/runtime/api
+module github.com/atomix/atomix/api
 
 go 1.19
 

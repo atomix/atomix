@@ -12,7 +12,7 @@ go:
 	docker run -i \
 		-v `pwd`:/build \
 		atomix/codegen:go-latest \
-	    --proto-path . --go-path . --import-path github.com/atomix/runtime/api
+	    --proto-path . --go-path . --import-path github.com/atomix/atomix/api
 
 docs:
 	@find . -name '*.md' -delete
