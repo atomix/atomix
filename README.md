@@ -5,6 +5,9 @@
 [![Controller](https://github.com/atomix/runtime/actions/workflows/controller.yml/badge.svg)](https://github.com/atomix/runtime/actions/workflows/controller.yml)
 [![Proxy](https://github.com/atomix/runtime/actions/workflows/proxy.yml/badge.svg)](https://github.com/atomix/runtime/actions/workflows/proxy.yml)
 
+**Note** The original Java implementation has moved to [atomix/atomix-archive](https://github.com/atomix/atomix-archive)
+to be archived.
+
 # Atomix Runtime
 
 Atomix is a cloud native runtime for building stateful, scalable, configurable, and reliable distributed 
@@ -19,4 +22,5 @@ distributed applications.
 * `sdk` - the core Go library for extending the Atomix runtime, including drivers and custom primitives
 * `controller` - the runtime Kubernetes controller responsible for managing stores, injecting proxis, and 
   configuring primitives according to configuration defined in k8s custom resources
+* `primitives` - common primitive state machine, proxy, and server implementations
 * `proxy` - the sidecar proxy used by applications to operate on distributed primitives
