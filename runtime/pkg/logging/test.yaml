@@ -1,0 +1,42 @@
+loggers:
+  root:
+    level: info
+    output:
+      stdout:
+        sink: stdout
+      file:
+        sink: file
+  test/1:
+    level: debug
+  test/2:
+    level: warn
+    output:
+      stdout-1:
+        sink: stdout-1
+        level: info
+  test/2/3:
+    level: info
+  test/3:
+    level: info
+    output:
+      stdout:
+        level: info
+      stdout-1:
+        sink: stdout-1
+        level: warn
+  test/kafka:
+    level: info
+    output:
+      kafka:
+        sink: kafka-1
+sinks:
+  stdout:
+    encoding: console
+    stdout: {}
+  stdout-1:
+    encoding: json
+    stdout: {}
+  file:
+    encoding: json
+    file:
+      path: test.log

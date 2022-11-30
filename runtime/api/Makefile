@@ -1,0 +1,17 @@
+
+.PHONY: generate
+generate: go docs
+
+go:
+	@find . -name '*.pb.go' -delete
+	docker run -i \
+		-v `pwd`:/build \
+		atomix/codegen:go-latest \
+	    --proto-path . --go-path . --import-path github.com/atomix/atomix/runtime/api
+
+docs:
+	@find . -name '*.md' -delete
+	docker run -i \
+		-v `pwd`:/build \
+		atomix/codegen:docs-latest \
+		--proto-path . --docs-path . --docs-format markdown
