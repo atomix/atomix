@@ -5,9 +5,10 @@
 package v1
 
 import (
-	valuev1 "github.com/atomix/runtime/api/atomix/runtime/value/v1"
-	"github.com/atomix/runtime/proxy/pkg/proxy"
-	"github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/atomix/driver/pkg/driver"
+	valuedriverv1 "github.com/atomix/atomix/driver/pkg/driver/value/v1"
+	"github.com/atomix/atomix/proxy/pkg/proxy"
+	valuev1 "github.com/atomix/atomix/runtime/api/atomix/runtime/value/v1"
 	"google.golang.org/grpc"
 )
 
@@ -19,14 +20,10 @@ func register(server *grpc.Server, delegate *proxy.Delegate[valuev1.ValueServer]
 	valuev1.RegisterValueServer(server, newValueServer(delegate))
 }
 
-func resolve(conn runtime.Conn, spec proxy.PrimitiveSpec) (valuev1.ValueServer, bool, error) {
-	if provider, ok := conn.(ValueProvider); ok {
+func resolve(conn driver.Conn, spec proxy.PrimitiveSpec) (valuev1.ValueServer, bool, error) {
+	if provider, ok := conn.(valuedriverv1.ValueProvider); ok {
 		value, err := provider.NewValue(spec)
 		return value, true, err
 	}
 	return nil, false, nil
-}
-
-type ValueProvider interface {
-	NewValue(spec proxy.PrimitiveSpec) (valuev1.ValueServer, error)
 }

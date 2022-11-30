@@ -5,9 +5,10 @@
 package v1
 
 import (
-	electionv1 "github.com/atomix/runtime/api/atomix/runtime/election/v1"
-	"github.com/atomix/runtime/proxy/pkg/proxy"
-	"github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/atomix/driver/pkg/driver"
+	electiondriverv1 "github.com/atomix/atomix/driver/pkg/driver/election/v1"
+	"github.com/atomix/atomix/proxy/pkg/proxy"
+	electionv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/election/v1"
 	"google.golang.org/grpc"
 )
 
@@ -19,14 +20,10 @@ func register(server *grpc.Server, delegate *proxy.Delegate[electionv1.LeaderEle
 	electionv1.RegisterLeaderElectionServer(server, newLeaderElectionServer(delegate))
 }
 
-func resolve(conn runtime.Conn, spec proxy.PrimitiveSpec) (electionv1.LeaderElectionServer, bool, error) {
-	if provider, ok := conn.(LeaderElectionProvider); ok {
+func resolve(conn driver.Conn, spec proxy.PrimitiveSpec) (electionv1.LeaderElectionServer, bool, error) {
+	if provider, ok := conn.(electiondriverv1.LeaderElectionProvider); ok {
 		election, err := provider.NewLeaderElection(spec)
 		return election, true, err
 	}
 	return nil, false, nil
-}
-
-type LeaderElectionProvider interface {
-	NewLeaderElection(spec proxy.PrimitiveSpec) (electionv1.LeaderElectionServer, error)
 }

@@ -1,10 +1,12 @@
-module github.com/atomix/runtime/proxy
+module github.com/atomix/atomix/proxy
 
 go 1.18
 
 require (
-	github.com/atomix/runtime/api v0.7.0
+	github.com/atomix/atomix/driver v0.0.0-20221130203717-545cc6d7639e
+	github.com/atomix/atomix/runtime v0.0.0-20221130201959-61fb795ed9a0
 	github.com/atomix/runtime/sdk v0.7.5
+	github.com/gogo/protobuf v1.3.2
 	github.com/rogpeppe/go-internal v1.8.1
 	github.com/spf13/cobra v1.4.0
 	google.golang.org/grpc v1.46.0
@@ -12,7 +14,6 @@ require (
 )
 
 require (
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect

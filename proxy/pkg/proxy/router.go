@@ -5,8 +5,8 @@
 package proxy
 
 import (
-	"github.com/atomix/runtime/sdk/pkg/errors"
-	"github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/runtime/pkg/errors"
 )
 
 const wildcard = "*"
@@ -31,16 +31,16 @@ type Router struct {
 	routes []*Route
 }
 
-func (r *Router) Route(context routerContext) (runtime.StoreID, map[string]interface{}, error) {
+func (r *Router) Route(context routerContext) (driver.StoreID, map[string]interface{}, error) {
 	for _, route := range r.routes {
 		if config, ok := route.GetConfig(context); ok {
-			return runtime.StoreID{
+			return driver.StoreID{
 				Namespace: route.Store.Namespace,
 				Name:      route.Store.Name,
 			}, config, nil
 		}
 	}
-	return runtime.StoreID{}, nil, errors.NewForbidden("no route found for '%s'", context.name)
+	return driver.StoreID{}, nil, errors.NewForbidden("no route found for '%s'", context.name)
 }
 
 func newRoute(route RouteConfig) *Route {

@@ -6,11 +6,11 @@ package v1
 
 import (
 	"context"
-	indexedmapv1 "github.com/atomix/runtime/api/atomix/runtime/indexedmap/v1"
-	"github.com/atomix/runtime/proxy/pkg/proxy"
-	"github.com/atomix/runtime/sdk/pkg/errors"
-	"github.com/atomix/runtime/sdk/pkg/logging"
-	"github.com/atomix/runtime/sdk/pkg/stringer"
+	"github.com/atomix/atomix/proxy/pkg/proxy"
+	indexedmapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/indexedmap/v1"
+	"github.com/atomix/atomix/runtime/pkg/errors"
+	"github.com/atomix/atomix/runtime/pkg/logging"
+	"github.com/atomix/atomix/runtime/pkg/stringer"
 )
 
 var log = logging.GetLogger()

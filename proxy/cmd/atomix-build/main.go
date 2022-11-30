@@ -68,24 +68,14 @@ func newBuilder(cmd *cobra.Command) (*atomixBuilder, error) {
 		return nil, err
 	}
 
-	var sdkVersion string
-	for _, require := range proxyModFile.Require {
-		if require.Mod.Path == sdkPath {
-			sdkVersion = require.Mod.Version
-			break
-		}
-	}
-
 	return &atomixBuilder{
 		cmd:          cmd,
-		sdkVersion:   sdkVersion,
 		proxyModFile: proxyModFile,
 	}, nil
 }
 
 type atomixBuilder struct {
 	cmd          *cobra.Command
-	sdkVersion   string
 	proxyModFile *modfile.File
 }
 
@@ -96,7 +86,6 @@ func (b *atomixBuilder) buildProxy(outputPath string) error {
 		"-mod=readonly",
 		"-trimpath",
 		"-gcflags=all=-N -l",
-		fmt.Sprintf("-ldflags=-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s", b.sdkVersion),
 		"-o", outputPath,
 		"./cmd/atomix-runtime-proxy")
 	return err
@@ -179,7 +168,6 @@ func (b *atomixBuilder) buildPlugin(outputPath string, dir string) error {
 		"-trimpath",
 		"-buildmode=plugin",
 		"-gcflags=all=-N -l",
-		fmt.Sprintf("-ldflags=-s -w -X github.com/atomix/runtime/sdk/pkg/version.version=%s", b.sdkVersion),
 		"-o", outputPath,
 		"./plugin")
 	if err != nil {

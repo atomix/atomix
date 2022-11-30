@@ -6,10 +6,10 @@ package proxy
 
 import (
 	"context"
-	proxyv1 "github.com/atomix/runtime/api/atomix/proxy/v1"
-	"github.com/atomix/runtime/sdk/pkg/errors"
-	"github.com/atomix/runtime/sdk/pkg/logging"
-	"github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/atomix/driver/pkg/driver"
+	proxyv1 "github.com/atomix/atomix/proxy/api/atomix/proxy/v1"
+	"github.com/atomix/atomix/runtime/pkg/errors"
+	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
 func newProxyServer(runtime *Runtime) proxyv1.ProxyServer {
@@ -25,12 +25,12 @@ type proxyServer struct {
 func (s *proxyServer) Connect(ctx context.Context, request *proxyv1.ConnectRequest) (*proxyv1.ConnectResponse, error) {
 	log.Debugw("Connect",
 		logging.Stringer("ConnectRequest", request))
-	driverID := runtime.DriverID{
-		Name:    request.DriverID.Name,
-		Version: request.DriverID.Version,
+	driverID := driverID{
+		name:    request.DriverID.Name,
+		version: request.DriverID.Version,
 	}
-	spec := runtime.ConnSpec{
-		StoreID: runtime.StoreID{
+	spec := driver.ConnSpec{
+		StoreID: driver.StoreID{
 			Namespace: request.StoreID.Namespace,
 			Name:      request.StoreID.Name,
 		},
@@ -53,8 +53,8 @@ func (s *proxyServer) Connect(ctx context.Context, request *proxyv1.ConnectReque
 func (s *proxyServer) Configure(ctx context.Context, request *proxyv1.ConfigureRequest) (*proxyv1.ConfigureResponse, error) {
 	log.Debugw("Configure",
 		logging.Stringer("ConfigureRequest", request))
-	spec := runtime.ConnSpec{
-		StoreID: runtime.StoreID{
+	spec := driver.ConnSpec{
+		StoreID: driver.StoreID{
 			Namespace: request.StoreID.Namespace,
 			Name:      request.StoreID.Name,
 		},
@@ -77,7 +77,7 @@ func (s *proxyServer) Configure(ctx context.Context, request *proxyv1.ConfigureR
 func (s *proxyServer) Disconnect(ctx context.Context, request *proxyv1.DisconnectRequest) (*proxyv1.DisconnectResponse, error) {
 	log.Debugw("Disconnect",
 		logging.Stringer("DisconnectRequest", request))
-	storeID := runtime.StoreID{
+	storeID := driver.StoreID{
 		Namespace: request.StoreID.Namespace,
 		Name:      request.StoreID.Name,
 	}

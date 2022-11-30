@@ -14,7 +14,3 @@ const (
 func getNamespace() string {
 	return os.Getenv(namespaceEnv)
 }
-
-func getProfile() string {
-	return os.Getenv(profileEnv)
-}

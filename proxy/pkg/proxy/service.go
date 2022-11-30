@@ -6,9 +6,9 @@ package proxy
 
 import (
 	"fmt"
-	proxyv1 "github.com/atomix/runtime/api/atomix/proxy/v1"
-	"github.com/atomix/runtime/sdk/pkg/network"
-	"github.com/atomix/runtime/sdk/pkg/service"
+	proxyv1 "github.com/atomix/atomix/proxy/api/atomix/proxy/v1"
+	"github.com/atomix/atomix/runtime/pkg/network"
+	"github.com/atomix/atomix/runtime/pkg/service"
 	"google.golang.org/grpc"
 	"os"
 )

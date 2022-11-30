@@ -6,28 +6,28 @@ package v1
 
 import (
 	"context"
-	atomiccountermapv1 "github.com/atomix/runtime/api/atomix/runtime/countermap/v1"
-	"github.com/atomix/runtime/proxy/pkg/proxy"
-	"github.com/atomix/runtime/sdk/pkg/errors"
-	"github.com/atomix/runtime/sdk/pkg/logging"
-	"github.com/atomix/runtime/sdk/pkg/stringer"
+	"github.com/atomix/atomix/proxy/pkg/proxy"
+	countermapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/countermap/v1"
+	"github.com/atomix/atomix/runtime/pkg/errors"
+	"github.com/atomix/atomix/runtime/pkg/logging"
+	"github.com/atomix/atomix/runtime/pkg/stringer"
 )
 
 var log = logging.GetLogger()
 
 const truncLen = 250
 
-func newCounterMapServer(delegate *proxy.Delegate[atomiccountermapv1.CounterMapServer]) atomiccountermapv1.CounterMapServer {
+func newCounterMapServer(delegate *proxy.Delegate[countermapv1.CounterMapServer]) countermapv1.CounterMapServer {
 	return &counterMapServer{
 		delegate: delegate,
 	}
 }
 
 type counterMapServer struct {
-	delegate *proxy.Delegate[atomiccountermapv1.CounterMapServer]
+	delegate *proxy.Delegate[countermapv1.CounterMapServer]
 }
 
-func (s *counterMapServer) Create(ctx context.Context, request *atomiccountermapv1.CreateRequest) (*atomiccountermapv1.CreateResponse, error) {
+func (s *counterMapServer) Create(ctx context.Context, request *countermapv1.CreateRequest) (*countermapv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Create(request.ID.Name, request.Tags)
@@ -50,7 +50,7 @@ func (s *counterMapServer) Create(ctx context.Context, request *atomiccountermap
 	return response, nil
 }
 
-func (s *counterMapServer) Close(ctx context.Context, request *atomiccountermapv1.CloseRequest) (*atomiccountermapv1.CloseResponse, error) {
+func (s *counterMapServer) Close(ctx context.Context, request *countermapv1.CloseRequest) (*countermapv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -73,7 +73,7 @@ func (s *counterMapServer) Close(ctx context.Context, request *atomiccountermapv
 	return response, nil
 }
 
-func (s *counterMapServer) Size(ctx context.Context, request *atomiccountermapv1.SizeRequest) (*atomiccountermapv1.SizeResponse, error) {
+func (s *counterMapServer) Size(ctx context.Context, request *countermapv1.SizeRequest) (*countermapv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -96,7 +96,7 @@ func (s *counterMapServer) Size(ctx context.Context, request *atomiccountermapv1
 	return response, nil
 }
 
-func (s *counterMapServer) Set(ctx context.Context, request *atomiccountermapv1.SetRequest) (*atomiccountermapv1.SetResponse, error) {
+func (s *counterMapServer) Set(ctx context.Context, request *countermapv1.SetRequest) (*countermapv1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -119,7 +119,7 @@ func (s *counterMapServer) Set(ctx context.Context, request *atomiccountermapv1.
 	return response, nil
 }
 
-func (s *counterMapServer) Increment(ctx context.Context, request *atomiccountermapv1.IncrementRequest) (*atomiccountermapv1.IncrementResponse, error) {
+func (s *counterMapServer) Increment(ctx context.Context, request *countermapv1.IncrementRequest) (*countermapv1.IncrementResponse, error) {
 	log.Debugw("Increment",
 		logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -142,7 +142,7 @@ func (s *counterMapServer) Increment(ctx context.Context, request *atomiccounter
 	return response, nil
 }
 
-func (s *counterMapServer) Decrement(ctx context.Context, request *atomiccountermapv1.DecrementRequest) (*atomiccountermapv1.DecrementResponse, error) {
+func (s *counterMapServer) Decrement(ctx context.Context, request *countermapv1.DecrementRequest) (*countermapv1.DecrementResponse, error) {
 	log.Debugw("Decrement",
 		logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -165,7 +165,7 @@ func (s *counterMapServer) Decrement(ctx context.Context, request *atomiccounter
 	return response, nil
 }
 
-func (s *counterMapServer) Insert(ctx context.Context, request *atomiccountermapv1.InsertRequest) (*atomiccountermapv1.InsertResponse, error) {
+func (s *counterMapServer) Insert(ctx context.Context, request *countermapv1.InsertRequest) (*countermapv1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -188,7 +188,7 @@ func (s *counterMapServer) Insert(ctx context.Context, request *atomiccountermap
 	return response, nil
 }
 
-func (s *counterMapServer) Update(ctx context.Context, request *atomiccountermapv1.UpdateRequest) (*atomiccountermapv1.UpdateResponse, error) {
+func (s *counterMapServer) Update(ctx context.Context, request *countermapv1.UpdateRequest) (*countermapv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -211,7 +211,7 @@ func (s *counterMapServer) Update(ctx context.Context, request *atomiccountermap
 	return response, nil
 }
 
-func (s *counterMapServer) Get(ctx context.Context, request *atomiccountermapv1.GetRequest) (*atomiccountermapv1.GetResponse, error) {
+func (s *counterMapServer) Get(ctx context.Context, request *countermapv1.GetRequest) (*countermapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -234,7 +234,7 @@ func (s *counterMapServer) Get(ctx context.Context, request *atomiccountermapv1.
 	return response, nil
 }
 
-func (s *counterMapServer) Remove(ctx context.Context, request *atomiccountermapv1.RemoveRequest) (*atomiccountermapv1.RemoveResponse, error) {
+func (s *counterMapServer) Remove(ctx context.Context, request *countermapv1.RemoveRequest) (*countermapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -257,7 +257,7 @@ func (s *counterMapServer) Remove(ctx context.Context, request *atomiccountermap
 	return response, nil
 }
 
-func (s *counterMapServer) Clear(ctx context.Context, request *atomiccountermapv1.ClearRequest) (*atomiccountermapv1.ClearResponse, error) {
+func (s *counterMapServer) Clear(ctx context.Context, request *countermapv1.ClearRequest) (*countermapv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -280,7 +280,7 @@ func (s *counterMapServer) Clear(ctx context.Context, request *atomiccountermapv
 	return response, nil
 }
 
-func (s *counterMapServer) Lock(ctx context.Context, request *atomiccountermapv1.LockRequest) (*atomiccountermapv1.LockResponse, error) {
+func (s *counterMapServer) Lock(ctx context.Context, request *countermapv1.LockRequest) (*countermapv1.LockResponse, error) {
 	log.Debugw("Lock",
 		logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -303,7 +303,7 @@ func (s *counterMapServer) Lock(ctx context.Context, request *atomiccountermapv1
 	return response, nil
 }
 
-func (s *counterMapServer) Unlock(ctx context.Context, request *atomiccountermapv1.UnlockRequest) (*atomiccountermapv1.UnlockResponse, error) {
+func (s *counterMapServer) Unlock(ctx context.Context, request *countermapv1.UnlockRequest) (*countermapv1.UnlockResponse, error) {
 	log.Debugw("Unlock",
 		logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)))
 	client, err := s.delegate.Get(request.ID.Name)
@@ -326,7 +326,7 @@ func (s *counterMapServer) Unlock(ctx context.Context, request *atomiccountermap
 	return response, nil
 }
 
-func (s *counterMapServer) Events(request *atomiccountermapv1.EventsRequest, server atomiccountermapv1.CounterMap_EventsServer) error {
+func (s *counterMapServer) Events(request *countermapv1.EventsRequest, server countermapv1.CounterMap_EventsServer) error {
 	log.Debugw("Events",
 		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
 		logging.String("State", "started"))
@@ -348,7 +348,7 @@ func (s *counterMapServer) Events(request *atomiccountermapv1.EventsRequest, ser
 	return nil
 }
 
-func (s *counterMapServer) Entries(request *atomiccountermapv1.EntriesRequest, server atomiccountermapv1.CounterMap_EntriesServer) error {
+func (s *counterMapServer) Entries(request *countermapv1.EntriesRequest, server countermapv1.CounterMap_EntriesServer) error {
 	log.Debugw("Entries",
 		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
 		logging.String("State", "started"))
@@ -370,4 +370,4 @@ func (s *counterMapServer) Entries(request *atomiccountermapv1.EntriesRequest, s
 	return nil
 }
 
-var _ atomiccountermapv1.CounterMapServer = (*counterMapServer)(nil)
+var _ countermapv1.CounterMapServer = (*counterMapServer)(nil)

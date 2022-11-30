@@ -5,9 +5,10 @@
 package v1
 
 import (
-	atomiccountermapv1 "github.com/atomix/runtime/api/atomix/runtime/countermap/v1"
-	"github.com/atomix/runtime/proxy/pkg/proxy"
-	"github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/atomix/driver/pkg/driver"
+	countermapdriverv1 "github.com/atomix/atomix/driver/pkg/driver/countermap/v1"
+	"github.com/atomix/atomix/proxy/pkg/proxy"
+	atomiccountermapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/countermap/v1"
 	"google.golang.org/grpc"
 )
 
@@ -19,14 +20,10 @@ func register(server *grpc.Server, delegate *proxy.Delegate[atomiccountermapv1.C
 	atomiccountermapv1.RegisterCounterMapServer(server, newCounterMapServer(delegate))
 }
 
-func resolve(conn runtime.Conn, spec proxy.PrimitiveSpec) (atomiccountermapv1.CounterMapServer, bool, error) {
-	if provider, ok := conn.(CounterMapProvider); ok {
+func resolve(conn driver.Conn, spec proxy.PrimitiveSpec) (atomiccountermapv1.CounterMapServer, bool, error) {
+	if provider, ok := conn.(countermapdriverv1.CounterMapProvider); ok {
 		counterMap, err := provider.NewCounterMap(spec)
 		return counterMap, true, err
 	}
 	return nil, false, nil
-}
-
-type CounterMapProvider interface {
-	NewCounterMap(spec proxy.PrimitiveSpec) (atomiccountermapv1.CounterMapServer, error)
 }

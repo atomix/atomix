@@ -5,9 +5,10 @@
 package v1
 
 import (
-	indexedmapv1 "github.com/atomix/runtime/api/atomix/runtime/indexedmap/v1"
-	"github.com/atomix/runtime/proxy/pkg/proxy"
-	"github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/atomix/driver/pkg/driver"
+	indexedmapdriverv1 "github.com/atomix/atomix/driver/pkg/driver/indexedmap/v1"
+	"github.com/atomix/atomix/proxy/pkg/proxy"
+	indexedmapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/indexedmap/v1"
 	"google.golang.org/grpc"
 )
 
@@ -19,14 +20,10 @@ func register(server *grpc.Server, delegate *proxy.Delegate[indexedmapv1.Indexed
 	indexedmapv1.RegisterIndexedMapServer(server, newIndexedMapServer(delegate))
 }
 
-func resolve(conn runtime.Conn, spec proxy.PrimitiveSpec) (indexedmapv1.IndexedMapServer, bool, error) {
-	if provider, ok := conn.(IndexedMapProvider); ok {
+func resolve(conn driver.Conn, spec proxy.PrimitiveSpec) (indexedmapv1.IndexedMapServer, bool, error) {
+	if provider, ok := conn.(indexedmapdriverv1.IndexedMapProvider); ok {
 		indexedMap, err := provider.NewIndexedMap(spec)
 		return indexedMap, true, err
 	}
 	return nil, false, nil
-}
-
-type IndexedMapProvider interface {
-	NewIndexedMap(spec proxy.PrimitiveSpec) (indexedmapv1.IndexedMapServer, error)
 }

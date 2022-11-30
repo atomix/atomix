@@ -5,8 +5,8 @@
 package proxy
 
 import (
-	"github.com/atomix/runtime/sdk/pkg/errors"
-	"github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/runtime/pkg/errors"
 	"sync"
 )
 
@@ -47,10 +47,9 @@ func (p *Delegate[T]) Create(name string, tags []string) (T, error) {
 		return client, err
 	}
 
-	spec := runtime.PrimitiveSpec{
+	spec := driver.PrimitiveSpec{
 		Name:      name,
 		Namespace: getNamespace(),
-		Profile:   getProfile(),
 		Service:   p.service,
 		Config:    config,
 	}

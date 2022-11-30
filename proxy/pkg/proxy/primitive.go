@@ -6,11 +6,11 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/atomix/driver/pkg/driver"
 	"google.golang.org/grpc"
 )
 
-type PrimitiveSpec = runtime.PrimitiveSpec
+type PrimitiveSpec = driver.PrimitiveSpec
 
 type Kind struct {
 	Name       string
@@ -28,7 +28,7 @@ type Type interface {
 
 type Registrar[T any] func(*grpc.Server, *Delegate[T])
 
-type Resolver[T any] func(runtime.Conn, runtime.PrimitiveSpec) (T, bool, error)
+type Resolver[T any] func(driver.Conn, driver.PrimitiveSpec) (T, bool, error)
 
 func NewType[T any](service string, registrar Registrar[T], resolver Resolver[T]) Type {
 	return &genericType[T]{

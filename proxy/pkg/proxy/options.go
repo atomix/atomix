@@ -5,7 +5,7 @@
 package proxy
 
 import (
-	"github.com/atomix/runtime/sdk/pkg/runtime"
+	"github.com/atomix/atomix/driver/pkg/driver"
 )
 
 const (
@@ -17,7 +17,7 @@ type Options struct {
 	Config         Config
 	RuntimeService RuntimeServiceOptions
 	ProxyService   ProxyServiceOptions
-	Drivers        []runtime.Driver
+	Drivers        []driver.Driver
 	PluginsDir     string
 }
 
@@ -57,7 +57,7 @@ func WithConfig(config Config) Option {
 	}
 }
 
-func WithDrivers(drivers ...runtime.Driver) Option {
+func WithDrivers(drivers ...driver.Driver) Option {
 	return func(options *Options) {
 		options.Drivers = append(options.Drivers, drivers...)
 	}
