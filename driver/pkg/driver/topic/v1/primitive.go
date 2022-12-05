@@ -5,8 +5,8 @@
 package v1
 
 import (
+	topicv1 "github.com/atomix/atomix/api/atomix/topic/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
-	topicv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/topic/v1"
 )
 
 type TopicProxy topicv1.TopicServer

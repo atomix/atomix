@@ -2,7 +2,7 @@ module github.com/atomix/atomix/driver
 
 go 1.19
 
-require github.com/atomix/atomix/runtime v0.0.0-20221130201959-61fb795ed9a0
+require github.com/atomix/atomix/api v0.0.0-20221205094738-07c4d4749367
 
 require (
 	github.com/gogo/protobuf v1.3.2 // indirect

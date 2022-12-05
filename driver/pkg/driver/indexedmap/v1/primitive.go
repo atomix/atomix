@@ -5,8 +5,8 @@
 package v1
 
 import (
+	indexedmapv1 "github.com/atomix/atomix/api/atomix/indexedmap/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
-	indexedmapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/indexedmap/v1"
 )
 
 type IndexedMapProxy indexedmapv1.IndexedMapServer

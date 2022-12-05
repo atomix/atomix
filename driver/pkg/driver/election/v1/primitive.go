@@ -5,8 +5,8 @@
 package v1
 
 import (
+	electionv1 "github.com/atomix/atomix/api/atomix/election/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
-	electionv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/election/v1"
 )
 
 type LeaderElectionProxy electionv1.LeaderElectionServer

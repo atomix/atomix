@@ -5,8 +5,8 @@
 package v1
 
 import (
+	multimapv1 "github.com/atomix/atomix/api/atomix/multimap/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
-	multimapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/multimap/v1"
 )
 
 type MultiMapProxy multimapv1.MultiMapServer

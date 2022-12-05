@@ -5,8 +5,8 @@
 package v1
 
 import (
+	countermapv1 "github.com/atomix/atomix/api/atomix/countermap/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
-	countermapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/countermap/v1"
 )
 
 type CounterMapProxy countermapv1.CounterMapServer

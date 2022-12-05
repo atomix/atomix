@@ -5,8 +5,8 @@
 package v1
 
 import (
+	listv1 "github.com/atomix/atomix/api/atomix/list/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
-	listv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/list/v1"
 )
 
 type ListProxy listv1.ListServer

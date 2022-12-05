@@ -5,8 +5,8 @@
 package v1
 
 import (
+	setv1 "github.com/atomix/atomix/api/atomix/set/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
-	setv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/set/v1"
 )
 
 type SetProxy setv1.SetServer

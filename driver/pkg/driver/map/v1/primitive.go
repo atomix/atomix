@@ -5,8 +5,8 @@
 package v1
 
 import (
+	mapv1 "github.com/atomix/atomix/api/atomix/map/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
-	mapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/map/v1"
 )
 
 type MapProxy mapv1.MapServer

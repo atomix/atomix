@@ -5,8 +5,8 @@
 package v1
 
 import (
+	valuev1 "github.com/atomix/atomix/api/atomix/value/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
-	valuev1 "github.com/atomix/atomix/runtime/api/atomix/runtime/value/v1"
 )
 
 type ValueProxy valuev1.ValueServer
