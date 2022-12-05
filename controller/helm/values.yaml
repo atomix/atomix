@@ -4,18 +4,17 @@
 
 replicas: 1
 
-controller:
-  image:
-    registry: ""
-    repository: atomix/runtime-controller
-    tag: v0.7.7
-    pullPolicy: Always
-    pullSecrets: []
+image:
+  registry: ""
+  repository: atomix/controller
+  tag: v0.7.7
+  pullPolicy: Always
+  pullSecrets: []
 
 init:
   image:
     registry: ""
-    repository: atomix/runtime-controller-init
+    repository: atomix/controller-init
     tag: v0.7.7
     pullPolicy: Always
     pullSecrets: []
@@ -23,7 +22,7 @@ init:
 proxy:
   image:
     registry: ""
-    repository: atomix/runtime-proxy
+    repository: atomix/proxy
     tag: v0.12
     pullPolicy: Always
     pullSecrets: []

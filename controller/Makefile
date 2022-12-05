@@ -13,36 +13,36 @@ endif
 build: build-controller build-controller-init
 
 build-controller:
-	docker build . -t atomix/runtime-controller:latest -f build/Dockerfile
+	docker build . -t atomix/controller:latest -f build/Dockerfile
 
 build-controller-init:
-	docker build . -t atomix/runtime-controller-init:latest -f build/init.Dockerfile
+	docker build . -t atomix/controller-init:latest -f build/init.Dockerfile
 
 .PHONY: release
 release: build release-controller release-controller-init
 
 release-controller:
-	docker push atomix/runtime-controller:latest
+	docker push atomix/controller:latest
 ifdef TAG
-	docker tag atomix/runtime-controller:latest atomix/runtime-controller:${MAJOR}.${MINOR}.${PATCH}
-	docker tag atomix/runtime-controller:latest atomix/runtime-controller:${MAJOR}.${MINOR}
-	docker push atomix/runtime-controller:${MAJOR}.${MINOR}.${PATCH}
-	docker push atomix/runtime-controller:${MAJOR}.${MINOR}
+	docker tag atomix/controller:latest atomix/controller:${MAJOR}.${MINOR}.${PATCH}
+	docker tag atomix/controller:latest atomix/controller:${MAJOR}.${MINOR}
+	docker push atomix/controller:${MAJOR}.${MINOR}.${PATCH}
+	docker push atomix/controller:${MAJOR}.${MINOR}
 endif
 
 release-controller-init:
-	docker push atomix/runtime-controller-init:latest
+	docker push atomix/controller-init:latest
 ifdef TAG
-	docker tag atomix/runtime-controller-init:latest atomix/runtime-controller-init:${MAJOR}.${MINOR}.${PATCH}
-	docker tag atomix/runtime-controller-init:latest atomix/runtime-controller-init:${MAJOR}.${MINOR}
-	docker push atomix/runtime-controller-init:${MAJOR}.${MINOR}.${PATCH}
-	docker push atomix/runtime-controller-init:${MAJOR}.${MINOR}
+	docker tag atomix/controller-init:latest atomix/controller-init:${MAJOR}.${MINOR}.${PATCH}
+	docker tag atomix/controller-init:latest atomix/controller-init:${MAJOR}.${MINOR}
+	docker push atomix/controller-init:${MAJOR}.${MINOR}.${PATCH}
+	docker push atomix/controller-init:${MAJOR}.${MINOR}
 endif
 
 kind: build
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
-	kind load docker-image atomix/runtime-controller:latest
-	kind load docker-image atomix/runtime-controller-init:latest
+	kind load docker-image atomix/controller:latest
+	kind load docker-image atomix/controller-init:latest
 
 reuse-tool: # @HELP install reuse if not present
 	command -v reuse || python3 -m pip install reuse

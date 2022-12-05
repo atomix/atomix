@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "atomix-runtime-controller.fullname" . }}-config
+  name: {{ template "atomix-controller.fullname" . }}-config
 data:
   logging.yaml: |-
     loggers:

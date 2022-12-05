@@ -5,28 +5,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "atomix-runtime-controller.fullname" . }}
+  name: {{ template "atomix-controller.fullname" . }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      name: {{ template "atomix-runtime-controller.fullname" . }}
+      name: {{ template "atomix-controller.fullname" . }}
   template:
     metadata:
       labels:
-        name: {{ template "atomix-runtime-controller.fullname" . }}
+        name: {{ template "atomix-controller.fullname" . }}
     spec:
-      serviceAccountName: {{ template "atomix-runtime-controller.fullname" . }}
+      serviceAccountName: {{ template "atomix-controller.fullname" . }}
       initContainers:
         - name: init-certs
-          image: {{ include "atomix-runtime-controller.imagename" .Values.init.image | quote }}
+          image: {{ include "atomix-controller.imagename" .Values.init.image | quote }}
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
             runAsUser: 0
           env:
             - name: CONTROLLER_NAME
-              value: {{ template "atomix-runtime-controller.fullname" . }}
+              value: {{ template "atomix-controller.fullname" . }}
             - name: CONTROLLER_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -46,15 +46,15 @@ spec:
             - name: certs
               mountPath: /etc/webhook/certs
       containers:
-        - name: atomix-runtime-controller
-          image: {{ include "atomix-runtime-controller.imagename" .Values.controller.image | quote }}
+        - name: atomix-controller
+          image: {{ include "atomix-controller.imagename" .Values.image | quote }}
           securityContext:
             allowPrivilegeEscalation: false
             runAsUser: 0
           ports:
             - containerPort: 443
               name: webhook-server
-          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           readinessProbe:
             exec:
               command:
@@ -65,7 +65,7 @@ spec:
             failureThreshold: 1
           env:
             - name: CONTROLLER_NAME
-              value: {{ template "atomix-runtime-controller.fullname" . }}
+              value: {{ template "atomix-controller.fullname" . }}
             - name: CONTROLLER_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -79,7 +79,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: PROXY_IMAGE
-              value: {{ include "atomix-runtime-controller.imagename" .Values.proxy.image | quote }}
+              value: {{ include "atomix-controller.imagename" .Values.proxy.image | quote }}
           volumeMounts:
             - name: certs
               mountPath: /tmp/k8s-webhook-server/serving-certs
@@ -92,4 +92,4 @@ spec:
           emptyDir: { }
         - name: config
           configMap:
-            name: {{ template "atomix-runtime-controller.fullname" . }}-config
+            name: {{ template "atomix-controller.fullname" . }}-config

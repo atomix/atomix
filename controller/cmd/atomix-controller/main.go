@@ -41,7 +41,7 @@ func main() {
 
 func getCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "atomix-runtime-controller",
+		Use:  "atomix-controller",
 		Args: cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			namespace, _ := cmd.Flags().GetString("namespace")

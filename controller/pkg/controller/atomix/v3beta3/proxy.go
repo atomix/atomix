@@ -43,7 +43,7 @@ const (
 
 const (
 	proxyImageEnv     = "PROXY_IMAGE"
-	defaultProxyImage = "atomix/runtime-proxy:latest"
+	defaultProxyImage = "atomix/proxy:latest"
 )
 
 const (

@@ -15,7 +15,7 @@ RUN go mod download -x
 COPY ./cmd /build/cmd
 COPY ./pkg /build/pkg
 
-RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix-runtime-controller-init ./cmd/atomix-runtime-controller-init
+RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix-controller-init ./cmd/atomix-controller-init
 
 FROM alpine:3.15
 
@@ -25,6 +25,6 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 
 USER atomix
 
-COPY --from=build /build/dist/bin/atomix-runtime-controller-init /usr/local/bin/atomix-runtime-controller-init
+COPY --from=build /build/dist/bin/atomix-controller-init /usr/local/bin/atomix-controller-init
 
-ENTRYPOINT ["atomix-runtime-controller-init"]
+ENTRYPOINT ["atomix-controller-init"]

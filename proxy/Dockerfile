@@ -16,7 +16,7 @@ RUN go mod download
 
 # Build the proxy binary
 FROM builder AS build-proxy
-RUN go run ./cmd/atomix-build proxy /build/bin/atomix-runtime-proxy
+RUN go run ./cmd/atomix-build proxy /build/bin/atomix-proxy
 
 # Build the consensus storage driver
 FROM builder AS build-consensus-driver
@@ -45,9 +45,9 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 
 USER atomix
 
-COPY --from=build-proxy /build/bin/atomix-runtime-proxy /usr/local/bin/atomix-runtime-proxy
+COPY --from=build-proxy /build/bin/atomix-proxy /usr/local/bin/atomix-proxy
 COPY --from=build-consensus-driver /build/bin/Consensus@v1beta1.so /var/atomix/plugins/
 COPY --from=build-shared-memory-driver /build/bin/SharedMemory@v1beta1.so /var/atomix/plugins/
 COPY --from=build-pod-memory-driver /build/bin/PodMemory@v1beta1.so /var/atomix/plugins/
 
-ENTRYPOINT ["atomix-runtime-proxy"]
+ENTRYPOINT ["atomix-proxy"]

@@ -11,21 +11,21 @@ endif
 
 .PHONY: build
 build:
-	docker build . -t atomix/runtime-proxy:latest
+	docker build . -t atomix/proxy:latest
 
 .PHONY: release
 release: build
-	docker push atomix/runtime-proxy:latest
+	docker push atomix/proxy:latest
 ifdef TAG
-	docker tag atomix/runtime-proxy:latest atomix/runtime-proxy:${MAJOR}.${MINOR}.${PATCH}
-	docker tag atomix/runtime-proxy:latest atomix/runtime-proxy:${MAJOR}.${MINOR}
-	docker push atomix/runtime-proxy:${MAJOR}.${MINOR}.${PATCH}
-	docker push atomix/runtime-proxy:${MAJOR}.${MINOR}
+	docker tag atomix/proxy:latest atomix/proxy:${MAJOR}.${MINOR}.${PATCH}
+	docker tag atomix/proxy:latest atomix/proxy:${MAJOR}.${MINOR}
+	docker push atomix/proxy:${MAJOR}.${MINOR}.${PATCH}
+	docker push atomix/proxy:${MAJOR}.${MINOR}
 endif
 
 kind: build
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
-	kind load docker-image atomix/runtime-proxy:latest
+	kind load docker-image atomix/proxy:latest
 
 .PHONY: api
 api:

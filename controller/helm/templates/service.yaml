@@ -5,12 +5,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "atomix-runtime-controller.fullname" . }}
+  name: {{ template "atomix-controller.fullname" . }}
   labels:
-    name: {{ template "atomix-runtime-controller.fullname" . }}
+    name: {{ template "atomix-controller.fullname" . }}
 spec:
   selector:
-    name: {{ template "atomix-runtime-controller.fullname" . }}
+    name: {{ template "atomix-controller.fullname" . }}
   ports:
     - name: webhook
       port: 443

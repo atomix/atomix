@@ -13,7 +13,7 @@
     - [DriverId](#atomix-proxy-v1-DriverId)
     - [StoreId](#atomix-proxy-v1-StoreId)
   
-    - [Proxy](#atomix-proxy-v1-Proxy)
+    - [ProxyControl](#atomix-proxy-v1-ProxyControl)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -142,9 +142,9 @@
  
 
 
-<a name="atomix-proxy-v1-Proxy"></a>
+<a name="atomix-proxy-v1-ProxyControl"></a>
 
-### Proxy
+### ProxyControl
 
 
 | Method Name | Request Type | Response Type | Description |

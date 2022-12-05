@@ -14,16 +14,16 @@ const (
 )
 
 type Options struct {
-	Config         Config
-	RuntimeService RuntimeServiceOptions
-	ProxyService   ProxyServiceOptions
-	Drivers        []driver.Driver
-	PluginsDir     string
+	Config              Config
+	ProxyService        ProxyServiceOptions
+	ProxyControlService ProxyControlServiceOptions
+	Drivers             []driver.Driver
+	PluginsDir          string
 }
 
 func (o *Options) apply(opts ...Option) {
-	o.RuntimeService.Port = defaultRuntimePort
-	o.ProxyService.Port = defaultProxyPort
+	o.ProxyService.Port = defaultRuntimePort
+	o.ProxyControlService.Port = defaultProxyPort
 	for _, opt := range opts {
 		opt(o)
 	}
@@ -36,12 +36,12 @@ type ServerOptions struct {
 	Port int
 }
 
-type RuntimeServiceOptions struct {
+type ProxyServiceOptions struct {
 	ServerOptions
 	Types []Type
 }
 
-type ProxyServiceOptions struct {
+type ProxyControlServiceOptions struct {
 	ServerOptions
 }
 
@@ -71,30 +71,30 @@ func WithPluginsDir(pluginsDir string) Option {
 
 func WithTypes(types ...Type) Option {
 	return func(options *Options) {
-		options.RuntimeService.Types = append(options.RuntimeService.Types, types...)
+		options.ProxyService.Types = append(options.ProxyService.Types, types...)
 	}
 }
 
-func WithRuntimeHost(host string) Option {
-	return func(options *Options) {
-		options.RuntimeService.Host = host
-	}
-}
-
-func WithRuntimePort(port int) Option {
-	return func(options *Options) {
-		options.RuntimeService.Port = port
-	}
-}
-
-func WithProxyHost(host string) Option {
+func WithHost(host string) Option {
 	return func(options *Options) {
 		options.ProxyService.Host = host
 	}
 }
 
-func WithProxyPort(port int) Option {
+func WithPort(port int) Option {
 	return func(options *Options) {
 		options.ProxyService.Port = port
+	}
+}
+
+func WithControlHost(host string) Option {
+	return func(options *Options) {
+		options.ProxyControlService.Host = host
+	}
+}
+
+func WithControlPort(port int) Option {
+	return func(options *Options) {
+		options.ProxyControlService.Port = port
 	}
 }

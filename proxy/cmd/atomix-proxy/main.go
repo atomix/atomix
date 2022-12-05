@@ -29,24 +29,24 @@ import (
 
 func main() {
 	cmd := &cobra.Command{
-		Use: "atomix-runtime-proxy",
+		Use: "atomix-proxy",
 		Run: func(cmd *cobra.Command, args []string) {
-			runtimeHost, err := cmd.Flags().GetString("runtime-host")
+			host, err := cmd.Flags().GetString("host")
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
-			runtimePort, err := cmd.Flags().GetInt("runtime-port")
+			port, err := cmd.Flags().GetInt("port")
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
-			proxyHost, err := cmd.Flags().GetString("proxy-host")
+			controlHost, err := cmd.Flags().GetString("control-host")
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
-			proxyPort, err := cmd.Flags().GetInt("proxy-port")
+			controlPort, err := cmd.Flags().GetInt("control-port")
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
@@ -81,10 +81,10 @@ func main() {
 				network.NewNetwork(),
 				proxy.WithPluginsDir(pluginsDir),
 				proxy.WithConfig(config),
-				proxy.WithRuntimeHost(runtimeHost),
-				proxy.WithRuntimePort(runtimePort),
-				proxy.WithProxyHost(proxyHost),
-				proxy.WithProxyPort(proxyPort),
+				proxy.WithHost(host),
+				proxy.WithPort(port),
+				proxy.WithControlHost(controlHost),
+				proxy.WithControlPort(controlPort),
 				proxy.WithTypes(
 					counterv1.Type,
 					countermapv1.Type,
@@ -117,10 +117,10 @@ func main() {
 		},
 	}
 	cmd.Flags().StringP("config", "c", "", "the path to the router configuration")
-	cmd.Flags().String("runtime-host", "", "the host to which to bind the runtime server")
-	cmd.Flags().Int("runtime-port", 5678, "the port to which to bind the runtime server")
-	cmd.Flags().String("proxy-host", "", "the host to which to bind the proxy server")
-	cmd.Flags().Int("proxy-port", 5679, "the port to which to bind the proxy server")
+	cmd.Flags().String("host", "", "the host to which to bind the runtime server")
+	cmd.Flags().Int("port", 5678, "the port to which to bind the runtime server")
+	cmd.Flags().String("control-host", "", "the host to which to bind the proxy server")
+	cmd.Flags().Int("control-port", 5679, "the port to which to bind the proxy server")
 	cmd.Flags().StringP("plugins", "p", "/var/atomix/plugins", "the path to the plugins directory")
 
 	_ = cmd.MarkFlagRequired("config")

@@ -13,7 +13,7 @@ import (
 	"os"
 )
 
-func newRuntimeService(runtime *Runtime, network network.Network, config ServerConfig, options RuntimeServiceOptions) service.Service {
+func newProxyService(runtime *Runtime, network network.Network, config ServerConfig, options ProxyServiceOptions) service.Service {
 	var opts []grpc.ServerOption
 	if config.ReadBufferSize != nil {
 		opts = append(opts, grpc.ReadBufferSize(*config.ReadBufferSize))
@@ -33,22 +33,22 @@ func newRuntimeService(runtime *Runtime, network network.Network, config ServerC
 	if config.MaxConcurrentStreams != nil {
 		opts = append(opts, grpc.MaxConcurrentStreams(*config.MaxConcurrentStreams))
 	}
-	return &runtimeService{
-		RuntimeServiceOptions: options,
-		runtime:               runtime,
-		network:               network,
-		server:                grpc.NewServer(opts...),
+	return &proxyService{
+		ProxyServiceOptions: options,
+		runtime:             runtime,
+		network:             network,
+		server:              grpc.NewServer(opts...),
 	}
 }
 
-type runtimeService struct {
-	RuntimeServiceOptions
+type proxyService struct {
+	ProxyServiceOptions
 	runtime *Runtime
 	network network.Network
 	server  *grpc.Server
 }
 
-func (s *runtimeService) Start() error {
+func (s *proxyService) Start() error {
 	log.Info("Starting primitive service")
 	address := fmt.Sprintf("%s:%d", s.Host, s.Port)
 	lis, err := s.network.Listen(address)
@@ -69,31 +69,31 @@ func (s *runtimeService) Start() error {
 	return nil
 }
 
-func (s *runtimeService) Stop() error {
+func (s *proxyService) Stop() error {
 	log.Info("Shutting down primitive service")
 	s.server.Stop()
 	return nil
 }
 
-var _ service.Service = (*runtimeService)(nil)
+var _ service.Service = (*proxyService)(nil)
 
-func newProxyService(runtime *Runtime, network network.Network, options ProxyServiceOptions) service.Service {
-	return &proxyService{
-		ProxyServiceOptions: options,
-		runtime:             runtime,
-		network:             network,
-		server:              grpc.NewServer(),
+func newProxyControlService(runtime *Runtime, network network.Network, options ProxyControlServiceOptions) service.Service {
+	return &proxyControlService{
+		ProxyControlServiceOptions: options,
+		runtime:                    runtime,
+		network:                    network,
+		server:                     grpc.NewServer(),
 	}
 }
 
-type proxyService struct {
-	ProxyServiceOptions
+type proxyControlService struct {
+	ProxyControlServiceOptions
 	runtime *Runtime
 	network network.Network
 	server  *grpc.Server
 }
 
-func (s *proxyService) Start() error {
+func (s *proxyControlService) Start() error {
 	log.Info("Starting proxy service")
 	address := fmt.Sprintf("%s:%d", s.Host, s.Port)
 	lis, err := s.network.Listen(address)
@@ -101,7 +101,7 @@ func (s *proxyService) Start() error {
 		return err
 	}
 
-	proxyv1.RegisterProxyServer(s.server, newProxyServer(s.runtime))
+	proxyv1.RegisterProxyControlServer(s.server, newProxyServer(s.runtime))
 
 	go func() {
 		if err := s.server.Serve(lis); err != nil {
@@ -112,10 +112,10 @@ func (s *proxyService) Start() error {
 	return nil
 }
 
-func (s *proxyService) Stop() error {
+func (s *proxyControlService) Stop() error {
 	log.Info("Shutting down proxy service")
 	s.server.Stop()
 	return nil
 }
 
-var _ service.Service = (*proxyService)(nil)
+var _ service.Service = (*proxyControlService)(nil)
