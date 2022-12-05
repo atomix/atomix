@@ -7,7 +7,7 @@ package v3beta3
 import (
 	"context"
 	"fmt"
-	atomixv3beta2 "github.com/atomix/runtime/controller/pkg/apis/atomix/v3beta3"
+	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -120,7 +120,7 @@ func (i *ProxyInjector) Handle(ctx context.Context, request admission.Request) a
 		return admission.Denied(fmt.Sprintf("'%s' annotation not found", proxyProfileAnnotation))
 	}
 
-	profile := &atomixv3beta2.StorageProfile{}
+	profile := &atomixv3beta3.StorageProfile{}
 	profileNamespacedName := types.NamespacedName{
 		Namespace: request.Namespace,
 		Name:      profileName,
