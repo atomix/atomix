@@ -5,14 +5,14 @@
 package v1
 
 import (
+	atomiccountermapv1 "github.com/atomix/atomix/api/atomix/countermap/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	countermapdriverv1 "github.com/atomix/atomix/driver/pkg/driver/countermap/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	atomiccountermapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/countermap/v1"
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.countermap.v1.CounterMap"
+const Service = "atomix.countermap.v1.CounterMap"
 
 var Type = proxy.NewType[atomiccountermapv1.CounterMapServer](Service, register, resolve)
 

@@ -6,8 +6,8 @@ package v1
 
 import (
 	"context"
+	counterv1 "github.com/atomix/atomix/api/atomix/counter/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	counterv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/counter/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/stringer"

@@ -5,14 +5,14 @@
 package v1
 
 import (
+	electionv1 "github.com/atomix/atomix/api/atomix/election/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	electiondriverv1 "github.com/atomix/atomix/driver/pkg/driver/election/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	electionv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/election/v1"
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.election.v1.LeaderElection"
+const Service = "atomix.election.v1.LeaderElection"
 
 var Type = proxy.NewType[electionv1.LeaderElectionServer](Service, register, resolve)
 

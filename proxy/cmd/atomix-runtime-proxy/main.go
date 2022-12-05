@@ -18,7 +18,7 @@ import (
 	setv1 "github.com/atomix/atomix/proxy/pkg/proxy/set/v1"
 	topicv1 "github.com/atomix/atomix/proxy/pkg/proxy/topic/v1"
 	valuev1 "github.com/atomix/atomix/proxy/pkg/proxy/value/v1"
-	"github.com/atomix/runtime/sdk/pkg/network"
+	"github.com/atomix/atomix/runtime/pkg/network"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"

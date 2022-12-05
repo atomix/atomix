@@ -5,14 +5,14 @@
 package v1
 
 import (
+	mapv1 "github.com/atomix/atomix/api/atomix/map/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	mapdriverv1 "github.com/atomix/atomix/driver/pkg/driver/map/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	mapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/map/v1"
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.map.v1.Map"
+const Service = "atomix.map.v1.Map"
 
 var Type = proxy.NewType[mapv1.MapServer](Service, register, resolve)
 

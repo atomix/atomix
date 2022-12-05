@@ -5,14 +5,14 @@
 package v1
 
 import (
+	indexedmapv1 "github.com/atomix/atomix/api/atomix/indexedmap/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	indexedmapdriverv1 "github.com/atomix/atomix/driver/pkg/driver/indexedmap/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	indexedmapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/indexedmap/v1"
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.indexedmap.v1.IndexedMap"
+const Service = "atomix.indexedmap.v1.IndexedMap"
 
 var Type = proxy.NewType[indexedmapv1.IndexedMapServer](Service, register, resolve)
 

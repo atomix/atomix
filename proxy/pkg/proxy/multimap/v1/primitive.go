@@ -5,14 +5,14 @@
 package v1
 
 import (
+	multimapv1 "github.com/atomix/atomix/api/atomix/multimap/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	multimapdriverv1 "github.com/atomix/atomix/driver/pkg/driver/multimap/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	multimapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/multimap/v1"
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.multimap.v1.MultiMap"
+const Service = "atomix.multimap.v1.MultiMap"
 
 var Type = proxy.NewType[multimapv1.MultiMapServer](Service, register, resolve)
 

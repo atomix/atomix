@@ -5,14 +5,14 @@
 package v1
 
 import (
+	topicv1 "github.com/atomix/atomix/api/atomix/topic/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	topicdriverv1 "github.com/atomix/atomix/driver/pkg/driver/topic/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	topicv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/topic/v1"
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.counter.v1.Topic"
+const Service = "atomix.counter.v1.Topic"
 
 var Type = proxy.NewType[topicv1.TopicServer](Service, register, resolve)
 

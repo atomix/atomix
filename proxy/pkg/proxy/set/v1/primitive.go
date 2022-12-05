@@ -5,14 +5,14 @@
 package v1
 
 import (
+	setv1 "github.com/atomix/atomix/api/atomix/set/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	setdriverv1 "github.com/atomix/atomix/driver/pkg/driver/set/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	setv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/set/v1"
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.set.v1.Set"
+const Service = "atomix.set.v1.Set"
 
 var Type = proxy.NewType[setv1.SetServer](Service, register, resolve)
 

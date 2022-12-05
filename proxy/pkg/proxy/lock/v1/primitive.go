@@ -5,14 +5,14 @@
 package v1
 
 import (
+	lockv1 "github.com/atomix/atomix/api/atomix/lock/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	lockdriverv1 "github.com/atomix/atomix/driver/pkg/driver/lock/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	lockv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/lock/v1"
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.lock.v1.Lock"
+const Service = "atomix.lock.v1.Lock"
 
 var Type = proxy.NewType[lockv1.LockServer](Service, register, resolve)
 

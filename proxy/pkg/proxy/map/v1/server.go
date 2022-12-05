@@ -6,8 +6,8 @@ package v1
 
 import (
 	"context"
+	mapv1 "github.com/atomix/atomix/api/atomix/map/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	mapv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/map/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/stringer"

@@ -5,14 +5,14 @@
 package v1
 
 import (
+	listv1 "github.com/atomix/atomix/api/atomix/list/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	listdriverv1 "github.com/atomix/atomix/driver/pkg/driver/list/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	listv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/list/v1"
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.list.v1.List"
+const Service = "atomix.list.v1.List"
 
 var Type = proxy.NewType[listv1.ListServer](Service, register, resolve)
 

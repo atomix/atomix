@@ -5,14 +5,14 @@
 package v1
 
 import (
+	valuev1 "github.com/atomix/atomix/api/atomix/value/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	valuedriverv1 "github.com/atomix/atomix/driver/pkg/driver/value/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	valuev1 "github.com/atomix/atomix/runtime/api/atomix/runtime/value/v1"
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.value.v1.Value"
+const Service = "atomix.value.v1.Value"
 
 var Type = proxy.NewType[valuev1.ValueServer](Service, register, resolve)
 

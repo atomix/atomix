@@ -5,14 +5,14 @@
 package v1
 
 import (
+	counterv1 "github.com/atomix/atomix/api/atomix/counter/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	counterdriverv1 "github.com/atomix/atomix/driver/pkg/driver/counter/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	counterv1 "github.com/atomix/atomix/runtime/api/atomix/runtime/counter/v1"
 	"google.golang.org/grpc"
 )
 
-const Service = "atomix.runtime.counter.v1.Counter"
+const Service = "atomix.counter.v1.Counter"
 
 var Type = proxy.NewType[counterv1.CounterServer](Service, register, resolve)
 
