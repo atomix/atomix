@@ -5,7 +5,7 @@
 package v1
 
 import (
-	counterv1 "github.com/atomix/atomix/api/atomix/counter/v1"
+	counterv1 "github.com/atomix/atomix/api/pkg/counter/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 )
 

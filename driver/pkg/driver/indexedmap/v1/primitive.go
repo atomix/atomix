@@ -5,7 +5,7 @@
 package v1
 
 import (
-	indexedmapv1 "github.com/atomix/atomix/api/atomix/indexedmap/v1"
+	indexedmapv1 "github.com/atomix/atomix/api/pkg/indexedmap/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 )
 

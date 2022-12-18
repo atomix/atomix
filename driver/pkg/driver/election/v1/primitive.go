@@ -5,7 +5,7 @@
 package v1
 
 import (
-	electionv1 "github.com/atomix/atomix/api/atomix/election/v1"
+	electionv1 "github.com/atomix/atomix/api/pkg/election/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 )
 

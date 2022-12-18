@@ -5,7 +5,7 @@
 package v1
 
 import (
-	lockv1 "github.com/atomix/atomix/api/atomix/lock/v1"
+	lockv1 "github.com/atomix/atomix/api/pkg/lock/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 )
 

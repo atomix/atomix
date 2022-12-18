@@ -5,7 +5,7 @@
 package v1
 
 import (
-	countermapv1 "github.com/atomix/atomix/api/atomix/countermap/v1"
+	countermapv1 "github.com/atomix/atomix/api/pkg/countermap/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 )
 

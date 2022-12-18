@@ -5,7 +5,7 @@
 package v1
 
 import (
-	mapv1 "github.com/atomix/atomix/api/atomix/map/v1"
+	mapv1 "github.com/atomix/atomix/api/pkg/map/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 )
 

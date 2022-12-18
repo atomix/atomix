@@ -5,7 +5,7 @@
 package v1
 
 import (
-	multimapv1 "github.com/atomix/atomix/api/atomix/multimap/v1"
+	multimapv1 "github.com/atomix/atomix/api/pkg/multimap/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 )
 
