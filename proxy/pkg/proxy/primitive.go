@@ -6,7 +6,7 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/driver"
 	"google.golang.org/grpc"
 )
 

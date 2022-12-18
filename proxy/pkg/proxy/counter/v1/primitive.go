@@ -5,9 +5,8 @@
 package v1
 
 import (
-	counterv1 "github.com/atomix/atomix/api/pkg/counter/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
-	counterdriverv1 "github.com/atomix/atomix/driver/pkg/driver/counter/v1"
+	"github.com/atomix/atomix/api/pkg/driver"
+	counterv1 "github.com/atomix/atomix/api/pkg/primitive/counter/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
 	"google.golang.org/grpc"
 )
@@ -21,7 +20,7 @@ func register(server *grpc.Server, delegate *proxy.Delegate[counterv1.CounterSer
 }
 
 func resolve(conn driver.Conn, spec proxy.PrimitiveSpec) (counterv1.CounterServer, bool, error) {
-	if provider, ok := conn.(counterdriverv1.CounterProvider); ok {
+	if provider, ok := conn.(counterv1.CounterProvider); ok {
 		counter, err := provider.NewCounter(spec)
 		return counter, true, err
 	}

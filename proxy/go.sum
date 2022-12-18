@@ -2,12 +2,10 @@ cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/atomix/atomix/api v0.0.0-20221218012701-b686cc63d3f4 h1:CAJON067roIFzb2iYDyAP70otCv2yP9pp0/C9kemMrI=
-github.com/atomix/atomix/api v0.0.0-20221218012701-b686cc63d3f4/go.mod h1:PNMOo77ofCaaZqmj3uC7cfclGEI9NCcue/G5VXSon7k=
-github.com/atomix/atomix/driver v0.0.0-20221218012923-e23afa40f26b h1:CdgxXN+C8rnHkZ3tMmz8rK3fnFKwPXji4yIKa5ohSuE=
-github.com/atomix/atomix/driver v0.0.0-20221218012923-e23afa40f26b/go.mod h1:8TC7dzJeu7Y3kij0lJHP88An9t+ji0nLvQPcXvv7oHY=
-github.com/atomix/atomix/runtime v0.0.0-20221205094738-07c4d4749367 h1:p1pdILuMaFfFbVilTzQ55COrTtBQF9B+VNwH1VXqSow=
-github.com/atomix/atomix/runtime v0.0.0-20221205094738-07c4d4749367/go.mod h1:0bnr8L+R44bCNTHd/iX7//ioHmYrcFT5JiajMV4dkZ8=
+github.com/atomix/atomix/api v0.0.0-20221218014837-eec7ba47625a h1:t10ZuSBWW2FHqgBVQZBq6YPcl9WTRRXJODSC2bwESbI=
+github.com/atomix/atomix/api v0.0.0-20221218014837-eec7ba47625a/go.mod h1:PNMOo77ofCaaZqmj3uC7cfclGEI9NCcue/G5VXSon7k=
+github.com/atomix/atomix/common v0.0.0-20221218014837-eec7ba47625a h1:wl0Dluvco99pHI2q9QFy6+ICpDVHO2JHXL0ECHIWMWU=
+github.com/atomix/atomix/common v0.0.0-20221218014837-eec7ba47625a/go.mod h1:f+7MtZqcoNS6G3anGqBNJS8HjzZlnkBVOLTGhzbiwOg=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=

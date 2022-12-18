@@ -5,23 +5,22 @@
 package v1
 
 import (
-	atomiccountermapv1 "github.com/atomix/atomix/api/pkg/countermap/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
-	countermapdriverv1 "github.com/atomix/atomix/driver/pkg/driver/countermap/v1"
+	"github.com/atomix/atomix/api/pkg/driver"
+	countermapv1 "github.com/atomix/atomix/api/pkg/primitive/countermap/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
 	"google.golang.org/grpc"
 )
 
 const Service = "atomix.countermap.v1.CounterMap"
 
-var Type = proxy.NewType[atomiccountermapv1.CounterMapServer](Service, register, resolve)
+var Type = proxy.NewType[countermapv1.CounterMapServer](Service, register, resolve)
 
-func register(server *grpc.Server, delegate *proxy.Delegate[atomiccountermapv1.CounterMapServer]) {
-	atomiccountermapv1.RegisterCounterMapServer(server, newCounterMapServer(delegate))
+func register(server *grpc.Server, delegate *proxy.Delegate[countermapv1.CounterMapServer]) {
+	countermapv1.RegisterCounterMapServer(server, newCounterMapServer(delegate))
 }
 
-func resolve(conn driver.Conn, spec proxy.PrimitiveSpec) (atomiccountermapv1.CounterMapServer, bool, error) {
-	if provider, ok := conn.(countermapdriverv1.CounterMapProvider); ok {
+func resolve(conn driver.Conn, spec proxy.PrimitiveSpec) (countermapv1.CounterMapServer, bool, error) {
+	if provider, ok := conn.(countermapv1.CounterMapProvider); ok {
 		counterMap, err := provider.NewCounterMap(spec)
 		return counterMap, true, err
 	}

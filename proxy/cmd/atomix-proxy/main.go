@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/atomix/atomix/common/pkg/network"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
 	counterv1 "github.com/atomix/atomix/proxy/pkg/proxy/counter/v1"
 	countermapv1 "github.com/atomix/atomix/proxy/pkg/proxy/countermap/v1"
@@ -18,7 +19,6 @@ import (
 	setv1 "github.com/atomix/atomix/proxy/pkg/proxy/set/v1"
 	topicv1 "github.com/atomix/atomix/proxy/pkg/proxy/topic/v1"
 	valuev1 "github.com/atomix/atomix/proxy/pkg/proxy/value/v1"
-	"github.com/atomix/atomix/runtime/pkg/network"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"

@@ -5,9 +5,8 @@
 package v1
 
 import (
-	setv1 "github.com/atomix/atomix/api/pkg/set/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
-	setdriverv1 "github.com/atomix/atomix/driver/pkg/driver/set/v1"
+	"github.com/atomix/atomix/api/pkg/driver"
+	setv1 "github.com/atomix/atomix/api/pkg/primitive/set/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
 	"google.golang.org/grpc"
 )
@@ -21,7 +20,7 @@ func register(server *grpc.Server, delegate *proxy.Delegate[setv1.SetServer]) {
 }
 
 func resolve(conn driver.Conn, spec proxy.PrimitiveSpec) (setv1.SetServer, bool, error) {
-	if provider, ok := conn.(setdriverv1.SetProvider); ok {
+	if provider, ok := conn.(setv1.SetProvider); ok {
 		set, err := provider.NewSet(spec)
 		return set, true, err
 	}

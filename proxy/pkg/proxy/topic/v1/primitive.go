@@ -5,9 +5,8 @@
 package v1
 
 import (
-	topicv1 "github.com/atomix/atomix/api/pkg/topic/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
-	topicdriverv1 "github.com/atomix/atomix/driver/pkg/driver/topic/v1"
+	"github.com/atomix/atomix/api/pkg/driver"
+	topicv1 "github.com/atomix/atomix/api/pkg/primitive/topic/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
 	"google.golang.org/grpc"
 )
@@ -21,7 +20,7 @@ func register(server *grpc.Server, delegate *proxy.Delegate[topicv1.TopicServer]
 }
 
 func resolve(conn driver.Conn, spec proxy.PrimitiveSpec) (topicv1.TopicServer, bool, error) {
-	if provider, ok := conn.(topicdriverv1.TopicProvider); ok {
+	if provider, ok := conn.(topicv1.TopicProvider); ok {
 		topic, err := provider.NewTopic(spec)
 		return topic, true, err
 	}

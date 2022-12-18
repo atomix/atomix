@@ -5,7 +5,7 @@
 package proxy
 
 import (
-	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/driver"
 )
 
 const (

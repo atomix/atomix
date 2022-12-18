@@ -5,9 +5,8 @@
 package v1
 
 import (
-	lockv1 "github.com/atomix/atomix/api/pkg/lock/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
-	lockdriverv1 "github.com/atomix/atomix/driver/pkg/driver/lock/v1"
+	"github.com/atomix/atomix/api/pkg/driver"
+	lockv1 "github.com/atomix/atomix/api/pkg/primitive/lock/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
 	"google.golang.org/grpc"
 )
@@ -21,7 +20,7 @@ func register(server *grpc.Server, delegate *proxy.Delegate[lockv1.LockServer]) 
 }
 
 func resolve(conn driver.Conn, spec proxy.PrimitiveSpec) (lockv1.LockServer, bool, error) {
-	if provider, ok := conn.(lockdriverv1.LockProvider); ok {
+	if provider, ok := conn.(lockv1.LockProvider); ok {
 		lock, err := provider.NewLock(spec)
 		return lock, true, err
 	}

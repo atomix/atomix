@@ -5,8 +5,8 @@
 package proxy
 
 import (
-	"github.com/atomix/atomix/runtime/pkg/network"
-	"github.com/atomix/atomix/runtime/pkg/service"
+	"github.com/atomix/atomix/common/pkg/network"
+	"github.com/atomix/atomix/common/pkg/service"
 )
 
 func New(network network.Network, opts ...Option) *Proxy {

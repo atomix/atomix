@@ -7,8 +7,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/atomix/atomix/runtime/pkg/errors"
-	"github.com/atomix/atomix/runtime/pkg/logging"
+	"github.com/atomix/atomix/api/pkg/errors"
+	"github.com/atomix/atomix/common/pkg/logging"
 	"github.com/rogpeppe/go-internal/modfile"
 	"github.com/spf13/cobra"
 	"io/ioutil"

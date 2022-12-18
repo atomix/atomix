@@ -6,10 +6,10 @@ package proxy
 
 import (
 	"context"
+	"github.com/atomix/atomix/api/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/errors"
 	proxyv1 "github.com/atomix/atomix/api/pkg/proxy/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
-	"github.com/atomix/atomix/runtime/pkg/errors"
-	"github.com/atomix/atomix/runtime/pkg/logging"
+	"github.com/atomix/atomix/common/pkg/logging"
 )
 
 func newProxyServer(runtime *Runtime) proxyv1.ProxyServer {

@@ -6,11 +6,11 @@ package v1
 
 import (
 	"context"
-	mapv1 "github.com/atomix/atomix/api/pkg/map/v1"
+	"github.com/atomix/atomix/api/pkg/errors"
+	mapv1 "github.com/atomix/atomix/api/pkg/primitive/map/v1"
+	"github.com/atomix/atomix/common/pkg/logging"
+	"github.com/atomix/atomix/common/pkg/stringer"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	"github.com/atomix/atomix/runtime/pkg/errors"
-	"github.com/atomix/atomix/runtime/pkg/logging"
-	"github.com/atomix/atomix/runtime/pkg/stringer"
 )
 
 var log = logging.GetLogger()

@@ -5,9 +5,8 @@
 package v1
 
 import (
-	multimapv1 "github.com/atomix/atomix/api/pkg/multimap/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
-	multimapdriverv1 "github.com/atomix/atomix/driver/pkg/driver/multimap/v1"
+	"github.com/atomix/atomix/api/pkg/driver"
+	multimapv1 "github.com/atomix/atomix/api/pkg/primitive/multimap/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
 	"google.golang.org/grpc"
 )
@@ -21,7 +20,7 @@ func register(server *grpc.Server, delegate *proxy.Delegate[multimapv1.MultiMapS
 }
 
 func resolve(conn driver.Conn, spec proxy.PrimitiveSpec) (multimapv1.MultiMapServer, bool, error) {
-	if provider, ok := conn.(multimapdriverv1.MultiMapProvider); ok {
+	if provider, ok := conn.(multimapv1.MultiMapProvider); ok {
 		multiMap, err := provider.NewMultiMap(spec)
 		return multiMap, true, err
 	}

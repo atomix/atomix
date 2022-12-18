@@ -5,9 +5,8 @@
 package v1
 
 import (
-	listv1 "github.com/atomix/atomix/api/pkg/list/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
-	listdriverv1 "github.com/atomix/atomix/driver/pkg/driver/list/v1"
+	"github.com/atomix/atomix/api/pkg/driver"
+	listv1 "github.com/atomix/atomix/api/pkg/primitive/list/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
 	"google.golang.org/grpc"
 )
@@ -21,7 +20,7 @@ func register(server *grpc.Server, delegate *proxy.Delegate[listv1.ListServer]) 
 }
 
 func resolve(conn driver.Conn, spec proxy.PrimitiveSpec) (listv1.ListServer, bool, error) {
-	if provider, ok := conn.(listdriverv1.ListProvider); ok {
+	if provider, ok := conn.(listv1.ListProvider); ok {
 		list, err := provider.NewList(spec)
 		return list, true, err
 	}

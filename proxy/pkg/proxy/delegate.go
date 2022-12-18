@@ -5,8 +5,8 @@
 package proxy
 
 import (
-	"github.com/atomix/atomix/driver/pkg/driver"
-	"github.com/atomix/atomix/runtime/pkg/errors"
+	"github.com/atomix/atomix/api/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/errors"
 	"sync"
 )
 
