@@ -14,7 +14,7 @@ option java_multiple_files = true;
 
 import "gogoproto/gogo.proto";
 
-service ProxyControl {
+service Proxy {
     rpc Connect (ConnectRequest) returns (ConnectResponse);
     rpc Configure (ConfigureRequest) returns (ConfigureResponse);
     rpc Disconnect (DisconnectRequest) returns (DisconnectResponse);

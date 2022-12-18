@@ -5,7 +5,7 @@
 package v1
 
 import (
-	listv1 "github.com/atomix/atomix/api/atomix/list/v1"
+	listv1 "github.com/atomix/atomix/api/pkg/list/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	listdriverv1 "github.com/atomix/atomix/driver/pkg/driver/list/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"

@@ -5,7 +5,7 @@
 package v1
 
 import (
-	valuev1 "github.com/atomix/atomix/api/atomix/value/v1"
+	valuev1 "github.com/atomix/atomix/api/pkg/value/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	valuedriverv1 "github.com/atomix/atomix/driver/pkg/driver/value/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"

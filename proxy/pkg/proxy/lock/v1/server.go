@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	lockv1 "github.com/atomix/atomix/api/atomix/lock/v1"
+	lockv1 "github.com/atomix/atomix/api/pkg/lock/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"

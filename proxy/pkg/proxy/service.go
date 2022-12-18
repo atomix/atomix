@@ -101,7 +101,7 @@ func (s *proxyControlService) Start() error {
 		return err
 	}
 
-	proxyv1.RegisterProxyControlServer(s.server, newProxyServer(s.runtime))
+	proxyv1.RegisterProxyServer(s.server, newProxyServer(s.runtime))
 
 	go func() {
 		if err := s.server.Serve(lis); err != nil {

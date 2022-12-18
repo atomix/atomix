@@ -5,7 +5,7 @@
 package v1
 
 import (
-	topicv1 "github.com/atomix/atomix/api/atomix/topic/v1"
+	topicv1 "github.com/atomix/atomix/api/pkg/topic/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	topicdriverv1 "github.com/atomix/atomix/driver/pkg/driver/topic/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"

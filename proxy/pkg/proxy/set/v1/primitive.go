@@ -5,7 +5,7 @@
 package v1
 
 import (
-	setv1 "github.com/atomix/atomix/api/atomix/set/v1"
+	setv1 "github.com/atomix/atomix/api/pkg/set/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
 	setdriverv1 "github.com/atomix/atomix/driver/pkg/driver/set/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"

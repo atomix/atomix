@@ -3,8 +3,8 @@ module github.com/atomix/atomix/proxy
 go 1.18
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221205094738-07c4d4749367
-	github.com/atomix/atomix/driver v0.0.0-20221205095048-ba330f1a6c49
+	github.com/atomix/atomix/api v0.0.0-20221218011407-51c4fe6e4162
+	github.com/atomix/atomix/driver v0.0.0-20221218012143-dcb896b23c4e
 	github.com/atomix/atomix/runtime v0.0.0-20221205094738-07c4d4749367
 	github.com/gogo/protobuf v1.3.2
 	github.com/rogpeppe/go-internal v1.8.1
