@@ -6,8 +6,8 @@ package proxy
 
 import (
 	"context"
+	proxyv1 "github.com/atomix/atomix/api/pkg/proxy/v1"
 	"github.com/atomix/atomix/driver/pkg/driver"
-	proxyv1 "github.com/atomix/atomix/proxy/api/atomix/proxy/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
