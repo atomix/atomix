@@ -3,24 +3,24 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: api controller primitives proxy sdk
+build: api common controller driver proxy
 
 .PHONY: api
 api:
 	$(MAKE) -C api build
 
+.PHONY: common
+common:
+	$(MAKE) -C common build
+
 .PHONY: controller
 controller:
 	$(MAKE) -C controller build
 
-.PHONY: primitives
-primitives:
-	$(MAKE) -C primitives build
+.PHONY: driver
+driver:
+	$(MAKE) -C driver build
 
 .PHONY: proxy
 proxy:
 	$(MAKE) -C proxy build
-
-.PHONY: sdk
-sdk:
-	$(MAKE) -C sdk build

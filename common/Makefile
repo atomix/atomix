@@ -6,10 +6,6 @@
 build:
 	go build ./...
 
-.PHONY: api
-api:
-	$(MAKE) -C api
-
 reuse-tool: # @HELP install reuse if not present
 	command -v reuse || python3 -m pip install reuse
 
