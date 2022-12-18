@@ -1,0 +1,94 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.lock.v1;
+
+option java_package = "io.atomix.api.lock.v1";
+option java_outer_classname = "LockV1";
+option java_multiple_files = true;
+
+import "google/protobuf/duration.proto";
+import "primitive/v1/primitive.proto";
+import "gogoproto/gogo.proto";
+
+// Lock is a service for a lock primitive
+service Lock {
+    // Create creates the lock
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the lock
+    rpc Close (CloseRequest) returns (CloseResponse);
+
+    // Lock attempts to acquire the lock
+    rpc Lock (LockRequest) returns (LockResponse);
+
+    // Unlock releases the lock
+    rpc Unlock (UnlockRequest) returns (UnlockResponse);
+
+    // GetLock gets the lock state
+    rpc GetLock (GetLockRequest) returns (GetLockResponse);
+}
+
+message CreateRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated string tags = 2;
+}
+
+message CreateResponse {
+
+}
+
+message CloseRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}
+
+message LockRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    google.protobuf.Duration timeout = 2 [
+        (gogoproto.stdduration) = true
+    ];
+}
+
+message LockResponse {
+    uint64 version = 1;
+}
+
+message UnlockRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message UnlockResponse {
+
+}
+
+message GetLockRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetLockResponse {
+    uint64 version = 1;
+}
