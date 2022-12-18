@@ -6,37 +6,32 @@ SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
 
-package atomix.proxy.v1;
+package atomix.runtime.v1;
 
-option java_package = "io.atomix.api.proxy.v1";
-option java_outer_classname = "ProxyV1";
+option java_package = "io.atomix.api.runtime.v1";
+option java_outer_classname = "RuntimeV1";
 option java_multiple_files = true;
-option deprecated = true;
 
 import "gogoproto/gogo.proto";
 
-service Proxy {
-    option deprecated = true;
+service Runtime {
     rpc Connect (ConnectRequest) returns (ConnectResponse);
     rpc Configure (ConfigureRequest) returns (ConfigureResponse);
     rpc Disconnect (DisconnectRequest) returns (DisconnectResponse);
 }
 
 message StoreId {
-    option deprecated = true;
     string namespace = 1;
     string name = 2;
 }
 
 message DriverId {
-    option deprecated = true;
     option (gogoproto.equal) = true;
     string name = 1;
     string version = 2;
 }
 
 message ConnectRequest {
-    option deprecated = true;
     StoreId store_id = 1 [
         (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
@@ -49,11 +44,10 @@ message ConnectRequest {
 }
 
 message ConnectResponse {
-    option deprecated = true;
+
 }
 
 message ConfigureRequest {
-    option deprecated = true;
     StoreId store_id = 1 [
         (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
@@ -62,11 +56,10 @@ message ConfigureRequest {
 }
 
 message ConfigureResponse {
-    option deprecated = true;
+
 }
 
 message DisconnectRequest {
-    option deprecated = true;
     StoreId store_id = 1 [
         (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
@@ -74,5 +67,5 @@ message DisconnectRequest {
 }
 
 message DisconnectResponse {
-    option deprecated = true;
+
 }
