@@ -3,133 +3,29 @@
 
 ## Table of Contents
 
-- [proxy/v1/proxy.proto](#proxy_v1_proxy-proto)
-    - [ConfigureRequest](#atomix-proxy-v1-ConfigureRequest)
-    - [ConfigureResponse](#atomix-proxy-v1-ConfigureResponse)
-    - [ConnectRequest](#atomix-proxy-v1-ConnectRequest)
-    - [ConnectResponse](#atomix-proxy-v1-ConnectResponse)
-    - [DisconnectRequest](#atomix-proxy-v1-DisconnectRequest)
-    - [DisconnectResponse](#atomix-proxy-v1-DisconnectResponse)
-    - [DriverId](#atomix-proxy-v1-DriverId)
-    - [StoreId](#atomix-proxy-v1-StoreId)
-  
-    - [Proxy](#atomix-proxy-v1-Proxy)
+- [runtime/v1/primitive.proto](#runtime_v1_primitive-proto)
+    - [PrimitiveId](#atomix-runtime-v1-PrimitiveId)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="proxy_v1_proxy-proto"></a>
+<a name="runtime_v1_primitive-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## proxy/v1/proxy.proto
+## runtime/v1/primitive.proto
 
 
 
-<a name="atomix-proxy-v1-ConfigureRequest"></a>
+<a name="atomix-runtime-v1-PrimitiveId"></a>
 
-### ConfigureRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-proxy-v1-StoreId) |  |  |
-| config | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="atomix-proxy-v1-ConfigureResponse"></a>
-
-### ConfigureResponse
-
-
-
-
-
-
-
-<a name="atomix-proxy-v1-ConnectRequest"></a>
-
-### ConnectRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-proxy-v1-StoreId) |  |  |
-| driver_id | [DriverId](#atomix-proxy-v1-DriverId) |  |  |
-| config | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="atomix-proxy-v1-ConnectResponse"></a>
-
-### ConnectResponse
-
-
-
-
-
-
-
-<a name="atomix-proxy-v1-DisconnectRequest"></a>
-
-### DisconnectRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-proxy-v1-StoreId) |  |  |
-
-
-
-
-
-
-<a name="atomix-proxy-v1-DisconnectResponse"></a>
-
-### DisconnectResponse
-
-
-
-
-
-
-
-<a name="atomix-proxy-v1-DriverId"></a>
-
-### DriverId
+### PrimitiveId
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  |  |
-| version | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-proxy-v1-StoreId"></a>
-
-### StoreId
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| namespace | [string](#string) |  |  |
-| name | [string](#string) |  |  |
 
 
 
@@ -140,18 +36,6 @@
  
 
  
-
-
-<a name="atomix-proxy-v1-Proxy"></a>
-
-### Proxy
-
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| Connect | [ConnectRequest](#atomix-proxy-v1-ConnectRequest) | [ConnectResponse](#atomix-proxy-v1-ConnectResponse) |  |
-| Configure | [ConfigureRequest](#atomix-proxy-v1-ConfigureRequest) | [ConfigureResponse](#atomix-proxy-v1-ConfigureResponse) |  |
-| Disconnect | [DisconnectRequest](#atomix-proxy-v1-DisconnectRequest) | [DisconnectResponse](#atomix-proxy-v1-DisconnectResponse) |  |
 
  
 

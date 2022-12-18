@@ -3,100 +3,49 @@
 
 ## Table of Contents
 
-- [proxy/v1/proxy.proto](#proxy_v1_proxy-proto)
-    - [ConfigureRequest](#atomix-proxy-v1-ConfigureRequest)
-    - [ConfigureResponse](#atomix-proxy-v1-ConfigureResponse)
-    - [ConnectRequest](#atomix-proxy-v1-ConnectRequest)
-    - [ConnectResponse](#atomix-proxy-v1-ConnectResponse)
-    - [DisconnectRequest](#atomix-proxy-v1-DisconnectRequest)
-    - [DisconnectResponse](#atomix-proxy-v1-DisconnectResponse)
-    - [DriverId](#atomix-proxy-v1-DriverId)
-    - [StoreId](#atomix-proxy-v1-StoreId)
+- [runtime/lock/v1/lock.proto](#runtime_lock_v1_lock-proto)
+    - [CloseRequest](#atomix-runtime-lock-v1-CloseRequest)
+    - [CloseResponse](#atomix-runtime-lock-v1-CloseResponse)
+    - [CreateRequest](#atomix-runtime-lock-v1-CreateRequest)
+    - [CreateResponse](#atomix-runtime-lock-v1-CreateResponse)
+    - [GetLockRequest](#atomix-runtime-lock-v1-GetLockRequest)
+    - [GetLockResponse](#atomix-runtime-lock-v1-GetLockResponse)
+    - [LockRequest](#atomix-runtime-lock-v1-LockRequest)
+    - [LockResponse](#atomix-runtime-lock-v1-LockResponse)
+    - [UnlockRequest](#atomix-runtime-lock-v1-UnlockRequest)
+    - [UnlockResponse](#atomix-runtime-lock-v1-UnlockResponse)
   
-    - [Proxy](#atomix-proxy-v1-Proxy)
+    - [Lock](#atomix-runtime-lock-v1-Lock)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="proxy_v1_proxy-proto"></a>
+<a name="runtime_lock_v1_lock-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## proxy/v1/proxy.proto
+## runtime/lock/v1/lock.proto
 
 
 
-<a name="atomix-proxy-v1-ConfigureRequest"></a>
+<a name="atomix-runtime-lock-v1-CloseRequest"></a>
 
-### ConfigureRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-proxy-v1-StoreId) |  |  |
-| config | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="atomix-proxy-v1-ConfigureResponse"></a>
-
-### ConfigureResponse
-
-
-
-
-
-
-
-<a name="atomix-proxy-v1-ConnectRequest"></a>
-
-### ConnectRequest
+### CloseRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-proxy-v1-StoreId) |  |  |
-| driver_id | [DriverId](#atomix-proxy-v1-DriverId) |  |  |
-| config | [bytes](#bytes) |  |  |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 
 
 
 
 
 
-<a name="atomix-proxy-v1-ConnectResponse"></a>
+<a name="atomix-runtime-lock-v1-CloseResponse"></a>
 
-### ConnectResponse
-
-
-
-
-
-
-
-<a name="atomix-proxy-v1-DisconnectRequest"></a>
-
-### DisconnectRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-proxy-v1-StoreId) |  |  |
-
-
-
-
-
-
-<a name="atomix-proxy-v1-DisconnectResponse"></a>
-
-### DisconnectResponse
+### CloseResponse
 
 
 
@@ -104,32 +53,112 @@
 
 
 
-<a name="atomix-proxy-v1-DriverId"></a>
+<a name="atomix-runtime-lock-v1-CreateRequest"></a>
 
-### DriverId
+### CreateRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| version | [string](#string) |  |  |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| tags | [string](#string) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-proxy-v1-StoreId"></a>
+<a name="atomix-runtime-lock-v1-CreateResponse"></a>
 
-### StoreId
+### CreateResponse
+
+
+
+
+
+
+
+<a name="atomix-runtime-lock-v1-GetLockRequest"></a>
+
+### GetLockRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| namespace | [string](#string) |  |  |
-| name | [string](#string) |  |  |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-lock-v1-GetLockResponse"></a>
+
+### GetLockResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-lock-v1-LockRequest"></a>
+
+### LockRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| timeout | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-lock-v1-LockResponse"></a>
+
+### LockResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-lock-v1-UnlockRequest"></a>
+
+### UnlockRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-lock-v1-UnlockResponse"></a>
+
+### UnlockResponse
+
 
 
 
@@ -142,16 +171,18 @@
  
 
 
-<a name="atomix-proxy-v1-Proxy"></a>
+<a name="atomix-runtime-lock-v1-Lock"></a>
 
-### Proxy
-
+### Lock
+Lock is a service for a lock primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Connect | [ConnectRequest](#atomix-proxy-v1-ConnectRequest) | [ConnectResponse](#atomix-proxy-v1-ConnectResponse) |  |
-| Configure | [ConfigureRequest](#atomix-proxy-v1-ConfigureRequest) | [ConfigureResponse](#atomix-proxy-v1-ConfigureResponse) |  |
-| Disconnect | [DisconnectRequest](#atomix-proxy-v1-DisconnectRequest) | [DisconnectResponse](#atomix-proxy-v1-DisconnectResponse) |  |
+| Create | [CreateRequest](#atomix-runtime-lock-v1-CreateRequest) | [CreateResponse](#atomix-runtime-lock-v1-CreateResponse) | Create creates the lock |
+| Close | [CloseRequest](#atomix-runtime-lock-v1-CloseRequest) | [CloseResponse](#atomix-runtime-lock-v1-CloseResponse) | Close closes the lock |
+| Lock | [LockRequest](#atomix-runtime-lock-v1-LockRequest) | [LockResponse](#atomix-runtime-lock-v1-LockResponse) | Lock attempts to acquire the lock |
+| Unlock | [UnlockRequest](#atomix-runtime-lock-v1-UnlockRequest) | [UnlockResponse](#atomix-runtime-lock-v1-UnlockResponse) | Unlock releases the lock |
+| GetLock | [GetLockRequest](#atomix-runtime-lock-v1-GetLockRequest) | [GetLockResponse](#atomix-runtime-lock-v1-GetLockResponse) | GetLock gets the lock state |
 
  
 

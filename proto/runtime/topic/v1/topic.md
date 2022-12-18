@@ -3,100 +3,47 @@
 
 ## Table of Contents
 
-- [proxy/v1/proxy.proto](#proxy_v1_proxy-proto)
-    - [ConfigureRequest](#atomix-proxy-v1-ConfigureRequest)
-    - [ConfigureResponse](#atomix-proxy-v1-ConfigureResponse)
-    - [ConnectRequest](#atomix-proxy-v1-ConnectRequest)
-    - [ConnectResponse](#atomix-proxy-v1-ConnectResponse)
-    - [DisconnectRequest](#atomix-proxy-v1-DisconnectRequest)
-    - [DisconnectResponse](#atomix-proxy-v1-DisconnectResponse)
-    - [DriverId](#atomix-proxy-v1-DriverId)
-    - [StoreId](#atomix-proxy-v1-StoreId)
+- [runtime/topic/v1/topic.proto](#runtime_topic_v1_topic-proto)
+    - [CloseRequest](#atomix-runtime-topic-v1-CloseRequest)
+    - [CloseResponse](#atomix-runtime-topic-v1-CloseResponse)
+    - [CreateRequest](#atomix-runtime-topic-v1-CreateRequest)
+    - [CreateResponse](#atomix-runtime-topic-v1-CreateResponse)
+    - [PublishRequest](#atomix-runtime-topic-v1-PublishRequest)
+    - [PublishResponse](#atomix-runtime-topic-v1-PublishResponse)
+    - [SubscribeRequest](#atomix-runtime-topic-v1-SubscribeRequest)
+    - [SubscribeResponse](#atomix-runtime-topic-v1-SubscribeResponse)
   
-    - [Proxy](#atomix-proxy-v1-Proxy)
+    - [Topic](#atomix-runtime-topic-v1-Topic)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="proxy_v1_proxy-proto"></a>
+<a name="runtime_topic_v1_topic-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## proxy/v1/proxy.proto
+## runtime/topic/v1/topic.proto
 
 
 
-<a name="atomix-proxy-v1-ConfigureRequest"></a>
+<a name="atomix-runtime-topic-v1-CloseRequest"></a>
 
-### ConfigureRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-proxy-v1-StoreId) |  |  |
-| config | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="atomix-proxy-v1-ConfigureResponse"></a>
-
-### ConfigureResponse
-
-
-
-
-
-
-
-<a name="atomix-proxy-v1-ConnectRequest"></a>
-
-### ConnectRequest
+### CloseRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-proxy-v1-StoreId) |  |  |
-| driver_id | [DriverId](#atomix-proxy-v1-DriverId) |  |  |
-| config | [bytes](#bytes) |  |  |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
 
 
 
 
 
 
-<a name="atomix-proxy-v1-ConnectResponse"></a>
+<a name="atomix-runtime-topic-v1-CloseResponse"></a>
 
-### ConnectResponse
-
-
-
-
-
-
-
-<a name="atomix-proxy-v1-DisconnectRequest"></a>
-
-### DisconnectRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-proxy-v1-StoreId) |  |  |
-
-
-
-
-
-
-<a name="atomix-proxy-v1-DisconnectResponse"></a>
-
-### DisconnectResponse
+### CloseResponse
 
 
 
@@ -104,32 +51,84 @@
 
 
 
-<a name="atomix-proxy-v1-DriverId"></a>
+<a name="atomix-runtime-topic-v1-CreateRequest"></a>
 
-### DriverId
+### CreateRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| version | [string](#string) |  |  |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| tags | [string](#string) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-proxy-v1-StoreId"></a>
+<a name="atomix-runtime-topic-v1-CreateResponse"></a>
 
-### StoreId
+### CreateResponse
+
+
+
+
+
+
+
+<a name="atomix-runtime-topic-v1-PublishRequest"></a>
+
+### PublishRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| namespace | [string](#string) |  |  |
-| name | [string](#string) |  |  |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+| payload | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-topic-v1-PublishResponse"></a>
+
+### PublishResponse
+
+
+
+
+
+
+
+<a name="atomix-runtime-topic-v1-SubscribeRequest"></a>
+
+### SubscribeRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveId](#atomix-runtime-v1-PrimitiveId) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-topic-v1-SubscribeResponse"></a>
+
+### SubscribeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| offset | [uint64](#uint64) |  |  |
+| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| payload | [bytes](#bytes) |  |  |
 
 
 
@@ -142,16 +141,17 @@
  
 
 
-<a name="atomix-proxy-v1-Proxy"></a>
+<a name="atomix-runtime-topic-v1-Topic"></a>
 
-### Proxy
+### Topic
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Connect | [ConnectRequest](#atomix-proxy-v1-ConnectRequest) | [ConnectResponse](#atomix-proxy-v1-ConnectResponse) |  |
-| Configure | [ConfigureRequest](#atomix-proxy-v1-ConfigureRequest) | [ConfigureResponse](#atomix-proxy-v1-ConfigureResponse) |  |
-| Disconnect | [DisconnectRequest](#atomix-proxy-v1-DisconnectRequest) | [DisconnectResponse](#atomix-proxy-v1-DisconnectResponse) |  |
+| Create | [CreateRequest](#atomix-runtime-topic-v1-CreateRequest) | [CreateResponse](#atomix-runtime-topic-v1-CreateResponse) | Create creates the topic |
+| Close | [CloseRequest](#atomix-runtime-topic-v1-CloseRequest) | [CloseResponse](#atomix-runtime-topic-v1-CloseResponse) | Close closes the topic |
+| Publish | [PublishRequest](#atomix-runtime-topic-v1-PublishRequest) | [PublishResponse](#atomix-runtime-topic-v1-PublishResponse) | Publish publishes a message to the topic |
+| Subscribe | [SubscribeRequest](#atomix-runtime-topic-v1-SubscribeRequest) | [SubscribeResponse](#atomix-runtime-topic-v1-SubscribeResponse) stream | Subscribe subscribes to receive messages from the topic |
 
  
 

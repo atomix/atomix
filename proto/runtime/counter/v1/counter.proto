@@ -1,0 +1,129 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.counter.v1;
+
+option java_package = "io.atomix.api.counter.v1";
+option java_outer_classname = "CounterV1";
+option java_multiple_files = true;
+
+import "runtime/v1/primitive.proto";
+import "gogoproto/gogo.proto";
+
+// Counter is a service for a counter primitive
+service Counter {
+    // Create creates the counter
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the counter
+    rpc Close (CloseRequest) returns (CloseResponse);
+
+    // Set sets the counter value
+    rpc Set (SetRequest) returns (SetResponse);
+
+    // Update compares and updates the counter value
+    rpc Update (UpdateRequest) returns (UpdateResponse);
+
+    // Get gets the current counter value
+    rpc Get (GetRequest) returns (GetResponse);
+
+    // Increment increments the counter value
+    rpc Increment (IncrementRequest) returns (IncrementResponse);
+
+    // Decrement decrements the counter value
+    rpc Decrement (DecrementRequest) returns (DecrementResponse);
+}
+
+message CreateRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated string tags = 2;
+}
+
+message CreateResponse {
+
+}
+
+message CloseRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}
+
+message IncrementRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    int64 delta = 2;
+}
+
+message IncrementResponse {
+    int64 value = 1;
+}
+
+message DecrementRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    int64 delta = 2;
+}
+
+message DecrementResponse {
+    int64 value = 1;
+}
+
+message GetRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message GetResponse {
+    int64 value = 1;
+}
+
+message Precondition {
+    oneof precondition {
+        int64 value = 1;
+    }
+}
+
+message SetRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    int64 value = 2;
+}
+
+message SetResponse {
+    int64 value = 1;
+}
+
+message UpdateRequest {
+    atomix.runtime.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    int64 check = 2;
+    int64 update = 3;
+}
+
+message UpdateResponse {
+    int64 value = 1;
+}
