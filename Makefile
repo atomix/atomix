@@ -3,11 +3,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: api common controller driver logging proxy runtime
+build: api common controller driver logging proto proxy runtime
 
 .PHONY: api
 api:
-	$(MAKE) -C api build
+	@find ./api -name '*.pb.go' -delete
+	docker run -i \
+		-v `pwd`:/build \
+		atomix/codegen:go-latest \
+		--proto-path ./proto --go-path ./api/pkg --import-path github.com/atomix/atomix/api/pkg
 
 .PHONY: common
 common:
@@ -24,6 +28,10 @@ driver:
 .PHONY: logging
 logging:
 	$(MAKE) -C logging build
+
+.PHONY: proto
+proto:
+	$(MAKE) -C proto build
 
 .PHONY: proxy
 proxy:
