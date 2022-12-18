@@ -8,7 +8,7 @@ build: # @HELP build the runtime
 build: deps
 
 deps: # @HELP build the runtime dependencies
-	helm dep update .
+	helm dep update helm
 
 reuse-tool: # @HELP install reuse if not present
 	command -v reuse || python3 -m pip install reuse
