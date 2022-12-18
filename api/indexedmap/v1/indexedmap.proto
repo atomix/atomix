@@ -1,0 +1,288 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.indexedmap.v1;
+
+option java_package = "io.atomix.api.indexedmap.v1";
+option java_outer_classname = "IndexedMapV1";
+option java_multiple_files = true;
+
+import "google/protobuf/duration.proto";
+import "v1/primitive.proto";
+import "gogoproto/gogo.proto";
+
+// IndexedMap is a service for a sorted/indexed map primitive
+service IndexedMap {
+    // Create creates the map
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the map
+    rpc Close (CloseRequest) returns (CloseResponse);
+
+    // Size returns the size of the map
+    rpc Size (SizeRequest) returns (SizeResponse);
+
+    // Append appends an entry to the map
+    rpc Append (AppendRequest) returns (AppendResponse);
+
+    // Update updates an entry in the map
+    rpc Update (UpdateRequest) returns (UpdateResponse);
+
+    // Get gets the entry for a key
+    rpc Get (GetRequest) returns (GetResponse);
+
+    // FirstEntry gets the first entry in the map
+    rpc FirstEntry (FirstEntryRequest) returns (FirstEntryResponse);
+
+    // LastEntry gets the last entry in the map
+    rpc LastEntry (LastEntryRequest) returns (LastEntryResponse);
+
+    // PrevEntry gets the previous entry in the map
+    rpc PrevEntry (PrevEntryRequest) returns (PrevEntryResponse);
+
+    // NextEntry gets the next entry in the map
+    rpc NextEntry (NextEntryRequest) returns (NextEntryResponse);
+
+    // Remove removes an entry from the map
+    rpc Remove (RemoveRequest) returns (RemoveResponse);
+
+    // Clear removes all entries from the map
+    rpc Clear (ClearRequest) returns (ClearResponse);
+
+    // Events listens for change events
+    rpc Events (EventsRequest) returns (stream EventsResponse);
+
+    // Entries lists all entries in the map
+    rpc Entries (EntriesRequest) returns (stream EntriesResponse);
+}
+
+message SizeRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CreateRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated string tags = 2;
+}
+
+message CreateResponse {
+
+}
+
+message CloseRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}
+
+message SizeResponse {
+    uint32 size = 1;
+}
+
+message AppendRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    bytes value = 3;
+    google.protobuf.Duration ttl = 4 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
+}
+
+message AppendResponse {
+    Entry entry = 1;
+}
+
+message UpdateRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    uint64 index = 3;
+    bytes value = 4;
+    google.protobuf.Duration ttl = 5 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
+    uint64 prev_version = 6;
+}
+
+message UpdateResponse {
+    Entry entry = 1;
+}
+
+message GetRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    uint64 index = 3;
+}
+
+message GetResponse {
+    Entry entry = 1;
+}
+
+message FirstEntryRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message FirstEntryResponse {
+    Entry entry = 1;
+}
+
+message LastEntryRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message LastEntryResponse {
+    Entry entry = 1;
+}
+
+message PrevEntryRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 index = 2;
+}
+
+message PrevEntryResponse {
+    Entry entry = 1;
+}
+
+message NextEntryRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    uint64 index = 2;
+}
+
+message NextEntryResponse {
+    Entry entry = 1;
+}
+
+message RemoveRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+    uint64 index = 3;
+    uint64 prev_version = 4;
+}
+
+message RemoveResponse {
+    Entry entry = 1;
+}
+
+message ClearRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ClearResponse {
+
+}
+
+message EntriesRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    bool watch = 2;
+}
+
+message EntriesResponse {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EventsRequest {
+    atomix.v1.PrimitiveId id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    string key = 2;
+}
+
+message EventsResponse {
+    Event event = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Event {
+    string key = 1;
+    uint64 index = 2;
+
+    oneof event {
+        Inserted inserted = 3;
+        Updated updated = 4;
+        Removed removed = 5;
+    }
+
+    message Inserted {
+        VersionedValue value = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Updated {
+        VersionedValue value = 1 [
+            (gogoproto.nullable) = false
+        ];
+        VersionedValue prev_value = 2 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Removed {
+        VersionedValue value = 1 [
+            (gogoproto.nullable) = false
+        ];
+        bool expired = 2;
+    }
+}
+
+message VersionedValue {
+    bytes value = 1;
+    uint64 version = 2;
+}
+
+message Entry {
+    string key = 1;
+    uint64 index = 2;
+    VersionedValue value = 3;
+}
