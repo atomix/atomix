@@ -5,11 +5,10 @@
 package v1
 
 import (
-	topicv1 "github.com/atomix/atomix/api/pkg/topic/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/driver"
 )
 
-type TopicProxy topicv1.TopicServer
+type TopicProxy TopicServer
 
 type TopicProvider interface {
 	NewTopic(spec driver.PrimitiveSpec) (TopicProxy, error)

@@ -5,11 +5,10 @@
 package v1
 
 import (
-	counterv1 "github.com/atomix/atomix/api/pkg/counter/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/driver"
 )
 
-type CounterProxy counterv1.CounterServer
+type CounterProxy CounterServer
 
 type CounterProvider interface {
 	NewCounter(spec driver.PrimitiveSpec) (CounterProxy, error)

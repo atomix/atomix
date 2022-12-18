@@ -5,11 +5,10 @@
 package v1
 
 import (
-	setv1 "github.com/atomix/atomix/api/pkg/set/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/driver"
 )
 
-type SetProxy setv1.SetServer
+type SetProxy SetServer
 
 type SetProvider interface {
 	NewSet(spec driver.PrimitiveSpec) (SetProxy, error)

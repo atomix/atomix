@@ -5,11 +5,10 @@
 package v1
 
 import (
-	valuev1 "github.com/atomix/atomix/api/pkg/value/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/driver"
 )
 
-type ValueProxy valuev1.ValueServer
+type ValueProxy ValueServer
 
 type ValueProvider interface {
 	NewValue(spec driver.PrimitiveSpec) (ValueProxy, error)

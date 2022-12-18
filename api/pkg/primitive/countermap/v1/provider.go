@@ -5,11 +5,10 @@
 package v1
 
 import (
-	countermapv1 "github.com/atomix/atomix/api/pkg/countermap/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/driver"
 )
 
-type CounterMapProxy countermapv1.CounterMapServer
+type CounterMapProxy CounterMapServer
 
 type CounterMapProvider interface {
 	NewCounterMap(spec driver.PrimitiveSpec) (CounterMapProxy, error)

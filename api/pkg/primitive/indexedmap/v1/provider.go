@@ -5,11 +5,10 @@
 package v1
 
 import (
-	indexedmapv1 "github.com/atomix/atomix/api/pkg/indexedmap/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/driver"
 )
 
-type IndexedMapProxy indexedmapv1.IndexedMapServer
+type IndexedMapProxy IndexedMapServer
 
 type IndexedMapProvider interface {
 	NewIndexedMap(spec driver.PrimitiveSpec) (IndexedMapProxy, error)

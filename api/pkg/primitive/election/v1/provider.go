@@ -5,11 +5,10 @@
 package v1
 
 import (
-	electionv1 "github.com/atomix/atomix/api/pkg/election/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/driver"
 )
 
-type LeaderElectionProxy electionv1.LeaderElectionServer
+type LeaderElectionProxy LeaderElectionServer
 
 type LeaderElectionProvider interface {
 	NewLeaderElection(spec driver.PrimitiveSpec) (LeaderElectionProxy, error)

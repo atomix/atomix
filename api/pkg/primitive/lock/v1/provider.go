@@ -5,11 +5,10 @@
 package v1
 
 import (
-	lockv1 "github.com/atomix/atomix/api/pkg/lock/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/driver"
 )
 
-type LockProxy lockv1.LockServer
+type LockProxy LockServer
 
 type LockProvider interface {
 	NewLock(spec driver.PrimitiveSpec) (LockProxy, error)

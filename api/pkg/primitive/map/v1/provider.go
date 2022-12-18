@@ -5,11 +5,10 @@
 package v1
 
 import (
-	mapv1 "github.com/atomix/atomix/api/pkg/map/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/driver"
 )
 
-type MapProxy mapv1.MapServer
+type MapProxy MapServer
 
 type MapProvider interface {
 	NewMap(spec driver.PrimitiveSpec) (MapProxy, error)

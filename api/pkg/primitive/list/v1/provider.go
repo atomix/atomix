@@ -5,11 +5,10 @@
 package v1
 
 import (
-	listv1 "github.com/atomix/atomix/api/pkg/list/v1"
-	"github.com/atomix/atomix/driver/pkg/driver"
+	"github.com/atomix/atomix/api/pkg/driver"
 )
 
-type ListProxy listv1.ListServer
+type ListProxy ListServer
 
 type ListProvider interface {
 	NewList(spec driver.PrimitiveSpec) (ListProxy, error)
