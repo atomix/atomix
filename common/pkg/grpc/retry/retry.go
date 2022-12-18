@@ -6,7 +6,7 @@ package retry
 
 import (
 	"context"
-	"github.com/atomix/atomix/runtime/pkg/logging"
+	"github.com/atomix/atomix/common/pkg/logging"
 	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
