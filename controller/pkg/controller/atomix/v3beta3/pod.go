@@ -7,9 +7,9 @@ package v3beta3
 import (
 	"context"
 	"fmt"
+	"github.com/atomix/atomix/api/pkg/errors"
+	proxyv1 "github.com/atomix/atomix/api/pkg/proxy/v1"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
-	proxyv1 "github.com/atomix/atomix/proxy/api/atomix/proxy/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	corev1 "k8s.io/api/core/v1"

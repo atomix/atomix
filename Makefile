@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: api common controller driver proto proxy runtime
+build: api common controller proto proxy runtime
 
 .PHONY: api
 api:
@@ -20,10 +20,6 @@ common:
 .PHONY: controller
 controller:
 	$(MAKE) -C controller build
-
-.PHONY: driver
-driver:
-	$(MAKE) -C driver build
 
 .PHONY: proto
 proto:

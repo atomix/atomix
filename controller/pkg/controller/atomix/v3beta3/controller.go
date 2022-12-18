@@ -5,7 +5,7 @@
 package v3beta3
 
 import (
-	"github.com/atomix/atomix/runtime/pkg/logging"
+	"github.com/atomix/atomix/common/pkg/logging"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
