@@ -3,12 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 apiVersion: v2
-name: atomix-runtime
-description: Umbrella chart for deploying Atomix runtime controllers
+name: atomix
+description: Chart for deploying Atomix with storage various controllers
 kubeVersion: ">=1.17.0"
 type: application
-version: 0.1.8
-appVersion: v0.1.8
+version: 1.0.0
 keywords:
 - atomix
 home: https://atomix.io
@@ -16,8 +15,8 @@ maintainers:
 - name: Jordan Halterman
   email: jordan.halterman@intel.com
 dependencies:
-  - name: atomix-runtime-controller
-    version: 1.6.7
+  - name: atomix-controller
+    version: 2.0.0
     repository: https://charts.atomix.io
     alias: controller
   - name: atomix-consensus-controller

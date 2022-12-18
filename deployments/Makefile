@@ -2,12 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: build deps
-
-build: # @HELP build the runtime
 build: deps
 
-deps: # @HELP build the runtime dependencies
+deps: # @HELP build the deployments
 	helm dep update helm
 
 reuse-tool: # @HELP install reuse if not present

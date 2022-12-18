@@ -4,10 +4,10 @@
 
 apiVersion: v2
 name: atomix-controller
-description: The core Atomix controller implements the Atomix Cloud API
+description: The core Atomix controller provides custom resources for Atomix data stores
 kubeVersion: ">=1.17.0"
 type: application
-version: 1.6.7
+version: 2.0.0
 appVersion: v0.7.7
 keywords:
 - atomix
