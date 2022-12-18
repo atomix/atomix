@@ -12,7 +12,7 @@ option java_package = "io.atomix.api.election.v1";
 option java_outer_classname = "LeaderElectionV1";
 option java_multiple_files = true;
 
-import "runtime/v1/primitive.proto";
+import "runtime/v1/runtime.proto";
 import "gogoproto/gogo.proto";
 
 // LeaderElection is a service for a leader election primitive
@@ -49,7 +49,7 @@ service LeaderElection {
 }
 
 message CreateRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -61,7 +61,7 @@ message CreateResponse {
 }
 
 message CloseRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -72,7 +72,7 @@ message CloseResponse {
 }
 
 message EnterRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -86,7 +86,7 @@ message EnterResponse {
 }
 
 message WithdrawRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -100,7 +100,7 @@ message WithdrawResponse {
 }
 
 message AnointRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -114,7 +114,7 @@ message AnointResponse {
 }
 
 message PromoteRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -128,7 +128,7 @@ message PromoteResponse {
 }
 
 message DemoteRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -142,7 +142,7 @@ message DemoteResponse {
 }
 
 message EvictRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -156,7 +156,7 @@ message EvictResponse {
 }
 
 message GetTermRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -169,7 +169,7 @@ message GetTermResponse {
 }
 
 message WatchRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];

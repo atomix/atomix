@@ -13,7 +13,7 @@ option java_outer_classname = "SetV1";
 option java_multiple_files = true;
 
 import "google/protobuf/duration.proto";
-import "runtime/v1/primitive.proto";
+import "runtime/v1/runtime.proto";
 import "gogoproto/gogo.proto";
 
 // Set is a service for a set primitive
@@ -47,7 +47,7 @@ service Set {
 }
 
 message CreateRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -59,7 +59,7 @@ message CreateResponse {
 }
 
 message CloseRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -70,7 +70,7 @@ message CloseResponse {
 }
 
 message SizeRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -81,7 +81,7 @@ message SizeResponse {
 }
 
 message ContainsRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -95,7 +95,7 @@ message ContainsResponse {
 }
 
 message AddRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -115,7 +115,7 @@ message AddResponse {
 }
 
 message RemoveRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -131,7 +131,7 @@ message RemoveResponse {
 }
 
 message ClearRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -142,7 +142,7 @@ message ClearResponse {
 }
 
 message EventsRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -175,7 +175,7 @@ message Event {
 }
 
 message ElementsRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];

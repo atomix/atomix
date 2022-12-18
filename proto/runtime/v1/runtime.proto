@@ -21,7 +21,7 @@ service Runtime {
 }
 
 message Route {
-    StoreId store_id = 1 [
+    StoreID store_id = 1 [
         (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
     ];
@@ -36,23 +36,27 @@ message Service {
     bytes config = 2;
 }
 
-message StoreId {
+message StoreID {
     string namespace = 1;
     string name = 2;
 }
 
-message DriverId {
+message DriverID {
     option (gogoproto.equal) = true;
     string name = 1;
     string version = 2;
 }
 
+message PrimitiveID {
+    string name = 1;
+}
+
 message ConnectRequest {
-    StoreId store_id = 1 [
+    StoreID store_id = 1 [
         (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
     ];
-    DriverId driver_id = 2 [
+    DriverID driver_id = 2 [
         (gogoproto.customname) = "DriverID",
         (gogoproto.nullable) = false
     ];
@@ -64,7 +68,7 @@ message ConnectResponse {
 }
 
 message ConfigureRequest {
-    StoreId store_id = 1 [
+    StoreID store_id = 1 [
         (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
     ];
@@ -76,7 +80,7 @@ message ConfigureResponse {
 }
 
 message DisconnectRequest {
-    StoreId store_id = 1 [
+    StoreID store_id = 1 [
         (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
     ];

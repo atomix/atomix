@@ -12,7 +12,7 @@ option java_package = "io.atomix.api.counter.v1";
 option java_outer_classname = "CounterV1";
 option java_multiple_files = true;
 
-import "runtime/v1/primitive.proto";
+import "runtime/v1/runtime.proto";
 import "gogoproto/gogo.proto";
 
 // Counter is a service for a counter primitive
@@ -40,7 +40,7 @@ service Counter {
 }
 
 message CreateRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -52,7 +52,7 @@ message CreateResponse {
 }
 
 message CloseRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -63,7 +63,7 @@ message CloseResponse {
 }
 
 message IncrementRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -75,7 +75,7 @@ message IncrementResponse {
 }
 
 message DecrementRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -87,7 +87,7 @@ message DecrementResponse {
 }
 
 message GetRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -104,7 +104,7 @@ message Precondition {
 }
 
 message SetRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -116,7 +116,7 @@ message SetResponse {
 }
 
 message UpdateRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];

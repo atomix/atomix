@@ -12,7 +12,7 @@ option java_package = "io.atomix.api.topic.v1";
 option java_outer_classname = "TopicV1";
 option java_multiple_files = true;
 
-import "runtime/v1/primitive.proto";
+import "runtime/v1/runtime.proto";
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -31,7 +31,7 @@ service Topic {
 }
 
 message CreateRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -43,7 +43,7 @@ message CreateResponse {
 }
 
 message CloseRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -54,7 +54,7 @@ message CloseResponse {
 }
 
 message PublishRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -66,7 +66,7 @@ message PublishResponse {
 }
 
 message SubscribeRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];

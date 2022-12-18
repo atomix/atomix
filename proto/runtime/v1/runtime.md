@@ -10,10 +10,11 @@
     - [ConnectResponse](#atomix-runtime-v1-ConnectResponse)
     - [DisconnectRequest](#atomix-runtime-v1-DisconnectRequest)
     - [DisconnectResponse](#atomix-runtime-v1-DisconnectResponse)
-    - [DriverId](#atomix-runtime-v1-DriverId)
+    - [DriverID](#atomix-runtime-v1-DriverID)
+    - [PrimitiveID](#atomix-runtime-v1-PrimitiveID)
     - [Route](#atomix-runtime-v1-Route)
     - [Service](#atomix-runtime-v1-Service)
-    - [StoreId](#atomix-runtime-v1-StoreId)
+    - [StoreID](#atomix-runtime-v1-StoreID)
   
     - [Runtime](#atomix-runtime-v1-Runtime)
   
@@ -36,7 +37,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-runtime-v1-StoreId) |  |  |
+| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
 | config | [bytes](#bytes) |  |  |
 
 
@@ -62,8 +63,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-runtime-v1-StoreId) |  |  |
-| driver_id | [DriverId](#atomix-runtime-v1-DriverId) |  |  |
+| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
+| driver_id | [DriverID](#atomix-runtime-v1-DriverID) |  |  |
 | config | [bytes](#bytes) |  |  |
 
 
@@ -89,7 +90,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-runtime-v1-StoreId) |  |  |
+| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
 
 
 
@@ -106,9 +107,9 @@
 
 
 
-<a name="atomix-runtime-v1-DriverId"></a>
+<a name="atomix-runtime-v1-DriverID"></a>
 
-### DriverId
+### DriverID
 
 
 
@@ -116,6 +117,21 @@
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  |  |
 | version | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-PrimitiveID"></a>
+
+### PrimitiveID
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
 
 
 
@@ -130,7 +146,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| store_id | [StoreId](#atomix-runtime-v1-StoreId) |  |  |
+| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
 | tags | [string](#string) | repeated |  |
 | services | [Service](#atomix-runtime-v1-Service) | repeated |  |
 
@@ -155,9 +171,9 @@
 
 
 
-<a name="atomix-runtime-v1-StoreId"></a>
+<a name="atomix-runtime-v1-StoreID"></a>
 
-### StoreId
+### StoreID
 
 
 

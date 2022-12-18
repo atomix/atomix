@@ -13,7 +13,7 @@ option java_outer_classname = "LockV1";
 option java_multiple_files = true;
 
 import "google/protobuf/duration.proto";
-import "runtime/v1/primitive.proto";
+import "runtime/v1/runtime.proto";
 import "gogoproto/gogo.proto";
 
 // Lock is a service for a lock primitive
@@ -35,7 +35,7 @@ service Lock {
 }
 
 message CreateRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -47,7 +47,7 @@ message CreateResponse {
 }
 
 message CloseRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -58,7 +58,7 @@ message CloseResponse {
 }
 
 message LockRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -72,7 +72,7 @@ message LockResponse {
 }
 
 message UnlockRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
@@ -83,7 +83,7 @@ message UnlockResponse {
 }
 
 message GetLockRequest {
-    atomix.runtime.v1.PrimitiveId id = 1 [
+    atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
         (gogoproto.nullable) = false
     ];
