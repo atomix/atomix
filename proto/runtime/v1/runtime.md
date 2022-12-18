@@ -11,6 +11,8 @@
     - [DisconnectRequest](#atomix-runtime-v1-DisconnectRequest)
     - [DisconnectResponse](#atomix-runtime-v1-DisconnectResponse)
     - [DriverId](#atomix-runtime-v1-DriverId)
+    - [Route](#atomix-runtime-v1-Route)
+    - [Service](#atomix-runtime-v1-Service)
     - [StoreId](#atomix-runtime-v1-StoreId)
   
     - [Runtime](#atomix-runtime-v1-Runtime)
@@ -114,6 +116,39 @@
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  |  |
 | version | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-Route"></a>
+
+### Route
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| store_id | [StoreId](#atomix-runtime-v1-StoreId) |  |  |
+| tags | [string](#string) | repeated |  |
+| services | [Service](#atomix-runtime-v1-Service) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-Service"></a>
+
+### Service
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| config | [bytes](#bytes) |  |  |
 
 
 
