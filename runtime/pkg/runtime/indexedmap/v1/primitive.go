@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[IndexedMap], bool) {
 type IndexedMap indexedmapv1.IndexedMapServer
 
 type IndexedMapProvider interface {
-	NewIndexedMap(config []byte) (IndexedMap, error)
+	NewIndexedMap(spec runtimev1.PrimitiveSpec) (IndexedMap, error)
 }

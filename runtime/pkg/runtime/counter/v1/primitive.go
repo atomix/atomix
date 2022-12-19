@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Counter], bool) {
 type Counter counterv1.CounterServer
 
 type CounterProvider interface {
-	NewCounter(config []byte) (Counter, error)
+	NewCounter(spec runtimev1.PrimitiveSpec) (Counter, error)
 }

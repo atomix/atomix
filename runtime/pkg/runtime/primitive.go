@@ -13,7 +13,7 @@ import (
 
 type PrimitiveResolver[T any] func(conn Conn) (PrimitiveProvider[T], bool)
 
-type PrimitiveProvider[T any] func(config []byte) (T, error)
+type PrimitiveProvider[T any] func(spec runtimev1.PrimitiveSpec) (T, error)
 
 func NewPrimitiveClient[T any](primitiveType runtimev1.PrimitiveType, runtime Runtime, resolver PrimitiveResolver[T]) *PrimitiveClient[T] {
 	return &PrimitiveClient[T]{
@@ -54,6 +54,14 @@ func (c *PrimitiveClient[T]) Create(ctx context.Context, primitiveID runtimev1.P
 		}
 	}
 
+	spec := runtimev1.PrimitiveSpec{
+		PrimitiveMeta: runtimev1.PrimitiveMeta{
+			Type:        c.primitiveType,
+			PrimitiveID: primitiveID,
+		},
+		Config: config,
+	}
+
 	conn, err := c.runtime.lookup(route.StoreID)
 	if err != nil {
 		return primitive, err
@@ -64,7 +72,7 @@ func (c *PrimitiveClient[T]) Create(ctx context.Context, primitiveID runtimev1.P
 		return primitive, errors.NewNotSupported("route does not support this primitive type")
 	}
 
-	primitive, err = provider(config)
+	primitive, err = provider(spec)
 	if err != nil {
 		return primitive, err
 	}

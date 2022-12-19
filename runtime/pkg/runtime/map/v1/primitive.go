@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Map], bool) {
 type Map mapv1.MapServer
 
 type MapProvider interface {
-	NewMap(config []byte) (Map, error)
+	NewMap(spec runtimev1.PrimitiveSpec) (Map, error)
 }

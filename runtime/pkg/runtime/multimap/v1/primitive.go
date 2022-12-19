@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[MultiMap], bool) {
 type MultiMap multimapv1.MultiMapServer
 
 type MultiMapProvider interface {
-	NewMultiMap(config []byte) (MultiMap, error)
+	NewMultiMap(spec runtimev1.PrimitiveSpec) (MultiMap, error)
 }

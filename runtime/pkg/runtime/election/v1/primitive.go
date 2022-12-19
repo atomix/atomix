@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[LeaderElection], bool
 type LeaderElection electionv1.LeaderElectionServer
 
 type LeaderElectionProvider interface {
-	NewLeaderElection(config []byte) (LeaderElection, error)
+	NewLeaderElection(spec runtimev1.PrimitiveSpec) (LeaderElection, error)
 }

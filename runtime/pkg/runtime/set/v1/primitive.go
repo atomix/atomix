@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Set], bool) {
 type Set setv1.SetServer
 
 type SetProvider interface {
-	NewSet(config []byte) (Set, error)
+	NewSet(spec runtimev1.PrimitiveSpec) (Set, error)
 }

@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Lock], bool) {
 type Lock lockv1.LockServer
 
 type LockProvider interface {
-	NewLock(config []byte) (Lock, error)
+	NewLock(spec runtimev1.PrimitiveSpec) (Lock, error)
 }

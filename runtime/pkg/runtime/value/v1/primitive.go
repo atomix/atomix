@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Value], bool) {
 type Value valuev1.ValueServer
 
 type ValueProvider interface {
-	NewValue(config []byte) (Value, error)
+	NewValue(spec runtimev1.PrimitiveSpec) (Value, error)
 }

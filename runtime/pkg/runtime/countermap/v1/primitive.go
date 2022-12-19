@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[CounterMap], bool) {
 type CounterMap countermapv1.CounterMapServer
 
 type CounterMapProvider interface {
-	NewCounterMap(config []byte) (CounterMap, error)
+	NewCounterMap(spec runtimev1.PrimitiveSpec) (CounterMap, error)
 }

@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[List], bool) {
 type List listv1.ListServer
 
 type ListProvider interface {
-	NewList(config []byte) (List, error)
+	NewList(spec runtimev1.PrimitiveSpec) (List, error)
 }

@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Topic], bool) {
 type Topic topicv1.TopicServer
 
 type TopicProvider interface {
-	NewTopic(config []byte) (Topic, error)
+	NewTopic(spec runtimev1.PrimitiveSpec) (Topic, error)
 }
