@@ -5,45 +5,58 @@
 package proxy
 
 import (
-	"github.com/atomix/atomix/common/pkg/network"
-	"github.com/atomix/atomix/common/pkg/service"
+	"github.com/atomix/atomix/runtime/pkg/network"
+	"github.com/atomix/atomix/runtime/pkg/runtime"
+	counterv1 "github.com/atomix/atomix/runtime/pkg/runtime/counter/v1"
+	countermapv1 "github.com/atomix/atomix/runtime/pkg/runtime/countermap/v1"
+	electionv1 "github.com/atomix/atomix/runtime/pkg/runtime/election/v1"
+	indexedmapv1 "github.com/atomix/atomix/runtime/pkg/runtime/indexedmap/v1"
+	listv1 "github.com/atomix/atomix/runtime/pkg/runtime/list/v1"
+	lockv1 "github.com/atomix/atomix/runtime/pkg/runtime/lock/v1"
+	mapv1 "github.com/atomix/atomix/runtime/pkg/runtime/map/v1"
+	multimapv1 "github.com/atomix/atomix/runtime/pkg/runtime/multimap/v1"
+	setv1 "github.com/atomix/atomix/runtime/pkg/runtime/set/v1"
+	topicv1 "github.com/atomix/atomix/runtime/pkg/runtime/topic/v1"
+	valuev1 "github.com/atomix/atomix/runtime/pkg/runtime/value/v1"
+	"google.golang.org/grpc"
 )
 
-func New(network network.Network, opts ...Option) *Proxy {
+func register(server *grpc.Server, runtime runtime.Runtime) {
+	counterv1.RegisterServer(server, runtime)
+	countermapv1.RegisterServer(server, runtime)
+	electionv1.RegisterServer(server, runtime)
+	indexedmapv1.RegisterServer(server, runtime)
+	listv1.RegisterServer(server, runtime)
+	lockv1.RegisterServer(server, runtime)
+	mapv1.RegisterServer(server, runtime)
+	multimapv1.RegisterServer(server, runtime)
+	setv1.RegisterServer(server, runtime)
+	topicv1.RegisterServer(server, runtime)
+	valuev1.RegisterServer(server, runtime)
+}
+
+type Proxy interface {
+	network.Service
+}
+
+func New(runtime runtime.Runtime, opts ...Option) Proxy {
 	var options Options
 	options.apply(opts...)
-	runtime := newRuntime(options)
-	return &Proxy{
+	p := &proxy{
 		Options: options,
-		runtime: newProxyService(runtime, network, options.Config.Server, options.ProxyService),
-		service: newProxyControlService(runtime, network, options.ProxyControlService),
 	}
+
+	server := grpc.NewServer(options.GRPCServerOptions...)
+	register(server, runtime)
+
+	p.Service = network.NewService(server,
+		network.WithDriver(network.NewDefaultDriver()),
+		network.WithHost(options.Host),
+		network.WithPort(options.Port))
+	return p
 }
 
-type Proxy struct {
+type proxy struct {
+	network.Service
 	Options
-	runtime service.Service
-	service service.Service
 }
-
-func (p *Proxy) Start() error {
-	if err := p.service.Start(); err != nil {
-		return err
-	}
-	if err := p.runtime.Start(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (p *Proxy) Stop() error {
-	if err := p.runtime.Stop(); err != nil {
-		return err
-	}
-	if err := p.service.Stop(); err != nil {
-		return err
-	}
-	return nil
-}
-
-var _ service.Service = (*Proxy)(nil)

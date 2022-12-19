@@ -7,8 +7,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/atomix/atomix/api/pkg/errors"
-	"github.com/atomix/atomix/common/pkg/logging"
+	"github.com/atomix/atomix/runtime/pkg/errors"
+	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/rogpeppe/go-internal/modfile"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -16,8 +16,6 @@ import (
 	"os/exec"
 	"path/filepath"
 )
-
-const sdkPath = "github.com/atomix/runtime/sdk"
 
 func init() {
 	logging.SetLevel(logging.DebugLevel)

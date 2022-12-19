@@ -5,44 +5,33 @@
 package proxy
 
 import (
-	"github.com/atomix/atomix/api/pkg/driver"
+	"github.com/atomix/atomix/runtime/pkg/network"
+	"google.golang.org/grpc"
 )
 
 const (
-	defaultRuntimePort = 5678
-	defaultProxyPort   = 5679
+	defaultPort = 5678
 )
 
 type Options struct {
-	Config              Config
-	ProxyService        ProxyServiceOptions
-	ProxyControlService ProxyControlServiceOptions
-	Drivers             []driver.Driver
-	PluginsDir          string
+	ServiceOptions
 }
 
 func (o *Options) apply(opts ...Option) {
-	o.ProxyService.Port = defaultRuntimePort
-	o.ProxyControlService.Port = defaultProxyPort
+	o.Network = network.NewDefaultDriver()
+	o.Port = defaultPort
 	for _, opt := range opts {
 		opt(o)
 	}
 }
 
-type Option func(*Options)
+type Option = func(*Options)
 
-type ServerOptions struct {
-	Host string
-	Port int
-}
-
-type ProxyServiceOptions struct {
-	ServerOptions
-	Types []Type
-}
-
-type ProxyControlServiceOptions struct {
-	ServerOptions
+type ServiceOptions struct {
+	Network           network.Driver
+	Host              string
+	Port              int
+	GRPCServerOptions []grpc.ServerOption
 }
 
 func WithOptions(opts Options) Option {
@@ -51,50 +40,30 @@ func WithOptions(opts Options) Option {
 	}
 }
 
-func WithConfig(config Config) Option {
+func WithNetwork(driver network.Driver) Option {
 	return func(options *Options) {
-		options.Config = config
-	}
-}
-
-func WithDrivers(drivers ...driver.Driver) Option {
-	return func(options *Options) {
-		options.Drivers = append(options.Drivers, drivers...)
-	}
-}
-
-func WithPluginsDir(pluginsDir string) Option {
-	return func(options *Options) {
-		options.PluginsDir = pluginsDir
-	}
-}
-
-func WithTypes(types ...Type) Option {
-	return func(options *Options) {
-		options.ProxyService.Types = append(options.ProxyService.Types, types...)
+		options.Network = driver
 	}
 }
 
 func WithHost(host string) Option {
 	return func(options *Options) {
-		options.ProxyService.Host = host
+		options.Host = host
 	}
 }
 
 func WithPort(port int) Option {
 	return func(options *Options) {
-		options.ProxyService.Port = port
+		options.Port = port
 	}
 }
 
-func WithControlHost(host string) Option {
-	return func(options *Options) {
-		options.ProxyControlService.Host = host
-	}
+func WithServerOption(opt grpc.ServerOption) Option {
+	return WithServerOptions(opt)
 }
 
-func WithControlPort(port int) Option {
+func WithServerOptions(opts ...grpc.ServerOption) Option {
 	return func(options *Options) {
-		options.ProxyControlService.Port = port
+		options.GRPCServerOptions = append(options.GRPCServerOptions, opts...)
 	}
 }
