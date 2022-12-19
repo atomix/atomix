@@ -164,6 +164,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  |  |
+| api_version | [string](#string) |  |  |
 | config | [bytes](#bytes) |  |  |
 
 

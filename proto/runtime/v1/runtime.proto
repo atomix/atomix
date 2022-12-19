@@ -33,7 +33,10 @@ message Route {
 
 message Service {
     string name = 1;
-    bytes config = 2;
+    string api_version = 2 [
+        (gogoproto.customname) = "APIVersion"
+    ];
+    bytes config = 3;
 }
 
 message StoreID {
