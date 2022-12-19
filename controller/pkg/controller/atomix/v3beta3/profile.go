@@ -116,9 +116,14 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 			for _, primitive := range binding.Primitives {
 				route.Primitives = append(route.Primitives, runtimev1.PrimitiveSpec{
-					Type: runtimev1.PrimitiveType{
-						Name:       primitive.Name,
-						APIVersion: primitive.APIVersion,
+					PrimitiveMeta: runtimev1.PrimitiveMeta{
+						Type: runtimev1.PrimitiveType{
+							Name:       primitive.Type,
+							APIVersion: primitive.APIVersion,
+						},
+						PrimitiveID: runtimev1.PrimitiveID{
+							Name: primitive.Name,
+						},
 					},
 					Config: primitive.Config.Raw,
 				})
