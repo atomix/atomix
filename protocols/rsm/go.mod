@@ -1,4 +1,4 @@
-module github.com/atomix/atomix/proxy
+module github.com/atomix/atomix/protocols/rsm
 
 go 1.19
 

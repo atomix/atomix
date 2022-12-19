@@ -1,6 +1,6 @@
 module github.com/atomix/atomix/controller
 
-go 1.18
+go 1.19
 
 require (
 	github.com/atomix/atomix/api v0.0.0-20221219080515-f51040a03cdb

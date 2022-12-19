@@ -1,0 +1,134 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.protocols.rsm.v1;
+
+import "gogoproto/gogo.proto";
+
+message PartitionRequestHeaders {
+    uint32 partition_id = 1 [
+        (gogoproto.customname) = "PartitionID",
+        (gogoproto.casttype) = "PartitionID"
+    ];
+}
+
+message PartitionResponseHeaders {
+    uint64 index = 1 [
+        (gogoproto.casttype) = "Index"
+    ];
+}
+
+message SessionRequestHeaders {
+    PartitionRequestHeaders partition = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 session_id = 2 [
+        (gogoproto.customname) = "SessionID",
+        (gogoproto.casttype) = "SessionID"
+    ];
+}
+
+message SessionResponseHeaders {
+    PartitionResponseHeaders partition = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message PrimitiveRequestHeaders {
+    SessionRequestHeaders session = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 primitive_id = 2 [
+        (gogoproto.customname) = "PrimitiveID",
+        (gogoproto.casttype) = "PrimitiveID"
+    ];
+}
+
+message PrimitiveResponseHeaders {
+    SessionResponseHeaders primitive = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message CallRequestHeaders {
+    PrimitiveRequestHeaders primitive = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message CallResponseHeaders {
+    PrimitiveResponseHeaders session = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    Status status = 2;
+    string message = 3;
+
+    enum Status {
+        OK = 0;
+        ERROR = 1;
+        UNKNOWN = 2;
+        CANCELED = 3;
+        NOT_FOUND = 4;
+        ALREADY_EXISTS = 5;
+        UNAUTHORIZED = 6;
+        FORBIDDEN = 7;
+        CONFLICT = 8;
+        INVALID = 9;
+        UNAVAILABLE = 10;
+        NOT_SUPPORTED = 11;
+        TIMEOUT = 12;
+        INTERNAL = 13;
+        FAULT = 14;
+    }
+}
+
+message ProposalRequestHeaders {
+    CallRequestHeaders operation = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 sequence_num = 2 [
+        (gogoproto.casttype) = "SequenceNum"
+    ];
+}
+
+message ProposalResponseHeaders {
+    CallResponseHeaders operation = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 output_sequence_num = 2 [
+        (gogoproto.casttype) = "SequenceNum"
+    ];
+}
+
+message QueryRequestHeaders {
+    CallRequestHeaders operation = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 sequence_num = 2 [
+        (gogoproto.casttype) = "SequenceNum"
+    ];
+    uint64 max_received_index = 3 [
+        (gogoproto.casttype) = "Index"
+    ];
+}
+
+message QueryResponseHeaders {
+    CallResponseHeaders operation = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}

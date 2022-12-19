@@ -1,0 +1,449 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.protocols.rsm.indexedmap.v1;
+
+import "v1/headers.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+message IndexedMapConfig {
+    CacheConfig cache = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CacheConfig {
+    bool enabled = 1;
+    uint64 size = 2;
+    google.protobuf.Duration evict_after = 3 [
+        (gogoproto.stdduration) = true
+    ];
+    google.protobuf.Duration eviction_interval = 4 [
+        (gogoproto.stdduration) = true
+    ];
+}
+
+// IndexedMap is a service for an indexed map primitive
+service IndexedMap {
+    // Size returns the size of the map
+    rpc Size (SizeRequest) returns (SizeResponse);
+
+    // Append appends an entry to the map
+    rpc Append (AppendRequest) returns (AppendResponse);
+
+    // Update updates an entry in the map
+    rpc Update (UpdateRequest) returns (UpdateResponse);
+
+    // Remove removes an entry from the map
+    rpc Remove (RemoveRequest) returns (RemoveResponse);
+
+    // Get gets the entry for a key
+    rpc Get (GetRequest) returns (GetResponse);
+
+    // FirstEntry gets the first entry in the map
+    rpc FirstEntry (FirstEntryRequest) returns (FirstEntryResponse);
+
+    // LastEntry gets the last entry in the map
+    rpc LastEntry (LastEntryRequest) returns (LastEntryResponse);
+
+    // PrevEntry gets the previous entry in the map
+    rpc PrevEntry (PrevEntryRequest) returns (PrevEntryResponse);
+
+    // NextEntry gets the next entry in the map
+    rpc NextEntry (NextEntryRequest) returns (NextEntryResponse);
+
+    // Clear removes all entries from the map
+    rpc Clear (ClearRequest) returns (ClearResponse);
+
+    // Events listens for change events
+    rpc Events (EventsRequest) returns (stream EventsResponse);
+
+    // Entries lists all entries in the map
+    rpc Entries (EntriesRequest) returns (stream EntriesResponse);
+}
+
+message SizeRequest {
+    atomix.protocols.rsm.v1.QueryRequestHeaders headers = 1;
+    SizeInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message SizeResponse {
+    atomix.protocols.rsm.v1.QueryResponseHeaders headers = 1;
+    SizeOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message AppendRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    AppendInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message AppendResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    AppendOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message UpdateRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    UpdateInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message UpdateResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    UpdateOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetRequest {
+    atomix.protocols.rsm.v1.QueryRequestHeaders headers = 1;
+    GetInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetResponse {
+    atomix.protocols.rsm.v1.QueryResponseHeaders headers = 1;
+    GetOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message FirstEntryRequest {
+    atomix.protocols.rsm.v1.QueryRequestHeaders headers = 1;
+    FirstEntryInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message FirstEntryResponse {
+    atomix.protocols.rsm.v1.QueryResponseHeaders headers = 1;
+    FirstEntryOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message LastEntryRequest {
+    atomix.protocols.rsm.v1.QueryRequestHeaders headers = 1;
+    LastEntryInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message LastEntryResponse {
+    atomix.protocols.rsm.v1.QueryResponseHeaders headers = 1;
+    LastEntryOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message PrevEntryRequest {
+    atomix.protocols.rsm.v1.QueryRequestHeaders headers = 1;
+    PrevEntryInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message PrevEntryResponse {
+    atomix.protocols.rsm.v1.QueryResponseHeaders headers = 1;
+    PrevEntryOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message NextEntryRequest {
+    atomix.protocols.rsm.v1.QueryRequestHeaders headers = 1;
+    NextEntryInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message NextEntryResponse {
+    atomix.protocols.rsm.v1.QueryResponseHeaders headers = 1;
+    NextEntryOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message RemoveRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    RemoveInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message RemoveResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    RemoveOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ClearRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    ClearInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ClearResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    ClearOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message EntriesRequest {
+    atomix.protocols.rsm.v1.QueryRequestHeaders headers = 1;
+    EntriesInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message EntriesResponse {
+    atomix.protocols.rsm.v1.QueryResponseHeaders headers = 1;
+    EntriesOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    EventsInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message EventsResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    EventsOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message IndexedMapListener {
+    string key = 1;
+}
+
+message IndexedMapEntry {
+    string key = 1;
+    uint64 index = 2;
+    IndexedMapValue value = 3;
+}
+
+message IndexedMapValue {
+    bytes value = 1;
+    uint64 version = 2;
+    google.protobuf.Timestamp expire = 3 [
+        (gogoproto.stdtime) = true
+    ];
+}
+
+message IndexedMapInput {
+    oneof input {
+        SizeInput size = 1;
+        AppendInput append = 2;
+        UpdateInput update = 3;
+        GetInput get = 4;
+        FirstEntryInput first_entry = 5;
+        LastEntryInput last_entry = 6;
+        NextEntryInput next_entry = 7;
+        PrevEntryInput prev_entry = 8;
+        RemoveInput remove = 9;
+        ClearInput clear = 10;
+        EntriesInput entries = 11;
+        EventsInput events = 12;
+    }
+}
+
+message IndexedMapOutput {
+    oneof output {
+        SizeOutput size = 1;
+        AppendOutput append = 2;
+        UpdateOutput update = 3;
+        GetOutput get = 4;
+        FirstEntryOutput first_entry = 5;
+        LastEntryOutput last_entry = 6;
+        NextEntryOutput next_entry = 7;
+        PrevEntryOutput prev_entry = 8;
+        RemoveOutput remove = 9;
+        ClearOutput clear = 10;
+        EntriesOutput entries = 11;
+        EventsOutput events = 12;
+    }
+}
+
+message SizeInput {
+
+}
+
+message SizeOutput {
+    uint32 size = 1;
+}
+
+message AppendInput {
+    string key = 1;
+    bytes value = 2;
+    google.protobuf.Duration ttl = 3 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
+}
+
+message AppendOutput {
+    Entry entry = 1;
+}
+
+message UpdateInput {
+    string key = 1;
+    uint64 index = 2;
+    bytes value = 3;
+    google.protobuf.Duration ttl = 4 [
+        (gogoproto.customname) = "TTL",
+        (gogoproto.stdduration) = true
+    ];
+    uint64 prev_version = 5;
+}
+
+message UpdateOutput {
+    Entry entry = 1;
+}
+
+message GetInput {
+    string key = 1;
+    uint64 index = 2;
+}
+
+message GetOutput {
+    Entry entry = 1;
+}
+
+message FirstEntryInput {
+
+}
+
+message FirstEntryOutput {
+    Entry entry = 1;
+}
+
+message LastEntryInput {
+
+}
+
+message LastEntryOutput {
+    Entry entry = 1;
+}
+
+message PrevEntryInput {
+    uint64 index = 1;
+}
+
+message PrevEntryOutput {
+    Entry entry = 1;
+}
+
+message NextEntryInput {
+    uint64 index = 1;
+}
+
+message NextEntryOutput {
+    Entry entry = 1;
+}
+
+message RemoveInput {
+    string key = 1;
+    uint64 index = 2;
+    uint64 prev_version = 3;
+}
+
+message RemoveOutput {
+    Entry entry = 1;
+}
+
+message ClearInput {
+
+}
+
+message ClearOutput {
+
+}
+
+message EntriesInput {
+    bool watch = 1;
+}
+
+message EntriesOutput {
+    Entry entry = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message EventsInput {
+    string key = 1;
+}
+
+message EventsOutput {
+    Event event = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message Event {
+    string key = 1;
+    uint64 index = 2;
+
+    oneof event {
+        Inserted inserted = 3;
+        Updated updated = 4;
+        Removed removed = 5;
+    }
+
+    message Inserted {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Updated {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
+        Value prev_value = 2 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Removed {
+        Value value = 1 [
+            (gogoproto.nullable) = false
+        ];
+        bool expired = 2;
+    }
+}
+
+message Value {
+    bytes value = 1;
+    uint64 version = 2;
+}
+
+message Entry {
+    string key = 1;
+    uint64 index = 2;
+    Value value = 3;
+}

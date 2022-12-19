@@ -1,0 +1,161 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.protocols.rsm.counter.v1;
+
+import "v1/headers.proto";
+import "gogoproto/gogo.proto";
+
+// Counter is a service for a counter primitive
+service Counter {
+    // Set sets the counter value
+    rpc Set (SetRequest) returns (SetResponse);
+
+    // Update sets the counter value
+    rpc Update (UpdateRequest) returns (UpdateResponse);
+
+    // Get gets the current counter value
+    rpc Get (GetRequest) returns (GetResponse);
+
+    // Increment increments the counter value
+    rpc Increment (IncrementRequest) returns (IncrementResponse);
+
+    // Decrement decrements the counter value
+    rpc Decrement (DecrementRequest) returns (DecrementResponse);
+}
+
+message IncrementRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    IncrementInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message IncrementResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    IncrementOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message DecrementRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    DecrementInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message DecrementResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    DecrementOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetRequest {
+    atomix.protocols.rsm.v1.QueryRequestHeaders headers = 1;
+    GetInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetResponse {
+    atomix.protocols.rsm.v1.QueryResponseHeaders headers = 1;
+    GetOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message SetRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    SetInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message SetResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    SetOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message UpdateRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    UpdateInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message UpdateResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    UpdateOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message CounterInput {
+    oneof input {
+        IncrementInput increment = 1;
+        DecrementInput decrement = 2;
+        GetInput get = 3;
+        SetInput set = 4;
+        UpdateInput update = 5;
+    }
+}
+
+message CounterOutput {
+    oneof output {
+        IncrementOutput increment = 1;
+        DecrementOutput decrement = 2;
+        GetOutput get = 3;
+        SetOutput set = 4;
+        UpdateOutput update = 5;
+    }
+}
+
+message IncrementInput {
+    int64 delta = 1;
+}
+
+message IncrementOutput {
+    int64 value = 1;
+}
+
+message DecrementInput {
+    int64 delta = 1;
+}
+
+message DecrementOutput {
+    int64 value = 1;
+}
+
+message GetInput {
+
+}
+
+message GetOutput {
+    int64 value = 1;
+}
+
+message SetInput {
+    int64 value = 1;
+}
+
+message SetOutput {
+    int64 value = 1;
+}
+
+message UpdateInput {
+    int64 compare = 1;
+    int64 update = 2;
+}
+
+message UpdateOutput {
+    int64 value = 1;
+}

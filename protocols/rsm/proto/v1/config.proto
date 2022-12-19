@@ -1,0 +1,31 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.protocols.rsm.v1;
+
+import "google/protobuf/duration.proto";
+import "gogoproto/gogo.proto";
+
+message ProtocolConfig {
+    repeated PartitionConfig partitions = 1 [
+        (gogoproto.nullable) = false
+    ];
+    google.protobuf.Duration session_timeout = 2 [
+        (gogoproto.stdduration) = true
+    ];
+}
+
+message PartitionConfig {
+    uint32 partition_id = 1 [
+        (gogoproto.customname) = "PartitionID",
+        (gogoproto.casttype) = "PartitionID",
+        (gogoproto.jsontag) = "partitionId"
+    ];
+    string leader = 2;
+    repeated string followers = 3;
+}

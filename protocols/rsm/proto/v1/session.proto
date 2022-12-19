@@ -1,0 +1,141 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.protocols.rsm.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+import "v1/headers.proto";
+import "v1/primitive.proto";
+
+service Session {
+    rpc CreatePrimitive(CreatePrimitiveRequest) returns (CreatePrimitiveResponse);
+    rpc ClosePrimitive(ClosePrimitiveRequest) returns (ClosePrimitiveResponse);
+}
+
+message CreatePrimitiveRequest {
+    ProposalRequestHeaders headers = 1;
+    CreatePrimitiveInput input = 2 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message CreatePrimitiveResponse {
+    ProposalResponseHeaders headers = 1;
+    CreatePrimitiveOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ClosePrimitiveRequest {
+    ProposalRequestHeaders headers = 1;
+    ClosePrimitiveInput input = 2 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message ClosePrimitiveResponse {
+    ProposalResponseHeaders headers = 1;
+    ClosePrimitiveOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message SessionProposalInput {
+    uint64 session_id = 1 [
+        (gogoproto.customname) = "SessionID",
+        (gogoproto.casttype) = "SessionID"
+    ];
+    uint64 sequence_num = 2 [
+        (gogoproto.casttype) = "SequenceNum"
+    ];
+    oneof input {
+        CreatePrimitiveInput create_primitive = 3;
+        ClosePrimitiveInput close_primitive = 4;
+        PrimitiveProposalInput proposal = 5;
+    }
+}
+
+message SessionProposalOutput {
+    uint64 sequence_num = 1 [
+        (gogoproto.casttype) = "SequenceNum"
+    ];
+    Failure failure = 2;
+    oneof output {
+        CreatePrimitiveOutput create_primitive = 3;
+        ClosePrimitiveOutput close_primitive = 4;
+        PrimitiveProposalOutput proposal = 5;
+    }
+}
+
+message SessionQueryInput {
+    uint64 session_id = 1 [
+        (gogoproto.customname) = "SessionID",
+        (gogoproto.casttype) = "SessionID"
+    ];
+    uint64 sequence_num = 2 [
+        (gogoproto.casttype) = "SequenceNum"
+    ];
+    oneof input {
+        PrimitiveQueryInput query = 3;
+    }
+}
+
+message SessionQueryOutput {
+    Failure failure = 1;
+    oneof output {
+        PrimitiveQueryOutput query = 2;
+    }
+}
+
+message SessionSnapshot {
+    uint64 session_id = 1 [
+        (gogoproto.customname) = "SessionID",
+        (gogoproto.casttype) = "SessionID"
+    ];
+    State state = 2;
+    google.protobuf.Duration timeout = 3 [
+        (gogoproto.stdduration) = true,
+        (gogoproto.nullable) = false
+    ];
+    google.protobuf.Timestamp last_updated = 4 [
+        (gogoproto.stdtime) = true,
+        (gogoproto.nullable) = false
+    ];
+    enum State {
+        UNKNOWN = 0;
+        OPEN = 1;
+        CLOSED = 2;
+    }
+}
+
+message SessionProposalSnapshot {
+    uint64 index = 1 [
+        (gogoproto.casttype) = "Index"
+    ];
+    Phase phase = 2;
+    SessionProposalInput input = 3;
+    repeated SessionProposalOutput pending_outputs = 4;
+    uint64 last_output_sequence_num = 5 [
+        (gogoproto.casttype) = "SequenceNum"
+    ];
+    google.protobuf.Timestamp timestamp = 6 [
+        (gogoproto.stdtime) = true,
+        (gogoproto.nullable) = false
+    ];
+
+    enum Phase {
+        PENDING = 0;
+        RUNNING = 1;
+        COMPLETE = 2;
+        CANCELED = 3;
+    }
+}
