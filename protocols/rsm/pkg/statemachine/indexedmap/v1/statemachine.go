@@ -7,21 +7,28 @@ package v1
 import (
 	"bytes"
 	indexedmapprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/indexedmap/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"sync"
 )
 
-const Service = "atomix.runtime.indexedmap.v1.IndexedMap"
+const (
+	Name       = "IndexedMap"
+	APIVersion = "v1"
+)
 
-func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
-	statemachine.RegisterPrimitiveType[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput](registry)(PrimitiveType)
+var PrimitiveType = protocol.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
 }
 
-var PrimitiveType = statemachine.NewPrimitiveType[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput](Service, indexedMapCodec,
-	func(context statemachine.PrimitiveContext[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput]) statemachine.Executor[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput] {
-		return newExecutor(NewIndexedMapStateMachine(context))
-	})
+func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
+	statemachine.RegisterPrimitiveType[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput](registry)(PrimitiveType,
+		func(context statemachine.PrimitiveContext[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput]) statemachine.PrimitiveStateMachine[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput] {
+			return newExecutor(NewIndexedMapStateMachine(context))
+		}, indexedMapCodec)
+}
 
 type IndexedMapContext interface {
 	statemachine.PrimitiveContext[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput]

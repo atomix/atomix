@@ -11,7 +11,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
-var stateMachineCodec = statemachine.NewCodec[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput](
+var counterCodec = statemachine.NewCodec[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput](
 	func(bytes []byte) (*counterprotocolv1.CounterInput, error) {
 		input := &counterprotocolv1.CounterInput{}
 		if err := proto.Unmarshal(bytes, input); err != nil {
@@ -23,7 +23,7 @@ var stateMachineCodec = statemachine.NewCodec[*counterprotocolv1.CounterInput, *
 		return proto.Marshal(output)
 	})
 
-func newExecutor(stateMachine CounterStateMachine) statemachine.Executor[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput] {
+func newExecutor(stateMachine CounterStateMachine) statemachine.PrimitiveStateMachine[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput] {
 	executor := &counterExecutor{
 		CounterStateMachine: stateMachine,
 	}

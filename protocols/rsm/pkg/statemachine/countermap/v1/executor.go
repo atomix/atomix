@@ -23,7 +23,7 @@ var counterMapCodec = statemachine.NewCodec[*countermapprotocolv1.CounterMapInpu
 		return proto.Marshal(output)
 	})
 
-func newExecutor(sm CounterMapStateMachine) statemachine.Executor[*countermapprotocolv1.CounterMapInput, *countermapprotocolv1.CounterMapOutput] {
+func newExecutor(sm CounterMapStateMachine) statemachine.PrimitiveStateMachine[*countermapprotocolv1.CounterMapInput, *countermapprotocolv1.CounterMapOutput] {
 	executor := &CounterMapExecutor{
 		CounterMapStateMachine: sm,
 	}

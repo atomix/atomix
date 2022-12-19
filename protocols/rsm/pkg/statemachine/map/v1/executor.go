@@ -11,7 +11,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
-var stateMachineCodec = statemachine.NewCodec[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput](
+var mapCodec = statemachine.NewCodec[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput](
 	func(bytes []byte) (*mapprotocolv1.MapInput, error) {
 		input := &mapprotocolv1.MapInput{}
 		if err := proto.Unmarshal(bytes, input); err != nil {

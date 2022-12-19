@@ -6,20 +6,27 @@ package v1
 
 import (
 	counterprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/counter/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 )
 
-const Service = "atomix.runtime.counter.v1.Counter"
+const (
+	Name       = "Counter"
+	APIVersion = "v1"
+)
 
-func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
-	statemachine.RegisterPrimitiveType[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput](registry)(PrimitiveType)
+var PrimitiveType = protocol.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
 }
 
-var PrimitiveType = statemachine.NewPrimitiveType[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput](Service, stateMachineCodec,
-	func(context statemachine.PrimitiveContext[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput]) statemachine.Executor[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput] {
-		return newExecutor(NewCounterStateMachine(context))
-	})
+func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
+	statemachine.RegisterPrimitiveType[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput](registry)(PrimitiveType,
+		func(context statemachine.PrimitiveContext[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput]) statemachine.PrimitiveStateMachine[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput] {
+			return newExecutor(NewCounterStateMachine(context))
+		}, counterCodec)
+}
 
 type CounterContext interface {
 	statemachine.PrimitiveContext[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput]

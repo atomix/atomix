@@ -12,16 +12,22 @@ import (
 	"sync"
 )
 
-const Service = "atomix.runtime.election.v1.LeaderElection"
+const (
+	Name       = "LeaderElection"
+	APIVersion = "v1"
+)
 
-func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
-	statemachine.RegisterPrimitiveType[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput](registry)(PrimitiveType)
+var PrimitiveType = protocol.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
 }
 
-var PrimitiveType = statemachine.NewPrimitiveType[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput](Service, lockCodec,
-	func(context statemachine.PrimitiveContext[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput]) statemachine.Executor[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput] {
-		return newExecutor(NewLeaderElectionStateMachine(context))
-	})
+func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
+	statemachine.RegisterPrimitiveType[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput](registry)(PrimitiveType,
+		func(context statemachine.PrimitiveContext[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput]) statemachine.PrimitiveStateMachine[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput] {
+			return newExecutor(NewLeaderElectionStateMachine(context))
+		}, lockCodec)
+}
 
 type LeaderElectionContext interface {
 	statemachine.PrimitiveContext[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput]

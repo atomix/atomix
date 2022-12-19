@@ -23,7 +23,7 @@ var setCodec = statemachine.NewCodec[*setprotocolv1.SetInput, *setprotocolv1.Set
 		return proto.Marshal(output)
 	})
 
-func newExecutor(sm SetStateMachine) statemachine.Executor[*setprotocolv1.SetInput, *setprotocolv1.SetOutput] {
+func newExecutor(sm SetStateMachine) statemachine.PrimitiveStateMachine[*setprotocolv1.SetInput, *setprotocolv1.SetOutput] {
 	executor := &SetExecutor{
 		SetStateMachine: sm,
 	}

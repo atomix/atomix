@@ -6,21 +6,28 @@ package v1
 
 import (
 	setprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/set/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"sync"
 )
 
-const Service = "atomix.runtime.set.v1.Set"
+const (
+	Name       = "Set"
+	APIVersion = "v1"
+)
 
-func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
-	statemachine.RegisterPrimitiveType[*setprotocolv1.SetInput, *setprotocolv1.SetOutput](registry)(PrimitiveType)
+var PrimitiveType = protocol.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
 }
 
-var PrimitiveType = statemachine.NewPrimitiveType[*setprotocolv1.SetInput, *setprotocolv1.SetOutput](Service, setCodec,
-	func(context statemachine.PrimitiveContext[*setprotocolv1.SetInput, *setprotocolv1.SetOutput]) statemachine.Executor[*setprotocolv1.SetInput, *setprotocolv1.SetOutput] {
-		return newExecutor(NewSetStateMachine(context))
-	})
+func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
+	statemachine.RegisterPrimitiveType[*setprotocolv1.SetInput, *setprotocolv1.SetOutput](registry)(PrimitiveType,
+		func(context statemachine.PrimitiveContext[*setprotocolv1.SetInput, *setprotocolv1.SetOutput]) statemachine.PrimitiveStateMachine[*setprotocolv1.SetInput, *setprotocolv1.SetOutput] {
+			return newExecutor(NewSetStateMachine(context))
+		}, setCodec)
+}
 
 type SetContext interface {
 	statemachine.PrimitiveContext[*setprotocolv1.SetInput, *setprotocolv1.SetOutput]
@@ -143,9 +150,7 @@ func (s *setStateMachine) Recover(reader *statemachine.SnapshotReader) error {
 		if err != nil {
 			return err
 		}
-		element := &setprotocolv1.Setsetprotocolv1.Element
-		{
-		}
+		element := &setprotocolv1.SetElement{}
 		if err := reader.ReadMessage(element); err != nil {
 			return err
 		}
@@ -164,9 +169,7 @@ func (s *setStateMachine) Add(proposal statemachine.Proposal[*setprotocolv1.AddI
 		return
 	}
 
-	element := &setprotocolv1.Setsetprotocolv1.Element
-	{
-	}
+	element := &setprotocolv1.SetElement{}
 	if proposal.Input().TTL != nil {
 		expire := s.Scheduler().Time().Add(*proposal.Input().TTL)
 		element.Expire = &expire

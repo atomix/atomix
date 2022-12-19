@@ -23,7 +23,7 @@ var lockCodec = statemachine.NewCodec[*electionprotocolv1.LeaderElectionInput, *
 		return proto.Marshal(output)
 	})
 
-func newExecutor(sm LeaderElectionStateMachine) statemachine.Executor[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput] {
+func newExecutor(sm LeaderElectionStateMachine) statemachine.PrimitiveStateMachine[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput] {
 	executor := &LeaderElectionExecutor{
 		LeaderElectionStateMachine: sm,
 	}

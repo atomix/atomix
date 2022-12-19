@@ -3,6 +3,7 @@ module github.com/atomix/atomix/protocols/rsm
 go 1.19
 
 require (
+	github.com/atomix/atomix/api v0.0.0-20221219223759-628ae01a37ac
 	github.com/atomix/atomix/runtime v0.0.0-20221219222821-2f3d4294dd1f
 	github.com/bits-and-blooms/bloom/v3 v3.3.1
 	github.com/gogo/protobuf v1.3.2
@@ -13,12 +14,10 @@ require (
 )
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221219223759-628ae01a37ac // indirect
 	github.com/bits-and-blooms/bitset v1.3.1 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -29,7 +28,6 @@ require (
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
 	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	google.golang.org/genproto v0.0.0-20220407144326-9054f6ed7bac // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect

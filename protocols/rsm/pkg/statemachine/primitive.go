@@ -15,68 +15,77 @@ import (
 )
 
 type PrimitiveType[I, O any] interface {
-	Service() string
+	Name() string
+	APIVersion() string
 	Codec() Codec[I, O]
-	NewStateMachine(PrimitiveContext[I, O]) Executor[I, O]
+	NewStateMachine(PrimitiveContext[I, O]) PrimitiveStateMachine[I, O]
 }
 
 type AnyType PrimitiveType[any, any]
 
-func NewPrimitiveType[I, O any](service string, codec Codec[I, O], factory func(PrimitiveContext[I, O]) Executor[I, O]) PrimitiveType[I, O] {
+type NewStateMachineFunc[I, O any] func(PrimitiveContext[I, O]) PrimitiveStateMachine[I, O]
+
+func NewPrimitiveType[I, O any](typeInfo protocol.PrimitiveType, codec Codec[I, O], factory func(PrimitiveContext[I, O]) PrimitiveStateMachine[I, O]) PrimitiveType[I, O] {
 	return &primitiveType[I, O]{
-		service: service,
-		codec:   codec,
-		factory: factory,
+		name:       typeInfo.Name,
+		apiVersion: typeInfo.APIVersion,
+		codec:      codec,
+		factory:    factory,
 	}
 }
 
 type primitiveType[I, O any] struct {
-	service string
-	codec   Codec[I, O]
-	factory func(PrimitiveContext[I, O]) Executor[I, O]
+	name       string
+	apiVersion string
+	codec      Codec[I, O]
+	factory    func(PrimitiveContext[I, O]) PrimitiveStateMachine[I, O]
 }
 
-func (t *primitiveType[I, O]) Service() string {
-	return t.service
+func (t *primitiveType[I, O]) Name() string {
+	return t.name
+}
+
+func (t *primitiveType[I, O]) APIVersion() string {
+	return t.apiVersion
 }
 
 func (t *primitiveType[I, O]) Codec() Codec[I, O] {
 	return t.codec
 }
 
-func (t *primitiveType[I, O]) NewStateMachine(context PrimitiveContext[I, O]) Executor[I, O] {
+func (t *primitiveType[I, O]) NewStateMachine(context PrimitiveContext[I, O]) PrimitiveStateMachine[I, O] {
 	return t.factory(context)
 }
 
-func RegisterPrimitiveType[I, O any](registry *PrimitiveTypeRegistry) func(primitiveType PrimitiveType[I, O]) {
-	return func(primitiveType PrimitiveType[I, O]) {
-		registry.register(primitiveType.Service(), func(context SessionContext, id protocol.PrimitiveID, spec protocol.PrimitiveSpec) managedPrimitive {
-			return newPrimitive[I, O](context, id, spec, primitiveType)
+func RegisterPrimitiveType[I, O any](registry *PrimitiveTypeRegistry) func(primitiveType protocol.PrimitiveType, factory NewStateMachineFunc[I, O], codec Codec[I, O]) {
+	return func(primitiveType protocol.PrimitiveType, factory NewStateMachineFunc[I, O], codec Codec[I, O]) {
+		registry.register(primitiveType, func(context SessionContext, id protocol.PrimitiveID, spec protocol.PrimitiveSpec) managedPrimitive {
+			return newPrimitive[I, O](context, id, spec, factory, codec)
 		})
 	}
 }
 
 func NewPrimitiveTypeRegistry() *PrimitiveTypeRegistry {
 	return &PrimitiveTypeRegistry{
-		types: make(map[string]func(SessionContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive),
+		types: make(map[protocol.PrimitiveType]func(SessionContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive),
 	}
 }
 
 type PrimitiveTypeRegistry struct {
-	types map[string]func(SessionContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive
+	types map[protocol.PrimitiveType]func(SessionContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive
 	mu    sync.RWMutex
 }
 
-func (r *PrimitiveTypeRegistry) register(service string, factory func(SessionContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive) {
+func (r *PrimitiveTypeRegistry) register(primitiveType protocol.PrimitiveType, factory func(SessionContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.types[service] = factory
+	r.types[primitiveType] = factory
 }
 
-func (r *PrimitiveTypeRegistry) lookup(service string) (func(SessionContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive, bool) {
+func (r *PrimitiveTypeRegistry) lookup(primitiveType protocol.PrimitiveType) (func(SessionContext, protocol.PrimitiveID, protocol.PrimitiveSpec) managedPrimitive, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	factory, ok := r.types[service]
+	factory, ok := r.types[primitiveType]
 	return factory, ok
 }
 
@@ -85,7 +94,7 @@ type PrimitiveContext[I, O any] interface {
 	Info
 }
 
-type Executor[I, O any] interface {
+type PrimitiveStateMachine[I, O any] interface {
 	Recoverable
 	Propose(proposal Proposal[I, O])
 	Query(query Query[I, O])
@@ -125,11 +134,7 @@ func (m *primitiveManager) Snapshot(writer *SnapshotWriter) error {
 	for _, primitive := range m.primitives {
 		snapshot := &protocol.PrimitiveSnapshot{
 			PrimitiveID: primitive.ID(),
-			Spec: protocol.PrimitiveSpec{
-				Service:   primitive.Service(),
-				Namespace: primitive.Namespace(),
-				Name:      primitive.Name(),
-			},
+			Spec:        primitive.Spec(),
 		}
 		if err := writer.WriteMessage(snapshot); err != nil {
 			return err
@@ -151,7 +156,7 @@ func (m *primitiveManager) Recover(reader *SnapshotReader) error {
 		if err := reader.ReadMessage(snapshot); err != nil {
 			return err
 		}
-		factory, ok := m.registry.lookup(snapshot.Spec.Service)
+		factory, ok := m.registry.lookup(snapshot.Spec.Type)
 		if !ok {
 			return errors.NewFault("primitive type not found")
 		}
@@ -178,11 +183,15 @@ func (m *primitiveManager) Propose(proposal PrimitiveProposal) {
 func (m *primitiveManager) CreatePrimitive(proposal CreatePrimitiveProposal) {
 	var primitive managedPrimitive
 	for _, p := range m.primitives {
-		if p.Namespace() == proposal.Input().Namespace &&
-			p.Name() == proposal.Input().Name &&
-			p.Profile() == proposal.Input().Profile {
-			if p.Service() != proposal.Input().Service {
+		if p.Spec().Namespace == proposal.Input().Namespace &&
+			p.Spec().Name == proposal.Input().Name {
+			if p.Spec().Type.Name != proposal.Input().Type.Name {
 				proposal.Error(errors.NewForbidden("cannot create primitive of a different type with the same name"))
+				proposal.Close()
+				return
+			}
+			if p.Spec().Type.APIVersion != proposal.Input().Type.APIVersion {
+				proposal.Error(errors.NewForbidden("cannot create primitive of a different API version with the same type and name"))
 				proposal.Close()
 				return
 			}
@@ -192,7 +201,7 @@ func (m *primitiveManager) CreatePrimitive(proposal CreatePrimitiveProposal) {
 	}
 
 	if primitive == nil {
-		factory, ok := m.registry.lookup(proposal.Input().Service)
+		factory, ok := m.registry.lookup(proposal.Input().Type)
 		if !ok {
 			proposal.Error(errors.NewForbidden("unknown primitive type"))
 			proposal.Close()
@@ -232,14 +241,8 @@ type Info interface {
 	ID() protocol.PrimitiveID
 	// Log returns the service logger
 	Log() logging.Logger
-	// Service returns the primitive service name
-	Service() string
-	// Namespace returns the primitive namespace
-	Namespace() string
-	// Name returns the primitive name
-	Name() string
-	// Profile returns the profile in which the primitive was created
-	Profile() string
+	// Spec returns the primitive spec
+	Spec() protocol.PrimitiveSpec
 }
 
 type managedPrimitive interface {
@@ -251,19 +254,19 @@ type managedPrimitive interface {
 	query(query Query[*protocol.PrimitiveQueryInput, *protocol.PrimitiveQueryOutput])
 }
 
-func newPrimitiveContext[I, O any](parent SessionContext, id protocol.PrimitiveID, spec protocol.PrimitiveSpec, primitiveType PrimitiveType[I, O]) *primitiveContext[I, O] {
+func newPrimitiveContext[I, O any](parent SessionContext, id protocol.PrimitiveID, spec protocol.PrimitiveSpec, codec Codec[I, O]) *primitiveContext[I, O] {
 	return &primitiveContext[I, O]{
 		SessionContext: parent,
 		id:             id,
 		spec:           spec,
 		sessions:       newPrimitiveSessions[I, O](),
 		proposals:      newPrimitiveProposals[I, O](),
-		codec:          primitiveType.Codec(),
+		codec:          codec,
 		log: log.WithFields(
-			logging.String("Service", primitiveType.Service()),
-			logging.Uint64("Primitive", uint64(id)),
+			logging.String("Type", spec.Type.Name),
+			logging.String("APIVersion", spec.Type.APIVersion),
+			logging.Uint64("ID", uint64(id)),
 			logging.String("Namespace", spec.Namespace),
-			logging.String("Profile", spec.Profile),
 			logging.String("Name", spec.Name)),
 	}
 }
@@ -286,20 +289,8 @@ func (c *primitiveContext[I, O]) ID() protocol.PrimitiveID {
 	return c.id
 }
 
-func (c *primitiveContext[I, O]) Service() string {
-	return c.spec.Service
-}
-
-func (c *primitiveContext[I, O]) Namespace() string {
-	return c.spec.Namespace
-}
-
-func (c *primitiveContext[I, O]) Name() string {
-	return c.spec.Name
-}
-
-func (c *primitiveContext[I, O]) Profile() string {
-	return c.spec.Profile
+func (c *primitiveContext[I, O]) Spec() protocol.PrimitiveSpec {
+	return c.spec
 }
 
 func (c *primitiveContext[I, O]) Sessions() Sessions {
@@ -310,18 +301,18 @@ func (c *primitiveContext[I, O]) Proposals() Proposals[I, O] {
 	return c.proposals
 }
 
-func newPrimitive[I, O any](parent SessionContext, id protocol.PrimitiveID, spec protocol.PrimitiveSpec, primitiveType PrimitiveType[I, O]) managedPrimitive {
-	context := newPrimitiveContext[I, O](parent, id, spec, primitiveType)
+func newPrimitive[I, O any](parent SessionContext, id protocol.PrimitiveID, spec protocol.PrimitiveSpec, factory NewStateMachineFunc[I, O], codec Codec[I, O]) managedPrimitive {
+	context := newPrimitiveContext[I, O](parent, id, spec, codec)
 	return &primitiveExecutor[I, O]{
 		primitiveContext: context,
-		sm:               primitiveType.NewStateMachine(context),
+		sm:               factory(context),
 	}
 }
 
 type primitiveExecutor[I, O any] struct {
 	*primitiveContext[I, O]
 	log logging.Logger
-	sm  Executor[I, O]
+	sm  PrimitiveStateMachine[I, O]
 }
 
 func (p *primitiveExecutor[I, O]) Snapshot(writer *SnapshotWriter) error {
@@ -354,7 +345,7 @@ func (p *primitiveExecutor[I, O]) open(proposal Proposal[*protocol.CreatePrimiti
 	session := newPrimitiveSession[I, O](p)
 	session.open(proposal.Session())
 	proposal.Output(&protocol.CreatePrimitiveOutput{
-		PrimitiveID: protocol.PrimitiveID(p.ID()),
+		PrimitiveID: p.ID(),
 	})
 	proposal.Close()
 }

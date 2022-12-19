@@ -23,7 +23,7 @@ var valueCodec = statemachine.NewCodec[*valueprotocolv1.ValueInput, *valueprotoc
 		return proto.Marshal(output)
 	})
 
-func newExecutor(sm ValueStateMachine) statemachine.Executor[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput] {
+func newExecutor(sm ValueStateMachine) statemachine.PrimitiveStateMachine[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput] {
 	executor := &ValueExecutor{
 		ValueStateMachine: sm,
 	}

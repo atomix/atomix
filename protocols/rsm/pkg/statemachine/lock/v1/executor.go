@@ -23,7 +23,7 @@ var lockCodec = statemachine.NewCodec[*lockprotocolv1.LockInput, *lockprotocolv1
 		return proto.Marshal(output)
 	})
 
-func newExecutor(sm LockStateMachine) statemachine.Executor[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput] {
+func newExecutor(sm LockStateMachine) statemachine.PrimitiveStateMachine[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput] {
 	executor := &LockExecutor{
 		LockStateMachine: sm,
 	}

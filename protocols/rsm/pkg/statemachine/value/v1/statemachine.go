@@ -5,22 +5,29 @@
 package v1
 
 import (
+	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
 	valueprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"sync"
 )
 
-const Service = "atomix.runtime.value.v1.Value"
+const (
+	Name       = "Value"
+	APIVersion = "v1"
+)
 
-func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
-	statemachine.RegisterPrimitiveType[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput](registry)(PrimitiveType)
+var PrimitiveType = protocol.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
 }
 
-var PrimitiveType = statemachine.NewPrimitiveType[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput](Service, valueCodec,
-	func(context statemachine.PrimitiveContext[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput]) statemachine.Executor[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput] {
-		return newExecutor(NewValueStateMachine(context))
-	})
+func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
+	statemachine.RegisterPrimitiveType[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput](registry)(PrimitiveType,
+		func(context statemachine.PrimitiveContext[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput]) statemachine.PrimitiveStateMachine[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput] {
+			return newExecutor(NewValueStateMachine(context))
+		}, valueCodec)
+}
 
 type ValueContext interface {
 	statemachine.PrimitiveContext[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput]

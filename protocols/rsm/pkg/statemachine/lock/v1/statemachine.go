@@ -11,16 +11,22 @@ import (
 	"github.com/atomix/atomix/runtime/pkg/errors"
 )
 
-const Service = "atomix.runtime.lock.v1.Lock"
+const (
+	Name       = "Lock"
+	APIVersion = "v1"
+)
 
-func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
-	statemachine.RegisterPrimitiveType[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput](registry)(PrimitiveType)
+var PrimitiveType = protocol.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
 }
 
-var PrimitiveType = statemachine.NewPrimitiveType[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput](Service, lockCodec,
-	func(context statemachine.PrimitiveContext[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput]) statemachine.Executor[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput] {
-		return newExecutor(NewLockStateMachine(context))
-	})
+func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
+	statemachine.RegisterPrimitiveType[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput](registry)(PrimitiveType,
+		func(context statemachine.PrimitiveContext[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput]) statemachine.PrimitiveStateMachine[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput] {
+			return newExecutor(NewLockStateMachine(context))
+		}, lockCodec)
+}
 
 type LockContext interface {
 	statemachine.PrimitiveContext[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput]

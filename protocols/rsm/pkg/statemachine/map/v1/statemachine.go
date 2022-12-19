@@ -7,21 +7,28 @@ package v1
 import (
 	"bytes"
 	mapprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/map/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"sync"
 )
 
-const Service = "atomix.runtime.map.v1.Map"
+const (
+	Name       = "Map"
+	APIVersion = "v1"
+)
 
-func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
-	statemachine.RegisterPrimitiveType[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput](registry)(PrimitiveType)
+var PrimitiveType = protocol.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
 }
 
-var PrimitiveType = statemachine.NewPrimitiveType[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput](Service, stateMachineCodec,
-	func(context statemachine.PrimitiveContext[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput]) statemachine.Executor[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput] {
-		return newExecutor(NewMapStateMachine(context))
-	})
+func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
+	statemachine.RegisterPrimitiveType[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput](registry)(PrimitiveType,
+		func(context statemachine.PrimitiveContext[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput]) statemachine.PrimitiveStateMachine[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput] {
+			return newExecutor(NewMapStateMachine(context))
+		}, mapCodec)
+}
 
 type MapContext interface {
 	statemachine.PrimitiveContext[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput]
@@ -210,8 +217,8 @@ func (s *mapStateMachine) Put(proposal statemachine.Proposal[*mapprotocolv1.PutI
 			},
 		})
 		proposal.Output(&mapprotocolv1.PutOutput{
-			Index:     newEntry.Value.Index,
-			PrevValue: &mapprotocolv1.mapprotocolv1.IndexedValue, {
+			Index: newEntry.Value.Index,
+			PrevValue: &mapprotocolv1.IndexedValue{
 				Value: oldEntry.Value.Value,
 				Index: oldEntry.Value.Index,
 			},
@@ -449,9 +456,9 @@ func (s *mapStateMachine) Get(query statemachine.Query[*mapprotocolv1.GetInput, 
 func (s *mapStateMachine) Entries(query statemachine.Query[*mapprotocolv1.EntriesInput, *mapprotocolv1.EntriesOutput]) {
 	for _, entry := range s.entries {
 		query.Output(&mapprotocolv1.EntriesOutput{
-			Entry: Entry{
-				Key:   entry.Key,
-				Value: &mapprotocolv1.mapprotocolv1.IndexedValue, {
+			Entry: mapprotocolv1.Entry{
+				Key: entry.Key,
+				Value: &mapprotocolv1.IndexedValue{
 					Value: entry.Value.Value,
 					Index: entry.Value.Index,
 				},
@@ -492,9 +499,9 @@ func (s *mapStateMachine) notify(entry *mapprotocolv1.MapEntry, event *mapprotoc
 	for _, watcher := range s.watchers {
 		if entry.Value != nil {
 			watcher.Output(&mapprotocolv1.EntriesOutput{
-				Entry: Entry{
-					Key:   entry.Key,
-					Value: &mapprotocolv1.mapprotocolv1.IndexedValue, {
+				Entry: mapprotocolv1.Entry{
+					Key: entry.Key,
+					Value: &mapprotocolv1.IndexedValue{
 						Value: entry.Value.Value,
 						Index: entry.Value.Index,
 					},
@@ -502,7 +509,7 @@ func (s *mapStateMachine) notify(entry *mapprotocolv1.MapEntry, event *mapprotoc
 			})
 		} else {
 			watcher.Output(&mapprotocolv1.EntriesOutput{
-				Entry: Entry{
+				Entry: mapprotocolv1.Entry{
 					Key: entry.Key,
 				},
 			})

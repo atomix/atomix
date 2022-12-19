@@ -23,7 +23,7 @@ var indexedMapCodec = statemachine.NewCodec[*indexedmapprotocolv1.IndexedMapInpu
 		return proto.Marshal(output)
 	})
 
-func newExecutor(sm IndexedMapStateMachine) statemachine.Executor[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput] {
+func newExecutor(sm IndexedMapStateMachine) statemachine.PrimitiveStateMachine[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput] {
 	executor := &IndexedMapExecutor{
 		IndexedMapStateMachine: sm,
 	}

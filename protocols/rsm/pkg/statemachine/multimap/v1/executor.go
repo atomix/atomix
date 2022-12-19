@@ -23,7 +23,7 @@ var multiMapCodec = statemachine.NewCodec[*multimapprotocolv1.MultiMapInput, *mu
 		return proto.Marshal(output)
 	})
 
-func newExecutor(sm MultiMapStateMachine) statemachine.Executor[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput] {
+func newExecutor(sm MultiMapStateMachine) statemachine.PrimitiveStateMachine[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput] {
 	exector := &MultiMapExecutor{
 		MultiMapStateMachine: sm,
 	}

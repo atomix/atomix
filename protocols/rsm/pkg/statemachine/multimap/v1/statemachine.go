@@ -6,21 +6,28 @@ package v1
 
 import (
 	multimapprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/multimap/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"sync"
 )
 
-const Service = "atomix.runtime.multimap.v1.MultiMap"
+const (
+	Name       = "MultiMap"
+	APIVersion = "v1"
+)
 
-func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
-	statemachine.RegisterPrimitiveType[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput](registry)(PrimitiveType)
+var PrimitiveType = protocol.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
 }
 
-var PrimitiveType = statemachine.NewPrimitiveType[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput](Service, multiMapCodec,
-	func(context statemachine.PrimitiveContext[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput]) statemachine.Executor[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput] {
-		return newExecutor(NewMultiMapStateMachine(context))
-	})
+func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
+	statemachine.RegisterPrimitiveType[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput](registry)(PrimitiveType,
+		func(context statemachine.PrimitiveContext[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput]) statemachine.PrimitiveStateMachine[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput] {
+			return newExecutor(NewMultiMapStateMachine(context))
+		}, multiMapCodec)
+}
 
 type MultiMapContext interface {
 	statemachine.PrimitiveContext[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput]
