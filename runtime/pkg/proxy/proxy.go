@@ -39,7 +39,7 @@ func register(proxy *Proxy) {
 	valuev1.RegisterServer(proxy.server, proxy.runtime)
 }
 
-func NewProxy(runtime runtime.Runtime, opts ...Option) *Proxy {
+func New(runtime runtime.Runtime, opts ...Option) *Proxy {
 	var options Options
 	options.apply(opts...)
 	return &Proxy{

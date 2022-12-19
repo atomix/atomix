@@ -15,7 +15,7 @@ import (
 
 var log = logging.GetLogger()
 
-func NewController(runtime runtime.Runtime, opts ...Option) *Controller {
+func New(runtime runtime.Runtime, opts ...Option) *Controller {
 	var options Options
 	options.apply(opts...)
 	return &Controller{
