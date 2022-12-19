@@ -60,15 +60,16 @@ type StorageProxyServerConfig struct {
 }
 
 type Binding struct {
-	Store    corev1.ObjectReference `json:"store"`
-	Priority *uint32                `json:"priority"`
-	Tags     []string               `json:"tags"`
-	Services []ServiceBinding       `json:"services"`
+	Store      corev1.ObjectReference `json:"store"`
+	Priority   *uint32                `json:"priority"`
+	Tags       []string               `json:"tags"`
+	Primitives []PrimitiveSpec        `json:"primitives"`
 }
 
-type ServiceBinding struct {
-	Name   string               `json:"name"`
-	Config runtime.RawExtension `json:"config"`
+type PrimitiveSpec struct {
+	Name       string               `json:"name"`
+	APIVersion string               `json:"apiVersion"`
+	Config     runtime.RawExtension `json:"config"`
 }
 
 // LoggingConfig logging configuration

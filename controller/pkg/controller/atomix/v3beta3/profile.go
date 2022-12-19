@@ -6,9 +6,8 @@ package v3beta3
 
 import (
 	"context"
-	"encoding/json"
+	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
-	"github.com/atomix/atomix/proxy/pkg/proxy"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -100,9 +99,9 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			return p1 < p2
 		})
 
-		routes := make([]proxy.RouteConfig, 0, len(bindings))
+		routes := make([]*runtimev1.Route, 0, len(bindings))
 		for _, binding := range bindings {
-			storeID := proxy.StoreID{
+			storeID := runtimev1.StoreID{
 				Namespace: binding.Store.Namespace,
 				Name:      binding.Store.Name,
 			}
@@ -110,45 +109,26 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 				storeID.Namespace = profile.Namespace
 			}
 
-			routeConfig := proxy.RouteConfig{
-				Store: storeID,
-				Tags:  binding.Tags,
+			route := &runtimev1.Route{
+				StoreID: storeID,
+				Tags:    binding.Tags,
 			}
 
-			for _, service := range binding.Services {
-				serviceConfig := proxy.ServiceConfig{
-					Name: service.Name,
-				}
-				if service.Config.Raw != nil {
-					config := make(map[string]interface{})
-					if err := json.Unmarshal(service.Config.Raw, &config); err != nil {
-						return reconcile.Result{}, err
-					}
-					serviceConfig.Config = config
-				}
-				routeConfig.Services = append(routeConfig.Services, serviceConfig)
+			for _, primitive := range binding.Primitives {
+				route.Primitives = append(route.Primitives, runtimev1.PrimitiveSpec{
+					Type: runtimev1.PrimitiveType{
+						Name:       primitive.Name,
+						APIVersion: primitive.APIVersion,
+					},
+					Config: primitive.Config.Raw,
+				})
 			}
 
-			routes = append(routes, routeConfig)
+			routes = append(routes, route)
 		}
 
-		var config proxy.Config
-		config.Router = proxy.RouterConfig{
+		config := runtimev1.RuntimeConfig{
 			Routes: routes,
-		}
-		config.Server = proxy.ServerConfig{
-			ReadBufferSize:       profile.Spec.Proxy.Config.Server.ReadBufferSize,
-			WriteBufferSize:      profile.Spec.Proxy.Config.Server.WriteBufferSize,
-			NumStreamWorkers:     profile.Spec.Proxy.Config.Server.NumStreamWorkers,
-			MaxConcurrentStreams: profile.Spec.Proxy.Config.Server.MaxConcurrentStreams,
-		}
-		if profile.Spec.Proxy.Config.Server.MaxRecvMsgSize != nil {
-			maxRecvMsgSize := int(profile.Spec.Proxy.Config.Server.MaxRecvMsgSize.Value())
-			config.Server.MaxRecvMsgSize = &maxRecvMsgSize
-		}
-		if profile.Spec.Proxy.Config.Server.MaxSendMsgSize != nil {
-			maxSendMsgSize := int(profile.Spec.Proxy.Config.Server.MaxSendMsgSize.Value())
-			config.Server.MaxSendMsgSize = &maxSendMsgSize
 		}
 
 		configBytes, err := yaml.Marshal(config)

@@ -156,7 +156,7 @@ spec:
                         type: array
                         items:
                           type: string
-                      services:
+                      primitives:
                         type: array
                         items:
                           type: object
@@ -164,6 +164,8 @@ spec:
                             - name
                           properties:
                             name:
+                              type: string
+                            apiVersion:
                               type: string
                             config:
                               type: object

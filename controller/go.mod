@@ -3,13 +3,13 @@ module github.com/atomix/atomix/controller
 go 1.18
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221218014837-eec7ba47625a
+	github.com/atomix/atomix/api v0.0.0-20221219080515-f51040a03cdb
 	github.com/atomix/atomix/common v0.0.0-20221218014837-eec7ba47625a
-	github.com/atomix/atomix/proxy v0.0.0-20221218013252-cf24a1ffe6cb
+	github.com/atomix/atomix/runtime v0.0.0-20221219085404-5679432a0742
 	github.com/go-logr/logr v1.2.0
 	github.com/spf13/cobra v1.4.0
 	google.golang.org/grpc v1.46.0
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.24.0
 	k8s.io/apimachinery v0.24.0
 	k8s.io/client-go v0.24.0
@@ -19,8 +19,6 @@ require (
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/atomix/atomix/driver v0.0.0-20221218012923-e23afa40f26b // indirect
-	github.com/atomix/atomix/runtime v0.0.0-20221205094738-07c4d4749367 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -55,7 +53,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	go.uber.org/zap v1.21.0 // indirect
+	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
 	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 // indirect
