@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package net
+package network
 
 import (
 	"context"
@@ -12,48 +12,48 @@ import (
 	"sync"
 )
 
-// Network is an interface for creating net Conns and Listeners.
-type Network interface {
+// Driver is a network driver.
+type Driver interface {
 	// Listen creates a new Listener
 	Listen(address string) (net.Listener, error)
 	// Connect creates a new Conn
 	Connect(ctx context.Context, address string) (net.Conn, error)
 }
 
-// NewNetwork creates a new physical Network
-func NewNetwork() Network {
-	return &remoteNetwork{}
+// NewDefaultDriver creates a new physical Driver
+func NewDefaultDriver() Driver {
+	return &defaultDriver{}
 }
 
-// remoteNetwork is a physical network
-type remoteNetwork struct{}
+// defaultDriver is a physical network driver
+type defaultDriver struct{}
 
-func (n *remoteNetwork) Listen(address string) (net.Listener, error) {
+func (n *defaultDriver) Listen(address string) (net.Listener, error) {
 	return net.Listen("tcp", address)
 }
 
-func (n *remoteNetwork) Connect(ctx context.Context, address string) (net.Conn, error) {
+func (n *defaultDriver) Connect(ctx context.Context, address string) (net.Conn, error) {
 	return (&net.Dialer{}).DialContext(ctx, "tcp", address)
 }
 
 const localBufSize = 1024 * 1024
 
-// NewLocalNetwork creates a new process-local Network
-func NewLocalNetwork() Network {
-	return &localNetwork{
+// NewLocalDriver creates a new process-local Driver
+func NewLocalDriver() Driver {
+	return &localDriver{
 		listeners: make(map[string]*bufconn.Listener),
 		watchers:  make(map[string][]chan<- *bufconn.Listener),
 	}
 }
 
-type localNetwork struct {
+type localDriver struct {
 	listeners   map[string]*bufconn.Listener
 	listenersMu sync.Mutex
 	watchers    map[string][]chan<- *bufconn.Listener
 	watchersMu  sync.RWMutex
 }
 
-func (n *localNetwork) Listen(address string) (net.Listener, error) {
+func (n *localDriver) Listen(address string) (net.Listener, error) {
 	lis := bufconn.Listen(localBufSize)
 	n.listenersMu.Lock()
 	n.listeners[address] = lis
@@ -71,7 +71,7 @@ func (n *localNetwork) Listen(address string) (net.Listener, error) {
 	return lis, nil
 }
 
-func (n *localNetwork) Connect(ctx context.Context, address string) (net.Conn, error) {
+func (n *localDriver) Connect(ctx context.Context, address string) (net.Conn, error) {
 	n.listenersMu.Lock()
 	lis, ok := n.listeners[address]
 	n.listenersMu.Unlock()

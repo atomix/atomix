@@ -9,7 +9,8 @@ import (
 	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	"github.com/atomix/atomix/runtime/pkg/service"
+	"github.com/atomix/atomix/runtime/pkg/network"
+	"google.golang.org/grpc"
 	"os"
 	"sync"
 )
@@ -25,7 +26,7 @@ func Namespace() string {
 }
 
 type Runtime interface {
-	service.Service
+	network.Service
 	connect(ctx context.Context, driverID runtimev1.DriverID, storeID runtimev1.StoreID, config []byte) error
 	configure(ctx context.Context, storeID runtimev1.StoreID, config []byte) error
 	disconnect(ctx context.Context, storeID runtimev1.StoreID) error
@@ -42,12 +43,19 @@ func New(opts ...Option) Runtime {
 		drivers: make(map[runtimev1.DriverID]Driver),
 		conns:   make(map[runtimev1.StoreID]Conn),
 	}
-	rt.Service = newService(rt, options.ServiceOptions)
+
+	server := grpc.NewServer(options.GRPCServerOptions...)
+	runtimev1.RegisterRuntimeServer(server, newRuntimeServer(rt))
+
+	rt.Service = network.NewService(server,
+		network.WithDriver(network.NewDefaultDriver()),
+		network.WithHost(options.Host),
+		network.WithPort(options.Port))
 	return rt
 }
 
 type runtime struct {
-	service.Service
+	network.Service
 	Options
 	router  *router
 	drivers map[runtimev1.DriverID]Driver

@@ -6,7 +6,7 @@ package runtime
 
 import (
 	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/net"
+	"github.com/atomix/atomix/runtime/pkg/network"
 	"google.golang.org/grpc"
 )
 
@@ -21,14 +21,14 @@ type Options struct {
 }
 
 type ServiceOptions struct {
-	Network           net.Network
+	Network           network.Driver
 	Host              string
 	Port              int
 	GRPCServerOptions []grpc.ServerOption
 }
 
 func (o *Options) apply(opts ...Option) {
-	o.Network = net.NewNetwork()
+	o.Network = network.NewDefaultDriver()
 	o.Port = defaultPort
 	o.DriverProvider = newStaticDriverProvider()
 	o.RouteProvider = newStaticRouteProvider()
@@ -69,9 +69,9 @@ func WithRoutes(routes ...*runtimev1.Route) Option {
 	}
 }
 
-func WithNetwork(network net.Network) Option {
+func WithNetwork(driver network.Driver) Option {
 	return func(options *Options) {
-		options.Network = network
+		options.Network = driver
 	}
 }
 
