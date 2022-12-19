@@ -3,7 +3,7 @@ module github.com/atomix/atomix/protocols/rsm
 go 1.19
 
 require (
-	github.com/atomix/atomix/runtime v0.0.0-20221219085404-5679432a0742
+	github.com/atomix/atomix/runtime v0.0.0-20221219222821-2f3d4294dd1f
 	github.com/bits-and-blooms/bloom/v3 v3.3.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.6.0
@@ -13,6 +13,7 @@ require (
 )
 
 require (
+	github.com/atomix/atomix/api v0.0.0-20221219223759-628ae01a37ac // indirect
 	github.com/bits-and-blooms/bitset v1.3.1 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
