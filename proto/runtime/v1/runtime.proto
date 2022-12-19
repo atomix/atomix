@@ -20,6 +20,10 @@ service Runtime {
     rpc Disconnect (DisconnectRequest) returns (DisconnectResponse);
 }
 
+message RuntimeConfig {
+    repeated Route routes = 1;
+}
+
 message Route {
     StoreID store_id = 1 [
         (gogoproto.customname) = "StoreID",

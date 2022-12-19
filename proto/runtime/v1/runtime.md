@@ -15,6 +15,7 @@
     - [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec)
     - [PrimitiveType](#atomix-runtime-v1-PrimitiveType)
     - [Route](#atomix-runtime-v1-Route)
+    - [RuntimeConfig](#atomix-runtime-v1-RuntimeConfig)
     - [StoreID](#atomix-runtime-v1-StoreID)
   
     - [Runtime](#atomix-runtime-v1-Runtime)
@@ -182,6 +183,21 @@
 | store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
 | tags | [string](#string) | repeated |  |
 | primitives | [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-RuntimeConfig"></a>
+
+### RuntimeConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| routes | [Route](#atomix-runtime-v1-Route) | repeated |  |
 
 
 
