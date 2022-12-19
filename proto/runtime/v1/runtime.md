@@ -12,6 +12,7 @@
     - [DisconnectResponse](#atomix-runtime-v1-DisconnectResponse)
     - [DriverID](#atomix-runtime-v1-DriverID)
     - [PrimitiveID](#atomix-runtime-v1-PrimitiveID)
+    - [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta)
     - [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec)
     - [PrimitiveType](#atomix-runtime-v1-PrimitiveType)
     - [Route](#atomix-runtime-v1-Route)
@@ -140,6 +141,22 @@
 
 
 
+<a name="atomix-runtime-v1-PrimitiveMeta"></a>
+
+### PrimitiveMeta
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [PrimitiveType](#atomix-runtime-v1-PrimitiveType) |  |  |
+| id | [PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
+
+
+
+
+
+
 <a name="atomix-runtime-v1-PrimitiveSpec"></a>
 
 ### PrimitiveSpec
@@ -148,7 +165,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| type | [PrimitiveType](#atomix-runtime-v1-PrimitiveType) |  |  |
+| meta | [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta) |  |  |
 | config | [bytes](#bytes) |  |  |
 
 

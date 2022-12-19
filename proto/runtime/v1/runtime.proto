@@ -60,11 +60,24 @@ message PrimitiveType {
     ];
 }
 
-message PrimitiveSpec {
+message PrimitiveMeta {
+    option (gogoproto.equal) = true;
     PrimitiveType type = 1 [
         (gogoproto.nullable) = false
     ];
-    bytes config = 2;
+    PrimitiveID id = 2 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message PrimitiveSpec {
+    option (gogoproto.equal) = true;
+    PrimitiveMeta meta = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    bytes config = 3;
 }
 
 message ConnectRequest {
