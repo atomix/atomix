@@ -26,20 +26,13 @@ message Route {
         (gogoproto.nullable) = false
     ];
     repeated string tags = 2;
-    repeated Service services = 3 [
+    repeated PrimitiveSpec primitives = 3 [
         (gogoproto.nullable) = false
     ];
 }
 
-message Service {
-    string name = 1;
-    string api_version = 2 [
-        (gogoproto.customname) = "APIVersion"
-    ];
-    bytes config = 3;
-}
-
 message StoreID {
+    option (gogoproto.equal) = true;
     string namespace = 1;
     string name = 2;
 }
@@ -51,7 +44,23 @@ message DriverID {
 }
 
 message PrimitiveID {
+    option (gogoproto.equal) = true;
     string name = 1;
+}
+
+message PrimitiveType {
+    option (gogoproto.equal) = true;
+    string name = 1;
+    string api_version = 2 [
+        (gogoproto.customname) = "APIVersion"
+    ];
+}
+
+message PrimitiveSpec {
+    PrimitiveType type = 1 [
+        (gogoproto.nullable) = false
+    ];
+    bytes config = 2;
 }
 
 message ConnectRequest {

@@ -12,8 +12,9 @@
     - [DisconnectResponse](#atomix-runtime-v1-DisconnectResponse)
     - [DriverID](#atomix-runtime-v1-DriverID)
     - [PrimitiveID](#atomix-runtime-v1-PrimitiveID)
+    - [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec)
+    - [PrimitiveType](#atomix-runtime-v1-PrimitiveType)
     - [Route](#atomix-runtime-v1-Route)
-    - [Service](#atomix-runtime-v1-Service)
     - [StoreID](#atomix-runtime-v1-StoreID)
   
     - [Runtime](#atomix-runtime-v1-Runtime)
@@ -138,6 +139,38 @@
 
 
 
+<a name="atomix-runtime-v1-PrimitiveSpec"></a>
+
+### PrimitiveSpec
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [PrimitiveType](#atomix-runtime-v1-PrimitiveType) |  |  |
+| config | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-PrimitiveType"></a>
+
+### PrimitiveType
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| api_version | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="atomix-runtime-v1-Route"></a>
 
 ### Route
@@ -148,24 +181,7 @@
 | ----- | ---- | ----- | ----------- |
 | store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
 | tags | [string](#string) | repeated |  |
-| services | [Service](#atomix-runtime-v1-Service) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-Service"></a>
-
-### Service
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| api_version | [string](#string) |  |  |
-| config | [bytes](#bytes) |  |  |
+| primitives | [PrimitiveSpec](#atomix-runtime-v1-PrimitiveSpec) | repeated |  |
 
 
 
