@@ -15,11 +15,10 @@ type PrimitiveResolver[T any] func(conn Conn) (PrimitiveProvider[T], bool)
 
 type PrimitiveProvider[T any] func(config []byte) (T, error)
 
-func NewPrimitiveClient[T any](primitiveType runtimev1.PrimitiveType, runtime *Runtime, resolver PrimitiveResolver[T]) *PrimitiveClient[T] {
+func NewPrimitiveClient[T any](primitiveType runtimev1.PrimitiveType, runtime Runtime, resolver PrimitiveResolver[T]) *PrimitiveClient[T] {
 	return &PrimitiveClient[T]{
 		primitiveType: primitiveType,
 		runtime:       runtime,
-		router:        newRouter(runtime.RouteProvider),
 		resolver:      resolver,
 		primitives:    make(map[runtimev1.PrimitiveID]T),
 	}
@@ -27,8 +26,7 @@ func NewPrimitiveClient[T any](primitiveType runtimev1.PrimitiveType, runtime *R
 
 type PrimitiveClient[T any] struct {
 	primitiveType runtimev1.PrimitiveType
-	runtime       *Runtime
-	router        *router
+	runtime       Runtime
 	resolver      PrimitiveResolver[T]
 	primitives    map[runtimev1.PrimitiveID]T
 	mu            sync.RWMutex
@@ -43,7 +41,7 @@ func (c *PrimitiveClient[T]) Create(ctx context.Context, primitiveID runtimev1.P
 		return primitive, nil
 	}
 
-	route, err := c.router.route(ctx, tags...)
+	route, err := c.runtime.route(ctx, tags...)
 	if err != nil {
 		return primitive, err
 	}
@@ -56,7 +54,7 @@ func (c *PrimitiveClient[T]) Create(ctx context.Context, primitiveID runtimev1.P
 		}
 	}
 
-	conn, err := c.runtime.getConn(route.StoreID)
+	conn, err := c.runtime.lookup(route.StoreID)
 	if err != nil {
 		return primitive, err
 	}

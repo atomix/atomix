@@ -6,6 +6,7 @@ package runtime
 
 import (
 	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	"github.com/atomix/atomix/runtime/pkg/net"
 	"google.golang.org/grpc"
 )
 
@@ -59,7 +60,7 @@ func WithRoutes(routes ...*runtimev1.Route) Option {
 }
 
 type ServerOptions struct {
-	Network           Network
+	Network           net.Network
 	Host              string
 	Port              int
 	GRPCServerOptions []grpc.ServerOption
@@ -70,7 +71,7 @@ type ControllerOptions struct {
 }
 
 func (o *ControllerOptions) apply(opts ...ControllerOption) {
-	o.Network = NewNetwork()
+	o.Network = net.NewNetwork()
 	o.Port = defaultControllerPort
 	for _, opt := range opts {
 		opt(o)
@@ -85,7 +86,7 @@ func WithControllerOptions(opts ControllerOptions) ControllerOption {
 	}
 }
 
-func WithControllerNetwork(network Network) ControllerOption {
+func WithControllerNetwork(network net.Network) ControllerOption {
 	return func(options *ControllerOptions) {
 		options.Network = network
 	}

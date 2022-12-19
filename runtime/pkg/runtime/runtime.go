@@ -23,24 +23,38 @@ func Namespace() string {
 	return os.Getenv(namespaceEnv)
 }
 
-func New(opts ...Option) *Runtime {
+type Runtime interface {
+	Connect(ctx context.Context, driverID runtimev1.DriverID, storeID runtimev1.StoreID, config []byte) error
+	Configure(ctx context.Context, storeID runtimev1.StoreID, config []byte) error
+	Disconnect(ctx context.Context, storeID runtimev1.StoreID) error
+	route(ctx context.Context, tags ...string) (*runtimev1.Route, error)
+	lookup(storeID runtimev1.StoreID) (Conn, error)
+}
+
+func New(opts ...Option) Runtime {
 	var options Options
 	options.apply(opts...)
-	return &Runtime{
+	return &runtime{
 		Options: options,
+		router:  newRouter(options.RouteProvider),
 		drivers: make(map[runtimev1.DriverID]Driver),
 		conns:   make(map[runtimev1.StoreID]Conn),
 	}
 }
 
-type Runtime struct {
+type runtime struct {
 	Options
+	router  *router
 	drivers map[runtimev1.DriverID]Driver
 	conns   map[runtimev1.StoreID]Conn
 	mu      sync.RWMutex
 }
 
-func (r *Runtime) getConn(storeID runtimev1.StoreID) (Conn, error) {
+func (r *runtime) route(ctx context.Context, tags ...string) (*runtimev1.Route, error) {
+	return r.router.route(ctx, tags...)
+}
+
+func (r *runtime) lookup(storeID runtimev1.StoreID) (Conn, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	conn, ok := r.conns[storeID]
@@ -50,7 +64,7 @@ func (r *Runtime) getConn(storeID runtimev1.StoreID) (Conn, error) {
 	return conn, nil
 }
 
-func (r *Runtime) connect(ctx context.Context, driverID runtimev1.DriverID, storeID runtimev1.StoreID, config []byte) error {
+func (r *runtime) Connect(ctx context.Context, driverID runtimev1.DriverID, storeID runtimev1.StoreID, config []byte) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -95,7 +109,7 @@ func (r *Runtime) connect(ctx context.Context, driverID runtimev1.DriverID, stor
 	return nil
 }
 
-func (r *Runtime) configure(ctx context.Context, storeID runtimev1.StoreID, config []byte) error {
+func (r *runtime) Configure(ctx context.Context, storeID runtimev1.StoreID, config []byte) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -122,7 +136,7 @@ func (r *Runtime) configure(ctx context.Context, storeID runtimev1.StoreID, conf
 	return nil
 }
 
-func (r *Runtime) disconnect(ctx context.Context, storeID runtimev1.StoreID) error {
+func (r *runtime) Disconnect(ctx context.Context, storeID runtimev1.StoreID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

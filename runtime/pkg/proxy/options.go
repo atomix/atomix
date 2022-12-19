@@ -2,25 +2,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package runtime
+package proxy
 
 import (
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	"github.com/atomix/atomix/runtime/pkg/net"
 	"google.golang.org/grpc"
 )
 
 const (
-	defaultControllerPort = 5679
+	defaultPort = 5678
 )
 
 type Options struct {
-	DriverProvider DriverProvider
-	RouteProvider  RouteProvider
+	Network           net.Network
+	Host              string
+	Port              int
+	GRPCServerOptions []grpc.ServerOption
 }
 
 func (o *Options) apply(opts ...Option) {
-	o.DriverProvider = newStaticDriverProvider()
-	o.RouteProvider = newStaticRouteProvider()
+	o.Network = net.NewNetwork()
+	o.Port = defaultPort
 	for _, opt := range opts {
 		opt(o)
 	}
@@ -34,81 +36,30 @@ func WithOptions(opts Options) Option {
 	}
 }
 
-func WithDriverProvider(provider DriverProvider) Option {
+func WithNetwork(network net.Network) Option {
 	return func(options *Options) {
-		options.DriverProvider = provider
-	}
-}
-
-func WithDrivers(drivers ...Driver) Option {
-	return func(options *Options) {
-		options.DriverProvider = newStaticDriverProvider(drivers...)
-	}
-}
-
-func WithRouteProvider(provider RouteProvider) Option {
-	return func(options *Options) {
-		options.RouteProvider = provider
-	}
-}
-
-func WithRoutes(routes ...*runtimev1.Route) Option {
-	return func(options *Options) {
-		options.RouteProvider = newStaticRouteProvider(routes...)
-	}
-}
-
-type ServerOptions struct {
-	Network           Network
-	Host              string
-	Port              int
-	GRPCServerOptions []grpc.ServerOption
-}
-
-type ControllerOptions struct {
-	ServerOptions
-}
-
-func (o *ControllerOptions) apply(opts ...ControllerOption) {
-	o.Network = NewNetwork()
-	o.Port = defaultControllerPort
-	for _, opt := range opts {
-		opt(o)
-	}
-}
-
-type ControllerOption = func(*ControllerOptions)
-
-func WithControllerOptions(opts ControllerOptions) ControllerOption {
-	return func(options *ControllerOptions) {
-		*options = opts
-	}
-}
-
-func WithControllerNetwork(network Network) ControllerOption {
-	return func(options *ControllerOptions) {
 		options.Network = network
 	}
 }
 
-func WithControllerHost(host string) ControllerOption {
-	return func(options *ControllerOptions) {
+func WithHost(host string) Option {
+	return func(options *Options) {
 		options.Host = host
 	}
 }
 
-func WithControllerPort(port int) ControllerOption {
-	return func(options *ControllerOptions) {
+func WithPort(port int) Option {
+	return func(options *Options) {
 		options.Port = port
 	}
 }
 
-func WithServerOption(opt grpc.ServerOption) ControllerOption {
+func WithServerOption(opt grpc.ServerOption) Option {
 	return WithServerOptions(opt)
 }
 
-func WithServerOptions(opts ...grpc.ServerOption) ControllerOption {
-	return func(options *ControllerOptions) {
+func WithServerOptions(opts ...grpc.ServerOption) Option {
+	return func(options *Options) {
 		options.GRPCServerOptions = append(options.GRPCServerOptions, opts...)
 	}
 }

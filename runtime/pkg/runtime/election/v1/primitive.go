@@ -21,7 +21,7 @@ var PrimitiveType = runtimev1.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
-func RegisterServer(server *grpc.Server, rt *runtime.Runtime) {
+func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
 	electionv1.RegisterLeaderElectionServer(server, newLeaderElectionServer(runtime.NewPrimitiveClient[LeaderElection](PrimitiveType, rt, resolve)))
 }
 

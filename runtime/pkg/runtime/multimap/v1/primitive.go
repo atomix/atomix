@@ -21,7 +21,7 @@ var PrimitiveType = runtimev1.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
-func RegisterServer(server *grpc.Server, rt *runtime.Runtime) {
+func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
 	multimapv1.RegisterMultiMapServer(server, newMultiMapServer(runtime.NewPrimitiveClient[MultiMap](PrimitiveType, rt, resolve)))
 }
 

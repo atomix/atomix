@@ -21,7 +21,7 @@ var PrimitiveType = runtimev1.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
-func RegisterServer(server *grpc.Server, rt *runtime.Runtime) {
+func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
 	countermapv1.RegisterCounterMapServer(server, newCounterMapServer(runtime.NewPrimitiveClient[CounterMap](PrimitiveType, rt, resolve)))
 }
 

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package proxy
+package controller
 
 import (
 	"github.com/atomix/atomix/runtime/pkg/net"
@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defaultPort = 5678
+	defaultPort = 5679
 )
 
 type Options struct {

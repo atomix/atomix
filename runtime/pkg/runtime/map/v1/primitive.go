@@ -21,7 +21,7 @@ var PrimitiveType = runtimev1.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
-func RegisterServer(server *grpc.Server, rt *runtime.Runtime) {
+func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
 	mapv1.RegisterMapServer(server, newMapServer(runtime.NewPrimitiveClient[Map](PrimitiveType, rt, resolve)))
 }
 

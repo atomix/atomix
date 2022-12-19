@@ -21,7 +21,7 @@ var PrimitiveType = runtimev1.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
-func RegisterServer(server *grpc.Server, rt *runtime.Runtime) {
+func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
 	lockv1.RegisterLockServer(server, newLockServer(runtime.NewPrimitiveClient[Lock](PrimitiveType, rt, resolve)))
 }
 
