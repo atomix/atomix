@@ -10,8 +10,8 @@ import (
 	"github.com/atomix/atomix/proxy/pkg/plugin"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -56,7 +56,7 @@ func main() {
 			}
 
 			var config runtimev1.RuntimeConfig
-			if err := yaml.Unmarshal(configBytes, &config); err != nil {
+			if err := jsonpb.UnmarshalString(string(configBytes), &config); err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
