@@ -2,40 +2,38 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package runtime
+package proxy
 
 import (
 	"fmt"
 	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	"github.com/atomix/atomix/runtime/pkg/logging"
+	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 	"os"
 )
 
-// Service is an interface for starting and stopping a process
-type Service interface {
-	Start() error
-	Stop() error
-}
+var log = logging.GetLogger()
 
-func NewController(runtime *Runtime, opts ...ControllerOption) *Controller {
-	var options ControllerOptions
+func NewProxy(runtime *runtime.Runtime, opts ...Option) *Proxy {
+	var options Options
 	options.apply(opts...)
-	return &Controller{
-		ControllerOptions: options,
-		runtime:           runtime,
-		network:           options.Network,
-		server:            grpc.NewServer(options.GRPCServerOptions...),
+	return &Proxy{
+		Options: options,
+		runtime: runtime,
+		network: options.Network,
+		server:  grpc.NewServer(options.GRPCServerOptions...),
 	}
 }
 
-type Controller struct {
-	ControllerOptions
+type Proxy struct {
+	Options
 	runtime *Runtime
 	network Network
 	server  *grpc.Server
 }
 
-func (s *Controller) Start() error {
+func (s *Proxy) Start() error {
 	log.Info("Starting runtime controller service")
 	address := fmt.Sprintf("%s:%d", s.Host, s.Port)
 	lis, err := s.network.Listen(address)
@@ -54,10 +52,10 @@ func (s *Controller) Start() error {
 	return nil
 }
 
-func (s *Controller) Stop() error {
+func (s *Proxy) Stop() error {
 	log.Info("Shutting down runtime controller service")
 	s.server.Stop()
 	return nil
 }
 
-var _ Service = (*Controller)(nil)
+var _ Service = (*Proxy)(nil)
