@@ -8,8 +8,10 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
+	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
 	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
+	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"github.com/bits-and-blooms/bloom/v3"
 	"google.golang.org/grpc"
 	"os"
@@ -55,23 +57,25 @@ type SessionClient struct {
 	recorder     *Recorder
 }
 
-func (s *SessionClient) CreatePrimitive(ctx context.Context, spec protocol.PrimitiveSpec) error {
+func (s *SessionClient) CreatePrimitive(ctx context.Context, meta runtimev1.PrimitiveMeta) error {
 	s.primitivesMu.Lock()
 	defer s.primitivesMu.Unlock()
-	primitive, ok := s.primitives[spec.Name]
+	primitive, ok := s.primitives[meta.Name]
 	if ok {
 		return nil
 	}
 	primitive = newPrimitiveClient(s, protocol.PrimitiveSpec{
-		Service:   spec.Service,
-		Namespace: spec.Namespace,
-		Profile:   spec.Profile,
-		Name:      spec.Name,
+		Type: protocol.PrimitiveType{
+			Name:       meta.Type.Name,
+			APIVersion: meta.Type.APIVersion,
+		},
+		Namespace: runtime.Namespace(),
+		Name:      meta.Name,
 	})
 	if err := primitive.open(ctx); err != nil {
 		return err
 	}
-	s.primitives[spec.Name] = primitive
+	s.primitives[meta.Name] = primitive
 	return nil
 }
 
