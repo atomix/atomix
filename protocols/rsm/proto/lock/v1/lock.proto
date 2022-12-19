@@ -90,7 +90,7 @@ message AcquireInput {
 
 message AcquireOutput {
     uint64 index = 1 [
-        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/pkg/api/v1.Index"
     ];
 }
 
@@ -108,6 +108,6 @@ message GetInput {
 
 message GetOutput {
     uint64 index = 1 [
-        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/pkg/api/v1.Index"
     ];
 }

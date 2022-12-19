@@ -152,7 +152,7 @@ message WatchResponse {
 
 message LeaderElectionSnapshot {
     uint64 term = 1 [
-        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/pkg/api/v1.Index"
     ];
     LeaderElectionCandidate leader = 2;
     repeated LeaderElectionCandidate candidates = 3 [
@@ -164,7 +164,7 @@ message LeaderElectionCandidate {
     string name = 1;
     uint64 session_id = 2 [
         (gogoproto.customname) = "SessionID",
-        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.SessionID"
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/pkg/api/v1.SessionID"
     ];
 }
 
@@ -278,6 +278,6 @@ message Term {
     string leader = 1;
     repeated string candidates = 2;
     uint64 index = 3 [
-        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/pkg/api/v1.Index"
     ];
 }

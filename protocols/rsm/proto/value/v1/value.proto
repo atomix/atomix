@@ -184,7 +184,7 @@ message SetInput {
 
 message SetOutput {
     uint64 index = 1 [
-        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/pkg/api/v1.Index"
     ];
     IndexedValue prev_value = 2;
 }
@@ -199,14 +199,14 @@ message InsertInput {
 
 message InsertOutput {
     uint64 index = 1 [
-        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/pkg/api/v1.Index"
     ];
 }
 
 message UpdateInput {
     bytes value = 1;
     uint64 prev_index = 2 [
-        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/pkg/api/v1.Index"
     ];
     google.protobuf.Duration ttl = 3 [
         (gogoproto.customname) = "TTL",
@@ -216,7 +216,7 @@ message UpdateInput {
 
 message UpdateOutput {
     uint64 index = 1 [
-        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/pkg/api/v1.Index"
     ];
     IndexedValue prev_value = 2 [
         (gogoproto.nullable) = false
@@ -225,7 +225,7 @@ message UpdateOutput {
 
 message DeleteInput {
     uint64 prev_index = 1 [
-        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/pkg/api/v1.Index"
     ];
 }
 
@@ -256,7 +256,7 @@ message EventsOutput {
 message IndexedValue {
     bytes value = 1;
     uint64 index = 2 [
-        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/pkg/api/v1.Index"
     ];
 }
 

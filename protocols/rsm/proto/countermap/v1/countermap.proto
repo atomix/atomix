@@ -238,7 +238,7 @@ message EventsResponse {
 
 message CounterMapListener {
     uint64 index = 1 [
-        (gogoproto.casttype) = "github.com/atomix/runtime/sdk/pkg/protocol.Index"
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/pkg/api/v1.Index"
     ];
     string key = 2;
 }
