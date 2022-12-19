@@ -11,15 +11,25 @@ import (
 )
 
 const (
-	defaultControllerPort = 5679
+	defaultPort = 5679
 )
 
 type Options struct {
+	ServiceOptions
 	DriverProvider DriverProvider
 	RouteProvider  RouteProvider
 }
 
+type ServiceOptions struct {
+	Network           net.Network
+	Host              string
+	Port              int
+	GRPCServerOptions []grpc.ServerOption
+}
+
 func (o *Options) apply(opts ...Option) {
+	o.Network = net.NewNetwork()
+	o.Port = defaultPort
 	o.DriverProvider = newStaticDriverProvider()
 	o.RouteProvider = newStaticRouteProvider()
 	for _, opt := range opts {
@@ -59,57 +69,30 @@ func WithRoutes(routes ...*runtimev1.Route) Option {
 	}
 }
 
-type ServerOptions struct {
-	Network           net.Network
-	Host              string
-	Port              int
-	GRPCServerOptions []grpc.ServerOption
-}
-
-type ControllerOptions struct {
-	ServerOptions
-}
-
-func (o *ControllerOptions) apply(opts ...ControllerOption) {
-	o.Network = net.NewNetwork()
-	o.Port = defaultControllerPort
-	for _, opt := range opts {
-		opt(o)
-	}
-}
-
-type ControllerOption = func(*ControllerOptions)
-
-func WithControllerOptions(opts ControllerOptions) ControllerOption {
-	return func(options *ControllerOptions) {
-		*options = opts
-	}
-}
-
-func WithControllerNetwork(network net.Network) ControllerOption {
-	return func(options *ControllerOptions) {
+func WithNetwork(network net.Network) Option {
+	return func(options *Options) {
 		options.Network = network
 	}
 }
 
-func WithControllerHost(host string) ControllerOption {
-	return func(options *ControllerOptions) {
+func WithHost(host string) Option {
+	return func(options *Options) {
 		options.Host = host
 	}
 }
 
-func WithControllerPort(port int) ControllerOption {
-	return func(options *ControllerOptions) {
+func WithPort(port int) Option {
+	return func(options *Options) {
 		options.Port = port
 	}
 }
 
-func WithServerOption(opt grpc.ServerOption) ControllerOption {
+func WithServerOption(opt grpc.ServerOption) Option {
 	return WithServerOptions(opt)
 }
 
-func WithServerOptions(opts ...grpc.ServerOption) ControllerOption {
-	return func(options *ControllerOptions) {
+func WithServerOptions(opts ...grpc.ServerOption) Option {
+	return func(options *Options) {
 		options.GRPCServerOptions = append(options.GRPCServerOptions, opts...)
 	}
 }

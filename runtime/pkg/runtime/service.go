@@ -2,36 +2,31 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package controller
+package runtime
 
 import (
 	"fmt"
 	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/logging"
-	"github.com/atomix/atomix/runtime/pkg/runtime"
+	"github.com/atomix/atomix/runtime/pkg/service"
 	"google.golang.org/grpc"
 	"os"
 )
 
-var log = logging.GetLogger()
-
-func New(runtime runtime.Runtime, opts ...Option) *Controller {
-	var options Options
-	options.apply(opts...)
-	return &Controller{
-		Options: options,
-		runtime: runtime,
-		server:  grpc.NewServer(options.GRPCServerOptions...),
+func newService(runtime Runtime, options ServiceOptions) service.Service {
+	return &Service{
+		ServiceOptions: options,
+		runtime:        runtime,
+		server:         grpc.NewServer(options.GRPCServerOptions...),
 	}
 }
 
-type Controller struct {
-	Options
-	runtime runtime.Runtime
+type Service struct {
+	ServiceOptions
+	runtime Runtime
 	server  *grpc.Server
 }
 
-func (c *Controller) Start() error {
+func (c *Service) Start() error {
 	log.Info("Starting runtime controller service")
 	address := fmt.Sprintf("%s:%d", c.Host, c.Port)
 	lis, err := c.Network.Listen(address)
@@ -50,7 +45,7 @@ func (c *Controller) Start() error {
 	return nil
 }
 
-func (c *Controller) Stop() error {
+func (c *Service) Stop() error {
 	log.Info("Shutting down runtime controller service")
 	c.server.Stop()
 	return nil

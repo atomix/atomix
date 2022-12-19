@@ -9,6 +9,7 @@ import (
 	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	"github.com/atomix/atomix/runtime/pkg/service"
 	"os"
 	"sync"
 )
@@ -24,9 +25,10 @@ func Namespace() string {
 }
 
 type Runtime interface {
-	Connect(ctx context.Context, driverID runtimev1.DriverID, storeID runtimev1.StoreID, config []byte) error
-	Configure(ctx context.Context, storeID runtimev1.StoreID, config []byte) error
-	Disconnect(ctx context.Context, storeID runtimev1.StoreID) error
+	service.Service
+	connect(ctx context.Context, driverID runtimev1.DriverID, storeID runtimev1.StoreID, config []byte) error
+	configure(ctx context.Context, storeID runtimev1.StoreID, config []byte) error
+	disconnect(ctx context.Context, storeID runtimev1.StoreID) error
 	route(ctx context.Context, tags ...string) (*runtimev1.Route, error)
 	lookup(storeID runtimev1.StoreID) (Conn, error)
 }
@@ -34,15 +36,18 @@ type Runtime interface {
 func New(opts ...Option) Runtime {
 	var options Options
 	options.apply(opts...)
-	return &runtime{
+	rt := &runtime{
 		Options: options,
 		router:  newRouter(options.RouteProvider),
 		drivers: make(map[runtimev1.DriverID]Driver),
 		conns:   make(map[runtimev1.StoreID]Conn),
 	}
+	rt.Service = newService(rt, options.ServiceOptions)
+	return rt
 }
 
 type runtime struct {
+	service.Service
 	Options
 	router  *router
 	drivers map[runtimev1.DriverID]Driver
@@ -64,7 +69,7 @@ func (r *runtime) lookup(storeID runtimev1.StoreID) (Conn, error) {
 	return conn, nil
 }
 
-func (r *runtime) Connect(ctx context.Context, driverID runtimev1.DriverID, storeID runtimev1.StoreID, config []byte) error {
+func (r *runtime) connect(ctx context.Context, driverID runtimev1.DriverID, storeID runtimev1.StoreID, config []byte) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -109,7 +114,7 @@ func (r *runtime) Connect(ctx context.Context, driverID runtimev1.DriverID, stor
 	return nil
 }
 
-func (r *runtime) Configure(ctx context.Context, storeID runtimev1.StoreID, config []byte) error {
+func (r *runtime) configure(ctx context.Context, storeID runtimev1.StoreID, config []byte) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -136,7 +141,7 @@ func (r *runtime) Configure(ctx context.Context, storeID runtimev1.StoreID, conf
 	return nil
 }
 
-func (r *runtime) Disconnect(ctx context.Context, storeID runtimev1.StoreID) error {
+func (r *runtime) disconnect(ctx context.Context, storeID runtimev1.StoreID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
