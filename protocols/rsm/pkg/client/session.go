@@ -69,8 +69,10 @@ func (s *SessionClient) CreatePrimitive(ctx context.Context, meta runtimev1.Prim
 			Name:       meta.Type.Name,
 			APIVersion: meta.Type.APIVersion,
 		},
-		Namespace: runtime.Namespace(),
-		Name:      meta.Name,
+		PrimitiveName: protocol.PrimitiveName{
+			Namespace: runtime.Namespace(),
+			Name:      meta.Name,
+		},
 	})
 	if err := primitive.open(ctx); err != nil {
 		return err
