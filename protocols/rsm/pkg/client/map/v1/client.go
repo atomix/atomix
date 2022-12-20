@@ -28,31 +28,31 @@ var log = logging.GetLogger()
 
 const truncLen = 200
 
-func NewMapProxy(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (mapruntimev1.Map, error) {
-	proxy := newMapProxy(protocol, spec)
+func NewMap(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (mapruntimev1.Map, error) {
+	proxy := newMapClient(protocol, spec)
 	var config mapprotocolv1.MapConfig
 	if err := spec.UnmarshalConfig(&config); err != nil {
 		return nil, err
 	}
 	if config.Cache.Enabled {
-		proxy = newCachingMapProxy(proxy, config.Cache)
+		proxy = newCachingMapClient(proxy, config.Cache)
 	}
 	return proxy, nil
 }
 
-func newMapProxy(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) mapv1.MapServer {
-	return &mapProxy{
+func newMapClient(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) mapv1.MapServer {
+	return &mapClient{
 		Protocol:      protocol,
 		PrimitiveSpec: spec,
 	}
 }
 
-type mapProxy struct {
+type mapClient struct {
 	*client.Protocol
 	runtimev1.PrimitiveSpec
 }
 
-func (s *mapProxy) Create(ctx context.Context, request *mapv1.CreateRequest) (*mapv1.CreateResponse, error) {
+func (s *mapClient) Create(ctx context.Context, request *mapv1.CreateRequest) (*mapv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -77,7 +77,7 @@ func (s *mapProxy) Create(ctx context.Context, request *mapv1.CreateRequest) (*m
 	return response, nil
 }
 
-func (s *mapProxy) Close(ctx context.Context, request *mapv1.CloseRequest) (*mapv1.CloseResponse, error) {
+func (s *mapClient) Close(ctx context.Context, request *mapv1.CloseRequest) (*mapv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -102,7 +102,7 @@ func (s *mapProxy) Close(ctx context.Context, request *mapv1.CloseRequest) (*map
 	return response, nil
 }
 
-func (s *mapProxy) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
+func (s *mapClient) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -158,7 +158,7 @@ func (s *mapProxy) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1
 	return response, nil
 }
 
-func (s *mapProxy) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
+func (s *mapClient) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
 	log.Debugw("Put",
 		logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -215,7 +215,7 @@ func (s *mapProxy) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.P
 	return response, nil
 }
 
-func (s *mapProxy) Insert(ctx context.Context, request *mapv1.InsertRequest) (*mapv1.InsertResponse, error) {
+func (s *mapClient) Insert(ctx context.Context, request *mapv1.InsertRequest) (*mapv1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -264,7 +264,7 @@ func (s *mapProxy) Insert(ctx context.Context, request *mapv1.InsertRequest) (*m
 	return response, nil
 }
 
-func (s *mapProxy) Update(ctx context.Context, request *mapv1.UpdateRequest) (*mapv1.UpdateResponse, error) {
+func (s *mapClient) Update(ctx context.Context, request *mapv1.UpdateRequest) (*mapv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -319,7 +319,7 @@ func (s *mapProxy) Update(ctx context.Context, request *mapv1.UpdateRequest) (*m
 	return response, nil
 }
 
-func (s *mapProxy) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
+func (s *mapClient) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -369,7 +369,7 @@ func (s *mapProxy) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.G
 	return response, nil
 }
 
-func (s *mapProxy) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
+func (s *mapClient) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -421,7 +421,7 @@ func (s *mapProxy) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*m
 	return response, nil
 }
 
-func (s *mapProxy) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
+func (s *mapClient) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -471,7 +471,7 @@ func (s *mapProxy) Clear(ctx context.Context, request *mapv1.ClearRequest) (*map
 	return response, nil
 }
 
-func (s *mapProxy) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1.LockResponse, error) {
+func (s *mapClient) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1.LockResponse, error) {
 	log.Debugw("Lock",
 		logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)))
 
@@ -539,7 +539,7 @@ func (s *mapProxy) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1
 	return response, nil
 }
 
-func (s *mapProxy) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*mapv1.UnlockResponse, error) {
+func (s *mapClient) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*mapv1.UnlockResponse, error) {
 	log.Debugw("Unlock",
 		logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -589,7 +589,7 @@ func (s *mapProxy) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*m
 	return response, nil
 }
 
-func (s *mapProxy) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsServer) error {
+func (s *mapClient) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsServer) error {
 	log.Debugw("Events received",
 		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -726,7 +726,7 @@ func (s *mapProxy) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsS
 	return nil
 }
 
-func (s *mapProxy) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
+func (s *mapClient) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
 	log.Debugw("Entries received",
 		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -835,9 +835,9 @@ func (s *mapProxy) Entries(request *mapv1.EntriesRequest, server mapv1.Map_Entri
 	return nil
 }
 
-var _ mapv1.MapServer = (*mapProxy)(nil)
+var _ mapv1.MapServer = (*mapClient)(nil)
 
-func newCachingMapProxy(m mapv1.MapServer, config mapprotocolv1.CacheConfig) mapv1.MapServer {
+func newCachingMapClient(m mapv1.MapServer, config mapprotocolv1.CacheConfig) mapv1.MapServer {
 	return &cachingMapServer{
 		MapServer: m,
 		config:    config,

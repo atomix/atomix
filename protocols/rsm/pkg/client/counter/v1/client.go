@@ -23,18 +23,18 @@ var log = logging.GetLogger()
 const truncLen = 200
 
 func NewCounter(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (counterruntimev1.Counter, error) {
-	return &counterProxy{
+	return &counterClient{
 		Protocol:      protocol,
 		PrimitiveSpec: spec,
 	}, nil
 }
 
-type counterProxy struct {
+type counterClient struct {
 	*client.Protocol
 	runtimev1.PrimitiveSpec
 }
 
-func (s *counterProxy) Create(ctx context.Context, request *counterv1.CreateRequest) (*counterv1.CreateResponse, error) {
+func (s *counterClient) Create(ctx context.Context, request *counterv1.CreateRequest) (*counterv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -58,7 +58,7 @@ func (s *counterProxy) Create(ctx context.Context, request *counterv1.CreateRequ
 	return response, nil
 }
 
-func (s *counterProxy) Close(ctx context.Context, request *counterv1.CloseRequest) (*counterv1.CloseResponse, error) {
+func (s *counterClient) Close(ctx context.Context, request *counterv1.CloseRequest) (*counterv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -82,7 +82,7 @@ func (s *counterProxy) Close(ctx context.Context, request *counterv1.CloseReques
 	return response, nil
 }
 
-func (s *counterProxy) Set(ctx context.Context, request *counterv1.SetRequest) (*counterv1.SetResponse, error) {
+func (s *counterClient) Set(ctx context.Context, request *counterv1.SetRequest) (*counterv1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -129,7 +129,7 @@ func (s *counterProxy) Set(ctx context.Context, request *counterv1.SetRequest) (
 	return response, nil
 }
 
-func (s *counterProxy) Get(ctx context.Context, request *counterv1.GetRequest) (*counterv1.GetResponse, error) {
+func (s *counterClient) Get(ctx context.Context, request *counterv1.GetRequest) (*counterv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -174,7 +174,7 @@ func (s *counterProxy) Get(ctx context.Context, request *counterv1.GetRequest) (
 	return response, nil
 }
 
-func (s *counterProxy) Increment(ctx context.Context, request *counterv1.IncrementRequest) (*counterv1.IncrementResponse, error) {
+func (s *counterClient) Increment(ctx context.Context, request *counterv1.IncrementRequest) (*counterv1.IncrementResponse, error) {
 	log.Debugw("Increment",
 		logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -221,7 +221,7 @@ func (s *counterProxy) Increment(ctx context.Context, request *counterv1.Increme
 	return response, nil
 }
 
-func (s *counterProxy) Decrement(ctx context.Context, request *counterv1.DecrementRequest) (*counterv1.DecrementResponse, error) {
+func (s *counterClient) Decrement(ctx context.Context, request *counterv1.DecrementRequest) (*counterv1.DecrementResponse, error) {
 	log.Debugw("Decrement",
 		logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -268,7 +268,7 @@ func (s *counterProxy) Decrement(ctx context.Context, request *counterv1.Decreme
 	return response, nil
 }
 
-func (s *counterProxy) Update(ctx context.Context, request *counterv1.UpdateRequest) (*counterv1.UpdateResponse, error) {
+func (s *counterClient) Update(ctx context.Context, request *counterv1.UpdateRequest) (*counterv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -316,4 +316,4 @@ func (s *counterProxy) Update(ctx context.Context, request *counterv1.UpdateRequ
 	return response, nil
 }
 
-var _ counterv1.CounterServer = (*counterProxy)(nil)
+var _ counterv1.CounterServer = (*counterClient)(nil)

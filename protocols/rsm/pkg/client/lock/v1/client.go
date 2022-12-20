@@ -22,19 +22,19 @@ var log = logging.GetLogger()
 
 const truncLen = 200
 
-func NewLockProxy(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (lockruntimev1.Lock, error) {
-	return &lockProxy{
+func NewLock(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (lockruntimev1.Lock, error) {
+	return &lockClient{
 		Protocol:      protocol,
 		PrimitiveSpec: spec,
 	}, nil
 }
 
-type lockProxy struct {
+type lockClient struct {
 	*client.Protocol
 	runtimev1.PrimitiveSpec
 }
 
-func (s *lockProxy) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {
+func (s *lockClient) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -58,7 +58,7 @@ func (s *lockProxy) Create(ctx context.Context, request *lockv1.CreateRequest) (
 	return response, nil
 }
 
-func (s *lockProxy) Close(ctx context.Context, request *lockv1.CloseRequest) (*lockv1.CloseResponse, error) {
+func (s *lockClient) Close(ctx context.Context, request *lockv1.CloseRequest) (*lockv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -82,7 +82,7 @@ func (s *lockProxy) Close(ctx context.Context, request *lockv1.CloseRequest) (*l
 	return response, nil
 }
 
-func (s *lockProxy) Lock(ctx context.Context, request *lockv1.LockRequest) (*lockv1.LockResponse, error) {
+func (s *lockClient) Lock(ctx context.Context, request *lockv1.LockRequest) (*lockv1.LockResponse, error) {
 	log.Debugw("Lock",
 		logging.Stringer("LockRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -129,7 +129,7 @@ func (s *lockProxy) Lock(ctx context.Context, request *lockv1.LockRequest) (*loc
 	return response, nil
 }
 
-func (s *lockProxy) Unlock(ctx context.Context, request *lockv1.UnlockRequest) (*lockv1.UnlockResponse, error) {
+func (s *lockClient) Unlock(ctx context.Context, request *lockv1.UnlockRequest) (*lockv1.UnlockResponse, error) {
 	log.Debugw("Unlock",
 		logging.Stringer("UnlockRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -172,7 +172,7 @@ func (s *lockProxy) Unlock(ctx context.Context, request *lockv1.UnlockRequest) (
 	return response, nil
 }
 
-func (s *lockProxy) GetLock(ctx context.Context, request *lockv1.GetLockRequest) (*lockv1.GetLockResponse, error) {
+func (s *lockClient) GetLock(ctx context.Context, request *lockv1.GetLockRequest) (*lockv1.GetLockResponse, error) {
 	log.Debugw("GetLock",
 		logging.Stringer("GetLockRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -217,4 +217,4 @@ func (s *lockProxy) GetLock(ctx context.Context, request *lockv1.GetLockRequest)
 	return response, nil
 }
 
-var _ lockv1.LockServer = (*lockProxy)(nil)
+var _ lockv1.LockServer = (*lockClient)(nil)

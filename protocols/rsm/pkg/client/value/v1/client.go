@@ -23,19 +23,19 @@ var log = logging.GetLogger()
 
 const truncLen = 200
 
-func NewValueProxy(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (valueruntimev1.Value, error) {
-	return &valueProxy{
+func NewValue(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (valueruntimev1.Value, error) {
+	return &valueClient{
 		Protocol:      protocol,
 		PrimitiveSpec: spec,
 	}, nil
 }
 
-type valueProxy struct {
+type valueClient struct {
 	*client.Protocol
 	runtimev1.PrimitiveSpec
 }
 
-func (s *valueProxy) Create(ctx context.Context, request *valuev1.CreateRequest) (*valuev1.CreateResponse, error) {
+func (s *valueClient) Create(ctx context.Context, request *valuev1.CreateRequest) (*valuev1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -59,7 +59,7 @@ func (s *valueProxy) Create(ctx context.Context, request *valuev1.CreateRequest)
 	return response, nil
 }
 
-func (s *valueProxy) Close(ctx context.Context, request *valuev1.CloseRequest) (*valuev1.CloseResponse, error) {
+func (s *valueClient) Close(ctx context.Context, request *valuev1.CloseRequest) (*valuev1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -83,7 +83,7 @@ func (s *valueProxy) Close(ctx context.Context, request *valuev1.CloseRequest) (
 	return response, nil
 }
 
-func (s *valueProxy) Set(ctx context.Context, request *valuev1.SetRequest) (*valuev1.SetResponse, error) {
+func (s *valueClient) Set(ctx context.Context, request *valuev1.SetRequest) (*valuev1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -130,7 +130,7 @@ func (s *valueProxy) Set(ctx context.Context, request *valuev1.SetRequest) (*val
 	return response, nil
 }
 
-func (s *valueProxy) Insert(ctx context.Context, request *valuev1.InsertRequest) (*valuev1.InsertResponse, error) {
+func (s *valueClient) Insert(ctx context.Context, request *valuev1.InsertRequest) (*valuev1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -177,7 +177,7 @@ func (s *valueProxy) Insert(ctx context.Context, request *valuev1.InsertRequest)
 	return response, nil
 }
 
-func (s *valueProxy) Get(ctx context.Context, request *valuev1.GetRequest) (*valuev1.GetResponse, error) {
+func (s *valueClient) Get(ctx context.Context, request *valuev1.GetRequest) (*valuev1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -225,7 +225,7 @@ func (s *valueProxy) Get(ctx context.Context, request *valuev1.GetRequest) (*val
 	return response, nil
 }
 
-func (s *valueProxy) Update(ctx context.Context, request *valuev1.UpdateRequest) (*valuev1.UpdateResponse, error) {
+func (s *valueClient) Update(ctx context.Context, request *valuev1.UpdateRequest) (*valuev1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -278,7 +278,7 @@ func (s *valueProxy) Update(ctx context.Context, request *valuev1.UpdateRequest)
 	return response, nil
 }
 
-func (s *valueProxy) Delete(ctx context.Context, request *valuev1.DeleteRequest) (*valuev1.DeleteResponse, error) {
+func (s *valueClient) Delete(ctx context.Context, request *valuev1.DeleteRequest) (*valuev1.DeleteResponse, error) {
 	log.Debugw("Delete",
 		logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -328,7 +328,7 @@ func (s *valueProxy) Delete(ctx context.Context, request *valuev1.DeleteRequest)
 	return response, nil
 }
 
-func (s *valueProxy) Events(request *valuev1.EventsRequest, server valuev1.Value_EventsServer) error {
+func (s *valueClient) Events(request *valuev1.EventsRequest, server valuev1.Value_EventsServer) error {
 	log.Debugw("Events",
 		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -429,7 +429,7 @@ func (s *valueProxy) Events(request *valuev1.EventsRequest, server valuev1.Value
 	}
 }
 
-func (s *valueProxy) Watch(request *valuev1.WatchRequest, server valuev1.Value_WatchServer) error {
+func (s *valueClient) Watch(request *valuev1.WatchRequest, server valuev1.Value_WatchServer) error {
 	log.Debugw("Events",
 		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -495,4 +495,4 @@ func (s *valueProxy) Watch(request *valuev1.WatchRequest, server valuev1.Value_W
 	}
 }
 
-var _ valuev1.ValueServer = (*valueProxy)(nil)
+var _ valuev1.ValueServer = (*valueClient)(nil)

@@ -28,31 +28,31 @@ var log = logging.GetLogger()
 
 const truncLen = 200
 
-func NewIndexedMapProxy(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (indexedmapruntimev1.IndexedMap, error) {
-	proxy := newIndexedMapProxy(protocol, spec)
+func NewIndexedMap(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (indexedmapruntimev1.IndexedMap, error) {
+	proxy := newIndexedMapClient(protocol, spec)
 	var config indexedmapprotocolv1.IndexedMapConfig
 	if err := spec.UnmarshalConfig(&config); err != nil {
 		return nil, err
 	}
 	if config.Cache.Enabled {
-		proxy = newCachingIndexedMapProxy(proxy, config.Cache)
+		proxy = newCachingIndexedMapClient(proxy, config.Cache)
 	}
 	return proxy, nil
 }
 
-func newIndexedMapProxy(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) indexedmapv1.IndexedMapServer {
-	return &indexedMapProxy{
+func newIndexedMapClient(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) indexedmapv1.IndexedMapServer {
+	return &indexedMapClient{
 		Protocol:      protocol,
 		PrimitiveSpec: spec,
 	}
 }
 
-type indexedMapProxy struct {
+type indexedMapClient struct {
 	*client.Protocol
 	runtimev1.PrimitiveSpec
 }
 
-func (s *indexedMapProxy) Create(ctx context.Context, request *indexedmapv1.CreateRequest) (*indexedmapv1.CreateResponse, error) {
+func (s *indexedMapClient) Create(ctx context.Context, request *indexedmapv1.CreateRequest) (*indexedmapv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -77,7 +77,7 @@ func (s *indexedMapProxy) Create(ctx context.Context, request *indexedmapv1.Crea
 	return response, nil
 }
 
-func (s *indexedMapProxy) Close(ctx context.Context, request *indexedmapv1.CloseRequest) (*indexedmapv1.CloseResponse, error) {
+func (s *indexedMapClient) Close(ctx context.Context, request *indexedmapv1.CloseRequest) (*indexedmapv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -102,7 +102,7 @@ func (s *indexedMapProxy) Close(ctx context.Context, request *indexedmapv1.Close
 	return response, nil
 }
 
-func (s *indexedMapProxy) Size(ctx context.Context, request *indexedmapv1.SizeRequest) (*indexedmapv1.SizeResponse, error) {
+func (s *indexedMapClient) Size(ctx context.Context, request *indexedmapv1.SizeRequest) (*indexedmapv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -147,7 +147,7 @@ func (s *indexedMapProxy) Size(ctx context.Context, request *indexedmapv1.SizeRe
 	return response, nil
 }
 
-func (s *indexedMapProxy) Append(ctx context.Context, request *indexedmapv1.AppendRequest) (*indexedmapv1.AppendResponse, error) {
+func (s *indexedMapClient) Append(ctx context.Context, request *indexedmapv1.AppendRequest) (*indexedmapv1.AppendResponse, error) {
 	log.Debugw("Append",
 		logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -188,7 +188,7 @@ func (s *indexedMapProxy) Append(ctx context.Context, request *indexedmapv1.Appe
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.AppendResponse{
-		Entry: newProxyEntry(output.Entry),
+		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("Append",
 		logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
@@ -196,7 +196,7 @@ func (s *indexedMapProxy) Append(ctx context.Context, request *indexedmapv1.Appe
 	return response, nil
 }
 
-func (s *indexedMapProxy) Update(ctx context.Context, request *indexedmapv1.UpdateRequest) (*indexedmapv1.UpdateResponse, error) {
+func (s *indexedMapClient) Update(ctx context.Context, request *indexedmapv1.UpdateRequest) (*indexedmapv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -239,7 +239,7 @@ func (s *indexedMapProxy) Update(ctx context.Context, request *indexedmapv1.Upda
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.UpdateResponse{
-		Entry: newProxyEntry(output.Entry),
+		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("Update",
 		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
@@ -247,7 +247,7 @@ func (s *indexedMapProxy) Update(ctx context.Context, request *indexedmapv1.Upda
 	return response, nil
 }
 
-func (s *indexedMapProxy) Get(ctx context.Context, request *indexedmapv1.GetRequest) (*indexedmapv1.GetResponse, error) {
+func (s *indexedMapClient) Get(ctx context.Context, request *indexedmapv1.GetRequest) (*indexedmapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -287,7 +287,7 @@ func (s *indexedMapProxy) Get(ctx context.Context, request *indexedmapv1.GetRequ
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.GetResponse{
-		Entry: newProxyEntry(output.Entry),
+		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
@@ -295,7 +295,7 @@ func (s *indexedMapProxy) Get(ctx context.Context, request *indexedmapv1.GetRequ
 	return response, nil
 }
 
-func (s *indexedMapProxy) FirstEntry(ctx context.Context, request *indexedmapv1.FirstEntryRequest) (*indexedmapv1.FirstEntryResponse, error) {
+func (s *indexedMapClient) FirstEntry(ctx context.Context, request *indexedmapv1.FirstEntryRequest) (*indexedmapv1.FirstEntryResponse, error) {
 	log.Debugw("FirstEntry",
 		logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -332,7 +332,7 @@ func (s *indexedMapProxy) FirstEntry(ctx context.Context, request *indexedmapv1.
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.FirstEntryResponse{
-		Entry: newProxyEntry(output.Entry),
+		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("FirstEntry",
 		logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)),
@@ -340,7 +340,7 @@ func (s *indexedMapProxy) FirstEntry(ctx context.Context, request *indexedmapv1.
 	return response, nil
 }
 
-func (s *indexedMapProxy) LastEntry(ctx context.Context, request *indexedmapv1.LastEntryRequest) (*indexedmapv1.LastEntryResponse, error) {
+func (s *indexedMapClient) LastEntry(ctx context.Context, request *indexedmapv1.LastEntryRequest) (*indexedmapv1.LastEntryResponse, error) {
 	log.Debugw("LastEntry",
 		logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -377,7 +377,7 @@ func (s *indexedMapProxy) LastEntry(ctx context.Context, request *indexedmapv1.L
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.LastEntryResponse{
-		Entry: newProxyEntry(output.Entry),
+		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("LastEntry",
 		logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)),
@@ -385,7 +385,7 @@ func (s *indexedMapProxy) LastEntry(ctx context.Context, request *indexedmapv1.L
 	return response, nil
 }
 
-func (s *indexedMapProxy) NextEntry(ctx context.Context, request *indexedmapv1.NextEntryRequest) (*indexedmapv1.NextEntryResponse, error) {
+func (s *indexedMapClient) NextEntry(ctx context.Context, request *indexedmapv1.NextEntryRequest) (*indexedmapv1.NextEntryResponse, error) {
 	log.Debugw("NextEntry",
 		logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -424,7 +424,7 @@ func (s *indexedMapProxy) NextEntry(ctx context.Context, request *indexedmapv1.N
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.NextEntryResponse{
-		Entry: newProxyEntry(output.Entry),
+		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("NextEntry",
 		logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)),
@@ -432,7 +432,7 @@ func (s *indexedMapProxy) NextEntry(ctx context.Context, request *indexedmapv1.N
 	return response, nil
 }
 
-func (s *indexedMapProxy) PrevEntry(ctx context.Context, request *indexedmapv1.PrevEntryRequest) (*indexedmapv1.PrevEntryResponse, error) {
+func (s *indexedMapClient) PrevEntry(ctx context.Context, request *indexedmapv1.PrevEntryRequest) (*indexedmapv1.PrevEntryResponse, error) {
 	log.Debugw("PrevEntry",
 		logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -471,7 +471,7 @@ func (s *indexedMapProxy) PrevEntry(ctx context.Context, request *indexedmapv1.P
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.PrevEntryResponse{
-		Entry: newProxyEntry(output.Entry),
+		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("PrevEntry",
 		logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)),
@@ -479,7 +479,7 @@ func (s *indexedMapProxy) PrevEntry(ctx context.Context, request *indexedmapv1.P
 	return response, nil
 }
 
-func (s *indexedMapProxy) Remove(ctx context.Context, request *indexedmapv1.RemoveRequest) (*indexedmapv1.RemoveResponse, error) {
+func (s *indexedMapClient) Remove(ctx context.Context, request *indexedmapv1.RemoveRequest) (*indexedmapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -520,7 +520,7 @@ func (s *indexedMapProxy) Remove(ctx context.Context, request *indexedmapv1.Remo
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.RemoveResponse{
-		Entry: newProxyEntry(output.Entry),
+		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("Remove",
 		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
@@ -528,7 +528,7 @@ func (s *indexedMapProxy) Remove(ctx context.Context, request *indexedmapv1.Remo
 	return response, nil
 }
 
-func (s *indexedMapProxy) Clear(ctx context.Context, request *indexedmapv1.ClearRequest) (*indexedmapv1.ClearResponse, error) {
+func (s *indexedMapClient) Clear(ctx context.Context, request *indexedmapv1.ClearRequest) (*indexedmapv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -571,7 +571,7 @@ func (s *indexedMapProxy) Clear(ctx context.Context, request *indexedmapv1.Clear
 	return response, nil
 }
 
-func (s *indexedMapProxy) Entries(request *indexedmapv1.EntriesRequest, server indexedmapv1.IndexedMap_EntriesServer) error {
+func (s *indexedMapClient) Entries(request *indexedmapv1.EntriesRequest, server indexedmapv1.IndexedMap_EntriesServer) error {
 	log.Debugw("Entries",
 		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -621,7 +621,7 @@ func (s *indexedMapProxy) Entries(request *indexedmapv1.EntriesRequest, server i
 			return errors.ToProto(err)
 		}
 		response := &indexedmapv1.EntriesResponse{
-			Entry: *newProxyEntry(&output.Entry),
+			Entry: *newClientEntry(&output.Entry),
 		}
 		log.Debugw("Entries",
 			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
@@ -636,7 +636,7 @@ func (s *indexedMapProxy) Entries(request *indexedmapv1.EntriesRequest, server i
 	}
 }
 
-func (s *indexedMapProxy) Events(request *indexedmapv1.EventsRequest, server indexedmapv1.IndexedMap_EventsServer) error {
+func (s *indexedMapClient) Events(request *indexedmapv1.EventsRequest, server indexedmapv1.IndexedMap_EventsServer) error {
 	log.Debugw("Events",
 		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -699,20 +699,20 @@ func (s *indexedMapProxy) Events(request *indexedmapv1.EventsRequest, server ind
 		case *indexedmapprotocolv1.Event_Inserted_:
 			response.Event.Event = &indexedmapv1.Event_Inserted_{
 				Inserted: &indexedmapv1.Event_Inserted{
-					Value: *newProxyValue(&e.Inserted.Value),
+					Value: *newClientValue(&e.Inserted.Value),
 				},
 			}
 		case *indexedmapprotocolv1.Event_Updated_:
 			response.Event.Event = &indexedmapv1.Event_Updated_{
 				Updated: &indexedmapv1.Event_Updated{
-					Value:     *newProxyValue(&e.Updated.Value),
-					PrevValue: *newProxyValue(&e.Updated.PrevValue),
+					Value:     *newClientValue(&e.Updated.Value),
+					PrevValue: *newClientValue(&e.Updated.PrevValue),
 				},
 			}
 		case *indexedmapprotocolv1.Event_Removed_:
 			response.Event.Event = &indexedmapv1.Event_Removed_{
 				Removed: &indexedmapv1.Event_Removed{
-					Value:   *newProxyValue(&e.Removed.Value),
+					Value:   *newClientValue(&e.Removed.Value),
 					Expired: e.Removed.Expired,
 				},
 			}
@@ -730,18 +730,18 @@ func (s *indexedMapProxy) Events(request *indexedmapv1.EventsRequest, server ind
 	}
 }
 
-func newProxyEntry(entry *indexedmapprotocolv1.Entry) *indexedmapv1.Entry {
+func newClientEntry(entry *indexedmapprotocolv1.Entry) *indexedmapv1.Entry {
 	if entry == nil {
 		return nil
 	}
 	return &indexedmapv1.Entry{
 		Key:   entry.Key,
 		Index: entry.Index,
-		Value: newProxyValue(entry.Value),
+		Value: newClientValue(entry.Value),
 	}
 }
 
-func newProxyValue(value *indexedmapprotocolv1.Value) *indexedmapv1.VersionedValue {
+func newClientValue(value *indexedmapprotocolv1.Value) *indexedmapv1.VersionedValue {
 	if value == nil {
 		return nil
 	}
@@ -751,10 +751,10 @@ func newProxyValue(value *indexedmapprotocolv1.Value) *indexedmapv1.VersionedVal
 	}
 }
 
-var _ indexedmapv1.IndexedMapServer = (*indexedMapProxy)(nil)
+var _ indexedmapv1.IndexedMapServer = (*indexedMapClient)(nil)
 
-func newCachingIndexedMapProxy(m indexedmapv1.IndexedMapServer, config indexedmapprotocolv1.CacheConfig) indexedmapv1.IndexedMapServer {
-	return &cachingIndexedMapProxy{
+func newCachingIndexedMapClient(m indexedmapv1.IndexedMapServer, config indexedmapprotocolv1.CacheConfig) indexedmapv1.IndexedMapServer {
+	return &cachingIndexedMapClient{
 		IndexedMapServer: m,
 		config:           config,
 		entries:          make(map[string]*list.Element),
@@ -762,7 +762,7 @@ func newCachingIndexedMapProxy(m indexedmapv1.IndexedMapServer, config indexedma
 	}
 }
 
-type cachingIndexedMapProxy struct {
+type cachingIndexedMapClient struct {
 	indexedmapv1.IndexedMapServer
 	config  indexedmapprotocolv1.CacheConfig
 	entries map[string]*list.Element
@@ -770,7 +770,7 @@ type cachingIndexedMapProxy struct {
 	mu      sync.RWMutex
 }
 
-func (s *cachingIndexedMapProxy) Create(ctx context.Context, request *indexedmapv1.CreateRequest) (*indexedmapv1.CreateResponse, error) {
+func (s *cachingIndexedMapClient) Create(ctx context.Context, request *indexedmapv1.CreateRequest) (*indexedmapv1.CreateResponse, error) {
 	response, err := s.IndexedMapServer.Create(ctx, request)
 	if err != nil {
 		return nil, err
@@ -797,7 +797,7 @@ func (s *cachingIndexedMapProxy) Create(ctx context.Context, request *indexedmap
 	return response, nil
 }
 
-func (s *cachingIndexedMapProxy) Append(ctx context.Context, request *indexedmapv1.AppendRequest) (*indexedmapv1.AppendResponse, error) {
+func (s *cachingIndexedMapClient) Append(ctx context.Context, request *indexedmapv1.AppendRequest) (*indexedmapv1.AppendResponse, error) {
 	response, err := s.IndexedMapServer.Append(ctx, request)
 	if err != nil {
 		return nil, err
@@ -806,7 +806,7 @@ func (s *cachingIndexedMapProxy) Append(ctx context.Context, request *indexedmap
 	return response, nil
 }
 
-func (s *cachingIndexedMapProxy) Update(ctx context.Context, request *indexedmapv1.UpdateRequest) (*indexedmapv1.UpdateResponse, error) {
+func (s *cachingIndexedMapClient) Update(ctx context.Context, request *indexedmapv1.UpdateRequest) (*indexedmapv1.UpdateResponse, error) {
 	response, err := s.IndexedMapServer.Update(ctx, request)
 	if err != nil {
 		return nil, err
@@ -815,7 +815,7 @@ func (s *cachingIndexedMapProxy) Update(ctx context.Context, request *indexedmap
 	return response, nil
 }
 
-func (s *cachingIndexedMapProxy) Get(ctx context.Context, request *indexedmapv1.GetRequest) (*indexedmapv1.GetResponse, error) {
+func (s *cachingIndexedMapClient) Get(ctx context.Context, request *indexedmapv1.GetRequest) (*indexedmapv1.GetResponse, error) {
 	s.mu.RLock()
 	elem, ok := s.entries[request.Key]
 	s.mu.RUnlock()
@@ -827,7 +827,7 @@ func (s *cachingIndexedMapProxy) Get(ctx context.Context, request *indexedmapv1.
 	return s.IndexedMapServer.Get(ctx, request)
 }
 
-func (s *cachingIndexedMapProxy) Remove(ctx context.Context, request *indexedmapv1.RemoveRequest) (*indexedmapv1.RemoveResponse, error) {
+func (s *cachingIndexedMapClient) Remove(ctx context.Context, request *indexedmapv1.RemoveRequest) (*indexedmapv1.RemoveResponse, error) {
 	response, err := s.IndexedMapServer.Remove(ctx, request)
 	if err != nil {
 		return nil, err
@@ -836,7 +836,7 @@ func (s *cachingIndexedMapProxy) Remove(ctx context.Context, request *indexedmap
 	return response, nil
 }
 
-func (s *cachingIndexedMapProxy) Clear(ctx context.Context, request *indexedmapv1.ClearRequest) (*indexedmapv1.ClearResponse, error) {
+func (s *cachingIndexedMapClient) Clear(ctx context.Context, request *indexedmapv1.ClearRequest) (*indexedmapv1.ClearResponse, error) {
 	response, err := s.IndexedMapServer.Clear(ctx, request)
 	if err != nil {
 		return nil, err
@@ -848,7 +848,7 @@ func (s *cachingIndexedMapProxy) Clear(ctx context.Context, request *indexedmapv
 	return response, nil
 }
 
-func (s *cachingIndexedMapProxy) update(update *indexedmapv1.Entry) {
+func (s *cachingIndexedMapClient) update(update *indexedmapv1.Entry) {
 	s.mu.RLock()
 	check, ok := s.entries[update.Key]
 	s.mu.RUnlock()
@@ -870,7 +870,7 @@ func (s *cachingIndexedMapProxy) update(update *indexedmapv1.Entry) {
 	s.entries[update.Key] = s.aged.PushBack(entry)
 }
 
-func (s *cachingIndexedMapProxy) delete(key string) {
+func (s *cachingIndexedMapClient) delete(key string) {
 	s.mu.RLock()
 	_, ok := s.entries[key]
 	s.mu.RUnlock()
@@ -885,7 +885,7 @@ func (s *cachingIndexedMapProxy) delete(key string) {
 	}
 }
 
-func (s *cachingIndexedMapProxy) evict() {
+func (s *cachingIndexedMapClient) evict() {
 	t := time.Now()
 	evictionDuration := time.Hour
 	if s.config.EvictAfter != nil {
@@ -924,7 +924,7 @@ func (s *cachingIndexedMapProxy) evict() {
 	}
 }
 
-var _ indexedmapv1.IndexedMapServer = (*cachingIndexedMapProxy)(nil)
+var _ indexedmapv1.IndexedMapServer = (*cachingIndexedMapClient)(nil)
 
 func newChannelServer[T proto.Message](ch chan<- T) *channelServer[T] {
 	return &channelServer[T]{
@@ -942,7 +942,7 @@ func (s *channelServer[T]) Send(response T) error {
 	return nil
 }
 
-func newCachingEventsServer(server *cachingIndexedMapProxy) indexedmapv1.IndexedMap_EventsServer {
+func newCachingEventsServer(server *cachingIndexedMapClient) indexedmapv1.IndexedMap_EventsServer {
 	return &cachingEventsServer{
 		server: server,
 	}
@@ -950,7 +950,7 @@ func newCachingEventsServer(server *cachingIndexedMapProxy) indexedmapv1.Indexed
 
 type cachingEventsServer struct {
 	grpc.ServerStream
-	server *cachingIndexedMapProxy
+	server *cachingIndexedMapClient
 }
 
 func (s *cachingEventsServer) Send(response *indexedmapv1.EventsResponse) error {

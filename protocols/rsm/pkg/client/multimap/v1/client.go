@@ -26,19 +26,19 @@ var log = logging.GetLogger()
 
 const truncLen = 200
 
-func NewMultiMapProxy(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (multimapruntimev1.MultiMap, error) {
-	return &multiMapProxy{
+func NewMultiMap(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (multimapruntimev1.MultiMap, error) {
+	return &multiMapClient{
 		Protocol:      protocol,
 		PrimitiveSpec: spec,
 	}, nil
 }
 
-type multiMapProxy struct {
+type multiMapClient struct {
 	*client.Protocol
 	runtimev1.PrimitiveSpec
 }
 
-func (s *multiMapProxy) Create(ctx context.Context, request *multimapv1.CreateRequest) (*multimapv1.CreateResponse, error) {
+func (s *multiMapClient) Create(ctx context.Context, request *multimapv1.CreateRequest) (*multimapv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -63,7 +63,7 @@ func (s *multiMapProxy) Create(ctx context.Context, request *multimapv1.CreateRe
 	return response, nil
 }
 
-func (s *multiMapProxy) Close(ctx context.Context, request *multimapv1.CloseRequest) (*multimapv1.CloseResponse, error) {
+func (s *multiMapClient) Close(ctx context.Context, request *multimapv1.CloseRequest) (*multimapv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -88,7 +88,7 @@ func (s *multiMapProxy) Close(ctx context.Context, request *multimapv1.CloseRequ
 	return response, nil
 }
 
-func (s *multiMapProxy) Size(ctx context.Context, request *multimapv1.SizeRequest) (*multimapv1.SizeResponse, error) {
+func (s *multiMapClient) Size(ctx context.Context, request *multimapv1.SizeRequest) (*multimapv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -144,7 +144,7 @@ func (s *multiMapProxy) Size(ctx context.Context, request *multimapv1.SizeReques
 	return response, nil
 }
 
-func (s *multiMapProxy) Put(ctx context.Context, request *multimapv1.PutRequest) (*multimapv1.PutResponse, error) {
+func (s *multiMapClient) Put(ctx context.Context, request *multimapv1.PutRequest) (*multimapv1.PutResponse, error) {
 	log.Debugw("Put",
 		logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -191,7 +191,7 @@ func (s *multiMapProxy) Put(ctx context.Context, request *multimapv1.PutRequest)
 	return response, nil
 }
 
-func (s *multiMapProxy) PutAll(ctx context.Context, request *multimapv1.PutAllRequest) (*multimapv1.PutAllResponse, error) {
+func (s *multiMapClient) PutAll(ctx context.Context, request *multimapv1.PutAllRequest) (*multimapv1.PutAllResponse, error) {
 	log.Debugw("PutAll",
 		logging.Stringer("PutAllRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -240,7 +240,7 @@ func (s *multiMapProxy) PutAll(ctx context.Context, request *multimapv1.PutAllRe
 	return response, nil
 }
 
-func (s *multiMapProxy) PutEntries(ctx context.Context, request *multimapv1.PutEntriesRequest) (*multimapv1.PutEntriesResponse, error) {
+func (s *multiMapClient) PutEntries(ctx context.Context, request *multimapv1.PutEntriesRequest) (*multimapv1.PutEntriesResponse, error) {
 	log.Debugw("PutEntries",
 		logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)))
 	entries := make(map[int][]multimapprotocolv1.Entry)
@@ -314,7 +314,7 @@ func (s *multiMapProxy) PutEntries(ctx context.Context, request *multimapv1.PutE
 	return response, nil
 }
 
-func (s *multiMapProxy) Replace(ctx context.Context, request *multimapv1.ReplaceRequest) (*multimapv1.ReplaceResponse, error) {
+func (s *multiMapClient) Replace(ctx context.Context, request *multimapv1.ReplaceRequest) (*multimapv1.ReplaceResponse, error) {
 	log.Debugw("Replace",
 		logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -363,7 +363,7 @@ func (s *multiMapProxy) Replace(ctx context.Context, request *multimapv1.Replace
 	return response, nil
 }
 
-func (s *multiMapProxy) Contains(ctx context.Context, request *multimapv1.ContainsRequest) (*multimapv1.ContainsResponse, error) {
+func (s *multiMapClient) Contains(ctx context.Context, request *multimapv1.ContainsRequest) (*multimapv1.ContainsResponse, error) {
 	log.Debugw("Contains",
 		logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -410,7 +410,7 @@ func (s *multiMapProxy) Contains(ctx context.Context, request *multimapv1.Contai
 	return response, nil
 }
 
-func (s *multiMapProxy) Get(ctx context.Context, request *multimapv1.GetRequest) (*multimapv1.GetResponse, error) {
+func (s *multiMapClient) Get(ctx context.Context, request *multimapv1.GetRequest) (*multimapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -457,7 +457,7 @@ func (s *multiMapProxy) Get(ctx context.Context, request *multimapv1.GetRequest)
 	return response, nil
 }
 
-func (s *multiMapProxy) Remove(ctx context.Context, request *multimapv1.RemoveRequest) (*multimapv1.RemoveResponse, error) {
+func (s *multiMapClient) Remove(ctx context.Context, request *multimapv1.RemoveRequest) (*multimapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -506,7 +506,7 @@ func (s *multiMapProxy) Remove(ctx context.Context, request *multimapv1.RemoveRe
 	return response, nil
 }
 
-func (s *multiMapProxy) RemoveAll(ctx context.Context, request *multimapv1.RemoveAllRequest) (*multimapv1.RemoveAllResponse, error) {
+func (s *multiMapClient) RemoveAll(ctx context.Context, request *multimapv1.RemoveAllRequest) (*multimapv1.RemoveAllResponse, error) {
 	log.Debugw("RemoveAll",
 		logging.Stringer("RemoveAllRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -555,7 +555,7 @@ func (s *multiMapProxy) RemoveAll(ctx context.Context, request *multimapv1.Remov
 	return response, nil
 }
 
-func (s *multiMapProxy) RemoveEntries(ctx context.Context, request *multimapv1.RemoveEntriesRequest) (*multimapv1.RemoveEntriesResponse, error) {
+func (s *multiMapClient) RemoveEntries(ctx context.Context, request *multimapv1.RemoveEntriesRequest) (*multimapv1.RemoveEntriesResponse, error) {
 	log.Debugw("RemoveEntries",
 		logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)))
 	entries := make(map[int][]multimapprotocolv1.Entry)
@@ -629,7 +629,7 @@ func (s *multiMapProxy) RemoveEntries(ctx context.Context, request *multimapv1.R
 	return response, nil
 }
 
-func (s *multiMapProxy) Clear(ctx context.Context, request *multimapv1.ClearRequest) (*multimapv1.ClearResponse, error) {
+func (s *multiMapClient) Clear(ctx context.Context, request *multimapv1.ClearRequest) (*multimapv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -679,7 +679,7 @@ func (s *multiMapProxy) Clear(ctx context.Context, request *multimapv1.ClearRequ
 	return response, nil
 }
 
-func (s *multiMapProxy) Events(request *multimapv1.EventsRequest, server multimapv1.MultiMap_EventsServer) error {
+func (s *multiMapClient) Events(request *multimapv1.EventsRequest, server multimapv1.MultiMap_EventsServer) error {
 	log.Debugw("Events received",
 		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -796,7 +796,7 @@ func (s *multiMapProxy) Events(request *multimapv1.EventsRequest, server multima
 	return nil
 }
 
-func (s *multiMapProxy) Entries(request *multimapv1.EntriesRequest, server multimapv1.MultiMap_EntriesServer) error {
+func (s *multiMapClient) Entries(request *multimapv1.EntriesRequest, server multimapv1.MultiMap_EntriesServer) error {
 	log.Debugw("Entries received",
 		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -900,4 +900,4 @@ func (s *multiMapProxy) Entries(request *multimapv1.EntriesRequest, server multi
 	return nil
 }
 
-var _ multimapv1.MultiMapServer = (*multiMapProxy)(nil)
+var _ multimapv1.MultiMapServer = (*multiMapClient)(nil)

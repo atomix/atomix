@@ -26,19 +26,19 @@ var log = logging.GetLogger()
 
 const truncLen = 200
 
-func NewSetProxy(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (setruntimev1.Set, error) {
-	return &setProxy{
+func NewSet(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (setruntimev1.Set, error) {
+	return &setClient{
 		Protocol:      protocol,
 		PrimitiveSpec: spec,
 	}, nil
 }
 
-type setProxy struct {
+type setClient struct {
 	*client.Protocol
 	runtimev1.PrimitiveSpec
 }
 
-func (s *setProxy) Create(ctx context.Context, request *setv1.CreateRequest) (*setv1.CreateResponse, error) {
+func (s *setClient) Create(ctx context.Context, request *setv1.CreateRequest) (*setv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -63,7 +63,7 @@ func (s *setProxy) Create(ctx context.Context, request *setv1.CreateRequest) (*s
 	return response, nil
 }
 
-func (s *setProxy) Close(ctx context.Context, request *setv1.CloseRequest) (*setv1.CloseResponse, error) {
+func (s *setClient) Close(ctx context.Context, request *setv1.CloseRequest) (*setv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -88,7 +88,7 @@ func (s *setProxy) Close(ctx context.Context, request *setv1.CloseRequest) (*set
 	return response, nil
 }
 
-func (s *setProxy) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1.SizeResponse, error) {
+func (s *setClient) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -144,7 +144,7 @@ func (s *setProxy) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1
 	return response, nil
 }
 
-func (s *setProxy) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.AddResponse, error) {
+func (s *setClient) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.AddResponse, error) {
 	log.Debugw("Add",
 		logging.Stringer("AddRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Element.Value))
@@ -193,7 +193,7 @@ func (s *setProxy) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.A
 	return response, nil
 }
 
-func (s *setProxy) Contains(ctx context.Context, request *setv1.ContainsRequest) (*setv1.ContainsResponse, error) {
+func (s *setClient) Contains(ctx context.Context, request *setv1.ContainsRequest) (*setv1.ContainsResponse, error) {
 	log.Debugw("Contains",
 		logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Element.Value))
@@ -243,7 +243,7 @@ func (s *setProxy) Contains(ctx context.Context, request *setv1.ContainsRequest)
 	return response, nil
 }
 
-func (s *setProxy) Remove(ctx context.Context, request *setv1.RemoveRequest) (*setv1.RemoveResponse, error) {
+func (s *setClient) Remove(ctx context.Context, request *setv1.RemoveRequest) (*setv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)))
 	partition := s.PartitionBy([]byte(request.Element.Value))
@@ -291,7 +291,7 @@ func (s *setProxy) Remove(ctx context.Context, request *setv1.RemoveRequest) (*s
 	return response, nil
 }
 
-func (s *setProxy) Clear(ctx context.Context, request *setv1.ClearRequest) (*setv1.ClearResponse, error) {
+func (s *setClient) Clear(ctx context.Context, request *setv1.ClearRequest) (*setv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -341,7 +341,7 @@ func (s *setProxy) Clear(ctx context.Context, request *setv1.ClearRequest) (*set
 	return response, nil
 }
 
-func (s *setProxy) Events(request *setv1.EventsRequest, server setv1.Set_EventsServer) error {
+func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_EventsServer) error {
 	log.Debugw("Events received",
 		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -459,7 +459,7 @@ func (s *setProxy) Events(request *setv1.EventsRequest, server setv1.Set_EventsS
 	return nil
 }
 
-func (s *setProxy) Elements(request *setv1.ElementsRequest, server setv1.Set_ElementsServer) error {
+func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_ElementsServer) error {
 	log.Debugw("Elements received",
 		logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)))
 	partitions := s.Partitions()
@@ -562,4 +562,4 @@ func (s *setProxy) Elements(request *setv1.ElementsRequest, server setv1.Set_Ele
 	return nil
 }
 
-var _ setv1.SetServer = (*setProxy)(nil)
+var _ setv1.SetServer = (*setClient)(nil)
