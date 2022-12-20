@@ -7,15 +7,15 @@ package runtime
 import (
 	"context"
 	"fmt"
+	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 )
 
 // Driver is the primary interface for implementing storage drivers
 type Driver interface {
 	fmt.Stringer
-	Name() string
-	Version() string
-	Connect(ctx context.Context, config []byte) (Conn, error)
+	ID() runtimev1.DriverID
+	Connect(ctx context.Context, spec runtimev1.ConnSpec) (Conn, error)
 }
 
 // Conn is a connection to a store
@@ -26,7 +26,7 @@ type Conn interface {
 
 // Configurator is an interface for supporting configuration changes on an existing Conn
 type Configurator interface {
-	Configure(ctx context.Context, config []byte) error
+	Configure(ctx context.Context, spec runtimev1.ConnSpec) error
 }
 
 // Closer is an interface for closing connections
@@ -35,18 +35,13 @@ type Closer interface {
 }
 
 type DriverProvider interface {
-	LoadDriver(ctx context.Context, name, version string) (Driver, error)
+	LoadDriver(ctx context.Context, driverID runtimev1.DriverID) (Driver, error)
 }
 
 func newStaticDriverProvider(drivers ...Driver) DriverProvider {
-	driverMap := make(map[string]map[string]Driver)
+	driverMap := make(map[runtimev1.DriverID]Driver)
 	for _, driver := range drivers {
-		versionMap, ok := driverMap[driver.Name()]
-		if !ok {
-			versionMap = make(map[string]Driver)
-			driverMap[driver.Name()] = versionMap
-		}
-		versionMap[driver.Version()] = driver
+		driverMap[driver.ID()] = driver
 	}
 	return &staticDriverProvider{
 		drivers: driverMap,
@@ -54,17 +49,13 @@ func newStaticDriverProvider(drivers ...Driver) DriverProvider {
 }
 
 type staticDriverProvider struct {
-	drivers map[string]map[string]Driver
+	drivers map[runtimev1.DriverID]Driver
 }
 
-func (p *staticDriverProvider) LoadDriver(_ context.Context, name, version string) (Driver, error) {
-	versions, ok := p.drivers[name]
+func (p *staticDriverProvider) LoadDriver(_ context.Context, driverID runtimev1.DriverID) (Driver, error) {
+	driver, ok := p.drivers[driverID]
 	if !ok {
-		return nil, errors.NewNotFound("driver %s not found", name)
-	}
-	driver, ok := versions[version]
-	if !ok {
-		return nil, errors.NewNotFound("driver %s version %s not found", name, version)
+		return nil, errors.NewNotFound("driver %s not found", driverID)
 	}
 	return driver, nil
 }

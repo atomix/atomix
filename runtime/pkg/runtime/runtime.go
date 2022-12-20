@@ -27,8 +27,8 @@ func Namespace() string {
 
 type Runtime interface {
 	network.Service
-	connect(ctx context.Context, driverID runtimev1.DriverID, storeID runtimev1.StoreID, config []byte) error
-	configure(ctx context.Context, storeID runtimev1.StoreID, config []byte) error
+	connect(ctx context.Context, driverID runtimev1.DriverID, spec runtimev1.ConnSpec) error
+	configure(ctx context.Context, spec runtimev1.ConnSpec) error
 	disconnect(ctx context.Context, storeID runtimev1.StoreID) error
 	route(ctx context.Context, tags ...string) (*runtimev1.Route, error)
 	lookup(storeID runtimev1.StoreID) (Conn, error)
@@ -77,13 +77,13 @@ func (r *runtime) lookup(storeID runtimev1.StoreID) (Conn, error) {
 	return conn, nil
 }
 
-func (r *runtime) connect(ctx context.Context, driverID runtimev1.DriverID, storeID runtimev1.StoreID, config []byte) error {
+func (r *runtime) connect(ctx context.Context, driverID runtimev1.DriverID, spec runtimev1.ConnSpec) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	conn, ok := r.conns[storeID]
+	conn, ok := r.conns[spec.StoreID]
 	if ok {
-		return errors.NewAlreadyExists("connection '%s' already exists", storeID)
+		return errors.NewAlreadyExists("connection '%s' already exists", spec.StoreID)
 	}
 
 	driver, ok := r.drivers[driverID]
@@ -92,7 +92,7 @@ func (r *runtime) connect(ctx context.Context, driverID runtimev1.DriverID, stor
 			logging.String("Driver", driverID.Name),
 			logging.String("Version", driverID.Version))
 		var err error
-		driver, err = r.DriverProvider.LoadDriver(ctx, driverID.Name, driverID.Version)
+		driver, err = r.DriverProvider.LoadDriver(ctx, driverID)
 		if err != nil {
 			err = errors.NewInternal("failed loading driver '%s': %v", driverID, err)
 			log.Warnw("Loading driver failed",
@@ -105,47 +105,47 @@ func (r *runtime) connect(ctx context.Context, driverID runtimev1.DriverID, stor
 	}
 
 	log.Infow("Establishing connection to store",
-		logging.String("Name", storeID.Name),
-		logging.String("Namespace", storeID.Namespace))
-	conn, err := driver.Connect(ctx, config)
+		logging.String("Name", spec.StoreID.Name),
+		logging.String("Namespace", spec.StoreID.Namespace))
+	conn, err := driver.Connect(ctx, spec)
 	if err != nil {
 		log.Warnw("Connecting to store failed",
-			logging.String("Name", storeID.Name),
-			logging.String("Namespace", storeID.Namespace),
+			logging.String("Name", spec.StoreID.Name),
+			logging.String("Namespace", spec.StoreID.Namespace),
 			logging.Error("Error", err))
 		return err
 	}
 	log.Infow("Connected to store",
-		logging.String("Name", storeID.Name),
-		logging.String("Namespace", storeID.Namespace))
-	r.conns[storeID] = conn
+		logging.String("Name", spec.StoreID.Name),
+		logging.String("Namespace", spec.StoreID.Namespace))
+	r.conns[spec.StoreID] = conn
 	return nil
 }
 
-func (r *runtime) configure(ctx context.Context, storeID runtimev1.StoreID, config []byte) error {
+func (r *runtime) configure(ctx context.Context, spec runtimev1.ConnSpec) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	conn, ok := r.conns[storeID]
+	conn, ok := r.conns[spec.StoreID]
 	if !ok {
-		return errors.NewNotFound("connection '%s' not found", storeID)
+		return errors.NewNotFound("connection to '%s' not found", spec.StoreID)
 	}
 
 	log.Infow("Reconfiguring connection to store",
-		logging.String("Name", storeID.Name),
-		logging.String("Namespace", storeID.Namespace))
+		logging.String("Name", spec.StoreID.Name),
+		logging.String("Namespace", spec.StoreID.Namespace))
 	if configurator, ok := conn.(Configurator); ok {
-		if err := configurator.Configure(ctx, config); err != nil {
+		if err := configurator.Configure(ctx, spec); err != nil {
 			log.Warnw("Reconfiguring connection to store failed",
-				logging.String("Name", storeID.Name),
-				logging.String("Namespace", storeID.Namespace),
+				logging.String("Name", spec.StoreID.Name),
+				logging.String("Namespace", spec.StoreID.Namespace),
 				logging.Error("Error", err))
 			return err
 		}
 	}
 	log.Infow("Reconfigured connection to store",
-		logging.String("Name", storeID.Name),
-		logging.String("Namespace", storeID.Namespace))
+		logging.String("Name", spec.StoreID.Name),
+		logging.String("Namespace", spec.StoreID.Namespace))
 	return nil
 }
 
