@@ -7,7 +7,6 @@ package main
 import (
 	"fmt"
 	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
-	"github.com/atomix/atomix/proxy/pkg/plugin"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"github.com/gogo/protobuf/jsonpb"
@@ -71,7 +70,7 @@ func main() {
 			runtime := runtime.New(
 				runtime.WithHost(runtimeHost),
 				runtime.WithPort(runtimePort),
-				runtime.WithDriverProvider(plugin.NewDriverProvider(pluginsDir)),
+				runtime.WithDriverProvider(proxy.NewDriverProvider(pluginsDir)),
 				runtime.WithRoutes(config.Routes...))
 			if err := runtime.Start(); err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())

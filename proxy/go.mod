@@ -3,8 +3,8 @@ module github.com/atomix/atomix/proxy
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221219223759-628ae01a37ac
-	github.com/atomix/atomix/runtime v0.0.0-20221219235545-f1c852eaeb8e
+	github.com/atomix/atomix/api v0.0.0-20221220002711-d3ec8d10691a
+	github.com/atomix/atomix/runtime v0.0.0-20221220002934-fb8ee8a1e9e6
 	github.com/gogo/protobuf v1.3.2
 	github.com/rogpeppe/go-internal v1.8.1
 	github.com/spf13/cobra v1.4.0

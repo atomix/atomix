@@ -2,11 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package plugin
+package proxy
 
 import (
 	"context"
 	"fmt"
+	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"os"
@@ -26,8 +27,8 @@ type pluginDriverProvider struct {
 	path string
 }
 
-func (p *pluginDriverProvider) LoadDriver(_ context.Context, name, version string) (runtime.Driver, error) {
-	path := filepath.Join(p.path, fmt.Sprintf("%s@%s.so", name, version))
+func (p *pluginDriverProvider) LoadDriver(_ context.Context, driverID runtimev1.DriverID) (runtime.Driver, error) {
+	path := filepath.Join(p.path, fmt.Sprintf("%s@%s.so", driverID.Name, driverID.Version))
 	driverPlugin, err := plugin.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
