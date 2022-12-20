@@ -39,7 +39,7 @@ func addPodController(mgr manager.Manager) error {
 		Reconciler: &PodReconciler{
 			client:   mgr.GetClient(),
 			scheme:   mgr.GetScheme(),
-			events:   mgr.GetEventRecorderFor("atomix-multiraft-storage"),
+			events:   mgr.GetEventRecorderFor("atomix-multi-raft-storage"),
 			watchers: make(map[string]context.CancelFunc),
 		},
 		RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*10, time.Second*5),

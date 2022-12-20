@@ -38,13 +38,13 @@ func addMultiRaftStoreController(mgr manager.Manager) error {
 		Reconciler: &MultiRaftStoreReconciler{
 			client: mgr.GetClient(),
 			scheme: mgr.GetScheme(),
-			events: mgr.GetEventRecorderFor("atomix-multiraft-storage"),
+			events: mgr.GetEventRecorderFor("atomix-multi-raft-storage"),
 		},
 		RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*10, time.Second*5),
 	}
 
 	// Create a new controller
-	controller, err := controller.New("atomix-multiraft-store-v1beta1", mgr, options)
+	controller, err := controller.New("atomix-multi-raft-store-v1beta1", mgr, options)
 	if err != nil {
 		return err
 	}

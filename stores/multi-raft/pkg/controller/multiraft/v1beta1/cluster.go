@@ -44,9 +44,9 @@ const (
 	protocolPort          = 5679
 	probePort             = 5679
 	defaultImageEnv       = "DEFAULT_NODE_IMAGE"
-	defaultImage          = "atomix/multiraft-node:latest"
+	defaultImage          = "atomix/multi-raft-node:latest"
 	headlessServiceSuffix = "hs"
-	nodeContainerName     = "atomix-multiraft-node"
+	nodeContainerName     = "atomix-multi-raft-node"
 	multiRaftPodFinalizer = "multiraft.atomix.io/pod"
 	storeKey              = "atomix.io/store"
 	multiRaftStoreKey     = "multiraft.atomix.io/store"

@@ -34,15 +34,15 @@ release-node: build
 	docker push atomix/shared-memory-node:latest
 ifdef TAG
 	docker tag atomix/shared-memory-node:latest atomix/shared-memory-node:${MAJOR}.${MINOR}.${PATCH}
-	docker tag atomix/shared-memory-node:latest atomix/sharedmemory-node:${MAJOR}.${MINOR}
-	docker push atomix/sharedmemory-node:${MAJOR}.${MINOR}.${PATCH}
-	docker push atomix/sharedmemory-node:${MAJOR}.${MINOR}
+	docker tag atomix/shared-memory-node:latest atomix/shared-memory-node:${MAJOR}.${MINOR}
+	docker push atomix/shared-memory-node:${MAJOR}.${MINOR}.${PATCH}
+	docker push atomix/shared-memory-node:${MAJOR}.${MINOR}
 endif
 
 kind: build
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
-	kind load docker-image atomix/sharedmemory-controller:latest
-	kind load docker-image atomix/sharedmemory-node:latest
+	kind load docker-image atomix/shared-memory-controller:latest
+	kind load docker-image atomix/shared-memory-node:latest
 
 reuse-tool: # @HELP install reuse if not present
 	command -v reuse || python3 -m pip install reuse
