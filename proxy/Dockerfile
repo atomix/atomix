@@ -18,22 +18,22 @@ RUN go mod download
 FROM builder AS build-proxy
 RUN go run ./cmd/atomix-build proxy /build/bin/atomix-proxy
 
-# Build the multiraft storage driver
-FROM builder AS build-multiraft-driver
+# Build the multi-raft storage driver
+FROM builder AS build-multi-raft-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/atomix/drivers/multiraft@4bbea847d \
+    github.com/atomix/atomix/drivers/multi-raft@4bbea847d \
     /build/bin/MultiRaft@v2beta1.so
 
-# Build the sharedmemory storage driver
-FROM builder AS build-sharedmemory-driver
+# Build the shared-memory storage driver
+FROM builder AS build-shared-memory-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/atomix/drivers/sharedmemory@4bbea847d \
+    github.com/atomix/atomix/drivers/shared-memory@4bbea847d \
     /build/bin/SharedMemory@v2beta1.so
 
-# Build the podmemory storage driver
-FROM builder AS build-podmemory-driver
+# Build the pod-memory storage driver
+FROM builder AS build-pod-memory-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/atomix/drivers/podmemory@4bbea847d \
+    github.com/atomix/atomix/drivers/pod-memory@4bbea847d \
     /build/bin/PodMemory@v2beta1.so
 
 # Pull binaries and plugins into the Alpine image
@@ -46,8 +46,8 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 USER atomix
 
 COPY --from=build-proxy /build/bin/atomix-proxy /usr/local/bin/atomix-proxy
-COPY --from=build-multiraft-driver /build/bin/MultiRaft@v2beta1.so /var/atomix/plugins/
-COPY --from=build-sharedmemory-driver /build/bin/SharedMemory@v2beta1.so /var/atomix/plugins/
-COPY --from=build-podmemory-driver /build/bin/PodMemory@v2beta1.so /var/atomix/plugins/
+COPY --from=build-multi-raft-driver /build/bin/MultiRaft@v2beta1.so /var/atomix/plugins/
+COPY --from=build-shared-memory-driver /build/bin/SharedMemory@v2beta1.so /var/atomix/plugins/
+COPY --from=build-pod-memory-driver /build/bin/PodMemory@v2beta1.so /var/atomix/plugins/
 
 ENTRYPOINT ["atomix-proxy"]

@@ -1,4 +1,4 @@
 apiVersion: sharedmemory.atomix.io/v1beta1
 kind: SharedMemoryStore
 metadata:
-  name: example-sharedmemory-store
+  name: example-shared-memory-store

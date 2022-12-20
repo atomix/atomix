@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+replicas: 1
+
+image:
+  registry: ""
+  repository: atomix/pod-memory-controller
+  tag: v0.1.0
+  pullPolicy: ""
+  pullSecrets: []

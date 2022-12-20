@@ -5,7 +5,7 @@ metadata:
 spec:
   bindings:
     - store:
-        name: example-podmemory-store
+        name: example-pod-memory-store
       tags:
         - foo
         - bar

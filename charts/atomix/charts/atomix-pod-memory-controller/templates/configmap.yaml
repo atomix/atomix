@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "atomix-pod-memory-controller.fullname" . }}-config
+data:
+  logging.yaml: |-
+    loggers:
+      root:
+        level: debug
+        output:
+          stdout:
+            sink: stdout
+    sinks:
+      stdout:
+        type: stdout
+        stdout: {}

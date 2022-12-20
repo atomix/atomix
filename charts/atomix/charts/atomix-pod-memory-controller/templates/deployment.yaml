@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "atomix-pod-memory-controller.fullname" . }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      name: {{ template "atomix-pod-memory-controller.fullname" . }}
+  template:
+    metadata:
+      labels:
+        name: {{ template "atomix-pod-memory-controller.fullname" . }}
+    spec:
+      serviceAccountName: {{ template "atomix-pod-memory-controller.fullname" . }}
+      containers:
+        - name: atomix-pod-memory-controller
+          image: {{ include "atomix-pod-memory-controller.imagename" .Values.image | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          readinessProbe:
+            exec:
+              command:
+                - stat
+                - /tmp/atomix-controller-ready
+            initialDelaySeconds: 4
+            periodSeconds: 10
+            failureThreshold: 1
+          env:
+            - name: CONTROLLER_NAME
+              value: {{ template "atomix-pod-memory-controller.fullname" . }}
+            - name: CONTROLLER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: config
+              mountPath: /etc/atomix/config
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "atomix-pod-memory-controller.fullname" . }}-config

@@ -18,15 +18,15 @@ dependencies:
   - name: atomix-controller
     version: 2.0.0
     alias: controller
-  - name: atomix-multiraft-controller
+  - name: atomix-multi-raft-controller
     version: 2.0.0
     condition: multiraft.enabled
     alias: multiraft
-  - name: atomix-sharedmemory-controller
+  - name: atomix-shared-memory-controller
     version: 2.0.0
     condition: sharedmemory.enabled
     alias: sharedmemory
-  - name: atomix-podmemory-controller
+  - name: atomix-pod-memory-controller
     version: 2.0.0
     condition: podmemory.enabled
     alias: podmemory

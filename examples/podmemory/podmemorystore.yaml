@@ -1,4 +1,4 @@
 apiVersion: podmemory.atomix.io/v1beta1
 kind: PodMemoryStore
 metadata:
-  name: example-podmemory-store
+  name: example-pod-memory-store
