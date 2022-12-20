@@ -3,8 +3,8 @@ module github.com/atomix/atomix/protocols/rsm
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221219223759-628ae01a37ac
-	github.com/atomix/atomix/runtime v0.0.0-20221219222821-2f3d4294dd1f
+	github.com/atomix/atomix/api v0.0.0-20221220002711-d3ec8d10691a
+	github.com/atomix/atomix/runtime v0.0.0-20221220002934-fb8ee8a1e9e6
 	github.com/bits-and-blooms/bloom/v3 v3.3.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.6.0
