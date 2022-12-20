@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	driverName    = "MultiRaft"
+	driverName    = "Raft"
 	driverVersion = "v1beta2"
 )
 

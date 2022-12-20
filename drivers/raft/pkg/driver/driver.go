@@ -13,7 +13,7 @@ import (
 )
 
 var driverID = runtimev1.DriverID{
-	Name:    "MultiRaft",
+	Name:    "Raft",
 	Version: "v2beta1",
 }
 
