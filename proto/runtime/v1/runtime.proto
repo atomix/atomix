@@ -47,6 +47,27 @@ message DriverID {
     string version = 2;
 }
 
+message ConnMeta {
+    option (gogoproto.equal) = true;
+    DriverID driver_id = 1 [
+        (gogoproto.customname) = "DriverID",
+        (gogoproto.nullable) = false
+    ];
+    StoreID store_id = 2 [
+        (gogoproto.customname) = "StoreID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ConnSpec {
+    option (gogoproto.equal) = true;
+    ConnMeta meta = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    bytes config = 3;
+}
+
 message PrimitiveID {
     option (gogoproto.equal) = true;
     string name = 1;
@@ -81,15 +102,9 @@ message PrimitiveSpec {
 }
 
 message ConnectRequest {
-    StoreID store_id = 1 [
-        (gogoproto.customname) = "StoreID",
+    ConnSpec conn = 1 [
         (gogoproto.nullable) = false
     ];
-    DriverID driver_id = 2 [
-        (gogoproto.customname) = "DriverID",
-        (gogoproto.nullable) = false
-    ];
-    bytes config = 3;
 }
 
 message ConnectResponse {
@@ -97,11 +112,9 @@ message ConnectResponse {
 }
 
 message ConfigureRequest {
-    StoreID store_id = 1 [
-        (gogoproto.customname) = "StoreID",
+    ConnSpec conn = 1 [
         (gogoproto.nullable) = false
     ];
-    bytes config = 2;
 }
 
 message ConfigureResponse {
@@ -109,8 +122,7 @@ message ConfigureResponse {
 }
 
 message DisconnectRequest {
-    StoreID store_id = 1 [
-        (gogoproto.customname) = "StoreID",
+    ConnMeta conn = 1 [
         (gogoproto.nullable) = false
     ];
 }

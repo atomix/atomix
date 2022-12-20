@@ -12,3 +12,7 @@ import (
 func (m *PrimitiveSpec) UnmarshalConfig(config proto.Message) error {
 	return jsonpb.UnmarshalString(string(m.Config), config)
 }
+
+func (m *ConnSpec) UnmarshalConfig(config proto.Message) error {
+	return jsonpb.UnmarshalString(string(m.Config), config)
+}
