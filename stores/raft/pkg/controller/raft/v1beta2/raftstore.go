@@ -190,6 +190,11 @@ func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, store *raf
 			return true, nil
 		}
 
+		replicas := store.Spec.Replicas
+		if replicas > cluster.Spec.Replicas {
+			replicas = cluster.Spec.Replicas
+		}
+
 		partition = &raftv1beta2.RaftPartition{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   partitionName.Namespace,
@@ -202,7 +207,7 @@ func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, store *raf
 				Cluster:     store.Spec.Cluster,
 				ShardID:     *shardID,
 				PartitionID: 1,
-				Replicas:    *store.Status.ReplicationFactor,
+				Replicas:    replicas,
 			},
 		}
 		if err := controllerutil.SetControllerReference(store, partition, r.scheme); err != nil {
