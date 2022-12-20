@@ -21,19 +21,19 @@ RUN go run ./cmd/atomix-build proxy /build/bin/atomix-proxy
 # Build the multi-raft storage driver
 FROM builder AS build-multi-raft-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/atomix/drivers/multi-raft@4bbea847d \
+    github.com/atomix/atomix/drivers/multi-raft@8f784bb69 \
     /build/bin/MultiRaft@v2beta1.so
 
 # Build the shared-memory storage driver
 FROM builder AS build-shared-memory-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/atomix/drivers/shared-memory@4bbea847d \
+    github.com/atomix/atomix/drivers/shared-memory@8f784bb69 \
     /build/bin/SharedMemory@v2beta1.so
 
 # Build the pod-memory storage driver
 FROM builder AS build-pod-memory-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/atomix/drivers/pod-memory@4bbea847d \
+    github.com/atomix/atomix/drivers/pod-memory@8f784bb69 \
     /build/bin/PodMemory@v2beta1.so
 
 # Pull binaries and plugins into the Alpine image

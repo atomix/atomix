@@ -6,6 +6,10 @@
 build:
 	go build ./pkg/...
 
+.PHONY: test
+test:
+	go test github.com/atomix/atomix/drivers/multi-raft/pkg/... -p 1
+
 reuse-tool: # @HELP install reuse if not present
 	command -v reuse || python3 -m pip install reuse
 

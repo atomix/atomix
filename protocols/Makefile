@@ -4,4 +4,12 @@
 
 .PHONY: build
 build:
-	go build ./...
+	$(MAKE) -C rsm build
+
+.PHONY: test
+test:
+	$(MAKE) -C rsm test
+
+.PHONY: kind
+kind:
+	$(MAKE) -C rsm kind

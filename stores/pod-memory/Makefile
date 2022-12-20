@@ -11,7 +11,11 @@ endif
 
 .PHONY: build
 build:
-	docker build . -t atomix/pod-memory-controller:latest -f build/Dockerfile
+	docker build . -t atomix/pod-memory-controller:latest -f build/Dockerfile-controller
+
+.PHONY: test
+test:
+	go test github.com/atomix/atomix/stores/pod-memory/pkg/... -p 1
 
 .PHONY: release
 release: build

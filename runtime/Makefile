@@ -5,6 +5,10 @@
 build: generate
 	go build ./...
 
+.PHONY: test
+test:
+	go test github.com/atomix/atomix/runtime/pkg/... -p 1
+
 generate:
 	@find . -name '*.pb.go' -delete
 	docker run -i \

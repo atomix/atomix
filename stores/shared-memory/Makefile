@@ -13,10 +13,14 @@ endif
 build: build-controller build-node
 
 build-controller:
-	docker build . -t atomix/shared-memory-controller:latest -f build/controller.Dockerfile
+	docker build . -t atomix/shared-memory-controller:latest -f build/Dockerfile-controller
 
 build-node:
-	docker build . -t atomix/shared-memory-node:latest -f build/node.Dockerfile
+	docker build . -t atomix/shared-memory-node:latest -f build/Dockerfile-node
+
+.PHONY: test
+test:
+	go test github.com/atomix/atomix/stores/shared-memory/pkg/... -p 1
 
 .PHONY: release
 release: release-controller release-node

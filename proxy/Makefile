@@ -11,7 +11,11 @@ endif
 
 .PHONY: build
 build:
-	docker build . -t atomix/proxy:latest
+	docker build . -t atomix/proxy:latest -f build/Dockerfile
+
+.PHONY: test
+test:
+	go test github.com/atomix/atomix/proxy/pkg/... -p 1
 
 .PHONY: release
 release: build

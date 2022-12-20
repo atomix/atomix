@@ -167,7 +167,7 @@ func (b *atomixBuilder) buildPlugin(outputPath string, dir string) error {
 		"-buildmode=plugin",
 		"-gcflags=all=-N -l",
 		"-o", outputPath,
-		"./plugin")
+		".")
 	if err != nil {
 		return err
 	}

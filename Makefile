@@ -3,32 +3,29 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: api charts controller proto proxy runtime
-
-.PHONY: api
-api:
-	@find ./api -name '*.pb.go' -delete
-	docker run -i \
-		-v `pwd`:/build \
-		atomix/codegen:go-latest \
-		--proto-path ./proto --go-path ./api/pkg --import-path github.com/atomix/atomix/api/pkg
-
-.PHONY: charts
-charts:
+build:
+	$(MAKE) -C api build
 	$(MAKE) -C charts build
-
-.PHONY: controller
-controller:
 	$(MAKE) -C controller build
-
-.PHONY: proto
-proto:
-	$(MAKE) -C proto build
-
-.PHONY: proxy
-proxy:
+	$(MAKE) -C drivers build
+	$(MAKE) -C protocols build
 	$(MAKE) -C proxy build
-
-.PHONY: runtime
-runtime:
 	$(MAKE) -C runtime build
+	$(MAKE) -C stores build
+
+.PHONY: test
+test:
+	$(MAKE) -C api test
+	$(MAKE) -C charts test
+	$(MAKE) -C controller test
+	$(MAKE) -C drivers test
+	$(MAKE) -C protocols test
+	$(MAKE) -C proxy test
+	$(MAKE) -C runtime test
+	$(MAKE) -C stores test
+
+.PHONY: kind
+kind:
+	$(MAKE) -C controller kind
+	$(MAKE) -C proxy kind
+	$(MAKE) -C stores kind

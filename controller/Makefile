@@ -18,6 +18,10 @@ build-controller:
 build-controller-init:
 	docker build . -t atomix/controller-init:latest -f build/init.Dockerfile
 
+.PHONY: test
+test:
+	go test github.com/atomix/atomix/controller/pkg/... -p 1
+
 .PHONY: release
 release: build release-controller release-controller-init
 

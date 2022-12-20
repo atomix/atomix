@@ -6,6 +6,10 @@
 build:
 	go build ./...
 
+.PHONY: test
+test:
+	go test github.com/atomix/atomix/protocols/rsm/pkg/... -p 1
+
 .PHONY: api
 api:
 	@find ./pkg/api -name '*.pb.go' -delete
