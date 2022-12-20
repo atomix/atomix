@@ -161,9 +161,10 @@ spec:
                         items:
                           type: object
                           required:
-                            - type
+                            - kind
+                            - apiVersion
                           properties:
-                            type:
+                            kind:
                               type: string
                             apiVersion:
                               type: string

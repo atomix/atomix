@@ -67,7 +67,7 @@ type Binding struct {
 }
 
 type PrimitiveSpec struct {
-	Type       string               `json:"type"`
+	Kind       string               `json:"kind"`
 	APIVersion string               `json:"apiVersion"`
 	Name       string               `json:"name"`
 	Config     runtime.RawExtension `json:"config"`
