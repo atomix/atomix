@@ -11,7 +11,7 @@ import (
 	"github.com/atomix/atomix/controller/pkg/controller/util/k8s"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	raftapis "github.com/atomix/atomix/stores/raft/pkg/apis"
-	raftv1beta1 "github.com/atomix/atomix/stores/raft/pkg/controller/raft/v1beta1"
+	raftv1beta2 "github.com/atomix/atomix/stores/raft/pkg/controller/raft/v1beta2"
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 	"os"
@@ -85,7 +85,7 @@ func getCommand() *cobra.Command {
 			}
 
 			// Add all the controllers
-			if err := raftv1beta1.AddControllers(mgr); err != nil {
+			if err := raftv1beta2.AddControllers(mgr); err != nil {
 				log.Error(err)
 				os.Exit(1)
 			}

@@ -13,7 +13,7 @@ spec:
       - rm
   scope: Namespaced
   versions:
-    - name: v1beta1
+    - name: v1beta2
       served: true
       storage: true
       subresources:
@@ -27,9 +27,31 @@ spec:
             spec:
               type: object
               required:
+                - cluster
+                - shardID
+                - memberID
+                - replicaID
                 - pod
                 - type
+                - config
               properties:
+                cluster:
+                  type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+                shardID:
+                  type: integer
+                  minimum: 1
+                memberID:
+                  type: integer
+                  minimum: 1
+                  maximum: 1024
+                replicaID:
+                  type: integer
+                  minimum: 1
                 pod:
                   type: object
                   required:
@@ -44,6 +66,54 @@ spec:
                     - Member
                     - Observer
                     - Witness
+                config:
+                  type: object
+                  required:
+                    - peers
+                  properties:
+                    electionRTT:
+                      type: integer
+                      nullable: true
+                    heartbeatRTT:
+                      type: integer
+                      nullable: true
+                    snapshotEntries:
+                      type: integer
+                      nullable: true
+                    compactionOverhead:
+                      type: integer
+                      nullable: true
+                    maxInMemLogSize:
+                      type: string
+                      nullable: true
+                    peers:
+                      type: array
+                      items:
+                        type: object
+                        required:
+                          - pod
+                          - memberID
+                          - replicaID
+                        properties:
+                          pod:
+                            type: object
+                            required:
+                              - name
+                            properties:
+                              name:
+                                type: string
+                          memberID:
+                            type: integer
+                            minimum: 1
+                            maximum: 1024
+                          replicaID:
+                            type: integer
+                            minimum: 1
+                bootstrapPolicy:
+                  type: string
+                  enum:
+                    - Bootstrap
+                    - Join
             status:
               type: object
               properties:
@@ -82,12 +152,8 @@ spec:
                   type: integer
                   nullable: true
                 leader:
-                  type: object
-                  required:
-                    - name
-                  properties:
-                    name:
-                      type: string
+                  type: integer
+                  nullable: true
                 lastUpdated:
                   type: string
                   format: date-time
@@ -98,6 +164,18 @@ spec:
                   type: string
                   format: date-time
       additionalPrinterColumns:
+        - name: Member
+          type: integer
+          description: The identifier of the memember
+          jsonPath: .spec.memberID
+        - name: Replica
+          type: integer
+          description: The identifier of the Raft replica associated with the member
+          jsonPath: .spec.replicaID
+        - name: Shard
+          type: integer
+          description: The shard to which the member belongs
+          jsonPath: .spec.shardID
         - name: Pod
           type: string
           description: The pod to which the member belongs
@@ -111,9 +189,9 @@ spec:
           description: The member role
           jsonPath: .status.role
         - name: Leader
-          type: string
+          type: integer
           description: The current leader on the member
-          jsonPath: .status.leader.name
+          jsonPath: .status.leader
         - name: Term
           type: integer
           description: The current term on the member

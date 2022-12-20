@@ -2,20 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package v1beta2
 
-import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
+import "k8s.io/apimachinery/pkg/api/resource"
 
 // RaftConfig is the configuration of a Raft group
 type RaftConfig struct {
-	QuorumSize              *int32           `json:"quorumSize,omitempty"`
-	ReadReplicas            *int32           `json:"readReplicas,omitempty"`
-	HeartbeatPeriod         *metav1.Duration `json:"heartbeatPeriod,omitempty"`
-	ElectionTimeout         *metav1.Duration `json:"electionTimeout,omitempty"`
-	SnapshotEntryThreshold  *int64           `json:"snapshotEntryThreshold,omitempty"`
-	CompactionRetainEntries *int64           `json:"compactionRetainEntries,omitempty"`
+	ElectionRTT        *uint64            `json:"electionRTT,omitempty"`
+	HeartbeatRTT       *uint64            `json:"heartbeatRTT,omitempty"`
+	SnapshotEntries    *int64             `json:"snapshotEntries,omitempty"`
+	CompactionOverhead *int64             `json:"compactionOverhead,omitempty"`
+	MaxInMemLogSize    *resource.Quantity `json:"maxInMemLogSize,omitempty"`
 }
 
 // LoggingConfig logging configuration

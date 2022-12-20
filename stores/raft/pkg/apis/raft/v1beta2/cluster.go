@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package v1beta2
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -23,10 +23,7 @@ const (
 // MultiRaftClusterSpec specifies a MultiRaftCluster configuration
 type MultiRaftClusterSpec struct {
 	// Replicas is the number of raft replicas
-	Replicas int32 `json:"replicas,omitempty"`
-
-	// Groups is the number of groups
-	Groups int32 `json:"groups,omitempty"`
+	Replicas uint32 `json:"replicas,omitempty"`
 
 	// Image is the image to run
 	Image string `json:"image,omitempty"`
@@ -43,16 +40,16 @@ type MultiRaftClusterSpec struct {
 	// VolumeClaimTemplate is the volume claim template for Raft logs
 	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 
-	// Config is the raft store configuration
+	// Config is the raft cluster configuration
 	Config MultiRaftClusterConfig `json:"config,omitempty"`
 }
 
 type MultiRaftClusterConfig struct {
+	// RTT is the estimated round trip time between nodes
+	RTT metav1.Duration `json:"rtt"`
+
 	// Server is the raft server configuration
 	Server MultiRaftServerConfig `json:"server,omitempty"`
-
-	// Raft is the Raft protocol configuration
-	Raft RaftConfig `json:"raft,omitempty"`
 
 	// Logging is the store logging configuration
 	Logging LoggingConfig `json:"logging,omitempty"`
@@ -69,14 +66,15 @@ type MultiRaftServerConfig struct {
 
 // MultiRaftClusterStatus defines the status of a MultiRaftCluster
 type MultiRaftClusterStatus struct {
-	State      MultiRaftClusterState `json:"state,omitempty"`
-	Partitions []RaftPartitionStatus `json:"partitions,omitempty"`
+	State             MultiRaftClusterState             `json:"state"`
+	LastShardID       ShardID                           `json:"lastShardID"`
+	PartitionStatuses []MultiRaftClusterPartitionStatus `json:"partitionStatuses"`
 }
 
-type RaftPartitionStatus struct {
-	PartitionID int32    `json:"partitionID"`
-	Leader      *string  `json:"leader"`
-	Followers   []string `json:"followers"`
+type MultiRaftClusterPartitionStatus struct {
+	corev1.LocalObjectReference `json:",inline"`
+	PartitionID                 PartitionID `json:"partitionID"`
+	ShardID                     ShardID     `json:"shardID"`
 }
 
 // +genclient

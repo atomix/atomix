@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package v1beta2
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -22,9 +22,16 @@ const (
 type RaftMemberType string
 
 const (
-	RaftVotingMember RaftMemberType = "Member"
-	RaftWitness      RaftMemberType = "Witness"
-	RaftObserver     RaftMemberType = "Observer"
+	RaftVoter    RaftMemberType = "Member"
+	RaftWitness  RaftMemberType = "Witness"
+	RaftObserver RaftMemberType = "Observer"
+)
+
+type RaftBootstrapPolicy string
+
+const (
+	RaftBootstrap RaftBootstrapPolicy = "Bootstrap"
+	RaftJoin      RaftBootstrapPolicy = "Join"
 )
 
 // RaftMemberRole is a constant for RaftMember representing the current role of the member
@@ -39,22 +46,43 @@ const (
 	RaftFollower RaftMemberRole = "Follower"
 )
 
+type MemberID uint64
+
+type ReplicaID uint64
+
 type RaftMemberSpec struct {
-	Pod  corev1.LocalObjectReference `json:"pod"`
-	Type RaftMemberType              `json:"type"`
+	Cluster         corev1.LocalObjectReference `json:"cluster"`
+	ShardID         ShardID                     `json:"shardID"`
+	MemberID        MemberID                    `json:"memberID"`
+	ReplicaID       ReplicaID                   `json:"replicaID"`
+	Pod             corev1.LocalObjectReference `json:"pod"`
+	Type            RaftMemberType              `json:"type"`
+	Config          RaftMemberConfig            `json:"config"`
+	BootstrapPolicy RaftBootstrapPolicy         `json:"bootstrapPolicy"`
+}
+
+type RaftMemberConfig struct {
+	RaftConfig `json:",inline"`
+	Peers      []RaftMemberReference `json:"peers"`
+}
+
+type RaftMemberReference struct {
+	Pod       corev1.LocalObjectReference `json:"pod"`
+	MemberID  MemberID                    `json:"memberID"`
+	ReplicaID ReplicaID                   `json:"replicaID"`
 }
 
 // RaftMemberStatus defines the status of a RaftMember
 type RaftMemberStatus struct {
-	PodRef            *corev1.ObjectReference      `json:"podRef"`
-	Version           *int32                       `json:"version"`
-	State             RaftMemberState              `json:"state,omitempty"`
-	Role              *RaftMemberRole              `json:"role,omitempty"`
-	Leader            *corev1.LocalObjectReference `json:"leader,omitempty"`
-	Term              *uint64                      `json:"term,omitempty"`
-	LastUpdated       *metav1.Time                 `json:"lastUpdated,omitempty"`
-	LastSnapshotIndex *uint64                      `json:"lastSnapshotIndex,omitempty"`
-	LastSnapshotTime  *metav1.Time                 `json:"lastSnapshotTime,omitempty"`
+	PodRef            *corev1.ObjectReference `json:"podRef"`
+	Version           *int32                  `json:"version"`
+	State             RaftMemberState         `json:"state,omitempty"`
+	Role              *RaftMemberRole         `json:"role,omitempty"`
+	Leader            *MemberID               `json:"leader,omitempty"`
+	Term              *uint64                 `json:"term,omitempty"`
+	LastUpdated       *metav1.Time            `json:"lastUpdated,omitempty"`
+	LastSnapshotIndex *uint64                 `json:"lastSnapshotIndex,omitempty"`
+	LastSnapshotTime  *metav1.Time            `json:"lastSnapshotTime,omitempty"`
 }
 
 // +genclient

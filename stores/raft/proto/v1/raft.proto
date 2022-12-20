@@ -1,0 +1,381 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.stores.raft.v1;
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+enum ReplicaRole {
+    UNKNOWN = 0;
+    MEMBER = 1;
+    OBSERVER = 2;
+    WITNESS = 3;
+    REMOVED = 4;
+}
+
+message ShardConfig {
+    uint32 shard_id = 1 [
+        (gogoproto.customname) = "ShardID",
+        (gogoproto.casttype) = "ShardID"
+    ];
+    repeated ReplicaConfig replicas = 2 [
+        (gogoproto.nullable) = false
+    ];
+    uint64 version = 3;
+}
+
+message ReplicaConfig {
+    uint32 replica_id = 1 [
+        (gogoproto.customname) = "ReplicaID",
+        (gogoproto.casttype) = "ReplicaID"
+    ];
+    string host = 2;
+    int32 port = 3;
+    ReplicaRole role = 4;
+}
+
+message RaftConfig {
+    uint64 election_rtt = 1 [
+        (gogoproto.customname) = "ElectionRTT"
+    ];
+    uint64 heartbeat_rtt = 2 [
+        (gogoproto.customname) = "HeartbeatRTT"
+    ];
+    uint64 snapshot_entries = 3;
+    uint64 compaction_overhead = 4;
+    uint64 max_in_mem_log_size = 5;
+    bool disable_auto_compactions = 6;
+    bool ordered_config_change = 7;
+}
+
+message RaftProposal {
+    uint64 term = 1 [
+        (gogoproto.casttype) = "Term"
+    ];
+    uint64 sequence_num = 2 [
+        (gogoproto.casttype) = "SequenceNum"
+    ];
+    bytes data = 3;
+}
+
+service Node {
+    rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
+    rpc BootstrapShard(BootstrapShardRequest) returns (BootstrapShardResponse);
+    rpc AddReplica(AddReplicaRequest) returns (AddReplicaResponse);
+    rpc RemoveReplica(RemoveReplicaRequest) returns (RemoveReplicaResponse);
+    rpc JoinShard(JoinShardRequest) returns (JoinShardResponse);
+    rpc LeaveShard(LeaveShardRequest) returns (LeaveShardResponse);
+    rpc DeleteData(DeleteDataRequest) returns (DeleteDataResponse);
+    rpc Watch(WatchRequest) returns (stream Event);
+}
+
+message GetConfigRequest {
+    uint32 shard_id = 1 [
+        (gogoproto.customname) = "ShardID",
+        (gogoproto.casttype) = "ShardID"
+    ];
+}
+
+message GetConfigResponse {
+    ShardConfig shard = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message BootstrapShardRequest {
+    uint32 shard_id = 1 [
+        (gogoproto.customname) = "ShardID",
+        (gogoproto.casttype) = "ShardID"
+    ];
+    uint32 replica_id = 2 [
+        (gogoproto.customname) = "ReplicaID",
+        (gogoproto.casttype) = "ReplicaID"
+    ];
+    repeated ReplicaConfig replicas = 3 [
+        (gogoproto.nullable) = false
+    ];
+    RaftConfig config = 4 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message BootstrapShardResponse {
+
+}
+
+message AddReplicaRequest {
+    uint32 shard_id = 1 [
+        (gogoproto.customname) = "ShardID",
+        (gogoproto.casttype) = "ShardID"
+    ];
+    ReplicaConfig replica = 2 [
+        (gogoproto.nullable) = false
+    ];
+    uint64 version = 3;
+}
+
+message AddReplicaResponse {
+
+}
+
+message RemoveReplicaRequest {
+    uint32 shard_id = 1 [
+        (gogoproto.customname) = "ShardID",
+        (gogoproto.casttype) = "ShardID"
+    ];
+    uint32 replica_id = 2 [
+        (gogoproto.customname) = "ReplicaID",
+        (gogoproto.casttype) = "ReplicaID"
+    ];
+    uint64 version = 3;
+}
+
+message RemoveReplicaResponse {
+
+}
+
+message JoinShardRequest {
+    uint32 shard_id = 1 [
+        (gogoproto.customname) = "ShardID",
+        (gogoproto.casttype) = "ShardID"
+    ];
+    uint32 replica_id = 2 [
+        (gogoproto.customname) = "ReplicaID",
+        (gogoproto.casttype) = "ReplicaID"
+    ];
+    RaftConfig config = 3 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message JoinShardResponse {
+
+}
+
+message LeaveShardRequest {
+    uint32 shard_id = 1 [
+        (gogoproto.customname) = "ShardID",
+        (gogoproto.casttype) = "ShardID"
+    ];
+}
+
+message LeaveShardResponse {
+
+}
+
+message DeleteDataRequest {
+    uint32 shard_id = 1 [
+        (gogoproto.customname) = "ShardID",
+        (gogoproto.casttype) = "ShardID"
+    ];
+    uint32 replica_id = 2 [
+        (gogoproto.customname) = "ReplicaID",
+        (gogoproto.casttype) = "ReplicaID"
+    ];
+}
+
+message DeleteDataResponse {
+
+}
+
+message WatchRequest {
+
+}
+
+message Event {
+    google.protobuf.Timestamp timestamp = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.stdtime) = true
+    ];
+    oneof event {
+        ReplicaReadyEvent replica_ready = 2;
+        LeaderUpdatedEvent leader_updated = 3;
+        ConfigurationChangedEvent configuration_changed = 4;
+        SendSnapshotStartedEvent send_snapshot_started = 5;
+        SendSnapshotCompletedEvent send_snapshot_completed = 6;
+        SendSnapshotAbortedEvent send_snapshot_aborted = 7;
+        SnapshotReceivedEvent snapshot_received = 8;
+        SnapshotRecoveredEvent snapshot_recovered = 9;
+        SnapshotCreatedEvent snapshot_created = 10;
+        SnapshotCompactedEvent snapshot_compacted = 11;
+        LogCompactedEvent log_compacted = 12;
+        LogDBCompactedEvent logdb_compacted = 13;
+        ConnectionEstablishedEvent connection_established = 14;
+        ConnectionFailedEvent connection_failed = 15;
+    }
+}
+
+message ConnectionInfo {
+    string address = 1;
+    bool snapshot = 2;
+}
+
+message ReplicaEvent {
+    uint32 shard_id = 1 [
+        (gogoproto.customname) = "ShardID",
+        (gogoproto.casttype) = "ShardID"
+    ];
+    uint64 replica_id = 2 [
+        (gogoproto.customname) = "ReplicaID",
+        (gogoproto.casttype) = "ReplicaID"
+    ];
+}
+
+message ReplicaReadyEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message ConfigurationChangedEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message LeaderUpdatedEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 term = 2 [
+        (gogoproto.casttype) = "Term"
+    ];
+    uint64 leader = 3 [
+        (gogoproto.casttype) = "ReplicaID"
+    ];
+}
+
+message SendSnapshotStartedEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 index = 2 [
+        (gogoproto.casttype) = "Index"
+    ];
+    uint64 to = 3 [
+        (gogoproto.casttype) = "ReplicaID"
+    ];
+}
+
+message SendSnapshotCompletedEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 index = 2 [
+        (gogoproto.casttype) = "Index"
+    ];
+    uint64 to = 3 [
+        (gogoproto.casttype) = "ReplicaID"
+    ];
+}
+
+message SendSnapshotAbortedEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 index = 2 [
+        (gogoproto.casttype) = "Index"
+    ];
+    uint64 to = 3 [
+        (gogoproto.casttype) = "ReplicaID"
+    ];
+}
+
+message SnapshotReceivedEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 index = 2 [
+        (gogoproto.casttype) = "Index"
+    ];
+    uint64 from = 3 [
+        (gogoproto.casttype) = "ReplicaID"
+    ];
+}
+
+message SnapshotRecoveredEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 index = 2 [
+        (gogoproto.casttype) = "Index"
+    ];
+}
+
+message SnapshotCreatedEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 index = 2 [
+        (gogoproto.casttype) = "Index"
+    ];
+}
+
+message SnapshotCompactedEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 index = 2 [
+        (gogoproto.casttype) = "Index"
+    ];
+}
+
+message LogEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 index = 2 [
+        (gogoproto.casttype) = "Index"
+    ];
+}
+
+message LogCompactedEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 index = 2 [
+        (gogoproto.casttype) = "Index"
+    ];
+}
+
+message LogDBCompactedEvent {
+    ReplicaEvent replica = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+    uint64 index = 2 [
+        (gogoproto.casttype) = "Index"
+    ];
+}
+
+message ConnectionEstablishedEvent {
+    ConnectionInfo info = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}
+
+message ConnectionFailedEvent {
+    ConnectionInfo info = 1 [
+        (gogoproto.nullable) = false,
+        (gogoproto.embed) = true
+    ];
+}

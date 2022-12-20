@@ -17,9 +17,9 @@ import (
 	"sync/atomic"
 )
 
-func newPartition(id rsmv1.PartitionID, memberID raftv1.MemberID, host *dragonboat.NodeHost, streams *protocolContext) *Partition {
+func newPartition(id rsmv1.PartitionID, replicaID raftv1.ReplicaID, host *dragonboat.NodeHost, streams *protocolContext) *Partition {
 	partition := &Partition{
-		memberID: memberID,
+		replicaID: replicaID,
 	}
 	partition.Partition = node.NewPartition(id, &Executor{
 		Partition: partition,
@@ -31,10 +31,10 @@ func newPartition(id rsmv1.PartitionID, memberID raftv1.MemberID, host *dragonbo
 
 type Partition struct {
 	node.Partition
-	memberID raftv1.MemberID
-	ready    int32
-	leader   uint64
-	term     uint64
+	replicaID raftv1.ReplicaID
+	ready     int32
+	leader    uint64
+	term      uint64
 }
 
 func (p *Partition) setReady() {
@@ -45,13 +45,13 @@ func (p *Partition) getReady() bool {
 	return atomic.LoadInt32(&p.ready) == 1
 }
 
-func (p *Partition) setLeader(term raftv1.Term, leader raftv1.MemberID) {
+func (p *Partition) setLeader(term raftv1.Term, leader raftv1.ReplicaID) {
 	atomic.StoreUint64(&p.term, uint64(term))
 	atomic.StoreUint64(&p.leader, uint64(leader))
 }
 
-func (p *Partition) getLeader() (raftv1.Term, raftv1.MemberID) {
-	return raftv1.Term(atomic.LoadUint64(&p.term)), raftv1.MemberID(atomic.LoadUint64(&p.leader))
+func (p *Partition) getLeader() (raftv1.Term, raftv1.ReplicaID) {
+	return raftv1.Term(atomic.LoadUint64(&p.term)), raftv1.ReplicaID(atomic.LoadUint64(&p.leader))
 }
 
 type Executor struct {
@@ -63,7 +63,7 @@ type Executor struct {
 // Propose proposes a change to the protocol
 func (e *Executor) Propose(ctx context.Context, input *rsmv1.ProposalInput, stream streams.WriteStream[*rsmv1.ProposalOutput]) error {
 	term, leader := e.getLeader()
-	if leader != e.memberID {
+	if leader != e.replicaID {
 		return errors.NewUnavailable("not the leader")
 	}
 

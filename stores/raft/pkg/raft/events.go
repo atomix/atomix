@@ -29,12 +29,12 @@ func (e *eventListener) LeaderUpdated(info raftio.LeaderInfo) {
 		Timestamp: time.Now(),
 		Event: &raftv1.Event_LeaderUpdated{
 			LeaderUpdated: &raftv1.LeaderUpdatedEvent{
-				MemberEvent: raftv1.MemberEvent{
-					GroupID:  raftv1.GroupID(info.ClusterID),
-					MemberID: raftv1.MemberID(info.NodeID),
+				ReplicaEvent: raftv1.ReplicaEvent{
+					ShardID:   raftv1.ShardID(info.ClusterID),
+					ReplicaID: raftv1.ReplicaID(info.NodeID),
 				},
 				Term:   raftv1.Term(info.Term),
-				Leader: raftv1.MemberID(info.LeaderID),
+				Leader: raftv1.ReplicaID(info.LeaderID),
 			},
 		},
 	})
@@ -51,11 +51,11 @@ func (e *eventListener) NodeUnloaded(info raftio.NodeInfo) {
 func (e *eventListener) NodeReady(info raftio.NodeInfo) {
 	e.publish(&raftv1.Event{
 		Timestamp: time.Now(),
-		Event: &raftv1.Event_MemberReady{
-			MemberReady: &raftv1.MemberReadyEvent{
-				MemberEvent: raftv1.MemberEvent{
-					GroupID:  raftv1.GroupID(info.ClusterID),
-					MemberID: raftv1.MemberID(info.NodeID),
+		Event: &raftv1.Event_ReplicaReady{
+			ReplicaReady: &raftv1.ReplicaReadyEvent{
+				ReplicaEvent: raftv1.ReplicaEvent{
+					ShardID:   raftv1.ShardID(info.ClusterID),
+					ReplicaID: raftv1.ReplicaID(info.NodeID),
 				},
 			},
 		},
@@ -65,11 +65,11 @@ func (e *eventListener) NodeReady(info raftio.NodeInfo) {
 func (e *eventListener) MembershipChanged(info raftio.NodeInfo) {
 	e.publish(&raftv1.Event{
 		Timestamp: time.Now(),
-		Event: &raftv1.Event_MembershipChanged{
-			MembershipChanged: &raftv1.MembershipChangedEvent{
-				MemberEvent: raftv1.MemberEvent{
-					GroupID:  raftv1.GroupID(info.ClusterID),
-					MemberID: raftv1.MemberID(info.NodeID),
+		Event: &raftv1.Event_ConfigurationChanged{
+			ConfigurationChanged: &raftv1.ConfigurationChangedEvent{
+				ReplicaEvent: raftv1.ReplicaEvent{
+					ShardID:   raftv1.ShardID(info.ClusterID),
+					ReplicaID: raftv1.ReplicaID(info.NodeID),
 				},
 			},
 		},
@@ -109,12 +109,12 @@ func (e *eventListener) SendSnapshotStarted(info raftio.SnapshotInfo) {
 		Timestamp: time.Now(),
 		Event: &raftv1.Event_SendSnapshotStarted{
 			SendSnapshotStarted: &raftv1.SendSnapshotStartedEvent{
-				MemberEvent: raftv1.MemberEvent{
-					GroupID:  raftv1.GroupID(info.ClusterID),
-					MemberID: raftv1.MemberID(info.NodeID),
+				ReplicaEvent: raftv1.ReplicaEvent{
+					ShardID:   raftv1.ShardID(info.ClusterID),
+					ReplicaID: raftv1.ReplicaID(info.NodeID),
 				},
 				Index: raftv1.Index(info.Index),
-				To:    raftv1.MemberID(info.NodeID),
+				To:    raftv1.ReplicaID(info.NodeID),
 			},
 		},
 	})
@@ -125,12 +125,12 @@ func (e *eventListener) SendSnapshotCompleted(info raftio.SnapshotInfo) {
 		Timestamp: time.Now(),
 		Event: &raftv1.Event_SendSnapshotCompleted{
 			SendSnapshotCompleted: &raftv1.SendSnapshotCompletedEvent{
-				MemberEvent: raftv1.MemberEvent{
-					GroupID:  raftv1.GroupID(info.ClusterID),
-					MemberID: raftv1.MemberID(info.NodeID),
+				ReplicaEvent: raftv1.ReplicaEvent{
+					ShardID:   raftv1.ShardID(info.ClusterID),
+					ReplicaID: raftv1.ReplicaID(info.NodeID),
 				},
 				Index: raftv1.Index(info.Index),
-				To:    raftv1.MemberID(info.NodeID),
+				To:    raftv1.ReplicaID(info.NodeID),
 			},
 		},
 	})
@@ -141,12 +141,12 @@ func (e *eventListener) SendSnapshotAborted(info raftio.SnapshotInfo) {
 		Timestamp: time.Now(),
 		Event: &raftv1.Event_SendSnapshotAborted{
 			SendSnapshotAborted: &raftv1.SendSnapshotAbortedEvent{
-				MemberEvent: raftv1.MemberEvent{
-					GroupID:  raftv1.GroupID(info.ClusterID),
-					MemberID: raftv1.MemberID(info.NodeID),
+				ReplicaEvent: raftv1.ReplicaEvent{
+					ShardID:   raftv1.ShardID(info.ClusterID),
+					ReplicaID: raftv1.ReplicaID(info.NodeID),
 				},
 				Index: raftv1.Index(info.Index),
-				To:    raftv1.MemberID(info.NodeID),
+				To:    raftv1.ReplicaID(info.NodeID),
 			},
 		},
 	})
@@ -157,12 +157,12 @@ func (e *eventListener) SnapshotReceived(info raftio.SnapshotInfo) {
 		Timestamp: time.Now(),
 		Event: &raftv1.Event_SnapshotReceived{
 			SnapshotReceived: &raftv1.SnapshotReceivedEvent{
-				MemberEvent: raftv1.MemberEvent{
-					GroupID:  raftv1.GroupID(info.ClusterID),
-					MemberID: raftv1.MemberID(info.NodeID),
+				ReplicaEvent: raftv1.ReplicaEvent{
+					ShardID:   raftv1.ShardID(info.ClusterID),
+					ReplicaID: raftv1.ReplicaID(info.NodeID),
 				},
 				Index: raftv1.Index(info.Index),
-				From:  raftv1.MemberID(info.From),
+				From:  raftv1.ReplicaID(info.From),
 			},
 		},
 	})
@@ -173,9 +173,9 @@ func (e *eventListener) SnapshotRecovered(info raftio.SnapshotInfo) {
 		Timestamp: time.Now(),
 		Event: &raftv1.Event_SnapshotRecovered{
 			SnapshotRecovered: &raftv1.SnapshotRecoveredEvent{
-				MemberEvent: raftv1.MemberEvent{
-					GroupID:  raftv1.GroupID(info.ClusterID),
-					MemberID: raftv1.MemberID(info.NodeID),
+				ReplicaEvent: raftv1.ReplicaEvent{
+					ShardID:   raftv1.ShardID(info.ClusterID),
+					ReplicaID: raftv1.ReplicaID(info.NodeID),
 				},
 				Index: raftv1.Index(info.Index),
 			},
@@ -188,9 +188,9 @@ func (e *eventListener) SnapshotCreated(info raftio.SnapshotInfo) {
 		Timestamp: time.Now(),
 		Event: &raftv1.Event_SnapshotCreated{
 			SnapshotCreated: &raftv1.SnapshotCreatedEvent{
-				MemberEvent: raftv1.MemberEvent{
-					GroupID:  raftv1.GroupID(info.ClusterID),
-					MemberID: raftv1.MemberID(info.NodeID),
+				ReplicaEvent: raftv1.ReplicaEvent{
+					ShardID:   raftv1.ShardID(info.ClusterID),
+					ReplicaID: raftv1.ReplicaID(info.NodeID),
 				},
 				Index: raftv1.Index(info.Index),
 			},
@@ -203,9 +203,9 @@ func (e *eventListener) SnapshotCompacted(info raftio.SnapshotInfo) {
 		Timestamp: time.Now(),
 		Event: &raftv1.Event_SnapshotCompacted{
 			SnapshotCompacted: &raftv1.SnapshotCompactedEvent{
-				MemberEvent: raftv1.MemberEvent{
-					GroupID:  raftv1.GroupID(info.ClusterID),
-					MemberID: raftv1.MemberID(info.NodeID),
+				ReplicaEvent: raftv1.ReplicaEvent{
+					ShardID:   raftv1.ShardID(info.ClusterID),
+					ReplicaID: raftv1.ReplicaID(info.NodeID),
 				},
 				Index: raftv1.Index(info.Index),
 			},
@@ -218,9 +218,9 @@ func (e *eventListener) LogCompacted(info raftio.EntryInfo) {
 		Timestamp: time.Now(),
 		Event: &raftv1.Event_LogCompacted{
 			LogCompacted: &raftv1.LogCompactedEvent{
-				MemberEvent: raftv1.MemberEvent{
-					GroupID:  raftv1.GroupID(info.ClusterID),
-					MemberID: raftv1.MemberID(info.NodeID),
+				ReplicaEvent: raftv1.ReplicaEvent{
+					ShardID:   raftv1.ShardID(info.ClusterID),
+					ReplicaID: raftv1.ReplicaID(info.NodeID),
 				},
 				Index: raftv1.Index(info.Index),
 			},
@@ -233,9 +233,9 @@ func (e *eventListener) LogDBCompacted(info raftio.EntryInfo) {
 		Timestamp: time.Now(),
 		Event: &raftv1.Event_LogdbCompacted{
 			LogdbCompacted: &raftv1.LogDBCompactedEvent{
-				MemberEvent: raftv1.MemberEvent{
-					GroupID:  raftv1.GroupID(info.ClusterID),
-					MemberID: raftv1.MemberID(info.NodeID),
+				ReplicaEvent: raftv1.ReplicaEvent{
+					ShardID:   raftv1.ShardID(info.ClusterID),
+					ReplicaID: raftv1.ReplicaID(info.NodeID),
 				},
 				Index: raftv1.Index(info.Index),
 			},

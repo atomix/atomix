@@ -28,7 +28,7 @@ import (
 	valuev1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/value/v1"
 	"github.com/atomix/atomix/runtime/pkg/network"
 	raftv1 "github.com/atomix/atomix/stores/raft/pkg/api/v1"
-	raft "github.com/atomix/atomix/stores/raft/pkg/node"
+	"github.com/atomix/atomix/stores/raft/pkg/raft"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v3"
@@ -91,7 +91,7 @@ func main() {
 			valuev1.RegisterStateMachine(registry)
 
 			protocol := raft.NewProtocol(
-				config.Raft,
+				config.Node,
 				registry,
 				raft.WithHost(raftHost),
 				raft.WithPort(raftPort))

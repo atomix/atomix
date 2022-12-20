@@ -4,10 +4,10 @@
 
 // NOTE: Boilerplate only.  Ignore this file.
 
-// Package v1beta1 contains API Schema definitions for the raft v1beta1 API group
+// Package v1beta2 contains API Schema definitions for the raft v1beta2 API group
 // +k8s:deepcopy-gen=package,register
 // +groupName=raft.atomix.io
-package v1beta1
+package v1beta2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +16,7 @@ import (
 )
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: "raft.atomix.io", Version: "v1beta1"}
+var SchemeGroupVersion = schema.GroupVersion{Group: "raft.atomix.io", Version: "v1beta2"}
 
 // Kind takes an unqualified kind and returns a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {
@@ -37,9 +37,9 @@ var (
 
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(SchemeGroupVersion, &MultiRaftStore{}, &MultiRaftStoreList{})
 	scheme.AddKnownTypes(SchemeGroupVersion, &MultiRaftCluster{}, &MultiRaftClusterList{})
-	scheme.AddKnownTypes(SchemeGroupVersion, &RaftGroup{}, &RaftGroupList{})
+	scheme.AddKnownTypes(SchemeGroupVersion, &MultiRaftStore{}, &MultiRaftStoreList{})
+	scheme.AddKnownTypes(SchemeGroupVersion, &RaftPartition{}, &RaftPartitionList{})
 	scheme.AddKnownTypes(SchemeGroupVersion, &RaftMember{}, &RaftMemberList{})
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Package v1beta1 contains API Schema definitions for the raft v1beta1 API group
+// Package v1beta2 contains API Schema definitions for the raft v1beta2 API group
 // +k8s:deepcopy-gen=package,register
 // +groupName=raft.atomix.io
-package v1beta1
+package v1beta2

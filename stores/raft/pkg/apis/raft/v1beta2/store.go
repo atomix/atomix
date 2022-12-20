@@ -2,15 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package v1beta2
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // MultiRaftStoreSpec specifies a MultiRaftStore configuration
 type MultiRaftStoreSpec struct {
-	MultiRaftClusterSpec `json:",inline"`
+	RaftConfig        `json:",inline"`
+	Cluster           corev1.LocalObjectReference `json:"cluster"`
+	Partitions        uint32                      `json:"partitions"`
+	ReplicationFactor *uint32                     `json:"replicationFactor"`
 }
 
 // MultiRaftStoreState is a state constant for MultiRaftStore
@@ -23,8 +27,10 @@ const (
 	MultiRaftStoreReady MultiRaftStoreState = "Ready"
 )
 
+// MultiRaftStoreStatus defines the status of a MultiRaftStore
 type MultiRaftStoreStatus struct {
-	State MultiRaftStoreState `json:"state,omitempty"`
+	ReplicationFactor *uint32             `json:"replicationFactor"`
+	State             MultiRaftStoreState `json:"state,omitempty"`
 }
 
 // +genclient
