@@ -19,11 +19,11 @@ spec:
       serviceAccountName: {{ template "atomix-pod-memory-controller.fullname" . }}
       containers:
         - name: atomix-pod-memory-controller
-          image: {{ include "atomix-pod-memory-controller.imagename" .Values.image | quote }}
+          image: {{ include "atomix-pod-memory-controller.imagename" .Values.controller.image | quote }}
           securityContext:
             allowPrivilegeEscalation: false
             runAsUser: 0
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
           readinessProbe:
             exec:
               command:

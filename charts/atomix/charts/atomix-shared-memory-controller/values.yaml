@@ -4,12 +4,13 @@
 
 replicas: 1
 
-image:
-  registry: ""
-  repository: atomix/shared-memory-controller
-  tag: v0.1.0
-  pullPolicy: ""
-  pullSecrets: []
+controller:
+  image:
+    registry: ""
+    repository: atomix/shared-memory-controller
+    tag: v0.1.0
+    pullPolicy: ""
+    pullSecrets: []
 
 node:
   image:
