@@ -51,7 +51,7 @@ type MemberID uint64
 type ReplicaID uint64
 
 type RaftMemberSpec struct {
-	Cluster         corev1.LocalObjectReference `json:"cluster"`
+	Cluster         corev1.ObjectReference      `json:"cluster"`
 	ShardID         ShardID                     `json:"shardID"`
 	MemberID        MemberID                    `json:"memberID"`
 	ReplicaID       ReplicaID                   `json:"replicaID"`

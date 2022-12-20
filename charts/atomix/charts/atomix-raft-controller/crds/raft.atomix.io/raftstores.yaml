@@ -10,8 +10,8 @@ spec:
   group: raft.atomix.io
   scope: Namespaced
   names:
-    kind: MultiRaftStore
-    listKind: MultiRaftStoreList
+    kind: RaftStore
+    listKind: RaftStoreList
     plural: multiraftstores
     singular: multiraftstore
     shortNames:
@@ -42,12 +42,7 @@ spec:
                       type: string
                     namespace:
                       type: string
-                partitions:
-                  type: integer
-                  minimum: 1
-                  maximum: 1024
-                  default: 1
-                replicationFactor:
+                replicas:
                   type: integer
                   minimum: 1
                   maximum: 1024
@@ -83,14 +78,10 @@ spec:
           type: string
           description: The MultiRaftCluster associated with the store
           jsonPath: .spec.cluster.name
-        - name: Partitions
+        - name: Replicas
           type: integer
-          description: The number of partitions in the store
-          jsonPath: .spec.partitions
-        - name: ReplicationFactor
-          type: integer
-          description: The number of replicas per partition
-          jsonPath: .status.replicationFactor
+          description: The number of replicas
+          jsonPath: .spec.replicas
         - name: Status
           type: string
           description: The store state

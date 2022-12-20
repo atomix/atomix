@@ -170,6 +170,8 @@ spec:
                     properties:
                       name:
                         type: string
+                      namespace:
+                        type: string
                       partitionID:
                         type: integer
                         minimum: 1

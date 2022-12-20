@@ -12,9 +12,9 @@ import (
 // MultiRaftStoreSpec specifies a MultiRaftStore configuration
 type MultiRaftStoreSpec struct {
 	RaftConfig        `json:",inline"`
-	Cluster           corev1.LocalObjectReference `json:"cluster"`
-	Partitions        uint32                      `json:"partitions"`
-	ReplicationFactor *uint32                     `json:"replicationFactor"`
+	Cluster           corev1.ObjectReference `json:"cluster"`
+	Partitions        uint32                 `json:"partitions"`
+	ReplicationFactor *uint32                `json:"replicationFactor"`
 }
 
 // MultiRaftStoreState is a state constant for MultiRaftStore

@@ -34,7 +34,7 @@ func addRaftMemberController(mgr manager.Manager) error {
 		Reconciler: &RaftMemberReconciler{
 			client: mgr.GetClient(),
 			scheme: mgr.GetScheme(),
-			events: mgr.GetEventRecorderFor("atomix-consensus-storage"),
+			events: mgr.GetEventRecorderFor("atomix-raft"),
 		},
 		RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*10, time.Second*5),
 	}
@@ -309,7 +309,7 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, store *raftv1beta2
 		case raftv1beta2.RaftBootstrap:
 			replicas := make([]raftv1.ReplicaConfig, 0, len(member.Spec.Config.Peers))
 			for _, peer := range member.Spec.Config.Peers {
-				host := fmt.Sprintf("%s.%s.%s.svc.%s", peer.Pod.Name, getHeadlessServiceName(member.Spec.Cluster.Name), member.Namespace, getClusterDomain())
+				host := getPodDNSName(cluster, peer.Pod.Name)
 				replicas = append(replicas, raftv1.ReplicaConfig{
 					ReplicaID: raftv1.ReplicaID(peer.ReplicaID),
 					Host:      host,
@@ -447,7 +447,7 @@ func (r *RaftMemberReconciler) tryAddMember(ctx context.Context, store *raftv1be
 		ShardID: raftv1.ShardID(member.Spec.ShardID),
 		Replica: raftv1.ReplicaConfig{
 			ReplicaID: raftv1.ReplicaID(member.Spec.MemberID),
-			Host:      fmt.Sprintf("%s.%s.%s.svc.%s", member.Spec.Pod.Name, getHeadlessServiceName(member.Spec.Cluster.Name), member.Namespace, getClusterDomain()),
+			Host:      getPodDNSName(cluster, member.Spec.Pod.Name),
 			Port:      protocolPort,
 		},
 		Version: getConfigResponse.Shard.Version,

@@ -72,9 +72,9 @@ type MultiRaftClusterStatus struct {
 }
 
 type MultiRaftClusterPartitionStatus struct {
-	corev1.LocalObjectReference `json:",inline"`
-	PartitionID                 PartitionID `json:"partitionID"`
-	ShardID                     ShardID     `json:"shardID"`
+	corev1.ObjectReference `json:",inline"`
+	PartitionID            PartitionID `json:"partitionID"`
+	ShardID                ShardID     `json:"shardID"`
 }
 
 // +genclient

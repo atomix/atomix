@@ -21,7 +21,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"strconv"
 	"time"
 
 	raftv1beta2 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta2"
@@ -41,13 +40,13 @@ func addMultiRaftStoreController(mgr manager.Manager) error {
 		Reconciler: &MultiRaftStoreReconciler{
 			client: mgr.GetClient(),
 			scheme: mgr.GetScheme(),
-			events: mgr.GetEventRecorderFor("atomix-consensus-storage"),
+			events: mgr.GetEventRecorderFor("atomix-raft"),
 		},
 		RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*10, time.Second*5),
 	}
 
 	// Create a new controller
-	controller, err := controller.New("atomix-raft-store", mgr, options)
+	controller, err := controller.New("atomix-multi-raft-store", mgr, options)
 	if err != nil {
 		return err
 	}
@@ -75,6 +74,30 @@ func addMultiRaftStoreController(mgr manager.Manager) error {
 	if err != nil {
 		return err
 	}
+
+	// Watch for changes to secondary resource MultiRaftCluster
+	err = controller.Watch(&source.Kind{Type: &raftv1beta2.MultiRaftCluster{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+		stores := &raftv1beta2.MultiRaftStoreList{}
+		if err := mgr.GetClient().List(context.Background(), stores, &client.ListOptions{}); err != nil {
+			return nil
+		}
+
+		var requests []reconcile.Request
+		for _, store := range stores.Items {
+			if store.Spec.Cluster.Name == object.GetName() && getClusterNamespace(&store, store.Spec.Cluster) == object.GetNamespace() {
+				requests = append(requests, reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Namespace: store.Namespace,
+						Name:      store.Name,
+					},
+				})
+			}
+		}
+		return requests
+	}))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -99,14 +122,27 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 		return reconcile.Result{}, err
 	}
 
-	if ok, err := r.reconcilePartitions(ctx, store); err != nil {
+	cluster := &raftv1beta2.MultiRaftCluster{}
+	clusterName := types.NamespacedName{
+		Namespace: getClusterNamespace(store, store.Spec.Cluster),
+		Name:      store.Spec.Cluster.Name,
+	}
+	if err := r.client.Get(ctx, clusterName, cluster); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			log.Error(err, "Reconcile MultiRaftStore")
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
+	}
+
+	if ok, err := r.reconcilePartitions(ctx, store, cluster); err != nil {
 		log.Error(err, "Reconcile MultiRaftStore")
 		return reconcile.Result{}, err
 	} else if ok {
 		return reconcile.Result{}, nil
 	}
 
-	if ok, err := r.reconcileDataStore(ctx, store); err != nil {
+	if ok, err := r.reconcileDataStore(ctx, store, cluster); err != nil {
 		log.Error(err, "Reconcile MultiRaftStore")
 		return reconcile.Result{}, err
 	} else if ok {
@@ -122,20 +158,7 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 	return reconcile.Result{}, nil
 }
 
-func (r *MultiRaftStoreReconciler) reconcilePartitions(ctx context.Context, store *raftv1beta2.MultiRaftStore) (bool, error) {
-	cluster := &raftv1beta2.MultiRaftCluster{}
-	clusterName := types.NamespacedName{
-		Namespace: store.Namespace,
-		Name:      store.Spec.Cluster.Name,
-	}
-	if err := r.client.Get(ctx, clusterName, cluster); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			log.Error(err, "Reconcile MultiRaftStore")
-			return false, err
-		}
-		return true, nil
-	}
-
+func (r *MultiRaftStoreReconciler) reconcilePartitions(ctx context.Context, store *raftv1beta2.MultiRaftStore, cluster *raftv1beta2.MultiRaftCluster) (bool, error) {
 	if store.Status.ReplicationFactor == nil {
 		if store.Spec.ReplicationFactor != nil && *store.Spec.ReplicationFactor <= cluster.Spec.Replicas {
 			store.Status.ReplicationFactor = store.Spec.ReplicationFactor
@@ -183,8 +206,9 @@ func (r *MultiRaftStoreReconciler) reconcilePartition(ctx context.Context, store
 		if shardID == nil {
 			cluster.Status.LastShardID++
 			cluster.Status.PartitionStatuses = append(cluster.Status.PartitionStatuses, raftv1beta2.MultiRaftClusterPartitionStatus{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: partitionName.Name,
+				ObjectReference: corev1.ObjectReference{
+					Namespace: partitionName.Namespace,
+					Name:      partitionName.Name,
 				},
 				PartitionID: partitionID,
 				ShardID:     cluster.Status.LastShardID,
@@ -200,8 +224,8 @@ func (r *MultiRaftStoreReconciler) reconcilePartition(ctx context.Context, store
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   partitionName.Namespace,
 				Name:        partitionName.Name,
-				Labels:      newPartitionLabels(store, partitionID, *shardID),
-				Annotations: newPartitionAnnotations(store, partitionID, *shardID),
+				Labels:      newPartitionLabels(cluster, store, partitionID, *shardID),
+				Annotations: newPartitionAnnotations(cluster, store, partitionID, *shardID),
 			},
 			Spec: raftv1beta2.RaftPartitionSpec{
 				RaftConfig:  store.Spec.RaftConfig,
@@ -212,6 +236,10 @@ func (r *MultiRaftStoreReconciler) reconcilePartition(ctx context.Context, store
 			},
 		}
 		if err := controllerutil.SetControllerReference(store, partition, r.scheme); err != nil {
+			log.Error(err, "Reconcile MultiRaftStore")
+			return false, err
+		}
+		if err := controllerutil.SetOwnerReference(cluster, partition, r.scheme); err != nil {
 			log.Error(err, "Reconcile MultiRaftStore")
 			return false, err
 		}
@@ -241,7 +269,7 @@ func (r *MultiRaftStoreReconciler) getPartitions(ctx context.Context, store *raf
 	return partitions, nil
 }
 
-func (r *MultiRaftStoreReconciler) reconcileDataStore(ctx context.Context, store *raftv1beta2.MultiRaftStore) (bool, error) {
+func (r *MultiRaftStoreReconciler) reconcileDataStore(ctx context.Context, store *raftv1beta2.MultiRaftStore, cluster *raftv1beta2.MultiRaftCluster) (bool, error) {
 	partitions, err := r.getPartitions(ctx, store)
 	if err != nil {
 		return false, err
@@ -260,7 +288,7 @@ func (r *MultiRaftStoreReconciler) reconcileDataStore(ctx context.Context, store
 				log.Error(err, "Reconcile MultiRaftStore")
 				return false, err
 			}
-			leader = fmt.Sprintf("%s:%d", getPodDNSName(store.Namespace, store.Spec.Cluster.Name, member.Spec.Pod.Name), apiPort)
+			leader = fmt.Sprintf("%s:%d", getPodDNSName(cluster, member.Spec.Pod.Name), apiPort)
 		}
 
 		followers := make([]string, 0, len(partition.Status.Followers))
@@ -274,7 +302,7 @@ func (r *MultiRaftStoreReconciler) reconcileDataStore(ctx context.Context, store
 				log.Error(err, "Reconcile MultiRaftStore")
 				return false, err
 			}
-			followers = append(followers, fmt.Sprintf("%s:%d", getPodDNSName(store.Namespace, store.Spec.Cluster.Name, member.Spec.Pod.Name), apiPort))
+			followers = append(followers, fmt.Sprintf("%s:%d", getPodDNSName(cluster, member.Spec.Pod.Name), apiPort))
 		}
 
 		config.Partitions = append(config.Partitions, rsmv1.PartitionConfig{
@@ -291,14 +319,14 @@ func (r *MultiRaftStoreReconciler) reconcileDataStore(ctx context.Context, store
 	}
 	if err := r.client.Get(ctx, dataStoreName, dataStore); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return false, err
 		}
 
 		marshaler := &jsonpb.Marshaler{}
 		configString, err := marshaler.MarshalToString(&config)
 		if err != nil {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return false, err
 		}
 
@@ -319,11 +347,11 @@ func (r *MultiRaftStoreReconciler) reconcileDataStore(ctx context.Context, store
 			},
 		}
 		if err := controllerutil.SetControllerReference(store, dataStore, r.scheme); err != nil {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return false, err
 		}
 		if err := r.client.Create(ctx, dataStore); err != nil {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return false, err
 		}
 		return true, nil
@@ -331,7 +359,7 @@ func (r *MultiRaftStoreReconciler) reconcileDataStore(ctx context.Context, store
 
 	var storedConfig rsmv1.ProtocolConfig
 	if err := jsonpb.UnmarshalString(string(dataStore.Spec.Config.Raw), &storedConfig); err != nil {
-		log.Error(err, "Reconcile ConsensusStore")
+		log.Error(err, "Reconcile MultiRaftStore")
 		return false, err
 	}
 
@@ -339,7 +367,7 @@ func (r *MultiRaftStoreReconciler) reconcileDataStore(ctx context.Context, store
 		marshaler := &jsonpb.Marshaler{}
 		configString, err := marshaler.MarshalToString(&config)
 		if err != nil {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return false, err
 		}
 
@@ -347,7 +375,7 @@ func (r *MultiRaftStoreReconciler) reconcileDataStore(ctx context.Context, store
 			Raw: []byte(configString),
 		}
 		if err := r.client.Update(ctx, dataStore); err != nil {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return false, err
 		}
 		return true, nil
@@ -415,30 +443,3 @@ func isPartitionConfigEqual(partition1, partition2 rsmv1.PartitionConfig) bool {
 }
 
 var _ reconcile.Reconciler = (*MultiRaftStoreReconciler)(nil)
-
-// newPartitionLabels returns the labels for the given partition
-func newPartitionLabels(store *raftv1beta2.MultiRaftStore, partitionID raftv1beta2.PartitionID, shardID raftv1beta2.ShardID) map[string]string {
-	labels := make(map[string]string)
-	for key, value := range store.Labels {
-		labels[key] = value
-	}
-	labels[storeKey] = store.Name
-	labels[raftStoreKey] = store.Name
-	labels[raftClusterKey] = store.Spec.Cluster.Name
-	labels[raftPartitionKey] = strconv.Itoa(int(partitionID))
-	labels[raftShardKey] = strconv.Itoa(int(shardID))
-	return labels
-}
-
-func newPartitionAnnotations(store *raftv1beta2.MultiRaftStore, partitionID raftv1beta2.PartitionID, shardID raftv1beta2.ShardID) map[string]string {
-	annotations := make(map[string]string)
-	for key, value := range store.Annotations {
-		annotations[key] = value
-	}
-	annotations[storeKey] = store.Name
-	annotations[raftStoreKey] = store.Name
-	annotations[raftClusterKey] = store.Spec.Cluster.Name
-	annotations[raftPartitionKey] = strconv.Itoa(int(partitionID))
-	annotations[raftShardKey] = strconv.Itoa(int(shardID))
-	return annotations
-}

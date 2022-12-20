@@ -41,7 +41,7 @@ func addPodController(mgr manager.Manager) error {
 		Reconciler: &PodReconciler{
 			client:   mgr.GetClient(),
 			scheme:   mgr.GetScheme(),
-			events:   mgr.GetEventRecorderFor("atomix-consensus-storage"),
+			events:   mgr.GetEventRecorderFor("atomix-raft-storage"),
 			watchers: make(map[string]context.CancelFunc),
 		},
 		RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*10, time.Second*5),
@@ -111,7 +111,7 @@ func (r *PodReconciler) reconcileCreate(ctx context.Context, pod *corev1.Pod) er
 		return nil
 	}
 
-	address := fmt.Sprintf("%s:%d", getPodDNSName(pod.Namespace, cluster, pod.Name), apiPort)
+	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
 	clusterName := types.NamespacedName{
 		Namespace: pod.Namespace,
 		Name:      cluster,
@@ -123,16 +123,11 @@ func (r *PodReconciler) reconcileCreate(ctx context.Context, pod *corev1.Pod) er
 }
 
 func (r *PodReconciler) reconcileDelete(ctx context.Context, pod *corev1.Pod) error {
-	cluster, ok := pod.Annotations[raftClusterKey]
-	if !ok {
-		return nil
-	}
-
 	if !hasFinalizer(pod, podKey) {
 		return nil
 	}
 
-	address := fmt.Sprintf("%s:%d", getPodDNSName(pod.Namespace, cluster, pod.Name), apiPort)
+	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
 	if err := r.unwatch(address); err != nil {
 		return err
 	}

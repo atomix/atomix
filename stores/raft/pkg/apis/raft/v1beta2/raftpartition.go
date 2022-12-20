@@ -26,10 +26,10 @@ type ShardID uint64
 // RaftPartitionSpec specifies a RaftPartitionSpec configuration
 type RaftPartitionSpec struct {
 	RaftConfig  `json:",inline"`
-	Cluster     corev1.LocalObjectReference `json:"cluster"`
-	Replicas    uint32                      `json:"replicas"`
-	PartitionID PartitionID                 `json:"partitionID"`
-	ShardID     ShardID                     `json:"shardID"`
+	Cluster     corev1.ObjectReference `json:"cluster"`
+	Replicas    uint32                 `json:"replicas"`
+	PartitionID PartitionID            `json:"partitionID"`
+	ShardID     ShardID                `json:"shardID"`
 }
 
 // RaftPartitionStatus defines the status of a RaftPartition

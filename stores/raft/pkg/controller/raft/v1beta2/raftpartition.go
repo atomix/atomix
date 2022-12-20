@@ -33,7 +33,7 @@ func addRaftPartitionController(mgr manager.Manager) error {
 		Reconciler: &RaftPartitionReconciler{
 			client: mgr.GetClient(),
 			scheme: mgr.GetScheme(),
-			events: mgr.GetEventRecorderFor("atomix-consensus-storage"),
+			events: mgr.GetEventRecorderFor("atomix-raft-storage"),
 		},
 		RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*10, time.Second*5),
 	}
@@ -68,7 +68,7 @@ func addRaftPartitionController(mgr manager.Manager) error {
 
 		var requests []reconcile.Request
 		for _, partition := range partitions.Items {
-			if partition.Spec.Cluster.Name == object.GetName() {
+			if partition.Spec.Cluster.Name == object.GetName() && getClusterNamespace(&partition, partition.Spec.Cluster) == object.GetNamespace() {
 				requests = append(requests, reconcile.Request{
 					NamespacedName: types.NamespacedName{
 						Namespace: object.GetNamespace(),
@@ -123,7 +123,7 @@ func (r *RaftPartitionReconciler) reconcileCreate(ctx context.Context, partition
 
 	cluster := &raftv1beta2.MultiRaftCluster{}
 	clusterName := types.NamespacedName{
-		Namespace: partition.Namespace,
+		Namespace: getClusterNamespace(partition, partition.Spec.Cluster),
 		Name:      partition.Spec.Cluster.Name,
 	}
 	if err := r.client.Get(ctx, clusterName, cluster); err != nil {

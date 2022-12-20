@@ -17,15 +17,11 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/utils/pointer"
-	"net"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"strconv"
-	"strings"
 	"time"
 
 	raftv1beta2 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta2"
@@ -40,9 +36,9 @@ const (
 	protocolPort          = 5679
 	probePort             = 5679
 	defaultImageEnv       = "DEFAULT_NODE_IMAGE"
-	defaultImage          = "atomix/consensus-node:latest"
+	defaultImage          = "atomix/raft-node:latest"
 	headlessServiceSuffix = "hs"
-	nodeContainerName     = "atomix-consensus-node"
+	nodeContainerName     = "atomix-raft-node"
 	storeKey              = "atomix.io/store"
 	podKey                = "raft.atomix.io/pod"
 	raftStoreKey          = "raft.atomix.io/store"
@@ -72,7 +68,7 @@ func addMultiRaftClusterController(mgr manager.Manager) error {
 		Reconciler: &MultiRaftClusterReconciler{
 			client: mgr.GetClient(),
 			scheme: mgr.GetScheme(),
-			events: mgr.GetEventRecorderFor("atomix-raft-storage"),
+			events: mgr.GetEventRecorderFor("atomix-raft"),
 		},
 		RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*10, time.Second*5),
 	}
@@ -280,7 +276,7 @@ func (r *MultiRaftClusterReconciler) addStatefulSet(ctx context.Context, cluster
 			Annotations: newClusterAnnotations(cluster),
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName: getHeadlessServiceName(cluster.Name),
+			ServiceName: getHeadlessServiceName(cluster),
 			Replicas:    pointer.Int32Ptr(int32(cluster.Spec.Replicas)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: newClusterSelector(cluster),
@@ -316,8 +312,8 @@ func (r *MultiRaftClusterReconciler) addStatefulSet(ctx context.Context, cluster
 								fmt.Sprintf(`set -ex
 [[ `+"`hostname`"+` =~ -([0-9]+)$ ]] || exit 1
 ordinal=${BASH_REMATCH[1]}
-atomix-consensus-node --config %s/%s --api-port %d --raft-host %s-$ordinal.%s.%s.svc.%s --raft-port %d`,
-									configPath, raftConfigFile, apiPort, cluster.Name, getHeadlessServiceName(cluster.Name), cluster.Namespace, getClusterDomain(), protocolPort),
+atomix-raft-node --config %s/%s --api-port %d --raft-host %s-$ordinal.%s.%s.svc.%s --raft-port %d`,
+									configPath, raftConfigFile, apiPort, cluster.Name, getHeadlessServiceName(cluster), cluster.Namespace, getClusterDomain(), protocolPort),
 							},
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -441,7 +437,7 @@ func (r *MultiRaftClusterReconciler) reconcileHeadlessService(ctx context.Contex
 	service := &corev1.Service{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
-		Name:      getHeadlessServiceName(cluster.Name),
+		Name:      getHeadlessServiceName(cluster),
 	}
 	err := r.client.Get(ctx, name, service)
 	if err != nil && k8serrors.IsNotFound(err) {
@@ -455,7 +451,7 @@ func (r *MultiRaftClusterReconciler) addHeadlessService(ctx context.Context, clu
 
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        getHeadlessServiceName(cluster.Name),
+			Name:        getHeadlessServiceName(cluster),
 			Namespace:   cluster.Namespace,
 			Labels:      newClusterLabels(cluster),
 			Annotations: newClusterAnnotations(cluster),
@@ -521,103 +517,3 @@ func (r *MultiRaftClusterReconciler) reconcileStatus(ctx context.Context, cluste
 }
 
 var _ reconcile.Reconciler = (*MultiRaftClusterReconciler)(nil)
-
-// getResourceName returns the given resource name for the given object name
-func getResourceName(name string, resource string) string {
-	return fmt.Sprintf("%s-%s", name, resource)
-}
-
-// getHeadlessServiceName returns the headless service name for the given cluster
-func getHeadlessServiceName(cluster string) string {
-	return getResourceName(cluster, headlessServiceSuffix)
-}
-
-// getClusterDomain returns Kubernetes cluster domain, default to "cluster.local"
-func getClusterDomain() string {
-	clusterDomain := os.Getenv(clusterDomainEnv)
-	if clusterDomain == "" {
-		apiSvc := "kubernetes.default.svc"
-		cname, err := net.LookupCNAME(apiSvc)
-		if err != nil {
-			return "cluster.local"
-		}
-		clusterDomain = strings.TrimSuffix(strings.TrimPrefix(cname, apiSvc+"."), ".")
-	}
-	return clusterDomain
-}
-
-// getPodDNSName returns the fully qualified DNS name for the given pod ID
-func getPodDNSName(namespace string, cluster string, name string) string {
-	return fmt.Sprintf("%s.%s.%s.svc.%s", name, getHeadlessServiceName(cluster), namespace, getClusterDomain())
-}
-
-func getMemberPodOrdinal(cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID) int {
-	return (int(partition.Spec.Replicas)*int(partition.Spec.ShardID) + (int(memberID) - 1)) % int(cluster.Spec.Replicas)
-}
-
-func getMemberPodName(cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID) string {
-	return fmt.Sprintf("%s-%d", cluster.Name, getMemberPodOrdinal(cluster, partition, memberID))
-}
-
-// newClusterLabels returns the labels for the given cluster
-func newClusterLabels(cluster *raftv1beta2.MultiRaftCluster) map[string]string {
-	labels := make(map[string]string)
-	for key, value := range cluster.Labels {
-		labels[key] = value
-	}
-	labels[raftClusterKey] = cluster.Name
-	return labels
-}
-
-func newClusterSelector(cluster *raftv1beta2.MultiRaftCluster) map[string]string {
-	return map[string]string{
-		raftClusterKey: cluster.Name,
-	}
-}
-
-// newMemberLabels returns the labels for the given cluster
-func newMemberLabels(cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID, raftNodeID raftv1beta2.ReplicaID) map[string]string {
-	labels := make(map[string]string)
-	for key, value := range partition.Labels {
-		labels[key] = value
-	}
-	labels[podKey] = getMemberPodName(cluster, partition, memberID)
-	labels[raftMemberKey] = strconv.Itoa(int(memberID))
-	labels[raftReplicaKey] = strconv.Itoa(int(raftNodeID))
-	return labels
-}
-
-func newClusterAnnotations(cluster *raftv1beta2.MultiRaftCluster) map[string]string {
-	annotations := make(map[string]string)
-	for key, value := range cluster.Annotations {
-		annotations[key] = value
-	}
-	annotations[raftClusterKey] = cluster.Name
-	return annotations
-}
-
-func newMemberAnnotations(cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID, raftNodeID raftv1beta2.ReplicaID) map[string]string {
-	annotations := make(map[string]string)
-	for key, value := range partition.Labels {
-		annotations[key] = value
-	}
-	annotations[podKey] = getMemberPodName(cluster, partition, memberID)
-	annotations[raftMemberKey] = strconv.Itoa(int(memberID))
-	annotations[raftReplicaKey] = strconv.Itoa(int(raftNodeID))
-	return annotations
-}
-
-func getImage(cluster *raftv1beta2.MultiRaftCluster) string {
-	if cluster.Spec.Image != "" {
-		return cluster.Spec.Image
-	}
-	return getDefaultImage()
-}
-
-func getDefaultImage() string {
-	image := os.Getenv(defaultImageEnv)
-	if image == "" {
-		image = defaultImage
-	}
-	return image
-}

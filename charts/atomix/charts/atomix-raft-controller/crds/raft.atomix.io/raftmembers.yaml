@@ -42,6 +42,8 @@ spec:
                   properties:
                     name:
                       type: string
+                    namespace:
+                      type: string
                 shardID:
                   type: integer
                   minimum: 1
