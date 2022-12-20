@@ -18,23 +18,23 @@ RUN go mod download
 FROM builder AS build-proxy
 RUN go run ./cmd/atomix-build proxy /build/bin/atomix-proxy
 
-# Build the consensus storage driver
-FROM builder AS build-consensus-driver
+# Build the multiraft storage driver
+FROM builder AS build-multiraft-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/consensus-storage/driver@v0.13.3 \
-    /build/bin/Consensus@v1beta1.so
+    github.com/atomix/atomix/drivers/multiraft@4bbea847d \
+    /build/bin/MultiRaft@v2beta1.so
 
-# Build the shared memory storage driver
-FROM builder AS build-shared-memory-driver
+# Build the sharedmemory storage driver
+FROM builder AS build-sharedmemory-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/shared-memory-storage/driver@v0.1.3 \
-    /build/bin/SharedMemory@v1beta1.so
+    github.com/atomix/atomix/drivers/sharedmemory@4bbea847d \
+    /build/bin/SharedMemory@v2beta1.so
 
-# Build the pod memory storage driver
-FROM builder AS build-pod-memory-driver
+# Build the podmemory storage driver
+FROM builder AS build-podmemory-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/pod-memory-storage/driver@v0.1.5 \
-    /build/bin/PodMemory@v1beta1.so
+    github.com/atomix/atomix/drivers/podmemory@4bbea847d \
+    /build/bin/PodMemory@v2beta1.so
 
 # Pull binaries and plugins into the Alpine image
 FROM alpine:3.15
@@ -46,8 +46,8 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 USER atomix
 
 COPY --from=build-proxy /build/bin/atomix-proxy /usr/local/bin/atomix-proxy
-COPY --from=build-consensus-driver /build/bin/Consensus@v1beta1.so /var/atomix/plugins/
-COPY --from=build-shared-memory-driver /build/bin/SharedMemory@v1beta1.so /var/atomix/plugins/
-COPY --from=build-pod-memory-driver /build/bin/PodMemory@v1beta1.so /var/atomix/plugins/
+COPY --from=build-multiraft-driver /build/bin/MultiRaft@v2beta1.so /var/atomix/plugins/
+COPY --from=build-sharedmemory-driver /build/bin/SharedMemory@v2beta1.so /var/atomix/plugins/
+COPY --from=build-podmemory-driver /build/bin/PodMemory@v2beta1.so /var/atomix/plugins/
 
 ENTRYPOINT ["atomix-proxy"]
