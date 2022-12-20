@@ -3,7 +3,7 @@ module github.com/atomix/atomix/controller
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221219223759-628ae01a37ac
+	github.com/atomix/atomix/api v0.0.0-20221220002711-d3ec8d10691a
 	github.com/atomix/atomix/common v0.0.0-20221218014837-eec7ba47625a
 	github.com/atomix/atomix/runtime v0.0.0-20221219085404-5679432a0742
 	github.com/go-logr/logr v1.2.0

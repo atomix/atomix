@@ -7,7 +7,7 @@ package v3beta3
 import (
 	"context"
 	"fmt"
-	proxyv1 "github.com/atomix/atomix/api/pkg/proxy/v1"
+	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"google.golang.org/grpc"
@@ -264,9 +264,9 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 				return false, err
 			}
 
-			client := proxyv1.NewProxyClient(conn)
-			request := &proxyv1.DisconnectRequest{
-				StoreID: proxyv1.StoreId{
+			client := runtimev1.NewRuntimeClient(conn)
+			request := &runtimev1.DisconnectRequest{
+				StoreID: runtimev1.StoreID{
 					Namespace: storeNamespacedName.Namespace,
 					Name:      storeNamespacedName.Name,
 				},
@@ -307,17 +307,19 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 			return false, err
 		}
 
-		client := proxyv1.NewProxyClient(conn)
-		request := &proxyv1.ConnectRequest{
-			StoreID: proxyv1.StoreId{
-				Namespace: storeNamespacedName.Namespace,
-				Name:      storeNamespacedName.Name,
-			},
-			DriverID: proxyv1.DriverId{
+		client := runtimev1.NewRuntimeClient(conn)
+		request := &runtimev1.ConnectRequest{
+			DriverID: runtimev1.DriverID{
 				Name:    store.Spec.Driver.Name,
 				Version: store.Spec.Driver.Version,
 			},
-			Config: store.Spec.Config.Raw,
+			Spec: runtimev1.ConnSpec{
+				StoreID: runtimev1.StoreID{
+					Namespace: storeNamespacedName.Namespace,
+					Name:      storeNamespacedName.Name,
+				},
+				Config: store.Spec.Config.Raw,
+			},
 		}
 		_, err = client.Connect(ctx, request)
 		if err != nil {
@@ -350,13 +352,15 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 			return false, err
 		}
 
-		client := proxyv1.NewProxyClient(conn)
-		request := &proxyv1.ConfigureRequest{
-			StoreID: proxyv1.StoreId{
-				Namespace: storeNamespacedName.Namespace,
-				Name:      storeNamespacedName.Name,
+		client := runtimev1.NewRuntimeClient(conn)
+		request := &runtimev1.ConfigureRequest{
+			Spec: runtimev1.ConnSpec{
+				StoreID: runtimev1.StoreID{
+					Namespace: storeNamespacedName.Namespace,
+					Name:      storeNamespacedName.Name,
+				},
+				Config: store.Spec.Config.Raw,
 			},
-			Config: store.Spec.Config.Raw,
 		}
 		_, err = client.Configure(ctx, request)
 		if err != nil {
