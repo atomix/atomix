@@ -6,7 +6,6 @@
 - [runtime/v1/runtime.proto](#runtime_v1_runtime-proto)
     - [ConfigureRequest](#atomix-runtime-v1-ConfigureRequest)
     - [ConfigureResponse](#atomix-runtime-v1-ConfigureResponse)
-    - [ConnMeta](#atomix-runtime-v1-ConnMeta)
     - [ConnSpec](#atomix-runtime-v1-ConnSpec)
     - [ConnectRequest](#atomix-runtime-v1-ConnectRequest)
     - [ConnectResponse](#atomix-runtime-v1-ConnectResponse)
@@ -42,7 +41,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| conn | [ConnSpec](#atomix-runtime-v1-ConnSpec) |  |  |
+| spec | [ConnSpec](#atomix-runtime-v1-ConnSpec) |  |  |
 
 
 
@@ -59,22 +58,6 @@
 
 
 
-<a name="atomix-runtime-v1-ConnMeta"></a>
-
-### ConnMeta
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| driver_id | [DriverID](#atomix-runtime-v1-DriverID) |  |  |
-| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
-
-
-
-
-
-
 <a name="atomix-runtime-v1-ConnSpec"></a>
 
 ### ConnSpec
@@ -83,7 +66,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [ConnMeta](#atomix-runtime-v1-ConnMeta) |  |  |
+| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
 | config | [bytes](#bytes) |  |  |
 
 
@@ -99,7 +82,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| conn | [ConnSpec](#atomix-runtime-v1-ConnSpec) |  |  |
+| driver_id | [DriverID](#atomix-runtime-v1-DriverID) |  |  |
+| spec | [ConnSpec](#atomix-runtime-v1-ConnSpec) |  |  |
 
 
 
@@ -124,7 +108,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| conn | [ConnMeta](#atomix-runtime-v1-ConnMeta) |  |  |
+| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
 
 
 
