@@ -2,9 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-multiraft:
+multi-raft:
   enabled: true
-sharedmemory:
+  nameOverride: multi-raft-controller
+shared-memory:
   enabled: true
-podmemory:
+  nameOverride: shared-memory-controller
+pod-memory:
   enabled: true
+  nameOverride: pod-memory-controller
