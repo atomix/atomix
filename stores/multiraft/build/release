@@ -1,0 +1,36 @@
+#!/bin/sh
+# SPDX-FileCopyrightText: 2020-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+rm -rf .release
+
+git config --global user.email "jordan.halterman@gmail.com"
+git config --global user.name "Jordan Halterman"
+
+git clone --branch master https://$GITHUB_TOKEN@github.com/atomix/charts.atomix.io.git .release
+
+# Package the Helm chart
+cr package ./helm --package-path .release/package
+
+cd .release
+
+# Upload the Helm chart release
+cr upload \
+    --owner atomix \
+    --git-repo charts.atomix.io \
+    --package-path package \
+    --token $GITHUB_TOKEN \
+    --skip-existing
+
+# Update the repository index
+cr index \
+    --owner atomix \
+    --git-repo charts.atomix.io \
+    --pages-branch master \
+    --package-path package \
+    --index-path index.yaml
+
+git add index.yaml
+git commit -m "Add atomix-runtime-controller release to index.yaml" index.yaml
+git push https://$GITHUB_TOKEN@github.com/atomix/charts.atomix.io.git master

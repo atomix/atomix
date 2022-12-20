@@ -1,0 +1,16 @@
+apiVersion: atomix.io/v3beta3
+kind: StorageProfile
+metadata:
+  name: example-profile
+spec:
+  bindings:
+    - store:
+        name: example-multiraft-store
+      tags:
+        - foo
+        - bar
+      services:
+        - name: atomix.runtime.map.v1.Map
+          config:
+            cache:
+              enabled: true

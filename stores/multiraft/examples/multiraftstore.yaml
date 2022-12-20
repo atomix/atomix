@@ -1,0 +1,7 @@
+apiVersion: multiraft.atomix.io/v1beta1
+kind: ConsensusStore
+metadata:
+  name: example-multiraft-store
+spec:
+  replicas: 3
+  groups: 3
