@@ -4,18 +4,18 @@
 
 .PHONY: build
 build:
-	$(MAKE) -C multi-raft build
+	$(MAKE) -C raft build
 	$(MAKE) -C pod-memory build
 	$(MAKE) -C shared-memory build
 
 .PHONY: test
 test:
-	$(MAKE) -C multi-raft test
+	$(MAKE) -C raft test
 	$(MAKE) -C pod-memory test
 	$(MAKE) -C shared-memory test
 
 .PHONY: kind
 kind:
-	$(MAKE) -C multi-raft kind
+	$(MAKE) -C raft kind
 	$(MAKE) -C pod-memory kind
 	$(MAKE) -C shared-memory kind

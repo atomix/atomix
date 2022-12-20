@@ -18,10 +18,10 @@ RUN go mod download
 FROM builder AS build-proxy
 RUN go run ./cmd/atomix-build proxy /build/bin/atomix-proxy
 
-# Build the multi-raft storage driver
-FROM builder AS build-multi-raft-driver
+# Build the raft storage driver
+FROM builder AS build-raft-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/atomix/drivers/multi-raft@8f784bb69 \
+    github.com/atomix/atomix/drivers/raft@8f784bb69 \
     /build/bin/MultiRaft@v2beta1.so
 
 # Build the shared-memory storage driver
@@ -46,7 +46,7 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 USER atomix
 
 COPY --from=build-proxy /build/bin/atomix-proxy /usr/local/bin/atomix-proxy
-COPY --from=build-multi-raft-driver /build/bin/MultiRaft@v2beta1.so /var/atomix/plugins/
+COPY --from=build-raft-driver /build/bin/MultiRaft@v2beta1.so /var/atomix/plugins/
 COPY --from=build-shared-memory-driver /build/bin/SharedMemory@v2beta1.so /var/atomix/plugins/
 COPY --from=build-pod-memory-driver /build/bin/PodMemory@v2beta1.so /var/atomix/plugins/
 

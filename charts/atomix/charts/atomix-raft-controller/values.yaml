@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+replicas: 1
+
+controller:
+  image:
+    registry: ""
+    repository: atomix/raft-controller
+    tag: v0.7.1
+    pullPolicy: ""
+    pullSecrets: []
+
+node:
+  image:
+    registry: ""
+    repository: atomix/raft-node
+    tag: v0.13
+    pullPolicy: ""
+    pullSecrets: []

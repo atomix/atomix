@@ -18,10 +18,10 @@ dependencies:
   - name: atomix-controller
     version: 2.0.0
     alias: controller
-  - name: atomix-multi-raft-controller
+  - name: atomix-raft-controller
     version: 2.0.0
-    condition: multiraft.enabled
-    alias: multi-raft
+    condition: raft.enabled
+    alias: raft
   - name: atomix-shared-memory-controller
     version: 2.0.0
     condition: sharedmemory.enabled

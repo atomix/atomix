@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-multi-raft:
+raft:
   enabled: true
-  nameOverride: multi-raft-controller
+  nameOverride: raft-controller
 shared-memory:
   enabled: true
   nameOverride: shared-memory-controller
