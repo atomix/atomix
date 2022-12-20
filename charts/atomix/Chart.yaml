@@ -17,20 +17,16 @@ maintainers:
 dependencies:
   - name: atomix-controller
     version: 2.0.0
-    repository: https://charts.atomix.io
     alias: controller
   - name: atomix-multiraft-controller
     version: 2.0.0
-    repository: https://charts.atomix.io
     condition: multiraft.enabled
     alias: multiraft
   - name: atomix-sharedmemory-controller
     version: 2.0.0
-    repository: https://charts.atomix.io
     condition: sharedmemory.enabled
     alias: sharedmemory
   - name: atomix-podmemory-controller
     version: 2.0.0
-    repository: https://charts.atomix.io
     condition: podmemory.enabled
     alias: podmemory
