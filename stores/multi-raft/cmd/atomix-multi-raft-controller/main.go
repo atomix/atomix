@@ -42,7 +42,7 @@ func main() {
 
 func getCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "atomix-multiraft-controller",
+		Use:  "atomix-multi-raft-controller",
 		Args: cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			namespace, _ := cmd.Flags().GetString("namespace")
