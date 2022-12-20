@@ -1,17 +1,16 @@
 apiVersion: atomix.io/v3beta3
 kind: StorageProfile
 metadata:
-  name: example-profile
+  name: primitive-configuration-profile
 spec:
   bindings:
     - store:
-        name: example-memory-store
-      tags:
-        - foo
-        - bar
+        name: example-store
       primitives:
         - apiVersion: v1
           kind: Map
+          tags:
+            - cached
           config:
             cache:
               enabled: true

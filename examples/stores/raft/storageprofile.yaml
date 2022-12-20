@@ -10,7 +10,7 @@ spec:
         - foo
         - bar
       primitives:
-        - apiVerison: v1
+        - apiVersion: v1
           kind: Map
           config:
             cache:
