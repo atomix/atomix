@@ -4,7 +4,7 @@
 
 .PHONY: build
 build:
-	go build .
+	go build ./pkg/...
 
 reuse-tool: # @HELP install reuse if not present
 	command -v reuse || python3 -m pip install reuse

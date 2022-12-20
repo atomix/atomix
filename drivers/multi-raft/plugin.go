@@ -5,7 +5,7 @@
 package main
 
 import (
-	driver "github.com/atomix/atomix/drivers/shared-memory"
+	"github.com/atomix/atomix/drivers/multi-raft/pkg/driver"
 	"github.com/atomix/atomix/runtime/pkg/network"
 )
 
