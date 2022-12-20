@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: api controller deployments proto proxy runtime
+build: api charts controller proto proxy runtime
 
 .PHONY: api
 api:
@@ -13,13 +13,13 @@ api:
 		atomix/codegen:go-latest \
 		--proto-path ./proto --go-path ./api/pkg --import-path github.com/atomix/atomix/api/pkg
 
+.PHONY: charts
+charts:
+	$(MAKE) -C charts build
+
 .PHONY: controller
 controller:
 	$(MAKE) -C controller build
-
-.PHONY: deployments
-deployments:
-	$(MAKE) -C deployments build
 
 .PHONY: proto
 proto:

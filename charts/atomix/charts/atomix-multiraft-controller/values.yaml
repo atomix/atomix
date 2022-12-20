@@ -4,12 +4,13 @@
 
 replicas: 1
 
-image:
-  registry: ""
-  repository: atomix/multiraft-controller
-  tag: v0.7.1
-  pullPolicy: ""
-  pullSecrets: []
+controller:
+  image:
+    registry: ""
+    repository: atomix/multiraft-controller
+    tag: v0.7.1
+    pullPolicy: ""
+    pullSecrets: []
 
 node:
   image:

@@ -5,7 +5,7 @@
 build: deps
 
 deps: # @HELP build the deployments
-	helm dep update helm
+	helm dep update atomix
 
 reuse-tool: # @HELP install reuse if not present
 	command -v reuse || python3 -m pip install reuse

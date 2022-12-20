@@ -19,11 +19,11 @@ spec:
       serviceAccountName: {{ template "atomix-multiraft-controller.fullname" . }}
       containers:
         - name: atomix-multiraft-controller
-          image: {{ include "atomix-multiraft-controller.imagename" .Values.image | quote }}
+          image: {{ include "atomix-multiraft-controller.imagename" .Values.controller.image | quote }}
           securityContext:
             allowPrivilegeEscalation: false
             runAsUser: 0
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
           readinessProbe:
             exec:
               command:
