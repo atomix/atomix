@@ -61,33 +61,33 @@ func (c *memoryConn) NewCounter(spec runtimev1.PrimitiveSpec) (counterv1api.Coun
 }
 
 func (c *memoryConn) NewCounterMap(spec runtimev1.PrimitiveSpec) (countermapv1api.CounterMap, error) {
-	return countermapv1.NewCounterMapProxy(c.Protocol, spec)
+	return countermapv1.NewCounterMap(c.Protocol, spec)
 }
 
 func (c *memoryConn) NewLeaderElection(spec runtimev1.PrimitiveSpec) (electionv1api.LeaderElection, error) {
-	return electionv1.NewLeaderElectionProxy(c.Protocol, spec)
+	return electionv1.NewLeaderElection(c.Protocol, spec)
 }
 
 func (c *memoryConn) NewIndexedMap(spec runtimev1.PrimitiveSpec) (indexedmapv1api.IndexedMap, error) {
-	return indexedmapv1.NewIndexedMapProxy(c.Protocol, spec)
+	return indexedmapv1.NewIndexedMap(c.Protocol, spec)
 }
 
 func (c *memoryConn) NewLock(spec runtimev1.PrimitiveSpec) (lockv1api.Lock, error) {
-	return lockv1.NewLockProxy(c.Protocol, spec)
+	return lockv1.NewLock(c.Protocol, spec)
 }
 
 func (c *memoryConn) NewMap(spec runtimev1.PrimitiveSpec) (mapv1api.Map, error) {
-	return mapv1.NewMapProxy(c.Protocol, spec)
+	return mapv1.NewMap(c.Protocol, spec)
 }
 
 func (c *memoryConn) NewMultiMap(spec runtimev1.PrimitiveSpec) (multimapv1api.MultiMap, error) {
-	return multimapv1.NewMultiMapProxy(c.Protocol, spec)
+	return multimapv1.NewMultiMap(c.Protocol, spec)
 }
 
 func (c *memoryConn) NewSet(spec runtimev1.PrimitiveSpec) (setv1api.Set, error) {
-	return setv1.NewSetProxy(c.Protocol, spec)
+	return setv1.NewSet(c.Protocol, spec)
 }
 
 func (c *memoryConn) NewValue(spec runtimev1.PrimitiveSpec) (valuev1api.Value, error) {
-	return valuev1.NewValueProxy(c.Protocol, spec)
+	return valuev1.NewValue(c.Protocol, spec)
 }

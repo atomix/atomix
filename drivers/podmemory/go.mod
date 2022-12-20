@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/atomix/atomix/api v0.0.0-20221220002711-d3ec8d10691a
-	github.com/atomix/atomix/protocols/rsm v0.0.0-20221220003748-b8b3f4ce7b4f
+	github.com/atomix/atomix/protocols/rsm v0.0.0-20221220005634-00779f04cb55
 	github.com/atomix/atomix/runtime v0.0.0-20221220002934-fb8ee8a1e9e6
 )
 
