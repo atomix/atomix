@@ -14,7 +14,7 @@ import (
 
 var driverID = runtimev1.DriverID{
 	Name:    "SharedMemory",
-	Version: "v1beta1",
+	Version: "v2beta1",
 }
 
 func New(network network.Driver) runtime.Driver {
