@@ -29,11 +29,11 @@ import (
 )
 
 const (
-	driverName    = "Consensus"
+	driverName    = "MultiRaft"
 	driverVersion = "v1beta1"
 )
 
-func addConsensusStoreController(mgr manager.Manager) error {
+func addMultiRaftStoreController(mgr manager.Manager) error {
 	options := controller.Options{
 		Reconciler: &MultiRaftStoreReconciler{
 			client: mgr.GetClient(),
@@ -50,14 +50,14 @@ func addConsensusStoreController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to the storage resource and enqueue Stores that reference it
-	err = controller.Watch(&source.Kind{Type: &multiraftv1beta1.ConsensusStore{}}, &handler.EnqueueRequestForObject{})
+	err = controller.Watch(&source.Kind{Type: &multiraftv1beta1.MultiRaftStore{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to secondary resource MultiRaftCluster
 	err = controller.Watch(&source.Kind{Type: &multiraftv1beta1.MultiRaftCluster{}}, &handler.EnqueueRequestForOwner{
-		OwnerType:    &multiraftv1beta1.ConsensusStore{},
+		OwnerType:    &multiraftv1beta1.MultiRaftStore{},
 		IsController: true,
 	})
 	if err != nil {
@@ -85,11 +85,11 @@ type MultiRaftStoreReconciler struct {
 // Reconcile reads that state of the cluster for a Store object and makes changes based on the state read
 // and what is in the Store.Spec
 func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log.Info("Reconcile ConsensusStore")
-	store := &multiraftv1beta1.ConsensusStore{}
+	log.Info("Reconcile MultiRaftStore")
+	store := &multiraftv1beta1.MultiRaftStore{}
 	err := r.client.Get(ctx, request.NamespacedName, store)
 	if err != nil {
-		log.Error(err, "Reconcile ConsensusStore")
+		log.Error(err, "Reconcile MultiRaftStore")
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -114,11 +114,11 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 			Spec: store.Spec.MultiRaftClusterSpec,
 		}
 		if err := controllerutil.SetControllerReference(store, cluster, r.scheme); err != nil {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return reconcile.Result{}, err
 		}
 		if err := r.client.Create(ctx, cluster); err != nil {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
@@ -129,8 +129,8 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 	}
 
 	if cluster.Status.State == multiraftv1beta1.MultiRaftClusterNotReady &&
-		store.Status.State != multiraftv1beta1.ConsensusStoreNotReady {
-		store.Status.State = multiraftv1beta1.ConsensusStoreNotReady
+		store.Status.State != multiraftv1beta1.MultiRaftStoreNotReady {
+		store.Status.State = multiraftv1beta1.MultiRaftStoreNotReady
 		if err := r.client.Status().Update(ctx, store); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -144,7 +144,7 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 	}
 	if err := r.client.Get(ctx, dataStoreName, dataStore); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return reconcile.Result{}, err
 		}
 
@@ -152,7 +152,7 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 		marshaler := &jsonpb.Marshaler{}
 		configString, err := marshaler.MarshalToString(&config)
 		if err != nil {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return reconcile.Result{}, err
 		}
 
@@ -173,11 +173,11 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 			},
 		}
 		if err := controllerutil.SetControllerReference(store, dataStore, r.scheme); err != nil {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return reconcile.Result{}, err
 		}
 		if err := r.client.Create(ctx, dataStore); err != nil {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
@@ -185,7 +185,7 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 
 	var config rsmv1.ProtocolConfig
 	if err := jsonpb.UnmarshalString(string(dataStore.Spec.Config.Raw), &config); err != nil {
-		log.Error(err, "Reconcile ConsensusStore")
+		log.Error(err, "Reconcile MultiRaftStore")
 		return reconcile.Result{}, err
 	}
 
@@ -194,7 +194,7 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 		marshaler := &jsonpb.Marshaler{}
 		configString, err := marshaler.MarshalToString(&newConfig)
 		if err != nil {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return reconcile.Result{}, err
 		}
 
@@ -202,15 +202,15 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 			Raw: []byte(configString),
 		}
 		if err := r.client.Update(ctx, dataStore); err != nil {
-			log.Error(err, "Reconcile ConsensusStore")
+			log.Error(err, "Reconcile MultiRaftStore")
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
 	}
 
 	if cluster.Status.State == multiraftv1beta1.MultiRaftClusterReady &&
-		store.Status.State != multiraftv1beta1.ConsensusStoreReady {
-		store.Status.State = multiraftv1beta1.ConsensusStoreReady
+		store.Status.State != multiraftv1beta1.MultiRaftStoreReady {
+		store.Status.State = multiraftv1beta1.MultiRaftStoreReady
 		if err := r.client.Status().Update(ctx, store); err != nil {
 			return reconcile.Result{}, err
 		}

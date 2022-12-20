@@ -13,7 +13,7 @@ var log = logging.GetLogger()
 
 // AddControllers adds multiraft controllers to the manager
 func AddControllers(mgr manager.Manager) error {
-	if err := addConsensusStoreController(mgr); err != nil {
+	if err := addMultiRaftStoreController(mgr); err != nil {
 		return err
 	}
 	if err := addMultiRaftClusterController(mgr); err != nil {

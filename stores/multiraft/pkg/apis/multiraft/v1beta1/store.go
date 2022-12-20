@@ -8,44 +8,44 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ConsensusStoreSpec specifies a ConsensusStore configuration
-type ConsensusStoreSpec struct {
+// MultiRaftStoreSpec specifies a MultiRaftStore configuration
+type MultiRaftStoreSpec struct {
 	MultiRaftClusterSpec `json:",inline"`
 }
 
-// ConsensusStoreState is a state constant for ConsensusStore
-type ConsensusStoreState string
+// MultiRaftStoreState is a state constant for MultiRaftStore
+type MultiRaftStoreState string
 
 const (
-	// ConsensusStoreNotReady indicates a ConsensusStore is not yet ready
-	ConsensusStoreNotReady ConsensusStoreState = "NotReady"
-	// ConsensusStoreReady indicates a ConsensusStore is ready
-	ConsensusStoreReady ConsensusStoreState = "Ready"
+	// MultiRaftStoreNotReady indicates a MultiRaftStore is not yet ready
+	MultiRaftStoreNotReady MultiRaftStoreState = "NotReady"
+	// MultiRaftStoreReady indicates a MultiRaftStore is ready
+	MultiRaftStoreReady MultiRaftStoreState = "Ready"
 )
 
-type ConsensusStoreStatus struct {
-	State ConsensusStoreState `json:"state,omitempty"`
+type MultiRaftStoreStatus struct {
+	State MultiRaftStoreState `json:"state,omitempty"`
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ConsensusStore is the Schema for the ConsensusStore API
+// MultiRaftStore is the Schema for the MultiRaftStore API
 // +k8s:openapi-gen=true
-type ConsensusStore struct {
+type MultiRaftStore struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              ConsensusStoreSpec   `json:"spec,omitempty"`
-	Status            ConsensusStoreStatus `json:"status,omitempty"`
+	Spec              MultiRaftStoreSpec   `json:"spec,omitempty"`
+	Status            MultiRaftStoreStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ConsensusStoreList contains a list of ConsensusStore
-type ConsensusStoreList struct {
+// MultiRaftStoreList contains a list of MultiRaftStore
+type MultiRaftStoreList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	// Items is the ConsensusStore of items in the list
-	Items []ConsensusStore `json:"items"`
+	// Items is the MultiRaftStore of items in the list
+	Items []MultiRaftStore `json:"items"`
 }

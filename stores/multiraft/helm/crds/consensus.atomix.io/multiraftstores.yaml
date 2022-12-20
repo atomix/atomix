@@ -10,8 +10,8 @@ spec:
   group: multiraft.atomix.io
   scope: Namespaced
   names:
-    kind: ConsensusStore
-    listKind: ConsensusStoreList
+    kind: MultiRaftStore
+    listKind: MultiRaftStoreList
     plural: multiraftstores
     singular: multiraftstore
     shortNames:

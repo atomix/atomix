@@ -918,7 +918,7 @@ func getPodName(cluster *multiraftv1beta1.MultiRaftCluster, groupID int, memberI
 }
 
 // newClusterLabels returns the labels for the given cluster
-func newClusterLabels(store *multiraftv1beta1.ConsensusStore) map[string]string {
+func newClusterLabels(store *multiraftv1beta1.MultiRaftStore) map[string]string {
 	labels := make(map[string]string)
 	for key, value := range store.Labels {
 		labels[key] = value
@@ -950,7 +950,7 @@ func newMemberLabels(group *multiraftv1beta1.RaftGroup, memberID int) map[string
 	return labels
 }
 
-func newClusterAnnotations(store *multiraftv1beta1.ConsensusStore) map[string]string {
+func newClusterAnnotations(store *multiraftv1beta1.MultiRaftStore) map[string]string {
 	annotations := make(map[string]string)
 	for key, value := range store.Annotations {
 		annotations[key] = value

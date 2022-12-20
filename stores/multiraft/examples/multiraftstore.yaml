@@ -1,5 +1,5 @@
 apiVersion: multiraft.atomix.io/v1beta1
-kind: ConsensusStore
+kind: MultiRaftStore
 metadata:
   name: example-multiraft-store
 spec:
