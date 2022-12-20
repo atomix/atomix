@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
+	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
 	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/network"
@@ -19,6 +20,16 @@ import (
 	"testing"
 	"time"
 )
+
+var testPrimitiveMeta = runtimev1.PrimitiveMeta{
+	Type: runtimev1.PrimitiveType{
+		Name:       "test",
+		APIVersion: "v1",
+	},
+	PrimitiveID: runtimev1.PrimitiveID{
+		Name: "foo",
+	},
+}
 
 func TestPrimitiveCreateClose(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -89,7 +100,7 @@ func TestPrimitiveCreateClose(t *testing.T) {
 				},
 			}, nil
 		})
-	err = session.CreatePrimitive(context.TODO(), protocol.PrimitiveSpec{Name: "name", Service: "service"})
+	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
 	primitive, err := session.GetPrimitive("name")
@@ -264,7 +275,7 @@ func TestUnaryProposal(t *testing.T) {
 				},
 			}, nil
 		})
-	err = session.CreatePrimitive(context.TODO(), protocol.PrimitiveSpec{Name: "name", Service: "service"})
+	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
 	primitive, err := session.GetPrimitive("name")
@@ -413,7 +424,7 @@ func TestStreamPropose(t *testing.T) {
 				},
 			}, nil
 		})
-	err = session.CreatePrimitive(context.TODO(), protocol.PrimitiveSpec{Name: "name", Service: "service"})
+	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
 	primitive, err := session.GetPrimitive("name")
@@ -651,7 +662,7 @@ func TestStreamProposeCancel(t *testing.T) {
 				},
 			}, nil
 		})
-	err = session.CreatePrimitive(context.TODO(), protocol.PrimitiveSpec{Name: "name", Service: "service"})
+	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
 	primitive, err := session.GetPrimitive("name")
@@ -887,7 +898,7 @@ func TestUnaryQuery(t *testing.T) {
 				},
 			}, nil
 		})
-	err = session.CreatePrimitive(context.TODO(), protocol.PrimitiveSpec{Name: "name", Service: "service"})
+	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
 	primitive, err := session.GetPrimitive("name")
@@ -1035,7 +1046,7 @@ func TestStreamQuery(t *testing.T) {
 				},
 			}, nil
 		})
-	err = session.CreatePrimitive(context.TODO(), protocol.PrimitiveSpec{Name: "name", Service: "service"})
+	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
 	primitive, err := session.GetPrimitive("name")
@@ -1268,7 +1279,7 @@ func TestStreamQueryCancel(t *testing.T) {
 				},
 			}, nil
 		})
-	err = session.CreatePrimitive(context.TODO(), protocol.PrimitiveSpec{Name: "name", Service: "service"})
+	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
 	primitive, err := session.GetPrimitive("name")
