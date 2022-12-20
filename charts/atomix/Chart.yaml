@@ -24,9 +24,14 @@ dependencies:
     alias: raft
   - name: atomix-shared-memory-controller
     version: 2.0.0
-    condition: sharedmemory.enabled
+    condition: shared-memory.enabled
     alias: shared-memory
   - name: atomix-pod-memory-controller
     version: 2.0.0
-    condition: podmemory.enabled
+    condition: pod-memory.enabled
     alias: pod-memory
+  - name: atomix-consensus-controller
+    version: 1.5.1
+    repository: https://charts.atomix.io
+    condition: consensus.enabled
+    alias: consensus-controller

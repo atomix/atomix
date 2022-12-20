@@ -59,8 +59,8 @@ func addRaftPartitionController(mgr manager.Manager) error {
 		return err
 	}
 
-	// Watch for changes to secondary resource MultiRaftCluster
-	err = controller.Watch(&source.Kind{Type: &raftv1beta2.MultiRaftCluster{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+	// Watch for changes to secondary resource RaftCluster
+	err = controller.Watch(&source.Kind{Type: &raftv1beta2.RaftCluster{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
 		partitions := &raftv1beta2.RaftPartitionList{}
 		if err := mgr.GetClient().List(context.Background(), partitions, &client.ListOptions{Namespace: object.GetNamespace()}); err != nil {
 			return nil
@@ -121,7 +121,7 @@ func (r *RaftPartitionReconciler) reconcileCreate(ctx context.Context, partition
 		return reconcile.Result{}, nil
 	}
 
-	cluster := &raftv1beta2.MultiRaftCluster{}
+	cluster := &raftv1beta2.RaftCluster{}
 	clusterName := types.NamespacedName{
 		Namespace: getClusterNamespace(partition, partition.Spec.Cluster),
 		Name:      partition.Spec.Cluster.Name,
@@ -150,7 +150,7 @@ func (r *RaftPartitionReconciler) reconcileCreate(ctx context.Context, partition
 	return reconcile.Result{}, nil
 }
 
-func (r *RaftPartitionReconciler) reconcileMembers(ctx context.Context, cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition) (bool, error) {
+func (r *RaftPartitionReconciler) reconcileMembers(ctx context.Context, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition) (bool, error) {
 	// Iterate through partition members and ensure member statuses have been added to the partition status
 	memberStatuses := partition.Status.MemberStatuses
 	for ordinal := 1; ordinal <= int(partition.Spec.Replicas); ordinal++ {
@@ -193,7 +193,7 @@ func (r *RaftPartitionReconciler) reconcileMembers(ctx context.Context, cluster 
 	return false, nil
 }
 
-func (r *RaftPartitionReconciler) reconcileMember(ctx context.Context, cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID) (bool, error) {
+func (r *RaftPartitionReconciler) reconcileMember(ctx context.Context, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID) (bool, error) {
 	memberName := types.NamespacedName{
 		Namespace: partition.Namespace,
 		Name:      fmt.Sprintf("%s-%d", partition.Name, memberID),

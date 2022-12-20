@@ -1,0 +1,8 @@
+apiVersion: raft.atomix.io/v1beta2
+kind: RaftStore
+metadata:
+  name: example-raft-store
+spec:
+  cluster:
+    name: example-raft-cluster
+  replicas: 3

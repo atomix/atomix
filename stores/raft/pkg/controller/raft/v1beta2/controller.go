@@ -13,16 +13,16 @@ var log = logging.GetLogger()
 
 // AddControllers adds raft controllers to the manager
 func AddControllers(mgr manager.Manager) error {
-	if err := addMultiRaftStoreController(mgr); err != nil {
+	if err := addRaftStoreController(mgr); err != nil {
 		return err
 	}
 	if err := addRaftStoreController(mgr); err != nil {
 		return err
 	}
-	if err := addMultiRaftClusterController(mgr); err != nil {
+	if err := addRaftClusterController(mgr); err != nil {
 		return err
 	}
-	if err := addMultiRaftStoreController(mgr); err != nil {
+	if err := addRaftStoreController(mgr); err != nil {
 		return err
 	}
 	if err := addRaftPartitionController(mgr); err != nil {

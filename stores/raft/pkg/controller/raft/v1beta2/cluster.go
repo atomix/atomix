@@ -63,9 +63,9 @@ const (
 
 const clusterDomainEnv = "CLUSTER_DOMAIN"
 
-func addMultiRaftClusterController(mgr manager.Manager) error {
+func addRaftClusterController(mgr manager.Manager) error {
 	options := controller.Options{
-		Reconciler: &MultiRaftClusterReconciler{
+		Reconciler: &RaftClusterReconciler{
 			client: mgr.GetClient(),
 			scheme: mgr.GetScheme(),
 			events: mgr.GetEventRecorderFor("atomix-raft"),
@@ -80,14 +80,14 @@ func addMultiRaftClusterController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to the storage resource and enqueue Stores that reference it
-	err = controller.Watch(&source.Kind{Type: &raftv1beta2.MultiRaftCluster{}}, &handler.EnqueueRequestForObject{})
+	err = controller.Watch(&source.Kind{Type: &raftv1beta2.RaftCluster{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to secondary resource StatefulSet
 	err = controller.Watch(&source.Kind{Type: &appsv1.StatefulSet{}}, &handler.EnqueueRequestForOwner{
-		OwnerType:    &raftv1beta2.MultiRaftCluster{},
+		OwnerType:    &raftv1beta2.RaftCluster{},
 		IsController: true,
 	})
 	if err != nil {
@@ -96,8 +96,8 @@ func addMultiRaftClusterController(mgr manager.Manager) error {
 	return nil
 }
 
-// MultiRaftClusterReconciler reconciles a MultiRaftCluster object
-type MultiRaftClusterReconciler struct {
+// RaftClusterReconciler reconciles a RaftCluster object
+type RaftClusterReconciler struct {
 	client client.Client
 	scheme *runtime.Scheme
 	events record.EventRecorder
@@ -105,12 +105,12 @@ type MultiRaftClusterReconciler struct {
 
 // Reconcile reads that state of the cluster for a Store object and makes changes based on the state read
 // and what is in the Store.Spec
-func (r *MultiRaftClusterReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log.Info("Reconcile MultiRaftCluster")
-	cluster := &raftv1beta2.MultiRaftCluster{}
+func (r *RaftClusterReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log.Info("Reconcile RaftCluster")
+	cluster := &raftv1beta2.RaftCluster{}
 	err := r.client.Get(ctx, request.NamespacedName, cluster)
 	if err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -118,34 +118,34 @@ func (r *MultiRaftClusterReconciler) Reconcile(ctx context.Context, request reco
 	}
 
 	if err := r.reconcileConfigMap(ctx, cluster); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return reconcile.Result{}, err
 	}
 
 	if err := r.reconcileStatefulSet(ctx, cluster); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return reconcile.Result{}, err
 	}
 
 	if err := r.reconcileService(ctx, cluster); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return reconcile.Result{}, err
 	}
 
 	if err := r.reconcileHeadlessService(ctx, cluster); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return reconcile.Result{}, err
 	}
 
 	if err := r.reconcileStatus(ctx, cluster); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func (r *MultiRaftClusterReconciler) reconcileConfigMap(ctx context.Context, cluster *raftv1beta2.MultiRaftCluster) error {
+func (r *RaftClusterReconciler) reconcileConfigMap(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
 	log.Info("Reconcile raft protocol config map")
 	cm := &corev1.ConfigMap{}
 	name := types.NamespacedName{
@@ -159,17 +159,17 @@ func (r *MultiRaftClusterReconciler) reconcileConfigMap(ctx context.Context, clu
 	return err
 }
 
-func (r *MultiRaftClusterReconciler) addConfigMap(ctx context.Context, cluster *raftv1beta2.MultiRaftCluster) error {
+func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
 	log.Info("Creating raft ConfigMap", "Name", cluster.Name, "Namespace", cluster.Namespace)
 	loggingConfig, err := yaml.Marshal(&cluster.Spec.Config.Logging)
 	if err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return err
 	}
 
 	raftConfig, err := newNodeConfig(cluster)
 	if err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return err
 	}
 
@@ -187,17 +187,17 @@ func (r *MultiRaftClusterReconciler) addConfigMap(ctx context.Context, cluster *
 	}
 
 	if err := controllerutil.SetControllerReference(cluster, cm, r.scheme); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return err
 	}
 	if err := r.client.Create(ctx, cm); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return err
 	}
 	return nil
 }
 
-func newNodeConfig(cluster *raftv1beta2.MultiRaftCluster) ([]byte, error) {
+func newNodeConfig(cluster *raftv1beta2.RaftCluster) ([]byte, error) {
 	config := raft.Config{}
 	config.Server = raft.ServerConfig{
 		ReadBufferSize:       cluster.Spec.Config.Server.ReadBufferSize,
@@ -217,7 +217,7 @@ func newNodeConfig(cluster *raftv1beta2.MultiRaftCluster) ([]byte, error) {
 	return yaml.Marshal(&config)
 }
 
-func (r *MultiRaftClusterReconciler) reconcileStatefulSet(ctx context.Context, cluster *raftv1beta2.MultiRaftCluster) error {
+func (r *RaftClusterReconciler) reconcileStatefulSet(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
 	log.Info("Reconcile raft protocol stateful set")
 	statefulSet := &appsv1.StatefulSet{}
 	name := types.NamespacedName{
@@ -231,7 +231,7 @@ func (r *MultiRaftClusterReconciler) reconcileStatefulSet(ctx context.Context, c
 	return err
 }
 
-func (r *MultiRaftClusterReconciler) addStatefulSet(ctx context.Context, cluster *raftv1beta2.MultiRaftCluster) error {
+func (r *RaftClusterReconciler) addStatefulSet(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
 	log.Info("Creating raft replicas", "Name", cluster.Name, "Namespace", cluster.Namespace)
 
 	image := getImage(cluster)
@@ -372,17 +372,17 @@ atomix-raft-node --config %s/%s --api-port %d --raft-host %s-$ordinal.%s.%s.svc.
 	}
 
 	if err := controllerutil.SetControllerReference(cluster, set, r.scheme); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return err
 	}
 	if err := r.client.Create(ctx, set); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return err
 	}
 	return nil
 }
 
-func (r *MultiRaftClusterReconciler) reconcileService(ctx context.Context, cluster *raftv1beta2.MultiRaftCluster) error {
+func (r *RaftClusterReconciler) reconcileService(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
 	log.Info("Reconcile raft protocol service")
 	service := &corev1.Service{}
 	name := types.NamespacedName{
@@ -396,7 +396,7 @@ func (r *MultiRaftClusterReconciler) reconcileService(ctx context.Context, clust
 	return err
 }
 
-func (r *MultiRaftClusterReconciler) addService(ctx context.Context, cluster *raftv1beta2.MultiRaftCluster) error {
+func (r *RaftClusterReconciler) addService(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
 	log.Info("Creating raft service", "Name", cluster.Name, "Namespace", cluster.Namespace)
 
 	service := &corev1.Service{
@@ -422,17 +422,17 @@ func (r *MultiRaftClusterReconciler) addService(ctx context.Context, cluster *ra
 	}
 
 	if err := controllerutil.SetControllerReference(cluster, service, r.scheme); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return err
 	}
 	if err := r.client.Create(ctx, service); err != nil {
-		log.Error(err, "Reconcile RaftPMultiRaftClusterartition")
+		log.Error(err, "Reconcile RaftPRaftClusterartition")
 		return err
 	}
 	return nil
 }
 
-func (r *MultiRaftClusterReconciler) reconcileHeadlessService(ctx context.Context, cluster *raftv1beta2.MultiRaftCluster) error {
+func (r *RaftClusterReconciler) reconcileHeadlessService(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
 	log.Info("Reconcile raft protocol headless service")
 	service := &corev1.Service{}
 	name := types.NamespacedName{
@@ -446,7 +446,7 @@ func (r *MultiRaftClusterReconciler) reconcileHeadlessService(ctx context.Contex
 	return err
 }
 
-func (r *MultiRaftClusterReconciler) addHeadlessService(ctx context.Context, cluster *raftv1beta2.MultiRaftCluster) error {
+func (r *RaftClusterReconciler) addHeadlessService(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
 	log.Info("Creating headless raft service", "Name", cluster.Name, "Namespace", cluster.Namespace)
 
 	service := &corev1.Service{
@@ -474,41 +474,41 @@ func (r *MultiRaftClusterReconciler) addHeadlessService(ctx context.Context, clu
 	}
 
 	if err := controllerutil.SetControllerReference(cluster, service, r.scheme); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return err
 	}
 	if err := r.client.Create(ctx, service); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return err
 	}
 	return nil
 }
 
-func (r *MultiRaftClusterReconciler) reconcileStatus(ctx context.Context, cluster *raftv1beta2.MultiRaftCluster) error {
+func (r *RaftClusterReconciler) reconcileStatus(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
 	statefulSet := &appsv1.StatefulSet{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
 		Name:      cluster.Name,
 	}
 	if err := r.client.Get(ctx, name, statefulSet); err != nil {
-		log.Error(err, "Reconcile MultiRaftCluster")
+		log.Error(err, "Reconcile RaftCluster")
 		return err
 	}
 
 	switch cluster.Status.State {
-	case raftv1beta2.MultiRaftClusterNotReady:
+	case raftv1beta2.RaftClusterNotReady:
 		if statefulSet.Status.ReadyReplicas == statefulSet.Status.Replicas {
-			cluster.Status.State = raftv1beta2.MultiRaftClusterReady
+			cluster.Status.State = raftv1beta2.RaftClusterReady
 			if err := r.client.Status().Update(ctx, cluster); err != nil {
-				log.Error(err, "Reconcile MultiRaftCluster")
+				log.Error(err, "Reconcile RaftCluster")
 				return err
 			}
 		}
-	case raftv1beta2.MultiRaftClusterReady:
+	case raftv1beta2.RaftClusterReady:
 		if statefulSet.Status.ReadyReplicas != statefulSet.Status.Replicas {
-			cluster.Status.State = raftv1beta2.MultiRaftClusterNotReady
+			cluster.Status.State = raftv1beta2.RaftClusterNotReady
 			if err := r.client.Status().Update(ctx, cluster); err != nil {
-				log.Error(err, "Reconcile MultiRaftCluster")
+				log.Error(err, "Reconcile RaftCluster")
 				return err
 			}
 		}
@@ -516,4 +516,4 @@ func (r *MultiRaftClusterReconciler) reconcileStatus(ctx context.Context, cluste
 	return nil
 }
 
-var _ reconcile.Reconciler = (*MultiRaftClusterReconciler)(nil)
+var _ reconcile.Reconciler = (*RaftClusterReconciler)(nil)

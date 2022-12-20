@@ -11,3 +11,6 @@ shared-memory:
 pod-memory:
   enabled: true
   nameOverride: pod-memory-controller
+consensus:
+  enabled: true
+  nameOverride: consensus-controller

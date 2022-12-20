@@ -11,9 +11,10 @@ import (
 
 // RaftStoreSpec specifies a RaftStore configuration
 type RaftStoreSpec struct {
-	RaftConfig `json:",inline"`
-	Cluster    corev1.ObjectReference `json:"cluster"`
-	Replicas   uint32                 `json:"replicas,omitempty"`
+	RaftConfig        `json:",inline"`
+	Cluster           corev1.ObjectReference `json:"cluster"`
+	Partitions        uint32                 `json:"partitions"`
+	ReplicationFactor *uint32                `json:"replicationFactor"`
 }
 
 // RaftStoreState is a state constant for RaftStore
@@ -28,7 +29,8 @@ const (
 
 // RaftStoreStatus defines the status of a RaftStore
 type RaftStoreStatus struct {
-	State RaftStoreState `json:"state,omitempty"`
+	ReplicationFactor *uint32        `json:"replicationFactor"`
+	State             RaftStoreState `json:"state,omitempty"`
 }
 
 // +genclient

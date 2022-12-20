@@ -129,7 +129,7 @@ func (r *RaftMemberReconciler) reconcileCreate(ctx context.Context, member *raft
 		Namespace: member.Namespace,
 		Name:      member.Annotations[raftStoreKey],
 	}
-	store := &raftv1beta2.MultiRaftStore{}
+	store := &raftv1beta2.RaftStore{}
 	if err := r.client.Get(ctx, storeName, store); err != nil {
 		log.Error(err, "Reconcile RaftMember")
 		return err
@@ -139,7 +139,7 @@ func (r *RaftMemberReconciler) reconcileCreate(ctx context.Context, member *raft
 		Namespace: member.Namespace,
 		Name:      member.Spec.Cluster.Name,
 	}
-	cluster := &raftv1beta2.MultiRaftCluster{}
+	cluster := &raftv1beta2.RaftCluster{}
 	if err := r.client.Get(ctx, clusterName, cluster); err != nil {
 		log.Error(err, "Reconcile RaftMember")
 		return err
@@ -182,7 +182,7 @@ func (r *RaftMemberReconciler) reconcileDelete(ctx context.Context, member *raft
 		Namespace: member.Namespace,
 		Name:      member.Annotations[raftStoreKey],
 	}
-	store := &raftv1beta2.MultiRaftStore{}
+	store := &raftv1beta2.RaftStore{}
 	if err := r.client.Get(ctx, storeName, store); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err, "Reconcile RaftMember")
@@ -201,7 +201,7 @@ func (r *RaftMemberReconciler) reconcileDelete(ctx context.Context, member *raft
 		Namespace: member.Namespace,
 		Name:      member.Spec.Cluster.Name,
 	}
-	cluster := &raftv1beta2.MultiRaftCluster{}
+	cluster := &raftv1beta2.RaftCluster{}
 	if err := r.client.Get(ctx, clusterName, cluster); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err, "Reconcile RaftMember")
@@ -268,7 +268,7 @@ func (r *RaftMemberReconciler) reconcileDelete(ctx context.Context, member *raft
 	return nil
 }
 
-func (r *RaftMemberReconciler) addMember(ctx context.Context, store *raftv1beta2.MultiRaftStore, cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, pod *corev1.Pod, member *raftv1beta2.RaftMember) (bool, error) {
+func (r *RaftMemberReconciler) addMember(ctx context.Context, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, pod *corev1.Pod, member *raftv1beta2.RaftMember) (bool, error) {
 	if member.Status.PodRef == nil || member.Status.PodRef.UID != pod.UID {
 		log.Infof("Pod UID has changed for RaftMember %s/%s; reverting RaftMember status", member.Namespace, member.Name)
 		member.Status.PodRef = &corev1.ObjectReference{
@@ -414,7 +414,7 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, store *raftv1beta2
 	return false, nil
 }
 
-func (r *RaftMemberReconciler) tryAddMember(ctx context.Context, store *raftv1beta2.MultiRaftStore, cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, member *raftv1beta2.RaftMember, peer raftv1beta2.RaftMemberReference) (bool, error) {
+func (r *RaftMemberReconciler) tryAddMember(ctx context.Context, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, member *raftv1beta2.RaftMember, peer raftv1beta2.RaftMemberReference) (bool, error) {
 	pod := &corev1.Pod{}
 	podName := types.NamespacedName{
 		Namespace: member.Namespace,
@@ -471,7 +471,7 @@ func (r *RaftMemberReconciler) tryAddMember(ctx context.Context, store *raftv1be
 	return true, nil
 }
 
-func (r *RaftMemberReconciler) removeMember(ctx context.Context, store *raftv1beta2.MultiRaftStore, cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, pod *corev1.Pod, member *raftv1beta2.RaftMember) (bool, error) {
+func (r *RaftMemberReconciler) removeMember(ctx context.Context, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, pod *corev1.Pod, member *raftv1beta2.RaftMember) (bool, error) {
 	if member.Status.State != raftv1beta2.RaftMemberNotReady {
 		member.Status.State = raftv1beta2.RaftMemberNotReady
 		if err := r.client.Status().Update(ctx, member); err != nil {
@@ -512,7 +512,7 @@ func (r *RaftMemberReconciler) removeMember(ctx context.Context, store *raftv1be
 	return false, returnErr
 }
 
-func (r *RaftMemberReconciler) tryRemoveMember(ctx context.Context, store *raftv1beta2.MultiRaftStore, cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, member *raftv1beta2.RaftMember, peer raftv1beta2.RaftMemberReference) (bool, error) {
+func (r *RaftMemberReconciler) tryRemoveMember(ctx context.Context, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, member *raftv1beta2.RaftMember, peer raftv1beta2.RaftMemberReference) (bool, error) {
 	pod := &corev1.Pod{}
 	podName := types.NamespacedName{
 		Namespace: member.Namespace,

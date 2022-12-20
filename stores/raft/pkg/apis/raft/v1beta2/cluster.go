@@ -10,18 +10,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// MultiRaftClusterState is a state constant for MultiRaftCluster
-type MultiRaftClusterState string
+// RaftClusterState is a state constant for RaftCluster
+type RaftClusterState string
 
 const (
-	// MultiRaftClusterNotReady indicates a MultiRaftCluster is not yet ready
-	MultiRaftClusterNotReady MultiRaftClusterState = "NotReady"
-	// MultiRaftClusterReady indicates a MultiRaftCluster is ready
-	MultiRaftClusterReady MultiRaftClusterState = "Ready"
+	// RaftClusterNotReady indicates a RaftCluster is not yet ready
+	RaftClusterNotReady RaftClusterState = "NotReady"
+	// RaftClusterReady indicates a RaftCluster is ready
+	RaftClusterReady RaftClusterState = "Ready"
 )
 
-// MultiRaftClusterSpec specifies a MultiRaftCluster configuration
-type MultiRaftClusterSpec struct {
+// RaftClusterSpec specifies a RaftCluster configuration
+type RaftClusterSpec struct {
 	// Replicas is the number of raft replicas
 	Replicas uint32 `json:"replicas,omitempty"`
 
@@ -41,21 +41,21 @@ type MultiRaftClusterSpec struct {
 	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 
 	// Config is the raft cluster configuration
-	Config MultiRaftClusterConfig `json:"config,omitempty"`
+	Config RaftClusterConfig `json:"config,omitempty"`
 }
 
-type MultiRaftClusterConfig struct {
+type RaftClusterConfig struct {
 	// RTT is the estimated round trip time between nodes
 	RTT metav1.Duration `json:"rtt"`
 
 	// Server is the raft server configuration
-	Server MultiRaftServerConfig `json:"server,omitempty"`
+	Server RaftServerConfig `json:"server,omitempty"`
 
 	// Logging is the store logging configuration
 	Logging LoggingConfig `json:"logging,omitempty"`
 }
 
-type MultiRaftServerConfig struct {
+type RaftServerConfig struct {
 	ReadBufferSize       *int               `json:"readBufferSize"`
 	WriteBufferSize      *int               `json:"writeBufferSize"`
 	MaxRecvMsgSize       *resource.Quantity `json:"maxRecvMsgSize"`
@@ -64,14 +64,14 @@ type MultiRaftServerConfig struct {
 	MaxConcurrentStreams *uint32            `json:"maxConcurrentStreams"`
 }
 
-// MultiRaftClusterStatus defines the status of a MultiRaftCluster
-type MultiRaftClusterStatus struct {
-	State             MultiRaftClusterState             `json:"state"`
-	LastShardID       ShardID                           `json:"lastShardID"`
-	PartitionStatuses []MultiRaftClusterPartitionStatus `json:"partitionStatuses"`
+// RaftClusterStatus defines the status of a RaftCluster
+type RaftClusterStatus struct {
+	State             RaftClusterState             `json:"state"`
+	LastShardID       ShardID                      `json:"lastShardID"`
+	PartitionStatuses []RaftClusterPartitionStatus `json:"partitionStatuses"`
 }
 
-type MultiRaftClusterPartitionStatus struct {
+type RaftClusterPartitionStatus struct {
 	corev1.ObjectReference `json:",inline"`
 	PartitionID            PartitionID `json:"partitionID"`
 	ShardID                ShardID     `json:"shardID"`
@@ -80,22 +80,22 @@ type MultiRaftClusterPartitionStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// MultiRaftCluster is the Schema for the MultiRaftCluster API
+// RaftCluster is the Schema for the RaftCluster API
 // +k8s:openapi-gen=true
-type MultiRaftCluster struct {
+type RaftCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              MultiRaftClusterSpec   `json:"spec,omitempty"`
-	Status            MultiRaftClusterStatus `json:"status,omitempty"`
+	Spec              RaftClusterSpec   `json:"spec,omitempty"`
+	Status            RaftClusterStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// MultiRaftClusterList contains a list of MultiRaftCluster
-type MultiRaftClusterList struct {
+// RaftClusterList contains a list of RaftCluster
+type RaftClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	// Items is the MultiRaftCluster of items in the list
-	Items []MultiRaftCluster `json:"items"`
+	// Items is the RaftCluster of items in the list
+	Items []RaftCluster `json:"items"`
 }

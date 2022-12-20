@@ -9,8 +9,9 @@ spec:
       tags:
         - foo
         - bar
-      services:
-        - name: atomix.runtime.map.v1.Map
+      primitives:
+        - apiVerison: v1
+          kind: Map
           config:
             cache:
               enabled: true

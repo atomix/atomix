@@ -22,7 +22,7 @@ func getResourceName(name string, resource string) string {
 }
 
 // getHeadlessServiceName returns the headless service name for the given cluster
-func getHeadlessServiceName(cluster *raftv1beta2.MultiRaftCluster) string {
+func getHeadlessServiceName(cluster *raftv1beta2.RaftCluster) string {
 	return getResourceName(cluster.Name, headlessServiceSuffix)
 }
 
@@ -48,20 +48,20 @@ func getClusterNamespace(object metav1.Object, clusterRef corev1.ObjectReference
 }
 
 // getPodDNSName returns the fully qualified DNS name for the given pod ID
-func getPodDNSName(cluster *raftv1beta2.MultiRaftCluster, name string) string {
+func getPodDNSName(cluster *raftv1beta2.RaftCluster, name string) string {
 	return fmt.Sprintf("%s.%s.%s.svc.%s", name, getHeadlessServiceName(cluster), cluster.Namespace, getClusterDomain())
 }
 
-func getMemberPodOrdinal(cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID) int {
+func getMemberPodOrdinal(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID) int {
 	return (int(partition.Spec.Replicas)*int(partition.Spec.ShardID) + (int(memberID) - 1)) % int(cluster.Spec.Replicas)
 }
 
-func getMemberPodName(cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID) string {
+func getMemberPodName(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID) string {
 	return fmt.Sprintf("%s-%d", cluster.Name, getMemberPodOrdinal(cluster, partition, memberID))
 }
 
 // newClusterLabels returns the labels for the given cluster
-func newClusterLabels(cluster *raftv1beta2.MultiRaftCluster) map[string]string {
+func newClusterLabels(cluster *raftv1beta2.RaftCluster) map[string]string {
 	labels := make(map[string]string)
 	for key, value := range cluster.Labels {
 		labels[key] = value
@@ -70,14 +70,14 @@ func newClusterLabels(cluster *raftv1beta2.MultiRaftCluster) map[string]string {
 	return labels
 }
 
-func newClusterSelector(cluster *raftv1beta2.MultiRaftCluster) map[string]string {
+func newClusterSelector(cluster *raftv1beta2.RaftCluster) map[string]string {
 	return map[string]string{
 		raftClusterKey: cluster.Name,
 	}
 }
 
 // newPartitionLabels returns the labels for the given partition
-func newPartitionLabels(cluster *raftv1beta2.MultiRaftCluster, store metav1.Object, partitionID raftv1beta2.PartitionID, shardID raftv1beta2.ShardID) map[string]string {
+func newPartitionLabels(cluster *raftv1beta2.RaftCluster, store metav1.Object, partitionID raftv1beta2.PartitionID, shardID raftv1beta2.ShardID) map[string]string {
 	labels := make(map[string]string)
 	for key, value := range store.GetLabels() {
 		labels[key] = value
@@ -90,7 +90,7 @@ func newPartitionLabels(cluster *raftv1beta2.MultiRaftCluster, store metav1.Obje
 	return labels
 }
 
-func newPartitionAnnotations(cluster *raftv1beta2.MultiRaftCluster, store metav1.Object, partitionID raftv1beta2.PartitionID, shardID raftv1beta2.ShardID) map[string]string {
+func newPartitionAnnotations(cluster *raftv1beta2.RaftCluster, store metav1.Object, partitionID raftv1beta2.PartitionID, shardID raftv1beta2.ShardID) map[string]string {
 	annotations := make(map[string]string)
 	for key, value := range store.GetLabels() {
 		annotations[key] = value
@@ -104,7 +104,7 @@ func newPartitionAnnotations(cluster *raftv1beta2.MultiRaftCluster, store metav1
 }
 
 // newMemberLabels returns the labels for the given cluster
-func newMemberLabels(cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID, raftNodeID raftv1beta2.ReplicaID) map[string]string {
+func newMemberLabels(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID, raftNodeID raftv1beta2.ReplicaID) map[string]string {
 	labels := make(map[string]string)
 	for key, value := range partition.Labels {
 		labels[key] = value
@@ -115,7 +115,7 @@ func newMemberLabels(cluster *raftv1beta2.MultiRaftCluster, partition *raftv1bet
 	return labels
 }
 
-func newClusterAnnotations(cluster *raftv1beta2.MultiRaftCluster) map[string]string {
+func newClusterAnnotations(cluster *raftv1beta2.RaftCluster) map[string]string {
 	annotations := make(map[string]string)
 	for key, value := range cluster.Annotations {
 		annotations[key] = value
@@ -124,7 +124,7 @@ func newClusterAnnotations(cluster *raftv1beta2.MultiRaftCluster) map[string]str
 	return annotations
 }
 
-func newMemberAnnotations(cluster *raftv1beta2.MultiRaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID, raftNodeID raftv1beta2.ReplicaID) map[string]string {
+func newMemberAnnotations(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID, raftNodeID raftv1beta2.ReplicaID) map[string]string {
 	annotations := make(map[string]string)
 	for key, value := range partition.Labels {
 		annotations[key] = value
@@ -135,7 +135,7 @@ func newMemberAnnotations(cluster *raftv1beta2.MultiRaftCluster, partition *raft
 	return annotations
 }
 
-func getImage(cluster *raftv1beta2.MultiRaftCluster) string {
+func getImage(cluster *raftv1beta2.RaftCluster) string {
 	if cluster.Spec.Image != "" {
 		return cluster.Spec.Image
 	}
