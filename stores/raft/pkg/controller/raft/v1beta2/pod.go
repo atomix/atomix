@@ -115,7 +115,7 @@ func (r *PodReconciler) reconcileCreate(ctx context.Context, log logging.Logger,
 		return nil
 	}
 
-	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
+	address := fmt.Sprintf("%s:%d", getDNSName(pod.Namespace, cluster, pod.Name), apiPort)
 	clusterName := types.NamespacedName{
 		Namespace: pod.Namespace,
 		Name:      cluster,
@@ -127,11 +127,16 @@ func (r *PodReconciler) reconcileCreate(ctx context.Context, log logging.Logger,
 }
 
 func (r *PodReconciler) reconcileDelete(ctx context.Context, log logging.Logger, pod *corev1.Pod) error {
+	cluster, ok := pod.Annotations[raftClusterKey]
+	if !ok {
+		return nil
+	}
+
 	if !hasFinalizer(pod, podKey) {
 		return nil
 	}
 
-	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
+	address := fmt.Sprintf("%s:%d", getDNSName(pod.Namespace, cluster, pod.Name), apiPort)
 	if err := r.unwatch(address); err != nil {
 		return err
 	}
@@ -145,8 +150,6 @@ func (r *PodReconciler) reconcileDelete(ctx context.Context, log logging.Logger,
 }
 
 func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedName, address string) error {
-	log = log.WithFields(logging.String("Address", address))
-
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

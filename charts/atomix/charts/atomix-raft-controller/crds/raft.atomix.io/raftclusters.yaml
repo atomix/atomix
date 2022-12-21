@@ -60,6 +60,9 @@ spec:
                 volumeClaimTemplate:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object
+                averageRTT:
+                  type: string
+                  default: 10ms
                 logging:
                   type: object
                   default: {}

@@ -43,7 +43,7 @@ type RaftClusterSpec struct {
 	Logging LoggingConfig `json:"logging"`
 
 	// AverageRTT is the average round trip time between nodes
-	AverageRTT metav1.Duration `json:"averageRTTT"`
+	AverageRTT metav1.Duration `json:"averageRTT"`
 }
 
 // RaftClusterStatus defines the status of a RaftCluster

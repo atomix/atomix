@@ -300,7 +300,7 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 				}
 				return false, err
 			}
-			leader = fmt.Sprintf("%s:%d", getPodDNSName(cluster, member.Spec.Pod.Name), apiPort)
+			leader = fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, member.Spec.Pod.Name), apiPort)
 		}
 
 		followers := make([]string, 0, len(partition.Status.Followers))
@@ -316,7 +316,7 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 				}
 				return false, err
 			}
-			followers = append(followers, fmt.Sprintf("%s:%d", getPodDNSName(cluster, member.Spec.Pod.Name), apiPort))
+			followers = append(followers, fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, member.Spec.Pod.Name), apiPort))
 		}
 
 		config.Partitions = append(config.Partitions, rsmv1.PartitionConfig{

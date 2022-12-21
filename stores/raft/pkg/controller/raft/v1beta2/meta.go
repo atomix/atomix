@@ -47,8 +47,12 @@ func getClusterNamespace(object metav1.Object, clusterRef corev1.ObjectReference
 	return object.GetNamespace()
 }
 
-// getPodDNSName returns the fully qualified DNS name for the given pod ID
-func getPodDNSName(cluster *raftv1beta2.RaftCluster, name string) string {
+func getDNSName(namespace string, cluster string, name string) string {
+	return fmt.Sprintf("%s.%s-%s.%s.svc.%s", name, cluster, headlessServiceSuffix, namespace, getClusterDomain())
+}
+
+// getClusterPodDNSName returns the fully qualified DNS name for the given pod ID
+func getClusterPodDNSName(cluster *raftv1beta2.RaftCluster, name string) string {
 	return fmt.Sprintf("%s.%s.%s.svc.%s", name, getHeadlessServiceName(cluster), cluster.Namespace, getClusterDomain())
 }
 
