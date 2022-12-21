@@ -181,6 +181,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | meta | [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta) |  |  |
+| tags | [string](#string) | repeated |  |
 | config | [bytes](#bytes) |  |  |
 
 

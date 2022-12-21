@@ -86,6 +86,7 @@ message PrimitiveSpec {
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
+    repeated string tags = 2;
     bytes config = 3;
 }
 
