@@ -1,0 +1,55 @@
+# Create a DataStore with the configuration for the store
+apiVersion: atomix.io/v3beta3
+kind: DataStore
+metadata:
+  name: custom-example-store
+spec:
+  # Configure the DataStore to use a custom-built driver/version
+  driver:
+    name: CustomDriver
+    version: v1
+  # Define the configuration to be passed to the driver to connect to the store
+  config:
+    address: custom-store:1234
+---
+# Create a StorageProfile to bind your application to the store
+apiVersion: atomix.io/v3beta3
+kind: StorageProfile
+metadata:
+  name: custom-example
+spec:
+  # Configure the profile to use a custom-built proxy image
+  proxy:
+    image: atomix/proxy:custom-store-1.0.0
+  bindings:
+    # Bind the profile to the custom-example-store
+    - store:
+        name: custom-example-store
+---
+# Create a Deployment annotating the pods to use the StorageProfile
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: custom-example
+  labels:
+    app: custom-example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: custom-example
+  template:
+    metadata:
+      labels:
+        app: custom-example
+      annotations:
+        # Inject the proxy into the pods
+        proxy.atomix.io/inject: "true"
+        # Configure the proxy to use the custom-example profile
+        proxy.atomix.io/profile: custom-example
+    spec:
+      containers:
+        - name: sleep
+          image: alpine:latest
+          command: ["/bin/sh", "-c", "--"]
+          args: ["while true; do sleep 30; done;"]

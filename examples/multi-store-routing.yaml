@@ -33,6 +33,9 @@ apiVersion: sharedmemory.atomix.io/v1beta1
 kind: SharedMemoryStore
 metadata:
   name: example-memory-store
+spec:
+  image: atomix/shared-memory-node:latest
+  imagePullPolicy: Never
 ---
 apiVersion: atomix.io/v3beta3
 kind: StorageProfile
