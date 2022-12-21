@@ -1,0 +1,56 @@
+apiVersion: sharedmemory.atomix.io/v1beta1
+kind: SharedMemoryStore
+metadata:
+  name: primitive-example-store
+---
+apiVersion: atomix.io/v3beta3
+kind: StorageProfile
+metadata:
+  name: primitive-example
+spec:
+  bindings:
+    - store:
+        name: primitive-example-store
+      primitives:
+        # Enable caching for Map primitives tagged "cached"
+        - kind: Map
+          apiVersion: v1
+          tags:
+            - cached
+          config:
+            cache:
+              enabled: true
+        # Enable caching for the Set primitive named "cached-set"
+        - kind: Set
+          apiVersion: v1
+          name: cached-set
+          config:
+            cache:
+              enabled: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: primitive-example
+  labels:
+    app: primitive-example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: primitive-example
+  template:
+    metadata:
+      labels:
+        app: primitive-example
+      annotations:
+        # Inject the proxy into the pods
+        proxy.atomix.io/inject: "true"
+        # Configure the proxy to use the primitive-example profile
+        proxy.atomix.io/profile: primitive-example
+    spec:
+      containers:
+        - name: sleep
+          image: alpine:latest
+          command: ["/bin/sh", "-c", "--"]
+          args: ["while true; do sleep 30; done;"]

@@ -1,0 +1,86 @@
+# Create a Raft cluster
+apiVersion: raft.atomix.io/v1beta2
+kind: RaftCluster
+metadata:
+  name: example-raft-cluster
+spec:
+  replicas: 5
+  image: atomix/raft-node:latest
+  imagePullPolicy: Never
+---
+# Create a store in the Raft cluster
+apiVersion: raft.atomix.io/v1beta2
+kind: RaftStore
+metadata:
+  name: example-raft-store
+spec:
+  cluster:
+    name: example-raft-cluster
+---
+# Create a multi-partition store in the same Raft cluster
+apiVersion: raft.atomix.io/v1beta2
+kind: RaftStore
+metadata:
+  name: example-multi-raft-store
+spec:
+  cluster:
+    name: example-raft-cluster
+  partitions: 3
+  replicationFactor: 3
+---
+# Create an in-memory store
+apiVersion: sharedmemory.atomix.io/v1beta1
+kind: SharedMemoryStore
+metadata:
+  name: example-memory-store
+---
+apiVersion: atomix.io/v3beta3
+kind: StorageProfile
+metadata:
+  name: multi-store-example
+spec:
+  bindings:
+    # Route to the multi-raft store primitives tagged "persistent" and "partitioned"
+    - store:
+        name: example-multi-raft-store
+      tags:
+        - persistent
+        - partitioned
+    # Route to the single raft store primitives tagged only "persistent"
+    - store:
+        name: example-raft-store
+      tags:
+        - persistent
+    # Route to the in-memory store primitives tagged "volatile"
+    - store:
+        name: example-memory-store
+      tags:
+        - volatile
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multi-store-example
+  labels:
+    app: multi-store-example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: multi-store-example
+  template:
+    metadata:
+      labels:
+        app: multi-store-example
+      annotations:
+        # Inject the proxy into the pods
+        proxy.atomix.io/inject: "true"
+        # Configure the proxy to use the multi-store-example profile
+        proxy.atomix.io/profile: multi-store-example
+    spec:
+      containers:
+        - name: sleep
+          image: alpine:latest
+          command: ["/bin/sh", "-c", "--"]
+          args: ["while true; do sleep 30; done;"]
+`

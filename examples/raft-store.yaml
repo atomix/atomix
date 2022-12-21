@@ -1,0 +1,52 @@
+apiVersion: raft.atomix.io/v1beta2
+kind: RaftCluster
+metadata:
+  name: raft-example-cluster
+spec:
+  replicas: 3
+  image: atomix/raft-node:latest
+  imagePullPolicy: Never
+---
+apiVersion: raft.atomix.io/v1beta2
+kind: RaftStore
+metadata:
+  name: raft-example-store
+spec:
+  cluster:
+    name: raft-example-cluster
+---
+apiVersion: atomix.io/v3beta3
+kind: StorageProfile
+metadata:
+  name: raft-example
+spec:
+  bindings:
+    - store:
+        name: raft-example-store
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: raft-example
+  labels:
+    app: raft-example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: raft-example
+  template:
+    metadata:
+      labels:
+        app: raft-example
+      annotations:
+        # Inject the proxy into the pods
+        proxy.atomix.io/inject: "true"
+        # Configure the proxy to use the raft-example profile
+        proxy.atomix.io/profile: raft-example
+    spec:
+      containers:
+        - name: sleep
+          image: alpine:latest
+          command: ["/bin/sh", "-c", "--"]
+          args: ["while true; do sleep 30; done;"]

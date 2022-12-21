@@ -1,8 +1,0 @@
-apiVersion: raft.atomix.io/v1beta2
-kind: RaftCluster
-metadata:
-  name: example-raft-cluster
-spec:
-  replicas: 3
-  image: atomix/raft-node:latest
-  imagePullPolicy: Never

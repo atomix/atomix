@@ -1,0 +1,40 @@
+apiVersion: podmemory.atomix.io/v1beta1
+kind: PodMemoryStore
+metadata:
+  name: pod-memory-example-store
+---
+apiVersion: atomix.io/v3beta3
+kind: StorageProfile
+metadata:
+  name: pod-memory-example
+spec:
+  bindings:
+    - store:
+        name: pod-memory-example-store
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-memory-example
+  labels:
+    app: pod-memory-example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pod-memory-example
+  template:
+    metadata:
+      labels:
+        app: pod-memory-example
+      annotations:
+        # Inject the proxy into the pods
+        proxy.atomix.io/inject: "true"
+        # Configure the proxy to use the pod-memory-example profile
+        proxy.atomix.io/profile: pod-memory-example
+    spec:
+      containers:
+        - name: sleep
+          image: alpine:latest
+          command: ["/bin/sh", "-c", "--"]
+          args: ["while true; do sleep 30; done;"]

@@ -1,0 +1,40 @@
+apiVersion: sharedmemory.atomix.io/v1beta1
+kind: SharedMemoryStore
+metadata:
+  name: shared-memory-example-store
+---
+apiVersion: atomix.io/v3beta3
+kind: StorageProfile
+metadata:
+  name: shared-memory-example
+spec:
+  bindings:
+    - store:
+        name: shared-memory-example-store
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shared-memory-example
+  labels:
+    app: shared-memory-example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shared-memory-example
+  template:
+    metadata:
+      labels:
+        app: shared-memory-example
+      annotations:
+        # Inject the proxy into the pods
+        proxy.atomix.io/inject: "true"
+        # Configure the proxy to use the shared-memory-example profile
+        proxy.atomix.io/profile: shared-memory-example
+    spec:
+      containers:
+        - name: sleep
+          image: alpine:latest
+          command: ["/bin/sh", "-c", "--"]
+          args: ["while true; do sleep 30; done;"]
