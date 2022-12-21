@@ -66,8 +66,8 @@ github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmV
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
-github.com/atomix/atomix/api v0.0.0-20221220002711-d3ec8d10691a h1:KfvwPYHv6xRsQlSZDyg0ix7mCMntasHu8THg0/YY7wk=
-github.com/atomix/atomix/api v0.0.0-20221220002711-d3ec8d10691a/go.mod h1:PNMOo77ofCaaZqmj3uC7cfclGEI9NCcue/G5VXSon7k=
+github.com/atomix/atomix/api v0.0.0-20221221001739-d7b19bcf8fb4 h1:iV+3a0A/1MmVEe6zaP1884a9qtQXBe0DhP1KDjzLsm0=
+github.com/atomix/atomix/api v0.0.0-20221221001739-d7b19bcf8fb4/go.mod h1:PNMOo77ofCaaZqmj3uC7cfclGEI9NCcue/G5VXSon7k=
 github.com/atomix/atomix/common v0.0.0-20221218014837-eec7ba47625a h1:wl0Dluvco99pHI2q9QFy6+ICpDVHO2JHXL0ECHIWMWU=
 github.com/atomix/atomix/common v0.0.0-20221218014837-eec7ba47625a/go.mod h1:f+7MtZqcoNS6G3anGqBNJS8HjzZlnkBVOLTGhzbiwOg=
 github.com/atomix/atomix/runtime v0.0.0-20221219085404-5679432a0742 h1:7wLBCITMTqFsdEV69RwFsvT1RpPHHwYMelVlV6+z2bc=

@@ -170,6 +170,10 @@ spec:
                               type: string
                             name:
                               type: string
+                            tags:
+                              type: array
+                              items:
+                                type: string
                             config:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true

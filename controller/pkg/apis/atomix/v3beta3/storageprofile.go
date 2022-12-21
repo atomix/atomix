@@ -70,6 +70,7 @@ type PrimitiveSpec struct {
 	Kind       string               `json:"kind"`
 	APIVersion string               `json:"apiVersion"`
 	Name       string               `json:"name"`
+	Tags       []string             `json:"tags"`
 	Config     runtime.RawExtension `json:"config"`
 }
 

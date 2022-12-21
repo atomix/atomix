@@ -124,6 +124,7 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 						PrimitiveID: runtimev1.PrimitiveID{
 							Name: primitive.Name,
 						},
+						Tags: primitive.Tags,
 					},
 					Config: primitive.Config.Raw,
 				})
