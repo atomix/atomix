@@ -41,7 +41,7 @@ spec:
                   fieldPath: metadata.namespace
           volumeMounts:
             - name: config
-              mountPath: /etc/atomix/config
+              mountPath: /etc/atomix
               readOnly: true
             - name: certs
               mountPath: /etc/webhook/certs
@@ -85,7 +85,7 @@ spec:
               mountPath: /tmp/k8s-webhook-server/serving-certs
               readOnly: true
             - name: config
-              mountPath: /etc/atomix/config
+              mountPath: /etc/atomix
               readOnly: true
       volumes:
         - name: certs
