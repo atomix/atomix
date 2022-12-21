@@ -89,6 +89,9 @@ type Logger interface {
 	// WithFields adds fields to the logger
 	WithFields(fields ...Field) Logger
 
+	// WithSkipCalls skipsthe given number of calls to the logger methods
+	WithSkipCalls(calls int) Logger
+
 	// Sync flushes the logger
 	Sync() error
 
@@ -275,6 +278,22 @@ func (l *zapLogger) WithFields(fields ...Field) Logger {
 	outputs := make([]*zapOutput, len(l.outputs))
 	for i, output := range l.outputs {
 		outputs[i] = output.WithFields(fields...).(*zapOutput)
+	}
+	return &zapLogger{
+		config:       l.config,
+		loggerConfig: l.loggerConfig,
+		children:     l.children,
+		outputs:      outputs,
+		mu:           l.mu,
+		level:        l.level,
+		defaultLevel: l.defaultLevel,
+	}
+}
+
+func (l *zapLogger) WithSkipCalls(calls int) Logger {
+	outputs := make([]*zapOutput, len(l.outputs))
+	for i, output := range l.outputs {
+		outputs[i] = output.WithSkipCalls(calls).(*zapOutput)
 	}
 	return &zapLogger{
 		config:       l.config,

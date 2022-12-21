@@ -102,6 +102,7 @@ func getWriter(url string) (zapcore.WriteSyncer, error) {
 // Output is a logging output
 type Output interface {
 	WithFields(fields ...Field) Output
+	WithSkipCalls(calls int) Output
 	Debug(msg string, fields ...Field)
 	Info(msg string, fields ...Field)
 	Error(msg string, fields ...Field)
@@ -122,6 +123,13 @@ func (o *zapOutput) WithFields(fields ...Field) Output {
 	return &zapOutput{
 		config: o.config,
 		logger: o.logger.With(o.getZapFields(fields...)...),
+	}
+}
+
+func (o *zapOutput) WithSkipCalls(calls int) Output {
+	return &zapOutput{
+		config: o.config,
+		logger: o.logger.WithOptions(zap.AddCallerSkip(calls)),
 	}
 }
 
