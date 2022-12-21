@@ -118,11 +118,7 @@ func (r *RaftStoreReconciler) Reconcile(ctx context.Context, request reconcile.R
 	store := &raftv1beta2.RaftStore{}
 	err := r.client.Get(ctx, request.NamespacedName, store)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, nil
-		}
-		log.Error(err)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, logError(log, err)
 	}
 
 	cluster := &raftv1beta2.RaftCluster{}
@@ -131,11 +127,7 @@ func (r *RaftStoreReconciler) Reconcile(ctx context.Context, request reconcile.R
 		Name:      store.Spec.Cluster.Name,
 	}
 	if err := r.client.Get(ctx, clusterName, cluster); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			log.Error(err)
-			return reconcile.Result{}, err
-		}
-		return reconcile.Result{}, nil
+		return reconcile.Result{}, logError(log, err)
 	}
 
 	if ok, err := r.reconcilePartitions(ctx, log, store, cluster); err != nil {
@@ -166,10 +158,7 @@ func (r *RaftStoreReconciler) reconcilePartitions(ctx context.Context, log loggi
 			store.Status.ReplicationFactor = &cluster.Spec.Replicas
 		}
 		if err := r.client.Status().Update(ctx, store); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return false, err
+			return false, logError(log, err)
 		}
 		return true, nil
 	}
@@ -193,8 +182,7 @@ func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, log loggin
 	partition := &raftv1beta2.RaftPartition{}
 	if err := r.client.Get(ctx, partitionName, partition); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			log.Error(err)
-			return false, err
+			return false, logError(log, err)
 		}
 
 		// Lookup the registered shard ID for this partition in the cluster status.
@@ -217,10 +205,7 @@ func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, log loggin
 				ShardID:     cluster.Status.LastShardID,
 			})
 			if err := r.client.Status().Update(ctx, cluster); err != nil {
-				if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-					log.Error(err)
-				}
-				return false, err
+				return false, logError(log, err)
 			}
 			return true, nil
 		}
@@ -241,19 +226,14 @@ func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, log loggin
 			},
 		}
 		if err := controllerutil.SetControllerReference(store, partition, r.scheme); err != nil {
-			log.Error(err)
-			return false, err
+			return false, logError(log, err)
 		}
 		if err := controllerutil.SetOwnerReference(cluster, partition, r.scheme); err != nil {
-			log.Error(err)
-			return false, err
+			return false, logError(log, err)
 		}
 		log.Info("Creating RaftPartition")
 		if err := r.client.Create(ctx, partition); err != nil {
-			if !k8serrors.IsAlreadyExists(err) {
-				log.Error(err)
-			}
-			return false, err
+			return false, logError(log, err)
 		}
 		return true, nil
 	}
@@ -269,10 +249,7 @@ func (r *RaftStoreReconciler) getPartitions(ctx context.Context, log logging.Log
 		}
 		partition := &raftv1beta2.RaftPartition{}
 		if err := r.client.Get(ctx, partitionName, partition); err != nil {
-			if !k8serrors.IsNotFound(err) {
-				log.Error(err)
-			}
-			return nil, err
+			return nil, logError(log, err)
 		}
 		partitions = append(partitions, partition)
 	}
@@ -295,10 +272,7 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 			}
 			member := &raftv1beta2.RaftMember{}
 			if err := r.client.Get(ctx, memberName, member); err != nil {
-				if !k8serrors.IsNotFound(err) {
-					log.Error(err)
-				}
-				return false, err
+				return false, logError(log, err)
 			}
 			leader = fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, member.Spec.Pod.Name), apiPort)
 		}
@@ -311,10 +285,7 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 			}
 			member := &raftv1beta2.RaftMember{}
 			if err := r.client.Get(ctx, memberName, member); err != nil {
-				if !k8serrors.IsNotFound(err) {
-					log.Error(err)
-				}
-				return false, err
+				return false, logError(log, err)
 			}
 			followers = append(followers, fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, member.Spec.Pod.Name), apiPort))
 		}
@@ -333,15 +304,13 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 	dataStore := &atomixv3beta3.DataStore{}
 	if err := r.client.Get(ctx, dataStoreName, dataStore); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			log.Error(err)
-			return false, err
+			return false, logError(log, err)
 		}
 
 		marshaler := &jsonpb.Marshaler{}
 		configString, err := marshaler.MarshalToString(&config)
 		if err != nil {
-			log.Error(err)
-			return false, err
+			return false, logError(log, err)
 		}
 
 		dataStore = &atomixv3beta3.DataStore{
@@ -361,32 +330,26 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 			},
 		}
 		if err := controllerutil.SetControllerReference(store, dataStore, r.scheme); err != nil {
-			log.Error(err)
-			return false, err
+			return false, logError(log, err)
 		}
 		log.Info("Creating DataStore")
 		log.Debugw("Configuring DataStore", logging.String("Config", configString))
 		if err := r.client.Create(ctx, dataStore); err != nil {
-			if !k8serrors.IsAlreadyExists(err) {
-				log.Error(err)
-			}
-			return false, err
+			return false, logError(log, err)
 		}
 		return true, nil
 	}
 
 	var storedConfig rsmv1.ProtocolConfig
 	if err := jsonpb.UnmarshalString(string(dataStore.Spec.Config.Raw), &storedConfig); err != nil {
-		log.Error(err)
-		return false, err
+		return false, logError(log, err)
 	}
 
 	if !isProtocolConfigEqual(storedConfig, config) {
 		marshaler := &jsonpb.Marshaler{}
 		configString, err := marshaler.MarshalToString(&config)
 		if err != nil {
-			log.Error(err)
-			return false, err
+			return false, logError(log, err)
 		}
 
 		dataStore.Spec.Config = runtime.RawExtension{
@@ -395,10 +358,7 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 		log.Info("Updating DataStore")
 		log.Debugw("Configuring DataStore", logging.String("Config", configString))
 		if err := r.client.Update(ctx, dataStore); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return false, err
+			return false, logError(log, err)
 		}
 		return true, nil
 	}
@@ -422,10 +382,7 @@ func (r *RaftStoreReconciler) reconcileStatus(ctx context.Context, log logging.L
 		store.Status.State = state
 		log.Infow("Store status changed", logging.String("Status", string(store.Status.State)))
 		if err := r.client.Status().Update(ctx, store); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return false, err
+			return false, logError(log, err)
 		}
 		return true, nil
 	}

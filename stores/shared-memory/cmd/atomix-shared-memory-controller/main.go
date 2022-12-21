@@ -17,7 +17,6 @@ import (
 	"os"
 	"runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -25,13 +24,13 @@ import (
 var log = logging.GetLogger()
 
 func init() {
-	logging.SetLevel(logging.DebugLevel)
+	logging.SetLevel(logging.InfoLevel)
 }
 
 func main() {
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
 	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
-	logf.SetLogger(logr.New(&ControllerLogSink{log}))
+	//logf.SetLogger(logr.New(&ControllerLogSink{log}))
 
 	cmd := getCommand()
 	if err := cmd.Execute(); err != nil {

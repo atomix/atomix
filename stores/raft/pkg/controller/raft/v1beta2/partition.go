@@ -101,11 +101,7 @@ func (r *RaftPartitionReconciler) Reconcile(ctx context.Context, request reconci
 
 	partition := &raftv1beta2.RaftPartition{}
 	if err := r.client.Get(ctx, request.NamespacedName, partition); err != nil {
-		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, nil
-		}
-		log.Error(err)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, logError(log, err)
 	}
 
 	log = log.WithFields(
@@ -123,10 +119,7 @@ func (r *RaftPartitionReconciler) reconcileCreate(ctx context.Context, log loggi
 		log.Debugf("Adding %s finalizer", raftPartitionKey)
 		addFinalizer(partition, raftPartitionKey)
 		if err := r.client.Update(ctx, partition); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return reconcile.Result{}, err
+			return reconcile.Result{}, logError(log, err)
 		}
 		return reconcile.Result{}, nil
 	}
@@ -137,22 +130,16 @@ func (r *RaftPartitionReconciler) reconcileCreate(ctx context.Context, log loggi
 		Name:      partition.Spec.Cluster.Name,
 	}
 	if err := r.client.Get(ctx, clusterName, cluster); err != nil {
-		log.Error(err)
-		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{}, err
+		return reconcile.Result{}, logError(log, err)
 	}
 
 	if ok, err := r.reconcileMembers(ctx, log, cluster, partition); err != nil {
-		log.Error(err)
 		return reconcile.Result{}, err
 	} else if ok {
 		return reconcile.Result{}, nil
 	}
 
 	if ok, err := r.reconcileStatus(ctx, log, partition); err != nil {
-		log.Error(err)
 		return reconcile.Result{}, err
 	} else if ok {
 		return reconcile.Result{}, nil
@@ -189,10 +176,7 @@ func (r *RaftPartitionReconciler) reconcileMembers(ctx context.Context, log logg
 				logging.Uint64("MemberID", uint64(memberStatus.MemberID)),
 				logging.Uint64("ReplicaID", uint64(memberStatus.ReplicaID)))
 			if err := r.client.Status().Update(ctx, partition); err != nil {
-				if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-					log.Error(err)
-				}
-				return false, err
+				return false, logError(log, err)
 			}
 			return true, nil
 		}
@@ -246,10 +230,7 @@ func (r *RaftPartitionReconciler) reconcileMember(ctx context.Context, log loggi
 						log.Infow("Pod not found; updating partition status",
 							logging.Uint64("ReplicaID", uint64(memberRef.ReplicaID)))
 						if err := r.client.Status().Update(ctx, partition); err != nil {
-							if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-								log.Error(err)
-							}
-							return false, err
+							return false, logError(log, err)
 						}
 					}
 					break
@@ -273,10 +254,7 @@ func (r *RaftPartitionReconciler) reconcileMember(ctx context.Context, log loggi
 					log.Infow("Pod found; assigning new replica ID to member",
 						logging.Uint64("ReplicaID", uint64(memberStatus.ReplicaID)))
 					if err := r.client.Status().Update(ctx, partition); err != nil {
-						if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-							log.Error(err)
-						}
-						return false, err
+						return false, logError(log, err)
 					}
 					return true, nil
 				}
@@ -307,10 +285,7 @@ func (r *RaftPartitionReconciler) reconcileMember(ctx context.Context, log loggi
 			log.Infow("Initializing member status",
 				logging.Uint64("ReplicaID", uint64(memberStatus.ReplicaID)))
 			if err := r.client.Status().Update(ctx, partition); err != nil {
-				if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-					log.Error(err)
-				}
-				return false, err
+				return false, logError(log, err)
 			}
 			return true, nil
 		}
@@ -363,10 +338,7 @@ func (r *RaftPartitionReconciler) reconcileMember(ctx context.Context, log loggi
 			return false, err
 		}
 		if err := r.client.Create(ctx, member); err != nil {
-			if !k8serrors.IsAlreadyExists(err) {
-				log.Error(err)
-			}
-			return false, err
+			return false, logError(log, err)
 		}
 		return true, nil
 	}
@@ -382,10 +354,7 @@ func (r *RaftPartitionReconciler) reconcileMember(ctx context.Context, log loggi
 					log.Infow("RaftMember deleted; updating partition status",
 						logging.Uint64("ReplicaID", uint64(memberRef.ReplicaID)))
 					if err := r.client.Status().Update(ctx, partition); err != nil {
-						if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-							log.Error(err)
-						}
-						return false, err
+						return false, logError(log, err)
 					}
 				}
 				break
@@ -395,10 +364,7 @@ func (r *RaftPartitionReconciler) reconcileMember(ctx context.Context, log loggi
 		log.Debugf("Removing %s finalizer", raftPartitionKey)
 		removeFinalizer(member, raftPartitionKey)
 		if err := r.client.Update(ctx, member); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return false, err
+			return false, logError(log, err)
 		}
 		return true, nil
 	}
@@ -414,10 +380,7 @@ func (r *RaftPartitionReconciler) reconcileStatus(ctx context.Context, log loggi
 		}
 		member := &raftv1beta2.RaftMember{}
 		if err := r.client.Get(ctx, memberName, member); err != nil {
-			if !k8serrors.IsNotFound(err) {
-				log.Error(err)
-			}
-			return false, err
+			return false, logError(log, err)
 		}
 		if member.Status.State == raftv1beta2.RaftMemberNotReady {
 			state = raftv1beta2.RaftPartitionNotReady
@@ -429,10 +392,7 @@ func (r *RaftPartitionReconciler) reconcileStatus(ctx context.Context, log loggi
 		log.Infow("Partition status changed",
 			logging.String("Status", string(state)))
 		if err := r.client.Status().Update(ctx, partition); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return false, err
+			return false, logError(log, err)
 		}
 		return true, nil
 	}
@@ -452,7 +412,7 @@ func (r *RaftPartitionReconciler) reconcileDelete(ctx context.Context, log loggi
 	}
 	members := &raftv1beta2.RaftMemberList{}
 	if err := r.client.List(ctx, members, options); err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, logError(log, err)
 	}
 
 	for _, member := range members.Items {
@@ -465,8 +425,7 @@ func (r *RaftPartitionReconciler) reconcileDelete(ctx context.Context, log loggi
 				Debugf("Removing %s finalizer", raftPartitionKey)
 			removeFinalizer(&member, raftPartitionKey)
 			if err := r.client.Update(ctx, &member); err != nil {
-				log.Error(err)
-				return reconcile.Result{}, err
+				return reconcile.Result{}, logError(log, err)
 			}
 		}
 	}
@@ -474,10 +433,7 @@ func (r *RaftPartitionReconciler) reconcileDelete(ctx context.Context, log loggi
 	log.Debugf("Removing %s finalizer", raftPartitionKey)
 	removeFinalizer(partition, raftPartitionKey)
 	if err := r.client.Update(ctx, partition); err != nil {
-		if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-			log.Error(err)
-		}
-		return reconcile.Result{}, err
+		return reconcile.Result{}, logError(log, err)
 	}
 	return reconcile.Result{}, nil
 }

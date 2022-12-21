@@ -31,7 +31,6 @@ import (
 	"time"
 
 	raftv1beta2 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta2"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -80,11 +79,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 	pod := &corev1.Pod{}
 	err := r.client.Get(ctx, request.NamespacedName, pod)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, nil
-		}
-		log.Error(err)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, logError(log, err)
 	}
 
 	if pod.DeletionTimestamp != nil {
@@ -110,7 +105,7 @@ func (r *PodReconciler) reconcileCreate(ctx context.Context, log logging.Logger,
 		log.Infof("Adding %s finalizer", podKey)
 		addFinalizer(pod, podKey)
 		if err := r.client.Update(ctx, pod); err != nil {
-			return err
+			return logError(log, err)
 		}
 		return nil
 	}
@@ -144,7 +139,7 @@ func (r *PodReconciler) reconcileDelete(ctx context.Context, log logging.Logger,
 	log.Infof("Removing %s finalizer", podKey)
 	removeFinalizer(pod, podKey)
 	if err := r.client.Update(ctx, pod); err != nil {
-		return err
+		return logError(log, err)
 	}
 	return nil
 }
@@ -173,7 +168,7 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithStreamInterceptor(retry.RetryingStreamClientInterceptor(retry.WithRetryOn(codes.Unavailable))))
 		if err != nil {
-			log.Error(err)
+			log.Warn(err)
 			return
 		}
 
@@ -182,7 +177,7 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 		request := &raftv1.WatchRequest{}
 		stream, err := node.Watch(ctx, request)
 		if err != nil {
-			log.Error(err)
+			log.Warn(err)
 			return
 		}
 
@@ -195,12 +190,12 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 			if err != nil {
 				err = errors.FromProto(err)
 				if errors.IsCanceled(err) {
-					log.Warnf("Watch canceled")
+					log.Warn("Watch canceled")
 					return
 				}
-				log.Error(err)
+				log.Warn(err)
 			} else {
-				log.Infow("Received event", logging.Stringer("Event", event))
+				log.Debugw("Received event", logging.Stringer("Event", event))
 				timestamp := metav1.NewTime(event.Timestamp)
 				switch e := event.Event.(type) {
 				case *raftv1.Event_ReplicaReady:
@@ -219,7 +214,6 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 						func(status *raftv1beta2.RaftPartitionStatus) bool {
 							member, err := r.getMember(ctx, log, clusterName, raftv1beta2.ShardID(e.ReplicaReady.ShardID), raftv1beta2.ReplicaID(e.ReplicaReady.ReplicaID))
 							if err != nil {
-								log.Error(err)
 								return false
 							}
 							if status.Leader != nil && *status.Leader == member.Spec.MemberID {
@@ -244,7 +238,6 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 								} else {
 									leader, err := r.getMember(ctx, log, clusterName, raftv1beta2.ShardID(e.LeaderUpdated.ShardID), raftv1beta2.ReplicaID(e.LeaderUpdated.Leader))
 									if err != nil {
-										log.Error(err)
 										return false
 									}
 									status.Leader = &leader.Spec.MemberID
@@ -417,8 +410,7 @@ func (r *PodReconciler) getMembers(ctx context.Context, log logging.Logger, clus
 	}
 	members := &raftv1beta2.RaftMemberList{}
 	if err := r.client.List(ctx, members, options); err != nil {
-		log.Error(err)
-		return nil, err
+		return nil, logError(log, err)
 	}
 	return members.Items, nil
 }
@@ -444,8 +436,7 @@ func (r *PodReconciler) getPartitions(ctx context.Context, log logging.Logger, c
 	}
 	partitions := &raftv1beta2.RaftPartitionList{}
 	if err := r.client.List(ctx, partitions, options); err != nil {
-		log.Error(err)
-		return nil, err
+		return nil, logError(log, err)
 	}
 	return partitions.Items, nil
 }
@@ -480,10 +471,7 @@ func (r *PodReconciler) tryRecordMemberEvent(
 	for _, member := range members {
 		if updater(&member.Status) {
 			if err := r.client.Status().Update(ctx, &member); err != nil {
-				if !k8serrors.IsNotFound(err) {
-					log.Error(err)
-				}
-				return err
+				return logWarn(log, err)
 			}
 			recorder(&member)
 		}
@@ -510,11 +498,7 @@ func (r *PodReconciler) tryRecordPartitionEvent(
 	for _, partition := range partitions {
 		if updater(&partition.Status) {
 			if err := r.client.Status().Update(ctx, &partition); err != nil {
-				if k8serrors.IsNotFound(err) {
-					return nil
-				}
-				log.Error(err)
-				return err
+				return logWarn(log, err)
 			}
 			recorder(&partition)
 		}

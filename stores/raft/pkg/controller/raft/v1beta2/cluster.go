@@ -228,10 +228,7 @@ func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, log logging.Lo
 		return err
 	}
 	if err := r.client.Create(ctx, cm); err != nil {
-		if !k8serrors.IsAlreadyExists(err) {
-			log.Error(err)
-		}
-		return err
+		return logError(log, err)
 	}
 	return nil
 }
@@ -253,6 +250,7 @@ func (r *RaftClusterReconciler) reconcileStatefulSet(ctx context.Context, log lo
 			log.Error(err)
 			return err
 		}
+		log.Debug(err)
 		log.Infow("Creating StatefulSet", logging.Stringer("StatefulSet", name))
 		return r.addStatefulSet(ctx, log, cluster)
 	}
@@ -402,10 +400,7 @@ atomix-raft-node --config %s/%s --api-port %d --raft-host %s-$ordinal.%s.%s.svc.
 		return err
 	}
 	if err := r.client.Create(ctx, set); err != nil {
-		if !k8serrors.IsAlreadyExists(err) {
-			log.Error(err)
-		}
-		return err
+		return logError(log, err)
 	}
 	return nil
 }
@@ -421,6 +416,7 @@ func (r *RaftClusterReconciler) reconcileService(ctx context.Context, log loggin
 			log.Error(err)
 			return err
 		}
+		log.Debug(err)
 		log.Infow("Creating Service", logging.Stringer("Service", name))
 		return r.addService(ctx, log, cluster)
 	}
@@ -455,10 +451,7 @@ func (r *RaftClusterReconciler) addService(ctx context.Context, log logging.Logg
 		return err
 	}
 	if err := r.client.Create(ctx, service); err != nil {
-		if !k8serrors.IsAlreadyExists(err) {
-			log.Error(err)
-		}
-		return err
+		return logError(log, err)
 	}
 	return nil
 }
@@ -474,6 +467,7 @@ func (r *RaftClusterReconciler) reconcileHeadlessService(ctx context.Context, lo
 			log.Error(err)
 			return err
 		}
+		log.Debug(err)
 		log.Infow("Creating headless Service", logging.Stringer("Service", name))
 		return r.addHeadlessService(ctx, log, cluster)
 	}
@@ -510,10 +504,7 @@ func (r *RaftClusterReconciler) addHeadlessService(ctx context.Context, log logg
 		return err
 	}
 	if err := r.client.Create(ctx, service); err != nil {
-		if !k8serrors.IsAlreadyExists(err) {
-			log.Error(err)
-		}
-		return err
+		return logError(log, err)
 	}
 	return nil
 }
@@ -529,6 +520,7 @@ func (r *RaftClusterReconciler) reconcileStatus(ctx context.Context, log logging
 			log.Error(err)
 			return err
 		}
+		log.Warn(err)
 		return nil
 	}
 
@@ -543,6 +535,7 @@ func (r *RaftClusterReconciler) reconcileStatus(ctx context.Context, log logging
 					log.Error(err)
 					return err
 				}
+				log.Debug(err)
 				return nil
 			}
 		}
@@ -556,6 +549,7 @@ func (r *RaftClusterReconciler) reconcileStatus(ctx context.Context, log logging
 					log.Error(err)
 					return err
 				}
+				log.Debug(err)
 				return nil
 			}
 		}

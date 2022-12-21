@@ -95,11 +95,7 @@ func (r *RaftMemberReconciler) Reconcile(ctx context.Context, request reconcile.
 	member := &raftv1beta2.RaftMember{}
 	err := r.client.Get(ctx, request.NamespacedName, member)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, nil
-		}
-		log.Error(err)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, logError(log, err)
 	}
 
 	if member.DeletionTimestamp != nil {
@@ -120,10 +116,7 @@ func (r *RaftMemberReconciler) reconcileCreate(ctx context.Context, log logging.
 		log.Debugf("Adding %s finalizer", raftMemberKey)
 		addFinalizer(member, raftMemberKey)
 		if err := r.client.Update(ctx, member); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return err
+			return logError(log, err)
 		}
 		return nil
 	}
@@ -134,8 +127,7 @@ func (r *RaftMemberReconciler) reconcileCreate(ctx context.Context, log logging.
 	}
 	store := &raftv1beta2.RaftStore{}
 	if err := r.client.Get(ctx, storeName, store); err != nil {
-		log.Warn(err)
-		return err
+		return logError(log, err)
 	}
 
 	clusterName := types.NamespacedName{
@@ -144,8 +136,7 @@ func (r *RaftMemberReconciler) reconcileCreate(ctx context.Context, log logging.
 	}
 	cluster := &raftv1beta2.RaftCluster{}
 	if err := r.client.Get(ctx, clusterName, cluster); err != nil {
-		log.Warn(err)
-		return err
+		return logError(log, err)
 	}
 
 	partitionName := types.NamespacedName{
@@ -154,8 +145,7 @@ func (r *RaftMemberReconciler) reconcileCreate(ctx context.Context, log logging.
 	}
 	partition := &raftv1beta2.RaftPartition{}
 	if err := r.client.Get(ctx, partitionName, partition); err != nil {
-		log.Warn(err)
-		return err
+		return logError(log, err)
 	}
 
 	podName := types.NamespacedName{
@@ -164,8 +154,7 @@ func (r *RaftMemberReconciler) reconcileCreate(ctx context.Context, log logging.
 	}
 	pod := &corev1.Pod{}
 	if err := r.client.Get(ctx, podName, pod); err != nil {
-		log.Warn(err)
-		return err
+		return logError(log, err)
 	}
 
 	log = log.WithFields(
@@ -197,13 +186,11 @@ func (r *RaftMemberReconciler) reconcileDelete(ctx context.Context, log logging.
 			log.Error(err)
 			return err
 		}
+		log.Debug(err)
 		log.Debugf("Removing %s finalizer", raftMemberKey)
 		removeFinalizer(member, raftMemberKey)
 		if err := r.client.Update(ctx, member); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return err
+			return logError(log, err)
 		}
 		return nil
 	}
@@ -218,13 +205,11 @@ func (r *RaftMemberReconciler) reconcileDelete(ctx context.Context, log logging.
 			log.Error(err)
 			return err
 		}
+		log.Debug(err)
 		log.Debugf("Removing %s finalizer", raftMemberKey)
 		removeFinalizer(member, raftMemberKey)
 		if err := r.client.Update(ctx, member); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return err
+			return logError(log, err)
 		}
 		return nil
 	}
@@ -239,13 +224,11 @@ func (r *RaftMemberReconciler) reconcileDelete(ctx context.Context, log logging.
 			log.Error(err)
 			return err
 		}
+		log.Debug(err)
 		log.Debugf("Removing %s finalizer", raftMemberKey)
 		removeFinalizer(member, raftMemberKey)
 		if err := r.client.Update(ctx, member); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return err
+			return logError(log, err)
 		}
 		return nil
 	}
@@ -260,13 +243,11 @@ func (r *RaftMemberReconciler) reconcileDelete(ctx context.Context, log logging.
 			log.Error(err)
 			return err
 		}
+		log.Debug(err)
 		log.Debugf("Removing %s finalizer", raftMemberKey)
 		removeFinalizer(member, raftMemberKey)
 		if err := r.client.Update(ctx, member); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return err
+			return logError(log, err)
 		}
 		return nil
 	}
@@ -277,10 +258,7 @@ func (r *RaftMemberReconciler) reconcileDelete(ctx context.Context, log logging.
 		log.Debugf("Removing %s finalizer", raftMemberKey)
 		removeFinalizer(member, raftMemberKey)
 		if err := r.client.Update(ctx, member); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return err
+			return logError(log, err)
 		}
 		return nil
 	}
@@ -299,10 +277,7 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 		}
 		member.Status.Version = nil
 		if err := r.client.Status().Update(ctx, member); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return false, err
+			return false, logError(log, err)
 		}
 		return true, nil
 	}
@@ -319,10 +294,7 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 		if member.Status.State != raftv1beta2.RaftMemberNotReady {
 			member.Status.State = raftv1beta2.RaftMemberNotReady
 			if err := r.client.Status().Update(ctx, member); err != nil {
-				if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-					log.Error(err)
-				}
-				return false, err
+				return false, logError(log, err)
 			}
 			r.events.Eventf(member, "Normal", "StateChanged", "State changed to %s", member.Status.State)
 			return true, nil
@@ -344,7 +316,10 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 			address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
 			conn, err := grpc.DialContext(ctx, address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
-				log.Error(err)
+				err = errors.FromProto(err)
+				if !errors.IsUnavailable(err) {
+					log.Warn(err)
+				}
 				return false, err
 			}
 			defer conn.Close()
@@ -358,9 +333,9 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 				Replicas:  replicas,
 			}
 			if _, err := client.BootstrapShard(ctx, request); err != nil {
-				log.Error(err)
 				err = errors.FromProto(err)
-				if !errors.IsAlreadyExists(err) {
+				if !errors.IsUnavailable(err) && !errors.IsAlreadyExists(err) {
+					log.Warn(err)
 					r.events.Eventf(store, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d member %d: %s", partition.Spec.PartitionID, member.Spec.ReplicaID, err.Error())
 					r.events.Eventf(cluster, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d member %d: %s", partition.Spec.PartitionID, member.Spec.ReplicaID, err.Error())
 					r.events.Eventf(partition, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d member %d: %s", partition.Spec.PartitionID, member.Spec.ReplicaID, err.Error())
@@ -378,10 +353,7 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 
 			member.Status.Version = &containerVersion
 			if err := r.client.Status().Update(ctx, member); err != nil {
-				if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-					log.Error(err)
-				}
-				return false, err
+				return false, logError(log, err)
 			}
 			return true, nil
 		case raftv1beta2.RaftJoin:
@@ -391,10 +363,17 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 				if ok, err := r.tryAddMember(ctx, log, store, cluster, partition, member, peer); err != nil {
 					returnErr = err
 				} else if ok {
+					if pod.Status.PodIP == "" {
+						continue
+					}
+
 					address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
 					conn, err := grpc.DialContext(ctx, address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 					if err != nil {
-						log.Error(err)
+						err = errors.FromProto(err)
+						if !errors.IsUnavailable(err) {
+							log.Warn(err)
+						}
 						return false, err
 					}
 
@@ -406,9 +385,9 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 						ReplicaID: raftv1.ReplicaID(member.Spec.MemberID),
 					}
 					if _, err := client.JoinShard(ctx, request); err != nil {
-						log.Error(err)
 						err = errors.FromProto(err)
-						if !errors.IsAlreadyExists(err) {
+						if !errors.IsUnavailable(err) && !errors.IsAlreadyExists(err) {
+							log.Warn(err)
 							r.events.Eventf(store, "Warning", "JoinFailed", "Failed to join member %d to partition %d: %s", member.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
 							r.events.Eventf(cluster, "Warning", "JoinFailed", "Failed to join member %d to partition %d: %s", member.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
 							r.events.Eventf(partition, "Warning", "JoinFailed", "Failed to join member %d to partition %d: %s", member.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
@@ -428,10 +407,7 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 
 					member.Status.Version = &containerVersion
 					if err := r.client.Status().Update(ctx, member); err != nil {
-						if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-							log.Error(err)
-						}
-						return false, err
+						return false, logError(log, err)
 					}
 					return true, nil
 				}
@@ -449,16 +425,20 @@ func (r *RaftMemberReconciler) tryAddMember(ctx context.Context, log logging.Log
 		Name:      peer.Pod.Name,
 	}
 	if err := r.client.Get(ctx, podName, pod); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			log.Warn(err)
-		}
-		return false, err
+		return false, logWarn(log, err)
+	}
+
+	if pod.Status.PodIP == "" {
+		return false, nil
 	}
 
 	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
 	conn, err := grpc.DialContext(ctx, address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Error(err)
+		err = errors.FromProto(err)
+		if !errors.IsUnavailable(err) {
+			log.Warn(err)
+		}
 		return false, err
 	}
 	defer conn.Close()
@@ -469,7 +449,10 @@ func (r *RaftMemberReconciler) tryAddMember(ctx context.Context, log logging.Log
 	}
 	getConfigResponse, err := client.GetConfig(ctx, getConfigRequest)
 	if err != nil {
-		log.Warn(err)
+		err = errors.FromProto(err)
+		if !errors.IsUnavailable(err) {
+			log.Warn(err)
+		}
 		return false, err
 	}
 
@@ -486,12 +469,15 @@ func (r *RaftMemberReconciler) tryAddMember(ctx context.Context, log logging.Log
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	if _, err := client.AddReplica(ctx, addReplicaRequest); err != nil {
-		log.Warn(err)
-		r.events.Eventf(store, "Warning", "ConfigurationChangeFailed", "Failed to add member %d to partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
-		r.events.Eventf(cluster, "Warning", "ConfigurationChangeFailed", "Failed to add member %d to partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
-		r.events.Eventf(partition, "Warning", "ConfigurationChangeFailed", "Failed to add member %d to partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
-		r.events.Eventf(pod, "Warning", "ConfigurationChangeFailed", "Failed to add member %d to partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
-		r.events.Eventf(member, "Warning", "ConfigurationChangeFailed", "Failed to add member to partition %d: %s", partition.Spec.PartitionID, err.Error())
+		err = errors.FromProto(err)
+		if !errors.IsUnavailable(err) {
+			log.Warn(err)
+			r.events.Eventf(store, "Warning", "ConfigurationChangeFailed", "Failed to add member %d to partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
+			r.events.Eventf(cluster, "Warning", "ConfigurationChangeFailed", "Failed to add member %d to partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
+			r.events.Eventf(partition, "Warning", "ConfigurationChangeFailed", "Failed to add member %d to partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
+			r.events.Eventf(pod, "Warning", "ConfigurationChangeFailed", "Failed to add member %d to partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
+			r.events.Eventf(member, "Warning", "ConfigurationChangeFailed", "Failed to add member to partition %d: %s", partition.Spec.PartitionID, err.Error())
+		}
 		return false, err
 	}
 	r.events.Eventf(store, "Normal", "ConfigurationChanged", "Added member %d to partition %d", member.Spec.MemberID, partition.Spec.PartitionID)
@@ -506,10 +492,7 @@ func (r *RaftMemberReconciler) removeMember(ctx context.Context, log logging.Log
 	if member.Status.State != raftv1beta2.RaftMemberNotReady {
 		member.Status.State = raftv1beta2.RaftMemberNotReady
 		if err := r.client.Status().Update(ctx, member); err != nil {
-			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
-				log.Error(err)
-			}
-			return false, err
+			return false, logError(log, err)
 		}
 		r.events.Eventf(member, "Normal", "StateChanged", "State changed to %s", member.Status.State)
 		return true, nil
@@ -518,7 +501,10 @@ func (r *RaftMemberReconciler) removeMember(ctx context.Context, log logging.Log
 	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
 	conn, err := grpc.DialContext(ctx, address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Error(err)
+		err = errors.FromProto(err)
+		if !errors.IsUnavailable(err) {
+			log.Warn(err)
+		}
 		return false, err
 	}
 	defer conn.Close()
@@ -530,7 +516,10 @@ func (r *RaftMemberReconciler) removeMember(ctx context.Context, log logging.Log
 		ShardID: raftv1.ShardID(member.Spec.ShardID),
 	}
 	if _, err := client.LeaveShard(ctx, request); err != nil {
-		log.Warn(err)
+		err = errors.FromProto(err)
+		if !errors.IsUnavailable(err) {
+			log.Warn(err)
+		}
 	}
 
 	// Loop through the list of peers and attempt to remove the member from the Raft group until successful
@@ -552,16 +541,16 @@ func (r *RaftMemberReconciler) tryRemoveMember(ctx context.Context, log logging.
 		Name:      peer.Pod.Name,
 	}
 	if err := r.client.Get(ctx, podName, pod); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			log.Warn(err)
-		}
-		return false, err
+		return false, logWarn(log, err)
 	}
 
 	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
 	conn, err := grpc.DialContext(ctx, address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Warn(err)
+		err = errors.FromProto(err)
+		if !errors.IsUnavailable(err) {
+			log.Warn(err)
+		}
 		return false, err
 	}
 	defer conn.Close()
@@ -572,7 +561,10 @@ func (r *RaftMemberReconciler) tryRemoveMember(ctx context.Context, log logging.
 	}
 	getConfigResponse, err := client.GetConfig(ctx, getConfigRequest)
 	if err != nil {
-		log.Warn(err)
+		err = errors.FromProto(err)
+		if !errors.IsUnavailable(err) {
+			log.Warn(err)
+		}
 		return false, err
 	}
 
@@ -585,12 +577,15 @@ func (r *RaftMemberReconciler) tryRemoveMember(ctx context.Context, log logging.
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	if _, err := client.RemoveReplica(ctx, removeReplicaRequest); err != nil {
-		log.Warn(err)
-		r.events.Eventf(store, "Warning", "ConfigurationChangeFailed", "Failed to remove member %d from partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
-		r.events.Eventf(cluster, "Warning", "ConfigurationChangeFailed", "Failed to remove member %d from partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
-		r.events.Eventf(partition, "Warning", "ConfigurationChangeFailed", "Failed to remove member %d from partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
-		r.events.Eventf(pod, "Warning", "ConfigurationChangeFailed", "Failed to remove member %d from partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
-		r.events.Eventf(member, "Warning", "ConfigurationChangeFailed", "Failed to remove member from partition %d: %s", partition.Spec.PartitionID, err.Error())
+		err = errors.FromProto(err)
+		if !errors.IsUnavailable(err) {
+			log.Warn(err)
+			r.events.Eventf(store, "Warning", "ConfigurationChangeFailed", "Failed to remove member %d from partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
+			r.events.Eventf(cluster, "Warning", "ConfigurationChangeFailed", "Failed to remove member %d from partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
+			r.events.Eventf(partition, "Warning", "ConfigurationChangeFailed", "Failed to remove member %d from partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
+			r.events.Eventf(pod, "Warning", "ConfigurationChangeFailed", "Failed to remove member %d from partition %d: %s", member.Spec.MemberID, partition.Spec.PartitionID, err.Error())
+			r.events.Eventf(member, "Warning", "ConfigurationChangeFailed", "Failed to remove member from partition %d: %s", partition.Spec.PartitionID, err.Error())
+		}
 		return false, err
 	}
 	r.events.Eventf(store, "Normal", "ConfigurationChanged", "Removed member %d from partition %d", member.Spec.MemberID, partition.Spec.PartitionID)
