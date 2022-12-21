@@ -68,12 +68,15 @@ spec:
                   nullable: true
             status:
               type: object
+              default: {}
               properties:
                 state:
                   type: string
-                  default: NotReady
+                  default: Initializing
                   enum:
-                    - NotReady
+                    - Initializing
+                    - Reconfiguring
+                    - Running
                     - Ready
                 term:
                   type: integer
@@ -85,30 +88,8 @@ spec:
                   type: array
                   items:
                     type: integer
-                lastReplicaID:
+                replicas:
                   type: integer
-                memberStatuses:
-                  type: array
-                  items:
-                    type: object
-                    required:
-                      - name
-                      - memberID
-                      - replicaID
-                    properties:
-                      name:
-                        type: string
-                      memberID:
-                        type: integer
-                        minimum: 1
-                        maximum: 1024
-                      replicaID:
-                        type: integer
-                        minimum: 1
-                      bootstrapped:
-                        type: boolean
-                      deleted:
-                        type: boolean
       additionalPrinterColumns:
         - name: Partition
           type: integer

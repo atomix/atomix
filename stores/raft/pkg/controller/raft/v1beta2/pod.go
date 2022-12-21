@@ -74,13 +74,18 @@ type PodReconciler struct {
 // and what is in the Store.Spec
 func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := log.WithFields(logging.String("Pod", request.NamespacedName.String()))
-	log.Debug("Reconciling Pod")
 
 	pod := &corev1.Pod{}
 	err := r.client.Get(ctx, request.NamespacedName, pod)
 	if err != nil {
 		return reconcile.Result{}, logError(log, err)
 	}
+
+	if _, ok := pod.Annotations[raftClusterKey]; !ok {
+		return reconcile.Result{}, nil
+	}
+
+	log.Debug("Reconciling Pod")
 
 	if pod.DeletionTimestamp != nil {
 		if err := r.reconcileDelete(ctx, log, pod); err != nil {
@@ -96,11 +101,6 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 }
 
 func (r *PodReconciler) reconcileCreate(ctx context.Context, log logging.Logger, pod *corev1.Pod) error {
-	cluster, ok := pod.Annotations[raftClusterKey]
-	if !ok {
-		return nil
-	}
-
 	if !hasFinalizer(pod, podKey) {
 		log.Infof("Adding %s finalizer", podKey)
 		addFinalizer(pod, podKey)
@@ -110,10 +110,10 @@ func (r *PodReconciler) reconcileCreate(ctx context.Context, log logging.Logger,
 		return nil
 	}
 
-	address := fmt.Sprintf("%s:%d", getDNSName(pod.Namespace, cluster, pod.Name), apiPort)
+	address := fmt.Sprintf("%s:%d", getDNSName(pod.Namespace, pod.Annotations[raftClusterKey], pod.Name), apiPort)
 	clusterName := types.NamespacedName{
 		Namespace: pod.Namespace,
-		Name:      cluster,
+		Name:      pod.Annotations[raftClusterKey],
 	}
 	if err := r.watch(log, clusterName, address); err != nil {
 		return err
@@ -122,16 +122,11 @@ func (r *PodReconciler) reconcileCreate(ctx context.Context, log logging.Logger,
 }
 
 func (r *PodReconciler) reconcileDelete(ctx context.Context, log logging.Logger, pod *corev1.Pod) error {
-	cluster, ok := pod.Annotations[raftClusterKey]
-	if !ok {
-		return nil
-	}
-
 	if !hasFinalizer(pod, podKey) {
 		return nil
 	}
 
-	address := fmt.Sprintf("%s:%d", getDNSName(pod.Namespace, cluster, pod.Name), apiPort)
+	address := fmt.Sprintf("%s:%d", getDNSName(pod.Namespace, pod.Annotations[raftClusterKey], pod.Name), apiPort)
 	if err := r.unwatch(address); err != nil {
 		return err
 	}

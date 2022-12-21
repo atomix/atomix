@@ -27,13 +27,6 @@ const (
 	RaftObserver RaftMemberType = "Observer"
 )
 
-type RaftBootstrapPolicy string
-
-const (
-	RaftBootstrap RaftBootstrapPolicy = "Bootstrap"
-	RaftJoin      RaftBootstrapPolicy = "Join"
-)
-
 // RaftMemberRole is a constant for RaftMember representing the current role of the member
 type RaftMemberRole string
 
@@ -51,25 +44,15 @@ type MemberID uint64
 type ReplicaID uint64
 
 type RaftMemberSpec struct {
-	Cluster         corev1.ObjectReference      `json:"cluster"`
-	ShardID         ShardID                     `json:"shardID"`
-	MemberID        MemberID                    `json:"memberID"`
-	ReplicaID       ReplicaID                   `json:"replicaID"`
-	Pod             corev1.LocalObjectReference `json:"pod"`
-	Type            RaftMemberType              `json:"type"`
-	Config          RaftMemberConfig            `json:"config"`
-	BootstrapPolicy RaftBootstrapPolicy         `json:"bootstrapPolicy"`
-}
-
-type RaftMemberConfig struct {
-	RaftConfig `json:",inline"`
-	Peers      []RaftMemberReference `json:"peers"`
-}
-
-type RaftMemberReference struct {
-	Pod       corev1.LocalObjectReference `json:"pod"`
+	Cluster   corev1.ObjectReference      `json:"cluster"`
+	ShardID   ShardID                     `json:"shardID"`
 	MemberID  MemberID                    `json:"memberID"`
 	ReplicaID ReplicaID                   `json:"replicaID"`
+	Pod       corev1.LocalObjectReference `json:"pod"`
+	Type      RaftMemberType              `json:"type"`
+	Peers     uint32                      `json:"peers"`
+	Join      bool                        `json:"join"`
+	Config    RaftConfig                  `json:"config"`
 }
 
 // RaftMemberStatus defines the status of a RaftMember

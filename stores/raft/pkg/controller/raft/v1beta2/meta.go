@@ -107,6 +107,14 @@ func newPartitionAnnotations(cluster *raftv1beta2.RaftCluster, store metav1.Obje
 	return annotations
 }
 
+func newPartitionSelector(partition *raftv1beta2.RaftPartition) map[string]string {
+	return map[string]string{
+		raftClusterKey:   partition.Spec.Cluster.Name,
+		raftPartitionKey: strconv.Itoa(int(partition.Spec.PartitionID)),
+		raftShardKey:     strconv.Itoa(int(partition.Spec.ShardID)),
+	}
+}
+
 // newMemberLabels returns the labels for the given cluster
 func newMemberLabels(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID, raftNodeID raftv1beta2.ReplicaID) map[string]string {
 	labels := make(map[string]string)

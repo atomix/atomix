@@ -34,7 +34,7 @@ import (
 
 const (
 	apiPort               = 5678
-	protocolPort          = 5679
+	raftPort              = 5679
 	probePort             = 5679
 	defaultImageEnv       = "DEFAULT_NODE_IMAGE"
 	defaultImage          = "atomix/raft-node:latest"
@@ -326,8 +326,8 @@ func (r *RaftClusterReconciler) addStatefulSet(ctx context.Context, log logging.
 									ContainerPort: apiPort,
 								},
 								{
-									Name:          "protocol",
-									ContainerPort: protocolPort,
+									Name:          "raft",
+									ContainerPort: raftPort,
 								},
 							},
 							Command: []string{
@@ -337,7 +337,7 @@ func (r *RaftClusterReconciler) addStatefulSet(ctx context.Context, log logging.
 [[ `+"`hostname`"+` =~ -([0-9]+)$ ]] || exit 1
 ordinal=${BASH_REMATCH[1]}
 atomix-raft-node --config %s/%s --api-port %d --raft-host %s-$ordinal.%s.%s.svc.%s --raft-port %d`,
-									configPath, raftConfigFile, apiPort, cluster.Name, getHeadlessServiceName(cluster), cluster.Namespace, getClusterDomain(), protocolPort),
+									configPath, raftConfigFile, apiPort, cluster.Name, getHeadlessServiceName(cluster), cluster.Namespace, getClusterDomain(), raftPort),
 							},
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -439,7 +439,7 @@ func (r *RaftClusterReconciler) addService(ctx context.Context, log logging.Logg
 				},
 				{
 					Name: "protocol",
-					Port: protocolPort,
+					Port: raftPort,
 				},
 			},
 			Selector: newClusterSelector(cluster),
@@ -490,7 +490,7 @@ func (r *RaftClusterReconciler) addHeadlessService(ctx context.Context, log logg
 				},
 				{
 					Name: "protocol",
-					Port: protocolPort,
+					Port: raftPort,
 				},
 			},
 			PublishNotReadyAddresses: true,

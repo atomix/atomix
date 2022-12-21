@@ -68,10 +68,12 @@ spec:
                     - Member
                     - Observer
                     - Witness
+                join:
+                  type: boolean
+                peers:
+                  type: integer
                 config:
                   type: object
-                  required:
-                    - peers
                   properties:
                     electionRTT:
                       type: integer
@@ -88,34 +90,6 @@ spec:
                     maxInMemLogSize:
                       type: string
                       nullable: true
-                    peers:
-                      type: array
-                      items:
-                        type: object
-                        required:
-                          - pod
-                          - memberID
-                          - replicaID
-                        properties:
-                          pod:
-                            type: object
-                            required:
-                              - name
-                            properties:
-                              name:
-                                type: string
-                          memberID:
-                            type: integer
-                            minimum: 1
-                            maximum: 1024
-                          replicaID:
-                            type: integer
-                            minimum: 1
-                bootstrapPolicy:
-                  type: string
-                  enum:
-                    - Bootstrap
-                    - Join
             status:
               type: object
               properties:

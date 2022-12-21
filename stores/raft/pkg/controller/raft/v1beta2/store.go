@@ -11,7 +11,6 @@ import (
 	rsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/gogo/protobuf/jsonpb"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -141,12 +140,6 @@ func (r *RaftStoreReconciler) Reconcile(ctx context.Context, request reconcile.R
 	} else if ok {
 		return reconcile.Result{}, nil
 	}
-
-	if ok, err := r.reconcileStatus(ctx, log, store); err != nil {
-		return reconcile.Result{}, err
-	} else if ok {
-		return reconcile.Result{}, nil
-	}
 	return reconcile.Result{}, nil
 }
 
@@ -163,85 +156,91 @@ func (r *RaftStoreReconciler) reconcilePartitions(ctx context.Context, log loggi
 		return true, nil
 	}
 
+	allReady := true
 	for ordinal := 1; ordinal <= int(store.Spec.Partitions); ordinal++ {
-		if updated, err := r.reconcilePartition(ctx, log, store, cluster, raftv1beta2.PartitionID(ordinal)); err != nil {
+		if status, ok, err := r.reconcilePartition(ctx, log, store, cluster, raftv1beta2.PartitionID(ordinal)); err != nil {
 			return false, err
-		} else if updated {
+		} else if ok {
 			return true, nil
+		} else if status != raftv1beta2.RaftPartitionReady {
+			if store.Status.State != raftv1beta2.RaftStoreNotReady {
+				store.Status.State = raftv1beta2.RaftStoreNotReady
+				log.Infow("Store status changed", logging.String("Status", string(store.Status.State)))
+				if err := r.client.Status().Update(ctx, store); err != nil {
+					return false, logError(log, err)
+				}
+				return true, nil
+			}
+			allReady = false
 		}
 	}
-	return false, nil
+
+	if allReady && store.Status.State != raftv1beta2.RaftStoreReady {
+		store.Status.State = raftv1beta2.RaftStoreReady
+		log.Infow("Store status changed", logging.String("Status", string(store.Status.State)))
+		if err := r.client.Status().Update(ctx, store); err != nil {
+			return false, logError(log, err)
+		}
+		return true, nil
+	}
+	return true, nil
 }
 
-func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partitionID raftv1beta2.PartitionID) (bool, error) {
+func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partitionID raftv1beta2.PartitionID) (raftv1beta2.RaftPartitionState, bool, error) {
+	log = log.WithFields(logging.Uint64("PartitionID", uint64(partitionID)))
 	partitionName := types.NamespacedName{
 		Namespace: store.Namespace,
 		Name:      fmt.Sprintf("%s-%d", store.Name, partitionID),
 	}
-	log = log.WithFields(logging.Uint64("PartitionID", uint64(partitionID)))
 	partition := &raftv1beta2.RaftPartition{}
 	if err := r.client.Get(ctx, partitionName, partition); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			return false, logError(log, err)
+			log.Error(err)
+			return "", false, err
 		}
 
-		// Lookup the registered shard ID for this partition in the cluster status.
-		var shardID *raftv1beta2.ShardID
-		for _, partitionStatus := range cluster.Status.PartitionStatuses {
-			if partitionStatus.Name == partitionName.Name {
-				shardID = &partitionStatus.ShardID
-				break
-			}
-		}
-
-		if shardID == nil {
-			cluster.Status.LastShardID++
-			cluster.Status.PartitionStatuses = append(cluster.Status.PartitionStatuses, raftv1beta2.RaftClusterPartitionStatus{
-				ObjectReference: corev1.ObjectReference{
-					Namespace: partitionName.Namespace,
-					Name:      partitionName.Name,
-				},
-				PartitionID: partitionID,
-				ShardID:     cluster.Status.LastShardID,
-			})
-			if err := r.client.Status().Update(ctx, cluster); err != nil {
-				return false, logError(log, err)
-			}
-			return true, nil
+		// Allocate new shard ID by incrementing the shard count in the cluster status
+		log.Debug("Allocating new shard")
+		cluster.Status.Shards++
+		if err := r.client.Status().Update(ctx, cluster); err != nil {
+			return "", false, logError(log, err)
 		}
 
 		partition = &raftv1beta2.RaftPartition{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   partitionName.Namespace,
 				Name:        partitionName.Name,
-				Labels:      newPartitionLabels(cluster, store, partitionID, *shardID),
-				Annotations: newPartitionAnnotations(cluster, store, partitionID, *shardID),
+				Labels:      newPartitionLabels(cluster, store, partitionID, partition.Spec.ShardID),
+				Annotations: newPartitionAnnotations(cluster, store, partitionID, partition.Spec.ShardID),
 			},
 			Spec: raftv1beta2.RaftPartitionSpec{
 				RaftConfig:  store.Spec.RaftConfig,
 				Cluster:     store.Spec.Cluster,
-				ShardID:     *shardID,
 				PartitionID: partitionID,
+				ShardID:     raftv1beta2.ShardID(cluster.Status.Shards),
 				Replicas:    *store.Status.ReplicationFactor,
 			},
 		}
+
+		log.Infow("Creating RaftPartition",
+			logging.Uint64("RaftPartition", uint64(partition.Spec.ShardID)))
 		if err := controllerutil.SetControllerReference(store, partition, r.scheme); err != nil {
-			return false, logError(log, err)
+			return "", false, logError(log, err)
 		}
 		if err := controllerutil.SetOwnerReference(cluster, partition, r.scheme); err != nil {
-			return false, logError(log, err)
+			return "", false, logError(log, err)
 		}
-		log.Info("Creating RaftPartition")
 		if err := r.client.Create(ctx, partition); err != nil {
-			return false, logError(log, err)
+			return "", false, logError(log, err)
 		}
-		return true, nil
+		return partition.Status.State, true, nil
 	}
-	return false, nil
+	return partition.Status.State, false, nil
 }
 
-func (r *RaftStoreReconciler) getPartitions(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore) ([]*raftv1beta2.RaftPartition, error) {
-	var partitions []*raftv1beta2.RaftPartition
+func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster) (bool, error) {
+	log.Debug("Reconciling DataStore")
+	var config rsmv1.ProtocolConfig
 	for ordinal := 1; ordinal <= int(store.Spec.Partitions); ordinal++ {
 		partitionName := types.NamespacedName{
 			Namespace: store.Namespace,
@@ -249,21 +248,9 @@ func (r *RaftStoreReconciler) getPartitions(ctx context.Context, log logging.Log
 		}
 		partition := &raftv1beta2.RaftPartition{}
 		if err := r.client.Get(ctx, partitionName, partition); err != nil {
-			return nil, logError(log, err)
+			return false, logError(log, err)
 		}
-		partitions = append(partitions, partition)
-	}
-	return partitions, nil
-}
 
-func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster) (bool, error) {
-	partitions, err := r.getPartitions(ctx, log, store)
-	if err != nil {
-		return false, err
-	}
-
-	var config rsmv1.ProtocolConfig
-	for _, partition := range partitions {
 		memberAddresses := make(map[raftv1beta2.MemberID]string)
 		for ordinal := 1; ordinal <= int(partition.Spec.Replicas); ordinal++ {
 			memberID := raftv1beta2.MemberID(ordinal)
@@ -366,30 +353,6 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 		log.Info("Updating DataStore")
 		log.Debugw("Configuring DataStore", logging.String("Config", configString))
 		if err := r.client.Update(ctx, dataStore); err != nil {
-			return false, logError(log, err)
-		}
-		return true, nil
-	}
-	return false, nil
-}
-
-func (r *RaftStoreReconciler) reconcileStatus(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore) (bool, error) {
-	partitions, err := r.getPartitions(ctx, log, store)
-	if err != nil {
-		return false, err
-	}
-
-	state := raftv1beta2.RaftStoreReady
-	for _, partition := range partitions {
-		if partition.Status.State == raftv1beta2.RaftPartitionNotReady {
-			state = raftv1beta2.RaftStoreNotReady
-		}
-	}
-
-	if store.Status.State != state {
-		store.Status.State = state
-		log.Infow("Store status changed", logging.String("Status", string(store.Status.State)))
-		if err := r.client.Status().Update(ctx, store); err != nil {
 			return false, logError(log, err)
 		}
 		return true, nil

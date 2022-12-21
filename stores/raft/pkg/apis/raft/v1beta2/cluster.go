@@ -48,15 +48,8 @@ type RaftClusterSpec struct {
 
 // RaftClusterStatus defines the status of a RaftCluster
 type RaftClusterStatus struct {
-	State             RaftClusterState             `json:"state"`
-	LastShardID       ShardID                      `json:"lastShardID"`
-	PartitionStatuses []RaftClusterPartitionStatus `json:"partitionStatuses"`
-}
-
-type RaftClusterPartitionStatus struct {
-	corev1.ObjectReference `json:",inline"`
-	PartitionID            PartitionID `json:"partitionID"`
-	ShardID                ShardID     `json:"shardID"`
+	State  RaftClusterState `json:"state"`
+	Shards uint32           `json:"shards"`
 }
 
 // +genclient

@@ -74,9 +74,11 @@ spec:
                   type: integer
                 state:
                   type: string
-                  default: NotReady
+                  default: Initializing
                   enum:
-                    - NotReady
+                    - Initializing
+                    - Reconfiguring
+                    - Running
                     - Ready
       additionalPrinterColumns:
         - name: Cluster

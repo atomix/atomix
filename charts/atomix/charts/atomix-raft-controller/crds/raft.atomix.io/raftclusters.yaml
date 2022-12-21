@@ -112,27 +112,8 @@ spec:
                   enum:
                     - NotReady
                     - Ready
-                lastShardID:
+                shards:
                   type: integer
-                partitionStatuses:
-                  type: array
-                  items:
-                    type: object
-                    required:
-                      - name
-                      - partitionID
-                      - shardID
-                    properties:
-                      name:
-                        type: string
-                      namespace:
-                        type: string
-                      partitionID:
-                        type: integer
-                        minimum: 1
-                      shardID:
-                        type: integer
-                        minimum: 1
       additionalPrinterColumns:
         - name: Replicas
           type: integer

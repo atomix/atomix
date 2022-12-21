@@ -210,19 +210,19 @@ func getReplica(replicaID uint64, address string, role raftv1.ReplicaRole) (raft
 }
 
 func (n *Protocol) BootstrapShard(ctx context.Context, shardID raftv1.ShardID, replicaID raftv1.ReplicaID, config raftv1.RaftConfig, replicas ...raftv1.ReplicaConfig) error {
-	var member *raftv1.ReplicaConfig
+	var replica *raftv1.ReplicaConfig
 	for _, r := range replicas {
 		if r.ReplicaID == replicaID {
-			member = &r
+			replica = &r
 			break
 		}
 	}
 
-	if member == nil {
-		return errors.NewInvalid("unknown member %d", replicaID)
+	if replica == nil {
+		return errors.NewInvalid("unknown replica %d", replicaID)
 	}
 
-	raftConfig := n.getRaftConfig(shardID, replicaID, member.Role, config)
+	raftConfig := n.getRaftConfig(shardID, replicaID, replica.Role, config)
 	targets := make(map[uint64]dragonboat.Target)
 	for _, member := range replicas {
 		targets[uint64(member.ReplicaID)] = fmt.Sprintf("%s:%d", member.Host, member.Port)

@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -159,7 +160,7 @@ func (r *RaftMemberReconciler) reconcileCreate(ctx context.Context, log logging.
 
 	log = log.WithFields(
 		logging.Uint64("PartitionID", uint64(partition.Spec.PartitionID)),
-		logging.Uint64("PartitionID", uint64(partition.Spec.ShardID)),
+		logging.Uint64("ShardID", uint64(partition.Spec.ShardID)),
 		logging.Uint64("MemberID", uint64(member.Spec.MemberID)),
 		logging.Uint64("ReplicaID", uint64(member.Spec.ReplicaID)),
 		logging.Stringer("Pod", podName))
@@ -296,19 +297,42 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 			if err := r.client.Status().Update(ctx, member); err != nil {
 				return false, logError(log, err)
 			}
+			log.Infow("RaftMember status changed", logging.String("Status", string(member.Status.State)))
 			r.events.Eventf(member, "Normal", "StateChanged", "State changed to %s", member.Status.State)
 			return true, nil
 		}
 
-		switch member.Spec.BootstrapPolicy {
-		case raftv1beta2.RaftBootstrap:
-			replicas := make([]raftv1.ReplicaConfig, 0, len(member.Spec.Config.Peers))
-			for _, peer := range member.Spec.Config.Peers {
-				host := getClusterPodDNSName(cluster, peer.Pod.Name)
+		var config raftv1.RaftConfig
+		if member.Spec.Config.ElectionRTT != nil {
+			config.ElectionRTT = *member.Spec.Config.ElectionRTT
+		}
+		if member.Spec.Config.HeartbeatRTT != nil {
+			config.ElectionRTT = *member.Spec.Config.HeartbeatRTT
+		}
+		if member.Spec.Config.SnapshotEntries != nil {
+			config.SnapshotEntries = uint64(*member.Spec.Config.SnapshotEntries)
+		}
+		if member.Spec.Config.CompactionOverhead != nil {
+			config.CompactionOverhead = uint64(*member.Spec.Config.CompactionOverhead)
+		}
+		if member.Spec.Config.MaxInMemLogSize != nil {
+			if maxInMemLogSize, ok := member.Spec.Config.MaxInMemLogSize.AsInt64(); ok {
+				config.MaxInMemLogSize = uint64(maxInMemLogSize)
+			}
+		}
+
+		if !member.Spec.Join {
+			if pod.Status.PodIP == "" {
+				return false, nil
+			}
+
+			replicas := make([]raftv1.ReplicaConfig, 0, int(member.Spec.Peers))
+			for ordinal := 1; ordinal <= int(member.Spec.Peers); ordinal++ {
+				peerID := raftv1beta2.MemberID(ordinal)
 				replicas = append(replicas, raftv1.ReplicaConfig{
-					ReplicaID: raftv1.ReplicaID(peer.ReplicaID),
-					Host:      host,
-					Port:      protocolPort,
+					ReplicaID: raftv1.ReplicaID(peerID),
+					Host:      getClusterPodDNSName(cluster, getMemberPodName(cluster, partition, peerID)),
+					Port:      raftPort,
 					Role:      raftv1.ReplicaRole_MEMBER,
 				})
 			}
@@ -325,14 +349,15 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 			defer conn.Close()
 
 			// Bootstrap the member with the initial configuration
-			log.Infof("Boostrapping new shard")
-			client := raftv1.NewNodeClient(conn)
+			log.Infof("Boostrapping member")
+			node := raftv1.NewNodeClient(conn)
 			request := &raftv1.BootstrapShardRequest{
 				ShardID:   raftv1.ShardID(member.Spec.ShardID),
 				ReplicaID: raftv1.ReplicaID(member.Spec.MemberID),
 				Replicas:  replicas,
+				Config:    config,
 			}
-			if _, err := client.BootstrapShard(ctx, request); err != nil {
+			if _, err := node.BootstrapShard(ctx, request); err != nil {
 				err = errors.FromProto(err)
 				if !errors.IsUnavailable(err) && !errors.IsAlreadyExists(err) {
 					log.Warn(err)
@@ -341,8 +366,8 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 					r.events.Eventf(partition, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d member %d: %s", partition.Spec.PartitionID, member.Spec.ReplicaID, err.Error())
 					r.events.Eventf(pod, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d member %d: %s", partition.Spec.PartitionID, member.Spec.ReplicaID, err.Error())
 					r.events.Eventf(member, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d: %s", partition.Spec.PartitionID, err.Error())
-					return false, err
 				}
+				return false, err
 			} else {
 				r.events.Eventf(store, "Normal", "Bootstrapped", "Bootstrapped partition %d member %d", partition.Spec.PartitionID, member.Spec.ReplicaID)
 				r.events.Eventf(cluster, "Normal", "Bootstrapped", "Bootstrapped partition %d member %d", partition.Spec.PartitionID, member.Spec.ReplicaID)
@@ -356,11 +381,20 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 				return false, logError(log, err)
 			}
 			return true, nil
-		case raftv1beta2.RaftJoin:
-			// Loop through the list of peers and attempt to add the member to the Raft group until successful
+		} else {
+			// Loop through the members in the partition and attempt to add the member to the Raft group until successful
+			options := &client.ListOptions{
+				Namespace:     member.Namespace,
+				LabelSelector: labels.SelectorFromSet(newPartitionSelector(partition)),
+			}
+			peers := &raftv1beta2.RaftMemberList{}
+			if err := r.client.List(ctx, peers, options); err != nil {
+				return false, logError(log, err)
+			}
+
 			var returnErr error
-			for _, peer := range member.Spec.Config.Peers {
-				if ok, err := r.tryAddMember(ctx, log, store, cluster, partition, member, peer); err != nil {
+			for _, peer := range peers.Items {
+				if ok, err := r.tryAddMember(ctx, log, store, cluster, partition, member, &peer); err != nil {
 					returnErr = err
 				} else if ok {
 					if pod.Status.PodIP == "" {
@@ -383,8 +417,11 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 					request := &raftv1.JoinShardRequest{
 						ShardID:   raftv1.ShardID(member.Spec.ShardID),
 						ReplicaID: raftv1.ReplicaID(member.Spec.MemberID),
+						Config:    config,
 					}
-					if _, err := client.JoinShard(ctx, request); err != nil {
+					_, err = client.JoinShard(ctx, request)
+					_ = conn.Close()
+					if err != nil {
 						err = errors.FromProto(err)
 						if !errors.IsUnavailable(err) && !errors.IsAlreadyExists(err) {
 							log.Warn(err)
@@ -393,9 +430,8 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 							r.events.Eventf(partition, "Warning", "JoinFailed", "Failed to join member %d to partition %d: %s", member.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
 							r.events.Eventf(pod, "Warning", "JoinFailed", "Failed to join member %d to partition %d: %s", member.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
 							r.events.Eventf(member, "Warning", "JoinFailed", "Failed to join partition %d: %s", partition.Spec.PartitionID, err.Error())
-							_ = conn.Close()
-							return false, err
 						}
+						return false, err
 					} else {
 						r.events.Eventf(store, "Normal", "Joined", "Joined member %d to partition %d", member.Spec.ReplicaID, partition.Spec.PartitionID)
 						r.events.Eventf(cluster, "Normal", "Joined", "Joined member %d to partition %d", member.Spec.ReplicaID, partition.Spec.PartitionID)
@@ -403,7 +439,6 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 						r.events.Eventf(pod, "Normal", "Joined", "Joined member %d to partition %d", member.Spec.ReplicaID, partition.Spec.PartitionID)
 						r.events.Eventf(member, "Normal", "Joined", "Joined partition %d", partition.Spec.PartitionID)
 					}
-					_ = conn.Close()
 
 					member.Status.Version = &containerVersion
 					if err := r.client.Status().Update(ctx, member); err != nil {
@@ -418,11 +453,11 @@ func (r *RaftMemberReconciler) addMember(ctx context.Context, log logging.Logger
 	return false, nil
 }
 
-func (r *RaftMemberReconciler) tryAddMember(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, member *raftv1beta2.RaftMember, peer raftv1beta2.RaftMemberReference) (bool, error) {
+func (r *RaftMemberReconciler) tryAddMember(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, member *raftv1beta2.RaftMember, peer *raftv1beta2.RaftMember) (bool, error) {
 	pod := &corev1.Pod{}
 	podName := types.NamespacedName{
 		Namespace: member.Namespace,
-		Name:      peer.Pod.Name,
+		Name:      peer.Spec.Pod.Name,
 	}
 	if err := r.client.Get(ctx, podName, pod); err != nil {
 		return false, logWarn(log, err)
@@ -462,7 +497,7 @@ func (r *RaftMemberReconciler) tryAddMember(ctx context.Context, log logging.Log
 		Replica: raftv1.ReplicaConfig{
 			ReplicaID: raftv1.ReplicaID(member.Spec.MemberID),
 			Host:      getClusterPodDNSName(cluster, member.Spec.Pod.Name),
-			Port:      protocolPort,
+			Port:      raftPort,
 		},
 		Version: getConfigResponse.Shard.Version,
 	}
@@ -494,8 +529,13 @@ func (r *RaftMemberReconciler) removeMember(ctx context.Context, log logging.Log
 		if err := r.client.Status().Update(ctx, member); err != nil {
 			return false, logError(log, err)
 		}
+		log.Infow("RaftMember status changed", logging.String("Status", string(member.Status.State)))
 		r.events.Eventf(member, "Normal", "StateChanged", "State changed to %s", member.Status.State)
 		return true, nil
+	}
+
+	if pod.Status.PodIP == "" {
+		return false, nil
 	}
 
 	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
@@ -511,11 +551,11 @@ func (r *RaftMemberReconciler) removeMember(ctx context.Context, log logging.Log
 
 	// Shutdown the group member.
 	log.Infof("Stopping replica")
-	client := raftv1.NewNodeClient(conn)
+	node := raftv1.NewNodeClient(conn)
 	request := &raftv1.LeaveShardRequest{
 		ShardID: raftv1.ShardID(member.Spec.ShardID),
 	}
-	if _, err := client.LeaveShard(ctx, request); err != nil {
+	if _, err := node.LeaveShard(ctx, request); err != nil {
 		err = errors.FromProto(err)
 		if !errors.IsUnavailable(err) {
 			log.Warn(err)
@@ -523,9 +563,18 @@ func (r *RaftMemberReconciler) removeMember(ctx context.Context, log logging.Log
 	}
 
 	// Loop through the list of peers and attempt to remove the member from the Raft group until successful
+	options := &client.ListOptions{
+		Namespace:     member.Namespace,
+		LabelSelector: labels.SelectorFromSet(newPartitionSelector(partition)),
+	}
+	peers := &raftv1beta2.RaftMemberList{}
+	if err := r.client.List(ctx, peers, options); err != nil {
+		return false, logError(log, err)
+	}
+
 	var returnErr error
-	for _, peer := range member.Spec.Config.Peers {
-		if ok, err := r.tryRemoveMember(ctx, log, store, cluster, partition, member, peer); err != nil {
+	for _, peer := range peers.Items {
+		if ok, err := r.tryRemoveMember(ctx, log, store, cluster, partition, member, &peer); err != nil {
 			returnErr = err
 		} else if ok {
 			return true, nil
@@ -534,14 +583,18 @@ func (r *RaftMemberReconciler) removeMember(ctx context.Context, log logging.Log
 	return false, returnErr
 }
 
-func (r *RaftMemberReconciler) tryRemoveMember(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, member *raftv1beta2.RaftMember, peer raftv1beta2.RaftMemberReference) (bool, error) {
+func (r *RaftMemberReconciler) tryRemoveMember(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, member *raftv1beta2.RaftMember, peer *raftv1beta2.RaftMember) (bool, error) {
 	pod := &corev1.Pod{}
 	podName := types.NamespacedName{
 		Namespace: member.Namespace,
-		Name:      peer.Pod.Name,
+		Name:      peer.Spec.Pod.Name,
 	}
 	if err := r.client.Get(ctx, podName, pod); err != nil {
 		return false, logWarn(log, err)
+	}
+
+	if pod.Status.PodIP == "" {
+		return false, nil
 	}
 
 	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
