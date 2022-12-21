@@ -8,6 +8,7 @@ import (
 	"context"
 	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
+	"github.com/gogo/protobuf/jsonpb"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -137,7 +138,8 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			Routes: routes,
 		}
 
-		configBytes, err := yaml.Marshal(config)
+		marshaler := &jsonpb.Marshaler{}
+		configString, err := marshaler.MarshalToString(&config)
 		if err != nil {
 			log.Error(err)
 			return reconcile.Result{}, err
@@ -155,7 +157,7 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 				Name:      profile.Name,
 			},
 			Data: map[string]string{
-				configFile:  string(configBytes),
+				configFile:  configString,
 				loggingFile: string(loggingBytes),
 			},
 		}
