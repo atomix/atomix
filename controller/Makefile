@@ -13,10 +13,10 @@ endif
 build: build-controller build-controller-init
 
 build-controller:
-	docker build . -t atomix/controller:latest -f build/Dockerfile
+	docker build . -t atomix/controller:latest -f build/Dockerfile-controller
 
 build-controller-init:
-	docker build . -t atomix/controller-init:latest -f build/init.Dockerfile
+	docker build . -t atomix/controller-init:latest -f build/Dockerfile-init
 
 .PHONY: test
 test:
