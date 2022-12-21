@@ -53,7 +53,7 @@ spec:
               value: {{ .Values.node.image.pullPolicy | quote }}
           volumeMounts:
             - name: config
-              mountPath: /etc/atomix/config
+              mountPath: /etc/atomix
               readOnly: true
       volumes:
         - name: config

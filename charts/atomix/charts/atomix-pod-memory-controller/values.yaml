@@ -13,3 +13,10 @@ controller:
     # TODO: Revert pull policy to default for patch releases or Always for for minor releases
     pullPolicy: IfNotPresent
     pullSecrets: []
+
+logging:
+  rootLevel: info
+  encoding: console
+  loggers:
+    github.com/atomix/atomix/runtime/pkg/grpc/retry:
+      level: error

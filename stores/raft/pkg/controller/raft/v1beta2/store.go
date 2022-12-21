@@ -264,17 +264,18 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 
 	var config rsmv1.ProtocolConfig
 	for _, partition := range partitions {
+		memberAddresses := make(map[raftv1beta2.MemberID]string)
+		for ordinal := 1; ordinal <= int(partition.Spec.Replicas); ordinal++ {
+			memberID := raftv1beta2.MemberID(ordinal)
+			memberAddresses[memberID] = fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, getMemberPodName(cluster, partition, memberID)), apiPort)
+		}
+
 		var leader string
 		if partition.Status.Leader != nil {
-			memberName := types.NamespacedName{
-				Namespace: partition.Namespace,
-				Name:      fmt.Sprintf("%s-%d-%d", store.Name, partition.Spec.PartitionID, *partition.Status.Leader),
+			if address, ok := memberAddresses[*partition.Status.Leader]; ok {
+				leader = address
+				delete(memberAddresses, *partition.Status.Leader)
 			}
-			member := &raftv1beta2.RaftMember{}
-			if err := r.client.Get(ctx, memberName, member); err != nil {
-				return false, logError(log, err)
-			}
-			leader = fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, member.Spec.Pod.Name), apiPort)
 		}
 
 		followers := make([]string, 0, len(partition.Status.Followers))
@@ -287,7 +288,14 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 			if err := r.client.Get(ctx, memberName, member); err != nil {
 				return false, logError(log, err)
 			}
-			followers = append(followers, fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, member.Spec.Pod.Name), apiPort))
+			if address, ok := memberAddresses[memberID]; ok {
+				followers = append(followers, address)
+				delete(memberAddresses, memberID)
+			}
+		}
+
+		for _, address := range memberAddresses {
+			followers = append(followers, address)
 		}
 
 		config.Partitions = append(config.Partitions, rsmv1.PartitionConfig{

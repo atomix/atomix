@@ -23,10 +23,6 @@ import (
 
 var log = logging.GetLogger()
 
-func init() {
-	logging.SetLevel(logging.InfoLevel)
-}
-
 func main() {
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
 	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))

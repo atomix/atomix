@@ -7,14 +7,15 @@ kind: ConfigMap
 metadata:
   name: {{ template "atomix-raft-controller.fullname" . }}-config
 data:
-  logging.yaml: |-
+  logging.yaml:  |-
     loggers:
       root:
-        level: debug
+        level: {{ .Values.logging.rootLevel }}
         output:
           stdout:
             sink: stdout
+{{ toYaml .Values.logging.loggers | indent 6 }}
     sinks:
       stdout:
-        type: stdout
+        encoding: {{ .Values.logging.encoding }}
         stdout: {}
