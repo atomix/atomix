@@ -10,6 +10,7 @@ import (
 	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
 	"github.com/atomix/atomix/runtime/pkg/errors"
+	"github.com/atomix/atomix/runtime/pkg/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	corev1 "k8s.io/api/core/v1"
@@ -114,7 +115,8 @@ type PodReconciler struct {
 
 // Reconcile reconciles StorageProfile resources
 func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log.Infof("Reconciling Pod '%s'", request.NamespacedName)
+	log := log.WithFields(logging.String("Pod", request.NamespacedName.String()))
+	log.Debug("Reconciling Pod")
 	pod := &corev1.Pod{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, pod)
 	if err != nil {
@@ -134,6 +136,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 		Namespace: pod.Namespace,
 		Name:      profileName,
 	}
+	log = log.WithFields(logging.String("StorageProfile", profileNamespacedName.String()))
 	profile := &atomixv3beta3.StorageProfile{}
 	if err := r.client.Get(ctx, profileNamespacedName, profile); err != nil {
 		if !k8serrors.IsNotFound(err) {
@@ -143,7 +146,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 		return reconcile.Result{}, nil
 	}
 
-	if ok, err := r.reconcileProfile(ctx, pod, profile); err != nil {
+	if ok, err := r.reconcileProfile(ctx, log, pod, profile); err != nil {
 		return reconcile.Result{}, err
 	} else if ok {
 		return reconcile.Result{Requeue: true}, nil
@@ -151,7 +154,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 	return reconcile.Result{}, nil
 }
 
-func (r *PodReconciler) reconcileProfile(ctx context.Context, pod *corev1.Pod, profile *atomixv3beta3.StorageProfile) (bool, error) {
+func (r *PodReconciler) reconcileProfile(ctx context.Context, log logging.Logger, pod *corev1.Pod, profile *atomixv3beta3.StorageProfile) (bool, error) {
 	ready := true
 
 	// Get the profile's pod status
@@ -159,6 +162,7 @@ func (r *PodReconciler) reconcileProfile(ctx context.Context, pod *corev1.Pod, p
 
 	// If the pod resource version has changed, reset all the Connected routes to the Configuring state
 	if podStatus.ResourceVersion != pod.ResourceVersion {
+		log.Debug("Pod status changed; verifying proxy connections to all stores...")
 		for i, routeStatus := range podStatus.Proxy.Routes {
 			switch routeStatus.State {
 			case atomixv3beta3.RouteConnected:
@@ -167,7 +171,7 @@ func (r *PodReconciler) reconcileProfile(ctx context.Context, pod *corev1.Pod, p
 			podStatus.Proxy.Routes[i] = routeStatus
 		}
 		podStatus.ResourceVersion = pod.ResourceVersion
-		if err := r.setPodStatus(ctx, profile, podStatus); err != nil {
+		if err := r.setPodStatus(ctx, log, profile, podStatus); err != nil {
 			log.Error(err)
 			return false, err
 		}
@@ -176,42 +180,33 @@ func (r *PodReconciler) reconcileProfile(ctx context.Context, pod *corev1.Pod, p
 
 	// Iterate through the profile's bindings and inject the routes into the pod
 	for _, binding := range profile.Spec.Bindings {
-		var routeStatus *atomixv3beta3.RouteStatus
-		var routeIndex int
+		routeStatus := atomixv3beta3.RouteStatus{
+			Store: binding.Store,
+		}
+		var routeIndex *int
 		for i, rs := range podStatus.Proxy.Routes {
 			if rs.Store.Namespace == binding.Store.Namespace && rs.Store.Name == binding.Store.Name {
-				routeStatus = &rs
-				routeIndex = i
+				routeStatus = rs
+				routeIndex = &i
 				break
 			}
 		}
-		if routeStatus == nil {
-			podStatus.Proxy.Routes = append(podStatus.Proxy.Routes, atomixv3beta3.RouteStatus{
-				Store: binding.Store,
-				State: atomixv3beta3.RoutePending,
-			})
-			if err := r.setPodStatus(ctx, profile, podStatus); err != nil {
-				log.Error(err)
-				return false, err
-			}
-			if updated, err := r.setReadyCondition(ctx, pod, corev1.ConditionFalse, "RouteNotConnected", fmt.Sprintf("Route to '%s' is not connected", binding.Store.Name)); err != nil {
-				log.Error(err)
-				return updated, err
-			}
-			return true, nil
-		}
 
-		if updated, err := r.reconcileRoute(ctx, pod, &binding, routeStatus); err != nil {
+		if updated, err := r.reconcileRoute(ctx, log, pod, &binding, &routeStatus); err != nil {
 			return false, err
 		} else if updated {
-			podStatus.Proxy.Routes[routeIndex] = *routeStatus
-			if err := r.setPodStatus(ctx, profile, podStatus); err != nil {
+			if routeIndex == nil {
+				podStatus.Proxy.Routes = append(podStatus.Proxy.Routes, routeStatus)
+			} else {
+				podStatus.Proxy.Routes[*routeIndex] = routeStatus
+			}
+			if err := r.setPodStatus(ctx, log, profile, podStatus); err != nil {
 				log.Error(err)
 				return false, err
 			}
 			switch routeStatus.State {
 			case atomixv3beta3.RouteConnecting, atomixv3beta3.RouteDisconnected:
-				if ok, err := r.setReadyCondition(ctx, pod, corev1.ConditionFalse, "RouteNotConnected", fmt.Sprintf("Route to '%s' is not connected", binding.Store.Name)); err != nil {
+				if ok, err := r.setReadyCondition(ctx, log, pod, corev1.ConditionFalse, "RouteNotConnected", fmt.Sprintf("Route to '%s' is not connected", binding.Store.Name)); err != nil {
 					log.Error(err)
 					return ok, err
 				}
@@ -226,12 +221,12 @@ func (r *PodReconciler) reconcileProfile(ctx context.Context, pod *corev1.Pod, p
 	}
 
 	if ready {
-		return r.setReadyCondition(ctx, pod, corev1.ConditionTrue, "RoutesConnected", "")
+		return r.setReadyCondition(ctx, log, pod, corev1.ConditionTrue, "RoutesConnected", "")
 	}
 	return false, nil
 }
 
-func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, binding *atomixv3beta3.Binding, status *atomixv3beta3.RouteStatus) (bool, error) {
+func (r *PodReconciler) reconcileRoute(ctx context.Context, log logging.Logger, pod *corev1.Pod, binding *atomixv3beta3.Binding, status *atomixv3beta3.RouteStatus) (bool, error) {
 	storeNamespace := binding.Store.Namespace
 	if storeNamespace == "" {
 		storeNamespace = pod.Namespace
@@ -241,6 +236,10 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 		Name:      binding.Store.Name,
 	}
 
+	log = log.WithFields(logging.String("DataStore", storeNamespacedName.String()))
+
+	log.Debug("Reconciling profile binding")
+
 	// If the route is ready but the store has been removed, disconnect the route
 	store := &atomixv3beta3.DataStore{}
 	if err := r.client.Get(ctx, storeNamespacedName, store); err != nil {
@@ -249,12 +248,11 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 			return false, err
 		}
 
-		if status.State == atomixv3beta3.RoutePending {
-			return false, nil
-		}
-
 		switch status.State {
+		case atomixv3beta3.RoutePending:
+			return false, nil
 		case atomixv3beta3.RouteConnecting, atomixv3beta3.RouteConnected, atomixv3beta3.RouteConfiguring:
+			log.Info("DataStore not found; disconnecting proxy...")
 			status.State = atomixv3beta3.RouteDisconnecting
 			return true, nil
 		case atomixv3beta3.RouteDisconnecting:
@@ -282,21 +280,25 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 			}
 
 			r.events.Eventf(pod, "Normal", "DisconnectedStore", "Successfully disconnected from store '%s'", storeNamespacedName)
+			log.Info("Disconnected proxy")
 			status.State = atomixv3beta3.RouteDisconnected
 			status.Version = ""
+			return true, nil
+		default:
+			status.State = atomixv3beta3.RoutePending
 			return true, nil
 		}
 	}
 
-	if status.State == atomixv3beta3.RoutePending {
+	switch status.State {
+	case atomixv3beta3.RoutePending:
+		log.Info("Connecting proxy to store")
 		status.State = atomixv3beta3.RouteConnecting
 		status.Version = store.ResourceVersion
 		return true, nil
-	}
-
-	switch status.State {
 	case atomixv3beta3.RouteConnecting:
 		if status.Version != store.ResourceVersion {
+			log.Debug("DataStore configuration changed; reconfiguring proxy...")
 			status.Version = store.ResourceVersion
 			return true, nil
 		}
@@ -332,16 +334,19 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 		}
 
 		r.events.Eventf(pod, "Normal", "ConnectedStore", "Successfully connected to store '%s'", storeNamespacedName)
+		log.Info("Proxy connected")
 		status.State = atomixv3beta3.RouteConnected
 		return true, nil
 	case atomixv3beta3.RouteConnected:
 		if status.Version != store.ResourceVersion {
+			log.Debug("DataStore configuration changed; reconfiguring proxy...")
 			status.State = atomixv3beta3.RouteConfiguring
 			status.Version = store.ResourceVersion
 			return true, nil
 		}
 	case atomixv3beta3.RouteConfiguring:
 		if status.Version != store.ResourceVersion {
+			log.Debug("DataStore configuration changed; reconfiguring proxy...")
 			status.Version = store.ResourceVersion
 			return true, nil
 		}
@@ -371,16 +376,17 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, pod *corev1.Pod, bin
 				return false, err
 			}
 			// If the proxy returned a NotFound error, set the route to Connecting to establish the connection.
+			log.Warn("Proxy not connected; connecting...")
 			status.State = atomixv3beta3.RouteConnecting
 			return true, nil
 		}
-		r.events.Eventf(pod, "Normal", "ConfiguredStore", "Configured store '%s'", storeNamespacedName)
 
+		r.events.Eventf(pod, "Normal", "ConfiguredStore", "Configured store '%s'", storeNamespacedName)
+		log.Info("Proxy configured")
 		status.State = atomixv3beta3.RouteConnected
 		return true, nil
 	default:
-		status.State = atomixv3beta3.RouteConnecting
-		status.Version = store.ResourceVersion
+		status.State = atomixv3beta3.RoutePending
 		return true, nil
 	}
 	return false, nil
@@ -402,28 +408,30 @@ func (r *PodReconciler) getPodStatus(profile *atomixv3beta3.StorageProfile, pod 
 	}
 }
 
-func (r *PodReconciler) setPodStatus(ctx context.Context, profile *atomixv3beta3.StorageProfile, status atomixv3beta3.PodStatus) error {
+func (r *PodReconciler) setPodStatus(ctx context.Context, log logging.Logger, profile *atomixv3beta3.StorageProfile, status atomixv3beta3.PodStatus) error {
 	for i, podStatus := range profile.Status.PodStatuses {
 		if podStatus.Name == status.Name {
-			log.Infof("Updating StorageProfile %s PodStatus %s", getNamespacedName(profile), status)
+			log.Infof("Updating StorageProfile %s PodStatus %s", status)
 			profile.Status.PodStatuses[i] = status
 			return r.client.Status().Update(ctx, profile)
 		}
 	}
 
-	log.Infof("Initializing StorageProfile %s PodStatus %s", getNamespacedName(profile), status)
+	log.Infow("Initializing Pod status in StorageProfile")
 	profile.Status.PodStatuses = append(profile.Status.PodStatuses, status)
 	return r.client.Status().Update(ctx, profile)
 }
 
-func (r *PodReconciler) setReadyCondition(ctx context.Context, pod *corev1.Pod, status corev1.ConditionStatus, reason string, message string) (bool, error) {
+func (r *PodReconciler) setReadyCondition(ctx context.Context, log logging.Logger, pod *corev1.Pod, status corev1.ConditionStatus, reason string, message string) (bool, error) {
 	for i, condition := range pod.Status.Conditions {
 		if condition.Type == proxyReadyCondition {
 			if condition.Status == status && condition.Reason == reason {
 				return false, nil
 			}
-			log.Infof("Updating Pod %s condition: status=%s, reason=%s, message=%s",
-				types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, status, reason, message)
+			log.Infow("Updating Pod condition",
+				logging.String("Status", string(status)),
+				logging.String("Reason", reason),
+				logging.String("Message", message))
 			if condition.Status != status {
 				condition.LastTransitionTime = metav1.Now()
 			}
@@ -435,8 +443,10 @@ func (r *PodReconciler) setReadyCondition(ctx context.Context, pod *corev1.Pod, 
 		}
 	}
 
-	log.Infof("Initializing Pod %s condition: status=%s, reason=%s, message=%s",
-		types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, status, reason, message)
+	log.Infow("Initializing Pod condition",
+		logging.String("Status", string(status)),
+		logging.String("Reason", reason),
+		logging.String("Message", message))
 	pod.Status.Conditions = append(pod.Status.Conditions, corev1.PodCondition{
 		Type:               proxyReadyCondition,
 		Status:             status,

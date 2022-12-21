@@ -32,7 +32,6 @@ spec:
               description: |-
                 The specification for the cluster.
               type: object
-              default: {}
               properties:
                 replicas:
                   type: integer

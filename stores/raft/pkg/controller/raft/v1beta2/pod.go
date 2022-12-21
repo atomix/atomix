@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/grpc/retry"
+	"github.com/atomix/atomix/runtime/pkg/logging"
 	raftv1 "github.com/atomix/atomix/stores/raft/pkg/api/v1"
 	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
@@ -73,37 +74,40 @@ type PodReconciler struct {
 // Reconcile reads that state of the cluster for a Store object and makes changes based on the state read
 // and what is in the Store.Spec
 func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log.Info("Reconcile Pod")
+	log := log.WithFields(logging.String("Pod", request.NamespacedName.String()))
+	log.Debug("Reconciling Pod")
+
 	pod := &corev1.Pod{}
 	err := r.client.Get(ctx, request.NamespacedName, pod)
 	if err != nil {
-		log.Error(err, "Reconcile Pod")
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
+		log.Error(err)
 		return reconcile.Result{}, err
 	}
 
 	if pod.DeletionTimestamp != nil {
-		if err := r.reconcileDelete(ctx, pod); err != nil {
+		if err := r.reconcileDelete(ctx, log, pod); err != nil {
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.reconcileCreate(ctx, pod); err != nil {
+	if err := r.reconcileCreate(ctx, log, pod); err != nil {
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
 }
 
-func (r *PodReconciler) reconcileCreate(ctx context.Context, pod *corev1.Pod) error {
+func (r *PodReconciler) reconcileCreate(ctx context.Context, log logging.Logger, pod *corev1.Pod) error {
 	cluster, ok := pod.Annotations[raftClusterKey]
 	if !ok {
 		return nil
 	}
 
 	if !hasFinalizer(pod, podKey) {
+		log.Infof("Adding %s finalizer", podKey)
 		addFinalizer(pod, podKey)
 		if err := r.client.Update(ctx, pod); err != nil {
 			return err
@@ -116,13 +120,13 @@ func (r *PodReconciler) reconcileCreate(ctx context.Context, pod *corev1.Pod) er
 		Namespace: pod.Namespace,
 		Name:      cluster,
 	}
-	if err := r.watch(clusterName, address); err != nil {
+	if err := r.watch(log, clusterName, address); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *PodReconciler) reconcileDelete(ctx context.Context, pod *corev1.Pod) error {
+func (r *PodReconciler) reconcileDelete(ctx context.Context, log logging.Logger, pod *corev1.Pod) error {
 	if !hasFinalizer(pod, podKey) {
 		return nil
 	}
@@ -132,6 +136,7 @@ func (r *PodReconciler) reconcileDelete(ctx context.Context, pod *corev1.Pod) er
 		return err
 	}
 
+	log.Infof("Removing %s finalizer", podKey)
 	removeFinalizer(pod, podKey)
 	if err := r.client.Update(ctx, pod); err != nil {
 		return err
@@ -139,7 +144,9 @@ func (r *PodReconciler) reconcileDelete(ctx context.Context, pod *corev1.Pod) er
 	return nil
 }
 
-func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) error {
+func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedName, address string) error {
+	log = log.WithFields(logging.String("Address", address))
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -157,7 +164,7 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 			r.mu.Unlock()
 		}()
 
-		log.Infof("Creating new Watch for %s", address)
+		log.Info("Creating new Watch")
 		conn, err := grpc.Dial(
 			address,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -179,22 +186,22 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 		for {
 			event, err := stream.Recv()
 			if err == io.EOF {
-				log.Debugf("Watch for %s complete", address)
+				log.Debug("Watch complete")
 				return
 			}
 			if err != nil {
 				err = errors.FromProto(err)
 				if errors.IsCanceled(err) {
-					log.Warnf("Watch for %s canceled", address)
+					log.Warnf("Watch canceled")
 					return
 				}
 				log.Error(err)
 			} else {
-				log.Infof("Received event %+v from %s", event, address)
+				log.Infow("Received event", logging.Stringer("Event", event))
 				timestamp := metav1.NewTime(event.Timestamp)
 				switch e := event.Event.(type) {
 				case *raftv1.Event_ReplicaReady:
-					r.recordMemberEvent(ctx, clusterName, e.ReplicaReady.ShardID, e.ReplicaReady.ReplicaID,
+					r.recordMemberEvent(ctx, log, clusterName, e.ReplicaReady.ShardID, e.ReplicaReady.ReplicaID,
 						func(status *raftv1beta2.RaftMemberStatus) bool {
 							if status.State != raftv1beta2.RaftMemberReady {
 								status.State = raftv1beta2.RaftMemberReady
@@ -205,9 +212,9 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 						}, func(member *raftv1beta2.RaftMember) {
 							r.events.Eventf(member, "Normal", "StateChanged", "Member is ready")
 						})
-					r.recordPartitionEvent(ctx, clusterName, e.ReplicaReady.ShardID,
+					r.recordPartitionEvent(ctx, log, clusterName, e.ReplicaReady.ShardID,
 						func(status *raftv1beta2.RaftPartitionStatus) bool {
-							member, err := r.getMember(ctx, clusterName, raftv1beta2.ShardID(e.ReplicaReady.ShardID), raftv1beta2.ReplicaID(e.ReplicaReady.ReplicaID))
+							member, err := r.getMember(ctx, log, clusterName, raftv1beta2.ShardID(e.ReplicaReady.ShardID), raftv1beta2.ReplicaID(e.ReplicaReady.ReplicaID))
 							if err != nil {
 								log.Error(err)
 								return false
@@ -224,7 +231,7 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 							return true
 						}, func(group *raftv1beta2.RaftPartition) {})
 				case *raftv1.Event_LeaderUpdated:
-					r.recordMemberEvent(ctx, clusterName, e.LeaderUpdated.ShardID, e.LeaderUpdated.ReplicaID,
+					r.recordMemberEvent(ctx, log, clusterName, e.LeaderUpdated.ShardID, e.LeaderUpdated.ReplicaID,
 						func(status *raftv1beta2.RaftMemberStatus) bool {
 							term := uint64(e.LeaderUpdated.Term)
 							if status.Term == nil || *status.Term < term || (*status.Term == term && status.Leader == nil && e.LeaderUpdated.Leader != 0) {
@@ -232,7 +239,7 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 								if e.LeaderUpdated.Leader == 0 {
 									status.Leader = nil
 								} else {
-									leader, err := r.getMember(ctx, clusterName, raftv1beta2.ShardID(e.LeaderUpdated.ShardID), raftv1beta2.ReplicaID(e.LeaderUpdated.Leader))
+									leader, err := r.getMember(ctx, log, clusterName, raftv1beta2.ShardID(e.LeaderUpdated.ShardID), raftv1beta2.ReplicaID(e.LeaderUpdated.Leader))
 									if err != nil {
 										log.Error(err)
 										return false
@@ -253,13 +260,13 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 								r.events.Eventf(member, "Normal", "ElectedLeader", "Elected leader for term %d", e.LeaderUpdated.Term)
 							}
 						})
-					r.recordPartitionEvent(ctx, clusterName, e.LeaderUpdated.ShardID,
+					r.recordPartitionEvent(ctx, log, clusterName, e.LeaderUpdated.ShardID,
 						func(status *raftv1beta2.RaftPartitionStatus) bool {
 							term := uint64(e.LeaderUpdated.Term)
 							if status.Term == nil || *status.Term < term || (*status.Term == term && status.Leader == nil && e.LeaderUpdated.Leader != 0) {
 								var leaderID *raftv1beta2.MemberID
 								if e.LeaderUpdated.Leader != 0 {
-									leader, err := r.getMember(ctx, clusterName, raftv1beta2.ShardID(e.LeaderUpdated.ShardID), raftv1beta2.ReplicaID(e.LeaderUpdated.Leader))
+									leader, err := r.getMember(ctx, log, clusterName, raftv1beta2.ShardID(e.LeaderUpdated.ShardID), raftv1beta2.ReplicaID(e.LeaderUpdated.Leader))
 									if err != nil {
 										return false
 									}
@@ -288,14 +295,14 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 							}
 						})
 				case *raftv1.Event_ConfigurationChanged:
-					r.recordMemberEvent(ctx, clusterName, e.ConfigurationChanged.ShardID, e.ConfigurationChanged.ReplicaID,
+					r.recordMemberEvent(ctx, log, clusterName, e.ConfigurationChanged.ShardID, e.ConfigurationChanged.ReplicaID,
 						func(status *raftv1beta2.RaftMemberStatus) bool {
 							return true
 						}, func(member *raftv1beta2.RaftMember) {
 							r.events.Eventf(member, "Normal", "MembershipChanged", "Membership changed")
 						})
 				case *raftv1.Event_SendSnapshotStarted:
-					r.recordMemberEvent(ctx, clusterName, e.SendSnapshotStarted.ShardID, e.SendSnapshotStarted.ReplicaID,
+					r.recordMemberEvent(ctx, log, clusterName, e.SendSnapshotStarted.ShardID, e.SendSnapshotStarted.ReplicaID,
 						func(status *raftv1beta2.RaftMemberStatus) bool {
 							return true
 						}, func(member *raftv1beta2.RaftMember) {
@@ -303,7 +310,7 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 								e.SendSnapshotStarted.Index, clusterName.Name, e.SendSnapshotStarted.ShardID, e.SendSnapshotStarted.To)
 						})
 				case *raftv1.Event_SendSnapshotCompleted:
-					r.recordMemberEvent(ctx, clusterName, e.SendSnapshotCompleted.ShardID, e.SendSnapshotCompleted.ReplicaID,
+					r.recordMemberEvent(ctx, log, clusterName, e.SendSnapshotCompleted.ShardID, e.SendSnapshotCompleted.ReplicaID,
 						func(status *raftv1beta2.RaftMemberStatus) bool {
 							return true
 						}, func(member *raftv1beta2.RaftMember) {
@@ -311,7 +318,7 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 								e.SendSnapshotCompleted.Index, clusterName.Name, e.SendSnapshotCompleted.ShardID, e.SendSnapshotCompleted.To)
 						})
 				case *raftv1.Event_SendSnapshotAborted:
-					r.recordMemberEvent(ctx, clusterName, e.SendSnapshotAborted.ShardID, e.SendSnapshotAborted.ReplicaID,
+					r.recordMemberEvent(ctx, log, clusterName, e.SendSnapshotAborted.ShardID, e.SendSnapshotAborted.ReplicaID,
 						func(status *raftv1beta2.RaftMemberStatus) bool {
 							return true
 						}, func(member *raftv1beta2.RaftMember) {
@@ -320,7 +327,7 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 						})
 				case *raftv1.Event_SnapshotReceived:
 					index := uint64(e.SnapshotReceived.Index)
-					r.recordMemberEvent(ctx, clusterName, e.SnapshotReceived.ShardID, e.SnapshotReceived.ReplicaID,
+					r.recordMemberEvent(ctx, log, clusterName, e.SnapshotReceived.ShardID, e.SnapshotReceived.ReplicaID,
 						func(status *raftv1beta2.RaftMemberStatus) bool {
 							if index > 0 && (status.LastSnapshotIndex == nil || index > *status.LastSnapshotIndex) {
 								status.LastUpdated = &timestamp
@@ -335,7 +342,7 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 						})
 				case *raftv1.Event_SnapshotRecovered:
 					index := uint64(e.SnapshotRecovered.Index)
-					r.recordMemberEvent(ctx, clusterName, e.SnapshotRecovered.ShardID, e.SnapshotRecovered.ReplicaID,
+					r.recordMemberEvent(ctx, log, clusterName, e.SnapshotRecovered.ShardID, e.SnapshotRecovered.ReplicaID,
 						func(status *raftv1beta2.RaftMemberStatus) bool {
 							if index > 0 && (status.LastSnapshotIndex == nil || index > *status.LastSnapshotIndex) {
 								status.LastUpdated = &timestamp
@@ -349,7 +356,7 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 						})
 				case *raftv1.Event_SnapshotCreated:
 					index := uint64(e.SnapshotCreated.Index)
-					r.recordMemberEvent(ctx, clusterName, e.SnapshotCreated.ShardID, e.SnapshotCreated.ReplicaID,
+					r.recordMemberEvent(ctx, log, clusterName, e.SnapshotCreated.ShardID, e.SnapshotCreated.ReplicaID,
 						func(status *raftv1beta2.RaftMemberStatus) bool {
 							if index > 0 && (status.LastSnapshotIndex == nil || index > *status.LastSnapshotIndex) {
 								status.LastUpdated = &timestamp
@@ -363,7 +370,7 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 						})
 				case *raftv1.Event_SnapshotCompacted:
 					index := uint64(e.SnapshotCompacted.Index)
-					r.recordMemberEvent(ctx, clusterName, e.SnapshotCompacted.ShardID, e.SnapshotCompacted.ReplicaID,
+					r.recordMemberEvent(ctx, log, clusterName, e.SnapshotCompacted.ShardID, e.SnapshotCompacted.ReplicaID,
 						func(status *raftv1beta2.RaftMemberStatus) bool {
 							if index > 0 && (status.LastSnapshotIndex == nil || index > *status.LastSnapshotIndex) {
 								status.LastUpdated = &timestamp
@@ -376,14 +383,14 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 							r.events.Eventf(member, "Normal", "SnapshotCompacted", "Compacted snapshot at index %d", e.SnapshotCompacted.Index)
 						})
 				case *raftv1.Event_LogCompacted:
-					r.recordMemberEvent(ctx, clusterName, e.LogCompacted.ShardID, e.LogCompacted.ReplicaID,
+					r.recordMemberEvent(ctx, log, clusterName, e.LogCompacted.ShardID, e.LogCompacted.ReplicaID,
 						func(status *raftv1beta2.RaftMemberStatus) bool {
 							return true
 						}, func(member *raftv1beta2.RaftMember) {
 							r.events.Eventf(member, "Normal", "LogCompacted", "Compacted log at index %d", e.LogCompacted.Index)
 						})
 				case *raftv1.Event_LogdbCompacted:
-					r.recordMemberEvent(ctx, clusterName, e.LogdbCompacted.ShardID, e.LogdbCompacted.ReplicaID,
+					r.recordMemberEvent(ctx, log, clusterName, e.LogdbCompacted.ShardID, e.LogdbCompacted.ReplicaID,
 						func(status *raftv1beta2.RaftMemberStatus) bool {
 							return true
 						}, func(member *raftv1beta2.RaftMember) {
@@ -396,7 +403,7 @@ func (r *PodReconciler) watch(clusterName types.NamespacedName, address string) 
 	return nil
 }
 
-func (r *PodReconciler) getMembers(ctx context.Context, clusterName types.NamespacedName, shardID raftv1beta2.ShardID, replicaID raftv1beta2.ReplicaID) ([]raftv1beta2.RaftMember, error) {
+func (r *PodReconciler) getMembers(ctx context.Context, log logging.Logger, clusterName types.NamespacedName, shardID raftv1beta2.ShardID, replicaID raftv1beta2.ReplicaID) ([]raftv1beta2.RaftMember, error) {
 	options := &client.ListOptions{
 		Namespace: clusterName.Namespace,
 		LabelSelector: labels.SelectorFromSet(map[string]string{
@@ -413,8 +420,8 @@ func (r *PodReconciler) getMembers(ctx context.Context, clusterName types.Namesp
 	return members.Items, nil
 }
 
-func (r *PodReconciler) getMember(ctx context.Context, clusterName types.NamespacedName, shardID raftv1beta2.ShardID, replicaID raftv1beta2.ReplicaID) (*raftv1beta2.RaftMember, error) {
-	members, err := r.getMembers(ctx, clusterName, shardID, replicaID)
+func (r *PodReconciler) getMember(ctx context.Context, log logging.Logger, clusterName types.NamespacedName, shardID raftv1beta2.ShardID, replicaID raftv1beta2.ReplicaID) (*raftv1beta2.RaftMember, error) {
+	members, err := r.getMembers(ctx, log, clusterName, shardID, replicaID)
 	if err != nil {
 		return nil, err
 	}
@@ -424,7 +431,7 @@ func (r *PodReconciler) getMember(ctx context.Context, clusterName types.Namespa
 	return &members[0], nil
 }
 
-func (r *PodReconciler) getPartitions(ctx context.Context, clusterName types.NamespacedName, shardID raftv1beta2.ShardID) ([]raftv1beta2.RaftPartition, error) {
+func (r *PodReconciler) getPartitions(ctx context.Context, log logging.Logger, clusterName types.NamespacedName, shardID raftv1beta2.ShardID) ([]raftv1beta2.RaftPartition, error) {
 	options := &client.ListOptions{
 		Namespace: clusterName.Namespace,
 		LabelSelector: labels.SelectorFromSet(map[string]string{
@@ -440,8 +447,8 @@ func (r *PodReconciler) getPartitions(ctx context.Context, clusterName types.Nam
 	return partitions.Items, nil
 }
 
-func (r *PodReconciler) getPartition(ctx context.Context, clusterName types.NamespacedName, shardID raftv1beta2.ShardID) (*raftv1beta2.RaftPartition, error) {
-	partitions, err := r.getPartitions(ctx, clusterName, shardID)
+func (r *PodReconciler) getPartition(ctx context.Context, log logging.Logger, clusterName types.NamespacedName, shardID raftv1beta2.ShardID) (*raftv1beta2.RaftPartition, error) {
+	partitions, err := r.getPartitions(ctx, log, clusterName, shardID)
 	if err != nil {
 		return nil, err
 	}
@@ -452,17 +459,17 @@ func (r *PodReconciler) getPartition(ctx context.Context, clusterName types.Name
 }
 
 func (r *PodReconciler) recordMemberEvent(
-	ctx context.Context, clusterName types.NamespacedName, shardID raftv1.ShardID, replicaID raftv1.ReplicaID,
+	ctx context.Context, log logging.Logger, clusterName types.NamespacedName, shardID raftv1.ShardID, replicaID raftv1.ReplicaID,
 	updater func(*raftv1beta2.RaftMemberStatus) bool, recorder func(*raftv1beta2.RaftMember)) {
 	_ = backoff.Retry(func() error {
-		return r.tryRecordMemberEvent(ctx, clusterName, raftv1beta2.ShardID(shardID), raftv1beta2.ReplicaID(replicaID), updater, recorder)
+		return r.tryRecordMemberEvent(ctx, log, clusterName, raftv1beta2.ShardID(shardID), raftv1beta2.ReplicaID(replicaID), updater, recorder)
 	}, backoff.NewExponentialBackOff())
 }
 
 func (r *PodReconciler) tryRecordMemberEvent(
-	ctx context.Context, clusterName types.NamespacedName, shardID raftv1beta2.ShardID, replicaID raftv1beta2.ReplicaID,
+	ctx context.Context, log logging.Logger, clusterName types.NamespacedName, shardID raftv1beta2.ShardID, replicaID raftv1beta2.ReplicaID,
 	updater func(*raftv1beta2.RaftMemberStatus) bool, recorder func(*raftv1beta2.RaftMember)) error {
-	members, err := r.getMembers(ctx, clusterName, shardID, replicaID)
+	members, err := r.getMembers(ctx, log, clusterName, shardID, replicaID)
 	if err != nil {
 		return err
 	}
@@ -470,10 +477,9 @@ func (r *PodReconciler) tryRecordMemberEvent(
 	for _, member := range members {
 		if updater(&member.Status) {
 			if err := r.client.Status().Update(ctx, &member); err != nil {
-				if k8serrors.IsNotFound(err) {
-					return nil
+				if !k8serrors.IsNotFound(err) {
+					log.Error(err)
 				}
-				log.Error(err)
 				return err
 			}
 			recorder(&member)
@@ -483,17 +489,17 @@ func (r *PodReconciler) tryRecordMemberEvent(
 }
 
 func (r *PodReconciler) recordPartitionEvent(
-	ctx context.Context, clusterName types.NamespacedName, shardID raftv1.ShardID,
+	ctx context.Context, log logging.Logger, clusterName types.NamespacedName, shardID raftv1.ShardID,
 	updater func(status *raftv1beta2.RaftPartitionStatus) bool, recorder func(*raftv1beta2.RaftPartition)) {
 	_ = backoff.Retry(func() error {
-		return r.tryRecordPartitionEvent(ctx, clusterName, raftv1beta2.ShardID(shardID), updater, recorder)
+		return r.tryRecordPartitionEvent(ctx, log, clusterName, raftv1beta2.ShardID(shardID), updater, recorder)
 	}, backoff.NewExponentialBackOff())
 }
 
 func (r *PodReconciler) tryRecordPartitionEvent(
-	ctx context.Context, clusterName types.NamespacedName, shardID raftv1beta2.ShardID,
+	ctx context.Context, log logging.Logger, clusterName types.NamespacedName, shardID raftv1beta2.ShardID,
 	updater func(status *raftv1beta2.RaftPartitionStatus) bool, recorder func(*raftv1beta2.RaftPartition)) error {
-	partitions, err := r.getPartitions(ctx, clusterName, shardID)
+	partitions, err := r.getPartitions(ctx, log, clusterName, shardID)
 	if err != nil {
 		return err
 	}

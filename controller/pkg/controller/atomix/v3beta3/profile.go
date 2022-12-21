@@ -74,14 +74,16 @@ type ProfileReconciler struct {
 
 // Reconcile reconciles StorageProfile resources
 func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log.Infof("Reconciling StorageProfile '%s'", request.NamespacedName)
+	log := log.WithFields(logging.String("StorageProfile", request.NamespacedName.String()))
+	log.Debug("Reconciling StorageProfile")
+
 	profile := &atomixv3beta3.StorageProfile{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, profile)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		log.Error(err)
+		log.Warn(err)
 		return reconcile.Result{}, err
 	}
 
@@ -91,6 +93,8 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			log.Error(err)
 			return reconcile.Result{}, err
 		}
+
+		log.Infof("Creating ConfigMap", logging.String("ConfigMap", request.NamespacedName.String()))
 
 		// Sort the bindings in priority order
 		bindings := profile.Spec.Bindings
@@ -162,7 +166,7 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		loggingConfig := logging.Config{
 			Loggers: map[string]logging.LoggerConfig{
 				rootLoggerName: {
-					Level:  profile.Spec.Proxy.Logging.Level,
+					Level:  &profile.Spec.Proxy.Logging.RootLevel,
 					Output: loggingOutputs,
 				},
 			},

@@ -25,7 +25,6 @@ spec:
       schema:
         openAPIV3Schema:
           type: object
-          default: {}
           properties:
             spec:
               description: |-
@@ -53,11 +52,6 @@ spec:
                 securityContext:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
-                volumeMounts:
-                  type: array
-                  items:
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
                 logging:
                   type: object
                   default: {}

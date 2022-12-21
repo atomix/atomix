@@ -41,7 +41,7 @@ import (
 
 const (
 	driverName    = "SharedMemory"
-	driverVersion = "v1beta1"
+	driverVersion = "v2beta1"
 )
 
 const (
@@ -194,7 +194,7 @@ func (r *SharedMemoryStoreReconciler) addConfigMap(ctx context.Context, store *s
 	loggingConfig := logging.Config{
 		Loggers: map[string]logging.LoggerConfig{
 			rootLoggerName: {
-				Level:  store.Spec.Logging.Level,
+				Level:  &store.Spec.Logging.RootLevel,
 				Output: loggingOutputs,
 			},
 		},

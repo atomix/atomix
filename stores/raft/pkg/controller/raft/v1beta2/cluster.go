@@ -112,61 +112,60 @@ type RaftClusterReconciler struct {
 // Reconcile reads that state of the cluster for a Store object and makes changes based on the state read
 // and what is in the Store.Spec
 func (r *RaftClusterReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log.Info("Reconcile RaftCluster")
+	log := log.WithFields(logging.String("RaftCluster", request.NamespacedName.String()))
+	log.Debug("Reconciling RaftCluster")
+
 	cluster := &raftv1beta2.RaftCluster{}
 	err := r.client.Get(ctx, request.NamespacedName, cluster)
 	if err != nil {
-		log.Error(err, "Reconcile RaftCluster")
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
+		log.Error(err)
 		return reconcile.Result{}, err
 	}
 
-	if err := r.reconcileConfigMap(ctx, cluster); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+	if err := r.reconcileConfigMap(ctx, log, cluster); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err := r.reconcileStatefulSet(ctx, cluster); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+	if err := r.reconcileStatefulSet(ctx, log, cluster); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err := r.reconcileService(ctx, cluster); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+	if err := r.reconcileService(ctx, log, cluster); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err := r.reconcileHeadlessService(ctx, cluster); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+	if err := r.reconcileHeadlessService(ctx, log, cluster); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err := r.reconcileStatus(ctx, cluster); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+	if err := r.reconcileStatus(ctx, log, cluster); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func (r *RaftClusterReconciler) reconcileConfigMap(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
-	log.Info("Reconcile raft protocol config map")
+func (r *RaftClusterReconciler) reconcileConfigMap(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
 	cm := &corev1.ConfigMap{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
 		Name:      cluster.Name,
 	}
-	err := r.client.Get(ctx, name, cm)
-	if err != nil && k8serrors.IsNotFound(err) {
-		err = r.addConfigMap(ctx, cluster)
+	if err := r.client.Get(ctx, name, cm); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			log.Error(err)
+			return err
+		}
+		log.Infow("Creating ConfigMap", logging.Stringer("ConfigMap", name))
+		return r.addConfigMap(ctx, log, cluster)
 	}
-	return err
+	return nil
 }
 
-func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
-	log.Info("Creating raft ConfigMap", "Name", cluster.Name, "Namespace", cluster.Namespace)
+func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
 	sinkName := stdoutSinkName
 	loggingOutputs := map[string]logging.OutputConfig{
 		stdoutSinkName: {
@@ -179,7 +178,7 @@ func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, cluster *raftv
 	loggingConfig := logging.Config{
 		Loggers: map[string]logging.LoggerConfig{
 			rootLoggerName: {
-				Level:  cluster.Spec.Logging.Level,
+				Level:  &cluster.Spec.Logging.RootLevel,
 				Output: loggingOutputs,
 			},
 		},
@@ -207,7 +206,7 @@ func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, cluster *raftv
 
 	raftConfigBytes, err := newNodeConfig(cluster)
 	if err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+		log.Error(err)
 		return err
 	}
 
@@ -225,11 +224,13 @@ func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, cluster *raftv
 	}
 
 	if err := controllerutil.SetControllerReference(cluster, cm, r.scheme); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+		log.Error(err)
 		return err
 	}
 	if err := r.client.Create(ctx, cm); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+		if !k8serrors.IsAlreadyExists(err) {
+			log.Error(err)
+		}
 		return err
 	}
 	return nil
@@ -241,23 +242,24 @@ func newNodeConfig(cluster *raftv1beta2.RaftCluster) ([]byte, error) {
 	return yaml.Marshal(&config)
 }
 
-func (r *RaftClusterReconciler) reconcileStatefulSet(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
-	log.Info("Reconcile raft protocol stateful set")
+func (r *RaftClusterReconciler) reconcileStatefulSet(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
 	statefulSet := &appsv1.StatefulSet{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
 		Name:      cluster.Name,
 	}
-	err := r.client.Get(ctx, name, statefulSet)
-	if err != nil && k8serrors.IsNotFound(err) {
-		err = r.addStatefulSet(ctx, cluster)
+	if err := r.client.Get(ctx, name, statefulSet); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			log.Error(err)
+			return err
+		}
+		log.Infow("Creating StatefulSet", logging.Stringer("StatefulSet", name))
+		return r.addStatefulSet(ctx, log, cluster)
 	}
-	return err
+	return nil
 }
 
-func (r *RaftClusterReconciler) addStatefulSet(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
-	log.Info("Creating raft replicas", "Name", cluster.Name, "Namespace", cluster.Namespace)
-
+func (r *RaftClusterReconciler) addStatefulSet(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
 	image := getImage(cluster)
 	volumes := []corev1.Volume{
 		{
@@ -396,33 +398,36 @@ atomix-raft-node --config %s/%s --api-port %d --raft-host %s-$ordinal.%s.%s.svc.
 	}
 
 	if err := controllerutil.SetControllerReference(cluster, set, r.scheme); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+		log.Error(err)
 		return err
 	}
 	if err := r.client.Create(ctx, set); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+		if !k8serrors.IsAlreadyExists(err) {
+			log.Error(err)
+		}
 		return err
 	}
 	return nil
 }
 
-func (r *RaftClusterReconciler) reconcileService(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
-	log.Info("Reconcile raft protocol service")
+func (r *RaftClusterReconciler) reconcileService(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
 	service := &corev1.Service{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
 		Name:      cluster.Name,
 	}
-	err := r.client.Get(ctx, name, service)
-	if err != nil && k8serrors.IsNotFound(err) {
-		err = r.addService(ctx, cluster)
+	if err := r.client.Get(ctx, name, service); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			log.Error(err)
+			return err
+		}
+		log.Infow("Creating Service", logging.Stringer("Service", name))
+		return r.addService(ctx, log, cluster)
 	}
-	return err
+	return nil
 }
 
-func (r *RaftClusterReconciler) addService(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
-	log.Info("Creating raft service", "Name", cluster.Name, "Namespace", cluster.Namespace)
-
+func (r *RaftClusterReconciler) addService(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        cluster.Name,
@@ -446,33 +451,36 @@ func (r *RaftClusterReconciler) addService(ctx context.Context, cluster *raftv1b
 	}
 
 	if err := controllerutil.SetControllerReference(cluster, service, r.scheme); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+		log.Error(err)
 		return err
 	}
 	if err := r.client.Create(ctx, service); err != nil {
-		log.Error(err, "Reconcile RaftPRaftClusterartition")
+		if !k8serrors.IsAlreadyExists(err) {
+			log.Error(err)
+		}
 		return err
 	}
 	return nil
 }
 
-func (r *RaftClusterReconciler) reconcileHeadlessService(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
-	log.Info("Reconcile raft protocol headless service")
+func (r *RaftClusterReconciler) reconcileHeadlessService(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
 	service := &corev1.Service{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
 		Name:      getHeadlessServiceName(cluster),
 	}
-	err := r.client.Get(ctx, name, service)
-	if err != nil && k8serrors.IsNotFound(err) {
-		err = r.addHeadlessService(ctx, cluster)
+	if err := r.client.Get(ctx, name, service); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			log.Error(err)
+			return err
+		}
+		log.Infow("Creating headless Service", logging.Stringer("Service", name))
+		return r.addHeadlessService(ctx, log, cluster)
 	}
-	return err
+	return nil
 }
 
-func (r *RaftClusterReconciler) addHeadlessService(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
-	log.Info("Creating headless raft service", "Name", cluster.Name, "Namespace", cluster.Namespace)
-
+func (r *RaftClusterReconciler) addHeadlessService(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        getHeadlessServiceName(cluster),
@@ -498,42 +506,57 @@ func (r *RaftClusterReconciler) addHeadlessService(ctx context.Context, cluster 
 	}
 
 	if err := controllerutil.SetControllerReference(cluster, service, r.scheme); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+		log.Error(err)
 		return err
 	}
 	if err := r.client.Create(ctx, service); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+		if !k8serrors.IsAlreadyExists(err) {
+			log.Error(err)
+		}
 		return err
 	}
 	return nil
 }
 
-func (r *RaftClusterReconciler) reconcileStatus(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
+func (r *RaftClusterReconciler) reconcileStatus(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
 	statefulSet := &appsv1.StatefulSet{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
 		Name:      cluster.Name,
 	}
 	if err := r.client.Get(ctx, name, statefulSet); err != nil {
-		log.Error(err, "Reconcile RaftCluster")
-		return err
+		if !k8serrors.IsNotFound(err) {
+			log.Error(err)
+			return err
+		}
+		return nil
 	}
 
 	switch cluster.Status.State {
 	case raftv1beta2.RaftClusterNotReady:
 		if statefulSet.Status.ReadyReplicas == statefulSet.Status.Replicas {
 			cluster.Status.State = raftv1beta2.RaftClusterReady
+			log.Infow("RaftCluster status changed",
+				logging.String("Status", string(cluster.Status.State)))
 			if err := r.client.Status().Update(ctx, cluster); err != nil {
-				log.Error(err, "Reconcile RaftCluster")
-				return err
+				if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
+					log.Error(err)
+					return err
+				}
+				return nil
 			}
 		}
 	case raftv1beta2.RaftClusterReady:
 		if statefulSet.Status.ReadyReplicas != statefulSet.Status.Replicas {
 			cluster.Status.State = raftv1beta2.RaftClusterNotReady
+			log.Infow("RaftCluster status changed",
+				logging.String("Status", string(cluster.Status.State)))
 			if err := r.client.Status().Update(ctx, cluster); err != nil {
-				log.Error(err, "Reconcile RaftCluster")
-				return err
+				if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
+					log.Error(err)
+					return err
+				}
+				return nil
 			}
 		}
 	}

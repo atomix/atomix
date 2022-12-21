@@ -27,7 +27,7 @@ import (
 
 const (
 	driverName    = "PodMemory"
-	driverVersion = "v1beta1"
+	driverVersion = "v2beta1"
 )
 
 func addPodMemoryStoreController(mgr manager.Manager) error {

@@ -34,7 +34,6 @@ spec:
               description: |-
                 The specification for the profile.
               type: object
-              default: {}
               required:
                 - bindings
               properties:
