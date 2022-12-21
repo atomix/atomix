@@ -6,7 +6,6 @@ package v1beta2
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -40,28 +39,11 @@ type RaftClusterSpec struct {
 	// VolumeClaimTemplate is the volume claim template for Raft logs
 	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 
-	// Config is the raft cluster configuration
-	Config RaftClusterConfig `json:"config,omitempty"`
-}
-
-type RaftClusterConfig struct {
-	// RTT is the estimated round trip time between nodes
-	RTT metav1.Duration `json:"rtt"`
-
-	// Server is the raft server configuration
-	Server RaftServerConfig `json:"server,omitempty"`
-
 	// Logging is the store logging configuration
-	Logging LoggingConfig `json:"logging,omitempty"`
-}
+	Logging LoggingConfig `json:"logging"`
 
-type RaftServerConfig struct {
-	ReadBufferSize       *int               `json:"readBufferSize"`
-	WriteBufferSize      *int               `json:"writeBufferSize"`
-	MaxRecvMsgSize       *resource.Quantity `json:"maxRecvMsgSize"`
-	MaxSendMsgSize       *resource.Quantity `json:"maxSendMsgSize"`
-	NumStreamWorkers     *uint32            `json:"numStreamWorkers"`
-	MaxConcurrentStreams *uint32            `json:"maxConcurrentStreams"`
+	// AverageRTT is the average round trip time between nodes
+	AverageRTT metav1.Duration `json:"averageRTTT"`
 }
 
 // RaftClusterStatus defines the status of a RaftCluster

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
 	rsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/stores/shared-memory/pkg/node"
 	"github.com/gogo/protobuf/jsonpb"
 	"gopkg.in/yaml.v3"
@@ -67,6 +68,11 @@ const (
 )
 
 const clusterDomainEnv = "CLUSTER_DOMAIN"
+
+const (
+	rootLoggerName = "root"
+	stdoutSinkName = "stdout"
+)
 
 func addSharedMemoryStoreController(mgr manager.Manager) error {
 	options := controller.Options{
@@ -176,12 +182,45 @@ func (r *SharedMemoryStoreReconciler) reconcileConfigMap(ctx context.Context, st
 
 func (r *SharedMemoryStoreReconciler) addConfigMap(ctx context.Context, store *sharedmemoryv1beta1.SharedMemoryStore) error {
 	log.Info("Creating raft ConfigMap", "Name", store.Name, "Namespace", store.Namespace)
-	loggingConfig, err := yaml.Marshal(&store.Spec.Config.Logging)
+	sinkName := stdoutSinkName
+	loggingOutputs := map[string]logging.OutputConfig{
+		stdoutSinkName: {
+			Name: stdoutSinkName,
+			Sink: &sinkName,
+		},
+	}
+
+	sinkEncoding := logging.SinkEncoding(store.Spec.Logging.Encoding)
+	loggingConfig := logging.Config{
+		Loggers: map[string]logging.LoggerConfig{
+			rootLoggerName: {
+				Level:  store.Spec.Logging.Level,
+				Output: loggingOutputs,
+			},
+		},
+		Sinks: map[string]logging.SinkConfig{
+			stdoutSinkName: {
+				Name:     stdoutSinkName,
+				Encoding: &sinkEncoding,
+				Stdout:   &logging.StdoutSinkConfig{},
+			},
+		},
+	}
+
+	for _, loggerConfig := range store.Spec.Logging.Loggers {
+		loggingConfig.Loggers[loggerConfig.Name] = logging.LoggerConfig{
+			Level:  loggerConfig.Level,
+			Output: loggingOutputs,
+		}
+	}
+
+	loggingConfigBytes, err := yaml.Marshal(&loggingConfig)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 
-	raftConfig, err := newNodeConfig(store)
+	raftConfigBytes, err := newNodeConfig(store)
 	if err != nil {
 		return err
 	}
@@ -194,8 +233,8 @@ func (r *SharedMemoryStoreReconciler) addConfigMap(ctx context.Context, store *s
 			Annotations: newStoreAnnotations(store),
 		},
 		Data: map[string]string{
-			configFile:        string(raftConfig),
-			loggingConfigFile: string(loggingConfig),
+			configFile:        string(raftConfigBytes),
+			loggingConfigFile: string(loggingConfigBytes),
 		},
 	}
 
@@ -208,20 +247,6 @@ func (r *SharedMemoryStoreReconciler) addConfigMap(ctx context.Context, store *s
 // newNodeConfig creates a protocol configuration string for the given store and protocol
 func newNodeConfig(store *sharedmemoryv1beta1.SharedMemoryStore) ([]byte, error) {
 	config := node.Config{}
-	config.Server = node.ServerConfig{
-		ReadBufferSize:       store.Spec.Config.Server.ReadBufferSize,
-		WriteBufferSize:      store.Spec.Config.Server.WriteBufferSize,
-		NumStreamWorkers:     store.Spec.Config.Server.NumStreamWorkers,
-		MaxConcurrentStreams: store.Spec.Config.Server.MaxConcurrentStreams,
-	}
-	if store.Spec.Config.Server.MaxRecvMsgSize != nil {
-		maxRecvMsgSize := int(store.Spec.Config.Server.MaxRecvMsgSize.Value())
-		config.Server.MaxRecvMsgSize = &maxRecvMsgSize
-	}
-	if store.Spec.Config.Server.MaxSendMsgSize != nil {
-		maxSendMsgSize := int(store.Spec.Config.Server.MaxSendMsgSize.Value())
-		config.Server.MaxSendMsgSize = &maxSendMsgSize
-	}
 	return yaml.Marshal(&config)
 }
 

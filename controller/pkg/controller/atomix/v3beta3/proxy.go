@@ -198,13 +198,11 @@ func (i *ProxyInjector) Handle(ctx context.Context, request admission.Request) a
 				ContainerPort: 5679,
 			},
 		},
-		VolumeMounts: []corev1.VolumeMount{
-			{
-				Name:      configVolumeName,
-				ReadOnly:  true,
-				MountPath: "/etc/atomix",
-			},
-		},
+		VolumeMounts: append(profile.Spec.Proxy.ExtraVolumeMounts, corev1.VolumeMount{
+			Name:      configVolumeName,
+			ReadOnly:  true,
+			MountPath: "/etc/atomix",
+		}),
 	})
 	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 		Name: configVolumeName,

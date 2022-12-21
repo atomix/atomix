@@ -32,6 +32,7 @@ spec:
               description: |-
                 The specification for the cluster.
               type: object
+              default: {}
               properties:
                 replicas:
                   type: integer
@@ -60,93 +61,45 @@ spec:
                 volumeClaimTemplate:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object
-                config:
+                logging:
                   type: object
                   default: {}
                   properties:
-                    rtt:
+                    encoding:
                       type: string
-                      default: 10ms
-                    server:
-                      type: object
-                      properties:
-                        readBufferSize:
-                          type: integer
-                          nullable: true
-                        writeBufferSize:
-                          type: integer
-                          nullable: true
-                        maxSendMsgSize:
-                          type: string
-                          nullable: true
-                        maxRecvMsgSize:
-                          type: string
-                          nullable: true
-                        numStreamWorkers:
-                          type: integer
-                          nullable: true
-                        maxConcurrentStreams:
-                          type: integer
-                          nullable: true
-                    logging:
-                      type: object
-                      properties:
-                        loggers:
-                          type: object
-                          additionalProperties:
-                            type: object
-                            properties:
-                              level:
-                                type: string
-                                nullable: true
-                                enum:
-                                  - debug
-                                  - info
-                                  - warn
-                                  - error
-                                  - fatal
-                                  - panic
-                              output:
-                                type: object
-                                additionalProperties:
-                                  type: object
-                                  properties:
-                                    sink:
-                                      type: string
-                                    level:
-                                      type: string
-                                      nullable: true
-                                      enum:
-                                        - debug
-                                        - info
-                                        - warn
-                                        - error
-                                        - fatal
-                                        - panic
-                        sinks:
-                          type: object
-                          additionalProperties:
-                            type: object
-                            properties:
-                              encoding:
-                                type: string
-                                nullable: true
-                                enum:
-                                  - console
-                                  - json
-                              stdout:
-                                type: object
-                                properties: {}
-                              stderr:
-                                type: object
-                                properties: {}
-                              file:
-                                type: object
-                                properties:
-                                  path:
-                                    type: string
-                                required:
-                                  - path
+                      default: console
+                      enum:
+                        - console
+                        - json
+                    rootLevel:
+                      type: string
+                      default: info
+                      enum:
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - panic
+                    loggers:
+                      type: array
+                      items:
+                        type: object
+                        required:
+                          - name
+                        properties:
+                          name:
+                            type: string
+                          level:
+                            type: string
+                            nullable: true
+                            enum:
+                              - debug
+                              - info
+                              - warn
+                              - error
+                              - fatal
+                              - panic
             status:
               type: object
               default: {}

@@ -8,6 +8,7 @@ import (
 	"context"
 	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
+	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/gogo/protobuf/jsonpb"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -27,8 +28,12 @@ import (
 	"time"
 )
 
-const configFile = "config.yaml"
-const loggingFile = "logging.yaml"
+const (
+	configFile     = "config.yaml"
+	loggingFile    = "logging.yaml"
+	rootLoggerName = "root"
+	stdoutSinkName = "stdout"
+)
 
 func addProfileController(mgr manager.Manager) error {
 	// Create a new controller
@@ -145,7 +150,39 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			return reconcile.Result{}, err
 		}
 
-		loggingBytes, err := yaml.Marshal(&profile.Spec.Proxy.Config.Logging)
+		sinkName := stdoutSinkName
+		loggingOutputs := map[string]logging.OutputConfig{
+			stdoutSinkName: {
+				Name: stdoutSinkName,
+				Sink: &sinkName,
+			},
+		}
+
+		sinkEncoding := logging.SinkEncoding(profile.Spec.Proxy.Logging.Encoding)
+		loggingConfig := logging.Config{
+			Loggers: map[string]logging.LoggerConfig{
+				rootLoggerName: {
+					Level:  profile.Spec.Proxy.Logging.Level,
+					Output: loggingOutputs,
+				},
+			},
+			Sinks: map[string]logging.SinkConfig{
+				stdoutSinkName: {
+					Name:     stdoutSinkName,
+					Encoding: &sinkEncoding,
+					Stdout:   &logging.StdoutSinkConfig{},
+				},
+			},
+		}
+
+		for _, loggerConfig := range profile.Spec.Proxy.Logging.Loggers {
+			loggingConfig.Loggers[loggerConfig.Name] = logging.LoggerConfig{
+				Level:  loggerConfig.Level,
+				Output: loggingOutputs,
+			}
+		}
+
+		loggingBytes, err := yaml.Marshal(&loggingConfig)
 		if err != nil {
 			log.Error(err)
 			return reconcile.Result{}, err

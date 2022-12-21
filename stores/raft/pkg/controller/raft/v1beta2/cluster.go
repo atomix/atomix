@@ -7,6 +7,7 @@ package v1beta2
 import (
 	"context"
 	"fmt"
+	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/stores/raft/pkg/raft"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
@@ -62,6 +63,11 @@ const (
 )
 
 const clusterDomainEnv = "CLUSTER_DOMAIN"
+
+const (
+	rootLoggerName = "root"
+	stdoutSinkName = "stdout"
+)
 
 func addRaftClusterController(mgr manager.Manager) error {
 	options := controller.Options{
@@ -161,13 +167,45 @@ func (r *RaftClusterReconciler) reconcileConfigMap(ctx context.Context, cluster 
 
 func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, cluster *raftv1beta2.RaftCluster) error {
 	log.Info("Creating raft ConfigMap", "Name", cluster.Name, "Namespace", cluster.Namespace)
-	loggingConfig, err := yaml.Marshal(&cluster.Spec.Config.Logging)
+	sinkName := stdoutSinkName
+	loggingOutputs := map[string]logging.OutputConfig{
+		stdoutSinkName: {
+			Name: stdoutSinkName,
+			Sink: &sinkName,
+		},
+	}
+
+	sinkEncoding := logging.SinkEncoding(cluster.Spec.Logging.Encoding)
+	loggingConfig := logging.Config{
+		Loggers: map[string]logging.LoggerConfig{
+			rootLoggerName: {
+				Level:  cluster.Spec.Logging.Level,
+				Output: loggingOutputs,
+			},
+		},
+		Sinks: map[string]logging.SinkConfig{
+			stdoutSinkName: {
+				Name:     stdoutSinkName,
+				Encoding: &sinkEncoding,
+				Stdout:   &logging.StdoutSinkConfig{},
+			},
+		},
+	}
+
+	for _, loggerConfig := range cluster.Spec.Logging.Loggers {
+		loggingConfig.Loggers[loggerConfig.Name] = logging.LoggerConfig{
+			Level:  loggerConfig.Level,
+			Output: loggingOutputs,
+		}
+	}
+
+	loggingConfigBytes, err := yaml.Marshal(&loggingConfig)
 	if err != nil {
-		log.Error(err, "Reconcile RaftCluster")
+		log.Error(err)
 		return err
 	}
 
-	raftConfig, err := newNodeConfig(cluster)
+	raftConfigBytes, err := newNodeConfig(cluster)
 	if err != nil {
 		log.Error(err, "Reconcile RaftCluster")
 		return err
@@ -181,8 +219,8 @@ func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, cluster *raftv
 			Annotations: newClusterAnnotations(cluster),
 		},
 		Data: map[string]string{
-			raftConfigFile:    string(raftConfig),
-			loggingConfigFile: string(loggingConfig),
+			raftConfigFile:    string(raftConfigBytes),
+			loggingConfigFile: string(loggingConfigBytes),
 		},
 	}
 
@@ -199,21 +237,7 @@ func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, cluster *raftv
 
 func newNodeConfig(cluster *raftv1beta2.RaftCluster) ([]byte, error) {
 	config := raft.Config{}
-	config.Server = raft.ServerConfig{
-		ReadBufferSize:       cluster.Spec.Config.Server.ReadBufferSize,
-		WriteBufferSize:      cluster.Spec.Config.Server.WriteBufferSize,
-		NumStreamWorkers:     cluster.Spec.Config.Server.NumStreamWorkers,
-		MaxConcurrentStreams: cluster.Spec.Config.Server.MaxConcurrentStreams,
-	}
-	if cluster.Spec.Config.Server.MaxRecvMsgSize != nil {
-		maxRecvMsgSize := int(cluster.Spec.Config.Server.MaxRecvMsgSize.Value())
-		config.Server.MaxRecvMsgSize = &maxRecvMsgSize
-	}
-	if cluster.Spec.Config.Server.MaxSendMsgSize != nil {
-		maxSendMsgSize := int(cluster.Spec.Config.Server.MaxSendMsgSize.Value())
-		config.Server.MaxSendMsgSize = &maxSendMsgSize
-	}
-	config.Node.RTT = &cluster.Spec.Config.RTT.Duration
+	config.Node.RTT = &cluster.Spec.AverageRTT.Duration
 	return yaml.Marshal(&config)
 }
 
