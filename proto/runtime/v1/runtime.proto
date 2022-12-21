@@ -78,6 +78,7 @@ message PrimitiveMeta {
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
+    repeated string tags = 3;
 }
 
 message PrimitiveSpec {
@@ -86,8 +87,7 @@ message PrimitiveSpec {
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
-    repeated string tags = 2;
-    bytes config = 3;
+    bytes config = 2;
 }
 
 message ConnectRequest {

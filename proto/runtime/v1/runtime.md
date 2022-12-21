@@ -166,6 +166,7 @@
 | ----- | ---- | ----- | ----------- |
 | type | [PrimitiveType](#atomix-runtime-v1-PrimitiveType) |  |  |
 | id | [PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
+| tags | [string](#string) | repeated |  |
 
 
 
@@ -181,7 +182,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | meta | [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta) |  |  |
-| tags | [string](#string) | repeated |  |
 | config | [bytes](#bytes) |  |  |
 
 

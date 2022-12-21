@@ -4,7 +4,6 @@
 
 .PHONY: build
 build:
-	$(MAKE) -C api build
 	$(MAKE) -C charts build
 	$(MAKE) -C controller build
 	$(MAKE) -C drivers build

@@ -5,7 +5,7 @@
 ROOT := $(basename $(dir $(abspath $(dir $$PWD))))
 
 .PHONY: build
-build:
+build: generate
 	go build ./...
 
 generate:
