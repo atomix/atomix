@@ -11,6 +11,11 @@ kind: StorageProfile
 metadata:
   name: primitive-example
 spec:
+  proxy:
+    # Configure the proxy to use locally built images
+    image: atomix/proxy:latest
+    imagePullPolicy: Never
+  # Bind the profile to the primitive-example-store
   bindings:
     - store:
         name: primitive-example-store

@@ -42,6 +42,11 @@ kind: StorageProfile
 metadata:
   name: multi-store-example
 spec:
+  # Configure the proxy to use locally built images
+  proxy:
+    image: atomix/proxy:latest
+    imagePullPolicy: Never
+  # Bind the profile to the stores and tag bindings to route specific primitives to specific stores
   bindings:
     # Route to the multi-raft store primitives tagged "persistent" and "partitioned"
     - store:

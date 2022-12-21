@@ -20,6 +20,11 @@ kind: StorageProfile
 metadata:
   name: raft-example
 spec:
+  proxy:
+    # Configure the proxy to use locally built images
+    image: atomix/proxy:latest
+    imagePullPolicy: Never
+  # Bind the profile to the raft-example-store
   bindings:
     - store:
         name: raft-example-store

@@ -8,6 +8,11 @@ kind: StorageProfile
 metadata:
   name: pod-memory-example
 spec:
+  proxy:
+    # Configure the proxy to use locally built images
+    image: atomix/proxy:latest
+    imagePullPolicy: Never
+  # Bind the profile to the pod-memory-example-store
   bindings:
     - store:
         name: pod-memory-example-store

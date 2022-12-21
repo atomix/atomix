@@ -21,8 +21,8 @@ spec:
   # Configure the profile to use a custom-built proxy image
   proxy:
     image: atomix/proxy:custom-store-1.0.0
+  # Bind the profile to the custom-example-store
   bindings:
-    # Bind the profile to the custom-example-store
     - store:
         name: custom-example-store
 ---

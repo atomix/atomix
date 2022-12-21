@@ -22,6 +22,11 @@ kind: StorageProfile
 metadata:
   name: multi-raft-example
 spec:
+  # Configure the proxy to use locally built images
+  proxy:
+    image: atomix/proxy:latest
+    imagePullPolicy: Never
+  # Bind the profile to the multi-raft-example-store
   bindings:
     - store:
         name: multi-raft-example-store
