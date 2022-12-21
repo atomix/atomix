@@ -1,26 +1,16 @@
-[![Runtime](https://github.com/atomix/runtime/actions/workflows/runtime.yml/badge.svg)](https://github.com/atomix/runtime/actions/workflows/runtime.yml)
-[![API](https://github.com/atomix/runtime/actions/workflows/api.yml/badge.svg)](https://github.com/atomix/runtime/actions/workflows/api.yml)
-[![SDK](https://github.com/atomix/runtime/actions/workflows/sdk.yml/badge.svg)](https://github.com/atomix/runtime/actions/workflows/sdk.yml)
-[![Primitives](https://github.com/atomix/runtime/actions/workflows/primitives.yml/badge.svg)](https://github.com/atomix/runtime/actions/workflows/primitives.yml)
-[![Controller](https://github.com/atomix/runtime/actions/workflows/controller.yml/badge.svg)](https://github.com/atomix/runtime/actions/workflows/controller.yml)
-[![Proxy](https://github.com/atomix/runtime/actions/workflows/proxy.yml/badge.svg)](https://github.com/atomix/runtime/actions/workflows/proxy.yml)
+![LICENSE](https://img.shields.io/github/license/atomix/atomix)
 
-**Note** The original Java implementation has moved to [atomix/atomix-archive](https://github.com/atomix/atomix-archive)
-to be archived.
-
-# Atomix Runtime
+# [Atomix](https://atomix.io)
 
 Atomix is a cloud native runtime for building stateful, scalable, configurable, and reliable distributed 
-applications in Kubernetes. The runtime API provides a set of high-level building blocks (referred to as distributed 
-primitives) for building distributed systems. The architecture of the Atomix runtime incorporates the lessons learned 
-from experience over the past decade building high-availability cloud infrastructure. The primary focus of the runtime 
+applications in Kubernetes. The Atomix API provides a set of high-level building blocks (referred to as distributed 
+primitives) for building distributed systems. The architecture of Atomix incorporates the lessons learned from 
+experience over the past decade building high-availability cloud infrastructure. The primary focus of the project 
 is to decouple applications from specific data stores, instead providing a set of unified, polyglot interfaces 
 (gRPC services) to a variety of systems and protocols, and enabling rapid experimentation and customization of 
 distributed applications.
 
-* `api` - provides the Protobuf API defining distributed primitives
-* `sdk` - the core Go library for extending the Atomix runtime, including drivers and custom primitives
-* `controller` - the runtime Kubernetes controller responsible for managing stores, injecting proxis, and 
-  configuring primitives according to configuration defined in k8s custom resources
-* `primitives` - common primitive state machine, proxy, and server implementations
-* `proxy` - the sidecar proxy used by applications to operate on distributed primitives
+### [Read the docs](https://atomix.io)
+
+**Note** The original Java implementation has been archived at
+[atomix/atomix-archive](https://github.com/atomix/atomix-archive)
