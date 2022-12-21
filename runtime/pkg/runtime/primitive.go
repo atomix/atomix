@@ -41,28 +41,23 @@ func (c *PrimitiveClient[T]) Create(ctx context.Context, primitiveID runtimev1.P
 		return primitive, nil
 	}
 
-	route, err := c.runtime.route(ctx, tags...)
+	meta := runtimev1.PrimitiveMeta{
+		Type:        c.primitiveType,
+		PrimitiveID: primitiveID,
+		Tags:        tags,
+	}
+
+	storeID, config, err := c.runtime.route(ctx, meta)
 	if err != nil {
 		return primitive, err
 	}
 
-	var config []byte
-	for _, primitiveRoute := range route.Primitives {
-		if primitiveRoute.Type == c.primitiveType {
-			config = primitiveRoute.Config
-			break
-		}
-	}
-
 	spec := runtimev1.PrimitiveSpec{
-		PrimitiveMeta: runtimev1.PrimitiveMeta{
-			Type:        c.primitiveType,
-			PrimitiveID: primitiveID,
-		},
-		Config: config,
+		PrimitiveMeta: meta,
+		Config:        config,
 	}
 
-	conn, err := c.runtime.lookup(route.StoreID)
+	conn, err := c.runtime.lookup(storeID)
 	if err != nil {
 		return primitive, err
 	}

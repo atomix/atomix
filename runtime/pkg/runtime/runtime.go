@@ -30,7 +30,7 @@ type Runtime interface {
 	connect(ctx context.Context, driverID runtimev1.DriverID, spec runtimev1.ConnSpec) error
 	configure(ctx context.Context, spec runtimev1.ConnSpec) error
 	disconnect(ctx context.Context, storeID runtimev1.StoreID) error
-	route(ctx context.Context, tags ...string) (*runtimev1.Route, error)
+	route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, []byte, error)
 	lookup(storeID runtimev1.StoreID) (Conn, error)
 }
 
@@ -63,8 +63,8 @@ type runtime struct {
 	mu      sync.RWMutex
 }
 
-func (r *runtime) route(ctx context.Context, tags ...string) (*runtimev1.Route, error) {
-	return r.router.route(ctx, tags...)
+func (r *runtime) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, []byte, error) {
+	return r.router.route(ctx, meta)
 }
 
 func (r *runtime) lookup(storeID runtimev1.StoreID) (Conn, error) {

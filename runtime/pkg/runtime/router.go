@@ -38,31 +38,59 @@ type router struct {
 	provider RouteProvider
 }
 
-func (r *router) route(ctx context.Context, tags ...string) (*runtimev1.Route, error) {
+func (r *router) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, []byte, error) {
 	routes, err := r.provider.LoadRoutes(ctx)
 	if err != nil {
-		return nil, errors.NewInternal(err.Error())
+		return runtimev1.StoreID{}, nil, errors.NewInternal(err.Error())
+	}
+
+	tags := make(map[string]bool)
+	for _, tag := range meta.Tags {
+		tags[tag] = true
 	}
 
 	for _, route := range routes {
-		if r.routeMatches(route, tags...) {
-			return route, err
-		}
-	}
-	return nil, errors.NewForbidden("no route matching tags %s", tags)
-}
-
-func (r *router) routeMatches(route *runtimev1.Route, tags ...string) bool {
-	if len(route.Tags) > 0 {
-		if len(tags) == 0 {
-			return false
-		}
-		for _, tag := range route.Tags {
-			for _, value := range tags {
-				if tag != value {
-					return false
+		if r.routeMatches(route, tags) {
+			for _, primitive := range route.Primitives {
+				if r.primitiveMatches(primitive.PrimitiveMeta, meta, tags) {
+					return route.StoreID, primitive.Config, nil
 				}
 			}
+			return route.StoreID, nil, err
+		}
+	}
+	return runtimev1.StoreID{}, nil, errors.NewForbidden("no route matching tags %s", tags)
+}
+
+func (r *router) routeMatches(route *runtimev1.Route, tags map[string]bool) bool {
+	return tagsMatch(route.Tags, tags)
+}
+
+func (r *router) primitiveMatches(primitive runtimev1.PrimitiveMeta, meta runtimev1.PrimitiveMeta, tags map[string]bool) bool {
+	// Compare the routing rule to the primitive type name
+	if primitive.Type.Name != meta.Type.Name {
+		return false
+	}
+	// Compare the routing rule to the primitive type version
+	if primitive.Type.APIVersion != meta.Type.APIVersion {
+		return false
+	}
+	return tagsMatch(primitive.Tags, tags)
+}
+
+func tagsMatch(routeTags []string, primitiveTags map[string]bool) bool {
+	// If the route requires no tags, it's always a match
+	if len(routeTags) == 0 {
+		return true
+	}
+	// If the primitive is not tagged, it won't match a route with tags
+	if len(primitiveTags) == 0 {
+		return false
+	}
+	// All tags required by the route must be present in the primitive
+	for _, tag := range routeTags {
+		if _, ok := primitiveTags[tag]; !ok {
+			return false
 		}
 	}
 	return true
