@@ -85,7 +85,7 @@ func addSharedMemoryStoreController(mgr manager.Manager) error {
 	}
 
 	// Create a new controller
-	controller, err := controller.New("atomix-shared-memory-store-v3beta1", mgr, options)
+	controller, err := controller.New("atomix-shared-memory-store", mgr, options)
 	if err != nil {
 		return err
 	}
@@ -126,39 +126,36 @@ type SharedMemoryStoreReconciler struct {
 // Reconcile reads that state of the cluster for a Store object and makes changes based on the state read
 // and what is in the Store.Spec
 func (r *SharedMemoryStoreReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log.Info("Reconcile SharedMemoryStore")
+	log := log.WithFields(logging.String("SharedMemoryStore", request.NamespacedName.String()))
+	log.Debug("Reconciling SharedMemoryStore")
+
 	store := &sharedmemoryv1beta1.SharedMemoryStore{}
 	err := r.client.Get(ctx, request.NamespacedName, store)
 	if err != nil {
-		log.Error(err, "Reconcile SharedMemoryStore")
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
+		log.Error(err)
 		return reconcile.Result{}, err
 	}
 
-	if err := r.reconcileConfigMap(ctx, store); err != nil {
-		log.Error(err, "Reconcile SharedMemoryStore")
+	if err := r.reconcileConfigMap(ctx, log, store); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err := r.reconcileDeployment(ctx, store); err != nil {
-		log.Error(err, "Reconcile SharedMemoryStore")
+	if err := r.reconcileDeployment(ctx, log, store); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err := r.reconcileService(ctx, store); err != nil {
-		log.Error(err, "Reconcile SharedMemoryStore")
+	if err := r.reconcileService(ctx, log, store); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err := r.reconcileDataStore(ctx, store); err != nil {
-		log.Error(err, "Reconcile SharedMemoryStore")
+	if err := r.reconcileDataStore(ctx, log, store); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if ok, err := r.reconcileStatus(ctx, store); err != nil {
-		log.Error(err, "Reconcile SharedMemoryStore")
+	if ok, err := r.reconcileStatus(ctx, log, store); err != nil {
 		return reconcile.Result{}, err
 	} else if ok {
 		return reconcile.Result{}, nil
@@ -166,22 +163,24 @@ func (r *SharedMemoryStoreReconciler) Reconcile(ctx context.Context, request rec
 	return reconcile.Result{}, nil
 }
 
-func (r *SharedMemoryStoreReconciler) reconcileConfigMap(ctx context.Context, store *sharedmemoryv1beta1.SharedMemoryStore) error {
-	log.Info("Reconcile raft protocol config map")
+func (r *SharedMemoryStoreReconciler) reconcileConfigMap(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
 	cm := &corev1.ConfigMap{}
 	name := types.NamespacedName{
 		Namespace: store.Namespace,
 		Name:      store.Name,
 	}
-	err := r.client.Get(ctx, name, cm)
-	if err != nil && k8serrors.IsNotFound(err) {
-		err = r.addConfigMap(ctx, store)
+	if err := r.client.Get(ctx, name, cm); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			log.Error(err)
+			return err
+		}
+		log.Infow("Creating ConfigMap", logging.Stringer("ConfigMap", name))
+		return r.addConfigMap(ctx, log, store)
 	}
-	return err
+	return nil
 }
 
-func (r *SharedMemoryStoreReconciler) addConfigMap(ctx context.Context, store *sharedmemoryv1beta1.SharedMemoryStore) error {
-	log.Info("Creating raft ConfigMap", "Name", store.Name, "Namespace", store.Namespace)
+func (r *SharedMemoryStoreReconciler) addConfigMap(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
 	sinkName := stdoutSinkName
 	loggingOutputs := map[string]logging.OutputConfig{
 		stdoutSinkName: {
@@ -220,7 +219,7 @@ func (r *SharedMemoryStoreReconciler) addConfigMap(ctx context.Context, store *s
 		return err
 	}
 
-	raftConfigBytes, err := newNodeConfig(store)
+	nodeConfigBytes, err := newNodeConfig(store)
 	if err != nil {
 		return err
 	}
@@ -233,7 +232,7 @@ func (r *SharedMemoryStoreReconciler) addConfigMap(ctx context.Context, store *s
 			Annotations: newStoreAnnotations(store),
 		},
 		Data: map[string]string{
-			configFile:        string(raftConfigBytes),
+			configFile:        string(nodeConfigBytes),
 			loggingConfigFile: string(loggingConfigBytes),
 		},
 	}
@@ -250,21 +249,24 @@ func newNodeConfig(store *sharedmemoryv1beta1.SharedMemoryStore) ([]byte, error)
 	return yaml.Marshal(&config)
 }
 
-func (r *SharedMemoryStoreReconciler) reconcileDeployment(ctx context.Context, store *sharedmemoryv1beta1.SharedMemoryStore) error {
+func (r *SharedMemoryStoreReconciler) reconcileDeployment(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
 	deployment := &appsv1.Deployment{}
 	name := types.NamespacedName{
 		Namespace: store.Namespace,
 		Name:      store.Name,
 	}
-	err := r.client.Get(ctx, name, deployment)
-	if err != nil && k8serrors.IsNotFound(err) {
-		err = r.addDeployment(ctx, store)
+	if err := r.client.Get(ctx, name, deployment); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			log.Error(err)
+			return err
+		}
+		log.Infow("Creating Deployment", logging.Stringer("Deployment", name))
+		return r.addDeployment(ctx, log, store)
 	}
-	return err
+	return nil
 }
 
-func (r *SharedMemoryStoreReconciler) addDeployment(ctx context.Context, store *sharedmemoryv1beta1.SharedMemoryStore) error {
-	log.Info("Creating Deployment", "Name", store.Name, "Namespace", store.Namespace)
+func (r *SharedMemoryStoreReconciler) addDeployment(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        store.Name,
@@ -352,23 +354,24 @@ func (r *SharedMemoryStoreReconciler) addDeployment(ctx context.Context, store *
 	return r.client.Create(ctx, deployment)
 }
 
-func (r *SharedMemoryStoreReconciler) reconcileService(ctx context.Context, store *sharedmemoryv1beta1.SharedMemoryStore) error {
-	log.Info("Reconcile raft protocol service")
+func (r *SharedMemoryStoreReconciler) reconcileService(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
 	service := &corev1.Service{}
 	name := types.NamespacedName{
 		Namespace: store.Namespace,
 		Name:      store.Name,
 	}
-	err := r.client.Get(ctx, name, service)
-	if err != nil && k8serrors.IsNotFound(err) {
-		err = r.addService(ctx, store)
+	if err := r.client.Get(ctx, name, service); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			log.Error(err)
+			return err
+		}
+		log.Infow("Creating Service", logging.Stringer("Service", name))
+		return r.addService(ctx, log, store)
 	}
-	return err
+	return nil
 }
 
-func (r *SharedMemoryStoreReconciler) addService(ctx context.Context, store *sharedmemoryv1beta1.SharedMemoryStore) error {
-	log.Info("Creating raft service", "Name", store.Name, "Namespace", store.Namespace)
-
+func (r *SharedMemoryStoreReconciler) addService(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        store.Name,
@@ -393,20 +396,24 @@ func (r *SharedMemoryStoreReconciler) addService(ctx context.Context, store *sha
 	return r.client.Create(ctx, service)
 }
 
-func (r *SharedMemoryStoreReconciler) reconcileDataStore(ctx context.Context, store *sharedmemoryv1beta1.SharedMemoryStore) error {
+func (r *SharedMemoryStoreReconciler) reconcileDataStore(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
 	dataStore := &atomixv3beta3.DataStore{}
 	name := types.NamespacedName{
 		Namespace: store.Namespace,
 		Name:      store.Name,
 	}
-	err := r.client.Get(ctx, name, dataStore)
-	if err != nil && k8serrors.IsNotFound(err) {
-		err = r.addDataStore(ctx, store)
+	if err := r.client.Get(ctx, name, dataStore); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			log.Error(err)
+			return err
+		}
+		log.Infow("Creating DataStore", logging.Stringer("DataStore", name))
+		return r.addDataStore(ctx, log, store)
 	}
-	return err
+	return nil
 }
 
-func (r *SharedMemoryStoreReconciler) addDataStore(ctx context.Context, store *sharedmemoryv1beta1.SharedMemoryStore) error {
+func (r *SharedMemoryStoreReconciler) addDataStore(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
 	config := rsmv1.ProtocolConfig{
 		Partitions: []rsmv1.PartitionConfig{
 			{
@@ -418,7 +425,7 @@ func (r *SharedMemoryStoreReconciler) addDataStore(ctx context.Context, store *s
 	marshaler := &jsonpb.Marshaler{}
 	configString, err := marshaler.MarshalToString(&config)
 	if err != nil {
-		log.Error(err, "Reconcile SharedMemoryStore")
+		log.Error(err)
 		return err
 	}
 
@@ -439,32 +446,38 @@ func (r *SharedMemoryStoreReconciler) addDataStore(ctx context.Context, store *s
 		},
 	}
 	if err := controllerutil.SetControllerReference(store, dataStore, r.scheme); err != nil {
-		log.Error(err, "Reconcile SharedMemoryStore")
+		log.Error(err)
 		return err
 	}
 	if err := r.client.Create(ctx, dataStore); err != nil {
-		log.Error(err, "Reconcile SharedMemoryStore")
+		log.Error(err)
 		return err
 	}
 	return nil
 }
 
-func (r *SharedMemoryStoreReconciler) reconcileStatus(ctx context.Context, store *sharedmemoryv1beta1.SharedMemoryStore) (bool, error) {
+func (r *SharedMemoryStoreReconciler) reconcileStatus(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) (bool, error) {
 	deployment := &appsv1.Deployment{}
 	name := types.NamespacedName{
 		Namespace: store.Namespace,
 		Name:      store.Name,
 	}
 	if err := r.client.Get(ctx, name, deployment); err != nil {
-		log.Error(err, "Reconcile SharedMemoryStore")
+		if !k8serrors.IsNotFound(err) {
+			log.Error(err)
+		}
 		return false, err
 	}
 
 	if deployment.Status.ReadyReplicas == 0 &&
 		store.Status.State != sharedmemoryv1beta1.SharedMemoryStoreNotReady {
 		store.Status.State = sharedmemoryv1beta1.SharedMemoryStoreNotReady
+		log.Info("SharedMemoryStore status changed",
+			logging.String("Status", string(store.Status.State)))
 		if err := r.client.Status().Update(ctx, store); err != nil {
-			log.Error(err, "Reconcile SharedMemoryStore")
+			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
+				log.Error(err)
+			}
 			return false, err
 		}
 		return true, nil
@@ -473,8 +486,12 @@ func (r *SharedMemoryStoreReconciler) reconcileStatus(ctx context.Context, store
 	if deployment.Status.ReadyReplicas == 1 &&
 		store.Status.State != sharedmemoryv1beta1.SharedMemoryStoreReady {
 		store.Status.State = sharedmemoryv1beta1.SharedMemoryStoreReady
+		log.Info("SharedMemoryStore status changed",
+			logging.String("Status", string(store.Status.State)))
 		if err := r.client.Status().Update(ctx, store); err != nil {
-			log.Error(err, "Reconcile SharedMemoryStore")
+			if !k8serrors.IsNotFound(err) && !k8serrors.IsConflict(err) {
+				log.Error(err)
+			}
 			return false, err
 		}
 		return true, nil
