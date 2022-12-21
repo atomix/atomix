@@ -7,22 +7,28 @@ replicas: 1
 image:
   registry: ""
   repository: atomix/controller
-  tag: v0.7.7
-  pullPolicy: Always
+  # TODO: Set image tag to release version
+  tag: latest
+  # TODO: Revert pull policy to default for patch releases or Always for for minor releases
+  pullPolicy: IfNotPresent
   pullSecrets: []
 
 init:
   image:
     registry: ""
     repository: atomix/controller-init
-    tag: v0.7.7
-    pullPolicy: Always
+    # TODO: Set image tag to release version
+    tag: latest
+    # TODO: Revert pull policy to default for patch releases or Always for for minor releases
+    pullPolicy: IfNotPresent
     pullSecrets: []
 
 proxy:
   image:
     registry: ""
     repository: atomix/proxy
-    tag: v0.12
-    pullPolicy: Always
+    # TODO: Set image tag to release version
+    tag: latest
+    # TODO: Revert pull policy to default for patch releases or Always for for minor releases
+    pullPolicy: IfNotPresent
     pullSecrets: []
