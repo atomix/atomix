@@ -69,12 +69,12 @@ func (n *Protocol) publish(event *raftv1.Event) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 	switch e := event.Event.(type) {
-	case *raftv1.Event_ReplicaReady:
-		if partition, ok := n.partitions[rsmv1.PartitionID(e.ReplicaReady.ShardID)]; ok {
+	case *raftv1.Event_MemberReady:
+		if partition, ok := n.partitions[rsmv1.PartitionID(e.MemberReady.GroupID)]; ok {
 			partition.setReady()
 		}
 	case *raftv1.Event_LeaderUpdated:
-		if partition, ok := n.partitions[rsmv1.PartitionID(e.LeaderUpdated.ShardID)]; ok {
+		if partition, ok := n.partitions[rsmv1.PartitionID(e.LeaderUpdated.GroupID)]; ok {
 			partition.setLeader(e.LeaderUpdated.Term, e.LeaderUpdated.Leader)
 		}
 	}
@@ -113,9 +113,9 @@ func (n *Protocol) Watch(ctx context.Context, watcher chan<- raftv1.Event) {
 			watcher <- raftv1.Event{
 				Event: &raftv1.Event_LeaderUpdated{
 					LeaderUpdated: &raftv1.LeaderUpdatedEvent{
-						ReplicaEvent: raftv1.ReplicaEvent{
-							ShardID:   raftv1.ShardID(partition.ID()),
-							ReplicaID: partition.replicaID,
+						MemberEvent: raftv1.MemberEvent{
+							GroupID:  raftv1.GroupID(partition.ID()),
+							MemberID: partition.memberID,
 						},
 						Term:   term,
 						Leader: leader,
@@ -126,11 +126,11 @@ func (n *Protocol) Watch(ctx context.Context, watcher chan<- raftv1.Event) {
 		ready := partition.getReady()
 		if ready {
 			watcher <- raftv1.Event{
-				Event: &raftv1.Event_ReplicaReady{
-					ReplicaReady: &raftv1.ReplicaReadyEvent{
-						ReplicaEvent: raftv1.ReplicaEvent{
-							ShardID:   raftv1.ShardID(partition.ID()),
-							ReplicaID: partition.replicaID,
+				Event: &raftv1.Event_MemberReady{
+					MemberReady: &raftv1.MemberReadyEvent{
+						MemberEvent: raftv1.MemberEvent{
+							GroupID:  raftv1.GroupID(partition.ID()),
+							MemberID: partition.memberID,
 						},
 					},
 				},
@@ -148,84 +148,84 @@ func (n *Protocol) Watch(ctx context.Context, watcher chan<- raftv1.Event) {
 	}()
 }
 
-func (n *Protocol) GetConfig(shardID raftv1.ShardID) (raftv1.ShardConfig, error) {
+func (n *Protocol) GetConfig(groupID raftv1.GroupID) (raftv1.GroupConfig, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	membership, err := n.host.SyncGetClusterMembership(ctx, uint64(shardID))
+	membership, err := n.host.SyncGetClusterMembership(ctx, uint64(groupID))
 	if err != nil {
 		if err == dragonboat.ErrClusterNotFound {
-			return raftv1.ShardConfig{}, errors.NewNotFound(err.Error())
+			return raftv1.GroupConfig{}, errors.NewNotFound(err.Error())
 		}
-		return raftv1.ShardConfig{}, wrapError(err)
+		return raftv1.GroupConfig{}, wrapError(err)
 	}
 
-	var replicas []raftv1.ReplicaConfig
-	for replicaID, address := range membership.Nodes {
-		member, err := getReplica(replicaID, address, raftv1.ReplicaRole_MEMBER)
+	var members []raftv1.MemberConfig
+	for memberID, address := range membership.Nodes {
+		member, err := getMember(memberID, address, raftv1.MemberRole_MEMBER)
 		if err != nil {
-			return raftv1.ShardConfig{}, err
+			return raftv1.GroupConfig{}, err
 		}
-		replicas = append(replicas, member)
+		members = append(members, member)
 	}
-	for replicaID, address := range membership.Observers {
-		member, err := getReplica(replicaID, address, raftv1.ReplicaRole_OBSERVER)
+	for memberID, address := range membership.Observers {
+		member, err := getMember(memberID, address, raftv1.MemberRole_OBSERVER)
 		if err != nil {
-			return raftv1.ShardConfig{}, err
+			return raftv1.GroupConfig{}, err
 		}
-		replicas = append(replicas, member)
+		members = append(members, member)
 	}
-	for replicaID, address := range membership.Witnesses {
-		member, err := getReplica(replicaID, address, raftv1.ReplicaRole_WITNESS)
+	for memberID, address := range membership.Witnesses {
+		member, err := getMember(memberID, address, raftv1.MemberRole_WITNESS)
 		if err != nil {
-			return raftv1.ShardConfig{}, err
+			return raftv1.GroupConfig{}, err
 		}
-		replicas = append(replicas, member)
+		members = append(members, member)
 	}
-	for replicaID := range membership.Removed {
-		replicas = append(replicas, raftv1.ReplicaConfig{
-			ReplicaID: raftv1.ReplicaID(replicaID),
-			Role:      raftv1.ReplicaRole_REMOVED,
+	for memberID := range membership.Removed {
+		members = append(members, raftv1.MemberConfig{
+			MemberID: raftv1.MemberID(memberID),
+			Role:     raftv1.MemberRole_REMOVED,
 		})
 	}
-	return raftv1.ShardConfig{
-		ShardID:  shardID,
-		Replicas: replicas,
-		Version:  membership.ConfigChangeID,
+	return raftv1.GroupConfig{
+		GroupID: groupID,
+		Members: members,
+		Version: membership.ConfigChangeID,
 	}, nil
 }
 
-func getReplica(replicaID uint64, address string, role raftv1.ReplicaRole) (raftv1.ReplicaConfig, error) {
+func getMember(memberID uint64, address string, role raftv1.MemberRole) (raftv1.MemberConfig, error) {
 	parts := strings.Split(address, ":")
 	host, portS := parts[0], parts[1]
 	port, err := strconv.Atoi(portS)
 	if err != nil {
-		return raftv1.ReplicaConfig{}, err
+		return raftv1.MemberConfig{}, err
 	}
-	return raftv1.ReplicaConfig{
-		ReplicaID: raftv1.ReplicaID(replicaID),
-		Host:      host,
-		Port:      int32(port),
-		Role:      role,
+	return raftv1.MemberConfig{
+		MemberID: raftv1.MemberID(memberID),
+		Host:     host,
+		Port:     int32(port),
+		Role:     role,
 	}, nil
 }
 
-func (n *Protocol) BootstrapShard(ctx context.Context, shardID raftv1.ShardID, replicaID raftv1.ReplicaID, config raftv1.RaftConfig, replicas ...raftv1.ReplicaConfig) error {
-	var replica *raftv1.ReplicaConfig
-	for _, r := range replicas {
-		if r.ReplicaID == replicaID {
-			replica = &r
+func (n *Protocol) BootstrapGroup(ctx context.Context, groupID raftv1.GroupID, memberID raftv1.MemberID, config raftv1.RaftConfig, members ...raftv1.MemberConfig) error {
+	var member *raftv1.MemberConfig
+	for _, r := range members {
+		if r.MemberID == memberID {
+			member = &r
 			break
 		}
 	}
 
-	if replica == nil {
-		return errors.NewInvalid("unknown replica %d", replicaID)
+	if member == nil {
+		return errors.NewInvalid("unknown member %d", memberID)
 	}
 
-	raftConfig := n.getRaftConfig(shardID, replicaID, replica.Role, config)
+	raftConfig := n.getRaftConfig(groupID, memberID, member.Role, config)
 	targets := make(map[uint64]dragonboat.Target)
-	for _, member := range replicas {
-		targets[uint64(member.ReplicaID)] = fmt.Sprintf("%s:%d", member.Host, member.Port)
+	for _, member := range members {
+		targets[uint64(member.MemberID)] = fmt.Sprintf("%s:%d", member.Host, member.Port)
 	}
 	if err := n.host.StartCluster(targets, false, n.newStateMachine, raftConfig); err != nil {
 		if err == dragonboat.ErrClusterAlreadyExist {
@@ -236,9 +236,9 @@ func (n *Protocol) BootstrapShard(ctx context.Context, shardID raftv1.ShardID, r
 	return nil
 }
 
-func (n *Protocol) AddReplica(ctx context.Context, shardID raftv1.ShardID, member raftv1.ReplicaConfig, version uint64) error {
+func (n *Protocol) AddMember(ctx context.Context, groupID raftv1.GroupID, member raftv1.MemberConfig, version uint64) error {
 	address := fmt.Sprintf("%s:%d", member.Host, member.Port)
-	if err := n.host.SyncRequestAddNode(ctx, uint64(shardID), uint64(member.ReplicaID), address, version); err != nil {
+	if err := n.host.SyncRequestAddNode(ctx, uint64(groupID), uint64(member.MemberID), address, version); err != nil {
 		if err == dragonboat.ErrClusterNotFound {
 			return errors.NewNotFound(err.Error())
 		}
@@ -247,8 +247,8 @@ func (n *Protocol) AddReplica(ctx context.Context, shardID raftv1.ShardID, membe
 	return nil
 }
 
-func (n *Protocol) RemoveReplica(ctx context.Context, shardID raftv1.ShardID, replicaID raftv1.ReplicaID, version uint64) error {
-	if err := n.host.SyncRequestDeleteNode(ctx, uint64(shardID), uint64(replicaID), version); err != nil {
+func (n *Protocol) RemoveMember(ctx context.Context, groupID raftv1.GroupID, memberID raftv1.MemberID, version uint64) error {
+	if err := n.host.SyncRequestDeleteNode(ctx, uint64(groupID), uint64(memberID), version); err != nil {
 		if err == dragonboat.ErrClusterNotFound {
 			return errors.NewNotFound(err.Error())
 		}
@@ -257,8 +257,8 @@ func (n *Protocol) RemoveReplica(ctx context.Context, shardID raftv1.ShardID, re
 	return nil
 }
 
-func (n *Protocol) JoinShard(ctx context.Context, shardID raftv1.ShardID, replicaID raftv1.ReplicaID, config raftv1.RaftConfig) error {
-	raftConfig := n.getRaftConfig(shardID, replicaID, raftv1.ReplicaRole_MEMBER, config)
+func (n *Protocol) JoinGroup(ctx context.Context, groupID raftv1.GroupID, memberID raftv1.MemberID, config raftv1.RaftConfig) error {
+	raftConfig := n.getRaftConfig(groupID, memberID, raftv1.MemberRole_MEMBER, config)
 	if err := n.host.StartCluster(map[uint64]dragonboat.Target{}, true, n.newStateMachine, raftConfig); err != nil {
 		if err == dragonboat.ErrClusterAlreadyExist {
 			return errors.NewAlreadyExists(err.Error())
@@ -268,8 +268,8 @@ func (n *Protocol) JoinShard(ctx context.Context, shardID raftv1.ShardID, replic
 	return nil
 }
 
-func (n *Protocol) LeaveShard(ctx context.Context, shardID raftv1.ShardID) error {
-	if err := n.host.StopCluster(uint64(shardID)); err != nil {
+func (n *Protocol) LeaveGroup(ctx context.Context, groupID raftv1.GroupID) error {
+	if err := n.host.StopCluster(uint64(groupID)); err != nil {
 		if err == dragonboat.ErrClusterNotFound {
 			return errors.NewNotFound(err.Error())
 		}
@@ -278,23 +278,23 @@ func (n *Protocol) LeaveShard(ctx context.Context, shardID raftv1.ShardID) error
 	return nil
 }
 
-func (n *Protocol) DeleteData(ctx context.Context, shardID raftv1.ShardID, replicaID raftv1.ReplicaID) error {
-	if err := n.host.SyncRemoveData(ctx, uint64(shardID), uint64(replicaID)); err != nil {
+func (n *Protocol) DeleteData(ctx context.Context, groupID raftv1.GroupID, memberID raftv1.MemberID) error {
+	if err := n.host.SyncRemoveData(ctx, uint64(groupID), uint64(memberID)); err != nil {
 		return wrapError(err)
 	}
 	return nil
 }
 
-func (n *Protocol) newStateMachine(clusterID, replicaID uint64) dbstatemachine.IStateMachine {
+func (n *Protocol) newStateMachine(clusterID, memberID uint64) dbstatemachine.IStateMachine {
 	streams := newContext()
-	partition := newPartition(rsmv1.PartitionID(clusterID), raftv1.ReplicaID(replicaID), n.host, streams)
+	partition := newPartition(rsmv1.PartitionID(clusterID), raftv1.MemberID(memberID), n.host, streams)
 	n.mu.Lock()
 	n.partitions[partition.ID()] = partition
 	n.mu.Unlock()
 	return newStateMachine(streams, n.registry)
 }
 
-func (n *Protocol) getRaftConfig(shardID raftv1.ShardID, replicaID raftv1.ReplicaID, role raftv1.ReplicaRole, config raftv1.RaftConfig) raftconfig.Config {
+func (n *Protocol) getRaftConfig(groupID raftv1.GroupID, memberID raftv1.MemberID, role raftv1.MemberRole, config raftv1.RaftConfig) raftconfig.Config {
 	electionRTT := config.ElectionRTT
 	if electionRTT == 0 {
 		electionRTT = defaultElectionRTT
@@ -312,8 +312,8 @@ func (n *Protocol) getRaftConfig(shardID raftv1.ShardID, replicaID raftv1.Replic
 		compactionOverhead = defaultCompactionOverhead
 	}
 	return raftconfig.Config{
-		NodeID:                 uint64(replicaID),
-		ClusterID:              uint64(shardID),
+		NodeID:                 uint64(memberID),
+		ClusterID:              uint64(groupID),
 		ElectionRTT:            electionRTT,
 		HeartbeatRTT:           heartbeatRTT,
 		CheckQuorum:            true,
@@ -322,8 +322,8 @@ func (n *Protocol) getRaftConfig(shardID raftv1.ShardID, replicaID raftv1.Replic
 		MaxInMemLogSize:        config.MaxInMemLogSize,
 		OrderedConfigChange:    config.OrderedConfigChange,
 		DisableAutoCompactions: config.DisableAutoCompactions,
-		IsObserver:             role == raftv1.ReplicaRole_OBSERVER,
-		IsWitness:              role == raftv1.ReplicaRole_WITNESS,
+		IsObserver:             role == raftv1.MemberRole_OBSERVER,
+		IsWitness:              role == raftv1.MemberRole_WITNESS,
 	}
 }
 

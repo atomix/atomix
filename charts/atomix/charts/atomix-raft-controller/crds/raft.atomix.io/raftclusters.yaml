@@ -112,7 +112,7 @@ spec:
                   enum:
                     - NotReady
                     - Ready
-                shards:
+                groups:
                   type: integer
       additionalPrinterColumns:
         - name: Replicas

@@ -24,7 +24,7 @@ type nodeServer struct {
 func (s *nodeServer) GetConfig(ctx context.Context, request *raftv1.GetConfigRequest) (*raftv1.GetConfigResponse, error) {
 	log.Debugw("GetConfig",
 		logging.Stringer("GetConfigRequest", request))
-	config, err := s.protocol.GetConfig(request.ShardID)
+	config, err := s.protocol.GetConfig(request.GroupID)
 	if err != nil {
 		log.Warnw("GetConfig",
 			logging.Stringer("GetConfigRequest", request),
@@ -32,7 +32,7 @@ func (s *nodeServer) GetConfig(ctx context.Context, request *raftv1.GetConfigReq
 		return nil, errors.ToProto(err)
 	}
 	response := &raftv1.GetConfigResponse{
-		Shard: config,
+		Group: config,
 	}
 	log.Debugw("GetConfig",
 		logging.Stringer("GetConfigRequest", request),
@@ -40,174 +40,174 @@ func (s *nodeServer) GetConfig(ctx context.Context, request *raftv1.GetConfigReq
 	return response, nil
 }
 
-func (s *nodeServer) BootstrapShard(ctx context.Context, request *raftv1.BootstrapShardRequest) (*raftv1.BootstrapShardResponse, error) {
-	log.Debugw("BootstrapShard",
-		logging.Stringer("BootstrapShardRequest", request))
-	if request.ShardID == 0 {
-		err := errors.NewInvalid("shard_id is required")
-		log.Warnw("BootstrapShard",
-			logging.Stringer("BootstrapShardRequest", request),
+func (s *nodeServer) BootstrapGroup(ctx context.Context, request *raftv1.BootstrapGroupRequest) (*raftv1.BootstrapGroupResponse, error) {
+	log.Debugw("BootstrapGroup",
+		logging.Stringer("BootstrapGroupRequest", request))
+	if request.GroupID == 0 {
+		err := errors.NewInvalid("group_id is required")
+		log.Warnw("BootstrapGroup",
+			logging.Stringer("BootstrapGroupRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	if request.ReplicaID == 0 {
+	if request.MemberID == 0 {
 		err := errors.NewInvalid("member_id is required")
-		log.Warnw("BootstrapShard",
-			logging.Stringer("BootstrapShardRequest", request),
+		log.Warnw("BootstrapGroup",
+			logging.Stringer("BootstrapGroupRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	if err := s.protocol.BootstrapShard(ctx, request.ShardID, request.ReplicaID, request.Config, request.Replicas...); err != nil {
-		log.Warnw("BootstrapShard",
-			logging.Stringer("BootstrapShardRequest", request),
+	if err := s.protocol.BootstrapGroup(ctx, request.GroupID, request.MemberID, request.Config, request.Members...); err != nil {
+		log.Warnw("BootstrapGroup",
+			logging.Stringer("BootstrapGroupRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	response := &raftv1.BootstrapShardResponse{}
-	log.Debugw("BootstrapShard",
-		logging.Stringer("BootstrapShardRequest", request),
-		logging.Stringer("BootstrapShardResponse", response))
+	response := &raftv1.BootstrapGroupResponse{}
+	log.Debugw("BootstrapGroup",
+		logging.Stringer("BootstrapGroupRequest", request),
+		logging.Stringer("BootstrapGroupResponse", response))
 	return response, nil
 }
 
-func (s *nodeServer) AddReplica(ctx context.Context, request *raftv1.AddReplicaRequest) (*raftv1.AddReplicaResponse, error) {
-	log.Debugw("AddReplica",
-		logging.Stringer("AddReplicaRequest", request))
-	if request.ShardID == 0 {
-		err := errors.NewInvalid("shard_id is required")
-		log.Warnw("AddReplica",
-			logging.Stringer("AddReplicaRequest", request),
+func (s *nodeServer) AddMember(ctx context.Context, request *raftv1.AddMemberRequest) (*raftv1.AddMemberResponse, error) {
+	log.Debugw("AddMember",
+		logging.Stringer("AddMemberRequest", request))
+	if request.GroupID == 0 {
+		err := errors.NewInvalid("group_id is required")
+		log.Warnw("AddMember",
+			logging.Stringer("AddMemberRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	if request.Version == 0 {
 		err := errors.NewInvalid("version is required")
-		log.Warnw("AddReplica",
-			logging.Stringer("AddReplicaRequest", request),
+		log.Warnw("AddMember",
+			logging.Stringer("AddMemberRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	if err := s.protocol.AddReplica(ctx, request.ShardID, request.Replica, request.Version); err != nil {
-		log.Warnw("AddReplica",
-			logging.Stringer("AddReplicaRequest", request),
+	if err := s.protocol.AddMember(ctx, request.GroupID, request.Member, request.Version); err != nil {
+		log.Warnw("AddMember",
+			logging.Stringer("AddMemberRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	response := &raftv1.AddReplicaResponse{}
-	log.Debugw("AddReplica",
-		logging.Stringer("AddReplicaRequest", request),
-		logging.Stringer("AddReplicaResponse", response))
+	response := &raftv1.AddMemberResponse{}
+	log.Debugw("AddMember",
+		logging.Stringer("AddMemberRequest", request),
+		logging.Stringer("AddMemberResponse", response))
 	return response, nil
 }
 
-func (s *nodeServer) RemoveReplica(ctx context.Context, request *raftv1.RemoveReplicaRequest) (*raftv1.RemoveReplicaResponse, error) {
-	log.Debugw("RemoveReplica",
-		logging.Stringer("RemoveReplicaRequest", request))
-	if request.ShardID == 0 {
-		err := errors.NewInvalid("shard_id is required")
-		log.Warnw("RemoveReplica",
-			logging.Stringer("RemoveReplicaRequest", request),
+func (s *nodeServer) RemoveMember(ctx context.Context, request *raftv1.RemoveMemberRequest) (*raftv1.RemoveMemberResponse, error) {
+	log.Debugw("RemoveMember",
+		logging.Stringer("RemoveMemberRequest", request))
+	if request.GroupID == 0 {
+		err := errors.NewInvalid("group_id is required")
+		log.Warnw("RemoveMember",
+			logging.Stringer("RemoveMemberRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	if request.ReplicaID == 0 {
+	if request.MemberID == 0 {
 		err := errors.NewInvalid("member_id is required")
-		log.Warnw("RemoveReplica",
-			logging.Stringer("RemoveReplicaRequest", request),
+		log.Warnw("RemoveMember",
+			logging.Stringer("RemoveMemberRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	if request.Version == 0 {
 		err := errors.NewInvalid("version is required")
-		log.Warnw("RemoveReplica",
-			logging.Stringer("RemoveReplicaRequest", request),
+		log.Warnw("RemoveMember",
+			logging.Stringer("RemoveMemberRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	if err := s.protocol.RemoveReplica(ctx, request.ShardID, request.ReplicaID, request.Version); err != nil {
-		log.Warnw("RemoveReplica",
-			logging.Stringer("RemoveReplicaRequest", request),
+	if err := s.protocol.RemoveMember(ctx, request.GroupID, request.MemberID, request.Version); err != nil {
+		log.Warnw("RemoveMember",
+			logging.Stringer("RemoveMemberRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	response := &raftv1.RemoveReplicaResponse{}
-	log.Debugw("RemoveReplica",
-		logging.Stringer("RemoveReplicaRequest", request),
-		logging.Stringer("RemoveReplicaResponse", response))
+	response := &raftv1.RemoveMemberResponse{}
+	log.Debugw("RemoveMember",
+		logging.Stringer("RemoveMemberRequest", request),
+		logging.Stringer("RemoveMemberResponse", response))
 	return response, nil
 }
 
-func (s *nodeServer) JoinShard(ctx context.Context, request *raftv1.JoinShardRequest) (*raftv1.JoinShardResponse, error) {
-	log.Debugw("JoinShard",
-		logging.Stringer("JoinShardRequest", request))
-	if request.ShardID == 0 {
-		err := errors.NewInvalid("shard_id is required")
-		log.Warnw("JoinShard",
-			logging.Stringer("JoinShardRequest", request),
+func (s *nodeServer) JoinGroup(ctx context.Context, request *raftv1.JoinGroupRequest) (*raftv1.JoinGroupResponse, error) {
+	log.Debugw("JoinGroup",
+		logging.Stringer("JoinGroupRequest", request))
+	if request.GroupID == 0 {
+		err := errors.NewInvalid("group_id is required")
+		log.Warnw("JoinGroup",
+			logging.Stringer("JoinGroupRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	if request.ReplicaID == 0 {
+	if request.MemberID == 0 {
 		err := errors.NewInvalid("member_id is required")
-		log.Warnw("JoinShard",
-			logging.Stringer("JoinShardRequest", request),
+		log.Warnw("JoinGroup",
+			logging.Stringer("JoinGroupRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	if err := s.protocol.JoinShard(ctx, request.ShardID, request.ReplicaID, request.Config); err != nil {
-		log.Warnw("JoinShard",
-			logging.Stringer("JoinShardRequest", request),
+	if err := s.protocol.JoinGroup(ctx, request.GroupID, request.MemberID, request.Config); err != nil {
+		log.Warnw("JoinGroup",
+			logging.Stringer("JoinGroupRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	response := &raftv1.JoinShardResponse{}
-	log.Debugw("JoinShard",
-		logging.Stringer("JoinShardRequest", request),
-		logging.Stringer("JoinShardResponse", response))
+	response := &raftv1.JoinGroupResponse{}
+	log.Debugw("JoinGroup",
+		logging.Stringer("JoinGroupRequest", request),
+		logging.Stringer("JoinGroupResponse", response))
 	return response, nil
 }
 
-func (s *nodeServer) LeaveShard(ctx context.Context, request *raftv1.LeaveShardRequest) (*raftv1.LeaveShardResponse, error) {
-	log.Debugw("LeaveShard",
-		logging.Stringer("LeaveShardRequest", request))
-	if request.ShardID == 0 {
-		err := errors.NewInvalid("shard_id is required")
-		log.Warnw("LeaveShard",
-			logging.Stringer("LeaveShardRequest", request),
+func (s *nodeServer) LeaveGroup(ctx context.Context, request *raftv1.LeaveGroupRequest) (*raftv1.LeaveGroupResponse, error) {
+	log.Debugw("LeaveGroup",
+		logging.Stringer("LeaveGroupRequest", request))
+	if request.GroupID == 0 {
+		err := errors.NewInvalid("group_id is required")
+		log.Warnw("LeaveGroup",
+			logging.Stringer("LeaveGroupRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	if err := s.protocol.LeaveShard(ctx, request.ShardID); err != nil {
-		log.Warnw("LeaveShard",
-			logging.Stringer("LeaveShardRequest", request),
+	if err := s.protocol.LeaveGroup(ctx, request.GroupID); err != nil {
+		log.Warnw("LeaveGroup",
+			logging.Stringer("LeaveGroupRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	response := &raftv1.LeaveShardResponse{}
-	log.Debugw("LeaveShard",
-		logging.Stringer("LeaveShardRequest", request),
-		logging.Stringer("LeaveShardResponse", response))
+	response := &raftv1.LeaveGroupResponse{}
+	log.Debugw("LeaveGroup",
+		logging.Stringer("LeaveGroupRequest", request),
+		logging.Stringer("LeaveGroupResponse", response))
 	return response, nil
 }
 
 func (s *nodeServer) DeleteData(ctx context.Context, request *raftv1.DeleteDataRequest) (*raftv1.DeleteDataResponse, error) {
 	log.Debugw("DeleteData",
 		logging.Stringer("DeleteDataRequest", request))
-	if request.ShardID == 0 {
-		err := errors.NewInvalid("shard_id is required")
+	if request.GroupID == 0 {
+		err := errors.NewInvalid("group_id is required")
 		log.Warnw("DeleteData",
 			logging.Stringer("DeleteDataRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	if request.ReplicaID == 0 {
+	if request.MemberID == 0 {
 		err := errors.NewInvalid("member_id is required")
 		log.Warnw("DeleteData",
 			logging.Stringer("DeleteDataRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	if err := s.protocol.DeleteData(ctx, request.ShardID, request.ReplicaID); err != nil {
+	if err := s.protocol.DeleteData(ctx, request.GroupID, request.MemberID); err != nil {
 		log.Warnw("DeleteData",
 			logging.Stringer("DeleteDataRequest", request),
 			logging.Error("Error", err))

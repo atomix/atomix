@@ -56,12 +56,12 @@ func getClusterPodDNSName(cluster *raftv1beta2.RaftCluster, name string) string 
 	return fmt.Sprintf("%s.%s.%s.svc.%s", name, getHeadlessServiceName(cluster), cluster.Namespace, getClusterDomain())
 }
 
-func getMemberPodOrdinal(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID) int {
-	return (int(partition.Spec.Replicas)*int(partition.Spec.ShardID) + (int(memberID) - 1)) % int(cluster.Spec.Replicas)
+func getReplicaPodOrdinal(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, replicaID raftv1beta2.ReplicaID) int {
+	return (int(partition.Spec.Replicas)*int(partition.Spec.GroupID) + (int(replicaID) - 1)) % int(cluster.Spec.Replicas)
 }
 
-func getMemberPodName(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID) string {
-	return fmt.Sprintf("%s-%d", cluster.Name, getMemberPodOrdinal(cluster, partition, memberID))
+func getReplicaPodName(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, replicaID raftv1beta2.ReplicaID) string {
+	return fmt.Sprintf("%s-%d", cluster.Name, getReplicaPodOrdinal(cluster, partition, replicaID))
 }
 
 // newClusterLabels returns the labels for the given cluster
@@ -70,60 +70,8 @@ func newClusterLabels(cluster *raftv1beta2.RaftCluster) map[string]string {
 	for key, value := range cluster.Labels {
 		labels[key] = value
 	}
+	labels[raftNamespaceKey] = cluster.Namespace
 	labels[raftClusterKey] = cluster.Name
-	return labels
-}
-
-func newClusterSelector(cluster *raftv1beta2.RaftCluster) map[string]string {
-	return map[string]string{
-		raftClusterKey: cluster.Name,
-	}
-}
-
-// newPartitionLabels returns the labels for the given partition
-func newPartitionLabels(cluster *raftv1beta2.RaftCluster, store metav1.Object, partitionID raftv1beta2.PartitionID, shardID raftv1beta2.ShardID) map[string]string {
-	labels := make(map[string]string)
-	for key, value := range store.GetLabels() {
-		labels[key] = value
-	}
-	labels[storeKey] = store.GetName()
-	labels[raftStoreKey] = store.GetName()
-	labels[raftClusterKey] = cluster.Name
-	labels[raftPartitionKey] = strconv.Itoa(int(partitionID))
-	labels[raftShardKey] = strconv.Itoa(int(shardID))
-	return labels
-}
-
-func newPartitionAnnotations(cluster *raftv1beta2.RaftCluster, store metav1.Object, partitionID raftv1beta2.PartitionID, shardID raftv1beta2.ShardID) map[string]string {
-	annotations := make(map[string]string)
-	for key, value := range store.GetLabels() {
-		annotations[key] = value
-	}
-	annotations[storeKey] = store.GetName()
-	annotations[raftStoreKey] = store.GetName()
-	annotations[raftClusterKey] = cluster.Name
-	annotations[raftPartitionKey] = strconv.Itoa(int(partitionID))
-	annotations[raftShardKey] = strconv.Itoa(int(shardID))
-	return annotations
-}
-
-func newPartitionSelector(partition *raftv1beta2.RaftPartition) map[string]string {
-	return map[string]string{
-		raftClusterKey:   partition.Spec.Cluster.Name,
-		raftPartitionKey: strconv.Itoa(int(partition.Spec.PartitionID)),
-		raftShardKey:     strconv.Itoa(int(partition.Spec.ShardID)),
-	}
-}
-
-// newMemberLabels returns the labels for the given cluster
-func newMemberLabels(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID, raftNodeID raftv1beta2.ReplicaID) map[string]string {
-	labels := make(map[string]string)
-	for key, value := range partition.Labels {
-		labels[key] = value
-	}
-	labels[podKey] = getMemberPodName(cluster, partition, memberID)
-	labels[raftMemberKey] = strconv.Itoa(int(memberID))
-	labels[raftReplicaKey] = strconv.Itoa(int(raftNodeID))
 	return labels
 }
 
@@ -132,18 +80,78 @@ func newClusterAnnotations(cluster *raftv1beta2.RaftCluster) map[string]string {
 	for key, value := range cluster.Annotations {
 		annotations[key] = value
 	}
+	annotations[raftNamespaceKey] = cluster.Namespace
 	annotations[raftClusterKey] = cluster.Name
 	return annotations
 }
 
-func newMemberAnnotations(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID, raftNodeID raftv1beta2.ReplicaID) map[string]string {
+func newClusterSelector(cluster *raftv1beta2.RaftCluster) map[string]string {
+	return map[string]string{
+		raftNamespaceKey: cluster.Namespace,
+		raftClusterKey:   cluster.Name,
+	}
+}
+
+// newPartitionLabels returns the labels for the given partition
+func newPartitionLabels(cluster *raftv1beta2.RaftCluster, store client.Object, partitionID raftv1beta2.PartitionID, groupID raftv1beta2.GroupID) map[string]string {
+	labels := make(map[string]string)
+	for key, value := range store.GetLabels() {
+		labels[key] = value
+	}
+	labels[raftNamespaceKey] = cluster.Namespace
+	labels[raftClusterKey] = cluster.Name
+	labels[storeKey] = store.GetName()
+	labels[raftStoreKey] = store.GetName()
+	labels[raftClusterKey] = cluster.Name
+	labels[raftPartitionIDKey] = strconv.Itoa(int(partitionID))
+	labels[raftGroupIDKey] = strconv.Itoa(int(groupID))
+	return labels
+}
+
+func newPartitionAnnotations(cluster *raftv1beta2.RaftCluster, store client.Object, partitionID raftv1beta2.PartitionID, groupID raftv1beta2.GroupID) map[string]string {
+	annotations := make(map[string]string)
+	for key, value := range store.GetLabels() {
+		annotations[key] = value
+	}
+	annotations[raftNamespaceKey] = cluster.Namespace
+	annotations[raftClusterKey] = cluster.Name
+	annotations[storeKey] = store.GetName()
+	annotations[raftStoreKey] = store.GetName()
+	annotations[raftClusterKey] = cluster.Name
+	annotations[raftPartitionIDKey] = strconv.Itoa(int(partitionID))
+	annotations[raftGroupIDKey] = strconv.Itoa(int(groupID))
+	return annotations
+}
+
+func newPartitionSelector(partition *raftv1beta2.RaftPartition) map[string]string {
+	return map[string]string{
+		raftNamespaceKey:   partition.Annotations[raftNamespaceKey],
+		raftClusterKey:     partition.Annotations[raftClusterKey],
+		raftPartitionIDKey: strconv.Itoa(int(partition.Spec.PartitionID)),
+		raftGroupIDKey:     strconv.Itoa(int(partition.Spec.GroupID)),
+	}
+}
+
+// newReplicaLabels returns the labels for the given cluster
+func newReplicaLabels(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, replicaID raftv1beta2.ReplicaID, memberID raftv1beta2.MemberID) map[string]string {
+	labels := make(map[string]string)
+	for key, value := range partition.Labels {
+		labels[key] = value
+	}
+	labels[podKey] = getReplicaPodName(cluster, partition, replicaID)
+	labels[raftReplicaIDKey] = strconv.Itoa(int(replicaID))
+	labels[raftMemberIDKey] = strconv.Itoa(int(memberID))
+	return labels
+}
+
+func newReplicaAnnotations(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, replicaID raftv1beta2.ReplicaID, memberID raftv1beta2.MemberID) map[string]string {
 	annotations := make(map[string]string)
 	for key, value := range partition.Labels {
 		annotations[key] = value
 	}
-	annotations[podKey] = getMemberPodName(cluster, partition, memberID)
-	annotations[raftMemberKey] = strconv.Itoa(int(memberID))
-	annotations[raftReplicaKey] = strconv.Itoa(int(raftNodeID))
+	annotations[podKey] = getReplicaPodName(cluster, partition, replicaID)
+	annotations[raftReplicaIDKey] = strconv.Itoa(int(replicaID))
+	annotations[raftMemberIDKey] = strconv.Itoa(int(memberID))
 	return annotations
 }
 

@@ -49,7 +49,7 @@ type RaftClusterSpec struct {
 // RaftClusterStatus defines the status of a RaftCluster
 type RaftClusterStatus struct {
 	State  RaftClusterState `json:"state"`
-	Shards uint32           `json:"shards"`
+	Groups uint32           `json:"groups"`
 }
 
 // +genclient

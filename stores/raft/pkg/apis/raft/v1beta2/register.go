@@ -40,7 +40,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion, &RaftCluster{}, &RaftClusterList{})
 	scheme.AddKnownTypes(SchemeGroupVersion, &RaftStore{}, &RaftStoreList{})
 	scheme.AddKnownTypes(SchemeGroupVersion, &RaftPartition{}, &RaftPartitionList{})
-	scheme.AddKnownTypes(SchemeGroupVersion, &RaftMember{}, &RaftMemberList{})
+	scheme.AddKnownTypes(SchemeGroupVersion, &RaftReplica{}, &RaftReplicaList{})
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }

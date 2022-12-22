@@ -31,17 +31,17 @@ var _ = time.Kitchen
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type ReplicaRole int32
+type MemberRole int32
 
 const (
-	ReplicaRole_UNKNOWN  ReplicaRole = 0
-	ReplicaRole_MEMBER   ReplicaRole = 1
-	ReplicaRole_OBSERVER ReplicaRole = 2
-	ReplicaRole_WITNESS  ReplicaRole = 3
-	ReplicaRole_REMOVED  ReplicaRole = 4
+	MemberRole_UNKNOWN  MemberRole = 0
+	MemberRole_MEMBER   MemberRole = 1
+	MemberRole_OBSERVER MemberRole = 2
+	MemberRole_WITNESS  MemberRole = 3
+	MemberRole_REMOVED  MemberRole = 4
 )
 
-var ReplicaRole_name = map[int32]string{
+var MemberRole_name = map[int32]string{
 	0: "UNKNOWN",
 	1: "MEMBER",
 	2: "OBSERVER",
@@ -49,7 +49,7 @@ var ReplicaRole_name = map[int32]string{
 	4: "REMOVED",
 }
 
-var ReplicaRole_value = map[string]int32{
+var MemberRole_value = map[string]int32{
 	"UNKNOWN":  0,
 	"MEMBER":   1,
 	"OBSERVER": 2,
@@ -57,32 +57,32 @@ var ReplicaRole_value = map[string]int32{
 	"REMOVED":  4,
 }
 
-func (x ReplicaRole) String() string {
-	return proto.EnumName(ReplicaRole_name, int32(x))
+func (x MemberRole) String() string {
+	return proto.EnumName(MemberRole_name, int32(x))
 }
 
-func (ReplicaRole) EnumDescriptor() ([]byte, []int) {
+func (MemberRole) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{0}
 }
 
-type ShardConfig struct {
-	ShardID  ShardID         `protobuf:"varint,1,opt,name=shard_id,json=shardId,proto3,casttype=ShardID" json:"shard_id,omitempty"`
-	Replicas []ReplicaConfig `protobuf:"bytes,2,rep,name=replicas,proto3" json:"replicas"`
-	Version  uint64          `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+type GroupConfig struct {
+	GroupID GroupID        `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3,casttype=GroupID" json:"group_id,omitempty"`
+	Members []MemberConfig `protobuf:"bytes,2,rep,name=members,proto3" json:"members"`
+	Version uint64         `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
 }
 
-func (m *ShardConfig) Reset()         { *m = ShardConfig{} }
-func (m *ShardConfig) String() string { return proto.CompactTextString(m) }
-func (*ShardConfig) ProtoMessage()    {}
-func (*ShardConfig) Descriptor() ([]byte, []int) {
+func (m *GroupConfig) Reset()         { *m = GroupConfig{} }
+func (m *GroupConfig) String() string { return proto.CompactTextString(m) }
+func (*GroupConfig) ProtoMessage()    {}
+func (*GroupConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{0}
 }
-func (m *ShardConfig) XXX_Unmarshal(b []byte) error {
+func (m *GroupConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ShardConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GroupConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ShardConfig.Marshal(b, m, deterministic)
+		return xxx_messageInfo_GroupConfig.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -92,58 +92,58 @@ func (m *ShardConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) 
 		return b[:n], nil
 	}
 }
-func (m *ShardConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ShardConfig.Merge(m, src)
+func (m *GroupConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GroupConfig.Merge(m, src)
 }
-func (m *ShardConfig) XXX_Size() int {
+func (m *GroupConfig) XXX_Size() int {
 	return m.Size()
 }
-func (m *ShardConfig) XXX_DiscardUnknown() {
-	xxx_messageInfo_ShardConfig.DiscardUnknown(m)
+func (m *GroupConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_GroupConfig.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ShardConfig proto.InternalMessageInfo
+var xxx_messageInfo_GroupConfig proto.InternalMessageInfo
 
-func (m *ShardConfig) GetShardID() ShardID {
+func (m *GroupConfig) GetGroupID() GroupID {
 	if m != nil {
-		return m.ShardID
+		return m.GroupID
 	}
 	return 0
 }
 
-func (m *ShardConfig) GetReplicas() []ReplicaConfig {
+func (m *GroupConfig) GetMembers() []MemberConfig {
 	if m != nil {
-		return m.Replicas
+		return m.Members
 	}
 	return nil
 }
 
-func (m *ShardConfig) GetVersion() uint64 {
+func (m *GroupConfig) GetVersion() uint64 {
 	if m != nil {
 		return m.Version
 	}
 	return 0
 }
 
-type ReplicaConfig struct {
-	ReplicaID ReplicaID   `protobuf:"varint,1,opt,name=replica_id,json=replicaId,proto3,casttype=ReplicaID" json:"replica_id,omitempty"`
-	Host      string      `protobuf:"bytes,2,opt,name=host,proto3" json:"host,omitempty"`
-	Port      int32       `protobuf:"varint,3,opt,name=port,proto3" json:"port,omitempty"`
-	Role      ReplicaRole `protobuf:"varint,4,opt,name=role,proto3,enum=atomix.stores.raft.v1.ReplicaRole" json:"role,omitempty"`
+type MemberConfig struct {
+	MemberID MemberID   `protobuf:"varint,1,opt,name=member_id,json=memberId,proto3,casttype=MemberID" json:"member_id,omitempty"`
+	Host     string     `protobuf:"bytes,2,opt,name=host,proto3" json:"host,omitempty"`
+	Port     int32      `protobuf:"varint,3,opt,name=port,proto3" json:"port,omitempty"`
+	Role     MemberRole `protobuf:"varint,4,opt,name=role,proto3,enum=atomix.stores.raft.v1.MemberRole" json:"role,omitempty"`
 }
 
-func (m *ReplicaConfig) Reset()         { *m = ReplicaConfig{} }
-func (m *ReplicaConfig) String() string { return proto.CompactTextString(m) }
-func (*ReplicaConfig) ProtoMessage()    {}
-func (*ReplicaConfig) Descriptor() ([]byte, []int) {
+func (m *MemberConfig) Reset()         { *m = MemberConfig{} }
+func (m *MemberConfig) String() string { return proto.CompactTextString(m) }
+func (*MemberConfig) ProtoMessage()    {}
+func (*MemberConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{1}
 }
-func (m *ReplicaConfig) XXX_Unmarshal(b []byte) error {
+func (m *MemberConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ReplicaConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MemberConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ReplicaConfig.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MemberConfig.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -153,44 +153,44 @@ func (m *ReplicaConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error
 		return b[:n], nil
 	}
 }
-func (m *ReplicaConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ReplicaConfig.Merge(m, src)
+func (m *MemberConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MemberConfig.Merge(m, src)
 }
-func (m *ReplicaConfig) XXX_Size() int {
+func (m *MemberConfig) XXX_Size() int {
 	return m.Size()
 }
-func (m *ReplicaConfig) XXX_DiscardUnknown() {
-	xxx_messageInfo_ReplicaConfig.DiscardUnknown(m)
+func (m *MemberConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_MemberConfig.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ReplicaConfig proto.InternalMessageInfo
+var xxx_messageInfo_MemberConfig proto.InternalMessageInfo
 
-func (m *ReplicaConfig) GetReplicaID() ReplicaID {
+func (m *MemberConfig) GetMemberID() MemberID {
 	if m != nil {
-		return m.ReplicaID
+		return m.MemberID
 	}
 	return 0
 }
 
-func (m *ReplicaConfig) GetHost() string {
+func (m *MemberConfig) GetHost() string {
 	if m != nil {
 		return m.Host
 	}
 	return ""
 }
 
-func (m *ReplicaConfig) GetPort() int32 {
+func (m *MemberConfig) GetPort() int32 {
 	if m != nil {
 		return m.Port
 	}
 	return 0
 }
 
-func (m *ReplicaConfig) GetRole() ReplicaRole {
+func (m *MemberConfig) GetRole() MemberRole {
 	if m != nil {
 		return m.Role
 	}
-	return ReplicaRole_UNKNOWN
+	return MemberRole_UNKNOWN
 }
 
 type RaftConfig struct {
@@ -346,7 +346,7 @@ func (m *RaftProposal) GetData() []byte {
 }
 
 type GetConfigRequest struct {
-	ShardID ShardID `protobuf:"varint,1,opt,name=shard_id,json=shardId,proto3,casttype=ShardID" json:"shard_id,omitempty"`
+	GroupID GroupID `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3,casttype=GroupID" json:"group_id,omitempty"`
 }
 
 func (m *GetConfigRequest) Reset()         { *m = GetConfigRequest{} }
@@ -382,15 +382,15 @@ func (m *GetConfigRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetConfigRequest proto.InternalMessageInfo
 
-func (m *GetConfigRequest) GetShardID() ShardID {
+func (m *GetConfigRequest) GetGroupID() GroupID {
 	if m != nil {
-		return m.ShardID
+		return m.GroupID
 	}
 	return 0
 }
 
 type GetConfigResponse struct {
-	Shard ShardConfig `protobuf:"bytes,1,opt,name=shard,proto3" json:"shard"`
+	Group GroupConfig `protobuf:"bytes,1,opt,name=group,proto3" json:"group"`
 }
 
 func (m *GetConfigResponse) Reset()         { *m = GetConfigResponse{} }
@@ -426,32 +426,32 @@ func (m *GetConfigResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetConfigResponse proto.InternalMessageInfo
 
-func (m *GetConfigResponse) GetShard() ShardConfig {
+func (m *GetConfigResponse) GetGroup() GroupConfig {
 	if m != nil {
-		return m.Shard
+		return m.Group
 	}
-	return ShardConfig{}
+	return GroupConfig{}
 }
 
-type BootstrapShardRequest struct {
-	ShardID   ShardID         `protobuf:"varint,1,opt,name=shard_id,json=shardId,proto3,casttype=ShardID" json:"shard_id,omitempty"`
-	ReplicaID ReplicaID       `protobuf:"varint,2,opt,name=replica_id,json=replicaId,proto3,casttype=ReplicaID" json:"replica_id,omitempty"`
-	Replicas  []ReplicaConfig `protobuf:"bytes,3,rep,name=replicas,proto3" json:"replicas"`
-	Config    RaftConfig      `protobuf:"bytes,4,opt,name=config,proto3" json:"config"`
+type BootstrapGroupRequest struct {
+	GroupID  GroupID        `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3,casttype=GroupID" json:"group_id,omitempty"`
+	MemberID MemberID       `protobuf:"varint,2,opt,name=member_id,json=memberId,proto3,casttype=MemberID" json:"member_id,omitempty"`
+	Members  []MemberConfig `protobuf:"bytes,3,rep,name=members,proto3" json:"members"`
+	Config   RaftConfig     `protobuf:"bytes,4,opt,name=config,proto3" json:"config"`
 }
 
-func (m *BootstrapShardRequest) Reset()         { *m = BootstrapShardRequest{} }
-func (m *BootstrapShardRequest) String() string { return proto.CompactTextString(m) }
-func (*BootstrapShardRequest) ProtoMessage()    {}
-func (*BootstrapShardRequest) Descriptor() ([]byte, []int) {
+func (m *BootstrapGroupRequest) Reset()         { *m = BootstrapGroupRequest{} }
+func (m *BootstrapGroupRequest) String() string { return proto.CompactTextString(m) }
+func (*BootstrapGroupRequest) ProtoMessage()    {}
+func (*BootstrapGroupRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{6}
 }
-func (m *BootstrapShardRequest) XXX_Unmarshal(b []byte) error {
+func (m *BootstrapGroupRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *BootstrapShardRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *BootstrapGroupRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_BootstrapShardRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_BootstrapGroupRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -461,61 +461,61 @@ func (m *BootstrapShardRequest) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return b[:n], nil
 	}
 }
-func (m *BootstrapShardRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BootstrapShardRequest.Merge(m, src)
+func (m *BootstrapGroupRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BootstrapGroupRequest.Merge(m, src)
 }
-func (m *BootstrapShardRequest) XXX_Size() int {
+func (m *BootstrapGroupRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *BootstrapShardRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_BootstrapShardRequest.DiscardUnknown(m)
+func (m *BootstrapGroupRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_BootstrapGroupRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_BootstrapShardRequest proto.InternalMessageInfo
+var xxx_messageInfo_BootstrapGroupRequest proto.InternalMessageInfo
 
-func (m *BootstrapShardRequest) GetShardID() ShardID {
+func (m *BootstrapGroupRequest) GetGroupID() GroupID {
 	if m != nil {
-		return m.ShardID
+		return m.GroupID
 	}
 	return 0
 }
 
-func (m *BootstrapShardRequest) GetReplicaID() ReplicaID {
+func (m *BootstrapGroupRequest) GetMemberID() MemberID {
 	if m != nil {
-		return m.ReplicaID
+		return m.MemberID
 	}
 	return 0
 }
 
-func (m *BootstrapShardRequest) GetReplicas() []ReplicaConfig {
+func (m *BootstrapGroupRequest) GetMembers() []MemberConfig {
 	if m != nil {
-		return m.Replicas
+		return m.Members
 	}
 	return nil
 }
 
-func (m *BootstrapShardRequest) GetConfig() RaftConfig {
+func (m *BootstrapGroupRequest) GetConfig() RaftConfig {
 	if m != nil {
 		return m.Config
 	}
 	return RaftConfig{}
 }
 
-type BootstrapShardResponse struct {
+type BootstrapGroupResponse struct {
 }
 
-func (m *BootstrapShardResponse) Reset()         { *m = BootstrapShardResponse{} }
-func (m *BootstrapShardResponse) String() string { return proto.CompactTextString(m) }
-func (*BootstrapShardResponse) ProtoMessage()    {}
-func (*BootstrapShardResponse) Descriptor() ([]byte, []int) {
+func (m *BootstrapGroupResponse) Reset()         { *m = BootstrapGroupResponse{} }
+func (m *BootstrapGroupResponse) String() string { return proto.CompactTextString(m) }
+func (*BootstrapGroupResponse) ProtoMessage()    {}
+func (*BootstrapGroupResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{7}
 }
-func (m *BootstrapShardResponse) XXX_Unmarshal(b []byte) error {
+func (m *BootstrapGroupResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *BootstrapShardResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *BootstrapGroupResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_BootstrapShardResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_BootstrapGroupResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -525,36 +525,36 @@ func (m *BootstrapShardResponse) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *BootstrapShardResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BootstrapShardResponse.Merge(m, src)
+func (m *BootstrapGroupResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BootstrapGroupResponse.Merge(m, src)
 }
-func (m *BootstrapShardResponse) XXX_Size() int {
+func (m *BootstrapGroupResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *BootstrapShardResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_BootstrapShardResponse.DiscardUnknown(m)
+func (m *BootstrapGroupResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_BootstrapGroupResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_BootstrapShardResponse proto.InternalMessageInfo
+var xxx_messageInfo_BootstrapGroupResponse proto.InternalMessageInfo
 
-type AddReplicaRequest struct {
-	ShardID ShardID       `protobuf:"varint,1,opt,name=shard_id,json=shardId,proto3,casttype=ShardID" json:"shard_id,omitempty"`
-	Replica ReplicaConfig `protobuf:"bytes,2,opt,name=replica,proto3" json:"replica"`
-	Version uint64        `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+type AddMemberRequest struct {
+	GroupID GroupID      `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3,casttype=GroupID" json:"group_id,omitempty"`
+	Member  MemberConfig `protobuf:"bytes,2,opt,name=member,proto3" json:"member"`
+	Version uint64       `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
 }
 
-func (m *AddReplicaRequest) Reset()         { *m = AddReplicaRequest{} }
-func (m *AddReplicaRequest) String() string { return proto.CompactTextString(m) }
-func (*AddReplicaRequest) ProtoMessage()    {}
-func (*AddReplicaRequest) Descriptor() ([]byte, []int) {
+func (m *AddMemberRequest) Reset()         { *m = AddMemberRequest{} }
+func (m *AddMemberRequest) String() string { return proto.CompactTextString(m) }
+func (*AddMemberRequest) ProtoMessage()    {}
+func (*AddMemberRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{8}
 }
-func (m *AddReplicaRequest) XXX_Unmarshal(b []byte) error {
+func (m *AddMemberRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AddReplicaRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AddMemberRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_AddReplicaRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_AddMemberRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -564,54 +564,54 @@ func (m *AddReplicaRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *AddReplicaRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AddReplicaRequest.Merge(m, src)
+func (m *AddMemberRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddMemberRequest.Merge(m, src)
 }
-func (m *AddReplicaRequest) XXX_Size() int {
+func (m *AddMemberRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *AddReplicaRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_AddReplicaRequest.DiscardUnknown(m)
+func (m *AddMemberRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddMemberRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AddReplicaRequest proto.InternalMessageInfo
+var xxx_messageInfo_AddMemberRequest proto.InternalMessageInfo
 
-func (m *AddReplicaRequest) GetShardID() ShardID {
+func (m *AddMemberRequest) GetGroupID() GroupID {
 	if m != nil {
-		return m.ShardID
+		return m.GroupID
 	}
 	return 0
 }
 
-func (m *AddReplicaRequest) GetReplica() ReplicaConfig {
+func (m *AddMemberRequest) GetMember() MemberConfig {
 	if m != nil {
-		return m.Replica
+		return m.Member
 	}
-	return ReplicaConfig{}
+	return MemberConfig{}
 }
 
-func (m *AddReplicaRequest) GetVersion() uint64 {
+func (m *AddMemberRequest) GetVersion() uint64 {
 	if m != nil {
 		return m.Version
 	}
 	return 0
 }
 
-type AddReplicaResponse struct {
+type AddMemberResponse struct {
 }
 
-func (m *AddReplicaResponse) Reset()         { *m = AddReplicaResponse{} }
-func (m *AddReplicaResponse) String() string { return proto.CompactTextString(m) }
-func (*AddReplicaResponse) ProtoMessage()    {}
-func (*AddReplicaResponse) Descriptor() ([]byte, []int) {
+func (m *AddMemberResponse) Reset()         { *m = AddMemberResponse{} }
+func (m *AddMemberResponse) String() string { return proto.CompactTextString(m) }
+func (*AddMemberResponse) ProtoMessage()    {}
+func (*AddMemberResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{9}
 }
-func (m *AddReplicaResponse) XXX_Unmarshal(b []byte) error {
+func (m *AddMemberResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AddReplicaResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AddMemberResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_AddReplicaResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_AddMemberResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -621,36 +621,36 @@ func (m *AddReplicaResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *AddReplicaResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AddReplicaResponse.Merge(m, src)
+func (m *AddMemberResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddMemberResponse.Merge(m, src)
 }
-func (m *AddReplicaResponse) XXX_Size() int {
+func (m *AddMemberResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *AddReplicaResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_AddReplicaResponse.DiscardUnknown(m)
+func (m *AddMemberResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddMemberResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AddReplicaResponse proto.InternalMessageInfo
+var xxx_messageInfo_AddMemberResponse proto.InternalMessageInfo
 
-type RemoveReplicaRequest struct {
-	ShardID   ShardID   `protobuf:"varint,1,opt,name=shard_id,json=shardId,proto3,casttype=ShardID" json:"shard_id,omitempty"`
-	ReplicaID ReplicaID `protobuf:"varint,2,opt,name=replica_id,json=replicaId,proto3,casttype=ReplicaID" json:"replica_id,omitempty"`
-	Version   uint64    `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+type RemoveMemberRequest struct {
+	GroupID  GroupID  `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3,casttype=GroupID" json:"group_id,omitempty"`
+	MemberID MemberID `protobuf:"varint,2,opt,name=member_id,json=memberId,proto3,casttype=MemberID" json:"member_id,omitempty"`
+	Version  uint64   `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
 }
 
-func (m *RemoveReplicaRequest) Reset()         { *m = RemoveReplicaRequest{} }
-func (m *RemoveReplicaRequest) String() string { return proto.CompactTextString(m) }
-func (*RemoveReplicaRequest) ProtoMessage()    {}
-func (*RemoveReplicaRequest) Descriptor() ([]byte, []int) {
+func (m *RemoveMemberRequest) Reset()         { *m = RemoveMemberRequest{} }
+func (m *RemoveMemberRequest) String() string { return proto.CompactTextString(m) }
+func (*RemoveMemberRequest) ProtoMessage()    {}
+func (*RemoveMemberRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{10}
 }
-func (m *RemoveReplicaRequest) XXX_Unmarshal(b []byte) error {
+func (m *RemoveMemberRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RemoveReplicaRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RemoveMemberRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_RemoveReplicaRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_RemoveMemberRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -660,54 +660,54 @@ func (m *RemoveReplicaRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return b[:n], nil
 	}
 }
-func (m *RemoveReplicaRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RemoveReplicaRequest.Merge(m, src)
+func (m *RemoveMemberRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RemoveMemberRequest.Merge(m, src)
 }
-func (m *RemoveReplicaRequest) XXX_Size() int {
+func (m *RemoveMemberRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *RemoveReplicaRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_RemoveReplicaRequest.DiscardUnknown(m)
+func (m *RemoveMemberRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RemoveMemberRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_RemoveReplicaRequest proto.InternalMessageInfo
+var xxx_messageInfo_RemoveMemberRequest proto.InternalMessageInfo
 
-func (m *RemoveReplicaRequest) GetShardID() ShardID {
+func (m *RemoveMemberRequest) GetGroupID() GroupID {
 	if m != nil {
-		return m.ShardID
+		return m.GroupID
 	}
 	return 0
 }
 
-func (m *RemoveReplicaRequest) GetReplicaID() ReplicaID {
+func (m *RemoveMemberRequest) GetMemberID() MemberID {
 	if m != nil {
-		return m.ReplicaID
+		return m.MemberID
 	}
 	return 0
 }
 
-func (m *RemoveReplicaRequest) GetVersion() uint64 {
+func (m *RemoveMemberRequest) GetVersion() uint64 {
 	if m != nil {
 		return m.Version
 	}
 	return 0
 }
 
-type RemoveReplicaResponse struct {
+type RemoveMemberResponse struct {
 }
 
-func (m *RemoveReplicaResponse) Reset()         { *m = RemoveReplicaResponse{} }
-func (m *RemoveReplicaResponse) String() string { return proto.CompactTextString(m) }
-func (*RemoveReplicaResponse) ProtoMessage()    {}
-func (*RemoveReplicaResponse) Descriptor() ([]byte, []int) {
+func (m *RemoveMemberResponse) Reset()         { *m = RemoveMemberResponse{} }
+func (m *RemoveMemberResponse) String() string { return proto.CompactTextString(m) }
+func (*RemoveMemberResponse) ProtoMessage()    {}
+func (*RemoveMemberResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{11}
 }
-func (m *RemoveReplicaResponse) XXX_Unmarshal(b []byte) error {
+func (m *RemoveMemberResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RemoveReplicaResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RemoveMemberResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_RemoveReplicaResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_RemoveMemberResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -717,36 +717,36 @@ func (m *RemoveReplicaResponse) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return b[:n], nil
 	}
 }
-func (m *RemoveReplicaResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RemoveReplicaResponse.Merge(m, src)
+func (m *RemoveMemberResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RemoveMemberResponse.Merge(m, src)
 }
-func (m *RemoveReplicaResponse) XXX_Size() int {
+func (m *RemoveMemberResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *RemoveReplicaResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_RemoveReplicaResponse.DiscardUnknown(m)
+func (m *RemoveMemberResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RemoveMemberResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_RemoveReplicaResponse proto.InternalMessageInfo
+var xxx_messageInfo_RemoveMemberResponse proto.InternalMessageInfo
 
-type JoinShardRequest struct {
-	ShardID   ShardID    `protobuf:"varint,1,opt,name=shard_id,json=shardId,proto3,casttype=ShardID" json:"shard_id,omitempty"`
-	ReplicaID ReplicaID  `protobuf:"varint,2,opt,name=replica_id,json=replicaId,proto3,casttype=ReplicaID" json:"replica_id,omitempty"`
-	Config    RaftConfig `protobuf:"bytes,3,opt,name=config,proto3" json:"config"`
+type JoinGroupRequest struct {
+	GroupID  GroupID    `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3,casttype=GroupID" json:"group_id,omitempty"`
+	MemberID MemberID   `protobuf:"varint,2,opt,name=member_id,json=memberId,proto3,casttype=MemberID" json:"member_id,omitempty"`
+	Config   RaftConfig `protobuf:"bytes,3,opt,name=config,proto3" json:"config"`
 }
 
-func (m *JoinShardRequest) Reset()         { *m = JoinShardRequest{} }
-func (m *JoinShardRequest) String() string { return proto.CompactTextString(m) }
-func (*JoinShardRequest) ProtoMessage()    {}
-func (*JoinShardRequest) Descriptor() ([]byte, []int) {
+func (m *JoinGroupRequest) Reset()         { *m = JoinGroupRequest{} }
+func (m *JoinGroupRequest) String() string { return proto.CompactTextString(m) }
+func (*JoinGroupRequest) ProtoMessage()    {}
+func (*JoinGroupRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{12}
 }
-func (m *JoinShardRequest) XXX_Unmarshal(b []byte) error {
+func (m *JoinGroupRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *JoinShardRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *JoinGroupRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_JoinShardRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_JoinGroupRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -756,54 +756,54 @@ func (m *JoinShardRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, er
 		return b[:n], nil
 	}
 }
-func (m *JoinShardRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_JoinShardRequest.Merge(m, src)
+func (m *JoinGroupRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JoinGroupRequest.Merge(m, src)
 }
-func (m *JoinShardRequest) XXX_Size() int {
+func (m *JoinGroupRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *JoinShardRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_JoinShardRequest.DiscardUnknown(m)
+func (m *JoinGroupRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_JoinGroupRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_JoinShardRequest proto.InternalMessageInfo
+var xxx_messageInfo_JoinGroupRequest proto.InternalMessageInfo
 
-func (m *JoinShardRequest) GetShardID() ShardID {
+func (m *JoinGroupRequest) GetGroupID() GroupID {
 	if m != nil {
-		return m.ShardID
+		return m.GroupID
 	}
 	return 0
 }
 
-func (m *JoinShardRequest) GetReplicaID() ReplicaID {
+func (m *JoinGroupRequest) GetMemberID() MemberID {
 	if m != nil {
-		return m.ReplicaID
+		return m.MemberID
 	}
 	return 0
 }
 
-func (m *JoinShardRequest) GetConfig() RaftConfig {
+func (m *JoinGroupRequest) GetConfig() RaftConfig {
 	if m != nil {
 		return m.Config
 	}
 	return RaftConfig{}
 }
 
-type JoinShardResponse struct {
+type JoinGroupResponse struct {
 }
 
-func (m *JoinShardResponse) Reset()         { *m = JoinShardResponse{} }
-func (m *JoinShardResponse) String() string { return proto.CompactTextString(m) }
-func (*JoinShardResponse) ProtoMessage()    {}
-func (*JoinShardResponse) Descriptor() ([]byte, []int) {
+func (m *JoinGroupResponse) Reset()         { *m = JoinGroupResponse{} }
+func (m *JoinGroupResponse) String() string { return proto.CompactTextString(m) }
+func (*JoinGroupResponse) ProtoMessage()    {}
+func (*JoinGroupResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{13}
 }
-func (m *JoinShardResponse) XXX_Unmarshal(b []byte) error {
+func (m *JoinGroupResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *JoinShardResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *JoinGroupResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_JoinShardResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_JoinGroupResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -813,34 +813,34 @@ func (m *JoinShardResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *JoinShardResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_JoinShardResponse.Merge(m, src)
+func (m *JoinGroupResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JoinGroupResponse.Merge(m, src)
 }
-func (m *JoinShardResponse) XXX_Size() int {
+func (m *JoinGroupResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *JoinShardResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_JoinShardResponse.DiscardUnknown(m)
+func (m *JoinGroupResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_JoinGroupResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_JoinShardResponse proto.InternalMessageInfo
+var xxx_messageInfo_JoinGroupResponse proto.InternalMessageInfo
 
-type LeaveShardRequest struct {
-	ShardID ShardID `protobuf:"varint,1,opt,name=shard_id,json=shardId,proto3,casttype=ShardID" json:"shard_id,omitempty"`
+type LeaveGroupRequest struct {
+	GroupID GroupID `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3,casttype=GroupID" json:"group_id,omitempty"`
 }
 
-func (m *LeaveShardRequest) Reset()         { *m = LeaveShardRequest{} }
-func (m *LeaveShardRequest) String() string { return proto.CompactTextString(m) }
-func (*LeaveShardRequest) ProtoMessage()    {}
-func (*LeaveShardRequest) Descriptor() ([]byte, []int) {
+func (m *LeaveGroupRequest) Reset()         { *m = LeaveGroupRequest{} }
+func (m *LeaveGroupRequest) String() string { return proto.CompactTextString(m) }
+func (*LeaveGroupRequest) ProtoMessage()    {}
+func (*LeaveGroupRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{14}
 }
-func (m *LeaveShardRequest) XXX_Unmarshal(b []byte) error {
+func (m *LeaveGroupRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *LeaveShardRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *LeaveGroupRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_LeaveShardRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_LeaveGroupRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -850,40 +850,40 @@ func (m *LeaveShardRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *LeaveShardRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LeaveShardRequest.Merge(m, src)
+func (m *LeaveGroupRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LeaveGroupRequest.Merge(m, src)
 }
-func (m *LeaveShardRequest) XXX_Size() int {
+func (m *LeaveGroupRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *LeaveShardRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_LeaveShardRequest.DiscardUnknown(m)
+func (m *LeaveGroupRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_LeaveGroupRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_LeaveShardRequest proto.InternalMessageInfo
+var xxx_messageInfo_LeaveGroupRequest proto.InternalMessageInfo
 
-func (m *LeaveShardRequest) GetShardID() ShardID {
+func (m *LeaveGroupRequest) GetGroupID() GroupID {
 	if m != nil {
-		return m.ShardID
+		return m.GroupID
 	}
 	return 0
 }
 
-type LeaveShardResponse struct {
+type LeaveGroupResponse struct {
 }
 
-func (m *LeaveShardResponse) Reset()         { *m = LeaveShardResponse{} }
-func (m *LeaveShardResponse) String() string { return proto.CompactTextString(m) }
-func (*LeaveShardResponse) ProtoMessage()    {}
-func (*LeaveShardResponse) Descriptor() ([]byte, []int) {
+func (m *LeaveGroupResponse) Reset()         { *m = LeaveGroupResponse{} }
+func (m *LeaveGroupResponse) String() string { return proto.CompactTextString(m) }
+func (*LeaveGroupResponse) ProtoMessage()    {}
+func (*LeaveGroupResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{15}
 }
-func (m *LeaveShardResponse) XXX_Unmarshal(b []byte) error {
+func (m *LeaveGroupResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *LeaveShardResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *LeaveGroupResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_LeaveShardResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_LeaveGroupResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -893,21 +893,21 @@ func (m *LeaveShardResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *LeaveShardResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LeaveShardResponse.Merge(m, src)
+func (m *LeaveGroupResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LeaveGroupResponse.Merge(m, src)
 }
-func (m *LeaveShardResponse) XXX_Size() int {
+func (m *LeaveGroupResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *LeaveShardResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_LeaveShardResponse.DiscardUnknown(m)
+func (m *LeaveGroupResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_LeaveGroupResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_LeaveShardResponse proto.InternalMessageInfo
+var xxx_messageInfo_LeaveGroupResponse proto.InternalMessageInfo
 
 type DeleteDataRequest struct {
-	ShardID   ShardID   `protobuf:"varint,1,opt,name=shard_id,json=shardId,proto3,casttype=ShardID" json:"shard_id,omitempty"`
-	ReplicaID ReplicaID `protobuf:"varint,2,opt,name=replica_id,json=replicaId,proto3,casttype=ReplicaID" json:"replica_id,omitempty"`
+	GroupID  GroupID  `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3,casttype=GroupID" json:"group_id,omitempty"`
+	MemberID MemberID `protobuf:"varint,2,opt,name=member_id,json=memberId,proto3,casttype=MemberID" json:"member_id,omitempty"`
 }
 
 func (m *DeleteDataRequest) Reset()         { *m = DeleteDataRequest{} }
@@ -943,16 +943,16 @@ func (m *DeleteDataRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeleteDataRequest proto.InternalMessageInfo
 
-func (m *DeleteDataRequest) GetShardID() ShardID {
+func (m *DeleteDataRequest) GetGroupID() GroupID {
 	if m != nil {
-		return m.ShardID
+		return m.GroupID
 	}
 	return 0
 }
 
-func (m *DeleteDataRequest) GetReplicaID() ReplicaID {
+func (m *DeleteDataRequest) GetMemberID() MemberID {
 	if m != nil {
-		return m.ReplicaID
+		return m.MemberID
 	}
 	return 0
 }
@@ -1032,7 +1032,7 @@ var xxx_messageInfo_WatchRequest proto.InternalMessageInfo
 type Event struct {
 	Timestamp time.Time `protobuf:"bytes,1,opt,name=timestamp,proto3,stdtime" json:"timestamp"`
 	// Types that are valid to be assigned to Event:
-	//	*Event_ReplicaReady
+	//	*Event_MemberReady
 	//	*Event_LeaderUpdated
 	//	*Event_ConfigurationChanged
 	//	*Event_SendSnapshotStarted
@@ -1088,8 +1088,8 @@ type isEvent_Event interface {
 	Size() int
 }
 
-type Event_ReplicaReady struct {
-	ReplicaReady *ReplicaReadyEvent `protobuf:"bytes,2,opt,name=replica_ready,json=replicaReady,proto3,oneof" json:"replica_ready,omitempty"`
+type Event_MemberReady struct {
+	MemberReady *MemberReadyEvent `protobuf:"bytes,2,opt,name=member_ready,json=memberReady,proto3,oneof" json:"member_ready,omitempty"`
 }
 type Event_LeaderUpdated struct {
 	LeaderUpdated *LeaderUpdatedEvent `protobuf:"bytes,3,opt,name=leader_updated,json=leaderUpdated,proto3,oneof" json:"leader_updated,omitempty"`
@@ -1131,7 +1131,7 @@ type Event_ConnectionFailed struct {
 	ConnectionFailed *ConnectionFailedEvent `protobuf:"bytes,15,opt,name=connection_failed,json=connectionFailed,proto3,oneof" json:"connection_failed,omitempty"`
 }
 
-func (*Event_ReplicaReady) isEvent_Event()          {}
+func (*Event_MemberReady) isEvent_Event()           {}
 func (*Event_LeaderUpdated) isEvent_Event()         {}
 func (*Event_ConfigurationChanged) isEvent_Event()  {}
 func (*Event_SendSnapshotStarted) isEvent_Event()   {}
@@ -1160,9 +1160,9 @@ func (m *Event) GetTimestamp() time.Time {
 	return time.Time{}
 }
 
-func (m *Event) GetReplicaReady() *ReplicaReadyEvent {
-	if x, ok := m.GetEvent().(*Event_ReplicaReady); ok {
-		return x.ReplicaReady
+func (m *Event) GetMemberReady() *MemberReadyEvent {
+	if x, ok := m.GetEvent().(*Event_MemberReady); ok {
+		return x.MemberReady
 	}
 	return nil
 }
@@ -1261,7 +1261,7 @@ func (m *Event) GetConnectionFailed() *ConnectionFailedEvent {
 // XXX_OneofWrappers is for the internal use of the proto package.
 func (*Event) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
-		(*Event_ReplicaReady)(nil),
+		(*Event_MemberReady)(nil),
 		(*Event_LeaderUpdated)(nil),
 		(*Event_ConfigurationChanged)(nil),
 		(*Event_SendSnapshotStarted)(nil),
@@ -1330,23 +1330,23 @@ func (m *ConnectionInfo) GetSnapshot() bool {
 	return false
 }
 
-type ReplicaEvent struct {
-	ShardID   ShardID   `protobuf:"varint,1,opt,name=shard_id,json=shardId,proto3,casttype=ShardID" json:"shard_id,omitempty"`
-	ReplicaID ReplicaID `protobuf:"varint,2,opt,name=replica_id,json=replicaId,proto3,casttype=ReplicaID" json:"replica_id,omitempty"`
+type MemberEvent struct {
+	GroupID  GroupID  `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3,casttype=GroupID" json:"group_id,omitempty"`
+	MemberID MemberID `protobuf:"varint,2,opt,name=member_id,json=memberId,proto3,casttype=MemberID" json:"member_id,omitempty"`
 }
 
-func (m *ReplicaEvent) Reset()         { *m = ReplicaEvent{} }
-func (m *ReplicaEvent) String() string { return proto.CompactTextString(m) }
-func (*ReplicaEvent) ProtoMessage()    {}
-func (*ReplicaEvent) Descriptor() ([]byte, []int) {
+func (m *MemberEvent) Reset()         { *m = MemberEvent{} }
+func (m *MemberEvent) String() string { return proto.CompactTextString(m) }
+func (*MemberEvent) ProtoMessage()    {}
+func (*MemberEvent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{21}
 }
-func (m *ReplicaEvent) XXX_Unmarshal(b []byte) error {
+func (m *MemberEvent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ReplicaEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MemberEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ReplicaEvent.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MemberEvent.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1356,48 +1356,48 @@ func (m *ReplicaEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return b[:n], nil
 	}
 }
-func (m *ReplicaEvent) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ReplicaEvent.Merge(m, src)
+func (m *MemberEvent) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MemberEvent.Merge(m, src)
 }
-func (m *ReplicaEvent) XXX_Size() int {
+func (m *MemberEvent) XXX_Size() int {
 	return m.Size()
 }
-func (m *ReplicaEvent) XXX_DiscardUnknown() {
-	xxx_messageInfo_ReplicaEvent.DiscardUnknown(m)
+func (m *MemberEvent) XXX_DiscardUnknown() {
+	xxx_messageInfo_MemberEvent.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ReplicaEvent proto.InternalMessageInfo
+var xxx_messageInfo_MemberEvent proto.InternalMessageInfo
 
-func (m *ReplicaEvent) GetShardID() ShardID {
+func (m *MemberEvent) GetGroupID() GroupID {
 	if m != nil {
-		return m.ShardID
+		return m.GroupID
 	}
 	return 0
 }
 
-func (m *ReplicaEvent) GetReplicaID() ReplicaID {
+func (m *MemberEvent) GetMemberID() MemberID {
 	if m != nil {
-		return m.ReplicaID
+		return m.MemberID
 	}
 	return 0
 }
 
-type ReplicaReadyEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
+type MemberReadyEvent struct {
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
 }
 
-func (m *ReplicaReadyEvent) Reset()         { *m = ReplicaReadyEvent{} }
-func (m *ReplicaReadyEvent) String() string { return proto.CompactTextString(m) }
-func (*ReplicaReadyEvent) ProtoMessage()    {}
-func (*ReplicaReadyEvent) Descriptor() ([]byte, []int) {
+func (m *MemberReadyEvent) Reset()         { *m = MemberReadyEvent{} }
+func (m *MemberReadyEvent) String() string { return proto.CompactTextString(m) }
+func (*MemberReadyEvent) ProtoMessage()    {}
+func (*MemberReadyEvent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_078208a31684120b, []int{22}
 }
-func (m *ReplicaReadyEvent) XXX_Unmarshal(b []byte) error {
+func (m *MemberReadyEvent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ReplicaReadyEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MemberReadyEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ReplicaReadyEvent.Marshal(b, m, deterministic)
+		return xxx_messageInfo_MemberReadyEvent.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1407,20 +1407,20 @@ func (m *ReplicaReadyEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *ReplicaReadyEvent) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ReplicaReadyEvent.Merge(m, src)
+func (m *MemberReadyEvent) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MemberReadyEvent.Merge(m, src)
 }
-func (m *ReplicaReadyEvent) XXX_Size() int {
+func (m *MemberReadyEvent) XXX_Size() int {
 	return m.Size()
 }
-func (m *ReplicaReadyEvent) XXX_DiscardUnknown() {
-	xxx_messageInfo_ReplicaReadyEvent.DiscardUnknown(m)
+func (m *MemberReadyEvent) XXX_DiscardUnknown() {
+	xxx_messageInfo_MemberReadyEvent.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ReplicaReadyEvent proto.InternalMessageInfo
+var xxx_messageInfo_MemberReadyEvent proto.InternalMessageInfo
 
 type ConfigurationChangedEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
 }
 
 func (m *ConfigurationChangedEvent) Reset()         { *m = ConfigurationChangedEvent{} }
@@ -1457,9 +1457,9 @@ func (m *ConfigurationChangedEvent) XXX_DiscardUnknown() {
 var xxx_messageInfo_ConfigurationChangedEvent proto.InternalMessageInfo
 
 type LeaderUpdatedEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
-	Term         Term      `protobuf:"varint,2,opt,name=term,proto3,casttype=Term" json:"term,omitempty"`
-	Leader       ReplicaID `protobuf:"varint,3,opt,name=leader,proto3,casttype=ReplicaID" json:"leader,omitempty"`
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
+	Term        Term     `protobuf:"varint,2,opt,name=term,proto3,casttype=Term" json:"term,omitempty"`
+	Leader      MemberID `protobuf:"varint,3,opt,name=leader,proto3,casttype=MemberID" json:"leader,omitempty"`
 }
 
 func (m *LeaderUpdatedEvent) Reset()         { *m = LeaderUpdatedEvent{} }
@@ -1502,7 +1502,7 @@ func (m *LeaderUpdatedEvent) GetTerm() Term {
 	return 0
 }
 
-func (m *LeaderUpdatedEvent) GetLeader() ReplicaID {
+func (m *LeaderUpdatedEvent) GetLeader() MemberID {
 	if m != nil {
 		return m.Leader
 	}
@@ -1510,9 +1510,9 @@ func (m *LeaderUpdatedEvent) GetLeader() ReplicaID {
 }
 
 type SendSnapshotStartedEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
-	Index        Index     `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
-	To           ReplicaID `protobuf:"varint,3,opt,name=to,proto3,casttype=ReplicaID" json:"to,omitempty"`
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
+	Index       Index    `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
+	To          MemberID `protobuf:"varint,3,opt,name=to,proto3,casttype=MemberID" json:"to,omitempty"`
 }
 
 func (m *SendSnapshotStartedEvent) Reset()         { *m = SendSnapshotStartedEvent{} }
@@ -1555,7 +1555,7 @@ func (m *SendSnapshotStartedEvent) GetIndex() Index {
 	return 0
 }
 
-func (m *SendSnapshotStartedEvent) GetTo() ReplicaID {
+func (m *SendSnapshotStartedEvent) GetTo() MemberID {
 	if m != nil {
 		return m.To
 	}
@@ -1563,9 +1563,9 @@ func (m *SendSnapshotStartedEvent) GetTo() ReplicaID {
 }
 
 type SendSnapshotCompletedEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
-	Index        Index     `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
-	To           ReplicaID `protobuf:"varint,3,opt,name=to,proto3,casttype=ReplicaID" json:"to,omitempty"`
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
+	Index       Index    `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
+	To          MemberID `protobuf:"varint,3,opt,name=to,proto3,casttype=MemberID" json:"to,omitempty"`
 }
 
 func (m *SendSnapshotCompletedEvent) Reset()         { *m = SendSnapshotCompletedEvent{} }
@@ -1608,7 +1608,7 @@ func (m *SendSnapshotCompletedEvent) GetIndex() Index {
 	return 0
 }
 
-func (m *SendSnapshotCompletedEvent) GetTo() ReplicaID {
+func (m *SendSnapshotCompletedEvent) GetTo() MemberID {
 	if m != nil {
 		return m.To
 	}
@@ -1616,9 +1616,9 @@ func (m *SendSnapshotCompletedEvent) GetTo() ReplicaID {
 }
 
 type SendSnapshotAbortedEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
-	Index        Index     `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
-	To           ReplicaID `protobuf:"varint,3,opt,name=to,proto3,casttype=ReplicaID" json:"to,omitempty"`
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
+	Index       Index    `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
+	To          MemberID `protobuf:"varint,3,opt,name=to,proto3,casttype=MemberID" json:"to,omitempty"`
 }
 
 func (m *SendSnapshotAbortedEvent) Reset()         { *m = SendSnapshotAbortedEvent{} }
@@ -1661,7 +1661,7 @@ func (m *SendSnapshotAbortedEvent) GetIndex() Index {
 	return 0
 }
 
-func (m *SendSnapshotAbortedEvent) GetTo() ReplicaID {
+func (m *SendSnapshotAbortedEvent) GetTo() MemberID {
 	if m != nil {
 		return m.To
 	}
@@ -1669,9 +1669,9 @@ func (m *SendSnapshotAbortedEvent) GetTo() ReplicaID {
 }
 
 type SnapshotReceivedEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
-	Index        Index     `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
-	From         ReplicaID `protobuf:"varint,3,opt,name=from,proto3,casttype=ReplicaID" json:"from,omitempty"`
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
+	Index       Index    `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
+	From        MemberID `protobuf:"varint,3,opt,name=from,proto3,casttype=MemberID" json:"from,omitempty"`
 }
 
 func (m *SnapshotReceivedEvent) Reset()         { *m = SnapshotReceivedEvent{} }
@@ -1714,7 +1714,7 @@ func (m *SnapshotReceivedEvent) GetIndex() Index {
 	return 0
 }
 
-func (m *SnapshotReceivedEvent) GetFrom() ReplicaID {
+func (m *SnapshotReceivedEvent) GetFrom() MemberID {
 	if m != nil {
 		return m.From
 	}
@@ -1722,8 +1722,8 @@ func (m *SnapshotReceivedEvent) GetFrom() ReplicaID {
 }
 
 type SnapshotRecoveredEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
-	Index        Index `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
+	Index       Index `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
 }
 
 func (m *SnapshotRecoveredEvent) Reset()         { *m = SnapshotRecoveredEvent{} }
@@ -1767,8 +1767,8 @@ func (m *SnapshotRecoveredEvent) GetIndex() Index {
 }
 
 type SnapshotCreatedEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
-	Index        Index `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
+	Index       Index `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
 }
 
 func (m *SnapshotCreatedEvent) Reset()         { *m = SnapshotCreatedEvent{} }
@@ -1812,8 +1812,8 @@ func (m *SnapshotCreatedEvent) GetIndex() Index {
 }
 
 type SnapshotCompactedEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
-	Index        Index `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
+	Index       Index `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
 }
 
 func (m *SnapshotCompactedEvent) Reset()         { *m = SnapshotCompactedEvent{} }
@@ -1857,8 +1857,8 @@ func (m *SnapshotCompactedEvent) GetIndex() Index {
 }
 
 type LogEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
-	Index        Index `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
+	Index       Index `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
 }
 
 func (m *LogEvent) Reset()         { *m = LogEvent{} }
@@ -1902,8 +1902,8 @@ func (m *LogEvent) GetIndex() Index {
 }
 
 type LogCompactedEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
-	Index        Index `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
+	Index       Index `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
 }
 
 func (m *LogCompactedEvent) Reset()         { *m = LogCompactedEvent{} }
@@ -1947,8 +1947,8 @@ func (m *LogCompactedEvent) GetIndex() Index {
 }
 
 type LogDBCompactedEvent struct {
-	ReplicaEvent `protobuf:"bytes,1,opt,name=replica,proto3,embedded=replica" json:"replica"`
-	Index        Index `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
+	MemberEvent `protobuf:"bytes,1,opt,name=member,proto3,embedded=member" json:"member"`
+	Index       Index `protobuf:"varint,2,opt,name=index,proto3,casttype=Index" json:"index,omitempty"`
 }
 
 func (m *LogDBCompactedEvent) Reset()         { *m = LogDBCompactedEvent{} }
@@ -2066,30 +2066,30 @@ func (m *ConnectionFailedEvent) XXX_DiscardUnknown() {
 var xxx_messageInfo_ConnectionFailedEvent proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterEnum("atomix.stores.raft.v1.ReplicaRole", ReplicaRole_name, ReplicaRole_value)
-	proto.RegisterType((*ShardConfig)(nil), "atomix.stores.raft.v1.ShardConfig")
-	proto.RegisterType((*ReplicaConfig)(nil), "atomix.stores.raft.v1.ReplicaConfig")
+	proto.RegisterEnum("atomix.stores.raft.v1.MemberRole", MemberRole_name, MemberRole_value)
+	proto.RegisterType((*GroupConfig)(nil), "atomix.stores.raft.v1.GroupConfig")
+	proto.RegisterType((*MemberConfig)(nil), "atomix.stores.raft.v1.MemberConfig")
 	proto.RegisterType((*RaftConfig)(nil), "atomix.stores.raft.v1.RaftConfig")
 	proto.RegisterType((*RaftProposal)(nil), "atomix.stores.raft.v1.RaftProposal")
 	proto.RegisterType((*GetConfigRequest)(nil), "atomix.stores.raft.v1.GetConfigRequest")
 	proto.RegisterType((*GetConfigResponse)(nil), "atomix.stores.raft.v1.GetConfigResponse")
-	proto.RegisterType((*BootstrapShardRequest)(nil), "atomix.stores.raft.v1.BootstrapShardRequest")
-	proto.RegisterType((*BootstrapShardResponse)(nil), "atomix.stores.raft.v1.BootstrapShardResponse")
-	proto.RegisterType((*AddReplicaRequest)(nil), "atomix.stores.raft.v1.AddReplicaRequest")
-	proto.RegisterType((*AddReplicaResponse)(nil), "atomix.stores.raft.v1.AddReplicaResponse")
-	proto.RegisterType((*RemoveReplicaRequest)(nil), "atomix.stores.raft.v1.RemoveReplicaRequest")
-	proto.RegisterType((*RemoveReplicaResponse)(nil), "atomix.stores.raft.v1.RemoveReplicaResponse")
-	proto.RegisterType((*JoinShardRequest)(nil), "atomix.stores.raft.v1.JoinShardRequest")
-	proto.RegisterType((*JoinShardResponse)(nil), "atomix.stores.raft.v1.JoinShardResponse")
-	proto.RegisterType((*LeaveShardRequest)(nil), "atomix.stores.raft.v1.LeaveShardRequest")
-	proto.RegisterType((*LeaveShardResponse)(nil), "atomix.stores.raft.v1.LeaveShardResponse")
+	proto.RegisterType((*BootstrapGroupRequest)(nil), "atomix.stores.raft.v1.BootstrapGroupRequest")
+	proto.RegisterType((*BootstrapGroupResponse)(nil), "atomix.stores.raft.v1.BootstrapGroupResponse")
+	proto.RegisterType((*AddMemberRequest)(nil), "atomix.stores.raft.v1.AddMemberRequest")
+	proto.RegisterType((*AddMemberResponse)(nil), "atomix.stores.raft.v1.AddMemberResponse")
+	proto.RegisterType((*RemoveMemberRequest)(nil), "atomix.stores.raft.v1.RemoveMemberRequest")
+	proto.RegisterType((*RemoveMemberResponse)(nil), "atomix.stores.raft.v1.RemoveMemberResponse")
+	proto.RegisterType((*JoinGroupRequest)(nil), "atomix.stores.raft.v1.JoinGroupRequest")
+	proto.RegisterType((*JoinGroupResponse)(nil), "atomix.stores.raft.v1.JoinGroupResponse")
+	proto.RegisterType((*LeaveGroupRequest)(nil), "atomix.stores.raft.v1.LeaveGroupRequest")
+	proto.RegisterType((*LeaveGroupResponse)(nil), "atomix.stores.raft.v1.LeaveGroupResponse")
 	proto.RegisterType((*DeleteDataRequest)(nil), "atomix.stores.raft.v1.DeleteDataRequest")
 	proto.RegisterType((*DeleteDataResponse)(nil), "atomix.stores.raft.v1.DeleteDataResponse")
 	proto.RegisterType((*WatchRequest)(nil), "atomix.stores.raft.v1.WatchRequest")
 	proto.RegisterType((*Event)(nil), "atomix.stores.raft.v1.Event")
 	proto.RegisterType((*ConnectionInfo)(nil), "atomix.stores.raft.v1.ConnectionInfo")
-	proto.RegisterType((*ReplicaEvent)(nil), "atomix.stores.raft.v1.ReplicaEvent")
-	proto.RegisterType((*ReplicaReadyEvent)(nil), "atomix.stores.raft.v1.ReplicaReadyEvent")
+	proto.RegisterType((*MemberEvent)(nil), "atomix.stores.raft.v1.MemberEvent")
+	proto.RegisterType((*MemberReadyEvent)(nil), "atomix.stores.raft.v1.MemberReadyEvent")
 	proto.RegisterType((*ConfigurationChangedEvent)(nil), "atomix.stores.raft.v1.ConfigurationChangedEvent")
 	proto.RegisterType((*LeaderUpdatedEvent)(nil), "atomix.stores.raft.v1.LeaderUpdatedEvent")
 	proto.RegisterType((*SendSnapshotStartedEvent)(nil), "atomix.stores.raft.v1.SendSnapshotStartedEvent")
@@ -2109,115 +2109,114 @@ func init() {
 func init() { proto.RegisterFile("v1/raft.proto", fileDescriptor_078208a31684120b) }
 
 var fileDescriptor_078208a31684120b = []byte{
-	// 1720 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x58, 0xcd, 0x6f, 0x22, 0xc9,
-	0x15, 0x77, 0x63, 0x30, 0xf0, 0x00, 0x1b, 0xca, 0xc6, 0xdb, 0x41, 0x1b, 0xe3, 0xed, 0x64, 0x15,
-	0xbc, 0x3b, 0x8b, 0xd7, 0x8e, 0x12, 0x25, 0x97, 0x44, 0x03, 0xc6, 0xbb, 0x4e, 0xfc, 0x11, 0x35,
-	0x9e, 0x9d, 0x48, 0x59, 0x0d, 0x2a, 0xd3, 0x05, 0xf4, 0x86, 0xee, 0x22, 0xdd, 0x05, 0x72, 0x56,
-	0x89, 0xf2, 0x21, 0xe5, 0x1a, 0xed, 0x31, 0xa7, 0x1c, 0x26, 0x1f, 0x87, 0xfc, 0x17, 0xb9, 0xcd,
-	0x71, 0x8e, 0x39, 0x91, 0xc8, 0xf3, 0x07, 0xe4, 0xee, 0xd3, 0xaa, 0xab, 0xab, 0x3f, 0x0c, 0xb4,
-	0xcd, 0xd8, 0x96, 0x67, 0x6e, 0x74, 0xbd, 0xf7, 0x7e, 0xef, 0x57, 0xaf, 0x5e, 0xd5, 0x7b, 0x3c,
-	0xc8, 0x8d, 0x76, 0xb6, 0x2d, 0xdc, 0x61, 0xd5, 0x81, 0x45, 0x19, 0x45, 0x45, 0xcc, 0xa8, 0xa1,
-	0x9f, 0x57, 0x6d, 0x46, 0x2d, 0x62, 0x57, 0xb9, 0x64, 0xb4, 0x53, 0x2a, 0x77, 0x29, 0xed, 0xf6,
-	0xc9, 0x36, 0x57, 0x3a, 0x1b, 0x76, 0xb6, 0x99, 0x6e, 0x10, 0x9b, 0x61, 0x63, 0xe0, 0xda, 0x95,
-	0xd6, 0xba, 0xb4, 0x4b, 0xf9, 0xcf, 0x6d, 0xe7, 0x97, 0xbb, 0xaa, 0x3c, 0x97, 0x20, 0xd3, 0xec,
-	0x61, 0x4b, 0xab, 0x53, 0xb3, 0xa3, 0x77, 0xd1, 0x0e, 0xa4, 0x6c, 0xe7, 0xb3, 0xa5, 0x6b, 0xb2,
-	0xb4, 0x29, 0x55, 0x72, 0xb5, 0xf5, 0x8b, 0x71, 0x39, 0xc9, 0x55, 0x0e, 0xf6, 0x2e, 0x83, 0x9f,
-	0x6a, 0x92, 0xeb, 0x1d, 0x68, 0x68, 0x1f, 0x52, 0x16, 0x19, 0xf4, 0xf5, 0x36, 0xb6, 0xe5, 0xd8,
-	0xe6, 0x62, 0x25, 0xb3, 0xfb, 0xed, 0xea, 0x4c, 0x8e, 0x55, 0xd5, 0x55, 0x73, 0x5d, 0xd5, 0xe2,
-	0x2f, 0xc6, 0xe5, 0x05, 0xd5, 0xb7, 0x45, 0x32, 0x24, 0x47, 0xc4, 0xb2, 0x75, 0x6a, 0xca, 0x8b,
-	0x9b, 0x52, 0x25, 0xae, 0x7a, 0x9f, 0xca, 0xbf, 0x24, 0xc8, 0x5d, 0xb1, 0x45, 0x3f, 0x04, 0x10,
-	0x76, 0x01, 0xd1, 0xd2, 0xc5, 0xb8, 0x9c, 0x16, 0x6a, 0x9c, 0x6a, 0xf0, 0xa1, 0xa6, 0x85, 0xf6,
-	0x81, 0x86, 0x10, 0xc4, 0x7b, 0xd4, 0x66, 0x72, 0x6c, 0x53, 0xaa, 0xa4, 0x55, 0xfe, 0xdb, 0x59,
-	0x1b, 0x50, 0x8b, 0x71, 0xbf, 0x09, 0x95, 0xff, 0x46, 0xdf, 0x87, 0xb8, 0x45, 0xfb, 0x44, 0x8e,
-	0x6f, 0x4a, 0x95, 0xe5, 0x5d, 0xe5, 0xfa, 0x2d, 0xa9, 0xb4, 0x4f, 0x54, 0xae, 0xaf, 0xfc, 0x3f,
-	0x06, 0xa0, 0xe2, 0x0e, 0x13, 0x4c, 0x77, 0x21, 0x4b, 0xfa, 0xa4, 0xcd, 0x74, 0x6a, 0xb6, 0x2c,
-	0xc6, 0x38, 0xd7, 0x78, 0x6d, 0xe5, 0x62, 0x5c, 0xce, 0x34, 0xc4, 0xba, 0x7a, 0x7a, 0xaa, 0x66,
-	0x3c, 0x25, 0x95, 0x31, 0xf4, 0x3d, 0xc8, 0xf5, 0x08, 0xb6, 0xd8, 0x19, 0xc1, 0x8c, 0x1b, 0xc5,
-	0xb8, 0x51, 0xfe, 0x62, 0x5c, 0xce, 0x7e, 0xea, 0x09, 0x1c, 0xab, 0xac, 0xaf, 0xe6, 0x98, 0x6d,
-	0x41, 0xde, 0x36, 0xf1, 0xc0, 0xee, 0x51, 0xd6, 0x22, 0x26, 0xb3, 0x74, 0x62, 0x8b, 0x48, 0xae,
-	0x78, 0xeb, 0x0d, 0x77, 0x19, 0x6d, 0xc3, 0x6a, 0x9b, 0x1a, 0x03, 0xec, 0xf2, 0xa2, 0x23, 0x62,
-	0xf5, 0x08, 0xd6, 0xf8, 0x5e, 0xe3, 0x2a, 0x0a, 0x44, 0x27, 0x42, 0x82, 0x1e, 0xc1, 0xaa, 0x81,
-	0xcf, 0x5b, 0xba, 0xd9, 0x32, 0x88, 0xd1, 0xea, 0xd3, 0x6e, 0xcb, 0xd6, 0xbf, 0x24, 0x72, 0xc2,
-	0x85, 0x37, 0xf0, 0xf9, 0x81, 0x79, 0x44, 0x8c, 0x43, 0xda, 0x6d, 0xea, 0x5f, 0x12, 0xf4, 0x03,
-	0x90, 0x35, 0xdd, 0xc6, 0x67, 0x7d, 0xd2, 0xc2, 0x43, 0x46, 0x5b, 0x01, 0xa0, 0x2d, 0x2f, 0x6d,
-	0x4a, 0x95, 0x94, 0xba, 0x2e, 0xe4, 0x8f, 0x87, 0x8c, 0xd6, 0x03, 0x29, 0xda, 0x85, 0x22, 0xb5,
-	0x34, 0x62, 0x11, 0xad, 0xd5, 0xe6, 0x01, 0x6c, 0xb5, 0x7b, 0xd8, 0xec, 0x12, 0x39, 0xc9, 0xcd,
-	0x56, 0x85, 0xd0, 0x0d, 0x6e, 0x9d, 0x8b, 0x14, 0x06, 0x59, 0x27, 0xe0, 0x3f, 0xb3, 0xe8, 0x80,
-	0xda, 0xb8, 0x8f, 0xde, 0x85, 0x38, 0x23, 0x96, 0x21, 0x42, 0x9d, 0xba, 0x1c, 0x97, 0xe3, 0xa7,
-	0xc4, 0x32, 0x54, 0xbe, 0xea, 0x1c, 0x88, 0x4d, 0x7e, 0x35, 0x24, 0x66, 0x9b, 0xb4, 0xcc, 0xa1,
-	0x21, 0x62, 0xbb, 0x72, 0x39, 0x2e, 0x67, 0x9a, 0x62, 0xfd, 0x78, 0x68, 0xa8, 0x19, 0x3b, 0xf8,
-	0x70, 0xf2, 0x43, 0xc3, 0x0c, 0xf3, 0x68, 0x66, 0x55, 0xfe, 0x5b, 0x69, 0x40, 0xfe, 0x13, 0x22,
-	0x4e, 0x59, 0x75, 0x74, 0x6d, 0x76, 0x8b, 0xdb, 0xa3, 0x34, 0xa1, 0x10, 0x82, 0xb1, 0x07, 0xd4,
-	0xb4, 0x09, 0xfa, 0x11, 0x24, 0xb8, 0x9c, 0x83, 0x64, 0x22, 0x93, 0x2f, 0x74, 0x71, 0xc5, 0x6d,
-	0x72, 0xcd, 0x94, 0x3f, 0xc7, 0xa0, 0x58, 0xa3, 0x94, 0xd9, 0xcc, 0xc2, 0x03, 0xae, 0x75, 0x7b,
-	0x86, 0x13, 0x77, 0x2d, 0xf6, 0x3a, 0x77, 0x2d, 0xfc, 0x34, 0x2c, 0xde, 0xe1, 0x69, 0xf8, 0x31,
-	0x2c, 0xb9, 0xd9, 0xc0, 0x33, 0x34, 0xb3, 0xfb, 0x5e, 0x14, 0x8a, 0x7f, 0xef, 0x04, 0x84, 0x30,
-	0x53, 0x64, 0x58, 0x9f, 0x8c, 0x87, 0x1b, 0x6a, 0xe5, 0x9f, 0x12, 0x14, 0x1e, 0x6b, 0x9a, 0x77,
-	0x8f, 0x6f, 0x1f, 0xa6, 0x3d, 0x48, 0x0a, 0xbe, 0x3c, 0x46, 0xaf, 0xb7, 0x55, 0xcf, 0xf4, 0x9a,
-	0x47, 0x70, 0x0d, 0x50, 0x98, 0xa7, 0xa0, 0xff, 0x57, 0x09, 0xd6, 0x54, 0x62, 0xd0, 0x11, 0xb9,
-	0xfb, 0x0e, 0xee, 0x70, 0xd0, 0xd1, 0xb4, 0xdf, 0x81, 0xe2, 0x04, 0x3f, 0xc1, 0xfc, 0xdf, 0x12,
-	0xe4, 0x7f, 0x42, 0x75, 0xf3, 0x0d, 0xa6, 0x67, 0x90, 0x56, 0x8b, 0xb7, 0x4b, 0xab, 0x55, 0x28,
-	0x84, 0xb6, 0x20, 0x36, 0xb6, 0x0f, 0x85, 0x43, 0x82, 0x47, 0xe4, 0x8e, 0x1b, 0x73, 0x0e, 0x3c,
-	0x8c, 0x23, 0xd0, 0xff, 0x20, 0x41, 0x61, 0x8f, 0xf4, 0x09, 0x23, 0x7b, 0x98, 0xbd, 0x99, 0xd3,
-	0x76, 0x98, 0x85, 0x29, 0x08, 0x66, 0xcb, 0x90, 0x7d, 0x8a, 0x59, 0xbb, 0x27, 0x38, 0x29, 0x7f,
-	0xca, 0x40, 0xa2, 0x31, 0x22, 0x26, 0x43, 0x35, 0x48, 0xfb, 0xdd, 0x88, 0x78, 0xd2, 0x4a, 0x55,
-	0xb7, 0x5f, 0xa9, 0x7a, 0xfd, 0x4a, 0xf5, 0xd4, 0xd3, 0xa8, 0xa5, 0x9c, 0x18, 0x7f, 0xf5, 0xdf,
-	0xb2, 0xa4, 0x06, 0x66, 0xe8, 0x04, 0x72, 0x1e, 0x5d, 0x8b, 0x60, 0xed, 0xd7, 0xe2, 0x92, 0x55,
-	0x6e, 0xa8, 0xcb, 0x8e, 0x2a, 0x27, 0xf1, 0xe9, 0x82, 0x9a, 0xb5, 0x42, 0x8b, 0x48, 0x85, 0xe5,
-	0x3e, 0xc1, 0x1a, 0xb1, 0x5a, 0xc3, 0x81, 0x86, 0x19, 0xd1, 0x44, 0x12, 0x6c, 0x45, 0x20, 0x1e,
-	0x72, 0xe5, 0x27, 0xae, 0xae, 0x07, 0x99, 0xeb, 0x87, 0x57, 0x51, 0x17, 0x8a, 0x6e, 0x66, 0x0c,
-	0x2d, 0xcc, 0x2b, 0xab, 0x5b, 0xbc, 0x34, 0xf1, 0x6c, 0x7d, 0x1c, 0x01, 0x5d, 0x0f, 0xdb, 0xb8,
-	0x45, 0xcd, 0xf7, 0xb0, 0xd6, 0x9e, 0x21, 0x44, 0x04, 0x8a, 0x36, 0x31, 0xb5, 0x96, 0x5f, 0xef,
-	0x6d, 0x86, 0x2d, 0x67, 0x0f, 0x09, 0xee, 0x68, 0x3b, 0xaa, 0x60, 0x10, 0x53, 0x6b, 0x0a, 0x93,
-	0xa6, 0x6b, 0xe1, 0xf9, 0x59, 0xb5, 0xa7, 0x65, 0xe8, 0x97, 0xf0, 0xce, 0x55, 0x37, 0x4e, 0x21,
-	0x77, 0x0e, 0x5e, 0xe3, 0x65, 0x3c, 0xb3, 0xbb, 0x33, 0x87, 0xa3, 0xba, 0x67, 0xe3, 0xb9, 0x2a,
-	0xda, 0xb3, 0xa4, 0xd3, 0x7b, 0xc2, 0x67, 0x94, 0xef, 0x29, 0x39, 0xf7, 0x9e, 0x1e, 0xbb, 0x16,
-	0x33, 0xf7, 0x24, 0x64, 0xe8, 0x17, 0x50, 0xf0, 0x3d, 0x58, 0xa4, 0x4d, 0xf4, 0x11, 0xd1, 0xe4,
-	0x14, 0x77, 0xf1, 0x28, 0xca, 0x85, 0xd0, 0x57, 0x85, 0xba, 0x87, 0xef, 0xb7, 0x5b, 0x9e, 0x00,
-	0x3d, 0x03, 0x14, 0x06, 0x77, 0x1a, 0x2b, 0xa2, 0xc9, 0x69, 0x8e, 0xfe, 0xd1, 0xcd, 0xe8, 0xae,
-	0xbe, 0x07, 0x5f, 0xb0, 0x27, 0x25, 0xe8, 0xe7, 0xa1, 0x16, 0xaf, 0x6d, 0x11, 0x9e, 0xb6, 0xc0,
-	0xd1, 0x3f, 0xbc, 0x01, 0xbd, 0xee, 0x6a, 0x7b, 0xd8, 0x7e, 0x47, 0x28, 0xd6, 0xaf, 0x30, 0x17,
-	0xed, 0x1a, 0xd1, 0xe4, 0xcc, 0x5c, 0xcc, 0xeb, 0x9e, 0xfe, 0x14, 0x73, 0x5f, 0xe2, 0xdc, 0x5f,
-	0xa7, 0x6b, 0x0c, 0xa0, 0xb3, 0xd7, 0xde, 0xdf, 0x43, 0xda, 0x9d, 0x42, 0xcd, 0xf6, 0x43, 0x8b,
-	0xe8, 0x09, 0xac, 0xf4, 0x69, 0x57, 0x3b, 0x0b, 0x41, 0xe6, 0x38, 0xe4, 0x07, 0xd1, 0x90, 0x7b,
-	0xb5, 0x29, 0xd0, 0x65, 0x0e, 0x12, 0xc0, 0x7e, 0x01, 0xeb, 0x6d, 0x6a, 0x9a, 0xa2, 0x63, 0x77,
-	0x1e, 0x9f, 0xb3, 0xbe, 0x6e, 0xf7, 0x88, 0x26, 0x2f, 0x5f, 0x9b, 0xf1, 0x75, 0xdf, 0xa8, 0x11,
-	0xd8, 0xf8, 0x19, 0xdf, 0x9e, 0x25, 0x75, 0x52, 0x31, 0xe4, 0xab, 0x83, 0xf5, 0x3e, 0xd1, 0xe4,
-	0x95, 0x6b, 0x53, 0x31, 0x70, 0xb3, 0xcf, 0xd5, 0xfd, 0x54, 0x6c, 0x4f, 0x08, 0x6a, 0x49, 0x48,
-	0x10, 0x47, 0xa8, 0xec, 0xc3, 0x72, 0x60, 0x75, 0x60, 0x76, 0xa8, 0x53, 0xad, 0xb1, 0xa6, 0x59,
-	0xc4, 0xb6, 0xf9, 0x6b, 0x9c, 0x56, 0xbd, 0x4f, 0x54, 0x82, 0x94, 0x77, 0x74, 0xfc, 0x81, 0x4d,
-	0xa9, 0xfe, 0xb7, 0xf2, 0x1b, 0xc8, 0x8a, 0x57, 0xd5, 0x7d, 0xd5, 0xef, 0xa5, 0xe6, 0xc4, 0xe7,
-	0xad, 0x39, 0x9f, 0x43, 0x61, 0xea, 0x4d, 0x47, 0x9f, 0x04, 0x3d, 0x97, 0x5b, 0x56, 0xbe, 0x75,
-	0x7d, 0x39, 0xe0, 0x56, 0x6e, 0x7d, 0x79, 0x39, 0x2e, 0x4b, 0x7e, 0xdb, 0xa5, 0x68, 0xf0, 0x8d,
-	0xc8, 0x47, 0xf8, 0xfe, 0xbc, 0x3c, 0x97, 0x78, 0x49, 0x9f, 0x28, 0x23, 0xf7, 0x86, 0xef, 0xff,
-	0xf1, 0x89, 0xcd, 0xfc, 0xe3, 0xf3, 0x3e, 0x2c, 0xb9, 0xd5, 0xca, 0x6d, 0xd1, 0x6a, 0xb9, 0xab,
-	0xb1, 0x16, 0x42, 0xe5, 0x6f, 0x12, 0xc8, 0x51, 0x75, 0xe2, 0xfe, 0xa8, 0x96, 0x21, 0xa1, 0x9b,
-	0x1a, 0x39, 0x17, 0x5c, 0xd3, 0x97, 0xe3, 0x72, 0xe2, 0xc0, 0x59, 0x50, 0xdd, 0x75, 0xf4, 0x4d,
-	0x88, 0x31, 0x3a, 0x9b, 0x69, 0x8c, 0x51, 0xe5, 0x1f, 0x12, 0x94, 0xa2, 0x8b, 0xcc, 0xdb, 0xc3,
-	0x73, 0x32, 0x9a, 0xe1, 0x0a, 0xf5, 0xf6, 0xb0, 0xfc, 0xbb, 0x04, 0xc5, 0x99, 0x45, 0xee, 0x01,
-	0x29, 0xbe, 0x07, 0xf1, 0x8e, 0x45, 0x8d, 0xd9, 0x24, 0xb9, 0x48, 0xf9, 0xa3, 0x04, 0xeb, 0xb3,
-	0xab, 0xe5, 0xc3, 0xf1, 0x54, 0x7e, 0x2f, 0xc1, 0xda, 0xac, 0xa2, 0xfa, 0x80, 0x14, 0xc2, 0x71,
-	0xb8, 0x5a, 0xd0, 0x1e, 0x90, 0x04, 0x83, 0xd4, 0x21, 0xed, 0x3e, 0xb4, 0xd7, 0xdf, 0x42, 0x61,
-	0xaa, 0x35, 0x78, 0x40, 0xf7, 0xbf, 0x83, 0xd5, 0x19, 0x6d, 0xc4, 0x03, 0x12, 0xc0, 0x50, 0x8a,
-	0xee, 0x34, 0x50, 0x1d, 0xe2, 0xba, 0xd9, 0xa1, 0x82, 0xc4, 0xfb, 0x37, 0xf6, 0x10, 0x4e, 0x37,
-	0x10, 0xa2, 0xc1, 0x8d, 0x95, 0xcf, 0xa1, 0x38, 0xb3, 0xcb, 0xb8, 0x17, 0xf4, 0x0f, 0x8e, 0x21,
-	0x13, 0x9a, 0x99, 0xa2, 0x0c, 0x24, 0x9f, 0x1c, 0xff, 0xf4, 0xf8, 0xe4, 0xe9, 0x71, 0x7e, 0x01,
-	0x01, 0x2c, 0x1d, 0x35, 0x8e, 0x6a, 0x0d, 0x35, 0x2f, 0xa1, 0x2c, 0xa4, 0x4e, 0x6a, 0xcd, 0x86,
-	0xfa, 0x59, 0x43, 0xcd, 0xc7, 0x1c, 0xb5, 0xa7, 0x07, 0xa7, 0xc7, 0x8d, 0x66, 0x33, 0xbf, 0xe8,
-	0x7c, 0xa8, 0x8d, 0xa3, 0x93, 0xcf, 0x1a, 0x7b, 0xf9, 0xf8, 0xee, 0x5f, 0x96, 0x20, 0x7e, 0x4c,
-	0x35, 0x82, 0x9e, 0x41, 0xda, 0x1f, 0xa4, 0xa1, 0xef, 0x44, 0x90, 0x9b, 0x9c, 0xd8, 0x95, 0x2a,
-	0x37, 0x2b, 0x8a, 0x99, 0x9c, 0x01, 0xcb, 0x57, 0x47, 0x48, 0x28, 0xaa, 0x47, 0x9b, 0x39, 0x79,
-	0x2b, 0x7d, 0x34, 0xa7, 0xb6, 0x70, 0x87, 0x01, 0x82, 0x71, 0x0f, 0x8a, 0xa2, 0x39, 0x35, 0xb9,
-	0x2a, 0x6d, 0xcd, 0xa1, 0x29, 0x5c, 0x7c, 0x01, 0xb9, 0x2b, 0xa3, 0x19, 0xf4, 0x61, 0x64, 0xd6,
-	0x4e, 0x0f, 0x98, 0x4a, 0x8f, 0xe6, 0x53, 0x16, 0xbe, 0x9e, 0x41, 0xda, 0x9f, 0x94, 0x44, 0x9e,
-	0xce, 0xe4, 0x38, 0x28, 0xf2, 0x74, 0xa6, 0x86, 0x2e, 0x4e, 0xb8, 0x82, 0x61, 0x49, 0x64, 0xb8,
-	0xa6, 0xe6, 0x32, 0xa5, 0xad, 0x39, 0x34, 0x03, 0x17, 0xc1, 0xd4, 0x23, 0xd2, 0xc5, 0xd4, 0x6c,
-	0x26, 0xd2, 0xc5, 0xf4, 0x08, 0x05, 0x1d, 0x42, 0x82, 0x8f, 0x50, 0x50, 0xd4, 0xfb, 0x11, 0x1e,
-	0xb0, 0x94, 0xde, 0x8d, 0x50, 0xe2, 0xb7, 0xf5, 0x63, 0xa9, 0x26, 0xbf, 0xb8, 0xd8, 0x90, 0x5e,
-	0x5e, 0x6c, 0x48, 0xff, 0xbb, 0xd8, 0x90, 0xbe, 0x7a, 0xb5, 0xb1, 0xf0, 0xf2, 0xd5, 0xc6, 0xc2,
-	0x7f, 0x5e, 0x6d, 0x2c, 0x9c, 0x2d, 0xf1, 0xa9, 0xcb, 0x77, 0xbf, 0x0e, 0x00, 0x00, 0xff, 0xff,
-	0x9d, 0xb3, 0x90, 0xef, 0x5b, 0x1a, 0x00, 0x00,
+	// 1709 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x58, 0xcd, 0x6f, 0x23, 0x4b,
+	0x11, 0xcf, 0x38, 0x76, 0x6c, 0x97, 0x9d, 0xc4, 0x6e, 0xc7, 0x61, 0xb0, 0x56, 0x71, 0x18, 0x40,
+	0x78, 0xdf, 0x87, 0xf3, 0x12, 0xf4, 0x24, 0x4e, 0xa0, 0xd8, 0xf1, 0xbe, 0x17, 0xc8, 0x07, 0x1a,
+	0x67, 0xdf, 0x3e, 0x09, 0xb4, 0x56, 0xdb, 0xd3, 0x76, 0x06, 0x3c, 0xd3, 0xde, 0x99, 0xb6, 0x09,
+	0x2b, 0x56, 0x48, 0x5c, 0xb8, 0xae, 0xb8, 0x71, 0xe1, 0x4b, 0xfc, 0x1b, 0xdc, 0xf7, 0xb8, 0x47,
+	0x4e, 0x06, 0x65, 0xff, 0x00, 0xee, 0x39, 0xa1, 0xe9, 0xe9, 0xf9, 0xf0, 0xc7, 0x24, 0x26, 0x1b,
+	0x99, 0xbd, 0xcd, 0x74, 0x55, 0xfd, 0xea, 0x57, 0x35, 0xdd, 0x5d, 0x35, 0x05, 0xeb, 0xa3, 0xfd,
+	0x3d, 0x0b, 0x77, 0x59, 0x75, 0x60, 0x51, 0x46, 0x51, 0x11, 0x33, 0x6a, 0xe8, 0x57, 0x55, 0x9b,
+	0x51, 0x8b, 0xd8, 0x55, 0x2e, 0x19, 0xed, 0x97, 0xca, 0x3d, 0x4a, 0x7b, 0x7d, 0xb2, 0xc7, 0x95,
+	0xda, 0xc3, 0xee, 0x1e, 0xd3, 0x0d, 0x62, 0x33, 0x6c, 0x0c, 0x5c, 0xbb, 0xd2, 0x56, 0x8f, 0xf6,
+	0x28, 0x7f, 0xdc, 0x73, 0x9e, 0xdc, 0x55, 0xe5, 0xcf, 0x12, 0x64, 0xbe, 0xb0, 0xe8, 0x70, 0x50,
+	0xa7, 0x66, 0x57, 0xef, 0xa1, 0x7d, 0x48, 0xf5, 0x9c, 0xd7, 0x96, 0xae, 0xc9, 0xd2, 0xae, 0x54,
+	0x59, 0xaf, 0x6d, 0x5f, 0x8f, 0xcb, 0x49, 0xae, 0x72, 0x7c, 0x74, 0x13, 0x3c, 0xaa, 0x49, 0xae,
+	0x77, 0xac, 0xa1, 0x3a, 0x24, 0x0d, 0x62, 0xb4, 0x89, 0x65, 0xcb, 0xb1, 0xdd, 0xd5, 0x4a, 0xe6,
+	0xe0, 0xdb, 0xd5, 0xb9, 0x14, 0xab, 0xa7, 0x5c, 0xcb, 0x75, 0x54, 0x8b, 0xbf, 0x19, 0x97, 0x57,
+	0x54, 0xcf, 0x12, 0xc9, 0x90, 0x1c, 0x11, 0xcb, 0xd6, 0xa9, 0x29, 0xaf, 0xee, 0x4a, 0x95, 0xb8,
+	0xea, 0xbd, 0x2a, 0x7f, 0x97, 0x20, 0x1b, 0xb6, 0x44, 0x9f, 0x43, 0xda, 0xb5, 0x0a, 0x38, 0xca,
+	0xd7, 0xe3, 0x72, 0xca, 0x55, 0xe2, 0x24, 0xfd, 0x67, 0x35, 0xe5, 0xaa, 0x1e, 0x6b, 0x08, 0x41,
+	0xfc, 0x92, 0xda, 0x4c, 0x8e, 0xed, 0x4a, 0x95, 0xb4, 0xca, 0x9f, 0x9d, 0xb5, 0x01, 0xb5, 0x18,
+	0x77, 0x99, 0x50, 0xf9, 0x33, 0xfa, 0x1c, 0xe2, 0x16, 0xed, 0x13, 0x39, 0xbe, 0x2b, 0x55, 0x36,
+	0x0e, 0xbe, 0x75, 0x6b, 0x2c, 0x2a, 0xed, 0x13, 0x95, 0xab, 0x2b, 0xff, 0x89, 0x01, 0xa8, 0xb8,
+	0xcb, 0x04, 0xc9, 0x03, 0xc8, 0x92, 0x3e, 0xe9, 0x30, 0x9d, 0x9a, 0x2d, 0x8b, 0x31, 0xce, 0x33,
+	0x5e, 0xdb, 0xbc, 0x1e, 0x97, 0x33, 0x0d, 0xb1, 0xae, 0x5e, 0x5c, 0xa8, 0x19, 0x4f, 0x49, 0x65,
+	0x8e, 0xe7, 0xf5, 0x4b, 0x82, 0x2d, 0xd6, 0x26, 0x98, 0x71, 0xa3, 0x18, 0x37, 0xca, 0x5d, 0x8f,
+	0xcb, 0xd9, 0x2f, 0x3d, 0x81, 0x63, 0x95, 0xf5, 0xd5, 0x1c, 0xb3, 0xc7, 0x90, 0xb3, 0x4d, 0x3c,
+	0xb0, 0x2f, 0x29, 0x6b, 0x11, 0x93, 0x59, 0x3a, 0xb1, 0x45, 0x0e, 0x37, 0xbd, 0xf5, 0x86, 0xbb,
+	0x8c, 0xf6, 0xa0, 0xd0, 0xa1, 0xc6, 0x00, 0xbb, 0xbc, 0xe8, 0x88, 0x58, 0x97, 0x04, 0x6b, 0x3c,
+	0xd4, 0xb8, 0x8a, 0x02, 0xd1, 0xb9, 0x90, 0xa0, 0x4f, 0xa0, 0x60, 0xe0, 0xab, 0x96, 0x6e, 0xb6,
+	0x0c, 0x62, 0xb4, 0xfa, 0xb4, 0xd7, 0xb2, 0xf5, 0x97, 0x44, 0x4e, 0xb8, 0xf0, 0x06, 0xbe, 0x3a,
+	0x36, 0x4f, 0x89, 0x71, 0x42, 0x7b, 0x4d, 0xfd, 0x25, 0x41, 0x3f, 0x00, 0x59, 0xd3, 0x6d, 0xdc,
+	0xee, 0x93, 0x16, 0x1e, 0x32, 0xda, 0x0a, 0x00, 0x6d, 0x79, 0x6d, 0x57, 0xaa, 0xa4, 0xd4, 0x6d,
+	0x21, 0x3f, 0x1c, 0x32, 0x5a, 0x0f, 0xa4, 0xe8, 0x00, 0x8a, 0xd4, 0xd2, 0x88, 0x45, 0xb4, 0x56,
+	0x87, 0x27, 0xb0, 0xd5, 0xb9, 0xc4, 0x66, 0x8f, 0xc8, 0x49, 0x6e, 0x56, 0x10, 0x42, 0x37, 0xb9,
+	0x75, 0x2e, 0x52, 0x18, 0x64, 0x9d, 0x84, 0xff, 0xd4, 0xa2, 0x03, 0x6a, 0xe3, 0x3e, 0x7a, 0x04,
+	0x71, 0x46, 0x2c, 0x43, 0xa4, 0x3a, 0x75, 0x33, 0x2e, 0xc7, 0x2f, 0x88, 0x65, 0xa8, 0x7c, 0xd5,
+	0xf9, 0x20, 0x36, 0x79, 0x31, 0x24, 0x66, 0x87, 0xb4, 0xcc, 0xa1, 0x21, 0x72, 0xbb, 0x79, 0x33,
+	0x2e, 0x67, 0x9a, 0x62, 0xfd, 0x6c, 0x68, 0xa8, 0x19, 0x3b, 0x78, 0x71, 0xb6, 0x87, 0x86, 0x19,
+	0xe6, 0xd9, 0xcc, 0xaa, 0xfc, 0x59, 0x69, 0x40, 0xee, 0x0b, 0x22, 0xbe, 0xb2, 0xea, 0xe8, 0xda,
+	0xec, 0x1e, 0x87, 0x46, 0x69, 0x42, 0x3e, 0x04, 0x63, 0x0f, 0xa8, 0x69, 0x13, 0xf4, 0x43, 0x48,
+	0x70, 0x39, 0x07, 0xc9, 0x1c, 0x28, 0x11, 0x7b, 0x2f, 0x74, 0x5e, 0xc5, 0x31, 0x72, 0xcd, 0x94,
+	0xdf, 0xc7, 0xa0, 0x58, 0xa3, 0x94, 0xd9, 0xcc, 0xc2, 0x03, 0xae, 0x75, 0x7f, 0x86, 0x93, 0xc7,
+	0x2c, 0xb6, 0xf0, 0x31, 0x0b, 0xdd, 0x06, 0xab, 0xf7, 0xbe, 0x0d, 0x7e, 0x04, 0x6b, 0xee, 0x36,
+	0xe0, 0x5b, 0x33, 0x13, 0x79, 0x0a, 0x83, 0x03, 0x27, 0x10, 0x84, 0x99, 0x22, 0xc3, 0xf6, 0x74,
+	0x22, 0xdc, 0x1c, 0x2b, 0x7f, 0x93, 0x20, 0x77, 0xa8, 0x69, 0xe2, 0xfc, 0xde, 0x3f, 0x3d, 0x87,
+	0xb0, 0xe6, 0xb2, 0xe5, 0xb9, 0xf9, 0x9f, 0xc2, 0x14, 0x86, 0xb7, 0xdc, 0x79, 0x05, 0xc8, 0x87,
+	0x38, 0x0a, 0xe6, 0x7f, 0x94, 0xa0, 0xa0, 0x12, 0x83, 0x8e, 0xc8, 0x7b, 0x93, 0xbf, 0xe7, 0xb7,
+	0x8d, 0x26, 0xbc, 0x0d, 0x5b, 0x93, 0xd4, 0x04, 0xe7, 0x7f, 0x48, 0x90, 0xfb, 0x31, 0xd5, 0xcd,
+	0xff, 0xd3, 0x66, 0x0c, 0xf6, 0xd1, 0xea, 0xfd, 0xf6, 0x51, 0x01, 0xf2, 0x21, 0xfa, 0x22, 0xa8,
+	0x27, 0x90, 0x3f, 0x21, 0x78, 0x44, 0xde, 0x33, 0x28, 0x65, 0x0b, 0x50, 0x18, 0x47, 0xa0, 0xbf,
+	0x82, 0xfc, 0x11, 0xe9, 0x13, 0x46, 0x8e, 0x30, 0xc3, 0x4b, 0x4f, 0x99, 0x43, 0x2a, 0xec, 0x5e,
+	0x90, 0xda, 0x80, 0xec, 0x33, 0xcc, 0x3a, 0x97, 0x82, 0x8f, 0xf2, 0xbb, 0x0c, 0x24, 0x1a, 0x23,
+	0x62, 0x32, 0x54, 0x83, 0xb4, 0xdf, 0x69, 0x88, 0x7b, 0xab, 0x54, 0x75, 0x7b, 0x91, 0xaa, 0xd7,
+	0x8b, 0x54, 0x2f, 0x3c, 0x8d, 0x5a, 0xca, 0x49, 0xef, 0xeb, 0x7f, 0x95, 0x25, 0x35, 0x30, 0x43,
+	0x27, 0x90, 0x15, 0x54, 0x2d, 0x82, 0xb5, 0x5f, 0x8b, 0x13, 0xf5, 0xbd, 0xdb, 0x4b, 0xaf, 0xa3,
+	0xc9, 0x29, 0x7c, 0xb9, 0xa2, 0x66, 0x8c, 0x60, 0x0d, 0xa9, 0xb0, 0xd1, 0x27, 0x58, 0x23, 0x56,
+	0x6b, 0x38, 0xd0, 0x30, 0x23, 0x9a, 0xf8, 0xf8, 0x8f, 0x23, 0xf0, 0x4e, 0xb8, 0xf2, 0x53, 0x57,
+	0xd7, 0x43, 0x5c, 0xef, 0x87, 0x57, 0x51, 0x0f, 0x8a, 0xee, 0x8e, 0x18, 0x5a, 0x98, 0xd7, 0x4e,
+	0xb7, 0x3c, 0x69, 0xe2, 0x7e, 0xfa, 0x2c, 0x02, 0xba, 0x1e, 0xb6, 0x71, 0xcb, 0x96, 0xef, 0x61,
+	0xab, 0x33, 0x47, 0x88, 0x08, 0x14, 0x6d, 0x62, 0x6a, 0x2d, 0xbf, 0xa2, 0xdb, 0x0c, 0x5b, 0x4e,
+	0x0c, 0x09, 0xee, 0x68, 0x2f, 0xc2, 0x51, 0x93, 0x98, 0x5a, 0x53, 0x98, 0x34, 0x5d, 0x0b, 0xcf,
+	0x4f, 0xc1, 0x9e, 0x95, 0xa1, 0x5f, 0xc2, 0x37, 0x26, 0xdd, 0x38, 0xa5, 0xda, 0xf9, 0xea, 0x1a,
+	0x2f, 0xd4, 0x99, 0x83, 0xfd, 0x05, 0x1c, 0xd5, 0x3d, 0x1b, 0xcf, 0x55, 0xd1, 0x9e, 0x27, 0x9d,
+	0x8d, 0x09, 0xb7, 0x29, 0x8f, 0x29, 0xb9, 0x70, 0x4c, 0x87, 0xae, 0xc5, 0xdc, 0x98, 0x84, 0x0c,
+	0xfd, 0x0c, 0xf2, 0xbe, 0x07, 0x8b, 0x74, 0x88, 0x3e, 0x22, 0x9a, 0x9c, 0xe2, 0x2e, 0x3e, 0x89,
+	0x72, 0x21, 0xf4, 0x55, 0xa1, 0xee, 0xe1, 0xfb, 0x0d, 0x95, 0x27, 0x40, 0xcf, 0x01, 0x85, 0xc1,
+	0x9d, 0xd6, 0x89, 0x68, 0x72, 0x9a, 0xa3, 0x7f, 0x7a, 0x37, 0xba, 0xab, 0xef, 0xc1, 0xe7, 0xed,
+	0x69, 0x09, 0xfa, 0x3a, 0xd4, 0xc4, 0x75, 0x2c, 0xc2, 0xb7, 0x2d, 0x70, 0xf4, 0x8f, 0xef, 0x40,
+	0xaf, 0xbb, 0xda, 0x1e, 0xb6, 0xdf, 0xf3, 0x89, 0xf5, 0x09, 0xe6, 0xa2, 0x21, 0x23, 0x9a, 0x9c,
+	0x59, 0x88, 0x79, 0xdd, 0xd3, 0x9f, 0x61, 0xee, 0x4b, 0xd0, 0x39, 0xac, 0x3b, 0x7d, 0x61, 0x00,
+	0x9d, 0xe5, 0xd0, 0x95, 0xa8, 0xd3, 0x46, 0x7b, 0x33, 0xa8, 0xd9, 0x7e, 0x68, 0x11, 0x3d, 0x85,
+	0xcd, 0x3e, 0xed, 0x69, 0xed, 0x10, 0xe4, 0x3a, 0x87, 0xfc, 0x28, 0x1a, 0xf2, 0xa8, 0x36, 0x03,
+	0xba, 0xc1, 0x41, 0x02, 0xd8, 0x5f, 0xc0, 0x76, 0x87, 0x9a, 0xa6, 0xe8, 0xc9, 0x9d, 0x9b, 0xa7,
+	0xdd, 0xd7, 0xed, 0x4b, 0xa2, 0xc9, 0x1b, 0xb7, 0xee, 0xf8, 0xba, 0x6f, 0xd4, 0x08, 0x6c, 0xfc,
+	0x1d, 0xdf, 0x99, 0x27, 0x75, 0xb6, 0x62, 0xc8, 0x57, 0x17, 0xeb, 0x7d, 0xa2, 0xc9, 0x9b, 0xb7,
+	0x6e, 0xc5, 0xc0, 0xcd, 0x13, 0xae, 0xee, 0x6f, 0xc5, 0xce, 0x94, 0xa0, 0x96, 0x84, 0x04, 0x71,
+	0x84, 0xca, 0x13, 0xd8, 0x08, 0xac, 0x8e, 0xcd, 0x2e, 0x75, 0x0a, 0x34, 0xd6, 0x34, 0x8b, 0xd8,
+	0x36, 0xbf, 0x8a, 0xd3, 0xaa, 0xf7, 0x8a, 0x4a, 0x90, 0xf2, 0x3e, 0x1d, 0xbf, 0x5e, 0x53, 0xaa,
+	0xff, 0xae, 0xfc, 0x0a, 0x32, 0xee, 0x9d, 0xea, 0xde, 0xe8, 0x0f, 0x51, 0x6b, 0xe2, 0x0b, 0xd5,
+	0x9a, 0xaf, 0x21, 0x37, 0x7d, 0x99, 0xa3, 0x23, 0xbf, 0xaf, 0xba, 0xbd, 0x09, 0x0e, 0x31, 0x76,
+	0x8b, 0xca, 0xdb, 0x71, 0x59, 0xf2, 0x5a, 0x2b, 0x05, 0xc3, 0x37, 0x23, 0xef, 0xde, 0x07, 0x72,
+	0xf1, 0x27, 0x89, 0x97, 0xef, 0xa9, 0xd2, 0xf1, 0x30, 0xe0, 0xfe, 0xbf, 0x4c, 0x6c, 0xee, 0xbf,
+	0xcc, 0x77, 0x60, 0xcd, 0x2d, 0x4f, 0x6e, 0x1b, 0x56, 0xcb, 0x4e, 0xe4, 0x57, 0xc8, 0x9c, 0x5f,
+	0x7b, 0x39, 0xaa, 0x2e, 0x3c, 0x10, 0xcd, 0x32, 0x24, 0x74, 0x53, 0x23, 0x57, 0x82, 0x67, 0xfa,
+	0x66, 0x5c, 0x4e, 0x1c, 0x3b, 0x0b, 0xaa, 0xbb, 0x8e, 0x1e, 0x41, 0x8c, 0xd1, 0xb9, 0x2c, 0x63,
+	0x8c, 0x2a, 0x7f, 0x95, 0xa0, 0x14, 0x5d, 0x50, 0x3e, 0x0c, 0x8e, 0xd3, 0x59, 0x0c, 0x57, 0xa2,
+	0x0f, 0x83, 0xe1, 0x5f, 0x24, 0x28, 0xce, 0x2d, 0x64, 0xcb, 0xa2, 0xb7, 0x0b, 0xf1, 0xae, 0x45,
+	0x8d, 0xb9, 0x04, 0xb9, 0x44, 0xf9, 0x2d, 0x6c, 0xcf, 0x2f, 0x86, 0x4b, 0xa2, 0xa8, 0xbc, 0x82,
+	0xad, 0x79, 0xf5, 0x72, 0x59, 0xee, 0x43, 0xf1, 0x4f, 0xd6, 0xa9, 0x65, 0x11, 0x78, 0x01, 0xa9,
+	0x13, 0xda, 0x5b, 0xaa, 0xcb, 0x97, 0x90, 0x9f, 0xa9, 0xf5, 0xcb, 0xf2, 0xfd, 0x1b, 0x28, 0xcc,
+	0x69, 0x0a, 0x96, 0xe5, 0x1d, 0x43, 0x29, 0xba, 0x69, 0x40, 0x75, 0x88, 0xeb, 0x66, 0x97, 0x0a,
+	0x0a, 0xdf, 0xbd, 0xb3, 0x1d, 0x70, 0x0a, 0x7b, 0x88, 0x05, 0x37, 0x56, 0x7e, 0x0e, 0xc5, 0xb9,
+	0x0d, 0xc3, 0x83, 0xa0, 0x7f, 0x74, 0x0a, 0x10, 0xcc, 0x37, 0x51, 0x06, 0x92, 0x4f, 0xcf, 0x7e,
+	0x72, 0x76, 0xfe, 0xec, 0x2c, 0xb7, 0x82, 0x00, 0xd6, 0x4e, 0x1b, 0xa7, 0xb5, 0x86, 0x9a, 0x93,
+	0x50, 0x16, 0x52, 0xe7, 0xb5, 0x66, 0x43, 0xfd, 0xaa, 0xa1, 0xe6, 0x62, 0x8e, 0xda, 0xb3, 0xe3,
+	0x8b, 0xb3, 0x46, 0xb3, 0x99, 0x5b, 0x75, 0x5e, 0xd4, 0xc6, 0xe9, 0xf9, 0x57, 0x8d, 0xa3, 0x5c,
+	0xfc, 0xe0, 0x0f, 0x6b, 0x10, 0x3f, 0xa3, 0x1a, 0x41, 0xcf, 0x21, 0xed, 0x0f, 0xbd, 0x50, 0xd4,
+	0xef, 0xdd, 0xf4, 0x74, 0xad, 0x54, 0xb9, 0x5b, 0x51, 0xcc, 0xcf, 0x0c, 0xd8, 0x98, 0x9c, 0xfa,
+	0xa0, 0xa8, 0x6e, 0x6b, 0xee, 0x94, 0xac, 0xf4, 0xe9, 0x82, 0xda, 0xc2, 0xdd, 0x73, 0x48, 0xfb,
+	0x53, 0x9a, 0xc8, 0x70, 0xa6, 0x67, 0x4d, 0x91, 0xe1, 0xcc, 0x0c, 0x7c, 0x50, 0x0f, 0xb2, 0xe1,
+	0xa1, 0x0a, 0x8a, 0xea, 0x7f, 0xe7, 0x0c, 0x85, 0x4a, 0x1f, 0x2f, 0xa4, 0x1b, 0x04, 0xe2, 0x4f,
+	0x39, 0x22, 0x03, 0x99, 0x1e, 0xe3, 0x44, 0x06, 0x32, 0x33, 0x30, 0x41, 0x18, 0x20, 0x18, 0x74,
+	0xa0, 0x4a, 0xf4, 0x7f, 0xf8, 0xe4, 0x4c, 0xa5, 0xf4, 0x78, 0x01, 0xcd, 0xc0, 0x45, 0x30, 0xb6,
+	0x88, 0x74, 0x31, 0x33, 0x58, 0x89, 0x74, 0x31, 0x3b, 0x03, 0x41, 0x27, 0x90, 0xe0, 0x33, 0x10,
+	0x14, 0x35, 0xea, 0x0b, 0x4f, 0x48, 0x4a, 0x8f, 0x22, 0x94, 0xf8, 0x31, 0xfd, 0x4c, 0xaa, 0xc9,
+	0x6f, 0xae, 0x77, 0xa4, 0xb7, 0xd7, 0x3b, 0xd2, 0xbf, 0xaf, 0x77, 0xa4, 0xd7, 0xef, 0x76, 0x56,
+	0xde, 0xbe, 0xdb, 0x59, 0xf9, 0xe7, 0xbb, 0x9d, 0x95, 0xf6, 0x1a, 0x1f, 0x9b, 0x7c, 0xff, 0xbf,
+	0x01, 0x00, 0x00, 0xff, 0xff, 0xe2, 0x99, 0x52, 0xf9, 0xf8, 0x19, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -2233,11 +2232,11 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type NodeClient interface {
 	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*GetConfigResponse, error)
-	BootstrapShard(ctx context.Context, in *BootstrapShardRequest, opts ...grpc.CallOption) (*BootstrapShardResponse, error)
-	AddReplica(ctx context.Context, in *AddReplicaRequest, opts ...grpc.CallOption) (*AddReplicaResponse, error)
-	RemoveReplica(ctx context.Context, in *RemoveReplicaRequest, opts ...grpc.CallOption) (*RemoveReplicaResponse, error)
-	JoinShard(ctx context.Context, in *JoinShardRequest, opts ...grpc.CallOption) (*JoinShardResponse, error)
-	LeaveShard(ctx context.Context, in *LeaveShardRequest, opts ...grpc.CallOption) (*LeaveShardResponse, error)
+	BootstrapGroup(ctx context.Context, in *BootstrapGroupRequest, opts ...grpc.CallOption) (*BootstrapGroupResponse, error)
+	AddMember(ctx context.Context, in *AddMemberRequest, opts ...grpc.CallOption) (*AddMemberResponse, error)
+	RemoveMember(ctx context.Context, in *RemoveMemberRequest, opts ...grpc.CallOption) (*RemoveMemberResponse, error)
+	JoinGroup(ctx context.Context, in *JoinGroupRequest, opts ...grpc.CallOption) (*JoinGroupResponse, error)
+	LeaveGroup(ctx context.Context, in *LeaveGroupRequest, opts ...grpc.CallOption) (*LeaveGroupResponse, error)
 	DeleteData(ctx context.Context, in *DeleteDataRequest, opts ...grpc.CallOption) (*DeleteDataResponse, error)
 	Watch(ctx context.Context, in *WatchRequest, opts ...grpc.CallOption) (Node_WatchClient, error)
 }
@@ -2259,45 +2258,45 @@ func (c *nodeClient) GetConfig(ctx context.Context, in *GetConfigRequest, opts .
 	return out, nil
 }
 
-func (c *nodeClient) BootstrapShard(ctx context.Context, in *BootstrapShardRequest, opts ...grpc.CallOption) (*BootstrapShardResponse, error) {
-	out := new(BootstrapShardResponse)
-	err := c.cc.Invoke(ctx, "/atomix.stores.raft.v1.Node/BootstrapShard", in, out, opts...)
+func (c *nodeClient) BootstrapGroup(ctx context.Context, in *BootstrapGroupRequest, opts ...grpc.CallOption) (*BootstrapGroupResponse, error) {
+	out := new(BootstrapGroupResponse)
+	err := c.cc.Invoke(ctx, "/atomix.stores.raft.v1.Node/BootstrapGroup", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeClient) AddReplica(ctx context.Context, in *AddReplicaRequest, opts ...grpc.CallOption) (*AddReplicaResponse, error) {
-	out := new(AddReplicaResponse)
-	err := c.cc.Invoke(ctx, "/atomix.stores.raft.v1.Node/AddReplica", in, out, opts...)
+func (c *nodeClient) AddMember(ctx context.Context, in *AddMemberRequest, opts ...grpc.CallOption) (*AddMemberResponse, error) {
+	out := new(AddMemberResponse)
+	err := c.cc.Invoke(ctx, "/atomix.stores.raft.v1.Node/AddMember", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeClient) RemoveReplica(ctx context.Context, in *RemoveReplicaRequest, opts ...grpc.CallOption) (*RemoveReplicaResponse, error) {
-	out := new(RemoveReplicaResponse)
-	err := c.cc.Invoke(ctx, "/atomix.stores.raft.v1.Node/RemoveReplica", in, out, opts...)
+func (c *nodeClient) RemoveMember(ctx context.Context, in *RemoveMemberRequest, opts ...grpc.CallOption) (*RemoveMemberResponse, error) {
+	out := new(RemoveMemberResponse)
+	err := c.cc.Invoke(ctx, "/atomix.stores.raft.v1.Node/RemoveMember", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeClient) JoinShard(ctx context.Context, in *JoinShardRequest, opts ...grpc.CallOption) (*JoinShardResponse, error) {
-	out := new(JoinShardResponse)
-	err := c.cc.Invoke(ctx, "/atomix.stores.raft.v1.Node/JoinShard", in, out, opts...)
+func (c *nodeClient) JoinGroup(ctx context.Context, in *JoinGroupRequest, opts ...grpc.CallOption) (*JoinGroupResponse, error) {
+	out := new(JoinGroupResponse)
+	err := c.cc.Invoke(ctx, "/atomix.stores.raft.v1.Node/JoinGroup", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeClient) LeaveShard(ctx context.Context, in *LeaveShardRequest, opts ...grpc.CallOption) (*LeaveShardResponse, error) {
-	out := new(LeaveShardResponse)
-	err := c.cc.Invoke(ctx, "/atomix.stores.raft.v1.Node/LeaveShard", in, out, opts...)
+func (c *nodeClient) LeaveGroup(ctx context.Context, in *LeaveGroupRequest, opts ...grpc.CallOption) (*LeaveGroupResponse, error) {
+	out := new(LeaveGroupResponse)
+	err := c.cc.Invoke(ctx, "/atomix.stores.raft.v1.Node/LeaveGroup", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2348,11 +2347,11 @@ func (x *nodeWatchClient) Recv() (*Event, error) {
 // NodeServer is the server API for Node service.
 type NodeServer interface {
 	GetConfig(context.Context, *GetConfigRequest) (*GetConfigResponse, error)
-	BootstrapShard(context.Context, *BootstrapShardRequest) (*BootstrapShardResponse, error)
-	AddReplica(context.Context, *AddReplicaRequest) (*AddReplicaResponse, error)
-	RemoveReplica(context.Context, *RemoveReplicaRequest) (*RemoveReplicaResponse, error)
-	JoinShard(context.Context, *JoinShardRequest) (*JoinShardResponse, error)
-	LeaveShard(context.Context, *LeaveShardRequest) (*LeaveShardResponse, error)
+	BootstrapGroup(context.Context, *BootstrapGroupRequest) (*BootstrapGroupResponse, error)
+	AddMember(context.Context, *AddMemberRequest) (*AddMemberResponse, error)
+	RemoveMember(context.Context, *RemoveMemberRequest) (*RemoveMemberResponse, error)
+	JoinGroup(context.Context, *JoinGroupRequest) (*JoinGroupResponse, error)
+	LeaveGroup(context.Context, *LeaveGroupRequest) (*LeaveGroupResponse, error)
 	DeleteData(context.Context, *DeleteDataRequest) (*DeleteDataResponse, error)
 	Watch(*WatchRequest, Node_WatchServer) error
 }
@@ -2364,20 +2363,20 @@ type UnimplementedNodeServer struct {
 func (*UnimplementedNodeServer) GetConfig(ctx context.Context, req *GetConfigRequest) (*GetConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
 }
-func (*UnimplementedNodeServer) BootstrapShard(ctx context.Context, req *BootstrapShardRequest) (*BootstrapShardResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BootstrapShard not implemented")
+func (*UnimplementedNodeServer) BootstrapGroup(ctx context.Context, req *BootstrapGroupRequest) (*BootstrapGroupResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BootstrapGroup not implemented")
 }
-func (*UnimplementedNodeServer) AddReplica(ctx context.Context, req *AddReplicaRequest) (*AddReplicaResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddReplica not implemented")
+func (*UnimplementedNodeServer) AddMember(ctx context.Context, req *AddMemberRequest) (*AddMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddMember not implemented")
 }
-func (*UnimplementedNodeServer) RemoveReplica(ctx context.Context, req *RemoveReplicaRequest) (*RemoveReplicaResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveReplica not implemented")
+func (*UnimplementedNodeServer) RemoveMember(ctx context.Context, req *RemoveMemberRequest) (*RemoveMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveMember not implemented")
 }
-func (*UnimplementedNodeServer) JoinShard(ctx context.Context, req *JoinShardRequest) (*JoinShardResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method JoinShard not implemented")
+func (*UnimplementedNodeServer) JoinGroup(ctx context.Context, req *JoinGroupRequest) (*JoinGroupResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method JoinGroup not implemented")
 }
-func (*UnimplementedNodeServer) LeaveShard(ctx context.Context, req *LeaveShardRequest) (*LeaveShardResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LeaveShard not implemented")
+func (*UnimplementedNodeServer) LeaveGroup(ctx context.Context, req *LeaveGroupRequest) (*LeaveGroupResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LeaveGroup not implemented")
 }
 func (*UnimplementedNodeServer) DeleteData(ctx context.Context, req *DeleteDataRequest) (*DeleteDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteData not implemented")
@@ -2408,92 +2407,92 @@ func _Node_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Node_BootstrapShard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BootstrapShardRequest)
+func _Node_BootstrapGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BootstrapGroupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NodeServer).BootstrapShard(ctx, in)
+		return srv.(NodeServer).BootstrapGroup(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/atomix.stores.raft.v1.Node/BootstrapShard",
+		FullMethod: "/atomix.stores.raft.v1.Node/BootstrapGroup",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServer).BootstrapShard(ctx, req.(*BootstrapShardRequest))
+		return srv.(NodeServer).BootstrapGroup(ctx, req.(*BootstrapGroupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Node_AddReplica_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddReplicaRequest)
+func _Node_AddMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddMemberRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NodeServer).AddReplica(ctx, in)
+		return srv.(NodeServer).AddMember(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/atomix.stores.raft.v1.Node/AddReplica",
+		FullMethod: "/atomix.stores.raft.v1.Node/AddMember",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServer).AddReplica(ctx, req.(*AddReplicaRequest))
+		return srv.(NodeServer).AddMember(ctx, req.(*AddMemberRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Node_RemoveReplica_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveReplicaRequest)
+func _Node_RemoveMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveMemberRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NodeServer).RemoveReplica(ctx, in)
+		return srv.(NodeServer).RemoveMember(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/atomix.stores.raft.v1.Node/RemoveReplica",
+		FullMethod: "/atomix.stores.raft.v1.Node/RemoveMember",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServer).RemoveReplica(ctx, req.(*RemoveReplicaRequest))
+		return srv.(NodeServer).RemoveMember(ctx, req.(*RemoveMemberRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Node_JoinShard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(JoinShardRequest)
+func _Node_JoinGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JoinGroupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NodeServer).JoinShard(ctx, in)
+		return srv.(NodeServer).JoinGroup(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/atomix.stores.raft.v1.Node/JoinShard",
+		FullMethod: "/atomix.stores.raft.v1.Node/JoinGroup",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServer).JoinShard(ctx, req.(*JoinShardRequest))
+		return srv.(NodeServer).JoinGroup(ctx, req.(*JoinGroupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Node_LeaveShard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LeaveShardRequest)
+func _Node_LeaveGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LeaveGroupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NodeServer).LeaveShard(ctx, in)
+		return srv.(NodeServer).LeaveGroup(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/atomix.stores.raft.v1.Node/LeaveShard",
+		FullMethod: "/atomix.stores.raft.v1.Node/LeaveGroup",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServer).LeaveShard(ctx, req.(*LeaveShardRequest))
+		return srv.(NodeServer).LeaveGroup(ctx, req.(*LeaveGroupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2546,24 +2545,24 @@ var _Node_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Node_GetConfig_Handler,
 		},
 		{
-			MethodName: "BootstrapShard",
-			Handler:    _Node_BootstrapShard_Handler,
+			MethodName: "BootstrapGroup",
+			Handler:    _Node_BootstrapGroup_Handler,
 		},
 		{
-			MethodName: "AddReplica",
-			Handler:    _Node_AddReplica_Handler,
+			MethodName: "AddMember",
+			Handler:    _Node_AddMember_Handler,
 		},
 		{
-			MethodName: "RemoveReplica",
-			Handler:    _Node_RemoveReplica_Handler,
+			MethodName: "RemoveMember",
+			Handler:    _Node_RemoveMember_Handler,
 		},
 		{
-			MethodName: "JoinShard",
-			Handler:    _Node_JoinShard_Handler,
+			MethodName: "JoinGroup",
+			Handler:    _Node_JoinGroup_Handler,
 		},
 		{
-			MethodName: "LeaveShard",
-			Handler:    _Node_LeaveShard_Handler,
+			MethodName: "LeaveGroup",
+			Handler:    _Node_LeaveGroup_Handler,
 		},
 		{
 			MethodName: "DeleteData",
@@ -2580,7 +2579,7 @@ var _Node_serviceDesc = grpc.ServiceDesc{
 	Metadata: "v1/raft.proto",
 }
 
-func (m *ShardConfig) Marshal() (dAtA []byte, err error) {
+func (m *GroupConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2590,12 +2589,12 @@ func (m *ShardConfig) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ShardConfig) MarshalTo(dAtA []byte) (int, error) {
+func (m *GroupConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ShardConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *GroupConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2605,10 +2604,10 @@ func (m *ShardConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x18
 	}
-	if len(m.Replicas) > 0 {
-		for iNdEx := len(m.Replicas) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.Members) > 0 {
+		for iNdEx := len(m.Members) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Replicas[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.Members[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -2619,15 +2618,15 @@ func (m *ShardConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x12
 		}
 	}
-	if m.ShardID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ShardID))
+	if m.GroupID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.GroupID))
 		i--
 		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *ReplicaConfig) Marshal() (dAtA []byte, err error) {
+func (m *MemberConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2637,12 +2636,12 @@ func (m *ReplicaConfig) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ReplicaConfig) MarshalTo(dAtA []byte) (int, error) {
+func (m *MemberConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ReplicaConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MemberConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2664,8 +2663,8 @@ func (m *ReplicaConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
-	if m.ReplicaID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ReplicaID))
+	if m.MemberID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.MemberID))
 		i--
 		dAtA[i] = 0x8
 	}
@@ -2800,8 +2799,8 @@ func (m *GetConfigRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.ShardID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ShardID))
+	if m.GroupID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.GroupID))
 		i--
 		dAtA[i] = 0x8
 	}
@@ -2829,7 +2828,7 @@ func (m *GetConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	{
-		size, err := m.Shard.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.Group.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2841,7 +2840,7 @@ func (m *GetConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *BootstrapShardRequest) Marshal() (dAtA []byte, err error) {
+func (m *BootstrapGroupRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2851,12 +2850,12 @@ func (m *BootstrapShardRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *BootstrapShardRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *BootstrapGroupRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *BootstrapShardRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *BootstrapGroupRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2871,10 +2870,10 @@ func (m *BootstrapShardRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x22
-	if len(m.Replicas) > 0 {
-		for iNdEx := len(m.Replicas) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.Members) > 0 {
+		for iNdEx := len(m.Members) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Replicas[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.Members[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -2885,20 +2884,20 @@ func (m *BootstrapShardRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x1a
 		}
 	}
-	if m.ReplicaID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ReplicaID))
+	if m.MemberID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.MemberID))
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.ShardID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ShardID))
+	if m.GroupID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.GroupID))
 		i--
 		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *BootstrapShardResponse) Marshal() (dAtA []byte, err error) {
+func (m *BootstrapGroupResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2908,12 +2907,12 @@ func (m *BootstrapShardResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *BootstrapShardResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *BootstrapGroupResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *BootstrapShardResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *BootstrapGroupResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2921,7 +2920,7 @@ func (m *BootstrapShardResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *AddReplicaRequest) Marshal() (dAtA []byte, err error) {
+func (m *AddMemberRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2931,12 +2930,12 @@ func (m *AddReplicaRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AddReplicaRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *AddMemberRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *AddReplicaRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *AddMemberRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2947,7 +2946,7 @@ func (m *AddReplicaRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x18
 	}
 	{
-		size, err := m.Replica.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.Member.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2956,15 +2955,15 @@ func (m *AddReplicaRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x12
-	if m.ShardID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ShardID))
+	if m.GroupID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.GroupID))
 		i--
 		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *AddReplicaResponse) Marshal() (dAtA []byte, err error) {
+func (m *AddMemberResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2974,12 +2973,12 @@ func (m *AddReplicaResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AddReplicaResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *AddMemberResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *AddReplicaResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *AddMemberResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2987,7 +2986,7 @@ func (m *AddReplicaResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *RemoveReplicaRequest) Marshal() (dAtA []byte, err error) {
+func (m *RemoveMemberRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2997,12 +2996,12 @@ func (m *RemoveReplicaRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RemoveReplicaRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *RemoveMemberRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *RemoveReplicaRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *RemoveMemberRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -3012,20 +3011,20 @@ func (m *RemoveReplicaRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x18
 	}
-	if m.ReplicaID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ReplicaID))
+	if m.MemberID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.MemberID))
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.ShardID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ShardID))
+	if m.GroupID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.GroupID))
 		i--
 		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *RemoveReplicaResponse) Marshal() (dAtA []byte, err error) {
+func (m *RemoveMemberResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3035,12 +3034,12 @@ func (m *RemoveReplicaResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RemoveReplicaResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *RemoveMemberResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *RemoveReplicaResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *RemoveMemberResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -3048,7 +3047,7 @@ func (m *RemoveReplicaResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *JoinShardRequest) Marshal() (dAtA []byte, err error) {
+func (m *JoinGroupRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3058,12 +3057,12 @@ func (m *JoinShardRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *JoinShardRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *JoinGroupRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *JoinShardRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *JoinGroupRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -3078,20 +3077,20 @@ func (m *JoinShardRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x1a
-	if m.ReplicaID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ReplicaID))
+	if m.MemberID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.MemberID))
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.ShardID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ShardID))
+	if m.GroupID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.GroupID))
 		i--
 		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *JoinShardResponse) Marshal() (dAtA []byte, err error) {
+func (m *JoinGroupResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3101,12 +3100,12 @@ func (m *JoinShardResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *JoinShardResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *JoinGroupResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *JoinShardResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *JoinGroupResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -3114,7 +3113,7 @@ func (m *JoinShardResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *LeaveShardRequest) Marshal() (dAtA []byte, err error) {
+func (m *LeaveGroupRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3124,25 +3123,25 @@ func (m *LeaveShardRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *LeaveShardRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *LeaveGroupRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *LeaveShardRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *LeaveGroupRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.ShardID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ShardID))
+	if m.GroupID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.GroupID))
 		i--
 		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *LeaveShardResponse) Marshal() (dAtA []byte, err error) {
+func (m *LeaveGroupResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3152,12 +3151,12 @@ func (m *LeaveShardResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *LeaveShardResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *LeaveGroupResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *LeaveShardResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *LeaveGroupResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -3185,13 +3184,13 @@ func (m *DeleteDataRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.ReplicaID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ReplicaID))
+	if m.MemberID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.MemberID))
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.ShardID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ShardID))
+	if m.GroupID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.GroupID))
 		i--
 		dAtA[i] = 0x8
 	}
@@ -3284,16 +3283,16 @@ func (m *Event) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Event_ReplicaReady) MarshalTo(dAtA []byte) (int, error) {
+func (m *Event_MemberReady) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Event_ReplicaReady) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Event_MemberReady) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.ReplicaReady != nil {
+	if m.MemberReady != nil {
 		{
-			size, err := m.ReplicaReady.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.MemberReady.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -3618,7 +3617,7 @@ func (m *ConnectionInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ReplicaEvent) Marshal() (dAtA []byte, err error) {
+func (m *MemberEvent) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3628,30 +3627,30 @@ func (m *ReplicaEvent) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ReplicaEvent) MarshalTo(dAtA []byte) (int, error) {
+func (m *MemberEvent) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ReplicaEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MemberEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.ReplicaID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ReplicaID))
+	if m.MemberID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.MemberID))
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.ShardID != 0 {
-		i = encodeVarintRaft(dAtA, i, uint64(m.ShardID))
+	if m.GroupID != 0 {
+		i = encodeVarintRaft(dAtA, i, uint64(m.GroupID))
 		i--
 		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *ReplicaReadyEvent) Marshal() (dAtA []byte, err error) {
+func (m *MemberReadyEvent) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3661,18 +3660,18 @@ func (m *ReplicaReadyEvent) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ReplicaReadyEvent) MarshalTo(dAtA []byte) (int, error) {
+func (m *MemberReadyEvent) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ReplicaReadyEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *MemberReadyEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3705,7 +3704,7 @@ func (m *ConfigurationChangedEvent) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	var l int
 	_ = l
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3748,7 +3747,7 @@ func (m *LeaderUpdatedEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3791,7 +3790,7 @@ func (m *SendSnapshotStartedEvent) MarshalToSizedBuffer(dAtA []byte) (int, error
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3834,7 +3833,7 @@ func (m *SendSnapshotCompletedEvent) MarshalToSizedBuffer(dAtA []byte) (int, err
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3877,7 +3876,7 @@ func (m *SendSnapshotAbortedEvent) MarshalToSizedBuffer(dAtA []byte) (int, error
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3920,7 +3919,7 @@ func (m *SnapshotReceivedEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3958,7 +3957,7 @@ func (m *SnapshotRecoveredEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3996,7 +3995,7 @@ func (m *SnapshotCreatedEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -4034,7 +4033,7 @@ func (m *SnapshotCompactedEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -4072,7 +4071,7 @@ func (m *LogEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -4110,7 +4109,7 @@ func (m *LogCompactedEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -4148,7 +4147,7 @@ func (m *LogDBCompactedEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x10
 	}
 	{
-		size, err := m.ReplicaEvent.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.MemberEvent.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -4237,17 +4236,17 @@ func encodeVarintRaft(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *ShardConfig) Size() (n int) {
+func (m *GroupConfig) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ShardID != 0 {
-		n += 1 + sovRaft(uint64(m.ShardID))
+	if m.GroupID != 0 {
+		n += 1 + sovRaft(uint64(m.GroupID))
 	}
-	if len(m.Replicas) > 0 {
-		for _, e := range m.Replicas {
+	if len(m.Members) > 0 {
+		for _, e := range m.Members {
 			l = e.Size()
 			n += 1 + l + sovRaft(uint64(l))
 		}
@@ -4258,14 +4257,14 @@ func (m *ShardConfig) Size() (n int) {
 	return n
 }
 
-func (m *ReplicaConfig) Size() (n int) {
+func (m *MemberConfig) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ReplicaID != 0 {
-		n += 1 + sovRaft(uint64(m.ReplicaID))
+	if m.MemberID != 0 {
+		n += 1 + sovRaft(uint64(m.MemberID))
 	}
 	l = len(m.Host)
 	if l > 0 {
@@ -4335,8 +4334,8 @@ func (m *GetConfigRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.ShardID != 0 {
-		n += 1 + sovRaft(uint64(m.ShardID))
+	if m.GroupID != 0 {
+		n += 1 + sovRaft(uint64(m.GroupID))
 	}
 	return n
 }
@@ -4347,25 +4346,25 @@ func (m *GetConfigResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.Shard.Size()
+	l = m.Group.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	return n
 }
 
-func (m *BootstrapShardRequest) Size() (n int) {
+func (m *BootstrapGroupRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ShardID != 0 {
-		n += 1 + sovRaft(uint64(m.ShardID))
+	if m.GroupID != 0 {
+		n += 1 + sovRaft(uint64(m.GroupID))
 	}
-	if m.ReplicaID != 0 {
-		n += 1 + sovRaft(uint64(m.ReplicaID))
+	if m.MemberID != 0 {
+		n += 1 + sovRaft(uint64(m.MemberID))
 	}
-	if len(m.Replicas) > 0 {
-		for _, e := range m.Replicas {
+	if len(m.Members) > 0 {
+		for _, e := range m.Members {
 			l = e.Size()
 			n += 1 + l + sovRaft(uint64(l))
 		}
@@ -4375,7 +4374,7 @@ func (m *BootstrapShardRequest) Size() (n int) {
 	return n
 }
 
-func (m *BootstrapShardResponse) Size() (n int) {
+func (m *BootstrapGroupResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4384,16 +4383,16 @@ func (m *BootstrapShardResponse) Size() (n int) {
 	return n
 }
 
-func (m *AddReplicaRequest) Size() (n int) {
+func (m *AddMemberRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ShardID != 0 {
-		n += 1 + sovRaft(uint64(m.ShardID))
+	if m.GroupID != 0 {
+		n += 1 + sovRaft(uint64(m.GroupID))
 	}
-	l = m.Replica.Size()
+	l = m.Member.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	if m.Version != 0 {
 		n += 1 + sovRaft(uint64(m.Version))
@@ -4401,7 +4400,7 @@ func (m *AddReplicaRequest) Size() (n int) {
 	return n
 }
 
-func (m *AddReplicaResponse) Size() (n int) {
+func (m *AddMemberResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4410,17 +4409,17 @@ func (m *AddReplicaResponse) Size() (n int) {
 	return n
 }
 
-func (m *RemoveReplicaRequest) Size() (n int) {
+func (m *RemoveMemberRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ShardID != 0 {
-		n += 1 + sovRaft(uint64(m.ShardID))
+	if m.GroupID != 0 {
+		n += 1 + sovRaft(uint64(m.GroupID))
 	}
-	if m.ReplicaID != 0 {
-		n += 1 + sovRaft(uint64(m.ReplicaID))
+	if m.MemberID != 0 {
+		n += 1 + sovRaft(uint64(m.MemberID))
 	}
 	if m.Version != 0 {
 		n += 1 + sovRaft(uint64(m.Version))
@@ -4428,7 +4427,7 @@ func (m *RemoveReplicaRequest) Size() (n int) {
 	return n
 }
 
-func (m *RemoveReplicaResponse) Size() (n int) {
+func (m *RemoveMemberResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4437,24 +4436,24 @@ func (m *RemoveReplicaResponse) Size() (n int) {
 	return n
 }
 
-func (m *JoinShardRequest) Size() (n int) {
+func (m *JoinGroupRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ShardID != 0 {
-		n += 1 + sovRaft(uint64(m.ShardID))
+	if m.GroupID != 0 {
+		n += 1 + sovRaft(uint64(m.GroupID))
 	}
-	if m.ReplicaID != 0 {
-		n += 1 + sovRaft(uint64(m.ReplicaID))
+	if m.MemberID != 0 {
+		n += 1 + sovRaft(uint64(m.MemberID))
 	}
 	l = m.Config.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	return n
 }
 
-func (m *JoinShardResponse) Size() (n int) {
+func (m *JoinGroupResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4463,19 +4462,19 @@ func (m *JoinShardResponse) Size() (n int) {
 	return n
 }
 
-func (m *LeaveShardRequest) Size() (n int) {
+func (m *LeaveGroupRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ShardID != 0 {
-		n += 1 + sovRaft(uint64(m.ShardID))
+	if m.GroupID != 0 {
+		n += 1 + sovRaft(uint64(m.GroupID))
 	}
 	return n
 }
 
-func (m *LeaveShardResponse) Size() (n int) {
+func (m *LeaveGroupResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4490,11 +4489,11 @@ func (m *DeleteDataRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.ShardID != 0 {
-		n += 1 + sovRaft(uint64(m.ShardID))
+	if m.GroupID != 0 {
+		n += 1 + sovRaft(uint64(m.GroupID))
 	}
-	if m.ReplicaID != 0 {
-		n += 1 + sovRaft(uint64(m.ReplicaID))
+	if m.MemberID != 0 {
+		n += 1 + sovRaft(uint64(m.MemberID))
 	}
 	return n
 }
@@ -4531,14 +4530,14 @@ func (m *Event) Size() (n int) {
 	return n
 }
 
-func (m *Event_ReplicaReady) Size() (n int) {
+func (m *Event_MemberReady) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ReplicaReady != nil {
-		l = m.ReplicaReady.Size()
+	if m.MemberReady != nil {
+		l = m.MemberReady.Size()
 		n += 1 + l + sovRaft(uint64(l))
 	}
 	return n
@@ -4715,28 +4714,28 @@ func (m *ConnectionInfo) Size() (n int) {
 	return n
 }
 
-func (m *ReplicaEvent) Size() (n int) {
+func (m *MemberEvent) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ShardID != 0 {
-		n += 1 + sovRaft(uint64(m.ShardID))
+	if m.GroupID != 0 {
+		n += 1 + sovRaft(uint64(m.GroupID))
 	}
-	if m.ReplicaID != 0 {
-		n += 1 + sovRaft(uint64(m.ReplicaID))
+	if m.MemberID != 0 {
+		n += 1 + sovRaft(uint64(m.MemberID))
 	}
 	return n
 }
 
-func (m *ReplicaReadyEvent) Size() (n int) {
+func (m *MemberReadyEvent) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	return n
 }
@@ -4747,7 +4746,7 @@ func (m *ConfigurationChangedEvent) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	return n
 }
@@ -4758,7 +4757,7 @@ func (m *LeaderUpdatedEvent) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	if m.Term != 0 {
 		n += 1 + sovRaft(uint64(m.Term))
@@ -4775,7 +4774,7 @@ func (m *SendSnapshotStartedEvent) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	if m.Index != 0 {
 		n += 1 + sovRaft(uint64(m.Index))
@@ -4792,7 +4791,7 @@ func (m *SendSnapshotCompletedEvent) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	if m.Index != 0 {
 		n += 1 + sovRaft(uint64(m.Index))
@@ -4809,7 +4808,7 @@ func (m *SendSnapshotAbortedEvent) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	if m.Index != 0 {
 		n += 1 + sovRaft(uint64(m.Index))
@@ -4826,7 +4825,7 @@ func (m *SnapshotReceivedEvent) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	if m.Index != 0 {
 		n += 1 + sovRaft(uint64(m.Index))
@@ -4843,7 +4842,7 @@ func (m *SnapshotRecoveredEvent) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	if m.Index != 0 {
 		n += 1 + sovRaft(uint64(m.Index))
@@ -4857,7 +4856,7 @@ func (m *SnapshotCreatedEvent) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	if m.Index != 0 {
 		n += 1 + sovRaft(uint64(m.Index))
@@ -4871,7 +4870,7 @@ func (m *SnapshotCompactedEvent) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	if m.Index != 0 {
 		n += 1 + sovRaft(uint64(m.Index))
@@ -4885,7 +4884,7 @@ func (m *LogEvent) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	if m.Index != 0 {
 		n += 1 + sovRaft(uint64(m.Index))
@@ -4899,7 +4898,7 @@ func (m *LogCompactedEvent) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	if m.Index != 0 {
 		n += 1 + sovRaft(uint64(m.Index))
@@ -4913,7 +4912,7 @@ func (m *LogDBCompactedEvent) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = m.ReplicaEvent.Size()
+	l = m.MemberEvent.Size()
 	n += 1 + l + sovRaft(uint64(l))
 	if m.Index != 0 {
 		n += 1 + sovRaft(uint64(m.Index))
@@ -4949,7 +4948,7 @@ func sovRaft(x uint64) (n int) {
 func sozRaft(x uint64) (n int) {
 	return sovRaft(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ShardConfig) Unmarshal(dAtA []byte) error {
+func (m *GroupConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4972,17 +4971,17 @@ func (m *ShardConfig) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ShardConfig: wiretype end group for non-group")
+			return fmt.Errorf("proto: GroupConfig: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ShardConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GroupConfig: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShardID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupID", wireType)
 			}
-			m.ShardID = 0
+			m.GroupID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -4992,14 +4991,14 @@ func (m *ShardConfig) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ShardID |= ShardID(b&0x7F) << shift
+				m.GroupID |= GroupID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Replicas", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Members", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5026,8 +5025,8 @@ func (m *ShardConfig) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Replicas = append(m.Replicas, ReplicaConfig{})
-			if err := m.Replicas[len(m.Replicas)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Members = append(m.Members, MemberConfig{})
+			if err := m.Members[len(m.Members)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5071,7 +5070,7 @@ func (m *ShardConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReplicaConfig) Unmarshal(dAtA []byte) error {
+func (m *MemberConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5094,17 +5093,17 @@ func (m *ReplicaConfig) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ReplicaConfig: wiretype end group for non-group")
+			return fmt.Errorf("proto: MemberConfig: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ReplicaConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MemberConfig: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberID", wireType)
 			}
-			m.ReplicaID = 0
+			m.MemberID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -5114,7 +5113,7 @@ func (m *ReplicaConfig) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ReplicaID |= ReplicaID(b&0x7F) << shift
+				m.MemberID |= MemberID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -5184,7 +5183,7 @@ func (m *ReplicaConfig) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Role |= ReplicaRole(b&0x7F) << shift
+				m.Role |= MemberRole(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -5548,9 +5547,9 @@ func (m *GetConfigRequest) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShardID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupID", wireType)
 			}
-			m.ShardID = 0
+			m.GroupID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -5560,7 +5559,7 @@ func (m *GetConfigRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ShardID |= ShardID(b&0x7F) << shift
+				m.GroupID |= GroupID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -5617,7 +5616,7 @@ func (m *GetConfigResponse) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Shard", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Group", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5644,7 +5643,7 @@ func (m *GetConfigResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Shard.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Group.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5669,7 +5668,7 @@ func (m *GetConfigResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *BootstrapShardRequest) Unmarshal(dAtA []byte) error {
+func (m *BootstrapGroupRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5692,17 +5691,17 @@ func (m *BootstrapShardRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: BootstrapShardRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: BootstrapGroupRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BootstrapShardRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: BootstrapGroupRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShardID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupID", wireType)
 			}
-			m.ShardID = 0
+			m.GroupID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -5712,16 +5711,16 @@ func (m *BootstrapShardRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ShardID |= ShardID(b&0x7F) << shift
+				m.GroupID |= GroupID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberID", wireType)
 			}
-			m.ReplicaID = 0
+			m.MemberID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -5731,14 +5730,14 @@ func (m *BootstrapShardRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ReplicaID |= ReplicaID(b&0x7F) << shift
+				m.MemberID |= MemberID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Replicas", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Members", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5765,8 +5764,8 @@ func (m *BootstrapShardRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Replicas = append(m.Replicas, ReplicaConfig{})
-			if err := m.Replicas[len(m.Replicas)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Members = append(m.Members, MemberConfig{})
+			if err := m.Members[len(m.Members)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5824,7 +5823,7 @@ func (m *BootstrapShardRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *BootstrapShardResponse) Unmarshal(dAtA []byte) error {
+func (m *BootstrapGroupResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5847,10 +5846,10 @@ func (m *BootstrapShardResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: BootstrapShardResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: BootstrapGroupResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BootstrapShardResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: BootstrapGroupResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -5874,7 +5873,7 @@ func (m *BootstrapShardResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AddReplicaRequest) Unmarshal(dAtA []byte) error {
+func (m *AddMemberRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5897,17 +5896,17 @@ func (m *AddReplicaRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AddReplicaRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: AddMemberRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AddReplicaRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: AddMemberRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShardID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupID", wireType)
 			}
-			m.ShardID = 0
+			m.GroupID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -5917,14 +5916,14 @@ func (m *AddReplicaRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ShardID |= ShardID(b&0x7F) << shift
+				m.GroupID |= GroupID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Replica", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Member", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5951,7 +5950,7 @@ func (m *AddReplicaRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Replica.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Member.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5995,7 +5994,7 @@ func (m *AddReplicaRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AddReplicaResponse) Unmarshal(dAtA []byte) error {
+func (m *AddMemberResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6018,10 +6017,10 @@ func (m *AddReplicaResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AddReplicaResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: AddMemberResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AddReplicaResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: AddMemberResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -6045,7 +6044,7 @@ func (m *AddReplicaResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RemoveReplicaRequest) Unmarshal(dAtA []byte) error {
+func (m *RemoveMemberRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6068,17 +6067,17 @@ func (m *RemoveReplicaRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: RemoveReplicaRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: RemoveMemberRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RemoveReplicaRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: RemoveMemberRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShardID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupID", wireType)
 			}
-			m.ShardID = 0
+			m.GroupID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -6088,16 +6087,16 @@ func (m *RemoveReplicaRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ShardID |= ShardID(b&0x7F) << shift
+				m.GroupID |= GroupID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberID", wireType)
 			}
-			m.ReplicaID = 0
+			m.MemberID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -6107,7 +6106,7 @@ func (m *RemoveReplicaRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ReplicaID |= ReplicaID(b&0x7F) << shift
+				m.MemberID |= MemberID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -6152,7 +6151,7 @@ func (m *RemoveReplicaRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RemoveReplicaResponse) Unmarshal(dAtA []byte) error {
+func (m *RemoveMemberResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6175,10 +6174,10 @@ func (m *RemoveReplicaResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: RemoveReplicaResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: RemoveMemberResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RemoveReplicaResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: RemoveMemberResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -6202,7 +6201,7 @@ func (m *RemoveReplicaResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *JoinShardRequest) Unmarshal(dAtA []byte) error {
+func (m *JoinGroupRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6225,17 +6224,17 @@ func (m *JoinShardRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: JoinShardRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: JoinGroupRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: JoinShardRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: JoinGroupRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShardID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupID", wireType)
 			}
-			m.ShardID = 0
+			m.GroupID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -6245,16 +6244,16 @@ func (m *JoinShardRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ShardID |= ShardID(b&0x7F) << shift
+				m.GroupID |= GroupID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberID", wireType)
 			}
-			m.ReplicaID = 0
+			m.MemberID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -6264,7 +6263,7 @@ func (m *JoinShardRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ReplicaID |= ReplicaID(b&0x7F) << shift
+				m.MemberID |= MemberID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -6323,7 +6322,7 @@ func (m *JoinShardRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *JoinShardResponse) Unmarshal(dAtA []byte) error {
+func (m *JoinGroupResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6346,10 +6345,10 @@ func (m *JoinShardResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: JoinShardResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: JoinGroupResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: JoinShardResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: JoinGroupResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -6373,7 +6372,7 @@ func (m *JoinShardResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *LeaveShardRequest) Unmarshal(dAtA []byte) error {
+func (m *LeaveGroupRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6396,17 +6395,17 @@ func (m *LeaveShardRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: LeaveShardRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: LeaveGroupRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: LeaveShardRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: LeaveGroupRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShardID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupID", wireType)
 			}
-			m.ShardID = 0
+			m.GroupID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -6416,7 +6415,7 @@ func (m *LeaveShardRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ShardID |= ShardID(b&0x7F) << shift
+				m.GroupID |= GroupID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -6442,7 +6441,7 @@ func (m *LeaveShardRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *LeaveShardResponse) Unmarshal(dAtA []byte) error {
+func (m *LeaveGroupResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6465,10 +6464,10 @@ func (m *LeaveShardResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: LeaveShardResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: LeaveGroupResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: LeaveShardResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: LeaveGroupResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -6523,9 +6522,9 @@ func (m *DeleteDataRequest) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShardID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupID", wireType)
 			}
-			m.ShardID = 0
+			m.GroupID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -6535,16 +6534,16 @@ func (m *DeleteDataRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ShardID |= ShardID(b&0x7F) << shift
+				m.GroupID |= GroupID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberID", wireType)
 			}
-			m.ReplicaID = 0
+			m.MemberID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -6554,7 +6553,7 @@ func (m *DeleteDataRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ReplicaID |= ReplicaID(b&0x7F) << shift
+				m.MemberID |= MemberID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -6744,7 +6743,7 @@ func (m *Event) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaReady", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberReady", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6771,11 +6770,11 @@ func (m *Event) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &ReplicaReadyEvent{}
+			v := &MemberReadyEvent{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Event = &Event_ReplicaReady{v}
+			m.Event = &Event_MemberReady{v}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -7355,7 +7354,7 @@ func (m *ConnectionInfo) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReplicaEvent) Unmarshal(dAtA []byte) error {
+func (m *MemberEvent) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7378,17 +7377,17 @@ func (m *ReplicaEvent) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ReplicaEvent: wiretype end group for non-group")
+			return fmt.Errorf("proto: MemberEvent: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ReplicaEvent: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MemberEvent: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShardID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupID", wireType)
 			}
-			m.ShardID = 0
+			m.GroupID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -7398,16 +7397,16 @@ func (m *ReplicaEvent) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ShardID |= ShardID(b&0x7F) << shift
+				m.GroupID |= GroupID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberID", wireType)
 			}
-			m.ReplicaID = 0
+			m.MemberID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRaft
@@ -7417,7 +7416,7 @@ func (m *ReplicaEvent) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ReplicaID |= ReplicaID(b&0x7F) << shift
+				m.MemberID |= MemberID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -7443,7 +7442,7 @@ func (m *ReplicaEvent) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReplicaReadyEvent) Unmarshal(dAtA []byte) error {
+func (m *MemberReadyEvent) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7466,15 +7465,15 @@ func (m *ReplicaReadyEvent) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ReplicaReadyEvent: wiretype end group for non-group")
+			return fmt.Errorf("proto: MemberReadyEvent: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ReplicaReadyEvent: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MemberReadyEvent: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7501,7 +7500,7 @@ func (m *ReplicaReadyEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7557,7 +7556,7 @@ func (m *ConfigurationChangedEvent) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7584,7 +7583,7 @@ func (m *ConfigurationChangedEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7640,7 +7639,7 @@ func (m *LeaderUpdatedEvent) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7667,7 +7666,7 @@ func (m *LeaderUpdatedEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7704,7 +7703,7 @@ func (m *LeaderUpdatedEvent) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Leader |= ReplicaID(b&0x7F) << shift
+				m.Leader |= MemberID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -7761,7 +7760,7 @@ func (m *SendSnapshotStartedEvent) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7788,7 +7787,7 @@ func (m *SendSnapshotStartedEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7825,7 +7824,7 @@ func (m *SendSnapshotStartedEvent) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.To |= ReplicaID(b&0x7F) << shift
+				m.To |= MemberID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -7882,7 +7881,7 @@ func (m *SendSnapshotCompletedEvent) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7909,7 +7908,7 @@ func (m *SendSnapshotCompletedEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7946,7 +7945,7 @@ func (m *SendSnapshotCompletedEvent) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.To |= ReplicaID(b&0x7F) << shift
+				m.To |= MemberID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -8003,7 +8002,7 @@ func (m *SendSnapshotAbortedEvent) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -8030,7 +8029,7 @@ func (m *SendSnapshotAbortedEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8067,7 +8066,7 @@ func (m *SendSnapshotAbortedEvent) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.To |= ReplicaID(b&0x7F) << shift
+				m.To |= MemberID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -8124,7 +8123,7 @@ func (m *SnapshotReceivedEvent) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -8151,7 +8150,7 @@ func (m *SnapshotReceivedEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8188,7 +8187,7 @@ func (m *SnapshotReceivedEvent) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.From |= ReplicaID(b&0x7F) << shift
+				m.From |= MemberID(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -8245,7 +8244,7 @@ func (m *SnapshotRecoveredEvent) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -8272,7 +8271,7 @@ func (m *SnapshotRecoveredEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8347,7 +8346,7 @@ func (m *SnapshotCreatedEvent) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -8374,7 +8373,7 @@ func (m *SnapshotCreatedEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8449,7 +8448,7 @@ func (m *SnapshotCompactedEvent) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -8476,7 +8475,7 @@ func (m *SnapshotCompactedEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8551,7 +8550,7 @@ func (m *LogEvent) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -8578,7 +8577,7 @@ func (m *LogEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8653,7 +8652,7 @@ func (m *LogCompactedEvent) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -8680,7 +8679,7 @@ func (m *LogCompactedEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8755,7 +8754,7 @@ func (m *LogDBCompactedEvent) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReplicaEvent", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MemberEvent", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -8782,7 +8781,7 @@ func (m *LogDBCompactedEvent) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.ReplicaEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MemberEvent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

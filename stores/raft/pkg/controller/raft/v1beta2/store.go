@@ -24,7 +24,6 @@ import (
 	"time"
 
 	raftv1beta2 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta2"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -115,9 +114,10 @@ func (r *RaftStoreReconciler) Reconcile(ctx context.Context, request reconcile.R
 	log.Debug("Reconciling RaftStore")
 
 	store := &raftv1beta2.RaftStore{}
-	err := r.client.Get(ctx, request.NamespacedName, store)
-	if err != nil {
-		return reconcile.Result{}, logError(log, err)
+	if ok, err := get(r.client, ctx, request.NamespacedName, store, log); err != nil {
+		return reconcile.Result{}, err
+	} else if !ok {
+		return reconcile.Result{}, nil
 	}
 
 	cluster := &raftv1beta2.RaftCluster{}
@@ -125,8 +125,10 @@ func (r *RaftStoreReconciler) Reconcile(ctx context.Context, request reconcile.R
 		Namespace: getClusterNamespace(store, store.Spec.Cluster),
 		Name:      store.Spec.Cluster.Name,
 	}
-	if err := r.client.Get(ctx, clusterName, cluster); err != nil {
-		return reconcile.Result{}, logError(log, err)
+	if ok, err := get(r.client, ctx, clusterName, cluster, log); err != nil {
+		return reconcile.Result{}, err
+	} else if !ok {
+		return reconcile.Result{}, nil
 	}
 
 	if ok, err := r.reconcilePartitions(ctx, log, store, cluster); err != nil {
@@ -150,8 +152,8 @@ func (r *RaftStoreReconciler) reconcilePartitions(ctx context.Context, log loggi
 		} else {
 			store.Status.ReplicationFactor = &cluster.Spec.Replicas
 		}
-		if err := r.client.Status().Update(ctx, store); err != nil {
-			return false, logError(log, err)
+		if err := updateStatus(r.client, ctx, store, log); err != nil {
+			return false, err
 		}
 		return true, nil
 	}
@@ -166,8 +168,8 @@ func (r *RaftStoreReconciler) reconcilePartitions(ctx context.Context, log loggi
 			if store.Status.State != raftv1beta2.RaftStoreNotReady {
 				store.Status.State = raftv1beta2.RaftStoreNotReady
 				log.Infow("Store status changed", logging.String("Status", string(store.Status.State)))
-				if err := r.client.Status().Update(ctx, store); err != nil {
-					return false, logError(log, err)
+				if err := updateStatus(r.client, ctx, store, log); err != nil {
+					return false, err
 				}
 				return true, nil
 			}
@@ -178,8 +180,8 @@ func (r *RaftStoreReconciler) reconcilePartitions(ctx context.Context, log loggi
 	if allReady && store.Status.State != raftv1beta2.RaftStoreReady {
 		store.Status.State = raftv1beta2.RaftStoreReady
 		log.Infow("Store status changed", logging.String("Status", string(store.Status.State)))
-		if err := r.client.Status().Update(ctx, store); err != nil {
-			return false, logError(log, err)
+		if err := updateStatus(r.client, ctx, store, log); err != nil {
+			return false, err
 		}
 		return true, nil
 	}
@@ -193,45 +195,43 @@ func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, log loggin
 		Name:      fmt.Sprintf("%s-%d", store.Name, partitionID),
 	}
 	partition := &raftv1beta2.RaftPartition{}
-	if err := r.client.Get(ctx, partitionName, partition); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			log.Error(err)
+	if ok, err := get(r.client, ctx, partitionName, partition, log); err != nil {
+		return "", false, err
+	} else if !ok {
+		// Allocate new group ID by incrementing the group count in the cluster status
+		cluster.Status.Groups++
+		log.Debugw("Allocating new group", logging.Uint64("GroupID", uint64(cluster.Status.Groups)))
+		if err := updateStatus(r.client, ctx, cluster, log); err != nil {
 			return "", false, err
-		}
-
-		// Allocate new shard ID by incrementing the shard count in the cluster status
-		log.Debug("Allocating new shard")
-		cluster.Status.Shards++
-		if err := r.client.Status().Update(ctx, cluster); err != nil {
-			return "", false, logError(log, err)
 		}
 
 		partition = &raftv1beta2.RaftPartition{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   partitionName.Namespace,
 				Name:        partitionName.Name,
-				Labels:      newPartitionLabels(cluster, store, partitionID, partition.Spec.ShardID),
-				Annotations: newPartitionAnnotations(cluster, store, partitionID, partition.Spec.ShardID),
+				Labels:      newPartitionLabels(cluster, store, partitionID, raftv1beta2.GroupID(cluster.Status.Groups)),
+				Annotations: newPartitionAnnotations(cluster, store, partitionID, raftv1beta2.GroupID(cluster.Status.Groups)),
 			},
 			Spec: raftv1beta2.RaftPartitionSpec{
 				RaftConfig:  store.Spec.RaftConfig,
-				Cluster:     store.Spec.Cluster,
 				PartitionID: partitionID,
-				ShardID:     raftv1beta2.ShardID(cluster.Status.Shards),
+				GroupID:     raftv1beta2.GroupID(cluster.Status.Groups),
 				Replicas:    *store.Status.ReplicationFactor,
 			},
 		}
 
 		log.Infow("Creating RaftPartition",
-			logging.Uint64("RaftPartition", uint64(partition.Spec.ShardID)))
+			logging.Uint64("RaftPartition", uint64(partition.Spec.GroupID)))
 		if err := controllerutil.SetControllerReference(store, partition, r.scheme); err != nil {
-			return "", false, logError(log, err)
+			log.Error(err)
+			return "", false, err
 		}
 		if err := controllerutil.SetOwnerReference(cluster, partition, r.scheme); err != nil {
-			return "", false, logError(log, err)
+			log.Error(err)
+			return "", false, err
 		}
-		if err := r.client.Create(ctx, partition); err != nil {
-			return "", false, logError(log, err)
+		if err := create(r.client, ctx, partition, log); err != nil {
+			return "", false, err
 		}
 		return partition.Status.State, true, nil
 	}
@@ -247,41 +247,35 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 			Name:      fmt.Sprintf("%s-%d", store.Name, ordinal),
 		}
 		partition := &raftv1beta2.RaftPartition{}
-		if err := r.client.Get(ctx, partitionName, partition); err != nil {
-			return false, logError(log, err)
+		if ok, err := get(r.client, ctx, partitionName, partition, log); err != nil {
+			return false, err
+		} else if !ok {
+			return false, nil
 		}
 
-		memberAddresses := make(map[raftv1beta2.MemberID]string)
+		replicaAddresses := make(map[raftv1beta2.ReplicaID]string)
 		for ordinal := 1; ordinal <= int(partition.Spec.Replicas); ordinal++ {
-			memberID := raftv1beta2.MemberID(ordinal)
-			memberAddresses[memberID] = fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, getMemberPodName(cluster, partition, memberID)), apiPort)
+			replicaID := raftv1beta2.ReplicaID(ordinal)
+			replicaAddresses[replicaID] = fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, getReplicaPodName(cluster, partition, replicaID)), apiPort)
 		}
 
 		var leader string
 		if partition.Status.Leader != nil {
-			if address, ok := memberAddresses[*partition.Status.Leader]; ok {
+			if address, ok := replicaAddresses[*partition.Status.Leader]; ok {
 				leader = address
-				delete(memberAddresses, *partition.Status.Leader)
+				delete(replicaAddresses, *partition.Status.Leader)
 			}
 		}
 
 		followers := make([]string, 0, len(partition.Status.Followers))
-		for _, memberID := range partition.Status.Followers {
-			memberName := types.NamespacedName{
-				Namespace: partition.Namespace,
-				Name:      fmt.Sprintf("%s-%d-%d", store.Name, partition.Spec.PartitionID, memberID),
-			}
-			member := &raftv1beta2.RaftMember{}
-			if err := r.client.Get(ctx, memberName, member); err != nil {
-				return false, logError(log, err)
-			}
-			if address, ok := memberAddresses[memberID]; ok {
+		for _, replicaID := range partition.Status.Followers {
+			if address, ok := replicaAddresses[replicaID]; ok {
 				followers = append(followers, address)
-				delete(memberAddresses, memberID)
+				delete(replicaAddresses, replicaID)
 			}
 		}
 
-		for _, address := range memberAddresses {
+		for _, address := range replicaAddresses {
 			followers = append(followers, address)
 		}
 
@@ -297,15 +291,14 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 		Name:      store.Name,
 	}
 	dataStore := &atomixv3beta3.DataStore{}
-	if err := r.client.Get(ctx, dataStoreName, dataStore); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return false, logError(log, err)
-		}
-
+	if ok, err := get(r.client, ctx, dataStoreName, dataStore, log); err != nil {
+		return false, err
+	} else if !ok {
 		marshaler := &jsonpb.Marshaler{}
 		configString, err := marshaler.MarshalToString(&config)
 		if err != nil {
-			return false, logError(log, err)
+			log.Error(err)
+			return false, err
 		}
 
 		dataStore = &atomixv3beta3.DataStore{
@@ -325,26 +318,26 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 			},
 		}
 		if err := controllerutil.SetControllerReference(store, dataStore, r.scheme); err != nil {
-			return false, logError(log, err)
+			log.Error(err)
+			return false, err
 		}
 		log.Info("Creating DataStore")
 		log.Debugw("Configuring DataStore", logging.String("Config", configString))
-		if err := r.client.Create(ctx, dataStore); err != nil {
-			return false, logError(log, err)
-		}
-		return true, nil
+		return true, create(r.client, ctx, dataStore, log)
 	}
 
 	var storedConfig rsmv1.ProtocolConfig
 	if err := jsonpb.UnmarshalString(string(dataStore.Spec.Config.Raw), &storedConfig); err != nil {
-		return false, logError(log, err)
+		log.Error(err)
+		return false, err
 	}
 
 	if !isProtocolConfigEqual(storedConfig, config) {
 		marshaler := &jsonpb.Marshaler{}
 		configString, err := marshaler.MarshalToString(&config)
 		if err != nil {
-			return false, logError(log, err)
+			log.Error(err)
+			return false, err
 		}
 
 		dataStore.Spec.Config = runtime.RawExtension{
@@ -352,10 +345,7 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 		}
 		log.Info("Updating DataStore")
 		log.Debugw("Configuring DataStore", logging.String("Config", configString))
-		if err := r.client.Update(ctx, dataStore); err != nil {
-			return false, logError(log, err)
-		}
-		return true, nil
+		return true, update(r.client, ctx, dataStore, log)
 	}
 	return false, nil
 }

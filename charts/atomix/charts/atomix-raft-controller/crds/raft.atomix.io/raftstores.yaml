@@ -32,6 +32,8 @@ spec:
               description: |-
                 The specification for the store.
               type: object
+              required:
+                - cluster
               properties:
                 cluster:
                   type: object
@@ -69,16 +71,15 @@ spec:
                   nullable: true
             status:
               type: object
+              default: {}
               properties:
                 replicationFactor:
                   type: integer
                 state:
                   type: string
-                  default: Initializing
+                  default: NotReady
                   enum:
-                    - Initializing
-                    - Reconfiguring
-                    - Running
+                    - NotReady
                     - Ready
       additionalPrinterColumns:
         - name: Cluster

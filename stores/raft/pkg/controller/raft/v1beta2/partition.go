@@ -10,6 +10,7 @@ import (
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -21,7 +22,6 @@ import (
 	"time"
 
 	raftv1beta2 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta2"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -49,8 +49,8 @@ func addRaftPartitionController(mgr manager.Manager) error {
 		return err
 	}
 
-	// Watch for changes to secondary resource RaftMember
-	err = controller.Watch(&source.Kind{Type: &raftv1beta2.RaftMember{}}, &handler.EnqueueRequestForOwner{
+	// Watch for changes to secondary resource RaftReplica
+	err = controller.Watch(&source.Kind{Type: &raftv1beta2.RaftReplica{}}, &handler.EnqueueRequestForOwner{
 		OwnerType:    &raftv1beta2.RaftPartition{},
 		IsController: true,
 	})
@@ -60,21 +60,60 @@ func addRaftPartitionController(mgr manager.Manager) error {
 
 	// Watch for changes to secondary resource RaftCluster
 	err = controller.Watch(&source.Kind{Type: &raftv1beta2.RaftCluster{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+		options := &client.ListOptions{
+			LabelSelector: labels.SelectorFromSet(map[string]string{
+				raftNamespaceKey: object.GetNamespace(),
+				raftClusterKey:   object.GetName(),
+			}),
+		}
 		partitions := &raftv1beta2.RaftPartitionList{}
-		if err := mgr.GetClient().List(context.Background(), partitions, &client.ListOptions{Namespace: object.GetNamespace()}); err != nil {
+		if err := mgr.GetClient().List(context.Background(), partitions, options); err != nil {
+			log.Error(err)
 			return nil
 		}
 
 		var requests []reconcile.Request
 		for _, partition := range partitions.Items {
-			if partition.Spec.Cluster.Name == object.GetName() && getClusterNamespace(&partition, partition.Spec.Cluster) == object.GetNamespace() {
-				requests = append(requests, reconcile.Request{
-					NamespacedName: types.NamespacedName{
-						Namespace: object.GetNamespace(),
-						Name:      partition.Name,
-					},
-				})
-			}
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: partition.Namespace,
+					Name:      partition.Name,
+				},
+			})
+		}
+		return requests
+	}))
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to secondary resource Pod
+	err = controller.Watch(&source.Kind{Type: &corev1.Pod{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+		clusterName, ok := object.GetAnnotations()[raftClusterKey]
+		if !ok {
+			return nil
+		}
+
+		options := &client.ListOptions{
+			LabelSelector: labels.SelectorFromSet(map[string]string{
+				raftNamespaceKey: object.GetAnnotations()[raftNamespaceKey],
+				raftClusterKey:   clusterName,
+			}),
+		}
+		partitions := &raftv1beta2.RaftPartitionList{}
+		if err := mgr.GetClient().List(context.Background(), partitions, options); err != nil {
+			log.Error(err)
+			return nil
+		}
+
+		var requests []reconcile.Request
+		for _, partition := range partitions.Items {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: partition.Namespace,
+					Name:      partition.Name,
+				},
+			})
 		}
 		return requests
 	}))
@@ -98,8 +137,10 @@ func (r *RaftPartitionReconciler) Reconcile(ctx context.Context, request reconci
 	log.Debug("Reconciling RaftPartition")
 
 	partition := &raftv1beta2.RaftPartition{}
-	if err := r.client.Get(ctx, request.NamespacedName, partition); err != nil {
-		return reconcile.Result{}, logError(log, err)
+	if ok, err := get(r.client, ctx, request.NamespacedName, partition, log); err != nil {
+		return reconcile.Result{}, err
+	} else if !ok {
+		return reconcile.Result{}, nil
 	}
 	return r.reconcilePartition(ctx, log, partition)
 }
@@ -107,18 +148,20 @@ func (r *RaftPartitionReconciler) Reconcile(ctx context.Context, request reconci
 func (r *RaftPartitionReconciler) reconcilePartition(ctx context.Context, log logging.Logger, partition *raftv1beta2.RaftPartition) (reconcile.Result, error) {
 	log = log.WithFields(
 		logging.Uint64("PartitionID", uint64(partition.Spec.PartitionID)),
-		logging.Uint64("ShardID", uint64(partition.Spec.ShardID)))
+		logging.Uint64("GroupID", uint64(partition.Spec.GroupID)))
 
 	cluster := &raftv1beta2.RaftCluster{}
 	clusterName := types.NamespacedName{
-		Namespace: getClusterNamespace(partition, partition.Spec.Cluster),
-		Name:      partition.Spec.Cluster.Name,
+		Namespace: partition.Annotations[raftNamespaceKey],
+		Name:      partition.Annotations[raftClusterKey],
 	}
-	if err := r.client.Get(ctx, clusterName, cluster); err != nil {
-		return reconcile.Result{}, logError(log, err)
+	if ok, err := get(r.client, ctx, clusterName, cluster, log); err != nil {
+		return reconcile.Result{}, err
+	} else if !ok {
+		return reconcile.Result{}, nil
 	}
 
-	if ok, err := r.reconcileMembers(ctx, log, cluster, partition); err != nil {
+	if ok, err := r.reconcileReplicas(ctx, log, cluster, partition); err != nil {
 		return reconcile.Result{}, err
 	} else if ok {
 		return reconcile.Result{}, nil
@@ -126,15 +169,15 @@ func (r *RaftPartitionReconciler) reconcilePartition(ctx context.Context, log lo
 	return reconcile.Result{}, nil
 }
 
-func (r *RaftPartitionReconciler) reconcileMembers(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition) (bool, error) {
+func (r *RaftPartitionReconciler) reconcileReplicas(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition) (bool, error) {
 	allReady := true
 	for ordinal := 1; ordinal <= int(partition.Spec.Replicas); ordinal++ {
-		memberID := raftv1beta2.MemberID(ordinal)
-		if status, ok, err := r.reconcileMember(ctx, log, cluster, partition, memberID); err != nil {
+		replicaID := raftv1beta2.ReplicaID(ordinal)
+		if status, ok, err := r.reconcileReplica(ctx, log, cluster, partition, replicaID); err != nil {
 			return false, err
 		} else if ok {
 			return true, nil
-		} else if status != raftv1beta2.RaftMemberReady {
+		} else if status != raftv1beta2.RaftReplicaReady {
 			allReady = false
 		}
 	}
@@ -142,7 +185,7 @@ func (r *RaftPartitionReconciler) reconcileMembers(ctx context.Context, log logg
 	switch partition.Status.State {
 	case raftv1beta2.RaftPartitionInitializing:
 		partition.Status.State = raftv1beta2.RaftPartitionRunning
-		partition.Status.Replicas = partition.Spec.Replicas
+		partition.Status.Members = partition.Spec.Replicas
 	case raftv1beta2.RaftPartitionReconfiguring, raftv1beta2.RaftPartitionRunning:
 		if !allReady {
 			return false, nil
@@ -156,48 +199,41 @@ func (r *RaftPartitionReconciler) reconcileMembers(ctx context.Context, log logg
 	}
 
 	log.Infow("Partition status changed", logging.String("Status", string(partition.Status.State)))
-	if err := r.client.Status().Update(ctx, partition); err != nil {
-		return false, logError(log, err)
+	if err := updateStatus(r.client, ctx, partition, log); err != nil {
+		return false, err
 	}
 	return true, nil
 }
 
-func (r *RaftPartitionReconciler) reconcileMember(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, memberID raftv1beta2.MemberID) (raftv1beta2.RaftMemberState, bool, error) {
-	log = log.WithFields(logging.Uint64("MemberID", uint64(memberID)))
-	memberName := types.NamespacedName{
+func (r *RaftPartitionReconciler) reconcileReplica(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, replicaID raftv1beta2.ReplicaID) (raftv1beta2.RaftReplicaState, bool, error) {
+	log = log.WithFields(logging.Uint64("ReplicaID", uint64(replicaID)))
+	replicaName := types.NamespacedName{
 		Namespace: partition.Namespace,
-		Name:      fmt.Sprintf("%s-%d", partition.Name, memberID),
+		Name:      fmt.Sprintf("%s-%d", partition.Name, replicaID),
 	}
-	member := &raftv1beta2.RaftMember{}
-	if err := r.client.Get(ctx, memberName, member); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			log.Error(err)
-			return "", false, err
-		}
-
+	replica := &raftv1beta2.RaftReplica{}
+	if ok, err := get(r.client, ctx, replicaName, replica, log); err != nil {
+		return "", false, err
+	} else if !ok {
 		podName := types.NamespacedName{
-			Namespace: getClusterNamespace(partition, partition.Spec.Cluster),
-			Name:      getMemberPodName(cluster, partition, memberID),
+			Namespace: cluster.Namespace,
+			Name:      getReplicaPodName(cluster, partition, replicaID),
 		}
 		pod := &corev1.Pod{}
-		if err := r.client.Get(ctx, podName, pod); err != nil {
-			if !k8serrors.IsNotFound(err) {
-				log.Error(err)
-				return "", false, err
-			}
-			log.Debugw("Member pod not found", logging.Stringer("Pod", podName))
-			return "", false, nil
+		if ok, err := get(r.client, ctx, podName, pod, log); err != nil {
+			return "", false, err
+		} else if !ok {
+			return "", true, nil
 		}
 
-		member = &raftv1beta2.RaftMember{
+		replica = &raftv1beta2.RaftReplica{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: memberName.Namespace,
-				Name:      memberName.Name,
+				Namespace: replicaName.Namespace,
+				Name:      replicaName.Name,
 			},
-			Spec: raftv1beta2.RaftMemberSpec{
-				Cluster:  partition.Spec.Cluster,
-				ShardID:  partition.Spec.ShardID,
-				MemberID: memberID,
+			Spec: raftv1beta2.RaftReplicaSpec{
+				GroupID:   partition.Spec.GroupID,
+				ReplicaID: replicaID,
 				Pod: corev1.LocalObjectReference{
 					Name: pod.Name,
 				},
@@ -209,37 +245,37 @@ func (r *RaftPartitionReconciler) reconcileMember(ctx context.Context, log loggi
 
 		switch partition.Status.State {
 		case raftv1beta2.RaftPartitionInitializing:
-			member.Spec.ReplicaID = raftv1beta2.ReplicaID(memberID)
+			replica.Spec.MemberID = raftv1beta2.MemberID(replicaID)
 		default:
-			log.Debug("Allocating new replica")
 			partition.Status.State = raftv1beta2.RaftPartitionReconfiguring
-			partition.Status.Replicas++
-			if err := r.client.Status().Update(ctx, partition); err != nil {
-				return "", false, logError(log, err)
+			partition.Status.Members++
+			log.Debugw("Allocating new member", logging.Uint64("MemberID", uint64(partition.Status.Members)))
+			if err := updateStatus(r.client, ctx, partition, log); err != nil {
+				return "", false, err
 			}
-			member.Spec.ReplicaID = raftv1beta2.ReplicaID(partition.Status.Replicas)
-			member.Spec.Join = true
+			replica.Spec.MemberID = raftv1beta2.MemberID(partition.Status.Members)
+			replica.Spec.Join = true
 		}
 
-		member.Labels = newMemberLabels(cluster, partition, memberID, member.Spec.ReplicaID)
-		member.Annotations = newMemberAnnotations(cluster, partition, memberID, member.Spec.ReplicaID)
+		replica.Labels = newReplicaLabels(cluster, partition, replicaID, replica.Spec.MemberID)
+		replica.Annotations = newReplicaAnnotations(cluster, partition, replicaID, replica.Spec.MemberID)
 
-		log.Infow("Creating RaftMember",
-			logging.Uint64("ReplicaID", uint64(member.Spec.ReplicaID)))
-		if err := controllerutil.SetControllerReference(partition, member, r.scheme); err != nil {
+		log.Infow("Creating RaftReplica",
+			logging.Uint64("MemberID", uint64(replica.Spec.MemberID)))
+		if err := controllerutil.SetControllerReference(partition, replica, r.scheme); err != nil {
 			log.Error(err)
 			return "", false, err
 		}
-		if err := controllerutil.SetOwnerReference(pod, member, r.scheme); err != nil {
+		if err := controllerutil.SetOwnerReference(pod, replica, r.scheme); err != nil {
 			log.Error(err)
 			return "", false, err
 		}
-		if err := r.client.Create(ctx, member); err != nil {
-			return "", false, logError(log, err)
+		if err := create(r.client, ctx, replica, log); err != nil {
+			return "", false, err
 		}
-		return member.Status.State, true, nil
+		return replica.Status.State, true, nil
 	}
-	return member.Status.State, false, nil
+	return replica.Status.State, false, nil
 }
 
 var _ reconcile.Reconciler = (*RaftPartitionReconciler)(nil)

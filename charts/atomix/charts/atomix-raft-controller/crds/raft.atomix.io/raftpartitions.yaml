@@ -27,19 +27,9 @@ spec:
             spec:
               type: object
               required:
-                - cluster
                 - partitionID
-                - shardID
+                - groupID
               properties:
-                cluster:
-                  type: object
-                  required:
-                    - name
-                  properties:
-                    name:
-                      type: string
-                    namespace:
-                      type: string
                 replicas:
                   type: integer
                   minimum: 1
@@ -48,7 +38,7 @@ spec:
                   type: integer
                   minimum: 1
                   maximum: 1024
-                shardID:
+                groupID:
                   type: integer
                   minimum: 1
                 electionRTT:
@@ -88,17 +78,17 @@ spec:
                   type: array
                   items:
                     type: integer
-                replicas:
+                members:
                   type: integer
       additionalPrinterColumns:
         - name: Partition
           type: integer
           description: The identifier of the partition
           jsonPath: .spec.partitionID
-        - name: Shard
+        - name: Group
           type: integer
-          description: The partition's shard identifier
-          jsonPath: .spec.shardID
+          description: The partition's group identifier
+          jsonPath: .spec.groupID
         - name: Cluster
           type: string
           description: The cluster in which the partition is stored

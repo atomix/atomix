@@ -5,7 +5,6 @@
 package v1beta2
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -21,24 +20,23 @@ const (
 
 type PartitionID uint64
 
-type ShardID uint64
+type GroupID uint64
 
 // RaftPartitionSpec specifies a RaftPartitionSpec configuration
 type RaftPartitionSpec struct {
 	RaftConfig  `json:",inline"`
-	Cluster     corev1.ObjectReference `json:"cluster"`
-	Replicas    uint32                 `json:"replicas"`
-	PartitionID PartitionID            `json:"partitionID"`
-	ShardID     ShardID                `json:"shardID"`
+	Replicas    uint32      `json:"replicas"`
+	PartitionID PartitionID `json:"partitionID"`
+	GroupID     GroupID     `json:"groupID"`
 }
 
 // RaftPartitionStatus defines the status of a RaftPartition
 type RaftPartitionStatus struct {
 	State     RaftPartitionState `json:"state,omitempty"`
 	Term      *uint64            `json:"term,omitempty"`
-	Leader    *MemberID          `json:"leader,omitempty"`
-	Followers []MemberID         `json:"followers,omitempty"`
-	Replicas  uint32             `json:"replicas"`
+	Leader    *ReplicaID         `json:"leader,omitempty"`
+	Followers []ReplicaID        `json:"followers,omitempty"`
+	Members   uint32             `json:"members"`
 }
 
 // +genclient
