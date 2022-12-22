@@ -347,7 +347,7 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 			node := raftv1.NewNodeClient(conn)
 			request := &raftv1.BootstrapGroupRequest{
 				GroupID:  raftv1.GroupID(replica.Spec.GroupID),
-				MemberID: raftv1.MemberID(replica.Spec.ReplicaID),
+				MemberID: raftv1.MemberID(replica.Spec.MemberID),
 				Members:  members,
 				Config:   config,
 			}
@@ -355,18 +355,18 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 				err = errors.FromProto(err)
 				if !errors.IsUnavailable(err) && !errors.IsAlreadyExists(err) {
 					log.Warn(err)
-					r.events.Eventf(store, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.MemberID, err.Error())
-					r.events.Eventf(cluster, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.MemberID, err.Error())
-					r.events.Eventf(partition, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.MemberID, err.Error())
-					r.events.Eventf(pod, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.MemberID, err.Error())
+					r.events.Eventf(store, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
+					r.events.Eventf(cluster, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
+					r.events.Eventf(partition, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
+					r.events.Eventf(pod, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
 					r.events.Eventf(replica, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d: %s", partition.Spec.PartitionID, err.Error())
 				}
 				return false, err
 			} else {
-				r.events.Eventf(store, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.MemberID)
-				r.events.Eventf(cluster, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.MemberID)
-				r.events.Eventf(partition, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.MemberID)
-				r.events.Eventf(pod, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.MemberID)
+				r.events.Eventf(store, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.ReplicaID)
+				r.events.Eventf(cluster, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.ReplicaID)
+				r.events.Eventf(partition, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.ReplicaID)
+				r.events.Eventf(pod, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.ReplicaID)
 				r.events.Eventf(replica, "Normal", "Bootstrapped", "Bootstrapped partition %d", partition.Spec.PartitionID)
 			}
 
@@ -410,7 +410,7 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 					client := raftv1.NewNodeClient(conn)
 					request := &raftv1.JoinGroupRequest{
 						GroupID:  raftv1.GroupID(replica.Spec.GroupID),
-						MemberID: raftv1.MemberID(replica.Spec.ReplicaID),
+						MemberID: raftv1.MemberID(replica.Spec.MemberID),
 						Config:   config,
 					}
 					_, err = client.JoinGroup(ctx, request)
@@ -419,18 +419,18 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 						err = errors.FromProto(err)
 						if !errors.IsUnavailable(err) && !errors.IsAlreadyExists(err) {
 							log.Warn(err)
-							r.events.Eventf(store, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.MemberID, partition.Spec.PartitionID, err.Error())
-							r.events.Eventf(cluster, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.MemberID, partition.Spec.PartitionID, err.Error())
-							r.events.Eventf(partition, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.MemberID, partition.Spec.PartitionID, err.Error())
-							r.events.Eventf(pod, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.MemberID, partition.Spec.PartitionID, err.Error())
+							r.events.Eventf(store, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
+							r.events.Eventf(cluster, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
+							r.events.Eventf(partition, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
+							r.events.Eventf(pod, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
 							r.events.Eventf(replica, "Warning", "JoinFailed", "Failed to join partition %d: %s", partition.Spec.PartitionID, err.Error())
 						}
 						return false, err
 					} else {
-						r.events.Eventf(store, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.MemberID, partition.Spec.PartitionID)
-						r.events.Eventf(cluster, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.MemberID, partition.Spec.PartitionID)
-						r.events.Eventf(partition, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.MemberID, partition.Spec.PartitionID)
-						r.events.Eventf(pod, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.MemberID, partition.Spec.PartitionID)
+						r.events.Eventf(store, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.ReplicaID, partition.Spec.PartitionID)
+						r.events.Eventf(cluster, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.ReplicaID, partition.Spec.PartitionID)
+						r.events.Eventf(partition, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.ReplicaID, partition.Spec.PartitionID)
+						r.events.Eventf(pod, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.ReplicaID, partition.Spec.PartitionID)
 						r.events.Eventf(replica, "Normal", "Joined", "Joined partition %d", partition.Spec.PartitionID)
 					}
 
@@ -491,7 +491,7 @@ func (r *RaftReplicaReconciler) tryAddReplica(ctx context.Context, log logging.L
 	addMemberRequest := &raftv1.AddMemberRequest{
 		GroupID: raftv1.GroupID(replica.Spec.GroupID),
 		Member: raftv1.MemberConfig{
-			MemberID: raftv1.MemberID(replica.Spec.ReplicaID),
+			MemberID: raftv1.MemberID(replica.Spec.MemberID),
 			Host:     getClusterPodDNSName(cluster, replica.Spec.Pod.Name),
 			Port:     raftPort,
 		},
@@ -622,7 +622,7 @@ func (r *RaftReplicaReconciler) tryRemoveReplica(ctx context.Context, log loggin
 	log.Infof("Removing member from group")
 	removeMemberRequest := &raftv1.RemoveMemberRequest{
 		GroupID:  raftv1.GroupID(replica.Spec.GroupID),
-		MemberID: raftv1.MemberID(replica.Spec.ReplicaID),
+		MemberID: raftv1.MemberID(replica.Spec.MemberID),
 		Version:  getConfigResponse.Group.Version,
 	}
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
