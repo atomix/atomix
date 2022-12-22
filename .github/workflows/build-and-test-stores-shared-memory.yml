@@ -1,0 +1,21 @@
+name: Build and Test Store -- SharedMemory
+
+on:
+  push:
+    branches:
+      - 'master'
+    paths:
+      - 'stores/shared-memory/**'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Run Tests
+        working-directory: stores/shared-memory
+        run: make test

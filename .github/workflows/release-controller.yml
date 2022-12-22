@@ -1,0 +1,25 @@
+name: Release Controller
+
+on:
+  push:
+    tags:
+      - 'controller/v*'
+
+jobs:
+  push-docker-images:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Docker Login
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Release
+        working-directory: controller
+        run: make release
+        env:
+          TAG: ${{ github.ref_name }}

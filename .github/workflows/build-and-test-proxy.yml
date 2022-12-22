@@ -1,0 +1,21 @@
+name: Build and Test Proxy
+
+on:
+  push:
+    branches:
+      - 'master'
+    paths:
+      - 'proxy/**'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Run Tests
+        working-directory: proxy
+        run: make test
