@@ -253,30 +253,44 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 			return false, nil
 		}
 
-		replicaAddresses := make(map[raftv1beta2.ReplicaID]string)
-		for ordinal := 1; ordinal <= int(partition.Spec.Replicas); ordinal++ {
-			replicaID := raftv1beta2.ReplicaID(ordinal)
-			replicaAddresses[replicaID] = fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, getReplicaPodName(cluster, partition, replicaID)), apiPort)
-		}
+		addedAddresses := make(map[string]bool)
 
 		var leader string
 		if partition.Status.Leader != nil {
-			if address, ok := replicaAddresses[*partition.Status.Leader]; ok {
-				leader = address
-				delete(replicaAddresses, *partition.Status.Leader)
+			replicaName := types.NamespacedName{
+				Namespace: partition.Namespace,
+				Name:      partition.Status.Leader.Name,
+			}
+			replica := &raftv1beta2.RaftReplica{}
+			if ok, err := get(r.client, ctx, replicaName, replica, log); err != nil {
+				return false, err
+			} else if ok {
+				leader = fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, replica.Spec.Pod.Name), apiPort)
+				addedAddresses[leader] = true
 			}
 		}
 
 		followers := make([]string, 0, len(partition.Status.Followers))
-		for _, replicaID := range partition.Status.Followers {
-			if address, ok := replicaAddresses[replicaID]; ok {
+		for _, follower := range partition.Status.Followers {
+			replicaName := types.NamespacedName{
+				Namespace: partition.Namespace,
+				Name:      follower.Name,
+			}
+			replica := &raftv1beta2.RaftReplica{}
+			if ok, err := get(r.client, ctx, replicaName, replica, log); err != nil {
+				return false, err
+			} else if ok {
+				address := fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, replica.Spec.Pod.Name), apiPort)
 				followers = append(followers, address)
-				delete(replicaAddresses, replicaID)
+				addedAddresses[address] = true
 			}
 		}
 
-		for _, address := range replicaAddresses {
-			followers = append(followers, address)
+		for id := 1; id <= int(partition.Spec.Replicas); id++ {
+			address := fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, getReplicaPodName(cluster, partition, raftv1beta2.ReplicaID(id))), apiPort)
+			if _, ok := addedAddresses[address]; !ok {
+				followers = append(followers, address)
+			}
 		}
 
 		config.Partitions = append(config.Partitions, rsmv1.PartitionConfig{

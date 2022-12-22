@@ -56,15 +56,15 @@ type RaftReplicaSpec struct {
 
 // RaftReplicaStatus defines the status of a RaftReplica
 type RaftReplicaStatus struct {
-	PodRef            *corev1.ObjectReference `json:"podRef"`
-	Version           *int32                  `json:"version"`
-	State             RaftReplicaState        `json:"state,omitempty"`
-	Role              *RaftReplicaRole        `json:"role,omitempty"`
-	Leader            *ReplicaID              `json:"leader,omitempty"`
-	Term              *uint64                 `json:"term,omitempty"`
-	LastUpdated       *metav1.Time            `json:"lastUpdated,omitempty"`
-	LastSnapshotIndex *uint64                 `json:"lastSnapshotIndex,omitempty"`
-	LastSnapshotTime  *metav1.Time            `json:"lastSnapshotTime,omitempty"`
+	PodRef            *corev1.ObjectReference      `json:"podRef"`
+	Version           *int32                       `json:"version"`
+	State             RaftReplicaState             `json:"state,omitempty"`
+	Role              *RaftReplicaRole             `json:"role,omitempty"`
+	Leader            *corev1.LocalObjectReference `json:"leader,omitempty"`
+	Term              *uint64                      `json:"term,omitempty"`
+	LastUpdated       *metav1.Time                 `json:"lastUpdated,omitempty"`
+	LastSnapshotIndex *uint64                      `json:"lastSnapshotIndex,omitempty"`
+	LastSnapshotTime  *metav1.Time                 `json:"lastSnapshotTime,omitempty"`
 }
 
 // +genclient

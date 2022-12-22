@@ -118,8 +118,13 @@ spec:
                   type: integer
                   nullable: true
                 leader:
-                  type: integer
+                  type: object
+                  required:
+                    - name
                   nullable: true
+                  properties:
+                    name:
+                      type: string
                 lastUpdated:
                   type: string
                   format: date-time
@@ -130,45 +135,29 @@ spec:
                   type: string
                   format: date-time
       additionalPrinterColumns:
-        - name: Replica
-          type: integer
-          description: The identifier of the replica
-          jsonPath: .spec.replicaID
-        - name: Group
-          type: integer
-          description: The identifier of the Raft group on which the replica is run
-          jsonPath: .spec.groupID
-        - name: Member
-          type: integer
-          description: The identifier of the Raft member on which the replica is run
-          jsonPath: .spec.memberID
         - name: Pod
           type: string
           description: The pod on which the replica is run
           jsonPath: .spec.pod.name
         - name: Type
           type: string
-          description: The member type
+          description: The type of membership in the Raft group
           jsonPath: .spec.type
         - name: Role
           type: string
           description: The member's current role in the Raft cluster
           jsonPath: .status.role
         - name: Leader
-          type: integer
+          type: string
           description: The member's current leader
-          jsonPath: .status.leader
+          jsonPath: .status.leader.name
         - name: Term
           type: integer
           description: The member's current term
           jsonPath: .status.term
-        - name: Snapshot Index
-          type: integer
-          description: The index at which the member last took a snapshot
-          jsonPath: .status.lastSnapshotIndex
-        - name: Snapshot Time
+        - name: Last Snapshot
           type: string
-          description: The last time the member took a snapshot
+          description: The last time the member took a snapshot of its state machine
           jsonPath: .status.lastSnapshotTime
         - name: Status
           type: string

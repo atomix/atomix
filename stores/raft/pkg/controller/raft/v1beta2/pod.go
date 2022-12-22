@@ -206,15 +206,17 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 							if err != nil {
 								return false
 							}
-							if status.Leader != nil && *status.Leader == replica.Spec.ReplicaID {
+							if status.Leader != nil && status.Leader.Name == replica.Namespace {
 								return false
 							}
 							for _, follower := range status.Followers {
-								if follower == replica.Spec.ReplicaID {
+								if follower.Name == replica.Name {
 									return false
 								}
 							}
-							status.Followers = append(status.Followers, replica.Spec.ReplicaID)
+							status.Followers = append(status.Followers, corev1.LocalObjectReference{
+								Name: replica.Name,
+							})
 							return true
 						}, func(group *raftv1beta2.RaftPartition) {})
 				case *raftv1.Event_LeaderUpdated:
@@ -230,7 +232,9 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 									if err != nil {
 										return false
 									}
-									status.Leader = &leader.Spec.ReplicaID
+									status.Leader = &corev1.LocalObjectReference{
+										Name: leader.Name,
+									}
 									if e.LeaderUpdated.Leader == e.LeaderUpdated.MemberID {
 										role = raftv1beta2.RaftLeader
 									}
@@ -250,25 +254,27 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 						func(status *raftv1beta2.RaftPartitionStatus) bool {
 							term := uint64(e.LeaderUpdated.Term)
 							if status.Term == nil || *status.Term < term || (*status.Term == term && status.Leader == nil && e.LeaderUpdated.Leader != 0) {
-								var leaderID *raftv1beta2.ReplicaID
+								var leaderRef *corev1.LocalObjectReference
 								if e.LeaderUpdated.Leader != 0 {
 									leader, err := r.getReplica(ctx, log, clusterName, raftv1beta2.GroupID(e.LeaderUpdated.GroupID), raftv1beta2.MemberID(e.LeaderUpdated.Leader))
 									if err != nil {
 										return false
 									}
-									leaderID = &leader.Spec.ReplicaID
+									leaderRef = &corev1.LocalObjectReference{
+										Name: leader.Name,
+									}
 								}
-								if status.Leader != nil && (leaderID == nil || *status.Leader != *leaderID) {
+								if status.Leader != nil && (leaderRef == nil || status.Leader.Name != leaderRef.Name) {
 									status.Followers = append(status.Followers, *status.Leader)
 								}
-								var followers []raftv1beta2.ReplicaID
+								var followers []corev1.LocalObjectReference
 								for _, follower := range status.Followers {
-									if leaderID == nil || follower != *leaderID {
+									if leaderRef == nil || follower.Name != leaderRef.Name {
 										followers = append(followers, follower)
 									}
 								}
 								status.Term = &term
-								status.Leader = leaderID
+								status.Leader = leaderRef
 								status.Followers = followers
 								return true
 							}

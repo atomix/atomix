@@ -5,6 +5,7 @@
 package v1beta2
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,11 +33,11 @@ type RaftPartitionSpec struct {
 
 // RaftPartitionStatus defines the status of a RaftPartition
 type RaftPartitionStatus struct {
-	State     RaftPartitionState `json:"state,omitempty"`
-	Term      *uint64            `json:"term,omitempty"`
-	Leader    *ReplicaID         `json:"leader,omitempty"`
-	Followers []ReplicaID        `json:"followers,omitempty"`
-	Members   uint32             `json:"members"`
+	State     RaftPartitionState            `json:"state,omitempty"`
+	Term      *uint64                       `json:"term,omitempty"`
+	Leader    *corev1.LocalObjectReference  `json:"leader,omitempty"`
+	Followers []corev1.LocalObjectReference `json:"followers,omitempty"`
+	Members   uint32                        `json:"members"`
 }
 
 // +genclient

@@ -297,12 +297,12 @@ func (in *RaftPartitionStatus) DeepCopyInto(out *RaftPartitionStatus) {
 	}
 	if in.Leader != nil {
 		in, out := &in.Leader, &out.Leader
-		*out = new(ReplicaID)
+		*out = new(v1.LocalObjectReference)
 		**out = **in
 	}
 	if in.Followers != nil {
 		in, out := &in.Followers, &out.Followers
-		*out = make([]ReplicaID, len(*in))
+		*out = make([]v1.LocalObjectReference, len(*in))
 		copy(*out, *in)
 	}
 	return
@@ -417,7 +417,7 @@ func (in *RaftReplicaStatus) DeepCopyInto(out *RaftReplicaStatus) {
 	}
 	if in.Leader != nil {
 		in, out := &in.Leader, &out.Leader
-		*out = new(ReplicaID)
+		*out = new(v1.LocalObjectReference)
 		**out = **in
 	}
 	if in.Term != nil {

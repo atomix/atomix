@@ -72,35 +72,33 @@ spec:
                   type: integer
                   nullable: true
                 leader:
-                  type: integer
+                  type: object
+                  required:
+                    - name
                   nullable: true
+                  properties:
+                    name:
+                      type: string
                 followers:
                   type: array
                   items:
-                    type: integer
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
                 members:
                   type: integer
       additionalPrinterColumns:
-        - name: Partition
-          type: integer
-          description: The identifier of the partition
-          jsonPath: .spec.partitionID
-        - name: Group
-          type: integer
-          description: The partition's group identifier
-          jsonPath: .spec.groupID
-        - name: Cluster
-          type: string
-          description: The cluster in which the partition is stored
-          jsonPath: .spec.cluster.name
         - name: Replicas
           type: integer
           description: The number of replicas in the partition
           jsonPath: .spec.replicas
         - name: Leader
-          type: integer
+          type: string
           description: The current leader for the partition
-          jsonPath: .status.leader
+          jsonPath: .status.leader.name
         - name: Term
           type: integer
           description: The current term for the partition

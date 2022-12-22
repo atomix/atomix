@@ -90,7 +90,7 @@ spec:
           type: integer
           description: The number of partitions in the store
           jsonPath: .spec.partitions
-        - name: ReplicationFactor
+        - name: Replication
           type: integer
           description: The number of replicas per partition
           jsonPath: .status.replicationFactor
