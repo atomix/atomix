@@ -14,11 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 250
-
-func newIndexedMapServer(manager *runtime.PrimitiveManager[IndexedMap]) indexedmapv1.IndexedMapServer {
+func NewIndexedMapServer(rt *runtime.Runtime) indexedmapv1.IndexedMapServer {
 	return &indexedMapServer{
-		manager: manager,
+		manager: runtime.NewPrimitiveManager[IndexedMap](PrimitiveType, rt),
 	}
 }
 

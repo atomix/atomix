@@ -14,11 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 250
-
-func newMapServer(manager *runtime.PrimitiveManager[Map]) mapv1.MapServer {
+func NewMapServer(rt *runtime.Runtime) mapv1.MapServer {
 	return &mapServer{
-		manager: manager,
+		manager: runtime.NewPrimitiveManager[Map](PrimitiveType, rt),
 	}
 }
 

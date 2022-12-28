@@ -7,8 +7,6 @@ package v1
 import (
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	valuev1 "github.com/atomix/atomix/api/runtime/value/v1"
-	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -21,19 +19,12 @@ var PrimitiveType = runtimev1.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
-func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
-	valuev1.RegisterValueServer(server, newValueServer(runtime.NewPrimitiveManager[Value](PrimitiveType, rt, resolve)))
-}
-
-func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Value], bool) {
-	if provider, ok := conn.(ValueProvider); ok {
-		return provider.NewValue, true
-	}
-	return nil, false
-}
-
 type Value valuev1.ValueServer
 
 type ValueProvider interface {
-	NewValue(spec runtimev1.Primitive) (Value, error)
+	NewValueV1(primitiveID runtimev1.PrimitiveID) (Value, error)
+}
+
+type ConfigurableValueProvider[S any] interface {
+	NewValueV1(primitiveID runtimev1.PrimitiveID, spec S) (Value, error)
 }

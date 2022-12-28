@@ -14,11 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 250
-
-func newListServer(manager *runtime.PrimitiveManager[List]) listv1.ListServer {
+func NewListServer(rt *runtime.Runtime) listv1.ListServer {
 	return &listServer{
-		manager: manager,
+		manager: runtime.NewPrimitiveManager[List](PrimitiveType, rt),
 	}
 }
 

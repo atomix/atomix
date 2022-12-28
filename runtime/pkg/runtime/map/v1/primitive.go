@@ -7,8 +7,6 @@ package v1
 import (
 	mapv1 "github.com/atomix/atomix/api/runtime/map/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
-	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -21,19 +19,12 @@ var PrimitiveType = runtimev1.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
-func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
-	mapv1.RegisterMapServer(server, newMapServer(runtime.NewPrimitiveManager[Map](PrimitiveType, rt, resolve)))
-}
-
-func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Map], bool) {
-	if provider, ok := conn.(MapProvider); ok {
-		return provider.NewMap, true
-	}
-	return nil, false
-}
-
 type Map mapv1.MapServer
 
 type MapProvider interface {
-	NewMap(spec runtimev1.Primitive) (Map, error)
+	NewMapV1(primitiveID runtimev1.PrimitiveID) (Map, error)
+}
+
+type ConfigurableMapProvider[S any] interface {
+	NewMapV1(primitiveID runtimev1.PrimitiveID, spec S) (Map, error)
 }

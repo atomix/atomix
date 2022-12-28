@@ -14,9 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-func newCounterMapServer(manager *runtime.PrimitiveManager[CounterMap]) countermapv1.CounterMapServer {
+func NewCounterMapServer(rt *runtime.Runtime) countermapv1.CounterMapServer {
 	return &counterMapServer{
-		manager: manager,
+		manager: runtime.NewPrimitiveManager[CounterMap](PrimitiveType, rt),
 	}
 }
 

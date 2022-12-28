@@ -14,11 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 250
-
-func newMultiMapServer(manager *runtime.PrimitiveManager[MultiMap]) multimapv1.MultiMapServer {
+func NewMultiMapServer(rt *runtime.Runtime) multimapv1.MultiMapServer {
 	return &multiMapServer{
-		manager: manager,
+		manager: runtime.NewPrimitiveManager[MultiMap](PrimitiveType, rt),
 	}
 }
 

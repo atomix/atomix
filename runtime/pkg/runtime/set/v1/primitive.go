@@ -7,8 +7,6 @@ package v1
 import (
 	setv1 "github.com/atomix/atomix/api/runtime/set/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
-	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -21,19 +19,12 @@ var PrimitiveType = runtimev1.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
-func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
-	setv1.RegisterSetServer(server, newSetServer(runtime.NewPrimitiveManager[Set](PrimitiveType, rt, resolve)))
-}
-
-func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Set], bool) {
-	if provider, ok := conn.(SetProvider); ok {
-		return provider.NewSet, true
-	}
-	return nil, false
-}
-
 type Set setv1.SetServer
 
 type SetProvider interface {
-	NewSet(spec runtimev1.Primitive) (Set, error)
+	NewSetV1(primitiveID runtimev1.PrimitiveID) (Set, error)
+}
+
+type ConfigurableSetProvider[S any] interface {
+	NewSetV1(primitiveID runtimev1.PrimitiveID, spec S) (Set, error)
 }

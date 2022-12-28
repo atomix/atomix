@@ -7,8 +7,6 @@ package v1
 import (
 	topicv1 "github.com/atomix/atomix/api/runtime/topic/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
-	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -21,19 +19,12 @@ var PrimitiveType = runtimev1.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
-func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
-	topicv1.RegisterTopicServer(server, newTopicServer(runtime.NewPrimitiveManager[Topic](PrimitiveType, rt, resolve)))
-}
-
-func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Topic], bool) {
-	if provider, ok := conn.(TopicProvider); ok {
-		return provider.NewTopic, true
-	}
-	return nil, false
-}
-
 type Topic topicv1.TopicServer
 
 type TopicProvider interface {
-	NewTopic(spec runtimev1.Primitive) (Topic, error)
+	NewTopicV1(primitiveID runtimev1.PrimitiveID) (Topic, error)
+}
+
+type ConfigurableTopicProvider[S any] interface {
+	NewTopicV1(primitiveID runtimev1.PrimitiveID, spec S) (Topic, error)
 }

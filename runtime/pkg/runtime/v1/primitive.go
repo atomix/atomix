@@ -6,28 +6,28 @@ package v1
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
+	"github.com/gogo/protobuf/jsonpb"
+	"github.com/gogo/protobuf/proto"
+	"reflect"
+	"strings"
 	"sync"
 )
 
-type PrimitiveResolver[T any] func(conn Conn) (PrimitiveProvider[T], bool)
-
-type PrimitiveProvider[T any] func(spec runtimev1.Primitive) (T, error)
-
-func NewPrimitiveManager[T any](primitiveType runtimev1.PrimitiveType, runtime Runtime, resolver PrimitiveResolver[T]) *PrimitiveManager[T] {
+func NewPrimitiveManager[T any](primitiveType runtimev1.PrimitiveType, runtime *Runtime) *PrimitiveManager[T] {
 	return &PrimitiveManager[T]{
 		primitiveType: primitiveType,
 		runtime:       runtime,
-		resolver:      resolver,
 		primitives:    make(map[runtimev1.PrimitiveID]T),
 	}
 }
 
 type PrimitiveManager[T any] struct {
 	primitiveType runtimev1.PrimitiveType
-	runtime       Runtime
-	resolver      PrimitiveResolver[T]
+	runtime       *Runtime
 	primitives    map[runtimev1.PrimitiveID]T
 	mu            sync.RWMutex
 }
@@ -57,12 +57,7 @@ func (c *PrimitiveManager[T]) Create(ctx context.Context, primitiveID runtimev1.
 		return primitive, err
 	}
 
-	provider, ok := c.resolver(conn)
-	if !ok {
-		return primitive, errors.NewNotSupported("route does not support this primitive type")
-	}
-
-	primitive, err = provider(runtimev1.Primitive{
+	primitive, err = create[T](conn, runtimev1.Primitive{
 		PrimitiveMeta: meta,
 		Spec:          spec,
 	})
@@ -93,4 +88,49 @@ func (c *PrimitiveManager[T]) Close(primitiveID runtimev1.PrimitiveID) (T, error
 	}
 	delete(c.primitives, primitiveID)
 	return client, nil
+}
+
+func create[T any](conn Conn, primitive runtimev1.Primitive) (T, error) {
+	var t T
+
+	methodName := fmt.Sprintf("New%s%s", primitive.Type.Name, strings.ToUpper(primitive.Type.APIVersion))
+
+	value := reflect.ValueOf(conn)
+	if _, ok := value.Type().MethodByName(methodName); !ok {
+		return t, errors.NewNotSupported("route does not support primitive type %s/%s", primitive.Type.Name, primitive.Type.APIVersion)
+	}
+
+	method := value.MethodByName(methodName)
+	if method.Type().NumIn() != 3 {
+		panic("unexpected method signature: " + methodName)
+	}
+
+	primitiveIDType := method.Type().In(1)
+	if !primitiveIDType.AssignableTo(reflect.TypeOf(runtimev1.PrimitiveID{})) {
+		panic("unexpected method signature: " + methodName)
+	}
+
+	primitiveSpecType := method.Type().In(2)
+
+	spec := reflect.New(primitiveSpecType.Elem()).Interface()
+	if message, ok := spec.(proto.Message); ok {
+		if err := jsonpb.UnmarshalString(string(primitive.Spec.Value), message); err != nil {
+			return t, err
+		}
+	} else {
+		if err := json.Unmarshal(primitive.Spec.Value, spec); err != nil {
+			return t, err
+		}
+	}
+
+	in := []reflect.Value{
+		reflect.ValueOf(primitive.PrimitiveID),
+		reflect.ValueOf(spec),
+	}
+	out := method.Call(in)
+	if !out[1].IsNil() {
+		return t, out[1].Interface().(error)
+	}
+	t = out[0].Interface().(T)
+	return t, nil
 }

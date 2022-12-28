@@ -11,14 +11,14 @@ import (
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
-func newRuntimeServer(runtime Runtime) runtimev1.RuntimeServer {
+func newRuntimeServer(runtime *Runtime) runtimev1.RuntimeServer {
 	return &runtimeServer{
 		runtime: runtime,
 	}
 }
 
 type runtimeServer struct {
-	runtime Runtime
+	runtime *Runtime
 }
 
 func (s *runtimeServer) Connect(ctx context.Context, request *runtimev1.ConnectRequest) (*runtimev1.ConnectResponse, error) {

@@ -14,11 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 250
-
-func newValueServer(manager *runtime.PrimitiveManager[Value]) valuev1.ValueServer {
+func NewValueServer(rt *runtime.Runtime) valuev1.ValueServer {
 	return &valueServer{
-		manager: manager,
+		manager: runtime.NewPrimitiveManager[Value](PrimitiveType, rt),
 	}
 }
 

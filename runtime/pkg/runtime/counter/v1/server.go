@@ -14,9 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-func newCounterServer(manager *runtime.PrimitiveManager[Counter]) counterv1.CounterServer {
+func NewCounterServer(rt *runtime.Runtime) counterv1.CounterServer {
 	return &counterServer{
-		manager: manager,
+		manager: runtime.NewPrimitiveManager[Counter](PrimitiveType, rt),
 	}
 }
 

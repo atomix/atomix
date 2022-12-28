@@ -14,11 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 250
-
-func newSetServer(manager *runtime.PrimitiveManager[Set]) setv1.SetServer {
+func NewSetServer(rt *runtime.Runtime) setv1.SetServer {
 	return &setServer{
-		manager: manager,
+		manager: runtime.NewPrimitiveManager[Set](PrimitiveType, rt),
 	}
 }
 

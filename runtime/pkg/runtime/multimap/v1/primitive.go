@@ -7,8 +7,6 @@ package v1
 import (
 	multimapv1 "github.com/atomix/atomix/api/runtime/multimap/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
-	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -21,19 +19,12 @@ var PrimitiveType = runtimev1.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
-func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
-	multimapv1.RegisterMultiMapServer(server, newMultiMapServer(runtime.NewPrimitiveManager[MultiMap](PrimitiveType, rt, resolve)))
-}
-
-func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[MultiMap], bool) {
-	if provider, ok := conn.(MultiMapProvider); ok {
-		return provider.NewMultiMap, true
-	}
-	return nil, false
-}
-
 type MultiMap multimapv1.MultiMapServer
 
 type MultiMapProvider interface {
-	NewMultiMap(spec runtimev1.Primitive) (MultiMap, error)
+	NewMultiMapV1(primitiveID runtimev1.PrimitiveID) (MultiMap, error)
+}
+
+type ConfigurableMultiMapProvider[S any] interface {
+	NewMultiMapV1(primitiveID runtimev1.PrimitiveID, spec S) (MultiMap, error)
 }

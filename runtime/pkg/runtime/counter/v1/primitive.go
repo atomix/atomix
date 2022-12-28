@@ -7,8 +7,6 @@ package v1
 import (
 	counterv1 "github.com/atomix/atomix/api/runtime/counter/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
-	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -21,19 +19,12 @@ var PrimitiveType = runtimev1.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
-func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
-	counterv1.RegisterCounterServer(server, newCounterServer(runtime.NewPrimitiveManager[Counter](PrimitiveType, rt, resolve)))
-}
-
-func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Counter], bool) {
-	if provider, ok := conn.(CounterProvider); ok {
-		return provider.NewCounter, true
-	}
-	return nil, false
-}
-
 type Counter counterv1.CounterServer
 
 type CounterProvider interface {
-	NewCounter(spec runtimev1.Primitive) (Counter, error)
+	NewCounterV1(primitiveID runtimev1.PrimitiveID) (Counter, error)
+}
+
+type ConfigurableCounterProvider[S any] interface {
+	NewCounterV1(primitiveID runtimev1.PrimitiveID, spec S) (Counter, error)
 }

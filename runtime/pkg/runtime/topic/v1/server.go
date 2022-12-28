@@ -14,11 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 250
-
-func newTopicServer(manager *runtime.PrimitiveManager[Topic]) topicv1.TopicServer {
+func NewTopicServer(rt *runtime.Runtime) topicv1.TopicServer {
 	return &topicServer{
-		manager: manager,
+		manager: runtime.NewPrimitiveManager[Topic](PrimitiveType, rt),
 	}
 }
 

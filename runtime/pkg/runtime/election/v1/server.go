@@ -14,11 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 250
-
-func newLeaderElectionServer(manager *runtime.PrimitiveManager[LeaderElection]) electionv1.LeaderElectionServer {
+func NewLeaderElectionServer(rt *runtime.Runtime) electionv1.LeaderElectionServer {
 	return &leaderElectionServer{
-		manager: manager,
+		manager: runtime.NewPrimitiveManager[LeaderElection](PrimitiveType, rt),
 	}
 }
 

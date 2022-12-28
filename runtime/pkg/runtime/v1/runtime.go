@@ -6,57 +6,31 @@ package v1
 
 import (
 	"context"
+	"encoding/json"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	"github.com/atomix/atomix/runtime/pkg/network"
+	"github.com/gogo/protobuf/jsonpb"
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"google.golang.org/grpc"
-	"os"
+	"reflect"
 	"sync"
 )
 
 var log = logging.GetLogger()
 
-const (
-	namespaceEnv = "ATOMIX_NAMESPACE"
-)
-
-func Namespace() string {
-	return os.Getenv(namespaceEnv)
-}
-
-type Runtime interface {
-	network.Service
-	connect(ctx context.Context, driverID runtimev1.DriverID, store runtimev1.Store) error
-	configure(ctx context.Context, store runtimev1.Store) error
-	disconnect(ctx context.Context, storeID runtimev1.StoreID) error
-	route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error)
-	lookup(storeID runtimev1.StoreID) (Conn, error)
-}
-
-func New(opts ...Option) Runtime {
+func New(opts ...Option) *Runtime {
 	var options Options
 	options.apply(opts...)
-	rt := &runtime{
+	return &Runtime{
 		Options: options,
 		router:  newRouter(options.RouteProvider),
 		drivers: make(map[runtimev1.DriverID]Driver),
 		conns:   make(map[runtimev1.StoreID]Conn),
 	}
-
-	server := grpc.NewServer(options.GRPCServerOptions...)
-	runtimev1.RegisterRuntimeServer(server, newRuntimeServer(rt))
-
-	rt.Service = network.NewService(server,
-		network.WithDriver(network.NewDefaultDriver()),
-		network.WithHost(options.Host),
-		network.WithPort(options.Port))
-	return rt
 }
 
-type runtime struct {
-	network.Service
+type Runtime struct {
 	Options
 	router  *router
 	drivers map[runtimev1.DriverID]Driver
@@ -64,11 +38,11 @@ type runtime struct {
 	mu      sync.RWMutex
 }
 
-func (r *runtime) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error) {
+func (r *Runtime) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error) {
 	return r.router.route(ctx, meta)
 }
 
-func (r *runtime) lookup(storeID runtimev1.StoreID) (Conn, error) {
+func (r *Runtime) lookup(storeID runtimev1.StoreID) (Conn, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	conn, ok := r.conns[storeID]
@@ -78,7 +52,7 @@ func (r *runtime) lookup(storeID runtimev1.StoreID) (Conn, error) {
 	return conn, nil
 }
 
-func (r *runtime) connect(ctx context.Context, driverID runtimev1.DriverID, store runtimev1.Store) error {
+func (r *Runtime) connect(ctx context.Context, driverID runtimev1.DriverID, store runtimev1.Store) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -108,7 +82,7 @@ func (r *runtime) connect(ctx context.Context, driverID runtimev1.DriverID, stor
 	log.Infow("Establishing connection to store",
 		logging.String("Name", store.StoreID.Name),
 		logging.String("Namespace", store.StoreID.Namespace))
-	conn, err := driver.Connect(ctx, store)
+	conn, err := connect(ctx, driver, store)
 	if err != nil {
 		log.Warnw("Connecting to store failed",
 			logging.String("Name", store.StoreID.Name),
@@ -123,7 +97,7 @@ func (r *runtime) connect(ctx context.Context, driverID runtimev1.DriverID, stor
 	return nil
 }
 
-func (r *runtime) configure(ctx context.Context, store runtimev1.Store) error {
+func (r *Runtime) configure(ctx context.Context, store runtimev1.Store) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -135,14 +109,12 @@ func (r *runtime) configure(ctx context.Context, store runtimev1.Store) error {
 	log.Infow("Reconfiguring connection to store",
 		logging.String("Name", store.StoreID.Name),
 		logging.String("Namespace", store.StoreID.Namespace))
-	if configurator, ok := conn.(Configurator); ok {
-		if err := configurator.Configure(ctx, store); err != nil {
-			log.Warnw("Reconfiguring connection to store failed",
-				logging.String("Name", store.StoreID.Name),
-				logging.String("Namespace", store.StoreID.Namespace),
-				logging.Error("Error", err))
-			return err
-		}
+	if err := configure(ctx, conn, store); err != nil {
+		log.Warnw("Reconfiguring connection to store failed",
+			logging.String("Name", store.StoreID.Name),
+			logging.String("Namespace", store.StoreID.Namespace),
+			logging.Error("Error", err))
+		return err
 	}
 	log.Infow("Reconfigured connection to store",
 		logging.String("Name", store.StoreID.Name),
@@ -150,7 +122,7 @@ func (r *runtime) configure(ctx context.Context, store runtimev1.Store) error {
 	return nil
 }
 
-func (r *runtime) disconnect(ctx context.Context, storeID runtimev1.StoreID) error {
+func (r *Runtime) disconnect(ctx context.Context, storeID runtimev1.StoreID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -173,5 +145,66 @@ func (r *runtime) disconnect(ctx context.Context, storeID runtimev1.StoreID) err
 	log.Infow("Connection to store closed",
 		logging.String("Name", storeID.Name),
 		logging.String("Namespace", storeID.Namespace))
+	return nil
+}
+
+func connect(ctx context.Context, driver Driver, store runtimev1.Store) (Conn, error) {
+	value := reflect.ValueOf(driver)
+	if _, ok := value.Type().MethodByName("Connect"); !ok {
+		return nil, errors.NewNotSupported("driver not supported")
+	}
+	method := value.MethodByName("Connect")
+	if method.Type().NumIn() != 4 {
+		panic("unexpected method signature: Connect")
+	}
+	spec := reflect.New(method.Type().In(3).Elem()).Interface()
+	if message, ok := spec.(proto.Message); ok {
+		if err := jsonpb.UnmarshalString(string(store.Spec.Value), message); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := json.Unmarshal(store.Spec.Value, spec); err != nil {
+			return nil, err
+		}
+	}
+	in := []reflect.Value{
+		reflect.ValueOf(ctx),
+		reflect.ValueOf(store.StoreID),
+		reflect.ValueOf(spec),
+	}
+	out := method.Call(in)
+	if !out[1].IsNil() {
+		return nil, out[1].Interface().(error)
+	}
+	return out[0].Interface().(Conn), nil
+}
+
+func configure(ctx context.Context, conn Conn, store runtimev1.Store) error {
+	value := reflect.ValueOf(conn)
+	if _, ok := value.Type().MethodByName("Configure"); !ok {
+		return nil
+	}
+	method := value.MethodByName("Configure")
+	if method.Type().NumIn() != 3 {
+		panic("unexpected method signature: Configure")
+	}
+	spec := reflect.New(method.Type().In(2).Elem()).Interface()
+	if message, ok := spec.(proto.Message); ok {
+		if err := jsonpb.UnmarshalString(string(store.Spec.Value), message); err != nil {
+			return err
+		}
+	} else {
+		if err := json.Unmarshal(store.Spec.Value, spec); err != nil {
+			return err
+		}
+	}
+	in := []reflect.Value{
+		reflect.ValueOf(ctx),
+		reflect.ValueOf(spec),
+	}
+	out := method.Call(in)
+	if !out[0].IsNil() {
+		return out[0].Interface().(error)
+	}
 	return nil
 }

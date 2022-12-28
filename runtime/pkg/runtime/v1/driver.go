@@ -15,7 +15,6 @@ import (
 type Driver interface {
 	fmt.Stringer
 	ID() runtimev1.DriverID
-	Connect(ctx context.Context, store runtimev1.Store) (Conn, error)
 }
 
 // Conn is a connection to a store
@@ -24,9 +23,14 @@ type Conn interface {
 	Closer
 }
 
+// Connector is an interface for connecting to a store
+type Connector[T any] interface {
+	Connect(ctx context.Context, storeID runtimev1.StoreID, spec T) (Conn, error)
+}
+
 // Configurator is an interface for supporting configuration changes on an existing Conn
-type Configurator interface {
-	Configure(ctx context.Context, store runtimev1.Store) error
+type Configurator[T any] interface {
+	Configure(ctx context.Context, spec T) error
 }
 
 // Closer is an interface for closing connections

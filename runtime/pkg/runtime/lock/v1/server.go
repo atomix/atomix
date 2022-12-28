@@ -14,11 +14,9 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 250
-
-func newLockServer(manager *runtime.PrimitiveManager[Lock]) lockv1.LockServer {
+func NewLockServer(rt *runtime.Runtime) lockv1.LockServer {
 	return &lockServer{
-		manager: manager,
+		manager: runtime.NewPrimitiveManager[Lock](PrimitiveType, rt),
 	}
 }
 
