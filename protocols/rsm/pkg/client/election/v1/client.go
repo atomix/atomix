@@ -19,10 +19,10 @@ import (
 
 var log = logging.GetLogger()
 
-func NewLeaderElection(protocol *client.Protocol) (electionv1.LeaderElectionServer, error) {
+func NewLeaderElection(protocol *client.Protocol) electionv1.LeaderElectionServer {
 	return &electionClient{
 		Protocol: protocol,
-	}, nil
+	}
 }
 
 type electionClient struct {

@@ -19,10 +19,10 @@ import (
 
 var log = logging.GetLogger()
 
-func NewValue(protocol *client.Protocol) (valuev1.ValueServer, error) {
+func NewValue(protocol *client.Protocol) valuev1.ValueServer {
 	return &valueClient{
 		Protocol: protocol,
-	}, nil
+	}
 }
 
 type valueClient struct {

@@ -24,7 +24,7 @@ import (
 
 var log = logging.GetLogger()
 
-func NewIndexedMap(protocol *client.Protocol, config indexedmapprotocolv1.IndexedMapConfig) (indexedmapv1.IndexedMapServer, error) {
+func NewIndexedMap(protocol *client.Protocol, config *indexedmapprotocolv1.IndexedMapConfig) (indexedmapv1.IndexedMapServer, error) {
 	proxy := newIndexedMapClient(protocol)
 	if config.Cache.Enabled {
 		proxy = newCachingIndexedMapClient(proxy, config.Cache)

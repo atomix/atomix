@@ -22,10 +22,10 @@ import (
 
 var log = logging.GetLogger()
 
-func NewMultiMap(protocol *client.Protocol) (multimapv1.MultiMapServer, error) {
+func NewMultiMap(protocol *client.Protocol) multimapv1.MultiMapServer {
 	return &multiMapClient{
 		Protocol: protocol,
-	}, nil
+	}
 }
 
 type multiMapClient struct {

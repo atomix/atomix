@@ -22,10 +22,10 @@ import (
 
 var log = logging.GetLogger()
 
-func NewCounterMap(protocol *client.Protocol) (countermapv1.CounterMapServer, error) {
+func NewCounterMap(protocol *client.Protocol) countermapv1.CounterMapServer {
 	return &counterMapClient{
 		Protocol: protocol,
-	}, nil
+	}
 }
 
 type counterMapClient struct {

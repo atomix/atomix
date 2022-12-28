@@ -22,10 +22,10 @@ import (
 
 var log = logging.GetLogger()
 
-func NewSet(protocol *client.Protocol) (setv1.SetServer, error) {
+func NewSet(protocol *client.Protocol) setv1.SetServer {
 	return &setClient{
 		Protocol: protocol,
-	}, nil
+	}
 }
 
 type setClient struct {

@@ -18,10 +18,10 @@ import (
 
 var log = logging.GetLogger()
 
-func NewCounter(protocol *client.Protocol) (counterv1.CounterServer, error) {
+func NewCounter(protocol *client.Protocol) counterv1.CounterServer {
 	return &counterClient{
 		Protocol: protocol,
-	}, nil
+	}
 }
 
 type counterClient struct {

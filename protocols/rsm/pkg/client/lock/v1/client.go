@@ -18,10 +18,10 @@ import (
 
 var log = logging.GetLogger()
 
-func NewLock(protocol *client.Protocol) (lockv1.LockServer, error) {
+func NewLock(protocol *client.Protocol) lockv1.LockServer {
 	return &lockClient{
 		Protocol: protocol,
-	}, nil
+	}
 }
 
 type lockClient struct {
