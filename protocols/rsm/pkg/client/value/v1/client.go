@@ -6,98 +6,97 @@ package v1
 
 import (
 	"context"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
-	valuev1 "github.com/atomix/atomix/api/pkg/runtime/value/v1"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
-	valueprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/value/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	valuev1 "github.com/atomix/atomix/api/runtime/value/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
+	valueprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	valueruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/value/v1"
-	"github.com/atomix/atomix/runtime/pkg/utils/stringer"
 	"google.golang.org/grpc"
 	"io"
 )
 
 var log = logging.GetLogger()
 
-const truncLen = 200
-
-func NewValue(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (valueruntimev1.Value, error) {
+func NewValue(protocol *client.Protocol) (valueruntimev1.Value, error) {
 	return &valueClient{
-		Protocol:      protocol,
-		PrimitiveSpec: spec,
+		Protocol: protocol,
 	}, nil
 }
 
 type valueClient struct {
 	*client.Protocol
-	runtimev1.PrimitiveSpec
 }
 
 func (s *valueClient) Create(ctx context.Context, request *valuev1.CreateRequest) (*valuev1.CreateResponse, error) {
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("CreateRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	if err := session.CreatePrimitive(ctx, s.PrimitiveMeta); err != nil {
+	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
+		Type:        valueruntimev1.PrimitiveType,
+		PrimitiveID: request.ID,
+		Tags:        request.Tags,
+	}); err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &valuev1.CreateResponse{}
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("CreateResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("CreateRequest", request),
+		logging.Stringer("CreateResponse", response))
 	return response, nil
 }
 
 func (s *valueClient) Close(ctx context.Context, request *valuev1.CloseRequest) (*valuev1.CloseResponse, error) {
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("CloseRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &valuev1.CloseResponse{}
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("CloseResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("CloseRequest", request),
+		logging.Stringer("CloseResponse", response))
 	return response, nil
 }
 
 func (s *valueClient) Set(ctx context.Context, request *valuev1.SetRequest) (*valuev1.SetResponse, error) {
 	log.Debugw("Set",
-		logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("SetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -112,12 +111,12 @@ func (s *valueClient) Set(ctx context.Context, request *valuev1.SetRequest) (*va
 	})
 	if !ok {
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Set",
-			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -125,26 +124,26 @@ func (s *valueClient) Set(ctx context.Context, request *valuev1.SetRequest) (*va
 		Version: uint64(output.Index),
 	}
 	log.Debugw("Set",
-		logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("SetResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("SetRequest", request),
+		logging.Stringer("SetResponse", response))
 	return response, nil
 }
 
 func (s *valueClient) Insert(ctx context.Context, request *valuev1.InsertRequest) (*valuev1.InsertResponse, error) {
 	log.Debugw("Insert",
-		logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("InsertRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Insert",
-			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Insert",
-			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -159,12 +158,12 @@ func (s *valueClient) Insert(ctx context.Context, request *valuev1.InsertRequest
 	})
 	if !ok {
 		log.Warnw("Insert",
-			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Insert",
-			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -172,26 +171,26 @@ func (s *valueClient) Insert(ctx context.Context, request *valuev1.InsertRequest
 		Version: uint64(output.Index),
 	}
 	log.Debugw("Insert",
-		logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("InsertResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("InsertRequest", request),
+		logging.Stringer("InsertResponse", response))
 	return response, nil
 }
 
 func (s *valueClient) Get(ctx context.Context, request *valuev1.GetRequest) (*valuev1.GetResponse, error) {
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -204,12 +203,12 @@ func (s *valueClient) Get(ctx context.Context, request *valuev1.GetRequest) (*va
 	})
 	if !ok {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -220,26 +219,26 @@ func (s *valueClient) Get(ctx context.Context, request *valuev1.GetRequest) (*va
 		},
 	}
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("GetResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("GetRequest", request),
+		logging.Stringer("GetResponse", response))
 	return response, nil
 }
 
 func (s *valueClient) Update(ctx context.Context, request *valuev1.UpdateRequest) (*valuev1.UpdateResponse, error) {
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("UpdateRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -256,12 +255,12 @@ func (s *valueClient) Update(ctx context.Context, request *valuev1.UpdateRequest
 	})
 	if !ok {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -273,26 +272,26 @@ func (s *valueClient) Update(ctx context.Context, request *valuev1.UpdateRequest
 		},
 	}
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("UpdateResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("UpdateRequest", request),
+		logging.Stringer("UpdateResponse", response))
 	return response, nil
 }
 
 func (s *valueClient) Delete(ctx context.Context, request *valuev1.DeleteRequest) (*valuev1.DeleteResponse, error) {
 	log.Debugw("Delete",
-		logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("DeleteRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Delete",
-			logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("DeleteRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Delete",
-			logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("DeleteRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -307,12 +306,12 @@ func (s *valueClient) Delete(ctx context.Context, request *valuev1.DeleteRequest
 	})
 	if !ok {
 		log.Warnw("Delete",
-			logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("DeleteRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Delete",
-			logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("DeleteRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -323,26 +322,26 @@ func (s *valueClient) Delete(ctx context.Context, request *valuev1.DeleteRequest
 		},
 	}
 	log.Debugw("Delete",
-		logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("DeleteResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("DeleteRequest", request),
+		logging.Stringer("DeleteResponse", response))
 	return response, nil
 }
 
 func (s *valueClient) Events(request *valuev1.EventsRequest, server valuev1.Value_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EventsRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(server.Context())
 	if err != nil {
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return errors.ToProto(err)
 	}
@@ -356,7 +355,7 @@ func (s *valueClient) Events(request *valuev1.EventsRequest, server valuev1.Valu
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
@@ -364,18 +363,18 @@ func (s *valueClient) Events(request *valuev1.EventsRequest, server valuev1.Valu
 		output, ok, err := stream.Recv()
 		if err == io.EOF {
 			log.Debugw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.String("State", "Done"))
 			return nil
 		}
 		if !ok {
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			return errors.ToProto(err)
 		} else if err != nil {
 			log.Debugw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			return errors.ToProto(err)
 		}
@@ -417,12 +416,12 @@ func (s *valueClient) Events(request *valuev1.EventsRequest, server valuev1.Valu
 			}
 		}
 		log.Debugw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-			logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
+			logging.Stringer("EventsRequest", request),
+			logging.Stringer("EventsResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)),
+				logging.Stringer("EventsRequest", request),
+				logging.Stringer("EventsResponse", response),
 				logging.Error("Error", err))
 			return err
 		}
@@ -431,19 +430,19 @@ func (s *valueClient) Events(request *valuev1.EventsRequest, server valuev1.Valu
 
 func (s *valueClient) Watch(request *valuev1.WatchRequest, server valuev1.Value_WatchServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EventsRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(server.Context())
 	if err != nil {
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return errors.ToProto(err)
 	}
@@ -456,7 +455,7 @@ func (s *valueClient) Watch(request *valuev1.WatchRequest, server valuev1.Value_
 	})
 	if err != nil {
 		log.Warnw("Watch",
-			logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("WatchRequest", request),
 			logging.Error("Error", err))
 		return errors.ToProto(err)
 	}
@@ -467,12 +466,12 @@ func (s *valueClient) Watch(request *valuev1.WatchRequest, server valuev1.Value_
 		}
 		if !ok {
 			log.Warnw("Watch",
-				logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("WatchRequest", request),
 				logging.Error("Error", err))
 			return errors.ToProto(err)
 		} else if err != nil {
 			log.Debugw("Watch",
-				logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("WatchRequest", request),
 				logging.Error("Error", err))
 			return errors.ToProto(err)
 		}
@@ -483,12 +482,12 @@ func (s *valueClient) Watch(request *valuev1.WatchRequest, server valuev1.Value_
 			},
 		}
 		log.Debugw("Watch",
-			logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
-			logging.Stringer("WatchResponse", stringer.Truncate(response, truncLen)))
+			logging.Stringer("WatchRequest", request),
+			logging.Stringer("WatchResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Watch",
-				logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
-				logging.Stringer("WatchResponse", stringer.Truncate(response, truncLen)),
+				logging.Stringer("WatchRequest", request),
+				logging.Stringer("WatchResponse", response),
 				logging.Error("Error", err))
 			return err
 		}

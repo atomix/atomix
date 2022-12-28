@@ -6,8 +6,8 @@ package v1
 
 import (
 	"bytes"
-	indexedmapprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/indexedmap/v1"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	indexedmapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/indexedmap/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"sync"

@@ -6,8 +6,8 @@ package v1
 
 import (
 	"bytes"
-	mapprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/map/v1"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	mapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/map/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"sync"

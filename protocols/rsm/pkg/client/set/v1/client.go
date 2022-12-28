@@ -6,17 +6,16 @@ package v1
 
 import (
 	"context"
-	setv1 "github.com/atomix/atomix/api/pkg/runtime/set/v1"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
-	setprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/set/v1"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	setv1 "github.com/atomix/atomix/api/runtime/set/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	setprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/set/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	setruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/set/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
-	"github.com/atomix/atomix/runtime/pkg/utils/stringer"
 	"google.golang.org/grpc"
 	"io"
 	"sync"
@@ -24,23 +23,19 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 200
-
-func NewSet(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (setruntimev1.Set, error) {
+func NewSet(protocol *client.Protocol) (setruntimev1.Set, error) {
 	return &setClient{
-		Protocol:      protocol,
-		PrimitiveSpec: spec,
+		Protocol: protocol,
 	}, nil
 }
 
 type setClient struct {
 	*client.Protocol
-	runtimev1.PrimitiveSpec
 }
 
 func (s *setClient) Create(ctx context.Context, request *setv1.CreateRequest) (*setv1.CreateResponse, error) {
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("CreateRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -48,24 +43,28 @@ func (s *setClient) Create(ctx context.Context, request *setv1.CreateRequest) (*
 		if err != nil {
 			return err
 		}
-		return session.CreatePrimitive(ctx, s.PrimitiveMeta)
+		return session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
+			Type:        setruntimev1.PrimitiveType,
+			PrimitiveID: request.ID,
+			Tags:        request.Tags,
+		})
 	})
 	if err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &setv1.CreateResponse{}
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("CreateResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("CreateRequest", request),
+		logging.Stringer("CreateResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Close(ctx context.Context, request *setv1.CloseRequest) (*setv1.CloseResponse, error) {
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("CloseRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -77,34 +76,34 @@ func (s *setClient) Close(ctx context.Context, request *setv1.CloseRequest) (*se
 	})
 	if err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &setv1.CloseResponse{}
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("CloseResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("CloseRequest", request),
+		logging.Stringer("CloseResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1.SizeResponse, error) {
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("SizeRequest", request))
 	partitions := s.Partitions()
 	sizes, err := async.ExecuteAsync[int](len(partitions), func(i int) (int, error) {
 		partition := partitions[i]
 		session, err := partition.GetSession(ctx)
 		if err != nil {
 			log.Warnw("Size",
-				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		}
 		primitive, err := session.GetPrimitive(request.ID.Name)
 		if err != nil {
 			log.Warnw("Size",
-				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		}
@@ -117,12 +116,12 @@ func (s *setClient) Size(ctx context.Context, request *setv1.SizeRequest) (*setv
 		})
 		if !ok {
 			log.Warnw("Size",
-				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		} else if err != nil {
 			log.Debugw("Size",
-				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		}
@@ -139,26 +138,26 @@ func (s *setClient) Size(ctx context.Context, request *setv1.SizeRequest) (*setv
 		Size_: uint32(size),
 	}
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("SizeResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("SizeRequest", request),
+		logging.Stringer("SizeResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.AddResponse, error) {
 	log.Debugw("Add",
-		logging.Stringer("AddRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("AddRequest", request))
 	partition := s.PartitionBy([]byte(request.Element.Value))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Add",
-			logging.Stringer("AddRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("AddRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Add",
-			logging.Stringer("AddRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("AddRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -177,37 +176,37 @@ func (s *setClient) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.
 	})
 	if !ok {
 		log.Warnw("Add",
-			logging.Stringer("AddRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("AddRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Add",
-			logging.Stringer("AddRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("AddRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &setv1.AddResponse{}
 	log.Debugw("Add",
-		logging.Stringer("AddRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("AddResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("AddRequest", request),
+		logging.Stringer("AddResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Contains(ctx context.Context, request *setv1.ContainsRequest) (*setv1.ContainsResponse, error) {
 	log.Debugw("Contains",
-		logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("ContainsRequest", request))
 	partition := s.PartitionBy([]byte(request.Element.Value))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Contains",
-			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Contains",
-			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -225,12 +224,12 @@ func (s *setClient) Contains(ctx context.Context, request *setv1.ContainsRequest
 	})
 	if !ok {
 		log.Warnw("Contains",
-			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Contains",
-			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -238,26 +237,26 @@ func (s *setClient) Contains(ctx context.Context, request *setv1.ContainsRequest
 		Contains: output.Contains,
 	}
 	log.Debugw("Contains",
-		logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("ContainsResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("ContainsRequest", request),
+		logging.Stringer("ContainsResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Remove(ctx context.Context, request *setv1.RemoveRequest) (*setv1.RemoveResponse, error) {
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("RemoveRequest", request))
 	partition := s.PartitionBy([]byte(request.Element.Value))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -275,39 +274,39 @@ func (s *setClient) Remove(ctx context.Context, request *setv1.RemoveRequest) (*
 	})
 	if !ok {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &setv1.RemoveResponse{}
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("RemoveResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("RemoveRequest", request),
+		logging.Stringer("RemoveResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Clear(ctx context.Context, request *setv1.ClearRequest) (*setv1.ClearResponse, error) {
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("ClearRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
 		session, err := partition.GetSession(ctx)
 		if err != nil {
 			log.Warnw("Clear",
-				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
 		primitive, err := session.GetPrimitive(request.ID.Name)
 		if err != nil {
 			log.Warnw("Clear",
-				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -320,12 +319,12 @@ func (s *setClient) Clear(ctx context.Context, request *setv1.ClearRequest) (*se
 		})
 		if !ok {
 			log.Warnw("Clear",
-				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		} else if err != nil {
 			log.Debugw("Clear",
-				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -336,14 +335,14 @@ func (s *setClient) Clear(ctx context.Context, request *setv1.ClearRequest) (*se
 	}
 	response := &setv1.ClearResponse{}
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("ClearResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("ClearRequest", request),
+		logging.Stringer("ClearResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_EventsServer) error {
 	log.Debugw("Events received",
-		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EventsRequest", request))
 	partitions := s.Partitions()
 	ch := make(chan streams.Result[*setv1.EventsResponse])
 	wg := &sync.WaitGroup{}
@@ -354,7 +353,7 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Events",
-					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+					logging.Stringer("EventsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*setv1.EventsResponse]{
 					Error: err,
@@ -364,7 +363,7 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 			primitive, err := session.GetPrimitive(request.ID.Name)
 			if err != nil {
 				log.Warnw("Events",
-					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+					logging.Stringer("EventsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*setv1.EventsResponse]{
 					Error: err,
@@ -380,7 +379,7 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 			})
 			if err != nil {
 				log.Warnw("Events",
-					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+					logging.Stringer("EventsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*setv1.EventsResponse]{
 					Error: err,
@@ -392,7 +391,7 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 				if !ok {
 					if err != io.EOF {
 						log.Warnw("Events",
-							logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+							logging.Stringer("EventsRequest", request),
 							logging.Error("Error", err))
 						ch <- streams.Result[*setv1.EventsResponse]{
 							Error: err,
@@ -402,7 +401,7 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 				}
 				if err != nil {
 					log.Debugw("Events",
-						logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+						logging.Stringer("EventsRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*setv1.EventsResponse]{
 						Error: errors.ToProto(err),
@@ -431,8 +430,8 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 						}
 					}
 					log.Debugw("Events",
-						logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-						logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
+						logging.Stringer("EventsRequest", request),
+						logging.Stringer("EventsResponse", response))
 					ch <- streams.Result[*setv1.EventsResponse]{
 						Value: response,
 					}
@@ -455,13 +454,13 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 		}
 	}
 	log.Debugw("Events complete",
-		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EventsRequest", request))
 	return nil
 }
 
 func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_ElementsServer) error {
 	log.Debugw("Elements received",
-		logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("ElementsRequest", request))
 	partitions := s.Partitions()
 	ch := make(chan streams.Result[*setv1.ElementsResponse])
 	wg := &sync.WaitGroup{}
@@ -472,7 +471,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Elements",
-					logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
+					logging.Stringer("ElementsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*setv1.ElementsResponse]{
 					Error: err,
@@ -482,7 +481,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 			primitive, err := session.GetPrimitive(request.ID.Name)
 			if err != nil {
 				log.Warnw("Elements",
-					logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
+					logging.Stringer("ElementsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*setv1.ElementsResponse]{
 					Error: err,
@@ -500,7 +499,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 			})
 			if err != nil {
 				log.Warnw("Elements",
-					logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
+					logging.Stringer("ElementsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*setv1.ElementsResponse]{
 					Error: err,
@@ -512,7 +511,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 				if !ok {
 					if err != io.EOF {
 						log.Warnw("Elements",
-							logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
+							logging.Stringer("ElementsRequest", request),
 							logging.Error("Error", err))
 						ch <- streams.Result[*setv1.ElementsResponse]{
 							Error: err,
@@ -522,7 +521,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 				}
 				if err != nil {
 					log.Debugw("Elements",
-						logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
+						logging.Stringer("ElementsRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*setv1.ElementsResponse]{
 						Error: errors.ToProto(err),
@@ -534,8 +533,8 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 						},
 					}
 					log.Debugw("Elements",
-						logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
-						logging.Stringer("ElementsResponse", stringer.Truncate(response, truncLen)))
+						logging.Stringer("ElementsRequest", request),
+						logging.Stringer("ElementsResponse", response))
 					ch <- streams.Result[*setv1.ElementsResponse]{
 						Value: response,
 					}
@@ -558,7 +557,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 		}
 	}
 	log.Debugw("Elements complete",
-		logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("ElementsRequest", request))
 	return nil
 }
 

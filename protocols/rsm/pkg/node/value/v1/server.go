@@ -6,12 +6,11 @@ package v1
 
 import (
 	"context"
-	valueprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/value/v1"
+	valueprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
-	"github.com/atomix/atomix/runtime/pkg/utils/stringer"
 	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc"
 )
@@ -50,7 +49,7 @@ type valueServer struct {
 
 func (s *valueServer) Update(ctx context.Context, request *valueprotocolv1.UpdateRequest) (*valueprotocolv1.UpdateResponse, error) {
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("UpdateRequest", request))
 	input := &valueprotocolv1.ValueInput{
 		Input: &valueprotocolv1.ValueInput_Update{
 			Update: request.UpdateInput,
@@ -60,7 +59,7 @@ func (s *valueServer) Update(ctx context.Context, request *valueprotocolv1.Updat
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -69,14 +68,14 @@ func (s *valueServer) Update(ctx context.Context, request *valueprotocolv1.Updat
 		UpdateOutput: output.GetUpdate(),
 	}
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("UpdateResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("UpdateRequest", request),
+		logging.Stringer("UpdateResponse", response))
 	return response, nil
 }
 
 func (s *valueServer) Set(ctx context.Context, request *valueprotocolv1.SetRequest) (*valueprotocolv1.SetResponse, error) {
 	log.Debugw("Set",
-		logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("SetRequest", request))
 	input := &valueprotocolv1.ValueInput{
 		Input: &valueprotocolv1.ValueInput_Set{
 			Set: request.SetInput,
@@ -86,7 +85,7 @@ func (s *valueServer) Set(ctx context.Context, request *valueprotocolv1.SetReque
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -95,14 +94,14 @@ func (s *valueServer) Set(ctx context.Context, request *valueprotocolv1.SetReque
 		SetOutput: output.GetSet(),
 	}
 	log.Debugw("Set",
-		logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("SetResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("SetRequest", request),
+		logging.Stringer("SetResponse", response))
 	return response, nil
 }
 
 func (s *valueServer) Insert(ctx context.Context, request *valueprotocolv1.InsertRequest) (*valueprotocolv1.InsertResponse, error) {
 	log.Debugw("Insert",
-		logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("InsertRequest", request))
 	input := &valueprotocolv1.ValueInput{
 		Input: &valueprotocolv1.ValueInput_Insert{
 			Insert: request.InsertInput,
@@ -112,7 +111,7 @@ func (s *valueServer) Insert(ctx context.Context, request *valueprotocolv1.Inser
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Insert",
-			logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -121,14 +120,14 @@ func (s *valueServer) Insert(ctx context.Context, request *valueprotocolv1.Inser
 		InsertOutput: output.GetInsert(),
 	}
 	log.Debugw("Insert",
-		logging.Stringer("InsertRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("InsertResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("InsertRequest", request),
+		logging.Stringer("InsertResponse", response))
 	return response, nil
 }
 
 func (s *valueServer) Delete(ctx context.Context, request *valueprotocolv1.DeleteRequest) (*valueprotocolv1.DeleteResponse, error) {
 	log.Debugw("Delete",
-		logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("DeleteRequest", request))
 	input := &valueprotocolv1.ValueInput{
 		Input: &valueprotocolv1.ValueInput_Delete{
 			Delete: request.DeleteInput,
@@ -138,7 +137,7 @@ func (s *valueServer) Delete(ctx context.Context, request *valueprotocolv1.Delet
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Delete",
-			logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("DeleteRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -147,14 +146,14 @@ func (s *valueServer) Delete(ctx context.Context, request *valueprotocolv1.Delet
 		DeleteOutput: output.GetDelete(),
 	}
 	log.Debugw("Delete",
-		logging.Stringer("DeleteRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("DeleteResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("DeleteRequest", request),
+		logging.Stringer("DeleteResponse", response))
 	return response, nil
 }
 
 func (s *valueServer) Get(ctx context.Context, request *valueprotocolv1.GetRequest) (*valueprotocolv1.GetResponse, error) {
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("GetRequest", request))
 	input := &valueprotocolv1.ValueInput{
 		Input: &valueprotocolv1.ValueInput_Get{
 			Get: request.GetInput,
@@ -164,7 +163,7 @@ func (s *valueServer) Get(ctx context.Context, request *valueprotocolv1.GetReque
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -173,14 +172,14 @@ func (s *valueServer) Get(ctx context.Context, request *valueprotocolv1.GetReque
 		GetOutput: output.GetGet(),
 	}
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("GetResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("GetRequest", request),
+		logging.Stringer("GetResponse", response))
 	return response, nil
 }
 
 func (s *valueServer) Events(request *valueprotocolv1.EventsRequest, server valueprotocolv1.Value_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EventsRequest", request))
 	input := &valueprotocolv1.ValueInput{
 		Input: &valueprotocolv1.ValueInput_Events{
 			Events: request.EventsInput,
@@ -193,7 +192,7 @@ func (s *valueServer) Events(request *valueprotocolv1.EventsRequest, server valu
 		if err != nil {
 			err = errors.ToProto(err)
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			stream.Error(err)
 			stream.Close()
@@ -209,7 +208,7 @@ func (s *valueServer) Events(request *valueprotocolv1.EventsRequest, server valu
 		if result.Failed() {
 			err := errors.ToProto(result.Error)
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -219,11 +218,11 @@ func (s *valueServer) Events(request *valueprotocolv1.EventsRequest, server valu
 			EventsOutput: result.Value.Output.GetEvents(),
 		}
 		log.Debugw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-			logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
+			logging.Stringer("EventsRequest", request),
+			logging.Stringer("EventsResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -232,7 +231,7 @@ func (s *valueServer) Events(request *valueprotocolv1.EventsRequest, server valu
 
 func (s *valueServer) Watch(request *valueprotocolv1.WatchRequest, server valueprotocolv1.Value_WatchServer) error {
 	log.Debugw("Watch",
-		logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("WatchRequest", request))
 	input := &valueprotocolv1.ValueInput{
 		Input: &valueprotocolv1.ValueInput_Watch{
 			Watch: request.WatchInput,
@@ -245,7 +244,7 @@ func (s *valueServer) Watch(request *valueprotocolv1.WatchRequest, server valuep
 		if err != nil {
 			err = errors.ToProto(err)
 			log.Warnw("Watch",
-				logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("WatchRequest", request),
 				logging.Error("Error", err))
 			stream.Error(err)
 			stream.Close()
@@ -261,7 +260,7 @@ func (s *valueServer) Watch(request *valueprotocolv1.WatchRequest, server valuep
 		if result.Failed() {
 			err := errors.ToProto(result.Error)
 			log.Warnw("Watch",
-				logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("WatchRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -271,11 +270,11 @@ func (s *valueServer) Watch(request *valueprotocolv1.WatchRequest, server valuep
 			WatchOutput: result.Value.Output.GetWatch(),
 		}
 		log.Debugw("Watch",
-			logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
-			logging.Stringer("WatchResponse", stringer.Truncate(response, truncLen)))
+			logging.Stringer("WatchRequest", request),
+			logging.Stringer("WatchResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Watch",
-				logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("WatchRequest", request),
 				logging.Error("Error", err))
 			return err
 		}

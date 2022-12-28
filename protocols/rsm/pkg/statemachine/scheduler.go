@@ -6,7 +6,7 @@ package statemachine
 
 import (
 	"container/list"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"sync/atomic"
 	"time"
 )

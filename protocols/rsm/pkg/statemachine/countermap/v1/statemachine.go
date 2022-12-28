@@ -5,8 +5,8 @@
 package v1
 
 import (
-	countermapprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/countermap/v1"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	countermapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/countermap/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"sync"

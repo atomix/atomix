@@ -4,7 +4,7 @@
 
 package node
 
-import protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+import protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 
 type Protocol interface {
 	Partitions() []Partition

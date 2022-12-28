@@ -7,16 +7,15 @@ package v1
 import (
 	"container/list"
 	"context"
-	indexedmapv1 "github.com/atomix/atomix/api/pkg/runtime/indexedmap/v1"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
-	indexedmapprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/indexedmap/v1"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	indexedmapv1 "github.com/atomix/atomix/api/runtime/indexedmap/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	indexedmapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/indexedmap/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	indexedmapruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/indexedmap/v1"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
-	"github.com/atomix/atomix/runtime/pkg/utils/stringer"
 	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc"
 	"io"
@@ -26,35 +25,27 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 200
-
-func NewIndexedMap(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (indexedmapruntimev1.IndexedMap, error) {
-	proxy := newIndexedMapClient(protocol, spec)
-	var config indexedmapprotocolv1.IndexedMapConfig
-	if err := spec.UnmarshalConfig(&config); err != nil {
-		return nil, err
-	}
+func NewIndexedMap(protocol *client.Protocol, config indexedmapprotocolv1.IndexedMapConfig) (indexedmapruntimev1.IndexedMap, error) {
+	proxy := newIndexedMapClient(protocol)
 	if config.Cache.Enabled {
 		proxy = newCachingIndexedMapClient(proxy, config.Cache)
 	}
 	return proxy, nil
 }
 
-func newIndexedMapClient(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) indexedmapv1.IndexedMapServer {
+func newIndexedMapClient(protocol *client.Protocol) indexedmapv1.IndexedMapServer {
 	return &indexedMapClient{
-		Protocol:      protocol,
-		PrimitiveSpec: spec,
+		Protocol: protocol,
 	}
 }
 
 type indexedMapClient struct {
 	*client.Protocol
-	runtimev1.PrimitiveSpec
 }
 
 func (s *indexedMapClient) Create(ctx context.Context, request *indexedmapv1.CreateRequest) (*indexedmapv1.CreateResponse, error) {
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("CreateRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -62,24 +53,28 @@ func (s *indexedMapClient) Create(ctx context.Context, request *indexedmapv1.Cre
 		if err != nil {
 			return err
 		}
-		return session.CreatePrimitive(ctx, s.PrimitiveMeta)
+		return session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
+			Type:        indexedmapruntimev1.PrimitiveType,
+			PrimitiveID: request.ID,
+			Tags:        request.Tags,
+		})
 	})
 	if err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.CreateResponse{}
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("CreateResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("CreateRequest", request),
+		logging.Stringer("CreateResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapClient) Close(ctx context.Context, request *indexedmapv1.CloseRequest) (*indexedmapv1.CloseResponse, error) {
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("CloseRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -91,32 +86,32 @@ func (s *indexedMapClient) Close(ctx context.Context, request *indexedmapv1.Clos
 	})
 	if err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.CloseResponse{}
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("CloseResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("CloseRequest", request),
+		logging.Stringer("CloseResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapClient) Size(ctx context.Context, request *indexedmapv1.SizeRequest) (*indexedmapv1.SizeResponse, error) {
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("SizeRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Size",
-			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SizeRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Size",
-			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SizeRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -129,12 +124,12 @@ func (s *indexedMapClient) Size(ctx context.Context, request *indexedmapv1.SizeR
 	})
 	if !ok {
 		log.Warnw("Size",
-			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SizeRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Size",
-			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SizeRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -142,26 +137,26 @@ func (s *indexedMapClient) Size(ctx context.Context, request *indexedmapv1.SizeR
 		Size_: output.Size_,
 	}
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("SizeResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("SizeRequest", request),
+		logging.Stringer("SizeResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapClient) Append(ctx context.Context, request *indexedmapv1.AppendRequest) (*indexedmapv1.AppendResponse, error) {
 	log.Debugw("Append",
-		logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("AppendRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Append",
-			logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("AppendRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Append",
-			logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("AppendRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -178,12 +173,12 @@ func (s *indexedMapClient) Append(ctx context.Context, request *indexedmapv1.App
 	})
 	if !ok {
 		log.Warnw("Append",
-			logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("AppendRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Append",
-			logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("AppendRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -191,26 +186,26 @@ func (s *indexedMapClient) Append(ctx context.Context, request *indexedmapv1.App
 		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("Append",
-		logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("AppendResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("AppendRequest", request),
+		logging.Stringer("AppendResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapClient) Update(ctx context.Context, request *indexedmapv1.UpdateRequest) (*indexedmapv1.UpdateResponse, error) {
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("UpdateRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -229,12 +224,12 @@ func (s *indexedMapClient) Update(ctx context.Context, request *indexedmapv1.Upd
 	})
 	if !ok {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -242,26 +237,26 @@ func (s *indexedMapClient) Update(ctx context.Context, request *indexedmapv1.Upd
 		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("UpdateResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("UpdateRequest", request),
+		logging.Stringer("UpdateResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapClient) Get(ctx context.Context, request *indexedmapv1.GetRequest) (*indexedmapv1.GetResponse, error) {
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -277,12 +272,12 @@ func (s *indexedMapClient) Get(ctx context.Context, request *indexedmapv1.GetReq
 	})
 	if !ok {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -290,26 +285,26 @@ func (s *indexedMapClient) Get(ctx context.Context, request *indexedmapv1.GetReq
 		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("GetResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("GetRequest", request),
+		logging.Stringer("GetResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapClient) FirstEntry(ctx context.Context, request *indexedmapv1.FirstEntryRequest) (*indexedmapv1.FirstEntryResponse, error) {
 	log.Debugw("FirstEntry",
-		logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("FirstEntryRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("FirstEntry",
-			logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("FirstEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("FirstEntry",
-			logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("FirstEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -322,12 +317,12 @@ func (s *indexedMapClient) FirstEntry(ctx context.Context, request *indexedmapv1
 	})
 	if !ok {
 		log.Warnw("FirstEntry",
-			logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("FirstEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("FirstEntry",
-			logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("FirstEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -335,26 +330,26 @@ func (s *indexedMapClient) FirstEntry(ctx context.Context, request *indexedmapv1
 		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("FirstEntry",
-		logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("FirstEntryResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("FirstEntryRequest", request),
+		logging.Stringer("FirstEntryResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapClient) LastEntry(ctx context.Context, request *indexedmapv1.LastEntryRequest) (*indexedmapv1.LastEntryResponse, error) {
 	log.Debugw("LastEntry",
-		logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("LastEntryRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("LastEntry",
-			logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("LastEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("LastEntry",
-			logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("LastEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -367,12 +362,12 @@ func (s *indexedMapClient) LastEntry(ctx context.Context, request *indexedmapv1.
 	})
 	if !ok {
 		log.Warnw("LastEntry",
-			logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("LastEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("LastEntry",
-			logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("LastEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -380,26 +375,26 @@ func (s *indexedMapClient) LastEntry(ctx context.Context, request *indexedmapv1.
 		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("LastEntry",
-		logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("LastEntryResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("LastEntryRequest", request),
+		logging.Stringer("LastEntryResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapClient) NextEntry(ctx context.Context, request *indexedmapv1.NextEntryRequest) (*indexedmapv1.NextEntryResponse, error) {
 	log.Debugw("NextEntry",
-		logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("NextEntryRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("NextEntry",
-			logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("NextEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("NextEntry",
-			logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("NextEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -414,12 +409,12 @@ func (s *indexedMapClient) NextEntry(ctx context.Context, request *indexedmapv1.
 	})
 	if !ok {
 		log.Warnw("NextEntry",
-			logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("NextEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("NextEntry",
-			logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("NextEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -427,26 +422,26 @@ func (s *indexedMapClient) NextEntry(ctx context.Context, request *indexedmapv1.
 		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("NextEntry",
-		logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("NextEntryResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("NextEntryRequest", request),
+		logging.Stringer("NextEntryResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapClient) PrevEntry(ctx context.Context, request *indexedmapv1.PrevEntryRequest) (*indexedmapv1.PrevEntryResponse, error) {
 	log.Debugw("PrevEntry",
-		logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("PrevEntryRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("PrevEntry",
-			logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PrevEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("PrevEntry",
-			logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PrevEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -461,12 +456,12 @@ func (s *indexedMapClient) PrevEntry(ctx context.Context, request *indexedmapv1.
 	})
 	if !ok {
 		log.Warnw("PrevEntry",
-			logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PrevEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("PrevEntry",
-			logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PrevEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -474,26 +469,26 @@ func (s *indexedMapClient) PrevEntry(ctx context.Context, request *indexedmapv1.
 		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("PrevEntry",
-		logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("PrevEntryResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("PrevEntryRequest", request),
+		logging.Stringer("PrevEntryResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapClient) Remove(ctx context.Context, request *indexedmapv1.RemoveRequest) (*indexedmapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("RemoveRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -510,12 +505,12 @@ func (s *indexedMapClient) Remove(ctx context.Context, request *indexedmapv1.Rem
 	})
 	if !ok {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -523,26 +518,26 @@ func (s *indexedMapClient) Remove(ctx context.Context, request *indexedmapv1.Rem
 		Entry: newClientEntry(output.Entry),
 	}
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("RemoveResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("RemoveRequest", request),
+		logging.Stringer("RemoveResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapClient) Clear(ctx context.Context, request *indexedmapv1.ClearRequest) (*indexedmapv1.ClearResponse, error) {
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("ClearRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Clear",
-			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ClearRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Clear",
-			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ClearRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -555,37 +550,37 @@ func (s *indexedMapClient) Clear(ctx context.Context, request *indexedmapv1.Clea
 	})
 	if !ok {
 		log.Warnw("Clear",
-			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ClearRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Clear",
-			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ClearRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &indexedmapv1.ClearResponse{}
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("ClearResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("ClearRequest", request),
+		logging.Stringer("ClearResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapClient) Entries(request *indexedmapv1.EntriesRequest, server indexedmapv1.IndexedMap_EntriesServer) error {
 	log.Debugw("Entries",
-		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EntriesRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(server.Context())
 	if err != nil {
 		log.Warnw("Entries",
-			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EntriesRequest", request),
 			logging.Error("Error", err))
 		return errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Entries",
-			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EntriesRequest", request),
 			logging.Error("Error", err))
 		return errors.ToProto(err)
 	}
@@ -600,7 +595,7 @@ func (s *indexedMapClient) Entries(request *indexedmapv1.EntriesRequest, server 
 	})
 	if err != nil {
 		log.Warnw("Entries",
-			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EntriesRequest", request),
 			logging.Error("Error", err))
 		return errors.ToProto(err)
 	}
@@ -611,12 +606,12 @@ func (s *indexedMapClient) Entries(request *indexedmapv1.EntriesRequest, server 
 		}
 		if !ok {
 			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EntriesRequest", request),
 				logging.Error("Error", err))
 			return errors.ToProto(err)
 		} else if err != nil {
 			log.Debugw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EntriesRequest", request),
 				logging.Error("Error", err))
 			return errors.ToProto(err)
 		}
@@ -624,12 +619,12 @@ func (s *indexedMapClient) Entries(request *indexedmapv1.EntriesRequest, server 
 			Entry: *newClientEntry(&output.Entry),
 		}
 		log.Debugw("Entries",
-			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-			logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)))
+			logging.Stringer("EntriesRequest", request),
+			logging.Stringer("EntriesResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-				logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)),
+				logging.Stringer("EntriesRequest", request),
+				logging.Stringer("EntriesResponse", response),
 				logging.Error("Error", err))
 			return err
 		}
@@ -638,19 +633,19 @@ func (s *indexedMapClient) Entries(request *indexedmapv1.EntriesRequest, server 
 
 func (s *indexedMapClient) Events(request *indexedmapv1.EventsRequest, server indexedmapv1.IndexedMap_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EventsRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(server.Context())
 	if err != nil {
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return errors.ToProto(err)
 	}
@@ -666,7 +661,7 @@ func (s *indexedMapClient) Events(request *indexedmapv1.EventsRequest, server in
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
@@ -674,18 +669,18 @@ func (s *indexedMapClient) Events(request *indexedmapv1.EventsRequest, server in
 		output, ok, err := stream.Recv()
 		if err == io.EOF {
 			log.Debugw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.String("State", "Done"))
 			return nil
 		}
 		if !ok {
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			return errors.ToProto(err)
 		} else if err != nil {
 			log.Debugw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			return errors.ToProto(err)
 		}
@@ -718,12 +713,12 @@ func (s *indexedMapClient) Events(request *indexedmapv1.EventsRequest, server in
 			}
 		}
 		log.Debugw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-			logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
+			logging.Stringer("EventsRequest", request),
+			logging.Stringer("EventsResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-				logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)),
+				logging.Stringer("EventsRequest", request),
+				logging.Stringer("EventsResponse", response),
 				logging.Error("Error", err))
 			return err
 		}

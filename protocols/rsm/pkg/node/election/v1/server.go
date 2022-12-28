@@ -6,12 +6,11 @@ package v1
 
 import (
 	"context"
-	electionprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/election/v1"
+	electionprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/election/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
-	"github.com/atomix/atomix/runtime/pkg/utils/stringer"
 	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc"
 )
@@ -50,7 +49,7 @@ type electionServer struct {
 
 func (s *electionServer) Enter(ctx context.Context, request *electionprotocolv1.EnterRequest) (*electionprotocolv1.EnterResponse, error) {
 	log.Debugw("Enter",
-		logging.Stringer("EnterRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EnterRequest", request))
 	input := &electionprotocolv1.LeaderElectionInput{
 		Input: &electionprotocolv1.LeaderElectionInput_Enter{
 			Enter: request.EnterInput,
@@ -60,7 +59,7 @@ func (s *electionServer) Enter(ctx context.Context, request *electionprotocolv1.
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Enter",
-			logging.Stringer("EnterRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EnterRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -69,14 +68,14 @@ func (s *electionServer) Enter(ctx context.Context, request *electionprotocolv1.
 		EnterOutput: output.GetEnter(),
 	}
 	log.Debugw("Enter",
-		logging.Stringer("EnterRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("EnterResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("EnterRequest", request),
+		logging.Stringer("EnterResponse", response))
 	return response, nil
 }
 
 func (s *electionServer) Withdraw(ctx context.Context, request *electionprotocolv1.WithdrawRequest) (*electionprotocolv1.WithdrawResponse, error) {
 	log.Debugw("Withdraw",
-		logging.Stringer("WithdrawRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("WithdrawRequest", request))
 	input := &electionprotocolv1.LeaderElectionInput{
 		Input: &electionprotocolv1.LeaderElectionInput_Withdraw{
 			Withdraw: request.WithdrawInput,
@@ -86,7 +85,7 @@ func (s *electionServer) Withdraw(ctx context.Context, request *electionprotocol
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Withdraw",
-			logging.Stringer("WithdrawRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("WithdrawRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -95,14 +94,14 @@ func (s *electionServer) Withdraw(ctx context.Context, request *electionprotocol
 		WithdrawOutput: output.GetWithdraw(),
 	}
 	log.Debugw("Withdraw",
-		logging.Stringer("WithdrawRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("WithdrawResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("WithdrawRequest", request),
+		logging.Stringer("WithdrawResponse", response))
 	return response, nil
 }
 
 func (s *electionServer) Anoint(ctx context.Context, request *electionprotocolv1.AnointRequest) (*electionprotocolv1.AnointResponse, error) {
 	log.Debugw("Anoint",
-		logging.Stringer("AnointRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("AnointRequest", request))
 	input := &electionprotocolv1.LeaderElectionInput{
 		Input: &electionprotocolv1.LeaderElectionInput_Anoint{
 			Anoint: request.AnointInput,
@@ -112,7 +111,7 @@ func (s *electionServer) Anoint(ctx context.Context, request *electionprotocolv1
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Anoint",
-			logging.Stringer("AnointRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("AnointRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -121,14 +120,14 @@ func (s *electionServer) Anoint(ctx context.Context, request *electionprotocolv1
 		AnointOutput: output.GetAnoint(),
 	}
 	log.Debugw("Anoint",
-		logging.Stringer("AnointRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("AnointResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("AnointRequest", request),
+		logging.Stringer("AnointResponse", response))
 	return response, nil
 }
 
 func (s *electionServer) Promote(ctx context.Context, request *electionprotocolv1.PromoteRequest) (*electionprotocolv1.PromoteResponse, error) {
 	log.Debugw("Promote",
-		logging.Stringer("PromoteRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("PromoteRequest", request))
 	input := &electionprotocolv1.LeaderElectionInput{
 		Input: &electionprotocolv1.LeaderElectionInput_Promote{
 			Promote: request.PromoteInput,
@@ -138,7 +137,7 @@ func (s *electionServer) Promote(ctx context.Context, request *electionprotocolv
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Promote",
-			logging.Stringer("PromoteRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PromoteRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -147,14 +146,14 @@ func (s *electionServer) Promote(ctx context.Context, request *electionprotocolv
 		PromoteOutput: output.GetPromote(),
 	}
 	log.Debugw("Promote",
-		logging.Stringer("PromoteRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("PromoteResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("PromoteRequest", request),
+		logging.Stringer("PromoteResponse", response))
 	return response, nil
 }
 
 func (s *electionServer) Demote(ctx context.Context, request *electionprotocolv1.DemoteRequest) (*electionprotocolv1.DemoteResponse, error) {
 	log.Debugw("Demote",
-		logging.Stringer("DemoteRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("DemoteRequest", request))
 	input := &electionprotocolv1.LeaderElectionInput{
 		Input: &electionprotocolv1.LeaderElectionInput_Demote{
 			Demote: request.DemoteInput,
@@ -164,7 +163,7 @@ func (s *electionServer) Demote(ctx context.Context, request *electionprotocolv1
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Demote",
-			logging.Stringer("DemoteRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("DemoteRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -173,14 +172,14 @@ func (s *electionServer) Demote(ctx context.Context, request *electionprotocolv1
 		DemoteOutput: output.GetDemote(),
 	}
 	log.Debugw("Demote",
-		logging.Stringer("DemoteRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("DemoteResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("DemoteRequest", request),
+		logging.Stringer("DemoteResponse", response))
 	return response, nil
 }
 
 func (s *electionServer) Evict(ctx context.Context, request *electionprotocolv1.EvictRequest) (*electionprotocolv1.EvictResponse, error) {
 	log.Debugw("Evict",
-		logging.Stringer("EvictRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EvictRequest", request))
 	input := &electionprotocolv1.LeaderElectionInput{
 		Input: &electionprotocolv1.LeaderElectionInput_Evict{
 			Evict: request.EvictInput,
@@ -190,7 +189,7 @@ func (s *electionServer) Evict(ctx context.Context, request *electionprotocolv1.
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Evict",
-			logging.Stringer("EvictRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("EvictRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -199,14 +198,14 @@ func (s *electionServer) Evict(ctx context.Context, request *electionprotocolv1.
 		EvictOutput: output.GetEvict(),
 	}
 	log.Debugw("Evict",
-		logging.Stringer("EvictRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("EvictResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("EvictRequest", request),
+		logging.Stringer("EvictResponse", response))
 	return response, nil
 }
 
 func (s *electionServer) GetTerm(ctx context.Context, request *electionprotocolv1.GetTermRequest) (*electionprotocolv1.GetTermResponse, error) {
 	log.Debugw("GetTerm",
-		logging.Stringer("GetTermRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("GetTermRequest", request))
 	input := &electionprotocolv1.LeaderElectionInput{
 		Input: &electionprotocolv1.LeaderElectionInput_GetTerm{
 			GetTerm: request.GetTermInput,
@@ -216,7 +215,7 @@ func (s *electionServer) GetTerm(ctx context.Context, request *electionprotocolv
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("GetTerm",
-			logging.Stringer("GetTermRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetTermRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -225,14 +224,14 @@ func (s *electionServer) GetTerm(ctx context.Context, request *electionprotocolv
 		GetTermOutput: output.GetGetTerm(),
 	}
 	log.Debugw("GetTerm",
-		logging.Stringer("GetTermRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("GetTermResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("GetTermRequest", request),
+		logging.Stringer("GetTermResponse", response))
 	return response, nil
 }
 
 func (s *electionServer) Watch(request *electionprotocolv1.WatchRequest, server electionprotocolv1.LeaderElection_WatchServer) error {
 	log.Debugw("Watch",
-		logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("WatchRequest", request))
 	input := &electionprotocolv1.LeaderElectionInput{
 		Input: &electionprotocolv1.LeaderElectionInput_Watch{
 			Watch: request.WatchInput,
@@ -245,7 +244,7 @@ func (s *electionServer) Watch(request *electionprotocolv1.WatchRequest, server 
 		if err != nil {
 			err = errors.ToProto(err)
 			log.Warnw("Watch",
-				logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("WatchRequest", request),
 				logging.Error("Error", err))
 			stream.Error(err)
 			stream.Close()
@@ -261,7 +260,7 @@ func (s *electionServer) Watch(request *electionprotocolv1.WatchRequest, server 
 		if result.Failed() {
 			err := errors.ToProto(result.Error)
 			log.Warnw("Watch",
-				logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("WatchRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -271,11 +270,11 @@ func (s *electionServer) Watch(request *electionprotocolv1.WatchRequest, server 
 			WatchOutput: result.Value.Output.GetWatch(),
 		}
 		log.Debugw("Watch",
-			logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
-			logging.Stringer("WatchResponse", stringer.Truncate(response, truncLen)))
+			logging.Stringer("WatchRequest", request),
+			logging.Stringer("WatchResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Watch",
-				logging.Stringer("WatchRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("WatchRequest", request),
 				logging.Error("Error", err))
 			return err
 		}

@@ -5,7 +5,7 @@
 package statemachine
 
 import (
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 )
 

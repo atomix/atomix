@@ -6,7 +6,6 @@ package statemachine
 
 import (
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	"github.com/atomix/atomix/runtime/pkg/utils/stringer"
 	"github.com/gogo/protobuf/proto"
 	"time"
 )
@@ -75,7 +74,7 @@ func (b *ProposerBuilder[I1, O1, I2, O2]) Build(f func(Proposal[I2, O2])) Propos
 		}
 		proposal := newTranscodingProposal[I1, O1, I2, O2](
 			parent, input, b.decoder, b.encoder, parent.Log().WithFields(logging.String("Method", b.name)))
-		proposal.Log().Debugw("Applying proposal", logging.Stringer("Input", stringer.Truncate(proposal.Input(), truncLen)))
+		proposal.Log().Debugw("Applying proposal", logging.Stringer("Input", proposal.Input()))
 		f(proposal)
 	}
 }
@@ -112,7 +111,7 @@ func (b *QuerierBuilder[I1, O1, I2, O2]) Build(f func(Query[I2, O2])) Querier[I1
 		}
 		query := newTranscodingQuery[I1, O1, I2, O2](
 			parent, input, b.decoder, b.encoder, parent.Log().WithFields(logging.String("Method", b.name)))
-		query.Log().Debugw("Applying query", logging.Stringer("Input", stringer.Truncate(query.Input(), truncLen)))
+		query.Log().Debugw("Applying query", logging.Stringer("Input", query.Input()))
 		f(query)
 	}
 }
@@ -135,7 +134,7 @@ func (p *transcodingProposer[I1, O1, I2, O2]) Call(parent Proposal[I1, O1]) {
 		return
 	}
 	proposal := newTranscodingProposal[I1, O1, I2, O2](parent, input, p.decoder, p.encoder, parent.Log().WithFields(logging.String("Method", p.name)))
-	proposal.Log().Debugw("Applying proposal", logging.Stringer("Input", stringer.Truncate(proposal.Input(), truncLen)))
+	proposal.Log().Debugw("Applying proposal", logging.Stringer("Input", proposal.Input()))
 	p.f(proposal)
 }
 
@@ -153,7 +152,7 @@ func (q *transcodingQuerier[I1, O1, I2, O2]) Call(parent Query[I1, O1]) {
 		return
 	}
 	query := newTranscodingQuery[I1, O1, I2, O2](parent, input, q.decoder, q.encoder, parent.Log().WithFields(logging.String("Method", q.name)))
-	query.Log().Debugw("Applying query", logging.Stringer("Input", stringer.Truncate(query.Input(), truncLen)))
+	query.Log().Debugw("Applying query", logging.Stringer("Input", query.Input()))
 	q.f(query)
 }
 

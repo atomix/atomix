@@ -5,7 +5,7 @@
 package v1
 
 import (
-	lockprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/lock/v1"
+	lockprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/lock/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/gogo/protobuf/proto"

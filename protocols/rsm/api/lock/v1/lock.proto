@@ -1,0 +1,113 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.protocols.rsm.lock.v1;
+
+import "v1/headers.proto";
+import "google/protobuf/duration.proto";
+import "gogoproto/gogo.proto";
+
+// Lock is a service for a counter primitive
+service Lock {
+    // Acquire attempts to acquire the lock
+    rpc Acquire (AcquireRequest) returns (AcquireResponse);
+
+    // Release releases the lock
+    rpc Release (ReleaseRequest) returns (ReleaseResponse);
+
+    // Get gets the lock state
+    rpc Get (GetRequest) returns (GetResponse);
+}
+
+message AcquireRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    AcquireInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message AcquireResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    AcquireOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ReleaseRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    ReleaseInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ReleaseResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    ReleaseOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetRequest {
+    atomix.protocols.rsm.v1.QueryRequestHeaders headers = 1;
+    GetInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message GetResponse {
+    atomix.protocols.rsm.v1.QueryResponseHeaders headers = 1;
+    GetOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message LockInput {
+    oneof input {
+        AcquireInput acquire = 1;
+        ReleaseInput release = 2;
+        GetInput get = 3;
+    }
+}
+
+message LockOutput {
+    oneof output {
+        AcquireOutput acquire = 1;
+        ReleaseOutput release = 2;
+        GetOutput get = 3;
+    }
+}
+
+message AcquireInput {
+    google.protobuf.Duration timeout = 1 [
+        (gogoproto.stdduration) = true
+    ];
+}
+
+message AcquireOutput {
+    uint64 index = 1 [
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/api/v1.Index"
+    ];
+}
+
+message ReleaseInput {
+
+}
+
+message ReleaseOutput {
+
+}
+
+message GetInput {
+
+}
+
+message GetOutput {
+    uint64 index = 1 [
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/api/v1.Index"
+    ];
+}

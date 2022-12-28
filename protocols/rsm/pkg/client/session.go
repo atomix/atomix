@@ -8,10 +8,9 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
-	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"github.com/bits-and-blooms/bloom/v3"
 	"google.golang.org/grpc"
 	"os"
@@ -70,8 +69,7 @@ func (s *SessionClient) CreatePrimitive(ctx context.Context, meta runtimev1.Prim
 			APIVersion: meta.Type.APIVersion,
 		},
 		PrimitiveName: protocol.PrimitiveName{
-			Namespace: runtime.Namespace(),
-			Name:      meta.Name,
+			Name: meta.Name,
 		},
 	})
 	if err := primitive.open(ctx); err != nil {

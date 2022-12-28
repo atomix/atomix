@@ -6,12 +6,11 @@ package v1
 
 import (
 	"context"
-	multimapprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/multimap/v1"
+	multimapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/multimap/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
-	"github.com/atomix/atomix/runtime/pkg/utils/stringer"
 	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc"
 )
@@ -50,7 +49,7 @@ type multiMapServer struct {
 
 func (s *multiMapServer) Size(ctx context.Context, request *multimapprotocolv1.SizeRequest) (*multimapprotocolv1.SizeResponse, error) {
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("SizeRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_Size_{
 			Size_: request.SizeInput,
@@ -60,7 +59,7 @@ func (s *multiMapServer) Size(ctx context.Context, request *multimapprotocolv1.S
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Size",
-			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SizeRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -69,14 +68,14 @@ func (s *multiMapServer) Size(ctx context.Context, request *multimapprotocolv1.S
 		SizeOutput: output.GetSize_(),
 	}
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("SizeResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("SizeRequest", request),
+		logging.Stringer("SizeResponse", response))
 	return response, nil
 }
 
 func (s *multiMapServer) Put(ctx context.Context, request *multimapprotocolv1.PutRequest) (*multimapprotocolv1.PutResponse, error) {
 	log.Debugw("Put",
-		logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("PutRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_Put{
 			Put: request.PutInput,
@@ -86,7 +85,7 @@ func (s *multiMapServer) Put(ctx context.Context, request *multimapprotocolv1.Pu
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -95,14 +94,14 @@ func (s *multiMapServer) Put(ctx context.Context, request *multimapprotocolv1.Pu
 		PutOutput: output.GetPut(),
 	}
 	log.Debugw("Put",
-		logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("PutResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("PutRequest", request),
+		logging.Stringer("PutResponse", response))
 	return response, nil
 }
 
 func (s *multiMapServer) PutAll(ctx context.Context, request *multimapprotocolv1.PutAllRequest) (*multimapprotocolv1.PutAllResponse, error) {
 	log.Debugw("PutAll",
-		logging.Stringer("PutAllRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("PutAllRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_PutAll{
 			PutAll: request.PutAllInput,
@@ -112,7 +111,7 @@ func (s *multiMapServer) PutAll(ctx context.Context, request *multimapprotocolv1
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("PutAll",
-			logging.Stringer("PutAllRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PutAllRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -121,14 +120,14 @@ func (s *multiMapServer) PutAll(ctx context.Context, request *multimapprotocolv1
 		PutAllOutput: output.GetPutAll(),
 	}
 	log.Debugw("PutAll",
-		logging.Stringer("PutAllRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("PutAllResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("PutAllRequest", request),
+		logging.Stringer("PutAllResponse", response))
 	return response, nil
 }
 
 func (s *multiMapServer) PutEntries(ctx context.Context, request *multimapprotocolv1.PutEntriesRequest) (*multimapprotocolv1.PutEntriesResponse, error) {
 	log.Debugw("PutEntries",
-		logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("PutEntriesRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_PutEntries{
 			PutEntries: request.PutEntriesInput,
@@ -138,7 +137,7 @@ func (s *multiMapServer) PutEntries(ctx context.Context, request *multimapprotoc
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("PutEntries",
-			logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PutEntriesRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -147,14 +146,14 @@ func (s *multiMapServer) PutEntries(ctx context.Context, request *multimapprotoc
 		PutEntriesOutput: output.GetPutEntries(),
 	}
 	log.Debugw("PutEntries",
-		logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("PutEntriesResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("PutEntriesRequest", request),
+		logging.Stringer("PutEntriesResponse", response))
 	return response, nil
 }
 
 func (s *multiMapServer) Replace(ctx context.Context, request *multimapprotocolv1.ReplaceRequest) (*multimapprotocolv1.ReplaceResponse, error) {
 	log.Debugw("Replace",
-		logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("ReplaceRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_Replace{
 			Replace: request.ReplaceInput,
@@ -164,7 +163,7 @@ func (s *multiMapServer) Replace(ctx context.Context, request *multimapprotocolv
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Replace",
-			logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ReplaceRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -173,14 +172,14 @@ func (s *multiMapServer) Replace(ctx context.Context, request *multimapprotocolv
 		ReplaceOutput: output.GetReplace(),
 	}
 	log.Debugw("Replace",
-		logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("ReplaceResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("ReplaceRequest", request),
+		logging.Stringer("ReplaceResponse", response))
 	return response, nil
 }
 
 func (s *multiMapServer) Contains(ctx context.Context, request *multimapprotocolv1.ContainsRequest) (*multimapprotocolv1.ContainsResponse, error) {
 	log.Debugw("Contains",
-		logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("ContainsRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_Contains{
 			Contains: request.ContainsInput,
@@ -190,7 +189,7 @@ func (s *multiMapServer) Contains(ctx context.Context, request *multimapprotocol
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Contains",
-			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -199,14 +198,14 @@ func (s *multiMapServer) Contains(ctx context.Context, request *multimapprotocol
 		ContainsOutput: output.GetContains(),
 	}
 	log.Debugw("Contains",
-		logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("ContainsResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("ContainsRequest", request),
+		logging.Stringer("ContainsResponse", response))
 	return response, nil
 }
 
 func (s *multiMapServer) Get(ctx context.Context, request *multimapprotocolv1.GetRequest) (*multimapprotocolv1.GetResponse, error) {
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("GetRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_Get{
 			Get: request.GetInput,
@@ -216,7 +215,7 @@ func (s *multiMapServer) Get(ctx context.Context, request *multimapprotocolv1.Ge
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -225,14 +224,14 @@ func (s *multiMapServer) Get(ctx context.Context, request *multimapprotocolv1.Ge
 		GetOutput: output.GetGet(),
 	}
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("GetResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("GetRequest", request),
+		logging.Stringer("GetResponse", response))
 	return response, nil
 }
 
 func (s *multiMapServer) Remove(ctx context.Context, request *multimapprotocolv1.RemoveRequest) (*multimapprotocolv1.RemoveResponse, error) {
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("RemoveRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_Remove{
 			Remove: request.RemoveInput,
@@ -242,7 +241,7 @@ func (s *multiMapServer) Remove(ctx context.Context, request *multimapprotocolv1
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -251,14 +250,14 @@ func (s *multiMapServer) Remove(ctx context.Context, request *multimapprotocolv1
 		RemoveOutput: output.GetRemove(),
 	}
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("RemoveResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("RemoveRequest", request),
+		logging.Stringer("RemoveResponse", response))
 	return response, nil
 }
 
 func (s *multiMapServer) RemoveAll(ctx context.Context, request *multimapprotocolv1.RemoveAllRequest) (*multimapprotocolv1.RemoveAllResponse, error) {
 	log.Debugw("RemoveAll",
-		logging.Stringer("RemoveAllRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("RemoveAllRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_RemoveAll{
 			RemoveAll: request.RemoveAllInput,
@@ -268,7 +267,7 @@ func (s *multiMapServer) RemoveAll(ctx context.Context, request *multimapprotoco
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("RemoveAll",
-			logging.Stringer("RemoveAllRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveAllRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -277,14 +276,14 @@ func (s *multiMapServer) RemoveAll(ctx context.Context, request *multimapprotoco
 		RemoveAllOutput: output.GetRemoveAll(),
 	}
 	log.Debugw("RemoveAll",
-		logging.Stringer("RemoveAllRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("RemoveAllResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("RemoveAllRequest", request),
+		logging.Stringer("RemoveAllResponse", response))
 	return response, nil
 }
 
 func (s *multiMapServer) RemoveEntries(ctx context.Context, request *multimapprotocolv1.RemoveEntriesRequest) (*multimapprotocolv1.RemoveEntriesResponse, error) {
 	log.Debugw("RemoveEntries",
-		logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("RemoveEntriesRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_RemoveEntries{
 			RemoveEntries: request.RemoveEntriesInput,
@@ -294,7 +293,7 @@ func (s *multiMapServer) RemoveEntries(ctx context.Context, request *multimappro
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("RemoveEntries",
-			logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveEntriesRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -303,14 +302,14 @@ func (s *multiMapServer) RemoveEntries(ctx context.Context, request *multimappro
 		RemoveEntriesOutput: output.GetRemoveEntries(),
 	}
 	log.Debugw("RemoveEntries",
-		logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("RemoveEntriesResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("RemoveEntriesRequest", request),
+		logging.Stringer("RemoveEntriesResponse", response))
 	return response, nil
 }
 
 func (s *multiMapServer) Clear(ctx context.Context, request *multimapprotocolv1.ClearRequest) (*multimapprotocolv1.ClearResponse, error) {
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("ClearRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_Clear{
 			Clear: request.ClearInput,
@@ -320,7 +319,7 @@ func (s *multiMapServer) Clear(ctx context.Context, request *multimapprotocolv1.
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Clear",
-			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ClearRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -329,14 +328,14 @@ func (s *multiMapServer) Clear(ctx context.Context, request *multimapprotocolv1.
 		ClearOutput: output.GetClear(),
 	}
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("ClearResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("ClearRequest", request),
+		logging.Stringer("ClearResponse", response))
 	return response, nil
 }
 
 func (s *multiMapServer) Events(request *multimapprotocolv1.EventsRequest, server multimapprotocolv1.MultiMap_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EventsRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_Events{
 			Events: request.EventsInput,
@@ -349,7 +348,7 @@ func (s *multiMapServer) Events(request *multimapprotocolv1.EventsRequest, serve
 		if err != nil {
 			err = errors.ToProto(err)
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			stream.Error(err)
 			stream.Close()
@@ -365,7 +364,7 @@ func (s *multiMapServer) Events(request *multimapprotocolv1.EventsRequest, serve
 		if result.Failed() {
 			err := errors.ToProto(result.Error)
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -375,11 +374,11 @@ func (s *multiMapServer) Events(request *multimapprotocolv1.EventsRequest, serve
 			EventsOutput: result.Value.Output.GetEvents(),
 		}
 		log.Debugw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-			logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
+			logging.Stringer("EventsRequest", request),
+			logging.Stringer("EventsResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -388,7 +387,7 @@ func (s *multiMapServer) Events(request *multimapprotocolv1.EventsRequest, serve
 
 func (s *multiMapServer) Entries(request *multimapprotocolv1.EntriesRequest, server multimapprotocolv1.MultiMap_EntriesServer) error {
 	log.Debugw("Entries",
-		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EntriesRequest", request))
 	input := &multimapprotocolv1.MultiMapInput{
 		Input: &multimapprotocolv1.MultiMapInput_Entries{
 			Entries: request.EntriesInput,
@@ -401,7 +400,7 @@ func (s *multiMapServer) Entries(request *multimapprotocolv1.EntriesRequest, ser
 		if err != nil {
 			err = errors.ToProto(err)
 			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EntriesRequest", request),
 				logging.Error("Error", err))
 			stream.Error(err)
 			stream.Close()
@@ -417,7 +416,7 @@ func (s *multiMapServer) Entries(request *multimapprotocolv1.EntriesRequest, ser
 		if result.Failed() {
 			err := errors.ToProto(result.Error)
 			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EntriesRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -427,11 +426,11 @@ func (s *multiMapServer) Entries(request *multimapprotocolv1.EntriesRequest, ser
 			EntriesOutput: result.Value.Output.GetEntries(),
 		}
 		log.Debugw("Entries",
-			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-			logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)))
+			logging.Stringer("EntriesRequest", request),
+			logging.Stringer("EntriesResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EntriesRequest", request),
 				logging.Error("Error", err))
 			return err
 		}

@@ -6,12 +6,11 @@ package v1
 
 import (
 	"context"
-	indexedmapprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/indexedmap/v1"
+	indexedmapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/indexedmap/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
-	"github.com/atomix/atomix/runtime/pkg/utils/stringer"
 	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc"
 )
@@ -50,7 +49,7 @@ type indexedMapServer struct {
 
 func (s *indexedMapServer) Size(ctx context.Context, request *indexedmapprotocolv1.SizeRequest) (*indexedmapprotocolv1.SizeResponse, error) {
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("SizeRequest", request))
 	input := &indexedmapprotocolv1.IndexedMapInput{
 		Input: &indexedmapprotocolv1.IndexedMapInput_Size_{
 			Size_: request.SizeInput,
@@ -60,7 +59,7 @@ func (s *indexedMapServer) Size(ctx context.Context, request *indexedmapprotocol
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Size",
-			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SizeRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -69,14 +68,14 @@ func (s *indexedMapServer) Size(ctx context.Context, request *indexedmapprotocol
 		SizeOutput: output.GetSize_(),
 	}
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("SizeResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("SizeRequest", request),
+		logging.Stringer("SizeResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapServer) Append(ctx context.Context, request *indexedmapprotocolv1.AppendRequest) (*indexedmapprotocolv1.AppendResponse, error) {
 	log.Debugw("Append",
-		logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("AppendRequest", request))
 	input := &indexedmapprotocolv1.IndexedMapInput{
 		Input: &indexedmapprotocolv1.IndexedMapInput_Append{
 			Append: request.AppendInput,
@@ -86,7 +85,7 @@ func (s *indexedMapServer) Append(ctx context.Context, request *indexedmapprotoc
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Append",
-			logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("AppendRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -95,14 +94,14 @@ func (s *indexedMapServer) Append(ctx context.Context, request *indexedmapprotoc
 		AppendOutput: output.GetAppend(),
 	}
 	log.Debugw("Append",
-		logging.Stringer("AppendRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("AppendResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("AppendRequest", request),
+		logging.Stringer("AppendResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapServer) Update(ctx context.Context, request *indexedmapprotocolv1.UpdateRequest) (*indexedmapprotocolv1.UpdateResponse, error) {
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("UpdateRequest", request))
 	input := &indexedmapprotocolv1.IndexedMapInput{
 		Input: &indexedmapprotocolv1.IndexedMapInput_Update{
 			Update: request.UpdateInput,
@@ -112,7 +111,7 @@ func (s *indexedMapServer) Update(ctx context.Context, request *indexedmapprotoc
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -121,14 +120,14 @@ func (s *indexedMapServer) Update(ctx context.Context, request *indexedmapprotoc
 		UpdateOutput: output.GetUpdate(),
 	}
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("UpdateResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("UpdateRequest", request),
+		logging.Stringer("UpdateResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapServer) Remove(ctx context.Context, request *indexedmapprotocolv1.RemoveRequest) (*indexedmapprotocolv1.RemoveResponse, error) {
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("RemoveRequest", request))
 	input := &indexedmapprotocolv1.IndexedMapInput{
 		Input: &indexedmapprotocolv1.IndexedMapInput_Remove{
 			Remove: request.RemoveInput,
@@ -138,7 +137,7 @@ func (s *indexedMapServer) Remove(ctx context.Context, request *indexedmapprotoc
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -147,14 +146,14 @@ func (s *indexedMapServer) Remove(ctx context.Context, request *indexedmapprotoc
 		RemoveOutput: output.GetRemove(),
 	}
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("RemoveResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("RemoveRequest", request),
+		logging.Stringer("RemoveResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapServer) Get(ctx context.Context, request *indexedmapprotocolv1.GetRequest) (*indexedmapprotocolv1.GetResponse, error) {
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("GetRequest", request))
 	input := &indexedmapprotocolv1.IndexedMapInput{
 		Input: &indexedmapprotocolv1.IndexedMapInput_Get{
 			Get: request.GetInput,
@@ -164,7 +163,7 @@ func (s *indexedMapServer) Get(ctx context.Context, request *indexedmapprotocolv
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -173,14 +172,14 @@ func (s *indexedMapServer) Get(ctx context.Context, request *indexedmapprotocolv
 		GetOutput: output.GetGet(),
 	}
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("GetResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("GetRequest", request),
+		logging.Stringer("GetResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapServer) FirstEntry(ctx context.Context, request *indexedmapprotocolv1.FirstEntryRequest) (*indexedmapprotocolv1.FirstEntryResponse, error) {
 	log.Debugw("FirstEntry",
-		logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("FirstEntryRequest", request))
 	input := &indexedmapprotocolv1.IndexedMapInput{
 		Input: &indexedmapprotocolv1.IndexedMapInput_FirstEntry{
 			FirstEntry: request.FirstEntryInput,
@@ -190,7 +189,7 @@ func (s *indexedMapServer) FirstEntry(ctx context.Context, request *indexedmappr
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("FirstEntry",
-			logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("FirstEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -199,14 +198,14 @@ func (s *indexedMapServer) FirstEntry(ctx context.Context, request *indexedmappr
 		FirstEntryOutput: output.GetFirstEntry(),
 	}
 	log.Debugw("FirstEntry",
-		logging.Stringer("FirstEntryRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("FirstEntryResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("FirstEntryRequest", request),
+		logging.Stringer("FirstEntryResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapServer) LastEntry(ctx context.Context, request *indexedmapprotocolv1.LastEntryRequest) (*indexedmapprotocolv1.LastEntryResponse, error) {
 	log.Debugw("LastEntry",
-		logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("LastEntryRequest", request))
 	input := &indexedmapprotocolv1.IndexedMapInput{
 		Input: &indexedmapprotocolv1.IndexedMapInput_LastEntry{
 			LastEntry: request.LastEntryInput,
@@ -216,7 +215,7 @@ func (s *indexedMapServer) LastEntry(ctx context.Context, request *indexedmappro
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("LastEntry",
-			logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("LastEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -225,14 +224,14 @@ func (s *indexedMapServer) LastEntry(ctx context.Context, request *indexedmappro
 		LastEntryOutput: output.GetLastEntry(),
 	}
 	log.Debugw("LastEntry",
-		logging.Stringer("LastEntryRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("LastEntryResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("LastEntryRequest", request),
+		logging.Stringer("LastEntryResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapServer) NextEntry(ctx context.Context, request *indexedmapprotocolv1.NextEntryRequest) (*indexedmapprotocolv1.NextEntryResponse, error) {
 	log.Debugw("NextEntry",
-		logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("NextEntryRequest", request))
 	input := &indexedmapprotocolv1.IndexedMapInput{
 		Input: &indexedmapprotocolv1.IndexedMapInput_NextEntry{
 			NextEntry: request.NextEntryInput,
@@ -242,7 +241,7 @@ func (s *indexedMapServer) NextEntry(ctx context.Context, request *indexedmappro
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("NextEntry",
-			logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("NextEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -251,14 +250,14 @@ func (s *indexedMapServer) NextEntry(ctx context.Context, request *indexedmappro
 		NextEntryOutput: output.GetNextEntry(),
 	}
 	log.Debugw("NextEntry",
-		logging.Stringer("NextEntryRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("NextEntryResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("NextEntryRequest", request),
+		logging.Stringer("NextEntryResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapServer) PrevEntry(ctx context.Context, request *indexedmapprotocolv1.PrevEntryRequest) (*indexedmapprotocolv1.PrevEntryResponse, error) {
 	log.Debugw("PrevEntry",
-		logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("PrevEntryRequest", request))
 	input := &indexedmapprotocolv1.IndexedMapInput{
 		Input: &indexedmapprotocolv1.IndexedMapInput_PrevEntry{
 			PrevEntry: request.PrevEntryInput,
@@ -268,7 +267,7 @@ func (s *indexedMapServer) PrevEntry(ctx context.Context, request *indexedmappro
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("PrevEntry",
-			logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PrevEntryRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -277,14 +276,14 @@ func (s *indexedMapServer) PrevEntry(ctx context.Context, request *indexedmappro
 		PrevEntryOutput: output.GetPrevEntry(),
 	}
 	log.Debugw("PrevEntry",
-		logging.Stringer("PrevEntryRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("PrevEntryResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("PrevEntryRequest", request),
+		logging.Stringer("PrevEntryResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapServer) Clear(ctx context.Context, request *indexedmapprotocolv1.ClearRequest) (*indexedmapprotocolv1.ClearResponse, error) {
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("ClearRequest", request))
 	input := &indexedmapprotocolv1.IndexedMapInput{
 		Input: &indexedmapprotocolv1.IndexedMapInput_Clear{
 			Clear: request.ClearInput,
@@ -294,7 +293,7 @@ func (s *indexedMapServer) Clear(ctx context.Context, request *indexedmapprotoco
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Clear",
-			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ClearRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -303,14 +302,14 @@ func (s *indexedMapServer) Clear(ctx context.Context, request *indexedmapprotoco
 		ClearOutput: output.GetClear(),
 	}
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("ClearResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("ClearRequest", request),
+		logging.Stringer("ClearResponse", response))
 	return response, nil
 }
 
 func (s *indexedMapServer) Events(request *indexedmapprotocolv1.EventsRequest, server indexedmapprotocolv1.IndexedMap_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EventsRequest", request))
 	input := &indexedmapprotocolv1.IndexedMapInput{
 		Input: &indexedmapprotocolv1.IndexedMapInput_Events{
 			Events: request.EventsInput,
@@ -323,7 +322,7 @@ func (s *indexedMapServer) Events(request *indexedmapprotocolv1.EventsRequest, s
 		if err != nil {
 			err = errors.ToProto(err)
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			stream.Error(err)
 			stream.Close()
@@ -339,7 +338,7 @@ func (s *indexedMapServer) Events(request *indexedmapprotocolv1.EventsRequest, s
 		if result.Failed() {
 			err := errors.ToProto(result.Error)
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -349,11 +348,11 @@ func (s *indexedMapServer) Events(request *indexedmapprotocolv1.EventsRequest, s
 			EventsOutput: result.Value.Output.GetEvents(),
 		}
 		log.Debugw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-			logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
+			logging.Stringer("EventsRequest", request),
+			logging.Stringer("EventsResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -362,7 +361,7 @@ func (s *indexedMapServer) Events(request *indexedmapprotocolv1.EventsRequest, s
 
 func (s *indexedMapServer) Entries(request *indexedmapprotocolv1.EntriesRequest, server indexedmapprotocolv1.IndexedMap_EntriesServer) error {
 	log.Debugw("Entries",
-		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EntriesRequest", request))
 	input := &indexedmapprotocolv1.IndexedMapInput{
 		Input: &indexedmapprotocolv1.IndexedMapInput_Entries{
 			Entries: request.EntriesInput,
@@ -375,7 +374,7 @@ func (s *indexedMapServer) Entries(request *indexedmapprotocolv1.EntriesRequest,
 		if err != nil {
 			err = errors.ToProto(err)
 			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EntriesRequest", request),
 				logging.Error("Error", err))
 			stream.Error(err)
 			stream.Close()
@@ -391,7 +390,7 @@ func (s *indexedMapServer) Entries(request *indexedmapprotocolv1.EntriesRequest,
 		if result.Failed() {
 			err := errors.ToProto(result.Error)
 			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EntriesRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -401,11 +400,11 @@ func (s *indexedMapServer) Entries(request *indexedmapprotocolv1.EntriesRequest,
 			EntriesOutput: result.Value.Output.GetEntries(),
 		}
 		log.Debugw("Entries",
-			logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-			logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)))
+			logging.Stringer("EntriesRequest", request),
+			logging.Stringer("EntriesResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Entries",
-				logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("EntriesRequest", request),
 				logging.Error("Error", err))
 			return err
 		}

@@ -6,17 +6,16 @@ package v1
 
 import (
 	"context"
-	multimapv1 "github.com/atomix/atomix/api/pkg/runtime/multimap/v1"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
-	multimapprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/multimap/v1"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	multimapv1 "github.com/atomix/atomix/api/runtime/multimap/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	multimapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/multimap/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	multimapruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/multimap/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
-	"github.com/atomix/atomix/runtime/pkg/utils/stringer"
 	"google.golang.org/grpc"
 	"io"
 	"sync"
@@ -24,23 +23,19 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 200
-
-func NewMultiMap(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (multimapruntimev1.MultiMap, error) {
+func NewMultiMap(protocol *client.Protocol) (multimapruntimev1.MultiMap, error) {
 	return &multiMapClient{
-		Protocol:      protocol,
-		PrimitiveSpec: spec,
+		Protocol: protocol,
 	}, nil
 }
 
 type multiMapClient struct {
 	*client.Protocol
-	runtimev1.PrimitiveSpec
 }
 
 func (s *multiMapClient) Create(ctx context.Context, request *multimapv1.CreateRequest) (*multimapv1.CreateResponse, error) {
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("CreateRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -48,24 +43,28 @@ func (s *multiMapClient) Create(ctx context.Context, request *multimapv1.CreateR
 		if err != nil {
 			return err
 		}
-		return session.CreatePrimitive(ctx, s.PrimitiveMeta)
+		return session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
+			Type:        multimapruntimev1.PrimitiveType,
+			PrimitiveID: request.ID,
+			Tags:        request.Tags,
+		})
 	})
 	if err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &multimapv1.CreateResponse{}
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("CreateResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("CreateRequest", request),
+		logging.Stringer("CreateResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) Close(ctx context.Context, request *multimapv1.CloseRequest) (*multimapv1.CloseResponse, error) {
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("CloseRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -77,34 +76,34 @@ func (s *multiMapClient) Close(ctx context.Context, request *multimapv1.CloseReq
 	})
 	if err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &multimapv1.CloseResponse{}
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("CloseResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("CloseRequest", request),
+		logging.Stringer("CloseResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) Size(ctx context.Context, request *multimapv1.SizeRequest) (*multimapv1.SizeResponse, error) {
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("SizeRequest", request))
 	partitions := s.Partitions()
 	sizes, err := async.ExecuteAsync[int](len(partitions), func(i int) (int, error) {
 		partition := partitions[i]
 		session, err := partition.GetSession(ctx)
 		if err != nil {
 			log.Warnw("Size",
-				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		}
 		primitive, err := session.GetPrimitive(request.ID.Name)
 		if err != nil {
 			log.Warnw("Size",
-				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		}
@@ -117,12 +116,12 @@ func (s *multiMapClient) Size(ctx context.Context, request *multimapv1.SizeReque
 		})
 		if !ok {
 			log.Warnw("Size",
-				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		} else if err != nil {
 			log.Debugw("Size",
-				logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		}
@@ -139,26 +138,26 @@ func (s *multiMapClient) Size(ctx context.Context, request *multimapv1.SizeReque
 		Size_: uint32(size),
 	}
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("SizeResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("SizeRequest", request),
+		logging.Stringer("SizeResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) Put(ctx context.Context, request *multimapv1.PutRequest) (*multimapv1.PutResponse, error) {
 	log.Debugw("Put",
-		logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("PutRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -175,37 +174,37 @@ func (s *multiMapClient) Put(ctx context.Context, request *multimapv1.PutRequest
 	})
 	if !ok {
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Put",
-			logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &multimapv1.PutResponse{}
 	log.Debugw("Put",
-		logging.Stringer("PutRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("PutResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("PutRequest", request),
+		logging.Stringer("PutResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) PutAll(ctx context.Context, request *multimapv1.PutAllRequest) (*multimapv1.PutAllResponse, error) {
 	log.Debugw("PutAll",
-		logging.Stringer("PutAllRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("PutAllRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("PutAll",
-			logging.Stringer("PutAllRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PutAllRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("PutAll",
-			logging.Stringer("PutAllRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PutAllRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -222,12 +221,12 @@ func (s *multiMapClient) PutAll(ctx context.Context, request *multimapv1.PutAllR
 	})
 	if !ok {
 		log.Warnw("PutAll",
-			logging.Stringer("PutAllRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PutAllRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("PutAll",
-			logging.Stringer("PutAllRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("PutAllRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -235,14 +234,14 @@ func (s *multiMapClient) PutAll(ctx context.Context, request *multimapv1.PutAllR
 		Updated: output.Updated,
 	}
 	log.Debugw("PutAll",
-		logging.Stringer("PutAllRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("PutAllResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("PutAllRequest", request),
+		logging.Stringer("PutAllResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) PutEntries(ctx context.Context, request *multimapv1.PutEntriesRequest) (*multimapv1.PutEntriesResponse, error) {
 	log.Debugw("PutEntries",
-		logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("PutEntriesRequest", request))
 	entries := make(map[int][]multimapprotocolv1.Entry)
 	for _, entry := range request.Entries {
 		index := s.PartitionIndex([]byte(entry.Key))
@@ -265,14 +264,14 @@ func (s *multiMapClient) PutEntries(ctx context.Context, request *multimapv1.Put
 		session, err := partition.GetSession(ctx)
 		if err != nil {
 			log.Warnw("PutEntries",
-				logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("PutEntriesRequest", request),
 				logging.Error("Error", err))
 			return false, err
 		}
 		primitive, err := session.GetPrimitive(request.ID.Name)
 		if err != nil {
 			log.Warnw("PutEntries",
-				logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("PutEntriesRequest", request),
 				logging.Error("Error", err))
 			return false, err
 		}
@@ -288,12 +287,12 @@ func (s *multiMapClient) PutEntries(ctx context.Context, request *multimapv1.Put
 		})
 		if !ok {
 			log.Warnw("PutEntries",
-				logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("PutEntriesRequest", request),
 				logging.Error("Error", err))
 			return false, err
 		} else if err != nil {
 			log.Debugw("PutEntries",
-				logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("PutEntriesRequest", request),
 				logging.Error("Error", err))
 			return false, err
 		}
@@ -309,26 +308,26 @@ func (s *multiMapClient) PutEntries(ctx context.Context, request *multimapv1.Put
 		}
 	}
 	log.Debugw("PutEntries",
-		logging.Stringer("PutEntriesRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("PutEntriesResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("PutEntriesRequest", request),
+		logging.Stringer("PutEntriesResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) Replace(ctx context.Context, request *multimapv1.ReplaceRequest) (*multimapv1.ReplaceResponse, error) {
 	log.Debugw("Replace",
-		logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("ReplaceRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Replace",
-			logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ReplaceRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Replace",
-			logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ReplaceRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -345,12 +344,12 @@ func (s *multiMapClient) Replace(ctx context.Context, request *multimapv1.Replac
 	})
 	if !ok {
 		log.Warnw("Replace",
-			logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ReplaceRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Replace",
-			logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ReplaceRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -358,26 +357,26 @@ func (s *multiMapClient) Replace(ctx context.Context, request *multimapv1.Replac
 		PrevValues: output.PrevValues,
 	}
 	log.Debugw("Replace",
-		logging.Stringer("ReplaceRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("ReplaceResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("ReplaceRequest", request),
+		logging.Stringer("ReplaceResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) Contains(ctx context.Context, request *multimapv1.ContainsRequest) (*multimapv1.ContainsResponse, error) {
 	log.Debugw("Contains",
-		logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("ContainsRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Contains",
-			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Contains",
-			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -392,12 +391,12 @@ func (s *multiMapClient) Contains(ctx context.Context, request *multimapv1.Conta
 	})
 	if !ok {
 		log.Warnw("Contains",
-			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Contains",
-			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -405,26 +404,26 @@ func (s *multiMapClient) Contains(ctx context.Context, request *multimapv1.Conta
 		Result: output.Result,
 	}
 	log.Debugw("Contains",
-		logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("ContainsResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("ContainsRequest", request),
+		logging.Stringer("ContainsResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) Get(ctx context.Context, request *multimapv1.GetRequest) (*multimapv1.GetResponse, error) {
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -439,12 +438,12 @@ func (s *multiMapClient) Get(ctx context.Context, request *multimapv1.GetRequest
 	})
 	if !ok {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -452,26 +451,26 @@ func (s *multiMapClient) Get(ctx context.Context, request *multimapv1.GetRequest
 		Values: output.Values,
 	}
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("GetResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("GetRequest", request),
+		logging.Stringer("GetResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) Remove(ctx context.Context, request *multimapv1.RemoveRequest) (*multimapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("RemoveRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -488,12 +487,12 @@ func (s *multiMapClient) Remove(ctx context.Context, request *multimapv1.RemoveR
 	})
 	if !ok {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -501,26 +500,26 @@ func (s *multiMapClient) Remove(ctx context.Context, request *multimapv1.RemoveR
 		Values: output.Values,
 	}
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("RemoveResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("RemoveRequest", request),
+		logging.Stringer("RemoveResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) RemoveAll(ctx context.Context, request *multimapv1.RemoveAllRequest) (*multimapv1.RemoveAllResponse, error) {
 	log.Debugw("RemoveAll",
-		logging.Stringer("RemoveAllRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("RemoveAllRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("RemoveAll",
-			logging.Stringer("RemoveAllRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveAllRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("RemoveAll",
-			logging.Stringer("RemoveAllRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveAllRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -537,12 +536,12 @@ func (s *multiMapClient) RemoveAll(ctx context.Context, request *multimapv1.Remo
 	})
 	if !ok {
 		log.Warnw("RemoveAll",
-			logging.Stringer("RemoveAllRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveAllRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("RemoveAll",
-			logging.Stringer("RemoveAllRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("RemoveAllRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -550,14 +549,14 @@ func (s *multiMapClient) RemoveAll(ctx context.Context, request *multimapv1.Remo
 		Updated: output.Updated,
 	}
 	log.Debugw("RemoveAll",
-		logging.Stringer("RemoveAllRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("RemoveAllResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("RemoveAllRequest", request),
+		logging.Stringer("RemoveAllResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) RemoveEntries(ctx context.Context, request *multimapv1.RemoveEntriesRequest) (*multimapv1.RemoveEntriesResponse, error) {
 	log.Debugw("RemoveEntries",
-		logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("RemoveEntriesRequest", request))
 	entries := make(map[int][]multimapprotocolv1.Entry)
 	for _, entry := range request.Entries {
 		index := s.PartitionIndex([]byte(entry.Key))
@@ -580,14 +579,14 @@ func (s *multiMapClient) RemoveEntries(ctx context.Context, request *multimapv1.
 		session, err := partition.GetSession(ctx)
 		if err != nil {
 			log.Warnw("RemoveEntries",
-				logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("RemoveEntriesRequest", request),
 				logging.Error("Error", err))
 			return false, err
 		}
 		primitive, err := session.GetPrimitive(request.ID.Name)
 		if err != nil {
 			log.Warnw("RemoveEntries",
-				logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("RemoveEntriesRequest", request),
 				logging.Error("Error", err))
 			return false, err
 		}
@@ -603,12 +602,12 @@ func (s *multiMapClient) RemoveEntries(ctx context.Context, request *multimapv1.
 		})
 		if !ok {
 			log.Warnw("RemoveEntries",
-				logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("RemoveEntriesRequest", request),
 				logging.Error("Error", err))
 			return false, err
 		} else if err != nil {
 			log.Debugw("RemoveEntries",
-				logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("RemoveEntriesRequest", request),
 				logging.Error("Error", err))
 			return false, err
 		}
@@ -624,28 +623,28 @@ func (s *multiMapClient) RemoveEntries(ctx context.Context, request *multimapv1.
 		}
 	}
 	log.Debugw("RemoveEntries",
-		logging.Stringer("RemoveEntriesRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("RemoveEntriesResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("RemoveEntriesRequest", request),
+		logging.Stringer("RemoveEntriesResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) Clear(ctx context.Context, request *multimapv1.ClearRequest) (*multimapv1.ClearResponse, error) {
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("ClearRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
 		session, err := partition.GetSession(ctx)
 		if err != nil {
 			log.Warnw("Clear",
-				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
 		primitive, err := session.GetPrimitive(request.ID.Name)
 		if err != nil {
 			log.Warnw("Clear",
-				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -658,12 +657,12 @@ func (s *multiMapClient) Clear(ctx context.Context, request *multimapv1.ClearReq
 		})
 		if !ok {
 			log.Warnw("Clear",
-				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		} else if err != nil {
 			log.Debugw("Clear",
-				logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+				logging.Stringer("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -674,14 +673,14 @@ func (s *multiMapClient) Clear(ctx context.Context, request *multimapv1.ClearReq
 	}
 	response := &multimapv1.ClearResponse{}
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("ClearResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("ClearRequest", request),
+		logging.Stringer("ClearResponse", response))
 	return response, nil
 }
 
 func (s *multiMapClient) Events(request *multimapv1.EventsRequest, server multimapv1.MultiMap_EventsServer) error {
 	log.Debugw("Events received",
-		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EventsRequest", request))
 	partitions := s.Partitions()
 	ch := make(chan streams.Result[*multimapv1.EventsResponse])
 	wg := &sync.WaitGroup{}
@@ -692,7 +691,7 @@ func (s *multiMapClient) Events(request *multimapv1.EventsRequest, server multim
 			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Events",
-					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+					logging.Stringer("EventsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*multimapv1.EventsResponse]{
 					Error: err,
@@ -702,7 +701,7 @@ func (s *multiMapClient) Events(request *multimapv1.EventsRequest, server multim
 			primitive, err := session.GetPrimitive(request.ID.Name)
 			if err != nil {
 				log.Warnw("Events",
-					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+					logging.Stringer("EventsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*multimapv1.EventsResponse]{
 					Error: err,
@@ -720,7 +719,7 @@ func (s *multiMapClient) Events(request *multimapv1.EventsRequest, server multim
 			})
 			if err != nil {
 				log.Warnw("Events",
-					logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+					logging.Stringer("EventsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*multimapv1.EventsResponse]{
 					Error: err,
@@ -732,7 +731,7 @@ func (s *multiMapClient) Events(request *multimapv1.EventsRequest, server multim
 				if !ok {
 					if err != io.EOF {
 						log.Warnw("Events",
-							logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+							logging.Stringer("EventsRequest", request),
 							logging.Error("Error", err))
 						ch <- streams.Result[*multimapv1.EventsResponse]{
 							Error: err,
@@ -742,7 +741,7 @@ func (s *multiMapClient) Events(request *multimapv1.EventsRequest, server multim
 				}
 				if err != nil {
 					log.Debugw("Events",
-						logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+						logging.Stringer("EventsRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*multimapv1.EventsResponse]{
 						Error: errors.ToProto(err),
@@ -768,8 +767,8 @@ func (s *multiMapClient) Events(request *multimapv1.EventsRequest, server multim
 						}
 					}
 					log.Debugw("Events",
-						logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
-						logging.Stringer("EventsResponse", stringer.Truncate(response, truncLen)))
+						logging.Stringer("EventsRequest", request),
+						logging.Stringer("EventsResponse", response))
 					ch <- streams.Result[*multimapv1.EventsResponse]{
 						Value: response,
 					}
@@ -792,13 +791,13 @@ func (s *multiMapClient) Events(request *multimapv1.EventsRequest, server multim
 		}
 	}
 	log.Debugw("Events complete",
-		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EventsRequest", request))
 	return nil
 }
 
 func (s *multiMapClient) Entries(request *multimapv1.EntriesRequest, server multimapv1.MultiMap_EntriesServer) error {
 	log.Debugw("Entries received",
-		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EntriesRequest", request))
 	partitions := s.Partitions()
 	ch := make(chan streams.Result[*multimapv1.EntriesResponse])
 	wg := &sync.WaitGroup{}
@@ -809,7 +808,7 @@ func (s *multiMapClient) Entries(request *multimapv1.EntriesRequest, server mult
 			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Entries",
-					logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+					logging.Stringer("EntriesRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*multimapv1.EntriesResponse]{
 					Error: err,
@@ -819,7 +818,7 @@ func (s *multiMapClient) Entries(request *multimapv1.EntriesRequest, server mult
 			primitive, err := session.GetPrimitive(request.ID.Name)
 			if err != nil {
 				log.Warnw("Entries",
-					logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+					logging.Stringer("EntriesRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*multimapv1.EntriesResponse]{
 					Error: err,
@@ -837,7 +836,7 @@ func (s *multiMapClient) Entries(request *multimapv1.EntriesRequest, server mult
 			})
 			if err != nil {
 				log.Warnw("Entries",
-					logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+					logging.Stringer("EntriesRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*multimapv1.EntriesResponse]{
 					Error: err,
@@ -849,7 +848,7 @@ func (s *multiMapClient) Entries(request *multimapv1.EntriesRequest, server mult
 				if !ok {
 					if err != io.EOF {
 						log.Warnw("Entries",
-							logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+							logging.Stringer("EntriesRequest", request),
 							logging.Error("Error", err))
 						ch <- streams.Result[*multimapv1.EntriesResponse]{
 							Error: err,
@@ -859,7 +858,7 @@ func (s *multiMapClient) Entries(request *multimapv1.EntriesRequest, server mult
 				}
 				if err != nil {
 					log.Debugw("Entries",
-						logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
+						logging.Stringer("EntriesRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*multimapv1.EntriesResponse]{
 						Error: errors.ToProto(err),
@@ -872,8 +871,8 @@ func (s *multiMapClient) Entries(request *multimapv1.EntriesRequest, server mult
 						},
 					}
 					log.Debugw("Entries",
-						logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)),
-						logging.Stringer("EntriesResponse", stringer.Truncate(response, truncLen)))
+						logging.Stringer("EntriesRequest", request),
+						logging.Stringer("EntriesResponse", response))
 					ch <- streams.Result[*multimapv1.EntriesResponse]{
 						Value: response,
 					}
@@ -896,7 +895,7 @@ func (s *multiMapClient) Entries(request *multimapv1.EntriesRequest, server mult
 		}
 	}
 	log.Debugw("Entries complete",
-		logging.Stringer("EntriesRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("EntriesRequest", request))
 	return nil
 }
 

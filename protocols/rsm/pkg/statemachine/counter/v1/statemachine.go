@@ -5,8 +5,8 @@
 package v1
 
 import (
-	counterprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/counter/v1"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	counterprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/counter/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 )

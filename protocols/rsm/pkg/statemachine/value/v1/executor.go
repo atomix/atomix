@@ -5,7 +5,7 @@
 package v1
 
 import (
-	valueprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/value/v1"
+	valueprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/gogo/protobuf/proto"

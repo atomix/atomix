@@ -5,7 +5,7 @@
 package v1
 
 import (
-	electionprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/election/v1"
+	electionprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/election/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/gogo/protobuf/proto"

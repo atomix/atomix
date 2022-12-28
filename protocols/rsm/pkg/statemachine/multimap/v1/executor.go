@@ -5,7 +5,7 @@
 package v1
 
 import (
-	multimapprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/multimap/v1"
+	multimapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/multimap/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/gogo/protobuf/proto"

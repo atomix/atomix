@@ -5,8 +5,8 @@
 package v1
 
 import (
-	lockprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/lock/v1"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	lockprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/lock/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 )

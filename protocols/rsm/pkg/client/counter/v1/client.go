@@ -6,97 +6,96 @@ package v1
 
 import (
 	"context"
-	counterv1 "github.com/atomix/atomix/api/pkg/runtime/counter/v1"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
-	counterprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/counter/v1"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	counterv1 "github.com/atomix/atomix/api/runtime/counter/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	counterprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/counter/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	counterruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/counter/v1"
-	"github.com/atomix/atomix/runtime/pkg/utils/stringer"
 	"google.golang.org/grpc"
 )
 
 var log = logging.GetLogger()
 
-const truncLen = 200
-
-func NewCounter(protocol *client.Protocol, spec runtimev1.PrimitiveSpec) (counterruntimev1.Counter, error) {
+func NewCounter(protocol *client.Protocol) (counterruntimev1.Counter, error) {
 	return &counterClient{
-		Protocol:      protocol,
-		PrimitiveSpec: spec,
+		Protocol: protocol,
 	}, nil
 }
 
 type counterClient struct {
 	*client.Protocol
-	runtimev1.PrimitiveSpec
 }
 
 func (s *counterClient) Create(ctx context.Context, request *counterv1.CreateRequest) (*counterv1.CreateResponse, error) {
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("CreateRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
-	if err := session.CreatePrimitive(ctx, s.PrimitiveMeta); err != nil {
+	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
+		Type:        counterruntimev1.PrimitiveType,
+		PrimitiveID: request.ID,
+		Tags:        request.Tags,
+	}); err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &counterv1.CreateResponse{}
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("CreateResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("CreateRequest", request),
+		logging.Stringer("CreateResponse", response))
 	return response, nil
 }
 
 func (s *counterClient) Close(ctx context.Context, request *counterv1.CloseRequest) (*counterv1.CloseResponse, error) {
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("CloseRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	response := &counterv1.CloseResponse{}
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("CloseResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("CloseRequest", request),
+		logging.Stringer("CloseResponse", response))
 	return response, nil
 }
 
 func (s *counterClient) Set(ctx context.Context, request *counterv1.SetRequest) (*counterv1.SetResponse, error) {
 	log.Debugw("Set",
-		logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("SetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -111,12 +110,12 @@ func (s *counterClient) Set(ctx context.Context, request *counterv1.SetRequest) 
 	})
 	if !ok {
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Set",
-			logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -124,26 +123,26 @@ func (s *counterClient) Set(ctx context.Context, request *counterv1.SetRequest) 
 		Value: output.Value,
 	}
 	log.Debugw("Set",
-		logging.Stringer("SetRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("SetResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("SetRequest", request),
+		logging.Stringer("SetResponse", response))
 	return response, nil
 }
 
 func (s *counterClient) Get(ctx context.Context, request *counterv1.GetRequest) (*counterv1.GetResponse, error) {
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -156,12 +155,12 @@ func (s *counterClient) Get(ctx context.Context, request *counterv1.GetRequest) 
 	})
 	if !ok {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Get",
-			logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -169,26 +168,26 @@ func (s *counterClient) Get(ctx context.Context, request *counterv1.GetRequest) 
 		Value: output.Value,
 	}
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("GetResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("GetRequest", request),
+		logging.Stringer("GetResponse", response))
 	return response, nil
 }
 
 func (s *counterClient) Increment(ctx context.Context, request *counterv1.IncrementRequest) (*counterv1.IncrementResponse, error) {
 	log.Debugw("Increment",
-		logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("IncrementRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Increment",
-			logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Increment",
-			logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -203,12 +202,12 @@ func (s *counterClient) Increment(ctx context.Context, request *counterv1.Increm
 	})
 	if !ok {
 		log.Warnw("Increment",
-			logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Increment",
-			logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -216,26 +215,26 @@ func (s *counterClient) Increment(ctx context.Context, request *counterv1.Increm
 		Value: output.Value,
 	}
 	log.Debugw("Increment",
-		logging.Stringer("IncrementRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("IncrementResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("IncrementRequest", request),
+		logging.Stringer("IncrementResponse", response))
 	return response, nil
 }
 
 func (s *counterClient) Decrement(ctx context.Context, request *counterv1.DecrementRequest) (*counterv1.DecrementResponse, error) {
 	log.Debugw("Decrement",
-		logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("DecrementRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Decrement",
-			logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Decrement",
-			logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -250,12 +249,12 @@ func (s *counterClient) Decrement(ctx context.Context, request *counterv1.Decrem
 	})
 	if !ok {
 		log.Warnw("Decrement",
-			logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Decrement",
-			logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -263,26 +262,26 @@ func (s *counterClient) Decrement(ctx context.Context, request *counterv1.Decrem
 		Value: output.Value,
 	}
 	log.Debugw("Decrement",
-		logging.Stringer("DecrementRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("DecrementResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("DecrementRequest", request),
+		logging.Stringer("DecrementResponse", response))
 	return response, nil
 }
 
 func (s *counterClient) Update(ctx context.Context, request *counterv1.UpdateRequest) (*counterv1.UpdateResponse, error) {
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)))
+		logging.Stringer("UpdateRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -298,12 +297,12 @@ func (s *counterClient) Update(ctx context.Context, request *counterv1.UpdateReq
 	})
 	if !ok {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	} else if err != nil {
 		log.Debugw("Update",
-			logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
+			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, errors.ToProto(err)
 	}
@@ -311,8 +310,8 @@ func (s *counterClient) Update(ctx context.Context, request *counterv1.UpdateReq
 		Value: output.Value,
 	}
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", stringer.Truncate(request, truncLen)),
-		logging.Stringer("UpdateResponse", stringer.Truncate(response, truncLen)))
+		logging.Stringer("UpdateRequest", request),
+		logging.Stringer("UpdateResponse", response))
 	return response, nil
 }
 

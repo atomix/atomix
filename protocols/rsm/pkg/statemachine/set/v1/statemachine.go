@@ -5,8 +5,8 @@
 package v1
 
 import (
-	setprotocolv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/set/v1"
-	protocol "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	setprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/set/v1"
+	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"sync"
