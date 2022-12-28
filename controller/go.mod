@@ -3,9 +3,8 @@ module github.com/atomix/atomix/controller
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221228090355-f80263b9b241
-	github.com/atomix/atomix/common v0.0.0-20221218014837-eec7ba47625a
-	github.com/atomix/atomix/runtime v0.0.0-20221219085404-5679432a0742
+	github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978
+	github.com/atomix/atomix/runtime v0.0.0-20221228222855-b2275fb2adbe
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/spf13/cobra v1.4.0
@@ -21,6 +20,7 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful v2.9.5+incompatible // indirect

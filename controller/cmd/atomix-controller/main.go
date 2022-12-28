@@ -7,10 +7,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/atomix/atomix/common/pkg/logging"
 	"github.com/atomix/atomix/controller/pkg/apis"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/controller/atomix/v3beta3"
 	"github.com/atomix/atomix/controller/pkg/controller/util/k8s"
+	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 	"os"

@@ -7,10 +7,11 @@ package v3beta3
 import (
 	"context"
 	"fmt"
+	"github.com/atomix/atomix/api/errors"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	"github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors"
 	gogotypes "github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -272,7 +273,6 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, log logging.Logger, 
 			}
 			_, err = client.Disconnect(ctx, request)
 			if err != nil {
-				err = errors.FromProto(err)
 				if !errors.IsNotFound(err) {
 					log.Error(err)
 					r.events.Eventf(pod, "Warning", "DisconnectStoreFailed", "Failed disconnecting from store '%s': %s", storeNamespacedName, err)
@@ -333,7 +333,6 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, log logging.Logger, 
 		}
 		_, err = client.Connect(ctx, request)
 		if err != nil {
-			err = errors.FromProto(err)
 			if !errors.IsAlreadyExists(err) {
 				log.Error(err)
 				r.events.Eventf(pod, "Warning", "ConnectStoreFailed", "Failed connecting to store '%s': %s", storeNamespacedName, err)
@@ -379,7 +378,6 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, log logging.Logger, 
 		}
 		_, err = client.Configure(ctx, request)
 		if err != nil {
-			err = errors.FromProto(err)
 			if !errors.IsNotFound(err) {
 				r.events.Eventf(pod, "Warning", "ConfigureStoreFailed", "Failed reconfiguring store '%s': %s", storeNamespacedName, err)
 				log.Error(err)
@@ -469,5 +467,8 @@ func (r *PodReconciler) setReadyCondition(ctx context.Context, log logging.Logge
 
 func connect(ctx context.Context, pod *corev1.Pod) (*grpc.ClientConn, error) {
 	target := fmt.Sprintf("%s:%d", pod.Status.PodIP, defaultProxyPort)
-	return grpc.DialContext(ctx, target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	return grpc.DialContext(ctx, target,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(interceptors.ErrorHandlingUnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(interceptors.RetryingStreamClientInterceptor()))
 }

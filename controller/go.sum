@@ -66,12 +66,10 @@ github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmV
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
-github.com/atomix/atomix/api v0.0.0-20221228090355-f80263b9b241 h1:lYPsc42aqirdztDJe5GoF0p6bNMnF45x9JdNawv6p+U=
-github.com/atomix/atomix/api v0.0.0-20221228090355-f80263b9b241/go.mod h1:PNMOo77ofCaaZqmj3uC7cfclGEI9NCcue/G5VXSon7k=
-github.com/atomix/atomix/common v0.0.0-20221218014837-eec7ba47625a h1:wl0Dluvco99pHI2q9QFy6+ICpDVHO2JHXL0ECHIWMWU=
-github.com/atomix/atomix/common v0.0.0-20221218014837-eec7ba47625a/go.mod h1:f+7MtZqcoNS6G3anGqBNJS8HjzZlnkBVOLTGhzbiwOg=
-github.com/atomix/atomix/runtime v0.0.0-20221219085404-5679432a0742 h1:7wLBCITMTqFsdEV69RwFsvT1RpPHHwYMelVlV6+z2bc=
-github.com/atomix/atomix/runtime v0.0.0-20221219085404-5679432a0742/go.mod h1:Hx3TvGEuLNpHlKOZhORorUZaRs/TljX9ohk6cYy/JFQ=
+github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978 h1:QwDDxnD2rLVsJxxxrmXj8xWOR7dOvPT6euefiayl4gw=
+github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978/go.mod h1:PNMOo77ofCaaZqmj3uC7cfclGEI9NCcue/G5VXSon7k=
+github.com/atomix/atomix/runtime v0.0.0-20221228222855-b2275fb2adbe h1:2Xcf/yJ//IKyPNU60ouJ2MzBCmKmr6C8EFVde6qdYiw=
+github.com/atomix/atomix/runtime v0.0.0-20221228222855-b2275fb2adbe/go.mod h1:vcFpNMTviuy9HrkFp8Gly7/YGfLPavLL2jVTrRlyXHs=
 github.com/benbjohnson/clock v1.0.3/go.mod h1:bGMdMPoPVvcYyt1gHDf4J2KE153Yf9BuiUKYMaxlTDM=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
@@ -82,6 +80,8 @@ github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6r
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
 github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c/go.mod h1:MKsuJmJgSg28kpZDP6UIiPt0e0Oz0kqKNGyRaWEPv84=
 github.com/blang/semver/v4 v4.0.0/go.mod h1:IbckMUScFkM3pff0VJDNKRiT6TG/YpiHIM2yvyW5YoQ=
+github.com/cenkalti/backoff v2.2.1+incompatible h1:tNowT99t7UNflLxfYYSlKYsBpXdEet03Pg2g16Swow4=
+github.com/cenkalti/backoff v2.2.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/certifi/gocertifi v0.0.0-20191021191039-0944d244cd40/go.mod h1:sGbDF6GwGcLpkNXPUTkMRoywsNa/ol15pxFe6ERfguA=
 github.com/certifi/gocertifi v0.0.0-20200922220541-2c3bb06c6054/go.mod h1:sGbDF6GwGcLpkNXPUTkMRoywsNa/ol15pxFe6ERfguA=
