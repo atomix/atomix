@@ -25,16 +25,16 @@ RUN go run ./cmd/atomix-build driver \
     /build/bin/Raft@v2beta1.so
 
 # Build the shared-memory storage driver
-#FROM builder AS build-shared-memory-driver
-#RUN go run ./cmd/atomix-build driver \
-#    github.com/atomix/atomix/drivers/shared-memory@0e8a3678a \
-#    /build/bin/SharedMemory@v2beta1.so
+FROM builder AS build-shared-memory-driver
+RUN go run ./cmd/atomix-build driver \
+    github.com/atomix/atomix/drivers/shared-memory@20230bb9c \
+    /build/bin/SharedMemory@v2beta1.so
 
 # Build the pod-memory storage driver
-#FROM builder AS build-pod-memory-driver
-#RUN go run ./cmd/atomix-build driver \
-#    github.com/atomix/atomix/drivers/pod-memory@0e8a3678a \
-#    /build/bin/PodMemory@v2beta1.so
+FROM builder AS build-pod-memory-driver
+RUN go run ./cmd/atomix-build driver \
+    github.com/atomix/atomix/drivers/pod-memory@20230bb9c \
+    /build/bin/PodMemory@v2beta1.so
 
 # Build the etcd storage driver
 FROM builder AS build-etcd-driver
@@ -53,8 +53,8 @@ USER atomix
 
 COPY --from=build-proxy /build/bin/atomix-proxy /usr/local/bin/atomix-proxy
 COPY --from=build-raft-driver /build/bin/Raft@v2beta1.so /var/atomix/plugins/
-#COPY --from=build-shared-memory-driver /build/bin/SharedMemory@v2beta1.so /var/atomix/plugins/
-#COPY --from=build-pod-memory-driver /build/bin/PodMemory@v2beta1.so /var/atomix/plugins/
+COPY --from=build-shared-memory-driver /build/bin/SharedMemory@v2beta1.so /var/atomix/plugins/
+COPY --from=build-pod-memory-driver /build/bin/PodMemory@v2beta1.so /var/atomix/plugins/
 COPY --from=build-etcd-driver /build/bin/Etcd@v3.so /var/atomix/plugins/
 
 ENTRYPOINT ["atomix-proxy"]
