@@ -74,12 +74,14 @@ github.com/armon/go-metrics v0.3.10 h1:FR+drcQStOe+32sYyJYyZ7FIdgoGGBnwLl+flodp8
 github.com/armon/go-metrics v0.3.10/go.mod h1:4O98XIr/9W0sxpJ8UaYkvjk10Iff7SnFrb4QAOwNTFc=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
+github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978 h1:QwDDxnD2rLVsJxxxrmXj8xWOR7dOvPT6euefiayl4gw=
+github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978/go.mod h1:PNMOo77ofCaaZqmj3uC7cfclGEI9NCcue/G5VXSon7k=
 github.com/atomix/atomix/controller v0.0.0-20221220011019-e8424decc5f9 h1:QhNy5qzz8DgETY7AArNn8X07DzWnQ4DyBv5idiFHGmY=
 github.com/atomix/atomix/controller v0.0.0-20221220011019-e8424decc5f9/go.mod h1:gs4XV5xf3QI/Dyi/KPLPSa9lbbfbOBfC+jRcVfH4y40=
-github.com/atomix/atomix/protocols/rsm v0.0.0-20221220011019-e8424decc5f9 h1:CcbnKuMoLjzH3H5DPEcTSi48VxmZV4VbjA819Ivf1ng=
-github.com/atomix/atomix/protocols/rsm v0.0.0-20221220011019-e8424decc5f9/go.mod h1:/hJ90FMWYUBI71Up1rGdbDSaXVpqgndI8EZn/hh2xlY=
-github.com/atomix/atomix/runtime v0.0.0-20221221235030-70fe55b080eb h1:/VoL8iziSNQUSC3IKNMl/b6nwsTnZIBJV0pkSShA6gY=
-github.com/atomix/atomix/runtime v0.0.0-20221221235030-70fe55b080eb/go.mod h1:5ILGBlRDKUz/jry3Pzgnjpmg6AP8CBRwpP+z1cqYe08=
+github.com/atomix/atomix/protocols/rsm v0.0.0-20221228222855-b2275fb2adbe h1:rSHxRFf73HzKeFfPu0dy6pIbQ4hYApABbnJqugpjF+0=
+github.com/atomix/atomix/protocols/rsm v0.0.0-20221228222855-b2275fb2adbe/go.mod h1:JKQ9+w+jID9mdXyy/CLUy7+DQcDwQX4whaBMXpAc57k=
+github.com/atomix/atomix/runtime v0.0.0-20221228222855-b2275fb2adbe h1:2Xcf/yJ//IKyPNU60ouJ2MzBCmKmr6C8EFVde6qdYiw=
+github.com/atomix/atomix/runtime v0.0.0-20221228222855-b2275fb2adbe/go.mod h1:vcFpNMTviuy9HrkFp8Gly7/YGfLPavLL2jVTrRlyXHs=
 github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible/go.mod h1:osfaiScAUVup+UC9Nfq76eWqDhXlp+4UYaA8uhTBO6g=
 github.com/benbjohnson/clock v1.0.3/go.mod h1:bGMdMPoPVvcYyt1gHDf4J2KE153Yf9BuiUKYMaxlTDM=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
@@ -236,8 +238,6 @@ github.com/golang/mock v1.4.1/go.mod h1:UOMv5ysSaYNkG+OFQykRIcU/QvvxJf3p21QfJ2Bt
 github.com/golang/mock v1.4.3/go.mod h1:UOMv5ysSaYNkG+OFQykRIcU/QvvxJf3p21QfJ2Bt3cw=
 github.com/golang/mock v1.4.4/go.mod h1:l3mdAwkq5BuhzHwde/uurv3sEJeZMXNpwsxVWU71h+4=
 github.com/golang/mock v1.5.0/go.mod h1:CWnOUgYIOo4TcNZ0wHX3YZCqsaM1I1Jvs6v3mP3KVu8=
-github.com/golang/mock v1.6.0 h1:ErTB+efbowRARo13NNdxyJji2egdxLGQhRaY+DUumQc=
-github.com/golang/mock v1.6.0/go.mod h1:p6yTPP+5HYm5mzsMV8JkE6ZKdX+/wYM6Hr+LicevLPs=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
@@ -847,7 +847,6 @@ golang.org/x/tools v0.0.0-20201208233053-a543418bbed2/go.mod h1:emZCQorbCU4vsT4f
 golang.org/x/tools v0.0.0-20210105154028-b0ab187a4818/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.0.0-20210106214847-113979e3529a/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.1.0/go.mod h1:xkSsbof2nBLbhDlRMhhhyNLN/zl3eTqcnHD5viDpcZ0=
-golang.org/x/tools v0.1.1/go.mod h1:o0xws9oXOQQZyjljx8fwUC0k7L1pTE6eaCbjGeHmOkk=
 golang.org/x/tools v0.1.5/go.mod h1:o0xws9oXOQQZyjljx8fwUC0k7L1pTE6eaCbjGeHmOkk=
 golang.org/x/tools v0.1.10-0.20220218145154-897bd77cd717/go.mod h1:Uh6Zz+xoGYZom868N8YTex3t7RhtHDBrE8Gzo9bV56E=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
@@ -855,7 +854,6 @@ golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f h1:GGU+dLjvlC3qDwqYgL6UgRmHXhOOgns0bZu2Ty5mm6U=
-golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 gomodules.xyz/jsonpatch/v2 v2.2.0 h1:4pT439QV83L+G9FkcCriY6EkpcK6r6bK+A5FBUMI7qY=
 gomodules.xyz/jsonpatch/v2 v2.2.0/go.mod h1:WXp+iVDkoLQqPudfQ9GBlwB2eZ5DKOnjQZCYdOS8GPY=
 google.golang.org/api v0.4.0/go.mod h1:8k5glujaEP+g9n7WNsDg8QP6cUVNI86fCNMcbazEtwE=

@@ -5,9 +5,9 @@
 package raft
 
 import (
-	rsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	rsmv1 "github.com/atomix/atomix/protocols/rsm/api/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
-	raftv1 "github.com/atomix/atomix/stores/raft/pkg/api/v1"
+	raftv1 "github.com/atomix/atomix/stores/raft/api/v1"
 	"sync"
 	"sync/atomic"
 )

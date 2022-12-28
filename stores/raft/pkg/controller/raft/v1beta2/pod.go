@@ -7,13 +7,12 @@ package v1beta2
 import (
 	"context"
 	"fmt"
-	"github.com/atomix/atomix/runtime/pkg/errors"
-	"github.com/atomix/atomix/runtime/pkg/grpc/retry"
+	"github.com/atomix/atomix/api/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	raftv1 "github.com/atomix/atomix/stores/raft/pkg/api/v1"
+	"github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors"
+	raftv1 "github.com/atomix/atomix/stores/raft/api/v1"
 	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	corev1 "k8s.io/api/core/v1"
@@ -156,7 +155,12 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 		conn, err := grpc.Dial(
 			address,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithStreamInterceptor(retry.RetryingStreamClientInterceptor(retry.WithRetryOn(codes.Unavailable))))
+			grpc.WithChainUnaryInterceptor(
+				interceptors.ErrorHandlingUnaryClientInterceptor(),
+				interceptors.RetryingUnaryClientInterceptor()),
+			grpc.WithChainStreamInterceptor(
+				interceptors.ErrorHandlingStreamClientInterceptor(),
+				interceptors.RetryingStreamClientInterceptor()))
 		if err != nil {
 			log.Warn(err)
 			return
@@ -178,7 +182,6 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 				return
 			}
 			if err != nil {
-				err = errors.FromProto(err)
 				if errors.IsCanceled(err) {
 					log.Warn("Watch canceled")
 					return

@@ -6,11 +6,11 @@ package raft
 
 import (
 	"context"
-	rsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	"github.com/atomix/atomix/api/errors"
+	rsmv1 "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
-	raftv1 "github.com/atomix/atomix/stores/raft/pkg/api/v1"
+	raftv1 "github.com/atomix/atomix/stores/raft/api/v1"
 	"github.com/gogo/protobuf/proto"
 	"github.com/lni/dragonboat/v3"
 	"google.golang.org/grpc/metadata"

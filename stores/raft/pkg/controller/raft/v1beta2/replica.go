@@ -7,9 +7,10 @@ package v1beta2
 import (
 	"context"
 	"fmt"
-	"github.com/atomix/atomix/runtime/pkg/errors"
+	"github.com/atomix/atomix/api/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	raftv1 "github.com/atomix/atomix/stores/raft/pkg/api/v1"
+	"github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors"
+	raftv1 "github.com/atomix/atomix/stores/raft/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	corev1 "k8s.io/api/core/v1"
@@ -332,9 +333,11 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 			}
 
 			address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
-			conn, err := grpc.DialContext(ctx, address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+			conn, err := grpc.DialContext(ctx, address,
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
+				grpc.WithUnaryInterceptor(interceptors.ErrorHandlingUnaryClientInterceptor()),
+				grpc.WithStreamInterceptor(interceptors.ErrorHandlingStreamClientInterceptor()))
 			if err != nil {
-				err = errors.FromProto(err)
 				if !errors.IsUnavailable(err) {
 					log.Warn(err)
 				}
@@ -352,7 +355,6 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 				Config:   config,
 			}
 			if _, err := node.BootstrapGroup(ctx, request); err != nil {
-				err = errors.FromProto(err)
 				if !errors.IsUnavailable(err) && !errors.IsAlreadyExists(err) {
 					log.Warn(err)
 					r.events.Eventf(store, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
@@ -396,9 +398,11 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 					}
 
 					address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
-					conn, err := grpc.DialContext(ctx, address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+					conn, err := grpc.DialContext(ctx, address,
+						grpc.WithTransportCredentials(insecure.NewCredentials()),
+						grpc.WithUnaryInterceptor(interceptors.ErrorHandlingUnaryClientInterceptor()),
+						grpc.WithStreamInterceptor(interceptors.ErrorHandlingStreamClientInterceptor()))
 					if err != nil {
-						err = errors.FromProto(err)
 						if !errors.IsUnavailable(err) {
 							log.Warn(err)
 						}
@@ -416,7 +420,6 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 					_, err = client.JoinGroup(ctx, request)
 					_ = conn.Close()
 					if err != nil {
-						err = errors.FromProto(err)
 						if !errors.IsUnavailable(err) && !errors.IsAlreadyExists(err) {
 							log.Warn(err)
 							r.events.Eventf(store, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
@@ -464,9 +467,11 @@ func (r *RaftReplicaReconciler) tryAddReplica(ctx context.Context, log logging.L
 	}
 
 	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
-	conn, err := grpc.DialContext(ctx, address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.DialContext(ctx, address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(interceptors.ErrorHandlingUnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(interceptors.ErrorHandlingStreamClientInterceptor()))
 	if err != nil {
-		err = errors.FromProto(err)
 		if !errors.IsUnavailable(err) {
 			log.Warn(err)
 		}
@@ -480,7 +485,6 @@ func (r *RaftReplicaReconciler) tryAddReplica(ctx context.Context, log logging.L
 	}
 	getConfigResponse, err := client.GetConfig(ctx, getConfigRequest)
 	if err != nil {
-		err = errors.FromProto(err)
 		if !errors.IsUnavailable(err) {
 			log.Warn(err)
 		}
@@ -500,7 +504,6 @@ func (r *RaftReplicaReconciler) tryAddReplica(ctx context.Context, log logging.L
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	if _, err := client.AddMember(ctx, addMemberRequest); err != nil {
-		err = errors.FromProto(err)
 		if !errors.IsUnavailable(err) {
 			log.Warn(err)
 			r.events.Eventf(store, "Warning", "ConfigurationChangeFailed", "Failed to add replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
@@ -535,9 +538,11 @@ func (r *RaftReplicaReconciler) removeReplica(ctx context.Context, log logging.L
 	}
 
 	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
-	conn, err := grpc.DialContext(ctx, address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.DialContext(ctx, address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(interceptors.ErrorHandlingUnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(interceptors.ErrorHandlingStreamClientInterceptor()))
 	if err != nil {
-		err = errors.FromProto(err)
 		if !errors.IsUnavailable(err) {
 			log.Warn(err)
 		}
@@ -552,7 +557,6 @@ func (r *RaftReplicaReconciler) removeReplica(ctx context.Context, log logging.L
 		GroupID: raftv1.GroupID(replica.Spec.GroupID),
 	}
 	if _, err := node.LeaveGroup(ctx, request); err != nil {
-		err = errors.FromProto(err)
 		if !errors.IsUnavailable(err) {
 			log.Warn(err)
 		}
@@ -596,9 +600,11 @@ func (r *RaftReplicaReconciler) tryRemoveReplica(ctx context.Context, log loggin
 	}
 
 	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
-	conn, err := grpc.DialContext(ctx, address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.DialContext(ctx, address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(interceptors.ErrorHandlingUnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(interceptors.ErrorHandlingStreamClientInterceptor()))
 	if err != nil {
-		err = errors.FromProto(err)
 		if !errors.IsUnavailable(err) {
 			log.Warn(err)
 		}
@@ -612,7 +618,6 @@ func (r *RaftReplicaReconciler) tryRemoveReplica(ctx context.Context, log loggin
 	}
 	getConfigResponse, err := client.GetConfig(ctx, getConfigRequest)
 	if err != nil {
-		err = errors.FromProto(err)
 		if !errors.IsUnavailable(err) {
 			log.Warn(err)
 		}
@@ -628,7 +633,6 @@ func (r *RaftReplicaReconciler) tryRemoveReplica(ctx context.Context, log loggin
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	if _, err := client.RemoveMember(ctx, removeMemberRequest); err != nil {
-		err = errors.FromProto(err)
 		if !errors.IsUnavailable(err) {
 			log.Warn(err)
 			r.events.Eventf(store, "Warning", "ConfigurationChangeFailed", "Failed to remove replica %d from partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())

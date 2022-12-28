@@ -6,9 +6,9 @@ package raft
 
 import (
 	"context"
-	"github.com/atomix/atomix/runtime/pkg/errors"
+	"github.com/atomix/atomix/api/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	raftv1 "github.com/atomix/atomix/stores/raft/pkg/api/v1"
+	raftv1 "github.com/atomix/atomix/stores/raft/api/v1"
 )
 
 func NewNodeServer(protocol *Protocol) raftv1.NodeServer {
@@ -29,7 +29,7 @@ func (s *nodeServer) GetConfig(ctx context.Context, request *raftv1.GetConfigReq
 		log.Warnw("GetConfig",
 			logging.Stringer("GetConfigRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &raftv1.GetConfigResponse{
 		Group: config,
@@ -48,20 +48,20 @@ func (s *nodeServer) BootstrapGroup(ctx context.Context, request *raftv1.Bootstr
 		log.Warnw("BootstrapGroup",
 			logging.Stringer("BootstrapGroupRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if request.MemberID == 0 {
 		err := errors.NewInvalid("member_id is required")
 		log.Warnw("BootstrapGroup",
 			logging.Stringer("BootstrapGroupRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := s.protocol.BootstrapGroup(ctx, request.GroupID, request.MemberID, request.Config, request.Members...); err != nil {
 		log.Warnw("BootstrapGroup",
 			logging.Stringer("BootstrapGroupRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &raftv1.BootstrapGroupResponse{}
 	log.Debugw("BootstrapGroup",
@@ -78,20 +78,20 @@ func (s *nodeServer) AddMember(ctx context.Context, request *raftv1.AddMemberReq
 		log.Warnw("AddMember",
 			logging.Stringer("AddMemberRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if request.Version == 0 {
 		err := errors.NewInvalid("version is required")
 		log.Warnw("AddMember",
 			logging.Stringer("AddMemberRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := s.protocol.AddMember(ctx, request.GroupID, request.Member, request.Version); err != nil {
 		log.Warnw("AddMember",
 			logging.Stringer("AddMemberRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &raftv1.AddMemberResponse{}
 	log.Debugw("AddMember",
@@ -108,27 +108,27 @@ func (s *nodeServer) RemoveMember(ctx context.Context, request *raftv1.RemoveMem
 		log.Warnw("RemoveMember",
 			logging.Stringer("RemoveMemberRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if request.MemberID == 0 {
 		err := errors.NewInvalid("member_id is required")
 		log.Warnw("RemoveMember",
 			logging.Stringer("RemoveMemberRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if request.Version == 0 {
 		err := errors.NewInvalid("version is required")
 		log.Warnw("RemoveMember",
 			logging.Stringer("RemoveMemberRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := s.protocol.RemoveMember(ctx, request.GroupID, request.MemberID, request.Version); err != nil {
 		log.Warnw("RemoveMember",
 			logging.Stringer("RemoveMemberRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &raftv1.RemoveMemberResponse{}
 	log.Debugw("RemoveMember",
@@ -145,20 +145,20 @@ func (s *nodeServer) JoinGroup(ctx context.Context, request *raftv1.JoinGroupReq
 		log.Warnw("JoinGroup",
 			logging.Stringer("JoinGroupRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if request.MemberID == 0 {
 		err := errors.NewInvalid("member_id is required")
 		log.Warnw("JoinGroup",
 			logging.Stringer("JoinGroupRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := s.protocol.JoinGroup(ctx, request.GroupID, request.MemberID, request.Config); err != nil {
 		log.Warnw("JoinGroup",
 			logging.Stringer("JoinGroupRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &raftv1.JoinGroupResponse{}
 	log.Debugw("JoinGroup",
@@ -175,13 +175,13 @@ func (s *nodeServer) LeaveGroup(ctx context.Context, request *raftv1.LeaveGroupR
 		log.Warnw("LeaveGroup",
 			logging.Stringer("LeaveGroupRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := s.protocol.LeaveGroup(ctx, request.GroupID); err != nil {
 		log.Warnw("LeaveGroup",
 			logging.Stringer("LeaveGroupRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &raftv1.LeaveGroupResponse{}
 	log.Debugw("LeaveGroup",
@@ -198,20 +198,20 @@ func (s *nodeServer) DeleteData(ctx context.Context, request *raftv1.DeleteDataR
 		log.Warnw("DeleteData",
 			logging.Stringer("DeleteDataRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if request.MemberID == 0 {
 		err := errors.NewInvalid("member_id is required")
 		log.Warnw("DeleteData",
 			logging.Stringer("DeleteDataRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := s.protocol.DeleteData(ctx, request.GroupID, request.MemberID); err != nil {
 		log.Warnw("DeleteData",
 			logging.Stringer("DeleteDataRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &raftv1.DeleteDataResponse{}
 	log.Debugw("DeleteData",
@@ -235,7 +235,7 @@ func (s *nodeServer) Watch(request *raftv1.WatchRequest, server raftv1.Node_Watc
 				logging.Stringer("WatchRequest", request),
 				logging.Stringer("NodeEvent", &event),
 				logging.Error("Error", err))
-			return errors.ToProto(err)
+			return err
 		}
 	}
 	return nil

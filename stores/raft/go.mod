@@ -3,9 +3,10 @@ module github.com/atomix/atomix/stores/raft
 go 1.19
 
 require (
+	github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978
 	github.com/atomix/atomix/controller v0.0.0-20221220011019-e8424decc5f9
-	github.com/atomix/atomix/protocols/rsm v0.0.0-20221220011019-e8424decc5f9
-	github.com/atomix/atomix/runtime v0.0.0-20221221235030-70fe55b080eb
+	github.com/atomix/atomix/protocols/rsm v0.0.0-20221228222855-b2275fb2adbe
+	github.com/atomix/atomix/runtime v0.0.0-20221228222855-b2275fb2adbe
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
@@ -42,7 +43,6 @@ require (
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3-0.20201103224600-674baa8c7fc3 // indirect
 	github.com/google/btree v1.0.1 // indirect
@@ -92,7 +92,6 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
-	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220407144326-9054f6ed7bac // indirect

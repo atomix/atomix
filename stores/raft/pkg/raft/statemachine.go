@@ -5,9 +5,9 @@
 package raft
 
 import (
-	rsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	rsmv1 "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
-	raftv1 "github.com/atomix/atomix/stores/raft/pkg/api/v1"
+	raftv1 "github.com/atomix/atomix/stores/raft/api/v1"
 	"github.com/gogo/protobuf/proto"
 	dbsm "github.com/lni/dragonboat/v3/statemachine"
 	"io"

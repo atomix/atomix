@@ -27,7 +27,7 @@ import (
 	setv1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/set/v1"
 	valuev1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/value/v1"
 	"github.com/atomix/atomix/runtime/pkg/network"
-	raftv1 "github.com/atomix/atomix/stores/raft/pkg/api/v1"
+	raftv1 "github.com/atomix/atomix/stores/raft/api/v1"
 	"github.com/atomix/atomix/stores/raft/pkg/raft"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -96,32 +96,11 @@ func main() {
 				raft.WithHost(raftHost),
 				raft.WithPort(raftPort))
 
-			var serverOptions []grpc.ServerOption
-			if config.Server.ReadBufferSize != nil {
-				serverOptions = append(serverOptions, grpc.ReadBufferSize(*config.Server.ReadBufferSize))
-			}
-			if config.Server.WriteBufferSize != nil {
-				serverOptions = append(serverOptions, grpc.WriteBufferSize(*config.Server.WriteBufferSize))
-			}
-			if config.Server.MaxSendMsgSize != nil {
-				serverOptions = append(serverOptions, grpc.MaxSendMsgSize(*config.Server.MaxSendMsgSize))
-			}
-			if config.Server.MaxRecvMsgSize != nil {
-				serverOptions = append(serverOptions, grpc.MaxRecvMsgSize(*config.Server.MaxRecvMsgSize))
-			}
-			if config.Server.NumStreamWorkers != nil {
-				serverOptions = append(serverOptions, grpc.NumStreamWorkers(*config.Server.NumStreamWorkers))
-			}
-			if config.Server.MaxConcurrentStreams != nil {
-				serverOptions = append(serverOptions, grpc.MaxConcurrentStreams(*config.Server.MaxConcurrentStreams))
-			}
-
 			node := node.NewNode(
 				network.NewDefaultDriver(),
 				protocol,
 				node.WithHost(apiHost),
-				node.WithPort(apiPort),
-				node.WithGRPCServerOptions(serverOptions...))
+				node.WithPort(apiPort))
 
 			counternodev1.RegisterServer(node)
 			countermapnodev1.RegisterServer(node)
