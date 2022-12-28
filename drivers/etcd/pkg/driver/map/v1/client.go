@@ -20,6 +20,7 @@ import (
 func NewMap(session *concurrency.Session, prefix string) mapruntimev1.Map {
 	return &etcdMap{
 		kv:       namespace.NewKV(session.Client(), prefix),
+		lease:    namespace.NewLease(session.Client(), prefix),
 		watcher:  namespace.NewWatcher(session.Client(), prefix),
 		revision: &etcdRevision{},
 	}
@@ -27,6 +28,7 @@ func NewMap(session *concurrency.Session, prefix string) mapruntimev1.Map {
 
 type etcdMap struct {
 	kv       clientv3.KV
+	lease    clientv3.Lease
 	watcher  clientv3.Watcher
 	revision *etcdRevision
 }
@@ -50,8 +52,19 @@ func (c *etcdMap) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.
 }
 
 func (c *etcdMap) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
+	var opts []clientv3.OpOption
+	opts = append(opts, clientv3.WithPrevKV())
+	if request.TTL != nil {
+		response, err := c.lease.Grant(ctx, int64(request.TTL.Seconds()))
+		if err != nil {
+			return nil, convertError(err)
+		}
+		opts = append(opts, clientv3.WithLease(response.ID))
+		c.revision.Update(response.Revision)
+	}
+
 	if request.PrevVersion == 0 {
-		response, err := c.kv.Put(ctx, request.Key, string(request.Value), clientv3.WithPrevKV())
+		response, err := c.kv.Put(ctx, request.Key, string(request.Value), opts...)
 		if err != nil {
 			return nil, convertError(err)
 		}
@@ -74,7 +87,7 @@ func (c *etcdMap) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.Pu
 
 	response, err := c.kv.Txn(ctx).
 		If(clientv3.Compare(clientv3.ModRevision(request.Key), "=", int64(request.PrevVersion))).
-		Then(clientv3.OpPut(request.Key, string(request.Value), clientv3.WithPrevKV())).
+		Then(clientv3.OpPut(request.Key, string(request.Value), opts...)).
 		Commit()
 	if err != nil {
 		return nil, convertError(err)
@@ -95,9 +108,20 @@ func (c *etcdMap) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.Pu
 }
 
 func (c *etcdMap) Insert(ctx context.Context, request *mapv1.InsertRequest) (*mapv1.InsertResponse, error) {
+	var opts []clientv3.OpOption
+	opts = append(opts, clientv3.WithPrevKV())
+	if request.TTL != nil {
+		response, err := c.lease.Grant(ctx, int64(request.TTL.Seconds()))
+		if err != nil {
+			return nil, convertError(err)
+		}
+		opts = append(opts, clientv3.WithLease(response.ID))
+		c.revision.Update(response.Revision)
+	}
+
 	response, err := c.kv.Txn(ctx).
 		If(clientv3.Compare(clientv3.CreateRevision(request.Key), "=", int64(0))).
-		Then(clientv3.OpPut(request.Key, string(request.Value))).
+		Then(clientv3.OpPut(request.Key, string(request.Value), opts...)).
 		Commit()
 	if err != nil {
 		return nil, convertError(err)
@@ -121,7 +145,18 @@ func (c *etcdMap) Update(ctx context.Context, request *mapv1.UpdateRequest) (*ma
 		txn = txn.If(clientv3.Compare(clientv3.ModRevision(request.Key), "=", int64(request.PrevVersion)))
 	}
 
-	response, err := txn.Then(clientv3.OpPut(request.Key, string(request.Value), clientv3.WithPrevKV())).Commit()
+	var opts []clientv3.OpOption
+	opts = append(opts, clientv3.WithPrevKV())
+	if request.TTL != nil {
+		response, err := c.lease.Grant(ctx, int64(request.TTL.Seconds()))
+		if err != nil {
+			return nil, convertError(err)
+		}
+		opts = append(opts, clientv3.WithLease(response.ID))
+		c.revision.Update(response.Revision)
+	}
+
+	response, err := txn.Then(clientv3.OpPut(request.Key, string(request.Value), opts...)).Commit()
 	if err != nil {
 		return nil, convertError(err)
 	}
@@ -220,7 +255,7 @@ func (c *etcdMap) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*ma
 }
 
 func (c *etcdMap) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsServer) error {
-	ch := c.watcher.Watch(server.Context(), "")
+	ch := c.watcher.Watch(server.Context(), request.Key)
 	for response := range ch {
 		c.revision.Update(response.Header.Revision)
 		for _, event := range response.Events {
@@ -265,6 +300,7 @@ func (c *etcdMap) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsSe
 								Version: uint64(event.PrevKv.ModRevision),
 								Value:   event.PrevKv.Value,
 							},
+							Expired: event.PrevKv.Lease != 0,
 						},
 					},
 				}
@@ -282,6 +318,10 @@ func (c *etcdMap) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsSe
 }
 
 func (c *etcdMap) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
+	if request.Watch {
+		return errors.NewNotSupported("watch flag not supported by etcd driver")
+	}
+
 	response, err := c.kv.Get(server.Context(), "", clientv3.WithPrefix())
 	if err != nil {
 		return convertError(err)
