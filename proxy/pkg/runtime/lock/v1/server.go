@@ -9,7 +9,6 @@ import (
 	lockv1 "github.com/atomix/atomix/api/runtime/lock/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
@@ -40,7 +39,6 @@ func (s *lockServer) Create(ctx context.Context, request *lockv1.CreateRequest) 
 		logging.Trunc64("CreateRequest", request))
 	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Create",
 			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
@@ -63,7 +61,6 @@ func (s *lockServer) Close(ctx context.Context, request *lockv1.CloseRequest) (*
 		logging.Trunc64("CloseRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Close",
 			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
@@ -86,7 +83,6 @@ func (s *lockServer) Lock(ctx context.Context, request *lockv1.LockRequest) (*lo
 		logging.Trunc64("LockRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Lock",
 			logging.Trunc64("LockRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +105,6 @@ func (s *lockServer) Unlock(ctx context.Context, request *lockv1.UnlockRequest) 
 		logging.Trunc64("UnlockRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Unlock",
 			logging.Trunc64("UnlockRequest", request),
 			logging.Error("Error", err))
@@ -132,7 +127,6 @@ func (s *lockServer) GetLock(ctx context.Context, request *lockv1.GetLockRequest
 		logging.Trunc64("GetLockRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("GetLock",
 			logging.Trunc64("GetLockRequest", request),
 			logging.Error("Error", err))

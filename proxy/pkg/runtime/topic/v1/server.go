@@ -9,7 +9,6 @@ import (
 	topicv1 "github.com/atomix/atomix/api/runtime/topic/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
@@ -40,7 +39,6 @@ func (s *topicServer) Create(ctx context.Context, request *topicv1.CreateRequest
 		logging.Trunc64("CreateRequest", request))
 	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Create",
 			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
@@ -63,7 +61,6 @@ func (s *topicServer) Close(ctx context.Context, request *topicv1.CloseRequest) 
 		logging.Trunc64("CloseRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Close",
 			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
@@ -86,7 +83,6 @@ func (s *topicServer) Publish(ctx context.Context, request *topicv1.PublishReque
 		logging.Trunc64("PublishRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Publish",
 			logging.Trunc64("PublishRequest", request),
 			logging.Error("Error", err))
@@ -110,7 +106,6 @@ func (s *topicServer) Subscribe(request *topicv1.SubscribeRequest, server topicv
 		logging.String("State", "started"))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Subscribe",
 			logging.Trunc64("SubscribeRequest", request),
 			logging.Error("Error", err))

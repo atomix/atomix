@@ -9,7 +9,6 @@ import (
 	countermapv1 "github.com/atomix/atomix/api/runtime/countermap/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
@@ -40,7 +39,6 @@ func (s *counterMapServer) Create(ctx context.Context, request *countermapv1.Cre
 		logging.Trunc64("CreateRequest", request))
 	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Create",
 			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
@@ -63,7 +61,6 @@ func (s *counterMapServer) Close(ctx context.Context, request *countermapv1.Clos
 		logging.Trunc64("CloseRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Close",
 			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
@@ -86,7 +83,6 @@ func (s *counterMapServer) Size(ctx context.Context, request *countermapv1.SizeR
 		logging.Trunc64("SizeRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Size",
 			logging.Trunc64("SizeRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +105,6 @@ func (s *counterMapServer) Set(ctx context.Context, request *countermapv1.SetReq
 		logging.Trunc64("SetRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Set",
 			logging.Trunc64("SetRequest", request),
 			logging.Error("Error", err))
@@ -132,7 +127,6 @@ func (s *counterMapServer) Increment(ctx context.Context, request *countermapv1.
 		logging.Trunc64("IncrementRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Increment",
 			logging.Trunc64("IncrementRequest", request),
 			logging.Error("Error", err))
@@ -155,7 +149,6 @@ func (s *counterMapServer) Decrement(ctx context.Context, request *countermapv1.
 		logging.Trunc64("DecrementRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Decrement",
 			logging.Trunc64("DecrementRequest", request),
 			logging.Error("Error", err))
@@ -178,7 +171,6 @@ func (s *counterMapServer) Insert(ctx context.Context, request *countermapv1.Ins
 		logging.Trunc64("InsertRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Insert",
 			logging.Trunc64("InsertRequest", request),
 			logging.Error("Error", err))
@@ -201,7 +193,6 @@ func (s *counterMapServer) Update(ctx context.Context, request *countermapv1.Upd
 		logging.Trunc64("UpdateRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Update",
 			logging.Trunc64("UpdateRequest", request),
 			logging.Error("Error", err))
@@ -224,7 +215,6 @@ func (s *counterMapServer) Get(ctx context.Context, request *countermapv1.GetReq
 		logging.Trunc64("GetRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Trunc64("GetRequest", request),
 			logging.Error("Error", err))
@@ -247,7 +237,6 @@ func (s *counterMapServer) Remove(ctx context.Context, request *countermapv1.Rem
 		logging.Trunc64("RemoveRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Remove",
 			logging.Trunc64("RemoveRequest", request),
 			logging.Error("Error", err))
@@ -270,7 +259,6 @@ func (s *counterMapServer) Clear(ctx context.Context, request *countermapv1.Clea
 		logging.Trunc64("ClearRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Clear",
 			logging.Trunc64("ClearRequest", request),
 			logging.Error("Error", err))
@@ -293,7 +281,6 @@ func (s *counterMapServer) Lock(ctx context.Context, request *countermapv1.LockR
 		logging.Trunc64("LockRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Lock",
 			logging.Trunc64("LockRequest", request),
 			logging.Error("Error", err))
@@ -316,7 +303,6 @@ func (s *counterMapServer) Unlock(ctx context.Context, request *countermapv1.Unl
 		logging.Trunc64("UnlockRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Unlock",
 			logging.Trunc64("UnlockRequest", request),
 			logging.Error("Error", err))
@@ -340,7 +326,6 @@ func (s *counterMapServer) Events(request *countermapv1.EventsRequest, server co
 		logging.String("State", "started"))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Trunc64("EventsRequest", request),
 			logging.Error("Error", err))
@@ -362,7 +347,6 @@ func (s *counterMapServer) Entries(request *countermapv1.EntriesRequest, server 
 		logging.String("State", "started"))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Entries",
 			logging.Trunc64("EntriesRequest", request),
 			logging.Error("Error", err))

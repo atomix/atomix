@@ -6,7 +6,6 @@ package runtime
 
 import (
 	"github.com/atomix/atomix/runtime/pkg/network"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -28,10 +27,9 @@ func (o *Options) apply(opts ...Option) {
 type Option = func(*Options)
 
 type ServiceOptions struct {
-	Network           network.Driver
-	Host              string
-	Port              int
-	GRPCServerOptions []grpc.ServerOption
+	Network network.Driver
+	Host    string
+	Port    int
 }
 
 func WithOptions(opts Options) Option {
@@ -55,15 +53,5 @@ func WithHost(host string) Option {
 func WithPort(port int) Option {
 	return func(options *Options) {
 		options.Port = port
-	}
-}
-
-func WithServerOption(opt grpc.ServerOption) Option {
-	return WithServerOptions(opt)
-}
-
-func WithServerOptions(opts ...grpc.ServerOption) Option {
-	return func(options *Options) {
-		options.GRPCServerOptions = append(options.GRPCServerOptions, opts...)
 	}
 }

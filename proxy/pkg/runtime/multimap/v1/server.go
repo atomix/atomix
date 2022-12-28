@@ -9,7 +9,6 @@ import (
 	multimapv1 "github.com/atomix/atomix/api/runtime/multimap/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
@@ -40,7 +39,6 @@ func (s *multiMapServer) Create(ctx context.Context, request *multimapv1.CreateR
 		logging.Trunc64("CreateRequest", request))
 	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Create",
 			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
@@ -63,7 +61,6 @@ func (s *multiMapServer) Close(ctx context.Context, request *multimapv1.CloseReq
 		logging.Trunc64("CloseRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Close",
 			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
@@ -86,7 +83,6 @@ func (s *multiMapServer) Size(ctx context.Context, request *multimapv1.SizeReque
 		logging.Trunc64("SizeRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Size",
 			logging.Trunc64("SizeRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +105,6 @@ func (s *multiMapServer) Put(ctx context.Context, request *multimapv1.PutRequest
 		logging.Trunc64("PutRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Put",
 			logging.Trunc64("PutRequest", request),
 			logging.Error("Error", err))
@@ -132,7 +127,6 @@ func (s *multiMapServer) PutAll(ctx context.Context, request *multimapv1.PutAllR
 		logging.Trunc64("PutAllRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("PutAll",
 			logging.Trunc64("PutAllRequest", request),
 			logging.Error("Error", err))
@@ -155,7 +149,6 @@ func (s *multiMapServer) PutEntries(ctx context.Context, request *multimapv1.Put
 		logging.Trunc64("PutEntriesRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("PutEntries",
 			logging.Trunc64("PutEntriesRequest", request),
 			logging.Error("Error", err))
@@ -178,7 +171,6 @@ func (s *multiMapServer) Replace(ctx context.Context, request *multimapv1.Replac
 		logging.Trunc64("ReplaceRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Replace",
 			logging.Trunc64("ReplaceRequest", request),
 			logging.Error("Error", err))
@@ -201,7 +193,6 @@ func (s *multiMapServer) Contains(ctx context.Context, request *multimapv1.Conta
 		logging.Trunc64("ContainsRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Contains",
 			logging.Trunc64("ContainsRequest", request),
 			logging.Error("Error", err))
@@ -224,7 +215,6 @@ func (s *multiMapServer) Get(ctx context.Context, request *multimapv1.GetRequest
 		logging.Trunc64("GetRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Trunc64("GetRequest", request),
 			logging.Error("Error", err))
@@ -247,7 +237,6 @@ func (s *multiMapServer) Remove(ctx context.Context, request *multimapv1.RemoveR
 		logging.Trunc64("RemoveRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Remove",
 			logging.Trunc64("RemoveRequest", request),
 			logging.Error("Error", err))
@@ -270,7 +259,6 @@ func (s *multiMapServer) RemoveAll(ctx context.Context, request *multimapv1.Remo
 		logging.Trunc64("RemoveAllRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("RemoveAll",
 			logging.Trunc64("RemoveAllRequest", request),
 			logging.Error("Error", err))
@@ -293,7 +281,6 @@ func (s *multiMapServer) RemoveEntries(ctx context.Context, request *multimapv1.
 		logging.Trunc64("RemoveEntriesRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("RemoveEntries",
 			logging.Trunc64("RemoveEntriesRequest", request),
 			logging.Error("Error", err))
@@ -316,7 +303,6 @@ func (s *multiMapServer) Clear(ctx context.Context, request *multimapv1.ClearReq
 		logging.Trunc64("ClearRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Clear",
 			logging.Trunc64("ClearRequest", request),
 			logging.Error("Error", err))
@@ -340,7 +326,6 @@ func (s *multiMapServer) Events(request *multimapv1.EventsRequest, server multim
 		logging.String("State", "started"))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Trunc64("EventsRequest", request),
 			logging.Error("Error", err))
@@ -362,7 +347,6 @@ func (s *multiMapServer) Entries(request *multimapv1.EntriesRequest, server mult
 		logging.String("State", "started"))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Entries",
 			logging.Trunc64("EntriesRequest", request),
 			logging.Error("Error", err))

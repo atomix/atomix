@@ -9,7 +9,6 @@ import (
 	counterv1 "github.com/atomix/atomix/api/runtime/counter/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
@@ -40,7 +39,6 @@ func (s *counterServer) Create(ctx context.Context, request *counterv1.CreateReq
 		logging.Trunc64("CreateRequest", request))
 	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Create",
 			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
@@ -63,7 +61,6 @@ func (s *counterServer) Close(ctx context.Context, request *counterv1.CloseReque
 		logging.Trunc64("CloseRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Close",
 			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
@@ -86,7 +83,6 @@ func (s *counterServer) Set(ctx context.Context, request *counterv1.SetRequest) 
 		logging.Trunc64("SetRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Set",
 			logging.Trunc64("SetRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +105,6 @@ func (s *counterServer) Update(ctx context.Context, request *counterv1.UpdateReq
 		logging.Trunc64("UpdateRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Update",
 			logging.Trunc64("UpdateRequest", request),
 			logging.Error("Error", err))
@@ -132,7 +127,6 @@ func (s *counterServer) Get(ctx context.Context, request *counterv1.GetRequest) 
 		logging.Trunc64("GetRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Trunc64("GetRequest", request),
 			logging.Error("Error", err))
@@ -155,7 +149,6 @@ func (s *counterServer) Increment(ctx context.Context, request *counterv1.Increm
 		logging.Trunc64("IncrementRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Increment",
 			logging.Trunc64("IncrementRequest", request),
 			logging.Error("Error", err))
@@ -178,7 +171,6 @@ func (s *counterServer) Decrement(ctx context.Context, request *counterv1.Decrem
 		logging.Trunc64("DecrementRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Decrement",
 			logging.Trunc64("DecrementRequest", request),
 			logging.Error("Error", err))

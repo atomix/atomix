@@ -7,10 +7,10 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"github.com/atomix/atomix/api/errors"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/driver"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"os"
 	"path/filepath"
 	"plugin"

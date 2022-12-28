@@ -9,7 +9,6 @@ import (
 	indexedmapv1 "github.com/atomix/atomix/api/runtime/indexedmap/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
@@ -40,7 +39,6 @@ func (s *indexedMapServer) Create(ctx context.Context, request *indexedmapv1.Cre
 		logging.Trunc64("CreateRequest", request))
 	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Create",
 			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
@@ -63,7 +61,6 @@ func (s *indexedMapServer) Close(ctx context.Context, request *indexedmapv1.Clos
 		logging.Trunc64("CloseRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Close",
 			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
@@ -86,7 +83,6 @@ func (s *indexedMapServer) Size(ctx context.Context, request *indexedmapv1.SizeR
 		logging.Trunc64("SizeRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Size",
 			logging.Trunc64("SizeRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +105,6 @@ func (s *indexedMapServer) Append(ctx context.Context, request *indexedmapv1.App
 		logging.Trunc64("AppendRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Append",
 			logging.Trunc64("AppendRequest", request),
 			logging.Error("Error", err))
@@ -132,7 +127,6 @@ func (s *indexedMapServer) Update(ctx context.Context, request *indexedmapv1.Upd
 		logging.Trunc64("UpdateRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Update",
 			logging.Trunc64("UpdateRequest", request),
 			logging.Error("Error", err))
@@ -155,7 +149,6 @@ func (s *indexedMapServer) Get(ctx context.Context, request *indexedmapv1.GetReq
 		logging.Trunc64("GetRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Trunc64("GetRequest", request),
 			logging.Error("Error", err))
@@ -178,7 +171,6 @@ func (s *indexedMapServer) FirstEntry(ctx context.Context, request *indexedmapv1
 		logging.Trunc64("FirstEntryRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("FirstEntry",
 			logging.Trunc64("FirstEntryRequest", request),
 			logging.Error("Error", err))
@@ -201,7 +193,6 @@ func (s *indexedMapServer) LastEntry(ctx context.Context, request *indexedmapv1.
 		logging.Trunc64("LastEntryRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("LastEntry",
 			logging.Trunc64("LastEntryRequest", request),
 			logging.Error("Error", err))
@@ -224,7 +215,6 @@ func (s *indexedMapServer) PrevEntry(ctx context.Context, request *indexedmapv1.
 		logging.Trunc64("PrevEntryRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("PrevEntry",
 			logging.Trunc64("PrevEntryRequest", request),
 			logging.Error("Error", err))
@@ -247,7 +237,6 @@ func (s *indexedMapServer) NextEntry(ctx context.Context, request *indexedmapv1.
 		logging.Trunc64("NextEntryRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("NextEntry",
 			logging.Trunc64("NextEntryRequest", request),
 			logging.Error("Error", err))
@@ -270,7 +259,6 @@ func (s *indexedMapServer) Remove(ctx context.Context, request *indexedmapv1.Rem
 		logging.Trunc64("RemoveRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Remove",
 			logging.Trunc64("RemoveRequest", request),
 			logging.Error("Error", err))
@@ -293,7 +281,6 @@ func (s *indexedMapServer) Clear(ctx context.Context, request *indexedmapv1.Clea
 		logging.Trunc64("ClearRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Clear",
 			logging.Trunc64("ClearRequest", request),
 			logging.Error("Error", err))
@@ -317,7 +304,6 @@ func (s *indexedMapServer) Events(request *indexedmapv1.EventsRequest, server in
 		logging.String("State", "started"))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Trunc64("EventsRequest", request),
 			logging.Error("Error", err))
@@ -339,7 +325,6 @@ func (s *indexedMapServer) Entries(request *indexedmapv1.EntriesRequest, server 
 		logging.String("State", "started"))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Entries",
 			logging.Trunc64("EntriesRequest", request),
 			logging.Error("Error", err))

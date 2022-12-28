@@ -9,7 +9,6 @@ import (
 	listv1 "github.com/atomix/atomix/api/runtime/list/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
@@ -40,7 +39,6 @@ func (s *listServer) Create(ctx context.Context, request *listv1.CreateRequest) 
 		logging.Trunc64("CreateRequest", request))
 	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Create",
 			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
@@ -63,7 +61,6 @@ func (s *listServer) Close(ctx context.Context, request *listv1.CloseRequest) (*
 		logging.Trunc64("CloseRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Close",
 			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
@@ -86,7 +83,6 @@ func (s *listServer) Size(ctx context.Context, request *listv1.SizeRequest) (*li
 		logging.Trunc64("SizeRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Size",
 			logging.Trunc64("SizeRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +105,6 @@ func (s *listServer) Append(ctx context.Context, request *listv1.AppendRequest) 
 		logging.Trunc64("AppendRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Append",
 			logging.Trunc64("AppendRequest", request),
 			logging.Error("Error", err))
@@ -132,7 +127,6 @@ func (s *listServer) Insert(ctx context.Context, request *listv1.InsertRequest) 
 		logging.Trunc64("InsertRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Insert",
 			logging.Trunc64("InsertRequest", request),
 			logging.Error("Error", err))
@@ -155,7 +149,6 @@ func (s *listServer) Get(ctx context.Context, request *listv1.GetRequest) (*list
 		logging.Trunc64("GetRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Trunc64("GetRequest", request),
 			logging.Error("Error", err))
@@ -178,7 +171,6 @@ func (s *listServer) Set(ctx context.Context, request *listv1.SetRequest) (*list
 		logging.Trunc64("SetRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Set",
 			logging.Trunc64("SetRequest", request),
 			logging.Error("Error", err))
@@ -201,7 +193,6 @@ func (s *listServer) Remove(ctx context.Context, request *listv1.RemoveRequest) 
 		logging.Trunc64("RemoveRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Remove",
 			logging.Trunc64("RemoveRequest", request),
 			logging.Error("Error", err))
@@ -224,7 +215,6 @@ func (s *listServer) Clear(ctx context.Context, request *listv1.ClearRequest) (*
 		logging.Trunc64("ClearRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Clear",
 			logging.Trunc64("ClearRequest", request),
 			logging.Error("Error", err))
@@ -248,7 +238,6 @@ func (s *listServer) Events(request *listv1.EventsRequest, server listv1.List_Ev
 		logging.String("State", "started"))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Trunc64("EventsRequest", request),
 			logging.Error("Error", err))
@@ -270,7 +259,6 @@ func (s *listServer) Items(request *listv1.ItemsRequest, server listv1.List_Item
 		logging.String("State", "started"))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Items",
 			logging.Trunc64("ItemsRequest", request),
 			logging.Error("Error", err))

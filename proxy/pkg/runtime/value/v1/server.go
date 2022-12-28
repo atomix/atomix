@@ -9,7 +9,6 @@ import (
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	valuev1 "github.com/atomix/atomix/api/runtime/value/v1"
 	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
@@ -40,7 +39,6 @@ func (s *valueServer) Create(ctx context.Context, request *valuev1.CreateRequest
 		logging.Trunc64("CreateRequest", request))
 	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Create",
 			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
@@ -63,7 +61,6 @@ func (s *valueServer) Close(ctx context.Context, request *valuev1.CloseRequest) 
 		logging.Trunc64("CloseRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Close",
 			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
@@ -86,7 +83,6 @@ func (s *valueServer) Set(ctx context.Context, request *valuev1.SetRequest) (*va
 		logging.Trunc64("SetRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Set",
 			logging.Trunc64("SetRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +105,6 @@ func (s *valueServer) Insert(ctx context.Context, request *valuev1.InsertRequest
 		logging.Trunc64("InsertRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Insert",
 			logging.Trunc64("InsertRequest", request),
 			logging.Error("Error", err))
@@ -132,7 +127,6 @@ func (s *valueServer) Update(ctx context.Context, request *valuev1.UpdateRequest
 		logging.Trunc64("UpdateRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Update",
 			logging.Trunc64("UpdateRequest", request),
 			logging.Error("Error", err))
@@ -155,7 +149,6 @@ func (s *valueServer) Get(ctx context.Context, request *valuev1.GetRequest) (*va
 		logging.Trunc64("GetRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Trunc64("GetRequest", request),
 			logging.Error("Error", err))
@@ -178,7 +171,6 @@ func (s *valueServer) Delete(ctx context.Context, request *valuev1.DeleteRequest
 		logging.Trunc64("DeleteRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Delete",
 			logging.Trunc64("DeleteRequest", request),
 			logging.Error("Error", err))
@@ -202,7 +194,6 @@ func (s *valueServer) Watch(request *valuev1.WatchRequest, server valuev1.Value_
 		logging.String("State", "started"))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Watch",
 			logging.Trunc64("WatchRequest", request),
 			logging.Error("Error", err))
@@ -224,7 +215,6 @@ func (s *valueServer) Events(request *valuev1.EventsRequest, server valuev1.Valu
 		logging.String("State", "started"))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Events",
 			logging.Trunc64("EventsRequest", request),
 			logging.Error("Error", err))

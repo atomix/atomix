@@ -2,11 +2,13 @@ cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/atomix/atomix/api v0.0.0-20221228090355-f80263b9b241 h1:lYPsc42aqirdztDJe5GoF0p6bNMnF45x9JdNawv6p+U=
-github.com/atomix/atomix/api v0.0.0-20221228090355-f80263b9b241/go.mod h1:PNMOo77ofCaaZqmj3uC7cfclGEI9NCcue/G5VXSon7k=
-github.com/atomix/atomix/runtime v0.0.0-20221228181157-0abb0dc2ceaa h1:VbaBwHMYELrZyYeKuWanfM/fA2mcrTJHaxeNHbN09KI=
-github.com/atomix/atomix/runtime v0.0.0-20221228181157-0abb0dc2ceaa/go.mod h1:fQDleN4JZAThPUyWWHnbOuH3ncbYxcYcNIWuY8f3fLM=
+github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978 h1:QwDDxnD2rLVsJxxxrmXj8xWOR7dOvPT6euefiayl4gw=
+github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978/go.mod h1:PNMOo77ofCaaZqmj3uC7cfclGEI9NCcue/G5VXSon7k=
+github.com/atomix/atomix/runtime v0.0.0-20221228200236-1b3b36b1e41d h1:R0xz2Q48Bp96wbHyqmEWsGJG1eyMwzFJOpIhAusCn5Y=
+github.com/atomix/atomix/runtime v0.0.0-20221228200236-1b3b36b1e41d/go.mod h1:vcFpNMTviuy9HrkFp8Gly7/YGfLPavLL2jVTrRlyXHs=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
+github.com/cenkalti/backoff v2.2.1+incompatible h1:tNowT99t7UNflLxfYYSlKYsBpXdEet03Pg2g16Swow4=
+github.com/cenkalti/backoff v2.2.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=

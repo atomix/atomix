@@ -6,8 +6,8 @@ package v1
 
 import (
 	"context"
+	"github.com/atomix/atomix/api/errors"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/gogo/protobuf/types"
 )
 

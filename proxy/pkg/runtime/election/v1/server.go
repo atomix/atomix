@@ -9,7 +9,6 @@ import (
 	electionv1 "github.com/atomix/atomix/api/runtime/election/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
@@ -40,7 +39,6 @@ func (s *leaderElectionServer) Create(ctx context.Context, request *electionv1.C
 		logging.Trunc64("CreateRequest", request))
 	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Create",
 			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
@@ -63,7 +61,6 @@ func (s *leaderElectionServer) Close(ctx context.Context, request *electionv1.Cl
 		logging.Trunc64("CloseRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Close",
 			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
@@ -86,7 +83,6 @@ func (s *leaderElectionServer) Enter(ctx context.Context, request *electionv1.En
 		logging.Trunc64("EnterRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Enter",
 			logging.Trunc64("EnterRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +105,6 @@ func (s *leaderElectionServer) Withdraw(ctx context.Context, request *electionv1
 		logging.Trunc64("WithdrawRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Withdraw",
 			logging.Trunc64("WithdrawRequest", request),
 			logging.Error("Error", err))
@@ -132,7 +127,6 @@ func (s *leaderElectionServer) Anoint(ctx context.Context, request *electionv1.A
 		logging.Trunc64("AnointRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Anoint",
 			logging.Trunc64("AnointRequest", request),
 			logging.Error("Error", err))
@@ -155,7 +149,6 @@ func (s *leaderElectionServer) Promote(ctx context.Context, request *electionv1.
 		logging.Trunc64("PromoteRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Promote",
 			logging.Trunc64("PromoteRequest", request),
 			logging.Error("Error", err))
@@ -178,7 +171,6 @@ func (s *leaderElectionServer) Demote(ctx context.Context, request *electionv1.D
 		logging.Trunc64("DemoteRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Demote",
 			logging.Trunc64("DemoteRequest", request),
 			logging.Error("Error", err))
@@ -201,7 +193,6 @@ func (s *leaderElectionServer) Evict(ctx context.Context, request *electionv1.Ev
 		logging.Trunc64("EvictRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Evict",
 			logging.Trunc64("EvictRequest", request),
 			logging.Error("Error", err))
@@ -224,7 +215,6 @@ func (s *leaderElectionServer) GetTerm(ctx context.Context, request *electionv1.
 		logging.Trunc64("GetTermRequest", request))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("GetTerm",
 			logging.Trunc64("GetTermRequest", request),
 			logging.Error("Error", err))
@@ -248,7 +238,6 @@ func (s *leaderElectionServer) Watch(request *electionv1.WatchRequest, server el
 		logging.String("State", "started"))
 	client, err := s.manager.Get(request.ID)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Watch",
 			logging.Trunc64("WatchRequest", request),
 			logging.Error("Error", err))

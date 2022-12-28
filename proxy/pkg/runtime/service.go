@@ -8,6 +8,7 @@ import (
 	runtimeapiv1 "github.com/atomix/atomix/api/runtime/v1"
 	runtimev1 "github.com/atomix/atomix/proxy/pkg/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/network"
+	"github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors"
 	"google.golang.org/grpc"
 )
 
@@ -19,7 +20,9 @@ type Service struct {
 func NewService(runtime *runtimev1.Runtime, opts ...Option) network.Service {
 	var options Options
 	options.apply(opts...)
-	server := grpc.NewServer(options.GRPCServerOptions...)
+	server := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptors.ErrorHandlingUnaryServerInterceptor()),
+		grpc.StreamInterceptor(interceptors.ErrorHandlingStreamServerInterceptor()))
 	runtimeapiv1.RegisterRuntimeServer(server, runtimev1.NewRuntimeServer(runtime))
 	return &Service{
 		Options: options,

@@ -7,7 +7,6 @@ package v1
 import (
 	"context"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
@@ -25,11 +24,10 @@ func (s *runtimeServer) Connect(ctx context.Context, request *runtimev1.ConnectR
 	log.Debugw("Connect",
 		logging.Stringer("ConnectRequest", request))
 	if err := s.runtime.Connect(ctx, request.DriverID, request.Store); err != nil {
-		err = errors.ToProto(err)
 		log.Debugw("Connect",
 			logging.Stringer("ConnectRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &runtimev1.ConnectResponse{}
 	log.Debugw("Connect",
@@ -42,11 +40,10 @@ func (s *runtimeServer) Configure(ctx context.Context, request *runtimev1.Config
 	log.Debugw("Configure",
 		logging.Stringer("ConfigureRequest", request))
 	if err := s.runtime.Configure(ctx, request.Store); err != nil {
-		err = errors.ToProto(err)
 		log.Debugw("Configure",
 			logging.Stringer("ConfigureRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &runtimev1.ConfigureResponse{}
 	log.Debugw("Configure",
@@ -59,11 +56,10 @@ func (s *runtimeServer) Disconnect(ctx context.Context, request *runtimev1.Disco
 	log.Debugw("Disconnect",
 		logging.Stringer("DisconnectRequest", request))
 	if err := s.runtime.Disconnect(ctx, request.StoreID); err != nil {
-		err = errors.ToProto(err)
 		log.Debugw("Disconnect",
 			logging.Stringer("DisconnectRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &runtimev1.DisconnectResponse{}
 	log.Debugw("Disconnect",

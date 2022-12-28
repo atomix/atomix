@@ -3,8 +3,8 @@ module github.com/atomix/atomix/proxy
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221228090355-f80263b9b241
-	github.com/atomix/atomix/runtime v0.0.0-20221228181157-0abb0dc2ceaa
+	github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978
+	github.com/atomix/atomix/runtime v0.0.0-20221228200236-1b3b36b1e41d
 	github.com/gogo/protobuf v1.3.2
 	github.com/rogpeppe/go-internal v1.8.1
 	github.com/spf13/cobra v1.4.0
@@ -13,6 +13,7 @@ require (
 )
 
 require (
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
