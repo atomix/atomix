@@ -7,9 +7,10 @@ package proxy
 import (
 	"context"
 	"fmt"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
+	"github.com/atomix/atomix/runtime/pkg/driver"
 	"github.com/atomix/atomix/runtime/pkg/errors"
-	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"os"
 	"path/filepath"
 	"plugin"
@@ -27,8 +28,8 @@ type pluginDriverProvider struct {
 	path string
 }
 
-func (p *pluginDriverProvider) LoadDriver(_ context.Context, driverID runtimev1.DriverID) (runtime.Driver, error) {
-	path := filepath.Join(p.path, fmt.Sprintf("%s@%s.so", driverID.Name, driverID.Version))
+func (p *pluginDriverProvider) LoadDriver(_ context.Context, driverID runtimev1.DriverID) (driver.Driver, error) {
+	path := filepath.Join(p.path, fmt.Sprintf("%s@%s.so", driverID.Name, driverID.APIVersion))
 	driverPlugin, err := plugin.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -40,8 +41,7 @@ func (p *pluginDriverProvider) LoadDriver(_ context.Context, driverID runtimev1.
 	if err != nil {
 		return nil, errors.NewNotFound(err.Error())
 	}
-	driver := *driverSym.(*runtime.Driver)
-	return driver, nil
+	return *driverSym.(*driver.Driver), nil
 }
 
 var _ runtime.DriverProvider = (*pluginDriverProvider)(nil)

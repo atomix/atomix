@@ -6,9 +6,10 @@ package main
 
 import (
 	"fmt"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	runtimeapiv1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/proxy/pkg/proxy"
-	"github.com/atomix/atomix/runtime/pkg/runtime"
+	"github.com/atomix/atomix/proxy/pkg/runtime"
+	runtimev1 "github.com/atomix/atomix/proxy/pkg/runtime/v1"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -54,7 +55,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			var config runtimev1.RuntimeConfig
+			var config runtimeapiv1.RuntimeConfig
 			if err := jsonpb.UnmarshalString(string(configBytes), &config); err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
@@ -66,22 +67,25 @@ func main() {
 				os.Exit(1)
 			}
 
-			// Start the runtime
-			runtime := runtime.New(
+			// Initialize the runtime
+			rt := runtimev1.New(
+				runtimev1.WithDriverProvider(proxy.NewDriverProvider(pluginsDir)),
+				runtimev1.WithRoutes(config.Routes...))
+
+			// Start the runtime service
+			rtSvc := runtime.NewService(rt,
 				runtime.WithHost(runtimeHost),
-				runtime.WithPort(runtimePort),
-				runtime.WithDriverProvider(proxy.NewDriverProvider(pluginsDir)),
-				runtime.WithRoutes(config.Routes...))
-			if err := runtime.Start(); err != nil {
+				runtime.WithPort(runtimePort))
+			if err := rtSvc.Start(); err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
 
-			// Start the proxy
-			proxy := proxy.New(runtime,
+			// Start the proxy service
+			proxySvc := proxy.NewService(rt,
 				proxy.WithHost(host),
 				proxy.WithPort(port))
-			if err := proxy.Start(); err != nil {
+			if err := proxySvc.Start(); err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
@@ -92,13 +96,13 @@ func main() {
 			<-ch
 
 			// Stop the proxy
-			if err := proxy.Stop(); err != nil {
+			if err := proxySvc.Stop(); err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
 
 			// Stop the runtime
-			if err := runtime.Stop(); err != nil {
+			if err := rtSvc.Stop(); err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
