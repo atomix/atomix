@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	"github.com/atomix/atomix/runtime/pkg/driver"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/gogo/protobuf/jsonpb"
@@ -25,16 +26,16 @@ func New(opts ...Option) *Runtime {
 	return &Runtime{
 		Options: options,
 		router:  newRouter(options.RouteProvider),
-		drivers: make(map[runtimev1.DriverID]Driver),
-		conns:   make(map[runtimev1.StoreID]Conn),
+		drivers: make(map[runtimev1.DriverID]driver.Driver),
+		conns:   make(map[runtimev1.StoreID]driver.Conn),
 	}
 }
 
 type Runtime struct {
 	Options
 	router  *router
-	drivers map[runtimev1.DriverID]Driver
-	conns   map[runtimev1.StoreID]Conn
+	drivers map[runtimev1.DriverID]driver.Driver
+	conns   map[runtimev1.StoreID]driver.Conn
 	mu      sync.RWMutex
 }
 
@@ -42,7 +43,7 @@ func (r *Runtime) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runt
 	return r.router.route(ctx, meta)
 }
 
-func (r *Runtime) lookup(storeID runtimev1.StoreID) (Conn, error) {
+func (r *Runtime) lookup(storeID runtimev1.StoreID) (driver.Conn, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	conn, ok := r.conns[storeID]
@@ -61,13 +62,13 @@ func (r *Runtime) Connect(ctx context.Context, driverID runtimev1.DriverID, stor
 		return errors.NewAlreadyExists("connection '%s' already exists", store.StoreID)
 	}
 
-	driver, ok := r.drivers[driverID]
+	drvr, ok := r.drivers[driverID]
 	if !ok {
 		log.Infow("Loading driver",
 			logging.String("Driver", driverID.Name),
 			logging.String("APIVersion", driverID.APIVersion))
 		var err error
-		driver, err = r.DriverProvider.LoadDriver(ctx, driverID)
+		drvr, err = r.DriverProvider.LoadDriver(ctx, driverID)
 		if err != nil {
 			err = errors.NewInternal("failed loading driver '%s': %v", driverID, err)
 			log.Warnw("Loading driver failed",
@@ -76,13 +77,19 @@ func (r *Runtime) Connect(ctx context.Context, driverID runtimev1.DriverID, stor
 				logging.Error("Error", err))
 			return err
 		}
-		r.drivers[driverID] = driver
+		drvr = newDriverAdapter(drvr)
+		r.drivers[driverID] = drvr
+	}
+
+	connector, ok := drvr.(driver.Connector[*types.Any])
+	if !ok {
+		return errors.NewNotSupported("Connect not implemented by driver %s/%s", driverID.Name, driverID.APIVersion)
 	}
 
 	log.Infow("Establishing connection to store",
 		logging.String("Name", store.StoreID.Name),
 		logging.String("Namespace", store.StoreID.Namespace))
-	conn, err := connect(ctx, driver, store)
+	conn, err := connector.Connect(ctx, store.Spec)
 	if err != nil {
 		log.Warnw("Connecting to store failed",
 			logging.String("Name", store.StoreID.Name),
@@ -106,10 +113,15 @@ func (r *Runtime) Configure(ctx context.Context, store runtimev1.Store) error {
 		return errors.NewNotFound("connection to '%s' not found", store.StoreID)
 	}
 
+	configurator, ok := conn.(driver.Configurator[*types.Any])
+	if !ok {
+		return nil
+	}
+
 	log.Infow("Reconfiguring connection to store",
 		logging.String("Name", store.StoreID.Name),
 		logging.String("Namespace", store.StoreID.Namespace))
-	if err := configure(ctx, conn, store); err != nil {
+	if err := configurator.Configure(ctx, store.Spec); err != nil {
 		log.Warnw("Reconfiguring connection to store failed",
 			logging.String("Name", store.StoreID.Name),
 			logging.String("Namespace", store.StoreID.Namespace),
@@ -148,8 +160,8 @@ func (r *Runtime) Disconnect(ctx context.Context, storeID runtimev1.StoreID) err
 	return nil
 }
 
-func connect(ctx context.Context, driver Driver, store runtimev1.Store) (Conn, error) {
-	value := reflect.ValueOf(driver)
+func connect(ctx context.Context, typedDriver any, rawSpec *types.Any) (driver.Conn, error) {
+	value := reflect.ValueOf(typedDriver)
 	if _, ok := value.Type().MethodByName("Connect"); !ok {
 		return nil, errors.NewNotSupported("driver not supported")
 	}
@@ -168,16 +180,16 @@ func connect(ctx context.Context, driver Driver, store runtimev1.Store) (Conn, e
 	}
 
 	if message, ok := spec.(proto.Message); ok {
-		if err := jsonpb.UnmarshalString(string(store.Spec.Value), message); err != nil {
+		if err := jsonpb.UnmarshalString(string(rawSpec.Value), message); err != nil {
 			return nil, err
 		}
 	} else {
 		if param.Kind() == reflect.Pointer {
-			if err := json.Unmarshal(store.Spec.Value, spec); err != nil {
+			if err := json.Unmarshal(rawSpec.Value, spec); err != nil {
 				return nil, err
 			}
 		} else {
-			if err := json.Unmarshal(store.Spec.Value, &spec); err != nil {
+			if err := json.Unmarshal(rawSpec.Value, &spec); err != nil {
 				return nil, err
 			}
 		}
@@ -196,11 +208,11 @@ func connect(ctx context.Context, driver Driver, store runtimev1.Store) (Conn, e
 	if !out[1].IsNil() {
 		return nil, out[1].Interface().(error)
 	}
-	return out[0].Interface().(Conn), nil
+	return out[0].Interface().(driver.Conn), nil
 }
 
-func configure(ctx context.Context, conn Conn, store runtimev1.Store) error {
-	value := reflect.ValueOf(conn)
+func configure(ctx context.Context, typedConn any, rawSpec *types.Any) error {
+	value := reflect.ValueOf(typedConn)
 	if _, ok := value.Type().MethodByName("Configure"); !ok {
 		return nil
 	}
@@ -219,16 +231,16 @@ func configure(ctx context.Context, conn Conn, store runtimev1.Store) error {
 	}
 
 	if message, ok := spec.(proto.Message); ok {
-		if err := jsonpb.UnmarshalString(string(store.Spec.Value), message); err != nil {
+		if err := jsonpb.UnmarshalString(string(rawSpec.Value), message); err != nil {
 			return err
 		}
 	} else {
 		if param.Kind() == reflect.Pointer {
-			if err := json.Unmarshal(store.Spec.Value, spec); err != nil {
+			if err := json.Unmarshal(rawSpec.Value, spec); err != nil {
 				return err
 			}
 		} else {
-			if err := json.Unmarshal(store.Spec.Value, &spec); err != nil {
+			if err := json.Unmarshal(rawSpec.Value, &spec); err != nil {
 				return err
 			}
 		}

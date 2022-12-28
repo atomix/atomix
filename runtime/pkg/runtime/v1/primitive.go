@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	"github.com/atomix/atomix/runtime/pkg/driver"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
@@ -90,7 +91,7 @@ func (c *PrimitiveManager[T]) Close(primitiveID runtimev1.PrimitiveID) (T, error
 	return client, nil
 }
 
-func create[T any](conn Conn, primitive runtimev1.Primitive) (T, error) {
+func create[T any](conn driver.Conn, primitive runtimev1.Primitive) (T, error) {
 	var t T
 
 	value := reflect.ValueOf(conn)

@@ -6,57 +6,69 @@ package v1
 
 import (
 	"context"
-	"fmt"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	"github.com/atomix/atomix/runtime/pkg/driver"
 	"github.com/atomix/atomix/runtime/pkg/errors"
+	"github.com/gogo/protobuf/types"
 )
 
-// Driver is the primary interface for implementing storage drivers
-type Driver interface {
-	fmt.Stringer
-	ID() runtimev1.DriverID
+func newDriverAdapter(driver driver.Driver) driver.Driver {
+	return &driverAdapter{
+		driver: driver,
+	}
 }
 
-// Conn is a connection to a store
-// Implement the Configurator interface to support configuration changes to an existing connection
-type Conn interface {
-	Closer
+type driverAdapter struct {
+	driver driver.Driver
 }
 
-// Connector is an interface for connecting to a store
-type Connector[T any] interface {
-	Connect(ctx context.Context, spec T) (Conn, error)
+func (d *driverAdapter) Connect(ctx context.Context, spec *types.Any) (driver.Conn, error) {
+	if connector, ok := d.driver.(driver.Connector[*types.Any]); ok {
+		return connector.Connect(ctx, spec)
+	}
+	conn, err := connect(ctx, d.driver, spec)
+	if err != nil {
+		return nil, err
+	}
+	return newConnAdapter(conn), nil
 }
 
-// Configurator is an interface for supporting configuration changes on an existing Conn
-type Configurator[T any] interface {
-	Configure(ctx context.Context, spec T) error
+func newConnAdapter(conn driver.Conn) driver.Conn {
+	return &connAdapter{
+		conn: conn,
+	}
 }
 
-// Closer is an interface for closing connections
-type Closer interface {
-	Close(ctx context.Context) error
+type connAdapter struct {
+	conn driver.Conn
+}
+
+func (c *connAdapter) Configure(ctx context.Context, spec *types.Any) error {
+	if configurator, ok := c.conn.(driver.Configurator[*types.Any]); ok {
+		return configurator.Configure(ctx, spec)
+	}
+	return configure(ctx, c.conn, spec)
+}
+
+func (c *connAdapter) Close(ctx context.Context) error {
+	return c.conn.Close(ctx)
 }
 
 type DriverProvider interface {
-	LoadDriver(ctx context.Context, driverID runtimev1.DriverID) (Driver, error)
+	LoadDriver(ctx context.Context, driverID runtimev1.DriverID) (driver.Driver, error)
 }
 
-func newStaticDriverProvider(drivers ...Driver) DriverProvider {
-	driverMap := make(map[runtimev1.DriverID]Driver)
-	for _, driver := range drivers {
-		driverMap[driver.ID()] = driver
-	}
+func newStaticDriverProvider(drivers map[runtimev1.DriverID]driver.Driver) DriverProvider {
 	return &staticDriverProvider{
-		drivers: driverMap,
+		drivers: drivers,
 	}
 }
 
 type staticDriverProvider struct {
-	drivers map[runtimev1.DriverID]Driver
+	drivers map[runtimev1.DriverID]driver.Driver
 }
 
-func (p *staticDriverProvider) LoadDriver(_ context.Context, driverID runtimev1.DriverID) (Driver, error) {
+func (p *staticDriverProvider) LoadDriver(_ context.Context, driverID runtimev1.DriverID) (driver.Driver, error) {
 	driver, ok := p.drivers[driverID]
 	if !ok {
 		return nil, errors.NewNotFound("driver %s not found", driverID)
