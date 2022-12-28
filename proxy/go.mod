@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978
-	github.com/atomix/atomix/runtime v0.0.0-20221228200236-1b3b36b1e41d
+	github.com/atomix/atomix/runtime v0.0.0-20221228220240-ab52db65c6fb
 	github.com/gogo/protobuf v1.3.2
 	github.com/rogpeppe/go-internal v1.8.1
 	github.com/spf13/cobra v1.4.0
