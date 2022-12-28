@@ -62,8 +62,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkY
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
 github.com/atomix/atomix/controller v0.0.0-20221220075114-dd2ab65e4a8d h1:ggFWAIfM6ux3wWbUhUPr2NXfuARAfBXCO2cGnCKYP/Q=
 github.com/atomix/atomix/controller v0.0.0-20221220075114-dd2ab65e4a8d/go.mod h1:gs4XV5xf3QI/Dyi/KPLPSa9lbbfbOBfC+jRcVfH4y40=
-github.com/atomix/atomix/runtime v0.0.0-20221219085404-5679432a0742 h1:7wLBCITMTqFsdEV69RwFsvT1RpPHHwYMelVlV6+z2bc=
-github.com/atomix/atomix/runtime v0.0.0-20221219085404-5679432a0742/go.mod h1:Hx3TvGEuLNpHlKOZhORorUZaRs/TljX9ohk6cYy/JFQ=
+github.com/atomix/atomix/runtime v0.0.0-20221228220240-ab52db65c6fb h1:hN7SGuOKYwSLgyU9ijDJtijMqd8Y3pzP67rRyVABfFc=
+github.com/atomix/atomix/runtime v0.0.0-20221228220240-ab52db65c6fb/go.mod h1:vcFpNMTviuy9HrkFp8Gly7/YGfLPavLL2jVTrRlyXHs=
 github.com/benbjohnson/clock v1.0.3/go.mod h1:bGMdMPoPVvcYyt1gHDf4J2KE153Yf9BuiUKYMaxlTDM=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
@@ -629,7 +629,6 @@ golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f h1:GGU+dLjvlC3qDwqYgL6UgRmHXhOOgns0bZu2Ty5mm6U=
-golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 gomodules.xyz/jsonpatch/v2 v2.2.0 h1:4pT439QV83L+G9FkcCriY6EkpcK6r6bK+A5FBUMI7qY=
 gomodules.xyz/jsonpatch/v2 v2.2.0/go.mod h1:WXp+iVDkoLQqPudfQ9GBlwB2eZ5DKOnjQZCYdOS8GPY=
 google.golang.org/api v0.4.0/go.mod h1:8k5glujaEP+g9n7WNsDg8QP6cUVNI86fCNMcbazEtwE=
