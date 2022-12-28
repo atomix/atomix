@@ -13,6 +13,7 @@ option java_outer_classname = "RuntimeV1";
 option java_multiple_files = true;
 
 import "gogoproto/gogo.proto";
+import "google/protobuf/any.proto";
 
 service Runtime {
     rpc Connect (ConnectRequest) returns (ConnectResponse);
@@ -30,15 +31,9 @@ message Route {
         (gogoproto.nullable) = false
     ];
     repeated string tags = 2;
-    repeated PrimitiveSpec primitives = 3 [
+    repeated Primitive primitives = 3 [
         (gogoproto.nullable) = false
     ];
-}
-
-message StoreID {
-    option (gogoproto.equal) = true;
-    string namespace = 1;
-    string name = 2;
 }
 
 message DriverID {
@@ -47,13 +42,18 @@ message DriverID {
     string version = 2;
 }
 
-message ConnSpec {
+message StoreID {
     option (gogoproto.equal) = true;
+    string namespace = 1;
+    string name = 2;
+}
+
+message Store {
     StoreID store_id = 1 [
         (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
     ];
-    bytes config = 2;
+    google.protobuf.Any spec = 2;
 }
 
 message PrimitiveID {
@@ -81,13 +81,13 @@ message PrimitiveMeta {
     repeated string tags = 3;
 }
 
-message PrimitiveSpec {
+message Primitive {
     option (gogoproto.equal) = true;
     PrimitiveMeta meta = 1 [
         (gogoproto.nullable) = false,
         (gogoproto.embed) = true
     ];
-    bytes config = 2;
+    google.protobuf.Any spec = 2;
 }
 
 message ConnectRequest {
@@ -95,7 +95,7 @@ message ConnectRequest {
         (gogoproto.customname) = "DriverID",
         (gogoproto.nullable) = false
     ];
-    ConnSpec spec = 2 [
+    Store store = 2 [
         (gogoproto.nullable) = false
     ];
 }
@@ -105,7 +105,7 @@ message ConnectResponse {
 }
 
 message ConfigureRequest {
-    ConnSpec spec = 1 [
+    Store store = 1 [
         (gogoproto.nullable) = false
     ];
 }
