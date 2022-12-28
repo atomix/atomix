@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
-	rsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	rsmv1 "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/stores/shared-memory/pkg/node"
 	"github.com/gogo/protobuf/jsonpb"

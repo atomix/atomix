@@ -6,7 +6,7 @@ package node
 
 import (
 	"context"
-	rsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	rsmv1 "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
