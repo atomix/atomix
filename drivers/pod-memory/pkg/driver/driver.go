@@ -6,39 +6,25 @@ package driver
 
 import (
 	"context"
-	"fmt"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	rsmapiv1 "github.com/atomix/atomix/protocols/rsm/api/v1"
+	"github.com/atomix/atomix/runtime/pkg/driver"
 	"github.com/atomix/atomix/runtime/pkg/network"
-	"github.com/atomix/atomix/runtime/pkg/runtime"
 )
 
-var driverID = runtimev1.DriverID{
-	Name:    "PodMemory",
-	Version: "v2beta1",
-}
-
-func New(network network.Driver) runtime.Driver {
-	return &sharedMemoryDriver{
+func New(network network.Driver) driver.Driver {
+	return &podMemoryDriver{
 		network: network,
 	}
 }
 
-type sharedMemoryDriver struct {
+type podMemoryDriver struct {
 	network network.Driver
 }
 
-func (d *sharedMemoryDriver) ID() runtimev1.DriverID {
-	return driverID
-}
-
-func (d *sharedMemoryDriver) Connect(ctx context.Context, spec runtimev1.ConnSpec) (runtime.Conn, error) {
+func (d *podMemoryDriver) Connect(ctx context.Context, spec rsmapiv1.ProtocolConfig) (driver.Conn, error) {
 	conn := newConn(d.network)
 	if err := conn.Connect(ctx, spec); err != nil {
 		return nil, err
 	}
 	return conn, nil
-}
-
-func (d *sharedMemoryDriver) String() string {
-	return fmt.Sprintf("%s/%s", driverID.Name, driverID.Version)
 }

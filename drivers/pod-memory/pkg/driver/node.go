@@ -6,7 +6,7 @@ package driver
 
 import (
 	"context"
-	rsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	rsmapiv1 "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
 	counternodev1 "github.com/atomix/atomix/protocols/rsm/pkg/node/counter/v1"
 	countermapnodev1 "github.com/atomix/atomix/protocols/rsm/pkg/node/countermap/v1"
@@ -18,15 +18,15 @@ import (
 	setnodev1 "github.com/atomix/atomix/protocols/rsm/pkg/node/set/v1"
 	valuenodev1 "github.com/atomix/atomix/protocols/rsm/pkg/node/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/statemachine"
-	counterstatemachinev1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/counter/v1"
-	countermapstatemachinev1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/countermap/v1"
-	electionstatemachinev1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/election/v1"
-	indexedmapstatemachinev1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/indexedmap/v1"
-	lockstatemachinev1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/lock/v1"
-	mapstatemachinev1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/map/v1"
-	multimapstatemachinev1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/multimap/v1"
-	setstatemachinev1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/set/v1"
-	valuestatemachinev1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/value/v1"
+	countersmv1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/counter/v1"
+	countermapsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/countermap/v1"
+	electionsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/election/v1"
+	indexedmapsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/indexedmap/v1"
+	locksmv1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/lock/v1"
+	mapsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/map/v1"
+	multimapsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/multimap/v1"
+	setsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/set/v1"
+	valuesmv1 "github.com/atomix/atomix/protocols/rsm/pkg/statemachine/value/v1"
 	"github.com/atomix/atomix/runtime/pkg/network"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"sync"
@@ -48,36 +48,42 @@ func newNode(network network.Driver, opts ...node.Option) *node.Node {
 
 func newProtocol() node.Protocol {
 	return &podMemoryProtocol{
-		partition: node.NewPartition(1, newExecutor()),
+		partitions: map[rsmapiv1.PartitionID]node.Partition{
+			1: node.NewPartition(1, newExecutor()),
+			2: node.NewPartition(2, newExecutor()),
+			3: node.NewPartition(3, newExecutor()),
+		},
 	}
 }
 
 type podMemoryProtocol struct {
-	partition node.Partition
+	partitions map[rsmapiv1.PartitionID]node.Partition
 }
 
 func (p *podMemoryProtocol) Partitions() []node.Partition {
-	return []node.Partition{p.partition}
+	partitions := make([]node.Partition, 0, len(p.partitions))
+	for _, partition := range p.partitions {
+		partitions = append(partitions, partition)
+	}
+	return partitions
 }
 
-func (p *podMemoryProtocol) Partition(partitionID rsmv1.PartitionID) (node.Partition, bool) {
-	if p.partition.ID() != partitionID {
-		return nil, false
-	}
-	return p.partition, true
+func (p *podMemoryProtocol) Partition(partitionID rsmapiv1.PartitionID) (node.Partition, bool) {
+	partition, ok := p.partitions[partitionID]
+	return partition, ok
 }
 
 func newExecutor() node.Executor {
 	registry := statemachine.NewPrimitiveTypeRegistry()
-	counterstatemachinev1.RegisterStateMachine(registry)
-	countermapstatemachinev1.RegisterStateMachine(registry)
-	electionstatemachinev1.RegisterStateMachine(registry)
-	indexedmapstatemachinev1.RegisterStateMachine(registry)
-	lockstatemachinev1.RegisterStateMachine(registry)
-	mapstatemachinev1.RegisterStateMachine(registry)
-	multimapstatemachinev1.RegisterStateMachine(registry)
-	setstatemachinev1.RegisterStateMachine(registry)
-	valuestatemachinev1.RegisterStateMachine(registry)
+	countersmv1.RegisterStateMachine(registry)
+	countermapsmv1.RegisterStateMachine(registry)
+	electionsmv1.RegisterStateMachine(registry)
+	indexedmapsmv1.RegisterStateMachine(registry)
+	locksmv1.RegisterStateMachine(registry)
+	mapsmv1.RegisterStateMachine(registry)
+	multimapsmv1.RegisterStateMachine(registry)
+	setsmv1.RegisterStateMachine(registry)
+	valuesmv1.RegisterStateMachine(registry)
 	return &podMemoryExecutor{
 		sm: statemachine.NewStateMachine(registry),
 	}
@@ -88,14 +94,14 @@ type podMemoryExecutor struct {
 	mu sync.RWMutex
 }
 
-func (e *podMemoryExecutor) Propose(ctx context.Context, proposal *rsmv1.ProposalInput, stream streams.WriteStream[*rsmv1.ProposalOutput]) error {
+func (e *podMemoryExecutor) Propose(ctx context.Context, proposal *rsmapiv1.ProposalInput, stream streams.WriteStream[*rsmapiv1.ProposalOutput]) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.sm.Propose(proposal, stream)
 	return nil
 }
 
-func (e *podMemoryExecutor) Query(ctx context.Context, query *rsmv1.QueryInput, stream streams.WriteStream[*rsmv1.QueryOutput]) error {
+func (e *podMemoryExecutor) Query(ctx context.Context, query *rsmapiv1.QueryInput, stream streams.WriteStream[*rsmapiv1.QueryOutput]) error {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 	e.sm.Query(query, stream)

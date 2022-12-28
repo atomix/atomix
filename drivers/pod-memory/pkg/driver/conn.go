@@ -6,37 +6,39 @@ package driver
 
 import (
 	"context"
-	"fmt"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
-	rsmv1 "github.com/atomix/atomix/protocols/rsm/pkg/api/v1"
+	"github.com/atomix/atomix/api/errors"
+	counterapiv1 "github.com/atomix/atomix/api/runtime/counter/v1"
+	countermapapiv1 "github.com/atomix/atomix/api/runtime/countermap/v1"
+	electionapiv1 "github.com/atomix/atomix/api/runtime/election/v1"
+	indexedmapapiv1 "github.com/atomix/atomix/api/runtime/indexedmap/v1"
+	lockapiv1 "github.com/atomix/atomix/api/runtime/lock/v1"
+	mapapiv1 "github.com/atomix/atomix/api/runtime/map/v1"
+	multimapapiv1 "github.com/atomix/atomix/api/runtime/multimap/v1"
+	setapiv1 "github.com/atomix/atomix/api/runtime/set/v1"
+	valueapiv1 "github.com/atomix/atomix/api/runtime/value/v1"
+	indexedmaprsmv1 "github.com/atomix/atomix/protocols/rsm/api/indexedmap/v1"
+	maprsmv1 "github.com/atomix/atomix/protocols/rsm/api/map/v1"
+	rsmapiv1 "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
-	counterv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/counter/v1"
-	countermapv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/countermap/v1"
-	electionv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/election/v1"
-	indexedmapv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/indexedmap/v1"
-	lockv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/lock/v1"
-	mapv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/map/v1"
-	multimapv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/multimap/v1"
-	setv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/set/v1"
-	valuev1 "github.com/atomix/atomix/protocols/rsm/pkg/client/value/v1"
+	counterclientv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/counter/v1"
+	countermapclientv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/countermap/v1"
+	electionclientv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/election/v1"
+	indexedmapclientv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/indexedmap/v1"
+	lockclientv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/lock/v1"
+	mapclientv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/map/v1"
+	multimapclientv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/multimap/v1"
+	setclientv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/set/v1"
+	valueclientv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
 	"github.com/atomix/atomix/runtime/pkg/network"
-	counterruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/counter/v1"
-	countermapruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/countermap/v1"
-	electionruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/election/v1"
-	indexedmapruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/indexedmap/v1"
-	lockruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/lock/v1"
-	mapruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/map/v1"
-	multimapruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/multimap/v1"
-	setruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/set/v1"
-	valueruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/value/v1"
+	"strconv"
+	"strings"
 	"sync"
 )
 
 func newConn(network network.Driver) *podMemoryConn {
 	return &podMemoryConn{
 		ProtocolClient: client.NewClient(network),
-		network:        network,
 	}
 }
 
@@ -47,78 +49,61 @@ type podMemoryConn struct {
 	mu      sync.Mutex
 }
 
-func (c *podMemoryConn) Connect(ctx context.Context, spec runtimev1.ConnSpec) error {
+func (c *podMemoryConn) Connect(ctx context.Context, spec rsmapiv1.ProtocolConfig) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.node != nil {
 		return nil
 	}
 
+	parts := strings.Split(spec.Partitions[0].Leader, ":")
+	host, portS := parts[0], parts[1]
+	port, err := strconv.Atoi(portS)
+	if err != nil {
+		return errors.NewInvalid(err.Error())
+	}
+
 	c.node = newNode(c.network,
-		node.WithHost(fmt.Sprintf("%s.%s", spec.StoreID.Namespace, spec.StoreID.Name)),
-		node.WithPort(8080))
+		node.WithHost(host),
+		node.WithPort(port))
 	if err := c.node.Start(); err != nil {
 		return err
 	}
-
-	config := rsmv1.ProtocolConfig{
-		Partitions: []rsmv1.PartitionConfig{
-			{
-				PartitionID: 1,
-				Leader:      fmt.Sprintf("%s.%s:8080", spec.StoreID.Namespace, spec.StoreID.Name),
-			},
-		},
-	}
-	return c.ProtocolClient.Connect(ctx, config)
+	return c.ProtocolClient.Connect(ctx, spec)
 }
 
-func (c *podMemoryConn) Close(ctx context.Context) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.node == nil {
-		return nil
-	}
-	if err := c.ProtocolClient.Close(ctx); err != nil {
-		return err
-	}
-	if err := c.node.Stop(); err != nil {
-		return err
-	}
-	return nil
+func (c *podMemoryConn) NewCounterV1() counterapiv1.CounterServer {
+	return counterclientv1.NewCounter(c.Protocol)
 }
 
-func (c *podMemoryConn) NewCounter(spec runtimev1.PrimitiveSpec) (counterruntimev1.Counter, error) {
-	return counterv1.NewCounter(c.Protocol, spec)
+func (c *podMemoryConn) NewCounterMapV1() countermapapiv1.CounterMapServer {
+	return countermapclientv1.NewCounterMap(c.Protocol)
 }
 
-func (c *podMemoryConn) NewCounterMap(spec runtimev1.PrimitiveSpec) (countermapruntimev1.CounterMap, error) {
-	return countermapv1.NewCounterMap(c.Protocol, spec)
+func (c *podMemoryConn) NewLeaderElectionV1() electionapiv1.LeaderElectionServer {
+	return electionclientv1.NewLeaderElection(c.Protocol)
 }
 
-func (c *podMemoryConn) NewLeaderElection(spec runtimev1.PrimitiveSpec) (electionruntimev1.LeaderElection, error) {
-	return electionv1.NewLeaderElection(c.Protocol, spec)
+func (c *podMemoryConn) NewIndexedMapV1(spec *indexedmaprsmv1.IndexedMapConfig) (indexedmapapiv1.IndexedMapServer, error) {
+	return indexedmapclientv1.NewIndexedMap(c.Protocol, spec)
 }
 
-func (c *podMemoryConn) NewIndexedMap(spec runtimev1.PrimitiveSpec) (indexedmapruntimev1.IndexedMap, error) {
-	return indexedmapv1.NewIndexedMap(c.Protocol, spec)
+func (c *podMemoryConn) NewLockV1() lockapiv1.LockServer {
+	return lockclientv1.NewLock(c.Protocol)
 }
 
-func (c *podMemoryConn) NewLock(spec runtimev1.PrimitiveSpec) (lockruntimev1.Lock, error) {
-	return lockv1.NewLock(c.Protocol, spec)
+func (c *podMemoryConn) NewMapV1(spec *maprsmv1.MapConfig) (mapapiv1.MapServer, error) {
+	return mapclientv1.NewMap(c.Protocol, spec)
 }
 
-func (c *podMemoryConn) NewMap(spec runtimev1.PrimitiveSpec) (mapruntimev1.Map, error) {
-	return mapv1.NewMap(c.Protocol, spec)
+func (c *podMemoryConn) NewMultiMapV1() multimapapiv1.MultiMapServer {
+	return multimapclientv1.NewMultiMap(c.Protocol)
 }
 
-func (c *podMemoryConn) NewMultiMap(spec runtimev1.PrimitiveSpec) (multimapruntimev1.MultiMap, error) {
-	return multimapv1.NewMultiMap(c.Protocol, spec)
+func (c *podMemoryConn) NewSetV1() setapiv1.SetServer {
+	return setclientv1.NewSet(c.Protocol)
 }
 
-func (c *podMemoryConn) NewSet(spec runtimev1.PrimitiveSpec) (setruntimev1.Set, error) {
-	return setv1.NewSet(c.Protocol, spec)
-}
-
-func (c *podMemoryConn) NewValue(spec runtimev1.PrimitiveSpec) (valueruntimev1.Value, error) {
-	return valuev1.NewValue(c.Protocol, spec)
+func (c *podMemoryConn) NewValueV1() valueapiv1.ValueServer {
+	return valueclientv1.NewValue(c.Protocol)
 }
