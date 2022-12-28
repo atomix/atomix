@@ -3,9 +3,9 @@ module github.com/atomix/atomix/drivers/raft
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221228090355-f80263b9b241
-	github.com/atomix/atomix/protocols/rsm v0.0.0-20221228121211-52cce6aee436
-	github.com/atomix/atomix/runtime v0.0.0-20221228114623-367fc9daa78f
+	github.com/atomix/atomix/api v0.0.0-20221228184436-3143c3c4ae19
+	github.com/atomix/atomix/protocols/rsm v0.0.0-20221228184803-68c53cc5bcdd
+	github.com/atomix/atomix/runtime v0.0.0-20221228183446-5af0f149b216
 )
 
 require (
