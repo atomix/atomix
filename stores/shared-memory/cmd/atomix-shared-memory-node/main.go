@@ -29,7 +29,6 @@ import (
 	"github.com/atomix/atomix/runtime/pkg/network"
 	sharedmemory "github.com/atomix/atomix/stores/shared-memory/pkg/node"
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
@@ -68,26 +67,6 @@ func main() {
 				os.Exit(1)
 			}
 
-			var serverOptions []grpc.ServerOption
-			if config.Server.ReadBufferSize != nil {
-				serverOptions = append(serverOptions, grpc.ReadBufferSize(*config.Server.ReadBufferSize))
-			}
-			if config.Server.WriteBufferSize != nil {
-				serverOptions = append(serverOptions, grpc.WriteBufferSize(*config.Server.WriteBufferSize))
-			}
-			if config.Server.MaxSendMsgSize != nil {
-				serverOptions = append(serverOptions, grpc.MaxSendMsgSize(*config.Server.MaxSendMsgSize))
-			}
-			if config.Server.MaxRecvMsgSize != nil {
-				serverOptions = append(serverOptions, grpc.MaxRecvMsgSize(*config.Server.MaxRecvMsgSize))
-			}
-			if config.Server.NumStreamWorkers != nil {
-				serverOptions = append(serverOptions, grpc.NumStreamWorkers(*config.Server.NumStreamWorkers))
-			}
-			if config.Server.MaxConcurrentStreams != nil {
-				serverOptions = append(serverOptions, grpc.MaxConcurrentStreams(*config.Server.MaxConcurrentStreams))
-			}
-
 			registry := statemachine.NewPrimitiveTypeRegistry()
 			counterstatemachinev1.RegisterStateMachine(registry)
 			countermapstatemachinev1.RegisterStateMachine(registry)
@@ -103,8 +82,7 @@ func main() {
 				network.NewDefaultDriver(),
 				sharedmemory.NewProtocol(registry),
 				node.WithHost(host),
-				node.WithPort(port),
-				node.WithGRPCServerOptions(serverOptions...))
+				node.WithPort(port))
 
 			counternodev1.RegisterServer(node)
 			countermapnodev1.RegisterServer(node)
