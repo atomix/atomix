@@ -10,7 +10,6 @@ import (
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
-	"github.com/atomix/atomix/runtime/pkg/utils/stringer"
 )
 
 var log = logging.GetLogger()
@@ -29,89 +28,89 @@ type topicServer struct {
 
 func (s *topicServer) Create(ctx context.Context, request *topicv1.CreateRequest) (*topicv1.CreateResponse, error) {
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
+		logging.Trunc64("CreateRequest", request))
 	client, err := s.client.Create(ctx, request.ID, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
 		log.Debugw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Create",
-		logging.Stringer("CreateResponse", stringer.Truncate(response, truncLen)))
+		logging.Trunc64("CreateResponse", response))
 	return response, nil
 }
 
 func (s *topicServer) Close(ctx context.Context, request *topicv1.CloseRequest) (*topicv1.CloseResponse, error) {
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
+		logging.Trunc64("CloseRequest", request))
 	client, err := s.client.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
 		log.Debugw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Close",
-		logging.Stringer("CloseResponse", stringer.Truncate(response, truncLen)))
+		logging.Trunc64("CloseResponse", response))
 	return response, nil
 }
 
 func (s *topicServer) Publish(ctx context.Context, request *topicv1.PublishRequest) (*topicv1.PublishResponse, error) {
 	log.Debugw("Publish",
-		logging.Stringer("PublishRequest", stringer.Truncate(request, truncLen)))
+		logging.Trunc64("PublishRequest", request))
 	client, err := s.client.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Publish",
-			logging.Stringer("PublishRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("PublishRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Publish(ctx, request)
 	if err != nil {
 		log.Debugw("Publish",
-			logging.Stringer("PublishRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("PublishRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Publish",
-		logging.Stringer("PublishResponse", stringer.Truncate(response, truncLen)))
+		logging.Trunc64("PublishResponse", response))
 	return response, nil
 }
 
 func (s *topicServer) Subscribe(request *topicv1.SubscribeRequest, server topicv1.Topic_SubscribeServer) error {
 	log.Debugw("Subscribe",
-		logging.Stringer("SubscribeRequest", stringer.Truncate(request, truncLen)),
+		logging.Trunc64("SubscribeRequest", request),
 		logging.String("State", "started"))
 	client, err := s.client.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Subscribe",
-			logging.Stringer("SubscribeRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("SubscribeRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
 	err = client.Subscribe(request, server)
 	if err != nil {
 		log.Debugw("Subscribe",
-			logging.Stringer("SubscribeRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("SubscribeRequest", request),
 			logging.Error("Error", err))
 		return err
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
-	"github.com/atomix/atomix/runtime/pkg/utils/stringer"
 )
 
 var log = logging.GetLogger()
@@ -29,181 +28,181 @@ type setServer struct {
 
 func (s *setServer) Create(ctx context.Context, request *setv1.CreateRequest) (*setv1.CreateResponse, error) {
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)))
+		logging.Trunc64("CreateRequest", request))
 	client, err := s.client.Create(ctx, request.ID, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Create(ctx, request)
 	if err != nil {
 		log.Debugw("Create",
-			logging.Stringer("CreateRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Create",
-		logging.Stringer("CreateResponse", stringer.Truncate(response, truncLen)))
+		logging.Trunc64("CreateResponse", response))
 	return response, nil
 }
 
 func (s *setServer) Close(ctx context.Context, request *setv1.CloseRequest) (*setv1.CloseResponse, error) {
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)))
+		logging.Trunc64("CloseRequest", request))
 	client, err := s.client.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Close(ctx, request)
 	if err != nil {
 		log.Debugw("Close",
-			logging.Stringer("CloseRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Close",
-		logging.Stringer("CloseResponse", stringer.Truncate(response, truncLen)))
+		logging.Trunc64("CloseResponse", response))
 	return response, nil
 }
 
 func (s *setServer) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1.SizeResponse, error) {
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)))
+		logging.Trunc64("SizeRequest", request))
 	client, err := s.client.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Size",
-			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("SizeRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Size(ctx, request)
 	if err != nil {
 		log.Debugw("Size",
-			logging.Stringer("SizeRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("SizeRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Size",
-		logging.Stringer("SizeResponse", stringer.Truncate(response, truncLen)))
+		logging.Trunc64("SizeResponse", response))
 	return response, nil
 }
 
 func (s *setServer) Contains(ctx context.Context, request *setv1.ContainsRequest) (*setv1.ContainsResponse, error) {
 	log.Debugw("Contains",
-		logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)))
+		logging.Trunc64("ContainsRequest", request))
 	client, err := s.client.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Contains",
-			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Contains(ctx, request)
 	if err != nil {
 		log.Debugw("Contains",
-			logging.Stringer("ContainsRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Contains",
-		logging.Stringer("ContainsResponse", stringer.Truncate(response, truncLen)))
+		logging.Trunc64("ContainsResponse", response))
 	return response, nil
 }
 
 func (s *setServer) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.AddResponse, error) {
 	log.Debugw("Add",
-		logging.Stringer("AddRequest", stringer.Truncate(request, truncLen)))
+		logging.Trunc64("AddRequest", request))
 	client, err := s.client.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Add",
-			logging.Stringer("AddRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("AddRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Add(ctx, request)
 	if err != nil {
 		log.Debugw("Add",
-			logging.Stringer("AddRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("AddRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Add",
-		logging.Stringer("AddResponse", stringer.Truncate(response, truncLen)))
+		logging.Trunc64("AddResponse", response))
 	return response, nil
 }
 
 func (s *setServer) Remove(ctx context.Context, request *setv1.RemoveRequest) (*setv1.RemoveResponse, error) {
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)))
+		logging.Trunc64("RemoveRequest", request))
 	client, err := s.client.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Remove(ctx, request)
 	if err != nil {
 		log.Debugw("Remove",
-			logging.Stringer("RemoveRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Remove",
-		logging.Stringer("RemoveResponse", stringer.Truncate(response, truncLen)))
+		logging.Trunc64("RemoveResponse", response))
 	return response, nil
 }
 
 func (s *setServer) Clear(ctx context.Context, request *setv1.ClearRequest) (*setv1.ClearResponse, error) {
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)))
+		logging.Trunc64("ClearRequest", request))
 	client, err := s.client.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Clear",
-			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("ClearRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response, err := client.Clear(ctx, request)
 	if err != nil {
 		log.Debugw("Clear",
-			logging.Stringer("ClearRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("ClearRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	log.Debugw("Clear",
-		logging.Stringer("ClearResponse", stringer.Truncate(response, truncLen)))
+		logging.Trunc64("ClearResponse", response))
 	return response, nil
 }
 
 func (s *setServer) Events(request *setv1.EventsRequest, server setv1.Set_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+		logging.Trunc64("EventsRequest", request),
 		logging.String("State", "started"))
 	client, err := s.client.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
 	err = client.Events(request, server)
 	if err != nil {
 		log.Debugw("Events",
-			logging.Stringer("EventsRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("EventsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
@@ -212,20 +211,20 @@ func (s *setServer) Events(request *setv1.EventsRequest, server setv1.Set_Events
 
 func (s *setServer) Elements(request *setv1.ElementsRequest, server setv1.Set_ElementsServer) error {
 	log.Debugw("Elements",
-		logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
+		logging.Trunc64("ElementsRequest", request),
 		logging.String("State", "started"))
 	client, err := s.client.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Elements",
-			logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("ElementsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
 	err = client.Elements(request, server)
 	if err != nil {
 		log.Debugw("Elements",
-			logging.Stringer("ElementsRequest", stringer.Truncate(request, truncLen)),
+			logging.Trunc64("ElementsRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
