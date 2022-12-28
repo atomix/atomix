@@ -42,6 +42,53 @@ func Stringer(name string, value fmt.Stringer) Field {
 	}
 }
 
+// Trunc creates a truncated named field for a Stringer
+func Trunc(name string, value fmt.Stringer, len int) Field {
+	return &zapField{
+		field: zap.Stringer(name, &truncStringer{
+			stringer: value,
+			length:   len,
+		}),
+	}
+}
+
+func Trunc8(name string, value fmt.Stringer) Field {
+	return Trunc(name, value, 8)
+}
+
+func Trunc16(name string, value fmt.Stringer) Field {
+	return Trunc(name, value, 8)
+}
+
+func Trunc32(name string, value fmt.Stringer) Field {
+	return Trunc(name, value, 8)
+}
+
+func Trunc64(name string, value fmt.Stringer) Field {
+	return Trunc(name, value, 8)
+}
+
+func Trunc128(name string, value fmt.Stringer) Field {
+	return Trunc(name, value, 8)
+}
+
+func Trunc256(name string, value fmt.Stringer) Field {
+	return Trunc(name, value, 8)
+}
+
+type truncStringer struct {
+	stringer fmt.Stringer
+	length   int
+}
+
+func (s *truncStringer) String() string {
+	value := s.stringer.String()
+	if len(value) > s.length {
+		return value[:s.length]
+	}
+	return value
+}
+
 // String creates a named string field
 func String(name string, value string) Field {
 	return &zapField{
