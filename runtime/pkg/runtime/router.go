@@ -6,8 +6,9 @@ package runtime
 
 import (
 	"context"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
+	"github.com/gogo/protobuf/types"
 )
 
 type RouteProvider interface {
@@ -38,7 +39,7 @@ type router struct {
 	provider RouteProvider
 }
 
-func (r *router) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, []byte, error) {
+func (r *router) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error) {
 	routes, err := r.provider.LoadRoutes(ctx)
 	if err != nil {
 		return runtimev1.StoreID{}, nil, errors.NewInternal(err.Error())
@@ -53,7 +54,7 @@ func (r *router) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runti
 		if r.routeMatches(route, tags) {
 			for _, primitive := range route.Primitives {
 				if r.primitiveMatches(primitive.PrimitiveMeta, meta, tags) {
-					return route.StoreID, primitive.Config, nil
+					return route.StoreID, primitive.Spec, nil
 				}
 			}
 			return route.StoreID, nil, err

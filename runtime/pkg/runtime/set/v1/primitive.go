@@ -5,8 +5,8 @@
 package v1
 
 import (
-	setv1 "github.com/atomix/atomix/api/pkg/runtime/set/v1"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	setv1 "github.com/atomix/atomix/api/runtime/set/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Set], bool) {
 type Set setv1.SetServer
 
 type SetProvider interface {
-	NewSet(spec runtimev1.PrimitiveSpec) (Set, error)
+	NewSet(spec runtimev1.Primitive) (Set, error)
 }

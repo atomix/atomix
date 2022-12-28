@@ -6,10 +6,11 @@ package runtime
 
 import (
 	"context"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/network"
+	"github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
 	"os"
 	"sync"
@@ -27,10 +28,10 @@ func Namespace() string {
 
 type Runtime interface {
 	network.Service
-	connect(ctx context.Context, driverID runtimev1.DriverID, spec runtimev1.ConnSpec) error
-	configure(ctx context.Context, spec runtimev1.ConnSpec) error
+	connect(ctx context.Context, driverID runtimev1.DriverID, store runtimev1.Store) error
+	configure(ctx context.Context, store runtimev1.Store) error
 	disconnect(ctx context.Context, storeID runtimev1.StoreID) error
-	route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, []byte, error)
+	route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error)
 	lookup(storeID runtimev1.StoreID) (Conn, error)
 }
 
@@ -63,7 +64,7 @@ type runtime struct {
 	mu      sync.RWMutex
 }
 
-func (r *runtime) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, []byte, error) {
+func (r *runtime) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error) {
 	return r.router.route(ctx, meta)
 }
 
@@ -77,13 +78,13 @@ func (r *runtime) lookup(storeID runtimev1.StoreID) (Conn, error) {
 	return conn, nil
 }
 
-func (r *runtime) connect(ctx context.Context, driverID runtimev1.DriverID, spec runtimev1.ConnSpec) error {
+func (r *runtime) connect(ctx context.Context, driverID runtimev1.DriverID, store runtimev1.Store) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	conn, ok := r.conns[spec.StoreID]
+	conn, ok := r.conns[store.StoreID]
 	if ok {
-		return errors.NewAlreadyExists("connection '%s' already exists", spec.StoreID)
+		return errors.NewAlreadyExists("connection '%s' already exists", store.StoreID)
 	}
 
 	driver, ok := r.drivers[driverID]
@@ -105,47 +106,47 @@ func (r *runtime) connect(ctx context.Context, driverID runtimev1.DriverID, spec
 	}
 
 	log.Infow("Establishing connection to store",
-		logging.String("Name", spec.StoreID.Name),
-		logging.String("Namespace", spec.StoreID.Namespace))
-	conn, err := driver.Connect(ctx, spec)
+		logging.String("Name", store.StoreID.Name),
+		logging.String("Namespace", store.StoreID.Namespace))
+	conn, err := driver.Connect(ctx, store)
 	if err != nil {
 		log.Warnw("Connecting to store failed",
-			logging.String("Name", spec.StoreID.Name),
-			logging.String("Namespace", spec.StoreID.Namespace),
+			logging.String("Name", store.StoreID.Name),
+			logging.String("Namespace", store.StoreID.Namespace),
 			logging.Error("Error", err))
 		return err
 	}
 	log.Infow("Connected to store",
-		logging.String("Name", spec.StoreID.Name),
-		logging.String("Namespace", spec.StoreID.Namespace))
-	r.conns[spec.StoreID] = conn
+		logging.String("Name", store.StoreID.Name),
+		logging.String("Namespace", store.StoreID.Namespace))
+	r.conns[store.StoreID] = conn
 	return nil
 }
 
-func (r *runtime) configure(ctx context.Context, spec runtimev1.ConnSpec) error {
+func (r *runtime) configure(ctx context.Context, store runtimev1.Store) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	conn, ok := r.conns[spec.StoreID]
+	conn, ok := r.conns[store.StoreID]
 	if !ok {
-		return errors.NewNotFound("connection to '%s' not found", spec.StoreID)
+		return errors.NewNotFound("connection to '%s' not found", store.StoreID)
 	}
 
 	log.Infow("Reconfiguring connection to store",
-		logging.String("Name", spec.StoreID.Name),
-		logging.String("Namespace", spec.StoreID.Namespace))
+		logging.String("Name", store.StoreID.Name),
+		logging.String("Namespace", store.StoreID.Namespace))
 	if configurator, ok := conn.(Configurator); ok {
-		if err := configurator.Configure(ctx, spec); err != nil {
+		if err := configurator.Configure(ctx, store); err != nil {
 			log.Warnw("Reconfiguring connection to store failed",
-				logging.String("Name", spec.StoreID.Name),
-				logging.String("Namespace", spec.StoreID.Namespace),
+				logging.String("Name", store.StoreID.Name),
+				logging.String("Namespace", store.StoreID.Namespace),
 				logging.Error("Error", err))
 			return err
 		}
 	}
 	log.Infow("Reconfigured connection to store",
-		logging.String("Name", spec.StoreID.Name),
-		logging.String("Namespace", spec.StoreID.Namespace))
+		logging.String("Name", store.StoreID.Name),
+		logging.String("Namespace", store.StoreID.Namespace))
 	return nil
 }
 

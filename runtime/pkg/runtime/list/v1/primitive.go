@@ -5,8 +5,8 @@
 package v1
 
 import (
-	listv1 "github.com/atomix/atomix/api/pkg/runtime/list/v1"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	listv1 "github.com/atomix/atomix/api/runtime/list/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[List], bool) {
 type List listv1.ListServer
 
 type ListProvider interface {
-	NewList(spec runtimev1.PrimitiveSpec) (List, error)
+	NewList(spec runtimev1.Primitive) (List, error)
 }

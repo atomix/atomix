@@ -3,8 +3,9 @@ module github.com/atomix/atomix/runtime
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221221001739-d7b19bcf8fb4
+	github.com/atomix/atomix/api v0.0.0-20221228084113-a4d2313f3897
 	github.com/cenkalti/backoff v2.2.1+incompatible
+	github.com/gogo/protobuf v1.3.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/stretchr/testify v1.8.0
 	go.uber.org/zap v1.24.0
@@ -14,7 +15,6 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect

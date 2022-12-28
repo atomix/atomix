@@ -5,8 +5,8 @@
 package v1
 
 import (
-	multimapv1 "github.com/atomix/atomix/api/pkg/runtime/multimap/v1"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	multimapv1 "github.com/atomix/atomix/api/runtime/multimap/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[MultiMap], bool) {
 type MultiMap multimapv1.MultiMapServer
 
 type MultiMapProvider interface {
-	NewMultiMap(spec runtimev1.PrimitiveSpec) (MultiMap, error)
+	NewMultiMap(spec runtimev1.Primitive) (MultiMap, error)
 }

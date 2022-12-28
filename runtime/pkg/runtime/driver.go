@@ -7,7 +7,7 @@ package runtime
 import (
 	"context"
 	"fmt"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 )
 
@@ -15,7 +15,7 @@ import (
 type Driver interface {
 	fmt.Stringer
 	ID() runtimev1.DriverID
-	Connect(ctx context.Context, spec runtimev1.ConnSpec) (Conn, error)
+	Connect(ctx context.Context, store runtimev1.Store) (Conn, error)
 }
 
 // Conn is a connection to a store
@@ -26,7 +26,7 @@ type Conn interface {
 
 // Configurator is an interface for supporting configuration changes on an existing Conn
 type Configurator interface {
-	Configure(ctx context.Context, spec runtimev1.ConnSpec) error
+	Configure(ctx context.Context, store runtimev1.Store) error
 }
 
 // Closer is an interface for closing connections

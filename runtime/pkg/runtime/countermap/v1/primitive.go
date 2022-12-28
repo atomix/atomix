@@ -5,8 +5,8 @@
 package v1
 
 import (
-	countermapv1 "github.com/atomix/atomix/api/pkg/runtime/countermap/v1"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	countermapv1 "github.com/atomix/atomix/api/runtime/countermap/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[CounterMap], bool) {
 type CounterMap countermapv1.CounterMapServer
 
 type CounterMapProvider interface {
-	NewCounterMap(spec runtimev1.PrimitiveSpec) (CounterMap, error)
+	NewCounterMap(spec runtimev1.Primitive) (CounterMap, error)
 }

@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	setv1 "github.com/atomix/atomix/api/pkg/runtime/set/v1"
+	setv1 "github.com/atomix/atomix/api/runtime/set/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/runtime"

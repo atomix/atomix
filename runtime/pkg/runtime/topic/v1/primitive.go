@@ -5,8 +5,8 @@
 package v1
 
 import (
-	topicv1 "github.com/atomix/atomix/api/pkg/runtime/topic/v1"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	topicv1 "github.com/atomix/atomix/api/runtime/topic/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Topic], bool) {
 type Topic topicv1.TopicServer
 
 type TopicProvider interface {
-	NewTopic(spec runtimev1.PrimitiveSpec) (Topic, error)
+	NewTopic(spec runtimev1.Primitive) (Topic, error)
 }

@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	countermapv1 "github.com/atomix/atomix/api/pkg/runtime/countermap/v1"
+	countermapv1 "github.com/atomix/atomix/api/runtime/countermap/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/runtime"

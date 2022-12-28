@@ -5,7 +5,7 @@
 package runtime
 
 import (
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/network"
 	"google.golang.org/grpc"
 )

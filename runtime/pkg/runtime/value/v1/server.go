@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	valuev1 "github.com/atomix/atomix/api/pkg/runtime/value/v1"
+	valuev1 "github.com/atomix/atomix/api/runtime/value/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/runtime"

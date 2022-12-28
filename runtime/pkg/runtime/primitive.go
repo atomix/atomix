@@ -6,14 +6,14 @@ package runtime
 
 import (
 	"context"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"sync"
 )
 
 type PrimitiveResolver[T any] func(conn Conn) (PrimitiveProvider[T], bool)
 
-type PrimitiveProvider[T any] func(spec runtimev1.PrimitiveSpec) (T, error)
+type PrimitiveProvider[T any] func(spec runtimev1.Primitive) (T, error)
 
 func NewPrimitiveClient[T any](primitiveType runtimev1.PrimitiveType, runtime Runtime, resolver PrimitiveResolver[T]) *PrimitiveClient[T] {
 	return &PrimitiveClient[T]{
@@ -47,14 +47,9 @@ func (c *PrimitiveClient[T]) Create(ctx context.Context, primitiveID runtimev1.P
 		Tags:        tags,
 	}
 
-	storeID, config, err := c.runtime.route(ctx, meta)
+	storeID, spec, err := c.runtime.route(ctx, meta)
 	if err != nil {
 		return primitive, err
-	}
-
-	spec := runtimev1.PrimitiveSpec{
-		PrimitiveMeta: meta,
-		Config:        config,
 	}
 
 	conn, err := c.runtime.lookup(storeID)
@@ -67,7 +62,10 @@ func (c *PrimitiveClient[T]) Create(ctx context.Context, primitiveID runtimev1.P
 		return primitive, errors.NewNotSupported("route does not support this primitive type")
 	}
 
-	primitive, err = provider(spec)
+	primitive, err = provider(runtimev1.Primitive{
+		PrimitiveMeta: meta,
+		Spec:          spec,
+	})
 	if err != nil {
 		return primitive, err
 	}

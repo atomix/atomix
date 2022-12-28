@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	multimapv1 "github.com/atomix/atomix/api/pkg/runtime/multimap/v1"
+	multimapv1 "github.com/atomix/atomix/api/runtime/multimap/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/runtime"

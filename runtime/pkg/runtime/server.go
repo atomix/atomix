@@ -6,7 +6,7 @@ package runtime
 
 import (
 	"context"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
@@ -24,7 +24,7 @@ type runtimeServer struct {
 func (s *runtimeServer) Connect(ctx context.Context, request *runtimev1.ConnectRequest) (*runtimev1.ConnectResponse, error) {
 	log.Debugw("Connect",
 		logging.Stringer("ConnectRequest", request))
-	if err := s.runtime.connect(ctx, request.DriverID, request.Spec); err != nil {
+	if err := s.runtime.connect(ctx, request.DriverID, request.Store); err != nil {
 		err = errors.ToProto(err)
 		log.Debugw("Connect",
 			logging.Stringer("ConnectRequest", request),
@@ -41,7 +41,7 @@ func (s *runtimeServer) Connect(ctx context.Context, request *runtimev1.ConnectR
 func (s *runtimeServer) Configure(ctx context.Context, request *runtimev1.ConfigureRequest) (*runtimev1.ConfigureResponse, error) {
 	log.Debugw("Configure",
 		logging.Stringer("ConfigureRequest", request))
-	if err := s.runtime.configure(ctx, request.Spec); err != nil {
+	if err := s.runtime.configure(ctx, request.Store); err != nil {
 		err = errors.ToProto(err)
 		log.Debugw("Configure",
 			logging.Stringer("ConfigureRequest", request),

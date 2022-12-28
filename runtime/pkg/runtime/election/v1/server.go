@@ -6,7 +6,7 @@ package v1
 
 import (
 	"context"
-	electionv1 "github.com/atomix/atomix/api/pkg/runtime/election/v1"
+	electionv1 "github.com/atomix/atomix/api/runtime/election/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/runtime"

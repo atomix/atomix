@@ -5,8 +5,8 @@
 package v1
 
 import (
-	indexedmapv1 "github.com/atomix/atomix/api/pkg/runtime/indexedmap/v1"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	indexedmapv1 "github.com/atomix/atomix/api/runtime/indexedmap/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[IndexedMap], bool) {
 type IndexedMap indexedmapv1.IndexedMapServer
 
 type IndexedMapProvider interface {
-	NewIndexedMap(spec runtimev1.PrimitiveSpec) (IndexedMap, error)
+	NewIndexedMap(spec runtimev1.Primitive) (IndexedMap, error)
 }

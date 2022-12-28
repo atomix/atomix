@@ -5,8 +5,8 @@
 package v1
 
 import (
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
-	valuev1 "github.com/atomix/atomix/api/pkg/runtime/value/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	valuev1 "github.com/atomix/atomix/api/runtime/value/v1"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Value], bool) {
 type Value valuev1.ValueServer
 
 type ValueProvider interface {
-	NewValue(spec runtimev1.PrimitiveSpec) (Value, error)
+	NewValue(spec runtimev1.Primitive) (Value, error)
 }

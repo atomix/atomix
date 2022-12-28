@@ -5,8 +5,8 @@
 package v1
 
 import (
-	mapv1 "github.com/atomix/atomix/api/pkg/runtime/map/v1"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	mapv1 "github.com/atomix/atomix/api/runtime/map/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Map], bool) {
 type Map mapv1.MapServer
 
 type MapProvider interface {
-	NewMap(spec runtimev1.PrimitiveSpec) (Map, error)
+	NewMap(spec runtimev1.Primitive) (Map, error)
 }

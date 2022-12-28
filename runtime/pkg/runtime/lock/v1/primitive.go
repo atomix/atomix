@@ -5,8 +5,8 @@
 package v1
 
 import (
-	lockv1 "github.com/atomix/atomix/api/pkg/runtime/lock/v1"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	lockv1 "github.com/atomix/atomix/api/runtime/lock/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	"google.golang.org/grpc"
 )
@@ -35,5 +35,5 @@ func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Lock], bool) {
 type Lock lockv1.LockServer
 
 type LockProvider interface {
-	NewLock(spec runtimev1.PrimitiveSpec) (Lock, error)
+	NewLock(spec runtimev1.Primitive) (Lock, error)
 }
