@@ -11,7 +11,6 @@ import (
 	electionprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/election/v1"
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"google.golang.org/grpc"
 	"io"
@@ -38,7 +37,7 @@ func (s *electionClient) Create(ctx context.Context, request *electionv1.CreateR
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
 		Type:        electionv1.PrimitiveType,
@@ -48,7 +47,7 @@ func (s *electionClient) Create(ctx context.Context, request *electionv1.CreateR
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &electionv1.CreateResponse{}
 	log.Debugw("Create",
@@ -66,13 +65,13 @@ func (s *electionClient) Close(ctx context.Context, request *electionv1.CloseReq
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &electionv1.CloseResponse{}
 	log.Debugw("Close",
@@ -90,14 +89,14 @@ func (s *electionClient) Enter(ctx context.Context, request *electionv1.EnterReq
 		log.Warnw("Enter",
 			logging.Stringer("EnterRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Enter",
 			logging.Stringer("EnterRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*electionprotocolv1.EnterResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*electionprotocolv1.EnterResponse, error) {
@@ -112,12 +111,12 @@ func (s *electionClient) Enter(ctx context.Context, request *electionv1.EnterReq
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &electionv1.EnterResponse{
 		Term: electionv1.Term{
@@ -141,14 +140,14 @@ func (s *electionClient) Withdraw(ctx context.Context, request *electionv1.Withd
 		log.Warnw("Withdraw",
 			logging.Stringer("WithdrawRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Withdraw",
 			logging.Stringer("WithdrawRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*electionprotocolv1.WithdrawResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*electionprotocolv1.WithdrawResponse, error) {
@@ -163,12 +162,12 @@ func (s *electionClient) Withdraw(ctx context.Context, request *electionv1.Withd
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &electionv1.WithdrawResponse{
 		Term: electionv1.Term{
@@ -192,14 +191,14 @@ func (s *electionClient) Anoint(ctx context.Context, request *electionv1.AnointR
 		log.Warnw("Anoint",
 			logging.Stringer("AnointRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Anoint",
 			logging.Stringer("AnointRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*electionprotocolv1.AnointResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*electionprotocolv1.AnointResponse, error) {
@@ -214,12 +213,12 @@ func (s *electionClient) Anoint(ctx context.Context, request *electionv1.AnointR
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &electionv1.AnointResponse{
 		Term: electionv1.Term{
@@ -243,14 +242,14 @@ func (s *electionClient) Promote(ctx context.Context, request *electionv1.Promot
 		log.Warnw("Promote",
 			logging.Stringer("PromoteRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Promote",
 			logging.Stringer("PromoteRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	query := client.Proposal[*electionprotocolv1.PromoteResponse](primitive)
 	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*electionprotocolv1.PromoteResponse, error) {
@@ -265,12 +264,12 @@ func (s *electionClient) Promote(ctx context.Context, request *electionv1.Promot
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &electionv1.PromoteResponse{
 		Term: electionv1.Term{
@@ -294,14 +293,14 @@ func (s *electionClient) Demote(ctx context.Context, request *electionv1.DemoteR
 		log.Warnw("Demote",
 			logging.Stringer("DemoteRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Demote",
 			logging.Stringer("DemoteRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	query := client.Proposal[*electionprotocolv1.DemoteResponse](primitive)
 	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*electionprotocolv1.DemoteResponse, error) {
@@ -316,12 +315,12 @@ func (s *electionClient) Demote(ctx context.Context, request *electionv1.DemoteR
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &electionv1.DemoteResponse{
 		Term: electionv1.Term{
@@ -345,14 +344,14 @@ func (s *electionClient) Evict(ctx context.Context, request *electionv1.EvictReq
 		log.Warnw("Evict",
 			logging.Stringer("EvictRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Evict",
 			logging.Stringer("EvictRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*electionprotocolv1.EvictResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*electionprotocolv1.EvictResponse, error) {
@@ -367,12 +366,12 @@ func (s *electionClient) Evict(ctx context.Context, request *electionv1.EvictReq
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &electionv1.EvictResponse{
 		Term: electionv1.Term{
@@ -396,14 +395,14 @@ func (s *electionClient) GetTerm(ctx context.Context, request *electionv1.GetTer
 		log.Warnw("GetTerm",
 			logging.Stringer("GetTermRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("GetTerm",
 			logging.Stringer("GetTermRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	query := client.Query[*electionprotocolv1.GetTermResponse](primitive)
 	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*electionprotocolv1.GetTermResponse, error) {
@@ -416,12 +415,12 @@ func (s *electionClient) GetTerm(ctx context.Context, request *electionv1.GetTer
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &electionv1.GetTermResponse{
 		Term: electionv1.Term{
@@ -445,14 +444,14 @@ func (s *electionClient) Watch(request *electionv1.WatchRequest, server election
 		log.Warnw("Watch",
 			logging.Stringer("WatchRequest", request),
 			logging.Error("Error", err))
-		return errors.ToProto(err)
+		return err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Watch",
 			logging.Stringer("WatchRequest", request),
 			logging.Error("Error", err))
-		return errors.ToProto(err)
+		return err
 	}
 	query := client.StreamQuery[*electionprotocolv1.WatchResponse](primitive)
 	stream, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (client.QueryStream[*electionprotocolv1.WatchResponse], error) {
@@ -465,7 +464,7 @@ func (s *electionClient) Watch(request *electionv1.WatchRequest, server election
 		log.Warnw("Watch",
 			logging.Stringer("WatchRequest", request),
 			logging.Error("Error", err))
-		return errors.ToProto(err)
+		return err
 	}
 	for {
 		output, ok, err := stream.Recv()
@@ -476,12 +475,12 @@ func (s *electionClient) Watch(request *electionv1.WatchRequest, server election
 			log.Warnw("Put",
 				logging.Stringer("PutRequest", request),
 				logging.Error("Error", err))
-			return errors.ToProto(err)
+			return err
 		} else if err != nil {
 			log.Debugw("Put",
 				logging.Stringer("PutRequest", request),
 				logging.Error("Error", err))
-			return errors.ToProto(err)
+			return err
 		}
 		response := &electionv1.WatchResponse{
 			Term: electionv1.Term{

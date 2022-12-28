@@ -9,6 +9,7 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/network"
+	"github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors"
 	"google.golang.org/grpc"
 	"os"
 )
@@ -22,7 +23,9 @@ func NewNode(network network.Driver, protocol Protocol, opts ...Option) *Node {
 		Options:  options,
 		Protocol: protocol,
 		network:  network,
-		server:   grpc.NewServer(options.GRPCServerOptions...),
+		server: grpc.NewServer(
+			grpc.UnaryInterceptor(interceptors.ErrorHandlingUnaryServerInterceptor()),
+			grpc.StreamInterceptor(interceptors.ErrorHandlingStreamServerInterceptor())),
 	}
 }
 

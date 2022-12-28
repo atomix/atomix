@@ -11,7 +11,6 @@ import (
 	countermapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/countermap/v1"
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
@@ -52,7 +51,7 @@ func (s *counterMapClient) Create(ctx context.Context, request *countermapv1.Cre
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &countermapv1.CreateResponse{}
 	log.Debugw("Create",
@@ -77,7 +76,7 @@ func (s *counterMapClient) Close(ctx context.Context, request *countermapv1.Clos
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &countermapv1.CloseResponse{}
 	log.Debugw("Close",
@@ -127,7 +126,7 @@ func (s *counterMapClient) Size(ctx context.Context, request *countermapv1.SizeR
 		return int(output.Size_), nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	var size int
 	for _, s := range sizes {
@@ -151,14 +150,14 @@ func (s *counterMapClient) Set(ctx context.Context, request *countermapv1.SetReq
 		log.Warnw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*countermapprotocolv1.SetResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*countermapprotocolv1.SetResponse, error) {
@@ -175,12 +174,12 @@ func (s *counterMapClient) Set(ctx context.Context, request *countermapv1.SetReq
 		log.Warnw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &countermapv1.SetResponse{
 		PrevValue: output.PrevValue,
@@ -200,14 +199,14 @@ func (s *counterMapClient) Insert(ctx context.Context, request *countermapv1.Ins
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*countermapprotocolv1.InsertResponse](primitive)
 	_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*countermapprotocolv1.InsertResponse, error) {
@@ -223,12 +222,12 @@ func (s *counterMapClient) Insert(ctx context.Context, request *countermapv1.Ins
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &countermapv1.InsertResponse{}
 	log.Debugw("Insert",
@@ -246,14 +245,14 @@ func (s *counterMapClient) Update(ctx context.Context, request *countermapv1.Upd
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*countermapprotocolv1.UpdateResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*countermapprotocolv1.UpdateResponse, error) {
@@ -270,12 +269,12 @@ func (s *counterMapClient) Update(ctx context.Context, request *countermapv1.Upd
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &countermapv1.UpdateResponse{
 		PrevValue: output.PrevValue,
@@ -295,14 +294,14 @@ func (s *counterMapClient) Increment(ctx context.Context, request *countermapv1.
 		log.Warnw("Increment",
 			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Increment",
 			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*countermapprotocolv1.IncrementResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*countermapprotocolv1.IncrementResponse, error) {
@@ -319,12 +318,12 @@ func (s *counterMapClient) Increment(ctx context.Context, request *countermapv1.
 		log.Warnw("Increment",
 			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Increment",
 			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &countermapv1.IncrementResponse{
 		PrevValue: output.PrevValue,
@@ -344,14 +343,14 @@ func (s *counterMapClient) Decrement(ctx context.Context, request *countermapv1.
 		log.Warnw("Decrement",
 			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Decrement",
 			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*countermapprotocolv1.DecrementResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*countermapprotocolv1.DecrementResponse, error) {
@@ -368,12 +367,12 @@ func (s *counterMapClient) Decrement(ctx context.Context, request *countermapv1.
 		log.Warnw("Decrement",
 			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Decrement",
 			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &countermapv1.DecrementResponse{
 		PrevValue: output.PrevValue,
@@ -393,14 +392,14 @@ func (s *counterMapClient) Get(ctx context.Context, request *countermapv1.GetReq
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	query := client.Query[*countermapprotocolv1.GetResponse](primitive)
 	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*countermapprotocolv1.GetResponse, error) {
@@ -415,12 +414,12 @@ func (s *counterMapClient) Get(ctx context.Context, request *countermapv1.GetReq
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &countermapv1.GetResponse{
 		Value: output.Value,
@@ -440,14 +439,14 @@ func (s *counterMapClient) Remove(ctx context.Context, request *countermapv1.Rem
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*countermapprotocolv1.RemoveResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*countermapprotocolv1.RemoveResponse, error) {
@@ -464,12 +463,12 @@ func (s *counterMapClient) Remove(ctx context.Context, request *countermapv1.Rem
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &countermapv1.RemoveResponse{
 		Value: output.Value,
@@ -521,7 +520,7 @@ func (s *counterMapClient) Clear(ctx context.Context, request *countermapv1.Clea
 		return nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &countermapv1.ClearResponse{}
 	log.Debugw("Clear",
@@ -589,7 +588,7 @@ func (s *counterMapClient) Lock(ctx context.Context, request *countermapv1.LockR
 		return nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &countermapv1.LockResponse{}
 	log.Debugw("Lock",
@@ -639,7 +638,7 @@ func (s *counterMapClient) Unlock(ctx context.Context, request *countermapv1.Unl
 		return nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &countermapv1.UnlockResponse{}
 	log.Debugw("Unlock",
@@ -714,7 +713,7 @@ func (s *counterMapClient) Events(request *countermapv1.EventsRequest, server co
 						logging.Stringer("EventsRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*countermapv1.EventsResponse]{
-						Error: errors.ToProto(err),
+						Error: err,
 					}
 				} else {
 					response := &countermapv1.EventsResponse{
@@ -838,7 +837,7 @@ func (s *counterMapClient) Entries(request *countermapv1.EntriesRequest, server 
 						logging.Stringer("EntriesRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*countermapv1.EntriesResponse]{
-						Error: errors.ToProto(err),
+						Error: err,
 					}
 				} else {
 					response := &countermapv1.EntriesResponse{

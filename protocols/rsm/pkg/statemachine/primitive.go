@@ -5,8 +5,8 @@
 package statemachine
 
 import (
+	"github.com/atomix/atomix/api/errors"
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/google/uuid"
 	"sync"

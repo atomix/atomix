@@ -8,7 +8,6 @@ import (
 	"context"
 	electionprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/election/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/gogo/protobuf/proto"
@@ -57,7 +56,6 @@ func (s *electionServer) Enter(ctx context.Context, request *electionprotocolv1.
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Enter",
 			logging.Stringer("EnterRequest", request),
 			logging.Error("Error", err))
@@ -83,7 +81,6 @@ func (s *electionServer) Withdraw(ctx context.Context, request *electionprotocol
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Withdraw",
 			logging.Stringer("WithdrawRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +106,6 @@ func (s *electionServer) Anoint(ctx context.Context, request *electionprotocolv1
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Anoint",
 			logging.Stringer("AnointRequest", request),
 			logging.Error("Error", err))
@@ -135,7 +131,6 @@ func (s *electionServer) Promote(ctx context.Context, request *electionprotocolv
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Promote",
 			logging.Stringer("PromoteRequest", request),
 			logging.Error("Error", err))
@@ -161,7 +156,6 @@ func (s *electionServer) Demote(ctx context.Context, request *electionprotocolv1
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Demote",
 			logging.Stringer("DemoteRequest", request),
 			logging.Error("Error", err))
@@ -187,7 +181,6 @@ func (s *electionServer) Evict(ctx context.Context, request *electionprotocolv1.
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Evict",
 			logging.Stringer("EvictRequest", request),
 			logging.Error("Error", err))
@@ -213,7 +206,6 @@ func (s *electionServer) GetTerm(ctx context.Context, request *electionprotocolv
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("GetTerm",
 			logging.Stringer("GetTermRequest", request),
 			logging.Error("Error", err))
@@ -242,7 +234,6 @@ func (s *electionServer) Watch(request *electionprotocolv1.WatchRequest, server 
 	go func() {
 		err := s.handler.StreamQuery(server.Context(), input, request.Headers, stream)
 		if err != nil {
-			err = errors.ToProto(err)
 			log.Warnw("Watch",
 				logging.Stringer("WatchRequest", request),
 				logging.Error("Error", err))
@@ -258,11 +249,10 @@ func (s *electionServer) Watch(request *electionprotocolv1.WatchRequest, server 
 		}
 
 		if result.Failed() {
-			err := errors.ToProto(result.Error)
 			log.Warnw("Watch",
 				logging.Stringer("WatchRequest", request),
-				logging.Error("Error", err))
-			return err
+				logging.Error("Error", result.Error))
+			return result.Error
 		}
 
 		response := &electionprotocolv1.WatchResponse{

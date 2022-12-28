@@ -8,7 +8,6 @@ import (
 	"context"
 	valueprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/gogo/protobuf/proto"
@@ -57,7 +56,6 @@ func (s *valueServer) Update(ctx context.Context, request *valueprotocolv1.Updat
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
@@ -83,7 +81,6 @@ func (s *valueServer) Set(ctx context.Context, request *valueprotocolv1.SetReque
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +106,6 @@ func (s *valueServer) Insert(ctx context.Context, request *valueprotocolv1.Inser
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
@@ -135,7 +131,6 @@ func (s *valueServer) Delete(ctx context.Context, request *valueprotocolv1.Delet
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Delete",
 			logging.Stringer("DeleteRequest", request),
 			logging.Error("Error", err))
@@ -161,7 +156,6 @@ func (s *valueServer) Get(ctx context.Context, request *valueprotocolv1.GetReque
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
@@ -190,7 +184,6 @@ func (s *valueServer) Events(request *valueprotocolv1.EventsRequest, server valu
 	go func() {
 		err := s.handler.StreamPropose(server.Context(), input, request.Headers, stream)
 		if err != nil {
-			err = errors.ToProto(err)
 			log.Warnw("Events",
 				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
@@ -206,11 +199,10 @@ func (s *valueServer) Events(request *valueprotocolv1.EventsRequest, server valu
 		}
 
 		if result.Failed() {
-			err := errors.ToProto(result.Error)
 			log.Warnw("Events",
 				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
+				logging.Error("Error", result.Error))
+			return result.Error
 		}
 
 		response := &valueprotocolv1.EventsResponse{
@@ -242,7 +234,6 @@ func (s *valueServer) Watch(request *valueprotocolv1.WatchRequest, server valuep
 	go func() {
 		err := s.handler.StreamQuery(server.Context(), input, request.Headers, stream)
 		if err != nil {
-			err = errors.ToProto(err)
 			log.Warnw("Watch",
 				logging.Stringer("WatchRequest", request),
 				logging.Error("Error", err))
@@ -258,11 +249,10 @@ func (s *valueServer) Watch(request *valueprotocolv1.WatchRequest, server valuep
 		}
 
 		if result.Failed() {
-			err := errors.ToProto(result.Error)
 			log.Warnw("Watch",
 				logging.Stringer("WatchRequest", request),
-				logging.Error("Error", err))
-			return err
+				logging.Error("Error", result.Error))
+			return result.Error
 		}
 
 		response := &valueprotocolv1.WatchResponse{

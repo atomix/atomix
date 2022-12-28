@@ -8,7 +8,6 @@ import (
 	"context"
 	mapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/map/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/gogo/protobuf/proto"
@@ -57,7 +56,6 @@ func (s *mapServer) Size(ctx context.Context, request *mapprotocolv1.SizeRequest
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Size",
 			logging.Stringer("SizeRequest", request),
 			logging.Error("Error", err))
@@ -83,7 +81,6 @@ func (s *mapServer) Put(ctx context.Context, request *mapprotocolv1.PutRequest) 
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +106,6 @@ func (s *mapServer) Insert(ctx context.Context, request *mapprotocolv1.InsertReq
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
@@ -135,7 +131,6 @@ func (s *mapServer) Update(ctx context.Context, request *mapprotocolv1.UpdateReq
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
@@ -161,7 +156,6 @@ func (s *mapServer) Get(ctx context.Context, request *mapprotocolv1.GetRequest) 
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
@@ -187,7 +181,6 @@ func (s *mapServer) Remove(ctx context.Context, request *mapprotocolv1.RemoveReq
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
@@ -213,7 +206,6 @@ func (s *mapServer) Clear(ctx context.Context, request *mapprotocolv1.ClearReque
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Clear",
 			logging.Stringer("ClearRequest", request),
 			logging.Error("Error", err))
@@ -239,7 +231,6 @@ func (s *mapServer) Lock(ctx context.Context, request *mapprotocolv1.LockRequest
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Lock",
 			logging.Stringer("LockRequest", request),
 			logging.Error("Error", err))
@@ -265,7 +256,6 @@ func (s *mapServer) Unlock(ctx context.Context, request *mapprotocolv1.UnlockReq
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Unlock",
 			logging.Stringer("UnlockRequest", request),
 			logging.Error("Error", err))
@@ -294,7 +284,6 @@ func (s *mapServer) Events(request *mapprotocolv1.EventsRequest, server mapproto
 	go func() {
 		err := s.handler.StreamPropose(server.Context(), input, request.Headers, stream)
 		if err != nil {
-			err = errors.ToProto(err)
 			log.Warnw("Events",
 				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
@@ -310,11 +299,10 @@ func (s *mapServer) Events(request *mapprotocolv1.EventsRequest, server mapproto
 		}
 
 		if result.Failed() {
-			err := errors.ToProto(result.Error)
 			log.Warnw("Events",
 				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
+				logging.Error("Error", result.Error))
+			return result.Error
 		}
 
 		response := &mapprotocolv1.EventsResponse{
@@ -346,7 +334,6 @@ func (s *mapServer) Entries(request *mapprotocolv1.EntriesRequest, server mappro
 	go func() {
 		err := s.handler.StreamQuery(server.Context(), input, request.Headers, stream)
 		if err != nil {
-			err = errors.ToProto(err)
 			log.Warnw("Entries",
 				logging.Stringer("EntriesRequest", request),
 				logging.Error("Error", err))
@@ -362,11 +349,10 @@ func (s *mapServer) Entries(request *mapprotocolv1.EntriesRequest, server mappro
 		}
 
 		if result.Failed() {
-			err := errors.ToProto(result.Error)
 			log.Warnw("Entries",
 				logging.Stringer("EntriesRequest", request),
-				logging.Error("Error", err))
-			return err
+				logging.Error("Error", result.Error))
+			return result.Error
 		}
 
 		response := &mapprotocolv1.EntriesResponse{

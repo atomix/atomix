@@ -12,7 +12,6 @@ import (
 	mapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/map/v1"
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
@@ -62,7 +61,7 @@ func (s *mapClient) Create(ctx context.Context, request *mapv1.CreateRequest) (*
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &mapv1.CreateResponse{}
 	log.Debugw("Create",
@@ -87,7 +86,7 @@ func (s *mapClient) Close(ctx context.Context, request *mapv1.CloseRequest) (*ma
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &mapv1.CloseResponse{}
 	log.Debugw("Close",
@@ -137,7 +136,7 @@ func (s *mapClient) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv
 		return int(output.Size_), nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	var size int
 	for _, s := range sizes {
@@ -161,14 +160,14 @@ func (s *mapClient) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*mapprotocolv1.PutResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*mapprotocolv1.PutResponse, error) {
@@ -187,12 +186,12 @@ func (s *mapClient) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &mapv1.PutResponse{
 		Version: uint64(output.Index),
@@ -218,14 +217,14 @@ func (s *mapClient) Insert(ctx context.Context, request *mapv1.InsertRequest) (*
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*mapprotocolv1.InsertResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*mapprotocolv1.InsertResponse, error) {
@@ -242,12 +241,12 @@ func (s *mapClient) Insert(ctx context.Context, request *mapv1.InsertRequest) (*
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &mapv1.InsertResponse{
 		Version: uint64(output.Index),
@@ -267,14 +266,14 @@ func (s *mapClient) Update(ctx context.Context, request *mapv1.UpdateRequest) (*
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*mapprotocolv1.UpdateResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*mapprotocolv1.UpdateResponse, error) {
@@ -293,12 +292,12 @@ func (s *mapClient) Update(ctx context.Context, request *mapv1.UpdateRequest) (*
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &mapv1.UpdateResponse{
 		Version: uint64(output.Index),
@@ -322,14 +321,14 @@ func (s *mapClient) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	query := client.Query[*mapprotocolv1.GetResponse](primitive)
 	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*mapprotocolv1.GetResponse, error) {
@@ -344,12 +343,12 @@ func (s *mapClient) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &mapv1.GetResponse{
 		Value: mapv1.VersionedValue{
@@ -372,14 +371,14 @@ func (s *mapClient) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*mapprotocolv1.RemoveResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*mapprotocolv1.RemoveResponse, error) {
@@ -396,12 +395,12 @@ func (s *mapClient) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &mapv1.RemoveResponse{
 		Value: mapv1.VersionedValue{
@@ -456,7 +455,7 @@ func (s *mapClient) Clear(ctx context.Context, request *mapv1.ClearRequest) (*ma
 		return nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &mapv1.ClearResponse{}
 	log.Debugw("Clear",
@@ -524,7 +523,7 @@ func (s *mapClient) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv
 		return nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &mapv1.LockResponse{}
 	log.Debugw("Lock",
@@ -574,7 +573,7 @@ func (s *mapClient) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*
 		return nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &mapv1.UnlockResponse{}
 	log.Debugw("Unlock",
@@ -649,7 +648,7 @@ func (s *mapClient) Events(request *mapv1.EventsRequest, server mapv1.Map_Events
 						logging.Stringer("EventsRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*mapv1.EventsResponse]{
-						Error: errors.ToProto(err),
+						Error: err,
 					}
 				} else {
 					response := &mapv1.EventsResponse{
@@ -786,7 +785,7 @@ func (s *mapClient) Entries(request *mapv1.EntriesRequest, server mapv1.Map_Entr
 						logging.Stringer("EntriesRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*mapv1.EntriesResponse]{
-						Error: errors.ToProto(err),
+						Error: err,
 					}
 				} else {
 					response := &mapv1.EntriesResponse{

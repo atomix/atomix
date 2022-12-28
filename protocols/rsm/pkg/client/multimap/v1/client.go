@@ -11,7 +11,6 @@ import (
 	multimapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/multimap/v1"
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
@@ -52,7 +51,7 @@ func (s *multiMapClient) Create(ctx context.Context, request *multimapv1.CreateR
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &multimapv1.CreateResponse{}
 	log.Debugw("Create",
@@ -77,7 +76,7 @@ func (s *multiMapClient) Close(ctx context.Context, request *multimapv1.CloseReq
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &multimapv1.CloseResponse{}
 	log.Debugw("Close",
@@ -127,7 +126,7 @@ func (s *multiMapClient) Size(ctx context.Context, request *multimapv1.SizeReque
 		return int(output.Size_), nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	var size int
 	for _, s := range sizes {
@@ -151,14 +150,14 @@ func (s *multiMapClient) Put(ctx context.Context, request *multimapv1.PutRequest
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*multimapprotocolv1.PutResponse](primitive)
 	_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*multimapprotocolv1.PutResponse, error) {
@@ -175,12 +174,12 @@ func (s *multiMapClient) Put(ctx context.Context, request *multimapv1.PutRequest
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &multimapv1.PutResponse{}
 	log.Debugw("Put",
@@ -198,14 +197,14 @@ func (s *multiMapClient) PutAll(ctx context.Context, request *multimapv1.PutAllR
 		log.Warnw("PutAll",
 			logging.Stringer("PutAllRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("PutAll",
 			logging.Stringer("PutAllRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*multimapprotocolv1.PutAllResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*multimapprotocolv1.PutAllResponse, error) {
@@ -222,12 +221,12 @@ func (s *multiMapClient) PutAll(ctx context.Context, request *multimapv1.PutAllR
 		log.Warnw("PutAll",
 			logging.Stringer("PutAllRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("PutAll",
 			logging.Stringer("PutAllRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &multimapv1.PutAllResponse{
 		Updated: output.Updated,
@@ -298,7 +297,7 @@ func (s *multiMapClient) PutEntries(ctx context.Context, request *multimapv1.Put
 		return output.Updated, nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &multimapv1.PutEntriesResponse{}
 	for _, updated := range results {
@@ -321,14 +320,14 @@ func (s *multiMapClient) Replace(ctx context.Context, request *multimapv1.Replac
 		log.Warnw("Replace",
 			logging.Stringer("ReplaceRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Replace",
 			logging.Stringer("ReplaceRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*multimapprotocolv1.ReplaceResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*multimapprotocolv1.ReplaceResponse, error) {
@@ -345,12 +344,12 @@ func (s *multiMapClient) Replace(ctx context.Context, request *multimapv1.Replac
 		log.Warnw("Replace",
 			logging.Stringer("ReplaceRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Replace",
 			logging.Stringer("ReplaceRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &multimapv1.ReplaceResponse{
 		PrevValues: output.PrevValues,
@@ -370,14 +369,14 @@ func (s *multiMapClient) Contains(ctx context.Context, request *multimapv1.Conta
 		log.Warnw("Contains",
 			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Contains",
 			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	query := client.Query[*multimapprotocolv1.ContainsResponse](primitive)
 	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*multimapprotocolv1.ContainsResponse, error) {
@@ -392,12 +391,12 @@ func (s *multiMapClient) Contains(ctx context.Context, request *multimapv1.Conta
 		log.Warnw("Contains",
 			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Contains",
 			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &multimapv1.ContainsResponse{
 		Result: output.Result,
@@ -417,14 +416,14 @@ func (s *multiMapClient) Get(ctx context.Context, request *multimapv1.GetRequest
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	query := client.Query[*multimapprotocolv1.GetResponse](primitive)
 	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*multimapprotocolv1.GetResponse, error) {
@@ -439,12 +438,12 @@ func (s *multiMapClient) Get(ctx context.Context, request *multimapv1.GetRequest
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &multimapv1.GetResponse{
 		Values: output.Values,
@@ -464,14 +463,14 @@ func (s *multiMapClient) Remove(ctx context.Context, request *multimapv1.RemoveR
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*multimapprotocolv1.RemoveResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*multimapprotocolv1.RemoveResponse, error) {
@@ -488,12 +487,12 @@ func (s *multiMapClient) Remove(ctx context.Context, request *multimapv1.RemoveR
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &multimapv1.RemoveResponse{
 		Values: output.Values,
@@ -513,14 +512,14 @@ func (s *multiMapClient) RemoveAll(ctx context.Context, request *multimapv1.Remo
 		log.Warnw("RemoveAll",
 			logging.Stringer("RemoveAllRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("RemoveAll",
 			logging.Stringer("RemoveAllRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*multimapprotocolv1.RemoveAllResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*multimapprotocolv1.RemoveAllResponse, error) {
@@ -537,12 +536,12 @@ func (s *multiMapClient) RemoveAll(ctx context.Context, request *multimapv1.Remo
 		log.Warnw("RemoveAll",
 			logging.Stringer("RemoveAllRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("RemoveAll",
 			logging.Stringer("RemoveAllRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &multimapv1.RemoveAllResponse{
 		Updated: output.Updated,
@@ -613,7 +612,7 @@ func (s *multiMapClient) RemoveEntries(ctx context.Context, request *multimapv1.
 		return output.Updated, nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &multimapv1.RemoveEntriesResponse{}
 	for _, updated := range results {
@@ -668,7 +667,7 @@ func (s *multiMapClient) Clear(ctx context.Context, request *multimapv1.ClearReq
 		return nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &multimapv1.ClearResponse{}
 	log.Debugw("Clear",
@@ -743,7 +742,7 @@ func (s *multiMapClient) Events(request *multimapv1.EventsRequest, server multim
 						logging.Stringer("EventsRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*multimapv1.EventsResponse]{
-						Error: errors.ToProto(err),
+						Error: err,
 					}
 				} else {
 					response := &multimapv1.EventsResponse{
@@ -860,7 +859,7 @@ func (s *multiMapClient) Entries(request *multimapv1.EntriesRequest, server mult
 						logging.Stringer("EntriesRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*multimapv1.EntriesResponse]{
-						Error: errors.ToProto(err),
+						Error: err,
 					}
 				} else {
 					response := &multimapv1.EntriesResponse{

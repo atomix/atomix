@@ -8,9 +8,9 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
+	"github.com/atomix/atomix/api/errors"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/bits-and-blooms/bloom/v3"
 	"google.golang.org/grpc"
 	"os"
@@ -223,7 +223,7 @@ func (s *SessionClient) keepAliveSessions(ctx context.Context, lastRequestNum pr
 	client := protocol.NewPartitionClient(s.conn)
 	response, err := client.KeepAlive(ctx, request)
 	if err != nil {
-		err = errors.FromProto(err)
+		err = err
 		if errors.IsFault(err) {
 			log.Error("Detected potential data loss: ", err)
 			log.Infof("Exiting process...")
@@ -251,7 +251,7 @@ func (s *SessionClient) close(ctx context.Context) error {
 	client := protocol.NewPartitionClient(s.conn)
 	_, err := client.CloseSession(ctx, request)
 	if err != nil {
-		return errors.FromProto(err)
+		return err
 	}
 	return nil
 }

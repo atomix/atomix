@@ -8,7 +8,6 @@ import (
 	"context"
 	indexedmapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/indexedmap/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/gogo/protobuf/proto"
@@ -57,7 +56,6 @@ func (s *indexedMapServer) Size(ctx context.Context, request *indexedmapprotocol
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Size",
 			logging.Stringer("SizeRequest", request),
 			logging.Error("Error", err))
@@ -83,7 +81,6 @@ func (s *indexedMapServer) Append(ctx context.Context, request *indexedmapprotoc
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Append",
 			logging.Stringer("AppendRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +106,6 @@ func (s *indexedMapServer) Update(ctx context.Context, request *indexedmapprotoc
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
@@ -135,7 +131,6 @@ func (s *indexedMapServer) Remove(ctx context.Context, request *indexedmapprotoc
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
@@ -161,7 +156,6 @@ func (s *indexedMapServer) Get(ctx context.Context, request *indexedmapprotocolv
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
@@ -187,7 +181,6 @@ func (s *indexedMapServer) FirstEntry(ctx context.Context, request *indexedmappr
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("FirstEntry",
 			logging.Stringer("FirstEntryRequest", request),
 			logging.Error("Error", err))
@@ -213,7 +206,6 @@ func (s *indexedMapServer) LastEntry(ctx context.Context, request *indexedmappro
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("LastEntry",
 			logging.Stringer("LastEntryRequest", request),
 			logging.Error("Error", err))
@@ -239,7 +231,6 @@ func (s *indexedMapServer) NextEntry(ctx context.Context, request *indexedmappro
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("NextEntry",
 			logging.Stringer("NextEntryRequest", request),
 			logging.Error("Error", err))
@@ -265,7 +256,6 @@ func (s *indexedMapServer) PrevEntry(ctx context.Context, request *indexedmappro
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("PrevEntry",
 			logging.Stringer("PrevEntryRequest", request),
 			logging.Error("Error", err))
@@ -291,7 +281,6 @@ func (s *indexedMapServer) Clear(ctx context.Context, request *indexedmapprotoco
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Clear",
 			logging.Stringer("ClearRequest", request),
 			logging.Error("Error", err))
@@ -320,7 +309,6 @@ func (s *indexedMapServer) Events(request *indexedmapprotocolv1.EventsRequest, s
 	go func() {
 		err := s.handler.StreamPropose(server.Context(), input, request.Headers, stream)
 		if err != nil {
-			err = errors.ToProto(err)
 			log.Warnw("Events",
 				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
@@ -336,11 +324,10 @@ func (s *indexedMapServer) Events(request *indexedmapprotocolv1.EventsRequest, s
 		}
 
 		if result.Failed() {
-			err := errors.ToProto(result.Error)
 			log.Warnw("Events",
 				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
+				logging.Error("Error", result.Error))
+			return result.Error
 		}
 
 		response := &indexedmapprotocolv1.EventsResponse{
@@ -372,7 +359,6 @@ func (s *indexedMapServer) Entries(request *indexedmapprotocolv1.EntriesRequest,
 	go func() {
 		err := s.handler.StreamQuery(server.Context(), input, request.Headers, stream)
 		if err != nil {
-			err = errors.ToProto(err)
 			log.Warnw("Entries",
 				logging.Stringer("EntriesRequest", request),
 				logging.Error("Error", err))
@@ -388,11 +374,10 @@ func (s *indexedMapServer) Entries(request *indexedmapprotocolv1.EntriesRequest,
 		}
 
 		if result.Failed() {
-			err := errors.ToProto(result.Error)
 			log.Warnw("Entries",
 				logging.Stringer("EntriesRequest", request),
-				logging.Error("Error", err))
-			return err
+				logging.Error("Error", result.Error))
+			return result.Error
 		}
 
 		response := &indexedmapprotocolv1.EntriesResponse{

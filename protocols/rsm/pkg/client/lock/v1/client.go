@@ -11,7 +11,6 @@ import (
 	lockprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/lock/v1"
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"google.golang.org/grpc"
 )
@@ -37,7 +36,7 @@ func (s *lockClient) Create(ctx context.Context, request *lockv1.CreateRequest) 
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
 		Type:        lockv1.PrimitiveType,
@@ -47,7 +46,7 @@ func (s *lockClient) Create(ctx context.Context, request *lockv1.CreateRequest) 
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &lockv1.CreateResponse{}
 	log.Debugw("Create",
@@ -65,13 +64,13 @@ func (s *lockClient) Close(ctx context.Context, request *lockv1.CloseRequest) (*
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &lockv1.CloseResponse{}
 	log.Debugw("Close",
@@ -89,14 +88,14 @@ func (s *lockClient) Lock(ctx context.Context, request *lockv1.LockRequest) (*lo
 		log.Warnw("Lock",
 			logging.Stringer("LockRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Lock",
 			logging.Stringer("LockRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	query := client.Proposal[*lockprotocolv1.AcquireResponse](primitive)
 	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*lockprotocolv1.AcquireResponse, error) {
@@ -116,7 +115,7 @@ func (s *lockClient) Lock(ctx context.Context, request *lockv1.LockRequest) (*lo
 		log.Debugw("Lock",
 			logging.Stringer("LockRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &lockv1.LockResponse{
 		Version: uint64(output.Index),
@@ -136,14 +135,14 @@ func (s *lockClient) Unlock(ctx context.Context, request *lockv1.UnlockRequest) 
 		log.Warnw("Unlock",
 			logging.Stringer("UnlockRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Unlock",
 			logging.Stringer("UnlockRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	query := client.Proposal[*lockprotocolv1.ReleaseResponse](primitive)
 	_, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*lockprotocolv1.ReleaseResponse, error) {
@@ -161,7 +160,7 @@ func (s *lockClient) Unlock(ctx context.Context, request *lockv1.UnlockRequest) 
 		log.Debugw("Unlock",
 			logging.Stringer("UnlockRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &lockv1.UnlockResponse{}
 	log.Debugw("Unlock",
@@ -179,14 +178,14 @@ func (s *lockClient) GetLock(ctx context.Context, request *lockv1.GetLockRequest
 		log.Warnw("GetLock",
 			logging.Stringer("GetLockRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("GetLock",
 			logging.Stringer("GetLockRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	query := client.Query[*lockprotocolv1.GetResponse](primitive)
 	output, ok, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*lockprotocolv1.GetResponse, error) {
@@ -204,7 +203,7 @@ func (s *lockClient) GetLock(ctx context.Context, request *lockv1.GetLockRequest
 		log.Debugw("GetLock",
 			logging.Stringer("GetLockRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &lockv1.GetLockResponse{
 		Version: uint64(output.Index),

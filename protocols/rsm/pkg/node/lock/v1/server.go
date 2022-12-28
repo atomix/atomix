@@ -8,7 +8,6 @@ import (
 	"context"
 	lockprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/lock/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc"
@@ -56,7 +55,6 @@ func (s *lockServer) Acquire(ctx context.Context, request *lockprotocolv1.Acquir
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Acquire",
 			logging.Stringer("AcquireRequest", request),
 			logging.Error("Error", err))
@@ -82,7 +80,6 @@ func (s *lockServer) Release(ctx context.Context, request *lockprotocolv1.Releas
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Release",
 			logging.Stringer("ReleaseRequest", request),
 			logging.Error("Error", err))
@@ -108,7 +105,6 @@ func (s *lockServer) Get(ctx context.Context, request *lockprotocolv1.GetRequest
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))

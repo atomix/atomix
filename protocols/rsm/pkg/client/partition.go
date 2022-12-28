@@ -7,9 +7,9 @@ package client
 import (
 	"context"
 	"fmt"
+	"github.com/atomix/atomix/api/errors"
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
-	"github.com/atomix/atomix/runtime/pkg/utils/grpc/retry"
+	"github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -71,7 +71,7 @@ func (p *PartitionClient) GetSession(ctx context.Context) (*SessionClient, error
 	client := protocol.NewPartitionClient(p.conn)
 	response, err := client.OpenSession(ctx, request)
 	if err != nil {
-		return nil, errors.FromProto(err)
+		return nil, err
 	}
 
 	session = newSessionClient(response.SessionID, p, p.conn, p.sessionTimeout)
@@ -90,13 +90,17 @@ func (p *PartitionClient) connect(ctx context.Context, config *protocol.Partitio
 		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"loadBalancingPolicy":"%s"}`, resolverName)),
 		grpc.WithResolvers(p.resolver),
 		grpc.WithContextDialer(p.client.network.Connect),
-		grpc.WithUnaryInterceptor(retry.RetryingUnaryClientInterceptor(retry.WithRetryOn(codes.Unavailable))),
-		grpc.WithStreamInterceptor(retry.RetryingStreamClientInterceptor(retry.WithRetryOn(codes.Unavailable))),
+		grpc.WithChainUnaryInterceptor(
+			interceptors.ErrorHandlingUnaryClientInterceptor(),
+			interceptors.RetryingUnaryClientInterceptor(interceptors.WithRetryOn(codes.Unavailable))),
+		grpc.WithChainStreamInterceptor(
+			interceptors.ErrorHandlingStreamClientInterceptor(),
+			interceptors.RetryingStreamClientInterceptor(interceptors.WithRetryOn(codes.Unavailable))),
 	}
 	dialOptions = append(dialOptions, p.client.GRPCDialOptions...)
 	conn, err := grpc.DialContext(ctx, address, dialOptions...)
 	if err != nil {
-		return errors.FromProto(err)
+		return err
 	}
 	p.conn = conn
 	return nil

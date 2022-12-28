@@ -11,7 +11,6 @@ import (
 	setprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/set/v1"
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
@@ -52,7 +51,7 @@ func (s *setClient) Create(ctx context.Context, request *setv1.CreateRequest) (*
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &setv1.CreateResponse{}
 	log.Debugw("Create",
@@ -77,7 +76,7 @@ func (s *setClient) Close(ctx context.Context, request *setv1.CloseRequest) (*se
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &setv1.CloseResponse{}
 	log.Debugw("Close",
@@ -127,7 +126,7 @@ func (s *setClient) Size(ctx context.Context, request *setv1.SizeRequest) (*setv
 		return int(output.Size_), nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	var size int
 	for _, s := range sizes {
@@ -151,14 +150,14 @@ func (s *setClient) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.
 		log.Warnw("Add",
 			logging.Stringer("AddRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Add",
 			logging.Stringer("AddRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*setprotocolv1.AddResponse](primitive)
 	_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*setprotocolv1.AddResponse, error) {
@@ -177,12 +176,12 @@ func (s *setClient) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.
 		log.Warnw("Add",
 			logging.Stringer("AddRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Add",
 			logging.Stringer("AddRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &setv1.AddResponse{}
 	log.Debugw("Add",
@@ -200,14 +199,14 @@ func (s *setClient) Contains(ctx context.Context, request *setv1.ContainsRequest
 		log.Warnw("Contains",
 			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Contains",
 			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Query[*setprotocolv1.ContainsResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*setprotocolv1.ContainsResponse, error) {
@@ -225,12 +224,12 @@ func (s *setClient) Contains(ctx context.Context, request *setv1.ContainsRequest
 		log.Warnw("Contains",
 			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Contains",
 			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &setv1.ContainsResponse{
 		Contains: output.Contains,
@@ -250,14 +249,14 @@ func (s *setClient) Remove(ctx context.Context, request *setv1.RemoveRequest) (*
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*setprotocolv1.RemoveResponse](primitive)
 	_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*setprotocolv1.RemoveResponse, error) {
@@ -275,12 +274,12 @@ func (s *setClient) Remove(ctx context.Context, request *setv1.RemoveRequest) (*
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &setv1.RemoveResponse{}
 	log.Debugw("Remove",
@@ -330,7 +329,7 @@ func (s *setClient) Clear(ctx context.Context, request *setv1.ClearRequest) (*se
 		return nil
 	})
 	if err != nil {
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &setv1.ClearResponse{}
 	log.Debugw("Clear",
@@ -403,7 +402,7 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 						logging.Stringer("EventsRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*setv1.EventsResponse]{
-						Error: errors.ToProto(err),
+						Error: err,
 					}
 				} else {
 					response := &setv1.EventsResponse{
@@ -523,7 +522,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 						logging.Stringer("ElementsRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*setv1.ElementsResponse]{
-						Error: errors.ToProto(err),
+						Error: err,
 					}
 				} else {
 					response := &setv1.ElementsResponse{

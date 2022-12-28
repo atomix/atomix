@@ -8,7 +8,6 @@ import (
 	"context"
 	multimapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/multimap/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/gogo/protobuf/proto"
@@ -57,7 +56,6 @@ func (s *multiMapServer) Size(ctx context.Context, request *multimapprotocolv1.S
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Size",
 			logging.Stringer("SizeRequest", request),
 			logging.Error("Error", err))
@@ -83,7 +81,6 @@ func (s *multiMapServer) Put(ctx context.Context, request *multimapprotocolv1.Pu
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Put",
 			logging.Stringer("PutRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +106,6 @@ func (s *multiMapServer) PutAll(ctx context.Context, request *multimapprotocolv1
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("PutAll",
 			logging.Stringer("PutAllRequest", request),
 			logging.Error("Error", err))
@@ -135,7 +131,6 @@ func (s *multiMapServer) PutEntries(ctx context.Context, request *multimapprotoc
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("PutEntries",
 			logging.Stringer("PutEntriesRequest", request),
 			logging.Error("Error", err))
@@ -161,7 +156,6 @@ func (s *multiMapServer) Replace(ctx context.Context, request *multimapprotocolv
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Replace",
 			logging.Stringer("ReplaceRequest", request),
 			logging.Error("Error", err))
@@ -187,7 +181,6 @@ func (s *multiMapServer) Contains(ctx context.Context, request *multimapprotocol
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Contains",
 			logging.Stringer("ContainsRequest", request),
 			logging.Error("Error", err))
@@ -213,7 +206,6 @@ func (s *multiMapServer) Get(ctx context.Context, request *multimapprotocolv1.Ge
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
@@ -239,7 +231,6 @@ func (s *multiMapServer) Remove(ctx context.Context, request *multimapprotocolv1
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
@@ -265,7 +256,6 @@ func (s *multiMapServer) RemoveAll(ctx context.Context, request *multimapprotoco
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("RemoveAll",
 			logging.Stringer("RemoveAllRequest", request),
 			logging.Error("Error", err))
@@ -291,7 +281,6 @@ func (s *multiMapServer) RemoveEntries(ctx context.Context, request *multimappro
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("RemoveEntries",
 			logging.Stringer("RemoveEntriesRequest", request),
 			logging.Error("Error", err))
@@ -317,7 +306,6 @@ func (s *multiMapServer) Clear(ctx context.Context, request *multimapprotocolv1.
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Clear",
 			logging.Stringer("ClearRequest", request),
 			logging.Error("Error", err))
@@ -346,7 +334,6 @@ func (s *multiMapServer) Events(request *multimapprotocolv1.EventsRequest, serve
 	go func() {
 		err := s.handler.StreamPropose(server.Context(), input, request.Headers, stream)
 		if err != nil {
-			err = errors.ToProto(err)
 			log.Warnw("Events",
 				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
@@ -362,11 +349,10 @@ func (s *multiMapServer) Events(request *multimapprotocolv1.EventsRequest, serve
 		}
 
 		if result.Failed() {
-			err := errors.ToProto(result.Error)
 			log.Warnw("Events",
 				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
+				logging.Error("Error", result.Error))
+			return result.Error
 		}
 
 		response := &multimapprotocolv1.EventsResponse{
@@ -398,7 +384,6 @@ func (s *multiMapServer) Entries(request *multimapprotocolv1.EntriesRequest, ser
 	go func() {
 		err := s.handler.StreamQuery(server.Context(), input, request.Headers, stream)
 		if err != nil {
-			err = errors.ToProto(err)
 			log.Warnw("Entries",
 				logging.Stringer("EntriesRequest", request),
 				logging.Error("Error", err))
@@ -414,11 +399,10 @@ func (s *multiMapServer) Entries(request *multimapprotocolv1.EntriesRequest, ser
 		}
 
 		if result.Failed() {
-			err := errors.ToProto(result.Error)
 			log.Warnw("Entries",
 				logging.Stringer("EntriesRequest", request),
-				logging.Error("Error", err))
-			return err
+				logging.Error("Error", result.Error))
+			return result.Error
 		}
 
 		response := &multimapprotocolv1.EntriesResponse{

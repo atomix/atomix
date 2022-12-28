@@ -6,8 +6,8 @@ package node
 
 import (
 	"context"
+	"github.com/atomix/atomix/api/errors"
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"time"
 )
@@ -32,7 +32,7 @@ func (s *nodeServer) OpenSession(ctx context.Context, request *protocol.OpenSess
 		log.Warnw("OpenSession",
 			logging.Stringer("OpenSessionRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 
 	input := &protocol.ProposalInput{
@@ -46,7 +46,7 @@ func (s *nodeServer) OpenSession(ctx context.Context, request *protocol.OpenSess
 		log.Warnw("OpenSession",
 			logging.Stringer("OpenSessionRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &protocol.OpenSessionResponse{
 		Headers: &protocol.PartitionResponseHeaders{
@@ -70,7 +70,7 @@ func (s *nodeServer) KeepAlive(ctx context.Context, request *protocol.KeepAliveR
 		log.Warnw("KeepAlive",
 			logging.Stringer("KeepAliveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 
 	command := &protocol.ProposalInput{
@@ -84,7 +84,7 @@ func (s *nodeServer) KeepAlive(ctx context.Context, request *protocol.KeepAliveR
 		log.Warnw("KeepAlive",
 			logging.Stringer("KeepAliveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &protocol.KeepAliveResponse{
 		Headers: &protocol.PartitionResponseHeaders{
@@ -108,7 +108,7 @@ func (s *nodeServer) CloseSession(ctx context.Context, request *protocol.CloseSe
 		log.Warnw("CloseSession",
 			logging.Stringer("CloseSessionRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 
 	command := &protocol.ProposalInput{
@@ -122,7 +122,7 @@ func (s *nodeServer) CloseSession(ctx context.Context, request *protocol.CloseSe
 		log.Warnw("CloseSession",
 			logging.Stringer("CloseSessionRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &protocol.CloseSessionResponse{
 		Headers: &protocol.PartitionResponseHeaders{
@@ -146,7 +146,7 @@ func (s *nodeServer) CreatePrimitive(ctx context.Context, request *protocol.Crea
 		log.Warnw("CreatePrimitive",
 			logging.Stringer("CreatePrimitiveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 
 	command := &protocol.ProposalInput{
@@ -166,7 +166,7 @@ func (s *nodeServer) CreatePrimitive(ctx context.Context, request *protocol.Crea
 		log.Warnw("CreatePrimitive",
 			logging.Stringer("CreatePrimitiveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 
 	response := &protocol.CreatePrimitiveResponse{
@@ -201,7 +201,7 @@ func (s *nodeServer) ClosePrimitive(ctx context.Context, request *protocol.Close
 		log.Warnw("ClosePrimitive",
 			logging.Stringer("ClosePrimitiveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 
 	command := &protocol.ProposalInput{
@@ -221,7 +221,7 @@ func (s *nodeServer) ClosePrimitive(ctx context.Context, request *protocol.Close
 		log.Warnw("ClosePrimitive",
 			logging.Stringer("ClosePrimitiveRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 
 	response := &protocol.ClosePrimitiveResponse{

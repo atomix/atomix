@@ -11,7 +11,6 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	valueprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"google.golang.org/grpc"
 	"io"
@@ -38,7 +37,7 @@ func (s *valueClient) Create(ctx context.Context, request *valuev1.CreateRequest
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
 		Type:        valuev1.PrimitiveType,
@@ -48,7 +47,7 @@ func (s *valueClient) Create(ctx context.Context, request *valuev1.CreateRequest
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &valuev1.CreateResponse{}
 	log.Debugw("Create",
@@ -66,13 +65,13 @@ func (s *valueClient) Close(ctx context.Context, request *valuev1.CloseRequest) 
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &valuev1.CloseResponse{}
 	log.Debugw("Close",
@@ -90,14 +89,14 @@ func (s *valueClient) Set(ctx context.Context, request *valuev1.SetRequest) (*va
 		log.Warnw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*valueprotocolv1.SetResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*valueprotocolv1.SetResponse, error) {
@@ -112,12 +111,12 @@ func (s *valueClient) Set(ctx context.Context, request *valuev1.SetRequest) (*va
 		log.Warnw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &valuev1.SetResponse{
 		Version: uint64(output.Index),
@@ -137,14 +136,14 @@ func (s *valueClient) Insert(ctx context.Context, request *valuev1.InsertRequest
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*valueprotocolv1.InsertResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*valueprotocolv1.InsertResponse, error) {
@@ -159,12 +158,12 @@ func (s *valueClient) Insert(ctx context.Context, request *valuev1.InsertRequest
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &valuev1.InsertResponse{
 		Version: uint64(output.Index),
@@ -184,14 +183,14 @@ func (s *valueClient) Get(ctx context.Context, request *valuev1.GetRequest) (*va
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Query[*valueprotocolv1.GetResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*valueprotocolv1.GetResponse, error) {
@@ -204,12 +203,12 @@ func (s *valueClient) Get(ctx context.Context, request *valuev1.GetRequest) (*va
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &valuev1.GetResponse{
 		Value: &valuev1.VersionedValue{
@@ -232,14 +231,14 @@ func (s *valueClient) Update(ctx context.Context, request *valuev1.UpdateRequest
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*valueprotocolv1.UpdateResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*valueprotocolv1.UpdateResponse, error) {
@@ -256,12 +255,12 @@ func (s *valueClient) Update(ctx context.Context, request *valuev1.UpdateRequest
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &valuev1.UpdateResponse{
 		Version: uint64(output.Index),
@@ -285,14 +284,14 @@ func (s *valueClient) Delete(ctx context.Context, request *valuev1.DeleteRequest
 		log.Warnw("Delete",
 			logging.Stringer("DeleteRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Delete",
 			logging.Stringer("DeleteRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	command := client.Proposal[*valueprotocolv1.DeleteResponse](primitive)
 	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*valueprotocolv1.DeleteResponse, error) {
@@ -307,12 +306,12 @@ func (s *valueClient) Delete(ctx context.Context, request *valuev1.DeleteRequest
 		log.Warnw("Delete",
 			logging.Stringer("DeleteRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Delete",
 			logging.Stringer("DeleteRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &valuev1.DeleteResponse{
 		Value: &valuev1.VersionedValue{
@@ -335,14 +334,14 @@ func (s *valueClient) Events(request *valuev1.EventsRequest, server valuev1.Valu
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
-		return errors.ToProto(err)
+		return err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
-		return errors.ToProto(err)
+		return err
 	}
 	command := client.StreamProposal[*valueprotocolv1.EventsResponse](primitive)
 	stream, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (client.ProposalStream[*valueprotocolv1.EventsResponse], error) {
@@ -352,7 +351,7 @@ func (s *valueClient) Events(request *valuev1.EventsRequest, server valuev1.Valu
 		})
 	})
 	if err != nil {
-		err = errors.ToProto(err)
+		err = err
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
@@ -370,12 +369,12 @@ func (s *valueClient) Events(request *valuev1.EventsRequest, server valuev1.Valu
 			log.Warnw("Events",
 				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
-			return errors.ToProto(err)
+			return err
 		} else if err != nil {
 			log.Debugw("Events",
 				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
-			return errors.ToProto(err)
+			return err
 		}
 		response := &valuev1.EventsResponse{
 			Event: valuev1.Event{},
@@ -436,14 +435,14 @@ func (s *valueClient) Watch(request *valuev1.WatchRequest, server valuev1.Value_
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
-		return errors.ToProto(err)
+		return err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
-		return errors.ToProto(err)
+		return err
 	}
 	query := client.StreamQuery[*valueprotocolv1.WatchResponse](primitive)
 	stream, err := query.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (client.QueryStream[*valueprotocolv1.WatchResponse], error) {
@@ -456,7 +455,7 @@ func (s *valueClient) Watch(request *valuev1.WatchRequest, server valuev1.Value_
 		log.Warnw("Watch",
 			logging.Stringer("WatchRequest", request),
 			logging.Error("Error", err))
-		return errors.ToProto(err)
+		return err
 	}
 	for {
 		output, ok, err := stream.Recv()
@@ -467,12 +466,12 @@ func (s *valueClient) Watch(request *valuev1.WatchRequest, server valuev1.Value_
 			log.Warnw("Watch",
 				logging.Stringer("WatchRequest", request),
 				logging.Error("Error", err))
-			return errors.ToProto(err)
+			return err
 		} else if err != nil {
 			log.Debugw("Watch",
 				logging.Stringer("WatchRequest", request),
 				logging.Error("Error", err))
-			return errors.ToProto(err)
+			return err
 		}
 		response := &valuev1.WatchResponse{
 			Value: &valuev1.VersionedValue{

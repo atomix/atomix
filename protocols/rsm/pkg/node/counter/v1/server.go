@@ -8,7 +8,6 @@ import (
 	"context"
 	counterprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/counter/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc"
@@ -56,7 +55,6 @@ func (s *counterServer) Set(ctx context.Context, request *counterprotocolv1.SetR
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
@@ -82,7 +80,6 @@ func (s *counterServer) Update(ctx context.Context, request *counterprotocolv1.U
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
@@ -108,7 +105,6 @@ func (s *counterServer) Get(ctx context.Context, request *counterprotocolv1.GetR
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
@@ -134,7 +130,6 @@ func (s *counterServer) Increment(ctx context.Context, request *counterprotocolv
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Increment",
 			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
@@ -160,7 +155,6 @@ func (s *counterServer) Decrement(ctx context.Context, request *counterprotocolv
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Decrement",
 			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))

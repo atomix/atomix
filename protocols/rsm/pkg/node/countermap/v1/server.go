@@ -8,7 +8,6 @@ import (
 	"context"
 	countermapprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/countermap/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/gogo/protobuf/proto"
@@ -57,7 +56,6 @@ func (s *counterMapServer) Size(ctx context.Context, request *countermapprotocol
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Size",
 			logging.Stringer("SizeRequest", request),
 			logging.Error("Error", err))
@@ -83,7 +81,6 @@ func (s *counterMapServer) Set(ctx context.Context, request *countermapprotocolv
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
@@ -109,7 +106,6 @@ func (s *counterMapServer) Insert(ctx context.Context, request *countermapprotoc
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Insert",
 			logging.Stringer("InsertRequest", request),
 			logging.Error("Error", err))
@@ -135,7 +131,6 @@ func (s *counterMapServer) Update(ctx context.Context, request *countermapprotoc
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
@@ -161,7 +156,6 @@ func (s *counterMapServer) Increment(ctx context.Context, request *countermappro
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Increment",
 			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
@@ -187,7 +181,6 @@ func (s *counterMapServer) Decrement(ctx context.Context, request *countermappro
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Decrement",
 			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
@@ -213,7 +206,6 @@ func (s *counterMapServer) Get(ctx context.Context, request *countermapprotocolv
 	}
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
@@ -239,7 +231,6 @@ func (s *counterMapServer) Remove(ctx context.Context, request *countermapprotoc
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Remove",
 			logging.Stringer("RemoveRequest", request),
 			logging.Error("Error", err))
@@ -265,7 +256,6 @@ func (s *counterMapServer) Clear(ctx context.Context, request *countermapprotoco
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Clear",
 			logging.Stringer("ClearRequest", request),
 			logging.Error("Error", err))
@@ -291,7 +281,6 @@ func (s *counterMapServer) Lock(ctx context.Context, request *countermapprotocol
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Lock",
 			logging.Stringer("LockRequest", request),
 			logging.Error("Error", err))
@@ -317,7 +306,6 @@ func (s *counterMapServer) Unlock(ctx context.Context, request *countermapprotoc
 	}
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
-		err = errors.ToProto(err)
 		log.Warnw("Unlock",
 			logging.Stringer("UnlockRequest", request),
 			logging.Error("Error", err))
@@ -346,7 +334,6 @@ func (s *counterMapServer) Events(request *countermapprotocolv1.EventsRequest, s
 	go func() {
 		err := s.handler.StreamPropose(server.Context(), input, request.Headers, stream)
 		if err != nil {
-			err = errors.ToProto(err)
 			log.Warnw("Events",
 				logging.Stringer("EventsRequest", request),
 				logging.Error("Error", err))
@@ -362,11 +349,10 @@ func (s *counterMapServer) Events(request *countermapprotocolv1.EventsRequest, s
 		}
 
 		if result.Failed() {
-			err := errors.ToProto(result.Error)
 			log.Warnw("Events",
 				logging.Stringer("EventsRequest", request),
-				logging.Error("Error", err))
-			return err
+				logging.Error("Error", result.Error))
+			return result.Error
 		}
 
 		response := &countermapprotocolv1.EventsResponse{
@@ -398,7 +384,6 @@ func (s *counterMapServer) Entries(request *countermapprotocolv1.EntriesRequest,
 	go func() {
 		err := s.handler.StreamQuery(server.Context(), input, request.Headers, stream)
 		if err != nil {
-			err = errors.ToProto(err)
 			log.Warnw("Entries",
 				logging.Stringer("EntriesRequest", request),
 				logging.Error("Error", err))
@@ -414,11 +399,10 @@ func (s *counterMapServer) Entries(request *countermapprotocolv1.EntriesRequest,
 		}
 
 		if result.Failed() {
-			err := errors.ToProto(result.Error)
 			log.Warnw("Entries",
 				logging.Stringer("EntriesRequest", request),
-				logging.Error("Error", err))
-			return err
+				logging.Error("Error", result.Error))
+			return result.Error
 		}
 
 		response := &countermapprotocolv1.EntriesResponse{

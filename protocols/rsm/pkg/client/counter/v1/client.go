@@ -11,7 +11,6 @@ import (
 	counterprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/counter/v1"
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
-	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"google.golang.org/grpc"
 )
@@ -37,7 +36,7 @@ func (s *counterClient) Create(ctx context.Context, request *counterv1.CreateReq
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
 		Type:        counterv1.PrimitiveType,
@@ -47,7 +46,7 @@ func (s *counterClient) Create(ctx context.Context, request *counterv1.CreateReq
 		log.Warnw("Create",
 			logging.Stringer("CreateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &counterv1.CreateResponse{}
 	log.Debugw("Create",
@@ -65,13 +64,13 @@ func (s *counterClient) Close(ctx context.Context, request *counterv1.CloseReque
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
 		log.Warnw("Close",
 			logging.Stringer("CloseRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &counterv1.CloseResponse{}
 	log.Debugw("Close",
@@ -89,14 +88,14 @@ func (s *counterClient) Set(ctx context.Context, request *counterv1.SetRequest) 
 		log.Warnw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	proposal := client.Proposal[*counterprotocolv1.SetResponse](primitive)
 	output, ok, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*counterprotocolv1.SetResponse, error) {
@@ -111,12 +110,12 @@ func (s *counterClient) Set(ctx context.Context, request *counterv1.SetRequest) 
 		log.Warnw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Set",
 			logging.Stringer("SetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &counterv1.SetResponse{
 		Value: output.Value,
@@ -136,14 +135,14 @@ func (s *counterClient) Get(ctx context.Context, request *counterv1.GetRequest) 
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	proposal := client.Query[*counterprotocolv1.GetResponse](primitive)
 	output, ok, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.QueryRequestHeaders) (*counterprotocolv1.GetResponse, error) {
@@ -156,12 +155,12 @@ func (s *counterClient) Get(ctx context.Context, request *counterv1.GetRequest) 
 		log.Warnw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Get",
 			logging.Stringer("GetRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &counterv1.GetResponse{
 		Value: output.Value,
@@ -181,14 +180,14 @@ func (s *counterClient) Increment(ctx context.Context, request *counterv1.Increm
 		log.Warnw("Increment",
 			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Increment",
 			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	proposal := client.Proposal[*counterprotocolv1.IncrementResponse](primitive)
 	output, ok, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*counterprotocolv1.IncrementResponse, error) {
@@ -203,12 +202,12 @@ func (s *counterClient) Increment(ctx context.Context, request *counterv1.Increm
 		log.Warnw("Increment",
 			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Increment",
 			logging.Stringer("IncrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &counterv1.IncrementResponse{
 		Value: output.Value,
@@ -228,14 +227,14 @@ func (s *counterClient) Decrement(ctx context.Context, request *counterv1.Decrem
 		log.Warnw("Decrement",
 			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Decrement",
 			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	proposal := client.Proposal[*counterprotocolv1.DecrementResponse](primitive)
 	output, ok, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*counterprotocolv1.DecrementResponse, error) {
@@ -250,12 +249,12 @@ func (s *counterClient) Decrement(ctx context.Context, request *counterv1.Decrem
 		log.Warnw("Decrement",
 			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Decrement",
 			logging.Stringer("DecrementRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &counterv1.DecrementResponse{
 		Value: output.Value,
@@ -275,14 +274,14 @@ func (s *counterClient) Update(ctx context.Context, request *counterv1.UpdateReq
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	proposal := client.Proposal[*counterprotocolv1.UpdateResponse](primitive)
 	output, ok, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*counterprotocolv1.UpdateResponse, error) {
@@ -298,12 +297,12 @@ func (s *counterClient) Update(ctx context.Context, request *counterv1.UpdateReq
 		log.Warnw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	} else if err != nil {
 		log.Debugw("Update",
 			logging.Stringer("UpdateRequest", request),
 			logging.Error("Error", err))
-		return nil, errors.ToProto(err)
+		return nil, err
 	}
 	response := &counterv1.UpdateResponse{
 		Value: output.Value,
