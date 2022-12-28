@@ -118,7 +118,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  |  |
-| version | [string](#string) |  |  |
+| api_version | [string](#string) |  |  |
 
 
 

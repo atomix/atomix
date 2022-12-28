@@ -39,7 +39,9 @@ message Route {
 message DriverID {
     option (gogoproto.equal) = true;
     string name = 1;
-    string version = 2;
+    string api_version = 2 [
+        (gogoproto.customname) = "APIVersion"
+    ];
 }
 
 message StoreID {
