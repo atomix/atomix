@@ -2,51 +2,53 @@
 apiVersion: atomix.io/v3beta3
 kind: DataStore
 metadata:
-  name: custom-example-store
+  name: etcd-example-store
 spec:
-  # Configure the DataStore to use a custom-built driver/version
+  # Configure the DataStore to use the etcd driver with the v3 API
   driver:
-    name: Custom
-    version: v1
+    name: Etcd
+    version: v3
   # Define the configuration to be passed to the driver to connect to the store
   config:
-    address: custom-store:1234
+    endpoints:
+      - etcd:2379
 ---
 # Create a StorageProfile to bind your application to the store
 apiVersion: atomix.io/v3beta3
 kind: StorageProfile
 metadata:
-  name: custom-example
+  name: etcd-example
 spec:
-  # Configure the profile to use a custom-built proxy image
+  # Configure the proxy to use locally built images
   proxy:
-    image: atomix/proxy:custom-store-1.0.0
-  # Bind the profile to the custom-example-store
+    image: atomix/proxy:latest
+    imagePullPolicy: Never
+  # Bind the profile to the etcd-example-store
   bindings:
     - store:
-        name: custom-example-store
+        name: etcd-example-store
 ---
 # Create a Deployment annotating the pods to use the StorageProfile
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: custom-example
+  name: etcd-example
   labels:
-    app: custom-example
+    app: etcd-example
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: custom-example
+      app: etcd-example
   template:
     metadata:
       labels:
-        app: custom-example
+        app: etcd-example
       annotations:
         # Inject the proxy into the pods
         proxy.atomix.io/inject: "true"
-        # Configure the proxy to use the custom-example profile
-        proxy.atomix.io/profile: custom-example
+        # Configure the proxy to use the etcd-example profile
+        proxy.atomix.io/profile: etcd-example
     spec:
       containers:
         - name: sleep
