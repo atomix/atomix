@@ -25,7 +25,7 @@ type Conn interface {
 
 // Connector is an interface for connecting to a store
 type Connector[T any] interface {
-	Connect(ctx context.Context, storeID runtimev1.StoreID, spec T) (Conn, error)
+	Connect(ctx context.Context, spec T) (Conn, error)
 }
 
 // Configurator is an interface for supporting configuration changes on an existing Conn

@@ -154,10 +154,16 @@ func connect(ctx context.Context, driver Driver, store runtimev1.Store) (Conn, e
 		return nil, errors.NewNotSupported("driver not supported")
 	}
 	method := value.MethodByName("Connect")
-	if method.Type().NumIn() != 4 {
+	if method.Type().NumIn() != 2 {
 		panic("unexpected method signature: Connect")
 	}
-	spec := reflect.New(method.Type().In(3).Elem()).Interface()
+	param := method.Type().In(1)
+	var spec any
+	if param.Kind() == reflect.Pointer {
+		spec = reflect.New(param.Elem()).Interface()
+	} else {
+		spec = reflect.New(param).Interface()
+	}
 	if message, ok := spec.(proto.Message); ok {
 		if err := jsonpb.UnmarshalString(string(store.Spec.Value), message); err != nil {
 			return nil, err
@@ -169,8 +175,11 @@ func connect(ctx context.Context, driver Driver, store runtimev1.Store) (Conn, e
 	}
 	in := []reflect.Value{
 		reflect.ValueOf(ctx),
-		reflect.ValueOf(store.StoreID),
-		reflect.ValueOf(spec),
+	}
+	if param.Kind() == reflect.Pointer {
+		in = append(in, reflect.ValueOf(spec))
+	} else {
+		in = append(in, reflect.ValueOf(spec).Elem())
 	}
 	out := method.Call(in)
 	if !out[1].IsNil() {
@@ -185,10 +194,16 @@ func configure(ctx context.Context, conn Conn, store runtimev1.Store) error {
 		return nil
 	}
 	method := value.MethodByName("Configure")
-	if method.Type().NumIn() != 3 {
+	if method.Type().NumIn() != 2 {
 		panic("unexpected method signature: Configure")
 	}
-	spec := reflect.New(method.Type().In(2).Elem()).Interface()
+	param := method.Type().In(1)
+	var spec any
+	if param.Kind() == reflect.Pointer {
+		spec = reflect.New(param.Elem()).Interface()
+	} else {
+		spec = reflect.New(param).Interface()
+	}
 	if message, ok := spec.(proto.Message); ok {
 		if err := jsonpb.UnmarshalString(string(store.Spec.Value), message); err != nil {
 			return err
@@ -200,7 +215,11 @@ func configure(ctx context.Context, conn Conn, store runtimev1.Store) error {
 	}
 	in := []reflect.Value{
 		reflect.ValueOf(ctx),
-		reflect.ValueOf(spec),
+	}
+	if param.Kind() == reflect.Pointer {
+		in = append(in, reflect.ValueOf(spec))
+	} else {
+		in = append(in, reflect.ValueOf(spec).Elem())
 	}
 	out := method.Call(in)
 	if !out[0].IsNil() {
