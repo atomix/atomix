@@ -6,9 +6,9 @@ package v1
 
 import (
 	"context"
-	mapv1 "github.com/atomix/atomix/api/pkg/runtime/map/v1"
-	"github.com/atomix/atomix/runtime/pkg/errors"
-	mapruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/map/v1"
+	"fmt"
+	"github.com/atomix/atomix/api/errors"
+	mapv1 "github.com/atomix/atomix/api/runtime/map/v1"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -17,16 +17,15 @@ import (
 	"sync/atomic"
 )
 
-func NewMap(session *concurrency.Session, prefix string) mapruntimev1.Map {
+func NewMap(session *concurrency.Session) mapv1.MapServer {
 	return &etcdMap{
-		kv:       namespace.NewKV(session.Client(), prefix),
-		lease:    namespace.NewLease(session.Client(), prefix),
-		watcher:  namespace.NewWatcher(session.Client(), prefix),
+		session:  session,
 		revision: &etcdRevision{},
 	}
 }
 
 type etcdMap struct {
+	session  *concurrency.Session
 	kv       clientv3.KV
 	lease    clientv3.Lease
 	watcher  clientv3.Watcher
@@ -34,6 +33,10 @@ type etcdMap struct {
 }
 
 func (c *etcdMap) Create(ctx context.Context, request *mapv1.CreateRequest) (*mapv1.CreateResponse, error) {
+	prefix := fmt.Sprintf("%s/", request.ID.Name)
+	c.kv = namespace.NewKV(c.session.Client(), prefix)
+	c.lease = namespace.NewLease(c.session.Client(), prefix)
+	c.watcher = namespace.NewWatcher(c.session.Client(), prefix)
 	return &mapv1.CreateResponse{}, nil
 }
 

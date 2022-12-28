@@ -6,22 +6,24 @@ package v1
 
 import (
 	"context"
-	lockv1 "github.com/atomix/atomix/api/pkg/runtime/lock/v1"
-	lockruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/lock/v1"
+	"fmt"
+	lockv1 "github.com/atomix/atomix/api/runtime/lock/v1"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
-func NewLock(session *concurrency.Session, prefix string) lockruntimev1.Lock {
+func NewLock(session *concurrency.Session) lockv1.LockServer {
 	return &etcdLock{
-		mutex: concurrency.NewMutex(session, prefix),
+		session: session,
 	}
 }
 
 type etcdLock struct {
-	mutex *concurrency.Mutex
+	session *concurrency.Session
+	mutex   *concurrency.Mutex
 }
 
 func (s *etcdLock) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {
+	s.mutex = concurrency.NewMutex(s.session, fmt.Sprintf("%s/", request.ID.Name))
 	return &lockv1.CreateResponse{}, nil
 }
 
