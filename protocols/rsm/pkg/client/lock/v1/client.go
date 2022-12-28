@@ -13,13 +13,12 @@ import (
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	lockruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/lock/v1"
 	"google.golang.org/grpc"
 )
 
 var log = logging.GetLogger()
 
-func NewLock(protocol *client.Protocol) (lockruntimev1.Lock, error) {
+func NewLock(protocol *client.Protocol) (lockv1.LockServer, error) {
 	return &lockClient{
 		Protocol: protocol,
 	}, nil
@@ -41,7 +40,7 @@ func (s *lockClient) Create(ctx context.Context, request *lockv1.CreateRequest) 
 		return nil, errors.ToProto(err)
 	}
 	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
-		Type:        lockruntimev1.PrimitiveType,
+		Type:        lockv1.PrimitiveType,
 		PrimitiveID: request.ID,
 		Tags:        request.Tags,
 	}); err != nil {

@@ -13,14 +13,13 @@ import (
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	electionruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/election/v1"
 	"google.golang.org/grpc"
 	"io"
 )
 
 var log = logging.GetLogger()
 
-func NewLeaderElection(protocol *client.Protocol) (electionruntimev1.LeaderElection, error) {
+func NewLeaderElection(protocol *client.Protocol) (electionv1.LeaderElectionServer, error) {
 	return &electionClient{
 		Protocol: protocol,
 	}, nil
@@ -42,7 +41,7 @@ func (s *electionClient) Create(ctx context.Context, request *electionv1.CreateR
 		return nil, errors.ToProto(err)
 	}
 	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
-		Type:        electionruntimev1.PrimitiveType,
+		Type:        electionv1.PrimitiveType,
 		PrimitiveID: request.ID,
 		Tags:        request.Tags,
 	}); err != nil {

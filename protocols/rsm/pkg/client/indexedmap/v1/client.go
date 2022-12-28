@@ -14,7 +14,6 @@ import (
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	indexedmapruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/indexedmap/v1"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc"
@@ -25,7 +24,7 @@ import (
 
 var log = logging.GetLogger()
 
-func NewIndexedMap(protocol *client.Protocol, config indexedmapprotocolv1.IndexedMapConfig) (indexedmapruntimev1.IndexedMap, error) {
+func NewIndexedMap(protocol *client.Protocol, config indexedmapprotocolv1.IndexedMapConfig) (indexedmapv1.IndexedMapServer, error) {
 	proxy := newIndexedMapClient(protocol)
 	if config.Cache.Enabled {
 		proxy = newCachingIndexedMapClient(proxy, config.Cache)
@@ -54,7 +53,7 @@ func (s *indexedMapClient) Create(ctx context.Context, request *indexedmapv1.Cre
 			return err
 		}
 		return session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
-			Type:        indexedmapruntimev1.PrimitiveType,
+			Type:        indexedmapv1.PrimitiveType,
 			PrimitiveID: request.ID,
 			Tags:        request.Tags,
 		})

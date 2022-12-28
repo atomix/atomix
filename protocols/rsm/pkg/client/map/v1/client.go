@@ -14,7 +14,6 @@ import (
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	mapruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/map/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
@@ -25,7 +24,7 @@ import (
 
 var log = logging.GetLogger()
 
-func NewMap(protocol *client.Protocol, config *mapprotocolv1.MapConfig) (mapruntimev1.Map, error) {
+func NewMap(protocol *client.Protocol, config *mapprotocolv1.MapConfig) (mapv1.MapServer, error) {
 	proxy := newMapClient(protocol)
 	if config.Cache.Enabled {
 		proxy = newCachingMapClient(proxy, config.Cache)
@@ -54,7 +53,7 @@ func (s *mapClient) Create(ctx context.Context, request *mapv1.CreateRequest) (*
 			return err
 		}
 		return session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
-			Type:        mapruntimev1.PrimitiveType,
+			Type:        mapv1.PrimitiveType,
 			PrimitiveID: request.ID,
 			Tags:        request.Tags,
 		})

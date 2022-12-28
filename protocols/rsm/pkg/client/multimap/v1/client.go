@@ -13,7 +13,6 @@ import (
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	multimapruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/multimap/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
@@ -23,7 +22,7 @@ import (
 
 var log = logging.GetLogger()
 
-func NewMultiMap(protocol *client.Protocol) (multimapruntimev1.MultiMap, error) {
+func NewMultiMap(protocol *client.Protocol) (multimapv1.MultiMapServer, error) {
 	return &multiMapClient{
 		Protocol: protocol,
 	}, nil
@@ -44,7 +43,7 @@ func (s *multiMapClient) Create(ctx context.Context, request *multimapv1.CreateR
 			return err
 		}
 		return session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
-			Type:        multimapruntimev1.PrimitiveType,
+			Type:        multimapv1.PrimitiveType,
 			PrimitiveID: request.ID,
 			Tags:        request.Tags,
 		})

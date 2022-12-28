@@ -13,7 +13,6 @@ import (
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	countermapruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/countermap/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
@@ -23,7 +22,7 @@ import (
 
 var log = logging.GetLogger()
 
-func NewCounterMap(protocol *client.Protocol) (countermapruntimev1.CounterMap, error) {
+func NewCounterMap(protocol *client.Protocol) (countermapv1.CounterMapServer, error) {
 	return &counterMapClient{
 		Protocol: protocol,
 	}, nil
@@ -44,7 +43,7 @@ func (s *counterMapClient) Create(ctx context.Context, request *countermapv1.Cre
 			return err
 		}
 		return session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
-			Type:        countermapruntimev1.PrimitiveType,
+			Type:        countermapv1.PrimitiveType,
 			PrimitiveID: request.ID,
 			Tags:        request.Tags,
 		})

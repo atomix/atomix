@@ -13,13 +13,12 @@ import (
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	counterruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/counter/v1"
 	"google.golang.org/grpc"
 )
 
 var log = logging.GetLogger()
 
-func NewCounter(protocol *client.Protocol) (counterruntimev1.Counter, error) {
+func NewCounter(protocol *client.Protocol) (counterv1.CounterServer, error) {
 	return &counterClient{
 		Protocol: protocol,
 	}, nil
@@ -41,7 +40,7 @@ func (s *counterClient) Create(ctx context.Context, request *counterv1.CreateReq
 		return nil, errors.ToProto(err)
 	}
 	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
-		Type:        counterruntimev1.PrimitiveType,
+		Type:        counterv1.PrimitiveType,
 		PrimitiveID: request.ID,
 		Tags:        request.Tags,
 	}); err != nil {

@@ -13,14 +13,13 @@ import (
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	valueruntimev1 "github.com/atomix/atomix/runtime/pkg/runtime/value/v1"
 	"google.golang.org/grpc"
 	"io"
 )
 
 var log = logging.GetLogger()
 
-func NewValue(protocol *client.Protocol) (valueruntimev1.Value, error) {
+func NewValue(protocol *client.Protocol) (valuev1.ValueServer, error) {
 	return &valueClient{
 		Protocol: protocol,
 	}, nil
@@ -42,7 +41,7 @@ func (s *valueClient) Create(ctx context.Context, request *valuev1.CreateRequest
 		return nil, errors.ToProto(err)
 	}
 	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
-		Type:        valueruntimev1.PrimitiveType,
+		Type:        valuev1.PrimitiveType,
 		PrimitiveID: request.ID,
 		Tags:        request.Tags,
 	}); err != nil {
