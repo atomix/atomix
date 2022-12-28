@@ -7,6 +7,7 @@ package v1
 import (
 	"context"
 	electionv1 "github.com/atomix/atomix/api/runtime/election/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
@@ -14,14 +15,24 @@ import (
 
 var log = logging.GetLogger()
 
+const (
+	Name       = "LeaderElection"
+	APIVersion = "v1"
+)
+
+var PrimitiveType = runtimev1.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
+}
+
 func NewLeaderElectionServer(rt *runtime.Runtime) electionv1.LeaderElectionServer {
 	return &leaderElectionServer{
-		manager: runtime.NewPrimitiveManager[LeaderElection](PrimitiveType, rt),
+		manager: runtime.NewPrimitiveManager[electionv1.LeaderElectionServer](PrimitiveType, rt),
 	}
 }
 
 type leaderElectionServer struct {
-	manager *runtime.PrimitiveManager[LeaderElection]
+	manager *runtime.PrimitiveManager[electionv1.LeaderElectionServer]
 }
 
 func (s *leaderElectionServer) Create(ctx context.Context, request *electionv1.CreateRequest) (*electionv1.CreateResponse, error) {

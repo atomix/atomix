@@ -7,6 +7,7 @@ package v1
 import (
 	"context"
 	topicv1 "github.com/atomix/atomix/api/runtime/topic/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
@@ -14,14 +15,24 @@ import (
 
 var log = logging.GetLogger()
 
+const (
+	Name       = "Topic"
+	APIVersion = "v1"
+)
+
+var PrimitiveType = runtimev1.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
+}
+
 func NewTopicServer(rt *runtime.Runtime) topicv1.TopicServer {
 	return &topicServer{
-		manager: runtime.NewPrimitiveManager[Topic](PrimitiveType, rt),
+		manager: runtime.NewPrimitiveManager[topicv1.TopicServer](PrimitiveType, rt),
 	}
 }
 
 type topicServer struct {
-	manager *runtime.PrimitiveManager[Topic]
+	manager *runtime.PrimitiveManager[topicv1.TopicServer]
 }
 
 func (s *topicServer) Create(ctx context.Context, request *topicv1.CreateRequest) (*topicv1.CreateResponse, error) {

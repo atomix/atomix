@@ -7,6 +7,7 @@ package v1
 import (
 	"context"
 	counterv1 "github.com/atomix/atomix/api/runtime/counter/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
@@ -14,14 +15,24 @@ import (
 
 var log = logging.GetLogger()
 
+const (
+	Name       = "Counter"
+	APIVersion = "v1"
+)
+
+var PrimitiveType = runtimev1.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
+}
+
 func NewCounterServer(rt *runtime.Runtime) counterv1.CounterServer {
 	return &counterServer{
-		manager: runtime.NewPrimitiveManager[Counter](PrimitiveType, rt),
+		manager: runtime.NewPrimitiveManager[counterv1.CounterServer](PrimitiveType, rt),
 	}
 }
 
 type counterServer struct {
-	manager *runtime.PrimitiveManager[Counter]
+	manager *runtime.PrimitiveManager[counterv1.CounterServer]
 }
 
 func (s *counterServer) Create(ctx context.Context, request *counterv1.CreateRequest) (*counterv1.CreateResponse, error) {

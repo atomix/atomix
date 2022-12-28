@@ -6,6 +6,7 @@ package v1
 
 import (
 	"context"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	valuev1 "github.com/atomix/atomix/api/runtime/value/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
@@ -14,14 +15,24 @@ import (
 
 var log = logging.GetLogger()
 
+const (
+	Name       = "Value"
+	APIVersion = "v1"
+)
+
+var PrimitiveType = runtimev1.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
+}
+
 func NewValueServer(rt *runtime.Runtime) valuev1.ValueServer {
 	return &valueServer{
-		manager: runtime.NewPrimitiveManager[Value](PrimitiveType, rt),
+		manager: runtime.NewPrimitiveManager[valuev1.ValueServer](PrimitiveType, rt),
 	}
 }
 
 type valueServer struct {
-	manager *runtime.PrimitiveManager[Value]
+	manager *runtime.PrimitiveManager[valuev1.ValueServer]
 }
 
 func (s *valueServer) Create(ctx context.Context, request *valuev1.CreateRequest) (*valuev1.CreateResponse, error) {

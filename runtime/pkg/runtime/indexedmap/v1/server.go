@@ -7,6 +7,7 @@ package v1
 import (
 	"context"
 	indexedmapv1 "github.com/atomix/atomix/api/runtime/indexedmap/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
@@ -14,14 +15,24 @@ import (
 
 var log = logging.GetLogger()
 
+const (
+	Name       = "IndexedMap"
+	APIVersion = "v1"
+)
+
+var PrimitiveType = runtimev1.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
+}
+
 func NewIndexedMapServer(rt *runtime.Runtime) indexedmapv1.IndexedMapServer {
 	return &indexedMapServer{
-		manager: runtime.NewPrimitiveManager[IndexedMap](PrimitiveType, rt),
+		manager: runtime.NewPrimitiveManager[indexedmapv1.IndexedMapServer](PrimitiveType, rt),
 	}
 }
 
 type indexedMapServer struct {
-	manager *runtime.PrimitiveManager[IndexedMap]
+	manager *runtime.PrimitiveManager[indexedmapv1.IndexedMapServer]
 }
 
 func (s *indexedMapServer) Create(ctx context.Context, request *indexedmapv1.CreateRequest) (*indexedmapv1.CreateResponse, error) {

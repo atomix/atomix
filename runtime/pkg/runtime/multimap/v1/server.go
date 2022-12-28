@@ -7,6 +7,7 @@ package v1
 import (
 	"context"
 	multimapv1 "github.com/atomix/atomix/api/runtime/multimap/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
@@ -14,14 +15,24 @@ import (
 
 var log = logging.GetLogger()
 
+const (
+	Name       = "MultiMap"
+	APIVersion = "v1"
+)
+
+var PrimitiveType = runtimev1.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
+}
+
 func NewMultiMapServer(rt *runtime.Runtime) multimapv1.MultiMapServer {
 	return &multiMapServer{
-		manager: runtime.NewPrimitiveManager[MultiMap](PrimitiveType, rt),
+		manager: runtime.NewPrimitiveManager[multimapv1.MultiMapServer](PrimitiveType, rt),
 	}
 }
 
 type multiMapServer struct {
-	manager *runtime.PrimitiveManager[MultiMap]
+	manager *runtime.PrimitiveManager[multimapv1.MultiMapServer]
 }
 
 func (s *multiMapServer) Create(ctx context.Context, request *multimapv1.CreateRequest) (*multimapv1.CreateResponse, error) {

@@ -7,6 +7,7 @@ package v1
 import (
 	"context"
 	mapv1 "github.com/atomix/atomix/api/runtime/map/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
@@ -14,14 +15,24 @@ import (
 
 var log = logging.GetLogger()
 
+const (
+	Name       = "Map"
+	APIVersion = "v1"
+)
+
+var PrimitiveType = runtimev1.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
+}
+
 func NewMapServer(rt *runtime.Runtime) mapv1.MapServer {
 	return &mapServer{
-		manager: runtime.NewPrimitiveManager[Map](PrimitiveType, rt),
+		manager: runtime.NewPrimitiveManager[mapv1.MapServer](PrimitiveType, rt),
 	}
 }
 
 type mapServer struct {
-	manager *runtime.PrimitiveManager[Map]
+	manager *runtime.PrimitiveManager[mapv1.MapServer]
 }
 
 func (s *mapServer) Create(ctx context.Context, request *mapv1.CreateRequest) (*mapv1.CreateResponse, error) {

@@ -7,6 +7,7 @@ package v1
 import (
 	"context"
 	listv1 "github.com/atomix/atomix/api/runtime/list/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
@@ -14,14 +15,24 @@ import (
 
 var log = logging.GetLogger()
 
+const (
+	Name       = "List"
+	APIVersion = "v1"
+)
+
+var PrimitiveType = runtimev1.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
+}
+
 func NewListServer(rt *runtime.Runtime) listv1.ListServer {
 	return &listServer{
-		manager: runtime.NewPrimitiveManager[List](PrimitiveType, rt),
+		manager: runtime.NewPrimitiveManager[listv1.ListServer](PrimitiveType, rt),
 	}
 }
 
 type listServer struct {
-	manager *runtime.PrimitiveManager[List]
+	manager *runtime.PrimitiveManager[listv1.ListServer]
 }
 
 func (s *listServer) Create(ctx context.Context, request *listv1.CreateRequest) (*listv1.CreateResponse, error) {

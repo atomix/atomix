@@ -7,6 +7,7 @@ package v1
 import (
 	"context"
 	lockv1 "github.com/atomix/atomix/api/runtime/lock/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
@@ -14,14 +15,24 @@ import (
 
 var log = logging.GetLogger()
 
+const (
+	Name       = "Lock"
+	APIVersion = "v1"
+)
+
+var PrimitiveType = runtimev1.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
+}
+
 func NewLockServer(rt *runtime.Runtime) lockv1.LockServer {
 	return &lockServer{
-		manager: runtime.NewPrimitiveManager[Lock](PrimitiveType, rt),
+		manager: runtime.NewPrimitiveManager[lockv1.LockServer](PrimitiveType, rt),
 	}
 }
 
 type lockServer struct {
-	manager *runtime.PrimitiveManager[Lock]
+	manager *runtime.PrimitiveManager[lockv1.LockServer]
 }
 
 func (s *lockServer) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {

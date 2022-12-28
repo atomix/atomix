@@ -7,6 +7,7 @@ package v1
 import (
 	"context"
 	setv1 "github.com/atomix/atomix/api/runtime/set/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
@@ -14,14 +15,24 @@ import (
 
 var log = logging.GetLogger()
 
+const (
+	Name       = "Set"
+	APIVersion = "v1"
+)
+
+var PrimitiveType = runtimev1.PrimitiveType{
+	Name:       Name,
+	APIVersion: APIVersion,
+}
+
 func NewSetServer(rt *runtime.Runtime) setv1.SetServer {
 	return &setServer{
-		manager: runtime.NewPrimitiveManager[Set](PrimitiveType, rt),
+		manager: runtime.NewPrimitiveManager[setv1.SetServer](PrimitiveType, rt),
 	}
 }
 
 type setServer struct {
-	manager *runtime.PrimitiveManager[Set]
+	manager *runtime.PrimitiveManager[setv1.SetServer]
 }
 
 func (s *setServer) Create(ctx context.Context, request *setv1.CreateRequest) (*setv1.CreateResponse, error) {
