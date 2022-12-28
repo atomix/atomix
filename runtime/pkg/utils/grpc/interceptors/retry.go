@@ -1,8 +1,8 @@
-// SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+// SPDX-FileCopyrightText: 2022-present Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package retry
+package interceptors
 
 import (
 	"context"
@@ -19,25 +19,24 @@ import (
 
 var log = logging.GetLogger()
 
-var defaultOptions = &callOptions{
+var defaultOptions = &retryingCallOptions{
 	codes: []codes.Code{
 		codes.Unavailable,
-		codes.Unknown,
 	},
 }
 
 // RetryingUnaryClientInterceptor returns a UnaryClientInterceptor that retries requests
-func RetryingUnaryClientInterceptor(callOpts ...CallOption) func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+func RetryingUnaryClientInterceptor(callOpts ...RetryingCallOption) func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 	connOpts := newCallOptions(defaultOptions, callOpts)
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		grpcOpts, retryOpts := filterCallOptions(opts)
 		callOpts := newCallOptions(connOpts, retryOpts)
 		b := backoff.NewExponentialBackOff()
-		if callOpts.initialInterval != nil {
-			b.InitialInterval = *callOpts.initialInterval
+		if callOpts.initialDelay != nil {
+			b.InitialInterval = *callOpts.initialDelay
 		}
-		if callOpts.maxInterval != nil {
-			b.MaxInterval = *callOpts.maxInterval
+		if callOpts.maxDelay != nil {
+			b.MaxInterval = *callOpts.maxDelay
 		}
 		return backoff.Retry(func() error {
 			log.Debugf("SendMsg %.250s", req)
@@ -66,7 +65,7 @@ func RetryingUnaryClientInterceptor(callOpts ...CallOption) func(ctx context.Con
 }
 
 // RetryingStreamClientInterceptor returns a ClientStreamInterceptor that retries both requests and responses
-func RetryingStreamClientInterceptor(callOpts ...CallOption) func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+func RetryingStreamClientInterceptor(callOpts ...RetryingCallOption) func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		if desc.ClientStreams && desc.ServerStreams {
 			return newBiDirectionalStreamClientInterceptor(callOpts...)(ctx, desc, cc, method, streamer, opts...)
@@ -80,7 +79,7 @@ func RetryingStreamClientInterceptor(callOpts ...CallOption) func(ctx context.Co
 }
 
 // newClientStreamClientInterceptor returns a ClientStreamInterceptor that retries both requests and responses
-func newClientStreamClientInterceptor(callOpts ...CallOption) func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+func newClientStreamClientInterceptor(callOpts ...RetryingCallOption) func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	connOpts := newCallOptions(defaultOptions, callOpts)
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		grpcOpts, retryOpts := filterCallOptions(opts)
@@ -98,7 +97,7 @@ func newClientStreamClientInterceptor(callOpts ...CallOption) func(ctx context.C
 }
 
 // newServerStreamClientInterceptor returns a ClientStreamInterceptor that retries both requests and responses
-func newServerStreamClientInterceptor(callOpts ...CallOption) func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+func newServerStreamClientInterceptor(callOpts ...RetryingCallOption) func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	connOpts := newCallOptions(defaultOptions, callOpts)
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		grpcOpts, retryOpts := filterCallOptions(opts)
@@ -116,7 +115,7 @@ func newServerStreamClientInterceptor(callOpts ...CallOption) func(ctx context.C
 }
 
 // newBiDirectionalStreamClientInterceptor returns a ClientStreamInterceptor that retries both requests and responses
-func newBiDirectionalStreamClientInterceptor(callOpts ...CallOption) func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+func newBiDirectionalStreamClientInterceptor(callOpts ...RetryingCallOption) func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	connOpts := newCallOptions(defaultOptions, callOpts)
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		grpcOpts, retryOpts := filterCallOptions(opts)
@@ -191,7 +190,7 @@ func (b *retryingBiDirectionalStreamBuffer) list() []interface{} {
 type retryingClientStream struct {
 	ctx       context.Context
 	stream    grpc.ClientStream
-	opts      *callOptions
+	opts      *retryingCallOptions
 	mu        sync.RWMutex
 	buffer    retryingStreamBuffer
 	newStream func(ctx context.Context) (grpc.ClientStream, error)
@@ -321,11 +320,11 @@ func (s *retryingClientStream) tryRecvMsg(m interface{}) error {
 
 func (s *retryingClientStream) retryStream() error {
 	b := backoff.NewExponentialBackOff()
-	if s.opts.initialInterval != nil {
-		b.InitialInterval = *s.opts.initialInterval
+	if s.opts.initialDelay != nil {
+		b.InitialInterval = *s.opts.initialDelay
 	}
-	if s.opts.maxInterval != nil {
-		b.MaxInterval = *s.opts.maxInterval
+	if s.opts.maxDelay != nil {
+		b.MaxInterval = *s.opts.maxDelay
 	}
 	return backoff.RetryNotify(s.tryStream, backoff.NewExponentialBackOff(), func(err error, duration time.Duration) {
 		log.Debugf("Stream: retry after %s", duration, err)
@@ -406,7 +405,7 @@ func isContextError(err error) bool {
 	return code == codes.DeadlineExceeded || code == codes.Canceled
 }
 
-func isRetryable(opts *callOptions, err error) bool {
+func isRetryable(opts *retryingCallOptions, err error) bool {
 	code := status.Code(err)
 	if code == codes.Canceled || code == codes.DeadlineExceeded {
 		return false
