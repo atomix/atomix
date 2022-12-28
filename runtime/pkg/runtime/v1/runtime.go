@@ -153,10 +153,12 @@ func connect(ctx context.Context, driver Driver, store runtimev1.Store) (Conn, e
 	if _, ok := value.Type().MethodByName("Connect"); !ok {
 		return nil, errors.NewNotSupported("driver not supported")
 	}
+
 	method := value.MethodByName("Connect")
 	if method.Type().NumIn() != 2 {
 		panic("unexpected method signature: Connect")
 	}
+
 	param := method.Type().In(1)
 	var spec any
 	if param.Kind() == reflect.Pointer {
@@ -164,15 +166,23 @@ func connect(ctx context.Context, driver Driver, store runtimev1.Store) (Conn, e
 	} else {
 		spec = reflect.New(param).Interface()
 	}
+
 	if message, ok := spec.(proto.Message); ok {
 		if err := jsonpb.UnmarshalString(string(store.Spec.Value), message); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := json.Unmarshal(store.Spec.Value, spec); err != nil {
-			return nil, err
+		if param.Kind() == reflect.Pointer {
+			if err := json.Unmarshal(store.Spec.Value, spec); err != nil {
+				return nil, err
+			}
+		} else {
+			if err := json.Unmarshal(store.Spec.Value, &spec); err != nil {
+				return nil, err
+			}
 		}
 	}
+
 	in := []reflect.Value{
 		reflect.ValueOf(ctx),
 	}
@@ -181,6 +191,7 @@ func connect(ctx context.Context, driver Driver, store runtimev1.Store) (Conn, e
 	} else {
 		in = append(in, reflect.ValueOf(spec).Elem())
 	}
+
 	out := method.Call(in)
 	if !out[1].IsNil() {
 		return nil, out[1].Interface().(error)
@@ -193,10 +204,12 @@ func configure(ctx context.Context, conn Conn, store runtimev1.Store) error {
 	if _, ok := value.Type().MethodByName("Configure"); !ok {
 		return nil
 	}
+
 	method := value.MethodByName("Configure")
 	if method.Type().NumIn() != 2 {
 		panic("unexpected method signature: Configure")
 	}
+
 	param := method.Type().In(1)
 	var spec any
 	if param.Kind() == reflect.Pointer {
@@ -204,15 +217,23 @@ func configure(ctx context.Context, conn Conn, store runtimev1.Store) error {
 	} else {
 		spec = reflect.New(param).Interface()
 	}
+
 	if message, ok := spec.(proto.Message); ok {
 		if err := jsonpb.UnmarshalString(string(store.Spec.Value), message); err != nil {
 			return err
 		}
 	} else {
-		if err := json.Unmarshal(store.Spec.Value, spec); err != nil {
-			return err
+		if param.Kind() == reflect.Pointer {
+			if err := json.Unmarshal(store.Spec.Value, spec); err != nil {
+				return err
+			}
+		} else {
+			if err := json.Unmarshal(store.Spec.Value, &spec); err != nil {
+				return err
+			}
 		}
 	}
+
 	in := []reflect.Value{
 		reflect.ValueOf(ctx),
 	}
@@ -221,6 +242,7 @@ func configure(ctx context.Context, conn Conn, store runtimev1.Store) error {
 	} else {
 		in = append(in, reflect.ValueOf(spec).Elem())
 	}
+
 	out := method.Call(in)
 	if !out[0].IsNil() {
 		return out[0].Interface().(error)

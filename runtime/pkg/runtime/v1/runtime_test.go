@@ -194,12 +194,20 @@ func (d protoValueConn) Configure(ctx context.Context, config *runtimev1.Runtime
 	return nil
 }
 
+func (d protoValueConn) NewTestV1(primitiveID runtimev1.PrimitiveID, config *runtimev1.RuntimeConfig) (runtimev1.RuntimeServer, error) {
+	return &runtimev1.UnimplementedRuntimeServer{}, nil
+}
+
 type protoPointerConn struct {
 	emptyConn
 }
 
 func (d *protoPointerConn) Configure(ctx context.Context, config *runtimev1.RuntimeConfig) error {
 	return nil
+}
+
+func (d *protoPointerConn) NewTestV1(primitiveID runtimev1.PrimitiveID, config *runtimev1.RuntimeConfig) (runtimev1.RuntimeServer, error) {
+	return &runtimev1.UnimplementedRuntimeServer{}, nil
 }
 
 type jsonValueConn struct {
@@ -210,12 +218,20 @@ func (d jsonValueConn) Configure(ctx context.Context, config jsonConfig) error {
 	return nil
 }
 
+func (d jsonValueConn) NewTestV1(primitiveID runtimev1.PrimitiveID, config jsonConfig) (runtimev1.RuntimeServer, error) {
+	return &runtimev1.UnimplementedRuntimeServer{}, nil
+}
+
 type jsonPointerConn struct {
 	emptyConn
 }
 
 func (d *jsonPointerConn) Configure(ctx context.Context, config *jsonConfig) error {
 	return nil
+}
+
+func (d *jsonPointerConn) NewTestV1(primitiveID runtimev1.PrimitiveID, config *jsonConfig) (runtimev1.RuntimeServer, error) {
+	return &runtimev1.UnimplementedRuntimeServer{}, nil
 }
 
 var _ Conn = emptyConn{}

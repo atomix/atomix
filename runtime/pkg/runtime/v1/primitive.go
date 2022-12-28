@@ -101,32 +101,48 @@ func create[T any](conn Conn, primitive runtimev1.Primitive) (T, error) {
 	}
 
 	method := value.MethodByName(methodName)
-	if method.Type().NumIn() != 3 {
+	if method.Type().NumIn() != 2 {
 		panic("unexpected method signature: " + methodName)
 	}
 
-	primitiveIDType := method.Type().In(1)
+	primitiveIDType := method.Type().In(0)
 	if !primitiveIDType.AssignableTo(reflect.TypeOf(runtimev1.PrimitiveID{})) {
 		panic("unexpected method signature: " + methodName)
 	}
 
-	primitiveSpecType := method.Type().In(2)
+	primitiveSpecType := method.Type().In(1)
+	var spec any
+	if primitiveSpecType.Kind() == reflect.Pointer {
+		spec = reflect.New(primitiveSpecType.Elem()).Interface()
+	} else {
+		spec = reflect.New(primitiveSpecType).Interface()
+	}
 
-	spec := reflect.New(primitiveSpecType.Elem()).Interface()
 	if message, ok := spec.(proto.Message); ok {
 		if err := jsonpb.UnmarshalString(string(primitive.Spec.Value), message); err != nil {
 			return t, err
 		}
 	} else {
-		if err := json.Unmarshal(primitive.Spec.Value, spec); err != nil {
-			return t, err
+		if primitiveSpecType.Kind() == reflect.Pointer {
+			if err := json.Unmarshal(primitive.Spec.Value, spec); err != nil {
+				return t, err
+			}
+		} else {
+			if err := json.Unmarshal(primitive.Spec.Value, &spec); err != nil {
+				return t, err
+			}
 		}
 	}
 
 	in := []reflect.Value{
 		reflect.ValueOf(primitive.PrimitiveID),
-		reflect.ValueOf(spec),
 	}
+	if primitiveSpecType.Kind() == reflect.Pointer {
+		in = append(in, reflect.ValueOf(spec))
+	} else {
+		in = append(in, reflect.ValueOf(spec).Elem())
+	}
+
 	out := method.Call(in)
 	if !out[1].IsNil() {
 		return t, out[1].Interface().(error)
