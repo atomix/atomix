@@ -3,10 +3,11 @@ module github.com/atomix/atomix/controller
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221221001739-d7b19bcf8fb4
+	github.com/atomix/atomix/api v0.0.0-20221228090355-f80263b9b241
 	github.com/atomix/atomix/common v0.0.0-20221218014837-eec7ba47625a
 	github.com/atomix/atomix/runtime v0.0.0-20221219085404-5679432a0742
 	github.com/go-logr/logr v1.2.0
+	github.com/gogo/protobuf v1.3.2
 	github.com/spf13/cobra v1.4.0
 	google.golang.org/grpc v1.46.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -28,7 +29,6 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect

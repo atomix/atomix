@@ -6,10 +6,11 @@ package v3beta3
 
 import (
 	"context"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/gogo/protobuf/jsonpb"
+	gogotypes "github.com/gogo/protobuf/types"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -125,7 +126,7 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 			}
 
 			for _, primitive := range binding.Primitives {
-				route.Primitives = append(route.Primitives, runtimev1.PrimitiveSpec{
+				route.Primitives = append(route.Primitives, runtimev1.Primitive{
 					PrimitiveMeta: runtimev1.PrimitiveMeta{
 						Type: runtimev1.PrimitiveType{
 							Name:       primitive.Kind,
@@ -136,7 +137,9 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 						},
 						Tags: primitive.Tags,
 					},
-					Config: primitive.Config.Raw,
+					Spec: &gogotypes.Any{
+						Value: primitive.Config.Raw,
+					},
 				})
 			}
 

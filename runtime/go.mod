@@ -3,7 +3,7 @@ module github.com/atomix/atomix/runtime
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221228084113-a4d2313f3897
+	github.com/atomix/atomix/api v0.0.0-20221228090355-f80263b9b241
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/gogo/protobuf v1.3.2
 	github.com/mitchellh/go-homedir v1.1.0

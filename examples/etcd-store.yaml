@@ -7,7 +7,7 @@ spec:
   # Configure the DataStore to use the etcd driver with the v3 API
   driver:
     name: Etcd
-    version: v3
+    apiVersion: v3
   # Define the configuration to be passed to the driver to connect to the store
   config:
     endpoints:

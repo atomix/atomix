@@ -35,11 +35,13 @@ spec:
                   type: object
                   required:
                     - name
-                    - version
+                    - apiVersion
                   properties:
                     name:
                       type: string
                     version:
+                      type: string
+                    apiVersion:
                       type: string
                 config:
                   description: |-

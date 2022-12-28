@@ -91,14 +91,14 @@ func (r *runtime) connect(ctx context.Context, driverID runtimev1.DriverID, stor
 	if !ok {
 		log.Infow("Loading driver",
 			logging.String("Driver", driverID.Name),
-			logging.String("Version", driverID.Version))
+			logging.String("APIVersion", driverID.APIVersion))
 		var err error
 		driver, err = r.DriverProvider.LoadDriver(ctx, driverID)
 		if err != nil {
 			err = errors.NewInternal("failed loading driver '%s': %v", driverID, err)
 			log.Warnw("Loading driver failed",
 				logging.String("Driver", driverID.Name),
-				logging.String("Version", driverID.Version),
+				logging.String("APIVersion", driverID.APIVersion),
 				logging.Error("Error", err))
 			return err
 		}

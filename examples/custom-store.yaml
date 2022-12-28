@@ -7,7 +7,7 @@ spec:
   # Configure the DataStore to use a custom-built driver/version
   driver:
     name: Custom
-    version: v1
+    apiVersion: v1
   # Define the configuration to be passed to the driver to connect to the store
   config:
     address: custom-store:1234

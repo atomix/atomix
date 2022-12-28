@@ -7,10 +7,11 @@ package v3beta3
 import (
 	"context"
 	"fmt"
-	runtimev1 "github.com/atomix/atomix/api/pkg/runtime/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	gogotypes "github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	corev1 "k8s.io/api/core/v1"
@@ -309,18 +310,25 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, log logging.Logger, 
 			return false, err
 		}
 
+		driverVersion := store.Spec.Driver.Version
+		if driverVersion == "" {
+			driverVersion = store.Spec.Driver.APIVersion
+		}
+
 		client := runtimev1.NewRuntimeClient(conn)
 		request := &runtimev1.ConnectRequest{
 			DriverID: runtimev1.DriverID{
-				Name:    store.Spec.Driver.Name,
-				Version: store.Spec.Driver.Version,
+				Name:       store.Spec.Driver.Name,
+				APIVersion: driverVersion,
 			},
-			Spec: runtimev1.ConnSpec{
+			Store: runtimev1.Store{
 				StoreID: runtimev1.StoreID{
 					Namespace: storeNamespacedName.Namespace,
 					Name:      storeNamespacedName.Name,
 				},
-				Config: store.Spec.Config.Raw,
+				Spec: &gogotypes.Any{
+					Value: store.Spec.Config.Raw,
+				},
 			},
 		}
 		_, err = client.Connect(ctx, request)
@@ -359,12 +367,14 @@ func (r *PodReconciler) reconcileRoute(ctx context.Context, log logging.Logger, 
 
 		client := runtimev1.NewRuntimeClient(conn)
 		request := &runtimev1.ConfigureRequest{
-			Spec: runtimev1.ConnSpec{
+			Store: runtimev1.Store{
 				StoreID: runtimev1.StoreID{
 					Namespace: storeNamespacedName.Namespace,
 					Name:      storeNamespacedName.Name,
 				},
-				Config: store.Spec.Config.Raw,
+				Spec: &gogotypes.Any{
+					Value: store.Spec.Config.Raw,
+				},
 			},
 		}
 		_, err = client.Configure(ctx, request)
