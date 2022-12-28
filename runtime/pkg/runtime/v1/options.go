@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package runtime
+package v1
 
 import (
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"

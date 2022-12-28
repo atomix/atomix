@@ -9,7 +9,7 @@ import (
 	listv1 "github.com/atomix/atomix/api/runtime/list/v1"
 	"github.com/atomix/atomix/runtime/pkg/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	"github.com/atomix/atomix/runtime/pkg/runtime"
+	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
 )
 
 var log = logging.GetLogger()

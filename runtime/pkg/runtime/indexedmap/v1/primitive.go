@@ -7,7 +7,7 @@ package v1
 import (
 	indexedmapv1 "github.com/atomix/atomix/api/runtime/indexedmap/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
-	"github.com/atomix/atomix/runtime/pkg/runtime"
+	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
 	"google.golang.org/grpc"
 )
 
