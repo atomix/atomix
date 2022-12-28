@@ -77,19 +77,13 @@ func (r *Runtime) Connect(ctx context.Context, driverID runtimev1.DriverID, stor
 				logging.Error("Error", err))
 			return err
 		}
-		drvr = newDriverAdapter(drvr)
 		r.drivers[driverID] = drvr
-	}
-
-	connector, ok := drvr.(driver.Connector[*types.Any])
-	if !ok {
-		return errors.NewNotSupported("Connect not implemented by driver %s/%s", driverID.Name, driverID.APIVersion)
 	}
 
 	log.Infow("Establishing connection to store",
 		logging.String("Name", store.StoreID.Name),
 		logging.String("Namespace", store.StoreID.Namespace))
-	conn, err := connector.Connect(ctx, store.Spec)
+	conn, err := connect(ctx, drvr, store.Spec)
 	if err != nil {
 		log.Warnw("Connecting to store failed",
 			logging.String("Name", store.StoreID.Name),
@@ -113,15 +107,10 @@ func (r *Runtime) Configure(ctx context.Context, store runtimev1.Store) error {
 		return errors.NewNotFound("connection to '%s' not found", store.StoreID)
 	}
 
-	configurator, ok := conn.(driver.Configurator[*types.Any])
-	if !ok {
-		return nil
-	}
-
 	log.Infow("Reconfiguring connection to store",
 		logging.String("Name", store.StoreID.Name),
 		logging.String("Namespace", store.StoreID.Namespace))
-	if err := configurator.Configure(ctx, store.Spec); err != nil {
+	if err := configure(ctx, conn, store.Spec); err != nil {
 		log.Warnw("Reconfiguring connection to store failed",
 			logging.String("Name", store.StoreID.Name),
 			logging.String("Namespace", store.StoreID.Namespace),

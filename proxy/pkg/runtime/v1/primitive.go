@@ -97,10 +97,10 @@ func create[T any](conn driver.Conn, primitive runtimev1.Primitive) (T, error) {
 	value := reflect.ValueOf(conn)
 
 	methodName := fmt.Sprintf("New%s%s", primitive.Type.Name, strings.ToUpper(primitive.Type.APIVersion))
-	method := value.MethodByName(methodName)
-	if method.IsZero() {
+	if _, ok := value.Type().MethodByName(methodName); !ok {
 		return t, errors.NewNotSupported("route does not support primitive type %s/%s", primitive.Type.Name, primitive.Type.APIVersion)
 	}
+	method := value.MethodByName(methodName)
 
 	var err error
 	var in []reflect.Value
@@ -126,25 +126,29 @@ func create[T any](conn driver.Conn, primitive runtimev1.Primitive) (T, error) {
 		var spec any
 		if specIn.Kind() == reflect.Pointer {
 			spec = reflect.New(specIn.Elem()).Interface()
-			if message, ok := spec.(proto.Message); ok {
-				if err := jsonpb.UnmarshalString(string(primitive.Spec.Value), message); err != nil {
-					return t, err
-				}
-			} else {
-				if err := json.Unmarshal(primitive.Spec.Value, spec); err != nil {
-					return t, err
+			if primitive.Spec != nil {
+				if message, ok := spec.(proto.Message); ok {
+					if err := jsonpb.UnmarshalString(string(primitive.Spec.Value), message); err != nil {
+						return t, err
+					}
+				} else {
+					if err := json.Unmarshal(primitive.Spec.Value, spec); err != nil {
+						return t, err
+					}
 				}
 			}
 			in = append(in, reflect.ValueOf(spec))
 		} else {
 			spec = reflect.New(specIn).Interface()
-			if message, ok := spec.(proto.Message); ok {
-				if err := jsonpb.UnmarshalString(string(primitive.Spec.Value), message); err != nil {
-					return t, err
-				}
-			} else {
-				if err := json.Unmarshal(primitive.Spec.Value, &spec); err != nil {
-					return t, err
+			if primitive.Spec != nil {
+				if message, ok := spec.(proto.Message); ok {
+					if err := jsonpb.UnmarshalString(string(primitive.Spec.Value), message); err != nil {
+						return t, err
+					}
+				} else {
+					if err := json.Unmarshal(primitive.Spec.Value, &spec); err != nil {
+						return t, err
+					}
 				}
 			}
 			in = append(in, reflect.ValueOf(spec).Elem())

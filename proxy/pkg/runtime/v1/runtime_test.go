@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	"github.com/atomix/atomix/runtime/pkg/driver"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
@@ -19,56 +20,32 @@ func TestConnect(t *testing.T) {
 	var marshaler jsonpb.Marshaler
 	chars, err := marshaler.MarshalToString(&runtimev1.RuntimeConfig{})
 	assert.NoError(t, err)
-	conn, err := connect(context.TODO(), protoValueDriver{}, runtimev1.Store{
-		StoreID: runtimev1.StoreID{
-			Namespace: "test",
-			Name:      "test",
-		},
-		Spec: &types.Any{
-			Value: []byte(chars),
-		},
+	conn, err := connect(context.TODO(), protoValueDriver{}, &types.Any{
+		Value: []byte(chars),
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, conn)
 
 	chars, err = marshaler.MarshalToString(&runtimev1.RuntimeConfig{})
 	assert.NoError(t, err)
-	conn, err = connect(context.TODO(), &protoPointerDriver{}, runtimev1.Store{
-		StoreID: runtimev1.StoreID{
-			Namespace: "test",
-			Name:      "test",
-		},
-		Spec: &types.Any{
-			Value: []byte(chars),
-		},
+	conn, err = connect(context.TODO(), &protoPointerDriver{}, &types.Any{
+		Value: []byte(chars),
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, conn)
 
 	bytes, err := json.Marshal(jsonConfig{Value: "foo"})
 	assert.NoError(t, err)
-	conn, err = connect(context.TODO(), jsonValueDriver{}, runtimev1.Store{
-		StoreID: runtimev1.StoreID{
-			Namespace: "test",
-			Name:      "test",
-		},
-		Spec: &types.Any{
-			Value: bytes,
-		},
+	conn, err = connect(context.TODO(), jsonValueDriver{}, &types.Any{
+		Value: bytes,
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, conn)
 
 	bytes, err = json.Marshal(jsonConfig{Value: "foo"})
 	assert.NoError(t, err)
-	conn, err = connect(context.TODO(), &jsonPointerDriver{}, runtimev1.Store{
-		StoreID: runtimev1.StoreID{
-			Namespace: "test",
-			Name:      "test",
-		},
-		Spec: &types.Any{
-			Value: bytes,
-		},
+	conn, err = connect(context.TODO(), &jsonPointerDriver{}, &types.Any{
+		Value: bytes,
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, conn)
@@ -78,53 +55,29 @@ func TestConfigure(t *testing.T) {
 	var marshaler jsonpb.Marshaler
 	chars, err := marshaler.MarshalToString(&runtimev1.RuntimeConfig{})
 	assert.NoError(t, err)
-	err = configure(context.TODO(), protoValueConn{}, runtimev1.Store{
-		StoreID: runtimev1.StoreID{
-			Namespace: "test",
-			Name:      "test",
-		},
-		Spec: &types.Any{
-			Value: []byte(chars),
-		},
+	err = configure(context.TODO(), protoValueConn{}, &types.Any{
+		Value: []byte(chars),
 	})
 	assert.NoError(t, err)
 
 	chars, err = marshaler.MarshalToString(&runtimev1.RuntimeConfig{})
 	assert.NoError(t, err)
-	err = configure(context.TODO(), &protoPointerConn{}, runtimev1.Store{
-		StoreID: runtimev1.StoreID{
-			Namespace: "test",
-			Name:      "test",
-		},
-		Spec: &types.Any{
-			Value: []byte(chars),
-		},
+	err = configure(context.TODO(), &protoPointerConn{}, &types.Any{
+		Value: []byte(chars),
 	})
 	assert.NoError(t, err)
 
 	bytes, err := json.Marshal(jsonConfig{Value: "foo"})
 	assert.NoError(t, err)
-	err = configure(context.TODO(), jsonValueConn{}, runtimev1.Store{
-		StoreID: runtimev1.StoreID{
-			Namespace: "test",
-			Name:      "test",
-		},
-		Spec: &types.Any{
-			Value: bytes,
-		},
+	err = configure(context.TODO(), jsonValueConn{}, &types.Any{
+		Value: bytes,
 	})
 	assert.NoError(t, err)
 
 	bytes, err = json.Marshal(jsonConfig{Value: "foo"})
 	assert.NoError(t, err)
-	err = configure(context.TODO(), &jsonPointerConn{}, runtimev1.Store{
-		StoreID: runtimev1.StoreID{
-			Namespace: "test",
-			Name:      "test",
-		},
-		Spec: &types.Any{
-			Value: bytes,
-		},
+	err = configure(context.TODO(), &jsonPointerConn{}, &types.Any{
+		Value: bytes,
 	})
 	assert.NoError(t, err)
 }
@@ -142,13 +95,13 @@ func (d emptyDriver) String() string {
 	return fmt.Sprintf("%s/%s", d.ID().Name, d.ID().APIVersion)
 }
 
-var _ Driver = emptyDriver{}
+var _ driver.Driver = emptyDriver{}
 
 type protoValueDriver struct {
 	emptyDriver
 }
 
-func (d protoValueDriver) Connect(ctx context.Context, config *runtimev1.RuntimeConfig) (Conn, error) {
+func (d protoValueDriver) Connect(ctx context.Context, config *runtimev1.RuntimeConfig) (driver.Conn, error) {
 	return emptyConn{}, nil
 }
 
@@ -156,7 +109,7 @@ type protoPointerDriver struct {
 	emptyDriver
 }
 
-func (d *protoPointerDriver) Connect(ctx context.Context, config *runtimev1.RuntimeConfig) (Conn, error) {
+func (d *protoPointerDriver) Connect(ctx context.Context, config *runtimev1.RuntimeConfig) (driver.Conn, error) {
 	return emptyConn{}, nil
 }
 
@@ -168,7 +121,7 @@ type jsonValueDriver struct {
 	emptyDriver
 }
 
-func (d jsonValueDriver) Connect(ctx context.Context, config jsonConfig) (Conn, error) {
+func (d jsonValueDriver) Connect(ctx context.Context, config jsonConfig) (driver.Conn, error) {
 	return emptyConn{}, nil
 }
 
@@ -176,7 +129,7 @@ type jsonPointerDriver struct {
 	emptyDriver
 }
 
-func (d *jsonPointerDriver) Connect(ctx context.Context, config *jsonConfig) (Conn, error) {
+func (d *jsonPointerDriver) Connect(ctx context.Context, config *jsonConfig) (driver.Conn, error) {
 	return emptyConn{}, nil
 }
 
@@ -234,4 +187,4 @@ func (d *jsonPointerConn) NewTestV1(config *jsonConfig) (runtimev1.RuntimeServer
 	return &runtimev1.UnimplementedRuntimeServer{}, nil
 }
 
-var _ Conn = emptyConn{}
+var _ driver.Conn = emptyConn{}
