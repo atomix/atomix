@@ -93,22 +93,24 @@ func (c *PrimitiveManager[T]) Close(primitiveID runtimev1.PrimitiveID) (T, error
 func create[T any](conn Conn, primitive runtimev1.Primitive) (T, error) {
 	var t T
 
-	methodName := fmt.Sprintf("New%s%s", primitive.Type.Name, strings.ToUpper(primitive.Type.APIVersion))
-
 	value := reflect.ValueOf(conn)
-	if _, ok := value.Type().MethodByName(methodName); !ok {
-		return t, errors.NewNotSupported("route does not support primitive type %s/%s", primitive.Type.Name, primitive.Type.APIVersion)
-	}
 
+	methodName := fmt.Sprintf("New%s%s", primitive.Type.Name, strings.ToUpper(primitive.Type.APIVersion))
 	method := value.MethodByName(methodName)
-
-	if method.Type().NumIn() > 1 {
-		panic(fmt.Sprintf("unexpected signature for method %s: expected <=1 input(s)", methodName))
+	if method.IsZero() {
+		return t, errors.NewNotSupported("route does not support primitive type %s/%s", primitive.Type.Name, primitive.Type.APIVersion)
 	}
 
 	var err error
 	var in []reflect.Value
-	if method.Type().NumIn() == 1 {
+	if method.Type().NumIn() == 0 {
+		if method.Type().NumOut() != 1 {
+			panic(fmt.Sprintf("unexpected signature for method %s: expected one output", methodName))
+		}
+		if !method.Type().Out(0).AssignableTo(reflect.TypeOf(&t).Elem()) {
+			panic(fmt.Sprintf("unexpected signature for method %s: expected %s output", methodName, reflect.TypeOf(&t).Elem().Name()))
+		}
+	} else if method.Type().NumIn() == 1 {
 		if method.Type().NumOut() != 2 {
 			panic(fmt.Sprintf("unexpected signature for method %s: expected two outputs", methodName))
 		}
@@ -147,12 +149,7 @@ func create[T any](conn Conn, primitive runtimev1.Primitive) (T, error) {
 			in = append(in, reflect.ValueOf(spec).Elem())
 		}
 	} else {
-		if method.Type().NumOut() != 1 {
-			panic(fmt.Sprintf("unexpected signature for method %s: expected one output", methodName))
-		}
-		if !method.Type().Out(0).AssignableTo(reflect.TypeOf(&t).Elem()) {
-			panic(fmt.Sprintf("unexpected signature for method %s: expected %s output", methodName, reflect.TypeOf(&t).Elem().Name()))
-		}
+		panic(fmt.Sprintf("unexpected signature for method %s: expected 0 or 1 input(s)", methodName))
 	}
 
 	out := method.Call(in)
