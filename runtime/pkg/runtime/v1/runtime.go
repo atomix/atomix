@@ -52,7 +52,7 @@ func (r *Runtime) lookup(storeID runtimev1.StoreID) (Conn, error) {
 	return conn, nil
 }
 
-func (r *Runtime) connect(ctx context.Context, driverID runtimev1.DriverID, store runtimev1.Store) error {
+func (r *Runtime) Connect(ctx context.Context, driverID runtimev1.DriverID, store runtimev1.Store) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -97,7 +97,7 @@ func (r *Runtime) connect(ctx context.Context, driverID runtimev1.DriverID, stor
 	return nil
 }
 
-func (r *Runtime) configure(ctx context.Context, store runtimev1.Store) error {
+func (r *Runtime) Configure(ctx context.Context, store runtimev1.Store) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -122,7 +122,7 @@ func (r *Runtime) configure(ctx context.Context, store runtimev1.Store) error {
 	return nil
 }
 
-func (r *Runtime) disconnect(ctx context.Context, storeID runtimev1.StoreID) error {
+func (r *Runtime) Disconnect(ctx context.Context, storeID runtimev1.StoreID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
