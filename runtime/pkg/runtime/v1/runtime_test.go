@@ -194,8 +194,8 @@ func (d protoValueConn) Configure(ctx context.Context, config *runtimev1.Runtime
 	return nil
 }
 
-func (d protoValueConn) NewTestV1(primitiveID runtimev1.PrimitiveID, config *runtimev1.RuntimeConfig) (runtimev1.RuntimeServer, error) {
-	return &runtimev1.UnimplementedRuntimeServer{}, nil
+func (d protoValueConn) NewTestV1() runtimev1.RuntimeServer {
+	return &runtimev1.UnimplementedRuntimeServer{}
 }
 
 type protoPointerConn struct {
@@ -206,7 +206,7 @@ func (d *protoPointerConn) Configure(ctx context.Context, config *runtimev1.Runt
 	return nil
 }
 
-func (d *protoPointerConn) NewTestV1(primitiveID runtimev1.PrimitiveID, config *runtimev1.RuntimeConfig) (runtimev1.RuntimeServer, error) {
+func (d *protoPointerConn) NewTestV1(config *runtimev1.RuntimeConfig) (runtimev1.RuntimeServer, error) {
 	return &runtimev1.UnimplementedRuntimeServer{}, nil
 }
 
@@ -218,8 +218,8 @@ func (d jsonValueConn) Configure(ctx context.Context, config jsonConfig) error {
 	return nil
 }
 
-func (d jsonValueConn) NewTestV1(primitiveID runtimev1.PrimitiveID, config jsonConfig) (runtimev1.RuntimeServer, error) {
-	return &runtimev1.UnimplementedRuntimeServer{}, nil
+func (d jsonValueConn) NewTestV1() runtimev1.RuntimeServer {
+	return &runtimev1.UnimplementedRuntimeServer{}
 }
 
 type jsonPointerConn struct {
@@ -230,7 +230,7 @@ func (d *jsonPointerConn) Configure(ctx context.Context, config *jsonConfig) err
 	return nil
 }
 
-func (d *jsonPointerConn) NewTestV1(primitiveID runtimev1.PrimitiveID, config *jsonConfig) (runtimev1.RuntimeServer, error) {
+func (d *jsonPointerConn) NewTestV1(config *jsonConfig) (runtimev1.RuntimeServer, error) {
 	return &runtimev1.UnimplementedRuntimeServer{}, nil
 }
 
