@@ -16,20 +16,20 @@ var log = logging.GetLogger()
 
 const truncLen = 250
 
-func newLeaderElectionServer(client *runtime.PrimitiveClient[LeaderElection]) electionv1.LeaderElectionServer {
+func newLeaderElectionServer(manager *runtime.PrimitiveManager[LeaderElection]) electionv1.LeaderElectionServer {
 	return &leaderElectionServer{
-		client: client,
+		manager: manager,
 	}
 }
 
 type leaderElectionServer struct {
-	client *runtime.PrimitiveClient[LeaderElection]
+	manager *runtime.PrimitiveManager[LeaderElection]
 }
 
 func (s *leaderElectionServer) Create(ctx context.Context, request *electionv1.CreateRequest) (*electionv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Trunc64("CreateRequest", request))
-	client, err := s.client.Create(ctx, request.ID, request.Tags)
+	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",
@@ -52,7 +52,7 @@ func (s *leaderElectionServer) Create(ctx context.Context, request *electionv1.C
 func (s *leaderElectionServer) Close(ctx context.Context, request *electionv1.CloseRequest) (*electionv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Trunc64("CloseRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Close",
@@ -75,7 +75,7 @@ func (s *leaderElectionServer) Close(ctx context.Context, request *electionv1.Cl
 func (s *leaderElectionServer) Enter(ctx context.Context, request *electionv1.EnterRequest) (*electionv1.EnterResponse, error) {
 	log.Debugw("Enter",
 		logging.Trunc64("EnterRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Enter",
@@ -98,7 +98,7 @@ func (s *leaderElectionServer) Enter(ctx context.Context, request *electionv1.En
 func (s *leaderElectionServer) Withdraw(ctx context.Context, request *electionv1.WithdrawRequest) (*electionv1.WithdrawResponse, error) {
 	log.Debugw("Withdraw",
 		logging.Trunc64("WithdrawRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Withdraw",
@@ -121,7 +121,7 @@ func (s *leaderElectionServer) Withdraw(ctx context.Context, request *electionv1
 func (s *leaderElectionServer) Anoint(ctx context.Context, request *electionv1.AnointRequest) (*electionv1.AnointResponse, error) {
 	log.Debugw("Anoint",
 		logging.Trunc64("AnointRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Anoint",
@@ -144,7 +144,7 @@ func (s *leaderElectionServer) Anoint(ctx context.Context, request *electionv1.A
 func (s *leaderElectionServer) Promote(ctx context.Context, request *electionv1.PromoteRequest) (*electionv1.PromoteResponse, error) {
 	log.Debugw("Promote",
 		logging.Trunc64("PromoteRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Promote",
@@ -167,7 +167,7 @@ func (s *leaderElectionServer) Promote(ctx context.Context, request *electionv1.
 func (s *leaderElectionServer) Demote(ctx context.Context, request *electionv1.DemoteRequest) (*electionv1.DemoteResponse, error) {
 	log.Debugw("Demote",
 		logging.Trunc64("DemoteRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Demote",
@@ -190,7 +190,7 @@ func (s *leaderElectionServer) Demote(ctx context.Context, request *electionv1.D
 func (s *leaderElectionServer) Evict(ctx context.Context, request *electionv1.EvictRequest) (*electionv1.EvictResponse, error) {
 	log.Debugw("Evict",
 		logging.Trunc64("EvictRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Evict",
@@ -213,7 +213,7 @@ func (s *leaderElectionServer) Evict(ctx context.Context, request *electionv1.Ev
 func (s *leaderElectionServer) GetTerm(ctx context.Context, request *electionv1.GetTermRequest) (*electionv1.GetTermResponse, error) {
 	log.Debugw("GetTerm",
 		logging.Trunc64("GetTermRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("GetTerm",
@@ -237,7 +237,7 @@ func (s *leaderElectionServer) Watch(request *electionv1.WatchRequest, server el
 	log.Debugw("Watch",
 		logging.Trunc64("WatchRequest", request),
 		logging.String("State", "started"))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Watch",

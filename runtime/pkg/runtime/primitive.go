@@ -15,8 +15,8 @@ type PrimitiveResolver[T any] func(conn Conn) (PrimitiveProvider[T], bool)
 
 type PrimitiveProvider[T any] func(spec runtimev1.Primitive) (T, error)
 
-func NewPrimitiveClient[T any](primitiveType runtimev1.PrimitiveType, runtime Runtime, resolver PrimitiveResolver[T]) *PrimitiveClient[T] {
-	return &PrimitiveClient[T]{
+func NewPrimitiveManager[T any](primitiveType runtimev1.PrimitiveType, runtime Runtime, resolver PrimitiveResolver[T]) *PrimitiveManager[T] {
+	return &PrimitiveManager[T]{
 		primitiveType: primitiveType,
 		runtime:       runtime,
 		resolver:      resolver,
@@ -24,7 +24,7 @@ func NewPrimitiveClient[T any](primitiveType runtimev1.PrimitiveType, runtime Ru
 	}
 }
 
-type PrimitiveClient[T any] struct {
+type PrimitiveManager[T any] struct {
 	primitiveType runtimev1.PrimitiveType
 	runtime       Runtime
 	resolver      PrimitiveResolver[T]
@@ -32,7 +32,7 @@ type PrimitiveClient[T any] struct {
 	mu            sync.RWMutex
 }
 
-func (c *PrimitiveClient[T]) Create(ctx context.Context, primitiveID runtimev1.PrimitiveID, tags []string) (T, error) {
+func (c *PrimitiveManager[T]) Create(ctx context.Context, primitiveID runtimev1.PrimitiveID, tags []string) (T, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -74,7 +74,7 @@ func (c *PrimitiveClient[T]) Create(ctx context.Context, primitiveID runtimev1.P
 	return primitive, nil
 }
 
-func (c *PrimitiveClient[T]) Get(primitiveID runtimev1.PrimitiveID) (T, error) {
+func (c *PrimitiveManager[T]) Get(primitiveID runtimev1.PrimitiveID) (T, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	primitive, ok := c.primitives[primitiveID]
@@ -84,7 +84,7 @@ func (c *PrimitiveClient[T]) Get(primitiveID runtimev1.PrimitiveID) (T, error) {
 	return primitive, nil
 }
 
-func (c *PrimitiveClient[T]) Close(primitiveID runtimev1.PrimitiveID) (T, error) {
+func (c *PrimitiveManager[T]) Close(primitiveID runtimev1.PrimitiveID) (T, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	client, ok := c.primitives[primitiveID]

@@ -16,20 +16,20 @@ var log = logging.GetLogger()
 
 const truncLen = 250
 
-func newListServer(client *runtime.PrimitiveClient[List]) listv1.ListServer {
+func newListServer(manager *runtime.PrimitiveManager[List]) listv1.ListServer {
 	return &listServer{
-		client: client,
+		manager: manager,
 	}
 }
 
 type listServer struct {
-	client *runtime.PrimitiveClient[List]
+	manager *runtime.PrimitiveManager[List]
 }
 
 func (s *listServer) Create(ctx context.Context, request *listv1.CreateRequest) (*listv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Trunc64("CreateRequest", request))
-	client, err := s.client.Create(ctx, request.ID, request.Tags)
+	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",
@@ -52,7 +52,7 @@ func (s *listServer) Create(ctx context.Context, request *listv1.CreateRequest) 
 func (s *listServer) Close(ctx context.Context, request *listv1.CloseRequest) (*listv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Trunc64("CloseRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Close",
@@ -75,7 +75,7 @@ func (s *listServer) Close(ctx context.Context, request *listv1.CloseRequest) (*
 func (s *listServer) Size(ctx context.Context, request *listv1.SizeRequest) (*listv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Trunc64("SizeRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Size",
@@ -98,7 +98,7 @@ func (s *listServer) Size(ctx context.Context, request *listv1.SizeRequest) (*li
 func (s *listServer) Append(ctx context.Context, request *listv1.AppendRequest) (*listv1.AppendResponse, error) {
 	log.Debugw("Append",
 		logging.Trunc64("AppendRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Append",
@@ -121,7 +121,7 @@ func (s *listServer) Append(ctx context.Context, request *listv1.AppendRequest) 
 func (s *listServer) Insert(ctx context.Context, request *listv1.InsertRequest) (*listv1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Trunc64("InsertRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Insert",
@@ -144,7 +144,7 @@ func (s *listServer) Insert(ctx context.Context, request *listv1.InsertRequest) 
 func (s *listServer) Get(ctx context.Context, request *listv1.GetRequest) (*listv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc64("GetRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
@@ -167,7 +167,7 @@ func (s *listServer) Get(ctx context.Context, request *listv1.GetRequest) (*list
 func (s *listServer) Set(ctx context.Context, request *listv1.SetRequest) (*listv1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Trunc64("SetRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Set",
@@ -190,7 +190,7 @@ func (s *listServer) Set(ctx context.Context, request *listv1.SetRequest) (*list
 func (s *listServer) Remove(ctx context.Context, request *listv1.RemoveRequest) (*listv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Trunc64("RemoveRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Remove",
@@ -213,7 +213,7 @@ func (s *listServer) Remove(ctx context.Context, request *listv1.RemoveRequest) 
 func (s *listServer) Clear(ctx context.Context, request *listv1.ClearRequest) (*listv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Trunc64("ClearRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Clear",
@@ -237,7 +237,7 @@ func (s *listServer) Events(request *listv1.EventsRequest, server listv1.List_Ev
 	log.Debugw("Events",
 		logging.Trunc64("EventsRequest", request),
 		logging.String("State", "started"))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
@@ -259,7 +259,7 @@ func (s *listServer) Items(request *listv1.ItemsRequest, server listv1.List_Item
 	log.Debugw("Items",
 		logging.Trunc64("ItemsRequest", request),
 		logging.String("State", "started"))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Items",

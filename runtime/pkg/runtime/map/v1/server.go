@@ -16,20 +16,20 @@ var log = logging.GetLogger()
 
 const truncLen = 250
 
-func newMapServer(client *runtime.PrimitiveClient[Map]) mapv1.MapServer {
+func newMapServer(manager *runtime.PrimitiveManager[Map]) mapv1.MapServer {
 	return &mapServer{
-		client: client,
+		manager: manager,
 	}
 }
 
 type mapServer struct {
-	client *runtime.PrimitiveClient[Map]
+	manager *runtime.PrimitiveManager[Map]
 }
 
 func (s *mapServer) Create(ctx context.Context, request *mapv1.CreateRequest) (*mapv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Trunc64("CreateRequest", request))
-	client, err := s.client.Create(ctx, request.ID, request.Tags)
+	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",
@@ -52,7 +52,7 @@ func (s *mapServer) Create(ctx context.Context, request *mapv1.CreateRequest) (*
 func (s *mapServer) Close(ctx context.Context, request *mapv1.CloseRequest) (*mapv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Trunc64("CloseRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Close",
@@ -75,7 +75,7 @@ func (s *mapServer) Close(ctx context.Context, request *mapv1.CloseRequest) (*ma
 func (s *mapServer) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Trunc64("SizeRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Size",
@@ -98,7 +98,7 @@ func (s *mapServer) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv
 func (s *mapServer) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
 	log.Debugw("Put",
 		logging.Trunc64("PutRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Put",
@@ -121,7 +121,7 @@ func (s *mapServer) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.
 func (s *mapServer) Insert(ctx context.Context, request *mapv1.InsertRequest) (*mapv1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Trunc64("InsertRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Insert",
@@ -144,7 +144,7 @@ func (s *mapServer) Insert(ctx context.Context, request *mapv1.InsertRequest) (*
 func (s *mapServer) Update(ctx context.Context, request *mapv1.UpdateRequest) (*mapv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Trunc64("UpdateRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Update",
@@ -167,7 +167,7 @@ func (s *mapServer) Update(ctx context.Context, request *mapv1.UpdateRequest) (*
 func (s *mapServer) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc64("GetRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
@@ -190,7 +190,7 @@ func (s *mapServer) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.
 func (s *mapServer) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Trunc64("RemoveRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Remove",
@@ -213,7 +213,7 @@ func (s *mapServer) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*
 func (s *mapServer) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Trunc64("ClearRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Clear",
@@ -236,7 +236,7 @@ func (s *mapServer) Clear(ctx context.Context, request *mapv1.ClearRequest) (*ma
 func (s *mapServer) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1.LockResponse, error) {
 	log.Debugw("Lock",
 		logging.Trunc64("LockRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Lock",
@@ -259,7 +259,7 @@ func (s *mapServer) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv
 func (s *mapServer) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*mapv1.UnlockResponse, error) {
 	log.Debugw("Unlock",
 		logging.Trunc64("UnlockRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Unlock",
@@ -283,7 +283,7 @@ func (s *mapServer) Events(request *mapv1.EventsRequest, server mapv1.Map_Events
 	log.Debugw("Events",
 		logging.Trunc64("EventsRequest", request),
 		logging.String("State", "started"))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
@@ -305,7 +305,7 @@ func (s *mapServer) Entries(request *mapv1.EntriesRequest, server mapv1.Map_Entr
 	log.Debugw("Entries",
 		logging.Trunc64("EntriesRequest", request),
 		logging.String("State", "started"))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Entries",

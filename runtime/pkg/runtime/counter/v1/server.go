@@ -14,22 +14,20 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 250
-
-func newCounterServer(client *runtime.PrimitiveClient[Counter]) counterv1.CounterServer {
+func newCounterServer(manager *runtime.PrimitiveManager[Counter]) counterv1.CounterServer {
 	return &counterServer{
-		client: client,
+		manager: manager,
 	}
 }
 
 type counterServer struct {
-	client *runtime.PrimitiveClient[Counter]
+	manager *runtime.PrimitiveManager[Counter]
 }
 
 func (s *counterServer) Create(ctx context.Context, request *counterv1.CreateRequest) (*counterv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Trunc64("CreateRequest", request))
-	client, err := s.client.Create(ctx, request.ID, request.Tags)
+	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",
@@ -52,7 +50,7 @@ func (s *counterServer) Create(ctx context.Context, request *counterv1.CreateReq
 func (s *counterServer) Close(ctx context.Context, request *counterv1.CloseRequest) (*counterv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Trunc64("CloseRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Close",
@@ -75,7 +73,7 @@ func (s *counterServer) Close(ctx context.Context, request *counterv1.CloseReque
 func (s *counterServer) Set(ctx context.Context, request *counterv1.SetRequest) (*counterv1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Trunc64("SetRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Set",
@@ -98,7 +96,7 @@ func (s *counterServer) Set(ctx context.Context, request *counterv1.SetRequest) 
 func (s *counterServer) Update(ctx context.Context, request *counterv1.UpdateRequest) (*counterv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Trunc64("UpdateRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Update",
@@ -121,7 +119,7 @@ func (s *counterServer) Update(ctx context.Context, request *counterv1.UpdateReq
 func (s *counterServer) Get(ctx context.Context, request *counterv1.GetRequest) (*counterv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc64("GetRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
@@ -144,7 +142,7 @@ func (s *counterServer) Get(ctx context.Context, request *counterv1.GetRequest) 
 func (s *counterServer) Increment(ctx context.Context, request *counterv1.IncrementRequest) (*counterv1.IncrementResponse, error) {
 	log.Debugw("Increment",
 		logging.Trunc64("IncrementRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Increment",
@@ -167,7 +165,7 @@ func (s *counterServer) Increment(ctx context.Context, request *counterv1.Increm
 func (s *counterServer) Decrement(ctx context.Context, request *counterv1.DecrementRequest) (*counterv1.DecrementResponse, error) {
 	log.Debugw("Decrement",
 		logging.Trunc64("DecrementRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Decrement",

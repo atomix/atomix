@@ -22,7 +22,7 @@ var PrimitiveType = runtimev1.PrimitiveType{
 }
 
 func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
-	counterv1.RegisterCounterServer(server, newCounterServer(runtime.NewPrimitiveClient[Counter](PrimitiveType, rt, resolve)))
+	counterv1.RegisterCounterServer(server, newCounterServer(runtime.NewPrimitiveManager[Counter](PrimitiveType, rt, resolve)))
 }
 
 func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Counter], bool) {

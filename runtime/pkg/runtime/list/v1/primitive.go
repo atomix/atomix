@@ -22,7 +22,7 @@ var PrimitiveType = runtimev1.PrimitiveType{
 }
 
 func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
-	listv1.RegisterListServer(server, newListServer(runtime.NewPrimitiveClient[List](PrimitiveType, rt, resolve)))
+	listv1.RegisterListServer(server, newListServer(runtime.NewPrimitiveManager[List](PrimitiveType, rt, resolve)))
 }
 
 func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[List], bool) {

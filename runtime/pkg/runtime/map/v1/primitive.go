@@ -22,7 +22,7 @@ var PrimitiveType = runtimev1.PrimitiveType{
 }
 
 func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
-	mapv1.RegisterMapServer(server, newMapServer(runtime.NewPrimitiveClient[Map](PrimitiveType, rt, resolve)))
+	mapv1.RegisterMapServer(server, newMapServer(runtime.NewPrimitiveManager[Map](PrimitiveType, rt, resolve)))
 }
 
 func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[Map], bool) {

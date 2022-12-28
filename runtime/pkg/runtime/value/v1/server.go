@@ -16,20 +16,20 @@ var log = logging.GetLogger()
 
 const truncLen = 250
 
-func newValueServer(client *runtime.PrimitiveClient[Value]) valuev1.ValueServer {
+func newValueServer(manager *runtime.PrimitiveManager[Value]) valuev1.ValueServer {
 	return &valueServer{
-		client: client,
+		manager: manager,
 	}
 }
 
 type valueServer struct {
-	client *runtime.PrimitiveClient[Value]
+	manager *runtime.PrimitiveManager[Value]
 }
 
 func (s *valueServer) Create(ctx context.Context, request *valuev1.CreateRequest) (*valuev1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Trunc64("CreateRequest", request))
-	client, err := s.client.Create(ctx, request.ID, request.Tags)
+	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",
@@ -52,7 +52,7 @@ func (s *valueServer) Create(ctx context.Context, request *valuev1.CreateRequest
 func (s *valueServer) Close(ctx context.Context, request *valuev1.CloseRequest) (*valuev1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Trunc64("CloseRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Close",
@@ -75,7 +75,7 @@ func (s *valueServer) Close(ctx context.Context, request *valuev1.CloseRequest) 
 func (s *valueServer) Set(ctx context.Context, request *valuev1.SetRequest) (*valuev1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Trunc64("SetRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Set",
@@ -98,7 +98,7 @@ func (s *valueServer) Set(ctx context.Context, request *valuev1.SetRequest) (*va
 func (s *valueServer) Insert(ctx context.Context, request *valuev1.InsertRequest) (*valuev1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Trunc64("InsertRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Insert",
@@ -121,7 +121,7 @@ func (s *valueServer) Insert(ctx context.Context, request *valuev1.InsertRequest
 func (s *valueServer) Update(ctx context.Context, request *valuev1.UpdateRequest) (*valuev1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Trunc64("UpdateRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Update",
@@ -144,7 +144,7 @@ func (s *valueServer) Update(ctx context.Context, request *valuev1.UpdateRequest
 func (s *valueServer) Get(ctx context.Context, request *valuev1.GetRequest) (*valuev1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc64("GetRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Get",
@@ -167,7 +167,7 @@ func (s *valueServer) Get(ctx context.Context, request *valuev1.GetRequest) (*va
 func (s *valueServer) Delete(ctx context.Context, request *valuev1.DeleteRequest) (*valuev1.DeleteResponse, error) {
 	log.Debugw("Delete",
 		logging.Trunc64("DeleteRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Delete",
@@ -191,7 +191,7 @@ func (s *valueServer) Watch(request *valuev1.WatchRequest, server valuev1.Value_
 	log.Debugw("Watch",
 		logging.Trunc64("WatchRequest", request),
 		logging.String("State", "started"))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Watch",
@@ -213,7 +213,7 @@ func (s *valueServer) Events(request *valuev1.EventsRequest, server valuev1.Valu
 	log.Debugw("Events",
 		logging.Trunc64("EventsRequest", request),
 		logging.String("State", "started"))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",

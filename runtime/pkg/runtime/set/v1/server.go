@@ -16,20 +16,20 @@ var log = logging.GetLogger()
 
 const truncLen = 250
 
-func newSetServer(client *runtime.PrimitiveClient[Set]) setv1.SetServer {
+func newSetServer(manager *runtime.PrimitiveManager[Set]) setv1.SetServer {
 	return &setServer{
-		client: client,
+		manager: manager,
 	}
 }
 
 type setServer struct {
-	client *runtime.PrimitiveClient[Set]
+	manager *runtime.PrimitiveManager[Set]
 }
 
 func (s *setServer) Create(ctx context.Context, request *setv1.CreateRequest) (*setv1.CreateResponse, error) {
 	log.Debugw("Create",
 		logging.Trunc64("CreateRequest", request))
-	client, err := s.client.Create(ctx, request.ID, request.Tags)
+	client, err := s.manager.Create(ctx, request.ID, request.Tags)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Create",
@@ -52,7 +52,7 @@ func (s *setServer) Create(ctx context.Context, request *setv1.CreateRequest) (*
 func (s *setServer) Close(ctx context.Context, request *setv1.CloseRequest) (*setv1.CloseResponse, error) {
 	log.Debugw("Close",
 		logging.Trunc64("CloseRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Close",
@@ -75,7 +75,7 @@ func (s *setServer) Close(ctx context.Context, request *setv1.CloseRequest) (*se
 func (s *setServer) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Trunc64("SizeRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Size",
@@ -98,7 +98,7 @@ func (s *setServer) Size(ctx context.Context, request *setv1.SizeRequest) (*setv
 func (s *setServer) Contains(ctx context.Context, request *setv1.ContainsRequest) (*setv1.ContainsResponse, error) {
 	log.Debugw("Contains",
 		logging.Trunc64("ContainsRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Contains",
@@ -121,7 +121,7 @@ func (s *setServer) Contains(ctx context.Context, request *setv1.ContainsRequest
 func (s *setServer) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.AddResponse, error) {
 	log.Debugw("Add",
 		logging.Trunc64("AddRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Add",
@@ -144,7 +144,7 @@ func (s *setServer) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.
 func (s *setServer) Remove(ctx context.Context, request *setv1.RemoveRequest) (*setv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Trunc64("RemoveRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Remove",
@@ -167,7 +167,7 @@ func (s *setServer) Remove(ctx context.Context, request *setv1.RemoveRequest) (*
 func (s *setServer) Clear(ctx context.Context, request *setv1.ClearRequest) (*setv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Trunc64("ClearRequest", request))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Clear",
@@ -191,7 +191,7 @@ func (s *setServer) Events(request *setv1.EventsRequest, server setv1.Set_Events
 	log.Debugw("Events",
 		logging.Trunc64("EventsRequest", request),
 		logging.String("State", "started"))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Events",
@@ -213,7 +213,7 @@ func (s *setServer) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 	log.Debugw("Elements",
 		logging.Trunc64("ElementsRequest", request),
 		logging.String("State", "started"))
-	client, err := s.client.Get(request.ID)
+	client, err := s.manager.Get(request.ID)
 	if err != nil {
 		err = errors.ToProto(err)
 		log.Warnw("Elements",

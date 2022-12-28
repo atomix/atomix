@@ -22,7 +22,7 @@ var PrimitiveType = runtimev1.PrimitiveType{
 }
 
 func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
-	indexedmapv1.RegisterIndexedMapServer(server, newIndexedMapServer(runtime.NewPrimitiveClient[IndexedMap](PrimitiveType, rt, resolve)))
+	indexedmapv1.RegisterIndexedMapServer(server, newIndexedMapServer(runtime.NewPrimitiveManager[IndexedMap](PrimitiveType, rt, resolve)))
 }
 
 func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[IndexedMap], bool) {

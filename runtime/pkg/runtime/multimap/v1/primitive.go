@@ -22,7 +22,7 @@ var PrimitiveType = runtimev1.PrimitiveType{
 }
 
 func RegisterServer(server *grpc.Server, rt runtime.Runtime) {
-	multimapv1.RegisterMultiMapServer(server, newMultiMapServer(runtime.NewPrimitiveClient[MultiMap](PrimitiveType, rt, resolve)))
+	multimapv1.RegisterMultiMapServer(server, newMultiMapServer(runtime.NewPrimitiveManager[MultiMap](PrimitiveType, rt, resolve)))
 }
 
 func resolve(conn runtime.Conn) (runtime.PrimitiveProvider[MultiMap], bool) {
