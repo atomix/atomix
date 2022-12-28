@@ -3,9 +3,9 @@ module github.com/atomix/atomix/drivers/raft
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221221001739-d7b19bcf8fb4
-	github.com/atomix/atomix/protocols/rsm v0.0.0-20221220005634-00779f04cb55
-	github.com/atomix/atomix/runtime v0.0.0-20221221003607-7e2d4e1804c5
+	github.com/atomix/atomix/api v0.0.0-20221228090355-f80263b9b241
+	github.com/atomix/atomix/protocols/rsm v0.0.0-20221228121211-52cce6aee436
+	github.com/atomix/atomix/runtime v0.0.0-20221228114623-367fc9daa78f
 )
 
 require (
@@ -13,7 +13,6 @@ require (
 	github.com/bits-and-blooms/bloom/v3 v3.3.1 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/kr/text v0.1.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
