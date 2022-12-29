@@ -15,7 +15,7 @@ build:
 
 .PHONY: test
 test:
-	go test github.com/atomix/atomix/bench/pkg/... -p 1
+	go test github.com/atomix/atomix/bench/...
 
 .PHONY: release
 release: build
