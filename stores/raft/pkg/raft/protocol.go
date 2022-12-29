@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -29,10 +30,8 @@ func NewProtocol(config NodeConfig, registry *statemachine.PrimitiveTypeRegistry
 	options.apply(opts...)
 
 	protocol := &Protocol{
-		config:     config,
-		registry:   registry,
-		partitions: make(map[rsmv1.PartitionID]*Partition),
-		watchers:   make(map[int]chan<- raftv1.Event),
+		config:   config,
+		registry: registry,
 	}
 
 	listener := newEventListener(protocol)
@@ -59,55 +58,52 @@ type Protocol struct {
 	host       *dragonboat.NodeHost
 	config     NodeConfig
 	registry   *statemachine.PrimitiveTypeRegistry
-	partitions map[rsmv1.PartitionID]*Partition
-	watchers   map[int]chan<- raftv1.Event
-	watcherID  int
-	mu         sync.RWMutex
+	partitions sync.Map
+	watchers   sync.Map
+	watcherID  atomic.Uint64
 }
 
 func (n *Protocol) publish(event *raftv1.Event) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
 	switch e := event.Event.(type) {
 	case *raftv1.Event_MemberReady:
-		if partition, ok := n.partitions[rsmv1.PartitionID(e.MemberReady.GroupID)]; ok {
-			partition.setReady()
+		if partition, ok := n.partitions.Load(rsmv1.PartitionID(e.MemberReady.GroupID)); ok {
+			partition.(*Partition).setReady()
 		}
 	case *raftv1.Event_LeaderUpdated:
-		if partition, ok := n.partitions[rsmv1.PartitionID(e.LeaderUpdated.GroupID)]; ok {
-			partition.setLeader(e.LeaderUpdated.Term, e.LeaderUpdated.Leader)
+		if partition, ok := n.partitions.Load(rsmv1.PartitionID(e.LeaderUpdated.GroupID)); ok {
+			partition.(*Partition).setLeader(e.LeaderUpdated.Term, e.LeaderUpdated.Leader)
 		}
 	}
 	log.Infow("Publish Event",
 		logging.Stringer("Event", event))
-	for _, listener := range n.watchers {
-		listener <- *event
-	}
+	n.watchers.Range(func(key, value any) bool {
+		watcher := value.(chan<- raftv1.Event)
+		watcher <- *event
+		return true
+	})
 }
 
 func (n *Protocol) Partition(partitionID rsmv1.PartitionID) (node.Partition, bool) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-	partition, ok := n.partitions[partitionID]
-	return partition, ok
+	if partition, ok := n.partitions.Load(partitionID); ok {
+		return partition.(node.Partition), true
+	}
+	return nil, false
 }
 
 func (n *Protocol) Partitions() []node.Partition {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-	partitions := make([]node.Partition, 0, len(n.partitions))
-	for _, partition := range n.partitions {
-		partitions = append(partitions, partition)
-	}
+	var partitions []node.Partition
+	n.partitions.Range(func(key, value any) bool {
+		partitions = append(partitions, value.(node.Partition))
+		return true
+	})
 	return partitions
 }
 
 func (n *Protocol) Watch(ctx context.Context, watcher chan<- raftv1.Event) {
-	n.watcherID++
-	id := n.watcherID
-	n.mu.Lock()
-	n.watchers[id] = watcher
-	for _, partition := range n.partitions {
+	id := n.watcherID.Add(1)
+	n.watchers.Store(id, watcher)
+	n.partitions.Range(func(key, value any) bool {
+		partition := value.(*Partition)
 		term, leader := partition.getLeader()
 		if term > 0 {
 			watcher <- raftv1.Event{
@@ -136,15 +132,13 @@ func (n *Protocol) Watch(ctx context.Context, watcher chan<- raftv1.Event) {
 				},
 			}
 		}
-	}
-	n.mu.Unlock()
+		return true
+	})
 
 	go func() {
 		<-ctx.Done()
-		n.mu.Lock()
 		close(watcher)
-		delete(n.watchers, id)
-		n.mu.Unlock()
+		n.watchers.Delete(id)
 	}()
 }
 
@@ -288,9 +282,7 @@ func (n *Protocol) DeleteData(ctx context.Context, groupID raftv1.GroupID, membe
 func (n *Protocol) newStateMachine(clusterID, memberID uint64) dbstatemachine.IStateMachine {
 	streams := newContext()
 	partition := newPartition(rsmv1.PartitionID(clusterID), raftv1.MemberID(memberID), n.host, streams)
-	n.mu.Lock()
-	n.partitions[partition.ID()] = partition
-	n.mu.Unlock()
+	n.partitions.Store(partition.ID(), partition)
 	return newStateMachine(streams, n.registry)
 }
 
