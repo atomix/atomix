@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -34,7 +35,7 @@ type PartitionClient struct {
 	watcherID      int
 	conn           *grpc.ClientConn
 	resolver       *partitionResolver
-	session        *SessionClient
+	session        atomic.Value
 	mu             sync.RWMutex
 }
 
@@ -43,17 +44,16 @@ func (p *PartitionClient) ID() protocol.PartitionID {
 }
 
 func (p *PartitionClient) GetSession(ctx context.Context) (*SessionClient, error) {
-	p.mu.RLock()
-	session := p.session
-	p.mu.RUnlock()
-	if session != nil {
-		return session, nil
+	stored := p.session.Load()
+	if stored != nil {
+		return stored.(*SessionClient), nil
 	}
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.session != nil {
-		return p.session, nil
+	stored = p.session.Load()
+	if stored != nil {
+		return stored.(*SessionClient), nil
 	}
 	if p.conn == nil {
 		return nil, errors.NewUnavailable("not connected")
@@ -74,8 +74,8 @@ func (p *PartitionClient) GetSession(ctx context.Context) (*SessionClient, error
 		return nil, err
 	}
 
-	session = newSessionClient(response.SessionID, p, p.conn, p.sessionTimeout)
-	p.session = session
+	session := newSessionClient(response.SessionID, p, p.conn, p.sessionTimeout)
+	p.session.Store(session)
 	return session, nil
 }
 
@@ -113,8 +113,9 @@ func (p *PartitionClient) configure(config *protocol.PartitionConfig) error {
 func (p *PartitionClient) close(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.session != nil {
-		return p.session.close(ctx)
+	session := p.session.Swap(nil)
+	if session != nil {
+		return session.(*SessionClient).close(ctx)
 	}
 	return nil
 }
