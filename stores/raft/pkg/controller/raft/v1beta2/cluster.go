@@ -59,8 +59,8 @@ const (
 )
 
 const (
-	configVolume = "config"
-	dataVolume   = "data"
+	configVolume = "atomix-config"
+	dataVolume   = "atomix-data"
 )
 
 const clusterDomainEnv = "CLUSTER_DOMAIN"
@@ -150,7 +150,7 @@ func (r *RaftClusterReconciler) reconcileConfigMap(ctx context.Context, log logg
 	cm := &corev1.ConfigMap{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
-		Name:      cluster.Name,
+		Name:      fmt.Sprintf("%s-raft-config", cluster.Name),
 	}
 	if ok, err := get(r.client, ctx, name, cm, log); err != nil {
 		return err
@@ -255,7 +255,7 @@ func (r *RaftClusterReconciler) addStatefulSet(ctx context.Context, log logging.
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cluster.Name,
+						Name: fmt.Sprintf("%s-raft-config", cluster.Name),
 					},
 				},
 			},
