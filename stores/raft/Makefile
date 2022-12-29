@@ -13,10 +13,10 @@ endif
 build: build-controller build-node
 
 build-controller:
-	docker build . -t atomix/raft-controller:latest -f build/Dockerfile-controller
+	docker build . -t atomix/raft-controller:latest -f build/controller/Dockerfile
 
 build-node:
-	docker build . -t atomix/raft-node:latest -f build/Dockerfile-node
+	docker build . -t atomix/raft-node:latest -f build/node/Dockerfile
 
 .PHONY: test
 test:

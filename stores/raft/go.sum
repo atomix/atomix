@@ -76,8 +76,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkY
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
 github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978 h1:QwDDxnD2rLVsJxxxrmXj8xWOR7dOvPT6euefiayl4gw=
 github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978/go.mod h1:PNMOo77ofCaaZqmj3uC7cfclGEI9NCcue/G5VXSon7k=
-github.com/atomix/atomix/controller v0.0.0-20221220011019-e8424decc5f9 h1:QhNy5qzz8DgETY7AArNn8X07DzWnQ4DyBv5idiFHGmY=
-github.com/atomix/atomix/controller v0.0.0-20221220011019-e8424decc5f9/go.mod h1:gs4XV5xf3QI/Dyi/KPLPSa9lbbfbOBfC+jRcVfH4y40=
+github.com/atomix/atomix/controller v0.0.0-20221228222855-b2275fb2adbe h1:J9XhySfGhqzoKnCQ9sBKc3XbOu14EWD36lZdfsHlGJs=
+github.com/atomix/atomix/controller v0.0.0-20221228222855-b2275fb2adbe/go.mod h1:dLqF7vFNyC3dXTgw/ZcQKSK8gtNAC9dM5S0BziH70+U=
 github.com/atomix/atomix/protocols/rsm v0.0.0-20221228222855-b2275fb2adbe h1:rSHxRFf73HzKeFfPu0dy6pIbQ4hYApABbnJqugpjF+0=
 github.com/atomix/atomix/protocols/rsm v0.0.0-20221228222855-b2275fb2adbe/go.mod h1:JKQ9+w+jID9mdXyy/CLUy7+DQcDwQX4whaBMXpAc57k=
 github.com/atomix/atomix/runtime v0.0.0-20221228222855-b2275fb2adbe h1:2Xcf/yJ//IKyPNU60ouJ2MzBCmKmr6C8EFVde6qdYiw=

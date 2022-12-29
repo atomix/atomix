@@ -35,7 +35,6 @@ spec:
                   type: object
                   required:
                     - name
-                    - apiVersion
                   properties:
                     name:
                       type: string
@@ -48,3 +47,12 @@ spec:
                     The configuration for the runtime driver.
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
+      additionalPrinterColumns:
+        - name: Driver
+          type: string
+          description: The name of the driver used to access the store
+          jsonPath: .spec.driver.name
+        - name: API Version
+          type: string
+          description: The driver API version
+          jsonPath: .spec.driver.apiVersion

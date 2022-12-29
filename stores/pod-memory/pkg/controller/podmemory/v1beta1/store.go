@@ -103,8 +103,8 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 			},
 			Spec: atomixv3beta3.DataStoreSpec{
 				Driver: atomixv3beta3.Driver{
-					Name:    driverName,
-					Version: driverVersion,
+					Name:       driverName,
+					APIVersion: driverVersion,
 				},
 			},
 		}

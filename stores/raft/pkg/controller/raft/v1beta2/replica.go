@@ -346,7 +346,7 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 			defer conn.Close()
 
 			// Bootstrap the replica with the initial configuration
-			log.Infof("Boostrapping replica")
+			log.Infof("Bootstrapping replica")
 			node := raftv1.NewNodeClient(conn)
 			request := &raftv1.BootstrapGroupRequest{
 				GroupID:  raftv1.GroupID(replica.Spec.GroupID),

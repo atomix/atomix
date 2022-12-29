@@ -209,7 +209,7 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 							if err != nil {
 								return false
 							}
-							if status.Leader != nil && status.Leader.Name == replica.Namespace {
+							if status.Leader != nil && status.Leader.Name == replica.Name {
 								return false
 							}
 							for _, follower := range status.Followers {
@@ -257,28 +257,28 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 						func(status *raftv1beta2.RaftPartitionStatus) bool {
 							term := uint64(e.LeaderUpdated.Term)
 							if status.Term == nil || *status.Term < term || (*status.Term == term && status.Leader == nil && e.LeaderUpdated.Leader != 0) {
-								var leaderRef *corev1.LocalObjectReference
+								var newLeader *corev1.LocalObjectReference
 								if e.LeaderUpdated.Leader != 0 {
 									leader, err := r.getReplica(ctx, log, clusterName, raftv1beta2.GroupID(e.LeaderUpdated.GroupID), raftv1beta2.MemberID(e.LeaderUpdated.Leader))
 									if err != nil {
 										return false
 									}
-									leaderRef = &corev1.LocalObjectReference{
+									newLeader = &corev1.LocalObjectReference{
 										Name: leader.Name,
 									}
 								}
-								if status.Leader != nil && (leaderRef == nil || status.Leader.Name != leaderRef.Name) {
-									status.Followers = append(status.Followers, *status.Leader)
-								}
-								var followers []corev1.LocalObjectReference
+								var newFollowers []corev1.LocalObjectReference
 								for _, follower := range status.Followers {
-									if leaderRef == nil || follower.Name != leaderRef.Name {
-										followers = append(followers, follower)
+									if newLeader == nil || follower.Name != newLeader.Name {
+										newFollowers = append(newFollowers, follower)
 									}
 								}
+								if status.Leader != nil && (newLeader == nil || status.Leader.Name != newLeader.Name) {
+									newFollowers = append(newFollowers, *status.Leader)
+								}
 								status.Term = &term
-								status.Leader = leaderRef
-								status.Followers = followers
+								status.Leader = newLeader
+								status.Followers = newFollowers
 								return true
 							}
 							return false

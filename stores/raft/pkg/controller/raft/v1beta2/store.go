@@ -185,7 +185,7 @@ func (r *RaftStoreReconciler) reconcilePartitions(ctx context.Context, log loggi
 		}
 		return true, nil
 	}
-	return true, nil
+	return false, nil
 }
 
 func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partitionID raftv1beta2.PartitionID) (raftv1beta2.RaftPartitionState, bool, error) {
@@ -253,8 +253,6 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 			return false, nil
 		}
 
-		addedAddresses := make(map[string]bool)
-
 		var leader string
 		if partition.Status.Leader != nil {
 			replicaName := types.NamespacedName{
@@ -266,7 +264,6 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 				return false, err
 			} else if ok {
 				leader = fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, replica.Spec.Pod.Name), apiPort)
-				addedAddresses[leader] = true
 			}
 		}
 
@@ -282,19 +279,11 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 			} else if ok {
 				address := fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, replica.Spec.Pod.Name), apiPort)
 				followers = append(followers, address)
-				addedAddresses[address] = true
-			}
-		}
-
-		for id := 1; id <= int(partition.Spec.Replicas); id++ {
-			address := fmt.Sprintf("%s:%d", getClusterPodDNSName(cluster, getReplicaPodName(cluster, partition, raftv1beta2.ReplicaID(id))), apiPort)
-			if _, ok := addedAddresses[address]; !ok {
-				followers = append(followers, address)
 			}
 		}
 
 		config.Partitions = append(config.Partitions, rsmv1.PartitionConfig{
-			PartitionID: rsmv1.PartitionID(partition.Spec.PartitionID),
+			PartitionID: rsmv1.PartitionID(partition.Spec.GroupID),
 			Leader:      leader,
 			Followers:   followers,
 		})
@@ -323,8 +312,8 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 			},
 			Spec: atomixv3beta3.DataStoreSpec{
 				Driver: atomixv3beta3.Driver{
-					Name:    driverName,
-					Version: driverVersion,
+					Name:       driverName,
+					APIVersion: driverVersion,
 				},
 				Config: runtime.RawExtension{
 					Raw: []byte(configString),

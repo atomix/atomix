@@ -437,8 +437,8 @@ func (r *SharedMemoryStoreReconciler) addDataStore(ctx context.Context, log logg
 		},
 		Spec: atomixv3beta3.DataStoreSpec{
 			Driver: atomixv3beta3.Driver{
-				Name:    driverName,
-				Version: driverVersion,
+				Name:       driverName,
+				APIVersion: driverVersion,
 			},
 			Config: runtime.RawExtension{
 				Raw: []byte(configString),

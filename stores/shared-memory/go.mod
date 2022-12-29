@@ -3,13 +3,12 @@ module github.com/atomix/atomix/stores/shared-memory
 go 1.19
 
 require (
-	github.com/atomix/atomix/controller v0.0.0-20221220075114-dd2ab65e4a8d
+	github.com/atomix/atomix/controller v0.0.0-20221228222855-b2275fb2adbe
 	github.com/atomix/atomix/protocols/rsm v0.0.0-20221228222855-b2275fb2adbe
 	github.com/atomix/atomix/runtime v0.0.0-20221228220240-ab52db65c6fb
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/spf13/cobra v1.4.0
-	google.golang.org/grpc v1.46.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.24.0
 	k8s.io/apimachinery v0.24.0
@@ -68,6 +67,7 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220407144326-9054f6ed7bac // indirect
+	google.golang.org/grpc v1.46.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
