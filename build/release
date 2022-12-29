@@ -11,7 +11,7 @@ git config --global user.name "Jordan Halterman"
 git clone --branch master https://$GITHUB_TOKEN@github.com/atomix/charts.atomix.io.git .release
 
 # Package the Helm chart
-cr package ./charts/atomix --package-path .release/package
+cr package ./charts/$1 --package-path .release/package
 
 cd .release
 
