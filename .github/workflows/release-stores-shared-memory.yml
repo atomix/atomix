@@ -1,4 +1,4 @@
-name: Release Store -- SharedMemory
+name: Release Store | SharedMemory
 
 on:
   push:

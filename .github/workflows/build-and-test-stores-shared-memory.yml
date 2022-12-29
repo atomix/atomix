@@ -1,4 +1,4 @@
-name: Build and Test Store -- SharedMemory
+name: Build and Test Store | SharedMemory
 
 on:
   push:

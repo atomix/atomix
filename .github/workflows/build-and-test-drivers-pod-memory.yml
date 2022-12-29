@@ -1,4 +1,4 @@
-name: Build and Test Driver -- PodMemory
+name: Build and Test Driver | PodMemory
 
 on:
   push:

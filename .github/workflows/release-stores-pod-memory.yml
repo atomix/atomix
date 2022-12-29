@@ -1,4 +1,4 @@
-name: Release Store -- PodMemory
+name: Release Store | PodMemory
 
 on:
   push:

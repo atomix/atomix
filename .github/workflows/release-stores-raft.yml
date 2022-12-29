@@ -1,4 +1,4 @@
-name: Release Store -- Raft
+name: Release Store | Raft
 
 on:
   push:

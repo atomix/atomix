@@ -1,11 +1,11 @@
-name: Build and Test Protocol | RSM
+name: Build and Test Driver | Etcd
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'protocols/rsm/**'
+      - 'drivers/etcd/**'
   pull_request:
 
 jobs:
@@ -28,5 +28,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Run Tests
-        working-directory: protocols/rsm
+        working-directory: drivers/etcd
         run: make test

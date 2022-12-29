@@ -1,4 +1,4 @@
-name: Build and Test Store -- Raft
+name: Build and Test Store | Raft
 
 on:
   push:
