@@ -11,7 +11,7 @@ endif
 
 .PHONY: build
 build:
-	docker build . -t atomix/pod-memory-controller:latest -f build/Dockerfile-controller
+	docker build . -t atomix/pod-memory-controller:latest -f build/controller/Dockerfile
 
 .PHONY: test
 test:
