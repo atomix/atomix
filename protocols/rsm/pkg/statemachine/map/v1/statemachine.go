@@ -85,7 +85,6 @@ func NewMapStateMachine(context statemachine.PrimitiveContext[*mapprotocolv1.Map
 		listeners:  make(map[statemachine.ProposalID]*mapprotocolv1.MapListener),
 		entries:    make(map[string]*mapprotocolv1.MapEntry),
 		timers:     make(map[string]statemachine.CancelFunc),
-		watchers:   make(map[statemachine.QueryID]statemachine.Query[*mapprotocolv1.EntriesInput, *mapprotocolv1.EntriesOutput]),
 	}
 }
 
@@ -94,7 +93,7 @@ type mapStateMachine struct {
 	listeners map[statemachine.ProposalID]*mapprotocolv1.MapListener
 	entries   map[string]*mapprotocolv1.MapEntry
 	timers    map[string]statemachine.CancelFunc
-	watchers  map[statemachine.QueryID]statemachine.Query[*mapprotocolv1.EntriesInput, *mapprotocolv1.EntriesOutput]
+	watchers  sync.Map
 	mu        sync.RWMutex
 }
 
@@ -467,14 +466,10 @@ func (s *mapStateMachine) Entries(query statemachine.Query[*mapprotocolv1.Entrie
 	}
 
 	if query.Input().Watch {
-		s.mu.Lock()
-		s.watchers[query.ID()] = query
-		s.mu.Unlock()
+		s.watchers.Store(query.ID(), query)
 		query.Watch(func(state statemachine.QueryState) {
 			if state != statemachine.Running {
-				s.mu.Lock()
-				delete(s.watchers, query.ID())
-				s.mu.Unlock()
+				s.watchers.Delete(query.ID())
 			}
 		})
 	} else {
@@ -494,9 +489,8 @@ func (s *mapStateMachine) notify(entry *mapprotocolv1.MapEntry, event *mapprotoc
 		}
 	}
 
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	for _, watcher := range s.watchers {
+	s.watchers.Range(func(key, value any) bool {
+		watcher := value.(statemachine.Query[*mapprotocolv1.EntriesInput, *mapprotocolv1.EntriesOutput])
 		if entry.Value != nil {
 			watcher.Output(&mapprotocolv1.EntriesOutput{
 				Entry: mapprotocolv1.Entry{
@@ -514,7 +508,8 @@ func (s *mapStateMachine) notify(entry *mapprotocolv1.MapEntry, event *mapprotoc
 				},
 			})
 		}
-	}
+		return true
+	})
 }
 
 func (s *mapStateMachine) scheduleTTL(key string, entry *mapprotocolv1.MapEntry) {
