@@ -4,6 +4,8 @@
 
 .PHONY: build
 build:
+	$(MAKE) -C api build
+	$(MAKE) -C bench build
 	$(MAKE) -C charts build
 	$(MAKE) -C controller build
 	$(MAKE) -C drivers build
@@ -15,6 +17,7 @@ build:
 .PHONY: test
 test:
 	$(MAKE) -C api test
+	$(MAKE) -C bench test
 	$(MAKE) -C charts test
 	$(MAKE) -C controller test
 	$(MAKE) -C drivers test
@@ -25,6 +28,7 @@ test:
 
 .PHONY: kind
 kind:
+	$(MAKE) -C bench kind
 	$(MAKE) -C controller kind
 	$(MAKE) -C proxy kind
 	$(MAKE) -C stores kind
