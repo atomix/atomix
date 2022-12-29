@@ -208,7 +208,7 @@ func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, log logging.Lo
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        cluster.Name,
+			Name:        fmt.Sprintf("%s-raft-config", cluster.Name),
 			Namespace:   cluster.Namespace,
 			Labels:      newClusterLabels(cluster),
 			Annotations: newClusterAnnotations(cluster),
