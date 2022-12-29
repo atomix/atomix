@@ -29,7 +29,7 @@ func init() {
 
 func main() {
 	cmd := &cobra.Command{
-		Use: "atomix-go-sdk-bench",
+		Use: "atomix-bench",
 		Run: func(cmd *cobra.Command, args []string) {
 			concurrency, err := cmd.Flags().GetInt("concurrency")
 			if err != nil {

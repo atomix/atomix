@@ -14,7 +14,7 @@ sampleInterval: 10s
 
 image:
   registry: ""
-  repository: atomix/go-sdk-bench
+  repository: atomix/bench
   # TODO: Set image tag to release version
   tag: latest
   # TODO: Revert pull policy to default for patch releases or Always for for minor releases
