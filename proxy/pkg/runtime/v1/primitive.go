@@ -22,24 +22,24 @@ func NewPrimitiveManager[T any](primitiveType runtimev1.PrimitiveType, runtime *
 	return &PrimitiveManager[T]{
 		primitiveType: primitiveType,
 		runtime:       runtime,
-		primitives:    make(map[runtimev1.PrimitiveID]T),
 	}
 }
 
 type PrimitiveManager[T any] struct {
 	primitiveType runtimev1.PrimitiveType
 	runtime       *Runtime
-	primitives    map[runtimev1.PrimitiveID]T
-	mu            sync.RWMutex
+	primitives    sync.Map
+	mu            sync.Mutex
 }
 
 func (c *PrimitiveManager[T]) Create(ctx context.Context, primitiveID runtimev1.PrimitiveID, tags []string) (T, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	primitive, ok := c.primitives[primitiveID]
+	var primitive T
+	value, ok := c.primitives.Load(primitiveID)
 	if ok {
-		return primitive, nil
+		return value.(T), nil
 	}
 
 	meta := runtimev1.PrimitiveMeta{
@@ -66,29 +66,28 @@ func (c *PrimitiveManager[T]) Create(ctx context.Context, primitiveID runtimev1.
 		return primitive, err
 	}
 
-	c.primitives[primitiveID] = primitive
+	c.primitives.Store(primitiveID, primitive)
 	return primitive, nil
 }
 
 func (c *PrimitiveManager[T]) Get(primitiveID runtimev1.PrimitiveID) (T, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	primitive, ok := c.primitives[primitiveID]
+	var primitive T
+	value, ok := c.primitives.Load(primitiveID)
 	if !ok {
 		return primitive, errors.NewForbidden("primitive not found for '%s'", primitiveID.Name)
 	}
-	return primitive, nil
+	return value.(T), nil
 }
 
 func (c *PrimitiveManager[T]) Close(primitiveID runtimev1.PrimitiveID) (T, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	client, ok := c.primitives[primitiveID]
+	var primitive T
+	value, ok := c.primitives.LoadAndDelete(primitiveID)
 	if !ok {
-		return client, errors.NewForbidden("client not found for '%s'", primitiveID.Name)
+		return primitive, errors.NewForbidden("primitive not found for '%s'", primitiveID.Name)
 	}
-	delete(c.primitives, primitiveID)
-	return client, nil
+	return value.(T), nil
 }
 
 func create[T any](conn driver.Conn, primitive runtimev1.Primitive) (T, error) {
