@@ -386,7 +386,6 @@ func newPrimitiveSession[I, O any](primitive *primitiveExecutor[I, O]) *primitiv
 	s := &primitiveSession[I, O]{
 		primitive: primitive,
 		proposals: make(map[ProposalID]*primitiveProposal[I, O]),
-		queries:   make(map[QueryID]*primitiveQuery[I, O]),
 		watchers:  make(map[uuid.UUID]func(State)),
 	}
 	return s
@@ -396,8 +395,7 @@ type primitiveSession[I, O any] struct {
 	primitive *primitiveExecutor[I, O]
 	parent    Session
 	proposals map[ProposalID]*primitiveProposal[I, O]
-	queries   map[QueryID]*primitiveQuery[I, O]
-	queriesMu sync.Mutex
+	queries   sync.Map
 	state     State
 	watchers  map[uuid.UUID]func(State)
 	cancel    CancelFunc
@@ -461,15 +459,11 @@ func (s *primitiveSession[I, O]) unregisterProposal(proposalID ProposalID) {
 }
 
 func (s *primitiveSession[I, O]) registerQuery(query *primitiveQuery[I, O]) {
-	s.queriesMu.Lock()
-	s.queries[query.ID()] = query
-	s.queriesMu.Unlock()
+	s.queries.Store(query.ID(), query)
 }
 
 func (s *primitiveSession[I, O]) unregisterQuery(queryID QueryID) {
-	s.queriesMu.Lock()
-	delete(s.queries, queryID)
-	s.queriesMu.Unlock()
+	s.queries.Delete(queryID)
 }
 
 func (s *primitiveSession[I, O]) open(parent Session) {
@@ -501,9 +495,11 @@ func (s *primitiveSession[I, O]) close() {
 	for _, proposal := range s.proposals {
 		proposal.Cancel()
 	}
-	for _, query := range s.queries {
+	s.queries.Range(func(key, value any) bool {
+		query := value.(*primitiveQuery[I, O])
 		query.Cancel()
-	}
+		return true
+	})
 	for _, watcher := range s.watchers {
 		watcher(Closed)
 	}
