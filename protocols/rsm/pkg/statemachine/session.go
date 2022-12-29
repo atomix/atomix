@@ -15,7 +15,6 @@ import (
 	"github.com/bits-and-blooms/bloom/v3"
 	"github.com/google/uuid"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -126,7 +125,6 @@ func newManagedSession(manager *sessionManager) *managedSession {
 	return &managedSession{
 		manager:   manager,
 		proposals: make(map[protocol.SequenceNum]*sessionProposal),
-		queries:   make(map[protocol.SequenceNum]*sessionQuery),
 		watchers:  make(map[uuid.UUID]func(State)),
 	}
 }
@@ -134,8 +132,7 @@ func newManagedSession(manager *sessionManager) *managedSession {
 type managedSession struct {
 	manager          *sessionManager
 	proposals        map[protocol.SequenceNum]*sessionProposal
-	queries          map[protocol.SequenceNum]*sessionQuery
-	queriesMu        sync.Mutex
+	queries          sync.Map
 	log              logging.Logger
 	id               SessionID
 	state            State
@@ -179,9 +176,7 @@ func (s *managedSession) query(input *protocol.SessionQueryInput, stream streams
 	query := newSessionQuery(s)
 	query.execute(input, stream)
 	if query.state == Running {
-		s.queriesMu.Lock()
-		s.queries[query.Input().SequenceNum] = query
-		s.queriesMu.Unlock()
+		s.queries.Store(query.Input().SequenceNum, query)
 	}
 }
 
@@ -309,19 +304,18 @@ func (s *managedSession) keepAlive(input *protocol.KeepAliveInput, stream stream
 		}
 	}
 
-	s.queriesMu.Lock()
-	for sn, query := range s.queries {
-		if input.LastInputSequenceNum < query.Input().SequenceNum {
-			continue
+	s.queries.Range(func(key, value any) bool {
+		query := value.(*sessionQuery)
+		if input.LastInputSequenceNum >= query.Input().SequenceNum {
+			sequenceNumBytes := make([]byte, 8)
+			binary.BigEndian.PutUint64(sequenceNumBytes, uint64(query.Input().SequenceNum))
+			if !openInputs.Test(sequenceNumBytes) {
+				query.Cancel()
+				s.queries.Delete(key)
+			}
 		}
-		sequenceNumBytes := make([]byte, 8)
-		binary.BigEndian.PutUint64(sequenceNumBytes, uint64(query.Input().SequenceNum))
-		if !openInputs.Test(sequenceNumBytes) {
-			query.Cancel()
-			delete(s.queries, sn)
-		}
-	}
-	s.queriesMu.Unlock()
+		return true
+	})
 
 	stream.Value(&protocol.KeepAliveOutput{})
 
@@ -342,11 +336,11 @@ func (s *managedSession) destroy() {
 	for _, proposal := range s.proposals {
 		proposal.Cancel()
 	}
-	s.queriesMu.Lock()
-	for _, query := range s.queries {
+	s.queries.Range(func(key, value any) bool {
+		query := value.(*sessionQuery)
 		query.Cancel()
-	}
-	s.queriesMu.Unlock()
+		return true
+	})
 	for _, watcher := range s.watchers {
 		watcher(Closed)
 	}
@@ -743,9 +737,7 @@ type sessionQuery struct {
 	stream    streams.WriteStream[*protocol.SessionQueryOutput]
 	timestamp time.Time
 	state     QueryState
-	watching  atomic.Bool
-	watchers  map[uuid.UUID]func(QueryState)
-	mu        sync.RWMutex
+	watchers  sync.Map
 	log       logging.Logger
 }
 
@@ -770,18 +762,10 @@ func (q *sessionQuery) State() QueryState {
 }
 
 func (q *sessionQuery) Watch(watcher func(QueryState)) CancelFunc {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-	if q.watchers == nil {
-		q.watchers = make(map[uuid.UUID]func(QueryState))
-	}
 	id := uuid.New()
-	q.watchers[id] = watcher
-	q.watching.Store(true)
+	q.watchers.Store(id, watcher)
 	return func() {
-		q.mu.Lock()
-		defer q.mu.Unlock()
-		delete(q.watchers, id)
+		q.watchers.Delete(id)
 	}
 }
 
@@ -832,17 +816,11 @@ func (q *sessionQuery) close(phase QueryState) {
 	}
 	q.state = phase
 	q.stream.Close()
-	if q.watching.Load() {
-		q.mu.RLock()
-		watchers := make([]func(QueryState), 0, len(q.watchers))
-		for _, watcher := range q.watchers {
-			watchers = append(watchers, watcher)
-		}
-		q.mu.RUnlock()
-		for _, watcher := range watchers {
-			watcher(phase)
-		}
-	}
+	q.watchers.Range(func(key, value any) bool {
+		watcher := value.(func(QueryState))
+		watcher(phase)
+		return true
+	})
 }
 
 var _ Query[*protocol.SessionQueryInput, *protocol.SessionQueryOutput] = (*sessionQuery)(nil)
