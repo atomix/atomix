@@ -139,6 +139,10 @@ spec:
           type: string
           description: The pod on which the replica is run
           jsonPath: .spec.pod.name
+        - name: Group
+          type: integer
+          description: The Raft group identifier
+          jsonPath: .spec.groupID
         - name: Type
           type: string
           description: The type of membership in the Raft group

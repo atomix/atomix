@@ -91,6 +91,10 @@ spec:
                 members:
                   type: integer
       additionalPrinterColumns:
+        - name: Group
+          type: integer
+          description: The Raft group identifier
+          jsonPath: .spec.groupID
         - name: Replicas
           type: integer
           description: The number of replicas in the partition
