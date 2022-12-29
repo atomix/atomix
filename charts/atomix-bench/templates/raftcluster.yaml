@@ -2,12 +2,15 @@
 apiVersion: raft.atomix.io/v1beta2
 kind: RaftCluster
 metadata:
-  name: {{ template "atomix-bench.fullname" . }}
+  name: {{ template "atomix-bench.fullname" . }}-raft
+  namespace: {{ .Release.Namespace }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
 spec:
   replicas: {{ .Values.store.raft.replicas }}
-  {{- if .Values.store.raft.image.tag }}
   image: {{ include "atomix-bench.imagename" .Values.store.raft.image | quote }}
-  {{- end }}
   {{- with .Values.store.raft.image.pullPolicy }}
   imagePullPolicy: {{ . }}
   {{- end }}

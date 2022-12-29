@@ -32,8 +32,9 @@ proxy:
   image:
     registry: ""
     repository: atomix/proxy
-    tag: ""
-    pullPolicy: ""
+    tag: latest
+    # TODO: Revert the pull policy to the default "" for release tags
+    pullPolicy: IfNotPresent
     pullSecrets: []
 
   logging:
@@ -56,8 +57,9 @@ store:
     image:
       registry: ""
       repository: atomix/raft-node
-      tag: ""
-      pullPolicy: ""
+      tag: latest
+      # TODO: Revert the pull policy to the default "" for release tags
+      pullPolicy: IfNotPresent
       pullSecrets: []
 
     resources:
@@ -78,8 +80,9 @@ store:
     image:
       registry: ""
       repository: atomix/shared-memory-node
-      tag: ""
-      pullPolicy: ""
+      tag: latest
+      # TODO: Revert the pull policy to the default "" for release tags
+      pullPolicy: IfNotPresent
       pullSecrets: []
 
     logging:

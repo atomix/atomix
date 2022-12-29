@@ -2,11 +2,14 @@ apiVersion: atomix.io/v3beta3
 kind: StorageProfile
 metadata:
   name: {{ template "atomix-bench.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
 spec:
   proxy:
-    {{- if .Values.proxy.image.tag }}
     image: {{ include "atomix-bench.imagename" .Values.proxy.image | quote }}
-    {{- end }}
     {{- with .Values.proxy.image.pullPolicy }}
     imagePullPolicy: {{ . }}
     {{- end }}
@@ -15,4 +18,4 @@ spec:
       encoding: {{ .Values.proxy.logging.encoding }}
   bindings:
     - store:
-        name: {{ template "atomix-bench.fullname" . }}
+        name: {{ template "atomix-bench.fullname" . }}-store

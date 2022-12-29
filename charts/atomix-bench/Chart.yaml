@@ -7,7 +7,7 @@ name: atomix-bench
 description: Benchmarking Helm chart for Atomix
 kubeVersion: ">=1.17.0"
 type: application
-version: 1.0.1
+version: 1.0.2
 keywords:
 - atomix
 - performance

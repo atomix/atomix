@@ -2,13 +2,18 @@
 apiVersion: raft.atomix.io/v1beta2
 kind: RaftStore
 metadata:
-  name: {{ template "atomix-bench.fullname" . }}
+  name: {{ template "atomix-bench.fullname" . }}-store
+  namespace: {{ .Release.Namespace }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
 spec:
   cluster:
     {{- if .Values.store.raft.cluster }}
     name: {{ .Values.store.raft.cluster | quote }}
     {{- else }}
-    name: {{ template "atomix-bench.fullname" . }}
+    name: {{ template "atomix-bench.fullname" . }}-raft
     {{- end }}
   partitions: {{ .Values.store.raft.partitions }}
   replicationFactor: {{ .Values.store.raft.replicationFactor }}

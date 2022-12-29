@@ -2,11 +2,14 @@
 apiVersion: sharedmemory.atomix.io/v1beta1
 kind: SharedMemoryStore
 metadata:
-  name: {{ template "atomix-bench.fullname" . }}
+  name: {{ template "atomix-bench.fullname" . }}-store
+  namespace: {{ .Release.Namespace }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
 spec:
-  {{- if .Values.store.memory.image.tag }}
   image: {{ include "atomix-bench.imagename" .Values.store.memory.image | quote }}
-  {{- end }}
   {{- with .Values.store.memory.image.pullPolicy }}
   imagePullPolicy: {{ . }}
   {{- end }}
