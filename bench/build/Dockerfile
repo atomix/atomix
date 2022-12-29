@@ -7,9 +7,15 @@ FROM goreleaser/goreleaser-cross:v1.19 AS build
 RUN mkdir /build
 WORKDIR /build
 
-COPY . /build
+COPY ./go.mod /build
+COPY ./go.sum /build
 
-RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix-bench .
+RUN go mod download -x
+
+COPY ./cmd /build/cmd
+#COPY ./pkg /build/pkg
+
+RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix-bench ./cmd/atomix-bench
 
 FROM alpine:3.15
 

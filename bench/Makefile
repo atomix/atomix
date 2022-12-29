@@ -1,25 +1,39 @@
-# SPDX-FileCopyrightText: 2019-present Open Networking Foundation <info@opennetworking.org>
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: build
-
-all: build
+ifdef TAG
+VERSION := $(word 2, $(subst /, , $(TAG)))
+MAJOR := $(word 1, $(subst ., , $(VERSION)))
+MINOR := $(word 2, $(subst ., , $(VERSION)))
+PATCH := $(word 3, $(subst ., , $(VERSION)))
+endif
 
 .PHONY: build
 build:
-	docker build . -t atomix/bench:latest
+	docker build . -t atomix/bench:latest -f build/Dockerfile
 
-test: # @HELP run the unit tests and source code validation
-test: build license #linters
-	go test github.com/atomix/atomix/bench/... -p 1
+.PHONY: test
+test:
+	go test github.com/atomix/atomix/bench/pkg/... -p 1
+
+.PHONY: release
+release: build
+	docker push atomix/bench:latest
+ifdef TAG
+	docker tag atomix/bench:latest atomix/bench:${MAJOR}.${MINOR}.${PATCH}
+	docker tag atomix/bench:latest atomix/bench:${MAJOR}.${MINOR}
+	docker push atomix/bench:${MAJOR}.${MINOR}.${PATCH}
+	docker push atomix/bench:${MAJOR}.${MINOR}
+endif
 
 kind: build
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/bench:latest
 
-linters: # @HELP examines Go source code and reports coding problems
-	golangci-lint run
+.PHONY: api
+api:
+	$(MAKE) -C api
 
 reuse-tool: # @HELP install reuse if not present
 	command -v reuse || python3 -m pip install reuse
