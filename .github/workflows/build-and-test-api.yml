@@ -1,9 +1,11 @@
-name: Build and Test Go API
+name: Build and Test API
 
 on:
   push:
     branches:
       - 'master'
+    tags:
+      - 'api/v*'
     paths:
       - 'api/**'
   pull_request:

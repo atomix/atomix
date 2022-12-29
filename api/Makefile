@@ -6,6 +6,10 @@
 build: go docs
 	go build ./...
 
+.PHONY: test
+test:
+	go test github.com/atomix/atomix/api/...
+
 go:
 	@find . -name '*.pb.go' -delete
 	docker run -i \
