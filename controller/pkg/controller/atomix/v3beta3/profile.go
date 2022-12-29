@@ -6,6 +6,7 @@ package v3beta3
 
 import (
 	"context"
+	"fmt"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
 	"github.com/atomix/atomix/runtime/pkg/logging"
@@ -16,6 +17,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -88,8 +90,12 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, err
 	}
 
+	configMapName := types.NamespacedName{
+		Namespace: profile.Namespace,
+		Name:      fmt.Sprintf("%s-proxy-config", profile.Name),
+	}
 	configMap := &corev1.ConfigMap{}
-	if err := r.client.Get(ctx, getNamespacedName(profile), configMap); err != nil {
+	if err := r.client.Get(ctx, configMapName, configMap); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err)
 			return reconcile.Result{}, err
@@ -197,8 +203,8 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 		configMap = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: profile.Namespace,
-				Name:      profile.Name,
+				Namespace: configMapName.Namespace,
+				Name:      configMapName.Name,
 			},
 			Data: map[string]string{
 				configFile:  configString,

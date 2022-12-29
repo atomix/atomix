@@ -211,7 +211,7 @@ func (i *ProxyInjector) Handle(ctx context.Context, request admission.Request) a
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: profileName,
+					Name: fmt.Sprintf("%s-proxy-config", profileName),
 				},
 			},
 		},
