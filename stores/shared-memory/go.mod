@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/atomix/atomix/controller v0.0.0-20221228222855-b2275fb2adbe
-	github.com/atomix/atomix/protocols/rsm v0.0.0-20221228222855-b2275fb2adbe
+	github.com/atomix/atomix/protocols/rsm v0.0.0-20221229101327-2067e53b3fe4
 	github.com/atomix/atomix/runtime v0.0.0-20221228220240-ab52db65c6fb
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
