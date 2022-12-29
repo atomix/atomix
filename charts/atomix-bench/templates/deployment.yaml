@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "atomix-bench.fullname" . }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      name: {{ template "atomix-bench.fullname" . }}
+  template:
+    metadata:
+      labels:
+        name: {{ template "atomix-bench.fullname" . }}
+    spec:
+      serviceAccountName: {{ template "atomix-bench.fullname" . }}
+      containers:
+        - name: atomix-bench
+          image: {{ include "atomix-bench.imagename" .Values.image | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --concurrency={{ .Values.concurrency }}
+            - --write-percentage={{ .Values.writePercentage }}
+            - --num-keys={{ .Values.numKeys }}
+            - --sample-interval={{ .Values.sampleInterval }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/atomix
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "atomix-bench.fullname" . }}-config

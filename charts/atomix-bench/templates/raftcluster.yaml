@@ -1,0 +1,25 @@
+{{- if and ( eq .Values.store.kind "RaftStore" ) ( not .Values.store.raft.cluster ) }}
+apiVersion: raft.atomix.io/v1beta2
+kind: RaftCluster
+metadata:
+  name: {{ template "atomix-bench.fullname" . }}
+spec:
+  replicas: {{ .Values.store.raft.replicas }}
+  {{- if .Values.store.raft.image.tag }}
+  image: {{ include "atomix-bench.imagename" .Values.store.raft.image | quote }}
+  {{- end }}
+  {{- with .Values.store.raft.image.pullPolicy }}
+  imagePullPolicy: {{ . }}
+  {{- end }}
+  logging:
+    rootLevel: {{ .Values.store.raft.logging.rootLevel }}
+    encoding: {{ .Values.store.raft.logging.encoding }}
+  volumeClaimTemplate:
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      {{- with .Values.store.raft.resources }}
+      resources:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

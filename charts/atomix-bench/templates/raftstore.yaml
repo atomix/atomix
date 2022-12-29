@@ -1,0 +1,15 @@
+{{- if eq .Values.store.kind "RaftStore" }}
+apiVersion: raft.atomix.io/v1beta2
+kind: RaftStore
+metadata:
+  name: {{ template "atomix-bench.fullname" . }}
+spec:
+  cluster:
+    {{- if .Values.store.raft.cluster }}
+    name: {{ .Values.store.raft.cluster | quote }}
+    {{- else }}
+    name: {{ template "atomix-bench.fullname" . }}
+    {{- end }}
+  partitions: {{ .Values.store.raft.partitions }}
+  replicationFactor: {{ .Values.store.raft.replicationFactor }}
+{{- end }}

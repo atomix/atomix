@@ -1,0 +1,16 @@
+{{- if eq .Values.store.kind "SharedMemoryStore" }}
+apiVersion: sharedmemory.atomix.io/v1beta1
+kind: SharedMemoryStore
+metadata:
+  name: {{ template "atomix-bench.fullname" . }}
+spec:
+  {{- if .Values.store.memory.image.tag }}
+  image: {{ include "atomix-bench.imagename" .Values.store.memory.image | quote }}
+  {{- end }}
+  {{- with .Values.store.memory.image.pullPolicy }}
+  imagePullPolicy: {{ . }}
+  {{- end }}
+  logging:
+    rootLevel: {{ .Values.store.memory.logging.rootLevel }}
+    encoding: {{ .Values.store.memory.logging.encoding }}
+{{- end }}
