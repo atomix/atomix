@@ -31,7 +31,6 @@ func newSessionClient(id protocol.SessionID, partition *PartitionClient, conn *g
 		sessionID:  id,
 		partition:  partition,
 		conn:       conn,
-		primitives: make(map[string]*PrimitiveClient),
 		requestNum: &atomic.Uint64{},
 		requestCh:  make(chan sessionRequestEvent, chanBufSize),
 		ticker:     time.NewTicker(timeout / 4),
@@ -44,26 +43,26 @@ func newSessionClient(id protocol.SessionID, partition *PartitionClient, conn *g
 }
 
 type SessionClient struct {
-	sessionID    protocol.SessionID
-	partition    *PartitionClient
-	conn         *grpc.ClientConn
-	ticker       *time.Ticker
-	lastIndex    *sessionIndex
-	requestNum   *atomic.Uint64
-	requestCh    chan sessionRequestEvent
-	primitives   map[string]*PrimitiveClient
-	primitivesMu sync.RWMutex
-	recorder     *Recorder
+	sessionID  protocol.SessionID
+	partition  *PartitionClient
+	conn       *grpc.ClientConn
+	ticker     *time.Ticker
+	lastIndex  *sessionIndex
+	requestNum *atomic.Uint64
+	requestCh  chan sessionRequestEvent
+	primitives sync.Map
+	mu         sync.Mutex
+	recorder   *Recorder
 }
 
 func (s *SessionClient) CreatePrimitive(ctx context.Context, meta runtimev1.PrimitiveMeta) error {
-	s.primitivesMu.Lock()
-	defer s.primitivesMu.Unlock()
-	primitive, ok := s.primitives[meta.Name]
-	if ok {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.primitives.Load(meta.Name); ok {
 		return nil
 	}
-	primitive = newPrimitiveClient(s, protocol.PrimitiveSpec{
+
+	primitive := newPrimitiveClient(s, protocol.PrimitiveSpec{
 		Type: protocol.PrimitiveType{
 			Name:       meta.Type.Name,
 			APIVersion: meta.Type.APIVersion,
@@ -75,31 +74,28 @@ func (s *SessionClient) CreatePrimitive(ctx context.Context, meta runtimev1.Prim
 	if err := primitive.open(ctx); err != nil {
 		return err
 	}
-	s.primitives[meta.Name] = primitive
+	s.primitives.Store(meta.Name, primitive)
 	return nil
 }
 
 func (s *SessionClient) GetPrimitive(name string) (*PrimitiveClient, error) {
-	s.primitivesMu.RLock()
-	defer s.primitivesMu.RUnlock()
-	primitive, ok := s.primitives[name]
+	primitive, ok := s.primitives.Load(name)
 	if !ok {
 		return nil, errors.NewUnavailable("primitive not found")
 	}
-	return primitive, nil
+	return primitive.(*PrimitiveClient), nil
 }
 
 func (s *SessionClient) ClosePrimitive(ctx context.Context, name string) error {
-	s.primitivesMu.Lock()
-	defer s.primitivesMu.Unlock()
-	primitive, ok := s.primitives[name]
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	primitive, ok := s.primitives.LoadAndDelete(name)
 	if !ok {
 		return nil
 	}
-	if err := primitive.close(ctx); err != nil {
+	if err := primitive.(*PrimitiveClient).close(ctx); err != nil {
 		return err
 	}
-	delete(s.primitives, name)
 	return nil
 }
 
