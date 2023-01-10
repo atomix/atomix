@@ -15,6 +15,6 @@ jobs:
           fetch-depth: 0
 
       - name: Release
-        uses: ./.github/actions/module/release.yml
+        uses: ./.github/actions/module/release
         with:
           working-directory: bench

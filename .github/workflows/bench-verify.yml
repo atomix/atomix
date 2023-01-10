@@ -21,6 +21,6 @@ jobs:
           fetch-depth: 0
 
       - name: Verify
-        uses: ./.github/actions/module/verify.yml
+        uses: ./.github/actions/module/verify
         with:
           working-directory: bench

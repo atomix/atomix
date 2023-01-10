@@ -8,11 +8,11 @@ runs:
   using: composite
   steps:
     - name: Build
-      uses: ./.github/actions/module/build.yml
+      uses: ./.github/actions/module/build
       with:
         working-directory: ${{ inputs.working-directory }}
 
     - name: Test
-      uses: ./.github/actions/module/test.yml
+      uses: ./.github/actions/module/test
       with:
         working-directory: ${{ inputs.working-directory }}
