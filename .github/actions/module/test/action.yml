@@ -21,5 +21,6 @@ runs:
           ${{ runner.os }}-go-
 
     - name: Run tests
-      working-directory: ${{ inputs.working-directory }}
       run: make test
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}

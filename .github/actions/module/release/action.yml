@@ -25,7 +25,8 @@ runs:
         password: ${{ inputs.docker-password }}
 
     - name: Release
-      working-directory: ${{ inputs.working-directory }}
       run: make release
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
       env:
         TAG: ${{ github.ref_name }}
