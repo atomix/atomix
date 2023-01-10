@@ -20,7 +20,6 @@ spec:
     metadata:
       labels:
         name: {{ template "atomix-bench.fullname" . }}
-      annotations:
         proxy.atomix.io/inject: "true"
         proxy.atomix.io/profile: {{ template "atomix-bench.fullname" . }}
     spec:
