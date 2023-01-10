@@ -1,11 +1,11 @@
-name: Build and Test Driver | PodMemory
+name: Build and Test Driver | SharedMemory/v1
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'drivers/pod-memory/**'
+      - 'drivers/shared-memory/v1/**'
   pull_request:
 
 jobs:
@@ -28,5 +28,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Run Tests
-        working-directory: drivers/pod-memory
+        working-directory: drivers/shared-memory/v1
         run: make test

@@ -1,11 +1,11 @@
-name: Build and Test Driver | Etcd
+name: Build and Test Driver | Raft/v1
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'drivers/etcd/**'
+      - 'drivers/raft/v1/**'
   pull_request:
 
 jobs:
@@ -28,5 +28,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Run Tests
-        working-directory: drivers/etcd
+        working-directory: drivers/raft/v1
         run: make test

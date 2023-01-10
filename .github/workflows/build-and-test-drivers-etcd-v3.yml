@@ -1,11 +1,11 @@
-name: Build and Test Driver | SharedMemory
+name: Build and Test Driver | Etcd/v3
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'drivers/shared-memory/**'
+      - 'drivers/etcd/v3/**'
   pull_request:
 
 jobs:
@@ -28,5 +28,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Run Tests
-        working-directory: drivers/shared-memory
+        working-directory: drivers/etcd/v3
         run: make test

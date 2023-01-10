@@ -1,11 +1,11 @@
-name: Build and Test Driver | Raft
+name: Build and Test Driver | Redis/v8
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'drivers/raft/**'
+      - 'drivers/redis/v8/**'
   pull_request:
 
 jobs:
@@ -28,5 +28,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Run Tests
-        working-directory: drivers/raft
+        working-directory: drivers/redis/v8
         run: make test
