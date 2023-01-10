@@ -1,4 +1,4 @@
-module github.com/atomix/atomix/drivers/shared-memory/v1
+module github.com/atomix/atomix/drivers/raft
 
 go 1.19
 

@@ -4,8 +4,14 @@
 
 .PHONY: build
 build:
-	$(MAKE) -C v1 build
+	go build ./driver/...
 
 .PHONY: test
 test:
-	$(MAKE) -C v1 test
+	go test github.com/atomix/atomix/drivers/pod-memory/driver/... -p 1
+
+reuse-tool: # @HELP install reuse if not present
+	command -v reuse || python3 -m pip install reuse
+
+license: reuse-tool # @HELP run license checks
+	reuse lint

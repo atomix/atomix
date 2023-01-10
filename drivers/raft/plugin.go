@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package main
+package raft
 
 import (
-	"github.com/atomix/atomix/drivers/shared-memory/v1/driver"
+	"github.com/atomix/atomix/drivers/raft/driver"
 	"github.com/atomix/atomix/runtime/pkg/network"
 )
 

@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package main
+package shared_memory
 
 import (
-	"github.com/atomix/atomix/drivers/pod-memory/v1/driver"
+	"github.com/atomix/atomix/drivers/shared-memory/driver"
 	"github.com/atomix/atomix/runtime/pkg/network"
 )
 
-var Plugin = driver.New(network.NewLocalDriver())
+var Plugin = driver.New(network.NewDefaultDriver())
