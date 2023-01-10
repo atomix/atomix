@@ -4,14 +4,8 @@
 
 .PHONY: build
 build:
-	go build ./pkg/...
+	$(MAKE) -C v1 build
 
 .PHONY: test
 test:
-	go test github.com/atomix/atomix/drivers/raft/pkg/... -p 1
-
-reuse-tool: # @HELP install reuse if not present
-	command -v reuse || python3 -m pip install reuse
-
-license: reuse-tool # @HELP run license checks
-	reuse lint
+	$(MAKE) -C v1 test

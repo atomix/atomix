@@ -1,4 +1,4 @@
-module github.com/atomix/atomix/drivers/raft
+module github.com/atomix/atomix/drivers/raft/v1
 
 go 1.19
 
