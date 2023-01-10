@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v3
+package main
 
 import (
 	"github.com/atomix/atomix/drivers/etcd/v3/driver"

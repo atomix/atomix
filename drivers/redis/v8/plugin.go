@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v8
+package main
 
 import (
 	"github.com/atomix/atomix/drivers/redis/v8/driver"
