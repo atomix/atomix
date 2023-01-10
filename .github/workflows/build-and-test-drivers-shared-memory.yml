@@ -1,4 +1,4 @@
-name: Build and Test Driver | SharedMemory/v1
+name: Build and Test Shared Memory Driver
 
 on:
   push:

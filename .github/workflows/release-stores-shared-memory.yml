@@ -1,4 +1,4 @@
-name: Release Store | SharedMemory
+name: Release Shared Memory Store Control Plane
 
 on:
   push:

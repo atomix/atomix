@@ -1,6 +1,13 @@
 name: Release Proxy
 
 on:
+  workflow_run:
+    workflows:
+      - "Build and Test Proxy"
+    branches:
+      - master
+    types:
+      - completed
   push:
     tags:
       - 'proxy/v*'

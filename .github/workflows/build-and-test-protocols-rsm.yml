@@ -1,4 +1,4 @@
-name: Build and Test Protocol | RSM
+name: Build and Test RSM Protocol
 
 on:
   push:

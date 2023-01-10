@@ -1,4 +1,4 @@
-name: Build and Test Driver | Raft/v1
+name: Build and Test Raft Driver
 
 on:
   push:

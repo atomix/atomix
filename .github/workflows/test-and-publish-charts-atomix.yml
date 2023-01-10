@@ -1,4 +1,4 @@
-name: Publish Helm Chart | Atomix
+name: Publish Atomix Helm Chart
 
 on:
   push:

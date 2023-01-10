@@ -1,4 +1,4 @@
-name: Build and Test Driver | Redis/v9
+name: Build and Test Redis v9 Driver
 
 on:
   push:

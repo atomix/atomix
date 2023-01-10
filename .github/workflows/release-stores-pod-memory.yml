@@ -1,4 +1,4 @@
-name: Release Store | PodMemory
+name: Release Pod Memory Store Control Plane
 
 on:
   push:

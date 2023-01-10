@@ -1,4 +1,4 @@
-name: Build and Test Bench
+name: Build and Test Benchmarks
 
 on:
   push:

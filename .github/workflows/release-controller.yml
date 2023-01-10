@@ -1,6 +1,13 @@
 name: Release Controller
 
 on:
+  workflow_run:
+    workflows:
+      - "Build and Test Controller"
+    branches:
+      - master
+    types:
+      - completed
   push:
     tags:
       - 'controller/v*'

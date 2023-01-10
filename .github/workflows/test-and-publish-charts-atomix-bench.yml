@@ -1,4 +1,4 @@
-name: Publish Helm Chart | Atomix Bench
+name: Publish Benchmark Helm Chart
 
 on:
   push:

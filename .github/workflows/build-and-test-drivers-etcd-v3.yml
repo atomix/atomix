@@ -1,4 +1,4 @@
-name: Build and Test Driver | Etcd/v3
+name: Build and Test Etcd v3 Driver
 
 on:
   push:

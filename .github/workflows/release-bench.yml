@@ -1,6 +1,13 @@
-name: Release Bench
+name: Release Benchmarks
 
 on:
+  workflow_run:
+    workflows:
+      - "Build and Test Bench"
+    branches:
+      - master
+    types:
+      - completed
   push:
     tags:
       - 'bench/v*'

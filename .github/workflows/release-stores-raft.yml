@@ -1,4 +1,4 @@
-name: Release Store | Raft
+name: Release Raft Store Control Plane
 
 on:
   push:
