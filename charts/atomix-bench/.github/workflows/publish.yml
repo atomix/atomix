@@ -1,13 +1,6 @@
 name: Publish Benchmark Helm Chart
 
 on:
-  workflow_run:
-    workflows:
-      - "Verify Benchmark Helm Chart"
-    branches:
-      - master
-    types:
-      - completed
   push:
     branches:
       - 'master'
@@ -15,20 +8,16 @@ on:
       - 'charts/atomix-bench/**'
 
 jobs:
-  publish:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-20.04
+  verify:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
 
-      - name: Publish Helm chart
-        run: |-
-          docker run -i \
-            -v `pwd`:/build -w /build \
-            -e GITHUB_TOKEN=${{ secrets.GH_TOKEN }} \
-            --entrypoint ./build/release \
-            quay.io/helmpack/chart-releaser:v1.4.0 \
-            atomix-bench
+      - name: Publish
+        uses: ./.github/actions/chart/publish
+        with:
+          working-directory: charts/atomix-bench
+          github-token: ${{ secrets.GH_TOKEN }}
