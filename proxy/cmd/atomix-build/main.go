@@ -102,11 +102,19 @@ func (b *atomixBuilder) buildProxy(outputPath string) error {
 }
 
 func (b *atomixBuilder) validateDriver(inputPath string) error {
-	pluginModFile, _, err := b.downloadPluginMod(inputPath)
+	fmt.Fprintln(b.cmd.OutOrStdout(), "Parsing", inputPath)
+	goModBytes, err := ioutil.ReadFile(inputPath)
 	if err != nil {
+		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to validate module", inputPath, err)
 		return err
 	}
-	if err := b.validatePluginModFile(inputPath, pluginModFile); err != nil {
+	goModFile, err := modfile.Parse(inputPath, goModBytes, nil)
+	if err != nil {
+		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to validate module", inputPath, err)
+		return err
+	}
+	if err := b.validatePluginModFile(inputPath, goModFile); err != nil {
+		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to validate module", inputPath, err)
 		return err
 	}
 	return nil
