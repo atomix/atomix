@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -55,24 +56,31 @@ func addPodController(mgr manager.Manager) error {
 		return err
 	}
 
-	// Watch for changes to Profiles
+	// Watch for changes to StorageProfiles and reconcile all Pods in the same namespace
 	err = c.Watch(&source.Kind{Type: &atomixv3beta3.StorageProfile{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
-		podList := &corev1.PodList{}
-		if err := mgr.GetClient().List(context.Background(), podList, &client.ListOptions{Namespace: object.GetNamespace()}); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
+		pods := &corev1.PodList{}
+		options := &client.ListOptions{
+			Namespace: object.GetNamespace(),
+			LabelSelector: labels.SelectorFromSet(map[string]string{
+				proxyInjectLabel: "true",
+			}),
+		}
+		if err := mgr.GetClient().List(ctx, pods, options); err != nil {
 			log.Error(err)
 			return nil
 		}
 
 		var requests []reconcile.Request
-		for _, pod := range podList.Items {
-			if pod.Annotations[proxyInjectStatusAnnotation] == injectedStatus && pod.Annotations[proxyProfileAnnotation] == object.GetName() {
-				requests = append(requests, reconcile.Request{
-					NamespacedName: types.NamespacedName{
-						Namespace: pod.Namespace,
-						Name:      pod.Name,
-					},
-				})
-			}
+		for _, pod := range pods.Items {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: pod.Namespace,
+					Name:      pod.Name,
+				},
+			})
 		}
 		return requests
 	}))
@@ -80,24 +88,30 @@ func addPodController(mgr manager.Manager) error {
 		return err
 	}
 
-	// Watch for changes to Stores
+	// Watch for changes to DataStores and reconcile all Pods
 	err = c.Watch(&source.Kind{Type: &atomixv3beta3.DataStore{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
-		podList := &corev1.PodList{}
-		if err := mgr.GetClient().List(context.Background(), podList, &client.ListOptions{}); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
+		pods := &corev1.PodList{}
+		options := &client.ListOptions{
+			LabelSelector: labels.SelectorFromSet(map[string]string{
+				proxyInjectLabel: "true",
+			}),
+		}
+		if err := mgr.GetClient().List(ctx, pods, options); err != nil {
 			log.Error(err)
 			return nil
 		}
 
 		var requests []reconcile.Request
-		for _, pod := range podList.Items {
-			if pod.Annotations[proxyInjectStatusAnnotation] == injectedStatus {
-				requests = append(requests, reconcile.Request{
-					NamespacedName: types.NamespacedName{
-						Namespace: pod.Namespace,
-						Name:      pod.Name,
-					},
-				})
-			}
+		for _, pod := range pods.Items {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: pod.Namespace,
+					Name:      pod.Name,
+				},
+			})
 		}
 		return requests
 	}))
@@ -127,6 +141,10 @@ func (r *PodReconciler) Reconcile(ctx context.Context, request reconcile.Request
 		}
 		log.Error(err)
 		return reconcile.Result{}, err
+	}
+
+	if pod.Annotations == nil {
+		return reconcile.Result{}, nil
 	}
 
 	profileName, ok := pod.Annotations[proxyProfileAnnotation]

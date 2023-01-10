@@ -32,18 +32,26 @@ const (
 )
 
 const (
-	proxyInjectPath             = "/inject-proxy"
+	proxyInjectPath    = "/inject-proxy"
+	proxyContainerName = "atomix-proxy"
+	configVolumeName   = "atomix-config"
+)
+
+const (
+	proxyProfileAnnotation      = "proxy.atomix.io/profile"
 	proxyInjectAnnotation       = "proxy.atomix.io/inject"
 	proxyInjectStatusAnnotation = "proxy.atomix.io/status"
-	proxyProfileAnnotation      = "proxy.atomix.io/profile"
 	injectedStatus              = "injected"
-	proxyContainerName          = "atomix-proxy"
-	configVolumeName            = "atomix-config"
+)
+
+const (
+	proxyInjectLabel  = "proxy.atomix.io/inject"
+	proxyProfileLabel = "proxy.atomix.io/profile"
 )
 
 const (
 	proxyImageEnv     = "PROXY_IMAGE"
-	defaultProxyImage = "atomix/proxy:latest"
+	defaultProxyImage = "atomix/runtime-proxy:latest"
 )
 
 const (
@@ -95,31 +103,38 @@ func (i *ProxyInjector) Handle(ctx context.Context, request admission.Request) a
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	injectRuntime, ok := pod.Annotations[proxyInjectAnnotation]
+	// If the proxy.atomix.io/inject label is not present, skip the mutation.
+	injectRuntime, ok := pod.Labels[proxyInjectLabel]
 	if !ok {
-		log.Infof("Skipping proxy injection for Pod '%s'", request.UID)
-		return admission.Allowed(fmt.Sprintf("'%s' annotation not found", proxyInjectAnnotation))
-	}
-	if inject, err := strconv.ParseBool(injectRuntime); err != nil {
-		log.Errorf("Runtime injection failed for Pod '%s'", request.UID, err)
-		return admission.Allowed(fmt.Sprintf("'%s' annotation could not be parsed", proxyInjectAnnotation))
-	} else if !inject {
-		log.Infof("Skipping proxy injection for Pod '%s'", request.UID)
-		return admission.Allowed(fmt.Sprintf("'%s' annotation is false", proxyInjectAnnotation))
+		log.Warnf("Denied proxy injection for Pod '%s': '%s' label was expected but not found", request.UID, proxyInjectLabel)
+		return admission.Allowed(fmt.Sprintf("Denied proxy injection: '%s' label was expected but not found", proxyInjectLabel))
 	}
 
+	// If the proxy.atomix.io/inject label is false, skip the mutation.
+	// TODO: Support removing the sidecar container on updates when proxy.atomix.io/inject label is changed to "false".
+	if inject, err := strconv.ParseBool(injectRuntime); err != nil {
+		log.Warnf("Denied proxy injection for Pod '%s': %s", request.UID, err.Error())
+		return admission.Allowed(fmt.Sprintf("Denied proxy injection: '%s' label could not be parsed", proxyInjectLabel))
+	} else if !inject {
+		log.Debugf("Skipped proxy injection for Pod '%s': '%s' label is false", request.UID, proxyInjectLabel)
+		return admission.Allowed(fmt.Sprintf("Skipped proxy injection: '%s' label is false", proxyInjectLabel))
+	}
+
+	// If the proxy sidecar was already injected, skip mutations.
 	injectedRuntime, ok := pod.Annotations[proxyInjectStatusAnnotation]
 	if ok && injectedRuntime == injectedStatus {
-		log.Infof("Skipping proxy injection for Pod '%s'", request.UID)
-		return admission.Allowed(fmt.Sprintf("'%s' annotation is '%s'", proxyInjectStatusAnnotation, injectedRuntime))
+		log.Debugf("Skipped proxy injection for Pod '%s': '%s' annotation is already '%s'", request.UID, proxyInjectStatusAnnotation, injectedStatus)
+		return admission.Allowed(fmt.Sprintf("Skipped proxy injection: '%s' annotation is already '%s'", proxyInjectStatusAnnotation, injectedStatus))
 	}
 
-	profileName, ok := pod.Annotations[proxyProfileAnnotation]
+	// If the proxy.atomix.io/profile label is missing, skip mutations.
+	profileName, ok := pod.Labels[proxyProfileLabel]
 	if !ok {
-		log.Warnf("No profile specified for Pod '%s'", request.UID)
-		return admission.Denied(fmt.Sprintf("'%s' annotation not found", proxyProfileAnnotation))
+		log.Warnf("Denied proxy injection for Pod '%s': '%s' label was expected but not found", request.UID, proxyProfileLabel)
+		return admission.Denied(fmt.Sprintf("Denied proxy injection: '%s' label was expected but not found", proxyProfileLabel))
 	}
 
+	// Lookup the StorageProfile associated with this Pod.
 	profile := &atomixv3beta3.StorageProfile{}
 	profileNamespacedName := types.NamespacedName{
 		Namespace: request.Namespace,
@@ -127,12 +142,26 @@ func (i *ProxyInjector) Handle(ctx context.Context, request admission.Request) a
 	}
 	if err := i.client.Get(ctx, profileNamespacedName, profile); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			log.Error(err)
+			log.Errorf("Proxy injection failed for Pod '%s'", request.UID, err)
 			return admission.Errored(http.StatusInternalServerError, err)
 		}
-		return admission.Denied(fmt.Sprintf("profile %s not found", profileName))
+		log.Debugf("Denied proxy injection for Pod '%s': StorageProfile '%s' not found", request.UID, profileName)
+		return admission.Denied(fmt.Sprintf("Denied proxy injection: StorageProfile '%s' not found", profileName))
 	}
 
+	// Add the StorageProfile's ConfigMap to the Pod as a volume.
+	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+		Name: configVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: profileName,
+				},
+			},
+		},
+	})
+
+	// Add the sidecar proxy container to the Pod's containers list.
 	pod.Spec.Containers = append(pod.Spec.Containers, corev1.Container{
 		Name:            proxyContainerName,
 		Image:           getProxyImage(profile.Spec.Proxy.Image),
@@ -206,22 +235,19 @@ func (i *ProxyInjector) Handle(ctx context.Context, request admission.Request) a
 			},
 		},
 	})
-	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-		Name: configVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: fmt.Sprintf("%s-proxy-config", profileName),
-				},
-			},
-		},
-	})
+
+	// Add proxy metadata annotations to the Pod.
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
+	}
+	pod.Annotations[proxyInjectAnnotation] = injectRuntime
+	pod.Annotations[proxyProfileAnnotation] = profileName
 	pod.Annotations[proxyInjectStatusAnnotation] = injectedStatus
 
 	// Marshal the pod and return a patch response
 	marshaledPod, err := json.Marshal(pod)
 	if err != nil {
-		log.Errorf("Runtime injection failed for Pod '%s'", request.UID, err)
+		log.Errorf("Proxy injection failed for Pod '%s'", request.UID, err)
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 	return admission.PatchResponseFromRaw(request.Object.Raw, marshaledPod)
