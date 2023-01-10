@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'master'
+    tags:
+      - 'stores/shared-memory/v*'
     paths:
       - 'stores/shared-memory/**'
   pull_request:

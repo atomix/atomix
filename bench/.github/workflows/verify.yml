@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'master'
+    tags:
+      - 'bench/v*'
     paths:
       - 'bench/**'
   pull_request:

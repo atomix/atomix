@@ -4,13 +4,10 @@ on:
   workflow_run:
     workflows:
       - "Verify Proxy"
-    branches:
-      - master
-    types:
-      - completed
-  push:
     tags:
       - 'proxy/v*'
+    types:
+      - completed
 
 jobs:
   push-docker-images:

@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'master'
+    tags:
+      - 'stores/raft/v*'
     paths:
       - 'stores/raft/**'
   pull_request:

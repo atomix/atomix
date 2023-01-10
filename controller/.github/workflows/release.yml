@@ -4,13 +4,10 @@ on:
   workflow_run:
     workflows:
       - "Verify Controller"
-    branches:
-      - master
-    types:
-      - completed
-  push:
     tags:
       - 'controller/v*'
+    types:
+      - completed
 
 jobs:
   push-docker-images:
