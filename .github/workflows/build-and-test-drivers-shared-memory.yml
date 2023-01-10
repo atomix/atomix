@@ -5,7 +5,7 @@ on:
     branches:
       - 'master'
     paths:
-      - 'drivers/shared-memory/v1/**'
+      - 'drivers/shared-memory/**'
   pull_request:
 
 jobs:
@@ -28,5 +28,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Run Tests
-        working-directory: drivers/shared-memory/v1
+        working-directory: drivers/shared-memory
         run: make test

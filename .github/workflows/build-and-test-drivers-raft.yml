@@ -1,11 +1,11 @@
-name: Build and Test Driver | PodMemory/v1
+name: Build and Test Driver | Raft/v1
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'drivers/pod-memory/v1/**'
+      - 'drivers/raft/**'
   pull_request:
 
 jobs:
@@ -28,5 +28,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Run Tests
-        working-directory: drivers/pod-memory/v1
+        working-directory: drivers/raft
         run: make test
