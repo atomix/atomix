@@ -1,3 +1,5 @@
-[![Build](https://github.com/atomix/atomix/actions/workflows/controller.yml/badge.svg)](https://github.com/atomix/atomix/actions/workflows/controller.yml)
+# Atomix Controller
 
-# Controller
+[![Build](https://img.shields.io/github/actions/workflow/status/atomix/atomix/build-and-test-controller.yml?style=for-the-badge)](https://github.com/atomix/atomix/actions/workflows/build-and-test-controller.yml)
+
+The Atomix controller provides custom Kubernetes resources for configuring stores.
