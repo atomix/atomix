@@ -1,6 +1,8 @@
-![LICENSE](https://img.shields.io/github/license/atomix/atomix)
-
 # [Atomix](https://atomix.io)
+
+![LICENSE](https://img.shields.io/github/license/atomix/atomix?style=for-the-badge)
+[![website](https://img.shields.io/website?label=read%20the%20docs&style=for-the-badge&url=https%3A%2F%2Fatomix.io)](https://atomix.io)
+[![social](https://img.shields.io/twitter/url?label=follow%20us%20on%20Twitter&logo=twitter&style=for-the-badge&url=https%3A%2F%2Ftwitter.com%2Fatomixio)](https://twitter.com/atomixio)
 
 Atomix is a cloud native runtime for building stateful, scalable, configurable, and reliable distributed 
 applications in Kubernetes. The Atomix API provides a set of high-level building blocks (referred to as distributed 
