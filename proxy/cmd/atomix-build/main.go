@@ -38,6 +38,18 @@ func main() {
 		},
 	})
 	cmd.AddCommand(&cobra.Command{
+		Use:  "validate",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			inputPath := args[0]
+			builder, err := newBuilder(cmd)
+			if err != nil {
+				return err
+			}
+			return builder.validateDriver(inputPath)
+		},
+	})
+	cmd.AddCommand(&cobra.Command{
 		Use:  "driver",
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -87,6 +99,17 @@ func (b *atomixBuilder) buildProxy(outputPath string) error {
 		"-o", outputPath,
 		"./cmd/atomix-proxy")
 	return err
+}
+
+func (b *atomixBuilder) validateDriver(inputPath string) error {
+	pluginModFile, _, err := b.downloadPluginMod(inputPath)
+	if err != nil {
+		return err
+	}
+	if err := b.validatePluginModFile(inputPath, pluginModFile); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (b *atomixBuilder) buildDriver(inputPath, outputPath string) error {
