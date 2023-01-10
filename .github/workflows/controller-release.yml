@@ -21,3 +21,5 @@ jobs:
         uses: ./.github/actions/module/release
         with:
           working-directory: controller
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
