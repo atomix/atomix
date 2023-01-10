@@ -1,4 +1,4 @@
-module github.com/atomix/atomix/drivers/shared-memory
+module github.com/atomix/atomix/drivers/shared-memory/v1
 
 go 1.19
 
