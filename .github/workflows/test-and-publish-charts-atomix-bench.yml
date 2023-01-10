@@ -1,0 +1,67 @@
+name: Publish Helm Chart | Atomix Bench
+
+on:
+  push:
+    branches:
+      - 'master'
+    paths:
+      - 'charts/atomix-bench/**'
+
+jobs:
+  test-helm-chart:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.10.0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          check-latest: true
+
+      - name: Set up chart tests
+        uses: helm/chart-testing-action@v2.3.1
+
+      - name: Evaluate Helm chart changes
+        id: list-changed
+        working-directory: charts/atomix-bench
+        run: |
+          changed=$(ct list-changed --target-branch ${{ github.event.repository.default_branch }})
+          if [[ -n "$changed" ]]; then
+            echo "::set-output name=changed::true"
+          fi
+
+      - name: Lint Helm charts
+        working-directory: charts/atomix-bench
+        run: ct lint --target-branch ${{ github.event.repository.default_branch }}
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.4.0
+        if: steps.list-changed.outputs.changed == 'true'
+
+      - name: Install Helm chart
+        working-directory: charts/atomix-bench
+        run: ct install
+  publish-helm-chart:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Publish Helm chart
+        run: |-
+          docker run -i \
+            -v `pwd`:/build -w /build \
+            -e GITHUB_TOKEN=${{ secrets.GH_TOKEN }} \
+            --entrypoint ./build/release \
+            quay.io/helmpack/chart-releaser:v1.4.0 \
+            atomix-bench
