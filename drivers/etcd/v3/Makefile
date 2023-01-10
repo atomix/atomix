@@ -8,7 +8,7 @@ build:
 
 .PHONY: test
 test:
-	go test github.com/atomix/atomix/drivers/redis/v9/driver/... -p 1
+	go test github.com/atomix/atomix/drivers/etcd/v3/driver/... -p 1
 
 reuse-tool: # @HELP install reuse if not present
 	command -v reuse || python3 -m pip install reuse

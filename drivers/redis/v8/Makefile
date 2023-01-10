@@ -4,7 +4,7 @@
 
 .PHONY: build
 build:
-	go build ./pkg/...
+	go build ./driver/...
 
 .PHONY: test
 test:
