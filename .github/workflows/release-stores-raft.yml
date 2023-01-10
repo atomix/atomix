@@ -1,12 +1,20 @@
-name: Release Raft Store Control Plane
+name: Release Raft Store
 
 on:
+  workflow_run:
+    workflows:
+      - "Build and Test Raft Store"
+    branches:
+      - master
+    types:
+      - completed
   push:
     tags:
       - 'stores/raft/v*'
 
 jobs:
   push-docker-images:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout

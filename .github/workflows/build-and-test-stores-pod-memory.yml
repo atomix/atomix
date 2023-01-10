@@ -1,4 +1,4 @@
-name: Build and Test Store | PodMemory
+name: Build and Test Pod Memory Store
 
 on:
   push:
