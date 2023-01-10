@@ -41,7 +41,7 @@ import (
 
 const (
 	driverName    = "SharedMemory"
-	driverVersion = "v2beta1"
+	driverVersion = "v1"
 )
 
 const (

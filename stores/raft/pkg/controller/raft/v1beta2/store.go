@@ -31,7 +31,7 @@ import (
 
 const (
 	driverName    = "Raft"
-	driverVersion = "v2beta1"
+	driverVersion = "v1"
 )
 
 func addRaftStoreController(mgr manager.Manager) error {
