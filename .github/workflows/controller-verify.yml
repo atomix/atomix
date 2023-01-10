@@ -7,6 +7,8 @@ on:
   push:
     branches:
       - 'master'
+    tags:
+      - 'controller/v*'
     paths:
       - 'controller/**'
   pull_request:

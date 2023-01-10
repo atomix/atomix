@@ -7,13 +7,10 @@ on:
   workflow_run:
     workflows:
       - "Verify Pod Memory Store"
-    branches:
-      - master
-    types:
-      - completed
-  push:
     tags:
       - 'stores/pod-memory/v*'
+    types:
+      - completed
 
 jobs:
   push-docker-images:

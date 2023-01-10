@@ -7,13 +7,10 @@ on:
   workflow_run:
     workflows:
       - "Verify Shared Memory Store"
-    branches:
-      - master
-    types:
-      - completed
-  push:
     tags:
       - 'stores/shared-memory/v*'
+    types:
+      - completed
 
 jobs:
   push-docker-images:

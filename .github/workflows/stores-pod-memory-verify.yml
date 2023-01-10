@@ -7,6 +7,8 @@ on:
   push:
     branches:
       - 'master'
+    tags:
+      - 'stores/pod-memory/v*'
     paths:
       - 'stores/pod-memory/**'
   pull_request:
