@@ -8,7 +8,7 @@ runs:
   using: composite
   steps:
     - name: Verify
-      uses: .github/actions/chart/verify.yml
+      uses: ./.github/actions/chart/verify.yml
       with:
         working-directory: ${{ inputs.working-directory }}
 
