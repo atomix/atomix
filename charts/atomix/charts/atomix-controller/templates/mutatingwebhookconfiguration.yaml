@@ -8,12 +8,12 @@ metadata:
   name: {{ template "atomix-controller.fullname" . }}
 webhooks:
   - name: injector.proxy.atomix.io
-    namespaceSelector:
-      matchExpressions:
-        - key: kubernetes.io/metadata.name
-          operator: NotIn
-          values: ["kube-system"]
+    # Match only pods that opt-in to Atomix with the proxy.atomix.io/inject label
+    objectSelector:
+      matchLabels:
+        proxy.atomix.io/inject: "true"
     rules:
+      # TODO: Support UPDATE operations for pods
       - operations: [ "CREATE" ]
         apiGroups: [ "" ]
         apiVersions: [ "v1" ]
