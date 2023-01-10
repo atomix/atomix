@@ -1,11 +1,11 @@
-name: Build and Test Proxy
+name: Verify Raft Store
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'proxy/**'
+      - 'stores/raft/**'
   pull_request:
 
 jobs:
@@ -21,8 +21,8 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-    - name: Build image
-      working-directory: proxy
+    - name: Build images
+      working-directory: stores/raft
       run: make build
   test:
     runs-on: ubuntu-20.04
@@ -42,6 +42,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Run Tests
-        working-directory: proxy
+      - name: Run tests
+        working-directory: stores/raft
         run: make test

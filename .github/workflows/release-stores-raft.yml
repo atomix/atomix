@@ -3,7 +3,7 @@ name: Release Raft Store
 on:
   workflow_run:
     workflows:
-      - "Build and Test Raft Store"
+      - "Verify Raft Store"
     branches:
       - master
     types:
@@ -26,7 +26,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Release
+      - name: Push Docker images
         working-directory: stores/raft
         run: make release
         env:

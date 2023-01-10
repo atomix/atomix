@@ -1,11 +1,11 @@
-name: Build and Test RSM Protocol
+name: Verify Runtime
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'protocols/rsm/**'
+      - 'runtime/**'
   pull_request:
 
 jobs:
@@ -27,6 +27,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Run Tests
-        working-directory: protocols/rsm
+      - name: Run tests
+        working-directory: runtime
         run: make test

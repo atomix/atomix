@@ -1,11 +1,11 @@
-name: Build and Test Benchmarks
+name: Verify Redis v9 Driver
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'bench/**'
+      - 'drivers/redis/v9/**'
   pull_request:
 
 jobs:
@@ -27,6 +27,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Run Tests
-        working-directory: bench
+      - name: Run tests
+        working-directory: drivers/redis/v9
         run: make test

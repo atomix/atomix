@@ -1,11 +1,11 @@
-name: Build and Test Raft Store
+name: Verify Pod Memory Store
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'stores/raft/**'
+      - 'stores/pod-memory/**'
   pull_request:
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
     - name: Build images
-      working-directory: stores/raft
+      working-directory: stores/pod-memory
       run: make build
   test:
     runs-on: ubuntu-20.04
@@ -42,6 +42,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Run Tests
-        working-directory: stores/raft
+      - name: Run tests
+        working-directory: stores/pod-memory
         run: make test

@@ -1,13 +1,11 @@
-name: Build and Test API
+name: Verify Shared Memory Driver
 
 on:
   push:
     branches:
       - 'master'
-    tags:
-      - 'api/v*'
     paths:
-      - 'api/**'
+      - 'drivers/shared-memory/**'
   pull_request:
 
 jobs:
@@ -29,6 +27,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Run Tests
-        working-directory: api
+      - name: Run tests
+        working-directory: drivers/shared-memory
         run: make test

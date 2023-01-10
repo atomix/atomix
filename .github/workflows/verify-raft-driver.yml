@@ -1,11 +1,11 @@
-name: Build and Test Etcd v3 Driver
+name: Verify Raft Driver
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'drivers/etcd/v3/**'
+      - 'drivers/raft/**'
   pull_request:
 
 jobs:
@@ -27,6 +27,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Run Tests
-        working-directory: drivers/etcd/v3
+      - name: Run tests
+        working-directory: drivers/raft
         run: make test

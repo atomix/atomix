@@ -1,14 +1,14 @@
-name: Publish Benchmark Helm Chart
+name: Verify Atomix Helm Chart
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'charts/atomix-bench/**'
+      - 'charts/atomix/**'
 
 jobs:
-  test-helm-chart:
+  test:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -31,7 +31,7 @@ jobs:
 
       - name: Evaluate Helm chart changes
         id: list-changed
-        working-directory: charts/atomix-bench
+        working-directory: charts/atomix
         run: |
           changed=$(ct list-changed --target-branch ${{ github.event.repository.default_branch }})
           if [[ -n "$changed" ]]; then
@@ -39,7 +39,7 @@ jobs:
           fi
 
       - name: Lint Helm charts
-        working-directory: charts/atomix-bench
+        working-directory: charts/atomix
         run: ct lint --target-branch ${{ github.event.repository.default_branch }}
 
       - name: Create kind cluster
@@ -47,21 +47,5 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
 
       - name: Install Helm chart
-        working-directory: charts/atomix-bench
+        working-directory: charts/atomix
         run: ct install
-  publish-helm-chart:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Publish Helm chart
-        run: |-
-          docker run -i \
-            -v `pwd`:/build -w /build \
-            -e GITHUB_TOKEN=${{ secrets.GH_TOKEN }} \
-            --entrypoint ./build/release \
-            quay.io/helmpack/chart-releaser:v1.4.0 \
-            atomix-bench

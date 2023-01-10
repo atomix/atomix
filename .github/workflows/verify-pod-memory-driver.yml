@@ -1,11 +1,11 @@
-name: Build and Test Redis v8 Driver
+name: Verify Pod Memory Driver
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'drivers/redis/v8/**'
+      - 'drivers/pod-memory/**'
   pull_request:
 
 jobs:
@@ -27,6 +27,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Run Tests
-        working-directory: drivers/redis/v8
+      - name: Run tests
+        working-directory: drivers/pod-memory
         run: make test
