@@ -1,0 +1,19 @@
+name: Release Module
+inputs:
+  working-directory:
+    description: 'The working directory'
+    required: true
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Verify
+      uses: .github/actions/module/verify.yml
+      with:
+        working-directory: ${{ inputs.working-directory }}
+
+    - name: Release
+      working-directory: ${{ inputs.working-directory }}
+      run: make release
+      env:
+        TAG: ${{ github.ref_name }}

@@ -1,0 +1,22 @@
+name: Publish Helm Chart
+inputs:
+  working-directory:
+    description: 'The working directory'
+    required: true
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Verify
+      uses: .github/actions/chart/verify.yml
+      with:
+        working-directory: ${{ inputs.working-directory }}
+
+    - name: Publish Helm chart
+      run: |-
+        docker run -i \
+          -v `pwd`:/build -w /build \
+          -e GITHUB_TOKEN=${{ secrets.GH_TOKEN }} \
+          --entrypoint ./.github/scripts/release-chart \
+          quay.io/helmpack/chart-releaser:v1.4.0 \
+          ${{ inputs.working-directory }}
