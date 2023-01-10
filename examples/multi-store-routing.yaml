@@ -80,7 +80,6 @@ spec:
     metadata:
       labels:
         app: multi-store-example
-      annotations:
         # Inject the proxy into the pods
         proxy.atomix.io/inject: "true"
         # Configure the proxy to use the multi-store-example profile
