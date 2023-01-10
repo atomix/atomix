@@ -32,7 +32,6 @@ spec:
     metadata:
       labels:
         app: pod-memory-example
-      annotations:
         # Inject the proxy into the pods
         proxy.atomix.io/inject: "true"
         # Configure the proxy to use the pod-memory-example profile

@@ -46,7 +46,6 @@ spec:
     metadata:
       labels:
         app: multi-raft-example
-      annotations:
         # Inject the proxy into the pods
         proxy.atomix.io/inject: "true"
         # Configure the proxy to use the multi-raft-example profile

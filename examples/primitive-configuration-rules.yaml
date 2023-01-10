@@ -51,7 +51,6 @@ spec:
     metadata:
       labels:
         app: primitive-example
-      annotations:
         # Inject the proxy into the pods
         proxy.atomix.io/inject: "true"
         # Configure the proxy to use the primitive-example profile
