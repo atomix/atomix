@@ -1,3 +1,3 @@
-[![Build](https://github.com/atomix/atomix/actions/workflows/shared-memory-store.yml/badge.svg)](https://github.com/atomix/atomix/actions/workflows/shared-memory-store.yml)
+# Shared Memory Store
 
-# SharedMemoryStore
+[![Build](https://github.com/atomix/atomix/actions/workflows/build-and-test-stores-shared-memory.yml/badge.svg)](https://github.com/atomix/atomix/actions/workflows/build-and-test-stores-shared-memory.yml)

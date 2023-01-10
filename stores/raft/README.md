@@ -1,3 +1,3 @@
-[![Build](https://github.com/atomix/atomix/actions/workflows/raft-store.yml/badge.svg)](https://github.com/atomix/atomix/actions/workflows/raft-store.yml)
+# Raft Consensus Store
 
-# RaftStore
+[![Build](https://github.com/atomix/atomix/actions/workflows/build-and-test-stores-raft.yml/badge.svg)](https://github.com/atomix/atomix/actions/workflows/build-and-test-stores-raft.yml)
