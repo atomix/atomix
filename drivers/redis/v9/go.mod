@@ -3,8 +3,8 @@ module github.com/atomix/atomix/drivers/redis/v9
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978
-	github.com/atomix/atomix/runtime v0.0.0-20221228220240-ab52db65c6fb
+	github.com/atomix/atomix/api v0.1.0
+	github.com/atomix/atomix/runtime v0.1.0
 	github.com/go-redis/redis/v9 v9.0.0-beta.1
 )
 
