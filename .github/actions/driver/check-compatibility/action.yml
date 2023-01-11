@@ -23,5 +23,6 @@ runs:
           ${{ runner.os }}-go-
 
     - name: Check module dependencies
-      run: go run github.com/atomix/atomix/proxy/cmd/atomix-build validate ${{ inputs.path }}
       shell: bash
+      working-directory: proxy
+      run: go run github.com/atomix/atomix/proxy/cmd/atomix-build validate "../${{ inputs.path }}/go.mod"
