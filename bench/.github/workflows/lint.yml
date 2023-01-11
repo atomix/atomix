@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Lint Benchmarking Tool
+
+on:
+  push:
+    branches:
+      - 'master'
+    paths:
+      - 'bench/**'
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Lint Go module
+        uses: ./.github/actions/go/lint
+        with:
+          path: bench
