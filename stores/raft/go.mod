@@ -3,10 +3,10 @@ module github.com/atomix/atomix/stores/raft
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978
-	github.com/atomix/atomix/controller v0.0.0-20221228222855-b2275fb2adbe
-	github.com/atomix/atomix/protocols/rsm v0.0.0-20221229101327-2067e53b3fe4
-	github.com/atomix/atomix/runtime v0.0.0-20221228222855-b2275fb2adbe
+	github.com/atomix/atomix/api v0.1.0
+	github.com/atomix/atomix/controller v0.1.0
+	github.com/atomix/atomix/protocols/rsm v0.1.0
+	github.com/atomix/atomix/runtime v0.1.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
@@ -43,6 +43,7 @@ require (
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3-0.20201103224600-674baa8c7fc3 // indirect
 	github.com/google/btree v1.0.1 // indirect
