@@ -23,22 +23,22 @@ runs:
       if: ${{ inputs.repository == '' && inputs.dockerfile == '' }}
       shell: bash
       working-directory: ${{ inputs.path }}
-      run: docker build ${{ inputs.path }} -t ${{ inputs.repository }}
+      run: docker build .
 
     - name: Build Docker image
       if: ${{ inputs.repository != '' && inputs.dockerfile == '' }}
       shell: bash
       working-directory: ${{ inputs.path }}
-      run: docker build ${{ inputs.path }} -t ${{ inputs.repository }}
+      run: docker build . -t ${{ inputs.repository }}
 
     - name: Build Docker image
       if: ${{ inputs.repository == '' && inputs.dockerfile != '' }}
       shell: bash
       working-directory: ${{ inputs.path }}
-      run: docker build ${{ inputs.path }} -f ${{ inputs.dockerfile }}
+      run: docker build . -f ${{ inputs.dockerfile }}
 
     - name: Build Docker image
       if: ${{ inputs.repository != '' && inputs.dockerfile != '' }}
       shell: bash
       working-directory: ${{ inputs.path }}
-      run: docker build ${{ inputs.path }} -t ${{ inputs.repository }} -f ${{ inputs.dockerfile }}
+      run: docker build . -t ${{ inputs.repository }} -f ${{ inputs.dockerfile }}
