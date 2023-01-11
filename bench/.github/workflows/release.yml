@@ -10,7 +10,7 @@ on:
       - 'bench/v*'
 
 jobs:
-  verify:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
