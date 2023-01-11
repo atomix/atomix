@@ -24,12 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Check plugin compatibility
-        uses: ./.github/actions/driver/check-compatibility
-        with:
-          path: drivers/pod-memory
-
-      - name: Run tests
+      - name: Test pod-memory@v1
         uses: ./.github/actions/go/test
         with:
           path: drivers/pod-memory

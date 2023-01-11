@@ -24,12 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Check plugin compatibility
-        uses: ./.github/actions/driver/check-compatibility
-        with:
-          path: drivers/raft
-
-      - name: Run tests
+      - name: Test raft@v1
         uses: ./.github/actions/go/test
         with:
           path: drivers/raft
