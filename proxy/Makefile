@@ -2,41 +2,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-ifdef TAG
-VERSION := $(word 2, $(subst /, , $(TAG)))
-MAJOR := $(word 1, $(subst ., , $(VERSION)))
-MINOR := $(word 2, $(subst ., , $(VERSION)))
-PATCH := $(word 3, $(subst ., , $(VERSION)))
-endif
-
-.PHONY: docker
-docker:
-	docker build . -t atomix/proxy:latest -f build/Dockerfile
+.PHONY: build
+build: test docker
 
 .PHONY: test
 test:
 	go test github.com/atomix/atomix/proxy/pkg/... -p 1
 
-.PHONY: publish
-publish: docker
-	docker push atomix/proxy:latest
-ifdef TAG
-	docker tag atomix/proxy:latest atomix/proxy:${MAJOR}.${MINOR}.${PATCH}
-	docker tag atomix/proxy:latest atomix/proxy:${MAJOR}.${MINOR}
-	docker push atomix/proxy:${MAJOR}.${MINOR}.${PATCH}
-	docker push atomix/proxy:${MAJOR}.${MINOR}
-endif
+.PHONY: docker
+docker:
+	docker build . -t atomix/proxy:latest -f build/Dockerfile
 
 kind: docker
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/proxy:latest
-
-.PHONY: api
-api:
-	$(MAKE) -C api
-
-reuse-tool: # @HELP install reuse if not present
-	command -v reuse || python3 -m pip install reuse
-
-license: reuse-tool # @HELP run license checks
-	reuse lint

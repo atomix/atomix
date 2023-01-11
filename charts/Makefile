@@ -4,11 +4,6 @@
 
 build: deps
 
-deps: # @HELP build the deployments
+deps: # @HELP build the chart dependencies
 	helm dep update atomix
-
-reuse-tool: # @HELP install reuse if not present
-	command -v reuse || python3 -m pip install reuse
-
-license: reuse-tool # @HELP run license checks
-	reuse lint
+	helm dep update atomix-bench

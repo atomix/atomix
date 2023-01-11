@@ -2,12 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-ifdef TAG
-VERSION := $(word 2, $(subst /, , $(TAG)))
-MAJOR := $(word 1, $(subst ., , $(VERSION)))
-MINOR := $(word 2, $(subst ., , $(VERSION)))
-PATCH := $(word 3, $(subst ., , $(VERSION)))
-endif
+.PHONY: build
+build: test docker
+
+.PHONY: test
+test:
+	go test github.com/atomix/atomix/controller/pkg/... -p 1
 
 .PHONY: docker
 docker: build-controller build-controller-init
@@ -18,38 +18,7 @@ build-controller:
 build-controller-init:
 	docker build . -t atomix/controller-init:latest -f build/Dockerfile-init
 
-.PHONY: test
-test:
-	go test github.com/atomix/atomix/controller/pkg/... -p 1
-
-.PHONY: publish
-publish: docker publish-controller publish-controller-init
-
-publish-controller:
-	docker push atomix/controller:latest
-ifdef TAG
-	docker tag atomix/controller:latest atomix/controller:${MAJOR}.${MINOR}.${PATCH}
-	docker tag atomix/controller:latest atomix/controller:${MAJOR}.${MINOR}
-	docker push atomix/controller:${MAJOR}.${MINOR}.${PATCH}
-	docker push atomix/controller:${MAJOR}.${MINOR}
-endif
-
-publish-controller-init:
-	docker push atomix/controller-init:latest
-ifdef TAG
-	docker tag atomix/controller-init:latest atomix/controller-init:${MAJOR}.${MINOR}.${PATCH}
-	docker tag atomix/controller-init:latest atomix/controller-init:${MAJOR}.${MINOR}
-	docker push atomix/controller-init:${MAJOR}.${MINOR}.${PATCH}
-	docker push atomix/controller-init:${MAJOR}.${MINOR}
-endif
-
 kind: docker
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/controller:latest
 	kind load docker-image atomix/controller-init:latest
-
-reuse-tool: # @HELP install reuse if not present
-	command -v reuse || python3 -m pip install reuse
-
-license: reuse-tool # @HELP run license checks
-	reuse lint

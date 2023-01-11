@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: test
+build: test docker
 
 .PHONY: test
 test:
