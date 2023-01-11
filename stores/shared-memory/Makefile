@@ -9,23 +9,23 @@ MINOR := $(word 2, $(subst ., , $(VERSION)))
 PATCH := $(word 3, $(subst ., , $(VERSION)))
 endif
 
-.PHONY: build
-build: build-controller build-node
+.PHONY: docker
+docker: docker-controller docker-node
 
-build-controller:
+docker-controller:
 	docker build . -t atomix/shared-memory-controller:latest -f build/controller/Dockerfile
 
-build-node:
+docker-node:
 	docker build . -t atomix/shared-memory-node:latest -f build/node/Dockerfile
 
 .PHONY: test
 test:
 	go test github.com/atomix/atomix/stores/shared-memory/pkg/... -p 1
 
-.PHONY: release
-release: release-controller release-node
+.PHONY: publish
+publish: publish-controller publish-node
 
-release-controller: build
+publish-controller: docker-controller
 	docker push atomix/shared-memory-controller:latest
 ifdef TAG
 	docker tag atomix/shared-memory-controller:latest atomix/shared-memory-controller:${MAJOR}.${MINOR}.${PATCH}
@@ -34,7 +34,7 @@ ifdef TAG
 	docker push atomix/shared-memory-controller:${MAJOR}.${MINOR}
 endif
 
-release-node: build
+publish-node: docker-node
 	docker push atomix/shared-memory-node:latest
 ifdef TAG
 	docker tag atomix/shared-memory-node:latest atomix/shared-memory-node:${MAJOR}.${MINOR}.${PATCH}
@@ -43,7 +43,7 @@ ifdef TAG
 	docker push atomix/shared-memory-node:${MAJOR}.${MINOR}
 endif
 
-kind: build
+kind: docker
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/shared-memory-controller:latest
 	kind load docker-image atomix/shared-memory-node:latest
