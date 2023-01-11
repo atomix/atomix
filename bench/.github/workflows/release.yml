@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Release Benchmark Tool
+name: Release Benchmarking Tool
 
 on:
   push:
