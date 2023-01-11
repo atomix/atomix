@@ -3,9 +3,9 @@ module github.com/atomix/atomix/stores/shared-memory
 go 1.19
 
 require (
-	github.com/atomix/atomix/controller v0.0.0-20221228222855-b2275fb2adbe
-	github.com/atomix/atomix/protocols/rsm v0.0.0-20221229101327-2067e53b3fe4
-	github.com/atomix/atomix/runtime v0.0.0-20221228220240-ab52db65c6fb
+	github.com/atomix/atomix/controller v0.1.0
+	github.com/atomix/atomix/protocols/rsm v0.1.0
+	github.com/atomix/atomix/runtime v0.1.0
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/spf13/cobra v1.4.0
@@ -20,7 +20,7 @@ require (
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978 // indirect
+	github.com/atomix/atomix/api v0.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.3.1 // indirect
 	github.com/bits-and-blooms/bloom/v3 v3.3.1 // indirect
@@ -34,6 +34,7 @@ require (
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.7 // indirect
