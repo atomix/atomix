@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Verify Benchmarking Tool
+name: Test Raft Store
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'bench/**'
+      - 'stores/raft/**'
   pull_request:
 
 jobs:
@@ -22,10 +22,16 @@ jobs:
       - name: Run tests
         uses: ./.github/actions/go/test
         with:
-          path: bench
+          path: stores/raft
 
-      - name: Build Docker image
+      - name: Build node image
         uses: ./.github/actions/docker/build
         with:
-          path: bench
-          dockerfile: build/Dockerfile
+          path: stores/raft
+          dockerfile: build/node/Dockerfile
+
+      - name: Build controller image
+        uses: ./.github/actions/docker/build
+        with:
+          path: stores/raft
+          dockerfile: build/controller/Dockerfile

@@ -1,4 +1,4 @@
-name: Verify API
+name: Test API
 
 on:
   push:

@@ -2,16 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Verify Shared Memory Driver
+name: Test Etcd v3 Driver
 
 on:
   push:
     branches:
       - 'master'
     tags:
-      - 'drivers/shared-memory/v*'
+      - 'drivers/etcd/v3/v*'
     paths:
-      - 'drivers/shared-memory/**'
+      - 'drivers/etcd/v3/**'
   pull_request:
 
 jobs:
@@ -24,10 +24,10 @@ jobs:
       - name: Check plugin compatibility
         uses: ./.github/actions/driver/check-compatibility
         with:
-          path: drivers/shared-memory
+          path: drivers/etcd/v3
 
       - name: Run tests
         uses: ./.github/actions/go/test
         with:
-          path: drivers/shared-memory
-          package: github.com/atomix/atomix/drivers/shared-memory/driver/...
+          path: drivers/etcd/v3
+          package: github.com/atomix/atomix/drivers/etcd/v3/driver/...

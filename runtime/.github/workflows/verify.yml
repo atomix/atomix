@@ -1,4 +1,4 @@
-name: Verify Runtime
+name: Test Runtime
 
 on:
   push:

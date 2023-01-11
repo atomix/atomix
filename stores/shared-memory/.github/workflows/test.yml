@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Verify Proxy
+name: Test Shared Memory Store
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'proxy/**'
+      - 'stores/shared-memory/**'
   pull_request:
 
 jobs:
@@ -22,10 +22,16 @@ jobs:
       - name: Run tests
         uses: ./.github/actions/go/test
         with:
-          path: proxy
+          path: stores/shared-memory
 
-      - name: Build Docker image
+      - name: Build node image
         uses: ./.github/actions/docker/build
         with:
-          path: proxy
-          dockerfile: build/Dockerfile
+          path: stores/shared-memory
+          dockerfile: build/node/Dockerfile
+
+      - name: Build controller image
+        uses: ./.github/actions/docker/build
+        with:
+          path: stores/shared-memory
+          dockerfile: build/controller/Dockerfile

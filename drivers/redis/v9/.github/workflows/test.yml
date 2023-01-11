@@ -2,16 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Verify Etcd v3 Driver
+name: Test Redis v9 Driver
 
 on:
   push:
     branches:
       - 'master'
     tags:
-      - 'drivers/etcd/v3/v*'
+      - 'drivers/redis/v9/v*'
     paths:
-      - 'drivers/etcd/v3/**'
+      - 'drivers/redis/v9/**'
   pull_request:
 
 jobs:
@@ -24,10 +24,10 @@ jobs:
       - name: Check plugin compatibility
         uses: ./.github/actions/driver/check-compatibility
         with:
-          path: drivers/etcd/v3
+          path: drivers/redis/v9
 
       - name: Run tests
         uses: ./.github/actions/go/test
         with:
-          path: drivers/etcd/v3
-          package: github.com/atomix/atomix/drivers/etcd/v3/driver/...
+          path: drivers/redis/v9
+          package: github.com/atomix/atomix/drivers/redis/v9/driver/...

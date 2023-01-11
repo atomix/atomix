@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Verify Pod Memory Store
+name: Test Controller
 
 on:
   push:
     branches:
       - 'master'
     paths:
-      - 'stores/pod-memory/**'
+      - 'controller/**'
   pull_request:
 
 jobs:
@@ -22,10 +22,16 @@ jobs:
       - name: Run tests
         uses: ./.github/actions/go/test
         with:
-          path: stores/pod-memory
+          path: controller
 
-      - name: Build Docker image
+      - name: Build init image
         uses: ./.github/actions/docker/build
         with:
-          path: stores/pod-memory
+          path: controller
+          dockerfile: build/init/Dockerfile
+
+      - name: Build controller image
+        uses: ./.github/actions/docker/build
+        with:
+          path: controller
           dockerfile: build/controller/Dockerfile
