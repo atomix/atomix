@@ -5,16 +5,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Test Etcd v3 Driver
+name: Test Etcd Driver
 
 on:
   push:
     branches:
       - 'master'
     tags:
-      - 'drivers/etcd/v3/v*'
+      - 'drivers/etcd/v*'
     paths:
-      - 'drivers/etcd/v3/**'
+      - 'drivers/etcd/**'
   pull_request:
 
 jobs:
