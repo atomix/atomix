@@ -9,16 +9,16 @@ MINOR := $(word 2, $(subst ., , $(VERSION)))
 PATCH := $(word 3, $(subst ., , $(VERSION)))
 endif
 
-.PHONY: build
-build:
+.PHONY: docker
+docker:
 	docker build . -t atomix/proxy:latest -f build/Dockerfile
 
 .PHONY: test
 test:
 	go test github.com/atomix/atomix/proxy/pkg/... -p 1
 
-.PHONY: release
-release: build
+.PHONY: publish
+publish: docker
 	docker push atomix/proxy:latest
 ifdef TAG
 	docker tag atomix/proxy:latest atomix/proxy:${MAJOR}.${MINOR}.${PATCH}
@@ -27,7 +27,7 @@ ifdef TAG
 	docker push atomix/proxy:${MAJOR}.${MINOR}
 endif
 
-kind: build
+kind: docker
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/proxy:latest
 
