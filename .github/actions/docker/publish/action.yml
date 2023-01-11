@@ -30,12 +30,14 @@ runs:
     - name: Publish minor version
       shell: bash
       run: |
-        tag=$(cut -d '.' -f 1,2 <<< "${{ inputs.tag }}")
+        version=$(basename "${{ inputs.tag }}")
+        tag=$(cut -d '.' -f 1,2 <<< "$version")
         docker tag ${{ inputs.repository }} ${{ inputs.repository }}:$tag
         docker push ${{ inputs.repository }}:$tag
 
     - name: Publish patch version
       shell: bash
       run: |
-        docker tag ${{ inputs.repository }} ${{ inputs.repository }}:${{ inputs.tag }}
+        tag=$(basename "${{ inputs.tag }}")
+        docker tag ${{ inputs.repository }} ${{ inputs.repository }}:$tag
         docker push ${{ inputs.repository }}:$tag
