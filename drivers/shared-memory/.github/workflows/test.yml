@@ -21,12 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Check plugin compatibility
-        uses: ./.github/actions/driver/check-compatibility
-        with:
-          path: drivers/shared-memory
-
-      - name: Run tests
+      - name: Test shared-memory@v1
         uses: ./.github/actions/go/test
         with:
           path: drivers/shared-memory

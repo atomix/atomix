@@ -8,4 +8,4 @@ build:
 
 .PHONY: test
 test:
-	go test github.com/atomix/atomix/drivers/raft/driver/... -p 1
+	go test github.com/atomix/atomix/drivers/raft/driver/...
