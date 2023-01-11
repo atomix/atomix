@@ -3,8 +3,8 @@ module github.com/atomix/atomix/stores/pod-memory
 go 1.19
 
 require (
-	github.com/atomix/atomix/controller v0.0.0-20221228222855-b2275fb2adbe
-	github.com/atomix/atomix/runtime v0.0.0-20221228220240-ab52db65c6fb
+	github.com/atomix/atomix/controller v0.1.0
+	github.com/atomix/atomix/runtime v0.1.0
 	github.com/go-logr/logr v1.2.0
 	github.com/spf13/cobra v1.4.0
 	k8s.io/apimachinery v0.24.0
