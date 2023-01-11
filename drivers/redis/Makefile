@@ -4,10 +4,9 @@
 
 .PHONY: build
 build:
-	$(MAKE) -C v8 build
-	$(MAKE) -C v9 build
+	go build ./driver/...
 
 .PHONY: test
 test:
-	$(MAKE) -C v8 test
-	$(MAKE) -C v9 test
+	go test github.com/atomix/atomix/drivers/redis/v8/driver/...
+	go test github.com/atomix/atomix/drivers/redis/v9/driver/...
