@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 func init() {
@@ -51,14 +52,14 @@ func main() {
 	})
 	cmd.AddCommand(&cobra.Command{
 		Use:  "driver",
-		Args: cobra.ExactArgs(2),
+		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inputPath, outputPath := args[0], args[1]
+			inputPath, pluginPath, outputPath := args[0], args[1], args[2]
 			builder, err := newBuilder(cmd)
 			if err != nil {
 				return err
 			}
-			return builder.buildDriver(inputPath, outputPath)
+			return builder.buildDriver(inputPath, pluginPath, outputPath)
 		},
 	})
 
@@ -117,10 +118,20 @@ func (b *atomixBuilder) validateDriver(inputPath string) error {
 		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to validate module", inputPath, err)
 		return err
 	}
+	fmt.Fprintln(b.cmd.OutOrStdout(), fmt.Sprintf("Module %s is compatible with this version of the proxy!", inputPath))
 	return nil
 }
 
-func (b *atomixBuilder) buildDriver(inputPath, outputPath string) error {
+func (b *atomixBuilder) buildDriver(inputPath, pluginPath, outputPath string) error {
+	inputPathParts := strings.Split(inputPath, "@")
+	if len(inputPathParts) != 2 {
+		return errors.NewInvalid("input path must be of the form {path}@{version}")
+	}
+	modPath := inputPathParts[0]
+	relPath, err := filepath.Rel(modPath, pluginPath)
+	if err != nil {
+		return err
+	}
 	pluginModFile, pluginModDir, err := b.downloadPluginMod(inputPath)
 	if err != nil {
 		return err
@@ -128,7 +139,7 @@ func (b *atomixBuilder) buildDriver(inputPath, outputPath string) error {
 	if err := b.validatePluginModFile(inputPath, pluginModFile); err != nil {
 		return err
 	}
-	if err := b.buildPlugin(outputPath, pluginModDir); err != nil {
+	if err := b.buildPlugin(filepath.Join(pluginModDir, relPath), outputPath); err != nil {
 		return err
 	}
 	return nil
@@ -189,9 +200,9 @@ func (b *atomixBuilder) validatePluginModFile(inputPath string, pluginModFile *m
 	return nil
 }
 
-func (b *atomixBuilder) buildPlugin(outputPath string, dir string) error {
+func (b *atomixBuilder) buildPlugin(inputPath, outputPath string) error {
 	fmt.Fprintln(b.cmd.OutOrStdout(), "Building plugin", filepath.Base(outputPath))
-	_, err := run(dir,
+	_, err := run(inputPath,
 		"go", "build",
 		"-mod=readonly",
 		"-trimpath",
