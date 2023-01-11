@@ -4,7 +4,8 @@
 
 .PHONY: build
 build:
-	go build ./driver/...
+	go build ./v8/driver/...
+	go build ./v9/driver/...
 
 .PHONY: test
 test:
