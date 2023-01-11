@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
 {{- if eq .Values.store.kind "RaftStore" }}
 apiVersion: raft.atomix.io/v1beta2
 kind: RaftStore

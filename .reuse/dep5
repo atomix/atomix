@@ -1,0 +1,5 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Files: *.so *.gnmi *.png *.gif *.jpg **/go.mod **/go.sum **/*.pb.go api/**/*.md
+Copyright: 2023-present Intel Corporation
+License: Apache-2.0

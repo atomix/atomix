@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # Create a DataStore with the configuration for the store
 apiVersion: atomix.io/v3beta3
 kind: DataStore

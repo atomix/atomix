@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2023-present Intel Corporation
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # [Atomix](https://atomix.io)
 
 [![website](https://img.shields.io/website?down_message=offline&label=read%20the%20docs&style=for-the-badge&up_message=online&url=https%3A%2F%2Fatomix.io)](https://atomix.io)
