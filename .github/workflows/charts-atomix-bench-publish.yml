@@ -11,20 +11,27 @@ on:
   push:
     branches:
       - 'master'
+    tags:
+      - 'charts/atomix-bench/v*'
     paths:
       - 'charts/atomix-bench/**'
 
 jobs:
-  verify:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      - name: Test Helm chart
+        uses: ./.github/actions/chart/test
+        with:
+          path: charts/atomix-bench
 
       - name: Publish
         uses: ./.github/actions/chart/publish
         with:
-          working-directory: charts/atomix-bench
-          github-token: ${{ secrets.GH_TOKEN }}
+          path: charts/atomix-bench
+          token: ${{ secrets.GH_TOKEN }}
