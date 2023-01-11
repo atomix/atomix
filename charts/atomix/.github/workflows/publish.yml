@@ -8,8 +8,6 @@ on:
   push:
     branches:
       - 'master'
-    tags:
-      - 'charts/atomix/v*'
     paths:
       - 'charts/atomix/**'
 

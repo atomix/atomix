@@ -14,11 +14,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Verify
-      uses: ./.github/actions/chart/verify
-      with:
-        path: ${{ inputs.path }}
-
     - name: Publish Helm chart
       shell: bash
       run: |-
