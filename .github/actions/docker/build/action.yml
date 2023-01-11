@@ -1,0 +1,40 @@
+name: Build Docker Image
+
+inputs:
+  path:
+    description: 'The path to the Docker build context relative to the repository root'
+    required: false
+    default: '.'
+
+  repository:
+    description: 'The name of the Docker repository'
+    required: false
+    default: ''
+
+  dockerfile:
+    description: 'The path to the Dockerfile relative to the repository root'
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Build Docker image
+      if: ${{ inputs.repository == '' && inputs.dockerfile == '' }}
+      run: docker build ${{ inputs.path }} -t ${{ inputs.repository }}
+      shell: bash
+
+    - name: Build Docker image
+      if: ${{ inputs.repository != '' && inputs.dockerfile == '' }}
+      run: docker build ${{ inputs.path }} -t ${{ inputs.repository }}
+      shell: bash
+
+    - name: Build Docker image
+      if: ${{ inputs.repository == '' && inputs.dockerfile != '' }}
+      run: docker build ${{ inputs.path }} -f ${{ inputs.dockerfile }}
+      shell: bash
+
+    - name: Build Docker image
+      if: ${{ inputs.repository != '' && inputs.dockerfile != '' }}
+      run: docker build ${{ inputs.path }} -t ${{ inputs.repository }} -f ${{ inputs.dockerfile }}
+      shell: bash

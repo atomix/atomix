@@ -1,0 +1,41 @@
+name: Publish Docker Image
+
+inputs:
+  repository:
+    description: 'The name of the Docker repository'
+    required: true
+
+  tag:
+    description: 'The Docker image tag to publish'
+    required: false
+    default: 'latest'
+
+  username:
+    description: 'The Docker username'
+    required: true
+
+  password:
+    description: 'The Docker password'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Docker login
+      uses: docker/login-action@v1
+      with:
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+
+    - name: Publish minor version
+      shell: bash
+      run: |
+        tag=$(cut -d '.' -f 1,2 <<< "${{ inputs.tag }}")
+        docker tag ${{ inputs.repository }} ${{ inputs.repository }}:$tag
+        docker push ${{ inputs.repository }}:$tag
+
+    - name: Publish patch version
+      shell: bash
+      run: |
+        docker tag ${{ inputs.repository }} ${{ inputs.repository }}:${{ inputs.tag }}
+        docker push ${{ inputs.repository }}:$tag

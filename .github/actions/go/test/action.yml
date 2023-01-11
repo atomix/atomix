@@ -1,0 +1,39 @@
+name: Test Go Module
+
+inputs:
+  path:
+    description: 'The module path relative to the repository root'
+    required: true
+
+  package:
+    description: 'The package to test'
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.19
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Run tests
+      if: ${{ inputs.package == '' }}
+      shell: bash
+      run: go test github.com/atomix/atomix/${{ inputs.path }}/...
+      working-directory: ${{ inputs.path }}
+
+    - name: Run tests
+      if: ${{ inputs.package != '' }}
+      shell: bash
+      run: go test ${{ inputs.package }}
+      working-directory: ${{ inputs.path }}

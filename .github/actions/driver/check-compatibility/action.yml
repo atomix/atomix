@@ -1,26 +1,27 @@
-name: Test Module
+name: Check Driver Compatibility
+
 inputs:
-  working-directory:
-    description: 'The working directory'
+  path:
+    description: 'The driver module path relative to the repository root'
     required: true
     default: ''
+
 runs:
   using: composite
   steps:
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v3
       with:
         go-version: 1.19
 
     - name: Cache Go modules
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       with:
         path: ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
-    - name: Run tests
-      run: make test
+    - name: Check module dependencies
+      run: go run github.com/atomix/atomix/proxy/cmd/atomix-build validate ${{ inputs.path }}
       shell: bash
-      working-directory: ${{ inputs.working-directory }}

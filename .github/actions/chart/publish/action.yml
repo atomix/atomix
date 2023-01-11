@@ -1,27 +1,30 @@
 name: Publish Helm Chart
+
 inputs:
-  working-directory:
-    description: 'The working directory'
+  path:
+    description: 'The chart path relative to the repository root'
     required: true
     default: ''
-  github-token:
+
+  token:
     description: 'The GitHub token for the release repository'
     required: true
     default: ''
+
 runs:
   using: composite
   steps:
     - name: Verify
       uses: ./.github/actions/chart/verify
       with:
-        working-directory: ${{ inputs.working-directory }}
+        path: ${{ inputs.path }}
 
     - name: Publish Helm chart
       shell: bash
       run: |-
         docker run -i \
           -v `pwd`:/build -w /build \
-          -e GITHUB_TOKEN=${{ inputs.github-token }} \
+          -e GITHUB_TOKEN=${{ inputs.token }} \
           --entrypoint ./.github/scripts/release-chart \
           quay.io/helmpack/chart-releaser:v1.4.0 \
-          ${{ inputs.working-directory }}
+          ${{ inputs.path }}

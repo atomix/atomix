@@ -1,9 +1,11 @@
-name: Verify Helm Chart
+name: Test Helm Chart
+
 inputs:
-  working-directory:
-    description: 'The working directory'
+  path:
+    description: 'The chart path relative to the repository root'
     required: true
     default: ''
+
 runs:
   using: composite
   steps:
@@ -28,12 +30,12 @@ runs:
           echo "::set-output name=changed::true"
         fi
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
+      working-directory: ${{ inputs.path }}
 
-    - name: Lint Helm charts
+    - name: Lint Helm chart
       run: ct lint --target-branch ${{ github.event.repository.default_branch }}
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
+      working-directory: ${{ inputs.path }}
 
     - name: Create kind cluster
       uses: helm/kind-action@v1.4.0
@@ -42,4 +44,4 @@ runs:
     - name: Install Helm chart
       run: ct install
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
+      working-directory: ${{ inputs.path }}
