@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
-	"github.com/atomix/atomix/api/errors"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/runtime/pkg/network"
@@ -16,6 +15,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"testing"
 	"time"
@@ -103,7 +104,7 @@ func TestPrimitiveCreateClose(t *testing.T) {
 	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
-	primitive, err := session.GetPrimitive("name")
+	primitive, err := session.GetPrimitive("foo")
 	assert.NoError(t, err)
 
 	command := Proposal[*protocol.TestProposalResponse](primitive)
@@ -189,7 +190,7 @@ func TestPrimitiveCreateClose(t *testing.T) {
 				},
 			}, nil
 		})
-	err = session.ClosePrimitive(context.TODO(), "name")
+	err = session.ClosePrimitive(context.TODO(), "foo")
 	assert.NoError(t, err)
 
 	partitionServer.EXPECT().CloseSession(gomock.Any(), gomock.Any()).
@@ -278,12 +279,12 @@ func TestUnaryProposal(t *testing.T) {
 	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
-	primitive, err := session.GetPrimitive("name")
+	primitive, err := session.GetPrimitive("foo")
 	assert.NoError(t, err)
 
 	command := Proposal[*protocol.TestProposalResponse](primitive)
 	testServer.EXPECT().TestPropose(gomock.Any(), gomock.Any()).
-		Return(nil, errors.ToProto(errors.NewUnavailable("unavailable")))
+		Return(nil, status.Error(codes.Unavailable, "unavailable"))
 	testServer.EXPECT().TestPropose(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(ctx context.Context, request *protocol.TestProposalRequest) (*protocol.TestProposalResponse, error) {
 			assert.Equal(t, protocol.PartitionID(1), request.Headers.PartitionID)
@@ -427,13 +428,13 @@ func TestStreamPropose(t *testing.T) {
 	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
-	primitive, err := session.GetPrimitive("name")
+	primitive, err := session.GetPrimitive("foo")
 	assert.NoError(t, err)
 
 	command := StreamProposal[*protocol.TestProposalResponse](primitive)
 	sendResponseCh := make(chan struct{})
 	testServer.EXPECT().TestStreamPropose(gomock.Any(), gomock.Any()).
-		Return(errors.ToProto(errors.NewUnavailable("unavailable")))
+		Return(status.Error(codes.Unavailable, "unavailable"))
 	testServer.EXPECT().TestStreamPropose(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(request *protocol.TestProposalRequest, stream protocol.Test_TestStreamProposeServer) error {
 			assert.Equal(t, protocol.PartitionID(1), request.Headers.PartitionID)
@@ -665,12 +666,12 @@ func TestStreamProposeCancel(t *testing.T) {
 	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
-	primitive, err := session.GetPrimitive("name")
+	primitive, err := session.GetPrimitive("foo")
 	assert.NoError(t, err)
 
 	command := StreamProposal[*protocol.TestProposalResponse](primitive)
 	testServer.EXPECT().TestStreamPropose(gomock.Any(), gomock.Any()).
-		Return(errors.ToProto(errors.NewUnavailable("unavailable")))
+		Return(status.Error(codes.Unavailable, "unavailable"))
 	testServer.EXPECT().TestStreamPropose(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(request *protocol.TestProposalRequest, stream protocol.Test_TestStreamProposeServer) error {
 			assert.Equal(t, protocol.PartitionID(1), request.Headers.PartitionID)
@@ -901,12 +902,12 @@ func TestUnaryQuery(t *testing.T) {
 	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
-	primitive, err := session.GetPrimitive("name")
+	primitive, err := session.GetPrimitive("foo")
 	assert.NoError(t, err)
 
 	query := Query[*protocol.TestQueryResponse](primitive)
 	testServer.EXPECT().TestQuery(gomock.Any(), gomock.Any()).
-		Return(nil, errors.ToProto(errors.NewUnavailable("unavailable")))
+		Return(nil, status.Error(codes.Unavailable, "unavailable"))
 	testServer.EXPECT().TestQuery(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(ctx context.Context, request *protocol.TestQueryRequest) (*protocol.TestQueryResponse, error) {
 			assert.Equal(t, protocol.PartitionID(1), request.Headers.PartitionID)
@@ -1049,13 +1050,13 @@ func TestStreamQuery(t *testing.T) {
 	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
-	primitive, err := session.GetPrimitive("name")
+	primitive, err := session.GetPrimitive("foo")
 	assert.NoError(t, err)
 
 	query := StreamQuery[*protocol.TestQueryResponse](primitive)
 	sendResponseCh := make(chan struct{})
 	testServer.EXPECT().TestStreamQuery(gomock.Any(), gomock.Any()).
-		Return(errors.ToProto(errors.NewUnavailable("unavailable")))
+		Return(status.Error(codes.Unavailable, "unavailable"))
 	testServer.EXPECT().TestStreamQuery(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(request *protocol.TestQueryRequest, stream protocol.Test_TestStreamQueryServer) error {
 			assert.Equal(t, protocol.PartitionID(1), request.Headers.PartitionID)
@@ -1282,12 +1283,12 @@ func TestStreamQueryCancel(t *testing.T) {
 	err = session.CreatePrimitive(context.TODO(), testPrimitiveMeta)
 	assert.NoError(t, err)
 
-	primitive, err := session.GetPrimitive("name")
+	primitive, err := session.GetPrimitive("foo")
 	assert.NoError(t, err)
 
 	query := StreamQuery[*protocol.TestQueryResponse](primitive)
 	testServer.EXPECT().TestStreamQuery(gomock.Any(), gomock.Any()).
-		Return(errors.ToProto(errors.NewUnavailable("unavailable")))
+		Return(status.Error(codes.Unavailable, "unavailable"))
 	testServer.EXPECT().TestStreamQuery(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(request *protocol.TestQueryRequest, stream protocol.Test_TestStreamQueryServer) error {
 			assert.Equal(t, protocol.PartitionID(1), request.Headers.PartitionID)

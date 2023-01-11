@@ -113,7 +113,7 @@ func (p *PartitionClient) configure(config *protocol.PartitionConfig) error {
 func (p *PartitionClient) close(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	session := p.session.Swap(nil)
+	session := p.session.Load()
 	if session != nil {
 		return session.(*SessionClient).close(ctx)
 	}
