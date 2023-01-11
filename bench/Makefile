@@ -10,15 +10,18 @@ PATCH := $(word 3, $(subst ., , $(VERSION)))
 endif
 
 .PHONY: build
-build:
-	docker build . -t atomix/bench:latest -f build/Dockerfile
+build: test
 
 .PHONY: test
 test:
 	go test github.com/atomix/atomix/bench/...
 
-.PHONY: release
-release: build
+.PHONY: docker
+docker:
+	docker build . -t atomix/bench:latest -f build/Dockerfile
+
+.PHONY: publish
+publish: docker
 	docker push atomix/bench:latest
 ifdef TAG
 	docker tag atomix/bench:latest atomix/bench:${MAJOR}.${MINOR}.${PATCH}
@@ -27,7 +30,7 @@ ifdef TAG
 	docker push atomix/bench:${MAJOR}.${MINOR}
 endif
 
-kind: build
+kind: docker
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/bench:latest
 

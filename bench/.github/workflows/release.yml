@@ -1,8 +1,8 @@
-# SPDX-FileCopyrightText: 2022-present Intel Corporation
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Release Benchmarks
+name: Release Benchmark Tool
 
 on:
   push:
@@ -14,13 +14,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v3
 
-      - name: Release
-        uses: ./.github/actions/module/release
+      - name: Run tests
+        uses: ./.github/actions/go/test
         with:
-          working-directory: bench
-          docker-username: ${{ secrets.DOCKER_USERNAME }}
-          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          path: bench
+
+      - name: Build Docker image
+        uses: ./.github/actions/docker/build
+        with:
+          path: bench
+          dockerfile: build/Dockerfile
+          repository: atomix/bench
+
+      - name: Publish Docker image
+        uses: ./.github/actions/docker/publish
+        with:
+          repository: atomix/bench
+          tag: ${{ github.ref_name }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}

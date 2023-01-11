@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Verify Benchmarks
+name: Verify Benchmark Tool
 
 on:
   push:
@@ -20,11 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v3
 
-      - name: Verify
-        uses: ./.github/actions/module/verify
+      - name: Run tests
+        uses: ./.github/actions/go/test
         with:
-          working-directory: bench
+          path: bench
+
+      - name: Build Docker image
+        uses: ./.github/actions/docker/build
+        with:
+          path: bench
+          dockerfile: build/Dockerfile
