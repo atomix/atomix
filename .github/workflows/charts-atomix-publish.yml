@@ -11,6 +11,8 @@ on:
   push:
     branches:
       - 'master'
+    tags:
+      - 'charts/atomix/v*'
     paths:
       - 'charts/atomix/**'
 
@@ -20,8 +22,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Test Helm chart
+        uses: ./.github/actions/chart/test
         with:
-          fetch-depth: 0
+          path: charts/atomix
 
       - name: Publish
         uses: ./.github/actions/chart/publish

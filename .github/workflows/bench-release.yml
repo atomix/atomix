@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Release Benchmark Tool
+name: Release Benchmarking Tool
 
 on:
   push:
@@ -13,7 +13,7 @@ on:
       - 'bench/v*'
 
 jobs:
-  verify:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
