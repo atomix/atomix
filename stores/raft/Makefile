@@ -9,23 +9,23 @@ MINOR := $(word 2, $(subst ., , $(VERSION)))
 PATCH := $(word 3, $(subst ., , $(VERSION)))
 endif
 
-.PHONY: build
-build: build-controller build-node
+.PHONY: docker
+docker: docker-controller docker-node
 
-build-controller:
+docker-controller:
 	docker build . -t atomix/raft-controller:latest -f build/controller/Dockerfile
 
-build-node:
+docker-node:
 	docker build . -t atomix/raft-node:latest -f build/node/Dockerfile
 
 .PHONY: test
 test:
 	go test github.com/atomix/atomix/stores/raft/pkg/... -p 1
 
-.PHONY: release
-release: release-controller release-node
+.PHONY: publish
+publish: publish-controller publish-node
 
-release-controller: build
+publish-controller: docker-controller
 	docker push atomix/raft-controller:latest
 ifdef TAG
 	docker tag atomix/raft-controller:latest atomix/raft-controller:${MAJOR}.${MINOR}.${PATCH}
@@ -34,7 +34,7 @@ ifdef TAG
 	docker push atomix/raft-controller:${MAJOR}.${MINOR}
 endif
 
-release-node: build
+publish-node: docker-node
 	docker push atomix/raft-node:latest
 ifdef TAG
 	docker tag atomix/raft-node:latest atomix/raft-node:${MAJOR}.${MINOR}.${PATCH}
@@ -51,7 +51,7 @@ api:
 		atomix/codegen:go-latest \
 		--proto-path ./api --go-path ./api --import-path github.com/atomix/atomix/stores/raft/api
 
-kind: build
+kind: docker
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/raft-controller:latest
 	kind load docker-image atomix/raft-node:latest
