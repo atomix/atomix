@@ -94,13 +94,13 @@ func main() {
 							if _, err := m.Put(context.Background(), keys[rand.Intn(numKeys)], keys[rand.Intn(numKeys)]); err != nil {
 								log.Warn(err)
 							}
-							totalDuration.Add(int64(time.Now().Sub(start)))
+							totalDuration.Add(int64(time.Since(start)))
 						} else {
 							start := time.Now()
 							if _, err := m.Get(context.Background(), keys[rand.Intn(numKeys)]); err != nil {
 								log.Warn(err)
 							}
-							totalDuration.Add(int64(time.Now().Sub(start)))
+							totalDuration.Add(int64(time.Since(start)))
 						}
 						opCount.Add(1)
 					}
