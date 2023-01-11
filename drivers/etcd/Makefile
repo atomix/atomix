@@ -4,8 +4,8 @@
 
 .PHONY: build
 build:
-	$(MAKE) -C v3 build
+	go build ./driver/...
 
 .PHONY: test
 test:
-	$(MAKE) -C v3 test
+	go test github.com/atomix/atomix/drivers/etcd/v3/driver/...

@@ -21,12 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Check plugin compatibility
-        uses: ./.github/actions/driver/check-compatibility
-        with:
-          path: drivers/etcd/v3
-
-      - name: Run tests
+      - name: Test etcd@v3
         uses: ./.github/actions/go/test
         with:
           path: drivers/etcd/v3

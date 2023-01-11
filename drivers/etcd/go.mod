@@ -1,4 +1,4 @@
-module github.com/atomix/atomix/drivers/etcd/v3
+module github.com/atomix/atomix/drivers/etcd
 
 go 1.19
 
