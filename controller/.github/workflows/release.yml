@@ -10,17 +10,43 @@ on:
       - 'controller/v*'
 
 jobs:
-  verify:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v3
 
-      - name: Release
-        uses: ./.github/actions/module/release
+      - name: Run tests
+        uses: ./.github/actions/go/test
         with:
-          working-directory: controller
-          docker-username: ${{ secrets.DOCKER_USERNAME }}
-          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          path: controller
+
+      - name: Build init image
+        uses: ./.github/actions/docker/build
+        with:
+          path: controller
+          dockerfile: build/init/Dockerfile
+          repository: atomix/controller-init
+
+      - name: Publish init image
+        uses: ./.github/actions/docker/publish
+        with:
+          repository: atomix/controller-init
+          tag: ${{ github.ref_name }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build controller image
+        uses: ./.github/actions/docker/build
+        with:
+          path: controller
+          dockerfile: build/controller/Dockerfile
+          repository: atomix/controller
+
+      - name: Publish controller image
+        uses: ./.github/actions/docker/publish
+        with:
+          repository: atomix/controller
+          tag: ${{ github.ref_name }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}

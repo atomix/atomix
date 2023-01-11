@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-present Intel Corporation
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -17,11 +17,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v3
 
-      - name: Verify
-        uses: ./.github/actions/module/verify
+      - name: Run tests
+        uses: ./.github/actions/go/test
         with:
-          working-directory: controller
+          path: controller
+
+      - name: Build init image
+        uses: ./.github/actions/docker/build
+        with:
+          path: controller
+          dockerfile: build/init/Dockerfile
+
+      - name: Build controller image
+        uses: ./.github/actions/docker/build
+        with:
+          path: controller
+          dockerfile: build/controller/Dockerfile

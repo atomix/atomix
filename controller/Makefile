@@ -9,8 +9,8 @@ MINOR := $(word 2, $(subst ., , $(VERSION)))
 PATCH := $(word 3, $(subst ., , $(VERSION)))
 endif
 
-.PHONY: build
-build: build-controller build-controller-init
+.PHONY: docker
+docker: build-controller build-controller-init
 
 build-controller:
 	docker build . -t atomix/controller:latest -f build/Dockerfile-controller
@@ -22,10 +22,10 @@ build-controller-init:
 test:
 	go test github.com/atomix/atomix/controller/pkg/... -p 1
 
-.PHONY: release
-release: build release-controller release-controller-init
+.PHONY: publish
+publish: docker publish-controller publish-controller-init
 
-release-controller:
+publish-controller:
 	docker push atomix/controller:latest
 ifdef TAG
 	docker tag atomix/controller:latest atomix/controller:${MAJOR}.${MINOR}.${PATCH}
@@ -34,7 +34,7 @@ ifdef TAG
 	docker push atomix/controller:${MAJOR}.${MINOR}
 endif
 
-release-controller-init:
+publish-controller-init:
 	docker push atomix/controller-init:latest
 ifdef TAG
 	docker tag atomix/controller-init:latest atomix/controller-init:${MAJOR}.${MINOR}.${PATCH}
@@ -43,7 +43,7 @@ ifdef TAG
 	docker push atomix/controller-init:${MAJOR}.${MINOR}
 endif
 
-kind: build
+kind: docker
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/controller:latest
 	kind load docker-image atomix/controller-init:latest
