@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1
+package main
 
 import (
 	"github.com/atomix/atomix/drivers/pod-memory/v1/driver"
