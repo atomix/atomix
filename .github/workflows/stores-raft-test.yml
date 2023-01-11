@@ -16,7 +16,7 @@ on:
   pull_request:
 
 jobs:
-  verify:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
