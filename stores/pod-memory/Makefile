@@ -9,16 +9,16 @@ MINOR := $(word 2, $(subst ., , $(VERSION)))
 PATCH := $(word 3, $(subst ., , $(VERSION)))
 endif
 
-.PHONY: build
-build:
+.PHONY: docker
+docker:
 	docker build . -t atomix/pod-memory-controller:latest -f build/controller/Dockerfile
 
 .PHONY: test
 test:
 	go test github.com/atomix/atomix/stores/pod-memory/pkg/... -p 1
 
-.PHONY: release
-release: build
+.PHONY: publish
+publish: docker
 	docker push atomix/pod-memory-controller:latest
 ifdef TAG
 	docker tag atomix/pod-memory-controller:latest atomix/pod-memory-controller:${MAJOR}.${MINOR}.${PATCH}
@@ -27,7 +27,7 @@ ifdef TAG
 	docker push atomix/pod-memory-controller:${MAJOR}.${MINOR}
 endif
 
-kind: build
+kind: docker
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/pod-memory-controller:latest
 
