@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package main
+package v1
 
 import (
-	"github.com/atomix/atomix/drivers/shared-memory/driver"
+	"github.com/atomix/atomix/drivers/shared-memory/v1/driver"
 	"github.com/atomix/atomix/runtime/pkg/network"
 )
 
