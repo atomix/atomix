@@ -10,7 +10,7 @@ metadata:
 spec:
   # Configure the DataStore to use the etcd driver with the v3 API
   driver:
-    name: Etcd
+    name: atomix.io/etcd
     apiVersion: v3
   # Define the configuration to be passed to the driver to connect to the store
   config:

@@ -40,7 +40,7 @@ import (
 )
 
 const (
-	driverName    = "SharedMemory"
+	driverName    = "atomix.io/shared-memory"
 	driverVersion = "v1"
 )
 

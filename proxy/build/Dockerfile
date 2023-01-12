@@ -23,42 +23,42 @@ FROM builder AS build-etcd-v3-driver
 RUN go run ./cmd/atomix-build driver \
     github.com/atomix/atomix/drivers/etcd@v0.2.0 \
     github.com/atomix/atomix/drivers/etcd/v3 \
-    /build/bin/Etcd@v3.so
+    /build/bin/driver.so
 
 # Build the PodMemory/v1 storage driver
-FROM builder AS build-pod-memory-driver
+FROM builder AS build-pod-memory-v1-driver
 RUN go run ./cmd/atomix-build driver \
     github.com/atomix/atomix/drivers/pod-memory@v0.2.0 \
     github.com/atomix/atomix/drivers/pod-memory/v1 \
-    /build/bin/PodMemory@v1.so
+    /build/bin/driver.so
 
 # Build the Raft/v1 storage driver
-FROM builder AS build-raft-driver
+FROM builder AS build-raft-v1-driver
 RUN go run ./cmd/atomix-build driver \
     github.com/atomix/atomix/drivers/raft@v0.2.0 \
     github.com/atomix/atomix/drivers/raft/v1 \
-    /build/bin/Raft@v1.so
+    /build/bin/driver.so
 
 # Build the Redis/v8 storage driver
 FROM builder AS build-redis-v8-driver
 RUN go run ./cmd/atomix-build driver \
     github.com/atomix/atomix/drivers/redis@v0.2.0 \
     github.com/atomix/atomix/drivers/redis/v8 \
-    /build/bin/Redis@v8.so
+    /build/bin/driver.so
 
 # Build the Redis/v8 storage driver
 FROM builder AS build-redis-v9-driver
 RUN go run ./cmd/atomix-build driver \
     github.com/atomix/atomix/drivers/redis@v0.2.0 \
     github.com/atomix/atomix/drivers/redis/v9 \
-    /build/bin/Redis@v9.so
+    /build/bin/driver.so
 
 # Build the SharedMemory/v1 storage driver
-FROM builder AS build-shared-memory-driver
+FROM builder AS build-shared-memory-v1-driver
 RUN go run ./cmd/atomix-build driver \
     github.com/atomix/atomix/drivers/shared-memory@v0.2.0 \
     github.com/atomix/atomix/drivers/shared-memory/v1 \
-    /build/bin/SharedMemory@v1.so
+    /build/bin/driver.so
 
 # Pull binaries and plugins into the Alpine image
 FROM alpine:3.15
@@ -70,11 +70,11 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 USER atomix
 
 COPY --from=build-proxy /build/bin/atomix-proxy /usr/local/bin/atomix-proxy
-COPY --from=build-etcd-v3-driver /build/bin/Etcd@v3.so /var/atomix/plugins/
-COPY --from=build-pod-memory-driver /build/bin/PodMemory@v1.so /var/atomix/plugins/
-COPY --from=build-raft-driver /build/bin/Raft@v1.so /var/atomix/plugins/
-COPY --from=build-redis-v8-driver /build/bin/Redis@v8.so /var/atomix/plugins/
-COPY --from=build-redis-v9-driver /build/bin/Redis@v9.so /var/atomix/plugins/
-COPY --from=build-shared-memory-driver /build/bin/SharedMemory@v1.so /var/atomix/plugins/
+COPY --from=build-etcd-v3-driver /build/bin/driver.so /var/atomix/plugins/atomix.io/etcd@v3.so
+COPY --from=build-pod-memory-v1-driver /build/bin/driver.so /var/atomix/plugins/atomix.io/pod-memory@v1.so
+COPY --from=build-raft-v1-driver /build/bin/driver.so /var/atomix/plugins/atomix.io/raft@v1.so
+COPY --from=build-redis-v8-driver /build/bin/driver.so /var/atomix/plugins/atomix.io/redis@v8.so
+COPY --from=build-redis-v9-driver /build/bin/driver.so /var/atomix/plugins/atomix.io/redis@v9.so
+COPY --from=build-shared-memory-v1-driver /build/bin/driver.so /var/atomix/plugins/atomix.io/shared-memory@v1.so
 
 ENTRYPOINT ["atomix-proxy"]

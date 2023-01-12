@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	driverName    = "Raft"
+	driverName    = "atomix.io/raft"
 	driverVersion = "v1"
 )
 

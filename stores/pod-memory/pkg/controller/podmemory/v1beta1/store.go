@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	driverName    = "PodMemory"
+	driverName    = "atomix.io/pod-memory"
 	driverVersion = "v1"
 )
 

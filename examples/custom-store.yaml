@@ -10,7 +10,7 @@ metadata:
 spec:
   # Configure the DataStore to use a custom-built driver/version
   driver:
-    name: Custom
+    name: atomix.io/custom-store
     apiVersion: v1
   # Define the configuration to be passed to the driver to connect to the store
   config:
