@@ -23,15 +23,6 @@ import (
 )
 
 const (
-	podIDEnv           = "POD_ID"
-	podNamespaceEnv    = "POD_NAMESPACE"
-	podNameEnv         = "POD_NAME"
-	nodeIDEnv          = "NODE_ID"
-	atomixNamespaceEnv = "ATOMIX_NAMESPACE"
-	atomixProfileEnv   = "ATOMIX_PROFILE"
-)
-
-const (
 	proxyInjectPath    = "/inject-proxy"
 	proxyContainerName = "atomix-proxy"
 	configVolumeName   = "atomix-config"
@@ -51,23 +42,12 @@ const (
 
 const (
 	proxyImageEnv     = "PROXY_IMAGE"
-	defaultProxyImage = "atomix/runtime-proxy:latest"
+	defaultProxyImage = "atomix/proxy"
 )
 
 const (
 	defaultProxyPort = 5679
 )
-
-func getProxyImage(image string) string {
-	if image != "" {
-		return image
-	}
-	image = os.Getenv(proxyImageEnv)
-	if image != "" {
-		return image
-	}
-	return defaultProxyImage
-}
 
 func addProxyController(mgr manager.Manager) error {
 	mgr.GetWebhookServer().Register(proxyInjectPath, &webhook.Admission{
@@ -161,61 +141,28 @@ func (i *ProxyInjector) Handle(ctx context.Context, request admission.Request) a
 		},
 	})
 
+	var image string
+	var imagePullPolicy corev1.PullPolicy
+	if profile.Spec.Proxy.Image != "" {
+		image = profile.Spec.Proxy.Image
+		imagePullPolicy = profile.Spec.Proxy.ImagePullPolicy
+	} else {
+		image = os.Getenv(proxyImageEnv)
+		imagePullPolicy = corev1.PullAlways
+		if image == "" {
+			image = defaultProxyImage
+		}
+	}
+
 	// Add the sidecar proxy container to the Pod's containers list.
 	pod.Spec.Containers = append(pod.Spec.Containers, corev1.Container{
 		Name:            proxyContainerName,
-		Image:           getProxyImage(profile.Spec.Proxy.Image),
-		ImagePullPolicy: profile.Spec.Proxy.ImagePullPolicy,
+		Image:           image,
+		ImagePullPolicy: imagePullPolicy,
 		SecurityContext: profile.Spec.Proxy.SecurityContext,
 		Args: []string{
 			"--config",
 			fmt.Sprintf("/etc/atomix/%s", configFile),
-		},
-		Env: []corev1.EnvVar{
-			{
-				Name: podIDEnv,
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "metadata.uid",
-					},
-				},
-			},
-			{
-				Name: podNamespaceEnv,
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "metadata.namespace",
-					},
-				},
-			},
-			{
-				Name: podNameEnv,
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "metadata.name",
-					},
-				},
-			},
-			{
-				Name: nodeIDEnv,
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "spec.nodeName",
-					},
-				},
-			},
-			{
-				Name: atomixNamespaceEnv,
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "metadata.namespace",
-					},
-				},
-			},
-			{
-				Name:  atomixProfileEnv,
-				Value: profileName,
-			},
 		},
 		Ports: []corev1.ContainerPort{
 			{
