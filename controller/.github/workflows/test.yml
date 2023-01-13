@@ -13,6 +13,17 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    name: Check code quality
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Run Go linter
+        uses: ./.github/actions/go/lint
+        with:
+          component: controller
+
   build-and-test:
     name: Build and test
     runs-on: ubuntu-latest

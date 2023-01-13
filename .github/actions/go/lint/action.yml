@@ -2,17 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Test Go Module
+name: Lint Go Module
 
 inputs:
   component:
     description: "The component path"
     required: true
-
-  package:
-    description: "The package to test"
-    required: false
-    default: ''
 
 runs:
   using: composite
@@ -30,14 +25,7 @@ runs:
         restore-keys: |
           ${{ runner.os }}-go-
 
-    - name: Run tests
-      if: ${{ inputs.package == '' }}
-      shell: bash
-      run: go test github.com/atomix/atomix/${{ inputs.component }}/...
-      working-directory: ${{ inputs.component }}
-
-    - name: Run tests
-      if: ${{ inputs.package != '' }}
-      shell: bash
-      run: go test ${{ inputs.package }}
-      working-directory: ${{ inputs.component }}
+    - name: Lint Go module
+      uses: golangci/golangci-lint-action@v3
+      with:
+        working-directory: ${{ inputs.component }}
