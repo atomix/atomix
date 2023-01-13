@@ -5,44 +5,30 @@
 name: Build Docker Image
 
 inputs:
-  path:
-    description: 'The path to the Docker build context relative to the repository root'
+  component:
+    description: "The path to the component to build"
+    required: true
+
+  file:
+    description: "The path to the Dockerfile relative to the component root"
     required: false
-    default: '.'
+    default: "Dockerfile"
 
   repository:
-    description: 'The name of the Docker repository'
+    description: "The name of the Docker repository to tag"
     required: false
-    default: ''
-
-  dockerfile:
-    description: 'The path to the Dockerfile relative to the repository root'
-    required: false
-    default: ''
+    default: ""
 
 runs:
   using: composite
   steps:
-    - name: Build Docker image
-      if: ${{ inputs.repository == '' && inputs.dockerfile == '' }}
-      shell: bash
-      working-directory: ${{ inputs.path }}
-      run: docker build .
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
-    - name: Build Docker image
-      if: ${{ inputs.repository != '' && inputs.dockerfile == '' }}
-      shell: bash
-      working-directory: ${{ inputs.path }}
-      run: docker build . -t ${{ inputs.repository }}
-
-    - name: Build Docker image
-      if: ${{ inputs.repository == '' && inputs.dockerfile != '' }}
-      shell: bash
-      working-directory: ${{ inputs.path }}
-      run: docker build . -f ${{ inputs.dockerfile }}
-
-    - name: Build Docker image
-      if: ${{ inputs.repository != '' && inputs.dockerfile != '' }}
-      shell: bash
-      working-directory: ${{ inputs.path }}
-      run: docker build . -t ${{ inputs.repository }} -f ${{ inputs.dockerfile }}
+    - name: Build image
+      uses: docker/build-push-action@v3
+      with:
+        context: ${{ inputs.path }}
+        file: ${{ inputs.component}}/${{ inputs.file }}
+        tags: ${{ inputs.repository }}
+        push: false

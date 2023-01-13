@@ -33,10 +33,10 @@ jobs:
       - name: Build Docker image
         uses: ./.github/actions/docker/build
         with:
-          path: bench
-          dockerfile: build/Dockerfile
+          component: bench
+          file: build/Dockerfile
 
       - name: Test Helm chart
         uses: ./.github/actions/helm/test
         with:
-          path: bench/chart
+          component: bench

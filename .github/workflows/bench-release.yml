@@ -22,30 +22,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - id: validate-version
-        name: Parse and validate version
-        uses: ./.github/actions/version/validate
-        with:
-          tag: ${{ github.ref_name }}
-
-      - name: Build Docker image
-        uses: ./.github/actions/docker/build
-        with:
-          path: bench
-          dockerfile: build/Dockerfile
-          repository: atomix/bench
-
       - name: Publish Docker image
         uses: ./.github/actions/docker/publish
         with:
+          component: bench
+          file: build/Dockerfile
           repository: atomix/bench
-          tag: v${{ steps.validate-version.outputs.version }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Publish Helm chart
+        if: ${{ steps.parse-version.outputs.prerelease-version == "" }}
         uses: ./.github/actions/helm/publish
         with:
-          path: bench/chart
-          version: ${{ steps.validate-version.outputs.version }}
-          token: ${{ secrets.GH_TOKEN }}
+          component: bench

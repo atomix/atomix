@@ -5,10 +5,9 @@
 name: Test Helm Chart
 
 inputs:
-  path:
-    description: 'The chart path relative to the repository root'
+  component:
+    description: "The component to test"
     required: true
-    default: ''
 
 runs:
   using: composite
@@ -34,13 +33,13 @@ runs:
           echo "::set-output name=changed::true"
         fi
       shell: bash
-      working-directory: ${{ inputs.path }}
+      working-directory: ${{ inputs.component }}/chart
 
     - name: Lint Helm chart
-      run: ct lint --charts ${{ inputs.path }} --target-branch ${{ github.event.repository.default_branch }} --validate-maintainers=false
+      run: ct lint --charts ${{ inputs.component }}/chart --target-branch ${{ github.event.repository.default_branch }} --validate-maintainers=false
       shell: bash
 
     #- name: Install Helm chart
     #  run: ct install
     #  shell: bash
-    #  working-directory: ${{ inputs.path }}
+    #  working-directory: ${{ inputs.component }}/chart

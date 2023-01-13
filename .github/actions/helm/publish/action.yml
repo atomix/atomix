@@ -5,17 +5,19 @@
 name: Publish Helm Chart
 
 inputs:
-  path:
-    description: "The chart path relative to the repository root"
-    required: true
-
-  version:
-    description: "The release version"
+  component:
+    description: "The component to publish"
     required: true
 
 runs:
   using: composite
   steps:
+    - id: parse-version
+      name: Parse and validate version
+      uses: ./.github/actions/version/parse-and-validate
+      with:
+        component: ${{ inputs.component }}
+
     - name: Configure Git
       run: |
         git config user.name "$GITHUB_ACTOR"
@@ -29,7 +31,7 @@ runs:
 
     - name: Package Helm chart
       run: |
-        helm package ${{ inputs.path }} \
+        helm package ${{ inputs.component }}/chart \
           --version ${{ inputs.version }} \
           --app-version "v${{ inputs.version }}" \
           --destination .deploy
