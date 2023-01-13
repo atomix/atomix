@@ -57,8 +57,7 @@ func (r *Runtime) Connect(ctx context.Context, driverID runtimev1.DriverID, stor
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	conn, ok := r.conns[store.StoreID]
-	if ok {
+	if _, ok := r.conns[store.StoreID]; ok {
 		return errors.NewAlreadyExists("connection '%s' already exists", store.StoreID)
 	}
 

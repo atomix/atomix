@@ -12,7 +12,6 @@ import (
 	runtimev1 "github.com/atomix/atomix/proxy/pkg/runtime/v1"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/spf13/cobra"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -49,7 +48,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			configBytes, err := ioutil.ReadFile(configFile)
+			configBytes, err := os.ReadFile(configFile)
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)

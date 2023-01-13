@@ -11,7 +11,6 @@ import (
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/rogpeppe/go-internal/modfile"
 	"github.com/spf13/cobra"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -69,7 +68,7 @@ func main() {
 }
 
 func newBuilder(cmd *cobra.Command) (*atomixBuilder, error) {
-	proxyModBytes, err := ioutil.ReadFile("go.mod")
+	proxyModBytes, err := os.ReadFile("go.mod")
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +103,7 @@ func (b *atomixBuilder) buildProxy(outputPath string) error {
 
 func (b *atomixBuilder) validateDriver(inputPath string) error {
 	fmt.Fprintln(b.cmd.OutOrStdout(), "Parsing", inputPath)
-	goModBytes, err := ioutil.ReadFile(inputPath)
+	goModBytes, err := os.ReadFile(inputPath)
 	if err != nil {
 		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to validate module", inputPath, err)
 		return err
@@ -118,7 +117,7 @@ func (b *atomixBuilder) validateDriver(inputPath string) error {
 		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to validate module", inputPath, err)
 		return err
 	}
-	fmt.Fprintln(b.cmd.OutOrStdout(), fmt.Sprintf("Module %s is compatible with this version of the proxy!", inputPath))
+	fmt.Fprintf(b.cmd.OutOrStdout(), "Module %s is compatible with this version of the proxy!\n", inputPath)
 	return nil
 }
 
@@ -167,7 +166,7 @@ func (b *atomixBuilder) downloadPluginMod(inputPath string) (*modfile.File, stri
 	}
 
 	fmt.Fprintln(b.cmd.OutOrStdout(), "Parsing", modInfo.GoMod)
-	goModBytes, err := ioutil.ReadFile(modInfo.GoMod)
+	goModBytes, err := os.ReadFile(modInfo.GoMod)
 	if err != nil {
 		fmt.Fprintln(b.cmd.OutOrStderr(), "Failed to download module", inputPath, err)
 		return nil, "", err
