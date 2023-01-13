@@ -13,28 +13,26 @@ on:
       - 'proxy/v*'
 
 jobs:
-  release:
+  build-and-release:
+    name: Build and release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Run tests
-        uses: ./.github/actions/go/test
         with:
-          path: proxy
-
-      - name: Build Docker image
-        uses: ./.github/actions/docker/build
-        with:
-          path: proxy
-          dockerfile: build/Dockerfile
-          repository: atomix/proxy
+          fetch-depth: 0
 
       - name: Publish Docker image
         uses: ./.github/actions/docker/publish
         with:
+          component: proxy
+          file: build/Dockerfile
           repository: atomix/proxy
-          tag: ${{ github.ref_name }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish Helm chart
+        if: ${{ steps.parse-version.outputs.prerelease-version == '' }}
+        uses: ./.github/actions/helm/publish
+        with:
+          component: proxy
