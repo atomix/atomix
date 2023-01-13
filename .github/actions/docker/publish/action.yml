@@ -9,6 +9,11 @@ inputs:
     description: "The component to publish"
     required: true
 
+  file:
+    description: "The path to the Dockerfile relative to the component root"
+    required: false
+    default: "Dockerfile"
+
   repository:
     description: "The name of the Docker repository"
     required: true
