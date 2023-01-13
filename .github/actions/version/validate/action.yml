@@ -22,5 +22,5 @@ runs:
       shell: bash
       run: |
         version=$(basename "${{ inputs.tag }}")
-        echo ${version/#v} >> $GITHUB_OUTPUT
+        echo "version=${version/#v}" >> $GITHUB_OUTPUT
     # TODO: Validate the version
