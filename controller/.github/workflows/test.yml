@@ -26,8 +26,8 @@ jobs:
         with:
           component: controller
 
-  build-and-test:
-    name: Build and test
+  test:
+    name: Run tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -40,17 +40,26 @@ jobs:
         with:
           component: controller
 
-      - name: Build init image
-        uses: ./.github/actions/docker/build
+  deploy:
+    name: Deploy and verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
-          component: controller
-          file: build/init/Dockerfile
+          fetch-depth: 0
 
       - name: Build controller image
         uses: ./.github/actions/docker/build
         with:
           component: controller
           file: build/controller/Dockerfile
+
+      - name: Build init image
+        uses: ./.github/actions/docker/build
+        with:
+          component: controller
+          file: build/init/Dockerfile
 
       - name: Test Helm chart
         uses: ./.github/actions/helm/test
