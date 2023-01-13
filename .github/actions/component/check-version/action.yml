@@ -33,9 +33,10 @@ runs:
       shell: bash
       run: |
         tag="${{ github.ref_name }}"
-        pattern="${{ inputs.component }}/*"
+        component="${{ inputs.component }}"
+        [[ "$component" == "atomix" ]] && pattern="v*" || pattern="$component/v*"
         if [[ "$tag" != $pattern ]]; then
-          echo "GitHub ref_name is not a valid tag for the component ${{ inputs.component }}"
+          echo "GitHub ref_name is not a valid tag for the component $component"
           exit 1
         fi
     - id: parse-version
@@ -43,7 +44,8 @@ runs:
       shell: bash
       run: |
         tag="${{ github.ref_name }}"
-        prefix="${{ inputs.component }}/"
+        component="${{ inputs.component }}"
+        [[ "$component" == "atomix" ]] && prefix="" || prefix="$component/"
         full_version=${tag/#$prefix}
         semantic_version=${full_version/#v}
         patch_version=$(cut -d '-' -f 1 <<< "$semantic_version")

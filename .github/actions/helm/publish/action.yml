@@ -22,7 +22,7 @@ runs:
   steps:
     - name: Parse and validate release version
       id: parse-version
-      uses: ./.github/actions/version/parse-and-validate
+      uses: ./.github/actions/component/check-version
       with:
         component: ${{ inputs.component }}
 
@@ -47,7 +47,7 @@ runs:
     - name: Package Helm chart
       if: ${{ steps.parse-version.outputs.prerelease-version == '' || inputs.publish-prereleases }}
       run: |
-        helm package ${{ inputs.component }}/${{ inputs.path }} \
+        helm package ${{ inputs.component != 'atomix' && inputs.component || '.' }}/${{ inputs.path }} \
           --version ${{ steps.parse-version.outputs.semantic-version }} \
           --app-version "v${{ steps.parse-version.outputs.semantic-version }}" \
           --destination .deploy

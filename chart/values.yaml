@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+stores:
+  raft:
+    enabled: true
+  shared-memory:
+    enabled: true
+  pod-memory:
+    enabled: true
+  consensus:
+    enabled: true

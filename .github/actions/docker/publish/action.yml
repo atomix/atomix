@@ -31,7 +31,7 @@ runs:
   steps:
     - id: parse-version
       name: Parse and validate version
-      uses: ./.github/actions/version/parse-and-validate
+      uses: ./.github/actions/component/check-version
       with:
         component: ${{ inputs.component }}
 
@@ -49,7 +49,7 @@ runs:
       uses: docker/build-push-action@v3
       with:
         context: ${{ inputs.component }}
-        file: ${{ inputs.component}}/${{ inputs.file }}
+        file: ${{ inputs.component }}/${{ inputs.file }}
         tags: ${{ inputs.repository }}:v${{ steps.parse-version.outputs.prerelease-version }}
         push: true
 
@@ -58,6 +58,6 @@ runs:
       uses: docker/build-push-action@v3
       with:
         context: ${{ inputs.component }}
-        file: ${{ inputs.component}}/${{ inputs.file }}
+        file: ${{ inputs.component }}/${{ inputs.file }}
         tags: ${{ inputs.repository }}:latest,${{ inputs.repository }}:v${{ steps.parse-version.outputs.minor-version }},${{ inputs.repository }}:v${{ steps.parse-version.outputs.patch-version }}
         push: true
