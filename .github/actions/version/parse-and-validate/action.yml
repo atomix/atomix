@@ -33,7 +33,7 @@ runs:
       shell: bash
       run: |
         tag="${{ github.ref_name }}"
-        pattern="${prefix}/*"
+        pattern="${{ inputs.component }}/*"
         if [[ "$tag" != $pattern ]]; then
           echo "GitHub ref_name is not a valid tag for the component ${{ inputs.component }}"
           exit 1
