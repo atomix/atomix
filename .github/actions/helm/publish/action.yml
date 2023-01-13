@@ -6,11 +6,11 @@ name: Publish Helm Chart
 
 inputs:
   path:
-    description: 'The chart path relative to the repository root'
+    description: "The chart path relative to the repository root"
     required: true
 
   version:
-    description: 'The release version'
+    description: "The release version"
     required: true
 
 runs:
@@ -40,6 +40,6 @@ runs:
       with:
         skip_packaging: true
       env:
-        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        CR_TOKEN: "${{ github.token }}"
         CR_PACKAGE_PATH: .deploy
         CR_SKIP_EXISTING: true
