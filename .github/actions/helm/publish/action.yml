@@ -13,22 +13,32 @@ inputs:
     description: 'The release version'
     required: true
 
-  token:
-    description: 'The GitHub token for the release repository'
-    required: true
-    default: ''
-
 runs:
   using: composite
   steps:
-    - name: Publish Helm chart
-      shell: bash
+    - name: Configure Git
       run: |
-        docker run -i \
-          -v `pwd`:/build -w /build \
-          -w /build \
-          -e GITHUB_TOKEN=${{ inputs.token }} \
-          --entrypoint ./.github/scripts/release-chart \
-          quay.io/helmpack/chart-releaser:v1.5.0 \
-          ${{ inputs.path }} \
-          ${{ inputs.version }}
+        git config user.name "$GITHUB_ACTOR"
+        git config user.email "$GITHUB_ACTOR"
+
+    - name: Set up Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: v3.10.0
+
+    - name: Package Helm chart
+      run: |
+        helm package ${{ inputs.path }} \
+          --version ${{ inputs.version }} \
+          --app-version "v${{ inputs.version }}" \
+          --destination .deploy
+      shell: bash
+
+    - name: Publish Helm chart
+      uses: helm/chart-releaser-action@v1.5.0
+      with:
+        skip_packaging: true
+      env:
+        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        CR_PACKAGE_PATH: .deploy
+        CR_SKIP_EXISTING: true

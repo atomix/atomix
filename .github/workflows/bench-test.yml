@@ -36,9 +36,6 @@ jobs:
           path: bench
           dockerfile: build/Dockerfile
 
-      - name: Setup Helm
-        uses: ./.github/actions/helm/setup
-
       - name: Test Helm chart
         uses: ./.github/actions/helm/test
         with:
