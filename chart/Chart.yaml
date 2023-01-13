@@ -20,7 +20,7 @@ dependencies:
     repository: https://atomix.github.io/atomix
     alias: controller
   - name: atomix-raft-controller
-    version: 0.2.1
+    version: 0.2.3
     repository: https://atomix.github.io/atomix
     condition: stores.raft.enabled
     alias: raft-controller
