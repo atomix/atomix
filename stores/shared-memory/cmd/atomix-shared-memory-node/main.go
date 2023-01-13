@@ -30,7 +30,6 @@ import (
 	sharedmemory "github.com/atomix/atomix/stores/shared-memory/pkg/node"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -57,7 +56,7 @@ func main() {
 			}
 
 			config := sharedmemory.Config{}
-			configBytes, err := ioutil.ReadFile(configPath)
+			configBytes, err := os.ReadFile(configPath)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
