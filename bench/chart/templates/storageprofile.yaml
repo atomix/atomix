@@ -24,4 +24,5 @@ spec:
       encoding: {{ .Values.proxy.logging.encoding }}
   bindings:
     - store:
-        name: {{ template "atomix-bench.fullname" . }}-store
+        name: {{ .Values.store.name }}
+        namespace: {{ .Values.store.namespace }}
