@@ -8,6 +8,10 @@ inputs:
   component:
     description: "The component to publish"
     required: true
+  path:
+    description: "The path to the Helm chart relative to the component"
+    required: false
+    default: chart
 
 runs:
   using: composite
@@ -31,7 +35,7 @@ runs:
 
     - name: Package Helm chart
       run: |
-        helm package ${{ inputs.component }}/chart \
+        helm package ${{ inputs.component }}/${{ inputs.path }} \
           --version ${{ inputs.version }} \
           --app-version "v${{ inputs.version }}" \
           --destination .deploy
