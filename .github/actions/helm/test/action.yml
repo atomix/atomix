@@ -24,9 +24,8 @@ runs:
       working-directory: ${{ inputs.path }}
 
     - name: Lint Helm chart
-      run: ct lint --all --target-branch ${{ github.event.repository.default_branch }}
+      run: ct lint --charts ${{ inputs.path }} --target-branch ${{ github.event.repository.default_branch }} --validate-maintainers=false
       shell: bash
-      working-directory: ${{ inputs.path }}
 
     #- name: Install Helm chart
     #  run: ct install

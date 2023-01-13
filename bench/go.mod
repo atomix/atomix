@@ -3,14 +3,14 @@ module github.com/atomix/atomix/bench
 go 1.19
 
 require (
-	github.com/atomix/atomix/runtime v0.0.0-20221228222855-b2275fb2adbe
+	github.com/atomix/atomix/runtime v0.1.0
 	github.com/atomix/go-sdk v0.10.1-0.20221229033800-4cbe25cdf03f
 	github.com/google/uuid v1.1.2
 	github.com/spf13/cobra v1.4.0
 )
 
 require (
-	github.com/atomix/atomix/api v0.0.0-20221228191831-4af56aa1f978 // indirect
+	github.com/atomix/atomix/api v0.1.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
