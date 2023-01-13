@@ -13,43 +13,35 @@ on:
       - 'controller/v*'
 
 jobs:
-  release:
+  build-and-release:
+    name: Build and release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Run tests
-        uses: ./.github/actions/go/test
         with:
-          path: controller
-
-      - name: Build init image
-        uses: ./.github/actions/docker/build
-        with:
-          path: controller
-          dockerfile: build/init/Dockerfile
-          repository: atomix/controller-init
+          fetch-depth: 0
 
       - name: Publish init image
         uses: ./.github/actions/docker/publish
         with:
+          component: controller
+          file: build/init/Dockerfile
           repository: atomix/controller-init
-          tag: ${{ github.ref_name }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build controller image
-        uses: ./.github/actions/docker/build
-        with:
-          path: controller
-          dockerfile: build/controller/Dockerfile
-          repository: atomix/controller
 
       - name: Publish controller image
         uses: ./.github/actions/docker/publish
         with:
+          component: controller
+          file: build/controller/Dockerfile
           repository: atomix/controller
-          tag: ${{ github.ref_name }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish Helm chart
+        if: ${{ steps.parse-version.outputs.prerelease-version == '' }}
+        uses: ./.github/actions/helm/publish
+        with:
+          component: controller

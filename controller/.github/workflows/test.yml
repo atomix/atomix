@@ -13,25 +13,33 @@ on:
   pull_request:
 
 jobs:
-  test:
+  build-and-test:
+    name: Build and test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: Run tests
+      - name: Run Go tests
         uses: ./.github/actions/go/test
         with:
-          path: controller
+          component: controller
 
       - name: Build init image
         uses: ./.github/actions/docker/build
         with:
-          path: controller
-          dockerfile: build/init/Dockerfile
+          component: controller
+          file: build/init/Dockerfile
 
       - name: Build controller image
         uses: ./.github/actions/docker/build
         with:
-          path: controller
-          dockerfile: build/controller/Dockerfile
+          component: controller
+          file: build/controller/Dockerfile
+
+      - name: Test Helm chart
+        uses: ./.github/actions/helm/test
+        with:
+          component: controller

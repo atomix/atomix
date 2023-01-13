@@ -1,0 +1,111 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "atomix-controller.fullname" . }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      name: {{ template "atomix-controller.fullname" . }}
+  template:
+    metadata:
+      labels:
+        name: {{ template "atomix-controller.fullname" . }}
+    spec:
+      serviceAccountName: {{ template "atomix-controller.fullname" . }}
+      initContainers:
+        - name: init-certs
+          {{- if .Values.init.image.tag }}
+          image: {{ printf "%s:%s" .Values.init.image.repository .Values.init.image.tag }}
+          {{- else if .Chart.AppVersion }}
+          image: {{ printf "%s:%s" .Values.init.image.repository .Chart.AppVersion }}
+          {{- else }}
+          image: {{ .Values.init.image.repository }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.init.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          env:
+            - name: CONTROLLER_NAME
+              value: {{ template "atomix-controller.fullname" . }}
+            - name: CONTROLLER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: config
+              mountPath: /etc/atomix
+              readOnly: true
+            - name: certs
+              mountPath: /etc/webhook/certs
+      containers:
+        - name: atomix-controller
+          {{- if .Values.image.tag }}
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+          {{- else if .Chart.AppVersion }}
+          image: {{ printf "%s:%s" .Values.image.repository .Chart.AppVersion }}
+          {{- else }}
+          image: {{ .Values.image.repository }}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          ports:
+            - containerPort: 443
+              name: webhook-server
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          readinessProbe:
+            exec:
+              command:
+                - stat
+                - /tmp/atomix-controller-ready
+            initialDelaySeconds: 4
+            periodSeconds: 10
+            failureThreshold: 1
+          env:
+            - name: CONTROLLER_NAME
+              value: {{ template "atomix-controller.fullname" . }}
+            - name: CONTROLLER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: PROXY_IMAGE
+              {{- if .Values.init.image.tag }}
+              value: {{ printf "%s:%s" .Values.init.image.repository .Values.init.image.tag }}
+              {{- else }}
+              value: {{ .Values.init.image.repository }}
+              {{- end }}
+          volumeMounts:
+            - name: certs
+              mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
+            - name: config
+              mountPath: /etc/atomix
+              readOnly: true
+      volumes:
+        - name: certs
+          emptyDir: { }
+        - name: config
+          configMap:
+            name: {{ template "atomix-controller.fullname" . }}-config
