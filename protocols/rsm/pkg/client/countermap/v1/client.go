@@ -33,7 +33,7 @@ type counterMapClient struct {
 
 func (s *counterMapClient) Create(ctx context.Context, request *countermapv1.CreateRequest) (*countermapv1.CreateResponse, error) {
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", request))
+		logging.Trunc128("CreateRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -49,20 +49,20 @@ func (s *counterMapClient) Create(ctx context.Context, request *countermapv1.Cre
 	})
 	if err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
+			logging.Trunc128("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response := &countermapv1.CreateResponse{}
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", request),
-		logging.Stringer("CreateResponse", response))
+		logging.Trunc128("CreateRequest", request),
+		logging.Trunc128("CreateResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Close(ctx context.Context, request *countermapv1.CloseRequest) (*countermapv1.CloseResponse, error) {
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", request))
+		logging.Trunc128("CloseRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -74,34 +74,34 @@ func (s *counterMapClient) Close(ctx context.Context, request *countermapv1.Clos
 	})
 	if err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
+			logging.Trunc128("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response := &countermapv1.CloseResponse{}
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", request),
-		logging.Stringer("CloseResponse", response))
+		logging.Trunc128("CloseRequest", request),
+		logging.Trunc128("CloseResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Size(ctx context.Context, request *countermapv1.SizeRequest) (*countermapv1.SizeResponse, error) {
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", request))
+		logging.Trunc128("SizeRequest", request))
 	partitions := s.Partitions()
 	sizes, err := async.ExecuteAsync[int](len(partitions), func(i int) (int, error) {
 		partition := partitions[i]
 		session, err := partition.GetSession(ctx)
 		if err != nil {
 			log.Warnw("Size",
-				logging.Stringer("SizeRequest", request),
+				logging.Trunc128("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		}
 		primitive, err := session.GetPrimitive(request.ID.Name)
 		if err != nil {
 			log.Warnw("Size",
-				logging.Stringer("SizeRequest", request),
+				logging.Trunc128("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		}
@@ -114,12 +114,12 @@ func (s *counterMapClient) Size(ctx context.Context, request *countermapv1.SizeR
 		})
 		if !ok {
 			log.Warnw("Size",
-				logging.Stringer("SizeRequest", request),
+				logging.Trunc128("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		} else if err != nil {
 			log.Debugw("Size",
-				logging.Stringer("SizeRequest", request),
+				logging.Trunc128("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		}
@@ -136,26 +136,26 @@ func (s *counterMapClient) Size(ctx context.Context, request *countermapv1.SizeR
 		Size_: uint32(size),
 	}
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", request),
-		logging.Stringer("SizeResponse", response))
+		logging.Trunc128("SizeRequest", request),
+		logging.Trunc128("SizeResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Set(ctx context.Context, request *countermapv1.SetRequest) (*countermapv1.SetResponse, error) {
 	log.Debugw("Set",
-		logging.Stringer("SetRequest", request))
+		logging.Trunc128("SetRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", request),
+			logging.Trunc128("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", request),
+			logging.Trunc128("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -172,12 +172,12 @@ func (s *counterMapClient) Set(ctx context.Context, request *countermapv1.SetReq
 	})
 	if !ok {
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", request),
+			logging.Trunc128("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Set",
-			logging.Stringer("SetRequest", request),
+			logging.Trunc128("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -185,26 +185,26 @@ func (s *counterMapClient) Set(ctx context.Context, request *countermapv1.SetReq
 		PrevValue: output.PrevValue,
 	}
 	log.Debugw("Set",
-		logging.Stringer("SetRequest", request),
-		logging.Stringer("SetResponse", response))
+		logging.Trunc128("SetRequest", request),
+		logging.Trunc128("SetResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Insert(ctx context.Context, request *countermapv1.InsertRequest) (*countermapv1.InsertResponse, error) {
 	log.Debugw("Insert",
-		logging.Stringer("InsertRequest", request))
+		logging.Trunc128("InsertRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Insert",
-			logging.Stringer("InsertRequest", request),
+			logging.Trunc128("InsertRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Insert",
-			logging.Stringer("InsertRequest", request),
+			logging.Trunc128("InsertRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -220,37 +220,37 @@ func (s *counterMapClient) Insert(ctx context.Context, request *countermapv1.Ins
 	})
 	if !ok {
 		log.Warnw("Insert",
-			logging.Stringer("InsertRequest", request),
+			logging.Trunc128("InsertRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Insert",
-			logging.Stringer("InsertRequest", request),
+			logging.Trunc128("InsertRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response := &countermapv1.InsertResponse{}
 	log.Debugw("Insert",
-		logging.Stringer("InsertRequest", request),
-		logging.Stringer("InsertResponse", response))
+		logging.Trunc128("InsertRequest", request),
+		logging.Trunc128("InsertResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Update(ctx context.Context, request *countermapv1.UpdateRequest) (*countermapv1.UpdateResponse, error) {
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", request))
+		logging.Trunc128("UpdateRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", request),
+			logging.Trunc128("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", request),
+			logging.Trunc128("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -267,12 +267,12 @@ func (s *counterMapClient) Update(ctx context.Context, request *countermapv1.Upd
 	})
 	if !ok {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", request),
+			logging.Trunc128("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Update",
-			logging.Stringer("UpdateRequest", request),
+			logging.Trunc128("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -280,26 +280,26 @@ func (s *counterMapClient) Update(ctx context.Context, request *countermapv1.Upd
 		PrevValue: output.PrevValue,
 	}
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", request),
-		logging.Stringer("UpdateResponse", response))
+		logging.Trunc128("UpdateRequest", request),
+		logging.Trunc128("UpdateResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Increment(ctx context.Context, request *countermapv1.IncrementRequest) (*countermapv1.IncrementResponse, error) {
 	log.Debugw("Increment",
-		logging.Stringer("IncrementRequest", request))
+		logging.Trunc128("IncrementRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Increment",
-			logging.Stringer("IncrementRequest", request),
+			logging.Trunc128("IncrementRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Increment",
-			logging.Stringer("IncrementRequest", request),
+			logging.Trunc128("IncrementRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -316,12 +316,12 @@ func (s *counterMapClient) Increment(ctx context.Context, request *countermapv1.
 	})
 	if !ok {
 		log.Warnw("Increment",
-			logging.Stringer("IncrementRequest", request),
+			logging.Trunc128("IncrementRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Increment",
-			logging.Stringer("IncrementRequest", request),
+			logging.Trunc128("IncrementRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -329,26 +329,26 @@ func (s *counterMapClient) Increment(ctx context.Context, request *countermapv1.
 		PrevValue: output.PrevValue,
 	}
 	log.Debugw("Increment",
-		logging.Stringer("IncrementRequest", request),
-		logging.Stringer("IncrementResponse", response))
+		logging.Trunc128("IncrementRequest", request),
+		logging.Trunc128("IncrementResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Decrement(ctx context.Context, request *countermapv1.DecrementRequest) (*countermapv1.DecrementResponse, error) {
 	log.Debugw("Decrement",
-		logging.Stringer("DecrementRequest", request))
+		logging.Trunc128("DecrementRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Decrement",
-			logging.Stringer("DecrementRequest", request),
+			logging.Trunc128("DecrementRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Decrement",
-			logging.Stringer("DecrementRequest", request),
+			logging.Trunc128("DecrementRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -365,12 +365,12 @@ func (s *counterMapClient) Decrement(ctx context.Context, request *countermapv1.
 	})
 	if !ok {
 		log.Warnw("Decrement",
-			logging.Stringer("DecrementRequest", request),
+			logging.Trunc128("DecrementRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Decrement",
-			logging.Stringer("DecrementRequest", request),
+			logging.Trunc128("DecrementRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -378,26 +378,26 @@ func (s *counterMapClient) Decrement(ctx context.Context, request *countermapv1.
 		PrevValue: output.PrevValue,
 	}
 	log.Debugw("Decrement",
-		logging.Stringer("DecrementRequest", request),
-		logging.Stringer("DecrementResponse", response))
+		logging.Trunc128("DecrementRequest", request),
+		logging.Trunc128("DecrementResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Get(ctx context.Context, request *countermapv1.GetRequest) (*countermapv1.GetResponse, error) {
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", request))
+		logging.Trunc128("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", request),
+			logging.Trunc128("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", request),
+			logging.Trunc128("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -412,12 +412,12 @@ func (s *counterMapClient) Get(ctx context.Context, request *countermapv1.GetReq
 	})
 	if !ok {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", request),
+			logging.Trunc128("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Get",
-			logging.Stringer("GetRequest", request),
+			logging.Trunc128("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -425,26 +425,26 @@ func (s *counterMapClient) Get(ctx context.Context, request *countermapv1.GetReq
 		Value: output.Value,
 	}
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", request),
-		logging.Stringer("GetResponse", response))
+		logging.Trunc128("GetRequest", request),
+		logging.Trunc128("GetResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Remove(ctx context.Context, request *countermapv1.RemoveRequest) (*countermapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", request))
+		logging.Trunc128("RemoveRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", request),
+			logging.Trunc128("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", request),
+			logging.Trunc128("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -461,12 +461,12 @@ func (s *counterMapClient) Remove(ctx context.Context, request *countermapv1.Rem
 	})
 	if !ok {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", request),
+			logging.Trunc128("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Remove",
-			logging.Stringer("RemoveRequest", request),
+			logging.Trunc128("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -474,28 +474,28 @@ func (s *counterMapClient) Remove(ctx context.Context, request *countermapv1.Rem
 		Value: output.Value,
 	}
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", request),
-		logging.Stringer("RemoveResponse", response))
+		logging.Trunc128("RemoveRequest", request),
+		logging.Trunc128("RemoveResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Clear(ctx context.Context, request *countermapv1.ClearRequest) (*countermapv1.ClearResponse, error) {
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", request))
+		logging.Trunc128("ClearRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
 		session, err := partition.GetSession(ctx)
 		if err != nil {
 			log.Warnw("Clear",
-				logging.Stringer("ClearRequest", request),
+				logging.Trunc128("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
 		primitive, err := session.GetPrimitive(request.ID.Name)
 		if err != nil {
 			log.Warnw("Clear",
-				logging.Stringer("ClearRequest", request),
+				logging.Trunc128("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -508,12 +508,12 @@ func (s *counterMapClient) Clear(ctx context.Context, request *countermapv1.Clea
 		})
 		if !ok {
 			log.Warnw("Clear",
-				logging.Stringer("ClearRequest", request),
+				logging.Trunc128("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		} else if err != nil {
 			log.Debugw("Clear",
-				logging.Stringer("ClearRequest", request),
+				logging.Trunc128("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -524,14 +524,14 @@ func (s *counterMapClient) Clear(ctx context.Context, request *countermapv1.Clea
 	}
 	response := &countermapv1.ClearResponse{}
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", request),
-		logging.Stringer("ClearResponse", response))
+		logging.Trunc128("ClearRequest", request),
+		logging.Trunc128("ClearResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Lock(ctx context.Context, request *countermapv1.LockRequest) (*countermapv1.LockResponse, error) {
 	log.Debugw("Lock",
-		logging.Stringer("LockRequest", request))
+		logging.Trunc128("LockRequest", request))
 
 	partitions := s.Partitions()
 	indexKeys := make(map[int][]string)
@@ -553,14 +553,14 @@ func (s *counterMapClient) Lock(ctx context.Context, request *countermapv1.LockR
 		session, err := partition.GetSession(ctx)
 		if err != nil {
 			log.Warnw("Lock",
-				logging.Stringer("LockRequest", request),
+				logging.Trunc128("LockRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
 		primitive, err := session.GetPrimitive(request.ID.Name)
 		if err != nil {
 			log.Warnw("Lock",
-				logging.Stringer("LockRequest", request),
+				logging.Trunc128("LockRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -576,12 +576,12 @@ func (s *counterMapClient) Lock(ctx context.Context, request *countermapv1.LockR
 		})
 		if !ok {
 			log.Warnw("Lock",
-				logging.Stringer("LockRequest", request),
+				logging.Trunc128("LockRequest", request),
 				logging.Error("Error", err))
 			return err
 		} else if err != nil {
 			log.Debugw("Lock",
-				logging.Stringer("LockRequest", request),
+				logging.Trunc128("LockRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -592,28 +592,28 @@ func (s *counterMapClient) Lock(ctx context.Context, request *countermapv1.LockR
 	}
 	response := &countermapv1.LockResponse{}
 	log.Debugw("Lock",
-		logging.Stringer("LockRequest", request),
-		logging.Stringer("LockResponse", response))
+		logging.Trunc128("LockRequest", request),
+		logging.Trunc128("LockResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Unlock(ctx context.Context, request *countermapv1.UnlockRequest) (*countermapv1.UnlockResponse, error) {
 	log.Debugw("Unlock",
-		logging.Stringer("UnlockRequest", request))
+		logging.Trunc128("UnlockRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
 		session, err := partition.GetSession(ctx)
 		if err != nil {
 			log.Warnw("Unlock",
-				logging.Stringer("UnlockRequest", request),
+				logging.Trunc128("UnlockRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
 		primitive, err := session.GetPrimitive(request.ID.Name)
 		if err != nil {
 			log.Warnw("Unlock",
-				logging.Stringer("UnlockRequest", request),
+				logging.Trunc128("UnlockRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -626,12 +626,12 @@ func (s *counterMapClient) Unlock(ctx context.Context, request *countermapv1.Unl
 		})
 		if !ok {
 			log.Warnw("Unlock",
-				logging.Stringer("UnlockRequest", request),
+				logging.Trunc128("UnlockRequest", request),
 				logging.Error("Error", err))
 			return err
 		} else if err != nil {
 			log.Debugw("Unlock",
-				logging.Stringer("UnlockRequest", request),
+				logging.Trunc128("UnlockRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -642,14 +642,14 @@ func (s *counterMapClient) Unlock(ctx context.Context, request *countermapv1.Unl
 	}
 	response := &countermapv1.UnlockResponse{}
 	log.Debugw("Unlock",
-		logging.Stringer("UnlockRequest", request),
-		logging.Stringer("UnlockResponse", response))
+		logging.Trunc128("UnlockRequest", request),
+		logging.Trunc128("UnlockResponse", response))
 	return response, nil
 }
 
 func (s *counterMapClient) Events(request *countermapv1.EventsRequest, server countermapv1.CounterMap_EventsServer) error {
 	log.Debugw("Events received",
-		logging.Stringer("EventsRequest", request))
+		logging.Trunc128("EventsRequest", request))
 	partitions := s.Partitions()
 	ch := make(chan streams.Result[*countermapv1.EventsResponse])
 	wg := &sync.WaitGroup{}
@@ -660,7 +660,7 @@ func (s *counterMapClient) Events(request *countermapv1.EventsRequest, server co
 			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Events",
-					logging.Stringer("EventsRequest", request),
+					logging.Trunc128("EventsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*countermapv1.EventsResponse]{
 					Error: err,
@@ -670,7 +670,7 @@ func (s *counterMapClient) Events(request *countermapv1.EventsRequest, server co
 			primitive, err := session.GetPrimitive(request.ID.Name)
 			if err != nil {
 				log.Warnw("Events",
-					logging.Stringer("EventsRequest", request),
+					logging.Trunc128("EventsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*countermapv1.EventsResponse]{
 					Error: err,
@@ -688,7 +688,7 @@ func (s *counterMapClient) Events(request *countermapv1.EventsRequest, server co
 			})
 			if err != nil {
 				log.Warnw("Events",
-					logging.Stringer("EventsRequest", request),
+					logging.Trunc128("EventsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*countermapv1.EventsResponse]{
 					Error: err,
@@ -700,7 +700,7 @@ func (s *counterMapClient) Events(request *countermapv1.EventsRequest, server co
 				if !ok {
 					if err != io.EOF {
 						log.Warnw("Events",
-							logging.Stringer("EventsRequest", request),
+							logging.Trunc128("EventsRequest", request),
 							logging.Error("Error", err))
 						ch <- streams.Result[*countermapv1.EventsResponse]{
 							Error: err,
@@ -710,7 +710,7 @@ func (s *counterMapClient) Events(request *countermapv1.EventsRequest, server co
 				}
 				if err != nil {
 					log.Debugw("Events",
-						logging.Stringer("EventsRequest", request),
+						logging.Trunc128("EventsRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*countermapv1.EventsResponse]{
 						Error: err,
@@ -743,8 +743,8 @@ func (s *counterMapClient) Events(request *countermapv1.EventsRequest, server co
 						}
 					}
 					log.Debugw("Events",
-						logging.Stringer("EventsRequest", request),
-						logging.Stringer("EventsResponse", response))
+						logging.Trunc128("EventsRequest", request),
+						logging.Trunc128("EventsResponse", response))
 					ch <- streams.Result[*countermapv1.EventsResponse]{
 						Value: response,
 					}
@@ -767,13 +767,13 @@ func (s *counterMapClient) Events(request *countermapv1.EventsRequest, server co
 		}
 	}
 	log.Debugw("Events complete",
-		logging.Stringer("EventsRequest", request))
+		logging.Trunc128("EventsRequest", request))
 	return nil
 }
 
 func (s *counterMapClient) Entries(request *countermapv1.EntriesRequest, server countermapv1.CounterMap_EntriesServer) error {
 	log.Debugw("Entries received",
-		logging.Stringer("EntriesRequest", request))
+		logging.Trunc128("EntriesRequest", request))
 	partitions := s.Partitions()
 	ch := make(chan streams.Result[*countermapv1.EntriesResponse])
 	wg := &sync.WaitGroup{}
@@ -784,7 +784,7 @@ func (s *counterMapClient) Entries(request *countermapv1.EntriesRequest, server 
 			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Entries",
-					logging.Stringer("EntriesRequest", request),
+					logging.Trunc128("EntriesRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*countermapv1.EntriesResponse]{
 					Error: err,
@@ -794,7 +794,7 @@ func (s *counterMapClient) Entries(request *countermapv1.EntriesRequest, server 
 			primitive, err := session.GetPrimitive(request.ID.Name)
 			if err != nil {
 				log.Warnw("Entries",
-					logging.Stringer("EntriesRequest", request),
+					logging.Trunc128("EntriesRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*countermapv1.EntriesResponse]{
 					Error: err,
@@ -812,7 +812,7 @@ func (s *counterMapClient) Entries(request *countermapv1.EntriesRequest, server 
 			})
 			if err != nil {
 				log.Warnw("Entries",
-					logging.Stringer("EntriesRequest", request),
+					logging.Trunc128("EntriesRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*countermapv1.EntriesResponse]{
 					Error: err,
@@ -824,7 +824,7 @@ func (s *counterMapClient) Entries(request *countermapv1.EntriesRequest, server 
 				if !ok {
 					if err != io.EOF {
 						log.Warnw("Entries",
-							logging.Stringer("EntriesRequest", request),
+							logging.Trunc128("EntriesRequest", request),
 							logging.Error("Error", err))
 						ch <- streams.Result[*countermapv1.EntriesResponse]{
 							Error: err,
@@ -834,7 +834,7 @@ func (s *counterMapClient) Entries(request *countermapv1.EntriesRequest, server 
 				}
 				if err != nil {
 					log.Debugw("Entries",
-						logging.Stringer("EntriesRequest", request),
+						logging.Trunc128("EntriesRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*countermapv1.EntriesResponse]{
 						Error: err,
@@ -847,8 +847,8 @@ func (s *counterMapClient) Entries(request *countermapv1.EntriesRequest, server 
 						},
 					}
 					log.Debugw("Entries",
-						logging.Stringer("EntriesRequest", request),
-						logging.Stringer("EntriesResponse", response))
+						logging.Trunc128("EntriesRequest", request),
+						logging.Trunc128("EntriesResponse", response))
 					ch <- streams.Result[*countermapv1.EntriesResponse]{
 						Value: response,
 					}
@@ -871,7 +871,7 @@ func (s *counterMapClient) Entries(request *countermapv1.EntriesRequest, server 
 		}
 	}
 	log.Debugw("Entries complete",
-		logging.Stringer("EntriesRequest", request))
+		logging.Trunc128("EntriesRequest", request))
 	return nil
 }
 

@@ -33,7 +33,7 @@ type setClient struct {
 
 func (s *setClient) Create(ctx context.Context, request *setv1.CreateRequest) (*setv1.CreateResponse, error) {
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", request))
+		logging.Trunc128("CreateRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -49,20 +49,20 @@ func (s *setClient) Create(ctx context.Context, request *setv1.CreateRequest) (*
 	})
 	if err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
+			logging.Trunc128("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response := &setv1.CreateResponse{}
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", request),
-		logging.Stringer("CreateResponse", response))
+		logging.Trunc128("CreateRequest", request),
+		logging.Trunc128("CreateResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Close(ctx context.Context, request *setv1.CloseRequest) (*setv1.CloseResponse, error) {
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", request))
+		logging.Trunc128("CloseRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -74,34 +74,34 @@ func (s *setClient) Close(ctx context.Context, request *setv1.CloseRequest) (*se
 	})
 	if err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
+			logging.Trunc128("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response := &setv1.CloseResponse{}
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", request),
-		logging.Stringer("CloseResponse", response))
+		logging.Trunc128("CloseRequest", request),
+		logging.Trunc128("CloseResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1.SizeResponse, error) {
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", request))
+		logging.Trunc128("SizeRequest", request))
 	partitions := s.Partitions()
 	sizes, err := async.ExecuteAsync[int](len(partitions), func(i int) (int, error) {
 		partition := partitions[i]
 		session, err := partition.GetSession(ctx)
 		if err != nil {
 			log.Warnw("Size",
-				logging.Stringer("SizeRequest", request),
+				logging.Trunc128("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		}
 		primitive, err := session.GetPrimitive(request.ID.Name)
 		if err != nil {
 			log.Warnw("Size",
-				logging.Stringer("SizeRequest", request),
+				logging.Trunc128("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		}
@@ -114,12 +114,12 @@ func (s *setClient) Size(ctx context.Context, request *setv1.SizeRequest) (*setv
 		})
 		if !ok {
 			log.Warnw("Size",
-				logging.Stringer("SizeRequest", request),
+				logging.Trunc128("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		} else if err != nil {
 			log.Debugw("Size",
-				logging.Stringer("SizeRequest", request),
+				logging.Trunc128("SizeRequest", request),
 				logging.Error("Error", err))
 			return 0, err
 		}
@@ -136,26 +136,26 @@ func (s *setClient) Size(ctx context.Context, request *setv1.SizeRequest) (*setv
 		Size_: uint32(size),
 	}
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", request),
-		logging.Stringer("SizeResponse", response))
+		logging.Trunc128("SizeRequest", request),
+		logging.Trunc128("SizeResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.AddResponse, error) {
 	log.Debugw("Add",
-		logging.Stringer("AddRequest", request))
+		logging.Trunc128("AddRequest", request))
 	partition := s.PartitionBy([]byte(request.Element.Value))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Add",
-			logging.Stringer("AddRequest", request),
+			logging.Trunc128("AddRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Add",
-			logging.Stringer("AddRequest", request),
+			logging.Trunc128("AddRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -174,37 +174,37 @@ func (s *setClient) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.
 	})
 	if !ok {
 		log.Warnw("Add",
-			logging.Stringer("AddRequest", request),
+			logging.Trunc128("AddRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Add",
-			logging.Stringer("AddRequest", request),
+			logging.Trunc128("AddRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response := &setv1.AddResponse{}
 	log.Debugw("Add",
-		logging.Stringer("AddRequest", request),
-		logging.Stringer("AddResponse", response))
+		logging.Trunc128("AddRequest", request),
+		logging.Trunc128("AddResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Contains(ctx context.Context, request *setv1.ContainsRequest) (*setv1.ContainsResponse, error) {
 	log.Debugw("Contains",
-		logging.Stringer("ContainsRequest", request))
+		logging.Trunc128("ContainsRequest", request))
 	partition := s.PartitionBy([]byte(request.Element.Value))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Contains",
-			logging.Stringer("ContainsRequest", request),
+			logging.Trunc128("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Contains",
-			logging.Stringer("ContainsRequest", request),
+			logging.Trunc128("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -222,12 +222,12 @@ func (s *setClient) Contains(ctx context.Context, request *setv1.ContainsRequest
 	})
 	if !ok {
 		log.Warnw("Contains",
-			logging.Stringer("ContainsRequest", request),
+			logging.Trunc128("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Contains",
-			logging.Stringer("ContainsRequest", request),
+			logging.Trunc128("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -235,26 +235,26 @@ func (s *setClient) Contains(ctx context.Context, request *setv1.ContainsRequest
 		Contains: output.Contains,
 	}
 	log.Debugw("Contains",
-		logging.Stringer("ContainsRequest", request),
-		logging.Stringer("ContainsResponse", response))
+		logging.Trunc128("ContainsRequest", request),
+		logging.Trunc128("ContainsResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Remove(ctx context.Context, request *setv1.RemoveRequest) (*setv1.RemoveResponse, error) {
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", request))
+		logging.Trunc128("RemoveRequest", request))
 	partition := s.PartitionBy([]byte(request.Element.Value))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", request),
+			logging.Trunc128("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", request),
+			logging.Trunc128("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -272,39 +272,39 @@ func (s *setClient) Remove(ctx context.Context, request *setv1.RemoveRequest) (*
 	})
 	if !ok {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", request),
+			logging.Trunc128("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Remove",
-			logging.Stringer("RemoveRequest", request),
+			logging.Trunc128("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response := &setv1.RemoveResponse{}
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", request),
-		logging.Stringer("RemoveResponse", response))
+		logging.Trunc128("RemoveRequest", request),
+		logging.Trunc128("RemoveResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Clear(ctx context.Context, request *setv1.ClearRequest) (*setv1.ClearResponse, error) {
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", request))
+		logging.Trunc128("ClearRequest", request))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
 		session, err := partition.GetSession(ctx)
 		if err != nil {
 			log.Warnw("Clear",
-				logging.Stringer("ClearRequest", request),
+				logging.Trunc128("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
 		primitive, err := session.GetPrimitive(request.ID.Name)
 		if err != nil {
 			log.Warnw("Clear",
-				logging.Stringer("ClearRequest", request),
+				logging.Trunc128("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -317,12 +317,12 @@ func (s *setClient) Clear(ctx context.Context, request *setv1.ClearRequest) (*se
 		})
 		if !ok {
 			log.Warnw("Clear",
-				logging.Stringer("ClearRequest", request),
+				logging.Trunc128("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		} else if err != nil {
 			log.Debugw("Clear",
-				logging.Stringer("ClearRequest", request),
+				logging.Trunc128("ClearRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -333,14 +333,14 @@ func (s *setClient) Clear(ctx context.Context, request *setv1.ClearRequest) (*se
 	}
 	response := &setv1.ClearResponse{}
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", request),
-		logging.Stringer("ClearResponse", response))
+		logging.Trunc128("ClearRequest", request),
+		logging.Trunc128("ClearResponse", response))
 	return response, nil
 }
 
 func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_EventsServer) error {
 	log.Debugw("Events received",
-		logging.Stringer("EventsRequest", request))
+		logging.Trunc128("EventsRequest", request))
 	partitions := s.Partitions()
 	ch := make(chan streams.Result[*setv1.EventsResponse])
 	wg := &sync.WaitGroup{}
@@ -351,7 +351,7 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Events",
-					logging.Stringer("EventsRequest", request),
+					logging.Trunc128("EventsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*setv1.EventsResponse]{
 					Error: err,
@@ -361,7 +361,7 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 			primitive, err := session.GetPrimitive(request.ID.Name)
 			if err != nil {
 				log.Warnw("Events",
-					logging.Stringer("EventsRequest", request),
+					logging.Trunc128("EventsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*setv1.EventsResponse]{
 					Error: err,
@@ -377,7 +377,7 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 			})
 			if err != nil {
 				log.Warnw("Events",
-					logging.Stringer("EventsRequest", request),
+					logging.Trunc128("EventsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*setv1.EventsResponse]{
 					Error: err,
@@ -389,7 +389,7 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 				if !ok {
 					if err != io.EOF {
 						log.Warnw("Events",
-							logging.Stringer("EventsRequest", request),
+							logging.Trunc128("EventsRequest", request),
 							logging.Error("Error", err))
 						ch <- streams.Result[*setv1.EventsResponse]{
 							Error: err,
@@ -399,7 +399,7 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 				}
 				if err != nil {
 					log.Debugw("Events",
-						logging.Stringer("EventsRequest", request),
+						logging.Trunc128("EventsRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*setv1.EventsResponse]{
 						Error: err,
@@ -428,8 +428,8 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 						}
 					}
 					log.Debugw("Events",
-						logging.Stringer("EventsRequest", request),
-						logging.Stringer("EventsResponse", response))
+						logging.Trunc128("EventsRequest", request),
+						logging.Trunc128("EventsResponse", response))
 					ch <- streams.Result[*setv1.EventsResponse]{
 						Value: response,
 					}
@@ -452,13 +452,13 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 		}
 	}
 	log.Debugw("Events complete",
-		logging.Stringer("EventsRequest", request))
+		logging.Trunc128("EventsRequest", request))
 	return nil
 }
 
 func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_ElementsServer) error {
 	log.Debugw("Elements received",
-		logging.Stringer("ElementsRequest", request))
+		logging.Trunc128("ElementsRequest", request))
 	partitions := s.Partitions()
 	ch := make(chan streams.Result[*setv1.ElementsResponse])
 	wg := &sync.WaitGroup{}
@@ -469,7 +469,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 			session, err := partition.GetSession(server.Context())
 			if err != nil {
 				log.Warnw("Elements",
-					logging.Stringer("ElementsRequest", request),
+					logging.Trunc128("ElementsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*setv1.ElementsResponse]{
 					Error: err,
@@ -479,7 +479,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 			primitive, err := session.GetPrimitive(request.ID.Name)
 			if err != nil {
 				log.Warnw("Elements",
-					logging.Stringer("ElementsRequest", request),
+					logging.Trunc128("ElementsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*setv1.ElementsResponse]{
 					Error: err,
@@ -497,7 +497,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 			})
 			if err != nil {
 				log.Warnw("Elements",
-					logging.Stringer("ElementsRequest", request),
+					logging.Trunc128("ElementsRequest", request),
 					logging.Error("Error", err))
 				ch <- streams.Result[*setv1.ElementsResponse]{
 					Error: err,
@@ -509,7 +509,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 				if !ok {
 					if err != io.EOF {
 						log.Warnw("Elements",
-							logging.Stringer("ElementsRequest", request),
+							logging.Trunc128("ElementsRequest", request),
 							logging.Error("Error", err))
 						ch <- streams.Result[*setv1.ElementsResponse]{
 							Error: err,
@@ -519,7 +519,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 				}
 				if err != nil {
 					log.Debugw("Elements",
-						logging.Stringer("ElementsRequest", request),
+						logging.Trunc128("ElementsRequest", request),
 						logging.Error("Error", err))
 					ch <- streams.Result[*setv1.ElementsResponse]{
 						Error: err,
@@ -531,8 +531,8 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 						},
 					}
 					log.Debugw("Elements",
-						logging.Stringer("ElementsRequest", request),
-						logging.Stringer("ElementsResponse", response))
+						logging.Trunc128("ElementsRequest", request),
+						logging.Trunc128("ElementsResponse", response))
 					ch <- streams.Result[*setv1.ElementsResponse]{
 						Value: response,
 					}
@@ -555,7 +555,7 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 		}
 	}
 	log.Debugw("Elements complete",
-		logging.Stringer("ElementsRequest", request))
+		logging.Trunc128("ElementsRequest", request))
 	return nil
 }
 

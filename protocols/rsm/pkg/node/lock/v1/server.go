@@ -45,7 +45,7 @@ type lockServer struct {
 
 func (s *lockServer) Acquire(ctx context.Context, request *lockprotocolv1.AcquireRequest) (*lockprotocolv1.AcquireResponse, error) {
 	log.Debugw("Acquire",
-		logging.Stringer("AcquireRequest", request))
+		logging.Trunc128("AcquireRequest", request))
 	input := &lockprotocolv1.LockInput{
 		Input: &lockprotocolv1.LockInput_Acquire{
 			Acquire: request.AcquireInput,
@@ -54,7 +54,7 @@ func (s *lockServer) Acquire(ctx context.Context, request *lockprotocolv1.Acquir
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Acquire",
-			logging.Stringer("AcquireRequest", request),
+			logging.Trunc128("AcquireRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -63,14 +63,14 @@ func (s *lockServer) Acquire(ctx context.Context, request *lockprotocolv1.Acquir
 		AcquireOutput: output.GetAcquire(),
 	}
 	log.Debugw("Acquire",
-		logging.Stringer("AcquireRequest", request),
-		logging.Stringer("AcquireResponse", response))
+		logging.Trunc128("AcquireRequest", request),
+		logging.Trunc128("AcquireResponse", response))
 	return response, nil
 }
 
 func (s *lockServer) Release(ctx context.Context, request *lockprotocolv1.ReleaseRequest) (*lockprotocolv1.ReleaseResponse, error) {
 	log.Debugw("Release",
-		logging.Stringer("ReleaseRequest", request))
+		logging.Trunc128("ReleaseRequest", request))
 	input := &lockprotocolv1.LockInput{
 		Input: &lockprotocolv1.LockInput_Release{
 			Release: request.ReleaseInput,
@@ -79,7 +79,7 @@ func (s *lockServer) Release(ctx context.Context, request *lockprotocolv1.Releas
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Release",
-			logging.Stringer("ReleaseRequest", request),
+			logging.Trunc128("ReleaseRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -88,14 +88,14 @@ func (s *lockServer) Release(ctx context.Context, request *lockprotocolv1.Releas
 		ReleaseOutput: output.GetRelease(),
 	}
 	log.Debugw("Release",
-		logging.Stringer("ReleaseRequest", request),
-		logging.Stringer("ReleaseResponse", response))
+		logging.Trunc128("ReleaseRequest", request),
+		logging.Trunc128("ReleaseResponse", response))
 	return response, nil
 }
 
 func (s *lockServer) Get(ctx context.Context, request *lockprotocolv1.GetRequest) (*lockprotocolv1.GetResponse, error) {
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", request))
+		logging.Trunc128("GetRequest", request))
 	input := &lockprotocolv1.LockInput{
 		Input: &lockprotocolv1.LockInput_Get{
 			Get: request.GetInput,
@@ -104,7 +104,7 @@ func (s *lockServer) Get(ctx context.Context, request *lockprotocolv1.GetRequest
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", request),
+			logging.Trunc128("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (s *lockServer) Get(ctx context.Context, request *lockprotocolv1.GetRequest
 		GetOutput: output.GetGet(),
 	}
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", request),
-		logging.Stringer("GetResponse", response))
+		logging.Trunc128("GetRequest", request),
+		logging.Trunc128("GetResponse", response))
 	return response, nil
 }

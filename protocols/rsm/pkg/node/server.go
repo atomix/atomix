@@ -24,13 +24,13 @@ type nodeServer struct {
 
 func (s *nodeServer) OpenSession(ctx context.Context, request *protocol.OpenSessionRequest) (*protocol.OpenSessionResponse, error) {
 	log.Debugw("OpenSession",
-		logging.Stringer("OpenSessionRequest", request))
+		logging.Trunc128("OpenSessionRequest", request))
 
 	partition, ok := s.Partition(request.Headers.PartitionID)
 	if !ok {
 		err := errors.NewUnavailable("unknown partition %d", request.Headers.PartitionID)
 		log.Warnw("OpenSession",
-			logging.Stringer("OpenSessionRequest", request),
+			logging.Trunc128("OpenSessionRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (s *nodeServer) OpenSession(ctx context.Context, request *protocol.OpenSess
 	output, err := partition.Propose(ctx, input)
 	if err != nil {
 		log.Warnw("OpenSession",
-			logging.Stringer("OpenSessionRequest", request),
+			logging.Trunc128("OpenSessionRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -55,20 +55,20 @@ func (s *nodeServer) OpenSession(ctx context.Context, request *protocol.OpenSess
 		OpenSessionOutput: output.GetOpenSession(),
 	}
 	log.Debugw("OpenSession",
-		logging.Stringer("OpenSessionRequest", request),
-		logging.Stringer("OpenSessionResponse", response))
+		logging.Trunc128("OpenSessionRequest", request),
+		logging.Trunc128("OpenSessionResponse", response))
 	return response, nil
 }
 
 func (s *nodeServer) KeepAlive(ctx context.Context, request *protocol.KeepAliveRequest) (*protocol.KeepAliveResponse, error) {
 	log.Debugw("KeepAlive",
-		logging.Stringer("KeepAliveRequest", request))
+		logging.Trunc128("KeepAliveRequest", request))
 
 	partition, ok := s.Partition(request.Headers.PartitionID)
 	if !ok {
 		err := errors.NewUnavailable("unknown partition %d", request.Headers.PartitionID)
 		log.Warnw("KeepAlive",
-			logging.Stringer("KeepAliveRequest", request),
+			logging.Trunc128("KeepAliveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (s *nodeServer) KeepAlive(ctx context.Context, request *protocol.KeepAliveR
 	output, err := partition.Propose(ctx, command)
 	if err != nil {
 		log.Warnw("KeepAlive",
-			logging.Stringer("KeepAliveRequest", request),
+			logging.Trunc128("KeepAliveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -93,20 +93,20 @@ func (s *nodeServer) KeepAlive(ctx context.Context, request *protocol.KeepAliveR
 		KeepAliveOutput: output.GetKeepAlive(),
 	}
 	log.Debugw("KeepAlive",
-		logging.Stringer("KeepAliveRequest", request),
-		logging.Stringer("KeepAliveResponse", response))
+		logging.Trunc128("KeepAliveRequest", request),
+		logging.Trunc128("KeepAliveResponse", response))
 	return response, nil
 }
 
 func (s *nodeServer) CloseSession(ctx context.Context, request *protocol.CloseSessionRequest) (*protocol.CloseSessionResponse, error) {
 	log.Debugw("CloseSession",
-		logging.Stringer("CloseSessionRequest", request))
+		logging.Trunc128("CloseSessionRequest", request))
 
 	partition, ok := s.Partition(request.Headers.PartitionID)
 	if !ok {
 		err := errors.NewUnavailable("unknown partition %d", request.Headers.PartitionID)
 		log.Warnw("CloseSession",
-			logging.Stringer("CloseSessionRequest", request),
+			logging.Trunc128("CloseSessionRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (s *nodeServer) CloseSession(ctx context.Context, request *protocol.CloseSe
 	output, err := partition.Propose(ctx, command)
 	if err != nil {
 		log.Warnw("CloseSession",
-			logging.Stringer("CloseSessionRequest", request),
+			logging.Trunc128("CloseSessionRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -131,20 +131,20 @@ func (s *nodeServer) CloseSession(ctx context.Context, request *protocol.CloseSe
 		CloseSessionOutput: output.GetCloseSession(),
 	}
 	log.Debugw("CloseSession",
-		logging.Stringer("CloseSessionRequest", request),
-		logging.Stringer("CloseSessionResponse", response))
+		logging.Trunc128("CloseSessionRequest", request),
+		logging.Trunc128("CloseSessionResponse", response))
 	return response, nil
 }
 
 func (s *nodeServer) CreatePrimitive(ctx context.Context, request *protocol.CreatePrimitiveRequest) (*protocol.CreatePrimitiveResponse, error) {
 	log.Debugw("CreatePrimitive",
-		logging.Stringer("CreatePrimitiveRequest", request))
+		logging.Trunc128("CreatePrimitiveRequest", request))
 
 	partition, ok := s.Partition(request.Headers.PartitionID)
 	if !ok {
 		err := errors.NewUnavailable("unknown partition %d", request.Headers.PartitionID)
 		log.Warnw("CreatePrimitive",
-			logging.Stringer("CreatePrimitiveRequest", request),
+			logging.Trunc128("CreatePrimitiveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (s *nodeServer) CreatePrimitive(ctx context.Context, request *protocol.Crea
 	output, err := partition.Propose(ctx, command)
 	if err != nil {
 		log.Warnw("CreatePrimitive",
-			logging.Stringer("CreatePrimitiveRequest", request),
+			logging.Trunc128("CreatePrimitiveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -186,20 +186,20 @@ func (s *nodeServer) CreatePrimitive(ctx context.Context, request *protocol.Crea
 		CreatePrimitiveOutput: output.GetProposal().GetCreatePrimitive(),
 	}
 	log.Debugw("CreatePrimitive",
-		logging.Stringer("CreatePrimitiveRequest", request),
-		logging.Stringer("CreatePrimitiveResponse", response))
+		logging.Trunc128("CreatePrimitiveRequest", request),
+		logging.Trunc128("CreatePrimitiveResponse", response))
 	return response, nil
 }
 
 func (s *nodeServer) ClosePrimitive(ctx context.Context, request *protocol.ClosePrimitiveRequest) (*protocol.ClosePrimitiveResponse, error) {
 	log.Debugw("ClosePrimitive",
-		logging.Stringer("ClosePrimitiveRequest", request))
+		logging.Trunc128("ClosePrimitiveRequest", request))
 
 	partition, ok := s.Partition(request.Headers.PartitionID)
 	if !ok {
 		err := errors.NewUnavailable("unknown partition %d", request.Headers.PartitionID)
 		log.Warnw("ClosePrimitive",
-			logging.Stringer("ClosePrimitiveRequest", request),
+			logging.Trunc128("ClosePrimitiveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -219,7 +219,7 @@ func (s *nodeServer) ClosePrimitive(ctx context.Context, request *protocol.Close
 	output, err := partition.Propose(ctx, command)
 	if err != nil {
 		log.Warnw("ClosePrimitive",
-			logging.Stringer("ClosePrimitiveRequest", request),
+			logging.Trunc128("ClosePrimitiveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func (s *nodeServer) ClosePrimitive(ctx context.Context, request *protocol.Close
 		ClosePrimitiveOutput: output.GetProposal().GetClosePrimitive(),
 	}
 	log.Debugw("ClosePrimitive",
-		logging.Stringer("ClosePrimitiveRequest", request),
-		logging.Stringer("ClosePrimitiveResponse", response))
+		logging.Trunc128("ClosePrimitiveRequest", request),
+		logging.Trunc128("ClosePrimitiveResponse", response))
 	return response, nil
 }

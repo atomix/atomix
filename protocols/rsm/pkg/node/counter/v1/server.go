@@ -45,7 +45,7 @@ type counterServer struct {
 
 func (s *counterServer) Set(ctx context.Context, request *counterprotocolv1.SetRequest) (*counterprotocolv1.SetResponse, error) {
 	log.Debugw("Set",
-		logging.Stringer("SetRequest", request))
+		logging.Trunc128("SetRequest", request))
 	input := &counterprotocolv1.CounterInput{
 		Input: &counterprotocolv1.CounterInput_Set{
 			Set: request.SetInput,
@@ -54,7 +54,7 @@ func (s *counterServer) Set(ctx context.Context, request *counterprotocolv1.SetR
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Set",
-			logging.Stringer("SetRequest", request),
+			logging.Trunc128("SetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -63,14 +63,14 @@ func (s *counterServer) Set(ctx context.Context, request *counterprotocolv1.SetR
 		SetOutput: output.GetSet(),
 	}
 	log.Debugw("Set",
-		logging.Stringer("SetRequest", request),
-		logging.Stringer("SetResponse", response))
+		logging.Trunc128("SetRequest", request),
+		logging.Trunc128("SetResponse", response))
 	return response, nil
 }
 
 func (s *counterServer) Update(ctx context.Context, request *counterprotocolv1.UpdateRequest) (*counterprotocolv1.UpdateResponse, error) {
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", request))
+		logging.Trunc128("UpdateRequest", request))
 	input := &counterprotocolv1.CounterInput{
 		Input: &counterprotocolv1.CounterInput_Update{
 			Update: request.UpdateInput,
@@ -79,7 +79,7 @@ func (s *counterServer) Update(ctx context.Context, request *counterprotocolv1.U
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Update",
-			logging.Stringer("UpdateRequest", request),
+			logging.Trunc128("UpdateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -88,14 +88,14 @@ func (s *counterServer) Update(ctx context.Context, request *counterprotocolv1.U
 		UpdateOutput: output.GetUpdate(),
 	}
 	log.Debugw("Update",
-		logging.Stringer("UpdateRequest", request),
-		logging.Stringer("UpdateResponse", response))
+		logging.Trunc128("UpdateRequest", request),
+		logging.Trunc128("UpdateResponse", response))
 	return response, nil
 }
 
 func (s *counterServer) Get(ctx context.Context, request *counterprotocolv1.GetRequest) (*counterprotocolv1.GetResponse, error) {
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", request))
+		logging.Trunc128("GetRequest", request))
 	input := &counterprotocolv1.CounterInput{
 		Input: &counterprotocolv1.CounterInput_Get{
 			Get: request.GetInput,
@@ -104,7 +104,7 @@ func (s *counterServer) Get(ctx context.Context, request *counterprotocolv1.GetR
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Get",
-			logging.Stringer("GetRequest", request),
+			logging.Trunc128("GetRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -113,14 +113,14 @@ func (s *counterServer) Get(ctx context.Context, request *counterprotocolv1.GetR
 		GetOutput: output.GetGet(),
 	}
 	log.Debugw("Get",
-		logging.Stringer("GetRequest", request),
-		logging.Stringer("GetResponse", response))
+		logging.Trunc128("GetRequest", request),
+		logging.Trunc128("GetResponse", response))
 	return response, nil
 }
 
 func (s *counterServer) Increment(ctx context.Context, request *counterprotocolv1.IncrementRequest) (*counterprotocolv1.IncrementResponse, error) {
 	log.Debugw("Increment",
-		logging.Stringer("IncrementRequest", request))
+		logging.Trunc128("IncrementRequest", request))
 	input := &counterprotocolv1.CounterInput{
 		Input: &counterprotocolv1.CounterInput_Increment{
 			Increment: request.IncrementInput,
@@ -129,7 +129,7 @@ func (s *counterServer) Increment(ctx context.Context, request *counterprotocolv
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Increment",
-			logging.Stringer("IncrementRequest", request),
+			logging.Trunc128("IncrementRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -138,14 +138,14 @@ func (s *counterServer) Increment(ctx context.Context, request *counterprotocolv
 		IncrementOutput: output.GetIncrement(),
 	}
 	log.Debugw("Increment",
-		logging.Stringer("IncrementRequest", request),
-		logging.Stringer("IncrementResponse", response))
+		logging.Trunc128("IncrementRequest", request),
+		logging.Trunc128("IncrementResponse", response))
 	return response, nil
 }
 
 func (s *counterServer) Decrement(ctx context.Context, request *counterprotocolv1.DecrementRequest) (*counterprotocolv1.DecrementResponse, error) {
 	log.Debugw("Decrement",
-		logging.Stringer("DecrementRequest", request))
+		logging.Trunc128("DecrementRequest", request))
 	input := &counterprotocolv1.CounterInput{
 		Input: &counterprotocolv1.CounterInput_Decrement{
 			Decrement: request.DecrementInput,
@@ -154,7 +154,7 @@ func (s *counterServer) Decrement(ctx context.Context, request *counterprotocolv
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Decrement",
-			logging.Stringer("DecrementRequest", request),
+			logging.Trunc128("DecrementRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (s *counterServer) Decrement(ctx context.Context, request *counterprotocolv
 		DecrementOutput: output.GetDecrement(),
 	}
 	log.Debugw("Decrement",
-		logging.Stringer("DecrementRequest", request),
-		logging.Stringer("DecrementResponse", response))
+		logging.Trunc128("DecrementRequest", request),
+		logging.Trunc128("DecrementResponse", response))
 	return response, nil
 }

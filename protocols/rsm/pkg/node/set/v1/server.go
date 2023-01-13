@@ -46,7 +46,7 @@ type setServer struct {
 
 func (s *setServer) Size(ctx context.Context, request *setprotocolv1.SizeRequest) (*setprotocolv1.SizeResponse, error) {
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", request))
+		logging.Trunc128("SizeRequest", request))
 	input := &setprotocolv1.SetInput{
 		Input: &setprotocolv1.SetInput_Size_{
 			Size_: request.SizeInput,
@@ -55,7 +55,7 @@ func (s *setServer) Size(ctx context.Context, request *setprotocolv1.SizeRequest
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Size",
-			logging.Stringer("SizeRequest", request),
+			logging.Trunc128("SizeRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -64,14 +64,14 @@ func (s *setServer) Size(ctx context.Context, request *setprotocolv1.SizeRequest
 		SizeOutput: output.GetSize_(),
 	}
 	log.Debugw("Size",
-		logging.Stringer("SizeRequest", request),
-		logging.Stringer("SizeResponse", response))
+		logging.Trunc128("SizeRequest", request),
+		logging.Trunc128("SizeResponse", response))
 	return response, nil
 }
 
 func (s *setServer) Add(ctx context.Context, request *setprotocolv1.AddRequest) (*setprotocolv1.AddResponse, error) {
 	log.Debugw("Add",
-		logging.Stringer("AddRequest", request))
+		logging.Trunc128("AddRequest", request))
 	input := &setprotocolv1.SetInput{
 		Input: &setprotocolv1.SetInput_Add{
 			Add: request.AddInput,
@@ -80,7 +80,7 @@ func (s *setServer) Add(ctx context.Context, request *setprotocolv1.AddRequest) 
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Add",
-			logging.Stringer("AddRequest", request),
+			logging.Trunc128("AddRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -89,14 +89,14 @@ func (s *setServer) Add(ctx context.Context, request *setprotocolv1.AddRequest) 
 		AddOutput: output.GetAdd(),
 	}
 	log.Debugw("Add",
-		logging.Stringer("AddRequest", request),
-		logging.Stringer("AddResponse", response))
+		logging.Trunc128("AddRequest", request),
+		logging.Trunc128("AddResponse", response))
 	return response, nil
 }
 
 func (s *setServer) Contains(ctx context.Context, request *setprotocolv1.ContainsRequest) (*setprotocolv1.ContainsResponse, error) {
 	log.Debugw("Contains",
-		logging.Stringer("ContainsRequest", request))
+		logging.Trunc128("ContainsRequest", request))
 	input := &setprotocolv1.SetInput{
 		Input: &setprotocolv1.SetInput_Contains{
 			Contains: request.ContainsInput,
@@ -105,7 +105,7 @@ func (s *setServer) Contains(ctx context.Context, request *setprotocolv1.Contain
 	output, headers, err := s.handler.Query(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Contains",
-			logging.Stringer("ContainsRequest", request),
+			logging.Trunc128("ContainsRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -114,14 +114,14 @@ func (s *setServer) Contains(ctx context.Context, request *setprotocolv1.Contain
 		ContainsOutput: output.GetContains(),
 	}
 	log.Debugw("Contains",
-		logging.Stringer("ContainsRequest", request),
-		logging.Stringer("ContainsResponse", response))
+		logging.Trunc128("ContainsRequest", request),
+		logging.Trunc128("ContainsResponse", response))
 	return response, nil
 }
 
 func (s *setServer) Remove(ctx context.Context, request *setprotocolv1.RemoveRequest) (*setprotocolv1.RemoveResponse, error) {
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", request))
+		logging.Trunc128("RemoveRequest", request))
 	input := &setprotocolv1.SetInput{
 		Input: &setprotocolv1.SetInput_Remove{
 			Remove: request.RemoveInput,
@@ -130,7 +130,7 @@ func (s *setServer) Remove(ctx context.Context, request *setprotocolv1.RemoveReq
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Remove",
-			logging.Stringer("RemoveRequest", request),
+			logging.Trunc128("RemoveRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -139,14 +139,14 @@ func (s *setServer) Remove(ctx context.Context, request *setprotocolv1.RemoveReq
 		RemoveOutput: output.GetRemove(),
 	}
 	log.Debugw("Remove",
-		logging.Stringer("RemoveRequest", request),
-		logging.Stringer("RemoveResponse", response))
+		logging.Trunc128("RemoveRequest", request),
+		logging.Trunc128("RemoveResponse", response))
 	return response, nil
 }
 
 func (s *setServer) Clear(ctx context.Context, request *setprotocolv1.ClearRequest) (*setprotocolv1.ClearResponse, error) {
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", request))
+		logging.Trunc128("ClearRequest", request))
 	input := &setprotocolv1.SetInput{
 		Input: &setprotocolv1.SetInput_Clear{
 			Clear: request.ClearInput,
@@ -155,7 +155,7 @@ func (s *setServer) Clear(ctx context.Context, request *setprotocolv1.ClearReque
 	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
 	if err != nil {
 		log.Warnw("Clear",
-			logging.Stringer("ClearRequest", request),
+			logging.Trunc128("ClearRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -164,14 +164,14 @@ func (s *setServer) Clear(ctx context.Context, request *setprotocolv1.ClearReque
 		ClearOutput: output.GetClear(),
 	}
 	log.Debugw("Clear",
-		logging.Stringer("ClearRequest", request),
-		logging.Stringer("ClearResponse", response))
+		logging.Trunc128("ClearRequest", request),
+		logging.Trunc128("ClearResponse", response))
 	return response, nil
 }
 
 func (s *setServer) Events(request *setprotocolv1.EventsRequest, server setprotocolv1.Set_EventsServer) error {
 	log.Debugw("Events",
-		logging.Stringer("EventsRequest", request))
+		logging.Trunc128("EventsRequest", request))
 	input := &setprotocolv1.SetInput{
 		Input: &setprotocolv1.SetInput_Events{
 			Events: request.EventsInput,
@@ -183,7 +183,7 @@ func (s *setServer) Events(request *setprotocolv1.EventsRequest, server setproto
 		err := s.handler.StreamPropose(server.Context(), input, request.Headers, stream)
 		if err != nil {
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
+				logging.Trunc128("EventsRequest", request),
 				logging.Error("Error", err))
 			stream.Error(err)
 			stream.Close()
@@ -198,7 +198,7 @@ func (s *setServer) Events(request *setprotocolv1.EventsRequest, server setproto
 
 		if result.Failed() {
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
+				logging.Trunc128("EventsRequest", request),
 				logging.Error("Error", result.Error))
 			return result.Error
 		}
@@ -208,11 +208,11 @@ func (s *setServer) Events(request *setprotocolv1.EventsRequest, server setproto
 			EventsOutput: result.Value.Output.GetEvents(),
 		}
 		log.Debugw("Events",
-			logging.Stringer("EventsRequest", request),
-			logging.Stringer("EventsResponse", response))
+			logging.Trunc128("EventsRequest", request),
+			logging.Trunc128("EventsResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Events",
-				logging.Stringer("EventsRequest", request),
+				logging.Trunc128("EventsRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -221,7 +221,7 @@ func (s *setServer) Events(request *setprotocolv1.EventsRequest, server setproto
 
 func (s *setServer) Elements(request *setprotocolv1.ElementsRequest, server setprotocolv1.Set_ElementsServer) error {
 	log.Debugw("Elements",
-		logging.Stringer("ElementsRequest", request))
+		logging.Trunc128("ElementsRequest", request))
 	input := &setprotocolv1.SetInput{
 		Input: &setprotocolv1.SetInput_Elements{
 			Elements: request.ElementsInput,
@@ -233,7 +233,7 @@ func (s *setServer) Elements(request *setprotocolv1.ElementsRequest, server setp
 		err := s.handler.StreamQuery(server.Context(), input, request.Headers, stream)
 		if err != nil {
 			log.Warnw("Elements",
-				logging.Stringer("ElementsRequest", request),
+				logging.Trunc128("ElementsRequest", request),
 				logging.Error("Error", err))
 			stream.Error(err)
 			stream.Close()
@@ -248,7 +248,7 @@ func (s *setServer) Elements(request *setprotocolv1.ElementsRequest, server setp
 
 		if result.Failed() {
 			log.Warnw("Elements",
-				logging.Stringer("ElementsRequest", request),
+				logging.Trunc128("ElementsRequest", request),
 				logging.Error("Error", result.Error))
 			return result.Error
 		}
@@ -258,11 +258,11 @@ func (s *setServer) Elements(request *setprotocolv1.ElementsRequest, server setp
 			ElementsOutput: result.Value.Output.GetElements(),
 		}
 		log.Debugw("Elements",
-			logging.Stringer("ElementsRequest", request),
-			logging.Stringer("ElementsResponse", response))
+			logging.Trunc128("ElementsRequest", request),
+			logging.Trunc128("ElementsResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Elements",
-				logging.Stringer("ElementsRequest", request),
+				logging.Trunc128("ElementsRequest", request),
 				logging.Error("Error", err))
 			return err
 		}

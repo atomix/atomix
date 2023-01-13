@@ -30,12 +30,12 @@ type electionClient struct {
 
 func (s *electionClient) Create(ctx context.Context, request *electionv1.CreateRequest) (*electionv1.CreateResponse, error) {
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", request))
+		logging.Trunc128("CreateRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
+			logging.Trunc128("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -45,56 +45,56 @@ func (s *electionClient) Create(ctx context.Context, request *electionv1.CreateR
 		Tags:        request.Tags,
 	}); err != nil {
 		log.Warnw("Create",
-			logging.Stringer("CreateRequest", request),
+			logging.Trunc128("CreateRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response := &electionv1.CreateResponse{}
 	log.Debugw("Create",
-		logging.Stringer("CreateRequest", request),
-		logging.Stringer("CreateResponse", response))
+		logging.Trunc128("CreateRequest", request),
+		logging.Trunc128("CreateResponse", response))
 	return response, nil
 }
 
 func (s *electionClient) Close(ctx context.Context, request *electionv1.CloseRequest) (*electionv1.CloseResponse, error) {
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", request))
+		logging.Trunc128("CloseRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
+			logging.Trunc128("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
 		log.Warnw("Close",
-			logging.Stringer("CloseRequest", request),
+			logging.Trunc128("CloseRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	response := &electionv1.CloseResponse{}
 	log.Debugw("Close",
-		logging.Stringer("CloseRequest", request),
-		logging.Stringer("CloseResponse", response))
+		logging.Trunc128("CloseRequest", request),
+		logging.Trunc128("CloseResponse", response))
 	return response, nil
 }
 
 func (s *electionClient) Enter(ctx context.Context, request *electionv1.EnterRequest) (*electionv1.EnterResponse, error) {
 	log.Debugw("Enter",
-		logging.Stringer("EnterRequest", request))
+		logging.Trunc128("EnterRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Enter",
-			logging.Stringer("EnterRequest", request),
+			logging.Trunc128("EnterRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Enter",
-			logging.Stringer("EnterRequest", request),
+			logging.Trunc128("EnterRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -109,12 +109,12 @@ func (s *electionClient) Enter(ctx context.Context, request *electionv1.EnterReq
 	})
 	if !ok {
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -126,26 +126,26 @@ func (s *electionClient) Enter(ctx context.Context, request *electionv1.EnterReq
 		},
 	}
 	log.Debugw("Enter",
-		logging.Stringer("EnterRequest", request),
-		logging.Stringer("EnterResponse", response))
+		logging.Trunc128("EnterRequest", request),
+		logging.Trunc128("EnterResponse", response))
 	return response, nil
 }
 
 func (s *electionClient) Withdraw(ctx context.Context, request *electionv1.WithdrawRequest) (*electionv1.WithdrawResponse, error) {
 	log.Debugw("Withdraw",
-		logging.Stringer("WithdrawRequest", request))
+		logging.Trunc128("WithdrawRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Withdraw",
-			logging.Stringer("WithdrawRequest", request),
+			logging.Trunc128("WithdrawRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Withdraw",
-			logging.Stringer("WithdrawRequest", request),
+			logging.Trunc128("WithdrawRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -160,12 +160,12 @@ func (s *electionClient) Withdraw(ctx context.Context, request *electionv1.Withd
 	})
 	if !ok {
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -177,26 +177,26 @@ func (s *electionClient) Withdraw(ctx context.Context, request *electionv1.Withd
 		},
 	}
 	log.Debugw("Withdraw",
-		logging.Stringer("WithdrawRequest", request),
-		logging.Stringer("WithdrawResponse", response))
+		logging.Trunc128("WithdrawRequest", request),
+		logging.Trunc128("WithdrawResponse", response))
 	return response, nil
 }
 
 func (s *electionClient) Anoint(ctx context.Context, request *electionv1.AnointRequest) (*electionv1.AnointResponse, error) {
 	log.Debugw("Anoint",
-		logging.Stringer("AnointRequest", request))
+		logging.Trunc128("AnointRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Anoint",
-			logging.Stringer("AnointRequest", request),
+			logging.Trunc128("AnointRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Anoint",
-			logging.Stringer("AnointRequest", request),
+			logging.Trunc128("AnointRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -211,12 +211,12 @@ func (s *electionClient) Anoint(ctx context.Context, request *electionv1.AnointR
 	})
 	if !ok {
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -228,26 +228,26 @@ func (s *electionClient) Anoint(ctx context.Context, request *electionv1.AnointR
 		},
 	}
 	log.Debugw("Anoint",
-		logging.Stringer("AnointRequest", request),
-		logging.Stringer("AnointResponse", response))
+		logging.Trunc128("AnointRequest", request),
+		logging.Trunc128("AnointResponse", response))
 	return response, nil
 }
 
 func (s *electionClient) Promote(ctx context.Context, request *electionv1.PromoteRequest) (*electionv1.PromoteResponse, error) {
 	log.Debugw("Promote",
-		logging.Stringer("PromoteRequest", request))
+		logging.Trunc128("PromoteRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Promote",
-			logging.Stringer("PromoteRequest", request),
+			logging.Trunc128("PromoteRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Promote",
-			logging.Stringer("PromoteRequest", request),
+			logging.Trunc128("PromoteRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -262,12 +262,12 @@ func (s *electionClient) Promote(ctx context.Context, request *electionv1.Promot
 	})
 	if !ok {
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -279,26 +279,26 @@ func (s *electionClient) Promote(ctx context.Context, request *electionv1.Promot
 		},
 	}
 	log.Debugw("Promote",
-		logging.Stringer("PromoteRequest", request),
-		logging.Stringer("PromoteResponse", response))
+		logging.Trunc128("PromoteRequest", request),
+		logging.Trunc128("PromoteResponse", response))
 	return response, nil
 }
 
 func (s *electionClient) Demote(ctx context.Context, request *electionv1.DemoteRequest) (*electionv1.DemoteResponse, error) {
 	log.Debugw("Demote",
-		logging.Stringer("DemoteRequest", request))
+		logging.Trunc128("DemoteRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Demote",
-			logging.Stringer("DemoteRequest", request),
+			logging.Trunc128("DemoteRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Demote",
-			logging.Stringer("DemoteRequest", request),
+			logging.Trunc128("DemoteRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -313,12 +313,12 @@ func (s *electionClient) Demote(ctx context.Context, request *electionv1.DemoteR
 	})
 	if !ok {
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -330,26 +330,26 @@ func (s *electionClient) Demote(ctx context.Context, request *electionv1.DemoteR
 		},
 	}
 	log.Debugw("Demote",
-		logging.Stringer("DemoteRequest", request),
-		logging.Stringer("DemoteResponse", response))
+		logging.Trunc128("DemoteRequest", request),
+		logging.Trunc128("DemoteResponse", response))
 	return response, nil
 }
 
 func (s *electionClient) Evict(ctx context.Context, request *electionv1.EvictRequest) (*electionv1.EvictResponse, error) {
 	log.Debugw("Evict",
-		logging.Stringer("EvictRequest", request))
+		logging.Trunc128("EvictRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Evict",
-			logging.Stringer("EvictRequest", request),
+			logging.Trunc128("EvictRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Evict",
-			logging.Stringer("EvictRequest", request),
+			logging.Trunc128("EvictRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -364,12 +364,12 @@ func (s *electionClient) Evict(ctx context.Context, request *electionv1.EvictReq
 	})
 	if !ok {
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -381,26 +381,26 @@ func (s *electionClient) Evict(ctx context.Context, request *electionv1.EvictReq
 		},
 	}
 	log.Debugw("Evict",
-		logging.Stringer("EvictRequest", request),
-		logging.Stringer("EvictResponse", response))
+		logging.Trunc128("EvictRequest", request),
+		logging.Trunc128("EvictResponse", response))
 	return response, nil
 }
 
 func (s *electionClient) GetTerm(ctx context.Context, request *electionv1.GetTermRequest) (*electionv1.GetTermResponse, error) {
 	log.Debugw("GetTerm",
-		logging.Stringer("GetTermRequest", request))
+		logging.Trunc128("GetTermRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("GetTerm",
-			logging.Stringer("GetTermRequest", request),
+			logging.Trunc128("GetTermRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("GetTerm",
-			logging.Stringer("GetTermRequest", request),
+			logging.Trunc128("GetTermRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -413,12 +413,12 @@ func (s *electionClient) GetTerm(ctx context.Context, request *electionv1.GetTer
 	})
 	if !ok {
 		log.Warnw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	} else if err != nil {
 		log.Debugw("Put",
-			logging.Stringer("PutRequest", request),
+			logging.Trunc128("PutRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
@@ -430,26 +430,26 @@ func (s *electionClient) GetTerm(ctx context.Context, request *electionv1.GetTer
 		},
 	}
 	log.Debugw("GetTerm",
-		logging.Stringer("GetTermRequest", request),
-		logging.Stringer("GetTermResponse", response))
+		logging.Trunc128("GetTermRequest", request),
+		logging.Trunc128("GetTermResponse", response))
 	return response, nil
 }
 
 func (s *electionClient) Watch(request *electionv1.WatchRequest, server electionv1.LeaderElection_WatchServer) error {
 	log.Debugw("Watch",
-		logging.Stringer("WatchRequest", request))
+		logging.Trunc128("WatchRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
 	session, err := partition.GetSession(server.Context())
 	if err != nil {
 		log.Warnw("Watch",
-			logging.Stringer("WatchRequest", request),
+			logging.Trunc128("WatchRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
 	primitive, err := session.GetPrimitive(request.ID.Name)
 	if err != nil {
 		log.Warnw("Watch",
-			logging.Stringer("WatchRequest", request),
+			logging.Trunc128("WatchRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
@@ -462,7 +462,7 @@ func (s *electionClient) Watch(request *electionv1.WatchRequest, server election
 	})
 	if err != nil {
 		log.Warnw("Watch",
-			logging.Stringer("WatchRequest", request),
+			logging.Trunc128("WatchRequest", request),
 			logging.Error("Error", err))
 		return err
 	}
@@ -473,12 +473,12 @@ func (s *electionClient) Watch(request *electionv1.WatchRequest, server election
 		}
 		if !ok {
 			log.Warnw("Put",
-				logging.Stringer("PutRequest", request),
+				logging.Trunc128("PutRequest", request),
 				logging.Error("Error", err))
 			return err
 		} else if err != nil {
 			log.Debugw("Put",
-				logging.Stringer("PutRequest", request),
+				logging.Trunc128("PutRequest", request),
 				logging.Error("Error", err))
 			return err
 		}
@@ -490,12 +490,12 @@ func (s *electionClient) Watch(request *electionv1.WatchRequest, server election
 			},
 		}
 		log.Debugw("Watch",
-			logging.Stringer("WatchRequest", request),
-			logging.Stringer("WatchResponse", response))
+			logging.Trunc128("WatchRequest", request),
+			logging.Trunc128("WatchResponse", response))
 		if err := server.Send(response); err != nil {
 			log.Warnw("Watch",
-				logging.Stringer("WatchRequest", request),
-				logging.Stringer("WatchResponse", response),
+				logging.Trunc128("WatchRequest", request),
+				logging.Trunc128("WatchResponse", response),
 				logging.Error("Error", err))
 			return err
 		}

@@ -74,7 +74,7 @@ func (b *ProposerBuilder[I1, O1, I2, O2]) Build(f func(Proposal[I2, O2])) Propos
 		}
 		proposal := newTranscodingProposal[I1, O1, I2, O2](
 			parent, input, b.decoder, b.encoder, parent.Log().WithFields(logging.String("Method", b.name)))
-		proposal.Log().Debugw("Applying proposal", logging.Stringer("Input", proposal.Input()))
+		proposal.Log().Debugw("Applying proposal", logging.Trunc128("Input", proposal.Input()))
 		f(proposal)
 	}
 }
@@ -111,7 +111,7 @@ func (b *QuerierBuilder[I1, O1, I2, O2]) Build(f func(Query[I2, O2])) Querier[I1
 		}
 		query := newTranscodingQuery[I1, O1, I2, O2](
 			parent, input, b.decoder, b.encoder, parent.Log().WithFields(logging.String("Method", b.name)))
-		query.Log().Debugw("Applying query", logging.Stringer("Input", query.Input()))
+		query.Log().Debugw("Applying query", logging.Trunc128("Input", query.Input()))
 		f(query)
 	}
 }
