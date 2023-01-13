@@ -40,7 +40,7 @@ runs:
         password: ${{ inputs.password }}
 
     - name: Build and push prerelease
-      if: ${{ steps.parse-version.outputs.prerelease-version != "" }}
+      if: ${{ steps.parse-version.outputs.prerelease-version != '' }}
       uses: docker/build-push-action@v3
       with:
         context: ${{ inputs.component }}
@@ -49,7 +49,7 @@ runs:
         push: true
 
     - name: Build and push patch
-      if: ${{ steps.parse-version.outputs.prerelease-version == "" }}
+      if: ${{ steps.parse-version.outputs.prerelease-version == '' }}
       uses: docker/build-push-action@v3
       with:
         context: ${{ inputs.component }}
