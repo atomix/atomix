@@ -91,10 +91,10 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: PROXY_IMAGE
-              {{- if .Values.init.image.tag }}
-              value: {{ printf "%s:%s" .Values.init.image.repository .Values.init.image.tag }}
+              {{- if .Values.proxy.image.tag }}
+              value: {{ printf "%s:%s" .Values.proxy.image.repository .Values.proxy.image.tag }}
               {{- else }}
-              value: {{ .Values.init.image.repository }}
+              value: {{ .Values.proxy.image.repository }}
               {{- end }}
           volumeMounts:
             - name: certs
