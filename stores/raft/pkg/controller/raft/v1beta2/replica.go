@@ -22,7 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"sync"
 	"time"
 
 	raftv1beta2 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta2"
@@ -83,6 +82,9 @@ func addRaftReplicaController(mgr manager.Manager) error {
 		}
 		return requests
 	}))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -91,7 +93,6 @@ type RaftReplicaReconciler struct {
 	client client.Client
 	scheme *runtime.Scheme
 	events record.EventRecorder
-	mu     sync.RWMutex
 }
 
 // Reconcile reads that state of the cluster for a Store object and makes changes based on the state read

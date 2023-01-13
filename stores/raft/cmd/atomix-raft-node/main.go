@@ -32,7 +32,6 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -69,7 +68,7 @@ func main() {
 			}
 
 			config := raft.Config{}
-			configBytes, err := ioutil.ReadFile(configPath)
+			configBytes, err := os.ReadFile(configPath)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
