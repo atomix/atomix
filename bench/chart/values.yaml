@@ -13,7 +13,6 @@ numKeys: 1000
 sampleInterval: 10s
 
 image:
-  registry: ""
   repository: atomix/bench
   tag: ""
   pullPolicy: ""
@@ -28,9 +27,8 @@ logging:
 
 proxy:
   image:
-    registry: ""
     repository: atomix/proxy
-    tag: v0.1
+    tag: ""
     pullPolicy: ""
     pullSecrets: []
 
@@ -52,11 +50,9 @@ store:
     replicationFactor: 3
 
     image:
-      registry: ""
       repository: atomix/raft-node
-      tag: latest
-      # TODO: Revert the pull policy to the default "" for release tags
-      pullPolicy: IfNotPresent
+      tag: ""
+      pullPolicy: ""
       pullSecrets: []
 
     resources:

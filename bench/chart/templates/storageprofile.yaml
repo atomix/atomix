@@ -13,7 +13,9 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   proxy:
-    image: {{ include "atomix-bench.imagename" .Values.proxy.image | quote }}
+    {{- if .Values.proxy.image.tag }}
+    image: {{ printf "%s:%s" .Values.proxy.image.repository .Values.proxy.image.tag }}
+    {{- end }}
     {{- with .Values.proxy.image.pullPolicy }}
     imagePullPolicy: {{ . }}
     {{- end }}

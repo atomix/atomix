@@ -14,7 +14,9 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   replicas: {{ .Values.store.raft.replicas }}
-  image: {{ include "atomix-bench.imagename" .Values.store.raft.image | quote }}
+  {{- if .Values.store.raft.image.tag }}
+  image: {{ printf "%s:%s" .Values.store.raft.image.repository .Values.store.raft.image.tag }}
+  {{- end }}
   {{- with .Values.store.raft.image.pullPolicy }}
   imagePullPolicy: {{ . }}
   {{- end }}

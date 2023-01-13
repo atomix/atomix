@@ -13,7 +13,9 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
-  image: {{ include "atomix-bench.imagename" .Values.store.memory.image | quote }}
+  {{- if .Values.store.memory.image.tag }}
+  image: {{ printf "%s:%s" .Values.store.memory.image.repository .Values.store.memory.image.tag }}
+  {{- end }}
   {{- with .Values.store.memory.image.pullPolicy }}
   imagePullPolicy: {{ . }}
   {{- end }}
