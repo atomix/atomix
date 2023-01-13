@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: sharedmemory.atomix.io/v1beta1
+kind: SharedMemoryStore
+metadata:
+  name: shared-memory-store

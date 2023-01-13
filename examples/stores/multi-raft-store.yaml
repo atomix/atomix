@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# A Raft cluster with 5 replicas
+apiVersion: raft.atomix.io/v1beta2
+kind: RaftCluster
+metadata:
+  name: multi-raft-cluster
+spec:
+  replicas: 5
+---
+# A horizontally scalable sharded Raft store with 30 partitions
+apiVersion: raft.atomix.io/v1beta2
+kind: RaftStore
+metadata:
+  name: raft-store-1
+spec:
+  cluster:
+    name: multi-raft-cluster
+  partitions: 3
+  replicationFactor: 3
+---
+# A traditional consensus store with a single Raft group replicates across all 5 replicas in the RaftCluster
+apiVersion: raft.atomix.io/v1beta2
+kind: RaftStore
+metadata:
+  name: raft-store-2
+spec:
+  cluster:
+    name: multi-raft-cluster
+  partitions: 1
+  replicationFactor: 5

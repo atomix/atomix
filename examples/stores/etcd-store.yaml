@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Create a DataStore with the configuration for the store
+apiVersion: atomix.io/v3beta3
+kind: DataStore
+metadata:
+  name: etcd-store
+spec:
+  # Configure the DataStore to use the etcd driver with the v3 API
+  driver:
+    name: atomix.io/etcd
+    apiVersion: v3
+  # Define the configuration to be passed to the driver to connect to the store
+  config:
+    endpoints:
+      - etcd:2379
