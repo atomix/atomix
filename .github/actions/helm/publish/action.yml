@@ -12,28 +12,40 @@ inputs:
     description: "The path to the Helm chart relative to the component"
     required: false
     default: chart
+  publish-prereleases:
+    description: "Whether to publish pre-release versions"
+    required: false
+    default: false
 
 runs:
   using: composite
   steps:
-    - id: parse-version
-      name: Parse and validate version
+    - name: Parse and validate release version
+      id: parse-version
       uses: ./.github/actions/version/parse-and-validate
       with:
         component: ${{ inputs.component }}
 
+    - name: Check release version
+      if: ${{ !inputs.publish-prereleases && steps.parse-version.outputs.prerelease-version != '' }}
+      run: echo "Prerelease publishing is disabled. Skipping prerelease version ${{ steps.parse-version.outputs.prerelease-version }}" && exit 1
+      shell: bash
+
     - name: Configure Git
+      if: ${{ steps.parse-version.outputs.prerelease-version == '' || inputs.publish-prereleases }}
       run: |
         git config user.name "$GITHUB_ACTOR"
         git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
       shell: bash
 
     - name: Set up Helm
+      if: ${{ steps.parse-version.outputs.prerelease-version == '' || inputs.publish-prereleases }}
       uses: azure/setup-helm@v3
       with:
         version: v3.10.0
 
     - name: Package Helm chart
+      if: ${{ steps.parse-version.outputs.prerelease-version == '' || inputs.publish-prereleases }}
       run: |
         helm package ${{ inputs.component }}/${{ inputs.path }} \
           --version ${{ steps.parse-version.outputs.semantic-version }} \
@@ -42,6 +54,7 @@ runs:
       shell: bash
 
     - name: Publish Helm chart
+      if: ${{ steps.parse-version.outputs.prerelease-version == '' || inputs.publish-prereleases }}
       uses: helm/chart-releaser-action@v1.5.0
       with:
         skip_packaging: true

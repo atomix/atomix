@@ -38,7 +38,6 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Publish Helm chart
-        if: ${{ steps.parse-version.outputs.prerelease-version == '' }}
         uses: ./.github/actions/helm/publish
         with:
           component: controller
