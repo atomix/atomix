@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Run Go tests
         uses: ./.github/actions/go/test
@@ -37,6 +39,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Helm
         uses: ./.github/actions/helm/setup
@@ -47,7 +51,7 @@ jobs:
           path: bench/chart
 
   test-version:
-    name: Parse and validate version
+    name: Test version
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.validate.outputs.version }}
@@ -71,6 +75,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Build Docker image
         uses: ./.github/actions/docker/build
@@ -98,6 +104,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Publish
         uses: ./.github/actions/helm/publish
