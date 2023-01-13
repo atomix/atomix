@@ -16,12 +16,14 @@ on:
   pull_request:
 
 jobs:
-  build:
-    name: Test build
+  build-and-test:
+    name: Build and test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Run Go tests
         uses: ./.github/actions/go/test
@@ -33,13 +35,6 @@ jobs:
         with:
           path: bench
           dockerfile: build/Dockerfile
-
-  test-deployment:
-    name: Test deployment
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
 
       - name: Setup Helm
         uses: ./.github/actions/helm/setup
