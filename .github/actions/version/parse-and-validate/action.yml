@@ -13,9 +13,9 @@ outputs:
   full-version:
     description: "The full version"
     value: ${{ steps.parse-version.outputs.full-version }}
-  semver-version:
+  semantic-version:
     description: "The semantic version"
-    value: ${{ steps.parse-version.outputs.semver-version }}
+    value: ${{ steps.parse-version.outputs.semantic-version }}
   patch-version:
     description: "The patch version"
     value: ${{ steps.parse-version.outputs.patch-version }}
@@ -45,13 +45,13 @@ runs:
         tag="${{ github.ref_name }}"
         prefix="${{ inputs.component }}/"
         full_version=${tag/#$prefix}
-        semver_version=${full_version/#v}
-        patch_version=$(cut -d '-' -f 1 <<< "$semver_version")
+        semantic_version=${full_version/#v}
+        patch_version=$(cut -d '-' -f 1 <<< "$semantic_version")
         minor_version=$(cut -d '.' -f 1,2 <<< "$patch_version")
         major_version=$(cut -d '.' -f 1 <<< "$minor_version")
-        [[ "$semver_version" != "$patch_version" ]] && echo "prerelease-version=$semver_version" || echo "prerelease-version=\"\"" >> $GITHUB_OUTPUT
+        [[ "$semantic_version" != "$patch_version" ]] && echo "prerelease-version=$semantic_version" || echo "prerelease-version=\"\"" >> $GITHUB_OUTPUT
         echo "full-version=$full_version" >> $GITHUB_OUTPUT
-        echo "semver-version=$semver_version" >> $GITHUB_OUTPUT
+        echo "semantic-version=$semantic_version" >> $GITHUB_OUTPUT
         echo "patch-version=$patch_version" >> $GITHUB_OUTPUT
         echo "minor-version=$minor_version" >> $GITHUB_OUTPUT
         echo "major-version=$major_version" >> $GITHUB_OUTPUT

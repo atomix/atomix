@@ -36,8 +36,8 @@ runs:
     - name: Package Helm chart
       run: |
         helm package ${{ inputs.component }}/${{ inputs.path }} \
-          --version ${{ inputs.version }} \
-          --app-version "v${{ inputs.version }}" \
+          --version ${{ steps.parse-version.outputs.semantic-version }} \
+          --app-version "v${{ steps.parse-version.outputs.semantic-version }}" \
           --destination .deploy
       shell: bash
 
