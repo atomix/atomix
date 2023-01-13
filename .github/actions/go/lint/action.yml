@@ -21,3 +21,4 @@ runs:
       uses: golangci/golangci-lint-action@v3
       with:
         working-directory: ${{ inputs.component }}
+        args: --timeout=5m
