@@ -17,14 +17,6 @@ runs:
       with:
         go-version: 1.19
 
-    - name: Cache Go modules
-      uses: actions/cache@v3
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-
     - name: Lint Go module
       uses: golangci/golangci-lint-action@v3
       with:
