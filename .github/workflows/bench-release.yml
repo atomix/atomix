@@ -12,6 +12,9 @@ on:
     tags:
       - 'bench/v*'
 
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-release
+
 jobs:
   build-and-release:
     name: Build and release
