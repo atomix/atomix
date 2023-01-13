@@ -13,15 +13,29 @@ on:
     paths:
       - 'runtime/**'
   pull_request:
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-20.04
+  lint:
+    name: Check code quality
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Run tests
+      - name: Run Go linter
+        uses: ./.github/actions/go/lint
+        with:
+          component: runtime
+
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Run Go tests
         uses: ./.github/actions/go/test
         with:
-          path: runtime
+          component: runtime
