@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "atomix-bench.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      name: {{ template "atomix-bench.fullname" . }}
+  template:
+    metadata:
+      labels:
+        name: {{ template "atomix-bench.fullname" . }}
+        proxy.atomix.io/inject: "true"
+        proxy.atomix.io/profile: {{ template "atomix-bench.fullname" . }}
+    spec:
+      containers:
+        - name: atomix-bench
+          {{- if .Values.image.tag }}
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+          {{- else if .Chart.AppVersion }}
+          image: {{ printf "%s:%s" .Values.image.repository .Chart.AppVersion }}
+          {{- else }}
+          image: {{ .Values.image.repository }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --concurrency={{ .Values.concurrency }}
+            - --write-percentage={{ .Values.writePercentage }}
+            - --num-keys={{ .Values.numKeys }}
+            - --sample-interval={{ .Values.sampleInterval }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/atomix
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "atomix-bench.fullname" . }}-config

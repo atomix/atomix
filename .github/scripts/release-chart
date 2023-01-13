@@ -4,15 +4,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+path=$1
+version=$2
+
 rm -rf .release
 
 git config --global user.email "jordan.halterman@gmail.com"
 git config --global user.name "Jordan Halterman"
 
-git clone --branch master https://$GITHUB_TOKEN@github.com/atomix/charts.atomix.io.git .release
+git clone --branch master "https://$GITHUB_TOKEN@github.com/atomix/charts.atomix.io.git .release"
 
 # Package the Helm chart
-cr package $1 --package-path .release/package
+helm package "$path" \
+    --version "$version" \
+    --app-version "v$version" \
+    --destination .release/package
 
 cd .release
 
@@ -21,7 +27,7 @@ cr upload \
     --owner atomix \
     --git-repo charts.atomix.io \
     --package-path package \
-    --token $GITHUB_TOKEN \
+    --token "$GITHUB_TOKEN" \
     --skip-existing
 
 # Update the repository index
@@ -34,4 +40,4 @@ cr index \
 
 git add index.yaml
 git commit -m "Add atomix release to index.yaml" index.yaml
-git push https://$GITHUB_TOKEN@github.com/atomix/charts.atomix.io.git master
+git push "https://$GITHUB_TOKEN@github.com/atomix/charts.atomix.io.git master"

@@ -1,0 +1,90 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+replicas: 1
+
+concurrency: 1
+
+writePercentage: .5
+
+numKeys: 1000
+
+sampleInterval: 10s
+
+image:
+  registry: ""
+  repository: atomix/bench
+  tag: ""
+  pullPolicy: ""
+  pullSecrets: []
+
+logging:
+  rootLevel: info
+  encoding: console
+  loggers:
+    github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors:
+      level: error
+
+proxy:
+  image:
+    registry: ""
+    repository: atomix/proxy
+    tag: v0.1
+    pullPolicy: ""
+    pullSecrets: []
+
+  logging:
+    rootLevel: info
+    encoding: console
+    loggers:
+      github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors:
+        level: error
+
+store:
+  kind: RaftStore
+
+  # RaftStore
+  raft:
+    cluster: ""
+    replicas: 3
+    partitions: 3
+    replicationFactor: 3
+
+    image:
+      registry: ""
+      repository: atomix/raft-node
+      tag: latest
+      # TODO: Revert the pull policy to the default "" for release tags
+      pullPolicy: IfNotPresent
+      pullSecrets: []
+
+    resources:
+      requests:
+        storage: 1Gi
+
+    logging:
+      rootLevel: info
+      encoding: console
+      loggers:
+        github.com/atomix/atomix/runtime/pkg/utils:
+          level: error
+
+  # SharedMemoryStore
+  memory:
+    partitions: 1
+
+    image:
+      registry: ""
+      repository: atomix/shared-memory-node
+      tag: latest
+      # TODO: Revert the pull policy to the default "" for release tags
+      pullPolicy: IfNotPresent
+      pullSecrets: []
+
+    logging:
+      rootLevel: info
+      encoding: console
+      loggers:
+        github.com/atomix/atomix/runtime/pkg/utils:
+          level: error

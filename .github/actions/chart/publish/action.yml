@@ -8,7 +8,10 @@ inputs:
   path:
     description: 'The chart path relative to the repository root'
     required: true
-    default: ''
+
+  version:
+    description: 'The release version'
+    required: true
 
   token:
     description: 'The GitHub token for the release repository'
@@ -20,10 +23,12 @@ runs:
   steps:
     - name: Publish Helm chart
       shell: bash
-      run: |-
+      run: |
         docker run -i \
           -v `pwd`:/build -w /build \
+          -w /build \
           -e GITHUB_TOKEN=${{ inputs.token }} \
           --entrypoint ./.github/scripts/release-chart \
-          quay.io/helmpack/chart-releaser:v1.4.0 \
-          ${{ inputs.path }}
+          quay.io/helmpack/chart-releaser:v1.5.0 \
+          ${{ inputs.path }} \
+          ${{ inputs.version }}
