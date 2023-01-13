@@ -19,7 +19,7 @@ runs:
     - name: Configure Git
       run: |
         git config user.name "$GITHUB_ACTOR"
-        git config user.email "$GITHUB_ACTOR"
+        git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
       shell: bash
 
     - name: Set up Helm
