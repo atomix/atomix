@@ -44,6 +44,10 @@ runs:
       with:
         version: v3.10.0
 
+    - name: Update chart dependencies
+      run: helm dep update ${{ inputs.component != 'atomix' && inputs.component || '.' }}/${{ inputs.path }}
+      shell: bash
+
     - name: Package Helm chart
       if: ${{ steps.parse-version.outputs.prerelease-version == '' || inputs.publish-prereleases }}
       run: |
