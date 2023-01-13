@@ -16,7 +16,7 @@ on:
   pull_request:
 
 jobs:
-  test-build:
+  build:
     name: Test build
     runs-on: ubuntu-latest
     steps:
