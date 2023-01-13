@@ -16,7 +16,7 @@ maintainers:
   email: jordan.halterman@intel.com
 dependencies:
   - name: atomix-controller
-    version: 0.1.2
+    version: 0.1.3
     repository: https://atomix.github.io/atomix
     alias: controller
   - name: atomix-raft-controller
