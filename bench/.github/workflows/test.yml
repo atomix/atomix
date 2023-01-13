@@ -13,8 +13,8 @@ on:
   pull_request:
 
 jobs:
-  run-tests:
-    name: Run tests
+  test-build:
+    name: Test build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -31,7 +31,13 @@ jobs:
           path: bench
           dockerfile: build/Dockerfile
 
+  test-deployment:
+    name: Test deployment
+    steps:
+      - name: Setup Helm
+        uses: ./.github/actions/helm/setup
+
       - name: Test Helm chart
-        uses: ./.github/actions/chart/test
+        uses: ./.github/actions/helm/test
         with:
           path: bench/chart

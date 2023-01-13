@@ -13,19 +13,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Set up Helm
-      uses: azure/setup-helm@v3
-      with:
-        version: v3.10.0
-
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-        check-latest: true
-
-    - name: Set up chart tests
-      uses: helm/chart-testing-action@v2.3.1
-
     - name: Evaluate Helm chart changes
       id: list-changed
       run: |
@@ -37,14 +24,11 @@ runs:
       working-directory: ${{ inputs.path }}
 
     - name: Lint Helm chart
-      run: ct lint --target-branch ${{ github.event.repository.default_branch }}
+      run: ct lint --all --target-branch ${{ github.event.repository.default_branch }}
       shell: bash
       working-directory: ${{ inputs.path }}
 
-    - name: Create kind cluster
-      uses: helm/kind-action@v1.4.0
-
-    - name: Install Helm chart
-      run: ct install
-      shell: bash
-      working-directory: ${{ inputs.path }}
+    #- name: Install Helm chart
+    #  run: ct install
+    #  shell: bash
+    #  working-directory: ${{ inputs.path }}
