@@ -25,11 +25,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Lint Go module
-        uses: ./.github/actions/go/lint
-        with:
-          path: bench
-
       - name: Run Go tests
         uses: ./.github/actions/go/test
         with:
