@@ -10,7 +10,7 @@ on:
       - 'stores/raft/v*'
 
 concurrency:
-  group: ${{ github.head_ref || github.ref_name }}-release
+  group: ${{ github.repository }}-release
 
 jobs:
   build-and-release:
