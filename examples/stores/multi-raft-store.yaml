@@ -18,7 +18,7 @@ metadata:
 spec:
   cluster:
     name: multi-raft-cluster
-  partitions: 3
+  partitions: 30
   replicationFactor: 3
 ---
 # A traditional consensus store with a single Raft group replicates across all 5 replicas in the RaftCluster

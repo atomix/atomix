@@ -7,7 +7,14 @@ kind: RaftCluster
 metadata:
   name: raft-cluster
 spec:
-  replicas: 3
+  replicas: 1
+  volumeClaimTemplate:
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
 ---
 apiVersion: raft.atomix.io/v1beta2
 kind: RaftStore
@@ -16,3 +23,4 @@ metadata:
 spec:
   cluster:
     name: raft-cluster
+  partitions: 30
