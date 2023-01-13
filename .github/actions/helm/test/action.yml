@@ -37,10 +37,10 @@ runs:
           echo "::set-output name=changed::true"
         fi
       shell: bash
-      working-directory: ${{ inputs.component }}/${{ inputs.path }}
+      working-directory: ${{ inputs.component != 'atomix' && inputs.component || '.' }}/${{ inputs.path }}
 
     - name: Lint Helm chart
-      run: ct lint --charts ${{ inputs.component }}/${{ inputs.path }} --target-branch ${{ github.event.repository.default_branch }} --validate-maintainers=false
+      run: ct lint --charts ${{ inputs.component != 'atomix' && inputs.component || '.' }}/${{ inputs.path }} --target-branch ${{ github.event.repository.default_branch }} --validate-maintainers=false
       shell: bash
 
     #- name: Install Helm chart
