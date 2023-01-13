@@ -16,6 +16,7 @@ on:
     paths:
       - 'drivers/shared-memory/**'
   pull_request:
+  workflow_dispatch:
 
 jobs:
   lint:

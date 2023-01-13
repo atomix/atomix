@@ -13,6 +13,7 @@ on:
     paths:
       - 'drivers/etcd/**'
   pull_request:
+  workflow_dispatch:
 
 jobs:
   lint:

@@ -16,6 +16,7 @@ on:
     paths:
       - 'drivers/raft/**'
   pull_request:
+  workflow_dispatch:
 
 jobs:
   lint:
