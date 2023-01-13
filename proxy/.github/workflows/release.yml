@@ -30,8 +30,3 @@ jobs:
           repository: atomix/proxy
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Publish Helm chart
-        uses: ./.github/actions/helm/publish
-        with:
-          component: proxy

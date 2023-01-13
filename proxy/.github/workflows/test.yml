@@ -45,8 +45,3 @@ jobs:
         with:
           component: proxy
           file: build/Dockerfile
-
-      - name: Test Helm chart
-        uses: ./.github/actions/helm/test
-        with:
-          component: proxy
