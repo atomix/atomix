@@ -28,7 +28,7 @@ runs:
     - name: Build image
       uses: docker/build-push-action@v3
       with:
-        context: ${{ inputs.path }}
+        context: ${{ inputs.component }}
         file: ${{ inputs.component}}/${{ inputs.file }}
         tags: ${{ inputs.repository }}
         push: false

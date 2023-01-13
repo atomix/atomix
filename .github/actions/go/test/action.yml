@@ -5,12 +5,12 @@
 name: Test Go Module
 
 inputs:
-  path:
-    description: 'The module path relative to the repository root'
+  component:
+    description: "The component path"
     required: true
 
   package:
-    description: 'The package to test'
+    description: "The package to test"
     required: false
     default: ''
 
@@ -33,16 +33,16 @@ runs:
     - name: Lint Go module
       uses: golangci/golangci-lint-action@v3
       with:
-        working-directory: ${{ inputs.path }}
+        working-directory: ${{ inputs.component }}
 
     - name: Run tests
       if: ${{ inputs.package == '' }}
       shell: bash
-      run: go test github.com/atomix/atomix/${{ inputs.path }}/...
-      working-directory: ${{ inputs.path }}
+      run: go test github.com/atomix/atomix/${{ inputs.component }}/...
+      working-directory: ${{ inputs.component }}
 
     - name: Run tests
       if: ${{ inputs.package != '' }}
       shell: bash
       run: go test ${{ inputs.package }}
-      working-directory: ${{ inputs.path }}
+      working-directory: ${{ inputs.component }}
