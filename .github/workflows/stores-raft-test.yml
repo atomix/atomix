@@ -14,27 +14,48 @@ on:
     paths:
       - 'stores/raft/**'
   pull_request:
+  workflow_dispatch:
 
 jobs:
-  test:
+  lint:
+    name: Check code quality
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Run tests
+      - name: Run Go linter
+        uses: ./.github/actions/go/lint
+        with:
+          component: stores/raft
+
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Run Go tests
         uses: ./.github/actions/go/test
         with:
-          path: stores/raft
-
-      - name: Build node image
-        uses: ./.github/actions/docker/build
-        with:
-          path: stores/raft
-          dockerfile: build/node/Dockerfile
+          component: stores/raft
 
       - name: Build controller image
         uses: ./.github/actions/docker/build
         with:
-          path: stores/raft
-          dockerfile: build/controller/Dockerfile
+          component: stores/raft
+          file: build/controller/Dockerfile
+
+      - name: Build node image
+        uses: ./.github/actions/docker/build
+        with:
+          component: stores/raft
+          file: build/node/Dockerfile
+
+      - name: Test Helm chart
+        uses: ./.github/actions/helm/test
+        with:
+          component: stores/raft

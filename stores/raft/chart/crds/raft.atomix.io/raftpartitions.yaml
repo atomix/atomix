@@ -1,0 +1,117 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: raftpartitions.raft.atomix.io
+spec:
+  group: raft.atomix.io
+  names:
+    kind: RaftPartition
+    listKind: RaftPartitionList
+    plural: raftpartitions
+    singular: raftpartition
+    shortNames:
+      - rp
+  scope: Namespaced
+  versions:
+    - name: v1beta2
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
+                - partitionID
+                - groupID
+              properties:
+                replicas:
+                  type: integer
+                  minimum: 1
+                  maximum: 1024
+                partitionID:
+                  type: integer
+                  minimum: 1
+                  maximum: 1024
+                groupID:
+                  type: integer
+                  minimum: 1
+                electionRTT:
+                  type: integer
+                  nullable: true
+                heartbeatRTT:
+                  type: integer
+                  nullable: true
+                snapshotEntries:
+                  type: integer
+                  nullable: true
+                compactionOverhead:
+                  type: integer
+                  nullable: true
+                maxInMemLogSize:
+                  type: string
+                  nullable: true
+            status:
+              type: object
+              default: {}
+              properties:
+                state:
+                  type: string
+                  default: Initializing
+                  enum:
+                    - Initializing
+                    - Reconfiguring
+                    - Running
+                    - Ready
+                term:
+                  type: integer
+                  nullable: true
+                leader:
+                  type: object
+                  required:
+                    - name
+                  nullable: true
+                  properties:
+                    name:
+                      type: string
+                followers:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                members:
+                  type: integer
+      additionalPrinterColumns:
+        - name: Group
+          type: integer
+          description: The Raft group identifier
+          jsonPath: .spec.groupID
+        - name: Replicas
+          type: integer
+          description: The number of replicas in the partition
+          jsonPath: .spec.replicas
+        - name: Leader
+          type: string
+          description: The current leader for the partition
+          jsonPath: .status.leader.name
+        - name: Term
+          type: integer
+          description: The current term for the partition
+          jsonPath: .status.term
+        - name: Status
+          type: string
+          description: The partition state
+          jsonPath: .status.state

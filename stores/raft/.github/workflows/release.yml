@@ -9,44 +9,38 @@ on:
     tags:
       - 'stores/raft/v*'
 
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-release
+
 jobs:
-  release:
+  build-and-release:
+    name: Build and release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Run tests
-        uses: ./.github/actions/go/test
         with:
-          path: stores/raft
-
-      - name: Build node image
-        uses: ./.github/actions/docker/build
-        with:
-          path: stores/raft
-          dockerfile: build/node/Dockerfile
-          repository: atomix/raft-node
-
-      - name: Publish node image
-        uses: ./.github/actions/docker/publish
-        with:
-          repository: atomix/raft-node
-          tag: ${{ github.ref_name }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build controller image
-        uses: ./.github/actions/docker/build
-        with:
-          path: stores/raft
-          dockerfile: build/controller/Dockerfile
-          repository: atomix/raft-controller
+          fetch-depth: 0
 
       - name: Publish controller image
         uses: ./.github/actions/docker/publish
         with:
+          component: stores/raft
+          file: build/controller/Dockerfile
           repository: atomix/raft-controller
-          tag: ${{ github.ref_name }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish node image
+        uses: ./.github/actions/docker/publish
+        with:
+          component: stores/raft
+          file: build/node/Dockerfile
+          repository: atomix/raft-node
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish Helm chart
+        uses: ./.github/actions/helm/publish
+        with:
+          component: stores/raft

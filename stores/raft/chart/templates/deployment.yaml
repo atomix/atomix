@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "atomix-raft-controller.fullname" . }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      name: {{ template "atomix-raft-controller.fullname" . }}
+  template:
+    metadata:
+      labels:
+        name: {{ template "atomix-raft-controller.fullname" . }}
+    spec:
+      serviceAccountName: {{ template "atomix-raft-controller.fullname" . }}
+      containers:
+        - name: atomix-raft-controller
+          {{- if .Values.image.tag }}
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+          {{- else if .Chart.AppVersion }}
+          image: {{ printf "%s:%s" .Values.image.repository .Chart.AppVersion }}
+          {{- else }}
+          image: {{ .Values.image.repository }}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          readinessProbe:
+            exec:
+              command:
+                - stat
+                - /tmp/atomix-controller-ready
+            initialDelaySeconds: 4
+            periodSeconds: 10
+            failureThreshold: 1
+          env:
+            - name: CONTROLLER_NAME
+              value: {{ template "atomix-raft-controller.fullname" . }}
+            - name: CONTROLLER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEFAULT_NODE_IMAGE
+              {{- if .Values.node.image.tag }}
+              value: {{ printf "%s:%s" .Values.node.image.repository .Values.node.image.tag }}
+              {{- else }}
+              value: {{ .Values.node.image.repository }}
+              {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/atomix
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "atomix-raft-controller.fullname" . }}-config
