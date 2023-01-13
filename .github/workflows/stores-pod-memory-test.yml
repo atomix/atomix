@@ -14,21 +14,42 @@ on:
     paths:
       - 'stores/pod-memory/**'
   pull_request:
+  workflow_dispatch:
 
 jobs:
-  test:
+  lint:
+    name: Check code quality
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Run tests
+      - name: Run Go linter
+        uses: ./.github/actions/go/lint
+        with:
+          component: stores/pod-memory
+
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Run Go tests
         uses: ./.github/actions/go/test
         with:
-          path: stores/pod-memory
+          component: stores/pod-memory
 
       - name: Build Docker image
         uses: ./.github/actions/docker/build
         with:
-          path: stores/pod-memory
-          dockerfile: build/controller/Dockerfile
+          component: stores/pod-memory
+          file: build/controller/Dockerfile
+
+      - name: Test Helm chart
+        uses: ./.github/actions/helm/test
+        with:
+          component: stores/pod-memory
