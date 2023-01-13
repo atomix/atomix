@@ -36,6 +36,7 @@ jobs:
 
   test-deployment:
     name: Test deployment
+    runs-on: ubuntu-latest
     steps:
       - name: Setup Helm
         uses: ./.github/actions/helm/setup
