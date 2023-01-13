@@ -39,4 +39,23 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-bench-0.2.0/atomix-bench-0.2.0.tgz
     version: 0.2.0
-generated: "2023-01-13T18:32:31.767994493Z"
+  atomix-controller:
+  - apiVersion: v2
+    appVersion: v0.1.2
+    created: "2023-01-13T20:59:04.522891928Z"
+    description: The core Atomix controller provides custom resources for Atomix data
+      stores
+    digest: 1ed5485dbed7e61f271c5d15023cc33d1381f95540649c4f0cba1d45310b1975
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-controller-0.1.2/atomix-controller-0.1.2.tgz
+    version: 0.1.2
+generated: "2023-01-13T20:59:04.522902228Z"
