@@ -30,6 +30,11 @@ runs:
         restore-keys: |
           ${{ runner.os }}-go-
 
+    - name: Lint Go module
+      uses: golangci/golangci-lint-action@v3
+      with:
+        working-directory: ${{ inputs.path }}
+
     - name: Run tests
       if: ${{ inputs.package == '' }}
       shell: bash
