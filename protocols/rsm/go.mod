@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/atomix/atomix/api v0.1.0
-	github.com/atomix/atomix/runtime v0.1.0
+	github.com/atomix/atomix/runtime v0.1.1
 	github.com/bits-and-blooms/bloom/v3 v3.3.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.6.0
