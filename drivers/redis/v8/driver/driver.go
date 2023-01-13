@@ -7,11 +7,8 @@ package driver
 import (
 	"context"
 	"github.com/atomix/atomix/runtime/pkg/driver"
-	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/go-redis/redis/v8"
 )
-
-var log = logging.GetLogger()
 
 func New() driver.Driver {
 	return &redisDriver{}
