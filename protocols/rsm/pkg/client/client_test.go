@@ -42,6 +42,7 @@ func TestPrimitiveCreateClose(t *testing.T) {
 
 	network := network.NewLocalDriver()
 	lis, err := network.Listen("localhost:5678")
+	assert.NoError(t, err)
 
 	server := grpc.NewServer()
 	protocol.RegisterPartitionServer(server, partitionServer)
@@ -215,6 +216,7 @@ func TestUnaryProposal(t *testing.T) {
 
 	network := network.NewLocalDriver()
 	lis, err := network.Listen("localhost:5678")
+	assert.NoError(t, err)
 
 	server := grpc.NewServer()
 	protocol.RegisterPartitionServer(server, partitionServer)
@@ -364,6 +366,7 @@ func TestStreamPropose(t *testing.T) {
 
 	network := network.NewLocalDriver()
 	lis, err := network.Listen("localhost:5678")
+	assert.NoError(t, err)
 
 	server := grpc.NewServer()
 	protocol.RegisterPartitionServer(server, partitionServer)
@@ -602,6 +605,7 @@ func TestStreamProposeCancel(t *testing.T) {
 
 	network := network.NewLocalDriver()
 	lis, err := network.Listen("localhost:5678")
+	assert.NoError(t, err)
 
 	server := grpc.NewServer()
 	protocol.RegisterPartitionServer(server, partitionServer)
@@ -838,6 +842,7 @@ func TestUnaryQuery(t *testing.T) {
 
 	network := network.NewLocalDriver()
 	lis, err := network.Listen("localhost:5678")
+	assert.NoError(t, err)
 
 	server := grpc.NewServer()
 	protocol.RegisterPartitionServer(server, partitionServer)
@@ -986,6 +991,7 @@ func TestStreamQuery(t *testing.T) {
 
 	network := network.NewLocalDriver()
 	lis, err := network.Listen("localhost:5678")
+	assert.NoError(t, err)
 
 	server := grpc.NewServer()
 	protocol.RegisterPartitionServer(server, partitionServer)
@@ -1219,6 +1225,7 @@ func TestStreamQueryCancel(t *testing.T) {
 
 	network := network.NewLocalDriver()
 	lis, err := network.Listen("localhost:5678")
+	assert.NoError(t, err)
 
 	server := grpc.NewServer()
 	protocol.RegisterPartitionServer(server, partitionServer)

@@ -4,8 +4,6 @@
 
 package statemachine
 
-const truncLen = 200
-
 type Codec[I, O any] interface {
 	DecodeInput([]byte) (I, error)
 	EncodeOutput(O) ([]byte, error)

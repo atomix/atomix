@@ -14,7 +14,6 @@ import (
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
-	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc"
 	"io"
 	"sync"
@@ -657,7 +656,6 @@ func (s *indexedMapClient) Events(request *indexedmapv1.EventsRequest, server in
 		})
 	})
 	if err != nil {
-		err = err
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))
@@ -918,22 +916,6 @@ func (s *cachingIndexedMapClient) evict() {
 }
 
 var _ indexedmapv1.IndexedMapServer = (*cachingIndexedMapClient)(nil)
-
-func newChannelServer[T proto.Message](ch chan<- T) *channelServer[T] {
-	return &channelServer[T]{
-		ch: ch,
-	}
-}
-
-type channelServer[T proto.Message] struct {
-	grpc.ServerStream
-	ch chan<- T
-}
-
-func (s *channelServer[T]) Send(response T) error {
-	s.ch <- response
-	return nil
-}
 
 func newCachingEventsServer(server *cachingIndexedMapClient) indexedmapv1.IndexedMap_EventsServer {
 	return &cachingEventsServer{

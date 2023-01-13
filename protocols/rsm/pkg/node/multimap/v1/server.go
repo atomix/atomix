@@ -16,8 +16,6 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 200
-
 func RegisterServer(node *node.Node) {
 	node.RegisterService(func(server *grpc.Server) {
 		multimapprotocolv1.RegisterMultiMapServer(server, NewMultiMapServer(node))

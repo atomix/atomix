@@ -15,8 +15,6 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 200
-
 func RegisterServer(node *node.Node) {
 	node.RegisterService(func(server *grpc.Server) {
 		counterprotocolv1.RegisterCounterServer(server, NewCounterServer(node))

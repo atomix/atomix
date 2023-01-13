@@ -94,7 +94,6 @@ type mapStateMachine struct {
 	entries   map[string]*mapprotocolv1.MapEntry
 	timers    map[string]statemachine.CancelFunc
 	watchers  sync.Map
-	mu        sync.RWMutex
 }
 
 func (s *mapStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {

@@ -52,7 +52,6 @@ func (r *partitionResolver) update(config *protocol.PartitionConfig) error {
 	if config.Leader != "" {
 		addrs = append(addrs, resolver.Address{
 			Addr: config.Leader,
-			Type: resolver.Backend,
 			Attributes: attributes.New(
 				"is_leader",
 				true,
@@ -63,7 +62,6 @@ func (r *partitionResolver) update(config *protocol.PartitionConfig) error {
 	for _, addr := range config.Followers {
 		addrs = append(addrs, resolver.Address{
 			Addr: addr,
-			Type: resolver.Backend,
 			Attributes: attributes.New(
 				"is_leader",
 				false,

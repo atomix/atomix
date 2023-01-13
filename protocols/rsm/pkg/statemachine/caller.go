@@ -116,54 +116,6 @@ func (b *QuerierBuilder[I1, O1, I2, O2]) Build(f func(Query[I2, O2])) Querier[I1
 	}
 }
 
-type transcodingProposer[I1, O1, I2, O2 proto.Message] struct {
-	ctx     PrimitiveContext[I1, O1]
-	decoder func(I1) (I2, bool)
-	encoder func(O2) O1
-	name    string
-	f       func(Proposal[I2, O2])
-}
-
-func (p *transcodingProposer[I1, O1, I2, O2]) Proposals() Proposals[I2, O2] {
-	return newTranscodingProposals[I1, O1, I2, O2](p.ctx.Proposals(), p.decoder, p.encoder)
-}
-
-func (p *transcodingProposer[I1, O1, I2, O2]) Call(parent Proposal[I1, O1]) {
-	input, ok := p.decoder(parent.Input())
-	if !ok {
-		return
-	}
-	proposal := newTranscodingProposal[I1, O1, I2, O2](parent, input, p.decoder, p.encoder, parent.Log().WithFields(logging.String("Method", p.name)))
-	proposal.Log().Debugw("Applying proposal", logging.Stringer("Input", proposal.Input()))
-	p.f(proposal)
-}
-
-type transcodingQuerier[I1, O1, I2, O2 proto.Message] struct {
-	ctx     PrimitiveContext[I1, O1]
-	decoder func(I1) (I2, bool)
-	encoder func(O2) O1
-	name    string
-	f       func(Query[I2, O2])
-}
-
-func (q *transcodingQuerier[I1, O1, I2, O2]) Call(parent Query[I1, O1]) {
-	input, ok := q.decoder(parent.Input())
-	if !ok {
-		return
-	}
-	query := newTranscodingQuery[I1, O1, I2, O2](parent, input, q.decoder, q.encoder, parent.Log().WithFields(logging.String("Method", q.name)))
-	query.Log().Debugw("Applying query", logging.Stringer("Input", query.Input()))
-	q.f(query)
-}
-
-func newTranscodingProposals[I1, O1, I2, O2 any](parent Proposals[I1, O1], decoder func(I1) (I2, bool), encoder func(O2) O1) Proposals[I2, O2] {
-	return &transcodingProposals[I1, O1, I2, O2]{
-		parent:  parent,
-		decoder: decoder,
-		encoder: encoder,
-	}
-}
-
 type transcodingProposals[I1, O1, I2, O2 any] struct {
 	parent  Proposals[I1, O1]
 	decoder func(I1) (I2, bool)

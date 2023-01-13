@@ -103,10 +103,6 @@ func (s *SessionClient) nextRequestNum() protocol.SequenceNum {
 	return protocol.SequenceNum(s.requestNum.Add(1))
 }
 
-func (s *SessionClient) update(index protocol.Index) {
-	s.lastIndex.Update(index)
-}
-
 func (s *SessionClient) open() {
 	s.lastIndex = &sessionIndex{}
 	s.lastIndex.Update(protocol.Index(s.sessionID))
@@ -219,7 +215,6 @@ func (s *SessionClient) keepAliveSessions(ctx context.Context, lastRequestNum pr
 	client := protocol.NewPartitionClient(s.conn)
 	response, err := client.KeepAlive(ctx, request)
 	if err != nil {
-		err = err
 		if errors.IsFault(err) {
 			log.Error("Detected potential data loss: ", err)
 			log.Infof("Exiting process...")

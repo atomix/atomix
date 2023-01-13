@@ -30,9 +30,6 @@ type PartitionClient struct {
 	client         *ProtocolClient
 	id             protocol.PartitionID
 	sessionTimeout time.Duration
-	state          *PartitionState
-	watchers       map[int]chan<- PartitionState
-	watcherID      int
 	conn           *grpc.ClientConn
 	resolver       *partitionResolver
 	session        atomic.Value
@@ -118,9 +115,4 @@ func (p *PartitionClient) close(ctx context.Context) error {
 		return session.(*SessionClient).close(ctx)
 	}
 	return nil
-}
-
-type PartitionState struct {
-	Leader    string
-	Followers []string
 }

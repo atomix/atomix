@@ -351,7 +351,6 @@ func (s *valueClient) Events(request *valuev1.EventsRequest, server valuev1.Valu
 		})
 	})
 	if err != nil {
-		err = err
 		log.Warnw("Events",
 			logging.Stringer("EventsRequest", request),
 			logging.Error("Error", err))

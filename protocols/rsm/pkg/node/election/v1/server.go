@@ -16,8 +16,6 @@ import (
 
 var log = logging.GetLogger()
 
-const truncLen = 200
-
 func RegisterServer(node *node.Node) {
 	node.RegisterService(func(server *grpc.Server) {
 		electionprotocolv1.RegisterLeaderElectionServer(server, NewLeaderElectionServer(node))

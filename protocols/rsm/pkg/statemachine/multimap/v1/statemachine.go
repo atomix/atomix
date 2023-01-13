@@ -293,10 +293,6 @@ func (s *multiMapStateMachine) PutEntries(proposal statemachine.Proposal[*multim
 func (s *multiMapStateMachine) Replace(proposal statemachine.Proposal[*multimapprotocolv1.ReplaceInput, *multimapprotocolv1.ReplaceOutput]) {
 	defer proposal.Close()
 
-	if len(proposal.Input().Values) == 0 {
-
-	}
-
 	oldValues, ok := s.entries[proposal.Input().Key]
 	if !ok {
 		oldValues = make(map[string]bool)

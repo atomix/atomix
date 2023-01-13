@@ -265,17 +265,15 @@ type QueryStreamContext[T QueryResponse] struct {
 }
 
 func (c *QueryStreamContext[T]) Recv() (T, bool, error) {
-	for {
-		response, err := c.stream.Recv()
-		if err != nil {
-			c.session.recorder.End(c.headers.SequenceNum)
-			return response, false, err
-		}
-		headers := response.GetHeaders()
-		c.session.lastIndex.Update(headers.Index)
-		if headers.Status != protocol.CallResponseHeaders_OK {
-			return response, true, getErrorFromStatus(headers.Status, headers.Message)
-		}
-		return response, true, nil
+	response, err := c.stream.Recv()
+	if err != nil {
+		c.session.recorder.End(c.headers.SequenceNum)
+		return response, false, err
 	}
+	headers := response.GetHeaders()
+	c.session.lastIndex.Update(headers.Index)
+	if headers.Status != protocol.CallResponseHeaders_OK {
+		return response, true, getErrorFromStatus(headers.Status, headers.Message)
+	}
+	return response, true, nil
 }
