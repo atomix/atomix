@@ -29,8 +29,8 @@ jobs:
         with:
           component: stores/shared-memory
 
-  build-and-test:
-    name: Build and test
+  test:
+    name: Run tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,6 +42,15 @@ jobs:
         uses: ./.github/actions/go/test
         with:
           component: stores/shared-memory
+
+  deploy:
+    name: Deploy and verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Build controller image
         uses: ./.github/actions/docker/build
