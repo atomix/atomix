@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/atomix/atomix/api/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"github.com/atomix/go-sdk/pkg/atomix"
@@ -122,12 +123,16 @@ func getMapCommand() *cobra.Command {
 						}
 					} else {
 						if _, err := m.Remove(context.Background(), keys[rand.Intn(numKeys)]); err != nil {
-							log.Warn(err)
+							if !errors.IsNotFound(err) {
+								log.Warn(err)
+							}
 						}
 					}
 				}, func(int) {
 					if _, err := m.Get(context.Background(), keys[rand.Intn(numKeys)]); err != nil {
-						log.Warn(err)
+						if !errors.IsNotFound(err) {
+							log.Warn(err)
+						}
 					}
 				})
 		},
