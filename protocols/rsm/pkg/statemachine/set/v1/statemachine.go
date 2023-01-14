@@ -165,7 +165,9 @@ func (s *setStateMachine) Add(proposal statemachine.Proposal[*setprotocolv1.AddI
 
 	value := proposal.Input().Element.Value
 	if _, ok := s.entries[value]; ok {
-		proposal.Error(errors.NewAlreadyExists("value already exists in set"))
+		proposal.Output(&setprotocolv1.AddOutput{
+			Added: false,
+		})
 		return
 	}
 
@@ -192,7 +194,9 @@ func (s *setStateMachine) Add(proposal statemachine.Proposal[*setprotocolv1.AddI
 			},
 		},
 	})
-	proposal.Output(&setprotocolv1.AddOutput{})
+	proposal.Output(&setprotocolv1.AddOutput{
+		Added: true,
+	})
 }
 
 func (s *setStateMachine) Remove(proposal statemachine.Proposal[*setprotocolv1.RemoveInput, *setprotocolv1.RemoveOutput]) {
@@ -200,7 +204,9 @@ func (s *setStateMachine) Remove(proposal statemachine.Proposal[*setprotocolv1.R
 
 	value := proposal.Input().Element.Value
 	if _, ok := s.entries[value]; !ok {
-		proposal.Error(errors.NewNotFound("value not found in set"))
+		proposal.Output(&setprotocolv1.RemoveOutput{
+			Removed: false,
+		})
 		return
 	}
 
@@ -218,7 +224,9 @@ func (s *setStateMachine) Remove(proposal statemachine.Proposal[*setprotocolv1.R
 			},
 		},
 	})
-	proposal.Output(&setprotocolv1.RemoveOutput{})
+	proposal.Output(&setprotocolv1.RemoveOutput{
+		Removed: true,
+	})
 }
 
 func (s *setStateMachine) Clear(proposal statemachine.Proposal[*setprotocolv1.ClearInput, *setprotocolv1.ClearOutput]) {

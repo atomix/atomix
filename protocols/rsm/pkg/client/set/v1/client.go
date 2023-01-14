@@ -160,7 +160,7 @@ func (s *setClient) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.
 		return nil, err
 	}
 	command := client.Proposal[*setprotocolv1.AddResponse](primitive)
-	_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*setprotocolv1.AddResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*setprotocolv1.AddResponse, error) {
 		input := &setprotocolv1.AddRequest{
 			Headers: headers,
 			AddInput: &setprotocolv1.AddInput{
@@ -183,7 +183,9 @@ func (s *setClient) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response := &setv1.AddResponse{}
+	response := &setv1.AddResponse{
+		Added: output.Added,
+	}
 	log.Debugw("Add",
 		logging.Trunc128("AddRequest", request),
 		logging.Trunc128("AddResponse", response))
@@ -259,7 +261,7 @@ func (s *setClient) Remove(ctx context.Context, request *setv1.RemoveRequest) (*
 		return nil, err
 	}
 	command := client.Proposal[*setprotocolv1.RemoveResponse](primitive)
-	_, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*setprotocolv1.RemoveResponse, error) {
+	output, ok, err := command.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*setprotocolv1.RemoveResponse, error) {
 		input := &setprotocolv1.RemoveRequest{
 			Headers: headers,
 			RemoveInput: &setprotocolv1.RemoveInput{
@@ -281,7 +283,9 @@ func (s *setClient) Remove(ctx context.Context, request *setv1.RemoveRequest) (*
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response := &setv1.RemoveResponse{}
+	response := &setv1.RemoveResponse{
+		Removed: output.Removed,
+	}
 	log.Debugw("Remove",
 		logging.Trunc128("RemoveRequest", request),
 		logging.Trunc128("RemoveResponse", response))

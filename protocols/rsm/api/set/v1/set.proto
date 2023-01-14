@@ -194,7 +194,7 @@ message AddInput {
 }
 
 message AddOutput {
-
+    bool added = 1;
 }
 
 message RemoveInput {
@@ -204,7 +204,7 @@ message RemoveInput {
 }
 
 message RemoveOutput {
-
+    bool removed = 1;
 }
 
 message ClearInput {
