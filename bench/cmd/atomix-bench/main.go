@@ -38,13 +38,14 @@ func getCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "atomix-bench",
 	}
-	cmd.PersistentFlags().IntP("concurrency", "c", 100, "the number of concurrent operations to run")
-	cmd.PersistentFlags().Float32P("write-percentage", "w", .5, "the percentage of operations to perform as writes")
-	cmd.PersistentFlags().DurationP("sample-interval", "i", 10*time.Second, "the interval at which to sample performance")
-
 	cmd.AddCommand(getCounterCommand())
 	cmd.AddCommand(getMapCommand())
 	cmd.AddCommand(getSetCommand())
+
+	cmd.PersistentFlags().StringP("name", "n", "test", "the name of the primitive to use")
+	cmd.PersistentFlags().IntP("concurrency", "c", 100, "the number of concurrent operations to run")
+	cmd.PersistentFlags().Float32P("write-percentage", "w", .5, "the percentage of operations to perform as writes")
+	cmd.PersistentFlags().DurationP("sample-interval", "i", 10*time.Second, "the interval at which to sample performance")
 	return cmd
 }
 
@@ -85,36 +86,11 @@ func getMapCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "map",
 		Run: func(cmd *cobra.Command, args []string) {
-			concurrency, err := cmd.PersistentFlags().GetInt("concurrency")
-			if err != nil {
-				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-				os.Exit(1)
-			}
-			sampleInterval, err := cmd.PersistentFlags().GetDuration("sample-interval")
-			if err != nil {
-				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-				os.Exit(1)
-			}
-			writePercentage, err := cmd.Flags().GetFloat32("write-percentage")
-			if err != nil {
-				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-				os.Exit(1)
-			}
 			numKeys, err := cmd.Flags().GetInt("num-keys")
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
-
-			if writePercentage > 1 {
-				panic("writePercentage must be a decimal value between 0 and 1")
-			}
-
-			log.Infof("Starting benchmark...")
-			log.Infof("concurrency: %d", concurrency)
-			log.Infof("sampleInterval: %s", sampleInterval)
-			log.Infof("writePercentage: %f", writePercentage)
-			log.Infof("numKeys: %d", numKeys)
 
 			m, err := atomix.Map[string, string]("test").
 				Codec(types.Scalar[string]()).
@@ -156,7 +132,7 @@ func getMapCommand() *cobra.Command {
 				})
 		},
 	}
-	cmd.Flags().IntP("num-keys", "n", 1000, "the number of unique map keys to use")
+	cmd.Flags().IntP("num-keys", "k", 1000, "the number of unique map keys to use")
 	return cmd
 }
 
@@ -164,36 +140,11 @@ func getSetCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "set",
 		Run: func(cmd *cobra.Command, args []string) {
-			concurrency, err := cmd.PersistentFlags().GetInt("concurrency")
+			numElements, err := cmd.Flags().GetInt("num-elements")
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
 			}
-			sampleInterval, err := cmd.PersistentFlags().GetDuration("sample-interval")
-			if err != nil {
-				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-				os.Exit(1)
-			}
-			writePercentage, err := cmd.Flags().GetFloat32("write-percentage")
-			if err != nil {
-				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-				os.Exit(1)
-			}
-			numElements, err := cmd.Flags().GetInt("num-numElements")
-			if err != nil {
-				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-				os.Exit(1)
-			}
-
-			if writePercentage > 1 {
-				panic("writePercentage must be a decimal value between 0 and 1")
-			}
-
-			log.Infof("Starting benchmark...")
-			log.Infof("concurrency: %d", concurrency)
-			log.Infof("sampleInterval: %s", sampleInterval)
-			log.Infof("writePercentage: %f", writePercentage)
-			log.Infof("numElements: %d", numElements)
 
 			m, err := atomix.Set[string]("test").
 				Codec(types.Scalar[string]()).
@@ -235,22 +186,22 @@ func getSetCommand() *cobra.Command {
 				})
 		},
 	}
-	cmd.Flags().IntP("num-elements", "n", 1000, "the number of unique set elements to use")
+	cmd.Flags().IntP("num-elements", "e", 1000, "the number of unique set elements to use")
 	return cmd
 }
 
 func runBenchmark(cmd *cobra.Command, writer func(int), reader func(int)) {
-	concurrency, err := cmd.PersistentFlags().GetInt("concurrency")
+	concurrency, err := cmd.Flags().GetInt("concurrency")
 	if err != nil {
 		fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 		os.Exit(1)
 	}
-	sampleInterval, err := cmd.PersistentFlags().GetDuration("sample-interval")
+	sampleInterval, err := cmd.Flags().GetDuration("sample-interval")
 	if err != nil {
 		fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 		os.Exit(1)
 	}
-	writePercentage, err := cmd.PersistentFlags().GetFloat32("write-percentage")
+	writePercentage, err := cmd.Flags().GetFloat32("write-percentage")
 	if err != nil {
 		fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 		os.Exit(1)
