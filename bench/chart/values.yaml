@@ -4,13 +4,21 @@
 
 replicas: 1
 
+primitive: Map
+
 concurrency: 1
+
+sampleInterval: 10s
 
 writePercentage: .5
 
-numKeys: 1000
+counter:
 
-sampleInterval: 10s
+map:
+  numKeys: 1000
+
+set:
+  numElements: 1000
 
 store:
   name: ""
