@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2023-present Intel Corporation
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Data Store Examples
 
 This folder contains example Kubernetes manifests for vaious data stores supported by Atomix.
