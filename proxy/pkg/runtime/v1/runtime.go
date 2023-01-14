@@ -167,18 +167,20 @@ func connect(ctx context.Context, typedDriver any, rawSpec *types.Any) (driver.C
 		spec = reflect.New(param).Interface()
 	}
 
-	if message, ok := spec.(proto.Message); ok {
-		if err := jsonpb.UnmarshalString(string(rawSpec.Value), message); err != nil {
-			return nil, err
-		}
-	} else {
-		if param.Kind() == reflect.Pointer {
-			if err := json.Unmarshal(rawSpec.Value, spec); err != nil {
+	if rawSpec.Value != nil {
+		if message, ok := spec.(proto.Message); ok {
+			if err := jsonpb.UnmarshalString(string(rawSpec.Value), message); err != nil {
 				return nil, err
 			}
 		} else {
-			if err := json.Unmarshal(rawSpec.Value, &spec); err != nil {
-				return nil, err
+			if param.Kind() == reflect.Pointer {
+				if err := json.Unmarshal(rawSpec.Value, spec); err != nil {
+					return nil, err
+				}
+			} else {
+				if err := json.Unmarshal(rawSpec.Value, &spec); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

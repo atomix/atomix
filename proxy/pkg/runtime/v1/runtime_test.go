@@ -17,10 +17,14 @@ import (
 )
 
 func TestConnect(t *testing.T) {
+	conn, err := connect(context.TODO(), protoValueDriver{}, &types.Any{})
+	assert.NoError(t, err)
+	assert.NotNil(t, conn)
+
 	var marshaler jsonpb.Marshaler
 	chars, err := marshaler.MarshalToString(&runtimev1.RuntimeConfig{})
 	assert.NoError(t, err)
-	conn, err := connect(context.TODO(), protoValueDriver{}, &types.Any{
+	conn, err = connect(context.TODO(), protoValueDriver{}, &types.Any{
 		Value: []byte(chars),
 	})
 	assert.NoError(t, err)
