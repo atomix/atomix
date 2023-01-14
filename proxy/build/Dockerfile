@@ -28,7 +28,7 @@ RUN go run ./cmd/atomix-build driver \
 # Build the PodMemory/v1 storage driver
 FROM builder AS build-pod-memory-v1-driver
 RUN go run ./cmd/atomix-build driver \
-    github.com/atomix/atomix/drivers/pod-memory@v0.2.2 \
+    github.com/atomix/atomix/drivers/pod-memory@v0.2.3 \
     github.com/atomix/atomix/drivers/pod-memory/v1 \
     /build/bin/driver.so
 
