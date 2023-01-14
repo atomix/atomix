@@ -65,7 +65,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| element | [Element](#atomix-runtime-set-v1-Element) |  |  |
+| added | [bool](#bool) |  |  |
 
 
 
@@ -326,7 +326,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| element | [Element](#atomix-runtime-set-v1-Element) |  |  |
+| removed | [bool](#bool) |  |  |
 
 
 
