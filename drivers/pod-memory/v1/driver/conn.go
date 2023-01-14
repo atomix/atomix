@@ -37,6 +37,7 @@ import (
 func newConn(network network.Driver) *podMemoryConn {
 	return &podMemoryConn{
 		ProtocolClient: client.NewClient(network),
+		network:        network,
 	}
 }
 
