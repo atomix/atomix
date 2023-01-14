@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Create a DataStore with the configuration for the store
+apiVersion: atomix.io/v3beta3
+kind: DataStore
+metadata:
+  name: redis-store
+spec:
+  # Configure the DataStore to use the etcd driver with the v3 API
+  driver:
+    name: atomix.io/redis
+    apiVersion: v9
+  # Define the configuration to be passed to the driver to connect to the store
+  config:
+    Addr: redis-master:6379
