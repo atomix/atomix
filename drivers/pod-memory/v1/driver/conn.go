@@ -6,7 +6,7 @@ package driver
 
 import (
 	"context"
-	"github.com/atomix/atomix/api/errors"
+	"fmt"
 	counterapiv1 "github.com/atomix/atomix/api/runtime/counter/v1"
 	countermapapiv1 "github.com/atomix/atomix/api/runtime/countermap/v1"
 	electionapiv1 "github.com/atomix/atomix/api/runtime/election/v1"
@@ -31,8 +31,6 @@ import (
 	valueclientv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
 	"github.com/atomix/atomix/runtime/pkg/network"
-	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -49,27 +47,26 @@ type podMemoryConn struct {
 	mu      sync.Mutex
 }
 
-func (c *podMemoryConn) Connect(ctx context.Context, spec rsmapiv1.ProtocolConfig) error {
+func (c *podMemoryConn) Connect(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.node != nil {
 		return nil
 	}
 
-	parts := strings.Split(spec.Partitions[0].Leader, ":")
-	host, portS := parts[0], parts[1]
-	port, err := strconv.Atoi(portS)
-	if err != nil {
-		return errors.NewInvalid(err.Error())
-	}
-
-	c.node = newNode(c.network,
-		node.WithHost(host),
-		node.WithPort(port))
+	c.node = newNode(c.network)
 	if err := c.node.Start(); err != nil {
 		return err
 	}
-	return c.ProtocolClient.Connect(ctx, spec)
+	config := rsmapiv1.ProtocolConfig{
+		Partitions: []rsmapiv1.PartitionConfig{
+			{
+				PartitionID: 1,
+				Leader:      fmt.Sprintf("%s:%d", c.node.Host, c.node.Port),
+			},
+		},
+	}
+	return c.ProtocolClient.Connect(ctx, config)
 }
 
 func (c *podMemoryConn) NewCounterV1() counterapiv1.CounterServer {

@@ -23,7 +23,7 @@ type podMemoryDriver struct {
 
 func (d *podMemoryDriver) Connect(ctx context.Context, spec rsmapiv1.ProtocolConfig) (driver.Conn, error) {
 	conn := newConn(d.network)
-	if err := conn.Connect(ctx, spec); err != nil {
+	if err := conn.Connect(ctx); err != nil {
 		return nil, err
 	}
 	return conn, nil

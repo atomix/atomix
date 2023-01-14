@@ -50,8 +50,6 @@ func newProtocol() node.Protocol {
 	return &podMemoryProtocol{
 		partitions: map[rsmapiv1.PartitionID]node.Partition{
 			1: node.NewPartition(1, newExecutor()),
-			2: node.NewPartition(2, newExecutor()),
-			3: node.NewPartition(3, newExecutor()),
 		},
 	}
 }
