@@ -6,8 +6,8 @@ package driver
 
 import (
 	"context"
-	mapv1 "github.com/atomix/atomix/api/runtime/map/v1"
-	redismapv1 "github.com/atomix/atomix/drivers/redis/v9/driver/map/v1"
+	setv1 "github.com/atomix/atomix/api/runtime/set/v1"
+	redissetv1 "github.com/atomix/atomix/drivers/redis/v9/driver/set/v1"
 	"github.com/atomix/atomix/runtime/pkg/driver"
 	"github.com/go-redis/redis/v9"
 )
@@ -22,8 +22,8 @@ type redisConn struct {
 	client *redis.Client
 }
 
-func (c *redisConn) NewMapV1() mapv1.MapServer {
-	return redismapv1.NewMap(c.client)
+func (c *redisConn) NewSetV1() setv1.SetServer {
+	return redissetv1.NewSet(c.client)
 }
 
 func (c *redisConn) Close(ctx context.Context) error {
