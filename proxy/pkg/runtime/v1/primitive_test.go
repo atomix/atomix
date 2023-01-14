@@ -14,10 +14,70 @@ import (
 )
 
 func TestCreate(t *testing.T) {
+	primitive, err := create[runtimev1.RuntimeServer](protoValueConn{}, runtimev1.Primitive{
+		PrimitiveMeta: runtimev1.PrimitiveMeta{
+			Type: runtimev1.PrimitiveType{
+				Name:       "Test",
+				APIVersion: "v1",
+			},
+			PrimitiveID: runtimev1.PrimitiveID{
+				Name: "test",
+			},
+		},
+		Spec: &types.Any{},
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, primitive)
+
+	primitive, err = create[runtimev1.RuntimeServer](&protoPointerConn{}, runtimev1.Primitive{
+		PrimitiveMeta: runtimev1.PrimitiveMeta{
+			Type: runtimev1.PrimitiveType{
+				Name:       "Test",
+				APIVersion: "v1",
+			},
+			PrimitiveID: runtimev1.PrimitiveID{
+				Name: "test",
+			},
+		},
+		Spec: &types.Any{},
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, primitive)
+
+	primitive, err = create[runtimev1.RuntimeServer](jsonValueConn{}, runtimev1.Primitive{
+		PrimitiveMeta: runtimev1.PrimitiveMeta{
+			Type: runtimev1.PrimitiveType{
+				Name:       "Test",
+				APIVersion: "v1",
+			},
+			PrimitiveID: runtimev1.PrimitiveID{
+				Name: "test",
+			},
+		},
+		Spec: &types.Any{},
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, primitive)
+
+	primitive, err = create[runtimev1.RuntimeServer](&jsonPointerConn{}, runtimev1.Primitive{
+		PrimitiveMeta: runtimev1.PrimitiveMeta{
+			Type: runtimev1.PrimitiveType{
+				Name:       "Test",
+				APIVersion: "v1",
+			},
+			PrimitiveID: runtimev1.PrimitiveID{
+				Name: "test",
+			},
+		},
+		Spec: &types.Any{},
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, primitive)
+
 	var marshaler jsonpb.Marshaler
 	chars, err := marshaler.MarshalToString(&runtimev1.RuntimeConfig{})
 	assert.NoError(t, err)
-	primitive, err := create[runtimev1.RuntimeServer](protoValueConn{}, runtimev1.Primitive{
+	primitive, err = create[runtimev1.RuntimeServer](protoValueConn{}, runtimev1.Primitive{
 		PrimitiveMeta: runtimev1.PrimitiveMeta{
 			Type: runtimev1.PrimitiveType{
 				Name:       "Test",

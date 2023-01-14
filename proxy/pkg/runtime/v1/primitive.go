@@ -125,7 +125,7 @@ func create[T any](conn driver.Conn, primitive runtimev1.Primitive) (T, error) {
 		var spec any
 		if specIn.Kind() == reflect.Pointer {
 			spec = reflect.New(specIn.Elem()).Interface()
-			if primitive.Spec != nil {
+			if primitive.Spec != nil && primitive.Spec.Value != nil {
 				if message, ok := spec.(proto.Message); ok {
 					if err := jsonpb.UnmarshalString(string(primitive.Spec.Value), message); err != nil {
 						return t, err
@@ -139,7 +139,7 @@ func create[T any](conn driver.Conn, primitive runtimev1.Primitive) (T, error) {
 			in = append(in, reflect.ValueOf(spec))
 		} else {
 			spec = reflect.New(specIn).Interface()
-			if primitive.Spec != nil {
+			if primitive.Spec != nil && primitive.Spec.Value != nil {
 				if message, ok := spec.(proto.Message); ok {
 					if err := jsonpb.UnmarshalString(string(primitive.Spec.Value), message); err != nil {
 						return t, err
