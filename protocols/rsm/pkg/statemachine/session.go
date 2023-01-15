@@ -162,19 +162,19 @@ func (s *managedSession) Watch(f func(State)) CancelFunc {
 	}
 }
 
-func (s *managedSession) propose(input *protocol.SessionProposalInput, stream streams.WriteStream[*protocol.SessionProposalOutput]) {
+func (s *managedSession) propose(index protocol.Index, input *protocol.SessionProposalInput, stream streams.WriteStream[*protocol.SessionProposalOutput]) {
 	if proposal, ok := s.proposals[input.SequenceNum]; ok {
 		proposal.replay(stream)
 	} else {
 		proposal := newSessionProposal(s)
 		s.proposals[input.SequenceNum] = proposal
-		proposal.execute(input, stream)
+		proposal.execute(index, input, stream)
 	}
 }
 
-func (s *managedSession) query(input *protocol.SessionQueryInput, stream streams.WriteStream[*protocol.SessionQueryOutput]) {
+func (s *managedSession) query(sequenceNum protocol.SequenceNum, input *protocol.SessionQueryInput, stream streams.WriteStream[*protocol.SessionQueryOutput]) {
 	query := newSessionQuery(s)
-	query.execute(input, stream)
+	query.execute(sequenceNum, input, stream)
 	if query.state == Running {
 		s.queries.Store(query.Input().SequenceNum, query)
 	}
@@ -262,9 +262,9 @@ func (s *managedSession) scheduleExpireTimer() {
 	s.Log().Debugw("Scheduled expire time", logging.Time("Expire", expireTime))
 }
 
-func (s *managedSession) open(input *protocol.OpenSessionInput, stream streams.WriteStream[*protocol.OpenSessionOutput]) {
+func (s *managedSession) open(index protocol.Index, input *protocol.OpenSessionInput, stream streams.WriteStream[*protocol.OpenSessionOutput]) {
 	defer stream.Close()
-	s.id = SessionID(s.manager.Index())
+	s.id = SessionID(index)
 	s.state = Open
 	s.lastUpdated = s.manager.Time()
 	s.timeout = input.Timeout
@@ -277,7 +277,7 @@ func (s *managedSession) open(input *protocol.OpenSessionInput, stream streams.W
 	})
 }
 
-func (s *managedSession) keepAlive(input *protocol.KeepAliveInput, stream streams.WriteStream[*protocol.KeepAliveOutput]) {
+func (s *managedSession) keepAlive(index protocol.Index, input *protocol.KeepAliveInput, stream streams.WriteStream[*protocol.KeepAliveOutput]) {
 	defer stream.Close()
 
 	openInputs := &bloom.BloomFilter{}
@@ -323,7 +323,7 @@ func (s *managedSession) keepAlive(input *protocol.KeepAliveInput, stream stream
 	s.scheduleExpireTimer()
 }
 
-func (s *managedSession) close(input *protocol.CloseSessionInput, stream streams.WriteStream[*protocol.CloseSessionOutput]) {
+func (s *managedSession) close(index protocol.Index, input *protocol.CloseSessionInput, stream streams.WriteStream[*protocol.CloseSessionOutput]) {
 	defer stream.Close()
 	s.destroy()
 	stream.Value(&protocol.CloseSessionOutput{})
@@ -480,8 +480,8 @@ func (p *sessionProposal) Watch(watcher func(ProposalState)) CancelFunc {
 	}
 }
 
-func (p *sessionProposal) execute(input *protocol.SessionProposalInput, stream streams.WriteStream[*protocol.SessionProposalOutput]) {
-	p.id = ProposalID(p.session.manager.Index())
+func (p *sessionProposal) execute(index protocol.Index, input *protocol.SessionProposalInput, stream streams.WriteStream[*protocol.SessionProposalOutput]) {
+	p.id = ProposalID(index)
 	p.input = input
 	p.timestamp = p.session.manager.Time()
 	p.state = Running
@@ -769,8 +769,8 @@ func (q *sessionQuery) Watch(watcher func(QueryState)) CancelFunc {
 	}
 }
 
-func (q *sessionQuery) execute(input *protocol.SessionQueryInput, stream streams.WriteStream[*protocol.SessionQueryOutput]) {
-	q.id = QueryID(q.session.manager.sequenceNum.Add(1))
+func (q *sessionQuery) execute(sequenceNum protocol.SequenceNum, input *protocol.SessionQueryInput, stream streams.WriteStream[*protocol.SessionQueryOutput]) {
+	q.id = QueryID(sequenceNum)
 	q.input = input
 	q.stream = stream
 	q.timestamp = q.session.manager.Time()

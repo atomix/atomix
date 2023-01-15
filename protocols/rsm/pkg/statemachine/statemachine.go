@@ -10,6 +10,7 @@ import (
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/gogo/protobuf/types"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -46,13 +47,14 @@ func newStateMachine(factory func(Context[*protocol.PrimitiveProposalInput, *pro
 }
 
 type sessionManager struct {
-	factory     func(Context[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) PrimitiveManager
-	index       atomic.Uint64
-	sequenceNum atomic.Uint64
-	scheduler   *stateMachineScheduler
-	sessions    *managedSessions
-	proposals   *sessionProposals
-	primitives  PrimitiveManager
+	factory        func(Context[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) PrimitiveManager
+	index          protocol.Index
+	sequenceNum    atomic.Uint64
+	scheduler      *stateMachineScheduler
+	sessions       *managedSessions
+	proposals      *sessionProposals
+	primitives     PrimitiveManager
+	pendingQueries sync.Map
 }
 
 func (s *sessionManager) init() StateMachine {
@@ -72,7 +74,7 @@ func (s *sessionManager) Log() logging.Logger {
 }
 
 func (s *sessionManager) Index() protocol.Index {
-	return protocol.Index(s.index.Load())
+	return s.index
 }
 
 func (s *sessionManager) Time() time.Time {
@@ -92,7 +94,7 @@ func (s *sessionManager) Proposals() Proposals[*protocol.PrimitiveProposalInput,
 }
 
 func (s *sessionManager) Snapshot(writer *SnapshotWriter) error {
-	if err := writer.WriteVarUint64(s.index.Load()); err != nil {
+	if err := writer.WriteVarUint64(uint64(s.index)); err != nil {
 		return err
 	}
 
@@ -123,7 +125,7 @@ func (s *sessionManager) Recover(reader *SnapshotReader) error {
 	if err != nil {
 		return err
 	}
-	s.index.Store(index)
+	s.index = protocol.Index(index)
 
 	timestamp := &types.Timestamp{}
 	if err := reader.ReadMessage(timestamp); err != nil {
@@ -149,9 +151,6 @@ func (s *sessionManager) Recover(reader *SnapshotReader) error {
 }
 
 func (s *sessionManager) Propose(input *protocol.ProposalInput, stream streams.WriteStream[*protocol.ProposalOutput]) {
-	// Increment the state machine index
-	s.index.Add(1)
-
 	// Run scheduled tasks for the updated timestamp
 	s.scheduler.tick(input.Timestamp)
 
@@ -162,7 +161,7 @@ func (s *sessionManager) Propose(input *protocol.ProposalInput, stream streams.W
 				return nil, err
 			}
 			return &protocol.ProposalOutput{
-				Index: s.Index(),
+				Index: s.index,
 				Output: &protocol.ProposalOutput_Proposal{
 					Proposal: output,
 				},
@@ -174,7 +173,7 @@ func (s *sessionManager) Propose(input *protocol.ProposalInput, stream streams.W
 				return nil, err
 			}
 			return &protocol.ProposalOutput{
-				Index: s.Index(),
+				Index: s.index,
 				Output: &protocol.ProposalOutput_OpenSession{
 					OpenSession: output,
 				},
@@ -186,7 +185,7 @@ func (s *sessionManager) Propose(input *protocol.ProposalInput, stream streams.W
 				return nil, err
 			}
 			return &protocol.ProposalOutput{
-				Index: s.Index(),
+				Index: s.index,
 				Output: &protocol.ProposalOutput_KeepAlive{
 					KeepAlive: output,
 				},
@@ -198,7 +197,7 @@ func (s *sessionManager) Propose(input *protocol.ProposalInput, stream streams.W
 				return nil, err
 			}
 			return &protocol.ProposalOutput{
-				Index: s.Index(),
+				Index: s.index,
 				Output: &protocol.ProposalOutput_CloseSession{
 					CloseSession: output,
 				},
@@ -206,37 +205,51 @@ func (s *sessionManager) Propose(input *protocol.ProposalInput, stream streams.W
 		}))
 	}
 
-	// Run scheduled tasks for this index
-	s.scheduler.tock(s.Index())
-}
-
-func (s *sessionManager) Query(input *protocol.QueryInput, stream streams.WriteStream[*protocol.QueryOutput]) {
-	if s.Index() < input.MaxReceivedIndex {
-		s.Scheduler().Await(input.MaxReceivedIndex, func() {
-			switch q := input.Input.(type) {
+	if indexQueries, ok := s.pendingQueries.LoadAndDelete(s.index); ok {
+		indexQueries.(*sync.Map).Range(func(key, value any) bool {
+			sequenceNum := key.(protocol.SequenceNum)
+			query := value.(pendingQuery)
+			switch q := query.input.Input.(type) {
 			case *protocol.QueryInput_Query:
-				s.query(q.Query, streams.NewEncodingStream[*protocol.SessionQueryOutput, *protocol.QueryOutput](stream, func(output *protocol.SessionQueryOutput, err error) (*protocol.QueryOutput, error) {
+				s.query(sequenceNum, q.Query, streams.NewEncodingStream[*protocol.SessionQueryOutput, *protocol.QueryOutput](query.stream, func(output *protocol.SessionQueryOutput, err error) (*protocol.QueryOutput, error) {
 					if err != nil {
 						return nil, err
 					}
 					return &protocol.QueryOutput{
-						Index: s.Index(),
+						Index: s.index,
 						Output: &protocol.QueryOutput_Query{
 							Query: output,
 						},
 					}, nil
 				}))
 			}
+			return true
+		})
+	}
+}
+
+type pendingQuery struct {
+	input  *protocol.QueryInput
+	stream streams.WriteStream[*protocol.QueryOutput]
+}
+
+func (s *sessionManager) Query(input *protocol.QueryInput, stream streams.WriteStream[*protocol.QueryOutput]) {
+	sequenceNum := protocol.SequenceNum(s.sequenceNum.Add(1))
+	if s.index < input.MaxReceivedIndex {
+		indexQueries, _ := s.pendingQueries.LoadOrStore(s.index, &sync.Map{})
+		indexQueries.(*sync.Map).Store(sequenceNum, pendingQuery{
+			input:  input,
+			stream: stream,
 		})
 	} else {
 		switch q := input.Input.(type) {
 		case *protocol.QueryInput_Query:
-			s.query(q.Query, streams.NewEncodingStream[*protocol.SessionQueryOutput, *protocol.QueryOutput](stream, func(output *protocol.SessionQueryOutput, err error) (*protocol.QueryOutput, error) {
+			s.query(sequenceNum, q.Query, streams.NewEncodingStream[*protocol.SessionQueryOutput, *protocol.QueryOutput](stream, func(output *protocol.SessionQueryOutput, err error) (*protocol.QueryOutput, error) {
 				if err != nil {
 					return nil, err
 				}
 				return &protocol.QueryOutput{
-					Index: s.Index(),
+					Index: s.index,
 					Output: &protocol.QueryOutput_Query{
 						Query: output,
 					},
@@ -248,7 +261,7 @@ func (s *sessionManager) Query(input *protocol.QueryInput, stream streams.WriteS
 
 func (s *sessionManager) openSession(input *protocol.OpenSessionInput, stream streams.WriteStream[*protocol.OpenSessionOutput]) {
 	session := newManagedSession(s)
-	session.open(input, stream)
+	session.open(s.index, input, stream)
 }
 
 func (s *sessionManager) keepAlive(input *protocol.KeepAliveInput, stream streams.WriteStream[*protocol.KeepAliveOutput]) {
@@ -258,7 +271,7 @@ func (s *sessionManager) keepAlive(input *protocol.KeepAliveInput, stream stream
 		stream.Error(errors.NewFault("session not found"))
 		stream.Close()
 	} else {
-		session.keepAlive(input, stream)
+		session.keepAlive(s.index, input, stream)
 	}
 }
 
@@ -269,7 +282,7 @@ func (s *sessionManager) closeSession(input *protocol.CloseSessionInput, stream 
 		stream.Error(errors.NewFault("session not found"))
 		stream.Close()
 	} else {
-		session.close(input, stream)
+		session.close(s.index, input, stream)
 	}
 }
 
@@ -280,17 +293,17 @@ func (s *sessionManager) propose(input *protocol.SessionProposalInput, stream st
 		stream.Error(errors.NewFault("session not found"))
 		stream.Close()
 	} else {
-		session.propose(input, stream)
+		session.propose(s.index, input, stream)
 	}
 }
 
-func (s *sessionManager) query(input *protocol.SessionQueryInput, stream streams.WriteStream[*protocol.SessionQueryOutput]) {
+func (s *sessionManager) query(sequenceNum protocol.SequenceNum, input *protocol.SessionQueryInput, stream streams.WriteStream[*protocol.SessionQueryOutput]) {
 	sessionID := SessionID(input.SessionID)
 	session, ok := s.sessions.get(sessionID)
 	if !ok {
 		stream.Error(errors.NewFault("session not found"))
 		stream.Close()
 	} else {
-		session.query(input, stream)
+		session.query(sequenceNum, input, stream)
 	}
 }

@@ -6,14 +6,13 @@ package statemachine
 
 import (
 	"container/list"
-	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
+	"sync"
 	"sync/atomic"
 	"time"
 )
 
 type Scheduler interface {
 	Time() time.Time
-	Await(index protocol.Index, f func()) CancelFunc
 	Delay(d time.Duration, f func()) CancelFunc
 	Schedule(t time.Time, f func()) CancelFunc
 }
@@ -23,7 +22,6 @@ type CancelFunc func()
 func newScheduler() *stateMachineScheduler {
 	scheduler := &stateMachineScheduler{
 		scheduledTasks: list.New(),
-		indexedTasks:   make(map[protocol.Index]*list.List),
 	}
 	scheduler.time.Store(time.UnixMilli(0))
 	return scheduler
@@ -31,22 +29,12 @@ func newScheduler() *stateMachineScheduler {
 
 type stateMachineScheduler struct {
 	scheduledTasks *list.List
-	indexedTasks   map[protocol.Index]*list.List
+	indexedTasks   sync.Map
 	time           atomic.Value
 }
 
 func (s *stateMachineScheduler) Time() time.Time {
 	return s.time.Load().(time.Time)
-}
-
-func (s *stateMachineScheduler) Await(index protocol.Index, f func()) CancelFunc {
-	task := &indexTask{
-		scheduler: s,
-		index:     index,
-		callback:  f,
-	}
-	task.schedule()
-	return task.cancel
 }
 
 func (s *stateMachineScheduler) Delay(d time.Duration, f func()) CancelFunc {
@@ -82,19 +70,6 @@ func (s *stateMachineScheduler) tick(time time.Time) {
 			}
 		}
 		s.time.Store(time)
-	}
-}
-
-// tock runs the scheduled index-based tasks
-func (s *stateMachineScheduler) tock(index protocol.Index) {
-	if tasks, ok := s.indexedTasks[index]; ok {
-		elem := tasks.Front()
-		for elem != nil {
-			task := elem.Value.(*indexTask)
-			task.run()
-			elem = elem.Next()
-		}
-		delete(s.indexedTasks, index)
 	}
 }
 
@@ -134,34 +109,5 @@ func (t *timeTask) run() {
 func (t *timeTask) cancel() {
 	if t.elem != nil {
 		t.scheduler.scheduledTasks.Remove(t.elem)
-	}
-}
-
-// index-based task
-type indexTask struct {
-	scheduler *stateMachineScheduler
-	callback  func()
-	index     protocol.Index
-	elem      *list.Element
-}
-
-func (t *indexTask) schedule() {
-	tasks, ok := t.scheduler.indexedTasks[t.index]
-	if !ok {
-		tasks = list.New()
-		t.scheduler.indexedTasks[t.index] = tasks
-	}
-	t.elem = tasks.PushBack(t)
-}
-
-func (t *indexTask) run() {
-	t.callback()
-}
-
-func (t *indexTask) cancel() {
-	if t.elem != nil {
-		if tasks, ok := t.scheduler.indexedTasks[t.index]; ok {
-			tasks.Remove(t.elem)
-		}
 	}
 }

@@ -44,23 +44,4 @@ func TestScheduler(t *testing.T) {
 	cancel()
 	scheduler.tick(time.UnixMilli(5))
 	assert.False(t, ran)
-
-	scheduler.tock(1)
-
-	ran = false
-	scheduler.Await(2, func() {
-		ran = true
-	})
-	scheduler.tock(2)
-	assert.True(t, ran)
-
-	ran = false
-	cancel = scheduler.Await(4, func() {
-		ran = true
-	})
-	scheduler.tock(3)
-	assert.False(t, ran)
-	cancel()
-	scheduler.tock(4)
-	assert.False(t, ran)
 }
