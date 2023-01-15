@@ -20,17 +20,17 @@ dependencies:
     repository: https://atomix.github.io/atomix
     alias: controller
   - name: atomix-raft-controller
-    version: 0.2.4
+    version: 0.2.5
     repository: https://atomix.github.io/atomix
     condition: stores.raft.enabled
     alias: raft-controller
   - name: atomix-shared-memory-controller
-    version: 0.2.3
+    version: 0.2.4
     repository: https://atomix.github.io/atomix
     condition: stores.shared-memory.enabled
     alias: shared-memory-controller
   - name: atomix-pod-memory-controller
-    version: 0.2.2
+    version: 0.2.3
     repository: https://atomix.github.io/atomix
     condition: stores.pod-memory.enabled
     alias: pod-memory-controller
