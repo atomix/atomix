@@ -6,7 +6,6 @@ package statemachine
 
 import (
 	"container/list"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -29,7 +28,6 @@ func newScheduler() *stateMachineScheduler {
 
 type stateMachineScheduler struct {
 	scheduledTasks *list.List
-	indexedTasks   sync.Map
 	time           atomic.Value
 }
 
