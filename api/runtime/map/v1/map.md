@@ -25,6 +25,7 @@
     - [InsertResponse](#atomix-runtime-map-v1-InsertResponse)
     - [LockRequest](#atomix-runtime-map-v1-LockRequest)
     - [LockResponse](#atomix-runtime-map-v1-LockResponse)
+    - [MapCacheConfig](#atomix-runtime-map-v1-MapCacheConfig)
     - [MapConfig](#atomix-runtime-map-v1-MapConfig)
     - [PutRequest](#atomix-runtime-map-v1-PutRequest)
     - [PutResponse](#atomix-runtime-map-v1-PutResponse)
@@ -366,10 +367,31 @@
 
 
 
+<a name="atomix-runtime-map-v1-MapCacheConfig"></a>
+
+### MapCacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+| size | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="atomix-runtime-map-v1-MapConfig"></a>
 
 ### MapConfig
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [MapCacheConfig](#atomix-runtime-map-v1-MapCacheConfig) |  |  |
 
 
 

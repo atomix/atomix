@@ -59,7 +59,14 @@ service Map {
 }
 
 message MapConfig {
+    MapCacheConfig cache = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
 
+message MapCacheConfig {
+    bool enabled = 1;
+    uint64 size = 2;
 }
 
 message CreateRequest {
