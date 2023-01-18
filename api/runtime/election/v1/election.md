@@ -18,6 +18,7 @@
     - [EvictResponse](#atomix-runtime-election-v1-EvictResponse)
     - [GetTermRequest](#atomix-runtime-election-v1-GetTermRequest)
     - [GetTermResponse](#atomix-runtime-election-v1-GetTermResponse)
+    - [LeaderElectionCacheConfig](#atomix-runtime-election-v1-LeaderElectionCacheConfig)
     - [LeaderElectionConfig](#atomix-runtime-election-v1-LeaderElectionConfig)
     - [PromoteRequest](#atomix-runtime-election-v1-PromoteRequest)
     - [PromoteResponse](#atomix-runtime-election-v1-PromoteResponse)
@@ -250,10 +251,30 @@
 
 
 
+<a name="atomix-runtime-election-v1-LeaderElectionCacheConfig"></a>
+
+### LeaderElectionCacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+
+
+
+
+
+
 <a name="atomix-runtime-election-v1-LeaderElectionConfig"></a>
 
 ### LeaderElectionConfig
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [LeaderElectionCacheConfig](#atomix-runtime-election-v1-LeaderElectionCacheConfig) |  |  |
 
 
 

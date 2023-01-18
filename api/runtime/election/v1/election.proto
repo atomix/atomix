@@ -49,7 +49,13 @@ service LeaderElection {
 }
 
 message LeaderElectionConfig {
+    LeaderElectionCacheConfig cache = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
 
+message LeaderElectionCacheConfig {
+    bool enabled = 1;
 }
 
 message CreateRequest {
