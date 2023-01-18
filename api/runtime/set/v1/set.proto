@@ -46,6 +46,10 @@ service Set {
     rpc Elements (ElementsRequest) returns (stream ElementsResponse);
 }
 
+message SetConfig {
+
+}
+
 message CreateRequest {
     atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
@@ -55,7 +59,9 @@ message CreateRequest {
 }
 
 message CreateResponse {
-
+    SetConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message CloseRequest {

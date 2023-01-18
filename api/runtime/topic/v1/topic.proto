@@ -30,6 +30,10 @@ service Topic {
     rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);
 }
 
+message TopicConfig {
+
+}
+
 message CreateRequest {
     atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
@@ -39,7 +43,9 @@ message CreateRequest {
 }
 
 message CreateResponse {
-
+    TopicConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message CloseRequest {

@@ -61,11 +61,8 @@ service IndexedMap {
     rpc Entries (EntriesRequest) returns (stream EntriesResponse);
 }
 
-message SizeRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
+message IndexedMapConfig {
+
 }
 
 message CreateRequest {
@@ -77,7 +74,9 @@ message CreateRequest {
 }
 
 message CreateResponse {
-
+    IndexedMapConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message CloseRequest {
@@ -89,6 +88,13 @@ message CloseRequest {
 
 message CloseResponse {
 
+}
+
+message SizeRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
 }
 
 message SizeResponse {

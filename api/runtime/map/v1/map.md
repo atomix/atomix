@@ -25,6 +25,7 @@
     - [InsertResponse](#atomix-runtime-map-v1-InsertResponse)
     - [LockRequest](#atomix-runtime-map-v1-LockRequest)
     - [LockResponse](#atomix-runtime-map-v1-LockResponse)
+    - [MapConfig](#atomix-runtime-map-v1-MapConfig)
     - [PutRequest](#atomix-runtime-map-v1-PutRequest)
     - [PutResponse](#atomix-runtime-map-v1-PutResponse)
     - [RemoveRequest](#atomix-runtime-map-v1-RemoveRequest)
@@ -120,6 +121,11 @@
 
 ### CreateResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [MapConfig](#atomix-runtime-map-v1-MapConfig) |  |  |
 
 
 
@@ -353,6 +359,16 @@
 <a name="atomix-runtime-map-v1-LockResponse"></a>
 
 ### LockResponse
+
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-MapConfig"></a>
+
+### MapConfig
 
 
 

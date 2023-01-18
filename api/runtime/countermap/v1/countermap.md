@@ -8,6 +8,7 @@
     - [ClearResponse](#atomix-runtime-countermap-v1-ClearResponse)
     - [CloseRequest](#atomix-runtime-countermap-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-countermap-v1-CloseResponse)
+    - [CounterMapConfig](#atomix-runtime-countermap-v1-CounterMapConfig)
     - [CreateRequest](#atomix-runtime-countermap-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-countermap-v1-CreateResponse)
     - [DecrementRequest](#atomix-runtime-countermap-v1-DecrementRequest)
@@ -103,6 +104,16 @@
 
 
 
+<a name="atomix-runtime-countermap-v1-CounterMapConfig"></a>
+
+### CounterMapConfig
+
+
+
+
+
+
+
 <a name="atomix-runtime-countermap-v1-CreateRequest"></a>
 
 ### CreateRequest
@@ -123,6 +134,11 @@
 
 ### CreateResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [CounterMapConfig](#atomix-runtime-countermap-v1-CounterMapConfig) |  |  |
 
 
 

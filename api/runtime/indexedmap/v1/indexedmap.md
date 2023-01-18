@@ -25,6 +25,7 @@
     - [FirstEntryResponse](#atomix-runtime-indexedmap-v1-FirstEntryResponse)
     - [GetRequest](#atomix-runtime-indexedmap-v1-GetRequest)
     - [GetResponse](#atomix-runtime-indexedmap-v1-GetResponse)
+    - [IndexedMapConfig](#atomix-runtime-indexedmap-v1-IndexedMapConfig)
     - [LastEntryRequest](#atomix-runtime-indexedmap-v1-LastEntryRequest)
     - [LastEntryResponse](#atomix-runtime-indexedmap-v1-LastEntryResponse)
     - [NextEntryRequest](#atomix-runtime-indexedmap-v1-NextEntryRequest)
@@ -155,6 +156,11 @@
 
 ### CreateResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [IndexedMapConfig](#atomix-runtime-indexedmap-v1-IndexedMapConfig) |  |  |
 
 
 
@@ -362,6 +368,16 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | entry | [Entry](#atomix-runtime-indexedmap-v1-Entry) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-indexedmap-v1-IndexedMapConfig"></a>
+
+### IndexedMapConfig
+
 
 
 

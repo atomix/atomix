@@ -24,6 +24,7 @@
     - [SetResponse](#atomix-runtime-value-v1-SetResponse)
     - [UpdateRequest](#atomix-runtime-value-v1-UpdateRequest)
     - [UpdateResponse](#atomix-runtime-value-v1-UpdateResponse)
+    - [ValueConfig](#atomix-runtime-value-v1-ValueConfig)
     - [VersionedValue](#atomix-runtime-value-v1-VersionedValue)
     - [WatchRequest](#atomix-runtime-value-v1-WatchRequest)
     - [WatchResponse](#atomix-runtime-value-v1-WatchResponse)
@@ -86,6 +87,11 @@
 
 ### CreateResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [ValueConfig](#atomix-runtime-value-v1-ValueConfig) |  |  |
 
 
 
@@ -340,6 +346,16 @@
 | ----- | ---- | ----- | ----------- |
 | version | [uint64](#uint64) |  |  |
 | prev_value | [VersionedValue](#atomix-runtime-value-v1-VersionedValue) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-value-v1-ValueConfig"></a>
+
+### ValueConfig
+
 
 
 

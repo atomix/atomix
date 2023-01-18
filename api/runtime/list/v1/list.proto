@@ -51,6 +51,10 @@ service List {
     rpc Items (ItemsRequest) returns (stream ItemsResponse);
 }
 
+message ListConfig {
+
+}
+
 message CreateRequest {
     atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
@@ -60,7 +64,9 @@ message CreateRequest {
 }
 
 message CreateResponse {
-
+    ListConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message CloseRequest {

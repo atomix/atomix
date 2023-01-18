@@ -48,6 +48,10 @@ service LeaderElection {
     rpc Watch (WatchRequest) returns (stream WatchResponse);
 }
 
+message LeaderElectionConfig {
+
+}
+
 message CreateRequest {
     atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
@@ -57,7 +61,9 @@ message CreateRequest {
 }
 
 message CreateResponse {
-
+    LeaderElectionConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message CloseRequest {

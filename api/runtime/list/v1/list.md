@@ -28,6 +28,7 @@
     - [Item](#atomix-runtime-list-v1-Item)
     - [ItemsRequest](#atomix-runtime-list-v1-ItemsRequest)
     - [ItemsResponse](#atomix-runtime-list-v1-ItemsResponse)
+    - [ListConfig](#atomix-runtime-list-v1-ListConfig)
     - [RemoveRequest](#atomix-runtime-list-v1-RemoveRequest)
     - [RemoveResponse](#atomix-runtime-list-v1-RemoveResponse)
     - [SetRequest](#atomix-runtime-list-v1-SetRequest)
@@ -176,6 +177,11 @@
 
 ### CreateResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [ListConfig](#atomix-runtime-list-v1-ListConfig) |  |  |
 
 
 
@@ -397,6 +403,16 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | item | [Item](#atomix-runtime-list-v1-Item) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-list-v1-ListConfig"></a>
+
+### ListConfig
+
 
 
 

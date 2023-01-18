@@ -22,6 +22,7 @@
     - [EventsResponse](#atomix-runtime-multimap-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-multimap-v1-GetRequest)
     - [GetResponse](#atomix-runtime-multimap-v1-GetResponse)
+    - [MultiMapConfig](#atomix-runtime-multimap-v1-MultiMapConfig)
     - [PutAllRequest](#atomix-runtime-multimap-v1-PutAllRequest)
     - [PutAllResponse](#atomix-runtime-multimap-v1-PutAllResponse)
     - [PutEntriesRequest](#atomix-runtime-multimap-v1-PutEntriesRequest)
@@ -154,6 +155,11 @@
 
 ### CreateResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [MultiMapConfig](#atomix-runtime-multimap-v1-MultiMapConfig) |  |  |
 
 
 
@@ -310,6 +316,16 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | values | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-runtime-multimap-v1-MultiMapConfig"></a>
+
+### MultiMapConfig
+
 
 
 

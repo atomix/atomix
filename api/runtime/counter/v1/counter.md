@@ -6,6 +6,7 @@
 - [runtime/counter/v1/counter.proto](#runtime_counter_v1_counter-proto)
     - [CloseRequest](#atomix-runtime-counter-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-counter-v1-CloseResponse)
+    - [CounterConfig](#atomix-runtime-counter-v1-CounterConfig)
     - [CreateRequest](#atomix-runtime-counter-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-counter-v1-CreateResponse)
     - [DecrementRequest](#atomix-runtime-counter-v1-DecrementRequest)
@@ -58,6 +59,16 @@
 
 
 
+<a name="atomix-runtime-counter-v1-CounterConfig"></a>
+
+### CounterConfig
+
+
+
+
+
+
+
 <a name="atomix-runtime-counter-v1-CreateRequest"></a>
 
 ### CreateRequest
@@ -78,6 +89,11 @@
 
 ### CreateResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [CounterConfig](#atomix-runtime-counter-v1-CounterConfig) |  |  |
 
 
 

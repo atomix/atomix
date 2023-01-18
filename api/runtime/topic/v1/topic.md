@@ -12,6 +12,7 @@
     - [PublishResponse](#atomix-runtime-topic-v1-PublishResponse)
     - [SubscribeRequest](#atomix-runtime-topic-v1-SubscribeRequest)
     - [SubscribeResponse](#atomix-runtime-topic-v1-SubscribeResponse)
+    - [TopicConfig](#atomix-runtime-topic-v1-TopicConfig)
   
     - [Topic](#atomix-runtime-topic-v1-Topic)
   
@@ -73,6 +74,11 @@
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [TopicConfig](#atomix-runtime-topic-v1-TopicConfig) |  |  |
+
+
 
 
 
@@ -129,6 +135,16 @@
 | offset | [uint64](#uint64) |  |  |
 | timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
 | payload | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-topic-v1-TopicConfig"></a>
+
+### TopicConfig
+
 
 
 

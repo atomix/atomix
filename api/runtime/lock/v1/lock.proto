@@ -34,6 +34,10 @@ service Lock {
     rpc GetLock (GetLockRequest) returns (GetLockResponse);
 }
 
+message LockConfig {
+
+}
+
 message CreateRequest {
     atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
@@ -43,7 +47,9 @@ message CreateRequest {
 }
 
 message CreateResponse {
-
+    LockConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message CloseRequest {

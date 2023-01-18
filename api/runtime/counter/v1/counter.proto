@@ -39,6 +39,10 @@ service Counter {
     rpc Decrement (DecrementRequest) returns (DecrementResponse);
 }
 
+message CounterConfig {
+
+}
+
 message CreateRequest {
     atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
@@ -48,7 +52,9 @@ message CreateRequest {
 }
 
 message CreateResponse {
-
+    CounterConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message CloseRequest {

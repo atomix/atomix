@@ -24,6 +24,7 @@
     - [EventsResponse](#atomix-runtime-set-v1-EventsResponse)
     - [RemoveRequest](#atomix-runtime-set-v1-RemoveRequest)
     - [RemoveResponse](#atomix-runtime-set-v1-RemoveResponse)
+    - [SetConfig](#atomix-runtime-set-v1-SetConfig)
     - [SizeRequest](#atomix-runtime-set-v1-SizeRequest)
     - [SizeResponse](#atomix-runtime-set-v1-SizeResponse)
   
@@ -173,6 +174,11 @@
 
 ### CreateResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [SetConfig](#atomix-runtime-set-v1-SetConfig) |  |  |
 
 
 
@@ -327,6 +333,16 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | removed | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-set-v1-SetConfig"></a>
+
+### SetConfig
+
 
 
 

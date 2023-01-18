@@ -10,6 +10,7 @@
     - [CreateResponse](#atomix-runtime-lock-v1-CreateResponse)
     - [GetLockRequest](#atomix-runtime-lock-v1-GetLockRequest)
     - [GetLockResponse](#atomix-runtime-lock-v1-GetLockResponse)
+    - [LockConfig](#atomix-runtime-lock-v1-LockConfig)
     - [LockRequest](#atomix-runtime-lock-v1-LockRequest)
     - [LockResponse](#atomix-runtime-lock-v1-LockResponse)
     - [UnlockRequest](#atomix-runtime-lock-v1-UnlockRequest)
@@ -75,6 +76,11 @@
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [LockConfig](#atomix-runtime-lock-v1-LockConfig) |  |  |
+
+
 
 
 
@@ -103,6 +109,16 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-lock-v1-LockConfig"></a>
+
+### LockConfig
+
 
 
 

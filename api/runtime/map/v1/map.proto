@@ -58,6 +58,10 @@ service Map {
     rpc Entries (EntriesRequest) returns (stream EntriesResponse);
 }
 
+message MapConfig {
+
+}
+
 message CreateRequest {
     atomix.runtime.v1.PrimitiveID id = 1 [
         (gogoproto.customname) = "ID",
@@ -67,7 +71,9 @@ message CreateRequest {
 }
 
 message CreateResponse {
-
+    MapConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message CloseRequest {
