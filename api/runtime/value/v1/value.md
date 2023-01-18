@@ -24,6 +24,7 @@
     - [SetResponse](#atomix-runtime-value-v1-SetResponse)
     - [UpdateRequest](#atomix-runtime-value-v1-UpdateRequest)
     - [UpdateResponse](#atomix-runtime-value-v1-UpdateResponse)
+    - [ValueCacheConfig](#atomix-runtime-value-v1-ValueCacheConfig)
     - [ValueConfig](#atomix-runtime-value-v1-ValueConfig)
     - [VersionedValue](#atomix-runtime-value-v1-VersionedValue)
     - [WatchRequest](#atomix-runtime-value-v1-WatchRequest)
@@ -352,10 +353,30 @@
 
 
 
+<a name="atomix-runtime-value-v1-ValueCacheConfig"></a>
+
+### ValueCacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+
+
+
+
+
+
 <a name="atomix-runtime-value-v1-ValueConfig"></a>
 
 ### ValueConfig
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [ValueCacheConfig](#atomix-runtime-value-v1-ValueCacheConfig) |  |  |
 
 
 

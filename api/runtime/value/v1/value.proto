@@ -47,8 +47,15 @@ service Value {
 }
 
 message ValueConfig {
-
+    ValueCacheConfig cache = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
+
+message ValueCacheConfig {
+    bool enabled = 1;
+}
+
 
 message CreateRequest {
     atomix.runtime.v1.PrimitiveID id = 1 [
