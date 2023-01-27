@@ -6,6 +6,8 @@ github.com/atomix/atomix/api v0.3.0 h1:6rcviiT3qcM3lcS2lzleDP4B+nWBsCM6rwCyOSxZf
 github.com/atomix/atomix/api v0.3.0/go.mod h1:Fz8zXQH6n28U0NTu5xctKhkNrN5RsWgX56lrMhqXlPg=
 github.com/atomix/atomix/runtime v0.3.0 h1:qBESmnvU/qKeB1q2rknkLJijqhHOIKhhr7FkYLKj3z8=
 github.com/atomix/atomix/runtime v0.3.0/go.mod h1:qoz4FvBWEIVZnktf06kk26egOdNQQpk9PJaKk8VTaEE=
+github.com/atomix/atomix/runtime v0.3.1-0.20230127220310-cde6d4d7a9c5 h1:QnA9WzFRdj/gydciOYJRDMKA/E+rwQ/yeyy7O5iZnTg=
+github.com/atomix/atomix/runtime v0.3.1-0.20230127220310-cde6d4d7a9c5/go.mod h1:cj27+xFOm7NVlZ0JEDWEX129eG22PgD77yLNqbjqbtc=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/cenkalti/backoff v2.2.1+incompatible h1:tNowT99t7UNflLxfYYSlKYsBpXdEet03Pg2g16Swow4=
 github.com/cenkalti/backoff v2.2.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
