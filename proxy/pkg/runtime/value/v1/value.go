@@ -6,7 +6,6 @@ package v1
 
 import (
 	"context"
-	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	valuev1 "github.com/atomix/atomix/api/runtime/value/v1"
 	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/logging"
@@ -14,68 +13,19 @@ import (
 
 var log = logging.GetLogger()
 
-const (
-	Name       = "Value"
-	APIVersion = "v1"
-)
-
-var PrimitiveType = runtimev1.PrimitiveType{
-	Name:       Name,
-	APIVersion: APIVersion,
+type ValueProxy interface {
+	runtime.PrimitiveProxy
+	valuev1.ValueServer
 }
 
 func NewValueServer(rt *runtime.Runtime) valuev1.ValueServer {
 	return &valueServer{
-		manager: runtime.NewPrimitiveManager[valuev1.ValueServer](PrimitiveType, rt),
+		manager: runtime.NewPrimitiveRegistry[ValueProxy](valuev1.PrimitiveType, rt),
 	}
 }
 
 type valueServer struct {
-	manager *runtime.PrimitiveManager[valuev1.ValueServer]
-}
-
-func (s *valueServer) Create(ctx context.Context, request *valuev1.CreateRequest) (*valuev1.CreateResponse, error) {
-	log.Debugw("Create",
-		logging.Trunc64("CreateRequest", request))
-	client, err := s.manager.Create(ctx, request.ID, request.Tags)
-	if err != nil {
-		log.Warnw("Create",
-			logging.Trunc64("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := client.Create(ctx, request)
-	if err != nil {
-		log.Debugw("Create",
-			logging.Trunc64("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Create",
-		logging.Trunc64("CreateResponse", response))
-	return response, nil
-}
-
-func (s *valueServer) Close(ctx context.Context, request *valuev1.CloseRequest) (*valuev1.CloseResponse, error) {
-	log.Debugw("Close",
-		logging.Trunc64("CloseRequest", request))
-	client, err := s.manager.Get(request.ID)
-	if err != nil {
-		log.Warnw("Close",
-			logging.Trunc64("CloseRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := client.Close(ctx, request)
-	if err != nil {
-		log.Debugw("Close",
-			logging.Trunc64("CloseRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Close",
-		logging.Trunc64("CloseResponse", response))
-	return response, nil
+	manager runtime.PrimitiveRegistry[ValueProxy]
 }
 
 func (s *valueServer) Set(ctx context.Context, request *valuev1.SetRequest) (*valuev1.SetResponse, error) {

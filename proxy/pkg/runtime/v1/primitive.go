@@ -6,41 +6,48 @@ package v1
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/atomix/atomix/api/errors"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/driver"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 	"reflect"
-	"strings"
-	"sync"
 )
 
-func NewPrimitiveManager[T any](primitiveType runtimev1.PrimitiveType, runtime *Runtime) *PrimitiveManager[T] {
-	return &PrimitiveManager[T]{
+type PrimitiveProxy interface {
+	Close(ctx context.Context) error
+}
+
+type Resolver[P PrimitiveProxy] func(ctx context.Context, conn driver.Conn, id runtimev1.PrimitiveID) (P, bool, error)
+
+type PrimitiveManager[C proto.Message] interface {
+	Create(ctx context.Context, primitiveID runtimev1.PrimitiveID, tags []string) (C, error)
+	Close(ctx context.Context, primitiveID runtimev1.PrimitiveID) error
+}
+
+type PrimitiveRegistry[P PrimitiveProxy] interface {
+	Get(primitiveID runtimev1.PrimitiveID) (P, error)
+}
+
+func NewPrimitiveManager[P PrimitiveProxy, C proto.Message](primitiveType runtimev1.PrimitiveType, resolver Resolver[P], runtime *Runtime) PrimitiveManager[C] {
+	return &primitiveManager[P, C]{
 		primitiveType: primitiveType,
+		resolver:      resolver,
 		runtime:       runtime,
 	}
 }
 
-type PrimitiveManager[T any] struct {
+type primitiveManager[P PrimitiveProxy, C proto.Message] struct {
 	primitiveType runtimev1.PrimitiveType
+	resolver      Resolver[P]
 	runtime       *Runtime
-	primitives    sync.Map
-	mu            sync.Mutex
 }
 
-func (c *PrimitiveManager[T]) Create(ctx context.Context, primitiveID runtimev1.PrimitiveID, tags []string) (T, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtimev1.PrimitiveID, tags []string) (C, error) {
+	c.runtime.mu.Lock()
+	defer c.runtime.mu.Unlock()
 
-	var primitive T
-	value, ok := c.primitives.Load(primitiveID)
-	if ok {
-		return value.(T), nil
-	}
+	var config C
 
 	meta := runtimev1.PrimitiveMeta{
 		Type:        c.primitiveType,
@@ -48,123 +55,78 @@ func (c *PrimitiveManager[T]) Create(ctx context.Context, primitiveID runtimev1.
 		Tags:        tags,
 	}
 
+	// Route the store and spec for the primitive
 	storeID, spec, err := c.runtime.route(ctx, meta)
 	if err != nil {
-		return primitive, err
+		return config, err
 	}
 
+	// Parse the primitive configuration from the matched route spec
+	configType := reflect.TypeOf(config)
+	config = reflect.New(configType.Elem()).Interface().(C)
+	if spec != nil && spec.Value != nil {
+		if err := jsonpb.UnmarshalString(string(spec.Value), config); err != nil {
+			return config, errors.NewInvalid("invalid configuration for primitive type '%s/%s'", c.primitiveType.Name, c.primitiveType.APIVersion)
+		}
+	}
+
+	// Lookup the connection via the runtime
 	conn, err := c.runtime.lookup(storeID)
 	if err != nil {
-		return primitive, err
+		return config, err
 	}
 
-	primitive, err = create[T](conn, runtimev1.Primitive{
-		PrimitiveMeta: meta,
-		Spec:          spec,
-	})
-	if err != nil {
-		return primitive, err
+	// Create and cache the primitive instance if it doesn't already exist
+	value, ok := c.runtime.primitives.Load(primitiveID)
+	if ok {
+		if _, ok := value.(P); !ok {
+			return config, errors.NewForbidden("cannot create primitive of type '%s/%s': a primitive of another type already exists with that name", c.primitiveType.Name, c.primitiveType.APIVersion)
+		}
+		return config, nil
 	}
 
-	c.primitives.Store(primitiveID, primitive)
-	return primitive, nil
+	// Attempt to create the primitive via the driver connection
+	primitive, ok, err := c.resolver(ctx, conn, primitiveID)
+	if !ok {
+		return config, errors.NewNotSupported("primitive type '%s/%s' not supported by configured driver", c.primitiveType.Name, c.primitiveType.APIVersion)
+	}
+
+	// Store the primitive in the cache
+	c.runtime.primitives.Store(primitiveID, primitive)
+	return config, nil
 }
 
-func (c *PrimitiveManager[T]) Get(primitiveID runtimev1.PrimitiveID) (T, error) {
-	var primitive T
-	value, ok := c.primitives.Load(primitiveID)
+func (c *primitiveManager[P, C]) Close(ctx context.Context, primitiveID runtimev1.PrimitiveID) error {
+	c.runtime.mu.Lock()
+	defer c.runtime.mu.Unlock()
+	value, ok := c.runtime.primitives.LoadAndDelete(primitiveID)
+	if !ok {
+		return errors.NewNotFound("primitive '%s' not found", primitiveID.Name)
+	}
+	primitive, ok := value.(P)
+	if !ok {
+		return errors.NewForbidden("cannot close primitive of type '%s/%s': a primitive of another type already exists with that name", c.primitiveType.Name, c.primitiveType.APIVersion)
+	}
+	return primitive.Close(ctx)
+}
+
+func NewPrimitiveRegistry[P PrimitiveProxy](primitiveType runtimev1.PrimitiveType, runtime *Runtime) PrimitiveRegistry[P] {
+	return &primitiveRegistry[P]{
+		primitiveType: primitiveType,
+		runtime:       runtime,
+	}
+}
+
+type primitiveRegistry[P PrimitiveProxy] struct {
+	primitiveType runtimev1.PrimitiveType
+	runtime       *Runtime
+}
+
+func (c *primitiveRegistry[P]) Get(primitiveID runtimev1.PrimitiveID) (P, error) {
+	var primitive P
+	value, ok := c.runtime.primitives.Load(primitiveID)
 	if !ok {
 		return primitive, errors.NewForbidden("primitive not found for '%s'", primitiveID.Name)
 	}
-	return value.(T), nil
-}
-
-func (c *PrimitiveManager[T]) Close(primitiveID runtimev1.PrimitiveID) (T, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	var primitive T
-	value, ok := c.primitives.LoadAndDelete(primitiveID)
-	if !ok {
-		return primitive, errors.NewForbidden("primitive not found for '%s'", primitiveID.Name)
-	}
-	return value.(T), nil
-}
-
-func create[T any](conn driver.Conn, primitive runtimev1.Primitive) (T, error) {
-	var t T
-
-	value := reflect.ValueOf(conn)
-
-	methodName := fmt.Sprintf("New%s%s", primitive.Type.Name, strings.ToUpper(primitive.Type.APIVersion))
-	if _, ok := value.Type().MethodByName(methodName); !ok {
-		return t, errors.NewNotSupported("route does not support primitive type %s/%s", primitive.Type.Name, primitive.Type.APIVersion)
-	}
-	method := value.MethodByName(methodName)
-
-	var err error
-	var in []reflect.Value
-	if method.Type().NumIn() == 0 {
-		if method.Type().NumOut() != 1 {
-			panic(fmt.Sprintf("unexpected signature for method %s: expected one output", methodName))
-		}
-		if !method.Type().Out(0).AssignableTo(reflect.TypeOf(&t).Elem()) {
-			panic(fmt.Sprintf("unexpected signature for method %s: expected %s output", methodName, reflect.TypeOf(&t).Elem().Name()))
-		}
-	} else if method.Type().NumIn() == 1 {
-		if method.Type().NumOut() != 2 {
-			panic(fmt.Sprintf("unexpected signature for method %s: expected two outputs", methodName))
-		}
-		if !method.Type().Out(0).AssignableTo(reflect.TypeOf(&t).Elem()) {
-			panic(fmt.Sprintf("unexpected signature for method %s: expected %s output", methodName, reflect.TypeOf(&t).Elem().Name()))
-		}
-		if !method.Type().Out(1).AssignableTo(reflect.TypeOf(&err).Elem()) {
-			panic(fmt.Sprintf("unexpected signature for method %s: expected error output", methodName))
-		}
-
-		specIn := method.Type().In(0)
-		var spec any
-		if specIn.Kind() == reflect.Pointer {
-			spec = reflect.New(specIn.Elem()).Interface()
-			if primitive.Spec != nil && primitive.Spec.Value != nil {
-				if message, ok := spec.(proto.Message); ok {
-					if err := jsonpb.UnmarshalString(string(primitive.Spec.Value), message); err != nil {
-						return t, err
-					}
-				} else {
-					if err := json.Unmarshal(primitive.Spec.Value, spec); err != nil {
-						return t, err
-					}
-				}
-			}
-			in = append(in, reflect.ValueOf(spec))
-		} else {
-			spec = reflect.New(specIn).Interface()
-			if primitive.Spec != nil && primitive.Spec.Value != nil {
-				if message, ok := spec.(proto.Message); ok {
-					if err := jsonpb.UnmarshalString(string(primitive.Spec.Value), message); err != nil {
-						return t, err
-					}
-				} else {
-					if err := json.Unmarshal(primitive.Spec.Value, &spec); err != nil {
-						return t, err
-					}
-				}
-			}
-			in = append(in, reflect.ValueOf(spec).Elem())
-		}
-	} else {
-		panic(fmt.Sprintf("unexpected signature for method %s: expected 0 or 1 input(s)", methodName))
-	}
-
-	out := method.Call(in)
-	if len(out) == 2 {
-		if !out[1].IsNil() {
-			err = out[1].Interface().(error)
-		} else {
-			t = out[0].Interface().(T)
-		}
-	} else {
-		t = out[0].Interface().(T)
-	}
-	return t, err
+	return value.(P), nil
 }

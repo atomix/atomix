@@ -33,10 +33,11 @@ func New(opts ...Option) *Runtime {
 
 type Runtime struct {
 	Options
-	router  *router
-	drivers map[runtimev1.DriverID]driver.Driver
-	conns   map[runtimev1.StoreID]driver.Conn
-	mu      sync.RWMutex
+	router     *router
+	drivers    map[runtimev1.DriverID]driver.Driver
+	conns      map[runtimev1.StoreID]driver.Conn
+	primitives sync.Map
+	mu         sync.RWMutex
 }
 
 func (r *Runtime) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error) {

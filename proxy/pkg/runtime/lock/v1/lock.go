@@ -7,75 +7,25 @@ package v1
 import (
 	"context"
 	lockv1 "github.com/atomix/atomix/api/runtime/lock/v1"
-	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
 var log = logging.GetLogger()
 
-const (
-	Name       = "Lock"
-	APIVersion = "v1"
-)
-
-var PrimitiveType = runtimev1.PrimitiveType{
-	Name:       Name,
-	APIVersion: APIVersion,
+type LockProxy interface {
+	runtime.PrimitiveProxy
+	lockv1.LockServer
 }
 
 func NewLockServer(rt *runtime.Runtime) lockv1.LockServer {
 	return &lockServer{
-		manager: runtime.NewPrimitiveManager[lockv1.LockServer](PrimitiveType, rt),
+		manager: runtime.NewPrimitiveRegistry[LockProxy](lockv1.PrimitiveType, rt),
 	}
 }
 
 type lockServer struct {
-	manager *runtime.PrimitiveManager[lockv1.LockServer]
-}
-
-func (s *lockServer) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {
-	log.Debugw("Create",
-		logging.Trunc64("CreateRequest", request))
-	client, err := s.manager.Create(ctx, request.ID, request.Tags)
-	if err != nil {
-		log.Warnw("Create",
-			logging.Trunc64("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := client.Create(ctx, request)
-	if err != nil {
-		log.Debugw("Create",
-			logging.Trunc64("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Create",
-		logging.Trunc64("CreateResponse", response))
-	return response, nil
-}
-
-func (s *lockServer) Close(ctx context.Context, request *lockv1.CloseRequest) (*lockv1.CloseResponse, error) {
-	log.Debugw("Close",
-		logging.Trunc64("CloseRequest", request))
-	client, err := s.manager.Get(request.ID)
-	if err != nil {
-		log.Warnw("Close",
-			logging.Trunc64("CloseRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response, err := client.Close(ctx, request)
-	if err != nil {
-		log.Debugw("Close",
-			logging.Trunc64("CloseRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	log.Debugw("Close",
-		logging.Trunc64("CloseResponse", response))
-	return response, nil
+	manager runtime.PrimitiveRegistry[LockProxy]
 }
 
 func (s *lockServer) Lock(ctx context.Context, request *lockv1.LockRequest) (*lockv1.LockResponse, error) {
