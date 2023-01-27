@@ -44,9 +44,6 @@ type primitiveManager[P PrimitiveProxy, C proto.Message] struct {
 }
 
 func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtimev1.PrimitiveID, tags []string) (C, error) {
-	c.runtime.mu.Lock()
-	defer c.runtime.mu.Unlock()
-
 	var config C
 
 	meta := runtimev1.PrimitiveMeta{
@@ -75,6 +72,9 @@ func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtime
 	if err != nil {
 		return config, err
 	}
+
+	c.runtime.mu.Lock()
+	defer c.runtime.mu.Unlock()
 
 	// Create and cache the primitive instance if it doesn't already exist
 	value, ok := c.runtime.primitives.Load(primitiveID)

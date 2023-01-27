@@ -25,23 +25,19 @@ func New(opts ...Option) *Runtime {
 	options.apply(opts...)
 	return &Runtime{
 		Options: options,
-		router:  newRouter(options.RouteProvider),
 		drivers: make(map[runtimev1.DriverID]driver.Driver),
 		conns:   make(map[runtimev1.StoreID]driver.Conn),
+		routes:  make(map[runtimev1.StoreID]*runtimev1.Route),
 	}
 }
 
 type Runtime struct {
 	Options
-	router     *router
 	drivers    map[runtimev1.DriverID]driver.Driver
 	conns      map[runtimev1.StoreID]driver.Conn
+	routes     map[runtimev1.StoreID]*runtimev1.Route
 	primitives sync.Map
 	mu         sync.RWMutex
-}
-
-func (r *Runtime) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error) {
-	return r.router.route(ctx, meta)
 }
 
 func (r *Runtime) lookup(storeID runtimev1.StoreID) (driver.Conn, error) {
@@ -54,7 +50,27 @@ func (r *Runtime) lookup(storeID runtimev1.StoreID) (driver.Conn, error) {
 	return conn, nil
 }
 
-func (r *Runtime) Connect(ctx context.Context, driverID runtimev1.DriverID, store runtimev1.Store) error {
+func (r *Runtime) AddRoute(ctx context.Context, route *runtimev1.Route) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.routes[route.StoreID]; ok {
+		return errors.NewAlreadyExists("route already exists")
+	}
+	r.routes[route.StoreID] = route
+	return nil
+}
+
+func (r *Runtime) RemoveRoute(ctx context.Context, storeID runtimev1.StoreID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.routes[storeID]; !ok {
+		return errors.NewNotFound("route not found")
+	}
+	delete(r.routes, storeID)
+	return nil
+}
+
+func (r *Runtime) ConnectStore(ctx context.Context, driverID runtimev1.DriverID, store runtimev1.Store) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -98,7 +114,7 @@ func (r *Runtime) Connect(ctx context.Context, driverID runtimev1.DriverID, stor
 	return nil
 }
 
-func (r *Runtime) Configure(ctx context.Context, store runtimev1.Store) error {
+func (r *Runtime) ConfigureStore(ctx context.Context, store runtimev1.Store) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -123,7 +139,7 @@ func (r *Runtime) Configure(ctx context.Context, store runtimev1.Store) error {
 	return nil
 }
 
-func (r *Runtime) Disconnect(ctx context.Context, storeID runtimev1.StoreID) error {
+func (r *Runtime) DisconnectStore(ctx context.Context, storeID runtimev1.StoreID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -251,4 +267,60 @@ func configure(ctx context.Context, typedConn any, rawSpec *types.Any) error {
 		return out[0].Interface().(error)
 	}
 	return nil
+}
+
+func (r *Runtime) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	tags := make(map[string]bool)
+	for _, tag := range meta.Tags {
+		tags[tag] = true
+	}
+
+	for _, route := range r.routes {
+		if r.routeMatches(route, tags) {
+			for _, primitive := range route.Primitives {
+				if r.primitiveMatches(primitive.PrimitiveMeta, meta, tags) {
+					return route.StoreID, primitive.Spec, nil
+				}
+			}
+			return route.StoreID, nil, nil
+		}
+	}
+	return runtimev1.StoreID{}, nil, errors.NewForbidden("no route matching tags %s", tags)
+}
+
+func (r *Runtime) routeMatches(route *runtimev1.Route, tags map[string]bool) bool {
+	return tagsMatch(route.MatchTags, tags)
+}
+
+func (r *Runtime) primitiveMatches(primitive runtimev1.PrimitiveMeta, meta runtimev1.PrimitiveMeta, tags map[string]bool) bool {
+	// Compare the routing rule to the primitive type name
+	if primitive.Type.Name != meta.Type.Name {
+		return false
+	}
+	// Compare the routing rule to the primitive type version
+	if primitive.Type.APIVersion != meta.Type.APIVersion {
+		return false
+	}
+	return tagsMatch(primitive.Tags, tags)
+}
+
+func tagsMatch(routeTags []string, primitiveTags map[string]bool) bool {
+	// If the route requires no tags, it's always a match
+	if len(routeTags) == 0 {
+		return true
+	}
+	// If the primitive is not tagged, it won't match a route with tags
+	if len(primitiveTags) == 0 {
+		return false
+	}
+	// All tags required by the route must be present in the primitive
+	for _, tag := range routeTags {
+		if _, ok := primitiveTags[tag]; !ok {
+			return false
+		}
+	}
+	return true
 }

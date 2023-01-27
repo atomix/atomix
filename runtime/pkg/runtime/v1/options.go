@@ -12,11 +12,9 @@ import (
 type Options struct {
 	DriverProvider DriverProvider
 	Drivers        map[runtimev1.DriverID]driver.Driver
-	RouteProvider  RouteProvider
 }
 
 func (o *Options) apply(opts ...Option) {
-	o.RouteProvider = newStaticRouteProvider()
 	for _, opt := range opts {
 		opt(o)
 	}
@@ -51,17 +49,5 @@ func WithDriver(id runtimev1.DriverID, d driver.Driver) Option {
 func WithDrivers(drivers map[runtimev1.DriverID]driver.Driver) Option {
 	return func(options *Options) {
 		options.DriverProvider = newStaticDriverProvider(drivers)
-	}
-}
-
-func WithRouteProvider(provider RouteProvider) Option {
-	return func(options *Options) {
-		options.RouteProvider = provider
-	}
-}
-
-func WithRoutes(routes ...*runtimev1.Route) Option {
-	return func(options *Options) {
-		options.RouteProvider = newStaticRouteProvider(routes...)
 	}
 }
