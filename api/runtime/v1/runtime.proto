@@ -16,13 +16,30 @@ import "gogoproto/gogo.proto";
 import "google/protobuf/any.proto";
 
 service Runtime {
-    rpc Connect (ConnectRequest) returns (ConnectResponse);
-    rpc Configure (ConfigureRequest) returns (ConfigureResponse);
-    rpc Disconnect (DisconnectRequest) returns (DisconnectResponse);
+    rpc AddRoute (AddRouteRequest) returns (AddRouteResponse);
+    rpc RemoveRoute (RemoveRouteRequest) returns (RemoveRouteResponse);
+    rpc ConnectStore (ConnectStoreRequest) returns (ConnectStoreResponse);
+    rpc ConfigureStore (ConfigureStoreRequest) returns (ConfigureStoreResponse);
+    rpc DisconnectStore (DisconnectStoreRequest) returns (DisconnectStoreResponse);
 }
 
-message RuntimeConfig {
-    repeated Route routes = 1;
+message AddRouteRequest {
+    Route route = 1;
+}
+
+message AddRouteResponse {
+
+}
+
+message RemoveRouteRequest {
+    StoreID store_id = 1 [
+        (gogoproto.customname) = "StoreID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message RemoveRouteResponse {
+
 }
 
 message Route {
@@ -30,7 +47,7 @@ message Route {
         (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
     ];
-    repeated string tags = 2;
+    repeated string match_tags = 2;
     repeated Primitive primitives = 3 [
         (gogoproto.nullable) = false
     ];
@@ -92,7 +109,7 @@ message Primitive {
     google.protobuf.Any spec = 2;
 }
 
-message ConnectRequest {
+message ConnectStoreRequest {
     DriverID driver_id = 1 [
         (gogoproto.customname) = "DriverID",
         (gogoproto.nullable) = false
@@ -102,27 +119,27 @@ message ConnectRequest {
     ];
 }
 
-message ConnectResponse {
+message ConnectStoreResponse {
 
 }
 
-message ConfigureRequest {
+message ConfigureStoreRequest {
     Store store = 1 [
         (gogoproto.nullable) = false
     ];
 }
 
-message ConfigureResponse {
+message ConfigureStoreResponse {
 
 }
 
-message DisconnectRequest {
+message DisconnectStoreRequest {
     StoreID store_id = 1 [
         (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
     ];
 }
 
-message DisconnectResponse {
+message DisconnectStoreResponse {
 
 }
