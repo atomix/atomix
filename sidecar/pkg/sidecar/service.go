@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package proxy
+package sidecar
 
 import (
 	counterv1 "github.com/atomix/atomix/api/runtime/counter/v1"

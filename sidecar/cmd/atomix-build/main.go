@@ -90,7 +90,7 @@ type atomixBuilder struct {
 }
 
 func (b *atomixBuilder) buildProxy(outputPath string) error {
-	fmt.Fprintln(b.cmd.OutOrStdout(), "Building github.com/atomix/atomix/proxy")
+	fmt.Fprintln(b.cmd.OutOrStdout(), "Building github.com/atomix/atomix/sidecar")
 	_, err := run(".",
 		"go", "build",
 		"-mod=readonly",

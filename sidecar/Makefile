@@ -7,7 +7,7 @@ build: test docker
 
 .PHONY: test
 test:
-	go test github.com/atomix/atomix/proxy/pkg/... -p 1
+	go test github.com/atomix/atomix/sidecar/pkg/... -p 1
 
 .PHONY: docker
 docker:

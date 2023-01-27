@@ -7,9 +7,9 @@ package main
 import (
 	"fmt"
 	runtimeapiv1 "github.com/atomix/atomix/api/runtime/v1"
-	"github.com/atomix/atomix/proxy/pkg/proxy"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	runtimev1 "github.com/atomix/atomix/runtime/pkg/runtime/v1"
+	"github.com/atomix/atomix/sidecar/pkg/sidecar"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/spf13/cobra"
 	"os"
@@ -68,7 +68,7 @@ func main() {
 
 			// Initialize the runtime
 			rt := runtimev1.New(
-				runtimev1.WithDriverProvider(proxy.NewDriverProvider(pluginsDir)),
+				runtimev1.WithDriverProvider(sidecar.NewDriverProvider(pluginsDir)),
 				runtimev1.WithRoutes(config.Routes...))
 
 			// Start the runtime service
@@ -81,9 +81,9 @@ func main() {
 			}
 
 			// Start the proxy service
-			proxySvc := proxy.NewService(rt,
-				proxy.WithHost(host),
-				proxy.WithPort(port))
+			proxySvc := sidecar.NewService(rt,
+				sidecar.WithHost(host),
+				sidecar.WithPort(port))
 			if err := proxySvc.Start(); err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
