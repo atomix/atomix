@@ -113,6 +113,11 @@ spec:
                         default: 0
                       tags:
                         type: array
+                        deprecated: true
+                        items:
+                          type: string
+                      matchTags:
+                        type: array
                         items:
                           type: string
                       primitives:
@@ -130,6 +135,11 @@ spec:
                             name:
                               type: string
                             tags:
+                              type: array
+                              deprecated: true
+                              items:
+                                type: string
+                            matchTags:
                               type: array
                               items:
                                 type: string

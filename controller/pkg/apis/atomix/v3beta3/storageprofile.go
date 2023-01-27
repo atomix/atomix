@@ -43,18 +43,22 @@ type StorageProxySpec struct {
 }
 
 type Binding struct {
-	Store      corev1.ObjectReference `json:"store"`
-	Priority   *uint32                `json:"priority"`
-	Tags       []string               `json:"tags"`
-	Primitives []PrimitiveSpec        `json:"primitives"`
+	Store    corev1.ObjectReference `json:"store"`
+	Priority *uint32                `json:"priority"`
+	// Deprecated: use MatchTags instead
+	Tags       []string        `json:"tags"`
+	MatchTags  []string        `json:"matchTags"`
+	Primitives []PrimitiveSpec `json:"primitives"`
 }
 
 type PrimitiveSpec struct {
-	Kind       string               `json:"kind"`
-	APIVersion string               `json:"apiVersion"`
-	Name       string               `json:"name"`
-	Tags       []string             `json:"tags"`
-	Config     runtime.RawExtension `json:"config"`
+	Kind       string `json:"kind"`
+	APIVersion string `json:"apiVersion"`
+	Name       string `json:"name"`
+	// Deprecated: use MatchTags instead
+	Tags      []string             `json:"tags"`
+	MatchTags []string             `json:"matchTags"`
+	Config    runtime.RawExtension `json:"config"`
 }
 
 // LoggingConfig logging configuration

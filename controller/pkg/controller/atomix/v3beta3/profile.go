@@ -128,11 +128,14 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 			route := &runtimev1.Route{
 				StoreID: storeID,
-				Tags:    binding.Tags,
+				Tags:    binding.MatchTags,
+			}
+			if binding.Tags != nil {
+				route.Tags = binding.Tags
 			}
 
 			for _, primitive := range binding.Primitives {
-				route.Primitives = append(route.Primitives, runtimev1.Primitive{
+				meta := runtimev1.Primitive{
 					PrimitiveMeta: runtimev1.PrimitiveMeta{
 						Type: runtimev1.PrimitiveType{
 							Name:       primitive.Kind,
@@ -141,12 +144,16 @@ func (r *ProfileReconciler) Reconcile(ctx context.Context, request reconcile.Req
 						PrimitiveID: runtimev1.PrimitiveID{
 							Name: primitive.Name,
 						},
-						Tags: primitive.Tags,
+						Tags: primitive.MatchTags,
 					},
 					Spec: &gogotypes.Any{
 						Value: primitive.Config.Raw,
 					},
-				})
+				}
+				if primitive.Tags != nil {
+					meta.Tags = primitive.Tags
+				}
+				route.Primitives = append(route.Primitives, meta)
 			}
 
 			routes = append(routes, route)
