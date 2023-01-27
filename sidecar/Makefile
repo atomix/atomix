@@ -11,8 +11,8 @@ test:
 
 .PHONY: docker
 docker:
-	docker build . -t atomix/proxy:latest -f build/Dockerfile
+	docker build . -t atomix/sidecar:latest -f build/Dockerfile
 
 kind: docker
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
-	kind load docker-image atomix/proxy:latest
+	kind load docker-image atomix/sidecar:latest

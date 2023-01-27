@@ -3,8 +3,8 @@ module github.com/atomix/atomix/sidecar
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.3.0
-	github.com/atomix/atomix/runtime v0.3.1-0.20230127220310-cde6d4d7a9c5
+	github.com/atomix/atomix/api v0.3.1-0.20230127225237-5b2fd17dc3b8
+	github.com/atomix/atomix/runtime v0.3.1-0.20230127230129-39b81a98f32c
 	github.com/gogo/protobuf v1.3.2
 	github.com/rogpeppe/go-internal v1.8.1
 	github.com/spf13/cobra v1.4.0

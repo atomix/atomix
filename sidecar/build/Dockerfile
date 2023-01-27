@@ -14,9 +14,9 @@ COPY ./pkg /build/pkg
 
 RUN go mod download
 
-# Build the proxy binary
-FROM builder AS build-proxy
-RUN go run ./cmd/atomix-build proxy /build/bin/atomix-proxy
+# Build the runtime binary
+FROM builder AS build-runtime
+RUN go run ./cmd/atomix-build runtime /build/bin/atomix-runtime
 
 # Build the Etcd/v3 storage driver
 FROM builder AS build-etcd-v3-driver
@@ -69,7 +69,7 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 
 USER atomix
 
-COPY --from=build-proxy /build/bin/atomix-proxy /usr/local/bin/atomix-proxy
+COPY --from=build-runtime /build/bin/atomix-runtime /usr/local/bin/atomix-runtime
 COPY --from=build-etcd-v3-driver /build/bin/driver.so /var/atomix/plugins/atomix.io/etcd@v3.so
 COPY --from=build-pod-memory-v1-driver /build/bin/driver.so /var/atomix/plugins/atomix.io/pod-memory@v1.so
 COPY --from=build-raft-v1-driver /build/bin/driver.so /var/atomix/plugins/atomix.io/raft@v1.so
@@ -77,4 +77,4 @@ COPY --from=build-redis-v8-driver /build/bin/driver.so /var/atomix/plugins/atomi
 COPY --from=build-redis-v9-driver /build/bin/driver.so /var/atomix/plugins/atomix.io/redis@v9.so
 COPY --from=build-shared-memory-v1-driver /build/bin/driver.so /var/atomix/plugins/atomix.io/shared-memory@v1.so
 
-ENTRYPOINT ["atomix-proxy"]
+ENTRYPOINT ["atomix-runtime"]
