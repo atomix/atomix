@@ -1,0 +1,61 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.map.v1;
+
+option java_package = "io.atomix.api.map.v1";
+option java_outer_classname = "MapV1";
+option java_multiple_files = true;
+
+import "runtime/v1/runtime.proto";
+import "gogoproto/gogo.proto";
+
+// Maps is a service for managing map primitives
+service Maps {
+    // Create creates the map
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the map
+    rpc Close (CloseRequest) returns (CloseResponse);
+}
+
+message MapConfig {
+    MapCacheConfig cache = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message MapCacheConfig {
+    bool enabled = 1;
+    uint64 size = 2;
+}
+
+message CreateRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated string tags = 2;
+}
+
+message CreateResponse {
+    MapConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}

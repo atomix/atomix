@@ -18,12 +18,6 @@ import "gogoproto/gogo.proto";
 
 // Map is a service for a map primitive
 service Map {
-    // Create creates the map
-    rpc Create (CreateRequest) returns (CreateResponse);
-
-    // Close closes the map
-    rpc Close (CloseRequest) returns (CloseResponse);
-
     // Size returns the size of the map
     rpc Size (SizeRequest) returns (SizeResponse);
 
@@ -56,42 +50,6 @@ service Map {
 
     // Entries lists all entries in the map
     rpc Entries (EntriesRequest) returns (stream EntriesResponse);
-}
-
-message MapConfig {
-    MapCacheConfig cache = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message MapCacheConfig {
-    bool enabled = 1;
-    uint64 size = 2;
-}
-
-message CreateRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    repeated string tags = 2;
-}
-
-message CreateResponse {
-    MapConfig config = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseResponse {
-
 }
 
 message SizeRequest {

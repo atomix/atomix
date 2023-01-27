@@ -8,10 +8,6 @@
     - [AppendResponse](#atomix-runtime-indexedmap-v1-AppendResponse)
     - [ClearRequest](#atomix-runtime-indexedmap-v1-ClearRequest)
     - [ClearResponse](#atomix-runtime-indexedmap-v1-ClearResponse)
-    - [CloseRequest](#atomix-runtime-indexedmap-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-indexedmap-v1-CloseResponse)
-    - [CreateRequest](#atomix-runtime-indexedmap-v1-CreateRequest)
-    - [CreateResponse](#atomix-runtime-indexedmap-v1-CreateResponse)
     - [EntriesRequest](#atomix-runtime-indexedmap-v1-EntriesRequest)
     - [EntriesResponse](#atomix-runtime-indexedmap-v1-EntriesResponse)
     - [Entry](#atomix-runtime-indexedmap-v1-Entry)
@@ -25,7 +21,6 @@
     - [FirstEntryResponse](#atomix-runtime-indexedmap-v1-FirstEntryResponse)
     - [GetRequest](#atomix-runtime-indexedmap-v1-GetRequest)
     - [GetResponse](#atomix-runtime-indexedmap-v1-GetResponse)
-    - [IndexedMapConfig](#atomix-runtime-indexedmap-v1-IndexedMapConfig)
     - [LastEntryRequest](#atomix-runtime-indexedmap-v1-LastEntryRequest)
     - [LastEntryResponse](#atomix-runtime-indexedmap-v1-LastEntryResponse)
     - [NextEntryRequest](#atomix-runtime-indexedmap-v1-NextEntryRequest)
@@ -105,62 +100,6 @@
 
 ### ClearResponse
 
-
-
-
-
-
-
-<a name="atomix-runtime-indexedmap-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-indexedmap-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-runtime-indexedmap-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-| tags | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-indexedmap-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [IndexedMapConfig](#atomix-runtime-indexedmap-v1-IndexedMapConfig) |  |  |
 
 
 
@@ -368,16 +307,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | entry | [Entry](#atomix-runtime-indexedmap-v1-Entry) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-indexedmap-v1-IndexedMapConfig"></a>
-
-### IndexedMapConfig
-
 
 
 
@@ -603,8 +532,6 @@ IndexedMap is a service for a sorted/indexed map primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-indexedmap-v1-CreateRequest) | [CreateResponse](#atomix-runtime-indexedmap-v1-CreateResponse) | Create creates the map |
-| Close | [CloseRequest](#atomix-runtime-indexedmap-v1-CloseRequest) | [CloseResponse](#atomix-runtime-indexedmap-v1-CloseResponse) | Close closes the map |
 | Size | [SizeRequest](#atomix-runtime-indexedmap-v1-SizeRequest) | [SizeResponse](#atomix-runtime-indexedmap-v1-SizeResponse) | Size returns the size of the map |
 | Append | [AppendRequest](#atomix-runtime-indexedmap-v1-AppendRequest) | [AppendResponse](#atomix-runtime-indexedmap-v1-AppendResponse) | Append appends an entry to the map |
 | Update | [UpdateRequest](#atomix-runtime-indexedmap-v1-UpdateRequest) | [UpdateResponse](#atomix-runtime-indexedmap-v1-UpdateResponse) | Update updates an entry in the map |

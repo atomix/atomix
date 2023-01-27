@@ -12,18 +12,11 @@ option java_package = "io.atomix.api.multimap.v1";
 option java_outer_classname = "AtomicMultiMapV1";
 option java_multiple_files = true;
 
-import "google/protobuf/duration.proto";
 import "runtime/v1/runtime.proto";
 import "gogoproto/gogo.proto";
 
 // MultiMap is a service for a multimap primitive
 service MultiMap {
-    // Create creates the map
-    rpc Create (CreateRequest) returns (CreateResponse);
-
-    // Close closes the map
-    rpc Close (CloseRequest) returns (CloseResponse);
-
     // Size returns the size of the map
     rpc Size (SizeRequest) returns (SizeResponse);
 
@@ -62,35 +55,6 @@ service MultiMap {
 
     // Entries lists all entries in the map
     rpc Entries (EntriesRequest) returns (stream EntriesResponse);
-}
-
-message MultiMapConfig {
-
-}
-
-message CreateRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    repeated string tags = 2;
-}
-
-message CreateResponse {
-    MultiMapConfig config = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseResponse {
-
 }
 
 message SizeRequest {

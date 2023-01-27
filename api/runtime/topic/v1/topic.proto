@@ -17,46 +17,11 @@ import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
 service Topic {
-    // Create creates the topic
-    rpc Create (CreateRequest) returns (CreateResponse);
-
-    // Close closes the topic
-    rpc Close (CloseRequest) returns (CloseResponse);
-
     // Publish publishes a message to the topic
     rpc Publish(PublishRequest) returns (PublishResponse);
 
     // Subscribe subscribes to receive messages from the topic
     rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);
-}
-
-message TopicConfig {
-
-}
-
-message CreateRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    repeated string tags = 2;
-}
-
-message CreateResponse {
-    TopicConfig config = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseResponse {
-
 }
 
 message PublishRequest {

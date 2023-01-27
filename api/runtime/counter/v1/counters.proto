@@ -1,0 +1,54 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.counter.v1;
+
+option java_package = "io.atomix.api.counter.v1";
+option java_outer_classname = "CounterV1";
+option java_multiple_files = true;
+
+import "runtime/v1/runtime.proto";
+import "gogoproto/gogo.proto";
+
+// Counters is a service for managing counter primitives
+service Counters {
+    // Create creates the counter
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the counter
+    rpc Close (CloseRequest) returns (CloseResponse);
+}
+
+message CounterConfig {
+
+}
+
+message CreateRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated string tags = 2;
+}
+
+message CreateResponse {
+    CounterConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}

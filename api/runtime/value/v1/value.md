@@ -4,10 +4,6 @@
 ## Table of Contents
 
 - [runtime/value/v1/value.proto](#runtime_value_v1_value-proto)
-    - [CloseRequest](#atomix-runtime-value-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-value-v1-CloseResponse)
-    - [CreateRequest](#atomix-runtime-value-v1-CreateRequest)
-    - [CreateResponse](#atomix-runtime-value-v1-CreateResponse)
     - [DeleteRequest](#atomix-runtime-value-v1-DeleteRequest)
     - [DeleteResponse](#atomix-runtime-value-v1-DeleteResponse)
     - [Event](#atomix-runtime-value-v1-Event)
@@ -24,8 +20,6 @@
     - [SetResponse](#atomix-runtime-value-v1-SetResponse)
     - [UpdateRequest](#atomix-runtime-value-v1-UpdateRequest)
     - [UpdateResponse](#atomix-runtime-value-v1-UpdateResponse)
-    - [ValueCacheConfig](#atomix-runtime-value-v1-ValueCacheConfig)
-    - [ValueConfig](#atomix-runtime-value-v1-ValueConfig)
     - [VersionedValue](#atomix-runtime-value-v1-VersionedValue)
     - [WatchRequest](#atomix-runtime-value-v1-WatchRequest)
     - [WatchResponse](#atomix-runtime-value-v1-WatchResponse)
@@ -40,62 +34,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/value/v1/value.proto
-
-
-
-<a name="atomix-runtime-value-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-value-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-runtime-value-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-| tags | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-value-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [ValueConfig](#atomix-runtime-value-v1-ValueConfig) |  |  |
-
-
-
 
 
 
@@ -353,36 +291,6 @@
 
 
 
-<a name="atomix-runtime-value-v1-ValueCacheConfig"></a>
-
-### ValueCacheConfig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| enabled | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-value-v1-ValueConfig"></a>
-
-### ValueConfig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| cache | [ValueCacheConfig](#atomix-runtime-value-v1-ValueCacheConfig) |  |  |
-
-
-
-
-
-
 <a name="atomix-runtime-value-v1-VersionedValue"></a>
 
 ### VersionedValue
@@ -442,8 +350,6 @@ Value is a service for a value primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-value-v1-CreateRequest) | [CreateResponse](#atomix-runtime-value-v1-CreateResponse) | Create creates the value |
-| Close | [CloseRequest](#atomix-runtime-value-v1-CloseRequest) | [CloseResponse](#atomix-runtime-value-v1-CloseResponse) | Close closes the value |
 | Set | [SetRequest](#atomix-runtime-value-v1-SetRequest) | [SetResponse](#atomix-runtime-value-v1-SetResponse) | Set sets the value |
 | Insert | [InsertRequest](#atomix-runtime-value-v1-InsertRequest) | [InsertResponse](#atomix-runtime-value-v1-InsertResponse) | Insert inserts the value |
 | Update | [UpdateRequest](#atomix-runtime-value-v1-UpdateRequest) | [UpdateResponse](#atomix-runtime-value-v1-UpdateResponse) | Update updates the value |

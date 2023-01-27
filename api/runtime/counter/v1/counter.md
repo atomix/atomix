@@ -4,11 +4,6 @@
 ## Table of Contents
 
 - [runtime/counter/v1/counter.proto](#runtime_counter_v1_counter-proto)
-    - [CloseRequest](#atomix-runtime-counter-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-counter-v1-CloseResponse)
-    - [CounterConfig](#atomix-runtime-counter-v1-CounterConfig)
-    - [CreateRequest](#atomix-runtime-counter-v1-CreateRequest)
-    - [CreateResponse](#atomix-runtime-counter-v1-CreateResponse)
     - [DecrementRequest](#atomix-runtime-counter-v1-DecrementRequest)
     - [DecrementResponse](#atomix-runtime-counter-v1-DecrementResponse)
     - [GetRequest](#atomix-runtime-counter-v1-GetRequest)
@@ -31,72 +26,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/counter/v1/counter.proto
-
-
-
-<a name="atomix-runtime-counter-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-counter-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-runtime-counter-v1-CounterConfig"></a>
-
-### CounterConfig
-
-
-
-
-
-
-
-<a name="atomix-runtime-counter-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-| tags | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-counter-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [CounterConfig](#atomix-runtime-counter-v1-CounterConfig) |  |  |
-
-
-
 
 
 
@@ -283,8 +212,6 @@ Counter is a service for a counter primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-counter-v1-CreateRequest) | [CreateResponse](#atomix-runtime-counter-v1-CreateResponse) | Create creates the counter |
-| Close | [CloseRequest](#atomix-runtime-counter-v1-CloseRequest) | [CloseResponse](#atomix-runtime-counter-v1-CloseResponse) | Close closes the counter |
 | Set | [SetRequest](#atomix-runtime-counter-v1-SetRequest) | [SetResponse](#atomix-runtime-counter-v1-SetResponse) | Set sets the counter value |
 | Update | [UpdateRequest](#atomix-runtime-counter-v1-UpdateRequest) | [UpdateResponse](#atomix-runtime-counter-v1-UpdateResponse) | Update compares and updates the counter value |
 | Get | [GetRequest](#atomix-runtime-counter-v1-GetRequest) | [GetResponse](#atomix-runtime-counter-v1-GetResponse) | Get gets the current counter value |

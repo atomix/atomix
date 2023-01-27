@@ -1,0 +1,61 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.value.v1;
+
+option java_package = "io.atomix.api.value.v1";
+option java_outer_classname = "ValueV1";
+option java_multiple_files = true;
+
+import "runtime/v1/runtime.proto";
+import "gogoproto/gogo.proto";
+
+// Values is a service for managing value primitives
+service Values {
+    // Create creates the value
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the value
+    rpc Close (CloseRequest) returns (CloseResponse);
+}
+
+message ValueConfig {
+    ValueCacheConfig cache = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ValueCacheConfig {
+    bool enabled = 1;
+}
+
+
+message CreateRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated string tags = 2;
+}
+
+message CreateResponse {
+    ValueConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}

@@ -8,12 +8,8 @@
     - [AppendResponse](#atomix-runtime-list-v1-AppendResponse)
     - [ClearRequest](#atomix-runtime-list-v1-ClearRequest)
     - [ClearResponse](#atomix-runtime-list-v1-ClearResponse)
-    - [CloseRequest](#atomix-runtime-list-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-list-v1-CloseResponse)
     - [ContainsRequest](#atomix-runtime-list-v1-ContainsRequest)
     - [ContainsResponse](#atomix-runtime-list-v1-ContainsResponse)
-    - [CreateRequest](#atomix-runtime-list-v1-CreateRequest)
-    - [CreateResponse](#atomix-runtime-list-v1-CreateResponse)
     - [Event](#atomix-runtime-list-v1-Event)
     - [Event.Appended](#atomix-runtime-list-v1-Event-Appended)
     - [Event.Inserted](#atomix-runtime-list-v1-Event-Inserted)
@@ -28,7 +24,6 @@
     - [Item](#atomix-runtime-list-v1-Item)
     - [ItemsRequest](#atomix-runtime-list-v1-ItemsRequest)
     - [ItemsResponse](#atomix-runtime-list-v1-ItemsResponse)
-    - [ListConfig](#atomix-runtime-list-v1-ListConfig)
     - [RemoveRequest](#atomix-runtime-list-v1-RemoveRequest)
     - [RemoveResponse](#atomix-runtime-list-v1-RemoveResponse)
     - [SetRequest](#atomix-runtime-list-v1-SetRequest)
@@ -101,31 +96,6 @@
 
 
 
-<a name="atomix-runtime-list-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-list-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
 <a name="atomix-runtime-list-v1-ContainsRequest"></a>
 
 ### ContainsRequest
@@ -151,37 +121,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | contains | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-list-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-| tags | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-list-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [ListConfig](#atomix-runtime-list-v1-ListConfig) |  |  |
 
 
 
@@ -409,16 +348,6 @@
 
 
 
-<a name="atomix-runtime-list-v1-ListConfig"></a>
-
-### ListConfig
-
-
-
-
-
-
-
 <a name="atomix-runtime-list-v1-RemoveRequest"></a>
 
 ### RemoveRequest
@@ -540,8 +469,6 @@ List is a service for a list primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-list-v1-CreateRequest) | [CreateResponse](#atomix-runtime-list-v1-CreateResponse) | Create creates the list |
-| Close | [CloseRequest](#atomix-runtime-list-v1-CloseRequest) | [CloseResponse](#atomix-runtime-list-v1-CloseResponse) | Close closes the list |
 | Size | [SizeRequest](#atomix-runtime-list-v1-SizeRequest) | [SizeResponse](#atomix-runtime-list-v1-SizeResponse) | Size gets the number of elements in the list |
 | Append | [AppendRequest](#atomix-runtime-list-v1-AppendRequest) | [AppendResponse](#atomix-runtime-list-v1-AppendResponse) | Append appends a value to the list |
 | Insert | [InsertRequest](#atomix-runtime-list-v1-InsertRequest) | [InsertResponse](#atomix-runtime-list-v1-InsertResponse) | Insert inserts a value at a specific index in the list |

@@ -18,12 +18,6 @@ import "gogoproto/gogo.proto";
 
 // Value is a service for a value primitive
 service Value {
-    // Create creates the value
-    rpc Create (CreateRequest) returns (CreateResponse);
-
-    // Close closes the value
-    rpc Close (CloseRequest) returns (CloseResponse);
-
     // Set sets the value
     rpc Set (SetRequest) returns (SetResponse);
 
@@ -44,42 +38,6 @@ service Value {
 
     // Events watches for value change events
     rpc Events (EventsRequest) returns (stream EventsResponse);
-}
-
-message ValueConfig {
-    ValueCacheConfig cache = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message ValueCacheConfig {
-    bool enabled = 1;
-}
-
-
-message CreateRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    repeated string tags = 2;
-}
-
-message CreateResponse {
-    ValueConfig config = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseResponse {
-
 }
 
 message GetRequest {

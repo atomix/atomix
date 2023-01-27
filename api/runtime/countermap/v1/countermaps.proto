@@ -1,0 +1,54 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.countermap.v1;
+
+option java_package = "io.atomix.api.countermap.v1";
+option java_outer_classname = "CounterMapV1";
+option java_multiple_files = true;
+
+import "runtime/v1/runtime.proto";
+import "gogoproto/gogo.proto";
+
+// CounterMaps is a service for managing counter map primitives
+service CounterMaps {
+    // Create creates the map
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the map
+    rpc Close (CloseRequest) returns (CloseResponse);
+}
+
+message CounterMapConfig {
+
+}
+
+message CreateRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated string tags = 2;
+}
+
+message CreateResponse {
+    CounterMapConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}

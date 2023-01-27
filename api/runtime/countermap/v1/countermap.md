@@ -6,11 +6,6 @@
 - [runtime/countermap/v1/countermap.proto](#runtime_countermap_v1_countermap-proto)
     - [ClearRequest](#atomix-runtime-countermap-v1-ClearRequest)
     - [ClearResponse](#atomix-runtime-countermap-v1-ClearResponse)
-    - [CloseRequest](#atomix-runtime-countermap-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-countermap-v1-CloseResponse)
-    - [CounterMapConfig](#atomix-runtime-countermap-v1-CounterMapConfig)
-    - [CreateRequest](#atomix-runtime-countermap-v1-CreateRequest)
-    - [CreateResponse](#atomix-runtime-countermap-v1-CreateResponse)
     - [DecrementRequest](#atomix-runtime-countermap-v1-DecrementRequest)
     - [DecrementResponse](#atomix-runtime-countermap-v1-DecrementResponse)
     - [EntriesRequest](#atomix-runtime-countermap-v1-EntriesRequest)
@@ -73,72 +68,6 @@
 
 ### ClearResponse
 
-
-
-
-
-
-
-<a name="atomix-runtime-countermap-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-countermap-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-runtime-countermap-v1-CounterMapConfig"></a>
-
-### CounterMapConfig
-
-
-
-
-
-
-
-<a name="atomix-runtime-countermap-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-| tags | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-countermap-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [CounterMapConfig](#atomix-runtime-countermap-v1-CounterMapConfig) |  |  |
 
 
 
@@ -602,8 +531,6 @@ CounterMap is a service for a counter map primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-countermap-v1-CreateRequest) | [CreateResponse](#atomix-runtime-countermap-v1-CreateResponse) | Create creates the map |
-| Close | [CloseRequest](#atomix-runtime-countermap-v1-CloseRequest) | [CloseResponse](#atomix-runtime-countermap-v1-CloseResponse) | Close closes the map |
 | Size | [SizeRequest](#atomix-runtime-countermap-v1-SizeRequest) | [SizeResponse](#atomix-runtime-countermap-v1-SizeResponse) | Size returns the size of the map |
 | Set | [SetRequest](#atomix-runtime-countermap-v1-SetRequest) | [SetResponse](#atomix-runtime-countermap-v1-SetResponse) | Set sets an entry into the map |
 | Insert | [InsertRequest](#atomix-runtime-countermap-v1-InsertRequest) | [InsertResponse](#atomix-runtime-countermap-v1-InsertResponse) | Insert inserts an entry into the map |

@@ -18,12 +18,6 @@ import "gogoproto/gogo.proto";
 
 // Lock is a service for a lock primitive
 service Lock {
-    // Create creates the lock
-    rpc Create (CreateRequest) returns (CreateResponse);
-
-    // Close closes the lock
-    rpc Close (CloseRequest) returns (CloseResponse);
-
     // Lock attempts to acquire the lock
     rpc Lock (LockRequest) returns (LockResponse);
 
@@ -32,35 +26,6 @@ service Lock {
 
     // GetLock gets the lock state
     rpc GetLock (GetLockRequest) returns (GetLockResponse);
-}
-
-message LockConfig {
-
-}
-
-message CreateRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    repeated string tags = 2;
-}
-
-message CreateResponse {
-    LockConfig config = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseResponse {
-
 }
 
 message LockRequest {

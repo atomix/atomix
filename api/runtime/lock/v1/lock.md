@@ -4,13 +4,8 @@
 ## Table of Contents
 
 - [runtime/lock/v1/lock.proto](#runtime_lock_v1_lock-proto)
-    - [CloseRequest](#atomix-runtime-lock-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-lock-v1-CloseResponse)
-    - [CreateRequest](#atomix-runtime-lock-v1-CreateRequest)
-    - [CreateResponse](#atomix-runtime-lock-v1-CreateResponse)
     - [GetLockRequest](#atomix-runtime-lock-v1-GetLockRequest)
     - [GetLockResponse](#atomix-runtime-lock-v1-GetLockResponse)
-    - [LockConfig](#atomix-runtime-lock-v1-LockConfig)
     - [LockRequest](#atomix-runtime-lock-v1-LockRequest)
     - [LockResponse](#atomix-runtime-lock-v1-LockResponse)
     - [UnlockRequest](#atomix-runtime-lock-v1-UnlockRequest)
@@ -26,62 +21,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/lock/v1/lock.proto
-
-
-
-<a name="atomix-runtime-lock-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-lock-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-runtime-lock-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-| tags | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-lock-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [LockConfig](#atomix-runtime-lock-v1-LockConfig) |  |  |
-
-
-
 
 
 
@@ -109,16 +48,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | version | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-lock-v1-LockConfig"></a>
-
-### LockConfig
-
 
 
 
@@ -194,8 +123,6 @@ Lock is a service for a lock primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-lock-v1-CreateRequest) | [CreateResponse](#atomix-runtime-lock-v1-CreateResponse) | Create creates the lock |
-| Close | [CloseRequest](#atomix-runtime-lock-v1-CloseRequest) | [CloseResponse](#atomix-runtime-lock-v1-CloseResponse) | Close closes the lock |
 | Lock | [LockRequest](#atomix-runtime-lock-v1-LockRequest) | [LockResponse](#atomix-runtime-lock-v1-LockResponse) | Lock attempts to acquire the lock |
 | Unlock | [UnlockRequest](#atomix-runtime-lock-v1-UnlockRequest) | [UnlockResponse](#atomix-runtime-lock-v1-UnlockResponse) | Unlock releases the lock |
 | GetLock | [GetLockRequest](#atomix-runtime-lock-v1-GetLockRequest) | [GetLockResponse](#atomix-runtime-lock-v1-GetLockResponse) | GetLock gets the lock state |

@@ -18,12 +18,6 @@ import "gogoproto/gogo.proto";
 
 // CounterMap is a service for a counter map primitive
 service CounterMap {
-    // Create creates the map
-    rpc Create (CreateRequest) returns (CreateResponse);
-
-    // Close closes the map
-    rpc Close (CloseRequest) returns (CloseResponse);
-
     // Size returns the size of the map
     rpc Size (SizeRequest) returns (SizeResponse);
 
@@ -62,35 +56,6 @@ service CounterMap {
 
     // Entries lists all entries in the map
     rpc Entries (EntriesRequest) returns (stream EntriesResponse);
-}
-
-message CounterMapConfig {
-
-}
-
-message CreateRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    repeated string tags = 2;
-}
-
-message CreateResponse {
-    CounterMapConfig config = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseResponse {
-
 }
 
 message SizeRequest {

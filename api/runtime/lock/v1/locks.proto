@@ -1,0 +1,54 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.lock.v1;
+
+option java_package = "io.atomix.api.lock.v1";
+option java_outer_classname = "LockV1";
+option java_multiple_files = true;
+
+import "runtime/v1/runtime.proto";
+import "gogoproto/gogo.proto";
+
+// Locks is a service for managing lock primitives
+service Locks {
+    // Create creates the lock
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the lock
+    rpc Close (CloseRequest) returns (CloseResponse);
+}
+
+message LockConfig {
+
+}
+
+message CreateRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated string tags = 2;
+}
+
+message CreateResponse {
+    LockConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}

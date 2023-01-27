@@ -8,12 +8,8 @@
     - [AddResponse](#atomix-runtime-set-v1-AddResponse)
     - [ClearRequest](#atomix-runtime-set-v1-ClearRequest)
     - [ClearResponse](#atomix-runtime-set-v1-ClearResponse)
-    - [CloseRequest](#atomix-runtime-set-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-set-v1-CloseResponse)
     - [ContainsRequest](#atomix-runtime-set-v1-ContainsRequest)
     - [ContainsResponse](#atomix-runtime-set-v1-ContainsResponse)
-    - [CreateRequest](#atomix-runtime-set-v1-CreateRequest)
-    - [CreateResponse](#atomix-runtime-set-v1-CreateResponse)
     - [Element](#atomix-runtime-set-v1-Element)
     - [ElementsRequest](#atomix-runtime-set-v1-ElementsRequest)
     - [ElementsResponse](#atomix-runtime-set-v1-ElementsResponse)
@@ -24,7 +20,6 @@
     - [EventsResponse](#atomix-runtime-set-v1-EventsResponse)
     - [RemoveRequest](#atomix-runtime-set-v1-RemoveRequest)
     - [RemoveResponse](#atomix-runtime-set-v1-RemoveResponse)
-    - [SetConfig](#atomix-runtime-set-v1-SetConfig)
     - [SizeRequest](#atomix-runtime-set-v1-SizeRequest)
     - [SizeResponse](#atomix-runtime-set-v1-SizeResponse)
   
@@ -98,31 +93,6 @@
 
 
 
-<a name="atomix-runtime-set-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-set-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
 <a name="atomix-runtime-set-v1-ContainsRequest"></a>
 
 ### ContainsRequest
@@ -148,37 +118,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | contains | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-set-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-| tags | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-set-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [SetConfig](#atomix-runtime-set-v1-SetConfig) |  |  |
 
 
 
@@ -339,16 +278,6 @@
 
 
 
-<a name="atomix-runtime-set-v1-SetConfig"></a>
-
-### SetConfig
-
-
-
-
-
-
-
 <a name="atomix-runtime-set-v1-SizeRequest"></a>
 
 ### SizeRequest
@@ -392,8 +321,6 @@ Set is a service for a set primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-set-v1-CreateRequest) | [CreateResponse](#atomix-runtime-set-v1-CreateResponse) | Create creates the set |
-| Close | [CloseRequest](#atomix-runtime-set-v1-CloseRequest) | [CloseResponse](#atomix-runtime-set-v1-CloseResponse) | Close closes the set |
 | Size | [SizeRequest](#atomix-runtime-set-v1-SizeRequest) | [SizeResponse](#atomix-runtime-set-v1-SizeResponse) | Size gets the number of elements in the set |
 | Contains | [ContainsRequest](#atomix-runtime-set-v1-ContainsRequest) | [ContainsResponse](#atomix-runtime-set-v1-ContainsResponse) | Contains returns whether the set contains a value |
 | Add | [AddRequest](#atomix-runtime-set-v1-AddRequest) | [AddResponse](#atomix-runtime-set-v1-AddResponse) | Add adds a value to the set |

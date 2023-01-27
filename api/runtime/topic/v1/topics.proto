@@ -1,0 +1,54 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.topic.v1;
+
+option java_package = "io.atomix.api.topic.v1";
+option java_outer_classname = "TopicV1";
+option java_multiple_files = true;
+
+import "runtime/v1/runtime.proto";
+import "gogoproto/gogo.proto";
+
+// Topics is a service for managing Topic primitives
+service Topics {
+    // Create creates the topic
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the topic
+    rpc Close (CloseRequest) returns (CloseResponse);
+}
+
+message TopicConfig {
+
+}
+
+message CreateRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated string tags = 2;
+}
+
+message CreateResponse {
+    TopicConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}

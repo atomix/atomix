@@ -32,218 +32,6 @@ var _ = time.Kitchen
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type TopicConfig struct {
-}
-
-func (m *TopicConfig) Reset()         { *m = TopicConfig{} }
-func (m *TopicConfig) String() string { return proto.CompactTextString(m) }
-func (*TopicConfig) ProtoMessage()    {}
-func (*TopicConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_16c36814ce7e5c5b, []int{0}
-}
-func (m *TopicConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *TopicConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_TopicConfig.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *TopicConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TopicConfig.Merge(m, src)
-}
-func (m *TopicConfig) XXX_Size() int {
-	return m.Size()
-}
-func (m *TopicConfig) XXX_DiscardUnknown() {
-	xxx_messageInfo_TopicConfig.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_TopicConfig proto.InternalMessageInfo
-
-type CreateRequest struct {
-	ID   v1.PrimitiveID `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
-	Tags []string       `protobuf:"bytes,2,rep,name=tags,proto3" json:"tags,omitempty"`
-}
-
-func (m *CreateRequest) Reset()         { *m = CreateRequest{} }
-func (m *CreateRequest) String() string { return proto.CompactTextString(m) }
-func (*CreateRequest) ProtoMessage()    {}
-func (*CreateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_16c36814ce7e5c5b, []int{1}
-}
-func (m *CreateRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CreateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CreateRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CreateRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateRequest.Merge(m, src)
-}
-func (m *CreateRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *CreateRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_CreateRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CreateRequest proto.InternalMessageInfo
-
-func (m *CreateRequest) GetID() v1.PrimitiveID {
-	if m != nil {
-		return m.ID
-	}
-	return v1.PrimitiveID{}
-}
-
-func (m *CreateRequest) GetTags() []string {
-	if m != nil {
-		return m.Tags
-	}
-	return nil
-}
-
-type CreateResponse struct {
-	Config TopicConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config"`
-}
-
-func (m *CreateResponse) Reset()         { *m = CreateResponse{} }
-func (m *CreateResponse) String() string { return proto.CompactTextString(m) }
-func (*CreateResponse) ProtoMessage()    {}
-func (*CreateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_16c36814ce7e5c5b, []int{2}
-}
-func (m *CreateResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CreateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CreateResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CreateResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateResponse.Merge(m, src)
-}
-func (m *CreateResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *CreateResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_CreateResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CreateResponse proto.InternalMessageInfo
-
-func (m *CreateResponse) GetConfig() TopicConfig {
-	if m != nil {
-		return m.Config
-	}
-	return TopicConfig{}
-}
-
-type CloseRequest struct {
-	ID v1.PrimitiveID `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
-}
-
-func (m *CloseRequest) Reset()         { *m = CloseRequest{} }
-func (m *CloseRequest) String() string { return proto.CompactTextString(m) }
-func (*CloseRequest) ProtoMessage()    {}
-func (*CloseRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_16c36814ce7e5c5b, []int{3}
-}
-func (m *CloseRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CloseRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CloseRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CloseRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CloseRequest.Merge(m, src)
-}
-func (m *CloseRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *CloseRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_CloseRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CloseRequest proto.InternalMessageInfo
-
-func (m *CloseRequest) GetID() v1.PrimitiveID {
-	if m != nil {
-		return m.ID
-	}
-	return v1.PrimitiveID{}
-}
-
-type CloseResponse struct {
-}
-
-func (m *CloseResponse) Reset()         { *m = CloseResponse{} }
-func (m *CloseResponse) String() string { return proto.CompactTextString(m) }
-func (*CloseResponse) ProtoMessage()    {}
-func (*CloseResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_16c36814ce7e5c5b, []int{4}
-}
-func (m *CloseResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CloseResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CloseResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CloseResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CloseResponse.Merge(m, src)
-}
-func (m *CloseResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *CloseResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_CloseResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CloseResponse proto.InternalMessageInfo
-
 type PublishRequest struct {
 	ID      v1.PrimitiveID `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
 	Payload []byte         `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
@@ -253,7 +41,7 @@ func (m *PublishRequest) Reset()         { *m = PublishRequest{} }
 func (m *PublishRequest) String() string { return proto.CompactTextString(m) }
 func (*PublishRequest) ProtoMessage()    {}
 func (*PublishRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_16c36814ce7e5c5b, []int{5}
+	return fileDescriptor_16c36814ce7e5c5b, []int{0}
 }
 func (m *PublishRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -303,7 +91,7 @@ func (m *PublishResponse) Reset()         { *m = PublishResponse{} }
 func (m *PublishResponse) String() string { return proto.CompactTextString(m) }
 func (*PublishResponse) ProtoMessage()    {}
 func (*PublishResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_16c36814ce7e5c5b, []int{6}
+	return fileDescriptor_16c36814ce7e5c5b, []int{1}
 }
 func (m *PublishResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -340,7 +128,7 @@ func (m *SubscribeRequest) Reset()         { *m = SubscribeRequest{} }
 func (m *SubscribeRequest) String() string { return proto.CompactTextString(m) }
 func (*SubscribeRequest) ProtoMessage()    {}
 func (*SubscribeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_16c36814ce7e5c5b, []int{7}
+	return fileDescriptor_16c36814ce7e5c5b, []int{2}
 }
 func (m *SubscribeRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -386,7 +174,7 @@ func (m *SubscribeResponse) Reset()         { *m = SubscribeResponse{} }
 func (m *SubscribeResponse) String() string { return proto.CompactTextString(m) }
 func (*SubscribeResponse) ProtoMessage()    {}
 func (*SubscribeResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_16c36814ce7e5c5b, []int{8}
+	return fileDescriptor_16c36814ce7e5c5b, []int{3}
 }
 func (m *SubscribeResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -437,11 +225,6 @@ func (m *SubscribeResponse) GetPayload() []byte {
 }
 
 func init() {
-	proto.RegisterType((*TopicConfig)(nil), "atomix.runtime.topic.v1.TopicConfig")
-	proto.RegisterType((*CreateRequest)(nil), "atomix.runtime.topic.v1.CreateRequest")
-	proto.RegisterType((*CreateResponse)(nil), "atomix.runtime.topic.v1.CreateResponse")
-	proto.RegisterType((*CloseRequest)(nil), "atomix.runtime.topic.v1.CloseRequest")
-	proto.RegisterType((*CloseResponse)(nil), "atomix.runtime.topic.v1.CloseResponse")
 	proto.RegisterType((*PublishRequest)(nil), "atomix.runtime.topic.v1.PublishRequest")
 	proto.RegisterType((*PublishResponse)(nil), "atomix.runtime.topic.v1.PublishResponse")
 	proto.RegisterType((*SubscribeRequest)(nil), "atomix.runtime.topic.v1.SubscribeRequest")
@@ -451,38 +234,32 @@ func init() {
 func init() { proto.RegisterFile("runtime/topic/v1/topic.proto", fileDescriptor_16c36814ce7e5c5b) }
 
 var fileDescriptor_16c36814ce7e5c5b = []byte{
-	// 496 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x52, 0x4f, 0x8f, 0xd2, 0x40,
-	0x14, 0x67, 0xba, 0x2c, 0x84, 0xc7, 0xb2, 0xeb, 0x4e, 0xcc, 0x4a, 0x1a, 0x53, 0x48, 0xa3, 0x2b,
-	0x7a, 0x98, 0x5a, 0xbc, 0x69, 0xe2, 0xa1, 0xec, 0x65, 0x3d, 0x18, 0x52, 0xc9, 0x26, 0x26, 0x26,
-	0xa6, 0x85, 0xb6, 0x4e, 0x02, 0x4c, 0xed, 0x4c, 0x1b, 0xfd, 0x00, 0xde, 0xf7, 0x63, 0xed, 0x71,
-	0x8f, 0x9e, 0x56, 0x03, 0xdf, 0xc3, 0x18, 0xa6, 0x53, 0x84, 0x4d, 0x1a, 0x3c, 0x70, 0x7b, 0x43,
-	0x7f, 0x7f, 0xde, 0xe3, 0xf7, 0x83, 0xc7, 0x49, 0x3a, 0x17, 0x74, 0x16, 0x58, 0x82, 0xc5, 0x74,
-	0x6c, 0x65, 0x76, 0x3e, 0x90, 0x38, 0x61, 0x82, 0xe1, 0x47, 0x9e, 0x60, 0x33, 0xfa, 0x8d, 0x28,
-	0x10, 0xc9, 0xbf, 0x65, 0xb6, 0xde, 0x2e, 0x68, 0x99, 0x6d, 0x15, 0x1f, 0x25, 0x45, 0x7f, 0x18,
-	0xb1, 0x88, 0xc9, 0xd1, 0x5a, 0x4d, 0xea, 0xd7, 0x4e, 0xc4, 0x58, 0x34, 0x0d, 0x2c, 0xf9, 0xf2,
-	0xd3, 0xd0, 0x5a, 0x31, 0xb8, 0xf0, 0x66, 0x71, 0x0e, 0x30, 0x5b, 0xd0, 0x1c, 0xad, 0xc4, 0x07,
-	0x6c, 0x1e, 0xd2, 0xc8, 0xfc, 0x0c, 0xad, 0x41, 0x12, 0x78, 0x22, 0x70, 0x83, 0xaf, 0x69, 0xc0,
-	0x05, 0x7e, 0x0d, 0x1a, 0x9d, 0xb4, 0x51, 0x17, 0xf5, 0x9a, 0x7d, 0x83, 0xdc, 0x5b, 0x2b, 0xb3,
-	0xc9, 0x30, 0xa1, 0x33, 0x2a, 0x68, 0x16, 0x5c, 0x5e, 0x38, 0x70, 0x73, 0xd7, 0xa9, 0x2c, 0xee,
-	0x3a, 0xda, 0xe5, 0x85, 0xab, 0xd1, 0x09, 0xc6, 0x50, 0x15, 0x5e, 0xc4, 0xdb, 0x5a, 0xf7, 0xa0,
-	0xd7, 0x70, 0xe5, 0x6c, 0x8e, 0xe0, 0xb8, 0x30, 0xe0, 0x31, 0x9b, 0xf3, 0x00, 0x3b, 0x50, 0x1b,
-	0x4b, 0x73, 0xe5, 0xf2, 0x84, 0x94, 0x1c, 0x4f, 0x36, 0x16, 0x75, 0xaa, 0x2b, 0x2f, 0x57, 0x31,
-	0xcd, 0x77, 0x70, 0x34, 0x98, 0x32, 0xbe, 0x8f, 0xad, 0xcd, 0x13, 0x68, 0x29, 0xad, 0x7c, 0x41,
-	0x33, 0x84, 0xe3, 0x61, 0xea, 0x4f, 0x29, 0xff, 0xb2, 0x8f, 0x3f, 0xa5, 0x0d, 0xf5, 0xd8, 0xfb,
-	0x3e, 0x65, 0xde, 0xa4, 0xad, 0x75, 0x51, 0xef, 0xc8, 0x2d, 0x9e, 0xe6, 0x29, 0x9c, 0xac, 0x7d,
-	0x94, 0xf5, 0x7b, 0x78, 0xf0, 0x21, 0xf5, 0xf9, 0x38, 0xa1, 0xfe, 0x5e, 0x6e, 0xfb, 0x81, 0xe0,
-	0x74, 0x43, 0x50, 0x25, 0x70, 0x06, 0x35, 0x16, 0x86, 0x3c, 0x10, 0x52, 0xb5, 0xea, 0xaa, 0x17,
-	0x7e, 0x0b, 0x8d, 0x75, 0x5d, 0xe4, 0xb2, 0xcd, 0xbe, 0x4e, 0xf2, 0x42, 0x91, 0xa2, 0x50, 0x64,
-	0x54, 0x20, 0x9c, 0xea, 0xf5, 0xaf, 0x0e, 0x72, 0xff, 0x51, 0x36, 0x4f, 0x3d, 0xd8, 0x3a, 0xb5,
-	0xff, 0x47, 0x83, 0x43, 0x99, 0x26, 0xfe, 0x08, 0xb5, 0xbc, 0x0f, 0xf8, 0xbc, 0x34, 0xf7, 0xad,
-	0x46, 0xea, 0xcf, 0x76, 0xe2, 0xd4, 0x59, 0x57, 0x70, 0x28, 0x83, 0xc4, 0x4f, 0xcb, 0x19, 0x1b,
-	0xa5, 0xd1, 0xcf, 0x77, 0xc1, 0x94, 0xee, 0x27, 0xa8, 0xab, 0x9c, 0x70, 0xf9, 0x2e, 0xdb, 0x8d,
-	0xd1, 0x7b, 0xbb, 0x81, 0x4a, 0x7d, 0x02, 0x8d, 0x75, 0x42, 0xf8, 0x79, 0x29, 0xed, 0x7e, 0x2d,
-	0xf4, 0x17, 0xff, 0x03, 0xcd, 0x3d, 0x5e, 0x22, 0xe7, 0xcd, 0xcd, 0xc2, 0x40, 0xb7, 0x0b, 0x03,
-	0xfd, 0x5e, 0x18, 0xe8, 0x7a, 0x69, 0x54, 0x6e, 0x97, 0x46, 0xe5, 0xe7, 0xd2, 0xa8, 0xc0, 0x19,
-	0x65, 0x85, 0x92, 0x17, 0xd3, 0xb5, 0x8a, 0x53, 0x97, 0x79, 0x5d, 0xd9, 0x43, 0xe4, 0xd7, 0x64,
-	0xf8, 0xaf, 0xfe, 0x06, 0x00, 0x00, 0xff, 0xff, 0x70, 0xae, 0x5d, 0x25, 0xc4, 0x04, 0x00, 0x00,
+	// 387 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x51, 0x3d, 0x6f, 0xda, 0x40,
+	0x18, 0xf6, 0xb9, 0x14, 0xc4, 0x51, 0xb5, 0xe5, 0x54, 0x51, 0xcb, 0xaa, 0x6c, 0xe4, 0xa5, 0xb4,
+	0xc3, 0xb9, 0xa6, 0x5b, 0x2b, 0x75, 0xb0, 0x58, 0x58, 0x2a, 0xe4, 0xa0, 0x4c, 0x59, 0x6c, 0x7c,
+	0x76, 0x4e, 0xc2, 0x9c, 0x63, 0x9f, 0xad, 0xe4, 0x07, 0x64, 0xe7, 0x67, 0x21, 0x65, 0x61, 0xcc,
+	0x44, 0x22, 0xf3, 0x47, 0x22, 0xfc, 0x15, 0x40, 0x42, 0xc9, 0x90, 0xed, 0x7d, 0xef, 0x9e, 0x8f,
+	0x7b, 0x9e, 0x83, 0xdf, 0xa2, 0x64, 0xc1, 0x69, 0x40, 0x74, 0xce, 0x42, 0x3a, 0xd3, 0x53, 0xa3,
+	0x18, 0x70, 0x18, 0x31, 0xce, 0xd0, 0x57, 0x9b, 0xb3, 0x80, 0x5e, 0xe3, 0x12, 0x84, 0x8b, 0xbb,
+	0xd4, 0x90, 0xa5, 0x8a, 0x96, 0x1a, 0x7a, 0x75, 0x99, 0x53, 0xe4, 0x2f, 0x3e, 0xf3, 0x59, 0x3e,
+	0xea, 0xbb, 0xa9, 0x3c, 0x55, 0x7d, 0xc6, 0xfc, 0x39, 0xd1, 0xf3, 0xcd, 0x49, 0x3c, 0x7d, 0xc7,
+	0x88, 0xb9, 0x1d, 0x84, 0x05, 0x40, 0xf3, 0xe0, 0xc7, 0x49, 0xe2, 0xcc, 0x69, 0x7c, 0x69, 0x91,
+	0xab, 0x84, 0xc4, 0x1c, 0xfd, 0x81, 0x22, 0x75, 0x25, 0xd0, 0x07, 0x83, 0xce, 0x50, 0xc1, 0x47,
+	0x0f, 0x49, 0x0d, 0x3c, 0x89, 0x68, 0x40, 0x39, 0x4d, 0xc9, 0x78, 0x64, 0xc2, 0xd5, 0x46, 0x15,
+	0xb2, 0x8d, 0x2a, 0x8e, 0x47, 0x96, 0x48, 0x5d, 0x24, 0xc1, 0x56, 0x68, 0xdf, 0xcc, 0x99, 0xed,
+	0x4a, 0x62, 0x1f, 0x0c, 0x3e, 0x58, 0xd5, 0xaa, 0x75, 0xe1, 0xa7, 0xda, 0x27, 0x0e, 0xd9, 0x22,
+	0x26, 0xda, 0x7f, 0xf8, 0xf9, 0x2c, 0x71, 0xe2, 0x59, 0x44, 0x1d, 0xf2, 0x06, 0xe6, 0xda, 0x2d,
+	0x80, 0xdd, 0x3d, 0xc1, 0xc2, 0x05, 0xf5, 0x60, 0x93, 0x79, 0x5e, 0x4c, 0x78, 0xae, 0xda, 0xb0,
+	0xca, 0x0d, 0xfd, 0x83, 0xed, 0xba, 0x8b, 0xfc, 0xb1, 0x9d, 0xa1, 0x8c, 0x8b, 0xb6, 0x70, 0xd5,
+	0x16, 0x9e, 0x56, 0x08, 0xb3, 0xb1, 0x7c, 0x50, 0x81, 0xf5, 0x4c, 0xd9, 0x8f, 0xfa, 0xee, 0x20,
+	0xea, 0xf0, 0x0e, 0xc0, 0xf7, 0xd3, 0xdd, 0x87, 0xa1, 0x0b, 0xd8, 0x2a, 0x43, 0xa3, 0xef, 0xf8,
+	0xc4, 0x97, 0xe2, 0xc3, 0xfa, 0xe5, 0xc1, 0xcb, 0xc0, 0x32, 0x99, 0x0b, 0xdb, 0x75, 0x5c, 0xf4,
+	0xe3, 0x24, 0xed, 0xb8, 0x63, 0xf9, 0xe7, 0x6b, 0xa0, 0x85, 0xc7, 0x2f, 0x60, 0xfe, 0x5d, 0x65,
+	0x0a, 0x58, 0x67, 0x0a, 0x78, 0xcc, 0x14, 0xb0, 0xdc, 0x2a, 0xc2, 0x7a, 0xab, 0x08, 0xf7, 0x5b,
+	0x45, 0x80, 0x3d, 0xca, 0x2a, 0x25, 0x3b, 0xa4, 0xb5, 0x8a, 0xd9, 0xca, 0xc3, 0x9f, 0x1b, 0x13,
+	0xe0, 0x34, 0xf3, 0x26, 0x7f, 0x3f, 0x05, 0x00, 0x00, 0xff, 0xff, 0x6a, 0xa6, 0xc4, 0x83, 0xee,
+	0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -497,10 +274,6 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type TopicClient interface {
-	// Create creates the topic
-	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error)
-	// Close closes the topic
-	Close(ctx context.Context, in *CloseRequest, opts ...grpc.CallOption) (*CloseResponse, error)
 	// Publish publishes a message to the topic
 	Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error)
 	// Subscribe subscribes to receive messages from the topic
@@ -513,24 +286,6 @@ type topicClient struct {
 
 func NewTopicClient(cc *grpc.ClientConn) TopicClient {
 	return &topicClient{cc}
-}
-
-func (c *topicClient) Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error) {
-	out := new(CreateResponse)
-	err := c.cc.Invoke(ctx, "/atomix.runtime.topic.v1.Topic/Create", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *topicClient) Close(ctx context.Context, in *CloseRequest, opts ...grpc.CallOption) (*CloseResponse, error) {
-	out := new(CloseResponse)
-	err := c.cc.Invoke(ctx, "/atomix.runtime.topic.v1.Topic/Close", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *topicClient) Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error) {
@@ -576,10 +331,6 @@ func (x *topicSubscribeClient) Recv() (*SubscribeResponse, error) {
 
 // TopicServer is the server API for Topic service.
 type TopicServer interface {
-	// Create creates the topic
-	Create(context.Context, *CreateRequest) (*CreateResponse, error)
-	// Close closes the topic
-	Close(context.Context, *CloseRequest) (*CloseResponse, error)
 	// Publish publishes a message to the topic
 	Publish(context.Context, *PublishRequest) (*PublishResponse, error)
 	// Subscribe subscribes to receive messages from the topic
@@ -590,12 +341,6 @@ type TopicServer interface {
 type UnimplementedTopicServer struct {
 }
 
-func (*UnimplementedTopicServer) Create(ctx context.Context, req *CreateRequest) (*CreateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
-}
-func (*UnimplementedTopicServer) Close(ctx context.Context, req *CloseRequest) (*CloseResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Close not implemented")
-}
 func (*UnimplementedTopicServer) Publish(ctx context.Context, req *PublishRequest) (*PublishResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Publish not implemented")
 }
@@ -605,42 +350,6 @@ func (*UnimplementedTopicServer) Subscribe(req *SubscribeRequest, srv Topic_Subs
 
 func RegisterTopicServer(s *grpc.Server, srv TopicServer) {
 	s.RegisterService(&_Topic_serviceDesc, srv)
-}
-
-func _Topic_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TopicServer).Create(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/atomix.runtime.topic.v1.Topic/Create",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TopicServer).Create(ctx, req.(*CreateRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Topic_Close_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CloseRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TopicServer).Close(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/atomix.runtime.topic.v1.Topic/Close",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TopicServer).Close(ctx, req.(*CloseRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Topic_Publish_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -687,14 +396,6 @@ var _Topic_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*TopicServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Create",
-			Handler:    _Topic_Create_Handler,
-		},
-		{
-			MethodName: "Close",
-			Handler:    _Topic_Close_Handler,
-		},
-		{
 			MethodName: "Publish",
 			Handler:    _Topic_Publish_Handler,
 		},
@@ -707,160 +408,6 @@ var _Topic_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Metadata: "runtime/topic/v1/topic.proto",
-}
-
-func (m *TopicConfig) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *TopicConfig) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *TopicConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *CreateRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CreateRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CreateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Tags) > 0 {
-		for iNdEx := len(m.Tags) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Tags[iNdEx])
-			copy(dAtA[i:], m.Tags[iNdEx])
-			i = encodeVarintTopic(dAtA, i, uint64(len(m.Tags[iNdEx])))
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	{
-		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintTopic(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *CreateResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CreateResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CreateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintTopic(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *CloseRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CloseRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CloseRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintTopic(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *CloseResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CloseResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CloseResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
 }
 
 func (m *PublishRequest) Marshal() (dAtA []byte, err error) {
@@ -987,12 +534,12 @@ func (m *SubscribeResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x1a
 	}
 	if m.Timestamp != nil {
-		n6, err6 := github_com_gogo_protobuf_types.StdTimeMarshalTo(*m.Timestamp, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(*m.Timestamp):])
-		if err6 != nil {
-			return 0, err6
+		n3, err3 := github_com_gogo_protobuf_types.StdTimeMarshalTo(*m.Timestamp, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(*m.Timestamp):])
+		if err3 != nil {
+			return 0, err3
 		}
-		i -= n6
-		i = encodeVarintTopic(dAtA, i, uint64(n6))
+		i -= n3
+		i = encodeVarintTopic(dAtA, i, uint64(n3))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -1015,63 +562,6 @@ func encodeVarintTopic(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *TopicConfig) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *CreateRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.ID.Size()
-	n += 1 + l + sovTopic(uint64(l))
-	if len(m.Tags) > 0 {
-		for _, s := range m.Tags {
-			l = len(s)
-			n += 1 + l + sovTopic(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *CreateResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.Config.Size()
-	n += 1 + l + sovTopic(uint64(l))
-	return n
-}
-
-func (m *CloseRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.ID.Size()
-	n += 1 + l + sovTopic(uint64(l))
-	return n
-}
-
-func (m *CloseResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
 func (m *PublishRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1132,387 +622,6 @@ func sovTopic(x uint64) (n int) {
 }
 func sozTopic(x uint64) (n int) {
 	return sovTopic(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *TopicConfig) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTopic
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: TopicConfig: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TopicConfig: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTopic(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTopic
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *CreateRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTopic
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CreateRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CreateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTopic
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthTopic
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthTopic
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Tags", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTopic
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTopic
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTopic
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Tags = append(m.Tags, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTopic(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTopic
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *CreateResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTopic
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CreateResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CreateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTopic
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthTopic
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthTopic
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTopic(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTopic
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *CloseRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTopic
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CloseRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CloseRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTopic
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthTopic
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthTopic
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTopic(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTopic
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *CloseResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTopic
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CloseResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CloseResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTopic(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTopic
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *PublishRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)

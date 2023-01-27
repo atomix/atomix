@@ -18,12 +18,6 @@ import "gogoproto/gogo.proto";
 
 // Set is a service for a set primitive
 service Set {
-    // Create creates the set
-    rpc Create (CreateRequest) returns (CreateResponse);
-
-    // Close closes the set
-    rpc Close (CloseRequest) returns (CloseResponse);
-
     // Size gets the number of elements in the set
     rpc Size (SizeRequest) returns (SizeResponse);
 
@@ -44,35 +38,6 @@ service Set {
 
     // Elements lists all elements in the set
     rpc Elements (ElementsRequest) returns (stream ElementsResponse);
-}
-
-message SetConfig {
-
-}
-
-message CreateRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    repeated string tags = 2;
-}
-
-message CreateResponse {
-    SetConfig config = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseResponse {
-
 }
 
 message SizeRequest {

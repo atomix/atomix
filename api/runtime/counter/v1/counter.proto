@@ -17,12 +17,6 @@ import "gogoproto/gogo.proto";
 
 // Counter is a service for a counter primitive
 service Counter {
-    // Create creates the counter
-    rpc Create (CreateRequest) returns (CreateResponse);
-
-    // Close closes the counter
-    rpc Close (CloseRequest) returns (CloseResponse);
-
     // Set sets the counter value
     rpc Set (SetRequest) returns (SetResponse);
 
@@ -37,35 +31,6 @@ service Counter {
 
     // Decrement decrements the counter value
     rpc Decrement (DecrementRequest) returns (DecrementResponse);
-}
-
-message CounterConfig {
-
-}
-
-message CreateRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    repeated string tags = 2;
-}
-
-message CreateResponse {
-    CounterConfig config = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseResponse {
-
 }
 
 message IncrementRequest {

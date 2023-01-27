@@ -1,0 +1,60 @@
+/*
+SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+package atomix.runtime.election.v1;
+
+option java_package = "io.atomix.api.election.v1";
+option java_outer_classname = "LeaderElectionV1";
+option java_multiple_files = true;
+
+import "runtime/v1/runtime.proto";
+import "gogoproto/gogo.proto";
+
+// LeaderElections is a service for managing leader election primitives
+service LeaderElections {
+    // Create creates the leader election
+    rpc Create (CreateRequest) returns (CreateResponse);
+
+    // Close closes the leader election
+    rpc Close (CloseRequest) returns (CloseResponse);
+}
+
+message LeaderElectionConfig {
+    LeaderElectionCacheConfig cache = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message LeaderElectionCacheConfig {
+    bool enabled = 1;
+}
+
+message CreateRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated string tags = 2;
+}
+
+message CreateResponse {
+    LeaderElectionConfig config = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message CloseResponse {
+
+}

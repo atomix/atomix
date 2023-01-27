@@ -6,12 +6,8 @@
 - [runtime/multimap/v1/multimap.proto](#runtime_multimap_v1_multimap-proto)
     - [ClearRequest](#atomix-runtime-multimap-v1-ClearRequest)
     - [ClearResponse](#atomix-runtime-multimap-v1-ClearResponse)
-    - [CloseRequest](#atomix-runtime-multimap-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-multimap-v1-CloseResponse)
     - [ContainsRequest](#atomix-runtime-multimap-v1-ContainsRequest)
     - [ContainsResponse](#atomix-runtime-multimap-v1-ContainsResponse)
-    - [CreateRequest](#atomix-runtime-multimap-v1-CreateRequest)
-    - [CreateResponse](#atomix-runtime-multimap-v1-CreateResponse)
     - [EntriesRequest](#atomix-runtime-multimap-v1-EntriesRequest)
     - [EntriesResponse](#atomix-runtime-multimap-v1-EntriesResponse)
     - [Entry](#atomix-runtime-multimap-v1-Entry)
@@ -22,7 +18,6 @@
     - [EventsResponse](#atomix-runtime-multimap-v1-EventsResponse)
     - [GetRequest](#atomix-runtime-multimap-v1-GetRequest)
     - [GetResponse](#atomix-runtime-multimap-v1-GetResponse)
-    - [MultiMapConfig](#atomix-runtime-multimap-v1-MultiMapConfig)
     - [PutAllRequest](#atomix-runtime-multimap-v1-PutAllRequest)
     - [PutAllResponse](#atomix-runtime-multimap-v1-PutAllResponse)
     - [PutEntriesRequest](#atomix-runtime-multimap-v1-PutEntriesRequest)
@@ -78,31 +73,6 @@
 
 
 
-<a name="atomix-runtime-multimap-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-multimap-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
 <a name="atomix-runtime-multimap-v1-ContainsRequest"></a>
 
 ### ContainsRequest
@@ -129,37 +99,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | result | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-multimap-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-| tags | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-multimap-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [MultiMapConfig](#atomix-runtime-multimap-v1-MultiMapConfig) |  |  |
 
 
 
@@ -316,16 +255,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | values | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-multimap-v1-MultiMapConfig"></a>
-
-### MultiMapConfig
-
 
 
 
@@ -592,8 +521,6 @@ MultiMap is a service for a multimap primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-multimap-v1-CreateRequest) | [CreateResponse](#atomix-runtime-multimap-v1-CreateResponse) | Create creates the map |
-| Close | [CloseRequest](#atomix-runtime-multimap-v1-CloseRequest) | [CloseResponse](#atomix-runtime-multimap-v1-CloseResponse) | Close closes the map |
 | Size | [SizeRequest](#atomix-runtime-multimap-v1-SizeRequest) | [SizeResponse](#atomix-runtime-multimap-v1-SizeResponse) | Size returns the size of the map |
 | Put | [PutRequest](#atomix-runtime-multimap-v1-PutRequest) | [PutResponse](#atomix-runtime-multimap-v1-PutResponse) | Put adds a value to an entry in the map |
 | PutAll | [PutAllRequest](#atomix-runtime-multimap-v1-PutAllRequest) | [PutAllResponse](#atomix-runtime-multimap-v1-PutAllResponse) | PutAll adds values to an entry in the map |

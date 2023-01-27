@@ -6,10 +6,6 @@
 - [runtime/map/v1/map.proto](#runtime_map_v1_map-proto)
     - [ClearRequest](#atomix-runtime-map-v1-ClearRequest)
     - [ClearResponse](#atomix-runtime-map-v1-ClearResponse)
-    - [CloseRequest](#atomix-runtime-map-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-map-v1-CloseResponse)
-    - [CreateRequest](#atomix-runtime-map-v1-CreateRequest)
-    - [CreateResponse](#atomix-runtime-map-v1-CreateResponse)
     - [EntriesRequest](#atomix-runtime-map-v1-EntriesRequest)
     - [EntriesResponse](#atomix-runtime-map-v1-EntriesResponse)
     - [Entry](#atomix-runtime-map-v1-Entry)
@@ -25,8 +21,6 @@
     - [InsertResponse](#atomix-runtime-map-v1-InsertResponse)
     - [LockRequest](#atomix-runtime-map-v1-LockRequest)
     - [LockResponse](#atomix-runtime-map-v1-LockResponse)
-    - [MapCacheConfig](#atomix-runtime-map-v1-MapCacheConfig)
-    - [MapConfig](#atomix-runtime-map-v1-MapConfig)
     - [PutRequest](#atomix-runtime-map-v1-PutRequest)
     - [PutResponse](#atomix-runtime-map-v1-PutResponse)
     - [RemoveRequest](#atomix-runtime-map-v1-RemoveRequest)
@@ -71,62 +65,6 @@
 
 ### ClearResponse
 
-
-
-
-
-
-
-<a name="atomix-runtime-map-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-map-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-runtime-map-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-| tags | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-map-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [MapConfig](#atomix-runtime-map-v1-MapConfig) |  |  |
 
 
 
@@ -367,37 +305,6 @@
 
 
 
-<a name="atomix-runtime-map-v1-MapCacheConfig"></a>
-
-### MapCacheConfig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| enabled | [bool](#bool) |  |  |
-| size | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-map-v1-MapConfig"></a>
-
-### MapConfig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| cache | [MapCacheConfig](#atomix-runtime-map-v1-MapCacheConfig) |  |  |
-
-
-
-
-
-
 <a name="atomix-runtime-map-v1-PutRequest"></a>
 
 ### PutRequest
@@ -585,8 +492,6 @@ Map is a service for a map primitive
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-map-v1-CreateRequest) | [CreateResponse](#atomix-runtime-map-v1-CreateResponse) | Create creates the map |
-| Close | [CloseRequest](#atomix-runtime-map-v1-CloseRequest) | [CloseResponse](#atomix-runtime-map-v1-CloseResponse) | Close closes the map |
 | Size | [SizeRequest](#atomix-runtime-map-v1-SizeRequest) | [SizeResponse](#atomix-runtime-map-v1-SizeResponse) | Size returns the size of the map |
 | Put | [PutRequest](#atomix-runtime-map-v1-PutRequest) | [PutResponse](#atomix-runtime-map-v1-PutResponse) | Put puts an entry into the map |
 | Insert | [InsertRequest](#atomix-runtime-map-v1-InsertRequest) | [InsertResponse](#atomix-runtime-map-v1-InsertResponse) | Insert inserts an entry into the map |

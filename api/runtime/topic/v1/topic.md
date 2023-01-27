@@ -4,15 +4,10 @@
 ## Table of Contents
 
 - [runtime/topic/v1/topic.proto](#runtime_topic_v1_topic-proto)
-    - [CloseRequest](#atomix-runtime-topic-v1-CloseRequest)
-    - [CloseResponse](#atomix-runtime-topic-v1-CloseResponse)
-    - [CreateRequest](#atomix-runtime-topic-v1-CreateRequest)
-    - [CreateResponse](#atomix-runtime-topic-v1-CreateResponse)
     - [PublishRequest](#atomix-runtime-topic-v1-PublishRequest)
     - [PublishResponse](#atomix-runtime-topic-v1-PublishResponse)
     - [SubscribeRequest](#atomix-runtime-topic-v1-SubscribeRequest)
     - [SubscribeResponse](#atomix-runtime-topic-v1-SubscribeResponse)
-    - [TopicConfig](#atomix-runtime-topic-v1-TopicConfig)
   
     - [Topic](#atomix-runtime-topic-v1-Topic)
   
@@ -24,62 +19,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/topic/v1/topic.proto
-
-
-
-<a name="atomix-runtime-topic-v1-CloseRequest"></a>
-
-### CloseRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-topic-v1-CloseResponse"></a>
-
-### CloseResponse
-
-
-
-
-
-
-
-<a name="atomix-runtime-topic-v1-CreateRequest"></a>
-
-### CreateRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
-| tags | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-topic-v1-CreateResponse"></a>
-
-### CreateResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| config | [TopicConfig](#atomix-runtime-topic-v1-TopicConfig) |  |  |
-
-
-
 
 
 
@@ -140,16 +79,6 @@
 
 
 
-
-<a name="atomix-runtime-topic-v1-TopicConfig"></a>
-
-### TopicConfig
-
-
-
-
-
-
  
 
  
@@ -164,8 +93,6 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Create | [CreateRequest](#atomix-runtime-topic-v1-CreateRequest) | [CreateResponse](#atomix-runtime-topic-v1-CreateResponse) | Create creates the topic |
-| Close | [CloseRequest](#atomix-runtime-topic-v1-CloseRequest) | [CloseResponse](#atomix-runtime-topic-v1-CloseResponse) | Close closes the topic |
 | Publish | [PublishRequest](#atomix-runtime-topic-v1-PublishRequest) | [PublishResponse](#atomix-runtime-topic-v1-PublishResponse) | Publish publishes a message to the topic |
 | Subscribe | [SubscribeRequest](#atomix-runtime-topic-v1-SubscribeRequest) | [SubscribeResponse](#atomix-runtime-topic-v1-SubscribeResponse) stream | Subscribe subscribes to receive messages from the topic |
 

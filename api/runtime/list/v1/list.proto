@@ -17,12 +17,6 @@ import "gogoproto/gogo.proto";
 
 // List is a service for a list primitive
 service List {
-    // Create creates the list
-    rpc Create (CreateRequest) returns (CreateResponse);
-
-    // Close closes the list
-    rpc Close (CloseRequest) returns (CloseResponse);
-
     // Size gets the number of elements in the list
     rpc Size (SizeRequest) returns (SizeResponse);
 
@@ -49,35 +43,6 @@ service List {
 
     // Items streams all items in the list
     rpc Items (ItemsRequest) returns (stream ItemsResponse);
-}
-
-message ListConfig {
-
-}
-
-message CreateRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-    repeated string tags = 2;
-}
-
-message CreateResponse {
-    ListConfig config = 1 [
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseRequest {
-    atomix.runtime.v1.PrimitiveID id = 1 [
-        (gogoproto.customname) = "ID",
-        (gogoproto.nullable) = false
-    ];
-}
-
-message CloseResponse {
-
 }
 
 message SizeRequest {
