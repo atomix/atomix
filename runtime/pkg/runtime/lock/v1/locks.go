@@ -8,9 +8,9 @@ import (
 	"context"
 	lockv1 "github.com/atomix/atomix/api/runtime/lock/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
-	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/driver"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
 )
 
 type LockProvider interface {

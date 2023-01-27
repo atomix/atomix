@@ -6,8 +6,8 @@ package runtime
 
 import (
 	runtimeapiv1 "github.com/atomix/atomix/api/runtime/v1"
-	runtimev1 "github.com/atomix/atomix/proxy/pkg/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/network"
+	runtimev1 "github.com/atomix/atomix/runtime/pkg/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors"
 	"google.golang.org/grpc"
 )

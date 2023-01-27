@@ -7,8 +7,8 @@ package v1
 import (
 	"context"
 	valuev1 "github.com/atomix/atomix/api/runtime/value/v1"
-	runtime "github.com/atomix/atomix/proxy/pkg/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
 )
 
 var log = logging.GetLogger()
