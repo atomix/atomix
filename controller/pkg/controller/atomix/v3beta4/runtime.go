@@ -271,7 +271,7 @@ func (r *RuntimeReconciler) reconcileProfile(ctx context.Context, log logging.Lo
 
 	// If the pod resource version has changed, reset all the Connected routes to the Configuring state
 	if podStatus.ResourceVersion != pod.ResourceVersion {
-		log.Debug("Pod status changed; verifying proxy connections to all stores...")
+		log.Debug("Pod status changed; verifying proxy connections to all routes...")
 		for i, routeStatus := range podStatus.Runtime.Routes {
 			switch routeStatus.State {
 			case atomixv3beta4.RouteConnected:
@@ -382,12 +382,12 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 			if err != nil {
 				if !errors.IsNotFound(err) {
 					log.Warn(err)
-					r.events.Eventf(pod, "Warning", "DisconnectRouteFailed", "Failed disconnecting from store '%s': %s", storeNamespacedName, err)
+					r.events.Eventf(pod, "Warning", "DisconnectRouteFailed", "Failed disconnecting route to '%s': %s", storeNamespacedName, err)
 					return false, err
 				}
 			}
 
-			r.events.Eventf(pod, "Normal", "DisconnectedRoute", "Successfully disconnected from store '%s'", storeNamespacedName)
+			r.events.Eventf(pod, "Normal", "DisconnectedRoute", "Successfully disconnected route to '%s'", storeNamespacedName)
 			log.Info("Disconnected route")
 			status.State = atomixv3beta4.RouteDisconnected
 			status.Version = ""
@@ -434,12 +434,12 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 		if err != nil {
 			if !errors.IsAlreadyExists(err) {
 				log.Warn(err)
-				r.events.Eventf(pod, "Warning", "ConnectRouteFailed", "Failed connecting to store '%s': %s", storeNamespacedName, err)
+				r.events.Eventf(pod, "Warning", "ConnectRouteFailed", "Failed connecting route to '%s': %s", storeNamespacedName, err)
 				return false, err
 			}
 		}
 
-		r.events.Eventf(pod, "Normal", "ConnectedRoute", "Successfully connected to store '%s'", storeNamespacedName)
+		r.events.Eventf(pod, "Normal", "ConnectedRoute", "Successfully connected route to '%s'", storeNamespacedName)
 		log.Info("Proxy connected")
 		status.State = atomixv3beta4.RouteConnected
 		return true, nil
@@ -470,7 +470,7 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 		_, err = client.ConfigureRoute(ctx, request)
 		if err != nil {
 			if !errors.IsNotFound(err) {
-				r.events.Eventf(pod, "Warning", "ConfigureRouteFailed", "Failed reconfiguring store '%s': %s", storeNamespacedName, err)
+				r.events.Eventf(pod, "Warning", "ConfigureRouteFailed", "Failed reconfiguring route to '%s': %s", storeNamespacedName, err)
 				log.Warn(err)
 				return false, err
 			}
@@ -480,7 +480,7 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 			return true, nil
 		}
 
-		r.events.Eventf(pod, "Normal", "ConfiguredRoute", "Configured store '%s'", storeNamespacedName)
+		r.events.Eventf(pod, "Normal", "ConfiguredRoute", "Configured route to '%s'", storeNamespacedName)
 		log.Info("Proxy configured")
 		status.State = atomixv3beta4.RouteConnected
 		return true, nil
