@@ -8,10 +8,11 @@ import (
 	"context"
 	"github.com/atomix/atomix/api/errors"
 	setv1 "github.com/atomix/atomix/api/runtime/set/v1"
+	runtimesetv1 "github.com/atomix/atomix/runtime/pkg/runtime/set/v1"
 	"github.com/go-redis/redis/v8"
 )
 
-func NewSet(client *redis.Client) setv1.SetServer {
+func NewSet(client *redis.Client) runtimesetv1.SetProxy {
 	return &redisSet{
 		client: client,
 	}
@@ -19,14 +20,6 @@ func NewSet(client *redis.Client) setv1.SetServer {
 
 type redisSet struct {
 	client *redis.Client
-}
-
-func (c *redisSet) Create(ctx context.Context, request *setv1.CreateRequest) (*setv1.CreateResponse, error) {
-	return &setv1.CreateResponse{}, nil
-}
-
-func (c *redisSet) Close(ctx context.Context, request *setv1.CloseRequest) (*setv1.CloseResponse, error) {
-	return &setv1.CloseResponse{}, nil
 }
 
 func (c *redisSet) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1.SizeResponse, error) {
@@ -104,4 +97,8 @@ func (c *redisSet) Clear(ctx context.Context, request *setv1.ClearRequest) (*set
 
 func (c *redisSet) Events(request *setv1.EventsRequest, server setv1.Set_EventsServer) error {
 	return errors.NewNotSupported("Events not supported")
+}
+
+func (c *redisSet) Close(ctx context.Context) error {
+	return nil
 }

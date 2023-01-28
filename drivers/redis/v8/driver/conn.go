@@ -6,9 +6,10 @@ package driver
 
 import (
 	"context"
-	setv1 "github.com/atomix/atomix/api/runtime/set/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	redissetv1 "github.com/atomix/atomix/drivers/redis/v8/driver/set/v1"
 	"github.com/atomix/atomix/runtime/pkg/driver"
+	runtimesetv1 "github.com/atomix/atomix/runtime/pkg/runtime/set/v1"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -22,10 +23,12 @@ type redisConn struct {
 	client *redis.Client
 }
 
-func (c *redisConn) NewSetV1() setv1.SetServer {
-	return redissetv1.NewSet(c.client)
+func (c *redisConn) NewSetV1(context.Context, runtimev1.PrimitiveID) (runtimesetv1.SetProxy, error) {
+	return redissetv1.NewSet(c.client), nil
 }
 
 func (c *redisConn) Close(ctx context.Context) error {
 	return c.client.Close()
 }
+
+var _ runtimesetv1.SetProvider = (*redisConn)(nil)
