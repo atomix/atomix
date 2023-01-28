@@ -23,7 +23,7 @@ const (
 )
 
 func addDataStoreController(mgr manager.Manager) error {
-	mgr.GetWebhookServer().Register(storageProfileConvertPath, &conversion.Webhook{
+	mgr.GetWebhookServer().Register(dataStoreConvertPath, &conversion.Webhook{
 		Handler: &DataStoreConverter{
 			client: mgr.GetClient(),
 			scheme: mgr.GetScheme(),

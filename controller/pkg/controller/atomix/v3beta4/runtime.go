@@ -429,16 +429,11 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 			return false, err
 		}
 
-		driverVersion := store.Spec.Driver.Version
-		if driverVersion == "" {
-			driverVersion = store.Spec.Driver.APIVersion
-		}
-
 		client := runtimev1.NewRuntimeClient(conn)
 		request := &runtimev1.ConnectRouteRequest{
 			DriverID: runtimev1.DriverID{
 				Name:       store.Spec.Driver.Name,
-				APIVersion: driverVersion,
+				APIVersion: store.Spec.Driver.APIVersion,
 			},
 			Route: toRuntimeRoute(store, route),
 		}
@@ -562,7 +557,7 @@ func (r *RuntimeReconciler) getPodStatus(profile *atomixv3beta4.StorageProfile, 
 func (r *RuntimeReconciler) setPodStatus(ctx context.Context, log logging.Logger, profile *atomixv3beta4.StorageProfile, status atomixv3beta4.PodStatus) error {
 	for i, podStatus := range profile.Status.PodStatuses {
 		if podStatus.Name == status.Name {
-			log.Infof("Updating StorageProfile %s PodStatus %s", status)
+			log.Infof("PodStatus changed to %s", status)
 			profile.Status.PodStatuses[i] = status
 			return r.client.Status().Update(ctx, profile)
 		}
