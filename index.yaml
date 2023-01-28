@@ -225,6 +225,25 @@ entries:
     version: 0.1.0
   atomix-bench:
   - apiVersion: v2
+    appVersion: v0.4.0
+    created: "2023-01-28T16:48:40.360368043Z"
+    description: Benchmarking Helm chart for Atomix
+    digest: 2c4a6886d142f1f0b5bf102fc12a27e4d694f3c116034c693bdec3e4df90b2ce
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - performance
+    - benchmark
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-bench
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-bench-0.4.0/atomix-bench-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v2
     appVersion: v0.3.2
     created: "2023-01-14T19:33:26.277451845Z"
     description: Benchmarking Helm chart for Atomix
@@ -597,4 +616,4 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.2.2/atomix-shared-memory-controller-0.2.2.tgz
     version: 0.2.2
-generated: "2023-01-28T16:36:44.074269568Z"
+generated: "2023-01-28T16:48:40.360418843Z"
