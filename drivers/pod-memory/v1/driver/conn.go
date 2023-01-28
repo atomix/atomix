@@ -7,17 +7,7 @@ package driver
 import (
 	"context"
 	"fmt"
-	counterapiv1 "github.com/atomix/atomix/api/runtime/counter/v1"
-	countermapapiv1 "github.com/atomix/atomix/api/runtime/countermap/v1"
-	electionapiv1 "github.com/atomix/atomix/api/runtime/election/v1"
-	indexedmapapiv1 "github.com/atomix/atomix/api/runtime/indexedmap/v1"
-	lockapiv1 "github.com/atomix/atomix/api/runtime/lock/v1"
-	mapapiv1 "github.com/atomix/atomix/api/runtime/map/v1"
-	multimapapiv1 "github.com/atomix/atomix/api/runtime/multimap/v1"
-	setapiv1 "github.com/atomix/atomix/api/runtime/set/v1"
-	valueapiv1 "github.com/atomix/atomix/api/runtime/value/v1"
-	indexedmaprsmv1 "github.com/atomix/atomix/protocols/rsm/api/indexedmap/v1"
-	maprsmv1 "github.com/atomix/atomix/protocols/rsm/api/map/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	rsmapiv1 "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	counterclientv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/counter/v1"
@@ -31,6 +21,15 @@ import (
 	valueclientv1 "github.com/atomix/atomix/protocols/rsm/pkg/client/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/node"
 	"github.com/atomix/atomix/runtime/pkg/network"
+	runtimecounterv1 "github.com/atomix/atomix/runtime/pkg/runtime/counter/v1"
+	runtimecountermapv1 "github.com/atomix/atomix/runtime/pkg/runtime/countermap/v1"
+	runtimeelectionv1 "github.com/atomix/atomix/runtime/pkg/runtime/election/v1"
+	runtimeindexedmapv1 "github.com/atomix/atomix/runtime/pkg/runtime/indexedmap/v1"
+	runtimelockv1 "github.com/atomix/atomix/runtime/pkg/runtime/lock/v1"
+	runtimemapv1 "github.com/atomix/atomix/runtime/pkg/runtime/map/v1"
+	runtimemultimapv1 "github.com/atomix/atomix/runtime/pkg/runtime/multimap/v1"
+	runtimesetv1 "github.com/atomix/atomix/runtime/pkg/runtime/set/v1"
+	runtimevaluev1 "github.com/atomix/atomix/runtime/pkg/runtime/value/v1"
 	"sync"
 )
 
@@ -70,38 +69,84 @@ func (c *podMemoryConn) Connect(ctx context.Context) error {
 	return c.ProtocolClient.Connect(ctx, config)
 }
 
-func (c *podMemoryConn) NewCounterV1() counterapiv1.CounterServer {
-	return counterclientv1.NewCounter(c.Protocol)
+func (c *podMemoryConn) NewCounterV1(ctx context.Context, id runtimev1.PrimitiveID) (runtimecounterv1.CounterProxy, error) {
+	proxy := counterclientv1.NewCounter(c.Protocol, id)
+	if err := proxy.Open(ctx); err != nil {
+		return nil, err
+	}
+	return proxy, nil
 }
 
-func (c *podMemoryConn) NewCounterMapV1() countermapapiv1.CounterMapServer {
-	return countermapclientv1.NewCounterMap(c.Protocol)
+func (c *podMemoryConn) NewCounterMapV1(ctx context.Context, id runtimev1.PrimitiveID) (runtimecountermapv1.CounterMapProxy, error) {
+	proxy := countermapclientv1.NewCounterMap(c.Protocol, id)
+	if err := proxy.Open(ctx); err != nil {
+		return nil, err
+	}
+	return proxy, nil
 }
 
-func (c *podMemoryConn) NewLeaderElectionV1() electionapiv1.LeaderElectionServer {
-	return electionclientv1.NewLeaderElection(c.Protocol)
+func (c *podMemoryConn) NewLeaderElectionV1(ctx context.Context, id runtimev1.PrimitiveID) (runtimeelectionv1.LeaderElectionProxy, error) {
+	proxy := electionclientv1.NewLeaderElection(c.Protocol, id)
+	if err := proxy.Open(ctx); err != nil {
+		return nil, err
+	}
+	return proxy, nil
 }
 
-func (c *podMemoryConn) NewIndexedMapV1(spec *indexedmaprsmv1.IndexedMapConfig) (indexedmapapiv1.IndexedMapServer, error) {
-	return indexedmapclientv1.NewIndexedMap(c.Protocol, spec)
+func (c *podMemoryConn) NewIndexedMapV1(ctx context.Context, id runtimev1.PrimitiveID) (runtimeindexedmapv1.IndexedMapProxy, error) {
+	proxy := indexedmapclientv1.NewIndexedMap(c.Protocol, id)
+	if err := proxy.Open(ctx); err != nil {
+		return nil, err
+	}
+	return proxy, nil
 }
 
-func (c *podMemoryConn) NewLockV1() lockapiv1.LockServer {
-	return lockclientv1.NewLock(c.Protocol)
+func (c *podMemoryConn) NewLockV1(ctx context.Context, id runtimev1.PrimitiveID) (runtimelockv1.LockProxy, error) {
+	proxy := lockclientv1.NewLock(c.Protocol, id)
+	if err := proxy.Open(ctx); err != nil {
+		return nil, err
+	}
+	return proxy, nil
 }
 
-func (c *podMemoryConn) NewMapV1(spec *maprsmv1.MapConfig) (mapapiv1.MapServer, error) {
-	return mapclientv1.NewMap(c.Protocol, spec)
+func (c *podMemoryConn) NewMapV1(ctx context.Context, id runtimev1.PrimitiveID) (runtimemapv1.MapProxy, error) {
+	proxy := mapclientv1.NewMap(c.Protocol, id)
+	if err := proxy.Open(ctx); err != nil {
+		return nil, err
+	}
+	return proxy, nil
 }
 
-func (c *podMemoryConn) NewMultiMapV1() multimapapiv1.MultiMapServer {
-	return multimapclientv1.NewMultiMap(c.Protocol)
+func (c *podMemoryConn) NewMultiMapV1(ctx context.Context, id runtimev1.PrimitiveID) (runtimemultimapv1.MultiMapProxy, error) {
+	proxy := multimapclientv1.NewMultiMap(c.Protocol, id)
+	if err := proxy.Open(ctx); err != nil {
+		return nil, err
+	}
+	return proxy, nil
 }
 
-func (c *podMemoryConn) NewSetV1() setapiv1.SetServer {
-	return setclientv1.NewSet(c.Protocol)
+func (c *podMemoryConn) NewSetV1(ctx context.Context, id runtimev1.PrimitiveID) (runtimesetv1.SetProxy, error) {
+	proxy := setclientv1.NewSet(c.Protocol, id)
+	if err := proxy.Open(ctx); err != nil {
+		return nil, err
+	}
+	return proxy, nil
 }
 
-func (c *podMemoryConn) NewValueV1() valueapiv1.ValueServer {
-	return valueclientv1.NewValue(c.Protocol)
+func (c *podMemoryConn) NewValueV1(ctx context.Context, id runtimev1.PrimitiveID) (runtimevaluev1.ValueProxy, error) {
+	proxy := valueclientv1.NewValue(c.Protocol, id)
+	if err := proxy.Open(ctx); err != nil {
+		return nil, err
+	}
+	return proxy, nil
 }
+
+var _ runtimecounterv1.CounterProvider = (*podMemoryConn)(nil)
+var _ runtimecountermapv1.CounterMapProvider = (*podMemoryConn)(nil)
+var _ runtimeelectionv1.LeaderElectionProvider = (*podMemoryConn)(nil)
+var _ runtimeindexedmapv1.IndexedMapProvider = (*podMemoryConn)(nil)
+var _ runtimelockv1.LockProvider = (*podMemoryConn)(nil)
+var _ runtimemapv1.MapProvider = (*podMemoryConn)(nil)
+var _ runtimemultimapv1.MultiMapProvider = (*podMemoryConn)(nil)
+var _ runtimesetv1.SetProvider = (*podMemoryConn)(nil)
+var _ runtimevaluev1.ValueProvider = (*podMemoryConn)(nil)

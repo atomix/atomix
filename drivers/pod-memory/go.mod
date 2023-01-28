@@ -3,9 +3,9 @@ module github.com/atomix/atomix/drivers/pod-memory
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.1.1
-	github.com/atomix/atomix/protocols/rsm v0.1.4
-	github.com/atomix/atomix/runtime v0.1.2
+	github.com/atomix/atomix/api v0.4.0
+	github.com/atomix/atomix/protocols/rsm v0.2.1
+	github.com/atomix/atomix/runtime v0.4.1
 )
 
 require (
