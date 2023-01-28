@@ -28,177 +28,17 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type AddRouteRequest struct {
-	Route *Route `protobuf:"bytes,1,opt,name=route,proto3" json:"route,omitempty"`
-}
-
-func (m *AddRouteRequest) Reset()         { *m = AddRouteRequest{} }
-func (m *AddRouteRequest) String() string { return proto.CompactTextString(m) }
-func (*AddRouteRequest) ProtoMessage()    {}
-func (*AddRouteRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{0}
-}
-func (m *AddRouteRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *AddRouteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_AddRouteRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *AddRouteRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AddRouteRequest.Merge(m, src)
-}
-func (m *AddRouteRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *AddRouteRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_AddRouteRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_AddRouteRequest proto.InternalMessageInfo
-
-func (m *AddRouteRequest) GetRoute() *Route {
-	if m != nil {
-		return m.Route
-	}
-	return nil
-}
-
-type AddRouteResponse struct {
-}
-
-func (m *AddRouteResponse) Reset()         { *m = AddRouteResponse{} }
-func (m *AddRouteResponse) String() string { return proto.CompactTextString(m) }
-func (*AddRouteResponse) ProtoMessage()    {}
-func (*AddRouteResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{1}
-}
-func (m *AddRouteResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *AddRouteResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_AddRouteResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *AddRouteResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AddRouteResponse.Merge(m, src)
-}
-func (m *AddRouteResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *AddRouteResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_AddRouteResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_AddRouteResponse proto.InternalMessageInfo
-
-type RemoveRouteRequest struct {
-	StoreID StoreID `protobuf:"bytes,1,opt,name=store_id,json=storeId,proto3" json:"store_id"`
-}
-
-func (m *RemoveRouteRequest) Reset()         { *m = RemoveRouteRequest{} }
-func (m *RemoveRouteRequest) String() string { return proto.CompactTextString(m) }
-func (*RemoveRouteRequest) ProtoMessage()    {}
-func (*RemoveRouteRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{2}
-}
-func (m *RemoveRouteRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *RemoveRouteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_RemoveRouteRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *RemoveRouteRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RemoveRouteRequest.Merge(m, src)
-}
-func (m *RemoveRouteRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *RemoveRouteRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_RemoveRouteRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RemoveRouteRequest proto.InternalMessageInfo
-
-func (m *RemoveRouteRequest) GetStoreID() StoreID {
-	if m != nil {
-		return m.StoreID
-	}
-	return StoreID{}
-}
-
-type RemoveRouteResponse struct {
-}
-
-func (m *RemoveRouteResponse) Reset()         { *m = RemoveRouteResponse{} }
-func (m *RemoveRouteResponse) String() string { return proto.CompactTextString(m) }
-func (*RemoveRouteResponse) ProtoMessage()    {}
-func (*RemoveRouteResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{3}
-}
-func (m *RemoveRouteResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *RemoveRouteResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_RemoveRouteResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *RemoveRouteResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RemoveRouteResponse.Merge(m, src)
-}
-func (m *RemoveRouteResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *RemoveRouteResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_RemoveRouteResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RemoveRouteResponse proto.InternalMessageInfo
-
 type Route struct {
-	StoreID    StoreID     `protobuf:"bytes,1,opt,name=store_id,json=storeId,proto3" json:"store_id"`
-	MatchTags  []string    `protobuf:"bytes,2,rep,name=match_tags,json=matchTags,proto3" json:"match_tags,omitempty"`
-	Primitives []Primitive `protobuf:"bytes,3,rep,name=primitives,proto3" json:"primitives"`
+	RouteID RouteID       `protobuf:"bytes,1,opt,name=route_id,json=routeId,proto3" json:"route_id"`
+	Config  *types.Any    `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
+	Rules   []RoutingRule `protobuf:"bytes,3,rep,name=rules,proto3" json:"rules"`
 }
 
 func (m *Route) Reset()         { *m = Route{} }
 func (m *Route) String() string { return proto.CompactTextString(m) }
 func (*Route) ProtoMessage()    {}
 func (*Route) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{4}
+	return fileDescriptor_1086d97beccc07c7, []int{0}
 }
 func (m *Route) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -227,23 +67,91 @@ func (m *Route) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Route proto.InternalMessageInfo
 
-func (m *Route) GetStoreID() StoreID {
+func (m *Route) GetRouteID() RouteID {
 	if m != nil {
-		return m.StoreID
+		return m.RouteID
 	}
-	return StoreID{}
+	return RouteID{}
 }
 
-func (m *Route) GetMatchTags() []string {
+func (m *Route) GetConfig() *types.Any {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+func (m *Route) GetRules() []RoutingRule {
+	if m != nil {
+		return m.Rules
+	}
+	return nil
+}
+
+type RoutingRule struct {
+	Type      PrimitiveType `protobuf:"bytes,1,opt,name=type,proto3" json:"type"`
+	MatchIds  []PrimitiveID `protobuf:"bytes,2,rep,name=match_ids,json=matchIds,proto3" json:"match_ids"`
+	MatchTags []string      `protobuf:"bytes,3,rep,name=match_tags,json=matchTags,proto3" json:"match_tags,omitempty"`
+	Config    *types.Any    `protobuf:"bytes,4,opt,name=config,proto3" json:"config,omitempty"`
+}
+
+func (m *RoutingRule) Reset()         { *m = RoutingRule{} }
+func (m *RoutingRule) String() string { return proto.CompactTextString(m) }
+func (*RoutingRule) ProtoMessage()    {}
+func (*RoutingRule) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1086d97beccc07c7, []int{1}
+}
+func (m *RoutingRule) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RoutingRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RoutingRule.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RoutingRule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RoutingRule.Merge(m, src)
+}
+func (m *RoutingRule) XXX_Size() int {
+	return m.Size()
+}
+func (m *RoutingRule) XXX_DiscardUnknown() {
+	xxx_messageInfo_RoutingRule.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RoutingRule proto.InternalMessageInfo
+
+func (m *RoutingRule) GetType() PrimitiveType {
+	if m != nil {
+		return m.Type
+	}
+	return PrimitiveType{}
+}
+
+func (m *RoutingRule) GetMatchIds() []PrimitiveID {
+	if m != nil {
+		return m.MatchIds
+	}
+	return nil
+}
+
+func (m *RoutingRule) GetMatchTags() []string {
 	if m != nil {
 		return m.MatchTags
 	}
 	return nil
 }
 
-func (m *Route) GetPrimitives() []Primitive {
+func (m *RoutingRule) GetConfig() *types.Any {
 	if m != nil {
-		return m.Primitives
+		return m.Config
 	}
 	return nil
 }
@@ -257,7 +165,7 @@ func (m *DriverID) Reset()         { *m = DriverID{} }
 func (m *DriverID) String() string { return proto.CompactTextString(m) }
 func (*DriverID) ProtoMessage()    {}
 func (*DriverID) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{5}
+	return fileDescriptor_1086d97beccc07c7, []int{2}
 }
 func (m *DriverID) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -300,23 +208,23 @@ func (m *DriverID) GetAPIVersion() string {
 	return ""
 }
 
-type StoreID struct {
+type RouteID struct {
 	Namespace string `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	Name      string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 }
 
-func (m *StoreID) Reset()         { *m = StoreID{} }
-func (m *StoreID) String() string { return proto.CompactTextString(m) }
-func (*StoreID) ProtoMessage()    {}
-func (*StoreID) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{6}
+func (m *RouteID) Reset()         { *m = RouteID{} }
+func (m *RouteID) String() string { return proto.CompactTextString(m) }
+func (*RouteID) ProtoMessage()    {}
+func (*RouteID) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1086d97beccc07c7, []int{3}
 }
-func (m *StoreID) XXX_Unmarshal(b []byte) error {
+func (m *RouteID) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *StoreID) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RouteID) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_StoreID.Marshal(b, m, deterministic)
+		return xxx_messageInfo_RouteID.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -326,82 +234,30 @@ func (m *StoreID) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *StoreID) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_StoreID.Merge(m, src)
+func (m *RouteID) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RouteID.Merge(m, src)
 }
-func (m *StoreID) XXX_Size() int {
+func (m *RouteID) XXX_Size() int {
 	return m.Size()
 }
-func (m *StoreID) XXX_DiscardUnknown() {
-	xxx_messageInfo_StoreID.DiscardUnknown(m)
+func (m *RouteID) XXX_DiscardUnknown() {
+	xxx_messageInfo_RouteID.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_StoreID proto.InternalMessageInfo
+var xxx_messageInfo_RouteID proto.InternalMessageInfo
 
-func (m *StoreID) GetNamespace() string {
+func (m *RouteID) GetNamespace() string {
 	if m != nil {
 		return m.Namespace
 	}
 	return ""
 }
 
-func (m *StoreID) GetName() string {
+func (m *RouteID) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
-}
-
-type Store struct {
-	StoreID StoreID    `protobuf:"bytes,1,opt,name=store_id,json=storeId,proto3" json:"store_id"`
-	Spec    *types.Any `protobuf:"bytes,2,opt,name=spec,proto3" json:"spec,omitempty"`
-}
-
-func (m *Store) Reset()         { *m = Store{} }
-func (m *Store) String() string { return proto.CompactTextString(m) }
-func (*Store) ProtoMessage()    {}
-func (*Store) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{7}
-}
-func (m *Store) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Store) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_Store.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *Store) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Store.Merge(m, src)
-}
-func (m *Store) XXX_Size() int {
-	return m.Size()
-}
-func (m *Store) XXX_DiscardUnknown() {
-	xxx_messageInfo_Store.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Store proto.InternalMessageInfo
-
-func (m *Store) GetStoreID() StoreID {
-	if m != nil {
-		return m.StoreID
-	}
-	return StoreID{}
-}
-
-func (m *Store) GetSpec() *types.Any {
-	if m != nil {
-		return m.Spec
-	}
-	return nil
 }
 
 type PrimitiveID struct {
@@ -412,7 +268,7 @@ func (m *PrimitiveID) Reset()         { *m = PrimitiveID{} }
 func (m *PrimitiveID) String() string { return proto.CompactTextString(m) }
 func (*PrimitiveID) ProtoMessage()    {}
 func (*PrimitiveID) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{8}
+	return fileDescriptor_1086d97beccc07c7, []int{4}
 }
 func (m *PrimitiveID) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -457,7 +313,7 @@ func (m *PrimitiveType) Reset()         { *m = PrimitiveType{} }
 func (m *PrimitiveType) String() string { return proto.CompactTextString(m) }
 func (*PrimitiveType) ProtoMessage()    {}
 func (*PrimitiveType) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{9}
+	return fileDescriptor_1086d97beccc07c7, []int{5}
 }
 func (m *PrimitiveType) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -510,7 +366,7 @@ func (m *PrimitiveMeta) Reset()         { *m = PrimitiveMeta{} }
 func (m *PrimitiveMeta) String() string { return proto.CompactTextString(m) }
 func (*PrimitiveMeta) ProtoMessage()    {}
 func (*PrimitiveMeta) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{10}
+	return fileDescriptor_1086d97beccc07c7, []int{6}
 }
 func (m *PrimitiveMeta) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -553,68 +409,23 @@ func (m *PrimitiveMeta) GetTags() []string {
 	return nil
 }
 
-type Primitive struct {
-	PrimitiveMeta `protobuf:"bytes,1,opt,name=meta,proto3,embedded=meta" json:"meta"`
-	Spec          *types.Any `protobuf:"bytes,2,opt,name=spec,proto3" json:"spec,omitempty"`
-}
-
-func (m *Primitive) Reset()         { *m = Primitive{} }
-func (m *Primitive) String() string { return proto.CompactTextString(m) }
-func (*Primitive) ProtoMessage()    {}
-func (*Primitive) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{11}
-}
-func (m *Primitive) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Primitive) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_Primitive.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *Primitive) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Primitive.Merge(m, src)
-}
-func (m *Primitive) XXX_Size() int {
-	return m.Size()
-}
-func (m *Primitive) XXX_DiscardUnknown() {
-	xxx_messageInfo_Primitive.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Primitive proto.InternalMessageInfo
-
-func (m *Primitive) GetSpec() *types.Any {
-	if m != nil {
-		return m.Spec
-	}
-	return nil
-}
-
-type ConnectStoreRequest struct {
+type ConnectRouteRequest struct {
 	DriverID DriverID `protobuf:"bytes,1,opt,name=driver_id,json=driverId,proto3" json:"driver_id"`
-	Store    Store    `protobuf:"bytes,2,opt,name=store,proto3" json:"store"`
+	Route    Route    `protobuf:"bytes,2,opt,name=route,proto3" json:"route"`
 }
 
-func (m *ConnectStoreRequest) Reset()         { *m = ConnectStoreRequest{} }
-func (m *ConnectStoreRequest) String() string { return proto.CompactTextString(m) }
-func (*ConnectStoreRequest) ProtoMessage()    {}
-func (*ConnectStoreRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{12}
+func (m *ConnectRouteRequest) Reset()         { *m = ConnectRouteRequest{} }
+func (m *ConnectRouteRequest) String() string { return proto.CompactTextString(m) }
+func (*ConnectRouteRequest) ProtoMessage()    {}
+func (*ConnectRouteRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1086d97beccc07c7, []int{7}
 }
-func (m *ConnectStoreRequest) XXX_Unmarshal(b []byte) error {
+func (m *ConnectRouteRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ConnectStoreRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ConnectRouteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ConnectStoreRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ConnectRouteRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -624,47 +435,47 @@ func (m *ConnectStoreRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return b[:n], nil
 	}
 }
-func (m *ConnectStoreRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ConnectStoreRequest.Merge(m, src)
+func (m *ConnectRouteRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConnectRouteRequest.Merge(m, src)
 }
-func (m *ConnectStoreRequest) XXX_Size() int {
+func (m *ConnectRouteRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *ConnectStoreRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ConnectStoreRequest.DiscardUnknown(m)
+func (m *ConnectRouteRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConnectRouteRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ConnectStoreRequest proto.InternalMessageInfo
+var xxx_messageInfo_ConnectRouteRequest proto.InternalMessageInfo
 
-func (m *ConnectStoreRequest) GetDriverID() DriverID {
+func (m *ConnectRouteRequest) GetDriverID() DriverID {
 	if m != nil {
 		return m.DriverID
 	}
 	return DriverID{}
 }
 
-func (m *ConnectStoreRequest) GetStore() Store {
+func (m *ConnectRouteRequest) GetRoute() Route {
 	if m != nil {
-		return m.Store
+		return m.Route
 	}
-	return Store{}
+	return Route{}
 }
 
-type ConnectStoreResponse struct {
+type ConnectRouteResponse struct {
 }
 
-func (m *ConnectStoreResponse) Reset()         { *m = ConnectStoreResponse{} }
-func (m *ConnectStoreResponse) String() string { return proto.CompactTextString(m) }
-func (*ConnectStoreResponse) ProtoMessage()    {}
-func (*ConnectStoreResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{13}
+func (m *ConnectRouteResponse) Reset()         { *m = ConnectRouteResponse{} }
+func (m *ConnectRouteResponse) String() string { return proto.CompactTextString(m) }
+func (*ConnectRouteResponse) ProtoMessage()    {}
+func (*ConnectRouteResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1086d97beccc07c7, []int{8}
 }
-func (m *ConnectStoreResponse) XXX_Unmarshal(b []byte) error {
+func (m *ConnectRouteResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ConnectStoreResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ConnectRouteResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ConnectStoreResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ConnectRouteResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -674,34 +485,34 @@ func (m *ConnectStoreResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return b[:n], nil
 	}
 }
-func (m *ConnectStoreResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ConnectStoreResponse.Merge(m, src)
+func (m *ConnectRouteResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConnectRouteResponse.Merge(m, src)
 }
-func (m *ConnectStoreResponse) XXX_Size() int {
+func (m *ConnectRouteResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *ConnectStoreResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ConnectStoreResponse.DiscardUnknown(m)
+func (m *ConnectRouteResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConnectRouteResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ConnectStoreResponse proto.InternalMessageInfo
+var xxx_messageInfo_ConnectRouteResponse proto.InternalMessageInfo
 
-type ConfigureStoreRequest struct {
-	Store Store `protobuf:"bytes,1,opt,name=store,proto3" json:"store"`
+type ConfigureRouteRequest struct {
+	Route Route `protobuf:"bytes,1,opt,name=route,proto3" json:"route"`
 }
 
-func (m *ConfigureStoreRequest) Reset()         { *m = ConfigureStoreRequest{} }
-func (m *ConfigureStoreRequest) String() string { return proto.CompactTextString(m) }
-func (*ConfigureStoreRequest) ProtoMessage()    {}
-func (*ConfigureStoreRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{14}
+func (m *ConfigureRouteRequest) Reset()         { *m = ConfigureRouteRequest{} }
+func (m *ConfigureRouteRequest) String() string { return proto.CompactTextString(m) }
+func (*ConfigureRouteRequest) ProtoMessage()    {}
+func (*ConfigureRouteRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1086d97beccc07c7, []int{9}
 }
-func (m *ConfigureStoreRequest) XXX_Unmarshal(b []byte) error {
+func (m *ConfigureRouteRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ConfigureStoreRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ConfigureRouteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ConfigureStoreRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ConfigureRouteRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -711,40 +522,40 @@ func (m *ConfigureStoreRequest) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return b[:n], nil
 	}
 }
-func (m *ConfigureStoreRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ConfigureStoreRequest.Merge(m, src)
+func (m *ConfigureRouteRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfigureRouteRequest.Merge(m, src)
 }
-func (m *ConfigureStoreRequest) XXX_Size() int {
+func (m *ConfigureRouteRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *ConfigureStoreRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ConfigureStoreRequest.DiscardUnknown(m)
+func (m *ConfigureRouteRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfigureRouteRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ConfigureStoreRequest proto.InternalMessageInfo
+var xxx_messageInfo_ConfigureRouteRequest proto.InternalMessageInfo
 
-func (m *ConfigureStoreRequest) GetStore() Store {
+func (m *ConfigureRouteRequest) GetRoute() Route {
 	if m != nil {
-		return m.Store
+		return m.Route
 	}
-	return Store{}
+	return Route{}
 }
 
-type ConfigureStoreResponse struct {
+type ConfigureRouteResponse struct {
 }
 
-func (m *ConfigureStoreResponse) Reset()         { *m = ConfigureStoreResponse{} }
-func (m *ConfigureStoreResponse) String() string { return proto.CompactTextString(m) }
-func (*ConfigureStoreResponse) ProtoMessage()    {}
-func (*ConfigureStoreResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{15}
+func (m *ConfigureRouteResponse) Reset()         { *m = ConfigureRouteResponse{} }
+func (m *ConfigureRouteResponse) String() string { return proto.CompactTextString(m) }
+func (*ConfigureRouteResponse) ProtoMessage()    {}
+func (*ConfigureRouteResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1086d97beccc07c7, []int{10}
 }
-func (m *ConfigureStoreResponse) XXX_Unmarshal(b []byte) error {
+func (m *ConfigureRouteResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ConfigureStoreResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ConfigureRouteResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ConfigureStoreResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ConfigureRouteResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -754,34 +565,34 @@ func (m *ConfigureStoreResponse) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *ConfigureStoreResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ConfigureStoreResponse.Merge(m, src)
+func (m *ConfigureRouteResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfigureRouteResponse.Merge(m, src)
 }
-func (m *ConfigureStoreResponse) XXX_Size() int {
+func (m *ConfigureRouteResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *ConfigureStoreResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ConfigureStoreResponse.DiscardUnknown(m)
+func (m *ConfigureRouteResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfigureRouteResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ConfigureStoreResponse proto.InternalMessageInfo
+var xxx_messageInfo_ConfigureRouteResponse proto.InternalMessageInfo
 
-type DisconnectStoreRequest struct {
-	StoreID StoreID `protobuf:"bytes,1,opt,name=store_id,json=storeId,proto3" json:"store_id"`
+type DisconnectRouteRequest struct {
+	RouteID RouteID `protobuf:"bytes,1,opt,name=route_id,json=routeId,proto3" json:"route_id"`
 }
 
-func (m *DisconnectStoreRequest) Reset()         { *m = DisconnectStoreRequest{} }
-func (m *DisconnectStoreRequest) String() string { return proto.CompactTextString(m) }
-func (*DisconnectStoreRequest) ProtoMessage()    {}
-func (*DisconnectStoreRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{16}
+func (m *DisconnectRouteRequest) Reset()         { *m = DisconnectRouteRequest{} }
+func (m *DisconnectRouteRequest) String() string { return proto.CompactTextString(m) }
+func (*DisconnectRouteRequest) ProtoMessage()    {}
+func (*DisconnectRouteRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1086d97beccc07c7, []int{11}
 }
-func (m *DisconnectStoreRequest) XXX_Unmarshal(b []byte) error {
+func (m *DisconnectRouteRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DisconnectStoreRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DisconnectRouteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_DisconnectStoreRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_DisconnectRouteRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -791,40 +602,40 @@ func (m *DisconnectStoreRequest) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *DisconnectStoreRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DisconnectStoreRequest.Merge(m, src)
+func (m *DisconnectRouteRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DisconnectRouteRequest.Merge(m, src)
 }
-func (m *DisconnectStoreRequest) XXX_Size() int {
+func (m *DisconnectRouteRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *DisconnectStoreRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DisconnectStoreRequest.DiscardUnknown(m)
+func (m *DisconnectRouteRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DisconnectRouteRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DisconnectStoreRequest proto.InternalMessageInfo
+var xxx_messageInfo_DisconnectRouteRequest proto.InternalMessageInfo
 
-func (m *DisconnectStoreRequest) GetStoreID() StoreID {
+func (m *DisconnectRouteRequest) GetRouteID() RouteID {
 	if m != nil {
-		return m.StoreID
+		return m.RouteID
 	}
-	return StoreID{}
+	return RouteID{}
 }
 
-type DisconnectStoreResponse struct {
+type DisconnectRouteResponse struct {
 }
 
-func (m *DisconnectStoreResponse) Reset()         { *m = DisconnectStoreResponse{} }
-func (m *DisconnectStoreResponse) String() string { return proto.CompactTextString(m) }
-func (*DisconnectStoreResponse) ProtoMessage()    {}
-func (*DisconnectStoreResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1086d97beccc07c7, []int{17}
+func (m *DisconnectRouteResponse) Reset()         { *m = DisconnectRouteResponse{} }
+func (m *DisconnectRouteResponse) String() string { return proto.CompactTextString(m) }
+func (*DisconnectRouteResponse) ProtoMessage()    {}
+func (*DisconnectRouteResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1086d97beccc07c7, []int{12}
 }
-func (m *DisconnectStoreResponse) XXX_Unmarshal(b []byte) error {
+func (m *DisconnectRouteResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DisconnectStoreResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DisconnectRouteResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_DisconnectStoreResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_DisconnectRouteResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -834,90 +645,80 @@ func (m *DisconnectStoreResponse) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return b[:n], nil
 	}
 }
-func (m *DisconnectStoreResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DisconnectStoreResponse.Merge(m, src)
+func (m *DisconnectRouteResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DisconnectRouteResponse.Merge(m, src)
 }
-func (m *DisconnectStoreResponse) XXX_Size() int {
+func (m *DisconnectRouteResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *DisconnectStoreResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_DisconnectStoreResponse.DiscardUnknown(m)
+func (m *DisconnectRouteResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DisconnectRouteResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DisconnectStoreResponse proto.InternalMessageInfo
+var xxx_messageInfo_DisconnectRouteResponse proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterType((*AddRouteRequest)(nil), "atomix.runtime.v1.AddRouteRequest")
-	proto.RegisterType((*AddRouteResponse)(nil), "atomix.runtime.v1.AddRouteResponse")
-	proto.RegisterType((*RemoveRouteRequest)(nil), "atomix.runtime.v1.RemoveRouteRequest")
-	proto.RegisterType((*RemoveRouteResponse)(nil), "atomix.runtime.v1.RemoveRouteResponse")
 	proto.RegisterType((*Route)(nil), "atomix.runtime.v1.Route")
+	proto.RegisterType((*RoutingRule)(nil), "atomix.runtime.v1.RoutingRule")
 	proto.RegisterType((*DriverID)(nil), "atomix.runtime.v1.DriverID")
-	proto.RegisterType((*StoreID)(nil), "atomix.runtime.v1.StoreID")
-	proto.RegisterType((*Store)(nil), "atomix.runtime.v1.Store")
+	proto.RegisterType((*RouteID)(nil), "atomix.runtime.v1.RouteID")
 	proto.RegisterType((*PrimitiveID)(nil), "atomix.runtime.v1.PrimitiveID")
 	proto.RegisterType((*PrimitiveType)(nil), "atomix.runtime.v1.PrimitiveType")
 	proto.RegisterType((*PrimitiveMeta)(nil), "atomix.runtime.v1.PrimitiveMeta")
-	proto.RegisterType((*Primitive)(nil), "atomix.runtime.v1.Primitive")
-	proto.RegisterType((*ConnectStoreRequest)(nil), "atomix.runtime.v1.ConnectStoreRequest")
-	proto.RegisterType((*ConnectStoreResponse)(nil), "atomix.runtime.v1.ConnectStoreResponse")
-	proto.RegisterType((*ConfigureStoreRequest)(nil), "atomix.runtime.v1.ConfigureStoreRequest")
-	proto.RegisterType((*ConfigureStoreResponse)(nil), "atomix.runtime.v1.ConfigureStoreResponse")
-	proto.RegisterType((*DisconnectStoreRequest)(nil), "atomix.runtime.v1.DisconnectStoreRequest")
-	proto.RegisterType((*DisconnectStoreResponse)(nil), "atomix.runtime.v1.DisconnectStoreResponse")
+	proto.RegisterType((*ConnectRouteRequest)(nil), "atomix.runtime.v1.ConnectRouteRequest")
+	proto.RegisterType((*ConnectRouteResponse)(nil), "atomix.runtime.v1.ConnectRouteResponse")
+	proto.RegisterType((*ConfigureRouteRequest)(nil), "atomix.runtime.v1.ConfigureRouteRequest")
+	proto.RegisterType((*ConfigureRouteResponse)(nil), "atomix.runtime.v1.ConfigureRouteResponse")
+	proto.RegisterType((*DisconnectRouteRequest)(nil), "atomix.runtime.v1.DisconnectRouteRequest")
+	proto.RegisterType((*DisconnectRouteResponse)(nil), "atomix.runtime.v1.DisconnectRouteResponse")
 }
 
 func init() { proto.RegisterFile("runtime/v1/runtime.proto", fileDescriptor_1086d97beccc07c7) }
 
 var fileDescriptor_1086d97beccc07c7 = []byte{
-	// 746 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0xcd, 0x6e, 0xd3, 0x40,
-	0x10, 0x8e, 0xf3, 0x43, 0x93, 0x09, 0xb4, 0x65, 0xfb, 0x83, 0x6b, 0x8a, 0x13, 0x19, 0x41, 0x03,
-	0x07, 0x47, 0x0d, 0x1c, 0x50, 0x0f, 0xa0, 0xb8, 0x11, 0x52, 0x90, 0x2a, 0x55, 0x6e, 0xe9, 0x01,
-	0x55, 0x0a, 0x6e, 0xbc, 0x75, 0x57, 0xc2, 0x5e, 0x63, 0x3b, 0x11, 0x11, 0x2f, 0xc1, 0x8d, 0x23,
-	0x3c, 0x03, 0x4f, 0xd1, 0x63, 0x8f, 0x9c, 0x22, 0x94, 0x5e, 0x38, 0xf1, 0x0c, 0xc8, 0xeb, 0x75,
-	0x7e, 0x1a, 0xd3, 0x06, 0x29, 0xb7, 0xcd, 0xf8, 0x9b, 0xef, 0x9b, 0x9d, 0xf9, 0x76, 0x02, 0xa2,
-	0xd7, 0x71, 0x02, 0x62, 0xe3, 0x6a, 0x77, 0xbb, 0xca, 0x8f, 0xaa, 0xeb, 0xd1, 0x80, 0xa2, 0xbb,
-	0x46, 0x40, 0x6d, 0xf2, 0x49, 0x8d, 0xa3, 0xdd, 0x6d, 0x69, 0xd5, 0xa2, 0x16, 0x65, 0x5f, 0xab,
-	0xe1, 0x29, 0x02, 0x4a, 0x1b, 0x16, 0xa5, 0xd6, 0x07, 0x5c, 0x65, 0xbf, 0x4e, 0x3a, 0xa7, 0x55,
-	0xc3, 0xe9, 0x45, 0x9f, 0x94, 0x3a, 0x2c, 0xd5, 0x4d, 0x53, 0xa7, 0x9d, 0x00, 0xeb, 0xf8, 0x63,
-	0x07, 0xfb, 0x01, 0x52, 0x21, 0xe7, 0x85, 0xbf, 0x45, 0xa1, 0x2c, 0x54, 0x8a, 0x35, 0x51, 0x9d,
-	0x92, 0x51, 0x23, 0x7c, 0x04, 0x53, 0x10, 0x2c, 0x8f, 0x28, 0x7c, 0x97, 0x3a, 0x3e, 0x56, 0x8e,
-	0x01, 0xe9, 0xd8, 0xa6, 0x5d, 0x3c, 0xc1, 0xfc, 0x1a, 0xf2, 0x7e, 0x40, 0x3d, 0xdc, 0x22, 0x26,
-	0x27, 0x97, 0x12, 0xc8, 0x0f, 0x42, 0x48, 0xb3, 0xa1, 0x2d, 0x9d, 0xf7, 0x4b, 0xa9, 0x41, 0xbf,
-	0xb4, 0xc0, 0x03, 0xfa, 0x02, 0x4b, 0x6e, 0x9a, 0xca, 0x1a, 0xac, 0x4c, 0xb0, 0x73, 0xd1, 0x1f,
-	0x02, 0xe4, 0x58, 0x64, 0x5e, 0x42, 0xe8, 0x01, 0x80, 0x6d, 0x04, 0xed, 0xb3, 0x56, 0x60, 0x58,
-	0xbe, 0x98, 0x2e, 0x67, 0x2a, 0x05, 0xbd, 0xc0, 0x22, 0x87, 0x86, 0xe5, 0x23, 0x0d, 0xc0, 0xf5,
-	0x88, 0x4d, 0x02, 0xd2, 0xc5, 0xbe, 0x98, 0x29, 0x67, 0x2a, 0xc5, 0xda, 0x66, 0x82, 0xd0, 0x7e,
-	0x0c, 0xd2, 0xb2, 0xa1, 0x94, 0x3e, 0x96, 0xa5, 0xbc, 0x85, 0x7c, 0xc3, 0x23, 0x5d, 0xec, 0x35,
-	0x1b, 0x08, 0x41, 0xd6, 0x31, 0xec, 0xa8, 0xf1, 0x05, 0x9d, 0x9d, 0x51, 0x15, 0x8a, 0x86, 0x4b,
-	0x5a, 0x5d, 0xec, 0xf9, 0x84, 0x3a, 0x62, 0x3a, 0xfc, 0xa4, 0x2d, 0x0e, 0xfa, 0x25, 0xa8, 0xef,
-	0x37, 0x8f, 0xa2, 0xa8, 0x0e, 0x86, 0x4b, 0xf8, 0x79, 0x27, 0xfb, 0xfb, 0x7b, 0x49, 0x50, 0xea,
-	0x10, 0xdf, 0x06, 0x6d, 0x42, 0x21, 0x64, 0xf2, 0x5d, 0xa3, 0x1d, 0x53, 0x8f, 0x02, 0x43, 0xcd,
-	0xf4, 0x48, 0x93, 0x53, 0xf4, 0x20, 0xc7, 0x28, 0xe6, 0xd6, 0xcd, 0x0a, 0x64, 0x7d, 0x17, 0xb7,
-	0x99, 0x54, 0xb1, 0xb6, 0xaa, 0x46, 0xae, 0x54, 0x63, 0x57, 0xaa, 0x75, 0xa7, 0xa7, 0x33, 0x84,
-	0xb2, 0x05, 0xc5, 0x61, 0xcf, 0x92, 0xfb, 0xc2, 0x6b, 0x7c, 0x07, 0x77, 0x86, 0xc0, 0xc3, 0x9e,
-	0x8b, 0xe7, 0xd9, 0xc2, 0x6f, 0xc2, 0x18, 0xf9, 0x1e, 0x0e, 0x0c, 0xb4, 0x03, 0xd9, 0xa0, 0xe7,
-	0xc6, 0x0f, 0xa3, 0x7c, 0xdd, 0xa4, 0xc3, 0x62, 0xf8, 0xb4, 0x59, 0x0e, 0x7a, 0x01, 0x69, 0x62,
-	0xf2, 0xab, 0xcb, 0xd7, 0x65, 0x36, 0x1b, 0x5a, 0x3e, 0xcc, 0xbb, 0xe8, 0x97, 0x04, 0x3d, 0x4d,
-	0xcc, 0xf0, 0x4a, 0xcc, 0x7e, 0x19, 0x66, 0x3f, 0x76, 0xe6, 0x15, 0x7e, 0x86, 0xc2, 0x30, 0x0d,
-	0xbd, 0x84, 0xac, 0x8d, 0x03, 0x63, 0x96, 0xe2, 0xc2, 0xcb, 0x8c, 0x89, 0xb0, 0xbc, 0xd9, 0xa7,
-	0xc3, 0xc5, 0xbf, 0x0a, 0xb0, 0xb2, 0x4b, 0x1d, 0x07, 0xb7, 0x03, 0x36, 0xe9, 0xf8, 0x91, 0xbf,
-	0x81, 0x82, 0xc9, 0x0c, 0x3d, 0xb2, 0xcb, 0xfd, 0x84, 0x62, 0x62, 0xd3, 0x6b, 0xcb, 0xdc, 0x2f,
-	0xc3, 0x67, 0xa0, 0xe7, 0xa3, 0xfc, 0xa6, 0x89, 0x9e, 0x43, 0x8e, 0x99, 0x87, 0x17, 0x25, 0xfe,
-	0xcb, 0x76, 0xbc, 0xd3, 0x11, 0x58, 0x59, 0x87, 0xd5, 0xc9, 0xc2, 0xf8, 0x7e, 0xd8, 0x83, 0xb5,
-	0x5d, 0xea, 0x9c, 0x12, 0xab, 0xe3, 0xe1, 0x89, 0x92, 0x87, 0x32, 0xc2, 0xff, 0xc8, 0x88, 0xb0,
-	0x7e, 0x95, 0x8e, 0x0b, 0xbd, 0x87, 0xf5, 0x06, 0xf1, 0xdb, 0x09, 0xcd, 0x99, 0xd7, 0x06, 0xdc,
-	0x80, 0x7b, 0x53, 0x0a, 0x91, 0x78, 0xed, 0x4f, 0x06, 0x16, 0xf4, 0x88, 0x0b, 0x1d, 0x40, 0x3e,
-	0x5e, 0xcd, 0x48, 0x49, 0x10, 0xba, 0xb2, 0xfa, 0xa5, 0x87, 0xd7, 0x62, 0x22, 0x01, 0x74, 0x0c,
-	0xc5, 0xb1, 0xed, 0x8b, 0x1e, 0x25, 0xfd, 0x3f, 0x4c, 0xed, 0x7e, 0xe9, 0xf1, 0x4d, 0x30, 0xce,
-	0xde, 0x82, 0xdb, 0xe3, 0xc3, 0x43, 0x49, 0x79, 0x09, 0xb6, 0x93, 0xb6, 0x6e, 0xc4, 0x71, 0x01,
-	0x0c, 0x8b, 0x93, 0x63, 0x43, 0x95, 0xe4, 0xd4, 0x69, 0xa3, 0x48, 0x4f, 0x66, 0x40, 0x72, 0x99,
-	0x33, 0x58, 0xba, 0x32, 0x21, 0x94, 0x94, 0x9d, 0xec, 0x13, 0xe9, 0xe9, 0x2c, 0xd0, 0x48, 0x49,
-	0x7b, 0x75, 0x3e, 0x90, 0x85, 0x8b, 0x81, 0x2c, 0xfc, 0x1a, 0xc8, 0xc2, 0x97, 0x4b, 0x39, 0x75,
-	0x71, 0x29, 0xa7, 0x7e, 0x5e, 0xca, 0x29, 0x10, 0x09, 0x8d, 0x79, 0x0c, 0x97, 0x8c, 0x71, 0x69,
-	0x05, 0xee, 0x90, 0xa3, 0xed, 0x7d, 0xe1, 0xe4, 0x16, 0x7b, 0xe3, 0xcf, 0xfe, 0x06, 0x00, 0x00,
-	0xff, 0xff, 0x4a, 0x68, 0xfa, 0x6b, 0x6a, 0x08, 0x00, 0x00,
+	// 659 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0xcd, 0x6e, 0xd3, 0x40,
+	0x10, 0xce, 0xa6, 0x69, 0x1b, 0x4f, 0xa0, 0x85, 0xa5, 0x14, 0x37, 0x80, 0x53, 0xf9, 0x40, 0x0b,
+	0x42, 0x8e, 0x5a, 0x38, 0xa0, 0x5e, 0x50, 0xdc, 0x08, 0xc9, 0x48, 0x95, 0x2a, 0xab, 0xf4, 0xc0,
+	0x25, 0xb8, 0xf1, 0xd6, 0x5d, 0xa9, 0xf1, 0x1a, 0xff, 0x44, 0xe4, 0x2d, 0xb8, 0x71, 0x84, 0xd7,
+	0x40, 0xbc, 0x40, 0x8f, 0x3d, 0xc2, 0x25, 0x42, 0xe9, 0x85, 0xc7, 0x40, 0xde, 0x5d, 0xa7, 0x4e,
+	0xeb, 0x2a, 0x45, 0xf4, 0x36, 0xde, 0x9d, 0xef, 0xfb, 0x66, 0xbe, 0xd9, 0x31, 0xa8, 0x61, 0xe2,
+	0xc7, 0xb4, 0x47, 0x9a, 0xfd, 0x8d, 0xa6, 0x0c, 0x8d, 0x20, 0x64, 0x31, 0xc3, 0x77, 0x9d, 0x98,
+	0xf5, 0xe8, 0x27, 0x23, 0x3b, 0xed, 0x6f, 0xd4, 0x97, 0x3c, 0xe6, 0x31, 0x7e, 0xdb, 0x4c, 0x23,
+	0x91, 0x58, 0x5f, 0xf1, 0x18, 0xf3, 0x8e, 0x49, 0x93, 0x7f, 0x1d, 0x24, 0x87, 0x4d, 0xc7, 0x1f,
+	0x88, 0x2b, 0xfd, 0x3b, 0x82, 0x59, 0x9b, 0x25, 0x31, 0xc1, 0x6f, 0xa0, 0x1a, 0xa6, 0x41, 0x87,
+	0xba, 0x2a, 0x5a, 0x45, 0xeb, 0xb5, 0xcd, 0xba, 0x71, 0x49, 0xc0, 0xe0, 0xb9, 0x56, 0xdb, 0x5c,
+	0x3c, 0x19, 0x36, 0x4a, 0xa3, 0x61, 0x63, 0x5e, 0x1e, 0xd8, 0xf3, 0x1c, 0x6c, 0xb9, 0xf8, 0x39,
+	0xcc, 0x75, 0x99, 0x7f, 0x48, 0x3d, 0xb5, 0xcc, 0x59, 0x96, 0x0c, 0xa1, 0x6e, 0x64, 0xea, 0x46,
+	0xcb, 0x1f, 0xd8, 0x32, 0x07, 0x6f, 0xc1, 0x6c, 0x98, 0x1c, 0x93, 0x48, 0x9d, 0x59, 0x9d, 0x59,
+	0xaf, 0x6d, 0x6a, 0x57, 0x48, 0x52, 0xdf, 0xb3, 0x93, 0x63, 0x62, 0x56, 0x52, 0x59, 0x5b, 0x40,
+	0xf4, 0x5f, 0x08, 0x6a, 0xb9, 0x4b, 0xbc, 0x05, 0x95, 0x78, 0x10, 0x10, 0x59, 0xfd, 0x6a, 0x01,
+	0xd5, 0x6e, 0x48, 0x7b, 0x34, 0xa6, 0x7d, 0xb2, 0x37, 0x08, 0x32, 0x32, 0x8e, 0xc1, 0x2d, 0x50,
+	0x7a, 0x4e, 0xdc, 0x3d, 0xea, 0x50, 0x37, 0x52, 0xcb, 0x57, 0xd6, 0x32, 0x26, 0xb0, 0xda, 0x12,
+	0x5e, 0xe5, 0x30, 0xcb, 0x8d, 0xf0, 0x63, 0x00, 0x41, 0x11, 0x3b, 0x9e, 0xe8, 0x47, 0xb1, 0x05,
+	0xe9, 0x9e, 0xe3, 0x45, 0x39, 0x5f, 0x2a, 0xd3, 0x7d, 0xd1, 0xdf, 0x41, 0xb5, 0x1d, 0xd2, 0x3e,
+	0x09, 0xad, 0x36, 0xc6, 0x50, 0xf1, 0x9d, 0x9e, 0xe8, 0x4b, 0xb1, 0x79, 0x8c, 0x9b, 0x50, 0x73,
+	0x02, 0xda, 0xe9, 0x93, 0x30, 0xa2, 0xcc, 0xe7, 0x56, 0x2b, 0xe6, 0xc2, 0x68, 0xd8, 0x80, 0xd6,
+	0xae, 0xb5, 0x2f, 0x4e, 0x6d, 0x70, 0x02, 0x2a, 0xe3, 0xad, 0xca, 0x9f, 0x6f, 0x0d, 0xa4, 0xb7,
+	0x20, 0x1b, 0x18, 0x7e, 0x04, 0x4a, 0xca, 0x14, 0x05, 0x4e, 0x37, 0xa3, 0x3e, 0x3f, 0x18, 0x6b,
+	0x96, 0xcf, 0x35, 0x25, 0xc5, 0x1a, 0xd4, 0x72, 0x2e, 0x14, 0x15, 0x27, 0x13, 0xdf, 0xc3, 0xed,
+	0x09, 0xbf, 0x6f, 0xb2, 0x8f, 0xaf, 0x28, 0x47, 0xbe, 0x43, 0x62, 0xe7, 0xbf, 0x86, 0xff, 0x0a,
+	0xca, 0xd4, 0x95, 0xcf, 0x75, 0xda, 0xd4, 0xab, 0x29, 0xee, 0x74, 0xd8, 0x40, 0x76, 0x99, 0xba,
+	0x69, 0x4b, 0xb9, 0x69, 0xf3, 0x58, 0x56, 0xf8, 0x05, 0xc1, 0xbd, 0x6d, 0xe6, 0xfb, 0xa4, 0x1b,
+	0x73, 0xc7, 0x6d, 0xf2, 0x31, 0x21, 0x51, 0x8c, 0xdf, 0x82, 0xe2, 0xf2, 0xc1, 0x9e, 0xef, 0xd9,
+	0xc3, 0x02, 0xc9, 0x6c, 0xf8, 0xe6, 0x1d, 0xb9, 0x68, 0xe3, 0xe7, 0x60, 0x57, 0x05, 0xde, 0x72,
+	0xf1, 0x4b, 0x98, 0xe5, 0x5b, 0x27, 0x4b, 0x57, 0xaf, 0xda, 0xd7, 0xf1, 0xda, 0xa4, 0x1f, 0xfa,
+	0x32, 0x2c, 0x4d, 0x16, 0x16, 0x05, 0xcc, 0x8f, 0x88, 0xbe, 0x03, 0xf7, 0xb7, 0xf9, 0xe3, 0x4b,
+	0x42, 0x32, 0x51, 0xf2, 0x58, 0x06, 0xfd, 0x8b, 0x8c, 0x0a, 0xcb, 0x17, 0xe9, 0xa4, 0xd0, 0x07,
+	0x58, 0x6e, 0xd3, 0xa8, 0x5b, 0x60, 0xce, 0x0d, 0xfd, 0x83, 0xf4, 0x15, 0x78, 0x70, 0x49, 0x41,
+	0x88, 0x6f, 0xfe, 0x28, 0xc3, 0xbc, 0x2d, 0xb8, 0x70, 0x07, 0x6e, 0xe5, 0x9d, 0xc0, 0x4f, 0x0a,
+	0xc4, 0x0a, 0x66, 0x58, 0x5f, 0x9b, 0x9a, 0x27, 0xc4, 0x30, 0x81, 0x85, 0x49, 0x0f, 0xf0, 0x7a,
+	0x31, 0xf4, 0xb2, 0xeb, 0xf5, 0xa7, 0xd7, 0xc8, 0x94, 0x32, 0x47, 0xb0, 0x78, 0xa1, 0x5d, 0x5c,
+	0x84, 0x2e, 0x36, 0xbd, 0xfe, 0xec, 0x3a, 0xa9, 0x42, 0xc9, 0x7c, 0x7d, 0x32, 0xd2, 0xd0, 0xe9,
+	0x48, 0x43, 0xbf, 0x47, 0x1a, 0xfa, 0x7c, 0xa6, 0x95, 0x4e, 0xcf, 0xb4, 0xd2, 0xcf, 0x33, 0xad,
+	0x04, 0x2a, 0x65, 0x19, 0x8f, 0x13, 0xd0, 0x1c, 0x97, 0xa9, 0x48, 0xbb, 0xf7, 0x37, 0x76, 0xd1,
+	0xc1, 0x1c, 0xff, 0xdb, 0xbd, 0xf8, 0x1b, 0x00, 0x00, 0xff, 0xff, 0x43, 0x8b, 0x4a, 0xb3, 0xd6,
+	0x06, 0x00, 0x00,
 }
 
 func (this *DriverID) Equal(that interface{}) bool {
@@ -947,14 +748,14 @@ func (this *DriverID) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (this *StoreID) Equal(that interface{}) bool {
+func (this *RouteID) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
 	}
 
-	that1, ok := that.(*StoreID)
+	that1, ok := that.(*RouteID)
 	if !ok {
-		that2, ok := that.(StoreID)
+		that2, ok := that.(RouteID)
 		if ok {
 			that1 = &that2
 		} else {
@@ -1060,33 +861,6 @@ func (this *PrimitiveMeta) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (this *Primitive) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*Primitive)
-	if !ok {
-		that2, ok := that.(Primitive)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if !this.PrimitiveMeta.Equal(&that1.PrimitiveMeta) {
-		return false
-	}
-	if !this.Spec.Equal(that1.Spec) {
-		return false
-	}
-	return true
-}
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
@@ -1100,11 +874,9 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type RuntimeClient interface {
-	AddRoute(ctx context.Context, in *AddRouteRequest, opts ...grpc.CallOption) (*AddRouteResponse, error)
-	RemoveRoute(ctx context.Context, in *RemoveRouteRequest, opts ...grpc.CallOption) (*RemoveRouteResponse, error)
-	ConnectStore(ctx context.Context, in *ConnectStoreRequest, opts ...grpc.CallOption) (*ConnectStoreResponse, error)
-	ConfigureStore(ctx context.Context, in *ConfigureStoreRequest, opts ...grpc.CallOption) (*ConfigureStoreResponse, error)
-	DisconnectStore(ctx context.Context, in *DisconnectStoreRequest, opts ...grpc.CallOption) (*DisconnectStoreResponse, error)
+	ConnectRoute(ctx context.Context, in *ConnectRouteRequest, opts ...grpc.CallOption) (*ConnectRouteResponse, error)
+	ConfigureRoute(ctx context.Context, in *ConfigureRouteRequest, opts ...grpc.CallOption) (*ConfigureRouteResponse, error)
+	DisconnectRoute(ctx context.Context, in *DisconnectRouteRequest, opts ...grpc.CallOption) (*DisconnectRouteResponse, error)
 }
 
 type runtimeClient struct {
@@ -1115,45 +887,27 @@ func NewRuntimeClient(cc *grpc.ClientConn) RuntimeClient {
 	return &runtimeClient{cc}
 }
 
-func (c *runtimeClient) AddRoute(ctx context.Context, in *AddRouteRequest, opts ...grpc.CallOption) (*AddRouteResponse, error) {
-	out := new(AddRouteResponse)
-	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.Runtime/AddRoute", in, out, opts...)
+func (c *runtimeClient) ConnectRoute(ctx context.Context, in *ConnectRouteRequest, opts ...grpc.CallOption) (*ConnectRouteResponse, error) {
+	out := new(ConnectRouteResponse)
+	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.Runtime/ConnectRoute", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *runtimeClient) RemoveRoute(ctx context.Context, in *RemoveRouteRequest, opts ...grpc.CallOption) (*RemoveRouteResponse, error) {
-	out := new(RemoveRouteResponse)
-	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.Runtime/RemoveRoute", in, out, opts...)
+func (c *runtimeClient) ConfigureRoute(ctx context.Context, in *ConfigureRouteRequest, opts ...grpc.CallOption) (*ConfigureRouteResponse, error) {
+	out := new(ConfigureRouteResponse)
+	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.Runtime/ConfigureRoute", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *runtimeClient) ConnectStore(ctx context.Context, in *ConnectStoreRequest, opts ...grpc.CallOption) (*ConnectStoreResponse, error) {
-	out := new(ConnectStoreResponse)
-	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.Runtime/ConnectStore", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *runtimeClient) ConfigureStore(ctx context.Context, in *ConfigureStoreRequest, opts ...grpc.CallOption) (*ConfigureStoreResponse, error) {
-	out := new(ConfigureStoreResponse)
-	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.Runtime/ConfigureStore", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *runtimeClient) DisconnectStore(ctx context.Context, in *DisconnectStoreRequest, opts ...grpc.CallOption) (*DisconnectStoreResponse, error) {
-	out := new(DisconnectStoreResponse)
-	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.Runtime/DisconnectStore", in, out, opts...)
+func (c *runtimeClient) DisconnectRoute(ctx context.Context, in *DisconnectRouteRequest, opts ...grpc.CallOption) (*DisconnectRouteResponse, error) {
+	out := new(DisconnectRouteResponse)
+	err := c.cc.Invoke(ctx, "/atomix.runtime.v1.Runtime/DisconnectRoute", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1162,123 +916,79 @@ func (c *runtimeClient) DisconnectStore(ctx context.Context, in *DisconnectStore
 
 // RuntimeServer is the server API for Runtime service.
 type RuntimeServer interface {
-	AddRoute(context.Context, *AddRouteRequest) (*AddRouteResponse, error)
-	RemoveRoute(context.Context, *RemoveRouteRequest) (*RemoveRouteResponse, error)
-	ConnectStore(context.Context, *ConnectStoreRequest) (*ConnectStoreResponse, error)
-	ConfigureStore(context.Context, *ConfigureStoreRequest) (*ConfigureStoreResponse, error)
-	DisconnectStore(context.Context, *DisconnectStoreRequest) (*DisconnectStoreResponse, error)
+	ConnectRoute(context.Context, *ConnectRouteRequest) (*ConnectRouteResponse, error)
+	ConfigureRoute(context.Context, *ConfigureRouteRequest) (*ConfigureRouteResponse, error)
+	DisconnectRoute(context.Context, *DisconnectRouteRequest) (*DisconnectRouteResponse, error)
 }
 
 // UnimplementedRuntimeServer can be embedded to have forward compatible implementations.
 type UnimplementedRuntimeServer struct {
 }
 
-func (*UnimplementedRuntimeServer) AddRoute(ctx context.Context, req *AddRouteRequest) (*AddRouteResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddRoute not implemented")
+func (*UnimplementedRuntimeServer) ConnectRoute(ctx context.Context, req *ConnectRouteRequest) (*ConnectRouteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConnectRoute not implemented")
 }
-func (*UnimplementedRuntimeServer) RemoveRoute(ctx context.Context, req *RemoveRouteRequest) (*RemoveRouteResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveRoute not implemented")
+func (*UnimplementedRuntimeServer) ConfigureRoute(ctx context.Context, req *ConfigureRouteRequest) (*ConfigureRouteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConfigureRoute not implemented")
 }
-func (*UnimplementedRuntimeServer) ConnectStore(ctx context.Context, req *ConnectStoreRequest) (*ConnectStoreResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ConnectStore not implemented")
-}
-func (*UnimplementedRuntimeServer) ConfigureStore(ctx context.Context, req *ConfigureStoreRequest) (*ConfigureStoreResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ConfigureStore not implemented")
-}
-func (*UnimplementedRuntimeServer) DisconnectStore(ctx context.Context, req *DisconnectStoreRequest) (*DisconnectStoreResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DisconnectStore not implemented")
+func (*UnimplementedRuntimeServer) DisconnectRoute(ctx context.Context, req *DisconnectRouteRequest) (*DisconnectRouteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DisconnectRoute not implemented")
 }
 
 func RegisterRuntimeServer(s *grpc.Server, srv RuntimeServer) {
 	s.RegisterService(&_Runtime_serviceDesc, srv)
 }
 
-func _Runtime_AddRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddRouteRequest)
+func _Runtime_ConnectRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConnectRouteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RuntimeServer).AddRoute(ctx, in)
+		return srv.(RuntimeServer).ConnectRoute(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/atomix.runtime.v1.Runtime/AddRoute",
+		FullMethod: "/atomix.runtime.v1.Runtime/ConnectRoute",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuntimeServer).AddRoute(ctx, req.(*AddRouteRequest))
+		return srv.(RuntimeServer).ConnectRoute(ctx, req.(*ConnectRouteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Runtime_RemoveRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveRouteRequest)
+func _Runtime_ConfigureRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfigureRouteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RuntimeServer).RemoveRoute(ctx, in)
+		return srv.(RuntimeServer).ConfigureRoute(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/atomix.runtime.v1.Runtime/RemoveRoute",
+		FullMethod: "/atomix.runtime.v1.Runtime/ConfigureRoute",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuntimeServer).RemoveRoute(ctx, req.(*RemoveRouteRequest))
+		return srv.(RuntimeServer).ConfigureRoute(ctx, req.(*ConfigureRouteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Runtime_ConnectStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConnectStoreRequest)
+func _Runtime_DisconnectRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DisconnectRouteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RuntimeServer).ConnectStore(ctx, in)
+		return srv.(RuntimeServer).DisconnectRoute(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/atomix.runtime.v1.Runtime/ConnectStore",
+		FullMethod: "/atomix.runtime.v1.Runtime/DisconnectRoute",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuntimeServer).ConnectStore(ctx, req.(*ConnectStoreRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Runtime_ConfigureStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConfigureStoreRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RuntimeServer).ConfigureStore(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/atomix.runtime.v1.Runtime/ConfigureStore",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuntimeServer).ConfigureStore(ctx, req.(*ConfigureStoreRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Runtime_DisconnectStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DisconnectStoreRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RuntimeServer).DisconnectStore(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/atomix.runtime.v1.Runtime/DisconnectStore",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuntimeServer).DisconnectStore(ctx, req.(*DisconnectStoreRequest))
+		return srv.(RuntimeServer).DisconnectRoute(ctx, req.(*DisconnectRouteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1288,142 +998,20 @@ var _Runtime_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*RuntimeServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "AddRoute",
-			Handler:    _Runtime_AddRoute_Handler,
+			MethodName: "ConnectRoute",
+			Handler:    _Runtime_ConnectRoute_Handler,
 		},
 		{
-			MethodName: "RemoveRoute",
-			Handler:    _Runtime_RemoveRoute_Handler,
+			MethodName: "ConfigureRoute",
+			Handler:    _Runtime_ConfigureRoute_Handler,
 		},
 		{
-			MethodName: "ConnectStore",
-			Handler:    _Runtime_ConnectStore_Handler,
-		},
-		{
-			MethodName: "ConfigureStore",
-			Handler:    _Runtime_ConfigureStore_Handler,
-		},
-		{
-			MethodName: "DisconnectStore",
-			Handler:    _Runtime_DisconnectStore_Handler,
+			MethodName: "DisconnectRoute",
+			Handler:    _Runtime_DisconnectRoute_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "runtime/v1/runtime.proto",
-}
-
-func (m *AddRouteRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *AddRouteRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *AddRouteRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Route != nil {
-		{
-			size, err := m.Route.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintRuntime(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *AddRouteResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *AddRouteResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *AddRouteResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *RemoveRouteRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *RemoveRouteRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *RemoveRouteRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size, err := m.StoreID.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintRuntime(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *RemoveRouteResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *RemoveRouteResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *RemoveRouteResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
 }
 
 func (m *Route) Marshal() (dAtA []byte, err error) {
@@ -1446,10 +1034,10 @@ func (m *Route) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.Primitives) > 0 {
-		for iNdEx := len(m.Primitives) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.Rules) > 0 {
+		for iNdEx := len(m.Rules) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Primitives[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.Rules[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -1460,17 +1048,88 @@ func (m *Route) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x1a
 		}
 	}
+	if m.Config != nil {
+		{
+			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintRuntime(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	{
+		size, err := m.RouteID.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintRuntime(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *RoutingRule) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RoutingRule) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RoutingRule) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Config != nil {
+		{
+			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintRuntime(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
 	if len(m.MatchTags) > 0 {
 		for iNdEx := len(m.MatchTags) - 1; iNdEx >= 0; iNdEx-- {
 			i -= len(m.MatchTags[iNdEx])
 			copy(dAtA[i:], m.MatchTags[iNdEx])
 			i = encodeVarintRuntime(dAtA, i, uint64(len(m.MatchTags[iNdEx])))
 			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.MatchIds) > 0 {
+		for iNdEx := len(m.MatchIds) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.MatchIds[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintRuntime(dAtA, i, uint64(size))
+			}
+			i--
 			dAtA[i] = 0x12
 		}
 	}
 	{
-		size, err := m.StoreID.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.Type.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1519,7 +1178,7 @@ func (m *DriverID) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *StoreID) Marshal() (dAtA []byte, err error) {
+func (m *RouteID) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1529,12 +1188,12 @@ func (m *StoreID) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *StoreID) MarshalTo(dAtA []byte) (int, error) {
+func (m *RouteID) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *StoreID) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *RouteID) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1553,51 +1212,6 @@ func (m *StoreID) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0xa
 	}
-	return len(dAtA) - i, nil
-}
-
-func (m *Store) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Store) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Store) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Spec != nil {
-		{
-			size, err := m.Spec.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintRuntime(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x12
-	}
-	{
-		size, err := m.StoreID.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintRuntime(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
 
@@ -1720,7 +1334,7 @@ func (m *PrimitiveMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Primitive) Marshal() (dAtA []byte, err error) {
+func (m *ConnectRouteRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1730,63 +1344,18 @@ func (m *Primitive) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Primitive) MarshalTo(dAtA []byte) (int, error) {
+func (m *ConnectRouteRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Primitive) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.Spec != nil {
-		{
-			size, err := m.Spec.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintRuntime(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x12
-	}
-	{
-		size, err := m.PrimitiveMeta.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintRuntime(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
-func (m *ConnectStoreRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ConnectStoreRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ConnectStoreRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ConnectRouteRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
 	{
-		size, err := m.Store.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.Route.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1808,7 +1377,7 @@ func (m *ConnectStoreRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ConnectStoreResponse) Marshal() (dAtA []byte, err error) {
+func (m *ConnectRouteResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1818,12 +1387,12 @@ func (m *ConnectStoreResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ConnectStoreResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ConnectRouteResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ConnectStoreResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ConnectRouteResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1831,7 +1400,7 @@ func (m *ConnectStoreResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ConfigureStoreRequest) Marshal() (dAtA []byte, err error) {
+func (m *ConfigureRouteRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1841,18 +1410,18 @@ func (m *ConfigureStoreRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ConfigureStoreRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ConfigureRouteRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ConfigureStoreRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ConfigureRouteRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
 	{
-		size, err := m.Store.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.Route.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1864,7 +1433,7 @@ func (m *ConfigureStoreRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ConfigureStoreResponse) Marshal() (dAtA []byte, err error) {
+func (m *ConfigureRouteResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1874,12 +1443,12 @@ func (m *ConfigureStoreResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ConfigureStoreResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ConfigureRouteResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ConfigureStoreResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ConfigureRouteResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1887,7 +1456,7 @@ func (m *ConfigureStoreResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *DisconnectStoreRequest) Marshal() (dAtA []byte, err error) {
+func (m *DisconnectRouteRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1897,18 +1466,18 @@ func (m *DisconnectStoreRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DisconnectStoreRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DisconnectRouteRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *DisconnectStoreRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *DisconnectRouteRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
 	{
-		size, err := m.StoreID.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.RouteID.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1920,7 +1489,7 @@ func (m *DisconnectStoreRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *DisconnectStoreResponse) Marshal() (dAtA []byte, err error) {
+func (m *DisconnectRouteResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1930,12 +1499,12 @@ func (m *DisconnectStoreResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DisconnectStoreResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *DisconnectRouteResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *DisconnectStoreResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *DisconnectRouteResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1954,67 +1523,50 @@ func encodeVarintRuntime(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *AddRouteRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Route != nil {
-		l = m.Route.Size()
-		n += 1 + l + sovRuntime(uint64(l))
-	}
-	return n
-}
-
-func (m *AddRouteResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
-func (m *RemoveRouteRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.StoreID.Size()
-	n += 1 + l + sovRuntime(uint64(l))
-	return n
-}
-
-func (m *RemoveRouteResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
 func (m *Route) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.StoreID.Size()
+	l = m.RouteID.Size()
 	n += 1 + l + sovRuntime(uint64(l))
+	if m.Config != nil {
+		l = m.Config.Size()
+		n += 1 + l + sovRuntime(uint64(l))
+	}
+	if len(m.Rules) > 0 {
+		for _, e := range m.Rules {
+			l = e.Size()
+			n += 1 + l + sovRuntime(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *RoutingRule) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.Type.Size()
+	n += 1 + l + sovRuntime(uint64(l))
+	if len(m.MatchIds) > 0 {
+		for _, e := range m.MatchIds {
+			l = e.Size()
+			n += 1 + l + sovRuntime(uint64(l))
+		}
+	}
 	if len(m.MatchTags) > 0 {
 		for _, s := range m.MatchTags {
 			l = len(s)
 			n += 1 + l + sovRuntime(uint64(l))
 		}
 	}
-	if len(m.Primitives) > 0 {
-		for _, e := range m.Primitives {
-			l = e.Size()
-			n += 1 + l + sovRuntime(uint64(l))
-		}
+	if m.Config != nil {
+		l = m.Config.Size()
+		n += 1 + l + sovRuntime(uint64(l))
 	}
 	return n
 }
@@ -2036,7 +1588,7 @@ func (m *DriverID) Size() (n int) {
 	return n
 }
 
-func (m *StoreID) Size() (n int) {
+func (m *RouteID) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2048,21 +1600,6 @@ func (m *StoreID) Size() (n int) {
 	}
 	l = len(m.Name)
 	if l > 0 {
-		n += 1 + l + sovRuntime(uint64(l))
-	}
-	return n
-}
-
-func (m *Store) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.StoreID.Size()
-	n += 1 + l + sovRuntime(uint64(l))
-	if m.Spec != nil {
-		l = m.Spec.Size()
 		n += 1 + l + sovRuntime(uint64(l))
 	}
 	return n
@@ -2117,22 +1654,7 @@ func (m *PrimitiveMeta) Size() (n int) {
 	return n
 }
 
-func (m *Primitive) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.PrimitiveMeta.Size()
-	n += 1 + l + sovRuntime(uint64(l))
-	if m.Spec != nil {
-		l = m.Spec.Size()
-		n += 1 + l + sovRuntime(uint64(l))
-	}
-	return n
-}
-
-func (m *ConnectStoreRequest) Size() (n int) {
+func (m *ConnectRouteRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2140,12 +1662,12 @@ func (m *ConnectStoreRequest) Size() (n int) {
 	_ = l
 	l = m.DriverID.Size()
 	n += 1 + l + sovRuntime(uint64(l))
-	l = m.Store.Size()
+	l = m.Route.Size()
 	n += 1 + l + sovRuntime(uint64(l))
 	return n
 }
 
-func (m *ConnectStoreResponse) Size() (n int) {
+func (m *ConnectRouteResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2154,18 +1676,18 @@ func (m *ConnectStoreResponse) Size() (n int) {
 	return n
 }
 
-func (m *ConfigureStoreRequest) Size() (n int) {
+func (m *ConfigureRouteRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.Store.Size()
+	l = m.Route.Size()
 	n += 1 + l + sovRuntime(uint64(l))
 	return n
 }
 
-func (m *ConfigureStoreResponse) Size() (n int) {
+func (m *ConfigureRouteResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2174,18 +1696,18 @@ func (m *ConfigureStoreResponse) Size() (n int) {
 	return n
 }
 
-func (m *DisconnectStoreRequest) Size() (n int) {
+func (m *DisconnectRouteRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = m.StoreID.Size()
+	l = m.RouteID.Size()
 	n += 1 + l + sovRuntime(uint64(l))
 	return n
 }
 
-func (m *DisconnectStoreResponse) Size() (n int) {
+func (m *DisconnectRouteResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2199,275 +1721,6 @@ func sovRuntime(x uint64) (n int) {
 }
 func sozRuntime(x uint64) (n int) {
 	return sovRuntime(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *AddRouteRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowRuntime
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AddRouteRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AddRouteRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Route", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRuntime
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Route == nil {
-				m.Route = &Route{}
-			}
-			if err := m.Route.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipRuntime(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *AddRouteResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowRuntime
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AddRouteResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AddRouteResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipRuntime(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RemoveRouteRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowRuntime
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RemoveRouteRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RemoveRouteRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StoreID", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRuntime
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.StoreID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipRuntime(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RemoveRouteResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowRuntime
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RemoveRouteResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RemoveRouteResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipRuntime(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *Route) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -2500,7 +1753,7 @@ func (m *Route) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StoreID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RouteID", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -2527,11 +1780,198 @@ func (m *Route) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.StoreID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.RouteID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRuntime
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Config == nil {
+				m.Config = &types.Any{}
+			}
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Rules", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRuntime
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Rules = append(m.Rules, RoutingRule{})
+			if err := m.Rules[len(m.Rules)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRuntime(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RoutingRule) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRuntime
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RoutingRule: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RoutingRule: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRuntime
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Type.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MatchIds", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRuntime
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRuntime
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MatchIds = append(m.MatchIds, PrimitiveID{})
+			if err := m.MatchIds[len(m.MatchIds)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MatchTags", wireType)
 			}
@@ -2563,9 +2003,9 @@ func (m *Route) Unmarshal(dAtA []byte) error {
 			}
 			m.MatchTags = append(m.MatchTags, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
-		case 3:
+		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Primitives", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -2592,8 +2032,10 @@ func (m *Route) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Primitives = append(m.Primitives, Primitive{})
-			if err := m.Primitives[len(m.Primitives)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if m.Config == nil {
+				m.Config = &types.Any{}
+			}
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2732,7 +2174,7 @@ func (m *DriverID) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *StoreID) Unmarshal(dAtA []byte) error {
+func (m *RouteID) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2755,10 +2197,10 @@ func (m *StoreID) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: StoreID: wiretype end group for non-group")
+			return fmt.Errorf("proto: RouteID: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: StoreID: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: RouteID: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2824,125 +2266,6 @@ func (m *StoreID) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipRuntime(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Store) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowRuntime
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Store: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Store: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StoreID", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRuntime
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.StoreID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Spec", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRuntime
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Spec == nil {
-				m.Spec = &types.Any{}
-			}
-			if err := m.Spec.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3309,7 +2632,7 @@ func (m *PrimitiveMeta) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Primitive) Unmarshal(dAtA []byte) error {
+func (m *ConnectRouteRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3332,129 +2655,10 @@ func (m *Primitive) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Primitive: wiretype end group for non-group")
+			return fmt.Errorf("proto: ConnectRouteRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Primitive: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PrimitiveMeta", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRuntime
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.PrimitiveMeta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Spec", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRuntime
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Spec == nil {
-				m.Spec = &types.Any{}
-			}
-			if err := m.Spec.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipRuntime(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthRuntime
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ConnectStoreRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowRuntime
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ConnectStoreRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ConnectStoreRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ConnectRouteRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -3492,7 +2696,7 @@ func (m *ConnectStoreRequest) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Store", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Route", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3519,7 +2723,7 @@ func (m *ConnectStoreRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Store.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Route.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3544,7 +2748,7 @@ func (m *ConnectStoreRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ConnectStoreResponse) Unmarshal(dAtA []byte) error {
+func (m *ConnectRouteResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3567,10 +2771,10 @@ func (m *ConnectStoreResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ConnectStoreResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: ConnectRouteResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ConnectStoreResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ConnectRouteResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -3594,7 +2798,7 @@ func (m *ConnectStoreResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ConfigureStoreRequest) Unmarshal(dAtA []byte) error {
+func (m *ConfigureRouteRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3617,15 +2821,15 @@ func (m *ConfigureStoreRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ConfigureStoreRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: ConfigureRouteRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ConfigureStoreRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ConfigureRouteRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Store", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Route", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3652,7 +2856,7 @@ func (m *ConfigureStoreRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Store.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Route.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3677,7 +2881,7 @@ func (m *ConfigureStoreRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ConfigureStoreResponse) Unmarshal(dAtA []byte) error {
+func (m *ConfigureRouteResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3700,10 +2904,10 @@ func (m *ConfigureStoreResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ConfigureStoreResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: ConfigureRouteResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ConfigureStoreResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ConfigureRouteResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -3727,7 +2931,7 @@ func (m *ConfigureStoreResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DisconnectStoreRequest) Unmarshal(dAtA []byte) error {
+func (m *DisconnectRouteRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3750,15 +2954,15 @@ func (m *DisconnectStoreRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DisconnectStoreRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: DisconnectRouteRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DisconnectStoreRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DisconnectRouteRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StoreID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RouteID", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3785,7 +2989,7 @@ func (m *DisconnectStoreRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.StoreID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.RouteID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3810,7 +3014,7 @@ func (m *DisconnectStoreRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DisconnectStoreResponse) Unmarshal(dAtA []byte) error {
+func (m *DisconnectRouteResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3833,10 +3037,10 @@ func (m *DisconnectStoreResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DisconnectStoreResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: DisconnectRouteResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DisconnectStoreResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DisconnectRouteResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

@@ -16,41 +16,31 @@ import "gogoproto/gogo.proto";
 import "google/protobuf/any.proto";
 
 service Runtime {
-    rpc AddRoute (AddRouteRequest) returns (AddRouteResponse);
-    rpc RemoveRoute (RemoveRouteRequest) returns (RemoveRouteResponse);
-    rpc ConnectStore (ConnectStoreRequest) returns (ConnectStoreResponse);
-    rpc ConfigureStore (ConfigureStoreRequest) returns (ConfigureStoreResponse);
-    rpc DisconnectStore (DisconnectStoreRequest) returns (DisconnectStoreResponse);
-}
-
-message AddRouteRequest {
-    Route route = 1;
-}
-
-message AddRouteResponse {
-
-}
-
-message RemoveRouteRequest {
-    StoreID store_id = 1 [
-        (gogoproto.customname) = "StoreID",
-        (gogoproto.nullable) = false
-    ];
-}
-
-message RemoveRouteResponse {
-
+    rpc ConnectRoute (ConnectRouteRequest) returns (ConnectRouteResponse);
+    rpc ConfigureRoute (ConfigureRouteRequest) returns (ConfigureRouteResponse);
+    rpc DisconnectRoute (DisconnectRouteRequest) returns (DisconnectRouteResponse);
 }
 
 message Route {
-    StoreID store_id = 1 [
-        (gogoproto.customname) = "StoreID",
+    RouteID route_id = 1 [
+        (gogoproto.customname) = "RouteID",
         (gogoproto.nullable) = false
     ];
-    repeated string match_tags = 2;
-    repeated Primitive primitives = 3 [
+    google.protobuf.Any config = 2;
+    repeated RoutingRule rules = 3 [
         (gogoproto.nullable) = false
     ];
+}
+
+message RoutingRule {
+    PrimitiveType type = 1 [
+        (gogoproto.nullable) = false
+    ];
+    repeated PrimitiveID match_ids = 2 [
+        (gogoproto.nullable) = false
+    ];
+    repeated string match_tags = 3;
+    google.protobuf.Any config = 4;
 }
 
 message DriverID {
@@ -61,18 +51,10 @@ message DriverID {
     ];
 }
 
-message StoreID {
+message RouteID {
     option (gogoproto.equal) = true;
     string namespace = 1;
     string name = 2;
-}
-
-message Store {
-    StoreID store_id = 1 [
-        (gogoproto.customname) = "StoreID",
-        (gogoproto.nullable) = false
-    ];
-    google.protobuf.Any spec = 2;
 }
 
 message PrimitiveID {
@@ -100,46 +82,37 @@ message PrimitiveMeta {
     repeated string tags = 3;
 }
 
-message Primitive {
-    option (gogoproto.equal) = true;
-    PrimitiveMeta meta = 1 [
-        (gogoproto.nullable) = false,
-        (gogoproto.embed) = true
-    ];
-    google.protobuf.Any spec = 2;
-}
-
-message ConnectStoreRequest {
+message ConnectRouteRequest {
     DriverID driver_id = 1 [
         (gogoproto.customname) = "DriverID",
         (gogoproto.nullable) = false
     ];
-    Store store = 2 [
+    Route route = 2 [
         (gogoproto.nullable) = false
     ];
 }
 
-message ConnectStoreResponse {
+message ConnectRouteResponse {
 
 }
 
-message ConfigureStoreRequest {
-    Store store = 1 [
+message ConfigureRouteRequest {
+    Route route = 1 [
         (gogoproto.nullable) = false
     ];
 }
 
-message ConfigureStoreResponse {
+message ConfigureRouteResponse {
 
 }
 
-message DisconnectStoreRequest {
-    StoreID store_id = 1 [
-        (gogoproto.customname) = "StoreID",
+message DisconnectRouteRequest {
+    RouteID route_id = 1 [
+        (gogoproto.customname) = "RouteID",
         (gogoproto.nullable) = false
     ];
 }
 
-message DisconnectStoreResponse {
+message DisconnectRouteResponse {
 
 }

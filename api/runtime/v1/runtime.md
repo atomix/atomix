@@ -4,24 +4,19 @@
 ## Table of Contents
 
 - [runtime/v1/runtime.proto](#runtime_v1_runtime-proto)
-    - [AddRouteRequest](#atomix-runtime-v1-AddRouteRequest)
-    - [AddRouteResponse](#atomix-runtime-v1-AddRouteResponse)
-    - [ConfigureStoreRequest](#atomix-runtime-v1-ConfigureStoreRequest)
-    - [ConfigureStoreResponse](#atomix-runtime-v1-ConfigureStoreResponse)
-    - [ConnectStoreRequest](#atomix-runtime-v1-ConnectStoreRequest)
-    - [ConnectStoreResponse](#atomix-runtime-v1-ConnectStoreResponse)
-    - [DisconnectStoreRequest](#atomix-runtime-v1-DisconnectStoreRequest)
-    - [DisconnectStoreResponse](#atomix-runtime-v1-DisconnectStoreResponse)
+    - [ConfigureRouteRequest](#atomix-runtime-v1-ConfigureRouteRequest)
+    - [ConfigureRouteResponse](#atomix-runtime-v1-ConfigureRouteResponse)
+    - [ConnectRouteRequest](#atomix-runtime-v1-ConnectRouteRequest)
+    - [ConnectRouteResponse](#atomix-runtime-v1-ConnectRouteResponse)
+    - [DisconnectRouteRequest](#atomix-runtime-v1-DisconnectRouteRequest)
+    - [DisconnectRouteResponse](#atomix-runtime-v1-DisconnectRouteResponse)
     - [DriverID](#atomix-runtime-v1-DriverID)
-    - [Primitive](#atomix-runtime-v1-Primitive)
     - [PrimitiveID](#atomix-runtime-v1-PrimitiveID)
     - [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta)
     - [PrimitiveType](#atomix-runtime-v1-PrimitiveType)
-    - [RemoveRouteRequest](#atomix-runtime-v1-RemoveRouteRequest)
-    - [RemoveRouteResponse](#atomix-runtime-v1-RemoveRouteResponse)
     - [Route](#atomix-runtime-v1-Route)
-    - [Store](#atomix-runtime-v1-Store)
-    - [StoreID](#atomix-runtime-v1-StoreID)
+    - [RouteID](#atomix-runtime-v1-RouteID)
+    - [RoutingRule](#atomix-runtime-v1-RoutingRule)
   
     - [Runtime](#atomix-runtime-v1-Runtime)
   
@@ -36,9 +31,9 @@
 
 
 
-<a name="atomix-runtime-v1-AddRouteRequest"></a>
+<a name="atomix-runtime-v1-ConfigureRouteRequest"></a>
 
-### AddRouteRequest
+### ConfigureRouteRequest
 
 
 
@@ -51,34 +46,9 @@
 
 
 
-<a name="atomix-runtime-v1-AddRouteResponse"></a>
+<a name="atomix-runtime-v1-ConfigureRouteResponse"></a>
 
-### AddRouteResponse
-
-
-
-
-
-
-
-<a name="atomix-runtime-v1-ConfigureStoreRequest"></a>
-
-### ConfigureStoreRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| store | [Store](#atomix-runtime-v1-Store) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-ConfigureStoreResponse"></a>
-
-### ConfigureStoreResponse
+### ConfigureRouteResponse
 
 
 
@@ -86,50 +56,50 @@
 
 
 
-<a name="atomix-runtime-v1-ConnectStoreRequest"></a>
+<a name="atomix-runtime-v1-ConnectRouteRequest"></a>
 
-### ConnectStoreRequest
+### ConnectRouteRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | driver_id | [DriverID](#atomix-runtime-v1-DriverID) |  |  |
-| store | [Store](#atomix-runtime-v1-Store) |  |  |
+| route | [Route](#atomix-runtime-v1-Route) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-ConnectStoreResponse"></a>
+<a name="atomix-runtime-v1-ConnectRouteResponse"></a>
 
-### ConnectStoreResponse
-
-
+### ConnectRouteResponse
 
 
 
 
 
-<a name="atomix-runtime-v1-DisconnectStoreRequest"></a>
 
-### DisconnectStoreRequest
+
+<a name="atomix-runtime-v1-DisconnectRouteRequest"></a>
+
+### DisconnectRouteRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
+| route_id | [RouteID](#atomix-runtime-v1-RouteID) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-DisconnectStoreResponse"></a>
+<a name="atomix-runtime-v1-DisconnectRouteResponse"></a>
 
-### DisconnectStoreResponse
+### DisconnectRouteResponse
 
 
 
@@ -147,22 +117,6 @@
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  |  |
 | api_version | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-Primitive"></a>
-
-### Primitive
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| meta | [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta) |  |  |
-| spec | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
 
@@ -217,31 +171,6 @@
 
 
 
-<a name="atomix-runtime-v1-RemoveRouteRequest"></a>
-
-### RemoveRouteRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-RemoveRouteResponse"></a>
-
-### RemoveRouteResponse
-
-
-
-
-
-
-
 <a name="atomix-runtime-v1-Route"></a>
 
 ### Route
@@ -250,34 +179,18 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
-| match_tags | [string](#string) | repeated |  |
-| primitives | [Primitive](#atomix-runtime-v1-Primitive) | repeated |  |
+| route_id | [RouteID](#atomix-runtime-v1-RouteID) |  |  |
+| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+| rules | [RoutingRule](#atomix-runtime-v1-RoutingRule) | repeated |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-Store"></a>
+<a name="atomix-runtime-v1-RouteID"></a>
 
-### Store
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
-| spec | [google.protobuf.Any](#google-protobuf-Any) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-StoreID"></a>
-
-### StoreID
+### RouteID
 
 
 
@@ -285,6 +198,24 @@
 | ----- | ---- | ----- | ----------- |
 | namespace | [string](#string) |  |  |
 | name | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-RoutingRule"></a>
+
+### RoutingRule
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [PrimitiveType](#atomix-runtime-v1-PrimitiveType) |  |  |
+| match_ids | [PrimitiveID](#atomix-runtime-v1-PrimitiveID) | repeated |  |
+| match_tags | [string](#string) | repeated |  |
+| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
 
@@ -304,11 +235,9 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| AddRoute | [AddRouteRequest](#atomix-runtime-v1-AddRouteRequest) | [AddRouteResponse](#atomix-runtime-v1-AddRouteResponse) |  |
-| RemoveRoute | [RemoveRouteRequest](#atomix-runtime-v1-RemoveRouteRequest) | [RemoveRouteResponse](#atomix-runtime-v1-RemoveRouteResponse) |  |
-| ConnectStore | [ConnectStoreRequest](#atomix-runtime-v1-ConnectStoreRequest) | [ConnectStoreResponse](#atomix-runtime-v1-ConnectStoreResponse) |  |
-| ConfigureStore | [ConfigureStoreRequest](#atomix-runtime-v1-ConfigureStoreRequest) | [ConfigureStoreResponse](#atomix-runtime-v1-ConfigureStoreResponse) |  |
-| DisconnectStore | [DisconnectStoreRequest](#atomix-runtime-v1-DisconnectStoreRequest) | [DisconnectStoreResponse](#atomix-runtime-v1-DisconnectStoreResponse) |  |
+| ConnectRoute | [ConnectRouteRequest](#atomix-runtime-v1-ConnectRouteRequest) | [ConnectRouteResponse](#atomix-runtime-v1-ConnectRouteResponse) |  |
+| ConfigureRoute | [ConfigureRouteRequest](#atomix-runtime-v1-ConfigureRouteRequest) | [ConfigureRouteResponse](#atomix-runtime-v1-ConfigureRouteResponse) |  |
+| DisconnectRoute | [DisconnectRouteRequest](#atomix-runtime-v1-DisconnectRouteRequest) | [DisconnectRouteResponse](#atomix-runtime-v1-DisconnectRouteResponse) |  |
 
  
 
