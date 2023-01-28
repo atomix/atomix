@@ -281,7 +281,11 @@ func (r *RuntimeReconciler) reconcileProfile(ctx context.Context, log logging.Lo
 		}
 		podStatus.ResourceVersion = pod.ResourceVersion
 		if err := r.setPodStatus(ctx, log, profile, podStatus); err != nil {
-			log.Error(err)
+			if k8serrors.IsConflict(err) {
+				log.Debug(err)
+			} else {
+				log.Error(err)
+			}
 			return false, err
 		}
 		return true, nil
@@ -310,13 +314,21 @@ func (r *RuntimeReconciler) reconcileProfile(ctx context.Context, log logging.Lo
 				podStatus.Runtime.Routes[*routeIndex] = routeStatus
 			}
 			if err := r.setPodStatus(ctx, log, profile, podStatus); err != nil {
-				log.Error(err)
+				if k8serrors.IsConflict(err) {
+					log.Debug(err)
+				} else {
+					log.Error(err)
+				}
 				return false, err
 			}
 			switch routeStatus.State {
 			case atomixv3beta4.RouteConnecting, atomixv3beta4.RouteDisconnected:
 				if ok, err := r.setReadyCondition(ctx, log, pod, corev1.ConditionFalse, "RouteNotConnected", fmt.Sprintf("Route to '%s' is not connected", route.Store.Name)); err != nil {
-					log.Error(err)
+					if k8serrors.IsConflict(err) {
+						log.Debug(err)
+					} else {
+						log.Error(err)
+					}
 					return ok, err
 				}
 			}
