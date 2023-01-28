@@ -36,10 +36,10 @@ message RoutingRule {
     PrimitiveType type = 1 [
         (gogoproto.nullable) = false
     ];
-    repeated PrimitiveID match_ids = 2 [
+    repeated PrimitiveID ids = 2 [
         (gogoproto.nullable) = false
     ];
-    repeated string match_tags = 3;
+    repeated string tags = 3;
     google.protobuf.Any config = 4;
 }
 
