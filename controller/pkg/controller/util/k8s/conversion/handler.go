@@ -104,7 +104,7 @@ func Errored(code int32, msg string, args ...any) Response {
 		ConversionResponse: apiextensionsv1.ConversionResponse{
 			Result: metav1.Status{
 				Code:    code,
-				Message: fmt.Sprintf(msg, args),
+				Message: fmt.Sprintf(msg, args...),
 			},
 		},
 	}
