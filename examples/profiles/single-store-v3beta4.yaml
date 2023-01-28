@@ -1,0 +1,8 @@
+apiVersion: atomix.io/v3beta4
+kind: StorageProfile
+metadata:
+  name: single-store
+spec:
+  routes:
+    - store:
+        name: single-store

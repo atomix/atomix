@@ -10,16 +10,9 @@ image:
   pullPolicy: ""
   pullSecrets: []
 
-init:
+sidecar:
   image:
-    repository: atomix/controller-init
-    tag: ""
-    pullPolicy: ""
-    pullSecrets: []
-
-proxy:
-  image:
-    repository: atomix/proxy
+    repository: atomix/sidecar
     tag: v0.1
     pullSecrets: []
 

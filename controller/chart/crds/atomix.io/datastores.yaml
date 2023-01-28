@@ -14,8 +14,53 @@ spec:
     listKind: DataStoreList
     plural: datastores
     singular: datastore
+    shortNames:
+      - ds
+  conversion:
+    strategy: None
   versions:
     - name: v3beta3
+      served: true
+      storage: false
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              description: |-
+                The specification for the store.
+              type: object
+              required:
+                - driver
+              properties:
+                driver:
+                  type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+                    version:
+                      type: string
+                    apiVersion:
+                      type: string
+                config:
+                  description: |-
+                    The configuration for the runtime driver.
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+      additionalPrinterColumns:
+        - name: Driver
+          type: string
+          description: The name of the driver used to access the store
+          jsonPath: .spec.driver.name
+        - name: API Version
+          type: string
+          description: The driver API version
+          jsonPath: .spec.driver.apiVersion
+    - name: v3beta4
       served: true
       storage: true
       schema:

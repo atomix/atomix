@@ -13,5 +13,21 @@ var AddToSchemes runtime.SchemeBuilder
 
 // AddToScheme adds all Resources to the Scheme
 func AddToScheme(s *runtime.Scheme) error {
-	return AddToSchemes.AddToScheme(s)
+	if err := AddToSchemes.AddToScheme(s); err != nil {
+		return err
+	}
+	if err := RegisterConversions(s); err != nil {
+		return err
+	}
+	return nil
+}
+
+func RegisterConversions(s *runtime.Scheme) error {
+	if err := registerConversions_v3beta3(s); err != nil {
+		return err
+	}
+	if err := registerConversions_v3beta4(s); err != nil {
+		return err
+	}
+	return nil
 }

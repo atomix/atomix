@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/atomix/atomix/controller/pkg/apis"
-	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/controller/atomix/v3beta3"
+	atomixv3beta4 "github.com/atomix/atomix/controller/pkg/controller/atomix/v3beta4"
 	"github.com/atomix/atomix/controller/pkg/controller/util/k8s"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/go-logr/logr"
@@ -16,6 +16,7 @@ import (
 	"os"
 	"runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -25,7 +26,8 @@ var log = logging.GetLogger()
 func main() {
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
 	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
-	//logf.SetLogger(logr.New(&ControllerLogSink{log}))
+	log.SetLevel(logging.DebugLevel)
+	logf.SetLogger(logr.New(&ControllerLogSink{log.WithSkipCalls(1)}))
 
 	cmd := getCommand()
 	if err := cmd.Execute(); err != nil {
@@ -75,7 +77,7 @@ func getCommand() *cobra.Command {
 			}
 
 			// Add all the controllers
-			if err := atomixv3beta3.AddControllers(mgr); err != nil {
+			if err := atomixv3beta4.AddControllers(mgr); err != nil {
 				log.Error(err)
 				os.Exit(1)
 			}

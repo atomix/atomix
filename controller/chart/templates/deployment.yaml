@@ -5,52 +5,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "atomix-controller.fullname" . }}
+  name: atomix-controller
 spec:
   replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      name: {{ template "atomix-controller.fullname" . }}
+      name: atomix-controller
   template:
     metadata:
       labels:
-        name: {{ template "atomix-controller.fullname" . }}
+        name: atomix-controller
     spec:
-      serviceAccountName: {{ template "atomix-controller.fullname" . }}
-      initContainers:
-        - name: init-certs
-          {{- if .Values.init.image.tag }}
-          image: {{ printf "%s:%s" .Values.init.image.repository .Values.init.image.tag }}
-          {{- else if .Chart.AppVersion }}
-          image: {{ printf "%s:%s" .Values.init.image.repository .Chart.AppVersion }}
-          {{- else }}
-          image: {{ .Values.init.image.repository }}
-          {{- end }}
-          imagePullPolicy: {{ .Values.init.image.pullPolicy }}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsUser: 0
-          env:
-            - name: CONTROLLER_NAME
-              value: {{ template "atomix-controller.fullname" . }}
-            - name: CONTROLLER_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-          volumeMounts:
-            - name: config
-              mountPath: /etc/atomix
-              readOnly: true
-            - name: certs
-              mountPath: /etc/webhook/certs
+      serviceAccountName: atomix-controller
       containers:
         - name: atomix-controller
           {{- if .Values.image.tag }}
@@ -77,7 +43,7 @@ spec:
             failureThreshold: 1
           env:
             - name: CONTROLLER_NAME
-              value: {{ template "atomix-controller.fullname" . }}
+              value: atomix-controller
             - name: CONTROLLER_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -90,11 +56,11 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: PROXY_IMAGE
-              {{- if .Values.proxy.image.tag }}
-              value: {{ printf "%s:%s" .Values.proxy.image.repository .Values.proxy.image.tag }}
+            - name: SIDECAR_IMAGE
+              {{- if .Values.sidecar.image.tag }}
+              value: {{ printf "%s:%s" .Values.sidecar.image.repository .Values.sidecar.image.tag }}
               {{- else }}
-              value: {{ .Values.proxy.image.repository }}
+              value: {{ .Values.sidecar.image.repository }}
               {{- end }}
           volumeMounts:
             - name: certs
@@ -105,7 +71,8 @@ spec:
               readOnly: true
       volumes:
         - name: certs
-          emptyDir: { }
+          secret:
+            secretName: atomix-controller-certs
         - name: config
           configMap:
-            name: {{ template "atomix-controller.fullname" . }}-config
+            name: atomix-controller-config

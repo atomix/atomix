@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v3beta3
+package v3beta4
 
 import (
 	"github.com/atomix/atomix/runtime/pkg/logging"
@@ -13,13 +13,13 @@ var log = logging.GetLogger()
 
 // AddControllers adds sidecar controllers to the given manager
 func AddControllers(mgr manager.Manager) error {
-	if err := addProxyController(mgr); err != nil {
+	if err := addSidecarController(mgr); err != nil {
 		return err
 	}
-	if err := addProfileController(mgr); err != nil {
+	if err := addRuntimeController(mgr); err != nil {
 		return err
 	}
-	if err := addPodController(mgr); err != nil {
+	if err := addStorageProfileController(mgr); err != nil {
 		return err
 	}
 	return nil

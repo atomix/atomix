@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v3beta3
+package v3beta4
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -24,50 +24,20 @@ type StorageProfile struct {
 
 // StorageProfileSpec is the spec for a StorageProfile resource
 type StorageProfileSpec struct {
-	Proxy    StorageProxySpec `json:"proxy"`
-	Bindings []Binding        `json:"bindings"`
+	Routes []Route `json:"routes"`
 }
 
-type StorageProxySpec struct {
-	// Image is the proxy image
-	Image string `json:"image,omitempty"`
-
-	// ImagePullPolicy is the pull policy to apply
-	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-
-	// SecurityContext is a pod security context
-	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
-
-	// Logging is the proxy logging configuration
-	Logging LoggingConfig `json:"logging,omitempty"`
+type Route struct {
+	Store corev1.ObjectReference `json:"store"`
+	Rules []RoutingRule          `json:"rules"`
 }
 
-type Binding struct {
-	Store      corev1.ObjectReference `json:"store"`
-	Priority   *uint32                `json:"priority"`
-	Tags       []string               `json:"tags"`
-	Primitives []PrimitiveSpec        `json:"primitives"`
-}
-
-type PrimitiveSpec struct {
+type RoutingRule struct {
 	Kind       string               `json:"kind"`
 	APIVersion string               `json:"apiVersion"`
-	Name       string               `json:"name"`
+	Names      []string             `json:"names"`
 	Tags       []string             `json:"tags"`
 	Config     runtime.RawExtension `json:"config"`
-}
-
-// LoggingConfig logging configuration
-type LoggingConfig struct {
-	Encoding  string         `json:"encoding"`
-	RootLevel string         `json:"rootLevel"`
-	Loggers   []LoggerConfig `json:"loggers"`
-}
-
-// LoggerConfig is the configuration for a logger
-type LoggerConfig struct {
-	Name  string  `json:"name"`
-	Level *string `json:"level"`
 }
 
 type StorageProfileStatus struct {
@@ -76,10 +46,10 @@ type StorageProfileStatus struct {
 
 type PodStatus struct {
 	corev1.ObjectReference `json:",inline"`
-	Proxy                  ProxyStatus `json:"proxy"`
+	Runtime                RuntimeStatus `json:"runtime"`
 }
 
-type ProxyStatus struct {
+type RuntimeStatus struct {
 	Routes []RouteStatus `json:"routes"`
 }
 

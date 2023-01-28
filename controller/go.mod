@@ -3,14 +3,14 @@ module github.com/atomix/atomix/controller
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.1.0
-	github.com/atomix/atomix/runtime v0.1.0
+	github.com/atomix/atomix/api v0.4.0
+	github.com/atomix/atomix/runtime v0.4.0
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/spf13/cobra v1.4.0
 	google.golang.org/grpc v1.46.0
-	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.24.0
+	k8s.io/apiextensions-apiserver v0.24.0
 	k8s.io/apimachinery v0.24.0
 	k8s.io/client-go v0.24.0
 	sigs.k8s.io/controller-runtime v0.12.1
@@ -66,7 +66,7 @@ require (
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/apiextensions-apiserver v0.24.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/component-base v0.24.0 // indirect
 	k8s.io/klog/v2 v2.60.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42 // indirect
