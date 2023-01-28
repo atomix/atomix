@@ -12,7 +12,6 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	runtimeindexedmapv1 "github.com/atomix/atomix/runtime/pkg/runtime/indexedmap/v1"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
 	"io"
@@ -20,19 +19,19 @@ import (
 
 var log = logging.GetLogger()
 
-func NewIndexedMap(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimeindexedmapv1.IndexedMapProxy {
-	return &indexedMapProxy{
+func NewIndexedMap(protocol *client.Protocol, id runtimev1.PrimitiveID) *IndexedMapSession {
+	return &IndexedMapSession{
 		Protocol: protocol,
 		id:       id,
 	}
 }
 
-type indexedMapProxy struct {
+type IndexedMapSession struct {
 	*client.Protocol
 	id runtimev1.PrimitiveID
 }
 
-func (s *indexedMapProxy) Open(ctx context.Context) error {
+func (s *IndexedMapSession) Open(ctx context.Context) error {
 	log.Debugw("Create",
 		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
@@ -56,7 +55,7 @@ func (s *indexedMapProxy) Open(ctx context.Context) error {
 	return nil
 }
 
-func (s *indexedMapProxy) Close(ctx context.Context) error {
+func (s *IndexedMapSession) Close(ctx context.Context) error {
 	log.Debugw("Close",
 		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
@@ -77,7 +76,7 @@ func (s *indexedMapProxy) Close(ctx context.Context) error {
 	return nil
 }
 
-func (s *indexedMapProxy) Size(ctx context.Context, request *indexedmapv1.SizeRequest) (*indexedmapv1.SizeResponse, error) {
+func (s *IndexedMapSession) Size(ctx context.Context, request *indexedmapv1.SizeRequest) (*indexedmapv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Trunc128("SizeRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -122,7 +121,7 @@ func (s *indexedMapProxy) Size(ctx context.Context, request *indexedmapv1.SizeRe
 	return response, nil
 }
 
-func (s *indexedMapProxy) Append(ctx context.Context, request *indexedmapv1.AppendRequest) (*indexedmapv1.AppendResponse, error) {
+func (s *IndexedMapSession) Append(ctx context.Context, request *indexedmapv1.AppendRequest) (*indexedmapv1.AppendResponse, error) {
 	log.Debugw("Append",
 		logging.Trunc128("AppendRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -171,7 +170,7 @@ func (s *indexedMapProxy) Append(ctx context.Context, request *indexedmapv1.Appe
 	return response, nil
 }
 
-func (s *indexedMapProxy) Update(ctx context.Context, request *indexedmapv1.UpdateRequest) (*indexedmapv1.UpdateResponse, error) {
+func (s *IndexedMapSession) Update(ctx context.Context, request *indexedmapv1.UpdateRequest) (*indexedmapv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Trunc128("UpdateRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -222,7 +221,7 @@ func (s *indexedMapProxy) Update(ctx context.Context, request *indexedmapv1.Upda
 	return response, nil
 }
 
-func (s *indexedMapProxy) Get(ctx context.Context, request *indexedmapv1.GetRequest) (*indexedmapv1.GetResponse, error) {
+func (s *IndexedMapSession) Get(ctx context.Context, request *indexedmapv1.GetRequest) (*indexedmapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc128("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -270,7 +269,7 @@ func (s *indexedMapProxy) Get(ctx context.Context, request *indexedmapv1.GetRequ
 	return response, nil
 }
 
-func (s *indexedMapProxy) FirstEntry(ctx context.Context, request *indexedmapv1.FirstEntryRequest) (*indexedmapv1.FirstEntryResponse, error) {
+func (s *IndexedMapSession) FirstEntry(ctx context.Context, request *indexedmapv1.FirstEntryRequest) (*indexedmapv1.FirstEntryResponse, error) {
 	log.Debugw("FirstEntry",
 		logging.Trunc128("FirstEntryRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -315,7 +314,7 @@ func (s *indexedMapProxy) FirstEntry(ctx context.Context, request *indexedmapv1.
 	return response, nil
 }
 
-func (s *indexedMapProxy) LastEntry(ctx context.Context, request *indexedmapv1.LastEntryRequest) (*indexedmapv1.LastEntryResponse, error) {
+func (s *IndexedMapSession) LastEntry(ctx context.Context, request *indexedmapv1.LastEntryRequest) (*indexedmapv1.LastEntryResponse, error) {
 	log.Debugw("LastEntry",
 		logging.Trunc128("LastEntryRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -360,7 +359,7 @@ func (s *indexedMapProxy) LastEntry(ctx context.Context, request *indexedmapv1.L
 	return response, nil
 }
 
-func (s *indexedMapProxy) NextEntry(ctx context.Context, request *indexedmapv1.NextEntryRequest) (*indexedmapv1.NextEntryResponse, error) {
+func (s *IndexedMapSession) NextEntry(ctx context.Context, request *indexedmapv1.NextEntryRequest) (*indexedmapv1.NextEntryResponse, error) {
 	log.Debugw("NextEntry",
 		logging.Trunc128("NextEntryRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -407,7 +406,7 @@ func (s *indexedMapProxy) NextEntry(ctx context.Context, request *indexedmapv1.N
 	return response, nil
 }
 
-func (s *indexedMapProxy) PrevEntry(ctx context.Context, request *indexedmapv1.PrevEntryRequest) (*indexedmapv1.PrevEntryResponse, error) {
+func (s *IndexedMapSession) PrevEntry(ctx context.Context, request *indexedmapv1.PrevEntryRequest) (*indexedmapv1.PrevEntryResponse, error) {
 	log.Debugw("PrevEntry",
 		logging.Trunc128("PrevEntryRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -454,7 +453,7 @@ func (s *indexedMapProxy) PrevEntry(ctx context.Context, request *indexedmapv1.P
 	return response, nil
 }
 
-func (s *indexedMapProxy) Remove(ctx context.Context, request *indexedmapv1.RemoveRequest) (*indexedmapv1.RemoveResponse, error) {
+func (s *IndexedMapSession) Remove(ctx context.Context, request *indexedmapv1.RemoveRequest) (*indexedmapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Trunc128("RemoveRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -503,7 +502,7 @@ func (s *indexedMapProxy) Remove(ctx context.Context, request *indexedmapv1.Remo
 	return response, nil
 }
 
-func (s *indexedMapProxy) Clear(ctx context.Context, request *indexedmapv1.ClearRequest) (*indexedmapv1.ClearResponse, error) {
+func (s *IndexedMapSession) Clear(ctx context.Context, request *indexedmapv1.ClearRequest) (*indexedmapv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Trunc128("ClearRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -546,7 +545,7 @@ func (s *indexedMapProxy) Clear(ctx context.Context, request *indexedmapv1.Clear
 	return response, nil
 }
 
-func (s *indexedMapProxy) Entries(request *indexedmapv1.EntriesRequest, server indexedmapv1.IndexedMap_EntriesServer) error {
+func (s *IndexedMapSession) Entries(request *indexedmapv1.EntriesRequest, server indexedmapv1.IndexedMap_EntriesServer) error {
 	log.Debugw("Entries",
 		logging.Trunc128("EntriesRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -611,7 +610,7 @@ func (s *indexedMapProxy) Entries(request *indexedmapv1.EntriesRequest, server i
 	}
 }
 
-func (s *indexedMapProxy) Events(request *indexedmapv1.EventsRequest, server indexedmapv1.IndexedMap_EventsServer) error {
+func (s *IndexedMapSession) Events(request *indexedmapv1.EventsRequest, server indexedmapv1.IndexedMap_EventsServer) error {
 	log.Debugw("Events",
 		logging.Trunc128("EventsRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -725,4 +724,4 @@ func newClientValue(value *indexedmapprotocolv1.Value) *indexedmapv1.VersionedVa
 	}
 }
 
-var _ indexedmapv1.IndexedMapServer = (*indexedMapProxy)(nil)
+var _ indexedmapv1.IndexedMapServer = (*IndexedMapSession)(nil)

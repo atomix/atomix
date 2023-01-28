@@ -12,26 +12,25 @@ import (
 	valueprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	runtimevaluev1 "github.com/atomix/atomix/runtime/pkg/runtime/value/v1"
 	"google.golang.org/grpc"
 	"io"
 )
 
 var log = logging.GetLogger()
 
-func NewValue(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimevaluev1.ValueProxy {
-	return &valueProxy{
+func NewValue(protocol *client.Protocol, id runtimev1.PrimitiveID) *ValueSession {
+	return &ValueSession{
 		Protocol: protocol,
 		id:       id,
 	}
 }
 
-type valueProxy struct {
+type ValueSession struct {
 	*client.Protocol
 	id runtimev1.PrimitiveID
 }
 
-func (s *valueProxy) Open(ctx context.Context) error {
+func (s *ValueSession) Open(ctx context.Context) error {
 	log.Debugw("Create",
 		logging.String("Name", s.id.Name))
 	partition := s.PartitionBy([]byte(s.id.Name))
@@ -55,7 +54,7 @@ func (s *valueProxy) Open(ctx context.Context) error {
 	return nil
 }
 
-func (s *valueProxy) Close(ctx context.Context) error {
+func (s *ValueSession) Close(ctx context.Context) error {
 	log.Debugw("Close",
 		logging.String("Name", s.id.Name))
 	partition := s.PartitionBy([]byte(s.id.Name))
@@ -75,7 +74,7 @@ func (s *valueProxy) Close(ctx context.Context) error {
 	return nil
 }
 
-func (s *valueProxy) Set(ctx context.Context, request *valuev1.SetRequest) (*valuev1.SetResponse, error) {
+func (s *ValueSession) Set(ctx context.Context, request *valuev1.SetRequest) (*valuev1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Trunc128("SetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -122,7 +121,7 @@ func (s *valueProxy) Set(ctx context.Context, request *valuev1.SetRequest) (*val
 	return response, nil
 }
 
-func (s *valueProxy) Insert(ctx context.Context, request *valuev1.InsertRequest) (*valuev1.InsertResponse, error) {
+func (s *ValueSession) Insert(ctx context.Context, request *valuev1.InsertRequest) (*valuev1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Trunc128("InsertRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -169,7 +168,7 @@ func (s *valueProxy) Insert(ctx context.Context, request *valuev1.InsertRequest)
 	return response, nil
 }
 
-func (s *valueProxy) Get(ctx context.Context, request *valuev1.GetRequest) (*valuev1.GetResponse, error) {
+func (s *ValueSession) Get(ctx context.Context, request *valuev1.GetRequest) (*valuev1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc128("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -217,7 +216,7 @@ func (s *valueProxy) Get(ctx context.Context, request *valuev1.GetRequest) (*val
 	return response, nil
 }
 
-func (s *valueProxy) Update(ctx context.Context, request *valuev1.UpdateRequest) (*valuev1.UpdateResponse, error) {
+func (s *ValueSession) Update(ctx context.Context, request *valuev1.UpdateRequest) (*valuev1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Trunc128("UpdateRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -270,7 +269,7 @@ func (s *valueProxy) Update(ctx context.Context, request *valuev1.UpdateRequest)
 	return response, nil
 }
 
-func (s *valueProxy) Delete(ctx context.Context, request *valuev1.DeleteRequest) (*valuev1.DeleteResponse, error) {
+func (s *ValueSession) Delete(ctx context.Context, request *valuev1.DeleteRequest) (*valuev1.DeleteResponse, error) {
 	log.Debugw("Delete",
 		logging.Trunc128("DeleteRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -320,7 +319,7 @@ func (s *valueProxy) Delete(ctx context.Context, request *valuev1.DeleteRequest)
 	return response, nil
 }
 
-func (s *valueProxy) Events(request *valuev1.EventsRequest, server valuev1.Value_EventsServer) error {
+func (s *ValueSession) Events(request *valuev1.EventsRequest, server valuev1.Value_EventsServer) error {
 	log.Debugw("Events",
 		logging.Trunc128("EventsRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -420,7 +419,7 @@ func (s *valueProxy) Events(request *valuev1.EventsRequest, server valuev1.Value
 	}
 }
 
-func (s *valueProxy) Watch(request *valuev1.WatchRequest, server valuev1.Value_WatchServer) error {
+func (s *ValueSession) Watch(request *valuev1.WatchRequest, server valuev1.Value_WatchServer) error {
 	log.Debugw("Events",
 		logging.Trunc128("EventsRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -486,4 +485,4 @@ func (s *valueProxy) Watch(request *valuev1.WatchRequest, server valuev1.Value_W
 	}
 }
 
-var _ valuev1.ValueServer = (*valueProxy)(nil)
+var _ valuev1.ValueServer = (*ValueSession)(nil)

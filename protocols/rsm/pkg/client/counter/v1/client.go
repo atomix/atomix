@@ -12,25 +12,24 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	runtimecounterv1 "github.com/atomix/atomix/runtime/pkg/runtime/counter/v1"
 	"google.golang.org/grpc"
 )
 
 var log = logging.GetLogger()
 
-func NewCounter(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimecounterv1.CounterProxy {
-	return &counterProxy{
+func NewCounter(protocol *client.Protocol, id runtimev1.PrimitiveID) *CounterSession {
+	return &CounterSession{
 		Protocol: protocol,
 		id:       id,
 	}
 }
 
-type counterProxy struct {
+type CounterSession struct {
 	*client.Protocol
 	id runtimev1.PrimitiveID
 }
 
-func (s *counterProxy) Open(ctx context.Context) error {
+func (s *CounterSession) Open(ctx context.Context) error {
 	log.Debugw("Create",
 		logging.String("Name", s.id.Name))
 	partition := s.PartitionBy([]byte(s.id.Name))
@@ -54,7 +53,7 @@ func (s *counterProxy) Open(ctx context.Context) error {
 	return nil
 }
 
-func (s *counterProxy) Close(ctx context.Context) error {
+func (s *CounterSession) Close(ctx context.Context) error {
 	log.Debugw("Close",
 		logging.String("Name", s.id.Name))
 	partition := s.PartitionBy([]byte(s.id.Name))
@@ -74,7 +73,7 @@ func (s *counterProxy) Close(ctx context.Context) error {
 	return nil
 }
 
-func (s *counterProxy) Set(ctx context.Context, request *counterv1.SetRequest) (*counterv1.SetResponse, error) {
+func (s *CounterSession) Set(ctx context.Context, request *counterv1.SetRequest) (*counterv1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Trunc128("SetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -121,7 +120,7 @@ func (s *counterProxy) Set(ctx context.Context, request *counterv1.SetRequest) (
 	return response, nil
 }
 
-func (s *counterProxy) Get(ctx context.Context, request *counterv1.GetRequest) (*counterv1.GetResponse, error) {
+func (s *CounterSession) Get(ctx context.Context, request *counterv1.GetRequest) (*counterv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc128("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -166,7 +165,7 @@ func (s *counterProxy) Get(ctx context.Context, request *counterv1.GetRequest) (
 	return response, nil
 }
 
-func (s *counterProxy) Increment(ctx context.Context, request *counterv1.IncrementRequest) (*counterv1.IncrementResponse, error) {
+func (s *CounterSession) Increment(ctx context.Context, request *counterv1.IncrementRequest) (*counterv1.IncrementResponse, error) {
 	log.Debugw("Increment",
 		logging.Trunc128("IncrementRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -213,7 +212,7 @@ func (s *counterProxy) Increment(ctx context.Context, request *counterv1.Increme
 	return response, nil
 }
 
-func (s *counterProxy) Decrement(ctx context.Context, request *counterv1.DecrementRequest) (*counterv1.DecrementResponse, error) {
+func (s *CounterSession) Decrement(ctx context.Context, request *counterv1.DecrementRequest) (*counterv1.DecrementResponse, error) {
 	log.Debugw("Decrement",
 		logging.Trunc128("DecrementRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -260,7 +259,7 @@ func (s *counterProxy) Decrement(ctx context.Context, request *counterv1.Decreme
 	return response, nil
 }
 
-func (s *counterProxy) Update(ctx context.Context, request *counterv1.UpdateRequest) (*counterv1.UpdateResponse, error) {
+func (s *CounterSession) Update(ctx context.Context, request *counterv1.UpdateRequest) (*counterv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Trunc128("UpdateRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -308,4 +307,4 @@ func (s *counterProxy) Update(ctx context.Context, request *counterv1.UpdateRequ
 	return response, nil
 }
 
-var _ counterv1.CounterServer = (*counterProxy)(nil)
+var _ counterv1.CounterServer = (*CounterSession)(nil)

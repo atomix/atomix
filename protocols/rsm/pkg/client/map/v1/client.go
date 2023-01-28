@@ -12,7 +12,6 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	runtimemapv1 "github.com/atomix/atomix/runtime/pkg/runtime/map/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
@@ -22,19 +21,19 @@ import (
 
 var log = logging.GetLogger()
 
-func NewMap(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimemapv1.MapProxy {
-	return &mapProxy{
+func NewMap(protocol *client.Protocol, id runtimev1.PrimitiveID) *MapSession {
+	return &MapSession{
 		Protocol: protocol,
 		id:       id,
 	}
 }
 
-type mapProxy struct {
+type MapSession struct {
 	*client.Protocol
 	id runtimev1.PrimitiveID
 }
 
-func (s *mapProxy) Open(ctx context.Context) error {
+func (s *MapSession) Open(ctx context.Context) error {
 	log.Debugw("Create",
 		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
@@ -58,7 +57,7 @@ func (s *mapProxy) Open(ctx context.Context) error {
 	return nil
 }
 
-func (s *mapProxy) Close(ctx context.Context) error {
+func (s *MapSession) Close(ctx context.Context) error {
 	log.Debugw("Close",
 		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
@@ -79,7 +78,7 @@ func (s *mapProxy) Close(ctx context.Context) error {
 	return nil
 }
 
-func (s *mapProxy) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
+func (s *MapSession) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Trunc128("SizeRequest", request))
 	partitions := s.Partitions()
@@ -135,7 +134,7 @@ func (s *mapProxy) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1
 	return response, nil
 }
 
-func (s *mapProxy) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
+func (s *MapSession) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
 	log.Debugw("Put",
 		logging.Trunc128("PutRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -192,7 +191,7 @@ func (s *mapProxy) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.P
 	return response, nil
 }
 
-func (s *mapProxy) Insert(ctx context.Context, request *mapv1.InsertRequest) (*mapv1.InsertResponse, error) {
+func (s *MapSession) Insert(ctx context.Context, request *mapv1.InsertRequest) (*mapv1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Trunc128("InsertRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -241,7 +240,7 @@ func (s *mapProxy) Insert(ctx context.Context, request *mapv1.InsertRequest) (*m
 	return response, nil
 }
 
-func (s *mapProxy) Update(ctx context.Context, request *mapv1.UpdateRequest) (*mapv1.UpdateResponse, error) {
+func (s *MapSession) Update(ctx context.Context, request *mapv1.UpdateRequest) (*mapv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Trunc128("UpdateRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -296,7 +295,7 @@ func (s *mapProxy) Update(ctx context.Context, request *mapv1.UpdateRequest) (*m
 	return response, nil
 }
 
-func (s *mapProxy) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
+func (s *MapSession) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc128("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -346,7 +345,7 @@ func (s *mapProxy) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.G
 	return response, nil
 }
 
-func (s *mapProxy) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
+func (s *MapSession) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Trunc128("RemoveRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -398,7 +397,7 @@ func (s *mapProxy) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*m
 	return response, nil
 }
 
-func (s *mapProxy) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
+func (s *MapSession) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Trunc128("ClearRequest", request))
 	partitions := s.Partitions()
@@ -448,7 +447,7 @@ func (s *mapProxy) Clear(ctx context.Context, request *mapv1.ClearRequest) (*map
 	return response, nil
 }
 
-func (s *mapProxy) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1.LockResponse, error) {
+func (s *MapSession) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1.LockResponse, error) {
 	log.Debugw("Lock",
 		logging.Trunc128("LockRequest", request))
 
@@ -516,7 +515,7 @@ func (s *mapProxy) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1
 	return response, nil
 }
 
-func (s *mapProxy) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*mapv1.UnlockResponse, error) {
+func (s *MapSession) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*mapv1.UnlockResponse, error) {
 	log.Debugw("Unlock",
 		logging.Trunc128("UnlockRequest", request))
 	partitions := s.Partitions()
@@ -566,7 +565,7 @@ func (s *mapProxy) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*m
 	return response, nil
 }
 
-func (s *mapProxy) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsServer) error {
+func (s *MapSession) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsServer) error {
 	log.Debugw("Events received",
 		logging.Trunc128("EventsRequest", request))
 	partitions := s.Partitions()
@@ -703,7 +702,7 @@ func (s *mapProxy) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsS
 	return nil
 }
 
-func (s *mapProxy) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
+func (s *MapSession) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
 	log.Debugw("Entries received",
 		logging.Trunc128("EntriesRequest", request))
 	partitions := s.Partitions()
@@ -812,4 +811,4 @@ func (s *mapProxy) Entries(request *mapv1.EntriesRequest, server mapv1.Map_Entri
 	return nil
 }
 
-var _ mapv1.MapServer = (*mapProxy)(nil)
+var _ mapv1.MapServer = (*MapSession)(nil)

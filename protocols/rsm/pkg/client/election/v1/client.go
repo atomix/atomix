@@ -12,26 +12,25 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	runtimeelectionv1 "github.com/atomix/atomix/runtime/pkg/runtime/election/v1"
 	"google.golang.org/grpc"
 	"io"
 )
 
 var log = logging.GetLogger()
 
-func NewLeaderElection(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimeelectionv1.LeaderElectionProxy {
-	return &leaderElectionProxy{
+func NewLeaderElection(protocol *client.Protocol, id runtimev1.PrimitiveID) *LeaderElectionSession {
+	return &LeaderElectionSession{
 		Protocol: protocol,
 		id:       id,
 	}
 }
 
-type leaderElectionProxy struct {
+type LeaderElectionSession struct {
 	*client.Protocol
 	id runtimev1.PrimitiveID
 }
 
-func (s *leaderElectionProxy) Open(ctx context.Context) error {
+func (s *LeaderElectionSession) Open(ctx context.Context) error {
 	log.Debugw("Create",
 		logging.String("Name", s.id.Name))
 	partition := s.PartitionBy([]byte(s.id.Name))
@@ -55,7 +54,7 @@ func (s *leaderElectionProxy) Open(ctx context.Context) error {
 	return nil
 }
 
-func (s *leaderElectionProxy) Close(ctx context.Context) error {
+func (s *LeaderElectionSession) Close(ctx context.Context) error {
 	log.Debugw("Close",
 		logging.String("Name", s.id.Name))
 	partition := s.PartitionBy([]byte(s.id.Name))
@@ -75,7 +74,7 @@ func (s *leaderElectionProxy) Close(ctx context.Context) error {
 	return nil
 }
 
-func (s *leaderElectionProxy) Enter(ctx context.Context, request *electionv1.EnterRequest) (*electionv1.EnterResponse, error) {
+func (s *LeaderElectionSession) Enter(ctx context.Context, request *electionv1.EnterRequest) (*electionv1.EnterResponse, error) {
 	log.Debugw("Enter",
 		logging.Trunc128("EnterRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -126,7 +125,7 @@ func (s *leaderElectionProxy) Enter(ctx context.Context, request *electionv1.Ent
 	return response, nil
 }
 
-func (s *leaderElectionProxy) Withdraw(ctx context.Context, request *electionv1.WithdrawRequest) (*electionv1.WithdrawResponse, error) {
+func (s *LeaderElectionSession) Withdraw(ctx context.Context, request *electionv1.WithdrawRequest) (*electionv1.WithdrawResponse, error) {
 	log.Debugw("Withdraw",
 		logging.Trunc128("WithdrawRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -177,7 +176,7 @@ func (s *leaderElectionProxy) Withdraw(ctx context.Context, request *electionv1.
 	return response, nil
 }
 
-func (s *leaderElectionProxy) Anoint(ctx context.Context, request *electionv1.AnointRequest) (*electionv1.AnointResponse, error) {
+func (s *LeaderElectionSession) Anoint(ctx context.Context, request *electionv1.AnointRequest) (*electionv1.AnointResponse, error) {
 	log.Debugw("Anoint",
 		logging.Trunc128("AnointRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -228,7 +227,7 @@ func (s *leaderElectionProxy) Anoint(ctx context.Context, request *electionv1.An
 	return response, nil
 }
 
-func (s *leaderElectionProxy) Promote(ctx context.Context, request *electionv1.PromoteRequest) (*electionv1.PromoteResponse, error) {
+func (s *LeaderElectionSession) Promote(ctx context.Context, request *electionv1.PromoteRequest) (*electionv1.PromoteResponse, error) {
 	log.Debugw("Promote",
 		logging.Trunc128("PromoteRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -279,7 +278,7 @@ func (s *leaderElectionProxy) Promote(ctx context.Context, request *electionv1.P
 	return response, nil
 }
 
-func (s *leaderElectionProxy) Demote(ctx context.Context, request *electionv1.DemoteRequest) (*electionv1.DemoteResponse, error) {
+func (s *LeaderElectionSession) Demote(ctx context.Context, request *electionv1.DemoteRequest) (*electionv1.DemoteResponse, error) {
 	log.Debugw("Demote",
 		logging.Trunc128("DemoteRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -330,7 +329,7 @@ func (s *leaderElectionProxy) Demote(ctx context.Context, request *electionv1.De
 	return response, nil
 }
 
-func (s *leaderElectionProxy) Evict(ctx context.Context, request *electionv1.EvictRequest) (*electionv1.EvictResponse, error) {
+func (s *LeaderElectionSession) Evict(ctx context.Context, request *electionv1.EvictRequest) (*electionv1.EvictResponse, error) {
 	log.Debugw("Evict",
 		logging.Trunc128("EvictRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -381,7 +380,7 @@ func (s *leaderElectionProxy) Evict(ctx context.Context, request *electionv1.Evi
 	return response, nil
 }
 
-func (s *leaderElectionProxy) GetTerm(ctx context.Context, request *electionv1.GetTermRequest) (*electionv1.GetTermResponse, error) {
+func (s *LeaderElectionSession) GetTerm(ctx context.Context, request *electionv1.GetTermRequest) (*electionv1.GetTermResponse, error) {
 	log.Debugw("GetTerm",
 		logging.Trunc128("GetTermRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -430,7 +429,7 @@ func (s *leaderElectionProxy) GetTerm(ctx context.Context, request *electionv1.G
 	return response, nil
 }
 
-func (s *leaderElectionProxy) Watch(request *electionv1.WatchRequest, server electionv1.LeaderElection_WatchServer) error {
+func (s *LeaderElectionSession) Watch(request *electionv1.WatchRequest, server electionv1.LeaderElection_WatchServer) error {
 	log.Debugw("Watch",
 		logging.Trunc128("WatchRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -497,4 +496,4 @@ func (s *leaderElectionProxy) Watch(request *electionv1.WatchRequest, server ele
 	}
 }
 
-var _ electionv1.LeaderElectionServer = (*leaderElectionProxy)(nil)
+var _ electionv1.LeaderElectionServer = (*LeaderElectionSession)(nil)

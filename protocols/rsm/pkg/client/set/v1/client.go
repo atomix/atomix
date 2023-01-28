@@ -12,7 +12,6 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
-	runtimesetv1 "github.com/atomix/atomix/runtime/pkg/runtime/set/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
@@ -22,19 +21,19 @@ import (
 
 var log = logging.GetLogger()
 
-func NewSet(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimesetv1.SetProxy {
-	return &setProxy{
+func NewSet(protocol *client.Protocol, id runtimev1.PrimitiveID) *SetSession {
+	return &SetSession{
 		Protocol: protocol,
 		id:       id,
 	}
 }
 
-type setProxy struct {
+type SetSession struct {
 	*client.Protocol
 	id runtimev1.PrimitiveID
 }
 
-func (s *setProxy) Open(ctx context.Context) error {
+func (s *SetSession) Open(ctx context.Context) error {
 	log.Debugw("Create",
 		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
@@ -58,7 +57,7 @@ func (s *setProxy) Open(ctx context.Context) error {
 	return nil
 }
 
-func (s *setProxy) Close(ctx context.Context) error {
+func (s *SetSession) Close(ctx context.Context) error {
 	log.Debugw("Close",
 		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
@@ -79,7 +78,7 @@ func (s *setProxy) Close(ctx context.Context) error {
 	return nil
 }
 
-func (s *setProxy) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1.SizeResponse, error) {
+func (s *SetSession) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Trunc128("SizeRequest", request))
 	partitions := s.Partitions()
@@ -135,7 +134,7 @@ func (s *setProxy) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1
 	return response, nil
 }
 
-func (s *setProxy) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.AddResponse, error) {
+func (s *SetSession) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.AddResponse, error) {
 	log.Debugw("Add",
 		logging.Trunc128("AddRequest", request))
 	partition := s.PartitionBy([]byte(request.Element.Value))
@@ -186,7 +185,7 @@ func (s *setProxy) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.A
 	return response, nil
 }
 
-func (s *setProxy) Contains(ctx context.Context, request *setv1.ContainsRequest) (*setv1.ContainsResponse, error) {
+func (s *SetSession) Contains(ctx context.Context, request *setv1.ContainsRequest) (*setv1.ContainsResponse, error) {
 	log.Debugw("Contains",
 		logging.Trunc128("ContainsRequest", request))
 	partition := s.PartitionBy([]byte(request.Element.Value))
@@ -236,7 +235,7 @@ func (s *setProxy) Contains(ctx context.Context, request *setv1.ContainsRequest)
 	return response, nil
 }
 
-func (s *setProxy) Remove(ctx context.Context, request *setv1.RemoveRequest) (*setv1.RemoveResponse, error) {
+func (s *SetSession) Remove(ctx context.Context, request *setv1.RemoveRequest) (*setv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Trunc128("RemoveRequest", request))
 	partition := s.PartitionBy([]byte(request.Element.Value))
@@ -286,7 +285,7 @@ func (s *setProxy) Remove(ctx context.Context, request *setv1.RemoveRequest) (*s
 	return response, nil
 }
 
-func (s *setProxy) Clear(ctx context.Context, request *setv1.ClearRequest) (*setv1.ClearResponse, error) {
+func (s *SetSession) Clear(ctx context.Context, request *setv1.ClearRequest) (*setv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Trunc128("ClearRequest", request))
 	partitions := s.Partitions()
@@ -336,7 +335,7 @@ func (s *setProxy) Clear(ctx context.Context, request *setv1.ClearRequest) (*set
 	return response, nil
 }
 
-func (s *setProxy) Events(request *setv1.EventsRequest, server setv1.Set_EventsServer) error {
+func (s *SetSession) Events(request *setv1.EventsRequest, server setv1.Set_EventsServer) error {
 	log.Debugw("Events received",
 		logging.Trunc128("EventsRequest", request))
 	partitions := s.Partitions()
@@ -454,7 +453,7 @@ func (s *setProxy) Events(request *setv1.EventsRequest, server setv1.Set_EventsS
 	return nil
 }
 
-func (s *setProxy) Elements(request *setv1.ElementsRequest, server setv1.Set_ElementsServer) error {
+func (s *SetSession) Elements(request *setv1.ElementsRequest, server setv1.Set_ElementsServer) error {
 	log.Debugw("Elements received",
 		logging.Trunc128("ElementsRequest", request))
 	partitions := s.Partitions()
@@ -557,4 +556,4 @@ func (s *setProxy) Elements(request *setv1.ElementsRequest, server setv1.Set_Ele
 	return nil
 }
 
-var _ setv1.SetServer = (*setProxy)(nil)
+var _ setv1.SetServer = (*SetSession)(nil)
