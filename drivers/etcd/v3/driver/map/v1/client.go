@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"github.com/atomix/atomix/api/errors"
 	mapv1 "github.com/atomix/atomix/api/runtime/map/v1"
+	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	runtimemapv1 "github.com/atomix/atomix/runtime/pkg/runtime/map/v1"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -17,11 +19,15 @@ import (
 	"sync/atomic"
 )
 
-func NewMap(session *concurrency.Session) mapv1.MapServer {
+func NewMap(session *concurrency.Session, id runtimev1.PrimitiveID) (runtimemapv1.MapProxy, error) {
+	prefix := fmt.Sprintf("%s/", id.Name)
 	return &etcdMap{
 		session:  session,
+		kv:       namespace.NewKV(session.Client(), prefix),
+		lease:    namespace.NewLease(session.Client(), prefix),
+		watcher:  namespace.NewWatcher(session.Client(), prefix),
 		revision: &etcdRevision{},
-	}
+	}, nil
 }
 
 type etcdMap struct {
@@ -38,10 +44,6 @@ func (c *etcdMap) Create(ctx context.Context, request *mapv1.CreateRequest) (*ma
 	c.lease = namespace.NewLease(c.session.Client(), prefix)
 	c.watcher = namespace.NewWatcher(c.session.Client(), prefix)
 	return &mapv1.CreateResponse{}, nil
-}
-
-func (c *etcdMap) Close(ctx context.Context, request *mapv1.CloseRequest) (*mapv1.CloseResponse, error) {
-	return &mapv1.CloseResponse{}, nil
 }
 
 func (c *etcdMap) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
@@ -344,6 +346,10 @@ func (c *etcdMap) Entries(request *mapv1.EntriesRequest, server mapv1.Map_Entrie
 			return err
 		}
 	}
+	return nil
+}
+
+func (c *etcdMap) Close(ctx context.Context) error {
 	return nil
 }
 

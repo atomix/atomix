@@ -12,6 +12,12 @@
 .idea
 .DS_Store
 
+# Generated TLS certificate files
+admission.conf
+admission.csr
+ca.key
+ca.srl
+
 # Test binary, built with `go test -c`
 *.test
 *.log
