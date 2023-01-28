@@ -271,7 +271,7 @@ func (r *RuntimeReconciler) reconcileProfile(ctx context.Context, log logging.Lo
 
 	// If the pod resource version has changed, reset all the Connected routes to the Configuring state
 	if podStatus.ResourceVersion != pod.ResourceVersion {
-		log.Debug("Pod status changed; verifying runtime connections to all routes...")
+		log.Debug("Pod status changed; reprogramming runtime routes to all stores...")
 		for i, routeStatus := range podStatus.Runtime.Routes {
 			switch routeStatus.State {
 			case atomixv3beta4.RouteConnected:
@@ -279,6 +279,42 @@ func (r *RuntimeReconciler) reconcileProfile(ctx context.Context, log logging.Lo
 			}
 			podStatus.Runtime.Routes[i] = routeStatus
 		}
+
+		conn, err := connect(ctx, pod)
+		if err != nil {
+			log.Error(err)
+			return false, err
+		}
+
+		var routes []runtimev1.Route
+		for _, route := range profile.Spec.Routes {
+			storeNamespace := route.Store.Namespace
+			if storeNamespace == "" {
+				storeNamespace = pod.Namespace
+			}
+			storeNamespacedName := types.NamespacedName{
+				Namespace: storeNamespace,
+				Name:      route.Store.Name,
+			}
+			routes = append(routes, toRuntimeRoute(storeNamespacedName, &route))
+		}
+
+		request := &runtimev1.ProgramRoutesRequest{
+			Routes: routes,
+		}
+		client := runtimev1.NewRuntimeClient(conn)
+		_, err = client.ProgramRoutes(ctx, request)
+		if err != nil {
+			if !errors.IsForbidden(err) {
+				log.Warn(err)
+				r.events.Eventf(pod, "Warning", "ProgrammingFailed", "Failed programming runtime routes: %s", err)
+				return false, err
+			}
+		} else {
+			r.events.Eventf(pod, "Normal", "ProgrammedRoutes", "Successfully programmed runtime routes")
+			log.Info("Reprogrammed all runtime routes to stores")
+		}
+
 		podStatus.ResourceVersion = pod.ResourceVersion
 		if err := r.setPodStatus(ctx, log, profile, podStatus); err != nil {
 			if k8serrors.IsConflict(err) {
@@ -431,11 +467,17 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 
 		client := runtimev1.NewRuntimeClient(conn)
 		request := &runtimev1.ConnectRouteRequest{
+			RouteID: runtimev1.RouteID{
+				Namespace: storeNamespacedName.Namespace,
+				Name:      storeNamespacedName.Name,
+			},
 			DriverID: runtimev1.DriverID{
 				Name:       store.Spec.Driver.Name,
 				APIVersion: store.Spec.Driver.APIVersion,
 			},
-			Route: toRuntimeRoute(store, route),
+			Config: &gogotypes.Any{
+				Value: store.Spec.Config.Raw,
+			},
 		}
 		_, err = client.ConnectRoute(ctx, request)
 		if err != nil {
@@ -472,7 +514,13 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 
 		client := runtimev1.NewRuntimeClient(conn)
 		request := &runtimev1.ConfigureRouteRequest{
-			Route: toRuntimeRoute(store, route),
+			RouteID: runtimev1.RouteID{
+				Namespace: storeNamespacedName.Namespace,
+				Name:      storeNamespacedName.Name,
+			},
+			Config: &gogotypes.Any{
+				Value: store.Spec.Config.Raw,
+			},
 		}
 		_, err = client.ConfigureRoute(ctx, request)
 		if err != nil {
@@ -498,7 +546,7 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 	return false, nil
 }
 
-func toRuntimeRoute(store *atomixv3beta4.DataStore, route *atomixv3beta4.Route) runtimev1.Route {
+func toRuntimeRoute(store types.NamespacedName, route *atomixv3beta4.Route) runtimev1.Route {
 	var rules []runtimev1.RoutingRule
 	for _, rule := range route.Rules {
 		var primitives []runtimev1.PrimitiveID
@@ -530,9 +578,6 @@ func toRuntimeRoute(store *atomixv3beta4.DataStore, route *atomixv3beta4.Route) 
 		RouteID: runtimev1.RouteID{
 			Namespace: store.Namespace,
 			Name:      store.Name,
-		},
-		Config: &gogotypes.Any{
-			Value: store.Spec.Config.Raw,
 		},
 		Rules: rules,
 	}
