@@ -47,13 +47,13 @@ func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtime
 	var config C
 
 	// Route the store and spec for the primitive
-	storeID, spec, err := c.runtime.route(runtimev1.PrimitiveMeta{
+	storeID, spec, ok := c.runtime.route(runtimev1.PrimitiveMeta{
 		Type:        c.primitiveType,
 		PrimitiveID: primitiveID,
 		Tags:        tags,
 	})
-	if err != nil {
-		return config, err
+	if !ok {
+		return config, errors.NewUnavailable("no route found matching tags %v", tags)
 	}
 
 	// Parse the primitive configuration from the matched route spec
@@ -61,7 +61,7 @@ func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtime
 	config = reflect.New(configType.Elem()).Interface().(C)
 	if spec != nil && spec.Value != nil {
 		if err := jsonpb.UnmarshalString(string(spec.Value), config); err != nil {
-			return config, errors.NewInvalid("invalid configuration for primitive type '%s/%s'", c.primitiveType.Name, c.primitiveType.APIVersion)
+			return config, errors.NewInternal("invalid route configuration for primitive type '%s/%s'", c.primitiveType.Name, c.primitiveType.APIVersion)
 		}
 	}
 
@@ -80,7 +80,7 @@ func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtime
 		if _, ok := value.(P); !ok {
 			return config, errors.NewForbidden("cannot create primitive of type '%s/%s': a primitive of another type already exists with that name", c.primitiveType.Name, c.primitiveType.APIVersion)
 		}
-		return config, nil
+		return config, errors.NewAlreadyExists("the primitive is already open")
 	}
 
 	// Attempt to create the primitive via the driver connection

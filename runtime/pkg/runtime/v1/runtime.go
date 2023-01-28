@@ -251,7 +251,7 @@ func configure(ctx context.Context, typedConn any, rawSpec *types.Any) error {
 	return nil
 }
 
-func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.RouteID, *types.Any, error) {
+func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.RouteID, *types.Any, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -266,7 +266,7 @@ func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.RouteID, *types
 	for _, route := range r.routes {
 		for _, rule := range route.Rules {
 			if exactMatch(rule, meta) {
-				return route.RouteID, rule.Config, nil
+				return route.RouteID, rule.Config, true
 			}
 			if score, ok := scoreMatch(rule, tags); ok && score > matchScore {
 				matchRoute = &route
@@ -277,9 +277,9 @@ func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.RouteID, *types
 	}
 
 	if matchRule != nil {
-		return matchRoute.RouteID, matchRule.Config, nil
+		return matchRoute.RouteID, matchRule.Config, true
 	}
-	return runtimev1.RouteID{}, nil, errors.NewForbidden("no route matching tags %s", tags)
+	return runtimev1.RouteID{}, nil, false
 }
 
 func exactMatch(rule runtimev1.RoutingRule, primitive runtimev1.PrimitiveMeta) bool {
