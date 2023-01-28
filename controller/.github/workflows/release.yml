@@ -26,26 +26,8 @@ jobs:
         uses: ./.github/actions/docker/publish
         with:
           component: controller
-          file: build/controller/Dockerfile
+          file: build/Dockerfile
           repository: atomix/controller
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-  publish-init:
-    name: Build and push init
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Publish init image
-        uses: ./.github/actions/docker/publish
-        with:
-          component: controller
-          file: build/init/Dockerfile
-          repository: atomix/controller-init
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 

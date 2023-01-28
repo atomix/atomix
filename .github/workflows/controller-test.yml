@@ -56,13 +56,7 @@ jobs:
         uses: ./.github/actions/docker/build
         with:
           component: controller
-          file: build/controller/Dockerfile
-
-      - name: Build init image
-        uses: ./.github/actions/docker/build
-        with:
-          component: controller
-          file: build/init/Dockerfile
+          file: build/Dockerfile
 
       - name: Test Helm chart
         uses: ./.github/actions/helm/test
