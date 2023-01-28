@@ -27,7 +27,6 @@ func New(opts ...Option) *Runtime {
 		Options: options,
 		drivers: make(map[runtimev1.DriverID]driver.Driver),
 		conns:   make(map[runtimev1.RouteID]driver.Conn),
-		routes:  make(map[runtimev1.RouteID]runtimev1.Route),
 	}
 }
 
@@ -50,12 +49,25 @@ func (r *Runtime) lookup(routeID runtimev1.RouteID) (driver.Conn, error) {
 	return conn, nil
 }
 
-func (r *Runtime) ConnectRoute(ctx context.Context, driverID runtimev1.DriverID, route runtimev1.Route) error {
+func (r *Runtime) Program(ctx context.Context, routes ...runtimev1.Route) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.routes != nil {
+		return errors.NewForbidden("routes have already been programed")
+	}
+	r.routes = make(map[runtimev1.RouteID]runtimev1.Route)
+	for _, route := range routes {
+		r.routes[route.RouteID] = route
+	}
+	return nil
+}
+
+func (r *Runtime) Connect(ctx context.Context, routeID runtimev1.RouteID, driverID runtimev1.DriverID, config *types.Any) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, ok := r.conns[route.RouteID]; ok {
-		return errors.NewAlreadyExists("connection '%s' already exists", route.RouteID)
+	if _, ok := r.conns[routeID]; ok {
+		return errors.NewAlreadyExists("connection '%s' already exists", routeID)
 	}
 
 	drvr, ok := r.drivers[driverID]
@@ -77,51 +89,49 @@ func (r *Runtime) ConnectRoute(ctx context.Context, driverID runtimev1.DriverID,
 	}
 
 	log.Infow("Establishing connection to route",
-		logging.String("Name", route.RouteID.Name),
-		logging.String("Namespace", route.RouteID.Namespace))
-	conn, err := connect(ctx, drvr, route.Config)
+		logging.String("Name", routeID.Name),
+		logging.String("Namespace", routeID.Namespace))
+	conn, err := connect(ctx, drvr, config)
 	if err != nil {
 		log.Warnw("Connecting to route failed",
-			logging.String("Name", route.RouteID.Name),
-			logging.String("Namespace", route.RouteID.Namespace),
+			logging.String("Name", routeID.Name),
+			logging.String("Namespace", routeID.Namespace),
 			logging.Error("Error", err))
 		return err
 	}
 	log.Infow("Connected to route",
-		logging.String("Name", route.RouteID.Name),
-		logging.String("Namespace", route.RouteID.Namespace))
-	r.conns[route.RouteID] = conn
-	r.routes[route.RouteID] = route
+		logging.String("Name", routeID.Name),
+		logging.String("Namespace", routeID.Namespace))
+	r.conns[routeID] = conn
 	return nil
 }
 
-func (r *Runtime) ConfigureRoute(ctx context.Context, route runtimev1.Route) error {
+func (r *Runtime) Configure(ctx context.Context, routeID runtimev1.RouteID, config *types.Any) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	conn, ok := r.conns[route.RouteID]
+	conn, ok := r.conns[routeID]
 	if !ok {
-		return errors.NewNotFound("connection to '%s' not found", route.RouteID)
+		return errors.NewNotFound("connection to '%s' not found", routeID)
 	}
 
 	log.Infow("Reconfiguring connection to route",
-		logging.String("Name", route.RouteID.Name),
-		logging.String("Namespace", route.RouteID.Namespace))
-	if err := configure(ctx, conn, route.Config); err != nil {
+		logging.String("Name", routeID.Name),
+		logging.String("Namespace", routeID.Namespace))
+	if err := configure(ctx, conn, config); err != nil {
 		log.Warnw("Reconfiguring connection to route failed",
-			logging.String("Name", route.RouteID.Name),
-			logging.String("Namespace", route.RouteID.Namespace),
+			logging.String("Name", routeID.Name),
+			logging.String("Namespace", routeID.Namespace),
 			logging.Error("Error", err))
 		return err
 	}
 	log.Infow("Reconfigured connection to route",
-		logging.String("Name", route.RouteID.Name),
-		logging.String("Namespace", route.RouteID.Namespace))
-	r.routes[route.RouteID] = route
+		logging.String("Name", routeID.Name),
+		logging.String("Namespace", routeID.Namespace))
 	return nil
 }
 
-func (r *Runtime) DisconnectRoute(ctx context.Context, routeID runtimev1.RouteID) error {
+func (r *Runtime) Disconnect(ctx context.Context, routeID runtimev1.RouteID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -251,9 +261,13 @@ func configure(ctx context.Context, typedConn any, rawSpec *types.Any) error {
 	return nil
 }
 
-func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.RouteID, *types.Any, bool) {
+func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.RouteID, *types.Any, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+
+	if r.routes == nil {
+		return runtimev1.RouteID{}, nil, errors.NewUnavailable("primitives are currently unavailable: waiting for route programming")
+	}
 
 	tags := make(map[string]bool)
 	for _, tag := range meta.Tags {
@@ -266,7 +280,7 @@ func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.RouteID, *types
 	for _, route := range r.routes {
 		for _, rule := range route.Rules {
 			if exactMatch(rule, meta) {
-				return route.RouteID, rule.Config, true
+				return route.RouteID, rule.Config, nil
 			}
 			if score, ok := scoreMatch(rule, tags); ok && score > matchScore {
 				matchRoute = &route
@@ -277,9 +291,9 @@ func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.RouteID, *types
 	}
 
 	if matchRule != nil {
-		return matchRoute.RouteID, matchRule.Config, true
+		return matchRoute.RouteID, matchRule.Config, nil
 	}
-	return runtimev1.RouteID{}, nil, false
+	return runtimev1.RouteID{}, nil, errors.NewUnavailable("no route found matching the given primitive")
 }
 
 func exactMatch(rule runtimev1.RoutingRule, primitive runtimev1.PrimitiveMeta) bool {

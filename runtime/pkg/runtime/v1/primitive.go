@@ -47,13 +47,13 @@ func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtime
 	var config C
 
 	// Route the store and spec for the primitive
-	storeID, spec, ok := c.runtime.route(runtimev1.PrimitiveMeta{
+	storeID, spec, err := c.runtime.route(runtimev1.PrimitiveMeta{
 		Type:        c.primitiveType,
 		PrimitiveID: primitiveID,
 		Tags:        tags,
 	})
-	if !ok {
-		return config, errors.NewUnavailable("no route found matching tags %v", tags)
+	if err != nil {
+		return config, err
 	}
 
 	// Parse the primitive configuration from the matched route spec
