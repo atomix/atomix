@@ -3,9 +3,9 @@ module github.com/atomix/atomix/drivers/shared-memory
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.4.0
+	github.com/atomix/atomix/api v0.6.0
 	github.com/atomix/atomix/protocols/rsm v0.2.1
-	github.com/atomix/atomix/runtime v0.4.2
+	github.com/atomix/atomix/runtime v0.6.0
 )
 
 require (
