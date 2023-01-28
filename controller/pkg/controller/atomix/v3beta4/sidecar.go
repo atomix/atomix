@@ -16,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"strconv"
 )
 
 const (
@@ -25,7 +24,6 @@ const (
 )
 
 const (
-	runtimeProfileAnnotation         = "runtime.atomix.io/profile"
 	sidecarInjectStatusAnnotation    = "sidecar.atomix.io/status"
 	sidecarImageAnnotation           = "sidecar.atomix.io/image"
 	sidecarImagePullPolicyAnnotation = "sidecar.atomix.io/imagePullPolicy"
@@ -33,7 +31,6 @@ const (
 )
 
 const (
-	sidecarInjectLabel  = "sidecar.atomix.io/inject"
 	runtimeProfileLabel = "runtime.atomix.io/profile"
 )
 
@@ -80,26 +77,9 @@ func (i *SidecarInjector) Handle(ctx context.Context, request admission.Request)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	// If the sidecar.atomix.io/inject label is not present, skip the mutation.
-	injectRuntime, ok := pod.Labels[sidecarInjectLabel]
-	if !ok {
-		log.Warnf("Denied sidecar injection for Pod '%s': '%s' label was expected but not found", request.UID, sidecarInjectLabel)
-		return admission.Allowed(fmt.Sprintf("Denied sidecar injection: '%s' label was expected but not found", sidecarInjectLabel))
-	}
-
-	// If the sidecar.atomix.io/inject label is false, skip the mutation.
-	// TODO: Support removing the sidecar container on updates when sidecar.atomix.io/inject label is changed to "false".
-	if inject, err := strconv.ParseBool(injectRuntime); err != nil {
-		log.Warnf("Denied sidecar injection for Pod '%s': %s", request.UID, err.Error())
-		return admission.Allowed(fmt.Sprintf("Denied sidecar injection: '%s' label could not be parsed", sidecarInjectLabel))
-	} else if !inject {
-		log.Debugf("Skipped sidecar injection for Pod '%s': '%s' label is false", request.UID, sidecarInjectLabel)
-		return admission.Allowed(fmt.Sprintf("Skipped sidecar injection: '%s' label is false", sidecarInjectLabel))
-	}
-
 	// If the proxy sidecar was already injected, skip mutations.
-	injectedRuntime, ok := pod.Annotations[sidecarInjectStatusAnnotation]
-	if ok && injectedRuntime == injectedStatus {
+	sidecarInjectStatus, ok := pod.Annotations[sidecarInjectStatusAnnotation]
+	if ok && sidecarInjectStatus == injectedStatus {
 		log.Debugf("Skipped sidecar injection for Pod '%s': '%s' annotation is already '%s'", request.UID, sidecarInjectStatusAnnotation, injectedStatus)
 		return admission.Allowed(fmt.Sprintf("Skipped sidecar injection: '%s' annotation is already '%s'", sidecarInjectStatusAnnotation, injectedStatus))
 	}

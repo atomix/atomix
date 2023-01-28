@@ -155,11 +155,11 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, err
 	}
 
-	if pod.Annotations == nil {
+	if pod.Labels == nil {
 		return reconcile.Result{}, nil
 	}
 
-	profileName, ok := pod.Annotations[runtimeProfileAnnotation]
+	profileName, ok := pod.Labels[runtimeProfileLabel]
 	if !ok {
 		return reconcile.Result{}, nil
 	}
