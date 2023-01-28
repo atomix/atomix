@@ -16,19 +16,17 @@ import "gogoproto/gogo.proto";
 import "google/protobuf/any.proto";
 
 service Runtime {
-    rpc ProgramRoutes (ProgramRoutesRequest) returns (ProgramRoutesResponse);
-    rpc ConnectRoute (ConnectRouteRequest) returns (ConnectRouteResponse);
-    rpc ConfigureRoute (ConfigureRouteRequest) returns (ConfigureRouteResponse);
-    rpc DisconnectRoute (DisconnectRouteRequest) returns (DisconnectRouteResponse);
+    rpc Program (ProgramRequest) returns (ProgramResponse);
+    rpc Connect (ConnectRequest) returns (ConnectResponse);
+    rpc Configure (ConfigureRequest) returns (ConfigureResponse);
+    rpc Disconnect (DisconnectRequest) returns (DisconnectResponse);
 }
 
 message RoutingRule {
     PrimitiveType type = 1 [
         (gogoproto.nullable) = false
     ];
-    repeated PrimitiveID primitives = 2 [
-        (gogoproto.nullable) = false
-    ];
+    repeated string names = 2;
     repeated string tags = 3;
     google.protobuf.Any config = 4;
 }
@@ -41,15 +39,15 @@ message DriverID {
     ];
 }
 
-message RouteID {
+message StoreID {
     option (gogoproto.equal) = true;
     string namespace = 1;
     string name = 2;
 }
 
 message Route {
-    RouteID route_id = 1 [
-        (gogoproto.customname) = "RouteID",
+    StoreID store_id = 1 [
+        (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
     ];
     repeated RoutingRule rules = 2 [
@@ -82,19 +80,19 @@ message PrimitiveMeta {
     repeated string tags = 3;
 }
 
-message ProgramRoutesRequest {
+message ProgramRequest {
     repeated Route routes = 1 [
         (gogoproto.nullable) = false
     ];
 }
 
-message ProgramRoutesResponse {
+message ProgramResponse {
 
 }
 
-message ConnectRouteRequest {
-    RouteID route_id = 1 [
-        (gogoproto.customname) = "RouteID",
+message ConnectRequest {
+    StoreID store_id = 1 [
+        (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
     ];
     DriverID driver_id = 2 [
@@ -104,29 +102,29 @@ message ConnectRouteRequest {
     google.protobuf.Any config = 3;
 }
 
-message ConnectRouteResponse {
+message ConnectResponse {
 
 }
 
-message ConfigureRouteRequest {
-    RouteID route_id = 1 [
-        (gogoproto.customname) = "RouteID",
+message ConfigureRequest {
+    StoreID store_id = 1 [
+        (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
     ];
     google.protobuf.Any config = 2;
 }
 
-message ConfigureRouteResponse {
+message ConfigureResponse {
 
 }
 
-message DisconnectRouteRequest {
-    RouteID route_id = 1 [
-        (gogoproto.customname) = "RouteID",
+message DisconnectRequest {
+    StoreID store_id = 1 [
+        (gogoproto.customname) = "StoreID",
         (gogoproto.nullable) = false
     ];
 }
 
-message DisconnectRouteResponse {
+message DisconnectResponse {
 
 }

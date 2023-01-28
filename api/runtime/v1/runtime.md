@@ -4,21 +4,21 @@
 ## Table of Contents
 
 - [runtime/v1/runtime.proto](#runtime_v1_runtime-proto)
-    - [ConfigureRouteRequest](#atomix-runtime-v1-ConfigureRouteRequest)
-    - [ConfigureRouteResponse](#atomix-runtime-v1-ConfigureRouteResponse)
-    - [ConnectRouteRequest](#atomix-runtime-v1-ConnectRouteRequest)
-    - [ConnectRouteResponse](#atomix-runtime-v1-ConnectRouteResponse)
-    - [DisconnectRouteRequest](#atomix-runtime-v1-DisconnectRouteRequest)
-    - [DisconnectRouteResponse](#atomix-runtime-v1-DisconnectRouteResponse)
+    - [ConfigureRequest](#atomix-runtime-v1-ConfigureRequest)
+    - [ConfigureResponse](#atomix-runtime-v1-ConfigureResponse)
+    - [ConnectRequest](#atomix-runtime-v1-ConnectRequest)
+    - [ConnectResponse](#atomix-runtime-v1-ConnectResponse)
+    - [DisconnectRequest](#atomix-runtime-v1-DisconnectRequest)
+    - [DisconnectResponse](#atomix-runtime-v1-DisconnectResponse)
     - [DriverID](#atomix-runtime-v1-DriverID)
     - [PrimitiveID](#atomix-runtime-v1-PrimitiveID)
     - [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta)
     - [PrimitiveType](#atomix-runtime-v1-PrimitiveType)
-    - [ProgramRoutesRequest](#atomix-runtime-v1-ProgramRoutesRequest)
-    - [ProgramRoutesResponse](#atomix-runtime-v1-ProgramRoutesResponse)
+    - [ProgramRequest](#atomix-runtime-v1-ProgramRequest)
+    - [ProgramResponse](#atomix-runtime-v1-ProgramResponse)
     - [Route](#atomix-runtime-v1-Route)
-    - [RouteID](#atomix-runtime-v1-RouteID)
     - [RoutingRule](#atomix-runtime-v1-RoutingRule)
+    - [StoreID](#atomix-runtime-v1-StoreID)
   
     - [Runtime](#atomix-runtime-v1-Runtime)
   
@@ -33,15 +33,15 @@
 
 
 
-<a name="atomix-runtime-v1-ConfigureRouteRequest"></a>
+<a name="atomix-runtime-v1-ConfigureRequest"></a>
 
-### ConfigureRouteRequest
+### ConfigureRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| route_id | [RouteID](#atomix-runtime-v1-RouteID) |  |  |
+| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
 | config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
@@ -49,25 +49,25 @@
 
 
 
-<a name="atomix-runtime-v1-ConfigureRouteResponse"></a>
+<a name="atomix-runtime-v1-ConfigureResponse"></a>
 
-### ConfigureRouteResponse
-
-
+### ConfigureResponse
 
 
 
 
 
-<a name="atomix-runtime-v1-ConnectRouteRequest"></a>
 
-### ConnectRouteRequest
+
+<a name="atomix-runtime-v1-ConnectRequest"></a>
+
+### ConnectRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| route_id | [RouteID](#atomix-runtime-v1-RouteID) |  |  |
+| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
 | driver_id | [DriverID](#atomix-runtime-v1-DriverID) |  |  |
 | config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
@@ -76,34 +76,34 @@
 
 
 
-<a name="atomix-runtime-v1-ConnectRouteResponse"></a>
+<a name="atomix-runtime-v1-ConnectResponse"></a>
 
-### ConnectRouteResponse
-
-
+### ConnectResponse
 
 
 
 
 
-<a name="atomix-runtime-v1-DisconnectRouteRequest"></a>
 
-### DisconnectRouteRequest
+
+<a name="atomix-runtime-v1-DisconnectRequest"></a>
+
+### DisconnectRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| route_id | [RouteID](#atomix-runtime-v1-RouteID) |  |  |
+| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
 
 
 
 
 
 
-<a name="atomix-runtime-v1-DisconnectRouteResponse"></a>
+<a name="atomix-runtime-v1-DisconnectResponse"></a>
 
-### DisconnectRouteResponse
+### DisconnectResponse
 
 
 
@@ -175,9 +175,9 @@
 
 
 
-<a name="atomix-runtime-v1-ProgramRoutesRequest"></a>
+<a name="atomix-runtime-v1-ProgramRequest"></a>
 
-### ProgramRoutesRequest
+### ProgramRequest
 
 
 
@@ -190,9 +190,9 @@
 
 
 
-<a name="atomix-runtime-v1-ProgramRoutesResponse"></a>
+<a name="atomix-runtime-v1-ProgramResponse"></a>
 
-### ProgramRoutesResponse
+### ProgramResponse
 
 
 
@@ -208,24 +208,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| route_id | [RouteID](#atomix-runtime-v1-RouteID) |  |  |
+| store_id | [StoreID](#atomix-runtime-v1-StoreID) |  |  |
 | rules | [RoutingRule](#atomix-runtime-v1-RoutingRule) | repeated |  |
-
-
-
-
-
-
-<a name="atomix-runtime-v1-RouteID"></a>
-
-### RouteID
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| namespace | [string](#string) |  |  |
-| name | [string](#string) |  |  |
 
 
 
@@ -241,9 +225,25 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | type | [PrimitiveType](#atomix-runtime-v1-PrimitiveType) |  |  |
-| primitives | [PrimitiveID](#atomix-runtime-v1-PrimitiveID) | repeated |  |
+| names | [string](#string) | repeated |  |
 | tags | [string](#string) | repeated |  |
 | config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-StoreID"></a>
+
+### StoreID
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| namespace | [string](#string) |  |  |
+| name | [string](#string) |  |  |
 
 
 
@@ -263,10 +263,10 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| ProgramRoutes | [ProgramRoutesRequest](#atomix-runtime-v1-ProgramRoutesRequest) | [ProgramRoutesResponse](#atomix-runtime-v1-ProgramRoutesResponse) |  |
-| ConnectRoute | [ConnectRouteRequest](#atomix-runtime-v1-ConnectRouteRequest) | [ConnectRouteResponse](#atomix-runtime-v1-ConnectRouteResponse) |  |
-| ConfigureRoute | [ConfigureRouteRequest](#atomix-runtime-v1-ConfigureRouteRequest) | [ConfigureRouteResponse](#atomix-runtime-v1-ConfigureRouteResponse) |  |
-| DisconnectRoute | [DisconnectRouteRequest](#atomix-runtime-v1-DisconnectRouteRequest) | [DisconnectRouteResponse](#atomix-runtime-v1-DisconnectRouteResponse) |  |
+| Program | [ProgramRequest](#atomix-runtime-v1-ProgramRequest) | [ProgramResponse](#atomix-runtime-v1-ProgramResponse) |  |
+| Connect | [ConnectRequest](#atomix-runtime-v1-ConnectRequest) | [ConnectResponse](#atomix-runtime-v1-ConnectResponse) |  |
+| Configure | [ConfigureRequest](#atomix-runtime-v1-ConfigureRequest) | [ConfigureResponse](#atomix-runtime-v1-ConfigureResponse) |  |
+| Disconnect | [DisconnectRequest](#atomix-runtime-v1-DisconnectRequest) | [DisconnectResponse](#atomix-runtime-v1-DisconnectResponse) |  |
 
  
 
