@@ -13,17 +13,17 @@ import (
 	runtime "github.com/atomix/atomix/runtime/pkg/runtime/v1"
 )
 
-type CounterProvider interface {
-	NewCounterV1(ctx context.Context, id runtimev1.PrimitiveID) (CounterMapProxy, error)
+type CounterMapProvider interface {
+	NewCounterMapV1(ctx context.Context, id runtimev1.PrimitiveID) (CounterMapProxy, error)
 }
 
 func resolve(ctx context.Context, conn driver.Conn, id runtimev1.PrimitiveID) (CounterMapProxy, bool, error) {
-	if provider, ok := conn.(CounterProvider); ok {
-		counter, err := provider.NewCounterV1(ctx, id)
+	if provider, ok := conn.(CounterMapProvider); ok {
+		counterMap, err := provider.NewCounterMapV1(ctx, id)
 		if err != nil {
 			return nil, false, err
 		}
-		return counter, true, nil
+		return counterMap, true, nil
 	}
 	return nil, false, nil
 }
