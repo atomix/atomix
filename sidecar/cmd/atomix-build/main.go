@@ -26,8 +26,9 @@ func main() {
 		Use: "atomix-build",
 	}
 	cmd.AddCommand(&cobra.Command{
-		Use:  "proxy",
-		Args: cobra.ExactArgs(1),
+		Use:     "binary",
+		Aliases: []string{"bin"},
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			outputPath := args[0]
 			builder, err := newBuilder(cmd)
@@ -50,7 +51,7 @@ func main() {
 		},
 	})
 	cmd.AddCommand(&cobra.Command{
-		Use:  "driver",
+		Use:  "plugin",
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inputPath, pluginPath, outputPath := args[0], args[1], args[2]
@@ -97,7 +98,7 @@ func (b *atomixBuilder) buildProxy(outputPath string) error {
 		"-trimpath",
 		"-gcflags=all=-N -l",
 		"-o", outputPath,
-		"./cmd/atomix-proxy")
+		"./cmd/atomix-runtime")
 	return err
 }
 
