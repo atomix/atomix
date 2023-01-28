@@ -151,6 +151,8 @@ func (s *sessionManager) Recover(reader *SnapshotReader) error {
 }
 
 func (s *sessionManager) Propose(input *protocol.ProposalInput, stream streams.WriteStream[*protocol.ProposalOutput]) {
+	s.index++
+
 	// Run scheduled tasks for the updated timestamp
 	s.scheduler.tick(input.Timestamp)
 
