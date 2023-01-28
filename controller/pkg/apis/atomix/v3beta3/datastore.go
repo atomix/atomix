@@ -27,9 +27,8 @@ type DataStoreSpec struct {
 }
 
 type Driver struct {
-	Name       string `json:"name"`
-	Version    string `json:"version"`
-	APIVersion string `json:"apiVersion"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

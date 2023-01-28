@@ -28,7 +28,6 @@ type DataStoreSpec struct {
 
 type Driver struct {
 	Name       string `json:"name"`
-	Version    string `json:"version"`
 	APIVersion string `json:"apiVersion"`
 }
 

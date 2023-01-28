@@ -17,7 +17,15 @@ spec:
     shortNames:
       - ds
   conversion:
-    strategy: None
+    strategy: Webhook
+    webhook:
+      conversionReviewVersions: [ "v1" ]
+      clientConfig:
+        service:
+          name: atomix-controller
+          namespace: kube-system
+          path: /convert-data-store
+        caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUNyRENDQVpRQ0NRRHJlaXcyZHg3dHVEQU5CZ2txaGtpRzl3MEJBUXNGQURBWE1SVXdFd1lEVlFRRERBeGgKWkcxcGMzTnBiMjVmWTJFd0lCY05Nak13TVRJNE1EWXpNekl5V2hnUE1qSTVOakV4TVRJd05qTXpNakphTUJjeApGVEFUQmdOVkJBTU1ER0ZrYldsemMybHZibDlqWVRDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDCkFRb0NnZ0VCQUx2N2RnV0k3NE4vU215K0tyeDlpRGdLQzMrR2pUcngycklvSEFqbEhKU3ZrYUxiZEVqWkRmMnUKRHgvODFkOWlxd3pOY0FFcGpQMVNCRzVKUE1KcWVEa2EwbEMweEMxbGxlY2Y4TjcvSVRLVmR2V3R3UGgvR1hGaQpiU1JXMVhnNTFxZ2xtN3ZXYlRyUk4vdXlPSHZQNkE2R1M4UFA2Z3V1UkpJYU1QQlN3UUtVTEZDVXI4aVVoUENzCjhiQVdSbXZDUVNDeXoxV0tISGNVbEhRQ2RpSHdQWDZ3Sm9jRXl3VTZlU1ZoMWdqemlKeXY4MGJMdFVHc1VtQXMKV2N1VmkrRzUwblZ0bmYrN2szU2xhcGxyRUxOYXJvOWdud0UrQVJ4SXdvZDBudW5FcVNEVUZGSlBXWkJMSjFndApXNEZNd2tCcFFMVy8wV0dlSFdWdjdzbEJQLzIzMEEwQ0F3RUFBVEFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBCkszSXpkNmwreHNXWTFlejZGODFJMTdCU2sxWWl6bzZmM1dJWmFBZUtncmVKSUJOZ2JwZTd3RlAvOWZNSG9aa3EKTjhLemtmK3JlbThVVU4wWm5DOEwyQnFHYmRaeVNBeUJYcElGS3pJTnVYR3FDUVo4ZHJtNUsvM2FpWjhSK1VZVwoxSWFuT1l5bDBSR1pMRExXVFJQNWdaZzk3TTRZQlpDVkVPZlFwZnhtenZPbXAxekhrVmVacDFzRTBwN2ZxbUpwCjFCNUw4ZHFZbTRvQ0g3VzZtZUNzZFRtME1FUmlYWDQxcG1zQUZCVVo5UnVLcElDZzdkTDlES2xHbWs2VFdnbGkKcURyVGJaNUR4S0xwVTg0Rk5ZR1RNZWhySE5HSVJQbE5VUjVlODhDS3BVN29pYzBwOUh1VEEvVi9YK1lpWWZuegpUNkNHSk5PZkkwZzRoT0ViRDdBUU1nPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
   versions:
     - name: v3beta3
       served: true
@@ -43,8 +51,6 @@ spec:
                     name:
                       type: string
                     version:
-                      type: string
-                    apiVersion:
                       type: string
                 config:
                   description: |-
@@ -82,8 +88,6 @@ spec:
                     - name
                   properties:
                     name:
-                      type: string
-                    version:
                       type: string
                     apiVersion:
                       type: string

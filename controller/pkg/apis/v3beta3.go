@@ -17,6 +17,11 @@ func init() {
 }
 
 func registerConversions_v3beta3(scheme *runtime.Scheme) error {
+	if err := scheme.AddConversionFunc((*atomixv3beta4.DataStore)(nil), (*atomixv3beta3.DataStore)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return convertDataStore_v3beta4_to_v3beta3(a.(*atomixv3beta4.DataStore), b.(*atomixv3beta3.DataStore), scope)
+	}); err != nil {
+		return err
+	}
 	if err := scheme.AddConversionFunc((*atomixv3beta4.StorageProfile)(nil), (*atomixv3beta3.StorageProfile)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return convertStorageProfile_v3beta4_to_v3beta3(a.(*atomixv3beta4.StorageProfile), b.(*atomixv3beta3.StorageProfile), scope)
 	}); err != nil {
@@ -32,6 +37,17 @@ func registerConversions_v3beta3(scheme *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	return nil
+}
+
+func convertDataStore_v3beta4_to_v3beta3(in *atomixv3beta4.DataStore, out *atomixv3beta3.DataStore, scope conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	out.SetGroupVersionKind(atomixv3beta3.SchemeGroupVersion.WithKind("StorageProfile"))
+	out.Spec.Driver = atomixv3beta3.Driver{
+		Name:    in.Spec.Driver.Name,
+		Version: in.Spec.Driver.APIVersion,
+	}
+	out.Spec.Config = in.Spec.Config
 	return nil
 }
 

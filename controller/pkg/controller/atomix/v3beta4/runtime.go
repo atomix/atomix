@@ -271,7 +271,7 @@ func (r *RuntimeReconciler) reconcileProfile(ctx context.Context, log logging.Lo
 
 	// If the pod resource version has changed, reset all the Connected routes to the Configuring state
 	if podStatus.ResourceVersion != pod.ResourceVersion {
-		log.Debug("Pod status changed; verifying proxy connections to all routes...")
+		log.Debug("Pod status changed; verifying runtime connections to all routes...")
 		for i, routeStatus := range podStatus.Runtime.Routes {
 			switch routeStatus.State {
 			case atomixv3beta4.RouteConnected:
@@ -452,7 +452,7 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 		}
 
 		r.events.Eventf(pod, "Normal", "ConnectedRoute", "Successfully connected route to '%s'", storeNamespacedName)
-		log.Info("Proxy connected")
+		log.Info("Runtime connected")
 		status.State = atomixv3beta4.RouteConnected
 		return true, nil
 	case atomixv3beta4.RouteConnected:
@@ -487,13 +487,13 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 				return false, err
 			}
 			// If the runtime returned a NotFound error, set the route to Connecting to establish the connection.
-			log.Warn("Proxy not connected; connecting...")
+			log.Warn("Runtime not connected; connecting...")
 			status.State = atomixv3beta4.RouteConnecting
 			return true, nil
 		}
 
 		r.events.Eventf(pod, "Normal", "ConfiguredRoute", "Configured route to '%s'", storeNamespacedName)
-		log.Info("Proxy configured")
+		log.Info("Runtime configured")
 		status.State = atomixv3beta4.RouteConnected
 		return true, nil
 	default:
