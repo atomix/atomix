@@ -20,8 +20,15 @@ spec:
     metadata:
       labels:
         name: {{ template "atomix-bench.fullname" . }}
-        proxy.atomix.io/inject: "true"
-        proxy.atomix.io/profile: {{ template "atomix-bench.fullname" . }}
+        sidecar.atomix.io/inject: "true"
+        runtime.atomix.io/profile: {{ template "atomix-bench.fullname" . }}
+      annotations:
+        {{- if .Values.sidecar.image.tag }}
+        sidecar.atomix.io/image: {{ printf "%s:%s" .Values.sidecar.image.repository .Values.sidecar.image.tag }}
+        {{- end }}
+        {{- with .Values.sidecar.image.pullPolicy }}
+        sidecar.atomix.io/imagePullPolicy: {{ . }}
+        {{- end }}
     spec:
       containers:
         - name: atomix-bench

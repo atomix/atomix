@@ -37,9 +37,9 @@ logging:
     github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors:
       level: error
 
-proxy:
+sidecar:
   image:
-    repository: atomix/proxy
+    repository: atomix/sidecar
     tag: ""
     pullPolicy: ""
     pullSecrets: []

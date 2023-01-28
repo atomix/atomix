@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-apiVersion: atomix.io/v3beta3
+apiVersion: atomix.io/v3beta4
 kind: StorageProfile
 metadata:
   name: {{ template "atomix-bench.fullname" . }}
@@ -12,17 +12,7 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
-  proxy:
-    {{- if .Values.proxy.image.tag }}
-    image: {{ printf "%s:%s" .Values.proxy.image.repository .Values.proxy.image.tag }}
-    {{- end }}
-    {{- with .Values.proxy.image.pullPolicy }}
-    imagePullPolicy: {{ . }}
-    {{- end }}
-    logging:
-      rootLevel: {{ .Values.proxy.logging.rootLevel }}
-      encoding: {{ .Values.proxy.logging.encoding }}
-  bindings:
+  routes:
     - store:
         name: {{ .Values.store.name }}
         namespace: {{ .Values.store.namespace }}
