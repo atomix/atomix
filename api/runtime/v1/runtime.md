@@ -14,7 +14,8 @@
     - [PrimitiveID](#atomix-runtime-v1-PrimitiveID)
     - [PrimitiveMeta](#atomix-runtime-v1-PrimitiveMeta)
     - [PrimitiveType](#atomix-runtime-v1-PrimitiveType)
-    - [Route](#atomix-runtime-v1-Route)
+    - [ProgramRoutesRequest](#atomix-runtime-v1-ProgramRoutesRequest)
+    - [ProgramRoutesResponse](#atomix-runtime-v1-ProgramRoutesResponse)
     - [RouteID](#atomix-runtime-v1-RouteID)
     - [RoutingRule](#atomix-runtime-v1-RoutingRule)
   
@@ -39,7 +40,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| route | [Route](#atomix-runtime-v1-Route) |  |  |
+| route_id | [RouteID](#atomix-runtime-v1-RouteID) |  |  |
+| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
 
@@ -64,8 +66,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| route_id | [RouteID](#atomix-runtime-v1-RouteID) |  |  |
 | driver_id | [DriverID](#atomix-runtime-v1-DriverID) |  |  |
-| route | [Route](#atomix-runtime-v1-Route) |  |  |
+| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
 
 
@@ -171,17 +174,26 @@
 
 
 
-<a name="atomix-runtime-v1-Route"></a>
+<a name="atomix-runtime-v1-ProgramRoutesRequest"></a>
 
-### Route
+### ProgramRoutesRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | route_id | [RouteID](#atomix-runtime-v1-RouteID) |  |  |
-| config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 | rules | [RoutingRule](#atomix-runtime-v1-RoutingRule) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-runtime-v1-ProgramRoutesResponse"></a>
+
+### ProgramRoutesResponse
+
 
 
 
@@ -235,6 +247,7 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+| ProgramRoutes | [ProgramRoutesRequest](#atomix-runtime-v1-ProgramRoutesRequest) | [ProgramRoutesResponse](#atomix-runtime-v1-ProgramRoutesResponse) |  |
 | ConnectRoute | [ConnectRouteRequest](#atomix-runtime-v1-ConnectRouteRequest) | [ConnectRouteResponse](#atomix-runtime-v1-ConnectRouteResponse) |  |
 | ConfigureRoute | [ConfigureRouteRequest](#atomix-runtime-v1-ConfigureRouteRequest) | [ConfigureRouteResponse](#atomix-runtime-v1-ConfigureRouteResponse) |  |
 | DisconnectRoute | [DisconnectRouteRequest](#atomix-runtime-v1-DisconnectRouteRequest) | [DisconnectRouteResponse](#atomix-runtime-v1-DisconnectRouteResponse) |  |

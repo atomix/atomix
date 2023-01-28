@@ -16,20 +16,10 @@ import "gogoproto/gogo.proto";
 import "google/protobuf/any.proto";
 
 service Runtime {
+    rpc ProgramRoutes (ProgramRoutesRequest) returns (ProgramRoutesResponse);
     rpc ConnectRoute (ConnectRouteRequest) returns (ConnectRouteResponse);
     rpc ConfigureRoute (ConfigureRouteRequest) returns (ConfigureRouteResponse);
     rpc DisconnectRoute (DisconnectRouteRequest) returns (DisconnectRouteResponse);
-}
-
-message Route {
-    RouteID route_id = 1 [
-        (gogoproto.customname) = "RouteID",
-        (gogoproto.nullable) = false
-    ];
-    google.protobuf.Any config = 2;
-    repeated RoutingRule rules = 3 [
-        (gogoproto.nullable) = false
-    ];
 }
 
 message RoutingRule {
@@ -82,14 +72,30 @@ message PrimitiveMeta {
     repeated string tags = 3;
 }
 
+message ProgramRoutesRequest {
+    RouteID route_id = 1 [
+        (gogoproto.customname) = "RouteID",
+        (gogoproto.nullable) = false
+    ];
+    repeated RoutingRule rules = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ProgramRoutesResponse {
+
+}
+
 message ConnectRouteRequest {
-    DriverID driver_id = 1 [
+    RouteID route_id = 1 [
+        (gogoproto.customname) = "RouteID",
+        (gogoproto.nullable) = false
+    ];
+    DriverID driver_id = 2 [
         (gogoproto.customname) = "DriverID",
         (gogoproto.nullable) = false
     ];
-    Route route = 2 [
-        (gogoproto.nullable) = false
-    ];
+    google.protobuf.Any config = 3;
 }
 
 message ConnectRouteResponse {
@@ -97,9 +103,11 @@ message ConnectRouteResponse {
 }
 
 message ConfigureRouteRequest {
-    Route route = 1 [
+    RouteID route_id = 1 [
+        (gogoproto.customname) = "RouteID",
         (gogoproto.nullable) = false
     ];
+    google.protobuf.Any config = 2;
 }
 
 message ConfigureRouteResponse {
