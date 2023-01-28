@@ -3,8 +3,8 @@ module github.com/atomix/atomix/drivers/etcd
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.6.0
-	github.com/atomix/atomix/runtime v0.6.0
+	github.com/atomix/atomix/api v0.7.0
+	github.com/atomix/atomix/runtime v0.7.0
 	go.etcd.io/etcd/api/v3 v3.5.6
 	go.etcd.io/etcd/client/v3 v3.5.6
 )
