@@ -12,75 +12,70 @@ import (
 	valueprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimevaluev1 "github.com/atomix/atomix/runtime/pkg/runtime/value/v1"
 	"google.golang.org/grpc"
 	"io"
 )
 
 var log = logging.GetLogger()
 
-func NewValue(protocol *client.Protocol) valuev1.ValueServer {
-	return &valueClient{
+func NewValue(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimevaluev1.ValueProxy {
+	return &valueProxy{
 		Protocol: protocol,
+		id:       id,
 	}
 }
 
-type valueClient struct {
+type valueProxy struct {
 	*client.Protocol
+	id runtimev1.PrimitiveID
 }
 
-func (s *valueClient) Create(ctx context.Context, request *valuev1.CreateRequest) (*valuev1.CreateResponse, error) {
+func (s *valueProxy) Open(ctx context.Context) error {
 	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request))
-	partition := s.PartitionBy([]byte(request.ID.Name))
+		logging.String("Name", s.id.Name))
+	partition := s.PartitionBy([]byte(s.id.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Create",
-			logging.Trunc128("CreateRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
+	meta := runtimev1.PrimitiveMeta{
 		Type:        valuev1.PrimitiveType,
-		PrimitiveID: request.ID,
-		Tags:        request.Tags,
-	}); err != nil {
-		log.Warnw("Create",
-			logging.Trunc128("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
+		PrimitiveID: s.id,
 	}
-	response := &valuev1.CreateResponse{}
-	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request),
-		logging.Trunc128("CreateResponse", response))
-	return response, nil
+	if err := session.CreatePrimitive(ctx, meta); err != nil {
+		log.Warnw("Create",
+			logging.String("Name", s.id.Name),
+			logging.Error("Error", err))
+		return err
+	}
+	return nil
 }
 
-func (s *valueClient) Close(ctx context.Context, request *valuev1.CloseRequest) (*valuev1.CloseResponse, error) {
+func (s *valueProxy) Close(ctx context.Context) error {
 	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request))
-	partition := s.PartitionBy([]byte(request.ID.Name))
+		logging.String("Name", s.id.Name))
+	partition := s.PartitionBy([]byte(s.id.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
-		log.Warnw("Close",
-			logging.Trunc128("CloseRequest", request),
+		log.Warnw("Create",
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
+	if err := session.ClosePrimitive(ctx, s.id.Name); err != nil {
 		log.Warnw("Close",
-			logging.Trunc128("CloseRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response := &valuev1.CloseResponse{}
-	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request),
-		logging.Trunc128("CloseResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *valueClient) Set(ctx context.Context, request *valuev1.SetRequest) (*valuev1.SetResponse, error) {
+func (s *valueProxy) Set(ctx context.Context, request *valuev1.SetRequest) (*valuev1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Trunc128("SetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -127,7 +122,7 @@ func (s *valueClient) Set(ctx context.Context, request *valuev1.SetRequest) (*va
 	return response, nil
 }
 
-func (s *valueClient) Insert(ctx context.Context, request *valuev1.InsertRequest) (*valuev1.InsertResponse, error) {
+func (s *valueProxy) Insert(ctx context.Context, request *valuev1.InsertRequest) (*valuev1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Trunc128("InsertRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -174,7 +169,7 @@ func (s *valueClient) Insert(ctx context.Context, request *valuev1.InsertRequest
 	return response, nil
 }
 
-func (s *valueClient) Get(ctx context.Context, request *valuev1.GetRequest) (*valuev1.GetResponse, error) {
+func (s *valueProxy) Get(ctx context.Context, request *valuev1.GetRequest) (*valuev1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc128("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -222,7 +217,7 @@ func (s *valueClient) Get(ctx context.Context, request *valuev1.GetRequest) (*va
 	return response, nil
 }
 
-func (s *valueClient) Update(ctx context.Context, request *valuev1.UpdateRequest) (*valuev1.UpdateResponse, error) {
+func (s *valueProxy) Update(ctx context.Context, request *valuev1.UpdateRequest) (*valuev1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Trunc128("UpdateRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -275,7 +270,7 @@ func (s *valueClient) Update(ctx context.Context, request *valuev1.UpdateRequest
 	return response, nil
 }
 
-func (s *valueClient) Delete(ctx context.Context, request *valuev1.DeleteRequest) (*valuev1.DeleteResponse, error) {
+func (s *valueProxy) Delete(ctx context.Context, request *valuev1.DeleteRequest) (*valuev1.DeleteResponse, error) {
 	log.Debugw("Delete",
 		logging.Trunc128("DeleteRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -325,7 +320,7 @@ func (s *valueClient) Delete(ctx context.Context, request *valuev1.DeleteRequest
 	return response, nil
 }
 
-func (s *valueClient) Events(request *valuev1.EventsRequest, server valuev1.Value_EventsServer) error {
+func (s *valueProxy) Events(request *valuev1.EventsRequest, server valuev1.Value_EventsServer) error {
 	log.Debugw("Events",
 		logging.Trunc128("EventsRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -425,7 +420,7 @@ func (s *valueClient) Events(request *valuev1.EventsRequest, server valuev1.Valu
 	}
 }
 
-func (s *valueClient) Watch(request *valuev1.WatchRequest, server valuev1.Value_WatchServer) error {
+func (s *valueProxy) Watch(request *valuev1.WatchRequest, server valuev1.Value_WatchServer) error {
 	log.Debugw("Events",
 		logging.Trunc128("EventsRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -491,4 +486,4 @@ func (s *valueClient) Watch(request *valuev1.WatchRequest, server valuev1.Value_
 	}
 }
 
-var _ valuev1.ValueServer = (*valueClient)(nil)
+var _ valuev1.ValueServer = (*valueProxy)(nil)

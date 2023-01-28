@@ -5,7 +5,6 @@
 package v1
 
 import (
-	"container/list"
 	"context"
 	mapv1 "github.com/atomix/atomix/api/runtime/map/v1"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
@@ -13,37 +12,31 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimemapv1 "github.com/atomix/atomix/runtime/pkg/runtime/map/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
 	"io"
 	"sync"
-	"time"
 )
 
 var log = logging.GetLogger()
 
-func NewMap(protocol *client.Protocol, config *mapprotocolv1.MapConfig) (mapv1.MapServer, error) {
-	proxy := newMapClient(protocol)
-	if config.Cache.Enabled {
-		proxy = newCachingMapClient(proxy, config.Cache)
-	}
-	return proxy, nil
-}
-
-func newMapClient(protocol *client.Protocol) mapv1.MapServer {
-	return &mapClient{
+func NewMap(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimemapv1.MapProxy {
+	return &mapProxy{
 		Protocol: protocol,
+		id:       id,
 	}
 }
 
-type mapClient struct {
+type mapProxy struct {
 	*client.Protocol
+	id runtimev1.PrimitiveID
 }
 
-func (s *mapClient) Create(ctx context.Context, request *mapv1.CreateRequest) (*mapv1.CreateResponse, error) {
+func (s *mapProxy) Open(ctx context.Context) error {
 	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request))
+		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -53,26 +46,21 @@ func (s *mapClient) Create(ctx context.Context, request *mapv1.CreateRequest) (*
 		}
 		return session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
 			Type:        mapv1.PrimitiveType,
-			PrimitiveID: request.ID,
-			Tags:        request.Tags,
+			PrimitiveID: s.id,
 		})
 	})
 	if err != nil {
 		log.Warnw("Create",
-			logging.Trunc128("CreateRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response := &mapv1.CreateResponse{}
-	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request),
-		logging.Trunc128("CreateResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *mapClient) Close(ctx context.Context, request *mapv1.CloseRequest) (*mapv1.CloseResponse, error) {
+func (s *mapProxy) Close(ctx context.Context) error {
 	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request))
+		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -80,22 +68,18 @@ func (s *mapClient) Close(ctx context.Context, request *mapv1.CloseRequest) (*ma
 		if err != nil {
 			return err
 		}
-		return session.ClosePrimitive(ctx, request.ID.Name)
+		return session.ClosePrimitive(ctx, s.id.Name)
 	})
 	if err != nil {
 		log.Warnw("Close",
-			logging.Trunc128("CloseRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response := &mapv1.CloseResponse{}
-	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request),
-		logging.Trunc128("CloseResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *mapClient) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
+func (s *mapProxy) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Trunc128("SizeRequest", request))
 	partitions := s.Partitions()
@@ -151,7 +135,7 @@ func (s *mapClient) Size(ctx context.Context, request *mapv1.SizeRequest) (*mapv
 	return response, nil
 }
 
-func (s *mapClient) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
+func (s *mapProxy) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
 	log.Debugw("Put",
 		logging.Trunc128("PutRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -208,7 +192,7 @@ func (s *mapClient) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.
 	return response, nil
 }
 
-func (s *mapClient) Insert(ctx context.Context, request *mapv1.InsertRequest) (*mapv1.InsertResponse, error) {
+func (s *mapProxy) Insert(ctx context.Context, request *mapv1.InsertRequest) (*mapv1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Trunc128("InsertRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -257,7 +241,7 @@ func (s *mapClient) Insert(ctx context.Context, request *mapv1.InsertRequest) (*
 	return response, nil
 }
 
-func (s *mapClient) Update(ctx context.Context, request *mapv1.UpdateRequest) (*mapv1.UpdateResponse, error) {
+func (s *mapProxy) Update(ctx context.Context, request *mapv1.UpdateRequest) (*mapv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Trunc128("UpdateRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -312,7 +296,7 @@ func (s *mapClient) Update(ctx context.Context, request *mapv1.UpdateRequest) (*
 	return response, nil
 }
 
-func (s *mapClient) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
+func (s *mapProxy) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc128("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -362,7 +346,7 @@ func (s *mapClient) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.
 	return response, nil
 }
 
-func (s *mapClient) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
+func (s *mapProxy) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Trunc128("RemoveRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -414,7 +398,7 @@ func (s *mapClient) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*
 	return response, nil
 }
 
-func (s *mapClient) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
+func (s *mapProxy) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Trunc128("ClearRequest", request))
 	partitions := s.Partitions()
@@ -464,7 +448,7 @@ func (s *mapClient) Clear(ctx context.Context, request *mapv1.ClearRequest) (*ma
 	return response, nil
 }
 
-func (s *mapClient) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1.LockResponse, error) {
+func (s *mapProxy) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1.LockResponse, error) {
 	log.Debugw("Lock",
 		logging.Trunc128("LockRequest", request))
 
@@ -532,7 +516,7 @@ func (s *mapClient) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv
 	return response, nil
 }
 
-func (s *mapClient) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*mapv1.UnlockResponse, error) {
+func (s *mapProxy) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*mapv1.UnlockResponse, error) {
 	log.Debugw("Unlock",
 		logging.Trunc128("UnlockRequest", request))
 	partitions := s.Partitions()
@@ -582,7 +566,7 @@ func (s *mapClient) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*
 	return response, nil
 }
 
-func (s *mapClient) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsServer) error {
+func (s *mapProxy) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsServer) error {
 	log.Debugw("Events received",
 		logging.Trunc128("EventsRequest", request))
 	partitions := s.Partitions()
@@ -719,7 +703,7 @@ func (s *mapClient) Events(request *mapv1.EventsRequest, server mapv1.Map_Events
 	return nil
 }
 
-func (s *mapClient) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
+func (s *mapProxy) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
 	log.Debugw("Entries received",
 		logging.Trunc128("EntriesRequest", request))
 	partitions := s.Partitions()
@@ -828,251 +812,4 @@ func (s *mapClient) Entries(request *mapv1.EntriesRequest, server mapv1.Map_Entr
 	return nil
 }
 
-var _ mapv1.MapServer = (*mapClient)(nil)
-
-func newCachingMapClient(m mapv1.MapServer, config mapprotocolv1.CacheConfig) mapv1.MapServer {
-	return &cachingMapServer{
-		MapServer: m,
-		config:    config,
-		entries:   make(map[string]*list.Element),
-		aged:      list.New(),
-	}
-}
-
-type cachingMapServer struct {
-	mapv1.MapServer
-	config  mapprotocolv1.CacheConfig
-	entries map[string]*list.Element
-	aged    *list.List
-	mu      sync.RWMutex
-}
-
-func (s *cachingMapServer) Create(ctx context.Context, request *mapv1.CreateRequest) (*mapv1.CreateResponse, error) {
-	response, err := s.MapServer.Create(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	go func() {
-		err = s.MapServer.Events(&mapv1.EventsRequest{
-			ID: request.ID,
-		}, newCachingEventsServer(s))
-		if err != nil {
-			log.Error(err)
-		}
-	}()
-	go func() {
-		interval := s.config.EvictionInterval
-		if interval == nil {
-			i := time.Minute
-			interval = &i
-		}
-		ticker := time.NewTicker(*interval)
-		for range ticker.C {
-			s.evict()
-		}
-	}()
-	return response, nil
-}
-
-func (s *cachingMapServer) Put(ctx context.Context, request *mapv1.PutRequest) (*mapv1.PutResponse, error) {
-	response, err := s.MapServer.Put(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	s.update(&mapv1.Entry{
-		Key: request.Key,
-		Value: &mapv1.VersionedValue{
-			Value:   request.Value,
-			Version: response.Version,
-		},
-	})
-	return response, nil
-}
-
-func (s *cachingMapServer) Insert(ctx context.Context, request *mapv1.InsertRequest) (*mapv1.InsertResponse, error) {
-	response, err := s.MapServer.Insert(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	s.update(&mapv1.Entry{
-		Key: request.Key,
-		Value: &mapv1.VersionedValue{
-			Value:   request.Value,
-			Version: response.Version,
-		},
-	})
-	return response, nil
-}
-
-func (s *cachingMapServer) Update(ctx context.Context, request *mapv1.UpdateRequest) (*mapv1.UpdateResponse, error) {
-	response, err := s.MapServer.Update(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	s.update(&mapv1.Entry{
-		Key: request.Key,
-		Value: &mapv1.VersionedValue{
-			Value:   request.Value,
-			Version: response.Version,
-		},
-	})
-	return response, nil
-}
-
-func (s *cachingMapServer) Get(ctx context.Context, request *mapv1.GetRequest) (*mapv1.GetResponse, error) {
-	s.mu.RLock()
-	elem, ok := s.entries[request.Key]
-	s.mu.RUnlock()
-	if ok {
-		return &mapv1.GetResponse{
-			Value: *elem.Value.(*cachedEntry).entry.Value,
-		}, nil
-	}
-	return s.MapServer.Get(ctx, request)
-}
-
-func (s *cachingMapServer) Remove(ctx context.Context, request *mapv1.RemoveRequest) (*mapv1.RemoveResponse, error) {
-	response, err := s.MapServer.Remove(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	s.delete(request.Key)
-	return response, nil
-}
-
-func (s *cachingMapServer) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv1.ClearResponse, error) {
-	response, err := s.MapServer.Clear(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	s.mu.Lock()
-	s.entries = make(map[string]*list.Element)
-	s.aged = list.New()
-	s.mu.Unlock()
-	return response, nil
-}
-
-func (s *cachingMapServer) update(update *mapv1.Entry) {
-	s.mu.RLock()
-	check, ok := s.entries[update.Key]
-	s.mu.RUnlock()
-	if ok && check.Value.(*cachedEntry).entry.Value.Version >= update.Value.Version {
-		return
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	check, ok = s.entries[update.Key]
-	if ok && check.Value.(*cachedEntry).entry.Value.Version >= update.Value.Version {
-		return
-	}
-
-	entry := newCachedEntry(update)
-	if elem, ok := s.entries[update.Key]; ok {
-		s.aged.Remove(elem)
-	}
-	s.entries[update.Key] = s.aged.PushBack(entry)
-}
-
-func (s *cachingMapServer) delete(key string) {
-	s.mu.RLock()
-	_, ok := s.entries[key]
-	s.mu.RUnlock()
-	if !ok {
-		return
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if elem, ok := s.entries[key]; ok {
-		delete(s.entries, key)
-		s.aged.Remove(elem)
-	}
-}
-
-func (s *cachingMapServer) evict() {
-	t := time.Now()
-	evictionDuration := time.Hour
-	if s.config.EvictAfter != nil {
-		evictionDuration = *s.config.EvictAfter
-	}
-
-	s.mu.RLock()
-	size := uint64(len(s.entries))
-	entry := s.aged.Front()
-	s.mu.RUnlock()
-	if (entry == nil || t.Sub(entry.Value.(*cachedEntry).timestamp) < evictionDuration) && size <= s.config.Size_ {
-		return
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	size = uint64(len(s.entries))
-	entry = s.aged.Front()
-	if (entry == nil || t.Sub(entry.Value.(*cachedEntry).timestamp) < evictionDuration) && size <= s.config.Size_ {
-		return
-	}
-
-	for i := s.aged.Len(); i > int(s.config.Size_); i-- {
-		if entry := s.aged.Front(); entry != nil {
-			s.aged.Remove(entry)
-		}
-	}
-
-	entry = s.aged.Front()
-	for entry != nil {
-		if t.Sub(entry.Value.(*cachedEntry).timestamp) < evictionDuration {
-			break
-		}
-		s.aged.Remove(entry)
-		entry = s.aged.Front()
-	}
-}
-
-var _ mapv1.MapServer = (*cachingMapServer)(nil)
-
-func newCachingEventsServer(server *cachingMapServer) mapv1.Map_EventsServer {
-	return &cachingEventsServer{
-		server: server,
-	}
-}
-
-type cachingEventsServer struct {
-	grpc.ServerStream
-	server *cachingMapServer
-}
-
-func (s *cachingEventsServer) Send(response *mapv1.EventsResponse) error {
-	switch e := response.Event.Event.(type) {
-	case *mapv1.Event_Inserted_:
-		s.server.update(&mapv1.Entry{
-			Key: response.Event.Key,
-			Value: &mapv1.VersionedValue{
-				Value:   e.Inserted.Value.Value,
-				Version: e.Inserted.Value.Version,
-			},
-		})
-	case *mapv1.Event_Updated_:
-		s.server.update(&mapv1.Entry{
-			Key: response.Event.Key,
-			Value: &mapv1.VersionedValue{
-				Value:   e.Updated.Value.Value,
-				Version: e.Updated.Value.Version,
-			},
-		})
-	case *mapv1.Event_Removed_:
-		s.server.delete(response.Event.Key)
-	}
-	return nil
-}
-
-func newCachedEntry(entry *mapv1.Entry) *cachedEntry {
-	return &cachedEntry{
-		entry:     entry,
-		timestamp: time.Now(),
-	}
-}
-
-type cachedEntry struct {
-	entry     *mapv1.Entry
-	timestamp time.Time
-}
+var _ mapv1.MapServer = (*mapProxy)(nil)

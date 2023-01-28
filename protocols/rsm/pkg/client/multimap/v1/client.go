@@ -12,6 +12,7 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimemultimapv1 "github.com/atomix/atomix/runtime/pkg/runtime/multimap/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
@@ -21,19 +22,21 @@ import (
 
 var log = logging.GetLogger()
 
-func NewMultiMap(protocol *client.Protocol) multimapv1.MultiMapServer {
-	return &multiMapClient{
+func NewMultiMap(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimemultimapv1.MultiMapProxy {
+	return &multiMapProxy{
 		Protocol: protocol,
+		id:       id,
 	}
 }
 
-type multiMapClient struct {
+type multiMapProxy struct {
 	*client.Protocol
+	id runtimev1.PrimitiveID
 }
 
-func (s *multiMapClient) Create(ctx context.Context, request *multimapv1.CreateRequest) (*multimapv1.CreateResponse, error) {
+func (s *multiMapProxy) Open(ctx context.Context) error {
 	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request))
+		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -43,26 +46,21 @@ func (s *multiMapClient) Create(ctx context.Context, request *multimapv1.CreateR
 		}
 		return session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
 			Type:        multimapv1.PrimitiveType,
-			PrimitiveID: request.ID,
-			Tags:        request.Tags,
+			PrimitiveID: s.id,
 		})
 	})
 	if err != nil {
 		log.Warnw("Create",
-			logging.Trunc128("CreateRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response := &multimapv1.CreateResponse{}
-	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request),
-		logging.Trunc128("CreateResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *multiMapClient) Close(ctx context.Context, request *multimapv1.CloseRequest) (*multimapv1.CloseResponse, error) {
+func (s *multiMapProxy) Close(ctx context.Context) error {
 	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request))
+		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -70,22 +68,18 @@ func (s *multiMapClient) Close(ctx context.Context, request *multimapv1.CloseReq
 		if err != nil {
 			return err
 		}
-		return session.ClosePrimitive(ctx, request.ID.Name)
+		return session.ClosePrimitive(ctx, s.id.Name)
 	})
 	if err != nil {
 		log.Warnw("Close",
-			logging.Trunc128("CloseRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response := &multimapv1.CloseResponse{}
-	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request),
-		logging.Trunc128("CloseResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *multiMapClient) Size(ctx context.Context, request *multimapv1.SizeRequest) (*multimapv1.SizeResponse, error) {
+func (s *multiMapProxy) Size(ctx context.Context, request *multimapv1.SizeRequest) (*multimapv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Trunc128("SizeRequest", request))
 	partitions := s.Partitions()
@@ -141,7 +135,7 @@ func (s *multiMapClient) Size(ctx context.Context, request *multimapv1.SizeReque
 	return response, nil
 }
 
-func (s *multiMapClient) Put(ctx context.Context, request *multimapv1.PutRequest) (*multimapv1.PutResponse, error) {
+func (s *multiMapProxy) Put(ctx context.Context, request *multimapv1.PutRequest) (*multimapv1.PutResponse, error) {
 	log.Debugw("Put",
 		logging.Trunc128("PutRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -188,7 +182,7 @@ func (s *multiMapClient) Put(ctx context.Context, request *multimapv1.PutRequest
 	return response, nil
 }
 
-func (s *multiMapClient) PutAll(ctx context.Context, request *multimapv1.PutAllRequest) (*multimapv1.PutAllResponse, error) {
+func (s *multiMapProxy) PutAll(ctx context.Context, request *multimapv1.PutAllRequest) (*multimapv1.PutAllResponse, error) {
 	log.Debugw("PutAll",
 		logging.Trunc128("PutAllRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -237,7 +231,7 @@ func (s *multiMapClient) PutAll(ctx context.Context, request *multimapv1.PutAllR
 	return response, nil
 }
 
-func (s *multiMapClient) PutEntries(ctx context.Context, request *multimapv1.PutEntriesRequest) (*multimapv1.PutEntriesResponse, error) {
+func (s *multiMapProxy) PutEntries(ctx context.Context, request *multimapv1.PutEntriesRequest) (*multimapv1.PutEntriesResponse, error) {
 	log.Debugw("PutEntries",
 		logging.Trunc128("PutEntriesRequest", request))
 	entries := make(map[int][]multimapprotocolv1.Entry)
@@ -311,7 +305,7 @@ func (s *multiMapClient) PutEntries(ctx context.Context, request *multimapv1.Put
 	return response, nil
 }
 
-func (s *multiMapClient) Replace(ctx context.Context, request *multimapv1.ReplaceRequest) (*multimapv1.ReplaceResponse, error) {
+func (s *multiMapProxy) Replace(ctx context.Context, request *multimapv1.ReplaceRequest) (*multimapv1.ReplaceResponse, error) {
 	log.Debugw("Replace",
 		logging.Trunc128("ReplaceRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -360,7 +354,7 @@ func (s *multiMapClient) Replace(ctx context.Context, request *multimapv1.Replac
 	return response, nil
 }
 
-func (s *multiMapClient) Contains(ctx context.Context, request *multimapv1.ContainsRequest) (*multimapv1.ContainsResponse, error) {
+func (s *multiMapProxy) Contains(ctx context.Context, request *multimapv1.ContainsRequest) (*multimapv1.ContainsResponse, error) {
 	log.Debugw("Contains",
 		logging.Trunc128("ContainsRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -407,7 +401,7 @@ func (s *multiMapClient) Contains(ctx context.Context, request *multimapv1.Conta
 	return response, nil
 }
 
-func (s *multiMapClient) Get(ctx context.Context, request *multimapv1.GetRequest) (*multimapv1.GetResponse, error) {
+func (s *multiMapProxy) Get(ctx context.Context, request *multimapv1.GetRequest) (*multimapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc128("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -454,7 +448,7 @@ func (s *multiMapClient) Get(ctx context.Context, request *multimapv1.GetRequest
 	return response, nil
 }
 
-func (s *multiMapClient) Remove(ctx context.Context, request *multimapv1.RemoveRequest) (*multimapv1.RemoveResponse, error) {
+func (s *multiMapProxy) Remove(ctx context.Context, request *multimapv1.RemoveRequest) (*multimapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Trunc128("RemoveRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -503,7 +497,7 @@ func (s *multiMapClient) Remove(ctx context.Context, request *multimapv1.RemoveR
 	return response, nil
 }
 
-func (s *multiMapClient) RemoveAll(ctx context.Context, request *multimapv1.RemoveAllRequest) (*multimapv1.RemoveAllResponse, error) {
+func (s *multiMapProxy) RemoveAll(ctx context.Context, request *multimapv1.RemoveAllRequest) (*multimapv1.RemoveAllResponse, error) {
 	log.Debugw("RemoveAll",
 		logging.Trunc128("RemoveAllRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -552,7 +546,7 @@ func (s *multiMapClient) RemoveAll(ctx context.Context, request *multimapv1.Remo
 	return response, nil
 }
 
-func (s *multiMapClient) RemoveEntries(ctx context.Context, request *multimapv1.RemoveEntriesRequest) (*multimapv1.RemoveEntriesResponse, error) {
+func (s *multiMapProxy) RemoveEntries(ctx context.Context, request *multimapv1.RemoveEntriesRequest) (*multimapv1.RemoveEntriesResponse, error) {
 	log.Debugw("RemoveEntries",
 		logging.Trunc128("RemoveEntriesRequest", request))
 	entries := make(map[int][]multimapprotocolv1.Entry)
@@ -626,7 +620,7 @@ func (s *multiMapClient) RemoveEntries(ctx context.Context, request *multimapv1.
 	return response, nil
 }
 
-func (s *multiMapClient) Clear(ctx context.Context, request *multimapv1.ClearRequest) (*multimapv1.ClearResponse, error) {
+func (s *multiMapProxy) Clear(ctx context.Context, request *multimapv1.ClearRequest) (*multimapv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Trunc128("ClearRequest", request))
 	partitions := s.Partitions()
@@ -676,7 +670,7 @@ func (s *multiMapClient) Clear(ctx context.Context, request *multimapv1.ClearReq
 	return response, nil
 }
 
-func (s *multiMapClient) Events(request *multimapv1.EventsRequest, server multimapv1.MultiMap_EventsServer) error {
+func (s *multiMapProxy) Events(request *multimapv1.EventsRequest, server multimapv1.MultiMap_EventsServer) error {
 	log.Debugw("Events received",
 		logging.Trunc128("EventsRequest", request))
 	partitions := s.Partitions()
@@ -793,7 +787,7 @@ func (s *multiMapClient) Events(request *multimapv1.EventsRequest, server multim
 	return nil
 }
 
-func (s *multiMapClient) Entries(request *multimapv1.EntriesRequest, server multimapv1.MultiMap_EntriesServer) error {
+func (s *multiMapProxy) Entries(request *multimapv1.EntriesRequest, server multimapv1.MultiMap_EntriesServer) error {
 	log.Debugw("Entries received",
 		logging.Trunc128("EntriesRequest", request))
 	partitions := s.Partitions()
@@ -897,4 +891,4 @@ func (s *multiMapClient) Entries(request *multimapv1.EntriesRequest, server mult
 	return nil
 }
 
-var _ multimapv1.MultiMapServer = (*multiMapClient)(nil)
+var _ multimapv1.MultiMapServer = (*multiMapProxy)(nil)

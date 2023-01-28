@@ -12,6 +12,7 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimesetv1 "github.com/atomix/atomix/runtime/pkg/runtime/set/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
@@ -21,19 +22,21 @@ import (
 
 var log = logging.GetLogger()
 
-func NewSet(protocol *client.Protocol) setv1.SetServer {
-	return &setClient{
+func NewSet(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimesetv1.SetProxy {
+	return &setProxy{
 		Protocol: protocol,
+		id:       id,
 	}
 }
 
-type setClient struct {
+type setProxy struct {
 	*client.Protocol
+	id runtimev1.PrimitiveID
 }
 
-func (s *setClient) Create(ctx context.Context, request *setv1.CreateRequest) (*setv1.CreateResponse, error) {
+func (s *setProxy) Open(ctx context.Context) error {
 	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request))
+		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -43,26 +46,21 @@ func (s *setClient) Create(ctx context.Context, request *setv1.CreateRequest) (*
 		}
 		return session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
 			Type:        setv1.PrimitiveType,
-			PrimitiveID: request.ID,
-			Tags:        request.Tags,
+			PrimitiveID: s.id,
 		})
 	})
 	if err != nil {
 		log.Warnw("Create",
-			logging.Trunc128("CreateRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response := &setv1.CreateResponse{}
-	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request),
-		logging.Trunc128("CreateResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *setClient) Close(ctx context.Context, request *setv1.CloseRequest) (*setv1.CloseResponse, error) {
+func (s *setProxy) Close(ctx context.Context) error {
 	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request))
+		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -70,22 +68,18 @@ func (s *setClient) Close(ctx context.Context, request *setv1.CloseRequest) (*se
 		if err != nil {
 			return err
 		}
-		return session.ClosePrimitive(ctx, request.ID.Name)
+		return session.ClosePrimitive(ctx, s.id.Name)
 	})
 	if err != nil {
 		log.Warnw("Close",
-			logging.Trunc128("CloseRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response := &setv1.CloseResponse{}
-	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request),
-		logging.Trunc128("CloseResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *setClient) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1.SizeResponse, error) {
+func (s *setProxy) Size(ctx context.Context, request *setv1.SizeRequest) (*setv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Trunc128("SizeRequest", request))
 	partitions := s.Partitions()
@@ -141,7 +135,7 @@ func (s *setClient) Size(ctx context.Context, request *setv1.SizeRequest) (*setv
 	return response, nil
 }
 
-func (s *setClient) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.AddResponse, error) {
+func (s *setProxy) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.AddResponse, error) {
 	log.Debugw("Add",
 		logging.Trunc128("AddRequest", request))
 	partition := s.PartitionBy([]byte(request.Element.Value))
@@ -192,7 +186,7 @@ func (s *setClient) Add(ctx context.Context, request *setv1.AddRequest) (*setv1.
 	return response, nil
 }
 
-func (s *setClient) Contains(ctx context.Context, request *setv1.ContainsRequest) (*setv1.ContainsResponse, error) {
+func (s *setProxy) Contains(ctx context.Context, request *setv1.ContainsRequest) (*setv1.ContainsResponse, error) {
 	log.Debugw("Contains",
 		logging.Trunc128("ContainsRequest", request))
 	partition := s.PartitionBy([]byte(request.Element.Value))
@@ -242,7 +236,7 @@ func (s *setClient) Contains(ctx context.Context, request *setv1.ContainsRequest
 	return response, nil
 }
 
-func (s *setClient) Remove(ctx context.Context, request *setv1.RemoveRequest) (*setv1.RemoveResponse, error) {
+func (s *setProxy) Remove(ctx context.Context, request *setv1.RemoveRequest) (*setv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Trunc128("RemoveRequest", request))
 	partition := s.PartitionBy([]byte(request.Element.Value))
@@ -292,7 +286,7 @@ func (s *setClient) Remove(ctx context.Context, request *setv1.RemoveRequest) (*
 	return response, nil
 }
 
-func (s *setClient) Clear(ctx context.Context, request *setv1.ClearRequest) (*setv1.ClearResponse, error) {
+func (s *setProxy) Clear(ctx context.Context, request *setv1.ClearRequest) (*setv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Trunc128("ClearRequest", request))
 	partitions := s.Partitions()
@@ -342,7 +336,7 @@ func (s *setClient) Clear(ctx context.Context, request *setv1.ClearRequest) (*se
 	return response, nil
 }
 
-func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_EventsServer) error {
+func (s *setProxy) Events(request *setv1.EventsRequest, server setv1.Set_EventsServer) error {
 	log.Debugw("Events received",
 		logging.Trunc128("EventsRequest", request))
 	partitions := s.Partitions()
@@ -460,7 +454,7 @@ func (s *setClient) Events(request *setv1.EventsRequest, server setv1.Set_Events
 	return nil
 }
 
-func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_ElementsServer) error {
+func (s *setProxy) Elements(request *setv1.ElementsRequest, server setv1.Set_ElementsServer) error {
 	log.Debugw("Elements received",
 		logging.Trunc128("ElementsRequest", request))
 	partitions := s.Partitions()
@@ -563,4 +557,4 @@ func (s *setClient) Elements(request *setv1.ElementsRequest, server setv1.Set_El
 	return nil
 }
 
-var _ setv1.SetServer = (*setClient)(nil)
+var _ setv1.SetServer = (*setProxy)(nil)

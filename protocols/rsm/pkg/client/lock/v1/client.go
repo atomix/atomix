@@ -12,74 +12,69 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimelockv1 "github.com/atomix/atomix/runtime/pkg/runtime/lock/v1"
 	"google.golang.org/grpc"
 )
 
 var log = logging.GetLogger()
 
-func NewLock(protocol *client.Protocol) lockv1.LockServer {
-	return &lockClient{
+func NewLock(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimelockv1.LockProxy {
+	return &lockProxy{
 		Protocol: protocol,
+		id:       id,
 	}
 }
 
-type lockClient struct {
+type lockProxy struct {
 	*client.Protocol
+	id runtimev1.PrimitiveID
 }
 
-func (s *lockClient) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {
+func (s *lockProxy) Open(ctx context.Context) error {
 	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request))
-	partition := s.PartitionBy([]byte(request.ID.Name))
+		logging.String("Name", s.id.Name))
+	partition := s.PartitionBy([]byte(s.id.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Create",
-			logging.Trunc128("CreateRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
+	meta := runtimev1.PrimitiveMeta{
 		Type:        lockv1.PrimitiveType,
-		PrimitiveID: request.ID,
-		Tags:        request.Tags,
-	}); err != nil {
-		log.Warnw("Create",
-			logging.Trunc128("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
+		PrimitiveID: s.id,
 	}
-	response := &lockv1.CreateResponse{}
-	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request),
-		logging.Trunc128("CreateResponse", response))
-	return response, nil
+	if err := session.CreatePrimitive(ctx, meta); err != nil {
+		log.Warnw("Create",
+			logging.String("Name", s.id.Name),
+			logging.Error("Error", err))
+		return err
+	}
+	return nil
 }
 
-func (s *lockClient) Close(ctx context.Context, request *lockv1.CloseRequest) (*lockv1.CloseResponse, error) {
+func (s *lockProxy) Close(ctx context.Context) error {
 	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request))
-	partition := s.PartitionBy([]byte(request.ID.Name))
+		logging.String("Name", s.id.Name))
+	partition := s.PartitionBy([]byte(s.id.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
-		log.Warnw("Close",
-			logging.Trunc128("CloseRequest", request),
+		log.Warnw("Create",
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
+	if err := session.ClosePrimitive(ctx, s.id.Name); err != nil {
 		log.Warnw("Close",
-			logging.Trunc128("CloseRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response := &lockv1.CloseResponse{}
-	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request),
-		logging.Trunc128("CloseResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *lockClient) Lock(ctx context.Context, request *lockv1.LockRequest) (*lockv1.LockResponse, error) {
+func (s *lockProxy) Lock(ctx context.Context, request *lockv1.LockRequest) (*lockv1.LockResponse, error) {
 	log.Debugw("Lock",
 		logging.Trunc128("LockRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -126,7 +121,7 @@ func (s *lockClient) Lock(ctx context.Context, request *lockv1.LockRequest) (*lo
 	return response, nil
 }
 
-func (s *lockClient) Unlock(ctx context.Context, request *lockv1.UnlockRequest) (*lockv1.UnlockResponse, error) {
+func (s *lockProxy) Unlock(ctx context.Context, request *lockv1.UnlockRequest) (*lockv1.UnlockResponse, error) {
 	log.Debugw("Unlock",
 		logging.Trunc128("UnlockRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -169,7 +164,7 @@ func (s *lockClient) Unlock(ctx context.Context, request *lockv1.UnlockRequest) 
 	return response, nil
 }
 
-func (s *lockClient) GetLock(ctx context.Context, request *lockv1.GetLockRequest) (*lockv1.GetLockResponse, error) {
+func (s *lockProxy) GetLock(ctx context.Context, request *lockv1.GetLockRequest) (*lockv1.GetLockResponse, error) {
 	log.Debugw("GetLock",
 		logging.Trunc128("GetLockRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -214,4 +209,4 @@ func (s *lockClient) GetLock(ctx context.Context, request *lockv1.GetLockRequest
 	return response, nil
 }
 
-var _ lockv1.LockServer = (*lockClient)(nil)
+var _ lockv1.LockServer = (*lockProxy)(nil)

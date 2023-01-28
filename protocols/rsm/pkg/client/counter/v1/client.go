@@ -12,74 +12,69 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimecounterv1 "github.com/atomix/atomix/runtime/pkg/runtime/counter/v1"
 	"google.golang.org/grpc"
 )
 
 var log = logging.GetLogger()
 
-func NewCounter(protocol *client.Protocol) counterv1.CounterServer {
-	return &counterClient{
+func NewCounter(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimecounterv1.CounterProxy {
+	return &counterProxy{
 		Protocol: protocol,
+		id:       id,
 	}
 }
 
-type counterClient struct {
+type counterProxy struct {
 	*client.Protocol
+	id runtimev1.PrimitiveID
 }
 
-func (s *counterClient) Create(ctx context.Context, request *counterv1.CreateRequest) (*counterv1.CreateResponse, error) {
+func (s *counterProxy) Open(ctx context.Context) error {
 	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request))
-	partition := s.PartitionBy([]byte(request.ID.Name))
+		logging.String("Name", s.id.Name))
+	partition := s.PartitionBy([]byte(s.id.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Create",
-			logging.Trunc128("CreateRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
+	meta := runtimev1.PrimitiveMeta{
 		Type:        counterv1.PrimitiveType,
-		PrimitiveID: request.ID,
-		Tags:        request.Tags,
-	}); err != nil {
-		log.Warnw("Create",
-			logging.Trunc128("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
+		PrimitiveID: s.id,
 	}
-	response := &counterv1.CreateResponse{}
-	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request),
-		logging.Trunc128("CreateResponse", response))
-	return response, nil
+	if err := session.CreatePrimitive(ctx, meta); err != nil {
+		log.Warnw("Create",
+			logging.String("Name", s.id.Name),
+			logging.Error("Error", err))
+		return err
+	}
+	return nil
 }
 
-func (s *counterClient) Close(ctx context.Context, request *counterv1.CloseRequest) (*counterv1.CloseResponse, error) {
+func (s *counterProxy) Close(ctx context.Context) error {
 	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request))
-	partition := s.PartitionBy([]byte(request.ID.Name))
+		logging.String("Name", s.id.Name))
+	partition := s.PartitionBy([]byte(s.id.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
-		log.Warnw("Close",
-			logging.Trunc128("CloseRequest", request),
+		log.Warnw("Create",
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
+	if err := session.ClosePrimitive(ctx, s.id.Name); err != nil {
 		log.Warnw("Close",
-			logging.Trunc128("CloseRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response := &counterv1.CloseResponse{}
-	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request),
-		logging.Trunc128("CloseResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *counterClient) Set(ctx context.Context, request *counterv1.SetRequest) (*counterv1.SetResponse, error) {
+func (s *counterProxy) Set(ctx context.Context, request *counterv1.SetRequest) (*counterv1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Trunc128("SetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -126,7 +121,7 @@ func (s *counterClient) Set(ctx context.Context, request *counterv1.SetRequest) 
 	return response, nil
 }
 
-func (s *counterClient) Get(ctx context.Context, request *counterv1.GetRequest) (*counterv1.GetResponse, error) {
+func (s *counterProxy) Get(ctx context.Context, request *counterv1.GetRequest) (*counterv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc128("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -171,7 +166,7 @@ func (s *counterClient) Get(ctx context.Context, request *counterv1.GetRequest) 
 	return response, nil
 }
 
-func (s *counterClient) Increment(ctx context.Context, request *counterv1.IncrementRequest) (*counterv1.IncrementResponse, error) {
+func (s *counterProxy) Increment(ctx context.Context, request *counterv1.IncrementRequest) (*counterv1.IncrementResponse, error) {
 	log.Debugw("Increment",
 		logging.Trunc128("IncrementRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -218,7 +213,7 @@ func (s *counterClient) Increment(ctx context.Context, request *counterv1.Increm
 	return response, nil
 }
 
-func (s *counterClient) Decrement(ctx context.Context, request *counterv1.DecrementRequest) (*counterv1.DecrementResponse, error) {
+func (s *counterProxy) Decrement(ctx context.Context, request *counterv1.DecrementRequest) (*counterv1.DecrementResponse, error) {
 	log.Debugw("Decrement",
 		logging.Trunc128("DecrementRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -265,7 +260,7 @@ func (s *counterClient) Decrement(ctx context.Context, request *counterv1.Decrem
 	return response, nil
 }
 
-func (s *counterClient) Update(ctx context.Context, request *counterv1.UpdateRequest) (*counterv1.UpdateResponse, error) {
+func (s *counterProxy) Update(ctx context.Context, request *counterv1.UpdateRequest) (*counterv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Trunc128("UpdateRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -313,4 +308,4 @@ func (s *counterClient) Update(ctx context.Context, request *counterv1.UpdateReq
 	return response, nil
 }
 
-var _ counterv1.CounterServer = (*counterClient)(nil)
+var _ counterv1.CounterServer = (*counterProxy)(nil)

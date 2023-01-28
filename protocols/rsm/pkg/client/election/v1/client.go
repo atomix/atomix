@@ -12,75 +12,70 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimeelectionv1 "github.com/atomix/atomix/runtime/pkg/runtime/election/v1"
 	"google.golang.org/grpc"
 	"io"
 )
 
 var log = logging.GetLogger()
 
-func NewLeaderElection(protocol *client.Protocol) electionv1.LeaderElectionServer {
-	return &electionClient{
+func NewLeaderElection(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimeelectionv1.LeaderElectionProxy {
+	return &leaderElectionProxy{
 		Protocol: protocol,
+		id:       id,
 	}
 }
 
-type electionClient struct {
+type leaderElectionProxy struct {
 	*client.Protocol
+	id runtimev1.PrimitiveID
 }
 
-func (s *electionClient) Create(ctx context.Context, request *electionv1.CreateRequest) (*electionv1.CreateResponse, error) {
+func (s *leaderElectionProxy) Open(ctx context.Context) error {
 	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request))
-	partition := s.PartitionBy([]byte(request.ID.Name))
+		logging.String("Name", s.id.Name))
+	partition := s.PartitionBy([]byte(s.id.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
 		log.Warnw("Create",
-			logging.Trunc128("CreateRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	if err := session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
+	meta := runtimev1.PrimitiveMeta{
 		Type:        electionv1.PrimitiveType,
-		PrimitiveID: request.ID,
-		Tags:        request.Tags,
-	}); err != nil {
-		log.Warnw("Create",
-			logging.Trunc128("CreateRequest", request),
-			logging.Error("Error", err))
-		return nil, err
+		PrimitiveID: s.id,
 	}
-	response := &electionv1.CreateResponse{}
-	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request),
-		logging.Trunc128("CreateResponse", response))
-	return response, nil
+	if err := session.CreatePrimitive(ctx, meta); err != nil {
+		log.Warnw("Create",
+			logging.String("Name", s.id.Name),
+			logging.Error("Error", err))
+		return err
+	}
+	return nil
 }
 
-func (s *electionClient) Close(ctx context.Context, request *electionv1.CloseRequest) (*electionv1.CloseResponse, error) {
+func (s *leaderElectionProxy) Close(ctx context.Context) error {
 	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request))
-	partition := s.PartitionBy([]byte(request.ID.Name))
+		logging.String("Name", s.id.Name))
+	partition := s.PartitionBy([]byte(s.id.Name))
 	session, err := partition.GetSession(ctx)
 	if err != nil {
-		log.Warnw("Close",
-			logging.Trunc128("CloseRequest", request),
+		log.Warnw("Create",
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	if err := session.ClosePrimitive(ctx, request.ID.Name); err != nil {
+	if err := session.ClosePrimitive(ctx, s.id.Name); err != nil {
 		log.Warnw("Close",
-			logging.Trunc128("CloseRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response := &electionv1.CloseResponse{}
-	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request),
-		logging.Trunc128("CloseResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *electionClient) Enter(ctx context.Context, request *electionv1.EnterRequest) (*electionv1.EnterResponse, error) {
+func (s *leaderElectionProxy) Enter(ctx context.Context, request *electionv1.EnterRequest) (*electionv1.EnterResponse, error) {
 	log.Debugw("Enter",
 		logging.Trunc128("EnterRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -131,7 +126,7 @@ func (s *electionClient) Enter(ctx context.Context, request *electionv1.EnterReq
 	return response, nil
 }
 
-func (s *electionClient) Withdraw(ctx context.Context, request *electionv1.WithdrawRequest) (*electionv1.WithdrawResponse, error) {
+func (s *leaderElectionProxy) Withdraw(ctx context.Context, request *electionv1.WithdrawRequest) (*electionv1.WithdrawResponse, error) {
 	log.Debugw("Withdraw",
 		logging.Trunc128("WithdrawRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -182,7 +177,7 @@ func (s *electionClient) Withdraw(ctx context.Context, request *electionv1.Withd
 	return response, nil
 }
 
-func (s *electionClient) Anoint(ctx context.Context, request *electionv1.AnointRequest) (*electionv1.AnointResponse, error) {
+func (s *leaderElectionProxy) Anoint(ctx context.Context, request *electionv1.AnointRequest) (*electionv1.AnointResponse, error) {
 	log.Debugw("Anoint",
 		logging.Trunc128("AnointRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -233,7 +228,7 @@ func (s *electionClient) Anoint(ctx context.Context, request *electionv1.AnointR
 	return response, nil
 }
 
-func (s *electionClient) Promote(ctx context.Context, request *electionv1.PromoteRequest) (*electionv1.PromoteResponse, error) {
+func (s *leaderElectionProxy) Promote(ctx context.Context, request *electionv1.PromoteRequest) (*electionv1.PromoteResponse, error) {
 	log.Debugw("Promote",
 		logging.Trunc128("PromoteRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -284,7 +279,7 @@ func (s *electionClient) Promote(ctx context.Context, request *electionv1.Promot
 	return response, nil
 }
 
-func (s *electionClient) Demote(ctx context.Context, request *electionv1.DemoteRequest) (*electionv1.DemoteResponse, error) {
+func (s *leaderElectionProxy) Demote(ctx context.Context, request *electionv1.DemoteRequest) (*electionv1.DemoteResponse, error) {
 	log.Debugw("Demote",
 		logging.Trunc128("DemoteRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -335,7 +330,7 @@ func (s *electionClient) Demote(ctx context.Context, request *electionv1.DemoteR
 	return response, nil
 }
 
-func (s *electionClient) Evict(ctx context.Context, request *electionv1.EvictRequest) (*electionv1.EvictResponse, error) {
+func (s *leaderElectionProxy) Evict(ctx context.Context, request *electionv1.EvictRequest) (*electionv1.EvictResponse, error) {
 	log.Debugw("Evict",
 		logging.Trunc128("EvictRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -386,7 +381,7 @@ func (s *electionClient) Evict(ctx context.Context, request *electionv1.EvictReq
 	return response, nil
 }
 
-func (s *electionClient) GetTerm(ctx context.Context, request *electionv1.GetTermRequest) (*electionv1.GetTermResponse, error) {
+func (s *leaderElectionProxy) GetTerm(ctx context.Context, request *electionv1.GetTermRequest) (*electionv1.GetTermResponse, error) {
 	log.Debugw("GetTerm",
 		logging.Trunc128("GetTermRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -435,7 +430,7 @@ func (s *electionClient) GetTerm(ctx context.Context, request *electionv1.GetTer
 	return response, nil
 }
 
-func (s *electionClient) Watch(request *electionv1.WatchRequest, server electionv1.LeaderElection_WatchServer) error {
+func (s *leaderElectionProxy) Watch(request *electionv1.WatchRequest, server electionv1.LeaderElection_WatchServer) error {
 	log.Debugw("Watch",
 		logging.Trunc128("WatchRequest", request))
 	partition := s.PartitionBy([]byte(request.ID.Name))
@@ -502,4 +497,4 @@ func (s *electionClient) Watch(request *electionv1.WatchRequest, server election
 	}
 }
 
-var _ electionv1.LeaderElectionServer = (*electionClient)(nil)
+var _ electionv1.LeaderElectionServer = (*leaderElectionProxy)(nil)

@@ -12,6 +12,7 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimecountermapv1 "github.com/atomix/atomix/runtime/pkg/runtime/countermap/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
@@ -21,19 +22,21 @@ import (
 
 var log = logging.GetLogger()
 
-func NewCounterMap(protocol *client.Protocol) countermapv1.CounterMapServer {
-	return &counterMapClient{
+func NewCounterMap(protocol *client.Protocol, id runtimev1.PrimitiveID) runtimecountermapv1.CounterMapProxy {
+	return &counterMapProxy{
 		Protocol: protocol,
+		id:       id,
 	}
 }
 
-type counterMapClient struct {
+type counterMapProxy struct {
 	*client.Protocol
+	id runtimev1.PrimitiveID
 }
 
-func (s *counterMapClient) Create(ctx context.Context, request *countermapv1.CreateRequest) (*countermapv1.CreateResponse, error) {
+func (s *counterMapProxy) Open(ctx context.Context) error {
 	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request))
+		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -43,26 +46,21 @@ func (s *counterMapClient) Create(ctx context.Context, request *countermapv1.Cre
 		}
 		return session.CreatePrimitive(ctx, runtimev1.PrimitiveMeta{
 			Type:        countermapv1.PrimitiveType,
-			PrimitiveID: request.ID,
-			Tags:        request.Tags,
+			PrimitiveID: s.id,
 		})
 	})
 	if err != nil {
 		log.Warnw("Create",
-			logging.Trunc128("CreateRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response := &countermapv1.CreateResponse{}
-	log.Debugw("Create",
-		logging.Trunc128("CreateRequest", request),
-		logging.Trunc128("CreateResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *counterMapClient) Close(ctx context.Context, request *countermapv1.CloseRequest) (*countermapv1.CloseResponse, error) {
+func (s *counterMapProxy) Close(ctx context.Context) error {
 	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request))
+		logging.String("Name", s.id.Name))
 	partitions := s.Partitions()
 	err := async.IterAsync(len(partitions), func(i int) error {
 		partition := partitions[i]
@@ -70,22 +68,18 @@ func (s *counterMapClient) Close(ctx context.Context, request *countermapv1.Clos
 		if err != nil {
 			return err
 		}
-		return session.ClosePrimitive(ctx, request.ID.Name)
+		return session.ClosePrimitive(ctx, s.id.Name)
 	})
 	if err != nil {
 		log.Warnw("Close",
-			logging.Trunc128("CloseRequest", request),
+			logging.String("Name", s.id.Name),
 			logging.Error("Error", err))
-		return nil, err
+		return err
 	}
-	response := &countermapv1.CloseResponse{}
-	log.Debugw("Close",
-		logging.Trunc128("CloseRequest", request),
-		logging.Trunc128("CloseResponse", response))
-	return response, nil
+	return nil
 }
 
-func (s *counterMapClient) Size(ctx context.Context, request *countermapv1.SizeRequest) (*countermapv1.SizeResponse, error) {
+func (s *counterMapProxy) Size(ctx context.Context, request *countermapv1.SizeRequest) (*countermapv1.SizeResponse, error) {
 	log.Debugw("Size",
 		logging.Trunc128("SizeRequest", request))
 	partitions := s.Partitions()
@@ -141,7 +135,7 @@ func (s *counterMapClient) Size(ctx context.Context, request *countermapv1.SizeR
 	return response, nil
 }
 
-func (s *counterMapClient) Set(ctx context.Context, request *countermapv1.SetRequest) (*countermapv1.SetResponse, error) {
+func (s *counterMapProxy) Set(ctx context.Context, request *countermapv1.SetRequest) (*countermapv1.SetResponse, error) {
 	log.Debugw("Set",
 		logging.Trunc128("SetRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -190,7 +184,7 @@ func (s *counterMapClient) Set(ctx context.Context, request *countermapv1.SetReq
 	return response, nil
 }
 
-func (s *counterMapClient) Insert(ctx context.Context, request *countermapv1.InsertRequest) (*countermapv1.InsertResponse, error) {
+func (s *counterMapProxy) Insert(ctx context.Context, request *countermapv1.InsertRequest) (*countermapv1.InsertResponse, error) {
 	log.Debugw("Insert",
 		logging.Trunc128("InsertRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -236,7 +230,7 @@ func (s *counterMapClient) Insert(ctx context.Context, request *countermapv1.Ins
 	return response, nil
 }
 
-func (s *counterMapClient) Update(ctx context.Context, request *countermapv1.UpdateRequest) (*countermapv1.UpdateResponse, error) {
+func (s *counterMapProxy) Update(ctx context.Context, request *countermapv1.UpdateRequest) (*countermapv1.UpdateResponse, error) {
 	log.Debugw("Update",
 		logging.Trunc128("UpdateRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -285,7 +279,7 @@ func (s *counterMapClient) Update(ctx context.Context, request *countermapv1.Upd
 	return response, nil
 }
 
-func (s *counterMapClient) Increment(ctx context.Context, request *countermapv1.IncrementRequest) (*countermapv1.IncrementResponse, error) {
+func (s *counterMapProxy) Increment(ctx context.Context, request *countermapv1.IncrementRequest) (*countermapv1.IncrementResponse, error) {
 	log.Debugw("Increment",
 		logging.Trunc128("IncrementRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -334,7 +328,7 @@ func (s *counterMapClient) Increment(ctx context.Context, request *countermapv1.
 	return response, nil
 }
 
-func (s *counterMapClient) Decrement(ctx context.Context, request *countermapv1.DecrementRequest) (*countermapv1.DecrementResponse, error) {
+func (s *counterMapProxy) Decrement(ctx context.Context, request *countermapv1.DecrementRequest) (*countermapv1.DecrementResponse, error) {
 	log.Debugw("Decrement",
 		logging.Trunc128("DecrementRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -383,7 +377,7 @@ func (s *counterMapClient) Decrement(ctx context.Context, request *countermapv1.
 	return response, nil
 }
 
-func (s *counterMapClient) Get(ctx context.Context, request *countermapv1.GetRequest) (*countermapv1.GetResponse, error) {
+func (s *counterMapProxy) Get(ctx context.Context, request *countermapv1.GetRequest) (*countermapv1.GetResponse, error) {
 	log.Debugw("Get",
 		logging.Trunc128("GetRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -430,7 +424,7 @@ func (s *counterMapClient) Get(ctx context.Context, request *countermapv1.GetReq
 	return response, nil
 }
 
-func (s *counterMapClient) Remove(ctx context.Context, request *countermapv1.RemoveRequest) (*countermapv1.RemoveResponse, error) {
+func (s *counterMapProxy) Remove(ctx context.Context, request *countermapv1.RemoveRequest) (*countermapv1.RemoveResponse, error) {
 	log.Debugw("Remove",
 		logging.Trunc128("RemoveRequest", request))
 	partition := s.PartitionBy([]byte(request.Key))
@@ -479,7 +473,7 @@ func (s *counterMapClient) Remove(ctx context.Context, request *countermapv1.Rem
 	return response, nil
 }
 
-func (s *counterMapClient) Clear(ctx context.Context, request *countermapv1.ClearRequest) (*countermapv1.ClearResponse, error) {
+func (s *counterMapProxy) Clear(ctx context.Context, request *countermapv1.ClearRequest) (*countermapv1.ClearResponse, error) {
 	log.Debugw("Clear",
 		logging.Trunc128("ClearRequest", request))
 	partitions := s.Partitions()
@@ -529,7 +523,7 @@ func (s *counterMapClient) Clear(ctx context.Context, request *countermapv1.Clea
 	return response, nil
 }
 
-func (s *counterMapClient) Lock(ctx context.Context, request *countermapv1.LockRequest) (*countermapv1.LockResponse, error) {
+func (s *counterMapProxy) Lock(ctx context.Context, request *countermapv1.LockRequest) (*countermapv1.LockResponse, error) {
 	log.Debugw("Lock",
 		logging.Trunc128("LockRequest", request))
 
@@ -597,7 +591,7 @@ func (s *counterMapClient) Lock(ctx context.Context, request *countermapv1.LockR
 	return response, nil
 }
 
-func (s *counterMapClient) Unlock(ctx context.Context, request *countermapv1.UnlockRequest) (*countermapv1.UnlockResponse, error) {
+func (s *counterMapProxy) Unlock(ctx context.Context, request *countermapv1.UnlockRequest) (*countermapv1.UnlockResponse, error) {
 	log.Debugw("Unlock",
 		logging.Trunc128("UnlockRequest", request))
 	partitions := s.Partitions()
@@ -647,7 +641,7 @@ func (s *counterMapClient) Unlock(ctx context.Context, request *countermapv1.Unl
 	return response, nil
 }
 
-func (s *counterMapClient) Events(request *countermapv1.EventsRequest, server countermapv1.CounterMap_EventsServer) error {
+func (s *counterMapProxy) Events(request *countermapv1.EventsRequest, server countermapv1.CounterMap_EventsServer) error {
 	log.Debugw("Events received",
 		logging.Trunc128("EventsRequest", request))
 	partitions := s.Partitions()
@@ -771,7 +765,7 @@ func (s *counterMapClient) Events(request *countermapv1.EventsRequest, server co
 	return nil
 }
 
-func (s *counterMapClient) Entries(request *countermapv1.EntriesRequest, server countermapv1.CounterMap_EntriesServer) error {
+func (s *counterMapProxy) Entries(request *countermapv1.EntriesRequest, server countermapv1.CounterMap_EntriesServer) error {
 	log.Debugw("Entries received",
 		logging.Trunc128("EntriesRequest", request))
 	partitions := s.Partitions()
@@ -875,4 +869,4 @@ func (s *counterMapClient) Entries(request *countermapv1.EntriesRequest, server 
 	return nil
 }
 
-var _ countermapv1.CounterMapServer = (*counterMapClient)(nil)
+var _ countermapv1.CounterMapServer = (*counterMapProxy)(nil)
