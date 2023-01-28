@@ -35,16 +35,27 @@ import (
 
 func register(server *grpc.Server, runtime *runtime.Runtime) {
 	counterv1.RegisterCounterServer(server, counterproxyv1.NewCounterServer(runtime))
+	counterv1.RegisterCountersServer(server, counterproxyv1.NewCountersServer(runtime))
 	countermapv1.RegisterCounterMapServer(server, countermapproxyv1.NewCounterMapServer(runtime))
+	countermapv1.RegisterCounterMapsServer(server, countermapproxyv1.NewCounterMapsServer(runtime))
 	electionv1.RegisterLeaderElectionServer(server, electionproxyv1.NewLeaderElectionServer(runtime))
+	electionv1.RegisterLeaderElectionsServer(server, electionproxyv1.NewLeaderElectionsServer(runtime))
 	indexedmapv1.RegisterIndexedMapServer(server, indexedmapproxyv1.NewIndexedMapServer(runtime))
+	indexedmapv1.RegisterIndexedMapsServer(server, indexedmapproxyv1.NewIndexedMapsServer(runtime))
 	listv1.RegisterListServer(server, listproxyv1.NewListServer(runtime))
+	listv1.RegisterListsServer(server, listproxyv1.NewListsServer(runtime))
 	lockv1.RegisterLockServer(server, lockproxyv1.NewLockServer(runtime))
+	lockv1.RegisterLocksServer(server, lockproxyv1.NewLocksServer(runtime))
 	mapv1.RegisterMapServer(server, mapproxyv1.NewMapServer(runtime))
+	mapv1.RegisterMapsServer(server, mapproxyv1.NewMapsServer(runtime))
 	multimapv1.RegisterMultiMapServer(server, multimapproxyv1.NewMultiMapServer(runtime))
+	multimapv1.RegisterMultiMapsServer(server, multimapproxyv1.NewMultiMapsServer(runtime))
 	setv1.RegisterSetServer(server, setproxyv1.NewSetServer(runtime))
+	setv1.RegisterSetsServer(server, setproxyv1.NewSetsServer(runtime))
 	topicv1.RegisterTopicServer(server, topicproxyv1.NewTopicServer(runtime))
+	topicv1.RegisterTopicsServer(server, topicproxyv1.NewTopicsServer(runtime))
 	valuev1.RegisterValueServer(server, valueproxyv1.NewValueServer(runtime))
+	valuev1.RegisterValuesServer(server, valueproxyv1.NewValuesServer(runtime))
 }
 
 type Service struct {
