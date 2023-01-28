@@ -3,9 +3,8 @@ module github.com/atomix/atomix/sidecar
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.3.1-0.20230127225237-5b2fd17dc3b8
-	github.com/atomix/atomix/runtime v0.3.1-0.20230127230129-39b81a98f32c
-	github.com/gogo/protobuf v1.3.2
+	github.com/atomix/atomix/api v0.4.0
+	github.com/atomix/atomix/runtime v0.4.0
 	github.com/rogpeppe/go-internal v1.8.1
 	github.com/spf13/cobra v1.4.0
 	google.golang.org/grpc v1.46.0
@@ -13,6 +12,7 @@ require (
 
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
