@@ -26,56 +26,36 @@ func New(opts ...Option) *Runtime {
 	return &Runtime{
 		Options: options,
 		drivers: make(map[runtimev1.DriverID]driver.Driver),
-		conns:   make(map[runtimev1.StoreID]driver.Conn),
-		routes:  make(map[runtimev1.StoreID]*runtimev1.Route),
+		conns:   make(map[runtimev1.RouteID]driver.Conn),
+		routes:  make(map[runtimev1.RouteID]runtimev1.Route),
 	}
 }
 
 type Runtime struct {
 	Options
 	drivers    map[runtimev1.DriverID]driver.Driver
-	conns      map[runtimev1.StoreID]driver.Conn
-	routes     map[runtimev1.StoreID]*runtimev1.Route
+	conns      map[runtimev1.RouteID]driver.Conn
+	routes     map[runtimev1.RouteID]runtimev1.Route
 	primitives sync.Map
 	mu         sync.RWMutex
 }
 
-func (r *Runtime) lookup(storeID runtimev1.StoreID) (driver.Conn, error) {
+func (r *Runtime) lookup(routeID runtimev1.RouteID) (driver.Conn, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	conn, ok := r.conns[storeID]
+	conn, ok := r.conns[routeID]
 	if !ok {
-		return nil, errors.NewUnavailable("connection to store '%s' not found", storeID)
+		return nil, errors.NewUnavailable("connection to store '%s' not found", routeID)
 	}
 	return conn, nil
 }
 
-func (r *Runtime) AddRoute(ctx context.Context, route *runtimev1.Route) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if _, ok := r.routes[route.StoreID]; ok {
-		return errors.NewAlreadyExists("route already exists")
-	}
-	r.routes[route.StoreID] = route
-	return nil
-}
-
-func (r *Runtime) RemoveRoute(ctx context.Context, storeID runtimev1.StoreID) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if _, ok := r.routes[storeID]; !ok {
-		return errors.NewNotFound("route not found")
-	}
-	delete(r.routes, storeID)
-	return nil
-}
-
-func (r *Runtime) ConnectStore(ctx context.Context, driverID runtimev1.DriverID, store runtimev1.Store) error {
+func (r *Runtime) ConnectRoute(ctx context.Context, driverID runtimev1.DriverID, route runtimev1.Route) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, ok := r.conns[store.StoreID]; ok {
-		return errors.NewAlreadyExists("connection '%s' already exists", store.StoreID)
+	if _, ok := r.conns[route.RouteID]; ok {
+		return errors.NewAlreadyExists("connection '%s' already exists", route.RouteID)
 	}
 
 	drvr, ok := r.drivers[driverID]
@@ -96,72 +76,74 @@ func (r *Runtime) ConnectStore(ctx context.Context, driverID runtimev1.DriverID,
 		r.drivers[driverID] = drvr
 	}
 
-	log.Infow("Establishing connection to store",
-		logging.String("Name", store.StoreID.Name),
-		logging.String("Namespace", store.StoreID.Namespace))
-	conn, err := connect(ctx, drvr, store.Spec)
+	log.Infow("Establishing connection to route",
+		logging.String("Name", route.RouteID.Name),
+		logging.String("Namespace", route.RouteID.Namespace))
+	conn, err := connect(ctx, drvr, route.Config)
 	if err != nil {
-		log.Warnw("Connecting to store failed",
-			logging.String("Name", store.StoreID.Name),
-			logging.String("Namespace", store.StoreID.Namespace),
+		log.Warnw("Connecting to route failed",
+			logging.String("Name", route.RouteID.Name),
+			logging.String("Namespace", route.RouteID.Namespace),
 			logging.Error("Error", err))
 		return err
 	}
-	log.Infow("Connected to store",
-		logging.String("Name", store.StoreID.Name),
-		logging.String("Namespace", store.StoreID.Namespace))
-	r.conns[store.StoreID] = conn
+	log.Infow("Connected to route",
+		logging.String("Name", route.RouteID.Name),
+		logging.String("Namespace", route.RouteID.Namespace))
+	r.conns[route.RouteID] = conn
+	r.routes[route.RouteID] = route
 	return nil
 }
 
-func (r *Runtime) ConfigureStore(ctx context.Context, store runtimev1.Store) error {
+func (r *Runtime) ConfigureRoute(ctx context.Context, route runtimev1.Route) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	conn, ok := r.conns[store.StoreID]
+	conn, ok := r.conns[route.RouteID]
 	if !ok {
-		return errors.NewNotFound("connection to '%s' not found", store.StoreID)
+		return errors.NewNotFound("connection to '%s' not found", route.RouteID)
 	}
 
-	log.Infow("Reconfiguring connection to store",
-		logging.String("Name", store.StoreID.Name),
-		logging.String("Namespace", store.StoreID.Namespace))
-	if err := configure(ctx, conn, store.Spec); err != nil {
-		log.Warnw("Reconfiguring connection to store failed",
-			logging.String("Name", store.StoreID.Name),
-			logging.String("Namespace", store.StoreID.Namespace),
+	log.Infow("Reconfiguring connection to route",
+		logging.String("Name", route.RouteID.Name),
+		logging.String("Namespace", route.RouteID.Namespace))
+	if err := configure(ctx, conn, route.Config); err != nil {
+		log.Warnw("Reconfiguring connection to route failed",
+			logging.String("Name", route.RouteID.Name),
+			logging.String("Namespace", route.RouteID.Namespace),
 			logging.Error("Error", err))
 		return err
 	}
-	log.Infow("Reconfigured connection to store",
-		logging.String("Name", store.StoreID.Name),
-		logging.String("Namespace", store.StoreID.Namespace))
+	log.Infow("Reconfigured connection to route",
+		logging.String("Name", route.RouteID.Name),
+		logging.String("Namespace", route.RouteID.Namespace))
+	r.routes[route.RouteID] = route
 	return nil
 }
 
-func (r *Runtime) DisconnectStore(ctx context.Context, storeID runtimev1.StoreID) error {
+func (r *Runtime) DisconnectRoute(ctx context.Context, routeID runtimev1.RouteID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	conn, ok := r.conns[storeID]
+	conn, ok := r.conns[routeID]
 	if !ok {
-		return errors.NewNotFound("connection '%s' not found", storeID)
+		return errors.NewNotFound("connection '%s' not found", routeID)
 	}
-	defer delete(r.conns, storeID)
+	defer delete(r.conns, routeID)
 
 	log.Infow("Disconnecting from store",
-		logging.String("Name", storeID.Name),
-		logging.String("Namespace", storeID.Namespace))
+		logging.String("Name", routeID.Name),
+		logging.String("Namespace", routeID.Namespace))
 	if err := conn.Close(ctx); err != nil {
 		log.Warnw("Failed disconnecting from store",
-			logging.String("Name", storeID.Name),
-			logging.String("Namespace", storeID.Namespace),
+			logging.String("Name", routeID.Name),
+			logging.String("Namespace", routeID.Namespace),
 			logging.Error("Error", err))
 		return err
 	}
 	log.Infow("Connection to store closed",
-		logging.String("Name", storeID.Name),
-		logging.String("Namespace", storeID.Namespace))
+		logging.String("Name", routeID.Name),
+		logging.String("Namespace", routeID.Namespace))
 	return nil
 }
 
@@ -269,7 +251,7 @@ func configure(ctx context.Context, typedConn any, rawSpec *types.Any) error {
 	return nil
 }
 
-func (r *Runtime) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error) {
+func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.RouteID, *types.Any, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -278,49 +260,48 @@ func (r *Runtime) route(ctx context.Context, meta runtimev1.PrimitiveMeta) (runt
 		tags[tag] = true
 	}
 
+	var matchRoute *runtimev1.Route
+	var matchRule *runtimev1.RoutingRule
+	var matchScore int
 	for _, route := range r.routes {
-		if r.routeMatches(route, tags) {
-			for _, primitive := range route.Primitives {
-				if r.primitiveMatches(primitive.PrimitiveMeta, meta, tags) {
-					return route.StoreID, primitive.Spec, nil
-				}
+		for _, rule := range route.Rules {
+			if exactMatch(rule, meta) {
+				return route.RouteID, rule.Config, nil
 			}
-			return route.StoreID, nil, nil
+			if score, ok := scoreMatch(rule, tags); ok && score > matchScore {
+				matchRoute = &route
+				matchRule = &rule
+				matchScore = score
+			}
 		}
 	}
-	return runtimev1.StoreID{}, nil, errors.NewForbidden("no route matching tags %s", tags)
+
+	if matchRule != nil {
+		return matchRoute.RouteID, matchRule.Config, nil
+	}
+	return runtimev1.RouteID{}, nil, errors.NewForbidden("no route matching tags %s", tags)
 }
 
-func (r *Runtime) routeMatches(route *runtimev1.Route, tags map[string]bool) bool {
-	return tagsMatch(route.MatchTags, tags)
-}
-
-func (r *Runtime) primitiveMatches(primitive runtimev1.PrimitiveMeta, meta runtimev1.PrimitiveMeta, tags map[string]bool) bool {
-	// Compare the routing rule to the primitive type name
-	if primitive.Type.Name != meta.Type.Name {
+func exactMatch(rule runtimev1.RoutingRule, primitive runtimev1.PrimitiveMeta) bool {
+	if rule.Type.Name != "" && primitive.Type.Name != rule.Type.Name {
 		return false
 	}
-	// Compare the routing rule to the primitive type version
-	if primitive.Type.APIVersion != meta.Type.APIVersion {
+	if rule.Type.APIVersion != "" && primitive.Type.APIVersion != rule.Type.APIVersion {
 		return false
 	}
-	return tagsMatch(primitive.Tags, tags)
-}
-
-func tagsMatch(routeTags []string, primitiveTags map[string]bool) bool {
-	// If the route requires no tags, it's always a match
-	if len(routeTags) == 0 {
-		return true
-	}
-	// If the primitive is not tagged, it won't match a route with tags
-	if len(primitiveTags) == 0 {
-		return false
-	}
-	// All tags required by the route must be present in the primitive
-	for _, tag := range routeTags {
-		if _, ok := primitiveTags[tag]; !ok {
-			return false
+	for _, id := range rule.MatchIds {
+		if primitive.Name == id.Name {
+			return true
 		}
 	}
-	return true
+	return false
+}
+
+func scoreMatch(rule runtimev1.RoutingRule, tags map[string]bool) (int, bool) {
+	for _, tag := range rule.MatchTags {
+		if _, ok := tags[tag]; !ok {
+			return 0, false
+		}
+	}
+	return len(rule.MatchTags), true
 }

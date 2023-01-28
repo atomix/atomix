@@ -20,82 +20,50 @@ type runtimeServer struct {
 	runtime *Runtime
 }
 
-func (s *runtimeServer) AddRoute(ctx context.Context, request *runtimev1.AddRouteRequest) (*runtimev1.AddRouteResponse, error) {
-	log.Debugw("AddRoute",
-		logging.Stringer("AddRouteRequest", request))
-	if err := s.runtime.AddRoute(ctx, request.Route); err != nil {
-		log.Debugw("AddRoute",
-			logging.Stringer("AddRouteRequest", request),
+func (s *runtimeServer) ConnectRoute(ctx context.Context, request *runtimev1.ConnectRouteRequest) (*runtimev1.ConnectRouteResponse, error) {
+	log.Debugw("ConnectRoute",
+		logging.Stringer("ConnectRouteRequest", request))
+	if err := s.runtime.ConnectRoute(ctx, request.DriverID, request.Route); err != nil {
+		log.Debugw("ConnectRoute",
+			logging.Stringer("ConnectRouteRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response := &runtimev1.AddRouteResponse{}
-	log.Debugw("AddRoute",
-		logging.Stringer("AddRouteRequest", request),
-		logging.Stringer("AddRouteResponse", response))
+	response := &runtimev1.ConnectRouteResponse{}
+	log.Debugw("ConnectRoute",
+		logging.Stringer("ConnectRouteRequest", request),
+		logging.Stringer("ConnectRouteResponse", response))
 	return response, nil
 }
 
-func (s *runtimeServer) RemoveRoute(ctx context.Context, request *runtimev1.RemoveRouteRequest) (*runtimev1.RemoveRouteResponse, error) {
-	log.Debugw("RemoveRoute",
-		logging.Stringer("RemoveRouteRequest", request))
-	if err := s.runtime.RemoveRoute(ctx, request.StoreID); err != nil {
-		log.Debugw("RemoveRoute",
-			logging.Stringer("RemoveRouteRequest", request),
+func (s *runtimeServer) ConfigureRoute(ctx context.Context, request *runtimev1.ConfigureRouteRequest) (*runtimev1.ConfigureRouteResponse, error) {
+	log.Debugw("ConfigureRoute",
+		logging.Stringer("ConfigureRouteRequest", request))
+	if err := s.runtime.ConfigureRoute(ctx, request.Route); err != nil {
+		log.Debugw("ConfigureRoute",
+			logging.Stringer("ConfigureRouteRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response := &runtimev1.RemoveRouteResponse{}
-	log.Debugw("RemoveRoute",
-		logging.Stringer("RemoveRouteRequest", request),
-		logging.Stringer("RemoveRouteResponse", response))
+	response := &runtimev1.ConfigureRouteResponse{}
+	log.Debugw("ConfigureRoute",
+		logging.Stringer("ConfigureRouteRequest", request),
+		logging.Stringer("ConfigureRouteResponse", response))
 	return response, nil
 }
 
-func (s *runtimeServer) ConnectStore(ctx context.Context, request *runtimev1.ConnectStoreRequest) (*runtimev1.ConnectStoreResponse, error) {
-	log.Debugw("ConnectStore",
-		logging.Stringer("ConnectStoreRequest", request))
-	if err := s.runtime.ConnectStore(ctx, request.DriverID, request.Store); err != nil {
-		log.Debugw("ConnectStore",
-			logging.Stringer("ConnectStoreRequest", request),
+func (s *runtimeServer) DisconnectRoute(ctx context.Context, request *runtimev1.DisconnectRouteRequest) (*runtimev1.DisconnectRouteResponse, error) {
+	log.Debugw("DisconnectRoute",
+		logging.Stringer("DisconnectRouteRequest", request))
+	if err := s.runtime.DisconnectRoute(ctx, request.RouteID); err != nil {
+		log.Debugw("DisconnectRoute",
+			logging.Stringer("DisconnectRouteRequest", request),
 			logging.Error("Error", err))
 		return nil, err
 	}
-	response := &runtimev1.ConnectStoreResponse{}
-	log.Debugw("ConnectStore",
-		logging.Stringer("ConnectStoreRequest", request),
-		logging.Stringer("ConnectStoreResponse", response))
-	return response, nil
-}
-
-func (s *runtimeServer) ConfigureStore(ctx context.Context, request *runtimev1.ConfigureStoreRequest) (*runtimev1.ConfigureStoreResponse, error) {
-	log.Debugw("ConfigureStore",
-		logging.Stringer("ConfigureStoreRequest", request))
-	if err := s.runtime.ConfigureStore(ctx, request.Store); err != nil {
-		log.Debugw("ConfigureStore",
-			logging.Stringer("ConfigureStoreRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response := &runtimev1.ConfigureStoreResponse{}
-	log.Debugw("ConfigureStore",
-		logging.Stringer("ConfigureStoreRequest", request),
-		logging.Stringer("ConfigureStoreResponse", response))
-	return response, nil
-}
-
-func (s *runtimeServer) DisconnectStore(ctx context.Context, request *runtimev1.DisconnectStoreRequest) (*runtimev1.DisconnectStoreResponse, error) {
-	log.Debugw("DisconnectStore",
-		logging.Stringer("DisconnectStoreRequest", request))
-	if err := s.runtime.DisconnectStore(ctx, request.StoreID); err != nil {
-		log.Debugw("DisconnectStore",
-			logging.Stringer("DisconnectStoreRequest", request),
-			logging.Error("Error", err))
-		return nil, err
-	}
-	response := &runtimev1.DisconnectStoreResponse{}
-	log.Debugw("DisconnectStore",
-		logging.Stringer("DisconnectStoreRequest", request),
-		logging.Stringer("DisconnectStoreResponse", response))
+	response := &runtimev1.DisconnectRouteResponse{}
+	log.Debugw("DisconnectRoute",
+		logging.Stringer("DisconnectRouteRequest", request),
+		logging.Stringer("DisconnectRouteResponse", response))
 	return response, nil
 }

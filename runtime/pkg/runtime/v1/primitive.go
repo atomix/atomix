@@ -46,14 +46,12 @@ type primitiveManager[P PrimitiveProxy, C proto.Message] struct {
 func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtimev1.PrimitiveID, tags []string) (C, error) {
 	var config C
 
-	meta := runtimev1.PrimitiveMeta{
+	// Route the store and spec for the primitive
+	storeID, spec, err := c.runtime.route(runtimev1.PrimitiveMeta{
 		Type:        c.primitiveType,
 		PrimitiveID: primitiveID,
 		Tags:        tags,
-	}
-
-	// Route the store and spec for the primitive
-	storeID, spec, err := c.runtime.route(ctx, meta)
+	})
 	if err != nil {
 		return config, err
 	}
