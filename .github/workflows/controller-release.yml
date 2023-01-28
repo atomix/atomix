@@ -16,8 +16,8 @@ concurrency:
   group: ${{ github.repository }}-release
 
 jobs:
-  publish-controller:
-    name: Build and push controller
+  publish-image:
+    name: Build and push Docker image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -38,8 +38,7 @@ jobs:
     name: Publish Helm chart
     runs-on: ubuntu-latest
     needs:
-      - publish-controller
-      - publish-init
+      - publish-image
     steps:
       - name: Checkout
         uses: actions/checkout@v3
