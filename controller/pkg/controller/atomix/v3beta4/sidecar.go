@@ -31,6 +31,7 @@ const (
 )
 
 const (
+	proxyProfileLabel   = "proxy.atomix.io/profile"
 	runtimeProfileLabel = "runtime.atomix.io/profile"
 )
 

@@ -94,12 +94,86 @@ func addRuntimeController(mgr manager.Manager) error {
 		return err
 	}
 
+	// Watch for changes to StorageProfiles and reconcile all Pods in the same namespace
+	err = c.Watch(&source.Kind{Type: &atomixv3beta4.StorageProfile{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
+		requirement, err := labels.NewRequirement(proxyProfileLabel, selection.Exists, nil)
+		if err != nil {
+			log.Error(err)
+			return nil
+		}
+		selector := labels.NewSelector().Add(*requirement)
+
+		pods := &corev1.PodList{}
+		options := &client.ListOptions{
+			Namespace:     object.GetNamespace(),
+			LabelSelector: selector,
+		}
+		if err := mgr.GetClient().List(ctx, pods, options); err != nil {
+			log.Error(err)
+			return nil
+		}
+
+		var requests []reconcile.Request
+		for _, pod := range pods.Items {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: pod.Namespace,
+					Name:      pod.Name,
+				},
+			})
+		}
+		return requests
+	}))
+	if err != nil {
+		return err
+	}
+
 	// Watch for changes to DataStores and reconcile all Pods
 	err = c.Watch(&source.Kind{Type: &atomixv3beta4.DataStore{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
 
 		requirement, err := labels.NewRequirement(runtimeProfileLabel, selection.Exists, nil)
+		if err != nil {
+			log.Error(err)
+			return nil
+		}
+		selector := labels.NewSelector().Add(*requirement)
+
+		pods := &corev1.PodList{}
+		options := &client.ListOptions{
+			Namespace:     object.GetNamespace(),
+			LabelSelector: selector,
+		}
+		if err := mgr.GetClient().List(ctx, pods, options); err != nil {
+			log.Error(err)
+			return nil
+		}
+
+		var requests []reconcile.Request
+		for _, pod := range pods.Items {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: pod.Namespace,
+					Name:      pod.Name,
+				},
+			})
+		}
+		return requests
+	}))
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to DataStores and reconcile all Pods
+	err = c.Watch(&source.Kind{Type: &atomixv3beta4.DataStore{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
+		requirement, err := labels.NewRequirement(proxyProfileLabel, selection.Exists, nil)
 		if err != nil {
 			log.Error(err)
 			return nil
@@ -161,7 +235,10 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 	profileName, ok := pod.Labels[runtimeProfileLabel]
 	if !ok {
-		return reconcile.Result{}, nil
+		profileName, ok = pod.Labels[proxyProfileLabel]
+		if !ok {
+			return reconcile.Result{}, nil
+		}
 	}
 
 	profileNamespacedName := types.NamespacedName{
@@ -304,7 +381,7 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 			_, err = client.DisconnectRoute(ctx, request)
 			if err != nil {
 				if !errors.IsNotFound(err) {
-					log.Error(err)
+					log.Warn(err)
 					r.events.Eventf(pod, "Warning", "DisconnectRouteFailed", "Failed disconnecting from store '%s': %s", storeNamespacedName, err)
 					return false, err
 				}
@@ -356,7 +433,7 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 		_, err = client.ConnectRoute(ctx, request)
 		if err != nil {
 			if !errors.IsAlreadyExists(err) {
-				log.Error(err)
+				log.Warn(err)
 				r.events.Eventf(pod, "Warning", "ConnectRouteFailed", "Failed connecting to store '%s': %s", storeNamespacedName, err)
 				return false, err
 			}
@@ -394,7 +471,7 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 		if err != nil {
 			if !errors.IsNotFound(err) {
 				r.events.Eventf(pod, "Warning", "ConfigureRouteFailed", "Failed reconfiguring store '%s': %s", storeNamespacedName, err)
-				log.Error(err)
+				log.Warn(err)
 				return false, err
 			}
 			// If the runtime returned a NotFound error, set the route to Connecting to establish the connection.
