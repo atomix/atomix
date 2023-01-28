@@ -16,6 +16,7 @@
     - [PrimitiveType](#atomix-runtime-v1-PrimitiveType)
     - [ProgramRoutesRequest](#atomix-runtime-v1-ProgramRoutesRequest)
     - [ProgramRoutesResponse](#atomix-runtime-v1-ProgramRoutesResponse)
+    - [Route](#atomix-runtime-v1-Route)
     - [RouteID](#atomix-runtime-v1-RouteID)
     - [RoutingRule](#atomix-runtime-v1-RoutingRule)
   
@@ -182,8 +183,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| route_id | [RouteID](#atomix-runtime-v1-RouteID) |  |  |
-| rules | [RoutingRule](#atomix-runtime-v1-RoutingRule) | repeated |  |
+| routes | [Route](#atomix-runtime-v1-Route) | repeated |  |
 
 
 
@@ -194,6 +194,22 @@
 
 ### ProgramRoutesResponse
 
+
+
+
+
+
+
+<a name="atomix-runtime-v1-Route"></a>
+
+### Route
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| route_id | [RouteID](#atomix-runtime-v1-RouteID) |  |  |
+| rules | [RoutingRule](#atomix-runtime-v1-RoutingRule) | repeated |  |
 
 
 

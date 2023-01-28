@@ -47,6 +47,16 @@ message RouteID {
     string name = 2;
 }
 
+message Route {
+    RouteID route_id = 1 [
+        (gogoproto.customname) = "RouteID",
+        (gogoproto.nullable) = false
+    ];
+    repeated RoutingRule rules = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
 message PrimitiveID {
     option (gogoproto.equal) = true;
     string name = 1;
@@ -73,11 +83,7 @@ message PrimitiveMeta {
 }
 
 message ProgramRoutesRequest {
-    RouteID route_id = 1 [
-        (gogoproto.customname) = "RouteID",
-        (gogoproto.nullable) = false
-    ];
-    repeated RoutingRule rules = 2 [
+    repeated Route routes = 1 [
         (gogoproto.nullable) = false
     ];
 }
