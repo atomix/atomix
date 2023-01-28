@@ -550,6 +550,12 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 
 func toRuntimeRoute(store types.NamespacedName, route *atomixv3beta4.Route) runtimev1.Route {
 	var rules []runtimev1.RoutingRule
+	if len(route.Rules) == 0 {
+		rules = append(rules, runtimev1.RoutingRule{
+			Names: []string{"*"},
+		})
+	}
+	
 	for _, rule := range route.Rules {
 		var config *gogotypes.Any
 		if rule.Config.Raw != nil {
