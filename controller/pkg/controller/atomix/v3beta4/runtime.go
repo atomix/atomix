@@ -36,6 +36,8 @@ import (
 
 const runtimeReadyCondition = "runtime.atomix.io/ready"
 
+const wildcard = "*"
+
 func addRuntimeController(mgr manager.Manager) error {
 	// Create a new controller
 	c, err := controller.New("runtime-controller", mgr, controller.Options{
@@ -299,11 +301,11 @@ func (r *RuntimeReconciler) reconcileProfile(ctx context.Context, log logging.Lo
 			routes = append(routes, toRuntimeRoute(storeNamespacedName, &route))
 		}
 
-		request := &runtimev1.ProgramRoutesRequest{
+		request := &runtimev1.ProgramRequest{
 			Routes: routes,
 		}
 		client := runtimev1.NewRuntimeClient(conn)
-		_, err = client.ProgramRoutes(ctx, request)
+		_, err = client.Program(ctx, request)
 		if err != nil {
 			if !errors.IsForbidden(err) {
 				log.Warn(err)
@@ -420,13 +422,13 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 			}
 
 			client := runtimev1.NewRuntimeClient(conn)
-			request := &runtimev1.DisconnectRouteRequest{
-				RouteID: runtimev1.RouteID{
+			request := &runtimev1.DisconnectRequest{
+				StoreID: runtimev1.StoreID{
 					Namespace: storeNamespacedName.Namespace,
 					Name:      storeNamespacedName.Name,
 				},
 			}
-			_, err = client.DisconnectRoute(ctx, request)
+			_, err = client.Disconnect(ctx, request)
 			if err != nil {
 				if !errors.IsNotFound(err) {
 					log.Warn(err)
@@ -466,8 +468,8 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 		}
 
 		client := runtimev1.NewRuntimeClient(conn)
-		request := &runtimev1.ConnectRouteRequest{
-			RouteID: runtimev1.RouteID{
+		request := &runtimev1.ConnectRequest{
+			StoreID: runtimev1.StoreID{
 				Namespace: storeNamespacedName.Namespace,
 				Name:      storeNamespacedName.Name,
 			},
@@ -479,7 +481,7 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 				Value: store.Spec.Config.Raw,
 			},
 		}
-		_, err = client.ConnectRoute(ctx, request)
+		_, err = client.Connect(ctx, request)
 		if err != nil {
 			if !errors.IsAlreadyExists(err) {
 				log.Warn(err)
@@ -513,8 +515,8 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 		}
 
 		client := runtimev1.NewRuntimeClient(conn)
-		request := &runtimev1.ConfigureRouteRequest{
-			RouteID: runtimev1.RouteID{
+		request := &runtimev1.ConfigureRequest{
+			StoreID: runtimev1.StoreID{
 				Namespace: storeNamespacedName.Namespace,
 				Name:      storeNamespacedName.Name,
 			},
@@ -522,7 +524,7 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 				Value: store.Spec.Config.Raw,
 			},
 		}
-		_, err = client.ConfigureRoute(ctx, request)
+		_, err = client.Configure(ctx, request)
 		if err != nil {
 			if !errors.IsNotFound(err) {
 				r.events.Eventf(pod, "Warning", "ConfigureRouteFailed", "Failed reconfiguring route to '%s': %s", storeNamespacedName, err)
@@ -549,13 +551,6 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 func toRuntimeRoute(store types.NamespacedName, route *atomixv3beta4.Route) runtimev1.Route {
 	var rules []runtimev1.RoutingRule
 	for _, rule := range route.Rules {
-		var primitives []runtimev1.PrimitiveID
-		for _, name := range rule.Names {
-			primitives = append(primitives, runtimev1.PrimitiveID{
-				Name: name,
-			})
-		}
-
 		var config *gogotypes.Any
 		if rule.Config.Raw != nil {
 			config = &gogotypes.Any{
@@ -563,19 +558,24 @@ func toRuntimeRoute(store types.NamespacedName, route *atomixv3beta4.Route) runt
 			}
 		}
 
+		names := rule.Names
+		if len(names) == 0 {
+			names = []string{wildcard}
+		}
+
 		rules = append(rules, runtimev1.RoutingRule{
 			Type: runtimev1.PrimitiveType{
 				Name:       rule.Kind,
 				APIVersion: rule.APIVersion,
 			},
-			Primitives: primitives,
-			Tags:       rule.Tags,
-			Config:     config,
+			Names:  names,
+			Tags:   rule.Tags,
+			Config: config,
 		})
 	}
 
 	return runtimev1.Route{
-		RouteID: runtimev1.RouteID{
+		StoreID: runtimev1.StoreID{
 			Namespace: store.Namespace,
 			Name:      store.Name,
 		},
