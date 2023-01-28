@@ -213,7 +213,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | type | [PrimitiveType](#atomix-runtime-v1-PrimitiveType) |  |  |
-| ids | [PrimitiveID](#atomix-runtime-v1-PrimitiveID) | repeated |  |
+| primitives | [PrimitiveID](#atomix-runtime-v1-PrimitiveID) | repeated |  |
 | tags | [string](#string) | repeated |  |
 | config | [google.protobuf.Any](#google-protobuf-Any) |  |  |
 
