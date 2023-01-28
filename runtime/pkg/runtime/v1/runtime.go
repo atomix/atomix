@@ -289,7 +289,7 @@ func exactMatch(rule runtimev1.RoutingRule, primitive runtimev1.PrimitiveMeta) b
 	if rule.Type.APIVersion != "" && primitive.Type.APIVersion != rule.Type.APIVersion {
 		return false
 	}
-	for _, id := range rule.MatchIds {
+	for _, id := range rule.Primitives {
 		if primitive.Name == id.Name {
 			return true
 		}
@@ -298,10 +298,10 @@ func exactMatch(rule runtimev1.RoutingRule, primitive runtimev1.PrimitiveMeta) b
 }
 
 func scoreMatch(rule runtimev1.RoutingRule, tags map[string]bool) (int, bool) {
-	for _, tag := range rule.MatchTags {
+	for _, tag := range rule.Tags {
 		if _, ok := tags[tag]; !ok {
 			return 0, false
 		}
 	}
-	return len(rule.MatchTags), true
+	return len(rule.Tags), true
 }
