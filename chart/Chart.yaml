@@ -29,8 +29,8 @@ dependencies:
     condition: stores.raft.enabled
     alias: raft-controller
   - name: atomix-shared-memory-controller
-    version: 2.0.0
-    repository: file://../stores/shared-memory/chart
+    version: 0.4.0
+    repository: https://atomix.github.io/atomix
     condition: stores.shared-memory.enabled
     alias: shared-memory-controller
   - name: atomix-pod-memory-controller
