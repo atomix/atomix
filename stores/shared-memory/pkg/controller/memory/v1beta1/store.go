@@ -7,7 +7,7 @@ package v1beta1
 import (
 	"context"
 	"fmt"
-	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
+	atomixv3beta4 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta4"
 	rsmv1 "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/stores/shared-memory/pkg/node"
@@ -106,7 +106,7 @@ func addSharedMemoryStoreController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to secondary resource DataStore
-	err = controller.Watch(&source.Kind{Type: &atomixv3beta3.DataStore{}}, &handler.EnqueueRequestForOwner{
+	err = controller.Watch(&source.Kind{Type: &atomixv3beta4.DataStore{}}, &handler.EnqueueRequestForOwner{
 		OwnerType:    &sharedmemoryv1beta1.SharedMemoryStore{},
 		IsController: true,
 	})
@@ -397,7 +397,7 @@ func (r *SharedMemoryStoreReconciler) addService(ctx context.Context, log loggin
 }
 
 func (r *SharedMemoryStoreReconciler) reconcileDataStore(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
-	dataStore := &atomixv3beta3.DataStore{}
+	dataStore := &atomixv3beta4.DataStore{}
 	name := types.NamespacedName{
 		Namespace: store.Namespace,
 		Name:      store.Name,
@@ -429,14 +429,14 @@ func (r *SharedMemoryStoreReconciler) addDataStore(ctx context.Context, log logg
 		return err
 	}
 
-	dataStore := &atomixv3beta3.DataStore{
+	dataStore := &atomixv3beta4.DataStore{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: store.Namespace,
 			Name:      store.Name,
 			Labels:    store.Labels,
 		},
-		Spec: atomixv3beta3.DataStoreSpec{
-			Driver: atomixv3beta3.Driver{
+		Spec: atomixv3beta4.DataStoreSpec{
+			Driver: atomixv3beta4.Driver{
 				Name:       driverName,
 				APIVersion: driverVersion,
 			},

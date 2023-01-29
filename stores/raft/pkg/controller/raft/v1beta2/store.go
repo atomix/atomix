@@ -7,7 +7,7 @@ package v1beta2
 import (
 	"context"
 	"fmt"
-	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
+	atomixv3beta4 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta4"
 	rsmv1 "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/gogo/protobuf/jsonpb"
@@ -57,7 +57,7 @@ func addRaftStoreController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to secondary resource DataStore
-	err = controller.Watch(&source.Kind{Type: &atomixv3beta3.DataStore{}}, &handler.EnqueueRequestForOwner{
+	err = controller.Watch(&source.Kind{Type: &atomixv3beta4.DataStore{}}, &handler.EnqueueRequestForOwner{
 		OwnerType:    &raftv1beta2.RaftStore{},
 		IsController: true,
 	})
@@ -293,7 +293,7 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 		Namespace: store.Namespace,
 		Name:      store.Name,
 	}
-	dataStore := &atomixv3beta3.DataStore{}
+	dataStore := &atomixv3beta4.DataStore{}
 	if ok, err := get(r.client, ctx, dataStoreName, dataStore, log); err != nil {
 		return false, err
 	} else if !ok {
@@ -304,14 +304,14 @@ func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log loggin
 			return false, err
 		}
 
-		dataStore = &atomixv3beta3.DataStore{
+		dataStore = &atomixv3beta4.DataStore{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: dataStoreName.Namespace,
 				Name:      dataStoreName.Name,
 				Labels:    store.Labels,
 			},
-			Spec: atomixv3beta3.DataStoreSpec{
-				Driver: atomixv3beta3.Driver{
+			Spec: atomixv3beta4.DataStoreSpec{
+				Driver: atomixv3beta4.Driver{
 					Name:       driverName,
 					APIVersion: driverVersion,
 				},

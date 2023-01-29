@@ -6,7 +6,7 @@ package v1beta1
 
 import (
 	"context"
-	atomixv3beta3 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta3"
+	atomixv3beta4 "github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta4"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -53,7 +53,7 @@ func addPodMemoryStoreController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to secondary resource Store
-	err = controller.Watch(&source.Kind{Type: &atomixv3beta3.DataStore{}}, &handler.EnqueueRequestForOwner{
+	err = controller.Watch(&source.Kind{Type: &atomixv3beta4.DataStore{}}, &handler.EnqueueRequestForOwner{
 		OwnerType:    &podmemoryv1beta1.PodMemoryStore{},
 		IsController: true,
 	})
@@ -84,7 +84,7 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 		return reconcile.Result{}, err
 	}
 
-	dataStore := &atomixv3beta3.DataStore{}
+	dataStore := &atomixv3beta4.DataStore{}
 	dataStoreName := types.NamespacedName{
 		Namespace: store.Namespace,
 		Name:      store.Name,
@@ -95,14 +95,14 @@ func (r *MultiRaftStoreReconciler) Reconcile(ctx context.Context, request reconc
 			return reconcile.Result{}, err
 		}
 
-		dataStore = &atomixv3beta3.DataStore{
+		dataStore = &atomixv3beta4.DataStore{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: dataStoreName.Namespace,
 				Name:      dataStoreName.Name,
 				Labels:    store.Labels,
 			},
-			Spec: atomixv3beta3.DataStoreSpec{
-				Driver: atomixv3beta3.Driver{
+			Spec: atomixv3beta4.DataStoreSpec{
+				Driver: atomixv3beta4.Driver{
 					Name:       driverName,
 					APIVersion: driverVersion,
 				},
