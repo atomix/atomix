@@ -4,25 +4,20 @@
 
 replicas: 1
 
-primitive: Map
-
 concurrency: 1
 
 sampleInterval: 10s
 
 writePercentage: .5
 
-counter:
-
-map:
-  numKeys: 1000
-
-set:
-  numElements: 1000
-
 store:
   name: ""
   namespace: ""
+
+primitive:
+  kind: ""
+  apiVersion: ""
+  config: {}
 
 image:
   repository: atomix/bench

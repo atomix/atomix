@@ -41,16 +41,10 @@ spec:
           {{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            - {{ .Values.primitive | lower }}
+            - {{ .Values.primitive.kind | lower }}
             - --concurrency={{ .Values.concurrency }}
             - --write-percentage={{ .Values.writePercentage }}
             - --sample-interval={{ .Values.sampleInterval }}
-            {{- if eq .Values.primitive "Map" }}
-            - --num-keys={{ .Values.map.numKeys }}
-            {{- end }}
-            {{- if eq .Values.primitive "Set" }}
-            - --num-elements={{ .Values.set.numElements }}
-            {{- end }}
           volumeMounts:
             - name: config
               mountPath: /etc/atomix
