@@ -59,6 +59,8 @@ spec:
             - name: SIDECAR_IMAGE
               {{- if .Values.sidecar.image.tag }}
               value: {{ printf "%s:%s" .Values.sidecar.image.repository .Values.sidecar.image.tag }}
+              {{- else if .Chart.AppVersion }}
+              value: {{ printf "%s:%s" .Values.sidecar.image.repository .Chart.AppVersion }}
               {{- else }}
               value: {{ .Values.sidecar.image.repository }}
               {{- end }}
