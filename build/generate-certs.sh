@@ -78,3 +78,5 @@ echo "Generated ${srvcsr}"
 
 openssl x509 -req -in "${srvcsr}" -CA "${cacrt}" -CAkey "${cakey}" -CAcreateserial -out "${srvcrt}" -days 100000 -extensions v3_req -extfile "${srvcfg}"
 echo "Generated ${srvcrt}"
+
+rm "${srvcfg}" "${srvcsr}"
