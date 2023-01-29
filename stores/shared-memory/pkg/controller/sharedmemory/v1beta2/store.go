@@ -189,18 +189,22 @@ func (r *SharedMemoryStoreReconciler) addConfigMap(ctx context.Context, log logg
 		},
 	}
 
-	sinkEncoding := logging.SinkEncoding(store.Spec.Logging.Encoding)
+	var sinkEncoding *logging.SinkEncoding
+	if store.Spec.Logging.Encoding != nil {
+		encoding := logging.SinkEncoding(*store.Spec.Logging.Encoding)
+		sinkEncoding = &encoding
+	}
 	loggingConfig := logging.Config{
 		Loggers: map[string]logging.LoggerConfig{
 			rootLoggerName: {
-				Level:  &store.Spec.Logging.RootLevel,
+				Level:  store.Spec.Logging.RootLevel,
 				Output: loggingOutputs,
 			},
 		},
 		Sinks: map[string]logging.SinkConfig{
 			stdoutSinkName: {
 				Name:     stdoutSinkName,
-				Encoding: &sinkEncoding,
+				Encoding: sinkEncoding,
 				Stdout:   &logging.StdoutSinkConfig{},
 			},
 		},

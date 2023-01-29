@@ -39,8 +39,8 @@ type SharedMemoryStoreSpec struct {
 
 // LoggingConfig logging configuration
 type LoggingConfig struct {
-	Encoding  string         `json:"encoding"`
-	RootLevel string         `json:"rootLevel"`
+	Encoding  *string        `json:"encoding"`
+	RootLevel *string        `json:"rootLevel"`
 	Loggers   []LoggerConfig `json:"loggers"`
 }
 

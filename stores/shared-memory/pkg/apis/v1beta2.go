@@ -32,7 +32,7 @@ func convertSharedMemoryStore_v1beta1_to_v1beta2(in *sharedmemoryv1beta1.SharedM
 	out.Spec.ImagePullPolicy = in.Spec.ImagePullPolicy
 	out.Spec.ImagePullSecrets = in.Spec.ImagePullSecrets
 	if rootLogger, ok := in.Spec.Config.Logging.Loggers["root"]; ok && rootLogger.Level != nil {
-		out.Spec.Logging.RootLevel = *rootLogger.Level
+		out.Spec.Logging.RootLevel = rootLogger.Level
 	}
 	for name, logger := range in.Spec.Config.Logging.Loggers {
 		if name != "root" {

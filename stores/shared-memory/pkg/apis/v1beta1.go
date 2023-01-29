@@ -33,7 +33,7 @@ func convertSharedMemoryStore_v1beta2_to_v1beta1(in *sharedmemoryv1beta2.SharedM
 	out.Spec.ImagePullSecrets = in.Spec.ImagePullSecrets
 	out.Spec.Config.Logging.Loggers = map[string]sharedmemoryv1beta1.LoggerConfig{
 		"root": {
-			Level: &in.Spec.Logging.RootLevel,
+			Level: in.Spec.Logging.RootLevel,
 		},
 	}
 	for _, logger := range in.Spec.Logging.Loggers {
