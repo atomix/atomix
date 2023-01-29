@@ -359,6 +359,24 @@ entries:
     version: 0.2.0
   atomix-controller:
   - apiVersion: v2
+    appVersion: v0.3.0
+    created: "2023-01-29T00:54:52.719519952Z"
+    description: The core Atomix controller provides custom resources for Atomix data
+      stores
+    digest: a94e5479b5231b630fd7098f43560fca0f9440be82ee1f475b0e0e33902ffc20
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-controller-0.3.0/atomix-controller-0.3.0.tgz
+    version: 0.3.0
+  - apiVersion: v2
     appVersion: v0.2.1
     created: "2023-01-28T16:53:08.748656095Z"
     description: The core Atomix controller provides custom resources for Atomix data
@@ -733,4 +751,4 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.2.2/atomix-shared-memory-controller-0.2.2.tgz
     version: 0.2.2
-generated: "2023-01-29T00:23:05.238265445Z"
+generated: "2023-01-29T00:54:52.719576352Z"
