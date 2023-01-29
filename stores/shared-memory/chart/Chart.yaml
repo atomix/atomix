@@ -8,6 +8,7 @@ description: The shared memory controller extends the Kubernetes API with custom
 kubeVersion: ">=1.17.0"
 type: application
 version: 2.0.0
+appVersion: latest
 keywords:
 - atomix
 - memory

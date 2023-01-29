@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: atomix-shared-memory-controller
+  labels:
+    name: atomix-shared-memory-controller
+spec:
+  selector:
+    name: atomix-shared-memory-controller
+  ports:
+    - name: webhook
+      port: 443
+      targetPort: 443

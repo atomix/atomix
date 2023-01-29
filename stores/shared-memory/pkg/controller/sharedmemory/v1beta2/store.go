@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package v1beta2
 
 import (
 	"context"
@@ -32,7 +32,7 @@ import (
 	"strings"
 	"time"
 
-	sharedmemoryv1beta1 "github.com/atomix/atomix/stores/shared-memory/pkg/apis/sharedmemory/v1beta1"
+	sharedmemoryv1beta2 "github.com/atomix/atomix/stores/shared-memory/pkg/apis/sharedmemory/v1beta2"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -91,14 +91,14 @@ func addSharedMemoryStoreController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to the storage resource and enqueue Stores that reference it
-	err = controller.Watch(&source.Kind{Type: &sharedmemoryv1beta1.SharedMemoryStore{}}, &handler.EnqueueRequestForObject{})
+	err = controller.Watch(&source.Kind{Type: &sharedmemoryv1beta2.SharedMemoryStore{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to secondary resource Deployment
 	err = controller.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-		OwnerType:    &sharedmemoryv1beta1.SharedMemoryStore{},
+		OwnerType:    &sharedmemoryv1beta2.SharedMemoryStore{},
 		IsController: true,
 	})
 	if err != nil {
@@ -107,7 +107,7 @@ func addSharedMemoryStoreController(mgr manager.Manager) error {
 
 	// Watch for changes to secondary resource DataStore
 	err = controller.Watch(&source.Kind{Type: &atomixv3beta4.DataStore{}}, &handler.EnqueueRequestForOwner{
-		OwnerType:    &sharedmemoryv1beta1.SharedMemoryStore{},
+		OwnerType:    &sharedmemoryv1beta2.SharedMemoryStore{},
 		IsController: true,
 	})
 	if err != nil {
@@ -129,7 +129,7 @@ func (r *SharedMemoryStoreReconciler) Reconcile(ctx context.Context, request rec
 	log := log.WithFields(logging.String("SharedMemoryStore", request.NamespacedName.String()))
 	log.Debug("Reconciling SharedMemoryStore")
 
-	store := &sharedmemoryv1beta1.SharedMemoryStore{}
+	store := &sharedmemoryv1beta2.SharedMemoryStore{}
 	err := r.client.Get(ctx, request.NamespacedName, store)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -163,7 +163,7 @@ func (r *SharedMemoryStoreReconciler) Reconcile(ctx context.Context, request rec
 	return reconcile.Result{}, nil
 }
 
-func (r *SharedMemoryStoreReconciler) reconcileConfigMap(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
+func (r *SharedMemoryStoreReconciler) reconcileConfigMap(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta2.SharedMemoryStore) error {
 	cm := &corev1.ConfigMap{}
 	name := types.NamespacedName{
 		Namespace: store.Namespace,
@@ -180,7 +180,7 @@ func (r *SharedMemoryStoreReconciler) reconcileConfigMap(ctx context.Context, lo
 	return nil
 }
 
-func (r *SharedMemoryStoreReconciler) addConfigMap(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
+func (r *SharedMemoryStoreReconciler) addConfigMap(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta2.SharedMemoryStore) error {
 	sinkName := stdoutSinkName
 	loggingOutputs := map[string]logging.OutputConfig{
 		stdoutSinkName: {
@@ -244,12 +244,12 @@ func (r *SharedMemoryStoreReconciler) addConfigMap(ctx context.Context, log logg
 }
 
 // newNodeConfig creates a protocol configuration string for the given store and protocol
-func newNodeConfig(store *sharedmemoryv1beta1.SharedMemoryStore) ([]byte, error) {
+func newNodeConfig(store *sharedmemoryv1beta2.SharedMemoryStore) ([]byte, error) {
 	config := node.Config{}
 	return yaml.Marshal(&config)
 }
 
-func (r *SharedMemoryStoreReconciler) reconcileDeployment(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
+func (r *SharedMemoryStoreReconciler) reconcileDeployment(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta2.SharedMemoryStore) error {
 	deployment := &appsv1.Deployment{}
 	name := types.NamespacedName{
 		Namespace: store.Namespace,
@@ -266,7 +266,7 @@ func (r *SharedMemoryStoreReconciler) reconcileDeployment(ctx context.Context, l
 	return nil
 }
 
-func (r *SharedMemoryStoreReconciler) addDeployment(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
+func (r *SharedMemoryStoreReconciler) addDeployment(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta2.SharedMemoryStore) error {
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        store.Name,
@@ -354,7 +354,7 @@ func (r *SharedMemoryStoreReconciler) addDeployment(ctx context.Context, log log
 	return r.client.Create(ctx, deployment)
 }
 
-func (r *SharedMemoryStoreReconciler) reconcileService(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
+func (r *SharedMemoryStoreReconciler) reconcileService(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta2.SharedMemoryStore) error {
 	service := &corev1.Service{}
 	name := types.NamespacedName{
 		Namespace: store.Namespace,
@@ -371,7 +371,7 @@ func (r *SharedMemoryStoreReconciler) reconcileService(ctx context.Context, log 
 	return nil
 }
 
-func (r *SharedMemoryStoreReconciler) addService(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
+func (r *SharedMemoryStoreReconciler) addService(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta2.SharedMemoryStore) error {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        store.Name,
@@ -396,7 +396,7 @@ func (r *SharedMemoryStoreReconciler) addService(ctx context.Context, log loggin
 	return r.client.Create(ctx, service)
 }
 
-func (r *SharedMemoryStoreReconciler) reconcileDataStore(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
+func (r *SharedMemoryStoreReconciler) reconcileDataStore(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta2.SharedMemoryStore) error {
 	dataStore := &atomixv3beta4.DataStore{}
 	name := types.NamespacedName{
 		Namespace: store.Namespace,
@@ -413,7 +413,7 @@ func (r *SharedMemoryStoreReconciler) reconcileDataStore(ctx context.Context, lo
 	return nil
 }
 
-func (r *SharedMemoryStoreReconciler) addDataStore(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) error {
+func (r *SharedMemoryStoreReconciler) addDataStore(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta2.SharedMemoryStore) error {
 	config := rsmv1.ProtocolConfig{
 		Partitions: []rsmv1.PartitionConfig{
 			{
@@ -456,7 +456,7 @@ func (r *SharedMemoryStoreReconciler) addDataStore(ctx context.Context, log logg
 	return nil
 }
 
-func (r *SharedMemoryStoreReconciler) reconcileStatus(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta1.SharedMemoryStore) (bool, error) {
+func (r *SharedMemoryStoreReconciler) reconcileStatus(ctx context.Context, log logging.Logger, store *sharedmemoryv1beta2.SharedMemoryStore) (bool, error) {
 	deployment := &appsv1.Deployment{}
 	name := types.NamespacedName{
 		Namespace: store.Namespace,
@@ -470,8 +470,8 @@ func (r *SharedMemoryStoreReconciler) reconcileStatus(ctx context.Context, log l
 	}
 
 	if deployment.Status.ReadyReplicas == 0 &&
-		store.Status.State != sharedmemoryv1beta1.SharedMemoryStoreNotReady {
-		store.Status.State = sharedmemoryv1beta1.SharedMemoryStoreNotReady
+		store.Status.State != sharedmemoryv1beta2.SharedMemoryStoreNotReady {
+		store.Status.State = sharedmemoryv1beta2.SharedMemoryStoreNotReady
 		log.Info("SharedMemoryStore status changed",
 			logging.String("Status", string(store.Status.State)))
 		if err := r.client.Status().Update(ctx, store); err != nil {
@@ -484,8 +484,8 @@ func (r *SharedMemoryStoreReconciler) reconcileStatus(ctx context.Context, log l
 	}
 
 	if deployment.Status.ReadyReplicas == 1 &&
-		store.Status.State != sharedmemoryv1beta1.SharedMemoryStoreReady {
-		store.Status.State = sharedmemoryv1beta1.SharedMemoryStoreReady
+		store.Status.State != sharedmemoryv1beta2.SharedMemoryStoreReady {
+		store.Status.State = sharedmemoryv1beta2.SharedMemoryStoreReady
 		log.Info("SharedMemoryStore status changed",
 			logging.String("Status", string(store.Status.State)))
 		if err := r.client.Status().Update(ctx, store); err != nil {
@@ -516,7 +516,7 @@ func getClusterDomain() string {
 }
 
 // newStoreLabels returns the labels for the given cluster
-func newStoreLabels(store *sharedmemoryv1beta1.SharedMemoryStore) map[string]string {
+func newStoreLabels(store *sharedmemoryv1beta2.SharedMemoryStore) map[string]string {
 	labels := make(map[string]string)
 	for key, value := range store.Labels {
 		labels[key] = value
@@ -526,7 +526,7 @@ func newStoreLabels(store *sharedmemoryv1beta1.SharedMemoryStore) map[string]str
 	return labels
 }
 
-func newStoreAnnotations(store *sharedmemoryv1beta1.SharedMemoryStore) map[string]string {
+func newStoreAnnotations(store *sharedmemoryv1beta2.SharedMemoryStore) map[string]string {
 	annotations := make(map[string]string)
 	for key, value := range store.Annotations {
 		annotations[key] = value
@@ -535,7 +535,7 @@ func newStoreAnnotations(store *sharedmemoryv1beta1.SharedMemoryStore) map[strin
 	return annotations
 }
 
-func getImage(store *sharedmemoryv1beta1.SharedMemoryStore) string {
+func getImage(store *sharedmemoryv1beta2.SharedMemoryStore) string {
 	if store.Spec.Image != "" {
 		return store.Spec.Image
 	}
@@ -550,7 +550,7 @@ func getDefaultImage() string {
 	return image
 }
 
-func getPullPolicy(store *sharedmemoryv1beta1.SharedMemoryStore) corev1.PullPolicy {
+func getPullPolicy(store *sharedmemoryv1beta2.SharedMemoryStore) corev1.PullPolicy {
 	if store.Spec.ImagePullPolicy != "" {
 		return store.Spec.ImagePullPolicy
 	}

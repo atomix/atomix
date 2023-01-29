@@ -16,8 +16,149 @@ spec:
     singular: sharedmemorystore
     shortNames:
       - sms
+  conversion:
+    strategy: Webhook
+    webhook:
+      conversionReviewVersions: [ "v1" ]
+      clientConfig:
+        service:
+          name: atomix-shared-memory-controller
+          namespace: kube-system
+          path: /convert-store
+        caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUNyRENDQVpRQ0NRRExGUzZuR3I1YmF6QU5CZ2txaGtpRzl3MEJBUXNGQURBWE1SVXdFd1lEVlFRRERBeGgKWkcxcGMzTnBiMjVmWTJFd0lCY05Nak13TVRJNU1ESXlPRE01V2hnUE1qSTVOakV4TVRNd01qSTRNemxhTUJjeApGVEFUQmdOVkJBTU1ER0ZrYldsemMybHZibDlqWVRDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDCkFRb0NnZ0VCQU1vbW02ME1KL0g4UUk5ajlNYXBKbERBYTg4OGdrcFlaZjFKNlZZdHhZS2o4eDdGWEVuK2JLSU4KQytvQjBkaDBOZk1lRlREYnBtMFdVNmh1RG02eEdqb2hPYllCRnRJZ20rS2hPa24vdlM1Ylh4Ty9jMEdPd3EwNQphNmpiaGhsUUw2WTg3a3FUNFFuNXBBLy9RMzlpSmlBbU9YS3FIa1BzQjZCK1Fua0ZCemI5d3FmaWY1TFBYN3g0CjY0UnBVRjVLSERqOEhieXlLd2JRYXJzTG5JWFlydzlSRHlrVzFQVEMvaVlsdkdEenY2TWpyOE5SQkdpenZ6SncKZ0cvcUdQN0pWb1lRYUMySXZSSjNSSTdLekZzVzBYRE9aSEdKWUFEQkZNMjJOZkhKNVBBZjU1dXZEa0hEY2dSagpSbmxuU2lvbkJtSmRFNzVXc2wvcVdKVlplbGZ6dXBrQ0F3RUFBVEFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBCmlIVURlTDVWeEdjTmdveGJHWmpqbysrK2pnK28xQXpweHV4M2V3Q2J2UVRhK21JZ2pMZ1FhbkVQM1VMRzlQTUMKOERJWnVXUFZuU3B0bUNVeFNyNEdmcHpNeUJjUXFDSjNoREo5allsR3oxRUVkT3Q1SnloUUVoRXhXSW8wMGRSRQpIeXBoaERXdzVWcjhRZ0pJNU0yaER1NzRtUk5lcXAzMjRaY054V3ZEakZ2Z3dWMG9kSDFTQnFqR29taFZ5c1lqCjlHT1IwOXNKOVMzZlBxQngrTXhDeWdrUFpua0RFeW9zaC9pQk95ZUd6VlhjalNPeFRYSFlDVFhnM1lZQ05NRVEKNjBPT09nQWdTZDRWUVc1MzRWenVteGNNb29SRHMyTUlkbXNzZjBoQ0Rhek9YMHBqSVNUa2xwUVp3dWVaa1VJbApOOUlIOHB4Mjh6LzByODNXR3ZxSTZnPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
   versions:
     - name: v1beta1
+      served: true
+      storage: false
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              description: |-
+                The specification for the store.
+              type: object
+              properties:
+                image:
+                  type: string
+                imagePullPolicy:
+                  type: string
+                  enum:
+                    - Never
+                    - IfNotPresent
+                    - Always
+                imagePullSecrets:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                securityContext:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                config:
+                  type: object
+                  properties:
+                    server:
+                      type: object
+                      properties:
+                        readBufferSize:
+                          type: integer
+                          nullable: true
+                        writeBufferSize:
+                          type: integer
+                          nullable: true
+                        maxSendMsgSize:
+                          type: string
+                          nullable: true
+                        maxRecvMsgSize:
+                          type: string
+                          nullable: true
+                        numStreamWorkers:
+                          type: integer
+                          nullable: true
+                        maxConcurrentStreams:
+                          type: integer
+                          nullable: true
+                    logging:
+                      type: object
+                      properties:
+                        loggers:
+                          type: object
+                          additionalProperties:
+                            type: object
+                            properties:
+                              level:
+                                type: string
+                                nullable: true
+                                enum:
+                                  - debug
+                                  - info
+                                  - warn
+                                  - error
+                                  - fatal
+                                  - panic
+                              output:
+                                type: object
+                                additionalProperties:
+                                  type: object
+                                  properties:
+                                    sink:
+                                      type: string
+                                    level:
+                                      type: string
+                                      nullable: true
+                                      enum:
+                                        - debug
+                                        - info
+                                        - warn
+                                        - error
+                                        - fatal
+                                        - panic
+                        sinks:
+                          type: object
+                          additionalProperties:
+                            type: object
+                            properties:
+                              encoding:
+                                type: string
+                                nullable: true
+                                enum:
+                                  - console
+                                  - json
+                              stdout:
+                                type: object
+                                properties: {}
+                              stderr:
+                                type: object
+                                properties: {}
+                              file:
+                                type: object
+                                properties:
+                                  path:
+                                    type: string
+                                required:
+                                  - path
+            status:
+              type: object
+              properties:
+                state:
+                  type: string
+                  default: NotReady
+                  enum:
+                    - NotReady
+                    - Ready
+      additionalPrinterColumns:
+        - name: Status
+          type: string
+          description: The store state
+          jsonPath: .status.state
+    - name: v1beta2
       served: true
       storage: true
       subresources:

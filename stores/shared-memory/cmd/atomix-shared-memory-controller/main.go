@@ -11,12 +11,13 @@ import (
 	"github.com/atomix/atomix/controller/pkg/controller/util/k8s"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	memoryapis "github.com/atomix/atomix/stores/shared-memory/pkg/apis"
-	memoryv1beta1 "github.com/atomix/atomix/stores/shared-memory/pkg/controller/memory/v1beta1"
+	memoryv1beta2 "github.com/atomix/atomix/stores/shared-memory/pkg/controller/sharedmemory/v1beta2"
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 	"os"
 	"runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -26,7 +27,8 @@ var log = logging.GetLogger()
 func main() {
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
 	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
-	//logf.SetLogger(logr.New(&ControllerLogSink{log}))
+	log.SetLevel(logging.DebugLevel)
+	logf.SetLogger(logr.New(&ControllerLogSink{log.WithSkipCalls(1)}))
 
 	cmd := getCommand()
 	if err := cmd.Execute(); err != nil {
@@ -80,13 +82,14 @@ func getCommand() *cobra.Command {
 			}
 
 			// Add all the controllers
-			if err := memoryv1beta1.AddControllers(mgr); err != nil {
+			if err := memoryv1beta2.AddControllers(mgr); err != nil {
 				log.Error(err)
 				os.Exit(1)
 			}
 
 			// Start the manager
 			log.Info("Starting the Manager")
+			mgr.GetWebhookServer().Port = 443
 			if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
 				log.Error(err, "controller exited non-zero")
 				os.Exit(1)

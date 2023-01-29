@@ -5,18 +5,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "atomix-shared-memory-controller.fullname" . }}
+  name: atomix-shared-memory-controller
 spec:
   replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      name: {{ template "atomix-shared-memory-controller.fullname" . }}
+      name: atomix-shared-memory-controller
   template:
     metadata:
       labels:
-        name: {{ template "atomix-shared-memory-controller.fullname" . }}
+        name: atomix-shared-memory-controller
     spec:
-      serviceAccountName: {{ template "atomix-shared-memory-controller.fullname" . }}
+      serviceAccountName: atomix-shared-memory-controller
       containers:
         - name: atomix-shared-memory-controller
           {{- if .Values.image.tag }}
@@ -40,7 +40,7 @@ spec:
             failureThreshold: 1
           env:
             - name: CONTROLLER_NAME
-              value: {{ template "atomix-shared-memory-controller.fullname" . }}
+              value: atomix-shared-memory-controller
             - name: CONTROLLER_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -62,10 +62,16 @@ spec:
             - name: DEFAULT_NODE_IMAGE_PULL_POLICY
               value: {{ .Values.node.image.pullPolicy | quote }}
           volumeMounts:
+            - name: certs
+              mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
             - name: config
               mountPath: /etc/atomix
               readOnly: true
       volumes:
+        - name: certs
+          secret:
+            secretName: atomix-shared-memory-controller-certs
         - name: config
           configMap:
-            name: {{ template "atomix-shared-memory-controller.fullname" . }}-config
+            name: atomix-shared-memory-controller-config

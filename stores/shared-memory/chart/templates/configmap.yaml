@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "atomix-shared-memory-controller.fullname" . }}-config
+  name: atomix-shared-memory-controller-config
 data:
   logging.yaml:  |-
     loggers:

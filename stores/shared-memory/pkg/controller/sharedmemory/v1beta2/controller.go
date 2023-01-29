@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package v1beta2
 
 import (
 	"github.com/atomix/atomix/runtime/pkg/logging"
@@ -14,6 +14,9 @@ var log = logging.GetLogger()
 // AddControllers adds memory controllers to the manager
 func AddControllers(mgr manager.Manager) error {
 	if err := addSharedMemoryStoreController(mgr); err != nil {
+		return err
+	}
+	if err := addSharedMemoryStoreConverter(mgr); err != nil {
 		return err
 	}
 	return nil
