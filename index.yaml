@@ -751,4 +751,23 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.2.2/atomix-shared-memory-controller-0.2.2.tgz
     version: 0.2.2
-generated: "2023-01-29T00:54:52.719576352Z"
+  atomix-sidecar-controller:
+  - apiVersion: v2
+    appVersion: v0.3.0
+    created: "2023-01-29T01:01:39.437670653Z"
+    description: The sidecar controller provides injection of the Atomix sidecar into
+      Kubernetes pods.
+    digest: f40a4dafcd35c3971fb6d1911858adb5c25e003ce37cd002ed11364e51dbda35
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-sidecar-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.0/atomix-sidecar-controller-0.3.0.tgz
+    version: 0.3.0
+generated: "2023-01-29T01:01:39.437750054Z"
