@@ -12,9 +12,6 @@ on:
     tags:
       - 'proxy/v*'
 
-concurrency:
-  group: ${{ github.repository }}-release
-
 jobs:
   build-and-release:
     name: Build and release

@@ -12,9 +12,6 @@ on:
     tags:
       - 'controller/v*'
 
-concurrency:
-  group: ${{ github.repository }}-release
-
 jobs:
   publish-image:
     name: Build and push Docker image

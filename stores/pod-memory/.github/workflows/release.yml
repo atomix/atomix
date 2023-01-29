@@ -9,9 +9,6 @@ on:
     tags:
       - 'stores/pod-memory/v*'
 
-concurrency:
-  group: ${{ github.repository }}-release
-
 jobs:
   build-and-push:
     name: Build and push
