@@ -2,6 +2,52 @@ apiVersion: v1
 entries:
   atomix:
   - apiVersion: v2
+    appVersion: v0.2.0
+    created: "2023-01-29T01:32:08.350325425Z"
+    dependencies:
+    - alias: controller
+      name: atomix-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.3.0
+    - alias: sidecar-controller
+      name: atomix-sidecar-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.3.1
+    - alias: raft-controller
+      condition: stores.raft.enabled
+      name: atomix-raft-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.3.1
+    - alias: shared-memory-controller
+      condition: stores.shared-memory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.3.1
+    - alias: pod-memory-controller
+      condition: stores.pod-memory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.3.1
+    - alias: consensus-controller
+      condition: stores.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.1
+    description: Chart for deploying Atomix with storage various controllers
+    digest: a576856c92c75c7087412e9cb273e629d323ef43b89d2bee3424be51452b88c3
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-0.2.0/atomix-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
     appVersion: v0.1.6
     created: "2023-01-15T02:38:06.170930337Z"
     dependencies:
@@ -788,4 +834,4 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.0/atomix-sidecar-controller-0.3.0.tgz
     version: 0.3.0
-generated: "2023-01-29T01:18:19.566059314Z"
+generated: "2023-01-29T01:32:08.350387627Z"
