@@ -8,6 +8,7 @@ description: The sidecar controller provides injection of the Atomix sidecar int
 kubeVersion: ">=1.17.0"
 type: application
 version: 2.0.0
+appVersion: latest
 keywords:
 - atomix
 home: https://atomix.io

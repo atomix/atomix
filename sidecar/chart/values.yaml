@@ -13,7 +13,7 @@ image:
 sidecar:
   image:
     repository: atomix/sidecar
-    tag: v0.2
+    tag: ""
     pullSecrets: []
 
 logging:
