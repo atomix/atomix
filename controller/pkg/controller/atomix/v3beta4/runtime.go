@@ -31,12 +31,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"strconv"
 	"time"
 )
 
 const runtimeReadyCondition = "runtime.atomix.io/ready"
 
 const wildcard = "*"
+
+const (
+	runtimeProfileLabel = "runtime.atomix.io/profile"
+	proxyProfileLabel   = "proxy.atomix.io/profile"
+)
+
+const (
+	defaultRuntimePort    = 5679
+	runtimePortAnnotation = "runtime.atomix.io/port"
+)
 
 func addRuntimeController(mgr manager.Manager) error {
 	// Create a new controller
@@ -555,7 +566,7 @@ func toRuntimeRoute(store types.NamespacedName, route *atomixv3beta4.Route) runt
 			Names: []string{"*"},
 		})
 	}
-	
+
 	for _, rule := range route.Rules {
 		var config *gogotypes.Any
 		if rule.Config.Raw != nil {
@@ -655,7 +666,16 @@ func (r *RuntimeReconciler) setReadyCondition(ctx context.Context, log logging.L
 }
 
 func connect(ctx context.Context, pod *corev1.Pod) (*grpc.ClientConn, error) {
-	target := fmt.Sprintf("%s:%d", pod.Status.PodIP, defaultRuntimePort)
+	port := defaultRuntimePort
+	portName, ok := pod.Annotations[runtimePortAnnotation]
+	if ok {
+		portNum, err := strconv.Atoi(portName)
+		if err != nil {
+			return nil, err
+		}
+		port = portNum
+	}
+	target := fmt.Sprintf("%s:%d", pod.Status.PodIP, port)
 	return grpc.DialContext(ctx, target,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(interceptors.ErrorHandlingUnaryClientInterceptor()),

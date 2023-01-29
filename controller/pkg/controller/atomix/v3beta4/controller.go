@@ -13,9 +13,6 @@ var log = logging.GetLogger()
 
 // AddControllers adds sidecar controllers to the given manager
 func AddControllers(mgr manager.Manager) error {
-	if err := addSidecarController(mgr); err != nil {
-		return err
-	}
 	if err := addRuntimeController(mgr); err != nil {
 		return err
 	}

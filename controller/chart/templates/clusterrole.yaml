@@ -33,25 +33,8 @@ rules:
     verbs:
       - '*'
   - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - roles
-      - rolebindings
-      - clusterroles
-      - clusterrolebindings
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
       - atomix.io
     resources:
       - '*'
-    verbs:
-      - '*'
-  - apiGroups:
-      - admissionregistration.k8s.io
-    resources:
-      - mutatingwebhookconfigurations
     verbs:
       - '*'

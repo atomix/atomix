@@ -42,7 +42,7 @@ func registerConversions_v3beta3(scheme *runtime.Scheme) error {
 
 func convertDataStore_v3beta4_to_v3beta3(in *atomixv3beta4.DataStore, out *atomixv3beta3.DataStore, scope conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
-	out.SetGroupVersionKind(atomixv3beta3.SchemeGroupVersion.WithKind("StorageProfile"))
+	out.SetGroupVersionKind(atomixv3beta3.SchemeGroupVersion.WithKind("DataStore"))
 	out.Spec.Driver = atomixv3beta3.Driver{
 		Name:    in.Spec.Driver.Name,
 		Version: in.Spec.Driver.APIVersion,

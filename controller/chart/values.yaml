@@ -10,12 +10,6 @@ image:
   pullPolicy: ""
   pullSecrets: []
 
-sidecar:
-  image:
-    repository: atomix/sidecar
-    tag: v0.2
-    pullSecrets: []
-
 logging:
   rootLevel: info
   encoding: console
