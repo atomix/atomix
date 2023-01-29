@@ -26,16 +26,16 @@ func main() {
 		Use: "atomix-build",
 	}
 	cmd.AddCommand(&cobra.Command{
-		Use:     "binary",
-		Aliases: []string{"bin"},
-		Args:    cobra.ExactArgs(1),
+		Use:  "runtime",
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			outputPath := args[0]
+			inputPath := args[0]
+			outputPath := args[1]
 			builder, err := newBuilder(cmd)
 			if err != nil {
 				return err
 			}
-			return builder.buildProxy(outputPath)
+			return builder.buildRuntime(inputPath, outputPath)
 		},
 	})
 	cmd.AddCommand(&cobra.Command{
@@ -90,7 +90,7 @@ type atomixBuilder struct {
 	proxyModFile *modfile.File
 }
 
-func (b *atomixBuilder) buildProxy(outputPath string) error {
+func (b *atomixBuilder) buildRuntime(inputPath, outputPath string) error {
 	fmt.Fprintln(b.cmd.OutOrStdout(), "Building github.com/atomix/atomix/sidecar")
 	_, err := run(".",
 		"go", "build",
@@ -98,7 +98,7 @@ func (b *atomixBuilder) buildProxy(outputPath string) error {
 		"-trimpath",
 		"-gcflags=all=-N -l",
 		"-o", outputPath,
-		"./cmd/atomix-runtime")
+		inputPath)
 	return err
 }
 

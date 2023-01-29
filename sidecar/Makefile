@@ -10,9 +10,15 @@ test:
 	go test github.com/atomix/atomix/sidecar/pkg/... -p 1
 
 .PHONY: docker
-docker:
-	docker build . -t atomix/sidecar:latest -f build/Dockerfile
+docker: build-sidecar build-controller
+
+build-sidecar:
+	docker build . -t atomix/sidecar:latest -f build/sidecar/Dockerfile
+
+build-controller:
+	docker build . -t atomix/sidecar-controller:latest -f build/controller/Dockerfile
 
 kind: docker
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/sidecar:latest
+	kind load docker-image atomix/sidecar-controller:latest

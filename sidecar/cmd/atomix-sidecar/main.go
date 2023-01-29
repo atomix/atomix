@@ -20,7 +20,7 @@ func main() {
 	logging.SetLevel(logging.DebugLevel)
 
 	cmd := &cobra.Command{
-		Use: "atomix-runtime",
+		Use: "atomix-sidecar",
 		Run: func(cmd *cobra.Command, args []string) {
 			host, err := cmd.Flags().GetString("host")
 			if err != nil {
@@ -49,8 +49,7 @@ func main() {
 			}
 
 			// Initialize the runtime
-			rt := runtimev1.New(
-				runtimev1.WithDriverProvider(sidecar.NewDriverProvider(pluginsDir)))
+			rt := runtimev1.New(runtimev1.WithDriverProvider(sidecar.NewDriverProvider(pluginsDir)))
 
 			// Start the runtime service
 			rtSvc := runtime.NewService(rt,

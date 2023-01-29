@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+replicas: 1
+
+image:
+  repository: atomix/sidecar-controller
+  tag: ""
+  pullPolicy: ""
+  pullSecrets: []
+
+sidecar:
+  image:
+    repository: atomix/sidecar
+    tag: v0.2
+    pullSecrets: []
+
+logging:
+  rootLevel: info
+  encoding: console
+  loggers:
+    github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors:
+      level: error

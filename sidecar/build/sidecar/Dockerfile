@@ -16,7 +16,7 @@ RUN go mod download
 
 # Build the runtime binary
 FROM builder AS build-runtime
-RUN go run ./cmd/atomix-build bin /build/bin/atomix-runtime
+RUN go run ./cmd/atomix-build runtime ./cmd/atomix-sidecar /build/bin/atomix-runtime
 
 # Build the Etcd/v3 storage driver
 FROM builder AS build-etcd-v3-driver

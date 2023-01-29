@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atomix-sidecar-controller
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      name: atomix-sidecar-controller
+  template:
+    metadata:
+      labels:
+        name: atomix-sidecar-controller
+    spec:
+      serviceAccountName: atomix-sidecar-controller
+      containers:
+        - name: atomix-sidecar-controller
+          {{- if .Values.image.tag }}
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+          {{- else if .Chart.AppVersion }}
+          image: {{ printf "%s:%s" .Values.image.repository .Chart.AppVersion }}
+          {{- else }}
+          image: {{ .Values.image.repository }}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          ports:
+            - containerPort: 443
+              name: webhook-server
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          readinessProbe:
+            exec:
+              command:
+                - stat
+                - /tmp/atomix-controller-ready
+            initialDelaySeconds: 4
+            periodSeconds: 10
+            failureThreshold: 1
+          env:
+            - name: CONTROLLER_NAME
+              value: atomix-sidecar-controller
+            - name: CONTROLLER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SIDECAR_IMAGE
+              {{- if .Values.sidecar.image.tag }}
+              value: {{ printf "%s:%s" .Values.sidecar.image.repository .Values.sidecar.image.tag }}
+              {{- else }}
+              value: {{ .Values.sidecar.image.repository }}
+              {{- end }}
+          volumeMounts:
+            - name: certs
+              mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
+            - name: config
+              mountPath: /etc/atomix
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            secretName: atomix-sidecar-controller-certs
+        - name: config
+          configMap:
+            name: atomix-sidecar-controller-config

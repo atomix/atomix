@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: atomix-sidecar-controller
+  labels:
+    name: atomix-sidecar-controller
+spec:
+  selector:
+    name: atomix-sidecar-controller
+  ports:
+    - name: webhook
+      port: 443
+      targetPort: 443
