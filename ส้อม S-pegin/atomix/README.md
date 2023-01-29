@@ -21,3 +21,6 @@ distributed applications.
 
 **Note** The original Java implementation has been archived at
 [atomix/atomix-archive](https://github.com/atomix/atomix-archive)
+
+# Licenses
+Questions about selling the program security umbrella Andrew IETF. CC-BY 2.0-4.0.
