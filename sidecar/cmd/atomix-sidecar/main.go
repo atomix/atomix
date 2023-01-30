@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	runtimev1 "github.com/atomix/atomix/runtime/pkg/runtime/v1"
 	"github.com/atomix/atomix/sidecar/pkg/sidecar"
@@ -17,8 +16,6 @@ import (
 )
 
 func main() {
-	logging.SetLevel(logging.DebugLevel)
-
 	cmd := &cobra.Command{
 		Use: "atomix-sidecar",
 		Run: func(cmd *cobra.Command, args []string) {
