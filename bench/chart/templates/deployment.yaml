@@ -20,8 +20,13 @@ spec:
     metadata:
       labels:
         name: {{ template "atomix-bench.fullname" . }}
+        {{- if eq .Values.apiVersion "v3beta4" }}
         sidecar.atomix.io/inject: "true"
         runtime.atomix.io/profile: {{ template "atomix-bench.fullname" . }}
+        {{- else if eq .Values.apiVersion "v3beta3" }}
+        proxy.atomix.io/inject: "true"
+        proxy.atomix.io/profile: {{ template "atomix-bench.fullname" . }}
+        {{- end }}
       annotations:
         {{- if .Values.sidecar.image.tag }}
         sidecar.atomix.io/image: {{ printf "%s:%s" .Values.sidecar.image.repository .Values.sidecar.image.tag }}

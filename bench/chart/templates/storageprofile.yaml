@@ -2,6 +2,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+{{- if eq .Values.apiVersion "v3beta3" }}
+apiVersion: atomix.io/v3beta3
+kind: StorageProfile
+metadata:
+  name: {{ template "atomix-bench.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  bindings:
+    - store:
+        name: {{ .Values.store.name }}
+        namespace: {{ .Values.store.namespace }}
+{{- else if eq .Values.apiVersion "v3beta4"}}
 apiVersion: atomix.io/v3beta4
 kind: StorageProfile
 metadata:
@@ -25,3 +41,4 @@ spec:
 {{ toYaml . | indent 12 }}
           {{- end }}
       {{- end }}
+{{- end }}

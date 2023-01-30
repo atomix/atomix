@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+apiVersion: v3beta4
+
 replicas: 1
 
 concurrency: 1
