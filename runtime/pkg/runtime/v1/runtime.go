@@ -314,7 +314,7 @@ func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types
 			}
 
 			// If all the tags matched and the rule specified more tags than the current match, update the match.
-			if tagsMatch && matchRule == nil || len(rule.Tags) > len(matchRule.Tags) {
+			if tagsMatch && (matchRule == nil || len(rule.Tags) > len(matchRule.Tags)) {
 				matchRoute = &route
 				matchRule = &rule
 			}
