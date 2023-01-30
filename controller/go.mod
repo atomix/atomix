@@ -3,8 +3,8 @@ module github.com/atomix/atomix/controller
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.7.0
-	github.com/atomix/atomix/runtime v0.7.0
+	github.com/atomix/atomix/api v0.8.0
+	github.com/atomix/atomix/runtime v0.8.3
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/spf13/cobra v1.4.0

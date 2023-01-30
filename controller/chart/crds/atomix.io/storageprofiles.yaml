@@ -50,7 +50,6 @@ spec:
               properties:
                 proxy:
                   type: object
-                  default: {}
                   properties:
                     image:
                       type: string
@@ -63,45 +62,87 @@ spec:
                     securityContext:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
-                    logging:
+                    config:
                       type: object
-                      default: {}
                       properties:
-                        encoding:
-                          type: string
-                          default: console
-                          enum:
-                            - console
-                            - json
-                        rootLevel:
-                          type: string
-                          default: info
-                          enum:
-                            - debug
-                            - info
-                            - warn
-                            - error
-                            - fatal
-                            - panic
-                        loggers:
-                          type: array
-                          items:
-                            type: object
-                            required:
-                              - name
-                            properties:
-                              name:
-                                type: string
-                              level:
-                                type: string
-                                nullable: true
-                                enum:
-                                  - debug
-                                  - info
-                                  - warn
-                                  - error
-                                  - fatal
-                                  - panic
+                        server:
+                          type: object
+                          properties:
+                            readBufferSize:
+                              type: integer
+                              nullable: true
+                            writeBufferSize:
+                              type: integer
+                              nullable: true
+                            maxSendMsgSize:
+                              type: string
+                              nullable: true
+                            maxRecvMsgSize:
+                              type: string
+                              nullable: true
+                            numStreamWorkers:
+                              type: integer
+                              nullable: true
+                            maxConcurrentStreams:
+                              type: integer
+                              nullable: true
+                        logging:
+                          type: object
+                          properties:
+                            loggers:
+                              type: object
+                              additionalProperties:
+                                type: object
+                                properties:
+                                  level:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - debug
+                                      - info
+                                      - warn
+                                      - error
+                                      - fatal
+                                      - panic
+                                  output:
+                                    type: object
+                                    additionalProperties:
+                                      type: object
+                                      properties:
+                                        sink:
+                                          type: string
+                                        level:
+                                          type: string
+                                          nullable: true
+                                          enum:
+                                            - debug
+                                            - info
+                                            - warn
+                                            - error
+                                            - fatal
+                                            - panic
+                            sinks:
+                              type: object
+                              additionalProperties:
+                                type: object
+                                properties:
+                                  encoding:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - console
+                                      - json
+                                  stdout:
+                                    type: object
+                                  stderr:
+                                    type: object
+                                  file:
+                                    type: object
+                                    properties:
+                                      path:
+                                        type: string
+                                    required:
+                                      - path
                 bindings:
                   type: array
                   items:
@@ -126,24 +167,15 @@ spec:
                         type: array
                         items:
                           type: string
-                      primitives:
+                      services:
                         type: array
                         items:
                           type: object
                           required:
-                            - kind
-                            - apiVersion
+                            - name
                           properties:
-                            kind:
-                              type: string
-                            apiVersion:
-                              type: string
                             name:
                               type: string
-                            tags:
-                              type: array
-                              items:
-                                type: string
                             config:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true

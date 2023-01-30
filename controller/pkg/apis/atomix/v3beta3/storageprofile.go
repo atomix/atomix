@@ -6,6 +6,7 @@ package v3beta3
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -38,36 +39,75 @@ type StorageProxySpec struct {
 	// SecurityContext is a pod security context
 	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 
+	// Config is the proxy configuration
+	Config StorageProxyConfig `json:"config,omitempty"`
+}
+
+type StorageProxyConfig struct {
+	// Server is the proxy server configuration
+	Server StorageProxyServerConfig `json:"server,omitempty"`
 	// Logging is the proxy logging configuration
 	Logging LoggingConfig `json:"logging,omitempty"`
 }
 
-type Binding struct {
-	Store      corev1.ObjectReference `json:"store"`
-	Priority   *uint32                `json:"priority"`
-	Tags       []string               `json:"tags"`
-	Primitives []PrimitiveSpec        `json:"primitives"`
+type StorageProxyServerConfig struct {
+	ReadBufferSize       *int               `json:"readBufferSize"`
+	WriteBufferSize      *int               `json:"writeBufferSize"`
+	MaxRecvMsgSize       *resource.Quantity `json:"maxRecvMsgSize"`
+	MaxSendMsgSize       *resource.Quantity `json:"maxSendMsgSize"`
+	NumStreamWorkers     *uint32            `json:"numStreamWorkers"`
+	MaxConcurrentStreams *uint32            `json:"maxConcurrentStreams"`
 }
 
-type PrimitiveSpec struct {
-	Kind       string               `json:"kind"`
-	APIVersion string               `json:"apiVersion"`
-	Name       string               `json:"name"`
-	Tags       []string             `json:"tags"`
-	Config     runtime.RawExtension `json:"config"`
+type Binding struct {
+	Store    corev1.ObjectReference `json:"store"`
+	Priority *uint32                `json:"priority"`
+	Tags     []string               `json:"tags"`
+	Services []ServiceBinding       `json:"services"`
+}
+
+type ServiceBinding struct {
+	Name   string               `json:"name"`
+	Config runtime.RawExtension `json:"config"`
 }
 
 // LoggingConfig logging configuration
 type LoggingConfig struct {
-	Encoding  string         `json:"encoding"`
-	RootLevel string         `json:"rootLevel"`
-	Loggers   []LoggerConfig `json:"loggers"`
+	Loggers map[string]LoggerConfig `json:"loggers" yaml:"loggers"`
+	Sinks   map[string]SinkConfig   `json:"sinks" yaml:"sinks"`
 }
 
 // LoggerConfig is the configuration for a logger
 type LoggerConfig struct {
-	Name  string  `json:"name"`
-	Level *string `json:"level"`
+	Level  *string                 `json:"level,omitempty" yaml:"level,omitempty"`
+	Output map[string]OutputConfig `json:"output" yaml:"output"`
+}
+
+// OutputConfig is the configuration for a sink output
+type OutputConfig struct {
+	Sink  *string `json:"sink,omitempty" yaml:"sink,omitempty"`
+	Level *string `json:"level,omitempty" yaml:"level,omitempty"`
+}
+
+// SinkConfig is the configuration for a sink
+type SinkConfig struct {
+	Encoding *string           `json:"encoding,omitempty" yaml:"encoding,omitempty"`
+	Stdout   *StdoutSinkConfig `json:"stdout" yaml:"stdout,omitempty"`
+	Stderr   *StderrSinkConfig `json:"stderr" yaml:"stderr,omitempty"`
+	File     *FileSinkConfig   `json:"file" yaml:"file,omitempty"`
+}
+
+// StdoutSinkConfig is the configuration for an stdout sink
+type StdoutSinkConfig struct {
+}
+
+// StderrSinkConfig is the configuration for an stderr sink
+type StderrSinkConfig struct {
+}
+
+// FileSinkConfig is the configuration for a file sink
+type FileSinkConfig struct {
+	Path string `json:"path" yaml:"path"`
 }
 
 type StorageProfileStatus struct {
