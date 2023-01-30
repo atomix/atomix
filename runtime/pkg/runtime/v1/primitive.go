@@ -88,6 +88,9 @@ func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtime
 	if !ok {
 		return config, errors.NewNotSupported("primitive type '%s/%s' not supported by configured driver", c.primitiveType.Name, c.primitiveType.APIVersion)
 	}
+	if err != nil {
+		return config, err
+	}
 
 	// Store the primitive in the cache
 	c.runtime.primitives.Store(primitiveID, primitive)

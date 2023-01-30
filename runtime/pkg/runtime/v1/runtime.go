@@ -326,12 +326,3 @@ func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types
 	}
 	return runtimev1.StoreID{}, nil, errors.NewUnavailable("no route found matching the given primitive")
 }
-
-func scoreMatch(rule runtimev1.RoutingRule, tags map[string]bool) (int, bool) {
-	for _, tag := range rule.Tags {
-		if _, ok := tags[tag]; !ok {
-			return 0, false
-		}
-	}
-	return len(rule.Tags), true
-}

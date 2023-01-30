@@ -29,7 +29,7 @@ type CounterProxy interface {
 
 func NewCounterServer(rt *runtime.Runtime) counterv1.CounterServer {
 	return &counterServer{
-		CountersServer: NewCounterServer(rt),
+		CountersServer: NewCountersServer(rt),
 		primitives:     runtime.NewPrimitiveRegistry[CounterProxy](counterv1.PrimitiveType, rt),
 	}
 }

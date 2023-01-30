@@ -22,7 +22,7 @@ func TestConnect(t *testing.T) {
 	assert.NotNil(t, conn)
 
 	var marshaler jsonpb.Marshaler
-	chars, err := marshaler.MarshalToString(&runtimev1.RuntimeConfig{})
+	chars, err := marshaler.MarshalToString(&runtimev1.PrimitiveID{})
 	assert.NoError(t, err)
 	conn, err = connect(context.TODO(), protoValueDriver{}, &types.Any{
 		Value: []byte(chars),
@@ -30,7 +30,7 @@ func TestConnect(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, conn)
 
-	chars, err = marshaler.MarshalToString(&runtimev1.RuntimeConfig{})
+	chars, err = marshaler.MarshalToString(&runtimev1.PrimitiveID{})
 	assert.NoError(t, err)
 	conn, err = connect(context.TODO(), &protoPointerDriver{}, &types.Any{
 		Value: []byte(chars),
@@ -57,14 +57,14 @@ func TestConnect(t *testing.T) {
 
 func TestConfigure(t *testing.T) {
 	var marshaler jsonpb.Marshaler
-	chars, err := marshaler.MarshalToString(&runtimev1.RuntimeConfig{})
+	chars, err := marshaler.MarshalToString(&runtimev1.PrimitiveID{})
 	assert.NoError(t, err)
 	err = configure(context.TODO(), protoValueConn{}, &types.Any{
 		Value: []byte(chars),
 	})
 	assert.NoError(t, err)
 
-	chars, err = marshaler.MarshalToString(&runtimev1.RuntimeConfig{})
+	chars, err = marshaler.MarshalToString(&runtimev1.PrimitiveID{})
 	assert.NoError(t, err)
 	err = configure(context.TODO(), &protoPointerConn{}, &types.Any{
 		Value: []byte(chars),
@@ -105,7 +105,7 @@ type protoValueDriver struct {
 	emptyDriver
 }
 
-func (d protoValueDriver) Connect(ctx context.Context, config *runtimev1.RuntimeConfig) (driver.Conn, error) {
+func (d protoValueDriver) Connect(ctx context.Context, config *runtimev1.PrimitiveID) (driver.Conn, error) {
 	return emptyConn{}, nil
 }
 
@@ -113,7 +113,7 @@ type protoPointerDriver struct {
 	emptyDriver
 }
 
-func (d *protoPointerDriver) Connect(ctx context.Context, config *runtimev1.RuntimeConfig) (driver.Conn, error) {
+func (d *protoPointerDriver) Connect(ctx context.Context, config *runtimev1.PrimitiveID) (driver.Conn, error) {
 	return emptyConn{}, nil
 }
 
@@ -147,7 +147,7 @@ type protoValueConn struct {
 	emptyConn
 }
 
-func (d protoValueConn) Configure(ctx context.Context, config *runtimev1.RuntimeConfig) error {
+func (d protoValueConn) Configure(ctx context.Context, config *runtimev1.PrimitiveID) error {
 	return nil
 }
 
@@ -159,11 +159,11 @@ type protoPointerConn struct {
 	emptyConn
 }
 
-func (d *protoPointerConn) Configure(ctx context.Context, config *runtimev1.RuntimeConfig) error {
+func (d *protoPointerConn) Configure(ctx context.Context, config *runtimev1.PrimitiveID) error {
 	return nil
 }
 
-func (d *protoPointerConn) NewTestV1(config *runtimev1.RuntimeConfig) (runtimev1.RuntimeServer, error) {
+func (d *protoPointerConn) NewTestV1(config *runtimev1.PrimitiveID) (runtimev1.RuntimeServer, error) {
 	return &runtimev1.UnimplementedRuntimeServer{}, nil
 }
 
