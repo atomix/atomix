@@ -4,7 +4,7 @@
 
 apiVersion: v2
 name: atomix
-description: Chart for deploying Atomix with storage various controllers
+description: Atomix core controllers and data stores
 kubeVersion: ">=1.17.0"
 type: application
 version: 2.0.0
