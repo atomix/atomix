@@ -15,23 +15,30 @@ var log = logging.GetLogger()
 
 type LockProxy interface {
 	runtime.PrimitiveProxy
-	lockv1.LockServer
+	// Lock attempts to acquire the lock
+	Lock(context.Context, *lockv1.LockRequest) (*lockv1.LockResponse, error)
+	// Unlock releases the lock
+	Unlock(context.Context, *lockv1.UnlockRequest) (*lockv1.UnlockResponse, error)
+	// GetLock gets the lock state
+	GetLock(context.Context, *lockv1.GetLockRequest) (*lockv1.GetLockResponse, error)
 }
 
 func NewLockServer(rt *runtime.Runtime) lockv1.LockServer {
 	return &lockServer{
-		manager: runtime.NewPrimitiveRegistry[LockProxy](lockv1.PrimitiveType, rt),
+		LocksServer: NewLocksServer(rt),
+		primitives:  runtime.NewPrimitiveRegistry[LockProxy](lockv1.PrimitiveType, rt),
 	}
 }
 
 type lockServer struct {
-	manager runtime.PrimitiveRegistry[LockProxy]
+	lockv1.LocksServer
+	primitives runtime.PrimitiveRegistry[LockProxy]
 }
 
 func (s *lockServer) Lock(ctx context.Context, request *lockv1.LockRequest) (*lockv1.LockResponse, error) {
 	log.Debugw("Lock",
 		logging.Trunc64("LockRequest", request))
-	client, err := s.manager.Get(request.ID)
+	client, err := s.primitives.Get(request.ID)
 	if err != nil {
 		log.Warnw("Lock",
 			logging.Trunc64("LockRequest", request),
@@ -53,7 +60,7 @@ func (s *lockServer) Lock(ctx context.Context, request *lockv1.LockRequest) (*lo
 func (s *lockServer) Unlock(ctx context.Context, request *lockv1.UnlockRequest) (*lockv1.UnlockResponse, error) {
 	log.Debugw("Unlock",
 		logging.Trunc64("UnlockRequest", request))
-	client, err := s.manager.Get(request.ID)
+	client, err := s.primitives.Get(request.ID)
 	if err != nil {
 		log.Warnw("Unlock",
 			logging.Trunc64("UnlockRequest", request),
@@ -75,7 +82,7 @@ func (s *lockServer) Unlock(ctx context.Context, request *lockv1.UnlockRequest) 
 func (s *lockServer) GetLock(ctx context.Context, request *lockv1.GetLockRequest) (*lockv1.GetLockResponse, error) {
 	log.Debugw("GetLock",
 		logging.Trunc64("GetLockRequest", request))
-	client, err := s.manager.Get(request.ID)
+	client, err := s.primitives.Get(request.ID)
 	if err != nil {
 		log.Warnw("GetLock",
 			logging.Trunc64("GetLockRequest", request),

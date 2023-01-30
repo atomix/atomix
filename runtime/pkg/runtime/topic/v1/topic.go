@@ -15,23 +15,28 @@ var log = logging.GetLogger()
 
 type TopicProxy interface {
 	runtime.PrimitiveProxy
-	topicv1.TopicServer
+	// Publish publishes a message to the topic
+	Publish(context.Context, *topicv1.PublishRequest) (*topicv1.PublishResponse, error)
+	// Subscribe subscribes to receive messages from the topic
+	Subscribe(*topicv1.SubscribeRequest, topicv1.Topic_SubscribeServer) error
 }
 
 func NewTopicServer(rt *runtime.Runtime) topicv1.TopicServer {
 	return &topicServer{
-		manager: runtime.NewPrimitiveRegistry[TopicProxy](topicv1.PrimitiveType, rt),
+		TopicsServer: NewTopicsServer(rt),
+		primitives:   runtime.NewPrimitiveRegistry[TopicProxy](topicv1.PrimitiveType, rt),
 	}
 }
 
 type topicServer struct {
-	manager runtime.PrimitiveRegistry[TopicProxy]
+	topicv1.TopicsServer
+	primitives runtime.PrimitiveRegistry[TopicProxy]
 }
 
 func (s *topicServer) Publish(ctx context.Context, request *topicv1.PublishRequest) (*topicv1.PublishResponse, error) {
 	log.Debugw("Publish",
 		logging.Trunc64("PublishRequest", request))
-	client, err := s.manager.Get(request.ID)
+	client, err := s.primitives.Get(request.ID)
 	if err != nil {
 		log.Warnw("Publish",
 			logging.Trunc64("PublishRequest", request),
@@ -54,7 +59,7 @@ func (s *topicServer) Subscribe(request *topicv1.SubscribeRequest, server topicv
 	log.Debugw("Subscribe",
 		logging.Trunc64("SubscribeRequest", request),
 		logging.String("State", "started"))
-	client, err := s.manager.Get(request.ID)
+	client, err := s.primitives.Get(request.ID)
 	if err != nil {
 		log.Warnw("Subscribe",
 			logging.Trunc64("SubscribeRequest", request),

@@ -15,16 +15,27 @@ var log = logging.GetLogger()
 
 type CounterProxy interface {
 	runtime.PrimitiveProxy
-	counterv1.CounterServer
+	// Set sets the counter value
+	Set(context.Context, *counterv1.SetRequest) (*counterv1.SetResponse, error)
+	// Update compares and updates the counter value
+	Update(context.Context, *counterv1.UpdateRequest) (*counterv1.UpdateResponse, error)
+	// Get gets the current counter value
+	Get(context.Context, *counterv1.GetRequest) (*counterv1.GetResponse, error)
+	// Increment increments the counter value
+	Increment(context.Context, *counterv1.IncrementRequest) (*counterv1.IncrementResponse, error)
+	// Decrement decrements the counter value
+	Decrement(context.Context, *counterv1.DecrementRequest) (*counterv1.DecrementResponse, error)
 }
 
 func NewCounterServer(rt *runtime.Runtime) counterv1.CounterServer {
 	return &counterServer{
-		primitives: runtime.NewPrimitiveRegistry[CounterProxy](counterv1.PrimitiveType, rt),
+		CountersServer: NewCounterServer(rt),
+		primitives:     runtime.NewPrimitiveRegistry[CounterProxy](counterv1.PrimitiveType, rt),
 	}
 }
 
 type counterServer struct {
+	counterv1.CountersServer
 	primitives runtime.PrimitiveRegistry[CounterProxy]
 }
 
