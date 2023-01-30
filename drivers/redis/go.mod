@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/atomix/atomix/api v0.8.0
-	github.com/atomix/atomix/runtime v0.8.2
+	github.com/atomix/atomix/runtime v0.8.3
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-redis/redis/v9 v9.0.0-beta.1
 )

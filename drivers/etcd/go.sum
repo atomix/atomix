@@ -9,8 +9,8 @@ github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d/go.mod h1:rBZYJk5
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/atomix/atomix/api v0.8.0 h1:KJVf3xY/8+Dd+CsAp7sUMJGsWW3DtRoIWmRIMCoWHVk=
 github.com/atomix/atomix/api v0.8.0/go.mod h1:Fz8zXQH6n28U0NTu5xctKhkNrN5RsWgX56lrMhqXlPg=
-github.com/atomix/atomix/runtime v0.8.2 h1:w3Nme+HVG2//T7K0p1xzWu5iyxVmvmrKXLYFyUGJ0FY=
-github.com/atomix/atomix/runtime v0.8.2/go.mod h1:kkAiuqqkDjSDQsGnQ9nfUz8FmVv/M6GFUjwxkoTbLC0=
+github.com/atomix/atomix/runtime v0.8.3 h1:+ZPGwolymNjkb2N+Y6+7GC3E1cjAsR1ynTEzpGP6NLw=
+github.com/atomix/atomix/runtime v0.8.3/go.mod h1:kkAiuqqkDjSDQsGnQ9nfUz8FmVv/M6GFUjwxkoTbLC0=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
