@@ -17,25 +17,25 @@ maintainers:
 dependencies:
   - name: atomix-controller
     version: 0.3.0
-    repository: https://atomix.github.io/atomix
+    repository: https://charts.atomix.io
     alias: controller
   - name: atomix-sidecar-controller
-    version: 0.3.1
-    repository: https://atomix.github.io/atomix
+    version: 0.4.0
+    repository: https://charts.atomix.io
     alias: sidecar-controller
   - name: atomix-raft-controller
     version: 0.3.1
-    repository: https://atomix.github.io/atomix
+    repository: https://charts.atomix.io
     condition: stores.raft.enabled
     alias: raft-controller
   - name: atomix-shared-memory-controller
     version: 0.4.1
-    repository: https://atomix.github.io/atomix
+    repository: https://charts.atomix.io
     condition: stores.shared-memory.enabled
     alias: shared-memory-controller
   - name: atomix-pod-memory-controller
     version: 0.3.1
-    repository: https://atomix.github.io/atomix
+    repository: https://charts.atomix.io
     condition: stores.pod-memory.enabled
     alias: pod-memory-controller
   - name: atomix-consensus-controller
