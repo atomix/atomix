@@ -139,228 +139,6 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-0.2.0/atomix-0.2.0.tgz
     version: 0.2.0
-  - apiVersion: v2
-    appVersion: v0.1.6
-    created: "2023-01-15T02:38:06.170930337Z"
-    dependencies:
-    - alias: controller
-      name: atomix-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.1.3
-    - alias: raft-controller
-      condition: stores.raft.enabled
-      name: atomix-raft-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.5
-    - alias: shared-memory-controller
-      condition: stores.shared-memory.enabled
-      name: atomix-shared-memory-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.4
-    - alias: pod-memory-controller
-      condition: stores.pod-memory.enabled
-      name: atomix-pod-memory-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.3
-    - alias: consensus-controller
-      condition: stores.consensus.enabled
-      name: atomix-consensus-controller
-      repository: https://charts.atomix.io
-      version: 1.5.1
-    description: Chart for deploying Atomix with storage various controllers
-    digest: b6007a7c3e4fb7231646b7d21a9c1cbc58e62b9fc9f9cb2ad5b66473ff24f04a
-    home: https://atomix.io
-    keywords:
-    - atomix
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-0.1.6/atomix-0.1.6.tgz
-    version: 0.1.6
-  - apiVersion: v2
-    appVersion: v0.1.5
-    created: "2023-01-14T01:34:06.313152933Z"
-    dependencies:
-    - alias: controller
-      name: atomix-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.1.3
-    - alias: raft-controller
-      condition: stores.raft.enabled
-      name: atomix-raft-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.4
-    - alias: shared-memory-controller
-      condition: stores.shared-memory.enabled
-      name: atomix-shared-memory-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.3
-    - alias: pod-memory-controller
-      condition: stores.pod-memory.enabled
-      name: atomix-pod-memory-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.2
-    - alias: consensus-controller
-      condition: stores.consensus.enabled
-      name: atomix-consensus-controller
-      repository: https://charts.atomix.io
-      version: 1.5.1
-    description: Chart for deploying Atomix with storage various controllers
-    digest: 901b7a126e2a812220126cf790c4408676c51f7ecabd30634aaf5471e262d6ab
-    home: https://atomix.io
-    keywords:
-    - atomix
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-0.1.5/atomix-0.1.5.tgz
-    version: 0.1.5
-  - apiVersion: v2
-    appVersion: v0.1.4
-    created: "2023-01-13T23:00:40.170913569Z"
-    dependencies:
-    - alias: controller
-      name: atomix-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.1.3
-    - alias: raft-controller
-      condition: stores.raft.enabled
-      name: atomix-raft-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.3
-    - alias: shared-memory-controller
-      condition: stores.shared-memory.enabled
-      name: atomix-shared-memory-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.2
-    - alias: pod-memory-controller
-      condition: stores.pod-memory.enabled
-      name: atomix-pod-memory-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.1
-    - alias: consensus-controller
-      condition: stores.consensus.enabled
-      name: atomix-consensus-controller
-      repository: https://charts.atomix.io
-      version: 1.5.1
-    description: Chart for deploying Atomix with storage various controllers
-    digest: 3e6703f4f1fa57521b2d3d7fb684d9406ac9da61bff6003aff355c23516d906e
-    home: https://atomix.io
-    keywords:
-    - atomix
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-0.1.4/atomix-0.1.4.tgz
-    version: 0.1.4
-  - apiVersion: v2
-    appVersion: v0.1.3
-    created: "2023-01-13T22:33:27.79160432Z"
-    dependencies:
-    - alias: controller
-      name: atomix-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.1.3
-    - alias: raft-controller
-      condition: stores.raft.enabled
-      name: atomix-raft-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.1
-    - alias: shared-memory-controller
-      condition: stores.shared-memory.enabled
-      name: atomix-shared-memory-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.2
-    - alias: pod-memory-controller
-      condition: stores.pod-memory.enabled
-      name: atomix-pod-memory-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.1
-    - alias: consensus-controller
-      condition: stores.consensus.enabled
-      name: atomix-consensus-controller
-      repository: https://charts.atomix.io
-      version: 1.5.1
-    description: Chart for deploying Atomix with storage various controllers
-    digest: e9a1ad2de7856bf716daa9b13ad674096d7c51b911eb23cdefb25327313bb1ee
-    home: https://atomix.io
-    keywords:
-    - atomix
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-0.1.3/atomix-0.1.3.tgz
-    version: 0.1.3
-  - apiVersion: v2
-    appVersion: v0.1.2
-    created: "2023-01-13T21:47:25.045906882Z"
-    dependencies:
-    - alias: controller
-      name: atomix-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.1.3
-    - alias: raft-controller
-      condition: stores.raft.enabled
-      name: atomix-raft-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.1
-    description: Chart for deploying Atomix with storage various controllers
-    digest: e2890ea94f2a410a787a332feb658596100526120840b62db74d1dab78cc9803
-    home: https://atomix.io
-    keywords:
-    - atomix
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-0.1.2/atomix-0.1.2.tgz
-    version: 0.1.2
-  - apiVersion: v2
-    appVersion: v0.1.0
-    created: "2023-01-13T21:20:46.601874766Z"
-    dependencies:
-    - alias: controller
-      name: atomix-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.1.2
-    - alias: raft-controller
-      condition: stores.raft.enabled
-      name: atomix-raft-controller
-      repository: https://atomix.github.io/atomix
-      version: 0.2.1
-    description: Chart for deploying Atomix with storage various controllers
-    digest: 37917f3783b1fcbcab08a1aa60da5eec9a2fed345653a369290df8d6fbe948fc
-    home: https://atomix.io
-    keywords:
-    - atomix
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-0.1.0/atomix-0.1.0.tgz
-    version: 0.1.0
   - apiVersion: v1
     appVersion: 3.1.12
     created: "2022-02-09T14:22:45.051737-08:00"
@@ -418,6 +196,48 @@ entries:
     urls:
     - https://github.com/atomix/atomix-helm-charts/releases/download/atomix-0.1.7/atomix-0.1.7.tgz
     version: 0.1.7
+  - apiVersion: v2
+    appVersion: v0.1.6
+    created: "2023-01-15T02:38:06.170930337Z"
+    dependencies:
+    - alias: controller
+      name: atomix-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.1.3
+    - alias: raft-controller
+      condition: stores.raft.enabled
+      name: atomix-raft-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.5
+    - alias: shared-memory-controller
+      condition: stores.shared-memory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.4
+    - alias: pod-memory-controller
+      condition: stores.pod-memory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.3
+    - alias: consensus-controller
+      condition: stores.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.1
+    description: Chart for deploying Atomix with storage various controllers
+    digest: b6007a7c3e4fb7231646b7d21a9c1cbc58e62b9fc9f9cb2ad5b66473ff24f04a
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-0.1.6/atomix-0.1.6.tgz
+    version: 0.1.6
   - apiVersion: v1
     appVersion: 3.1.9
     created: "2021-05-14T09:17:56.010086-07:00"
@@ -437,6 +257,48 @@ entries:
     urls:
     - https://github.com/atomix/helm-charts/releases/download/atomix-0.1.6/atomix-0.1.6.tgz
     version: 0.1.6
+  - apiVersion: v2
+    appVersion: v0.1.5
+    created: "2023-01-14T01:34:06.313152933Z"
+    dependencies:
+    - alias: controller
+      name: atomix-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.1.3
+    - alias: raft-controller
+      condition: stores.raft.enabled
+      name: atomix-raft-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.4
+    - alias: shared-memory-controller
+      condition: stores.shared-memory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.3
+    - alias: pod-memory-controller
+      condition: stores.pod-memory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.2
+    - alias: consensus-controller
+      condition: stores.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.1
+    description: Chart for deploying Atomix with storage various controllers
+    digest: 901b7a126e2a812220126cf790c4408676c51f7ecabd30634aaf5471e262d6ab
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-0.1.5/atomix-0.1.5.tgz
+    version: 0.1.5
   - apiVersion: v1
     appVersion: 3.1.9
     created: "2021-03-26T05:28:23.854673-07:00"
@@ -456,6 +318,48 @@ entries:
     urls:
     - https://github.com/atomix/helm-charts/releases/download/atomix-0.1.5/atomix-0.1.5.tgz
     version: 0.1.5
+  - apiVersion: v2
+    appVersion: v0.1.4
+    created: "2023-01-13T23:00:40.170913569Z"
+    dependencies:
+    - alias: controller
+      name: atomix-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.1.3
+    - alias: raft-controller
+      condition: stores.raft.enabled
+      name: atomix-raft-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.3
+    - alias: shared-memory-controller
+      condition: stores.shared-memory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.2
+    - alias: pod-memory-controller
+      condition: stores.pod-memory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.1
+    - alias: consensus-controller
+      condition: stores.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.1
+    description: Chart for deploying Atomix with storage various controllers
+    digest: 3e6703f4f1fa57521b2d3d7fb684d9406ac9da61bff6003aff355c23516d906e
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-0.1.4/atomix-0.1.4.tgz
+    version: 0.1.4
   - apiVersion: v1
     appVersion: 3.1.8
     created: "2020-10-01T09:49:06.702814-07:00"
@@ -475,6 +379,48 @@ entries:
     urls:
     - https://github.com/atomix/helm-charts/releases/download/atomix-0.1.4/atomix-0.1.4.tgz
     version: 0.1.4
+  - apiVersion: v2
+    appVersion: v0.1.3
+    created: "2023-01-13T22:33:27.79160432Z"
+    dependencies:
+    - alias: controller
+      name: atomix-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.1.3
+    - alias: raft-controller
+      condition: stores.raft.enabled
+      name: atomix-raft-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.1
+    - alias: shared-memory-controller
+      condition: stores.shared-memory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.2
+    - alias: pod-memory-controller
+      condition: stores.pod-memory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.1
+    - alias: consensus-controller
+      condition: stores.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.1
+    description: Chart for deploying Atomix with storage various controllers
+    digest: e9a1ad2de7856bf716daa9b13ad674096d7c51b911eb23cdefb25327313bb1ee
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-0.1.3/atomix-0.1.3.tgz
+    version: 0.1.3
   - apiVersion: v1
     appVersion: 3.1.8
     created: "2020-05-01T14:41:08.39985-07:00"
@@ -494,6 +440,33 @@ entries:
     urls:
     - https://github.com/atomix/helm-charts/releases/download/atomix-0.1.3/atomix-0.1.3.tgz
     version: 0.1.3
+  - apiVersion: v2
+    appVersion: v0.1.2
+    created: "2023-01-13T21:47:25.045906882Z"
+    dependencies:
+    - alias: controller
+      name: atomix-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.1.3
+    - alias: raft-controller
+      condition: stores.raft.enabled
+      name: atomix-raft-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.1
+    description: Chart for deploying Atomix with storage various controllers
+    digest: e2890ea94f2a410a787a332feb658596100526120840b62db74d1dab78cc9803
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-0.1.2/atomix-0.1.2.tgz
+    version: 0.1.2
   - apiVersion: v1
     appVersion: 3.1.0
     created: "2020-04-15T10:53:13.556762-07:00"
@@ -513,6 +486,33 @@ entries:
     urls:
     - https://github.com/atomix/helm-charts/releases/download/atomix-0.1.2/atomix-0.1.2.tgz
     version: 0.1.2
+  - apiVersion: v2
+    appVersion: v0.1.0
+    created: "2023-01-13T21:20:46.601874766Z"
+    dependencies:
+    - alias: controller
+      name: atomix-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.1.2
+    - alias: raft-controller
+      condition: stores.raft.enabled
+      name: atomix-raft-controller
+      repository: https://atomix.github.io/atomix
+      version: 0.2.1
+    description: Chart for deploying Atomix with storage various controllers
+    digest: 37917f3783b1fcbcab08a1aa60da5eec9a2fed345653a369290df8d6fbe948fc
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-0.1.0/atomix-0.1.0.tgz
+    version: 0.1.0
   atomix-bench:
   - apiVersion: v2
     appVersion: v0.6.0
@@ -666,6 +666,67 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-bench-0.2.0/atomix-bench-0.2.0.tgz
     version: 0.2.0
+  atomix-consensus-controller:
+  - apiVersion: v2
+    appVersion: v0.7.1
+    created: "2022-12-17T00:31:53.410535349Z"
+    description: The consensus controller extends the Kubernetes API with custom resources
+      for consensus stores.
+    digest: 5bd31dbc35d8616917e08695782d8b258fc574ab29121baf9c4b05f4708d70d6
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - consensus
+    - raft
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-consensus-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-consensus-controller-1.5.1/atomix-consensus-controller-1.5.1.tgz
+    version: 1.5.1
+  - apiVersion: v2
+    appVersion: v0.7.0
+    created: "2022-10-28T11:55:41.250390113Z"
+    description: The consensus controller extends the Kubernetes API with custom resources
+      for consensus stores.
+    digest: 583b53862444ac78dee4336e208a311bfdd21372a5d978a34cd87f959be3cf3e
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - consensus
+    - raft
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-consensus-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-consensus-controller-1.5.0/atomix-consensus-controller-1.5.0.tgz
+    version: 1.5.0
+  - apiVersion: v2
+    appVersion: v0.6.0
+    created: "2022-10-25T22:48:04.679352874Z"
+    description: The consensus controller extends the Kubernetes API with custom resources
+      for consensus stores.
+    digest: 5ce30a25457501342b517adc0d05af548aab39ca2549a2da8cbb617f64be7f05
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - consensus
+    - raft
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-consensus-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-consensus-controller-1.4.0/atomix-consensus-controller-1.4.0.tgz
+    version: 1.4.0
   atomix-controller:
   - apiVersion: v2
     appVersion: v0.3.0
@@ -758,6 +819,25 @@ entries:
     - https://github.com/atomix/atomix/releases/download/atomix-controller-0.1.2/atomix-controller-0.1.2.tgz
     version: 0.1.2
   atomix-pod-memory-controller:
+  - apiVersion: v2
+    appVersion: v0.1.0
+    created: "2022-10-28T11:58:16.462706907Z"
+    description: The pod memory controller extends the Kubernetes API with custom
+      resources for pod-local shared memory stores.
+    digest: e920d8e74bcd2e78f0f880efe05e653730e64d417882102642bd06c17b33493c
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-pod-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-pod-memory-controller-1.0.0/atomix-pod-memory-controller-1.0.0.tgz
+    version: 1.0.0
   - apiVersion: v2
     appVersion: v0.3.1
     created: "2023-01-29T00:13:46.541421517Z"
@@ -853,25 +933,6 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-pod-memory-controller-0.2.1/atomix-pod-memory-controller-0.2.1.tgz
     version: 0.2.1
-  - apiVersion: v2
-    appVersion: v0.1.0
-    created: "2022-10-28T11:58:16.462706907Z"
-    description: The pod memory controller extends the Kubernetes API with custom
-      resources for pod-local shared memory stores.
-    digest: e920d8e74bcd2e78f0f880efe05e653730e64d417882102642bd06c17b33493c
-    home: https://atomix.io
-    keywords:
-    - atomix
-    - memory
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-pod-memory-controller
-    type: application
-    urls:
-    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-pod-memory-controller-1.0.0/atomix-pod-memory-controller-1.0.0.tgz
-    version: 1.0.0
   atomix-raft-controller:
   - apiVersion: v2
     appVersion: v0.3.1
@@ -978,265 +1039,6 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-raft-controller-0.2.1/atomix-raft-controller-0.2.1.tgz
     version: 0.2.1
-  atomix-shared-memory-controller:
-  - apiVersion: v2
-    appVersion: v0.4.1
-    created: "2023-01-29T08:31:56.5050724Z"
-    description: The shared memory controller extends the Kubernetes API with custom
-      resources for memory stores.
-    digest: 89ea191f11c96d133e285768533ae63cc4b567b97144fafbdae38243b89331a3
-    home: https://atomix.io
-    keywords:
-    - atomix
-    - memory
-    - cache
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-shared-memory-controller
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.4.1/atomix-shared-memory-controller-0.4.1.tgz
-    version: 0.4.1
-  - apiVersion: v2
-    appVersion: v0.4.0
-    created: "2023-01-29T03:35:47.686341389Z"
-    description: The shared memory controller extends the Kubernetes API with custom
-      resources for memory stores.
-    digest: 3d751c5c461232378f131aa91a3c5205de99522dd076542015d96182bcff5864
-    home: https://atomix.io
-    keywords:
-    - atomix
-    - memory
-    - cache
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-shared-memory-controller
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.4.0/atomix-shared-memory-controller-0.4.0.tgz
-    version: 0.4.0
-  - apiVersion: v2
-    appVersion: v0.3.1
-    created: "2023-01-29T00:17:58.877946994Z"
-    description: The shared memory controller extends the Kubernetes API with custom
-      resources for memory stores.
-    digest: 6212932e3b7b1564e2c3aceaa9262863459d9e881df8c1c0ede5133b79c62808
-    home: https://atomix.io
-    keywords:
-    - atomix
-    - memory
-    - cache
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-shared-memory-controller
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.3.1/atomix-shared-memory-controller-0.3.1.tgz
-    version: 0.3.1
-  - apiVersion: v2
-    appVersion: v0.3.0
-    created: "2023-01-28T18:16:43.931322401Z"
-    description: The shared memory controller extends the Kubernetes API with custom
-      resources for memory stores.
-    digest: a48e6277dae14f6e2f7b073995f37376bc5ffe34a3eb04a2ff434664f34f9dc1
-    home: https://atomix.io
-    keywords:
-    - atomix
-    - memory
-    - cache
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-shared-memory-controller
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.3.0/atomix-shared-memory-controller-0.3.0.tgz
-    version: 0.3.0
-  - apiVersion: v2
-    appVersion: v0.2.4
-    created: "2023-01-15T02:22:36.171491749Z"
-    description: The shared memory controller extends the Kubernetes API with custom
-      resources for memory stores.
-    digest: c06396a39337274bfad53f5f2de751f420c8d52596657ecb044d98319b1cedea
-    home: https://atomix.io
-    keywords:
-    - atomix
-    - memory
-    - cache
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-shared-memory-controller
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.2.4/atomix-shared-memory-controller-0.2.4.tgz
-    version: 0.2.4
-  - apiVersion: v2
-    appVersion: v0.2.3
-    created: "2023-01-14T01:18:17.440477065Z"
-    description: The shared memory controller extends the Kubernetes API with custom
-      resources for memory stores.
-    digest: 3526ba463569578737a8c431f3ba3059286c9ef9b7b019e4d790d5852542660c
-    home: https://atomix.io
-    keywords:
-    - atomix
-    - memory
-    - cache
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-shared-memory-controller
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.2.3/atomix-shared-memory-controller-0.2.3.tgz
-    version: 0.2.3
-  - apiVersion: v2
-    appVersion: v0.2.2
-    created: "2023-01-13T22:25:22.503767711Z"
-    description: The shared memory controller extends the Kubernetes API with custom
-      resources for memory stores.
-    digest: 1faee54141c3b4f088bdadf6c843c4c009891090bf503f194921371dab5b303b
-    home: https://atomix.io
-    keywords:
-    - atomix
-    - memory
-    - cache
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-shared-memory-controller
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.2.2/atomix-shared-memory-controller-0.2.2.tgz
-    version: 0.2.2
-  - apiVersion: v2
-    appVersion: v0.1.0
-    created: "2022-10-28T12:04:26.683142927Z"
-    description: The shared memory controller extends the Kubernetes API with custom
-      resources for memory stores.
-    digest: 1c8ef3f56b4015dfa6eaf0b5b83347df9f84467b22a2f1f6dd40b80e5abccb2d
-    home: https://atomix.io
-    keywords:
-    - atomix
-    - memory
-    - cache
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-shared-memory-controller
-    type: application
-    urls:
-    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-shared-memory-controller-1.0.0/atomix-shared-memory-controller-1.0.0.tgz
-    version: 1.0.0
-  atomix-sidecar-controller:
-  - apiVersion: v2
-    appVersion: v0.3.1
-    created: "2023-01-29T01:18:19.565808398Z"
-    description: The sidecar controller provides injection of the Atomix sidecar into
-      Kubernetes pods.
-    digest: 693bf05f3099308c9d3fafcf818908945e963efc419a7ac6777e94ab04f4e8cf
-    home: https://atomix.io
-    keywords:
-    - atomix
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-sidecar-controller
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.1/atomix-sidecar-controller-0.3.1.tgz
-    version: 0.3.1
-  - apiVersion: v2
-    appVersion: v0.3.0
-    created: "2023-01-29T01:01:39.437670653Z"
-    description: The sidecar controller provides injection of the Atomix sidecar into
-      Kubernetes pods.
-    digest: f40a4dafcd35c3971fb6d1911858adb5c25e003ce37cd002ed11364e51dbda35
-    home: https://atomix.io
-    keywords:
-    - atomix
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-sidecar-controller
-    type: application
-    urls:
-    - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.0/atomix-sidecar-controller-0.3.0.tgz
-    version: 0.3.0
-  atomix-consensus-controller:
-  - apiVersion: v2
-    appVersion: v0.7.1
-    created: "2022-12-17T00:31:53.410535349Z"
-    description: The consensus controller extends the Kubernetes API with custom resources
-      for consensus stores.
-    digest: 5bd31dbc35d8616917e08695782d8b258fc574ab29121baf9c4b05f4708d70d6
-    home: https://atomix.io
-    keywords:
-    - atomix
-    - consensus
-    - raft
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-consensus-controller
-    type: application
-    urls:
-    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-consensus-controller-1.5.1/atomix-consensus-controller-1.5.1.tgz
-    version: 1.5.1
-  - apiVersion: v2
-    appVersion: v0.7.0
-    created: "2022-10-28T11:55:41.250390113Z"
-    description: The consensus controller extends the Kubernetes API with custom resources
-      for consensus stores.
-    digest: 583b53862444ac78dee4336e208a311bfdd21372a5d978a34cd87f959be3cf3e
-    home: https://atomix.io
-    keywords:
-    - atomix
-    - consensus
-    - raft
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-consensus-controller
-    type: application
-    urls:
-    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-consensus-controller-1.5.0/atomix-consensus-controller-1.5.0.tgz
-    version: 1.5.0
-  - apiVersion: v2
-    appVersion: v0.6.0
-    created: "2022-10-25T22:48:04.679352874Z"
-    description: The consensus controller extends the Kubernetes API with custom resources
-      for consensus stores.
-    digest: 5ce30a25457501342b517adc0d05af548aab39ca2549a2da8cbb617f64be7f05
-    home: https://atomix.io
-    keywords:
-    - atomix
-    - consensus
-    - raft
-    kubeVersion: '>=1.17.0'
-    maintainers:
-    - email: jordan.halterman@intel.com
-      name: Jordan Halterman
-    name: atomix-consensus-controller
-    type: application
-    urls:
-    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-consensus-controller-1.4.0/atomix-consensus-controller-1.4.0.tgz
-    version: 1.4.0
   atomix-runtime:
   - apiVersion: v2
     created: "2023-01-10T13:47:23.480447159Z"
@@ -2019,4 +1821,220 @@ entries:
     urls:
     - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-0.6.9/atomix-runtime-controller-0.6.9.tgz
     version: 0.6.9
-generated: "2023-01-29T08:34:35.041627681Z"
+  atomix-shared-memory-controller:
+  - apiVersion: v2
+    appVersion: v0.1.0
+    created: "2022-10-28T12:04:26.683142927Z"
+    description: The shared memory controller extends the Kubernetes API with custom
+      resources for memory stores.
+    digest: 1c8ef3f56b4015dfa6eaf0b5b83347df9f84467b22a2f1f6dd40b80e5abccb2d
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    - cache
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-shared-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-shared-memory-controller-1.0.0/atomix-shared-memory-controller-1.0.0.tgz
+    version: 1.0.0
+  - apiVersion: v2
+    appVersion: v0.4.1
+    created: "2023-01-29T08:31:56.5050724Z"
+    description: The shared memory controller extends the Kubernetes API with custom
+      resources for memory stores.
+    digest: 89ea191f11c96d133e285768533ae63cc4b567b97144fafbdae38243b89331a3
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    - cache
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-shared-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.4.1/atomix-shared-memory-controller-0.4.1.tgz
+    version: 0.4.1
+  - apiVersion: v2
+    appVersion: v0.4.0
+    created: "2023-01-29T03:35:47.686341389Z"
+    description: The shared memory controller extends the Kubernetes API with custom
+      resources for memory stores.
+    digest: 3d751c5c461232378f131aa91a3c5205de99522dd076542015d96182bcff5864
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    - cache
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-shared-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.4.0/atomix-shared-memory-controller-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v2
+    appVersion: v0.3.1
+    created: "2023-01-29T00:17:58.877946994Z"
+    description: The shared memory controller extends the Kubernetes API with custom
+      resources for memory stores.
+    digest: 6212932e3b7b1564e2c3aceaa9262863459d9e881df8c1c0ede5133b79c62808
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    - cache
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-shared-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.3.1/atomix-shared-memory-controller-0.3.1.tgz
+    version: 0.3.1
+  - apiVersion: v2
+    appVersion: v0.3.0
+    created: "2023-01-28T18:16:43.931322401Z"
+    description: The shared memory controller extends the Kubernetes API with custom
+      resources for memory stores.
+    digest: a48e6277dae14f6e2f7b073995f37376bc5ffe34a3eb04a2ff434664f34f9dc1
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    - cache
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-shared-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.3.0/atomix-shared-memory-controller-0.3.0.tgz
+    version: 0.3.0
+  - apiVersion: v2
+    appVersion: v0.2.4
+    created: "2023-01-15T02:22:36.171491749Z"
+    description: The shared memory controller extends the Kubernetes API with custom
+      resources for memory stores.
+    digest: c06396a39337274bfad53f5f2de751f420c8d52596657ecb044d98319b1cedea
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    - cache
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-shared-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.2.4/atomix-shared-memory-controller-0.2.4.tgz
+    version: 0.2.4
+  - apiVersion: v2
+    appVersion: v0.2.3
+    created: "2023-01-14T01:18:17.440477065Z"
+    description: The shared memory controller extends the Kubernetes API with custom
+      resources for memory stores.
+    digest: 3526ba463569578737a8c431f3ba3059286c9ef9b7b019e4d790d5852542660c
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    - cache
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-shared-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.2.3/atomix-shared-memory-controller-0.2.3.tgz
+    version: 0.2.3
+  - apiVersion: v2
+    appVersion: v0.2.2
+    created: "2023-01-13T22:25:22.503767711Z"
+    description: The shared memory controller extends the Kubernetes API with custom
+      resources for memory stores.
+    digest: 1faee54141c3b4f088bdadf6c843c4c009891090bf503f194921371dab5b303b
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    - cache
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-shared-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.2.2/atomix-shared-memory-controller-0.2.2.tgz
+    version: 0.2.2
+  atomix-sidecar-controller:
+  - apiVersion: v2
+    appVersion: v0.4.0
+    created: "2023-01-30T10:21:36.619652169Z"
+    description: The sidecar controller provides injection of the Atomix sidecar into
+      Kubernetes pods.
+    digest: 14479a81f85231968e37c2e5136beb9dafb2759091bf62bad8fdf14261db4f70
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-sidecar-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.4.0/atomix-sidecar-controller-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v2
+    appVersion: v0.3.1
+    created: "2023-01-29T01:18:19.565808398Z"
+    description: The sidecar controller provides injection of the Atomix sidecar into
+      Kubernetes pods.
+    digest: 693bf05f3099308c9d3fafcf818908945e963efc419a7ac6777e94ab04f4e8cf
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-sidecar-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.1/atomix-sidecar-controller-0.3.1.tgz
+    version: 0.3.1
+  - apiVersion: v2
+    appVersion: v0.3.0
+    created: "2023-01-29T01:01:39.437670653Z"
+    description: The sidecar controller provides injection of the Atomix sidecar into
+      Kubernetes pods.
+    digest: f40a4dafcd35c3971fb6d1911858adb5c25e003ce37cd002ed11364e51dbda35
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-sidecar-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.0/atomix-sidecar-controller-0.3.0.tgz
+    version: 0.3.0
+generated: "2023-01-30T10:21:36.62023317Z"
