@@ -35,9 +35,21 @@ func registerConversions_v3beta4(scheme *runtime.Scheme) error {
 func convertDataStore_v3beta3_to_v3beta4(in *atomixv3beta3.DataStore, out *atomixv3beta4.DataStore, scope conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	out.SetGroupVersionKind(atomixv3beta4.SchemeGroupVersion.WithKind("DataStore"))
-	out.Spec.Driver = atomixv3beta4.Driver{
-		Name:       in.Spec.Driver.Name,
-		APIVersion: in.Spec.Driver.Version,
+	if in.Spec.Driver.Name == "PodMemory" && in.Spec.Driver.Version == "v1beta1" {
+		out.Spec.Driver = atomixv3beta4.Driver{
+			Name:       "atomix.io/pod-memory",
+			APIVersion: "v1",
+		}
+	} else if in.Spec.Driver.Name == "SharedMemory" && in.Spec.Driver.Version == "v1beta1" {
+		out.Spec.Driver = atomixv3beta4.Driver{
+			Name:       "atomix.io/shared-memory",
+			APIVersion: "v1",
+		}
+	} else {
+		out.Spec.Driver = atomixv3beta4.Driver{
+			Name:       in.Spec.Driver.Name,
+			APIVersion: in.Spec.Driver.Version,
+		}
 	}
 	out.Spec.Config = in.Spec.Config
 	return nil

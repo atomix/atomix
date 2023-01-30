@@ -35,9 +35,21 @@ func registerConversions_v3beta3(scheme *runtime.Scheme) error {
 func convertDataStore_v3beta4_to_v3beta3(in *atomixv3beta4.DataStore, out *atomixv3beta3.DataStore, scope conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	out.SetGroupVersionKind(atomixv3beta3.SchemeGroupVersion.WithKind("DataStore"))
-	out.Spec.Driver = atomixv3beta3.Driver{
-		Name:    in.Spec.Driver.Name,
-		Version: in.Spec.Driver.APIVersion,
+	if in.Spec.Driver.Name == "atomix.io/pod-memory" && in.Spec.Driver.APIVersion == "v1" {
+		out.Spec.Driver = atomixv3beta3.Driver{
+			Name:    "PodMemory",
+			Version: "v1beta1",
+		}
+	} else if in.Spec.Driver.Name == "atomix.io/shared-memory" && in.Spec.Driver.APIVersion == "v1" {
+		out.Spec.Driver = atomixv3beta3.Driver{
+			Name:    "SharedMemory",
+			Version: "v1beta1",
+		}
+	} else {
+		out.Spec.Driver = atomixv3beta3.Driver{
+			Name:    in.Spec.Driver.Name,
+			Version: in.Spec.Driver.APIVersion,
+		}
 	}
 	out.Spec.Config = in.Spec.Config
 	return nil
@@ -47,6 +59,7 @@ func convertStorageProfile_v3beta4_to_v3beta3(in *atomixv3beta4.StorageProfile, 
 	out.ObjectMeta = in.ObjectMeta
 	out.SetGroupVersionKind(atomixv3beta3.SchemeGroupVersion.WithKind("StorageProfile"))
 
+	var priority uint32 = 0
 	for _, routeIn := range in.Spec.Routes {
 		if len(routeIn.Rules) > 0 {
 			for _, ruleIn := range routeIn.Rules {
@@ -57,13 +70,15 @@ func convertStorageProfile_v3beta4_to_v3beta3(in *atomixv3beta4.StorageProfile, 
 					}
 				}
 				out.Spec.Bindings = append(out.Spec.Bindings, atomixv3beta3.Binding{
-					Store: routeIn.Store,
-					Tags:  tags,
+					Store:    routeIn.Store,
+					Priority: &priority,
+					Tags:     tags,
 				})
 			}
 		} else {
 			out.Spec.Bindings = append(out.Spec.Bindings, atomixv3beta3.Binding{
-				Store: routeIn.Store,
+				Store:    routeIn.Store,
+				Priority: &priority,
 			})
 		}
 	}
