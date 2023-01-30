@@ -13,6 +13,7 @@ option java_outer_classname = "LeaderElectionV1";
 option java_multiple_files = true;
 
 import "runtime/v1/runtime.proto";
+import "runtime/election/v1/elections.proto";
 import "gogoproto/gogo.proto";
 
 // LeaderElection is a service for a leader election primitive
@@ -40,6 +41,18 @@ service LeaderElection {
 
     // Watch watches the election for events
     rpc Watch (WatchRequest) returns (stream WatchResponse);
+
+    // Create creates the election
+    // Deprecated: use the LeaderElections service instead
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option deprecated = true;
+    }
+
+    // Close closes the election
+    // Deprecated: use the LeaderElections service instead
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option deprecated = true;
+    }
 }
 
 message EnterRequest {

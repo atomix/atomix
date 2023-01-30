@@ -217,6 +217,8 @@ Counter is a service for a counter primitive
 | Get | [GetRequest](#atomix-runtime-counter-v1-GetRequest) | [GetResponse](#atomix-runtime-counter-v1-GetResponse) | Get gets the current counter value |
 | Increment | [IncrementRequest](#atomix-runtime-counter-v1-IncrementRequest) | [IncrementResponse](#atomix-runtime-counter-v1-IncrementResponse) | Increment increments the counter value |
 | Decrement | [DecrementRequest](#atomix-runtime-counter-v1-DecrementRequest) | [DecrementResponse](#atomix-runtime-counter-v1-DecrementResponse) | Decrement decrements the counter value |
+| Create | [CreateRequest](#atomix-runtime-counter-v1-CreateRequest) | [CreateResponse](#atomix-runtime-counter-v1-CreateResponse) | Create creates the counter Deprecated: use the Counters service instead |
+| Close | [CloseRequest](#atomix-runtime-counter-v1-CloseRequest) | [CloseResponse](#atomix-runtime-counter-v1-CloseResponse) | Close closes the counter Deprecated: use the Counters service instead |
 
  
 

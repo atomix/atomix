@@ -319,6 +319,8 @@ LeaderElection is a service for a leader election primitive
 | Evict | [EvictRequest](#atomix-runtime-election-v1-EvictRequest) | [EvictResponse](#atomix-runtime-election-v1-EvictResponse) | Evict evicts a candidate from the election |
 | GetTerm | [GetTermRequest](#atomix-runtime-election-v1-GetTermRequest) | [GetTermResponse](#atomix-runtime-election-v1-GetTermResponse) | GetTerm gets the current leadership term |
 | Watch | [WatchRequest](#atomix-runtime-election-v1-WatchRequest) | [WatchResponse](#atomix-runtime-election-v1-WatchResponse) stream | Watch watches the election for events |
+| Create | [CreateRequest](#atomix-runtime-election-v1-CreateRequest) | [CreateResponse](#atomix-runtime-election-v1-CreateResponse) | Create creates the election Deprecated: use the LeaderElections service instead |
+| Close | [CloseRequest](#atomix-runtime-election-v1-CloseRequest) | [CloseResponse](#atomix-runtime-election-v1-CloseResponse) | Close closes the election Deprecated: use the LeaderElections service instead |
 
  
 

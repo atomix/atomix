@@ -95,6 +95,8 @@
 | ----------- | ------------ | ------------- | ------------|
 | Publish | [PublishRequest](#atomix-runtime-topic-v1-PublishRequest) | [PublishResponse](#atomix-runtime-topic-v1-PublishResponse) | Publish publishes a message to the topic |
 | Subscribe | [SubscribeRequest](#atomix-runtime-topic-v1-SubscribeRequest) | [SubscribeResponse](#atomix-runtime-topic-v1-SubscribeResponse) stream | Subscribe subscribes to receive messages from the topic |
+| Create | [CreateRequest](#atomix-runtime-topic-v1-CreateRequest) | [CreateResponse](#atomix-runtime-topic-v1-CreateResponse) | Create creates the Topic Deprecated: use the Topics service instead |
+| Close | [CloseRequest](#atomix-runtime-topic-v1-CloseRequest) | [CloseResponse](#atomix-runtime-topic-v1-CloseResponse) | Close closes the Topic Deprecated: use the Topics service instead |
 
  
 

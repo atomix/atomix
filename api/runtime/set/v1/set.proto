@@ -14,6 +14,7 @@ option java_multiple_files = true;
 
 import "google/protobuf/duration.proto";
 import "runtime/v1/runtime.proto";
+import "runtime/set/v1/sets.proto";
 import "gogoproto/gogo.proto";
 
 // Set is a service for a set primitive
@@ -38,6 +39,18 @@ service Set {
 
     // Elements lists all elements in the set
     rpc Elements (ElementsRequest) returns (stream ElementsResponse);
+
+    // Create creates the Set
+    // Deprecated: use the Sets service instead
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option deprecated = true;
+    }
+
+    // Close closes the Set
+    // Deprecated: use the Sets service instead
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option deprecated = true;
+    }
 }
 
 message SizeRequest {

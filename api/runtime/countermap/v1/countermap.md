@@ -544,6 +544,8 @@ CounterMap is a service for a counter map primitive
 | Unlock | [UnlockRequest](#atomix-runtime-countermap-v1-UnlockRequest) | [UnlockResponse](#atomix-runtime-countermap-v1-UnlockResponse) | Unlock unlocks a key in the map |
 | Events | [EventsRequest](#atomix-runtime-countermap-v1-EventsRequest) | [EventsResponse](#atomix-runtime-countermap-v1-EventsResponse) stream | Events listens for change events |
 | Entries | [EntriesRequest](#atomix-runtime-countermap-v1-EntriesRequest) | [EntriesResponse](#atomix-runtime-countermap-v1-EntriesResponse) stream | Entries lists all entries in the map |
+| Create | [CreateRequest](#atomix-runtime-countermap-v1-CreateRequest) | [CreateResponse](#atomix-runtime-countermap-v1-CreateResponse) | Create creates the counter map session Deprecated: use the CounterMaps service instead |
+| Close | [CloseRequest](#atomix-runtime-countermap-v1-CloseRequest) | [CloseResponse](#atomix-runtime-countermap-v1-CloseResponse) | Close closes the counter map session Deprecated: use the CounterMaps service instead |
 
  
 

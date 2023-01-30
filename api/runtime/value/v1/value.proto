@@ -13,6 +13,7 @@ option java_outer_classname = "ValueV1";
 option java_multiple_files = true;
 
 import "runtime/v1/runtime.proto";
+import "runtime/value/v1/values.proto";
 import "google/protobuf/duration.proto";
 import "gogoproto/gogo.proto";
 
@@ -38,6 +39,18 @@ service Value {
 
     // Events watches for value change events
     rpc Events (EventsRequest) returns (stream EventsResponse);
+
+    // Create creates the Value
+    // Deprecated: use the Values service instead
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option deprecated = true;
+    }
+
+    // Close closes the Value
+    // Deprecated: use the Values service instead
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option deprecated = true;
+    }
 }
 
 message GetRequest {

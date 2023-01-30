@@ -328,6 +328,8 @@ Set is a service for a set primitive
 | Clear | [ClearRequest](#atomix-runtime-set-v1-ClearRequest) | [ClearResponse](#atomix-runtime-set-v1-ClearResponse) | Clear removes all values from the set |
 | Events | [EventsRequest](#atomix-runtime-set-v1-EventsRequest) | [EventsResponse](#atomix-runtime-set-v1-EventsResponse) stream | Events listens for set change events |
 | Elements | [ElementsRequest](#atomix-runtime-set-v1-ElementsRequest) | [ElementsResponse](#atomix-runtime-set-v1-ElementsResponse) stream | Elements lists all elements in the set |
+| Create | [CreateRequest](#atomix-runtime-set-v1-CreateRequest) | [CreateResponse](#atomix-runtime-set-v1-CreateResponse) | Create creates the Set Deprecated: use the Sets service instead |
+| Close | [CloseRequest](#atomix-runtime-set-v1-CloseRequest) | [CloseResponse](#atomix-runtime-set-v1-CloseResponse) | Close closes the Set Deprecated: use the Sets service instead |
 
  
 

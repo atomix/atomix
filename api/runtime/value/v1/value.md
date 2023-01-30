@@ -357,6 +357,8 @@ Value is a service for a value primitive
 | Delete | [DeleteRequest](#atomix-runtime-value-v1-DeleteRequest) | [DeleteResponse](#atomix-runtime-value-v1-DeleteResponse) | Delete deletes the value |
 | Watch | [WatchRequest](#atomix-runtime-value-v1-WatchRequest) | [WatchResponse](#atomix-runtime-value-v1-WatchResponse) stream | Watch watches the value |
 | Events | [EventsRequest](#atomix-runtime-value-v1-EventsRequest) | [EventsResponse](#atomix-runtime-value-v1-EventsResponse) stream | Events watches for value change events |
+| Create | [CreateRequest](#atomix-runtime-value-v1-CreateRequest) | [CreateResponse](#atomix-runtime-value-v1-CreateResponse) | Create creates the Value Deprecated: use the Values service instead |
+| Close | [CloseRequest](#atomix-runtime-value-v1-CloseRequest) | [CloseResponse](#atomix-runtime-value-v1-CloseResponse) | Close closes the Value Deprecated: use the Values service instead |
 
  
 

@@ -534,6 +534,8 @@ MultiMap is a service for a multimap primitive
 | Clear | [ClearRequest](#atomix-runtime-multimap-v1-ClearRequest) | [ClearResponse](#atomix-runtime-multimap-v1-ClearResponse) | Clear removes all entries from the map |
 | Events | [EventsRequest](#atomix-runtime-multimap-v1-EventsRequest) | [EventsResponse](#atomix-runtime-multimap-v1-EventsResponse) stream | Events listens for change events |
 | Entries | [EntriesRequest](#atomix-runtime-multimap-v1-EntriesRequest) | [EntriesResponse](#atomix-runtime-multimap-v1-EntriesResponse) stream | Entries lists all entries in the map |
+| Create | [CreateRequest](#atomix-runtime-multimap-v1-CreateRequest) | [CreateResponse](#atomix-runtime-multimap-v1-CreateResponse) | Create creates the MultiMap Deprecated: use the MultiMaps service instead |
+| Close | [CloseRequest](#atomix-runtime-multimap-v1-CloseRequest) | [CloseResponse](#atomix-runtime-multimap-v1-CloseResponse) | Close closes the MultiMap Deprecated: use the MultiMaps service instead |
 
  
 

@@ -503,6 +503,8 @@ Map is a service for a map primitive
 | Unlock | [UnlockRequest](#atomix-runtime-map-v1-UnlockRequest) | [UnlockResponse](#atomix-runtime-map-v1-UnlockResponse) | Unlock unlocks a key in the map |
 | Events | [EventsRequest](#atomix-runtime-map-v1-EventsRequest) | [EventsResponse](#atomix-runtime-map-v1-EventsResponse) stream | Events listens for change events |
 | Entries | [EntriesRequest](#atomix-runtime-map-v1-EntriesRequest) | [EntriesResponse](#atomix-runtime-map-v1-EntriesResponse) stream | Entries lists all entries in the map |
+| Create | [CreateRequest](#atomix-runtime-map-v1-CreateRequest) | [CreateResponse](#atomix-runtime-map-v1-CreateResponse) | Create creates the Map Deprecated: use the Maps service instead |
+| Close | [CloseRequest](#atomix-runtime-map-v1-CloseRequest) | [CloseResponse](#atomix-runtime-map-v1-CloseResponse) | Close closes the Map Deprecated: use the Maps service instead |
 
  
 

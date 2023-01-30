@@ -478,6 +478,8 @@ List is a service for a list primitive
 | Clear | [ClearRequest](#atomix-runtime-list-v1-ClearRequest) | [ClearResponse](#atomix-runtime-list-v1-ClearResponse) | Clear removes all elements from the list |
 | Events | [EventsRequest](#atomix-runtime-list-v1-EventsRequest) | [EventsResponse](#atomix-runtime-list-v1-EventsResponse) stream | Events listens for change events |
 | Items | [ItemsRequest](#atomix-runtime-list-v1-ItemsRequest) | [ItemsResponse](#atomix-runtime-list-v1-ItemsResponse) stream | Items streams all items in the list |
+| Create | [CreateRequest](#atomix-runtime-list-v1-CreateRequest) | [CreateResponse](#atomix-runtime-list-v1-CreateResponse) | Create creates the List Deprecated: use the Lists service instead |
+| Close | [CloseRequest](#atomix-runtime-list-v1-CloseRequest) | [CloseResponse](#atomix-runtime-list-v1-CloseResponse) | Close closes the List Deprecated: use the Lists service instead |
 
  
 

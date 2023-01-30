@@ -9,7 +9,7 @@ syntax = "proto3";
 package atomix.runtime.topic.v1;
 
 option java_package = "io.atomix.api.topic.v1";
-option java_outer_classname = "TopicV1";
+option java_outer_classname = "TopicsV1";
 option java_multiple_files = true;
 
 import "runtime/v1/runtime.proto";

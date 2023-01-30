@@ -14,6 +14,7 @@ option java_multiple_files = true;
 
 import "google/protobuf/duration.proto";
 import "runtime/v1/runtime.proto";
+import "runtime/lock/v1/locks.proto";
 import "gogoproto/gogo.proto";
 
 // Lock is a service for a lock primitive
@@ -26,6 +27,18 @@ service Lock {
 
     // GetLock gets the lock state
     rpc GetLock (GetLockRequest) returns (GetLockResponse);
+
+    // Create creates the Lock
+    // Deprecated: use the Locks service instead
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option deprecated = true;
+    }
+
+    // Close closes the Lock
+    // Deprecated: use the Locks service instead
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option deprecated = true;
+    }
 }
 
 message LockRequest {

@@ -13,6 +13,7 @@ option java_outer_classname = "TopicV1";
 option java_multiple_files = true;
 
 import "runtime/v1/runtime.proto";
+import "runtime/topic/v1/topics.proto";
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -22,6 +23,18 @@ service Topic {
 
     // Subscribe subscribes to receive messages from the topic
     rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);
+
+    // Create creates the Topic
+    // Deprecated: use the Topics service instead
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option deprecated = true;
+    }
+
+    // Close closes the Topic
+    // Deprecated: use the Topics service instead
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option deprecated = true;
+    }
 }
 
 message PublishRequest {

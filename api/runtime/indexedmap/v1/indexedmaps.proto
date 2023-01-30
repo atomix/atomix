@@ -9,7 +9,7 @@ syntax = "proto3";
 package atomix.runtime.indexedmap.v1;
 
 option java_package = "io.atomix.api.indexedmap.v1";
-option java_outer_classname = "IndexedMapV1";
+option java_outer_classname = "IndexedMapsV1";
 option java_multiple_files = true;
 
 import "runtime/v1/runtime.proto";

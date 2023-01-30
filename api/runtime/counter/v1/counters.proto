@@ -9,7 +9,7 @@ syntax = "proto3";
 package atomix.runtime.counter.v1;
 
 option java_package = "io.atomix.api.counter.v1";
-option java_outer_classname = "CounterV1";
+option java_outer_classname = "CountersV1";
 option java_multiple_files = true;
 
 import "runtime/v1/runtime.proto";

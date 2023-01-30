@@ -9,7 +9,7 @@ syntax = "proto3";
 package atomix.runtime.map.v1;
 
 option java_package = "io.atomix.api.map.v1";
-option java_outer_classname = "MapV1";
+option java_outer_classname = "MapsV1";
 option java_multiple_files = true;
 
 import "runtime/v1/runtime.proto";

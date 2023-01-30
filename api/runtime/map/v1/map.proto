@@ -14,6 +14,7 @@ option java_multiple_files = true;
 
 import "google/protobuf/duration.proto";
 import "runtime/v1/runtime.proto";
+import "runtime/map/v1/maps.proto";
 import "gogoproto/gogo.proto";
 
 // Map is a service for a map primitive
@@ -50,6 +51,18 @@ service Map {
 
     // Entries lists all entries in the map
     rpc Entries (EntriesRequest) returns (stream EntriesResponse);
+
+    // Create creates the Map
+    // Deprecated: use the Maps service instead
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option deprecated = true;
+    }
+
+    // Close closes the Map
+    // Deprecated: use the Maps service instead
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option deprecated = true;
+    }
 }
 
 message SizeRequest {

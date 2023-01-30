@@ -14,6 +14,7 @@ option java_multiple_files = true;
 
 import "google/protobuf/duration.proto";
 import "runtime/v1/runtime.proto";
+import "runtime/indexedmap/v1/indexedmaps.proto";
 import "gogoproto/gogo.proto";
 
 // IndexedMap is a service for a sorted/indexed map primitive
@@ -53,6 +54,18 @@ service IndexedMap {
 
     // Entries lists all entries in the map
     rpc Entries (EntriesRequest) returns (stream EntriesResponse);
+
+    // Create creates the IndexedMap
+    // Deprecated: use the IndexedMaps service instead
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option deprecated = true;
+    }
+
+    // Close closes the IndexedMap
+    // Deprecated: use the IndexedMaps service instead
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option deprecated = true;
+    }
 }
 
 message SizeRequest {

@@ -13,6 +13,7 @@ option java_outer_classname = "CounterV1";
 option java_multiple_files = true;
 
 import "runtime/v1/runtime.proto";
+import "runtime/counter/v1/counters.proto";
 import "gogoproto/gogo.proto";
 
 // Counter is a service for a counter primitive
@@ -31,6 +32,18 @@ service Counter {
 
     // Decrement decrements the counter value
     rpc Decrement (DecrementRequest) returns (DecrementResponse);
+
+    // Create creates the counter
+    // Deprecated: use the Counters service instead
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option deprecated = true;
+    }
+
+    // Close closes the counter
+    // Deprecated: use the Counters service instead
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option deprecated = true;
+    }
 }
 
 message IncrementRequest {

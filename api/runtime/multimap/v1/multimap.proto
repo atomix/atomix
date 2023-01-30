@@ -13,6 +13,7 @@ option java_outer_classname = "AtomicMultiMapV1";
 option java_multiple_files = true;
 
 import "runtime/v1/runtime.proto";
+import "runtime/multimap/v1/multimaps.proto";
 import "gogoproto/gogo.proto";
 
 // MultiMap is a service for a multimap primitive
@@ -55,6 +56,18 @@ service MultiMap {
 
     // Entries lists all entries in the map
     rpc Entries (EntriesRequest) returns (stream EntriesResponse);
+
+    // Create creates the MultiMap
+    // Deprecated: use the MultiMaps service instead
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option deprecated = true;
+    }
+
+    // Close closes the MultiMap
+    // Deprecated: use the MultiMaps service instead
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option deprecated = true;
+    }
 }
 
 message SizeRequest {

@@ -13,6 +13,7 @@ option java_outer_classname = "ListV1";
 option java_multiple_files = true;
 
 import "runtime/v1/runtime.proto";
+import "runtime/list/v1/lists.proto";
 import "gogoproto/gogo.proto";
 
 // List is a service for a list primitive
@@ -43,6 +44,18 @@ service List {
 
     // Items streams all items in the list
     rpc Items (ItemsRequest) returns (stream ItemsResponse);
+
+    // Create creates the List
+    // Deprecated: use the Lists service instead
+    rpc Create (CreateRequest) returns (CreateResponse) {
+        option deprecated = true;
+    }
+
+    // Close closes the List
+    // Deprecated: use the Lists service instead
+    rpc Close (CloseRequest) returns (CloseResponse) {
+        option deprecated = true;
+    }
 }
 
 message SizeRequest {

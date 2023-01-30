@@ -544,6 +544,8 @@ IndexedMap is a service for a sorted/indexed map primitive
 | Clear | [ClearRequest](#atomix-runtime-indexedmap-v1-ClearRequest) | [ClearResponse](#atomix-runtime-indexedmap-v1-ClearResponse) | Clear removes all entries from the map |
 | Events | [EventsRequest](#atomix-runtime-indexedmap-v1-EventsRequest) | [EventsResponse](#atomix-runtime-indexedmap-v1-EventsResponse) stream | Events listens for change events |
 | Entries | [EntriesRequest](#atomix-runtime-indexedmap-v1-EntriesRequest) | [EntriesResponse](#atomix-runtime-indexedmap-v1-EntriesResponse) stream | Entries lists all entries in the map |
+| Create | [CreateRequest](#atomix-runtime-indexedmap-v1-CreateRequest) | [CreateResponse](#atomix-runtime-indexedmap-v1-CreateResponse) | Create creates the IndexedMap Deprecated: use the IndexedMaps service instead |
+| Close | [CloseRequest](#atomix-runtime-indexedmap-v1-CloseRequest) | [CloseResponse](#atomix-runtime-indexedmap-v1-CloseResponse) | Close closes the IndexedMap Deprecated: use the IndexedMaps service instead |
 
  
 
