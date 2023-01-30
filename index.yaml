@@ -2,6 +2,52 @@ apiVersion: v1
 entries:
   atomix:
   - apiVersion: v2
+    appVersion: v0.3.0
+    created: "2023-01-30T12:54:29.505609604Z"
+    dependencies:
+    - alias: controller
+      name: atomix-controller
+      repository: https://charts.atomix.io
+      version: 0.3.0
+    - alias: sidecar-controller
+      name: atomix-sidecar-controller
+      repository: https://charts.atomix.io
+      version: 0.4.3
+    - alias: raft-controller
+      condition: stores.raft.enabled
+      name: atomix-raft-controller
+      repository: https://charts.atomix.io
+      version: 0.3.1
+    - alias: shared-memory-controller
+      condition: stores.shared-memory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://charts.atomix.io
+      version: 0.4.1
+    - alias: pod-memory-controller
+      condition: stores.pod-memory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://charts.atomix.io
+      version: 0.3.1
+    - alias: consensus-controller
+      condition: stores.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.1
+    description: Atomix core controllers and data stores
+    digest: 8305c4b160452f457182b0ea33adf5fd38215582de24f9448db566dada2a59cb
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-0.3.0/atomix-0.3.0.tgz
+    version: 0.3.0
+  - apiVersion: v2
     appVersion: v0.2.2
     created: "2023-01-29T08:34:35.041534383Z"
     dependencies:
@@ -2091,4 +2137,4 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.0/atomix-sidecar-controller-0.3.0.tgz
     version: 0.3.0
-generated: "2023-01-30T12:38:40.789329129Z"
+generated: "2023-01-30T12:54:29.505805403Z"
