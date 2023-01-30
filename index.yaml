@@ -2,6 +2,56 @@ apiVersion: v1
 entries:
   atomix:
   - apiVersion: v2
+    appVersion: v0.4.0
+    created: "2023-01-30T15:57:30.758985223Z"
+    dependencies:
+    - alias: controller
+      name: atomix-controller
+      repository: https://charts.atomix.io
+      version: 0.4.1
+    - alias: runtime-controller
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.7.0
+    - alias: sidecar-controller
+      name: atomix-sidecar-controller
+      repository: https://charts.atomix.io
+      version: 0.4.4
+    - alias: raft-controller
+      condition: stores.raft.enabled
+      name: atomix-raft-controller
+      repository: https://charts.atomix.io
+      version: 0.3.1
+    - alias: shared-memory-controller
+      condition: stores.shared-memory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://charts.atomix.io
+      version: 0.4.1
+    - alias: pod-memory-controller
+      condition: stores.pod-memory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://charts.atomix.io
+      version: 0.3.1
+    - alias: consensus-controller
+      condition: stores.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.1
+    description: Atomix core controllers and data stores
+    digest: ad127b68625518c4c480476349d706568fd7b85cc48339f9e0cb6e4c7fa3899c
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-0.4.0/atomix-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v2
     appVersion: v0.3.0
     created: "2023-01-30T12:54:29.505609604Z"
     dependencies:
@@ -242,6 +292,25 @@ entries:
     urls:
     - https://github.com/atomix/atomix-helm-charts/releases/download/atomix-0.1.7/atomix-0.1.7.tgz
     version: 0.1.7
+  - apiVersion: v1
+    appVersion: 3.1.9
+    created: "2021-05-14T09:17:56.010086-07:00"
+    description: Configurable Atomix 3.1.9 cluster
+    digest: 179b78459a1f495d31931c5a0a453e88218d3053c60c0bf19d7ca1c61c7c09a0
+    home: https://atomix.io
+    icon: https://atomix.io/assets/img/atomix-fav.png
+    keywords:
+    - atomix
+    - database
+    - cluster
+    kubeVersion: '>=1.10.0'
+    maintainers:
+    - email: jordan@opennetworking.org
+      name: kuujo
+    name: atomix
+    urls:
+    - https://github.com/atomix/helm-charts/releases/download/atomix-0.1.6/atomix-0.1.6.tgz
+    version: 0.1.6
   - apiVersion: v2
     appVersion: v0.1.6
     created: "2023-01-15T02:38:06.170930337Z"
@@ -283,25 +352,6 @@ entries:
     type: application
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-0.1.6/atomix-0.1.6.tgz
-    version: 0.1.6
-  - apiVersion: v1
-    appVersion: 3.1.9
-    created: "2021-05-14T09:17:56.010086-07:00"
-    description: Configurable Atomix 3.1.9 cluster
-    digest: 179b78459a1f495d31931c5a0a453e88218d3053c60c0bf19d7ca1c61c7c09a0
-    home: https://atomix.io
-    icon: https://atomix.io/assets/img/atomix-fav.png
-    keywords:
-    - atomix
-    - database
-    - cluster
-    kubeVersion: '>=1.10.0'
-    maintainers:
-    - email: jordan@opennetworking.org
-      name: kuujo
-    name: atomix
-    urls:
-    - https://github.com/atomix/helm-charts/releases/download/atomix-0.1.6/atomix-0.1.6.tgz
     version: 0.1.6
   - apiVersion: v2
     appVersion: v0.1.5
@@ -2210,4 +2260,4 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.0/atomix-sidecar-controller-0.3.0.tgz
     version: 0.3.0
-generated: "2023-01-30T15:52:15.912665323Z"
+generated: "2023-01-30T15:57:30.759213124Z"
