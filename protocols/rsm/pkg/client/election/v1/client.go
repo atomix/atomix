@@ -12,6 +12,7 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimeelectionv1 "github.com/atomix/atomix/runtime/pkg/runtime/election/v1"
 	"google.golang.org/grpc"
 	"io"
 )
@@ -496,4 +497,4 @@ func (s *LeaderElectionSession) Watch(request *electionv1.WatchRequest, server e
 	}
 }
 
-var _ electionv1.LeaderElectionServer = (*LeaderElectionSession)(nil)
+var _ runtimeelectionv1.LeaderElectionProxy = (*LeaderElectionSession)(nil)

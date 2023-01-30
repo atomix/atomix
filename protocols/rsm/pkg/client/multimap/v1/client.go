@@ -12,6 +12,7 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimemultimapv1 "github.com/atomix/atomix/runtime/pkg/runtime/multimap/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
@@ -890,4 +891,4 @@ func (s *MultiMapSession) Entries(request *multimapv1.EntriesRequest, server mul
 	return nil
 }
 
-var _ multimapv1.MultiMapServer = (*MultiMapSession)(nil)
+var _ runtimemultimapv1.MultiMapProxy = (*MultiMapSession)(nil)

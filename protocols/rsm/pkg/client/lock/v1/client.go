@@ -12,6 +12,7 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimelockv1 "github.com/atomix/atomix/runtime/pkg/runtime/lock/v1"
 	"google.golang.org/grpc"
 )
 
@@ -208,4 +209,4 @@ func (s *LockSession) GetLock(ctx context.Context, request *lockv1.GetLockReques
 	return response, nil
 }
 
-var _ lockv1.LockServer = (*LockSession)(nil)
+var _ runtimelockv1.LockProxy = (*LockSession)(nil)

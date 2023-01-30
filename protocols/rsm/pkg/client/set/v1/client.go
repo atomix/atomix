@@ -12,6 +12,7 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimesetv1 "github.com/atomix/atomix/runtime/pkg/runtime/set/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
@@ -556,4 +557,4 @@ func (s *SetSession) Elements(request *setv1.ElementsRequest, server setv1.Set_E
 	return nil
 }
 
-var _ setv1.SetServer = (*SetSession)(nil)
+var _ runtimesetv1.SetProxy = (*SetSession)(nil)

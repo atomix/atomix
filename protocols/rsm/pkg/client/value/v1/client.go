@@ -12,6 +12,7 @@ import (
 	valueprotocolv1 "github.com/atomix/atomix/protocols/rsm/api/value/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimevaluev1 "github.com/atomix/atomix/runtime/pkg/runtime/value/v1"
 	"google.golang.org/grpc"
 	"io"
 )
@@ -485,4 +486,4 @@ func (s *ValueSession) Watch(request *valuev1.WatchRequest, server valuev1.Value
 	}
 }
 
-var _ valuev1.ValueServer = (*ValueSession)(nil)
+var _ runtimevaluev1.ValueProxy = (*ValueSession)(nil)

@@ -12,6 +12,7 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimecountermapv1 "github.com/atomix/atomix/runtime/pkg/runtime/countermap/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
@@ -868,4 +869,4 @@ func (s *CounterMapSession) Entries(request *countermapv1.EntriesRequest, server
 	return nil
 }
 
-var _ countermapv1.CounterMapServer = (*CounterMapSession)(nil)
+var _ runtimecountermapv1.CounterMapProxy = (*CounterMapSession)(nil)

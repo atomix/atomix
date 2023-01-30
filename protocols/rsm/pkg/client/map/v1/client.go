@@ -12,6 +12,7 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimemapv1 "github.com/atomix/atomix/runtime/pkg/runtime/map/v1"
 	streams "github.com/atomix/atomix/runtime/pkg/stream"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
@@ -811,4 +812,4 @@ func (s *MapSession) Entries(request *mapv1.EntriesRequest, server mapv1.Map_Ent
 	return nil
 }
 
-var _ mapv1.MapServer = (*MapSession)(nil)
+var _ runtimemapv1.MapProxy = (*MapSession)(nil)

@@ -12,6 +12,7 @@ import (
 	protocol "github.com/atomix/atomix/protocols/rsm/api/v1"
 	"github.com/atomix/atomix/protocols/rsm/pkg/client"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	runtimeindexedmapv1 "github.com/atomix/atomix/runtime/pkg/runtime/indexedmap/v1"
 	"github.com/atomix/atomix/runtime/pkg/utils/async"
 	"google.golang.org/grpc"
 	"io"
@@ -724,4 +725,4 @@ func newClientValue(value *indexedmapprotocolv1.Value) *indexedmapv1.VersionedVa
 	}
 }
 
-var _ indexedmapv1.IndexedMapServer = (*IndexedMapSession)(nil)
+var _ runtimeindexedmapv1.IndexedMapProxy = (*IndexedMapSession)(nil)
