@@ -80,7 +80,7 @@ func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtime
 		if _, ok := value.(P); !ok {
 			return config, errors.NewForbidden("cannot create primitive of type '%s/%s': a primitive of another type already exists with that name", c.primitiveType.Name, c.primitiveType.APIVersion)
 		}
-		return config, errors.NewAlreadyExists("the primitive is already open")
+		return config, nil
 	}
 
 	// Attempt to create the primitive via the driver connection
@@ -106,7 +106,7 @@ func (c *primitiveManager[P, C]) Close(ctx context.Context, primitiveID runtimev
 	}
 	primitive, ok := value.(P)
 	if !ok {
-		return errors.NewForbidden("cannot close primitive of type '%s/%s': a primitive of another type already exists with that name", c.primitiveType.Name, c.primitiveType.APIVersion)
+		return nil
 	}
 	return primitive.Close(ctx)
 }
