@@ -361,6 +361,158 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-0.1.0/atomix-0.1.0.tgz
     version: 0.1.0
+  - apiVersion: v1
+    appVersion: 3.1.12
+    created: "2022-02-09T14:22:45.051737-08:00"
+    description: Configurable Atomix 3.1.12 cluster
+    digest: d064b13fc47055e7d881bce0a39b3432de2d529e384c76be750cd935e62a0af3
+    home: https://atomix.io
+    icon: https://atomix.io/assets/img/atomix-fav.png
+    keywords:
+    - atomix
+    - database
+    - cluster
+    kubeVersion: '>=1.10.0'
+    maintainers:
+    - email: jordan@opennetworking.org
+      name: kuujo
+    name: atomix
+    urls:
+    - https://github.com/atomix/atomix-helm-charts/releases/download/atomix-0.1.9/atomix-0.1.9.tgz
+    version: 0.1.9
+  - apiVersion: v1
+    appVersion: 3.1.9
+    created: "2021-12-02T14:18:57.124873-08:00"
+    description: Configurable Atomix 3.1.9 cluster
+    digest: 632948e260a24de92e2e63f40db6e9a0698dd18d77097dd8205de5ed5652da14
+    home: https://atomix.io
+    icon: https://atomix.io/assets/img/atomix-fav.png
+    keywords:
+    - atomix
+    - database
+    - cluster
+    kubeVersion: '>=1.10.0'
+    maintainers:
+    - email: jordan@opennetworking.org
+      name: kuujo
+    name: atomix
+    urls:
+    - https://github.com/atomix/atomix-helm-charts/releases/download/atomix-0.1.8/atomix-0.1.8.tgz
+    version: 0.1.8
+  - apiVersion: v1
+    appVersion: 3.1.9
+    created: "2021-09-30T11:43:16.555947-05:00"
+    description: Configurable Atomix 3.1.9 cluster
+    digest: db6dfca8dba787d23514976952f449f89edc3c6132cd77b058096ba7990f6a0a
+    home: https://atomix.io
+    icon: https://atomix.io/assets/img/atomix-fav.png
+    keywords:
+    - atomix
+    - database
+    - cluster
+    kubeVersion: '>=1.10.0'
+    maintainers:
+    - email: jordan@opennetworking.org
+      name: kuujo
+    name: atomix
+    urls:
+    - https://github.com/atomix/atomix-helm-charts/releases/download/atomix-0.1.7/atomix-0.1.7.tgz
+    version: 0.1.7
+  - apiVersion: v1
+    appVersion: 3.1.9
+    created: "2021-05-14T09:17:56.010086-07:00"
+    description: Configurable Atomix 3.1.9 cluster
+    digest: 179b78459a1f495d31931c5a0a453e88218d3053c60c0bf19d7ca1c61c7c09a0
+    home: https://atomix.io
+    icon: https://atomix.io/assets/img/atomix-fav.png
+    keywords:
+    - atomix
+    - database
+    - cluster
+    kubeVersion: '>=1.10.0'
+    maintainers:
+    - email: jordan@opennetworking.org
+      name: kuujo
+    name: atomix
+    urls:
+    - https://github.com/atomix/helm-charts/releases/download/atomix-0.1.6/atomix-0.1.6.tgz
+    version: 0.1.6
+  - apiVersion: v1
+    appVersion: 3.1.9
+    created: "2021-03-26T05:28:23.854673-07:00"
+    description: Configurable Atomix 3.1.9 cluster
+    digest: ade2c919b3b0e698eee254a35a94aa452efba50671045abff6e6b16d41667799
+    home: https://atomix.io
+    icon: https://atomix.io/assets/img/atomix-fav.png
+    keywords:
+    - atomix
+    - database
+    - cluster
+    kubeVersion: '>=1.10.0'
+    maintainers:
+    - email: jordan@opennetworking.org
+      name: kuujo
+    name: atomix
+    urls:
+    - https://github.com/atomix/helm-charts/releases/download/atomix-0.1.5/atomix-0.1.5.tgz
+    version: 0.1.5
+  - apiVersion: v1
+    appVersion: 3.1.8
+    created: "2020-10-01T09:49:06.702814-07:00"
+    description: Configurable Atomix 3.1.0 cluster
+    digest: d2c66835c4f328a8fe2a409030a3465e755ef0533c2ca9889da8f89bd3b0ed3f
+    home: https://atomix.io
+    icon: https://atomix.io/assets/img/atomix-fav.png
+    keywords:
+    - atomix
+    - database
+    - cluster
+    kubeVersion: '>=1.10.0'
+    maintainers:
+    - email: jordan@opennetworking.org
+      name: kuujo
+    name: atomix
+    urls:
+    - https://github.com/atomix/helm-charts/releases/download/atomix-0.1.4/atomix-0.1.4.tgz
+    version: 0.1.4
+  - apiVersion: v1
+    appVersion: 3.1.8
+    created: "2020-05-01T14:41:08.39985-07:00"
+    description: Configurable Atomix 3.1.0 cluster
+    digest: a38f4d9ea1245d17e07b7b10ff6d5742daa0467629f458e6ef1982f28bee928e
+    home: https://atomix.io
+    icon: https://atomix.io/assets/img/atomix-fav.png
+    keywords:
+    - atomix
+    - database
+    - cluster
+    kubeVersion: '>=1.10.0'
+    maintainers:
+    - email: jordan@opennetworking.org
+      name: kuujo
+    name: atomix
+    urls:
+    - https://github.com/atomix/helm-charts/releases/download/atomix-0.1.3/atomix-0.1.3.tgz
+    version: 0.1.3
+  - apiVersion: v1
+    appVersion: 3.1.0
+    created: "2020-04-15T10:53:13.556762-07:00"
+    description: Configurable Atomix 3.1.0 cluster
+    digest: c09a36909e7e26b70585c3015635674b227027a8749cc652a81141c40732d9eb
+    home: https://atomix.io
+    icon: https://atomix.io/assets/img/atomix-fav.png
+    keywords:
+    - atomix
+    - database
+    - cluster
+    kubeVersion: '>=1.10.0'
+    maintainers:
+    - email: jordan@opennetworking.org
+      name: kuujo
+    name: atomix
+    urls:
+    - https://github.com/atomix/helm-charts/releases/download/atomix-0.1.2/atomix-0.1.2.tgz
+    version: 0.1.2
   atomix-bench:
   - apiVersion: v2
     appVersion: v0.6.0
@@ -701,6 +853,25 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-pod-memory-controller-0.2.1/atomix-pod-memory-controller-0.2.1.tgz
     version: 0.2.1
+  - apiVersion: v2
+    appVersion: v0.1.0
+    created: "2022-10-28T11:58:16.462706907Z"
+    description: The pod memory controller extends the Kubernetes API with custom
+      resources for pod-local shared memory stores.
+    digest: e920d8e74bcd2e78f0f880efe05e653730e64d417882102642bd06c17b33493c
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-pod-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-pod-memory-controller-1.0.0/atomix-pod-memory-controller-1.0.0.tgz
+    version: 1.0.0
   atomix-raft-controller:
   - apiVersion: v2
     appVersion: v0.3.1
@@ -948,6 +1119,26 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.2.2/atomix-shared-memory-controller-0.2.2.tgz
     version: 0.2.2
+  - apiVersion: v2
+    appVersion: v0.1.0
+    created: "2022-10-28T12:04:26.683142927Z"
+    description: The shared memory controller extends the Kubernetes API with custom
+      resources for memory stores.
+    digest: 1c8ef3f56b4015dfa6eaf0b5b83347df9f84467b22a2f1f6dd40b80e5abccb2d
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    - cache
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-shared-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-shared-memory-controller-1.0.0/atomix-shared-memory-controller-1.0.0.tgz
+    version: 1.0.0
   atomix-sidecar-controller:
   - apiVersion: v2
     appVersion: v0.3.1
@@ -985,4 +1176,847 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.0/atomix-sidecar-controller-0.3.0.tgz
     version: 0.3.0
+  atomix-consensus-controller:
+  - apiVersion: v2
+    appVersion: v0.7.1
+    created: "2022-12-17T00:31:53.410535349Z"
+    description: The consensus controller extends the Kubernetes API with custom resources
+      for consensus stores.
+    digest: 5bd31dbc35d8616917e08695782d8b258fc574ab29121baf9c4b05f4708d70d6
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - consensus
+    - raft
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-consensus-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-consensus-controller-1.5.1/atomix-consensus-controller-1.5.1.tgz
+    version: 1.5.1
+  - apiVersion: v2
+    appVersion: v0.7.0
+    created: "2022-10-28T11:55:41.250390113Z"
+    description: The consensus controller extends the Kubernetes API with custom resources
+      for consensus stores.
+    digest: 583b53862444ac78dee4336e208a311bfdd21372a5d978a34cd87f959be3cf3e
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - consensus
+    - raft
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-consensus-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-consensus-controller-1.5.0/atomix-consensus-controller-1.5.0.tgz
+    version: 1.5.0
+  - apiVersion: v2
+    appVersion: v0.6.0
+    created: "2022-10-25T22:48:04.679352874Z"
+    description: The consensus controller extends the Kubernetes API with custom resources
+      for consensus stores.
+    digest: 5ce30a25457501342b517adc0d05af548aab39ca2549a2da8cbb617f64be7f05
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - consensus
+    - raft
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-consensus-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-consensus-controller-1.4.0/atomix-consensus-controller-1.4.0.tgz
+    version: 1.4.0
+  atomix-runtime:
+  - apiVersion: v2
+    created: "2023-01-10T13:47:23.480447159Z"
+    dependencies:
+    - alias: controller
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.7.0
+    - alias: consensus-controller
+      condition: storage.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.1
+    - alias: shared-memory-controller
+      condition: storage.sharedMemory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    - alias: pod-memory-controller
+      condition: storage.podMemory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    description: Umbrella chart for deploying Atomix runtime controllers
+    digest: c21f009797f8c7458db70779663c47698e76c84c6882e933e1efe5a962e169c0
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-0.2.0/atomix-runtime-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
+    appVersion: v0.1.9
+    created: "2022-12-17T00:34:12.62760884Z"
+    dependencies:
+    - alias: controller
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.6.7
+    - alias: consensus-controller
+      condition: storage.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.1
+    - alias: shared-memory-controller
+      condition: storage.sharedMemory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    - alias: pod-memory-controller
+      condition: storage.podMemory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    description: Umbrella chart for deploying Atomix runtime controllers
+    digest: 24d63ba34d88a1b09343d6544ead96fb80607f279caa0577a8606f683e11bd1a
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-0.1.9/atomix-runtime-0.1.9.tgz
+    version: 0.1.9
+  - apiVersion: v2
+    appVersion: v0.1.8
+    created: "2022-11-25T09:42:15.961092934Z"
+    dependencies:
+    - alias: controller
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.6.7
+    - alias: consensus-controller
+      condition: storage.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.0
+    - alias: shared-memory-controller
+      condition: storage.sharedMemory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    - alias: pod-memory-controller
+      condition: storage.podMemory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    description: Umbrella chart for deploying Atomix runtime controllers
+    digest: 7cfc74b20745bddc546f7ea0821b53b9673b9bc7d0f8dc98a600d4cdd418163d
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-0.1.8/atomix-runtime-0.1.8.tgz
+    version: 0.1.8
+  - apiVersion: v2
+    appVersion: v0.1.7
+    created: "2022-11-25T08:13:32.840973306Z"
+    dependencies:
+    - alias: controller
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.6.6
+    - alias: consensus-controller
+      condition: storage.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.0
+    - alias: shared-memory-controller
+      condition: storage.sharedMemory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    - alias: pod-memory-controller
+      condition: storage.podMemory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    description: Umbrella chart for deploying Atomix runtime controllers
+    digest: 3320242bb2d2c6f3e95eb1f16f8a26cd0b31e229430aac44e48fe5fae7f9eb77
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-0.1.7/atomix-runtime-0.1.7.tgz
+    version: 0.1.7
+  - apiVersion: v2
+    appVersion: v0.1.6
+    created: "2022-11-09T08:49:27.566223871Z"
+    dependencies:
+    - alias: controller
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.6.5
+    - alias: consensus-controller
+      condition: storage.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.0
+    - alias: shared-memory-controller
+      condition: storage.sharedMemory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    - alias: pod-memory-controller
+      condition: storage.podMemory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    description: Umbrella chart for deploying Atomix runtime controllers
+    digest: 163d7750db7e1b75c3603dba3a68a8976c1b09e1d9b7765cdcf02f39e3e7652a
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-0.1.6/atomix-runtime-0.1.6.tgz
+    version: 0.1.6
+  - apiVersion: v2
+    appVersion: v0.1.5
+    created: "2022-10-28T12:14:46.218588026Z"
+    dependencies:
+    - alias: controller
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.6.4
+    - alias: consensus-controller
+      condition: storage.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.0
+    - alias: shared-memory-controller
+      condition: storage.sharedMemory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    - alias: pod-memory-controller
+      condition: storage.podMemory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    description: Umbrella chart for deploying Atomix runtime controllers
+    digest: e05a748b3bd938f0ecba1615f6f9f7ef4c179c4de42002cada394b528ae7977e
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-0.1.5/atomix-runtime-0.1.5.tgz
+    version: 0.1.5
+  - apiVersion: v2
+    appVersion: v0.1.4
+    created: "2022-10-28T12:08:33.024845826Z"
+    dependencies:
+    - alias: runtime
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.6.4
+    - alias: consensus
+      condition: storage.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.0
+    - alias: sharedMemory
+      condition: storage.sharedMemory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    - alias: podMemory
+      condition: storage.podMemory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://charts.atomix.io
+      version: 1.0.0
+    description: Umbrella chart for deploying Atomix runtime controllers
+    digest: 1407c56cafb11f5ccb681e5a73ff5939a5cbffb986833ddf348f7202736f57c3
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-0.1.4/atomix-runtime-0.1.4.tgz
+    version: 0.1.4
+  - apiVersion: v2
+    appVersion: v0.1.3
+    created: "2022-10-25T23:04:34.733737446Z"
+    dependencies:
+    - alias: runtime
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.6.3
+    - alias: consensus
+      condition: storage.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.4.0
+    description: Umbrella chart for deploying Atomix runtime controllers
+    digest: 533d7666f2ab0cfec383ae3d42243c81174f13a2bd453fab0570a3e14ff0a1c9
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-0.1.3/atomix-runtime-0.1.3.tgz
+    version: 0.1.3
+  - apiVersion: v2
+    appVersion: v0.1.2
+    created: "2022-10-23T08:32:18.925112319Z"
+    dependencies:
+    - alias: runtime-controller
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.6.2
+    - alias: multi-raft-controller
+      condition: storage.multiRaft.enabled
+      name: atomix-multi-raft-controller
+      repository: https://charts.atomix.io
+      version: 1.3.3
+    description: Umbrella chart for deploying Atomix runtime controllers
+    digest: 7fbfad273047c4f838f453966024d5b080f0489e772f29f16b3852000c2b958e
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-0.1.2/atomix-runtime-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: v0.1.1
+    created: "2022-10-22T08:04:57.971064518Z"
+    dependencies:
+    - alias: runtime-controller
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.6.1
+    - alias: multi-raft-controller
+      condition: storage.multiRaft.enabled
+      name: atomix-multi-raft-controller
+      repository: https://charts.atomix.io
+      version: 1.3.1
+    description: Umbrella chart for deploying Atomix runtime controllers
+    digest: 2526f919a5a93b2021f9fa6ac1b977fda422dd624f42e1b518645167cdc1d7aa
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-0.1.1/atomix-runtime-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: v0.1.0
+    created: "2022-10-22T07:13:54.208790551Z"
+    dependencies:
+    - alias: runtime-controller
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.6.0
+    - alias: multi-raft-controller
+      condition: storage.multi-raft.enabled
+      name: atomix-multi-raft-controller
+      repository: https://charts.atomix.io
+      version: 1.3.1
+    description: Umbrella chart for deploying Atomix runtime controllers
+    digest: b3d711c95e3c59b825a08af55996724562b15e4aa75f9df3318d069bd3160753
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-0.1.0/atomix-runtime-0.1.0.tgz
+    version: 0.1.0
+  atomix-runtime-controller:
+  - apiVersion: v2
+    appVersion: v0.8.0
+    created: "2023-01-10T05:44:55.490306-08:00"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: fcb681205836b552db1cc092b1f128398c9ae8b15edd32db862f591f28ed561a
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.7.0/atomix-runtime-controller-1.7.0.tgz
+    version: 1.7.0
+  - apiVersion: v2
+    appVersion: v0.7.7
+    created: "2022-11-25T09:34:36.417034853Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: c150e2b427a5c182f2731e9260531bd648087a8ddb9cc0aafe0c367c44f303fb
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.6.7/atomix-runtime-controller-1.6.7.tgz
+    version: 1.6.7
+  - apiVersion: v2
+    appVersion: v0.7.7
+    created: "2022-11-25T08:09:14.920482162Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: ca2c7bab4192be1376635d80e88265f0d08ffae314eb434b250bed3624e5867d
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.6.6/atomix-runtime-controller-1.6.6.tgz
+    version: 1.6.6
+  - apiVersion: v2
+    appVersion: v0.7.7
+    created: "2022-11-09T08:42:51.33526647Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: 53aa72a927451856eea82f748547c77c4649dc88e49e3d7cae30199728a42903
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.6.5/atomix-runtime-controller-1.6.5.tgz
+    version: 1.6.5
+  - apiVersion: v2
+    appVersion: v0.7.6
+    created: "2022-10-28T12:05:43.316127241Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: c006a65ca5dfd5e1f321e3243af37dc662b6fc34e542b216754ed69dfeca91bc
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.6.4/atomix-runtime-controller-1.6.4.tgz
+    version: 1.6.4
+  - apiVersion: v2
+    appVersion: v0.7.5
+    created: "2022-10-25T22:46:14.076561048Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: 86cf4ef44c0c30afbb4aef0b48116819ffd193f81363ddbee719b42247f627c9
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.6.3/atomix-runtime-controller-1.6.3.tgz
+    version: 1.6.3
+  - apiVersion: v2
+    appVersion: v0.7.4
+    created: "2022-10-23T08:27:49.74816633Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: 1fc3d6aaf46e86878a65731a8aec057009889c2bc8d35fda4776ce82c8354598
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.6.2/atomix-runtime-controller-1.6.2.tgz
+    version: 1.6.2
+  - apiVersion: v2
+    appVersion: v0.7.3
+    created: "2022-10-22T08:02:21.86708264Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: 7d2c6442737bdedfec599b882ad799992f3a068319e6aab40face9ffac9b979b
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.6.1/atomix-runtime-controller-1.6.1.tgz
+    version: 1.6.1
+  - apiVersion: v2
+    appVersion: v0.7.2
+    created: "2022-10-22T07:05:02.014770605Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: c34ce7fa975f6bf57998ca48f8bf3726ea10441c870f4f9bc24e6e8b091f00a1
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.6.0/atomix-runtime-controller-1.6.0.tgz
+    version: 1.6.0
+  - apiVersion: v2
+    appVersion: v0.9.x
+    created: "2022-10-18T20:34:17.878319663Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: c2b20dfeae6aef84c9e8c49a699fbd31e52bfd098d1794301694cd9ec8d8c00a
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.5.3/atomix-runtime-controller-1.5.3.tgz
+    version: 1.5.3
+  - apiVersion: v2
+    appVersion: v0.9.x
+    created: "2022-10-18T08:30:36.62160009Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: 3379906477e3c03296cfa73aa8ee4a7d46d372daaf32f455e0e77886827e52a5
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.5.2/atomix-runtime-controller-1.5.2.tgz
+    version: 1.5.2
+  - apiVersion: v2
+    appVersion: v0.8.x
+    created: "2022-10-18T06:42:31.256143033Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: bbfe21ed28108622b12f0310d2751710bfaa652b4c9bb3afc0ca657f79b886c9
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.5.1/atomix-runtime-controller-1.5.1.tgz
+    version: 1.5.1
+  - apiVersion: v2
+    appVersion: v0.8.x
+    created: "2022-10-18T06:40:59.990008798Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: 276665d10457badece4b3dae1cad8ec829d0ae3bb5015a0ee977ec0f351d1ce0
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.5.0/atomix-runtime-controller-1.5.0.tgz
+    version: 1.5.0
+  - apiVersion: v2
+    appVersion: v0.8.x
+    created: "2022-10-18T01:15:10.513056095Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: 296e8909b135317be6276f47a45d13b8052df0bac3f95b17053c7fb610be1cb8
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.4.3/atomix-runtime-controller-1.4.3.tgz
+    version: 1.4.3
+  - apiVersion: v2
+    appVersion: v0.7.x
+    created: "2022-10-11T00:28:17.534496904Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: db8e405cf42ac59c504f49181cb15aeae93fc1b558abf185414a4ddab92f3478
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.4.2/atomix-runtime-controller-1.4.2.tgz
+    version: 1.4.2
+  - apiVersion: v2
+    appVersion: v0.6.x
+    created: "2022-10-07T11:45:17.590418247Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: 2bd8f55f0f9ccabbdb3a2ca1a0ad1a0fa082922ebcdf391f791db1a42a0cc565
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.4.1/atomix-runtime-controller-1.4.1.tgz
+    version: 1.4.1
+  - apiVersion: v2
+    appVersion: v0.6.x
+    created: "2022-10-07T01:38:00.954905768Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: e3efebbd1aff883d2b8d05290c8f4e6860ffb4d6f61062d2c4395d9605a339be
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.4.0/atomix-runtime-controller-1.4.0.tgz
+    version: 1.4.0
+  - apiVersion: v2
+    appVersion: v0.4.1
+    created: "2022-08-16T05:11:12.186703577Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: a5dbd589885a0561499df89ba7bde22e53c08cc0f3e42e2cd7ab3157d242eef4
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.3.1/atomix-runtime-controller-1.3.1.tgz
+    version: 1.3.1
+  - apiVersion: v2
+    appVersion: v0.4.0
+    created: "2022-08-13T07:08:37.248854673Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: f717bf63aa35b1861a0d85dbddc5dbf29c297d71308c89c34f80bf34be57a2ba
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.3.0/atomix-runtime-controller-1.3.0.tgz
+    version: 1.3.0
+  - apiVersion: v2
+    appVersion: v0.3.1
+    created: "2022-08-13T04:49:12.637591274Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: 33291382d913e5b886692b5e4aaf2ce5b9320cb59bb80f18787ad6e96534481e
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.2.0/atomix-runtime-controller-1.2.0.tgz
+    version: 1.2.0
+  - apiVersion: v2
+    appVersion: v0.1.1
+    created: "2022-07-29T11:07:53.942736056Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: 5799fe24a835e4f698c2796fb737ff8314d29b772e48db2779888f1beb9cc413
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.1.0/atomix-runtime-controller-1.1.0.tgz
+    version: 1.1.0
+  - apiVersion: v2
+    appVersion: v0.1.1
+    created: "2022-07-29T10:26:44.826127588Z"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: 5cce67cc90c6bdfc19717d012e5440b46689bd8c95eaad3d66574925c6e086c6
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-1.0.0/atomix-runtime-controller-1.0.0.tgz
+    version: 1.0.0
+  - apiVersion: v2
+    appVersion: v0.6.2
+    created: "2022-07-29T03:02:12.958894-07:00"
+    description: The core Atomix runtime controller implements the Atomix Cloud runtime
+      API
+    digest: 63aea93d4663c6682a012f5f69192717c034f4ad802c86527c639cfe8449ae25
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-runtime-controller
+    type: application
+    urls:
+    - https://github.com/atomix/charts.atomix.io/releases/download/atomix-runtime-controller-0.6.9/atomix-runtime-controller-0.6.9.tgz
+    version: 0.6.9
 generated: "2023-01-29T08:34:35.041627681Z"
