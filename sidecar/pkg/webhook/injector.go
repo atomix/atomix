@@ -35,8 +35,10 @@ const (
 )
 
 const (
-	sidecarImageEnv     = "SIDECAR_IMAGE"
-	defaultSidecarImage = "atomix/sidecar"
+	atomixRuntimeEnv     = "ATOMIX_RUNTIME"
+	atomixRuntimeSidecar = "sidecar"
+	sidecarImageEnv      = "SIDECAR_IMAGE"
+	defaultSidecarImage  = "atomix/sidecar"
 )
 
 func AddWebhook(mgr manager.Manager) error {
@@ -118,6 +120,15 @@ func (i *SidecarInjector) Handle(ctx context.Context, request admission.Request)
 		},
 		Args: args,
 	})
+
+	// Set the ATOMIX_RUNTIME environment variable on all containers
+	for i, container := range pod.Spec.Containers {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  atomixRuntimeEnv,
+			Value: atomixRuntimeSidecar,
+		})
+		pod.Spec.Containers[i] = container
+	}
 
 	// Add proxy metadata annotations to the Pod.
 	if pod.Annotations == nil {
