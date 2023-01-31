@@ -2,6 +2,56 @@ apiVersion: v1
 entries:
   atomix:
   - apiVersion: v2
+    appVersion: v0.4.3
+    created: "2023-01-31T18:20:49.96641337Z"
+    dependencies:
+    - alias: controller
+      name: atomix-controller
+      repository: https://charts.atomix.io
+      version: 0.4.2
+    - alias: runtime-controller
+      name: atomix-runtime-controller
+      repository: https://charts.atomix.io
+      version: 1.7.0
+    - alias: sidecar-controller
+      name: atomix-sidecar-controller
+      repository: https://charts.atomix.io
+      version: 0.4.4
+    - alias: raft-controller
+      condition: stores.raft.enabled
+      name: atomix-raft-controller
+      repository: https://charts.atomix.io
+      version: 0.3.3
+    - alias: shared-memory-controller
+      condition: stores.shared-memory.enabled
+      name: atomix-shared-memory-controller
+      repository: https://charts.atomix.io
+      version: 0.4.1
+    - alias: pod-memory-controller
+      condition: stores.pod-memory.enabled
+      name: atomix-pod-memory-controller
+      repository: https://charts.atomix.io
+      version: 0.3.1
+    - alias: consensus-controller
+      condition: stores.consensus.enabled
+      name: atomix-consensus-controller
+      repository: https://charts.atomix.io
+      version: 1.5.1
+    description: Atomix core controllers and data stores
+    digest: 641714325838d840d8be99d25e6f0d5ff468d7691aac7440a856b96abcc91a5b
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-0.4.3/atomix-0.4.3.tgz
+    version: 0.4.3
+  - apiVersion: v2
     appVersion: v0.4.2
     created: "2023-01-31T02:53:36.198973253Z"
     dependencies:
@@ -2420,4 +2470,4 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.0/atomix-sidecar-controller-0.3.0.tgz
     version: 0.3.0
-generated: "2023-01-31T18:16:45.157182104Z"
+generated: "2023-01-31T18:20:49.966742171Z"
