@@ -16,7 +16,7 @@ maintainers:
     email: jordan.halterman@intel.com
 dependencies:
   - name: atomix-controller
-    version: 0.4.2
+    version: 0.4.3
     repository: https://charts.atomix.io
     alias: controller
   - name: atomix-runtime-controller
@@ -24,7 +24,7 @@ dependencies:
     repository: https://charts.atomix.io
     alias: runtime-controller
   - name: atomix-sidecar-controller
-    version: 0.4.4
+    version: 0.4.5
     repository: https://charts.atomix.io
     alias: sidecar-controller
   - name: atomix-raft-controller
