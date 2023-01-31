@@ -455,6 +455,10 @@ func (r *PodReconciler) tryRecordReplicaEvent(
 	updater func(*raftv1beta2.RaftReplicaStatus) bool, recorder func(*raftv1beta2.RaftReplica)) error {
 	replica, err := r.getReplica(ctx, log, clusterName, groupID, memberID)
 	if err != nil {
+		// If the replica is not found, skip recording the event
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 
@@ -483,6 +487,10 @@ func (r *PodReconciler) tryRecordPartitionEvent(
 	updater func(status *raftv1beta2.RaftPartitionStatus) bool, recorder func(*raftv1beta2.RaftPartition)) error {
 	partition, err := r.getPartition(ctx, log, clusterName, groupID)
 	if err != nil {
+		// If the partition is not found, skip recording the event
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 
