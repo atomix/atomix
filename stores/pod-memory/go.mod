@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/atomix/atomix/controller v0.2.2-0.20230129000612-d7de4bbc6983
-	github.com/atomix/atomix/runtime v0.7.0
+	github.com/atomix/atomix/runtime v0.8.2
 	github.com/go-logr/logr v1.2.0
 	github.com/spf13/cobra v1.4.0
 	k8s.io/apimachinery v0.24.0
