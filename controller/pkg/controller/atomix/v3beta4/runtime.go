@@ -284,7 +284,7 @@ func (r *RuntimeReconciler) reconcileProfile(ctx context.Context, log logging.Lo
 
 	// If the pod resource version has changed, reset all the Connected routes to the Configuring state
 	if podStatus.ResourceVersion != pod.ResourceVersion {
-		log.Debug("Pod status changed; reprogramming runtime routes to all stores...")
+		log.Debug("Pod status changed; reprogramming routes to all stores...")
 		for i, routeStatus := range podStatus.Runtime.Routes {
 			switch routeStatus.State {
 			case atomixv3beta4.RouteConnected:
@@ -318,14 +318,14 @@ func (r *RuntimeReconciler) reconcileProfile(ctx context.Context, log logging.Lo
 		client := runtimev1.NewRuntimeClient(conn)
 		_, err = client.Program(ctx, request)
 		if err != nil {
-			if !errors.IsForbidden(err) {
+			if !errors.IsUnavailable(err) && !errors.IsForbidden(err) {
 				log.Warn(err)
-				r.events.Eventf(pod, "Warning", "ProgrammingFailed", "Failed programming runtime routes: %s", err)
+				r.events.Eventf(pod, "Warning", "ProgrammingFailed", "Failed programming routes: %s", err)
 				return false, err
 			}
 		} else {
-			r.events.Eventf(pod, "Normal", "ProgrammedRoutes", "Successfully programmed runtime routes")
-			log.Info("Reprogrammed all runtime routes to stores")
+			r.events.Eventf(pod, "Normal", "ProgrammedRoutes", "Successfully programmed routes")
+			log.Info("Reprogrammed routes to all stores")
 		}
 
 		podStatus.ResourceVersion = pod.ResourceVersion
