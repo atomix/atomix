@@ -48,7 +48,7 @@ func newStateMachine(factory func(Context[*protocol.PrimitiveProposalInput, *pro
 
 type sessionManager struct {
 	factory        func(Context[*protocol.PrimitiveProposalInput, *protocol.PrimitiveProposalOutput]) PrimitiveManager
-	index          atomic.Uint64
+	index          protocol.Index
 	sequenceNum    atomic.Uint64
 	scheduler      *stateMachineScheduler
 	sessions       *managedSessions
@@ -74,7 +74,7 @@ func (s *sessionManager) Log() logging.Logger {
 }
 
 func (s *sessionManager) Index() protocol.Index {
-	return protocol.Index(s.index.Load())
+	return s.index
 }
 
 func (s *sessionManager) Time() time.Time {
@@ -94,7 +94,7 @@ func (s *sessionManager) Proposals() Proposals[*protocol.PrimitiveProposalInput,
 }
 
 func (s *sessionManager) Snapshot(writer *SnapshotWriter) error {
-	if err := writer.WriteVarUint64(uint64(s.Index())); err != nil {
+	if err := writer.WriteVarUint64(uint64(s.index)); err != nil {
 		return err
 	}
 
@@ -125,7 +125,7 @@ func (s *sessionManager) Recover(reader *SnapshotReader) error {
 	if err != nil {
 		return err
 	}
-	s.index.Store(index)
+	s.index = protocol.Index(index)
 
 	timestamp := &types.Timestamp{}
 	if err := reader.ReadMessage(timestamp); err != nil {
@@ -151,55 +151,55 @@ func (s *sessionManager) Recover(reader *SnapshotReader) error {
 }
 
 func (s *sessionManager) Propose(input *protocol.ProposalInput, stream streams.WriteStream[*protocol.ProposalOutput]) {
-	index := protocol.Index(s.index.Add(1))
+	s.index++
 
 	// Run scheduled tasks for the updated timestamp
 	s.scheduler.tick(input.Timestamp)
 
 	switch p := input.Input.(type) {
 	case *protocol.ProposalInput_Proposal:
-		s.propose(index, p.Proposal, streams.NewEncodingStream[*protocol.SessionProposalOutput, *protocol.ProposalOutput](stream, func(output *protocol.SessionProposalOutput, err error) (*protocol.ProposalOutput, error) {
+		s.propose(p.Proposal, streams.NewEncodingStream[*protocol.SessionProposalOutput, *protocol.ProposalOutput](stream, func(output *protocol.SessionProposalOutput, err error) (*protocol.ProposalOutput, error) {
 			if err != nil {
 				return nil, err
 			}
 			return &protocol.ProposalOutput{
-				Index: s.Index(),
+				Index: s.index,
 				Output: &protocol.ProposalOutput_Proposal{
 					Proposal: output,
 				},
 			}, nil
 		}))
 	case *protocol.ProposalInput_OpenSession:
-		s.openSession(index, p.OpenSession, streams.NewEncodingStream[*protocol.OpenSessionOutput, *protocol.ProposalOutput](stream, func(output *protocol.OpenSessionOutput, err error) (*protocol.ProposalOutput, error) {
+		s.openSession(p.OpenSession, streams.NewEncodingStream[*protocol.OpenSessionOutput, *protocol.ProposalOutput](stream, func(output *protocol.OpenSessionOutput, err error) (*protocol.ProposalOutput, error) {
 			if err != nil {
 				return nil, err
 			}
 			return &protocol.ProposalOutput{
-				Index: s.Index(),
+				Index: s.index,
 				Output: &protocol.ProposalOutput_OpenSession{
 					OpenSession: output,
 				},
 			}, nil
 		}))
 	case *protocol.ProposalInput_KeepAlive:
-		s.keepAlive(index, p.KeepAlive, streams.NewEncodingStream[*protocol.KeepAliveOutput, *protocol.ProposalOutput](stream, func(output *protocol.KeepAliveOutput, err error) (*protocol.ProposalOutput, error) {
+		s.keepAlive(p.KeepAlive, streams.NewEncodingStream[*protocol.KeepAliveOutput, *protocol.ProposalOutput](stream, func(output *protocol.KeepAliveOutput, err error) (*protocol.ProposalOutput, error) {
 			if err != nil {
 				return nil, err
 			}
 			return &protocol.ProposalOutput{
-				Index: s.Index(),
+				Index: s.index,
 				Output: &protocol.ProposalOutput_KeepAlive{
 					KeepAlive: output,
 				},
 			}, nil
 		}))
 	case *protocol.ProposalInput_CloseSession:
-		s.closeSession(index, p.CloseSession, streams.NewEncodingStream[*protocol.CloseSessionOutput, *protocol.ProposalOutput](stream, func(output *protocol.CloseSessionOutput, err error) (*protocol.ProposalOutput, error) {
+		s.closeSession(p.CloseSession, streams.NewEncodingStream[*protocol.CloseSessionOutput, *protocol.ProposalOutput](stream, func(output *protocol.CloseSessionOutput, err error) (*protocol.ProposalOutput, error) {
 			if err != nil {
 				return nil, err
 			}
 			return &protocol.ProposalOutput{
-				Index: s.Index(),
+				Index: s.index,
 				Output: &protocol.ProposalOutput_CloseSession{
 					CloseSession: output,
 				},
@@ -207,7 +207,7 @@ func (s *sessionManager) Propose(input *protocol.ProposalInput, stream streams.W
 		}))
 	}
 
-	if indexQueries, ok := s.pendingQueries.LoadAndDelete(index); ok {
+	if indexQueries, ok := s.pendingQueries.LoadAndDelete(s.index); ok {
 		indexQueries.(*sync.Map).Range(func(key, value any) bool {
 			sequenceNum := key.(protocol.SequenceNum)
 			query := value.(pendingQuery)
@@ -218,7 +218,7 @@ func (s *sessionManager) Propose(input *protocol.ProposalInput, stream streams.W
 						return nil, err
 					}
 					return &protocol.QueryOutput{
-						Index: s.Index(),
+						Index: s.index,
 						Output: &protocol.QueryOutput_Query{
 							Query: output,
 						},
@@ -237,7 +237,7 @@ type pendingQuery struct {
 
 func (s *sessionManager) Query(input *protocol.QueryInput, stream streams.WriteStream[*protocol.QueryOutput]) {
 	sequenceNum := protocol.SequenceNum(s.sequenceNum.Add(1))
-	if s.Index() < input.MaxReceivedIndex {
+	if s.index < input.MaxReceivedIndex {
 		indexQueries, _ := s.pendingQueries.LoadOrStore(input.MaxReceivedIndex, &sync.Map{})
 		indexQueries.(*sync.Map).Store(sequenceNum, pendingQuery{
 			input:  input,
@@ -251,7 +251,7 @@ func (s *sessionManager) Query(input *protocol.QueryInput, stream streams.WriteS
 					return nil, err
 				}
 				return &protocol.QueryOutput{
-					Index: s.Index(),
+					Index: s.index,
 					Output: &protocol.QueryOutput_Query{
 						Query: output,
 					},
@@ -261,41 +261,41 @@ func (s *sessionManager) Query(input *protocol.QueryInput, stream streams.WriteS
 	}
 }
 
-func (s *sessionManager) openSession(index protocol.Index, input *protocol.OpenSessionInput, stream streams.WriteStream[*protocol.OpenSessionOutput]) {
+func (s *sessionManager) openSession(input *protocol.OpenSessionInput, stream streams.WriteStream[*protocol.OpenSessionOutput]) {
 	session := newManagedSession(s)
-	session.open(index, input, stream)
+	session.open(s.index, input, stream)
 }
 
-func (s *sessionManager) keepAlive(index protocol.Index, input *protocol.KeepAliveInput, stream streams.WriteStream[*protocol.KeepAliveOutput]) {
+func (s *sessionManager) keepAlive(input *protocol.KeepAliveInput, stream streams.WriteStream[*protocol.KeepAliveOutput]) {
 	sessionID := SessionID(input.SessionID)
 	session, ok := s.sessions.get(sessionID)
 	if !ok {
 		stream.Error(errors.NewFault("session not found"))
 		stream.Close()
 	} else {
-		session.keepAlive(index, input, stream)
+		session.keepAlive(s.index, input, stream)
 	}
 }
 
-func (s *sessionManager) closeSession(index protocol.Index, input *protocol.CloseSessionInput, stream streams.WriteStream[*protocol.CloseSessionOutput]) {
+func (s *sessionManager) closeSession(input *protocol.CloseSessionInput, stream streams.WriteStream[*protocol.CloseSessionOutput]) {
 	sessionID := SessionID(input.SessionID)
 	session, ok := s.sessions.get(sessionID)
 	if !ok {
 		stream.Error(errors.NewFault("session not found"))
 		stream.Close()
 	} else {
-		session.close(index, input, stream)
+		session.close(s.index, input, stream)
 	}
 }
 
-func (s *sessionManager) propose(index protocol.Index, input *protocol.SessionProposalInput, stream streams.WriteStream[*protocol.SessionProposalOutput]) {
+func (s *sessionManager) propose(input *protocol.SessionProposalInput, stream streams.WriteStream[*protocol.SessionProposalOutput]) {
 	sessionID := SessionID(input.SessionID)
 	session, ok := s.sessions.get(sessionID)
 	if !ok {
 		stream.Error(errors.NewFault("session not found"))
 		stream.Close()
 	} else {
-		session.propose(index, input, stream)
+		session.propose(s.index, input, stream)
 	}
 }
 
