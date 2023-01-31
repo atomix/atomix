@@ -30,6 +30,7 @@ const (
 	sidecarInjectStatusAnnotation    = "sidecar.atomix.io/status"
 	sidecarImageAnnotation           = "sidecar.atomix.io/image"
 	sidecarImagePullPolicyAnnotation = "sidecar.atomix.io/imagePullPolicy"
+	sidecarLogLevelAnnotation        = "sidecar.atomix.io/logLevel"
 	injectedStatus                   = "injected"
 )
 
@@ -94,6 +95,12 @@ func (i *SidecarInjector) Handle(ctx context.Context, request admission.Request)
 		imagePullPolicy = string(corev1.PullAlways)
 	}
 
+	var args []string
+	logLevel, ok := pod.Annotations[sidecarLogLevelAnnotation]
+	if ok {
+		args = append(args, "--log-level", logLevel)
+	}
+
 	// Add the sidecar proxy container to the Pod's containers list.
 	pod.Spec.Containers = append(pod.Spec.Containers, corev1.Container{
 		Name:            sidecarContainerName,
@@ -109,6 +116,7 @@ func (i *SidecarInjector) Handle(ctx context.Context, request admission.Request)
 				ContainerPort: 5679,
 			},
 		},
+		Args: args,
 	})
 
 	// Add proxy metadata annotations to the Pod.

@@ -6,12 +6,14 @@ package main
 
 import (
 	"fmt"
+	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/runtime"
 	runtimev1 "github.com/atomix/atomix/runtime/pkg/runtime/v1"
 	"github.com/atomix/atomix/sidecar/pkg/sidecar"
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
@@ -43,6 +45,24 @@ func main() {
 			if err != nil {
 				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
 				os.Exit(1)
+			}
+			logLevel, err := cmd.Flags().GetString("log-level")
+			if err != nil {
+				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
+				os.Exit(1)
+			}
+
+			switch strings.ToUpper(logLevel) {
+			case logging.DebugLevel.String():
+				logging.SetLevel(logging.DebugLevel)
+			case logging.InfoLevel.String():
+				logging.SetLevel(logging.InfoLevel)
+			case logging.WarnLevel.String():
+				logging.SetLevel(logging.WarnLevel)
+			case logging.ErrorLevel.String():
+				logging.SetLevel(logging.ErrorLevel)
+			case logging.FatalLevel.String():
+				logging.SetLevel(logging.FatalLevel)
 			}
 
 			// Initialize the runtime
@@ -89,6 +109,7 @@ func main() {
 	cmd.Flags().String("runtime-host", "", "the host to which to bind the runtime server")
 	cmd.Flags().Int("runtime-port", 5679, "the port to which to bind the runtime server")
 	cmd.Flags().StringP("plugins", "p", "/var/atomix/plugins", "the path to the plugins directory")
+	cmd.Flags().StringP("log-level", "l", "info", "the level at which to log in the sidecar")
 
 	_ = cmd.MarkFlagDirname("drivers")
 
