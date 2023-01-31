@@ -65,6 +65,8 @@ func main() {
 				logging.SetLevel(logging.FatalLevel)
 			}
 
+			logging.GetLogger("github.com/atomix/atomix/runtime/pkg/utils").SetLevel(logging.ErrorLevel)
+
 			// Initialize the runtime
 			rt := runtimev1.New(runtimev1.WithDriverProvider(sidecar.NewDriverProvider(pluginsDir)))
 
