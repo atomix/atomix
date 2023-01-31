@@ -1158,6 +1158,25 @@ entries:
     - https://github.com/atomix/charts.atomix.io/releases/download/atomix-pod-memory-controller-1.0.0/atomix-pod-memory-controller-1.0.0.tgz
     version: 1.0.0
   - apiVersion: v2
+    appVersion: v0.3.2
+    created: "2023-01-31T19:23:11.768920543Z"
+    description: The pod memory controller extends the Kubernetes API with custom
+      resources for pod-local shared memory stores.
+    digest: dba004dc9cd5d978fd6f97ab779dfda8c6032f8265bbd160c88e6d1f1206a1b8
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-pod-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-pod-memory-controller-0.3.2/atomix-pod-memory-controller-0.3.2.tgz
+    version: 0.3.2
+  - apiVersion: v2
     appVersion: v0.3.1
     created: "2023-01-29T00:13:46.541421517Z"
     description: The pod memory controller extends the Kubernetes API with custom
@@ -2470,4 +2489,4 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.0/atomix-sidecar-controller-0.3.0.tgz
     version: 0.3.0
-generated: "2023-01-31T18:20:49.966742171Z"
+generated: "2023-01-31T19:23:11.769144547Z"
