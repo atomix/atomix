@@ -2523,6 +2523,24 @@ entries:
     version: 0.2.2
   atomix-sidecar-controller:
   - apiVersion: v2
+    appVersion: v0.4.7
+    created: "2023-01-31T22:23:55.372192064Z"
+    description: The sidecar controller provides injection of the Atomix sidecar into
+      Kubernetes pods.
+    digest: 111fe02d6b923a6bf8793b78c0a3985000a0a8480458e7afd40a52e290eb90c5
+    home: https://atomix.io
+    keywords:
+    - atomix
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-sidecar-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.4.7/atomix-sidecar-controller-0.4.7.tgz
+    version: 0.4.7
+  - apiVersion: v2
     appVersion: v0.4.6
     created: "2023-01-31T21:55:54.759263174Z"
     description: The sidecar controller provides injection of the Atomix sidecar into
@@ -2684,4 +2702,4 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.0/atomix-sidecar-controller-0.3.0.tgz
     version: 0.3.0
-generated: "2023-01-31T22:06:34.105935183Z"
+generated: "2023-01-31T22:23:55.372647263Z"
