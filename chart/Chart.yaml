@@ -28,7 +28,7 @@ dependencies:
     repository: https://charts.atomix.io
     alias: sidecar-controller
   - name: atomix-raft-controller
-    version: 0.3.1
+    version: 0.3.2
     repository: https://charts.atomix.io
     condition: stores.raft.enabled
     alias: raft-controller
