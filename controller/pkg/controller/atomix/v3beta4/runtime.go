@@ -318,9 +318,11 @@ func (r *RuntimeReconciler) reconcileProfile(ctx context.Context, log logging.Lo
 		client := runtimev1.NewRuntimeClient(conn)
 		_, err = client.Program(ctx, request)
 		if err != nil {
-			if !errors.IsUnavailable(err) && !errors.IsForbidden(err) {
+			if !errors.IsForbidden(err) {
 				log.Warn(err)
-				r.events.Eventf(pod, "Warning", "ProgrammingFailed", "Failed programming routes: %s", err)
+				if !errors.IsUnavailable(err) {
+					r.events.Eventf(pod, "Warning", "ProgrammingFailed", "Failed programming routes: %s", err)
+				}
 				return false, err
 			}
 		} else {
@@ -443,7 +445,9 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 			if err != nil {
 				if !errors.IsNotFound(err) {
 					log.Warn(err)
-					r.events.Eventf(pod, "Warning", "DisconnectRouteFailed", "Failed disconnecting route to '%s': %s", storeNamespacedName, err)
+					if !errors.IsUnavailable(err) {
+						r.events.Eventf(pod, "Warning", "DisconnectRouteFailed", "Failed disconnecting route to '%s': %s", storeNamespacedName, err)
+					}
 					return false, err
 				}
 			}
@@ -496,7 +500,9 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 		if err != nil {
 			if !errors.IsAlreadyExists(err) {
 				log.Warn(err)
-				r.events.Eventf(pod, "Warning", "ConnectRouteFailed", "Failed connecting route to '%s': %s", storeNamespacedName, err)
+				if !errors.IsUnavailable(err) {
+					r.events.Eventf(pod, "Warning", "ConnectRouteFailed", "Failed connecting route to '%s': %s", storeNamespacedName, err)
+				}
 				return false, err
 			}
 		}
@@ -538,8 +544,10 @@ func (r *RuntimeReconciler) reconcileRoute(ctx context.Context, log logging.Logg
 		_, err = client.Configure(ctx, request)
 		if err != nil {
 			if !errors.IsNotFound(err) {
-				r.events.Eventf(pod, "Warning", "ConfigureRouteFailed", "Failed reconfiguring route to '%s': %s", storeNamespacedName, err)
 				log.Warn(err)
+				if !errors.IsUnavailable(err) {
+					r.events.Eventf(pod, "Warning", "ConfigureRouteFailed", "Failed reconfiguring route to '%s': %s", storeNamespacedName, err)
+				}
 				return false, err
 			}
 			// If the runtime returned a NotFound error, set the route to Connecting to establish the connection.
