@@ -34,16 +34,18 @@ func New(opts ...Option) *Runtime {
 
 type Runtime struct {
 	Options
-	drivers    map[runtimev1.DriverID]driver.Driver
-	conns      map[runtimev1.StoreID]driver.Conn
-	routes     map[runtimev1.StoreID]runtimev1.Route
-	primitives sync.Map
-	mu         sync.RWMutex
+	drivers      map[runtimev1.DriverID]driver.Driver
+	conns        map[runtimev1.StoreID]driver.Conn
+	connsMu      sync.RWMutex
+	routes       map[runtimev1.StoreID]runtimev1.Route
+	routesMu     sync.RWMutex
+	primitives   sync.Map
+	primitivesMu sync.RWMutex
 }
 
 func (r *Runtime) lookup(storeID runtimev1.StoreID) (driver.Conn, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	r.connsMu.RLock()
+	defer r.connsMu.RUnlock()
 	conn, ok := r.conns[storeID]
 	if !ok {
 		return nil, errors.NewUnavailable("connection to store '%s' not found", storeID)
@@ -52,8 +54,8 @@ func (r *Runtime) lookup(storeID runtimev1.StoreID) (driver.Conn, error) {
 }
 
 func (r *Runtime) Program(ctx context.Context, routes ...runtimev1.Route) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.routesMu.Lock()
+	defer r.routesMu.Unlock()
 	if r.routes != nil {
 		return errors.NewForbidden("routes have already been programed")
 	}
@@ -65,8 +67,8 @@ func (r *Runtime) Program(ctx context.Context, routes ...runtimev1.Route) error 
 }
 
 func (r *Runtime) Connect(ctx context.Context, storeID runtimev1.StoreID, driverID runtimev1.DriverID, config *types.Any) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.connsMu.Lock()
+	defer r.connsMu.Unlock()
 
 	if _, ok := r.conns[storeID]; ok {
 		return errors.NewAlreadyExists("connection '%s' already exists", storeID)
@@ -109,8 +111,8 @@ func (r *Runtime) Connect(ctx context.Context, storeID runtimev1.StoreID, driver
 }
 
 func (r *Runtime) Configure(ctx context.Context, storeID runtimev1.StoreID, config *types.Any) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.connsMu.Lock()
+	defer r.connsMu.Unlock()
 
 	conn, ok := r.conns[storeID]
 	if !ok {
@@ -134,8 +136,8 @@ func (r *Runtime) Configure(ctx context.Context, storeID runtimev1.StoreID, conf
 }
 
 func (r *Runtime) Disconnect(ctx context.Context, storeID runtimev1.StoreID) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.connsMu.Lock()
+	defer r.connsMu.Unlock()
 
 	conn, ok := r.conns[storeID]
 	if !ok {
@@ -264,8 +266,8 @@ func configure(ctx context.Context, typedConn any, rawSpec *types.Any) error {
 }
 
 func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	r.routesMu.RLock()
+	defer r.routesMu.RUnlock()
 
 	if r.routes == nil {
 		return runtimev1.StoreID{}, nil, errors.NewUnavailable("primitives are currently unavailable: waiting for route programming")

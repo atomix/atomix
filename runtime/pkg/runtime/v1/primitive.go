@@ -71,8 +71,8 @@ func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtime
 		return config, err
 	}
 
-	c.runtime.mu.Lock()
-	defer c.runtime.mu.Unlock()
+	c.runtime.primitivesMu.Lock()
+	defer c.runtime.primitivesMu.Unlock()
 
 	// Create and cache the primitive instance if it doesn't already exist
 	value, ok := c.runtime.primitives.Load(primitiveID)
@@ -98,11 +98,11 @@ func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtime
 }
 
 func (c *primitiveManager[P, C]) Close(ctx context.Context, primitiveID runtimev1.PrimitiveID) error {
-	c.runtime.mu.Lock()
-	defer c.runtime.mu.Unlock()
+	c.runtime.primitivesMu.Lock()
+	defer c.runtime.primitivesMu.Unlock()
 	value, ok := c.runtime.primitives.LoadAndDelete(primitiveID)
 	if !ok {
-		return errors.NewNotFound("primitive '%s' not found", primitiveID.Name)
+		return nil
 	}
 	primitive, ok := value.(P)
 	if !ok {
