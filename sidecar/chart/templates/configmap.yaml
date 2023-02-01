@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: atomix-sidecar-controller-config
+  name: {{ template "atomix-sidecar-controller.fullname" . }}-config
 data:
   logging.yaml:  |-
     loggers:

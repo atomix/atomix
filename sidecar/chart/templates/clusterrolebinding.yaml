@@ -5,12 +5,12 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: atomix-sidecar-controller
+  name: {{ template "atomix-sidecar-controller.fullname" . }}
 subjects:
   - kind: ServiceAccount
-    name: atomix-sidecar-controller
+    name: {{ template "atomix-sidecar-controller.fullname" . }}
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: atomix-sidecar-controller
+  name: {{ template "atomix-sidecar-controller.fullname" . }}
   apiGroup: rbac.authorization.k8s.io

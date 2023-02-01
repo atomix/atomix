@@ -6,7 +6,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: atomix-sidecar-controller
+  name: {{ template "atomix-sidecar-controller.fullname" . }}
 rules:
   - apiGroups:
       - ""
@@ -38,3 +38,12 @@ rules:
       - '*'
     verbs:
       - '*'
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+    verbs:
+      - get
+      - list
+      - watch
+      - update

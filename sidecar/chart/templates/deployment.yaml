@@ -5,20 +5,48 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: atomix-sidecar-controller
+  name: {{ template "atomix-sidecar-controller.fullname" . }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      name: atomix-sidecar-controller
+      name: {{ template "atomix-sidecar-controller.fullname" . }}
   template:
     metadata:
       labels:
-        name: atomix-sidecar-controller
+        name: {{ template "atomix-sidecar-controller.fullname" . }}
     spec:
-      serviceAccountName: atomix-sidecar-controller
+      serviceAccountName: {{ template "atomix-sidecar-controller.fullname" . }}
+      initContainers:
+        - name: atomix-controller-init
+          {{- if .Values.init.image.tag }}
+          image: {{ printf "%s:%s" .Values.init.image.repository .Values.init.image.tag }}
+          {{- else if .Chart.AppVersion }}
+          image: {{ printf "%s:%s" .Values.init.image.repository .Chart.AppVersion }}
+          {{- else }}
+          image: {{ .Values.init.image.repository }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.init.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          args:
+            - --namespace
+            - {{ .Release.Namespace }}
+            - --service
+            - {{ template "atomix-sidecar-controller.fullname" . }}
+            - --webhook
+            - {{ template "atomix-sidecar-controller.fullname" . }}
+            - --certs
+            - /etc/certs
+          volumeMounts:
+            - name: config
+              mountPath: /etc/atomix
+              readOnly: true
+            - name: certs
+              mountPath: /etc/certs
       containers:
-        - name: atomix-sidecar-controller
+        - name: {{ template "atomix-sidecar-controller.fullname" . }}
           {{- if .Values.image.tag }}
           image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
           {{- else if .Chart.AppVersion }}
@@ -33,6 +61,9 @@ spec:
             - containerPort: 443
               name: webhook-server
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --certs
+            - /etc/certs
           readinessProbe:
             exec:
               command:
@@ -43,7 +74,7 @@ spec:
             failureThreshold: 1
           env:
             - name: CONTROLLER_NAME
-              value: atomix-sidecar-controller
+              value: {{ template "atomix-sidecar-controller.fullname" . }}
             - name: CONTROLLER_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -66,15 +97,14 @@ spec:
               {{- end }}
           volumeMounts:
             - name: certs
-              mountPath: /tmp/k8s-webhook-server/serving-certs
+              mountPath: /etc/certs
               readOnly: true
             - name: config
               mountPath: /etc/atomix
               readOnly: true
       volumes:
         - name: certs
-          secret:
-            secretName: atomix-sidecar-controller-certs
+          emptyDir: {}
         - name: config
           configMap:
-            name: atomix-sidecar-controller-config
+            name: {{ template "atomix-sidecar-controller.fullname" . }}-config
