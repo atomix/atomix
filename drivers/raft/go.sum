@@ -6,8 +6,8 @@ github.com/atomix/atomix/api v0.8.0 h1:KJVf3xY/8+Dd+CsAp7sUMJGsWW3DtRoIWmRIMCoWH
 github.com/atomix/atomix/api v0.8.0/go.mod h1:Fz8zXQH6n28U0NTu5xctKhkNrN5RsWgX56lrMhqXlPg=
 github.com/atomix/atomix/protocols/rsm v0.5.2 h1:CH7qbIFM0RQaL599+9Df7/2LOkEYueFw/877cdnSF9A=
 github.com/atomix/atomix/protocols/rsm v0.5.2/go.mod h1:SgkK3PVLqx1KmNjxw8OY7AY7T6t6TuPLmnP6Rr/oFAQ=
-github.com/atomix/atomix/runtime v0.8.4 h1:wuG9s/Ub5pZRo0ZOXswkiqeyRw9KOTyuPG0syguCSoE=
-github.com/atomix/atomix/runtime v0.8.4/go.mod h1:kkAiuqqkDjSDQsGnQ9nfUz8FmVv/M6GFUjwxkoTbLC0=
+github.com/atomix/atomix/runtime v0.8.5 h1:FnqT+kYCUQtHcQliMeZqqtq7rmKoq+1yfFXtWSyteWY=
+github.com/atomix/atomix/runtime v0.8.5/go.mod h1:kkAiuqqkDjSDQsGnQ9nfUz8FmVv/M6GFUjwxkoTbLC0=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/bits-and-blooms/bitset v1.3.1 h1:y+qrlmq3XsWi+xZqSaueaE8ry8Y127iMxlMfqcK8p0g=
 github.com/bits-and-blooms/bitset v1.3.1/go.mod h1:gIdJ4wp64HaoK2YrL1Q5/N7Y16edYb8uY+O0FJTyyDA=
