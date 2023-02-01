@@ -56,7 +56,7 @@ jobs:
           file: build/controller/Dockerfile
 
   build-controller-init:
-    name: Build controller image
+    name: Build controller-init image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
