@@ -57,23 +57,23 @@ func Trunc8(name string, value fmt.Stringer) Field {
 }
 
 func Trunc16(name string, value fmt.Stringer) Field {
-	return Trunc(name, value, 8)
+	return Trunc(name, value, 16)
 }
 
 func Trunc32(name string, value fmt.Stringer) Field {
-	return Trunc(name, value, 8)
+	return Trunc(name, value, 32)
 }
 
 func Trunc64(name string, value fmt.Stringer) Field {
-	return Trunc(name, value, 8)
+	return Trunc(name, value, 64)
 }
 
 func Trunc128(name string, value fmt.Stringer) Field {
-	return Trunc(name, value, 8)
+	return Trunc(name, value, 128)
 }
 
 func Trunc256(name string, value fmt.Stringer) Field {
-	return Trunc(name, value, 8)
+	return Trunc(name, value, 256)
 }
 
 type truncStringer struct {
