@@ -17,6 +17,40 @@ spec:
         name: {{ template "atomix-raft-controller.fullname" . }}
     spec:
       serviceAccountName: {{ template "atomix-raft-controller.fullname" . }}
+      initContainers:
+        - name: atomix-controller-init
+          {{- if .Values.init.image.tag }}
+          image: {{ printf "%s:%s" .Values.init.image.repository .Values.init.image.tag }}
+          {{- else if .Chart.AppVersion }}
+          image: {{ printf "%s:%s" .Values.init.image.repository .Chart.AppVersion }}
+          {{- else }}
+          image: {{ .Values.init.image.repository }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.init.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          args:
+            - --namespace
+            - {{ .Release.Namespace }}
+            - --service
+            - {{ template "atomix-raft-controller.fullname" . }}
+            - --crd
+            - raftclusters.raft.atomix.io=/etc/atomix/raftclusters.yaml
+            - --crd
+            - raftpartitions.raft.atomix.io=/etc/atomix/raftpartitions.yaml
+            - --crd
+            - raftreplicas.raft.atomix.io=/etc/atomix/raftreplicas.yaml
+            - --crd
+            - raftstores.raft.atomix.io=/etc/atomix/raftstores.yaml
+            - --certs
+            - /etc/certs
+          volumeMounts:
+            - name: config
+              mountPath: /etc/atomix
+              readOnly: true
+            - name: certs
+              mountPath: /etc/certs
       containers:
         - name: atomix-raft-controller
           {{- if .Values.image.tag }}
@@ -30,6 +64,9 @@ spec:
             allowPrivilegeEscalation: false
             runAsUser: 0
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --certs
+            - /etc/certs
           readinessProbe:
             exec:
               command:
@@ -60,10 +97,15 @@ spec:
               value: {{ .Values.node.image.repository }}
               {{- end }}
           volumeMounts:
+            - name: certs
+              mountPath: /etc/certs
+              readOnly: true
             - name: config
               mountPath: /etc/atomix
               readOnly: true
       volumes:
+        - name: certs
+          emptyDir: {}
         - name: config
           configMap:
             name: {{ template "atomix-raft-controller.fullname" . }}-config
