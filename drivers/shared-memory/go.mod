@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/atomix/atomix/api v0.8.0
 	github.com/atomix/atomix/protocols/rsm v0.5.2
-	github.com/atomix/atomix/runtime v0.8.3
+	github.com/atomix/atomix/runtime v0.8.4
 )
 
 require (
