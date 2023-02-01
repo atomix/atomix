@@ -5,20 +5,48 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: atomix-shared-memory-controller
+  name: {{ template "atomix-shared-memory-controller.fullname" . }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      name: atomix-shared-memory-controller
+      name: {{ template "atomix-shared-memory-controller.fullname" . }}
   template:
     metadata:
       labels:
-        name: atomix-shared-memory-controller
+        name: {{ template "atomix-shared-memory-controller.fullname" . }}
     spec:
-      serviceAccountName: atomix-shared-memory-controller
+      serviceAccountName: {{ template "atomix-shared-memory-controller.fullname" . }}
+      initContainers:
+        - name: atomix-controller-init
+          {{- if .Values.init.image.tag }}
+          image: {{ printf "%s:%s" .Values.init.image.repository .Values.init.image.tag }}
+          {{- else if .Chart.AppVersion }}
+          image: {{ printf "%s:%s" .Values.init.image.repository .Chart.AppVersion }}
+          {{- else }}
+          image: {{ .Values.init.image.repository }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.init.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          args:
+            - --namespace
+            - {{ .Release.Namespace }}
+            - --service
+            - {{ template "atomix-shared-memory-controller.fullname" . }}
+            - --crd
+            - sharedmemorystores.sharedmemory.atomix.io=/etc/atomix/sharedmemorystores.yaml
+            - --certs
+            - /etc/certs
+          volumeMounts:
+            - name: config
+              mountPath: /etc/atomix
+              readOnly: true
+            - name: certs
+              mountPath: /etc/certs
       containers:
-        - name: atomix-shared-memory-controller
+        - name: {{ template "atomix-shared-memory-controller.fullname" . }}
           {{- if .Values.image.tag }}
           image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
           {{- else if .Chart.AppVersion }}
@@ -30,6 +58,9 @@ spec:
             allowPrivilegeEscalation: false
             runAsUser: 0
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --certs
+            - /etc/certs
           readinessProbe:
             exec:
               command:
@@ -40,7 +71,7 @@ spec:
             failureThreshold: 1
           env:
             - name: CONTROLLER_NAME
-              value: atomix-shared-memory-controller
+              value: {{ template "atomix-shared-memory-controller.fullname" . }}
             - name: CONTROLLER_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -63,15 +94,14 @@ spec:
               value: {{ .Values.node.image.pullPolicy | quote }}
           volumeMounts:
             - name: certs
-              mountPath: /tmp/k8s-webhook-server/serving-certs
+              mountPath: /etc/certs
               readOnly: true
             - name: config
               mountPath: /etc/atomix
               readOnly: true
       volumes:
         - name: certs
-          secret:
-            secretName: atomix-shared-memory-controller-certs
+          emptyDir: {}
         - name: config
           configMap:
-            name: atomix-shared-memory-controller-config
+            name: {{ template "atomix-shared-memory-controller.fullname" . }}-config

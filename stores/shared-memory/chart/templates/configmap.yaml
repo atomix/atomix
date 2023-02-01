@@ -5,8 +5,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: atomix-shared-memory-controller-config
+  name: {{ template "atomix-shared-memory-controller.fullname" . }}-config
 data:
+{{ (.Files.Glob "crds/sharedmemory.atomix.io/*.yaml").AsConfig | indent 2 }}
   logging.yaml:  |-
     loggers:
       root:

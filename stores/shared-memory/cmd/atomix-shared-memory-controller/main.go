@@ -43,6 +43,7 @@ func getCommand() *cobra.Command {
 		Args: cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			namespace, _ := cmd.Flags().GetString("namespace")
+			certsDir, _ := cmd.Flags().GetString("certs")
 
 			// Get a config to talk to the apiserver
 			cfg, err := config.GetConfig()
@@ -87,6 +88,9 @@ func getCommand() *cobra.Command {
 				os.Exit(1)
 			}
 
+			mgr.GetWebhookServer().Port = 443
+			mgr.GetWebhookServer().CertDir = certsDir
+
 			// Start the manager
 			log.Info("Starting the Manager")
 			mgr.GetWebhookServer().Port = 443
@@ -97,6 +101,7 @@ func getCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringP("namespace", "n", "", "the namespace in which to run the controller")
+	cmd.Flags().String("certs", "/etc/atomix/certs", "the path to the certificates directory")
 	return cmd
 }
 
