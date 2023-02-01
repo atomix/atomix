@@ -10,9 +10,11 @@ import (
 	"github.com/atomix/atomix/controller/pkg/apis"
 	atomixv3beta4 "github.com/atomix/atomix/controller/pkg/controller/atomix/v3beta4"
 	"github.com/atomix/atomix/controller/pkg/controller/util/k8s"
+	"github.com/atomix/atomix/controller/pkg/controller/util/k8s/conversion"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"os"
 	"runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -21,6 +23,11 @@ import (
 )
 
 var log = logging.GetLogger()
+
+const (
+	dataStoreConvertPath      = "/convert-data-store"
+	storageProfileConvertPath = "/convert-storage-profile"
+)
 
 func main() {
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
@@ -81,9 +88,24 @@ func getCommand() *cobra.Command {
 				os.Exit(1)
 			}
 
+			gvs := []schema.GroupVersion{
+				{
+					Group:   "atomix.io",
+					Version: "v3beta3",
+				},
+				{
+					Group:   "atomix.io",
+					Version: "v3beta4",
+				},
+			}
+
+			// Add conversion webhooks
+			mgr.GetWebhookServer().Port = 443
+			mgr.GetWebhookServer().Register(dataStoreConvertPath, conversion.NewWebhook(mgr, "DataStore", gvs...))
+			mgr.GetWebhookServer().Register(storageProfileConvertPath, conversion.NewWebhook(mgr, "StorageProfile", gvs...))
+
 			// Start the manager
 			log.Info("Starting the Manager")
-			mgr.GetWebhookServer().Port = 443
 			if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
 				log.Error(err, "controller exited non-zero")
 				os.Exit(1)

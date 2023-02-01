@@ -16,11 +16,5 @@ func AddControllers(mgr manager.Manager) error {
 	if err := addRuntimeController(mgr); err != nil {
 		return err
 	}
-	if err := addDataStoreController(mgr); err != nil {
-		return err
-	}
-	if err := addStorageProfileController(mgr); err != nil {
-		return err
-	}
 	return nil
 }

@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"net/http"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var conversionScheme = runtime.NewScheme()
@@ -23,6 +24,12 @@ var conversionCodecs = serializer.NewCodecFactory(conversionScheme)
 func init() {
 	if err := apiextensionsv1.AddToScheme(conversionScheme); err != nil {
 		panic(err)
+	}
+}
+
+func NewWebhook(mgr manager.Manager, kind string, gvs ...schema.GroupVersion) *Webhook {
+	return &Webhook{
+		Handler: NewConverter(mgr, kind, gvs...),
 	}
 }
 
