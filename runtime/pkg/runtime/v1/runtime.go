@@ -268,7 +268,13 @@ func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types
 	if r.routes == nil {
 		return runtimev1.StoreID{}, nil, errors.NewUnavailable("primitives are currently unavailable: waiting for route programming")
 	}
-	return route(r.routes, meta)
+	storeID, config, err := route(r.routes, meta)
+	if err != nil {
+		log.Warnf("Could not route primitive '%s' to store: %s", meta.Name, err.Error())
+		return storeID, nil, err
+	}
+	log.Infof("Routed primitive '%s' to '%s'", meta.Name, storeID)
+	return storeID, config, nil
 }
 
 func route(routes []runtimev1.Route, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error) {
