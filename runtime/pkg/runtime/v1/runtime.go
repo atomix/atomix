@@ -37,7 +37,7 @@ type Runtime struct {
 	drivers      map[runtimev1.DriverID]driver.Driver
 	conns        map[runtimev1.StoreID]driver.Conn
 	connsMu      sync.RWMutex
-	routes       map[runtimev1.StoreID]runtimev1.Route
+	routes       []runtimev1.Route
 	routesMu     sync.RWMutex
 	primitives   sync.Map
 	primitivesMu sync.RWMutex
@@ -59,10 +59,7 @@ func (r *Runtime) Program(ctx context.Context, routes ...runtimev1.Route) error 
 	if r.routes != nil {
 		return errors.NewForbidden("routes have already been programed")
 	}
-	r.routes = make(map[runtimev1.StoreID]runtimev1.Route)
-	for _, route := range routes {
-		r.routes[route.StoreID] = route
-	}
+	r.routes = routes
 	return nil
 }
 
@@ -268,63 +265,267 @@ func configure(ctx context.Context, typedConn any, rawSpec *types.Any) error {
 func (r *Runtime) route(meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error) {
 	r.routesMu.RLock()
 	defer r.routesMu.RUnlock()
-
 	if r.routes == nil {
 		return runtimev1.StoreID{}, nil, errors.NewUnavailable("primitives are currently unavailable: waiting for route programming")
 	}
+	return route(r.routes, meta)
+}
 
+func route(routes []runtimev1.Route, meta runtimev1.PrimitiveMeta) (runtimev1.StoreID, *types.Any, error) {
 	tags := make(map[string]bool)
 	for _, tag := range meta.Tags {
 		tags[tag] = true
 	}
 
-	var matchRoute *runtimev1.Route
-	var matchRule *runtimev1.RoutingRule
-	for _, route := range r.routes {
+	// If the primitive name matches any rule, only those rules with matching names can be considered
+	if matchesName(routes, meta) {
+		routes = matchName(routes, meta)
+	} else {
+		routes = filterName(routes, meta)
+	}
+
+	// If the primitive tags match any rule, only those rules with matching tags can be considered
+	if matchesTags(routes, meta) {
+		routes = matchTags(routes, meta)
+	} else {
+		routes = filterTags(routes, meta)
+	}
+
+	// If the primitive type matches any rule, only those rules with matching types can be considered
+	if matchesType(routes, meta) {
+		routes = matchType(routes, meta)
+	} else {
+		routes = filterType(routes, meta)
+	}
+
+	var matchedRoute *runtimev1.Route
+	var matchedRule runtimev1.RoutingRule
+	for _, r := range routes {
+		route := r
+		if len(route.Rules) == 0 && matchedRoute == nil {
+			matchedRoute = &route
+		}
+
 		for _, rule := range route.Rules {
-			// The primitive type must match the rule type, if specified.
-			if rule.Type.Name != "" && meta.Type.Name != rule.Type.Name {
-				continue
-			}
-			if rule.Type.APIVersion != "" && meta.Type.APIVersion != rule.Type.APIVersion {
-				continue
-			}
-
-			// If any names are specified by the rule, the primitive must match one of the names (excluding wildcards).
-			if len(rule.Names) > 0 {
-				hasWildcard := false
-				for _, name := range rule.Names {
-					if name == meta.Name {
-						return route.StoreID, rule.Config, nil
-					}
-					if name == wildcard {
-						hasWildcard = true
-					}
-				}
-				if !hasWildcard {
-					continue
-				}
-			}
-
-			// Determine whether all the tags required by the rule are present in the primitive metadata.
-			tagsMatch := true
-			for _, tag := range rule.Tags {
-				if _, ok := tags[tag]; !ok {
-					tagsMatch = false
-					break
-				}
-			}
-
-			// If all the tags matched and the rule specified more tags than the current match, update the match.
-			if tagsMatch && (matchRule == nil || len(rule.Tags) > len(matchRule.Tags)) {
-				matchRoute = &route
-				matchRule = &rule
+			if matchedRoute == nil {
+				matchedRoute = &route
+				matchedRule = rule
+			} else if len(rule.Tags) > len(matchedRule.Tags) {
+				matchedRoute = &route
+				matchedRule = rule
 			}
 		}
 	}
 
-	if matchRule != nil {
-		return matchRoute.StoreID, matchRule.Config, nil
+	if matchedRoute != nil {
+		return matchedRoute.StoreID, matchedRule.Config, nil
 	}
 	return runtimev1.StoreID{}, nil, errors.NewUnavailable("no route found matching the given primitive")
+}
+
+func matchesName(routes []runtimev1.Route, meta runtimev1.PrimitiveMeta) bool {
+	for _, route := range routes {
+		for _, rule := range route.Rules {
+			for _, name := range rule.Names {
+				if name == meta.Name {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func matchName(routes []runtimev1.Route, meta runtimev1.PrimitiveMeta) []runtimev1.Route {
+	var namedRoutes []runtimev1.Route
+	for _, route := range routes {
+		var namedRules []runtimev1.RoutingRule
+		for _, rule := range route.Rules {
+			for _, name := range rule.Names {
+				if name == meta.Name {
+					namedRules = append(namedRules, rule)
+					break
+				}
+			}
+		}
+		if len(namedRules) > 0 {
+			namedRoutes = append(namedRoutes, runtimev1.Route{
+				StoreID: route.StoreID,
+				Rules:   namedRules,
+			})
+		}
+	}
+	return namedRoutes
+}
+
+func filterName(routes []runtimev1.Route, meta runtimev1.PrimitiveMeta) []runtimev1.Route {
+	var filteredRoutes []runtimev1.Route
+	for _, route := range routes {
+		if len(route.Rules) == 0 {
+			filteredRoutes = append(filteredRoutes, route)
+		} else {
+			var filteredRules []runtimev1.RoutingRule
+			for _, rule := range route.Rules {
+				if len(rule.Names) == 0 {
+					filteredRules = append(filteredRules, rule)
+				} else {
+					hasNames := false
+					for _, name := range rule.Names {
+						if name != wildcard {
+							hasNames = true
+						}
+					}
+					if !hasNames {
+						filteredRules = append(filteredRules, rule)
+					}
+				}
+			}
+			if len(filteredRules) > 0 {
+				filteredRoutes = append(filteredRoutes, runtimev1.Route{
+					StoreID: route.StoreID,
+					Rules:   filteredRules,
+				})
+			}
+		}
+	}
+	return filteredRoutes
+}
+
+func matchesTags(routes []runtimev1.Route, meta runtimev1.PrimitiveMeta) bool {
+	tags := make(map[string]bool)
+	for _, tag := range meta.Tags {
+		tags[tag] = true
+	}
+
+	for _, route := range routes {
+		for _, rule := range route.Rules {
+			if len(rule.Tags) == 0 {
+				continue
+			}
+			allMatch := true
+			for _, tag := range rule.Tags {
+				if _, ok := tags[tag]; !ok {
+					allMatch = false
+				}
+			}
+			if allMatch {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func matchTags(routes []runtimev1.Route, meta runtimev1.PrimitiveMeta) []runtimev1.Route {
+	tags := make(map[string]bool)
+	for _, tag := range meta.Tags {
+		tags[tag] = true
+	}
+
+	var taggedRoutes []runtimev1.Route
+	for _, route := range routes {
+		var taggedRules []runtimev1.RoutingRule
+		for _, rule := range route.Rules {
+			if len(rule.Tags) == 0 {
+				continue
+			}
+			allMatch := true
+			for _, tag := range rule.Tags {
+				if _, ok := tags[tag]; !ok {
+					allMatch = false
+				}
+			}
+			if allMatch {
+				taggedRules = append(taggedRules, rule)
+			}
+		}
+		if len(taggedRules) > 0 {
+			taggedRoutes = append(taggedRoutes, runtimev1.Route{
+				StoreID: route.StoreID,
+				Rules:   taggedRules,
+			})
+		}
+	}
+	return taggedRoutes
+}
+
+func filterTags(routes []runtimev1.Route, meta runtimev1.PrimitiveMeta) []runtimev1.Route {
+	tags := make(map[string]bool)
+	for _, tag := range meta.Tags {
+		tags[tag] = true
+	}
+
+	var filteredRoutes []runtimev1.Route
+	for _, route := range routes {
+		if len(route.Rules) == 0 {
+			filteredRoutes = append(filteredRoutes, route)
+		} else {
+			var filteredRules []runtimev1.RoutingRule
+			for _, rule := range route.Rules {
+				if len(rule.Tags) == 0 {
+					filteredRules = append(filteredRules, rule)
+				}
+			}
+			if len(filteredRules) > 0 {
+				filteredRoutes = append(filteredRoutes, runtimev1.Route{
+					StoreID: route.StoreID,
+					Rules:   filteredRules,
+				})
+			}
+		}
+	}
+	return filteredRoutes
+}
+
+func matchesType(routes []runtimev1.Route, meta runtimev1.PrimitiveMeta) bool {
+	for _, route := range routes {
+		for _, rule := range route.Rules {
+			if rule.Type.Name != "" && meta.Type.Name == rule.Type.Name && (rule.Type.APIVersion == "" || meta.Type.APIVersion == rule.Type.APIVersion) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func matchType(routes []runtimev1.Route, meta runtimev1.PrimitiveMeta) []runtimev1.Route {
+	var typedRoutes []runtimev1.Route
+	for _, route := range routes {
+		var typedRules []runtimev1.RoutingRule
+		for _, rule := range route.Rules {
+			if rule.Type.Name != "" && meta.Type.Name == rule.Type.Name && (rule.Type.APIVersion == "" || meta.Type.APIVersion == rule.Type.APIVersion) {
+				typedRules = append(typedRules, rule)
+			}
+		}
+		if len(typedRules) > 0 {
+			typedRoutes = append(typedRoutes, runtimev1.Route{
+				StoreID: route.StoreID,
+				Rules:   typedRules,
+			})
+		}
+	}
+	return typedRoutes
+}
+
+func filterType(routes []runtimev1.Route, meta runtimev1.PrimitiveMeta) []runtimev1.Route {
+	var filteredRoutes []runtimev1.Route
+	for _, route := range routes {
+		if len(route.Rules) == 0 {
+			filteredRoutes = append(filteredRoutes, route)
+		} else {
+			var filteredRules []runtimev1.RoutingRule
+			for _, rule := range route.Rules {
+				if rule.Type.Name == "" {
+					filteredRules = append(filteredRules, rule)
+				}
+			}
+			if len(filteredRules) > 0 {
+				filteredRoutes = append(filteredRoutes, runtimev1.Route{
+					StoreID: route.StoreID,
+					Rules:   filteredRules,
+				})
+			}
+		}
+	}
+	return filteredRoutes
 }

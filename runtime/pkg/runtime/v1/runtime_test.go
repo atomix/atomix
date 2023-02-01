@@ -16,6 +16,111 @@ import (
 	"testing"
 )
 
+func TestRoute(t *testing.T) {
+	route1 := runtimev1.Route{
+		StoreID: runtimev1.StoreID{
+			Name: "store1",
+		},
+	}
+	route2 := runtimev1.Route{
+		StoreID: runtimev1.StoreID{
+			Name: "store2",
+		},
+		Rules: []runtimev1.RoutingRule{
+			{
+				Tags: []string{"tag1"},
+			},
+		},
+	}
+	route3 := runtimev1.Route{
+		StoreID: runtimev1.StoreID{
+			Name: "store3",
+		},
+		Rules: []runtimev1.RoutingRule{
+			{
+				Type: runtimev1.PrimitiveType{
+					Name:       "Set",
+					APIVersion: "v1",
+				},
+				Config: &types.Any{
+					Value: []byte("foo"),
+				},
+			},
+		},
+	}
+	route4 := runtimev1.Route{
+		StoreID: runtimev1.StoreID{
+			Name: "store4",
+		},
+		Rules: []runtimev1.RoutingRule{
+			{
+				Names: []string{"primitive1"},
+			},
+		},
+	}
+
+	primitive1 := runtimev1.PrimitiveMeta{
+		Type: runtimev1.PrimitiveType{
+			Name:       "Map",
+			APIVersion: "v1",
+		},
+		PrimitiveID: runtimev1.PrimitiveID{
+			Name: "primitive1",
+		},
+	}
+	primitive2 := runtimev1.PrimitiveMeta{
+		Type: runtimev1.PrimitiveType{
+			Name:       "Set",
+			APIVersion: "v1",
+		},
+		PrimitiveID: runtimev1.PrimitiveID{
+			Name: "primitive2",
+		},
+		Tags: []string{"tag1"},
+	}
+
+	store, config, err := route([]runtimev1.Route{route1, route2}, primitive1)
+	assert.Equal(t, "store1", store.Name)
+	assert.Nil(t, config)
+	assert.NoError(t, err)
+
+	store, config, err = route([]runtimev1.Route{route1, route2}, primitive2)
+	assert.Equal(t, "store2", store.Name)
+	assert.Nil(t, config)
+	assert.NoError(t, err)
+
+	store, config, err = route([]runtimev1.Route{route2, route1}, primitive1)
+	assert.Equal(t, "store1", store.Name)
+	assert.Nil(t, config)
+	assert.NoError(t, err)
+
+	store, config, err = route([]runtimev1.Route{route2, route1}, primitive2)
+	assert.Equal(t, "store2", store.Name)
+	assert.Nil(t, config)
+	assert.NoError(t, err)
+
+	store, config, err = route([]runtimev1.Route{route1, route3}, primitive1)
+	assert.Equal(t, "store1", store.Name)
+	assert.Nil(t, config)
+	assert.NoError(t, err)
+
+	store, config, err = route([]runtimev1.Route{route1, route3}, primitive2)
+	assert.Equal(t, "store3", store.Name)
+	assert.NotNil(t, config)
+	assert.NoError(t, err)
+
+	store, config, err = route([]runtimev1.Route{route1, route4}, primitive1)
+	assert.Equal(t, "store4", store.Name)
+	assert.Nil(t, config)
+	assert.NoError(t, err)
+
+	store, config, err = route([]runtimev1.Route{route1, route4}, primitive2)
+	assert.Equal(t, "store1", store.Name)
+	assert.Nil(t, config)
+	assert.NoError(t, err)
+
+}
+
 func TestConnect(t *testing.T) {
 	conn, err := connect(context.TODO(), protoValueDriver{}, &types.Any{})
 	assert.NoError(t, err)
