@@ -46,7 +46,7 @@ fi
 
 if [ -z "$cacrt" ]; then
   cacrt="${output}/ca.crt"
-  openssl req -x509 -new -nodes -key "${cakey}" -days 100000 -out "${cacrt}" -subj "/CN=admission_ca"
+  openssl req -x509  -sha256 -new -nodes -key "${cakey}" -days 100000 -out "${cacrt}" -subj "/CN=admission_ca"
   echo "Generated ${cacrt}"
   cat "$cacrt"
 fi
@@ -77,7 +77,7 @@ echo "Generated ${srvkey}"
 openssl req -new -key "${srvkey}" -out "${srvcsr}" -subj "/CN=${service}.${namespace}.svc" -config "${srvcfg}"
 echo "Generated ${srvcsr}"
 
-openssl x509 -req -in "${srvcsr}" -CA "${cacrt}" -CAkey "${cakey}" -CAcreateserial -out "${srvcrt}" -days 100000 -extensions v3_req -extfile "${srvcfg}"
+openssl x509 -sha256 -req -in "${srvcsr}" -CA "${cacrt}" -CAkey "${cakey}" -CAcreateserial -out "${srvcrt}" -days 100000 -extensions v3_req -extfile "${srvcfg}"
 echo "Generated ${srvcrt}"
 cat "$srvcrt"
 
