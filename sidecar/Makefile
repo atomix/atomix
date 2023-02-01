@@ -18,7 +18,11 @@ build-sidecar:
 build-controller:
 	docker build . -t atomix/sidecar-controller:latest -f build/controller/Dockerfile
 
-kind: docker
+kind: kind-sidecar kind-controller
+kind-sidecar: build-sidecar
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/sidecar:latest
+
+kind-controller: build-controller
+	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/sidecar-controller:latest
