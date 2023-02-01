@@ -13,8 +13,8 @@ on:
       - 'controller/v*'
 
 jobs:
-  publish-image:
-    name: Build and push Docker image
+  publish-controller:
+    name: Build and publish controller
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,12 +22,30 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Publish controller image
+      - name: Publish Docker image
         uses: ./.github/actions/docker/publish
         with:
           component: controller
-          file: build/Dockerfile
+          file: build/controller/Dockerfile
           repository: atomix/controller
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+  publish-controller-init:
+    name: Build and publish controller-init
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Publish Docker image
+        uses: ./.github/actions/docker/publish
+        with:
+          component: controller
+          file: build/controller-init/Dockerfile
+          repository: atomix/controller-init
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
