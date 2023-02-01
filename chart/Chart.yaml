@@ -16,30 +16,30 @@ maintainers:
     email: jordan.halterman@intel.com
 dependencies:
   - name: atomix-controller
-    version: 0.4.3
-    repository: https://charts.atomix.io
+    version: 2.0.0
+    repository: file://../controller/chart
     alias: controller
   - name: atomix-runtime-controller
     version: 1.7.0
     repository: https://charts.atomix.io
     alias: runtime-controller
   - name: atomix-sidecar-controller
-    version: 0.5.0
-    repository: https://charts.atomix.io
+    version: 2.0.0
+    repository: file://../sidecar/chart
     alias: sidecar-controller
   - name: atomix-raft-controller
-    version: 0.3.4
-    repository: https://charts.atomix.io
+    version: 2.0.0
+    repository: file://../stores/raft/chart
     condition: stores.raft.enabled
     alias: raft-controller
   - name: atomix-shared-memory-controller
-    version: 0.4.2
-    repository: https://charts.atomix.io
+    version: 2.0.0
+    repository: file://../stores/shared-memory/chart
     condition: stores.shared-memory.enabled
     alias: shared-memory-controller
   - name: atomix-pod-memory-controller
-    version: 0.3.2
-    repository: https://charts.atomix.io
+    version: 2.0.0
+    repository: file://../stores/pod-memory/chart
     condition: stores.pod-memory.enabled
     alias: pod-memory-controller
   - name: atomix-consensus-controller

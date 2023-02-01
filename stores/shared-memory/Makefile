@@ -18,7 +18,11 @@ docker-controller:
 docker-node:
 	docker build . -t atomix/shared-memory-node:latest -f build/node/Dockerfile
 
-kind: docker
+kind: kind-node kind-controller
+kind-node: docker-node
+	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
+	kind load docker-image atomix/shared-memory-node:latest
+
+kind-controller: docker-controller
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/shared-memory-controller:latest
-	kind load docker-image atomix/shared-memory-node:latest
