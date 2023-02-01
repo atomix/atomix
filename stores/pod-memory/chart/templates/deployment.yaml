@@ -17,6 +17,34 @@ spec:
         name: {{ template "atomix-pod-memory-controller.fullname" . }}
     spec:
       serviceAccountName: {{ template "atomix-pod-memory-controller.fullname" . }}
+      initContainers:
+        - name: atomix-controller-init
+          {{- if .Values.init.image.tag }}
+          image: {{ printf "%s:%s" .Values.init.image.repository .Values.init.image.tag }}
+          {{- else if .Chart.AppVersion }}
+          image: {{ printf "%s:%s" .Values.init.image.repository .Chart.AppVersion }}
+          {{- else }}
+          image: {{ .Values.init.image.repository }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.init.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          args:
+            - --namespace
+            - {{ .Release.Namespace }}
+            - --service
+            - {{ template "atomix-pod-memory-controller.fullname" . }}
+            - --crd
+            - podmemorystores.podmemory.atomix.io=/etc/atomix/podmemorystores.yaml
+            - --certs
+            - /etc/certs
+          volumeMounts:
+            - name: config
+              mountPath: /etc/atomix
+              readOnly: true
+            - name: certs
+              mountPath: /etc/certs
       containers:
         - name: atomix-pod-memory-controller
           {{- if .Values.image.tag }}
@@ -30,6 +58,9 @@ spec:
             allowPrivilegeEscalation: false
             runAsUser: 0
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --certs
+            - /etc/certs
           readinessProbe:
             exec:
               command:
@@ -54,10 +85,15 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
           volumeMounts:
+            - name: certs
+              mountPath: /etc/certs
+              readOnly: true
             - name: config
               mountPath: /etc/atomix
               readOnly: true
       volumes:
+        - name: certs
+          emptyDir: {}
         - name: config
           configMap:
             name: {{ template "atomix-pod-memory-controller.fullname" . }}-config

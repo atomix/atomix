@@ -7,6 +7,7 @@ kind: ConfigMap
 metadata:
   name: {{ template "atomix-pod-memory-controller.fullname" . }}-config
 data:
+{{ (.Files.Glob "crds/podmemory.atomix.io/*.yaml").AsConfig | indent 2 }}
   logging.yaml:  |-
     loggers:
       root:
