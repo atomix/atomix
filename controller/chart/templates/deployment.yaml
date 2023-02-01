@@ -5,18 +5,48 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: atomix-controller
+  name: {{ template "atomix-controller.fullname" . }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      name: atomix-controller
+      name: {{ template "atomix-controller.fullname" . }}
   template:
     metadata:
       labels:
-        name: atomix-controller
+        name: {{ template "atomix-controller.fullname" . }}
     spec:
-      serviceAccountName: atomix-controller
+      serviceAccountName: {{ template "atomix-controller.fullname" . }}
+      initContainers:
+        - name: atomix-controller-init
+          {{- if .Values.init.image.tag }}
+          image: {{ printf "%s:%s" .Values.init.image.repository .Values.init.image.tag }}
+          {{- else if .Chart.AppVersion }}
+          image: {{ printf "%s:%s" .Values.init.image.repository .Chart.AppVersion }}
+          {{- else }}
+          image: {{ .Values.init.image.repository }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.init.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          args:
+            - --namespace
+            - {{ .Release.Namespace }}
+            - --service
+            - {{ template "atomix-controller.fullname" . }}
+            - --crd
+            - datastores.atomix.io=/etc/atomix/datastores.yaml
+            - --crd
+            - storageprofiles.atomix.io=/etc/atomix/storageprofiles.yaml
+            - --certs
+            - /etc/certs
+          volumeMounts:
+            - name: config
+              mountPath: /etc/atomix
+              readOnly: true
+            - name: certs
+              mountPath: /etc/certs
       containers:
         - name: atomix-controller
           {{- if .Values.image.tag }}
@@ -26,13 +56,16 @@ spec:
           {{- else }}
           image: {{ .Values.image.repository }}
           {{- end }}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsUser: 0
           ports:
             - containerPort: 443
               name: webhook-server
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --certs
+            - /etc/certs
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
           readinessProbe:
             exec:
               command:
@@ -43,7 +76,7 @@ spec:
             failureThreshold: 1
           env:
             - name: CONTROLLER_NAME
-              value: atomix-controller
+              value: {{ template "atomix-controller.fullname" . }}
             - name: CONTROLLER_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -57,16 +90,15 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
           volumeMounts:
-            - name: certs
-              mountPath: /tmp/k8s-webhook-server/serving-certs
-              readOnly: true
             - name: config
               mountPath: /etc/atomix
               readOnly: true
+            - name: certs
+              mountPath: /etc/certs
+              readOnly: true
       volumes:
         - name: certs
-          secret:
-            secretName: atomix-controller-certs
+          emptyDir: {}
         - name: config
           configMap:
-            name: atomix-controller-config
+            name: {{ template "atomix-controller.fullname" . }}-config
