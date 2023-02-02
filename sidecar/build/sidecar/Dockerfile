@@ -21,42 +21,42 @@ RUN go run ./cmd/atomix-build runtime ./cmd/atomix-sidecar /build/bin/atomix-run
 # Build the Etcd/v3 storage driver
 FROM builder AS build-etcd-v3-driver
 RUN go run ./cmd/atomix-build plugin \
-    github.com/atomix/atomix/drivers/etcd@v0.4.4 \
+    github.com/atomix/atomix/drivers/etcd@v0.5.0 \
     github.com/atomix/atomix/drivers/etcd/v3 \
     /build/bin/driver.so
 
 # Build the PodMemory/v1 storage driver
 FROM builder AS build-pod-memory-v1-driver
 RUN go run ./cmd/atomix-build plugin \
-    github.com/atomix/atomix/drivers/pod-memory@v0.4.4 \
+    github.com/atomix/atomix/drivers/pod-memory@v0.5.0 \
     github.com/atomix/atomix/drivers/pod-memory/v1 \
     /build/bin/driver.so
 
 # Build the Raft/v1 storage driver
 FROM builder AS build-raft-v1-driver
 RUN go run ./cmd/atomix-build plugin \
-    github.com/atomix/atomix/drivers/raft@v0.4.4 \
+    github.com/atomix/atomix/drivers/raft@v0.5.0 \
     github.com/atomix/atomix/drivers/raft/v1 \
     /build/bin/driver.so
 
 # Build the Redis/v8 storage driver
 FROM builder AS build-redis-v8-driver
 RUN go run ./cmd/atomix-build plugin \
-    github.com/atomix/atomix/drivers/redis@v0.4.4 \
+    github.com/atomix/atomix/drivers/redis@v0.5.0 \
     github.com/atomix/atomix/drivers/redis/v8 \
     /build/bin/driver.so
 
 # Build the Redis/v8 storage driver
 FROM builder AS build-redis-v9-driver
 RUN go run ./cmd/atomix-build plugin \
-    github.com/atomix/atomix/drivers/redis@v0.4.4 \
+    github.com/atomix/atomix/drivers/redis@v0.5.0 \
     github.com/atomix/atomix/drivers/redis/v9 \
     /build/bin/driver.so
 
 # Build the SharedMemory/v1 storage driver
 FROM builder AS build-shared-memory-v1-driver
 RUN go run ./cmd/atomix-build plugin \
-    github.com/atomix/atomix/drivers/shared-memory@v0.4.4 \
+    github.com/atomix/atomix/drivers/shared-memory@v0.5.0 \
     github.com/atomix/atomix/drivers/shared-memory/v1 \
     /build/bin/driver.so
 
