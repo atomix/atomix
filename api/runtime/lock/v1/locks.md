@@ -6,9 +6,9 @@
 - [runtime/lock/v1/locks.proto](#runtime_lock_v1_locks-proto)
     - [CloseRequest](#atomix-runtime-lock-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-lock-v1-CloseResponse)
+    - [Config](#atomix-runtime-lock-v1-Config)
     - [CreateRequest](#atomix-runtime-lock-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-lock-v1-CreateResponse)
-    - [LockConfig](#atomix-runtime-lock-v1-LockConfig)
   
     - [Locks](#atomix-runtime-lock-v1-Locks)
   
@@ -48,6 +48,16 @@
 
 
 
+<a name="atomix-runtime-lock-v1-Config"></a>
+
+### Config
+
+
+
+
+
+
+
 <a name="atomix-runtime-lock-v1-CreateRequest"></a>
 
 ### CreateRequest
@@ -72,17 +82,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| config | [LockConfig](#atomix-runtime-lock-v1-LockConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-lock-v1-LockConfig"></a>
-
-### LockConfig
-
+| config | [Config](#atomix-runtime-lock-v1-Config) |  |  |
 
 
 

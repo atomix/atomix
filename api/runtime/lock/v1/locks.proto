@@ -24,7 +24,7 @@ service Locks {
     rpc Close (CloseRequest) returns (CloseResponse);
 }
 
-message LockConfig {
+message Config {
 
 }
 
@@ -37,7 +37,7 @@ message CreateRequest {
 }
 
 message CreateResponse {
-    LockConfig config = 1 [
+    Config config = 1 [
         (gogoproto.nullable) = false
     ];
 }
