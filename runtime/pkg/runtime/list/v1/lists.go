@@ -30,12 +30,12 @@ func resolve(ctx context.Context, conn driver.Conn, id runtimev1.PrimitiveID) (L
 
 func NewListsServer(rt *runtime.Runtime) listv1.ListsServer {
 	return &listsServer{
-		manager: runtime.NewPrimitiveManager[ListProxy, *listv1.ListConfig](listv1.PrimitiveType, resolve, rt),
+		manager: runtime.NewPrimitiveManager[ListProxy, *listv1.Config](listv1.PrimitiveType, resolve, rt),
 	}
 }
 
 type listsServer struct {
-	manager runtime.PrimitiveManager[*listv1.ListConfig]
+	manager runtime.PrimitiveManager[*listv1.Config]
 }
 
 func (s *listsServer) Create(ctx context.Context, request *listv1.CreateRequest) (*listv1.CreateResponse, error) {

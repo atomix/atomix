@@ -30,12 +30,12 @@ func resolve(ctx context.Context, conn driver.Conn, id runtimev1.PrimitiveID) (S
 
 func NewSetsServer(rt *runtime.Runtime) setv1.SetsServer {
 	return &setsServer{
-		manager: runtime.NewPrimitiveManager[SetProxy, *setv1.SetConfig](setv1.PrimitiveType, resolve, rt),
+		manager: runtime.NewPrimitiveManager[SetProxy, *setv1.Config](setv1.PrimitiveType, resolve, rt),
 	}
 }
 
 type setsServer struct {
-	manager runtime.PrimitiveManager[*setv1.SetConfig]
+	manager runtime.PrimitiveManager[*setv1.Config]
 }
 
 func (s *setsServer) Create(ctx context.Context, request *setv1.CreateRequest) (*setv1.CreateResponse, error) {

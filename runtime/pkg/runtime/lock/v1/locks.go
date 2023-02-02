@@ -30,12 +30,12 @@ func resolve(ctx context.Context, conn driver.Conn, id runtimev1.PrimitiveID) (L
 
 func NewLocksServer(rt *runtime.Runtime) lockv1.LocksServer {
 	return &locksServer{
-		manager: runtime.NewPrimitiveManager[LockProxy, *lockv1.LockConfig](lockv1.PrimitiveType, resolve, rt),
+		manager: runtime.NewPrimitiveManager[LockProxy, *lockv1.Config](lockv1.PrimitiveType, resolve, rt),
 	}
 }
 
 type locksServer struct {
-	manager runtime.PrimitiveManager[*lockv1.LockConfig]
+	manager runtime.PrimitiveManager[*lockv1.Config]
 }
 
 func (s *locksServer) Create(ctx context.Context, request *lockv1.CreateRequest) (*lockv1.CreateResponse, error) {

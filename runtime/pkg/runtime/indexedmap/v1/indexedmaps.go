@@ -30,12 +30,12 @@ func resolve(ctx context.Context, conn driver.Conn, id runtimev1.PrimitiveID) (I
 
 func NewIndexedMapsServer(rt *runtime.Runtime) indexedmapv1.IndexedMapsServer {
 	return &indexedMapsServer{
-		manager: runtime.NewPrimitiveManager[IndexedMapProxy, *indexedmapv1.IndexedMapConfig](indexedmapv1.PrimitiveType, resolve, rt),
+		manager: runtime.NewPrimitiveManager[IndexedMapProxy, *indexedmapv1.Config](indexedmapv1.PrimitiveType, resolve, rt),
 	}
 }
 
 type indexedMapsServer struct {
-	manager runtime.PrimitiveManager[*indexedmapv1.IndexedMapConfig]
+	manager runtime.PrimitiveManager[*indexedmapv1.Config]
 }
 
 func (s *indexedMapsServer) Create(ctx context.Context, request *indexedmapv1.CreateRequest) (*indexedmapv1.CreateResponse, error) {

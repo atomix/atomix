@@ -30,12 +30,12 @@ func resolve(ctx context.Context, conn driver.Conn, id runtimev1.PrimitiveID) (M
 
 func NewMultiMapsServer(rt *runtime.Runtime) multimapv1.MultiMapsServer {
 	return &multiMapsServer{
-		manager: runtime.NewPrimitiveManager[MultiMapProxy, *multimapv1.MultiMapConfig](multimapv1.PrimitiveType, resolve, rt),
+		manager: runtime.NewPrimitiveManager[MultiMapProxy, *multimapv1.Config](multimapv1.PrimitiveType, resolve, rt),
 	}
 }
 
 type multiMapsServer struct {
-	manager runtime.PrimitiveManager[*multimapv1.MultiMapConfig]
+	manager runtime.PrimitiveManager[*multimapv1.Config]
 }
 
 func (s *multiMapsServer) Create(ctx context.Context, request *multimapv1.CreateRequest) (*multimapv1.CreateResponse, error) {

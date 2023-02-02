@@ -30,12 +30,12 @@ func resolve(ctx context.Context, conn driver.Conn, id runtimev1.PrimitiveID) (T
 
 func NewTopicsServer(rt *runtime.Runtime) topicv1.TopicsServer {
 	return &topicsServer{
-		manager: runtime.NewPrimitiveManager[TopicProxy, *topicv1.TopicConfig](topicv1.PrimitiveType, resolve, rt),
+		manager: runtime.NewPrimitiveManager[TopicProxy, *topicv1.Config](topicv1.PrimitiveType, resolve, rt),
 	}
 }
 
 type topicsServer struct {
-	manager runtime.PrimitiveManager[*topicv1.TopicConfig]
+	manager runtime.PrimitiveManager[*topicv1.Config]
 }
 
 func (s *topicsServer) Create(ctx context.Context, request *topicv1.CreateRequest) (*topicv1.CreateResponse, error) {

@@ -30,12 +30,12 @@ func resolve(ctx context.Context, conn driver.Conn, id runtimev1.PrimitiveID) (L
 
 func NewLeaderElectionsServer(rt *runtime.Runtime) electionv1.LeaderElectionsServer {
 	return &leaderElectionsServer{
-		manager: runtime.NewPrimitiveManager[LeaderElectionProxy, *electionv1.LeaderElectionConfig](electionv1.PrimitiveType, resolve, rt),
+		manager: runtime.NewPrimitiveManager[LeaderElectionProxy, *electionv1.Config](electionv1.PrimitiveType, resolve, rt),
 	}
 }
 
 type leaderElectionsServer struct {
-	manager runtime.PrimitiveManager[*electionv1.LeaderElectionConfig]
+	manager runtime.PrimitiveManager[*electionv1.Config]
 }
 
 func (s *leaderElectionsServer) Create(ctx context.Context, request *electionv1.CreateRequest) (*electionv1.CreateResponse, error) {

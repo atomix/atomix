@@ -30,12 +30,12 @@ func resolve(ctx context.Context, conn driver.Conn, id runtimev1.PrimitiveID) (C
 
 func NewCountersServer(rt *runtime.Runtime) counterv1.CountersServer {
 	return &countersServer{
-		manager: runtime.NewPrimitiveManager[CounterProxy, *counterv1.CounterConfig](counterv1.PrimitiveType, resolve, rt),
+		manager: runtime.NewPrimitiveManager[CounterProxy, *counterv1.Config](counterv1.PrimitiveType, resolve, rt),
 	}
 }
 
 type countersServer struct {
-	manager runtime.PrimitiveManager[*counterv1.CounterConfig]
+	manager runtime.PrimitiveManager[*counterv1.Config]
 }
 
 func (s *countersServer) Create(ctx context.Context, request *counterv1.CreateRequest) (*counterv1.CreateResponse, error) {
