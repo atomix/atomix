@@ -24,21 +24,21 @@ dependencies:
     repository: https://charts.atomix.io
     alias: runtime-controller
   - name: atomix-sidecar-controller
-    version: 0.6.0
+    version: 0.6.1
     repository: https://charts.atomix.io
     alias: sidecar-controller
   - name: atomix-raft-controller
-    version: 0.4.0
+    version: 0.4.1
     repository: https://charts.atomix.io
     condition: stores.raft.enabled
     alias: raft-controller
   - name: atomix-shared-memory-controller
-    version: 0.5.0
+    version: 0.5.1
     repository: https://charts.atomix.io
     condition: stores.shared-memory.enabled
     alias: shared-memory-controller
   - name: atomix-pod-memory-controller
-    version: 0.4.0
+    version: 0.4.1
     repository: https://charts.atomix.io
     condition: stores.pod-memory.enabled
     alias: pod-memory-controller
