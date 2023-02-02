@@ -21,8 +21,6 @@ spec:
         - name: atomix-controller-init
           {{- if .Values.init.image.tag }}
           image: {{ printf "%s:%s" .Values.init.image.repository .Values.init.image.tag }}
-          {{- else if .Chart.AppVersion }}
-          image: {{ printf "%s:%s" .Values.init.image.repository .Chart.AppVersion }}
           {{- else }}
           image: {{ .Values.init.image.repository }}
           {{- end }}
