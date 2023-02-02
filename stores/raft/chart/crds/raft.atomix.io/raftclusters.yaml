@@ -195,6 +195,7 @@ spec:
                         type: string
                     size:
                       type: string
+                      default: 8Gi
                     selector:
                       type: object
                       properties:
