@@ -28,21 +28,22 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type ListConfig struct {
+type Config struct {
+	Cache CacheConfig `protobuf:"bytes,1,opt,name=cache,proto3" json:"cache"`
 }
 
-func (m *ListConfig) Reset()         { *m = ListConfig{} }
-func (m *ListConfig) String() string { return proto.CompactTextString(m) }
-func (*ListConfig) ProtoMessage()    {}
-func (*ListConfig) Descriptor() ([]byte, []int) {
+func (m *Config) Reset()         { *m = Config{} }
+func (m *Config) String() string { return proto.CompactTextString(m) }
+func (*Config) ProtoMessage()    {}
+func (*Config) Descriptor() ([]byte, []int) {
 	return fileDescriptor_610d040d6113d013, []int{0}
 }
-func (m *ListConfig) XXX_Unmarshal(b []byte) error {
+func (m *Config) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ListConfig.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Config.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -52,17 +53,76 @@ func (m *ListConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *ListConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListConfig.Merge(m, src)
+func (m *Config) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Config.Merge(m, src)
 }
-func (m *ListConfig) XXX_Size() int {
+func (m *Config) XXX_Size() int {
 	return m.Size()
 }
-func (m *ListConfig) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListConfig.DiscardUnknown(m)
+func (m *Config) XXX_DiscardUnknown() {
+	xxx_messageInfo_Config.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ListConfig proto.InternalMessageInfo
+var xxx_messageInfo_Config proto.InternalMessageInfo
+
+func (m *Config) GetCache() CacheConfig {
+	if m != nil {
+		return m.Cache
+	}
+	return CacheConfig{}
+}
+
+type CacheConfig struct {
+	Enabled bool   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	Size_   uint64 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+}
+
+func (m *CacheConfig) Reset()         { *m = CacheConfig{} }
+func (m *CacheConfig) String() string { return proto.CompactTextString(m) }
+func (*CacheConfig) ProtoMessage()    {}
+func (*CacheConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_610d040d6113d013, []int{1}
+}
+func (m *CacheConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CacheConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CacheConfig.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CacheConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CacheConfig.Merge(m, src)
+}
+func (m *CacheConfig) XXX_Size() int {
+	return m.Size()
+}
+func (m *CacheConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_CacheConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CacheConfig proto.InternalMessageInfo
+
+func (m *CacheConfig) GetEnabled() bool {
+	if m != nil {
+		return m.Enabled
+	}
+	return false
+}
+
+func (m *CacheConfig) GetSize_() uint64 {
+	if m != nil {
+		return m.Size_
+	}
+	return 0
+}
 
 type CreateRequest struct {
 	ID   v1.PrimitiveID `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
@@ -73,7 +133,7 @@ func (m *CreateRequest) Reset()         { *m = CreateRequest{} }
 func (m *CreateRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateRequest) ProtoMessage()    {}
 func (*CreateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_610d040d6113d013, []int{1}
+	return fileDescriptor_610d040d6113d013, []int{2}
 }
 func (m *CreateRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -117,14 +177,14 @@ func (m *CreateRequest) GetTags() []string {
 }
 
 type CreateResponse struct {
-	Config ListConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config"`
+	Config Config `protobuf:"bytes,1,opt,name=config,proto3" json:"config"`
 }
 
 func (m *CreateResponse) Reset()         { *m = CreateResponse{} }
 func (m *CreateResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateResponse) ProtoMessage()    {}
 func (*CreateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_610d040d6113d013, []int{2}
+	return fileDescriptor_610d040d6113d013, []int{3}
 }
 func (m *CreateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -153,11 +213,11 @@ func (m *CreateResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CreateResponse proto.InternalMessageInfo
 
-func (m *CreateResponse) GetConfig() ListConfig {
+func (m *CreateResponse) GetConfig() Config {
 	if m != nil {
 		return m.Config
 	}
-	return ListConfig{}
+	return Config{}
 }
 
 type CloseRequest struct {
@@ -168,7 +228,7 @@ func (m *CloseRequest) Reset()         { *m = CloseRequest{} }
 func (m *CloseRequest) String() string { return proto.CompactTextString(m) }
 func (*CloseRequest) ProtoMessage()    {}
 func (*CloseRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_610d040d6113d013, []int{3}
+	return fileDescriptor_610d040d6113d013, []int{4}
 }
 func (m *CloseRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -211,7 +271,7 @@ func (m *CloseResponse) Reset()         { *m = CloseResponse{} }
 func (m *CloseResponse) String() string { return proto.CompactTextString(m) }
 func (*CloseResponse) ProtoMessage()    {}
 func (*CloseResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_610d040d6113d013, []int{4}
+	return fileDescriptor_610d040d6113d013, []int{5}
 }
 func (m *CloseResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -241,7 +301,8 @@ func (m *CloseResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_CloseResponse proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterType((*ListConfig)(nil), "atomix.runtime.list.v1.ListConfig")
+	proto.RegisterType((*Config)(nil), "atomix.runtime.list.v1.Config")
+	proto.RegisterType((*CacheConfig)(nil), "atomix.runtime.list.v1.CacheConfig")
 	proto.RegisterType((*CreateRequest)(nil), "atomix.runtime.list.v1.CreateRequest")
 	proto.RegisterType((*CreateResponse)(nil), "atomix.runtime.list.v1.CreateResponse")
 	proto.RegisterType((*CloseRequest)(nil), "atomix.runtime.list.v1.CloseRequest")
@@ -251,29 +312,32 @@ func init() {
 func init() { proto.RegisterFile("runtime/list/v1/lists.proto", fileDescriptor_610d040d6113d013) }
 
 var fileDescriptor_610d040d6113d013 = []byte{
-	// 338 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x92, 0xcf, 0x4a, 0xc3, 0x40,
-	0x10, 0xc6, 0xb3, 0xb1, 0xad, 0x38, 0xb6, 0x0a, 0x8b, 0x4a, 0x89, 0xb0, 0x2d, 0xc1, 0x4a, 0x4f,
-	0x1b, 0x52, 0x6f, 0x3d, 0x49, 0xda, 0x4b, 0xc5, 0x43, 0x09, 0xa2, 0x47, 0x89, 0x76, 0x0d, 0x0b,
-	0x6d, 0xb7, 0x66, 0xb7, 0xc1, 0xc7, 0xf0, 0x69, 0x7c, 0x86, 0x1e, 0x7b, 0xf4, 0x54, 0x24, 0x7d,
-	0x11, 0xc9, 0x26, 0xc1, 0x3f, 0x58, 0x7a, 0xf1, 0x94, 0x21, 0x33, 0xdf, 0xfc, 0xbe, 0x6f, 0x58,
-	0x38, 0x8d, 0xe6, 0x53, 0xc5, 0x27, 0xcc, 0x19, 0x73, 0xa9, 0x9c, 0xd8, 0xd5, 0x5f, 0x49, 0x67,
-	0x91, 0x50, 0x02, 0x9f, 0x04, 0x4a, 0x4c, 0xf8, 0x0b, 0xcd, 0x67, 0x68, 0xda, 0xa3, 0xb1, 0x6b,
-	0xd5, 0x0b, 0x51, 0xec, 0x3a, 0x45, 0x4f, 0x2b, 0xac, 0xa3, 0x50, 0x84, 0x42, 0x97, 0x4e, 0x5a,
-	0x65, 0x7f, 0xed, 0x2a, 0xc0, 0x35, 0x97, 0xaa, 0x27, 0xa6, 0x4f, 0x3c, 0xb4, 0xef, 0xa1, 0xd6,
-	0x8b, 0x58, 0xa0, 0x98, 0xcf, 0x9e, 0xe7, 0x4c, 0x2a, 0xdc, 0x05, 0x93, 0x8f, 0xea, 0xa8, 0x89,
-	0xda, 0xfb, 0x1d, 0x42, 0x7f, 0x31, 0x63, 0x97, 0x0e, 0x23, 0x3e, 0xe1, 0x8a, 0xc7, 0x6c, 0xd0,
-	0xf7, 0x60, 0xb1, 0x6a, 0x18, 0xc9, 0xaa, 0x61, 0x0e, 0xfa, 0xbe, 0xc9, 0x47, 0x18, 0x43, 0x49,
-	0x05, 0xa1, 0xac, 0x9b, 0xcd, 0x9d, 0xf6, 0x9e, 0xaf, 0x6b, 0xdb, 0x87, 0x83, 0x02, 0x20, 0x67,
-	0x62, 0x2a, 0x19, 0xbe, 0x84, 0xca, 0xa3, 0x86, 0xe7, 0x14, 0x9b, 0xfe, 0x9d, 0x8c, 0x7e, 0xd9,
-	0xf4, 0x4a, 0x29, 0xc9, 0xcf, 0x75, 0xf6, 0x15, 0x54, 0x7b, 0x63, 0x21, 0xff, 0xc3, 0xb3, 0x7d,
-	0x08, 0xb5, 0x7c, 0x57, 0x66, 0xaf, 0xf3, 0x86, 0xa0, 0x9c, 0x92, 0x25, 0xbe, 0x83, 0x4a, 0x66,
-	0x1d, 0xb7, 0x36, 0x59, 0xfc, 0x71, 0x3b, 0xeb, 0x7c, 0xdb, 0x58, 0x7e, 0x81, 0x1b, 0x28, 0x6b,
-	0x26, 0x3e, 0xdb, 0x28, 0xf8, 0x16, 0xcf, 0x6a, 0x6d, 0x99, 0xca, 0xb6, 0x7a, 0xdd, 0x45, 0x42,
-	0xd0, 0x32, 0x21, 0xe8, 0x23, 0x21, 0xe8, 0x75, 0x4d, 0x8c, 0xe5, 0x9a, 0x18, 0xef, 0x6b, 0x62,
-	0xc0, 0x31, 0x17, 0xc5, 0x8a, 0x60, 0xc6, 0x0b, 0xb9, 0xb7, 0xab, 0x63, 0xde, 0xba, 0x43, 0xf4,
-	0x50, 0xd1, 0x6f, 0xe3, 0xe2, 0x33, 0x00, 0x00, 0xff, 0xff, 0x46, 0x01, 0xf5, 0xfe, 0x82, 0x02,
-	0x00, 0x00,
+	// 390 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x92, 0x41, 0x8b, 0x9b, 0x40,
+	0x14, 0xc7, 0x1d, 0x9b, 0x98, 0xf6, 0xa5, 0x69, 0x61, 0x68, 0x8b, 0x58, 0x30, 0xc1, 0x36, 0x25,
+	0x27, 0xc5, 0xf4, 0x96, 0x16, 0x0a, 0x9a, 0x4b, 0x4a, 0x29, 0x41, 0x4a, 0x7b, 0x2c, 0x26, 0x99,
+	0x75, 0x07, 0x12, 0x27, 0xeb, 0x4c, 0x64, 0xd9, 0x4f, 0xb1, 0x9f, 0x66, 0x3f, 0x43, 0x8e, 0x39,
+	0xee, 0x29, 0x2c, 0xe6, 0x8b, 0x2c, 0x8e, 0xba, 0xc8, 0xb2, 0x21, 0x97, 0x3d, 0xf9, 0xf4, 0xbd,
+	0xff, 0xfb, 0xff, 0xfe, 0xce, 0xc0, 0xc7, 0x64, 0x13, 0x0b, 0xba, 0x22, 0xce, 0x92, 0x72, 0xe1,
+	0xa4, 0xae, 0x7c, 0x72, 0x7b, 0x9d, 0x30, 0xc1, 0xf0, 0x87, 0x50, 0xb0, 0x15, 0xbd, 0xb4, 0xcb,
+	0x19, 0x3b, 0xef, 0xd9, 0xa9, 0x6b, 0xe8, 0x95, 0x28, 0x75, 0x9d, 0xaa, 0x27, 0x15, 0xc6, 0xbb,
+	0x88, 0x45, 0x4c, 0x96, 0x4e, 0x5e, 0x15, 0x5f, 0xad, 0x09, 0x68, 0x3e, 0x8b, 0xcf, 0x68, 0x84,
+	0x7f, 0x40, 0x73, 0x1e, 0xce, 0xcf, 0x89, 0x8e, 0x7a, 0x68, 0xd0, 0x1e, 0x7e, 0xb2, 0x9f, 0x76,
+	0xb0, 0xfd, 0x7c, 0xa8, 0xd0, 0x78, 0x8d, 0xed, 0xbe, 0xab, 0x04, 0x85, 0xce, 0xfa, 0x06, 0xed,
+	0x5a, 0x0f, 0xeb, 0xd0, 0x22, 0x71, 0x38, 0x5b, 0x92, 0x85, 0xdc, 0xf8, 0x32, 0xa8, 0x5e, 0x31,
+	0x86, 0x06, 0xa7, 0x57, 0x44, 0x57, 0x7b, 0x68, 0xd0, 0x08, 0x64, 0x6d, 0xfd, 0x87, 0x8e, 0x9f,
+	0x90, 0x50, 0x90, 0x80, 0x5c, 0x6c, 0x08, 0x17, 0x78, 0x04, 0x2a, 0x5d, 0x94, 0x2c, 0xe6, 0x63,
+	0x96, 0xd4, 0xb5, 0xa7, 0x09, 0x5d, 0x51, 0x41, 0x53, 0x32, 0x19, 0x7b, 0x90, 0x63, 0x64, 0xfb,
+	0xae, 0x3a, 0x19, 0x07, 0x2a, 0x95, 0x06, 0x22, 0x8c, 0xb8, 0xae, 0xf6, 0x5e, 0x0c, 0x5e, 0x05,
+	0xb2, 0xb6, 0x7e, 0xc3, 0x9b, 0xca, 0x80, 0xaf, 0x59, 0xcc, 0x09, 0xfe, 0x0e, 0xda, 0x5c, 0xa2,
+	0x1e, 0x73, 0x79, 0x48, 0x5c, 0x0f, 0x5b, 0x6a, 0xac, 0x9f, 0xf0, 0xda, 0x5f, 0x32, 0xfe, 0x1c,
+	0xbc, 0xd6, 0x5b, 0xe8, 0x94, 0xbb, 0x0a, 0xb4, 0xe1, 0x0d, 0x82, 0xe6, 0xaf, 0xfc, 0xb4, 0xf1,
+	0x3f, 0xd0, 0x0a, 0x6c, 0xdc, 0x3f, 0x8a, 0x57, 0xff, 0x6f, 0xc6, 0x97, 0x53, 0x63, 0x65, 0xfa,
+	0x3f, 0xd0, 0x94, 0x9e, 0xf8, 0xf3, 0x51, 0x41, 0x2d, 0x9e, 0xd1, 0x3f, 0x31, 0x55, 0x6c, 0xf5,
+	0x46, 0xdb, 0xcc, 0x44, 0xbb, 0xcc, 0x44, 0x77, 0x99, 0x89, 0xae, 0x0f, 0xa6, 0xb2, 0x3b, 0x98,
+	0xca, 0xed, 0xc1, 0x54, 0xe0, 0x3d, 0x65, 0xd5, 0x8a, 0x70, 0x4d, 0x2b, 0xb9, 0xd7, 0x92, 0x31,
+	0xff, 0xba, 0x53, 0x34, 0xd3, 0xe4, 0x8d, 0xfc, 0x7a, 0x1f, 0x00, 0x00, 0xff, 0xff, 0xfc, 0x26,
+	0xab, 0xe3, 0xf8, 0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -396,7 +460,7 @@ var _Lists_serviceDesc = grpc.ServiceDesc{
 	Metadata: "runtime/list/v1/lists.proto",
 }
 
-func (m *ListConfig) Marshal() (dAtA []byte, err error) {
+func (m *Config) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -406,16 +470,64 @@ func (m *ListConfig) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListConfig) MarshalTo(dAtA []byte) (int, error) {
+func (m *Config) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ListConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Config) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
+	{
+		size, err := m.Cache.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintLists(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *CacheConfig) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CacheConfig) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CacheConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Size_ != 0 {
+		i = encodeVarintLists(dAtA, i, uint64(m.Size_))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Enabled {
+		i--
+		if m.Enabled {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -561,12 +673,29 @@ func encodeVarintLists(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *ListConfig) Size() (n int) {
+func (m *Config) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
+	l = m.Cache.Size()
+	n += 1 + l + sovLists(uint64(l))
+	return n
+}
+
+func (m *CacheConfig) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Enabled {
+		n += 2
+	}
+	if m.Size_ != 0 {
+		n += 1 + sovLists(uint64(m.Size_))
+	}
 	return n
 }
 
@@ -624,7 +753,7 @@ func sovLists(x uint64) (n int) {
 func sozLists(x uint64) (n int) {
 	return sovLists(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ListConfig) Unmarshal(dAtA []byte) error {
+func (m *Config) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -647,12 +776,134 @@ func (m *ListConfig) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListConfig: wiretype end group for non-group")
+			return fmt.Errorf("proto: Config: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Config: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cache", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLists
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLists
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthLists
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Cache.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLists(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthLists
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CacheConfig) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLists
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CacheConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CacheConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLists
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Enabled = bool(v != 0)
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Size_", wireType)
+			}
+			m.Size_ = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLists
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Size_ |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipLists(dAtA[iNdEx:])

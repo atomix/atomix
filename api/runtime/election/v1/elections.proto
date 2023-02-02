@@ -24,13 +24,13 @@ service LeaderElections {
     rpc Close (CloseRequest) returns (CloseResponse);
 }
 
-message LeaderElectionConfig {
-    LeaderElectionCacheConfig cache = 1 [
+message Config {
+    CacheConfig cache = 1 [
         (gogoproto.nullable) = false
     ];
 }
 
-message LeaderElectionCacheConfig {
+message CacheConfig {
     bool enabled = 1;
 }
 
@@ -43,7 +43,7 @@ message CreateRequest {
 }
 
 message CreateResponse {
-    LeaderElectionConfig config = 1 [
+    Config config = 1 [
         (gogoproto.nullable) = false
     ];
 }

@@ -24,16 +24,15 @@ service Values {
     rpc Close (CloseRequest) returns (CloseResponse);
 }
 
-message ValueConfig {
-    ValueCacheConfig cache = 1 [
+message Config {
+    CacheConfig cache = 1 [
         (gogoproto.nullable) = false
     ];
 }
 
-message ValueCacheConfig {
+message CacheConfig {
     bool enabled = 1;
 }
-
 
 message CreateRequest {
     atomix.runtime.v1.PrimitiveID id = 1 [
@@ -44,7 +43,7 @@ message CreateRequest {
 }
 
 message CreateResponse {
-    ValueConfig config = 1 [
+    Config config = 1 [
         (gogoproto.nullable) = false
     ];
 }

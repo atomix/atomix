@@ -24,8 +24,15 @@ service Lists {
     rpc Close (CloseRequest) returns (CloseResponse);
 }
 
-message ListConfig {
+message Config {
+    CacheConfig cache = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
 
+message CacheConfig {
+    bool enabled = 1;
+    uint64 size = 2;
 }
 
 message CreateRequest {
@@ -37,7 +44,7 @@ message CreateRequest {
 }
 
 message CreateResponse {
-    ListConfig config = 1 [
+    Config config = 1 [
         (gogoproto.nullable) = false
     ];
 }

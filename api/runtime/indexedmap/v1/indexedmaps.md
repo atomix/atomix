@@ -4,11 +4,12 @@
 ## Table of Contents
 
 - [runtime/indexedmap/v1/indexedmaps.proto](#runtime_indexedmap_v1_indexedmaps-proto)
+    - [CacheConfig](#atomix-runtime-indexedmap-v1-CacheConfig)
     - [CloseRequest](#atomix-runtime-indexedmap-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-indexedmap-v1-CloseResponse)
+    - [Config](#atomix-runtime-indexedmap-v1-Config)
     - [CreateRequest](#atomix-runtime-indexedmap-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-indexedmap-v1-CreateResponse)
-    - [IndexedMapConfig](#atomix-runtime-indexedmap-v1-IndexedMapConfig)
   
     - [IndexedMaps](#atomix-runtime-indexedmap-v1-IndexedMaps)
   
@@ -20,6 +21,22 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/indexedmap/v1/indexedmaps.proto
+
+
+
+<a name="atomix-runtime-indexedmap-v1-CacheConfig"></a>
+
+### CacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+| size | [uint64](#uint64) |  |  |
+
+
+
 
 
 
@@ -42,6 +59,21 @@
 
 ### CloseResponse
 
+
+
+
+
+
+
+<a name="atomix-runtime-indexedmap-v1-Config"></a>
+
+### Config
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [CacheConfig](#atomix-runtime-indexedmap-v1-CacheConfig) |  |  |
 
 
 
@@ -72,17 +104,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| config | [IndexedMapConfig](#atomix-runtime-indexedmap-v1-IndexedMapConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-indexedmap-v1-IndexedMapConfig"></a>
-
-### IndexedMapConfig
-
+| config | [Config](#atomix-runtime-indexedmap-v1-Config) |  |  |
 
 
 

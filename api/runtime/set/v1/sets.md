@@ -4,11 +4,12 @@
 ## Table of Contents
 
 - [runtime/set/v1/sets.proto](#runtime_set_v1_sets-proto)
+    - [CacheConfig](#atomix-runtime-set-v1-CacheConfig)
     - [CloseRequest](#atomix-runtime-set-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-set-v1-CloseResponse)
+    - [Config](#atomix-runtime-set-v1-Config)
     - [CreateRequest](#atomix-runtime-set-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-set-v1-CreateResponse)
-    - [SetConfig](#atomix-runtime-set-v1-SetConfig)
   
     - [Sets](#atomix-runtime-set-v1-Sets)
   
@@ -20,6 +21,22 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/set/v1/sets.proto
+
+
+
+<a name="atomix-runtime-set-v1-CacheConfig"></a>
+
+### CacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+| size | [uint64](#uint64) |  |  |
+
+
+
 
 
 
@@ -42,6 +59,21 @@
 
 ### CloseResponse
 
+
+
+
+
+
+
+<a name="atomix-runtime-set-v1-Config"></a>
+
+### Config
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [CacheConfig](#atomix-runtime-set-v1-CacheConfig) |  |  |
 
 
 
@@ -72,17 +104,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| config | [SetConfig](#atomix-runtime-set-v1-SetConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-set-v1-SetConfig"></a>
-
-### SetConfig
-
+| config | [Config](#atomix-runtime-set-v1-Config) |  |  |
 
 
 

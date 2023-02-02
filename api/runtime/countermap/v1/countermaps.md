@@ -4,9 +4,10 @@
 ## Table of Contents
 
 - [runtime/countermap/v1/countermaps.proto](#runtime_countermap_v1_countermaps-proto)
+    - [CacheConfig](#atomix-runtime-countermap-v1-CacheConfig)
     - [CloseRequest](#atomix-runtime-countermap-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-countermap-v1-CloseResponse)
-    - [CounterMapConfig](#atomix-runtime-countermap-v1-CounterMapConfig)
+    - [Config](#atomix-runtime-countermap-v1-Config)
     - [CreateRequest](#atomix-runtime-countermap-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-countermap-v1-CreateResponse)
   
@@ -20,6 +21,22 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/countermap/v1/countermaps.proto
+
+
+
+<a name="atomix-runtime-countermap-v1-CacheConfig"></a>
+
+### CacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+| size | [uint64](#uint64) |  |  |
+
+
+
 
 
 
@@ -48,10 +65,15 @@
 
 
 
-<a name="atomix-runtime-countermap-v1-CounterMapConfig"></a>
+<a name="atomix-runtime-countermap-v1-Config"></a>
 
-### CounterMapConfig
+### Config
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [CacheConfig](#atomix-runtime-countermap-v1-CacheConfig) |  |  |
 
 
 
@@ -82,7 +104,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| config | [CounterMapConfig](#atomix-runtime-countermap-v1-CounterMapConfig) |  |  |
+| config | [Config](#atomix-runtime-countermap-v1-Config) |  |  |
 
 
 

@@ -24,13 +24,13 @@ service Maps {
     rpc Close (CloseRequest) returns (CloseResponse);
 }
 
-message MapConfig {
-    MapCacheConfig cache = 1 [
+message Config {
+    CacheConfig cache = 1 [
         (gogoproto.nullable) = false
     ];
 }
 
-message MapCacheConfig {
+message CacheConfig {
     bool enabled = 1;
     uint64 size = 2;
 }
@@ -44,7 +44,7 @@ message CreateRequest {
 }
 
 message CreateResponse {
-    MapConfig config = 1 [
+    Config config = 1 [
         (gogoproto.nullable) = false
     ];
 }

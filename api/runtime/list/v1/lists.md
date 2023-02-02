@@ -4,11 +4,12 @@
 ## Table of Contents
 
 - [runtime/list/v1/lists.proto](#runtime_list_v1_lists-proto)
+    - [CacheConfig](#atomix-runtime-list-v1-CacheConfig)
     - [CloseRequest](#atomix-runtime-list-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-list-v1-CloseResponse)
+    - [Config](#atomix-runtime-list-v1-Config)
     - [CreateRequest](#atomix-runtime-list-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-list-v1-CreateResponse)
-    - [ListConfig](#atomix-runtime-list-v1-ListConfig)
   
     - [Lists](#atomix-runtime-list-v1-Lists)
   
@@ -20,6 +21,22 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/list/v1/lists.proto
+
+
+
+<a name="atomix-runtime-list-v1-CacheConfig"></a>
+
+### CacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+| size | [uint64](#uint64) |  |  |
+
+
+
 
 
 
@@ -42,6 +59,21 @@
 
 ### CloseResponse
 
+
+
+
+
+
+
+<a name="atomix-runtime-list-v1-Config"></a>
+
+### Config
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [CacheConfig](#atomix-runtime-list-v1-CacheConfig) |  |  |
 
 
 
@@ -72,17 +104,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| config | [ListConfig](#atomix-runtime-list-v1-ListConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-list-v1-ListConfig"></a>
-
-### ListConfig
-
+| config | [Config](#atomix-runtime-list-v1-Config) |  |  |
 
 
 

@@ -4,9 +4,10 @@
 ## Table of Contents
 
 - [runtime/counter/v1/counters.proto](#runtime_counter_v1_counters-proto)
+    - [CacheConfig](#atomix-runtime-counter-v1-CacheConfig)
     - [CloseRequest](#atomix-runtime-counter-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-counter-v1-CloseResponse)
-    - [CounterConfig](#atomix-runtime-counter-v1-CounterConfig)
+    - [Config](#atomix-runtime-counter-v1-Config)
     - [CreateRequest](#atomix-runtime-counter-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-counter-v1-CreateResponse)
   
@@ -20,6 +21,21 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/counter/v1/counters.proto
+
+
+
+<a name="atomix-runtime-counter-v1-CacheConfig"></a>
+
+### CacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+
+
+
 
 
 
@@ -48,10 +64,15 @@
 
 
 
-<a name="atomix-runtime-counter-v1-CounterConfig"></a>
+<a name="atomix-runtime-counter-v1-Config"></a>
 
-### CounterConfig
+### Config
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [CacheConfig](#atomix-runtime-counter-v1-CacheConfig) |  |  |
 
 
 
@@ -82,7 +103,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| config | [CounterConfig](#atomix-runtime-counter-v1-CounterConfig) |  |  |
+| config | [Config](#atomix-runtime-counter-v1-Config) |  |  |
 
 
 

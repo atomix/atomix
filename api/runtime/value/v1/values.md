@@ -4,12 +4,12 @@
 ## Table of Contents
 
 - [runtime/value/v1/values.proto](#runtime_value_v1_values-proto)
+    - [CacheConfig](#atomix-runtime-value-v1-CacheConfig)
     - [CloseRequest](#atomix-runtime-value-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-value-v1-CloseResponse)
+    - [Config](#atomix-runtime-value-v1-Config)
     - [CreateRequest](#atomix-runtime-value-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-value-v1-CreateResponse)
-    - [ValueCacheConfig](#atomix-runtime-value-v1-ValueCacheConfig)
-    - [ValueConfig](#atomix-runtime-value-v1-ValueConfig)
   
     - [Values](#atomix-runtime-value-v1-Values)
   
@@ -21,6 +21,21 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/value/v1/values.proto
+
+
+
+<a name="atomix-runtime-value-v1-CacheConfig"></a>
+
+### CacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+
+
+
 
 
 
@@ -43,6 +58,21 @@
 
 ### CloseResponse
 
+
+
+
+
+
+
+<a name="atomix-runtime-value-v1-Config"></a>
+
+### Config
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [CacheConfig](#atomix-runtime-value-v1-CacheConfig) |  |  |
 
 
 
@@ -73,37 +103,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| config | [ValueConfig](#atomix-runtime-value-v1-ValueConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-value-v1-ValueCacheConfig"></a>
-
-### ValueCacheConfig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| enabled | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-value-v1-ValueConfig"></a>
-
-### ValueConfig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| cache | [ValueCacheConfig](#atomix-runtime-value-v1-ValueCacheConfig) |  |  |
+| config | [Config](#atomix-runtime-value-v1-Config) |  |  |
 
 
 

@@ -4,11 +4,12 @@
 ## Table of Contents
 
 - [runtime/multimap/v1/multimaps.proto](#runtime_multimap_v1_multimaps-proto)
+    - [CacheConfig](#atomix-runtime-multimap-v1-CacheConfig)
     - [CloseRequest](#atomix-runtime-multimap-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-multimap-v1-CloseResponse)
+    - [Config](#atomix-runtime-multimap-v1-Config)
     - [CreateRequest](#atomix-runtime-multimap-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-multimap-v1-CreateResponse)
-    - [MultiMapConfig](#atomix-runtime-multimap-v1-MultiMapConfig)
   
     - [MultiMaps](#atomix-runtime-multimap-v1-MultiMaps)
   
@@ -20,6 +21,22 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/multimap/v1/multimaps.proto
+
+
+
+<a name="atomix-runtime-multimap-v1-CacheConfig"></a>
+
+### CacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+| size | [uint64](#uint64) |  |  |
+
+
+
 
 
 
@@ -42,6 +59,21 @@
 
 ### CloseResponse
 
+
+
+
+
+
+
+<a name="atomix-runtime-multimap-v1-Config"></a>
+
+### Config
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [CacheConfig](#atomix-runtime-multimap-v1-CacheConfig) |  |  |
 
 
 
@@ -72,17 +104,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| config | [MultiMapConfig](#atomix-runtime-multimap-v1-MultiMapConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-multimap-v1-MultiMapConfig"></a>
-
-### MultiMapConfig
-
+| config | [Config](#atomix-runtime-multimap-v1-Config) |  |  |
 
 
 

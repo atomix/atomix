@@ -4,12 +4,12 @@
 ## Table of Contents
 
 - [runtime/map/v1/maps.proto](#runtime_map_v1_maps-proto)
+    - [CacheConfig](#atomix-runtime-map-v1-CacheConfig)
     - [CloseRequest](#atomix-runtime-map-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-map-v1-CloseResponse)
+    - [Config](#atomix-runtime-map-v1-Config)
     - [CreateRequest](#atomix-runtime-map-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-map-v1-CreateResponse)
-    - [MapCacheConfig](#atomix-runtime-map-v1-MapCacheConfig)
-    - [MapConfig](#atomix-runtime-map-v1-MapConfig)
   
     - [Maps](#atomix-runtime-map-v1-Maps)
   
@@ -21,6 +21,22 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/map/v1/maps.proto
+
+
+
+<a name="atomix-runtime-map-v1-CacheConfig"></a>
+
+### CacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+| size | [uint64](#uint64) |  |  |
+
+
+
 
 
 
@@ -43,6 +59,21 @@
 
 ### CloseResponse
 
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-Config"></a>
+
+### Config
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [CacheConfig](#atomix-runtime-map-v1-CacheConfig) |  |  |
 
 
 
@@ -73,38 +104,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| config | [MapConfig](#atomix-runtime-map-v1-MapConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-map-v1-MapCacheConfig"></a>
-
-### MapCacheConfig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| enabled | [bool](#bool) |  |  |
-| size | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-map-v1-MapConfig"></a>
-
-### MapConfig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| cache | [MapCacheConfig](#atomix-runtime-map-v1-MapCacheConfig) |  |  |
+| config | [Config](#atomix-runtime-map-v1-Config) |  |  |
 
 
 

@@ -4,12 +4,12 @@
 ## Table of Contents
 
 - [runtime/election/v1/elections.proto](#runtime_election_v1_elections-proto)
+    - [CacheConfig](#atomix-runtime-election-v1-CacheConfig)
     - [CloseRequest](#atomix-runtime-election-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-election-v1-CloseResponse)
+    - [Config](#atomix-runtime-election-v1-Config)
     - [CreateRequest](#atomix-runtime-election-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-election-v1-CreateResponse)
-    - [LeaderElectionCacheConfig](#atomix-runtime-election-v1-LeaderElectionCacheConfig)
-    - [LeaderElectionConfig](#atomix-runtime-election-v1-LeaderElectionConfig)
   
     - [LeaderElections](#atomix-runtime-election-v1-LeaderElections)
   
@@ -21,6 +21,21 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## runtime/election/v1/elections.proto
+
+
+
+<a name="atomix-runtime-election-v1-CacheConfig"></a>
+
+### CacheConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | [bool](#bool) |  |  |
+
+
+
 
 
 
@@ -43,6 +58,21 @@
 
 ### CloseResponse
 
+
+
+
+
+
+
+<a name="atomix-runtime-election-v1-Config"></a>
+
+### Config
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cache | [CacheConfig](#atomix-runtime-election-v1-CacheConfig) |  |  |
 
 
 
@@ -73,37 +103,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| config | [LeaderElectionConfig](#atomix-runtime-election-v1-LeaderElectionConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-election-v1-LeaderElectionCacheConfig"></a>
-
-### LeaderElectionCacheConfig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| enabled | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-election-v1-LeaderElectionConfig"></a>
-
-### LeaderElectionConfig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| cache | [LeaderElectionCacheConfig](#atomix-runtime-election-v1-LeaderElectionCacheConfig) |  |  |
+| config | [Config](#atomix-runtime-election-v1-Config) |  |  |
 
 
 
