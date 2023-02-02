@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta2
+package v1beta3
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 
-	raftv1beta2 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta2"
+	raftv1beta3 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta3"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,7 +48,7 @@ func addRaftReplicaController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to the storage resource and enqueue Stores that reference it
-	err = controller.Watch(&source.Kind{Type: &raftv1beta2.RaftReplica{}}, &handler.EnqueueRequestForObject{})
+	err = controller.Watch(&source.Kind{Type: &raftv1beta3.RaftReplica{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func addRaftReplicaController(mgr manager.Manager) error {
 				raftClusterKey:   clusterName,
 			}),
 		}
-		replicas := &raftv1beta2.RaftReplicaList{}
+		replicas := &raftv1beta3.RaftReplicaList{}
 		if err := mgr.GetClient().List(context.Background(), replicas, options); err != nil {
 			return nil
 		}
@@ -101,7 +101,7 @@ func (r *RaftReplicaReconciler) Reconcile(ctx context.Context, request reconcile
 	log := log.WithFields(logging.String("RaftReplica", request.NamespacedName.String()))
 	log.Debug("Reconciling RaftReplica")
 
-	replica := &raftv1beta2.RaftReplica{}
+	replica := &raftv1beta3.RaftReplica{}
 	if ok, err := get(r.client, ctx, request.NamespacedName, replica, log); err != nil {
 		return reconcile.Result{}, err
 	} else if !ok {
@@ -121,7 +121,7 @@ func (r *RaftReplicaReconciler) Reconcile(ctx context.Context, request reconcile
 	return reconcile.Result{}, nil
 }
 
-func (r *RaftReplicaReconciler) reconcileCreate(ctx context.Context, log logging.Logger, replica *raftv1beta2.RaftReplica) error {
+func (r *RaftReplicaReconciler) reconcileCreate(ctx context.Context, log logging.Logger, replica *raftv1beta3.RaftReplica) error {
 	if !hasFinalizer(replica, raftReplicaIDKey) {
 		log.Debugf("Adding %s finalizer", raftReplicaIDKey)
 		addFinalizer(replica, raftReplicaIDKey)
@@ -132,7 +132,7 @@ func (r *RaftReplicaReconciler) reconcileCreate(ctx context.Context, log logging
 		Namespace: replica.Namespace,
 		Name:      replica.Annotations[raftStoreKey],
 	}
-	store := &raftv1beta2.RaftStore{}
+	store := &raftv1beta3.RaftStore{}
 	if ok, err := get(r.client, ctx, storeName, store, log); err != nil {
 		return err
 	} else if !ok {
@@ -143,7 +143,7 @@ func (r *RaftReplicaReconciler) reconcileCreate(ctx context.Context, log logging
 		Namespace: replica.Annotations[raftNamespaceKey],
 		Name:      replica.Annotations[raftClusterKey],
 	}
-	cluster := &raftv1beta2.RaftCluster{}
+	cluster := &raftv1beta3.RaftCluster{}
 	if ok, err := get(r.client, ctx, clusterName, cluster, log); err != nil {
 		return err
 	} else if !ok {
@@ -154,7 +154,7 @@ func (r *RaftReplicaReconciler) reconcileCreate(ctx context.Context, log logging
 		Namespace: replica.Namespace,
 		Name:      fmt.Sprintf("%s-%s", storeName.Name, replica.Annotations[raftPartitionIDKey]),
 	}
-	partition := &raftv1beta2.RaftPartition{}
+	partition := &raftv1beta3.RaftPartition{}
 	if ok, err := get(r.client, ctx, partitionName, partition, log); err != nil {
 		return err
 	} else if !ok {
@@ -186,7 +186,7 @@ func (r *RaftReplicaReconciler) reconcileCreate(ctx context.Context, log logging
 	return nil
 }
 
-func (r *RaftReplicaReconciler) reconcileDelete(ctx context.Context, log logging.Logger, replica *raftv1beta2.RaftReplica) error {
+func (r *RaftReplicaReconciler) reconcileDelete(ctx context.Context, log logging.Logger, replica *raftv1beta3.RaftReplica) error {
 	if !hasFinalizer(replica, raftReplicaIDKey) {
 		return nil
 	}
@@ -195,7 +195,7 @@ func (r *RaftReplicaReconciler) reconcileDelete(ctx context.Context, log logging
 		Namespace: replica.Namespace,
 		Name:      replica.Annotations[raftStoreKey],
 	}
-	store := &raftv1beta2.RaftStore{}
+	store := &raftv1beta3.RaftStore{}
 	if err := r.client.Get(ctx, storeName, store); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err)
@@ -211,7 +211,7 @@ func (r *RaftReplicaReconciler) reconcileDelete(ctx context.Context, log logging
 		Namespace: replica.Annotations[raftNamespaceKey],
 		Name:      replica.Annotations[raftClusterKey],
 	}
-	cluster := &raftv1beta2.RaftCluster{}
+	cluster := &raftv1beta3.RaftCluster{}
 	if err := r.client.Get(ctx, clusterName, cluster); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err)
@@ -227,7 +227,7 @@ func (r *RaftReplicaReconciler) reconcileDelete(ctx context.Context, log logging
 		Namespace: replica.Namespace,
 		Name:      fmt.Sprintf("%s-%s", storeName.Name, replica.Annotations[raftPartitionIDKey]),
 	}
-	partition := &raftv1beta2.RaftPartition{}
+	partition := &raftv1beta3.RaftPartition{}
 	if err := r.client.Get(ctx, partitionName, partition); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err)
@@ -265,7 +265,7 @@ func (r *RaftReplicaReconciler) reconcileDelete(ctx context.Context, log logging
 	return nil
 }
 
-func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, pod *corev1.Pod, replica *raftv1beta2.RaftReplica) (bool, error) {
+func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, pod *corev1.Pod, replica *raftv1beta3.RaftReplica) (bool, error) {
 	if replica.Status.PodRef == nil || replica.Status.PodRef.UID != pod.UID {
 		log.Info("Pod UID has changed; reverting replica status")
 		replica.Status.PodRef = &corev1.ObjectReference{
@@ -288,8 +288,8 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 	}
 
 	if replica.Status.Version == nil || containerVersion > *replica.Status.Version {
-		if replica.Status.State != raftv1beta2.RaftReplicaNotReady {
-			replica.Status.State = raftv1beta2.RaftReplicaNotReady
+		if replica.Status.State != raftv1beta3.RaftReplicaNotReady {
+			replica.Status.State = raftv1beta3.RaftReplicaNotReady
 			if err := updateStatus(r.client, ctx, replica, log); err != nil {
 				return false, err
 			}
@@ -299,20 +299,20 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 		}
 
 		var config raftv1.RaftConfig
-		if replica.Spec.Config.ElectionRTT != nil {
-			config.ElectionRTT = *replica.Spec.Config.ElectionRTT
+		if store.Spec.ElectionRTT != nil {
+			config.ElectionRTT = *store.Spec.ElectionRTT
 		}
-		if replica.Spec.Config.HeartbeatRTT != nil {
-			config.ElectionRTT = *replica.Spec.Config.HeartbeatRTT
+		if store.Spec.HeartbeatRTT != nil {
+			config.ElectionRTT = *store.Spec.HeartbeatRTT
 		}
-		if replica.Spec.Config.SnapshotEntries != nil {
-			config.SnapshotEntries = uint64(*replica.Spec.Config.SnapshotEntries)
+		if store.Spec.SnapshotEntries != nil {
+			config.SnapshotEntries = uint64(*store.Spec.SnapshotEntries)
 		}
-		if replica.Spec.Config.CompactionOverhead != nil {
-			config.CompactionOverhead = uint64(*replica.Spec.Config.CompactionOverhead)
+		if store.Spec.CompactionOverhead != nil {
+			config.CompactionOverhead = uint64(*store.Spec.CompactionOverhead)
 		}
-		if replica.Spec.Config.MaxInMemLogSize != nil {
-			if maxInMemLogSize, ok := replica.Spec.Config.MaxInMemLogSize.AsInt64(); ok {
+		if store.Spec.MaxInMemLogSize != nil {
+			if maxInMemLogSize, ok := store.Spec.MaxInMemLogSize.AsInt64(); ok {
 				config.MaxInMemLogSize = uint64(maxInMemLogSize)
 			}
 		}
@@ -324,7 +324,7 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 
 			members := make([]raftv1.MemberConfig, 0, int(replica.Spec.Peers))
 			for ordinal := 1; ordinal <= int(replica.Spec.Peers); ordinal++ {
-				peerID := raftv1beta2.ReplicaID(ordinal)
+				peerID := raftv1beta3.ReplicaID(ordinal)
 				members = append(members, raftv1.MemberConfig{
 					MemberID: raftv1.MemberID(peerID),
 					Host:     getClusterPodDNSName(cluster, getReplicaPodName(cluster, partition, peerID)),
@@ -384,7 +384,7 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 				Namespace:     replica.Namespace,
 				LabelSelector: labels.SelectorFromSet(newPartitionSelector(partition)),
 			}
-			peers := &raftv1beta2.RaftReplicaList{}
+			peers := &raftv1beta3.RaftReplicaList{}
 			if err := r.client.List(ctx, peers, options); err != nil {
 				return false, err
 			}
@@ -451,7 +451,7 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 	return false, nil
 }
 
-func (r *RaftReplicaReconciler) tryAddReplica(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, replica *raftv1beta2.RaftReplica, peer *raftv1beta2.RaftReplica) (bool, error) {
+func (r *RaftReplicaReconciler) tryAddReplica(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replica *raftv1beta3.RaftReplica, peer *raftv1beta3.RaftReplica) (bool, error) {
 	pod := &corev1.Pod{}
 	podName := types.NamespacedName{
 		Namespace: replica.Namespace,
@@ -523,9 +523,9 @@ func (r *RaftReplicaReconciler) tryAddReplica(ctx context.Context, log logging.L
 	return true, nil
 }
 
-func (r *RaftReplicaReconciler) removeReplica(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, pod *corev1.Pod, replica *raftv1beta2.RaftReplica) (bool, error) {
-	if replica.Status.State != raftv1beta2.RaftReplicaNotReady {
-		replica.Status.State = raftv1beta2.RaftReplicaNotReady
+func (r *RaftReplicaReconciler) removeReplica(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, pod *corev1.Pod, replica *raftv1beta3.RaftReplica) (bool, error) {
+	if replica.Status.State != raftv1beta3.RaftReplicaNotReady {
+		replica.Status.State = raftv1beta3.RaftReplicaNotReady
 		if err := updateStatus(r.client, ctx, replica, log); err != nil {
 			return false, err
 		}
@@ -568,7 +568,7 @@ func (r *RaftReplicaReconciler) removeReplica(ctx context.Context, log logging.L
 		Namespace:     replica.Namespace,
 		LabelSelector: labels.SelectorFromSet(newPartitionSelector(partition)),
 	}
-	peers := &raftv1beta2.RaftReplicaList{}
+	peers := &raftv1beta3.RaftReplicaList{}
 	if err := r.client.List(ctx, peers, options); err != nil {
 		return false, err
 	}
@@ -584,7 +584,7 @@ func (r *RaftReplicaReconciler) removeReplica(ctx context.Context, log logging.L
 	return false, returnErr
 }
 
-func (r *RaftReplicaReconciler) tryRemoveReplica(ctx context.Context, log logging.Logger, store *raftv1beta2.RaftStore, cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, replica *raftv1beta2.RaftReplica, peer *raftv1beta2.RaftReplica) (bool, error) {
+func (r *RaftReplicaReconciler) tryRemoveReplica(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replica *raftv1beta3.RaftReplica, peer *raftv1beta3.RaftReplica) (bool, error) {
 	pod := &corev1.Pod{}
 	podName := types.NamespacedName{
 		Namespace: replica.Namespace,

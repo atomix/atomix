@@ -15,11 +15,13 @@ spec:
     singular: raftpartition
     shortNames:
       - rp
+  conversion:
+    strategy: None
   scope: Namespaced
   versions:
     - name: v1beta2
       served: true
-      storage: true
+      storage: false
       subresources:
         status: {}
       schema:
@@ -60,6 +62,89 @@ spec:
                 maxInMemLogSize:
                   type: string
                   nullable: true
+            status:
+              type: object
+              default: {}
+              properties:
+                state:
+                  type: string
+                  default: Initializing
+                  enum:
+                    - Initializing
+                    - Reconfiguring
+                    - Running
+                    - Ready
+                term:
+                  type: integer
+                  nullable: true
+                leader:
+                  type: object
+                  required:
+                    - name
+                  nullable: true
+                  properties:
+                    name:
+                      type: string
+                followers:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                members:
+                  type: integer
+      additionalPrinterColumns:
+        - name: Group
+          type: integer
+          description: The Raft group identifier
+          jsonPath: .spec.groupID
+        - name: Replicas
+          type: integer
+          description: The number of replicas in the partition
+          jsonPath: .spec.replicas
+        - name: Leader
+          type: string
+          description: The current leader for the partition
+          jsonPath: .status.leader.name
+        - name: Term
+          type: integer
+          description: The current term for the partition
+          jsonPath: .status.term
+        - name: Status
+          type: string
+          description: The partition state
+          jsonPath: .status.state
+    - name: v1beta3
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
+                - partitionID
+                - groupID
+              properties:
+                replicas:
+                  type: integer
+                  minimum: 1
+                  maximum: 1024
+                partitionID:
+                  type: integer
+                  minimum: 1
+                  maximum: 1024
+                groupID:
+                  type: integer
+                  minimum: 1
             status:
               type: object
               default: {}

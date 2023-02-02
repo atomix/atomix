@@ -4,9 +4,9 @@ go 1.19
 
 require (
 	github.com/atomix/atomix/api v0.8.0
-	github.com/atomix/atomix/controller v0.2.2-0.20230129000612-d7de4bbc6983
+	github.com/atomix/atomix/controller v0.5.0
 	github.com/atomix/atomix/protocols/rsm v0.5.4
-	github.com/atomix/atomix/runtime v0.8.2
+	github.com/atomix/atomix/runtime v0.8.3
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
@@ -99,6 +99,7 @@ require (
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	k8s.io/apiextensions-apiserver v0.24.0 // indirect
 	k8s.io/component-base v0.24.0 // indirect
 	k8s.io/klog/v2 v2.60.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42 // indirect

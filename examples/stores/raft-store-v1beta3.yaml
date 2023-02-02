@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: raft.atomix.io/v1beta3
+kind: RaftCluster
+metadata:
+  name: raft-cluster
+spec:
+  replicas: 1
+  persistence:
+    enabled: false
+---
+apiVersion: raft.atomix.io/v1beta3
+kind: RaftStore
+metadata:
+  name: raft-store
+spec:
+  cluster:
+    name: raft-cluster
+  partitions: 30

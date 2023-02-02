@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta2
+package v1beta3
 
 import (
 	"context"
@@ -16,12 +16,6 @@ var log = logging.GetLogger()
 
 // AddControllers adds raft controllers to the manager
 func AddControllers(mgr manager.Manager) error {
-	if err := addRaftStoreController(mgr); err != nil {
-		return err
-	}
-	if err := addRaftStoreController(mgr); err != nil {
-		return err
-	}
 	if err := addRaftClusterController(mgr); err != nil {
 		return err
 	}

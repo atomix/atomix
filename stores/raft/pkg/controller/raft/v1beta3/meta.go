@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta2
+package v1beta3
 
 import (
 	"fmt"
-	raftv1beta2 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta2"
+	raftv1beta3 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net"
@@ -22,7 +22,7 @@ func getResourceName(name string, resource string) string {
 }
 
 // getHeadlessServiceName returns the headless service name for the given cluster
-func getHeadlessServiceName(cluster *raftv1beta2.RaftCluster) string {
+func getHeadlessServiceName(cluster *raftv1beta3.RaftCluster) string {
 	return getResourceName(cluster.Name, headlessServiceSuffix)
 }
 
@@ -52,20 +52,20 @@ func getDNSName(namespace string, cluster string, name string) string {
 }
 
 // getClusterPodDNSName returns the fully qualified DNS name for the given pod ID
-func getClusterPodDNSName(cluster *raftv1beta2.RaftCluster, name string) string {
+func getClusterPodDNSName(cluster *raftv1beta3.RaftCluster, name string) string {
 	return fmt.Sprintf("%s.%s.%s.svc.%s", name, getHeadlessServiceName(cluster), cluster.Namespace, getClusterDomain())
 }
 
-func getReplicaPodOrdinal(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, replicaID raftv1beta2.ReplicaID) int {
+func getReplicaPodOrdinal(cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replicaID raftv1beta3.ReplicaID) int {
 	return (int(partition.Spec.Replicas)*int(partition.Spec.GroupID) + (int(replicaID) - 1)) % int(cluster.Spec.Replicas)
 }
 
-func getReplicaPodName(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, replicaID raftv1beta2.ReplicaID) string {
+func getReplicaPodName(cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replicaID raftv1beta3.ReplicaID) string {
 	return fmt.Sprintf("%s-%d", cluster.Name, getReplicaPodOrdinal(cluster, partition, replicaID))
 }
 
 // newClusterLabels returns the labels for the given cluster
-func newClusterLabels(cluster *raftv1beta2.RaftCluster) map[string]string {
+func newClusterLabels(cluster *raftv1beta3.RaftCluster) map[string]string {
 	labels := make(map[string]string)
 	for key, value := range cluster.Labels {
 		labels[key] = value
@@ -75,7 +75,7 @@ func newClusterLabels(cluster *raftv1beta2.RaftCluster) map[string]string {
 	return labels
 }
 
-func newClusterAnnotations(cluster *raftv1beta2.RaftCluster) map[string]string {
+func newClusterAnnotations(cluster *raftv1beta3.RaftCluster) map[string]string {
 	annotations := make(map[string]string)
 	for key, value := range cluster.Annotations {
 		annotations[key] = value
@@ -85,7 +85,7 @@ func newClusterAnnotations(cluster *raftv1beta2.RaftCluster) map[string]string {
 	return annotations
 }
 
-func newClusterSelector(cluster *raftv1beta2.RaftCluster) map[string]string {
+func newClusterSelector(cluster *raftv1beta3.RaftCluster) map[string]string {
 	return map[string]string{
 		raftNamespaceKey: cluster.Namespace,
 		raftClusterKey:   cluster.Name,
@@ -93,7 +93,7 @@ func newClusterSelector(cluster *raftv1beta2.RaftCluster) map[string]string {
 }
 
 // newPartitionLabels returns the labels for the given partition
-func newPartitionLabels(cluster *raftv1beta2.RaftCluster, store client.Object, partitionID raftv1beta2.PartitionID, groupID raftv1beta2.GroupID) map[string]string {
+func newPartitionLabels(cluster *raftv1beta3.RaftCluster, store client.Object, partitionID raftv1beta3.PartitionID, groupID raftv1beta3.GroupID) map[string]string {
 	labels := make(map[string]string)
 	for key, value := range store.GetLabels() {
 		labels[key] = value
@@ -108,7 +108,7 @@ func newPartitionLabels(cluster *raftv1beta2.RaftCluster, store client.Object, p
 	return labels
 }
 
-func newPartitionAnnotations(cluster *raftv1beta2.RaftCluster, store client.Object, partitionID raftv1beta2.PartitionID, groupID raftv1beta2.GroupID) map[string]string {
+func newPartitionAnnotations(cluster *raftv1beta3.RaftCluster, store client.Object, partitionID raftv1beta3.PartitionID, groupID raftv1beta3.GroupID) map[string]string {
 	annotations := make(map[string]string)
 	for key, value := range store.GetLabels() {
 		annotations[key] = value
@@ -123,7 +123,7 @@ func newPartitionAnnotations(cluster *raftv1beta2.RaftCluster, store client.Obje
 	return annotations
 }
 
-func newPartitionSelector(partition *raftv1beta2.RaftPartition) map[string]string {
+func newPartitionSelector(partition *raftv1beta3.RaftPartition) map[string]string {
 	return map[string]string{
 		raftNamespaceKey:   partition.Annotations[raftNamespaceKey],
 		raftClusterKey:     partition.Annotations[raftClusterKey],
@@ -133,7 +133,7 @@ func newPartitionSelector(partition *raftv1beta2.RaftPartition) map[string]strin
 }
 
 // newReplicaLabels returns the labels for the given cluster
-func newReplicaLabels(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, replicaID raftv1beta2.ReplicaID, memberID raftv1beta2.MemberID) map[string]string {
+func newReplicaLabels(cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replicaID raftv1beta3.ReplicaID, memberID raftv1beta3.MemberID) map[string]string {
 	labels := make(map[string]string)
 	for key, value := range partition.Labels {
 		labels[key] = value
@@ -144,7 +144,7 @@ func newReplicaLabels(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.R
 	return labels
 }
 
-func newReplicaAnnotations(cluster *raftv1beta2.RaftCluster, partition *raftv1beta2.RaftPartition, replicaID raftv1beta2.ReplicaID, memberID raftv1beta2.MemberID) map[string]string {
+func newReplicaAnnotations(cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replicaID raftv1beta3.ReplicaID, memberID raftv1beta3.MemberID) map[string]string {
 	annotations := make(map[string]string)
 	for key, value := range partition.Labels {
 		annotations[key] = value
@@ -155,7 +155,7 @@ func newReplicaAnnotations(cluster *raftv1beta2.RaftCluster, partition *raftv1be
 	return annotations
 }
 
-func getImage(cluster *raftv1beta2.RaftCluster) string {
+func getImage(cluster *raftv1beta3.RaftCluster) string {
 	if cluster.Spec.Image != "" {
 		return cluster.Spec.Image
 	}

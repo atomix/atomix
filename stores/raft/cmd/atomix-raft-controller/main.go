@@ -9,11 +9,15 @@ import (
 	"fmt"
 	atomixapis "github.com/atomix/atomix/controller/pkg/apis"
 	"github.com/atomix/atomix/controller/pkg/controller/util/k8s"
+	"github.com/atomix/atomix/controller/pkg/controller/util/k8s/conversion"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	raftapis "github.com/atomix/atomix/stores/raft/pkg/apis"
-	raftv1beta2 "github.com/atomix/atomix/stores/raft/pkg/controller/raft/v1beta2"
+	apisv1beta2 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta2"
+	apisv1beta3 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta3"
+	controllerv1beta3 "github.com/atomix/atomix/stores/raft/pkg/controller/raft/v1beta3"
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"os"
 	"runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -22,6 +26,10 @@ import (
 )
 
 var log = logging.GetLogger()
+
+const (
+	raftClusterConvertPath = "/convert-cluster"
+)
 
 func main() {
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
@@ -81,13 +89,16 @@ func getCommand() *cobra.Command {
 			}
 
 			// Add all the controllers
-			if err := raftv1beta2.AddControllers(mgr); err != nil {
+			if err := controllerv1beta3.AddControllers(mgr); err != nil {
 				log.Error(err)
 				os.Exit(1)
 			}
 
+			gvs := []schema.GroupVersion{apisv1beta2.SchemeGroupVersion, apisv1beta3.SchemeGroupVersion}
+
 			mgr.GetWebhookServer().Port = 443
 			mgr.GetWebhookServer().CertDir = certsDir
+			mgr.GetWebhookServer().Register(raftClusterConvertPath, conversion.NewWebhook(mgr, "RaftCluster", gvs...))
 
 			// Start the manager
 			log.Info("Starting the Manager")

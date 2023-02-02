@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta2
+package v1beta3
 
 import (
 	"context"
@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 
-	raftv1beta2 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta2"
+	raftv1beta3 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta3"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -87,14 +87,14 @@ func addRaftClusterController(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to the storage resource and enqueue Stores that reference it
-	err = controller.Watch(&source.Kind{Type: &raftv1beta2.RaftCluster{}}, &handler.EnqueueRequestForObject{})
+	err = controller.Watch(&source.Kind{Type: &raftv1beta3.RaftCluster{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to secondary resource StatefulSet
 	err = controller.Watch(&source.Kind{Type: &appsv1.StatefulSet{}}, &handler.EnqueueRequestForOwner{
-		OwnerType:    &raftv1beta2.RaftCluster{},
+		OwnerType:    &raftv1beta3.RaftCluster{},
 		IsController: true,
 	})
 	if err != nil {
@@ -116,7 +116,7 @@ func (r *RaftClusterReconciler) Reconcile(ctx context.Context, request reconcile
 	log := log.WithFields(logging.String("RaftCluster", request.NamespacedName.String()))
 	log.Debug("Reconciling RaftCluster")
 
-	cluster := &raftv1beta2.RaftCluster{}
+	cluster := &raftv1beta3.RaftCluster{}
 	if ok, err := get(r.client, ctx, request.NamespacedName, cluster, log); err != nil {
 		return reconcile.Result{}, err
 	} else if !ok {
@@ -146,7 +146,7 @@ func (r *RaftClusterReconciler) Reconcile(ctx context.Context, request reconcile
 	return reconcile.Result{}, nil
 }
 
-func (r *RaftClusterReconciler) reconcileConfigMap(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
+func (r *RaftClusterReconciler) reconcileConfigMap(ctx context.Context, log logging.Logger, cluster *raftv1beta3.RaftCluster) error {
 	cm := &corev1.ConfigMap{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
@@ -160,7 +160,7 @@ func (r *RaftClusterReconciler) reconcileConfigMap(ctx context.Context, log logg
 	return nil
 }
 
-func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
+func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, log logging.Logger, cluster *raftv1beta3.RaftCluster) error {
 	log.Infow("Creating ConfigMap")
 	sinkName := stdoutSinkName
 	loggingOutputs := map[string]logging.OutputConfig{
@@ -226,13 +226,13 @@ func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, log logging.Lo
 	return create(r.client, ctx, cm, log)
 }
 
-func newNodeConfig(cluster *raftv1beta2.RaftCluster) ([]byte, error) {
+func newNodeConfig(cluster *raftv1beta3.RaftCluster) ([]byte, error) {
 	config := raft.Config{}
 	config.Node.RTT = &cluster.Spec.AverageRTT.Duration
 	return yaml.Marshal(&config)
 }
 
-func (r *RaftClusterReconciler) reconcileStatefulSet(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
+func (r *RaftClusterReconciler) reconcileStatefulSet(ctx context.Context, log logging.Logger, cluster *raftv1beta3.RaftCluster) error {
 	statefulSet := &appsv1.StatefulSet{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
@@ -246,7 +246,7 @@ func (r *RaftClusterReconciler) reconcileStatefulSet(ctx context.Context, log lo
 	return nil
 }
 
-func (r *RaftClusterReconciler) addStatefulSet(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
+func (r *RaftClusterReconciler) addStatefulSet(ctx context.Context, log logging.Logger, cluster *raftv1beta3.RaftCluster) error {
 	log.Infow("Creating StatefulSet")
 	image := getImage(cluster)
 	volumes := []corev1.Volume{
@@ -263,16 +263,24 @@ func (r *RaftClusterReconciler) addStatefulSet(ctx context.Context, log logging.
 	}
 
 	var volumeClaimTemplates []corev1.PersistentVolumeClaim
-
-	dataVolumeName := dataVolume
-	if cluster.Spec.VolumeClaimTemplate != nil {
-		pvc := cluster.Spec.VolumeClaimTemplate
-		if pvc.Name == "" {
-			pvc.Name = dataVolume
-		} else {
-			dataVolumeName = pvc.Name
+	if cluster.Spec.Persistence.Enabled {
+		var resources corev1.ResourceRequirements
+		if cluster.Spec.Persistence.Size != nil {
+			resources.Requests = corev1.ResourceList{
+				corev1.ResourceStorage: *cluster.Spec.Persistence.Size,
+			}
 		}
-		volumeClaimTemplates = append(volumeClaimTemplates, *pvc)
+		volumeClaimTemplates = append(volumeClaimTemplates, corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dataVolume,
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				StorageClassName: cluster.Spec.Persistence.StorageClass,
+				AccessModes:      cluster.Spec.Persistence.AccessModes,
+				Selector:         cluster.Spec.Persistence.Selector,
+				Resources:        resources,
+			},
+		})
 	} else {
 		volumes = append(volumes, corev1.Volume{
 			Name: dataVolume,
@@ -351,7 +359,7 @@ atomix-raft-node --config %s/%s --api-port %d --raft-host %s-$ordinal.%s.%s.svc.
 							SecurityContext: cluster.Spec.SecurityContext,
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      dataVolumeName,
+									Name:      dataVolume,
 									MountPath: dataPath,
 								},
 								{
@@ -392,7 +400,7 @@ atomix-raft-node --config %s/%s --api-port %d --raft-host %s-$ordinal.%s.%s.svc.
 	return create(r.client, ctx, set, log)
 }
 
-func (r *RaftClusterReconciler) reconcileService(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
+func (r *RaftClusterReconciler) reconcileService(ctx context.Context, log logging.Logger, cluster *raftv1beta3.RaftCluster) error {
 	service := &corev1.Service{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
@@ -406,7 +414,7 @@ func (r *RaftClusterReconciler) reconcileService(ctx context.Context, log loggin
 	return nil
 }
 
-func (r *RaftClusterReconciler) addService(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
+func (r *RaftClusterReconciler) addService(ctx context.Context, log logging.Logger, cluster *raftv1beta3.RaftCluster) error {
 	log.Infow("Creating Service")
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -437,7 +445,7 @@ func (r *RaftClusterReconciler) addService(ctx context.Context, log logging.Logg
 	return create(r.client, ctx, service, log)
 }
 
-func (r *RaftClusterReconciler) reconcileHeadlessService(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
+func (r *RaftClusterReconciler) reconcileHeadlessService(ctx context.Context, log logging.Logger, cluster *raftv1beta3.RaftCluster) error {
 	service := &corev1.Service{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
@@ -451,7 +459,7 @@ func (r *RaftClusterReconciler) reconcileHeadlessService(ctx context.Context, lo
 	return nil
 }
 
-func (r *RaftClusterReconciler) addHeadlessService(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
+func (r *RaftClusterReconciler) addHeadlessService(ctx context.Context, log logging.Logger, cluster *raftv1beta3.RaftCluster) error {
 	log.Infow("Creating headless Service")
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -484,7 +492,7 @@ func (r *RaftClusterReconciler) addHeadlessService(ctx context.Context, log logg
 	return create(r.client, ctx, service, log)
 }
 
-func (r *RaftClusterReconciler) reconcileStatus(ctx context.Context, log logging.Logger, cluster *raftv1beta2.RaftCluster) error {
+func (r *RaftClusterReconciler) reconcileStatus(ctx context.Context, log logging.Logger, cluster *raftv1beta3.RaftCluster) error {
 	statefulSet := &appsv1.StatefulSet{}
 	name := types.NamespacedName{
 		Namespace: cluster.Namespace,
@@ -500,9 +508,9 @@ func (r *RaftClusterReconciler) reconcileStatus(ctx context.Context, log logging
 	}
 
 	switch cluster.Status.State {
-	case raftv1beta2.RaftClusterNotReady:
+	case raftv1beta3.RaftClusterNotReady:
 		if statefulSet.Status.ReadyReplicas == statefulSet.Status.Replicas {
-			cluster.Status.State = raftv1beta2.RaftClusterReady
+			cluster.Status.State = raftv1beta3.RaftClusterReady
 			log.Infow("RaftCluster status changed",
 				logging.String("Status", string(cluster.Status.State)))
 			if err := r.client.Status().Update(ctx, cluster); err != nil {
@@ -514,9 +522,9 @@ func (r *RaftClusterReconciler) reconcileStatus(ctx context.Context, log logging
 				return nil
 			}
 		}
-	case raftv1beta2.RaftClusterReady:
+	case raftv1beta3.RaftClusterReady:
 		if statefulSet.Status.ReadyReplicas != statefulSet.Status.Replicas {
-			cluster.Status.State = raftv1beta2.RaftClusterNotReady
+			cluster.Status.State = raftv1beta3.RaftClusterNotReady
 			log.Infow("RaftCluster status changed",
 				logging.String("Status", string(cluster.Status.State)))
 			if err := r.client.Status().Update(ctx, cluster); err != nil {
