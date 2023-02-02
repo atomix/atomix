@@ -6,9 +6,9 @@
 - [runtime/topic/v1/topics.proto](#runtime_topic_v1_topics-proto)
     - [CloseRequest](#atomix-runtime-topic-v1-CloseRequest)
     - [CloseResponse](#atomix-runtime-topic-v1-CloseResponse)
+    - [Config](#atomix-runtime-topic-v1-Config)
     - [CreateRequest](#atomix-runtime-topic-v1-CreateRequest)
     - [CreateResponse](#atomix-runtime-topic-v1-CreateResponse)
-    - [TopicConfig](#atomix-runtime-topic-v1-TopicConfig)
   
     - [Topics](#atomix-runtime-topic-v1-Topics)
   
@@ -48,6 +48,16 @@
 
 
 
+<a name="atomix-runtime-topic-v1-Config"></a>
+
+### Config
+
+
+
+
+
+
+
 <a name="atomix-runtime-topic-v1-CreateRequest"></a>
 
 ### CreateRequest
@@ -72,17 +82,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| config | [TopicConfig](#atomix-runtime-topic-v1-TopicConfig) |  |  |
-
-
-
-
-
-
-<a name="atomix-runtime-topic-v1-TopicConfig"></a>
-
-### TopicConfig
-
+| config | [Config](#atomix-runtime-topic-v1-Config) |  |  |
 
 
 
