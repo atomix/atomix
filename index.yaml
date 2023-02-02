@@ -2557,6 +2557,26 @@ entries:
     - https://github.com/atomix/charts.atomix.io/releases/download/atomix-shared-memory-controller-1.0.0/atomix-shared-memory-controller-1.0.0.tgz
     version: 1.0.0
   - apiVersion: v2
+    appVersion: v0.5.1
+    created: "2023-02-02T00:23:48.914457489Z"
+    description: The shared memory controller extends the Kubernetes API with custom
+      resources for memory stores.
+    digest: 8c47bc81c8365ae1734536387dbbc66e86e238b0789c52ced11b2298ef52e009
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - memory
+    - cache
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-shared-memory-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-shared-memory-controller-0.5.1/atomix-shared-memory-controller-0.5.1.tgz
+    version: 0.5.1
+  - apiVersion: v2
     appVersion: v0.5.0
     created: "2023-02-02T00:08:40.923365953Z"
     description: The shared memory controller extends the Kubernetes API with custom
@@ -2989,4 +3009,4 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.0/atomix-sidecar-controller-0.3.0.tgz
     version: 0.3.0
-generated: "2023-02-02T00:23:29.308545636Z"
+generated: "2023-02-02T00:23:48.914735793Z"
