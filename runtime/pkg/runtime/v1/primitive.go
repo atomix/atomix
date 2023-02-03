@@ -61,7 +61,7 @@ func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtime
 	config = reflect.New(configType.Elem()).Interface().(C)
 	if spec != nil && spec.Value != nil {
 		if err := jsonpb.UnmarshalString(string(spec.Value), config); err != nil {
-			return config, errors.NewInternal("invalid route configuration for primitive type '%s/%s'", c.primitiveType.Name, c.primitiveType.APIVersion)
+			return config, errors.NewInternal("invalid route configuration for primitive type '%s/%s': %s", c.primitiveType.Name, c.primitiveType.APIVersion, err.Error())
 		}
 	}
 
