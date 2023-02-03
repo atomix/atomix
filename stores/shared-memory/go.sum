@@ -70,8 +70,8 @@ github.com/atomix/atomix/api v0.8.0 h1:KJVf3xY/8+Dd+CsAp7sUMJGsWW3DtRoIWmRIMCoWH
 github.com/atomix/atomix/api v0.8.0/go.mod h1:Fz8zXQH6n28U0NTu5xctKhkNrN5RsWgX56lrMhqXlPg=
 github.com/atomix/atomix/controller v0.3.0 h1:bVuTF4i2xRWbGpXlF1NHFy2xob6lPOOxsGhkEJtLbCE=
 github.com/atomix/atomix/controller v0.3.0/go.mod h1:TDqA4gSPDLZKfMHLp+GSRcPZnKMa5XGGIqcdOCcMdH0=
-github.com/atomix/atomix/protocols/rsm v0.5.6 h1:55u/qIIUuLakypf1d1CQ5xxj/E720f6FRGDtv1VUOSs=
-github.com/atomix/atomix/protocols/rsm v0.5.6/go.mod h1:SgkK3PVLqx1KmNjxw8OY7AY7T6t6TuPLmnP6Rr/oFAQ=
+github.com/atomix/atomix/protocols/rsm v0.5.7 h1:hAaMCXT+F2DIN+e9B2r3nDPElJvEjCJE+llITVdy6jU=
+github.com/atomix/atomix/protocols/rsm v0.5.7/go.mod h1:SgkK3PVLqx1KmNjxw8OY7AY7T6t6TuPLmnP6Rr/oFAQ=
 github.com/atomix/atomix/runtime v0.8.2 h1:w3Nme+HVG2//T7K0p1xzWu5iyxVmvmrKXLYFyUGJ0FY=
 github.com/atomix/atomix/runtime v0.8.2/go.mod h1:kkAiuqqkDjSDQsGnQ9nfUz8FmVv/M6GFUjwxkoTbLC0=
 github.com/benbjohnson/clock v1.0.3/go.mod h1:bGMdMPoPVvcYyt1gHDf4J2KE153Yf9BuiUKYMaxlTDM=

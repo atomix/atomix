@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/atomix/atomix/api v0.8.0
 	github.com/atomix/atomix/controller v0.5.0
-	github.com/atomix/atomix/protocols/rsm v0.5.6
+	github.com/atomix/atomix/protocols/rsm v0.5.7
 	github.com/atomix/atomix/runtime v0.8.3
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/go-logr/logr v1.2.0
