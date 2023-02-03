@@ -232,7 +232,7 @@ func (s *leaderElectionStateMachine) Promote(proposal statemachine.Proposal[*ele
 			}
 		}
 
-		candidates := make([]electionprotocolv1.LeaderElectionCandidate, 0, len(s.Candidates))
+		candidates := make([]electionprotocolv1.LeaderElectionCandidate, len(s.Candidates))
 		for i, candidate := range s.Candidates {
 			if i < index-1 {
 				candidates[i] = candidate
@@ -283,7 +283,7 @@ func (s *leaderElectionStateMachine) Demote(proposal statemachine.Proposal[*elec
 			}
 		}
 
-		candidates := make([]electionprotocolv1.LeaderElectionCandidate, 0, len(s.Candidates))
+		candidates := make([]electionprotocolv1.LeaderElectionCandidate, len(s.Candidates))
 		for i, candidate := range s.Candidates {
 			if i < index+1 {
 				candidates[i] = candidate
