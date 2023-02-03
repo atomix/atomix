@@ -188,7 +188,7 @@ func (s *lockStateMachine) dequeueRequest(proposal statemachine.Proposal[*lockpr
 
 func (s *lockStateMachine) nextRequest() {
 	s.lock = nil
-	if s.queue == nil {
+	if len(s.queue) == 0 {
 		return
 	}
 	proposal := s.queue[0]
