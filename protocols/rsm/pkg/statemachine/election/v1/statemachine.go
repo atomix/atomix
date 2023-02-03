@@ -49,6 +49,7 @@ type LeaderElectionStateMachine interface {
 func NewLeaderElectionStateMachine(context statemachine.PrimitiveContext[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput]) LeaderElectionStateMachine {
 	return &leaderElectionStateMachine{
 		LeaderElectionContext: context,
+		sessions:              make(map[statemachine.SessionID]statemachine.CancelFunc),
 		watchers:              make(map[statemachine.QueryID]statemachine.Query[*electionprotocolv1.WatchInput, *electionprotocolv1.WatchOutput]),
 	}
 }
@@ -56,7 +57,7 @@ func NewLeaderElectionStateMachine(context statemachine.PrimitiveContext[*electi
 type leaderElectionStateMachine struct {
 	LeaderElectionContext
 	electionprotocolv1.LeaderElectionSnapshot
-	cancel   statemachine.CancelFunc
+	sessions map[statemachine.SessionID]statemachine.CancelFunc
 	watchers map[statemachine.QueryID]statemachine.Query[*electionprotocolv1.WatchInput, *electionprotocolv1.WatchOutput]
 	mu       sync.RWMutex
 }
@@ -77,32 +78,47 @@ func (s *leaderElectionStateMachine) Recover(reader *statemachine.SnapshotReader
 			return err
 		}
 	}
+	for _, candidate := range s.Candidates {
+		if err := s.watchSession(statemachine.SessionID(candidate.SessionID)); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (s *leaderElectionStateMachine) watchSession(sessionID statemachine.SessionID) error {
-	if s.cancel != nil {
-		s.cancel()
+	if _, ok := s.sessions[sessionID]; ok {
+		return nil
 	}
 	session, ok := s.Sessions().Get(sessionID)
 	if !ok {
 		return errors.NewFault("unknown session")
 	}
-	s.cancel = session.Watch(func(state statemachine.State) {
+	cancel := session.Watch(func(state statemachine.State) {
 		if state == statemachine.Closed {
-			s.Leader = nil
-			for len(s.Candidates) > 0 {
-				candidate := s.Candidates[0]
-				s.Candidates = s.Candidates[1:]
-				if statemachine.SessionID(candidate.SessionID) != session.ID() {
-					s.Leader = &candidate
-					s.Term++
-					s.notify(s.term())
-					break
+			if s.Leader != nil && statemachine.SessionID(s.Leader.SessionID) == sessionID {
+				s.Leader = nil
+			}
+
+			candidates := make([]electionprotocolv1.LeaderElectionCandidate, 0, len(s.Candidates))
+			for _, candidate := range s.Candidates {
+				if statemachine.SessionID(candidate.SessionID) != sessionID {
+					if s.Leader == nil {
+						leader := candidate
+						s.Leader = &leader
+						s.Term++
+					} else {
+						candidates = append(candidates, candidate)
+					}
 				}
+			}
+			if len(candidates) != len(s.Candidates) {
+				s.Candidates = candidates
+				s.notify(s.term())
 			}
 		}
 	})
+	s.sessions[sessionID] = cancel
 	return nil
 }
 
@@ -130,14 +146,14 @@ func (s *leaderElectionStateMachine) candidateExists(name string) bool {
 
 func (s *leaderElectionStateMachine) Enter(proposal statemachine.Proposal[*electionprotocolv1.EnterInput, *electionprotocolv1.EnterOutput]) {
 	defer proposal.Close()
+	if err := s.watchSession(proposal.Session().ID()); err != nil {
+		panic(err)
+	}
 	if s.Leader == nil {
 		s.Term++
 		s.Leader = &electionprotocolv1.LeaderElectionCandidate{
 			Name:      proposal.Input().Candidate,
 			SessionID: protocol.SessionID(proposal.Session().ID()),
-		}
-		if err := s.watchSession(proposal.Session().ID()); err != nil {
-			panic(err)
 		}
 		term := s.term()
 		s.notify(term)
@@ -193,6 +209,7 @@ func (s *leaderElectionStateMachine) Anoint(proposal statemachine.Proposal[*elec
 	}
 
 	candidates := make([]electionprotocolv1.LeaderElectionCandidate, 0, len(s.Candidates))
+	candidates = append(candidates, *s.Leader)
 	for _, candidate := range s.Candidates {
 		if candidate.Name == proposal.Input().Candidate {
 			s.Term++
@@ -220,9 +237,10 @@ func (s *leaderElectionStateMachine) Promote(proposal statemachine.Proposal[*ele
 	}
 
 	if s.Candidates[0].Name == proposal.Input().Candidate {
+		newLeader := s.Candidates[0]
+		s.Candidates = append([]electionprotocolv1.LeaderElectionCandidate{*s.Leader}, s.Candidates[1:]...)
+		s.Leader = &newLeader
 		s.Term++
-		s.Leader = &s.Candidates[0]
-		s.Candidates = s.Candidates[1:]
 	} else {
 		var index int
 		for i, candidate := range s.Candidates {
