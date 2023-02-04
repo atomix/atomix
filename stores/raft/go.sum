@@ -83,8 +83,8 @@ github.com/atomix/atomix/api v0.8.0 h1:KJVf3xY/8+Dd+CsAp7sUMJGsWW3DtRoIWmRIMCoWH
 github.com/atomix/atomix/api v0.8.0/go.mod h1:Fz8zXQH6n28U0NTu5xctKhkNrN5RsWgX56lrMhqXlPg=
 github.com/atomix/atomix/controller v0.5.0 h1:onVMGFAVGhfEySQiCMEPcAg+oOqcZHrh2rhBoK39CL8=
 github.com/atomix/atomix/controller v0.5.0/go.mod h1:q7YKFxlG0izZnrxiQuEnjeJpNUro5qfR5OI8hHglFaE=
-github.com/atomix/atomix/protocols/rsm v0.5.7 h1:hAaMCXT+F2DIN+e9B2r3nDPElJvEjCJE+llITVdy6jU=
-github.com/atomix/atomix/protocols/rsm v0.5.7/go.mod h1:SgkK3PVLqx1KmNjxw8OY7AY7T6t6TuPLmnP6Rr/oFAQ=
+github.com/atomix/atomix/protocols/rsm v0.6.0 h1:V0X5jzhkG6D0+VU5OJSm4ZyG4DAzfKOj6D1xFAnQg1Y=
+github.com/atomix/atomix/protocols/rsm v0.6.0/go.mod h1:SgkK3PVLqx1KmNjxw8OY7AY7T6t6TuPLmnP6Rr/oFAQ=
 github.com/atomix/atomix/runtime v0.8.3 h1:+ZPGwolymNjkb2N+Y6+7GC3E1cjAsR1ynTEzpGP6NLw=
 github.com/atomix/atomix/runtime v0.8.3/go.mod h1:kkAiuqqkDjSDQsGnQ9nfUz8FmVv/M6GFUjwxkoTbLC0=
 github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible/go.mod h1:osfaiScAUVup+UC9Nfq76eWqDhXlp+4UYaA8uhTBO6g=
