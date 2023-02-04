@@ -1765,6 +1765,27 @@ entries:
     version: 0.2.1
   atomix-raft-controller:
   - apiVersion: v2
+    appVersion: v0.6.0
+    created: "2023-02-04T06:54:58.816601658Z"
+    description: The Raft controller extends the Kubernetes API with custom resources
+      for Raft stores.
+    digest: f02811441b557f81ac304e35364eeed44906ca98716f01719c299f81129ac5d9
+    home: https://atomix.io
+    keywords:
+    - atomix
+    - raft
+    - multiraft
+    - consensus
+    kubeVersion: '>=1.17.0'
+    maintainers:
+    - email: jordan.halterman@intel.com
+      name: Jordan Halterman
+    name: atomix-raft-controller
+    type: application
+    urls:
+    - https://github.com/atomix/atomix/releases/download/atomix-raft-controller-0.6.0/atomix-raft-controller-0.6.0.tgz
+    version: 0.6.0
+  - apiVersion: v2
     appVersion: v0.5.3
     created: "2023-02-03T22:55:05.586672787Z"
     description: The Raft controller extends the Kubernetes API with custom resources
@@ -3877,4 +3898,4 @@ entries:
     urls:
     - https://github.com/atomix/atomix/releases/download/atomix-sidecar-controller-0.3.0/atomix-sidecar-controller-0.3.0.tgz
     version: 0.3.0
-generated: "2023-02-03T22:59:08.393275984Z"
+generated: "2023-02-04T06:54:58.816947266Z"
