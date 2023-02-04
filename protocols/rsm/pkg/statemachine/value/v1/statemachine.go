@@ -22,6 +22,10 @@ var PrimitiveType = protocol.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
+const (
+	version1 uint32 = 1
+)
+
 func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
 	statemachine.RegisterPrimitiveType[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput](registry)(PrimitiveType,
 		func(context statemachine.PrimitiveContext[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput]) statemachine.PrimitiveStateMachine[*valueprotocolv1.ValueInput, *valueprotocolv1.ValueOutput] {
@@ -95,6 +99,9 @@ type valueStateMachine struct {
 
 func (s *valueStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
 	s.Log().Infow("Persisting Value to snapshot")
+	if err := writer.WriteVarUint32(version1); err != nil {
+		return err
+	}
 	if err := writer.WriteVarInt(len(s.listeners)); err != nil {
 		return err
 	}
@@ -120,42 +127,51 @@ func (s *valueStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error 
 
 func (s *valueStateMachine) Recover(reader *statemachine.SnapshotReader) error {
 	s.Log().Infow("Recovering Value from snapshot")
-	n, err := reader.ReadVarInt()
+	version, err := reader.ReadVarUint32()
 	if err != nil {
 		return err
 	}
-	for i := 0; i < n; i++ {
-		proposalID, err := reader.ReadVarUint64()
+	switch version {
+	case version1:
+		n, err := reader.ReadVarInt()
 		if err != nil {
 			return err
 		}
-		proposal, ok := s.ValueContext.Events().Get(statemachine.ProposalID(proposalID))
-		if !ok {
-			return errors.NewFault("cannot find proposal %d", proposalID)
-		}
-		s.listeners[proposal.ID()] = true
-		proposal.Watch(func(state statemachine.ProposalState) {
-			if state != statemachine.Running {
-				delete(s.listeners, proposal.ID())
+		for i := 0; i < n; i++ {
+			proposalID, err := reader.ReadVarUint64()
+			if err != nil {
+				return err
 			}
-		})
-	}
+			proposal, ok := s.ValueContext.Events().Get(statemachine.ProposalID(proposalID))
+			if !ok {
+				return errors.NewFault("cannot find proposal %d", proposalID)
+			}
+			s.listeners[proposal.ID()] = true
+			proposal.Watch(func(state statemachine.ProposalState) {
+				if state != statemachine.Running {
+					delete(s.listeners, proposal.ID())
+				}
+			})
+		}
 
-	exists, err := reader.ReadBool()
-	if err != nil {
-		return err
-	}
+		exists, err := reader.ReadBool()
+		if err != nil {
+			return err
+		}
 
-	if !exists {
-		return nil
-	}
+		if !exists {
+			return nil
+		}
 
-	state := &valueprotocolv1.ValueState{}
-	if err := reader.ReadMessage(state); err != nil {
-		return err
+		state := &valueprotocolv1.ValueState{}
+		if err := reader.ReadMessage(state); err != nil {
+			return err
+		}
+		s.scheduleTTL(state)
+		s.value = state
+	default:
+		return errors.NewInvalid("unknown snapshot version %d", version)
 	}
-	s.scheduleTTL(state)
-	s.value = state
 	return nil
 }
 

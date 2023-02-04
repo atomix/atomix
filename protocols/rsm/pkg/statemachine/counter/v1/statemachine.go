@@ -21,6 +21,10 @@ var PrimitiveType = protocol.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
+const (
+	version1 uint32 = 1
+)
+
 func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
 	statemachine.RegisterPrimitiveType[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput](registry)(PrimitiveType,
 		func(context statemachine.PrimitiveContext[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput]) statemachine.PrimitiveStateMachine[*counterprotocolv1.CounterInput, *counterprotocolv1.CounterOutput] {
@@ -54,15 +58,30 @@ type counterStateMachine struct {
 }
 
 func (s *counterStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
-	return writer.WriteVarInt64(s.value)
+	if err := writer.WriteVarUint32(version1); err != nil {
+		return err
+	}
+	if err := writer.WriteVarInt64(s.value); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *counterStateMachine) Recover(reader *statemachine.SnapshotReader) error {
-	i, err := reader.ReadVarInt64()
+	version, err := reader.ReadVarUint32()
 	if err != nil {
 		return err
 	}
-	s.value = i
+	switch version {
+	case version1:
+		i, err := reader.ReadVarInt64()
+		if err != nil {
+			return err
+		}
+		s.value = i
+	default:
+		return errors.NewInvalid("unknown snapshot version %d", version)
+	}
 	return nil
 }
 

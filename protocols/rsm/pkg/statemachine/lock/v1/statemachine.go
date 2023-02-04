@@ -21,6 +21,10 @@ var PrimitiveType = protocol.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
+const (
+	version1 uint32 = 1
+)
+
 func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
 	statemachine.RegisterPrimitiveType[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput](registry)(PrimitiveType,
 		func(context statemachine.PrimitiveContext[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput]) statemachine.PrimitiveStateMachine[*lockprotocolv1.LockInput, *lockprotocolv1.LockOutput] {
@@ -94,6 +98,9 @@ type lockStateMachine struct {
 }
 
 func (s *lockStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
+	if err := writer.WriteVarUint32(version1); err != nil {
+		return err
+	}
 	if s.lock != nil {
 		if err := writer.WriteBool(true); err != nil {
 			return err
@@ -121,51 +128,60 @@ func (s *lockStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
 }
 
 func (s *lockStateMachine) Recover(reader *statemachine.SnapshotReader) error {
-	locked, err := reader.ReadBool()
+	version, err := reader.ReadVarUint32()
 	if err != nil {
 		return err
 	}
-
-	if locked {
-		proposalID, err := reader.ReadVarUint64()
-		if err != nil {
-			return err
-		}
-		sessionID, err := reader.ReadVarUint64()
+	switch version {
+	case version1:
+		locked, err := reader.ReadBool()
 		if err != nil {
 			return err
 		}
 
-		session, ok := s.Sessions().Get(statemachine.SessionID(sessionID))
-		if !ok {
-			return errors.NewFault("session not found")
-		}
-
-		s.lock = &lock{
-			proposalID: statemachine.ProposalID(proposalID),
-			sessionID:  statemachine.SessionID(sessionID),
-			watcher: session.Watch(func(state statemachine.State) {
-				if state == statemachine.Closed {
-					s.nextRequest()
-				}
-			}),
-		}
-
-		n, err := reader.ReadVarInt()
-		if err != nil {
-			return err
-		}
-		for i := 0; i < n; i++ {
+		if locked {
 			proposalID, err := reader.ReadVarUint64()
 			if err != nil {
 				return err
 			}
-			proposal, ok := s.Requests().Get(statemachine.ProposalID(proposalID))
-			if !ok {
-				return errors.NewFault("proposal not found")
+			sessionID, err := reader.ReadVarUint64()
+			if err != nil {
+				return err
 			}
-			s.enqueueRequest(proposal)
+
+			session, ok := s.Sessions().Get(statemachine.SessionID(sessionID))
+			if !ok {
+				return errors.NewFault("session not found")
+			}
+
+			s.lock = &lock{
+				proposalID: statemachine.ProposalID(proposalID),
+				sessionID:  statemachine.SessionID(sessionID),
+				watcher: session.Watch(func(state statemachine.State) {
+					if state == statemachine.Closed {
+						s.nextRequest()
+					}
+				}),
+			}
+
+			n, err := reader.ReadVarInt()
+			if err != nil {
+				return err
+			}
+			for i := 0; i < n; i++ {
+				proposalID, err := reader.ReadVarUint64()
+				if err != nil {
+					return err
+				}
+				proposal, ok := s.Requests().Get(statemachine.ProposalID(proposalID))
+				if !ok {
+					return errors.NewFault("proposal not found")
+				}
+				s.enqueueRequest(proposal)
+			}
 		}
+	default:
+		return errors.NewInvalid("unknown snapshot version %d", version)
 	}
 	return nil
 }

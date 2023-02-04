@@ -22,6 +22,10 @@ var PrimitiveType = protocol.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
+const (
+	version1 uint32 = 1
+)
+
 func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
 	statemachine.RegisterPrimitiveType[*setprotocolv1.SetInput, *setprotocolv1.SetOutput](registry)(PrimitiveType,
 		func(context statemachine.PrimitiveContext[*setprotocolv1.SetInput, *setprotocolv1.SetOutput]) statemachine.PrimitiveStateMachine[*setprotocolv1.SetInput, *setprotocolv1.SetOutput] {
@@ -96,6 +100,9 @@ type setStateMachine struct {
 }
 
 func (s *setStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
+	if err := writer.WriteVarUint32(version1); err != nil {
+		return err
+	}
 	if err := writer.WriteVarInt(len(s.listeners)); err != nil {
 		return err
 	}
@@ -120,42 +127,51 @@ func (s *setStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
 }
 
 func (s *setStateMachine) Recover(reader *statemachine.SnapshotReader) error {
-	n, err := reader.ReadVarInt()
+	version, err := reader.ReadVarUint32()
 	if err != nil {
 		return err
 	}
-	for i := 0; i < n; i++ {
-		proposalID, err := reader.ReadVarUint64()
+	switch version {
+	case version1:
+		n, err := reader.ReadVarInt()
 		if err != nil {
 			return err
 		}
-		proposal, ok := s.SetContext.Events().Get(statemachine.ProposalID(proposalID))
-		if !ok {
-			return errors.NewFault("cannot find proposal %d", proposalID)
-		}
-		s.listeners[proposal.ID()] = true
-		proposal.Watch(func(state statemachine.ProposalState) {
-			if state != statemachine.Running {
-				delete(s.listeners, proposal.ID())
+		for i := 0; i < n; i++ {
+			proposalID, err := reader.ReadVarUint64()
+			if err != nil {
+				return err
 			}
-		})
-	}
+			proposal, ok := s.SetContext.Events().Get(statemachine.ProposalID(proposalID))
+			if !ok {
+				return errors.NewFault("cannot find proposal %d", proposalID)
+			}
+			s.listeners[proposal.ID()] = true
+			proposal.Watch(func(state statemachine.ProposalState) {
+				if state != statemachine.Running {
+					delete(s.listeners, proposal.ID())
+				}
+			})
+		}
 
-	n, err = reader.ReadVarInt()
-	if err != nil {
-		return err
-	}
-	for i := 0; i < n; i++ {
-		key, err := reader.ReadString()
+		n, err = reader.ReadVarInt()
 		if err != nil {
 			return err
 		}
-		element := &setprotocolv1.SetElement{}
-		if err := reader.ReadMessage(element); err != nil {
-			return err
+		for i := 0; i < n; i++ {
+			key, err := reader.ReadString()
+			if err != nil {
+				return err
+			}
+			element := &setprotocolv1.SetElement{}
+			if err := reader.ReadMessage(element); err != nil {
+				return err
+			}
+			s.entries[key] = element
+			s.scheduleTTL(key, element)
 		}
-		s.entries[key] = element
-		s.scheduleTTL(key, element)
+	default:
+		return errors.NewInvalid("unknown snapshot version %d", version)
 	}
 	return nil
 }

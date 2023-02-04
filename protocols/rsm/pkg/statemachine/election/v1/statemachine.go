@@ -22,6 +22,10 @@ var PrimitiveType = protocol.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
+const (
+	version1 uint32 = 1
+)
+
 func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
 	statemachine.RegisterPrimitiveType[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput](registry)(PrimitiveType,
 		func(context statemachine.PrimitiveContext[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput]) statemachine.PrimitiveStateMachine[*electionprotocolv1.LeaderElectionInput, *electionprotocolv1.LeaderElectionOutput] {
@@ -63,6 +67,9 @@ type leaderElectionStateMachine struct {
 }
 
 func (s *leaderElectionStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
+	if err := writer.WriteVarUint32(version1); err != nil {
+		return err
+	}
 	if err := writer.WriteMessage(&s.LeaderElectionSnapshot); err != nil {
 		return err
 	}
@@ -70,18 +77,27 @@ func (s *leaderElectionStateMachine) Snapshot(writer *statemachine.SnapshotWrite
 }
 
 func (s *leaderElectionStateMachine) Recover(reader *statemachine.SnapshotReader) error {
-	if err := reader.ReadMessage(&s.LeaderElectionSnapshot); err != nil {
+	version, err := reader.ReadVarUint32()
+	if err != nil {
 		return err
 	}
-	if s.Leader != nil {
-		if err := s.watchSession(statemachine.SessionID(s.Leader.SessionID)); err != nil {
+	switch version {
+	case version1:
+		if err := reader.ReadMessage(&s.LeaderElectionSnapshot); err != nil {
 			return err
 		}
-	}
-	for _, candidate := range s.Candidates {
-		if err := s.watchSession(statemachine.SessionID(candidate.SessionID)); err != nil {
-			return err
+		if s.Leader != nil {
+			if err := s.watchSession(statemachine.SessionID(s.Leader.SessionID)); err != nil {
+				return err
+			}
 		}
+		for _, candidate := range s.Candidates {
+			if err := s.watchSession(statemachine.SessionID(candidate.SessionID)); err != nil {
+				return err
+			}
+		}
+	default:
+		return errors.NewInvalid("unknown snapshot version %d", version)
 	}
 	return nil
 }

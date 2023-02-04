@@ -23,6 +23,10 @@ var PrimitiveType = protocol.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
+const (
+	version1 uint32 = 1
+)
+
 func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
 	statemachine.RegisterPrimitiveType[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput](registry)(PrimitiveType,
 		func(context statemachine.PrimitiveContext[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput]) statemachine.PrimitiveStateMachine[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput] {
@@ -98,6 +102,9 @@ type mapStateMachine struct {
 
 func (s *mapStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
 	s.Log().Infow("Persisting Map to snapshot")
+	if err := writer.WriteVarUint32(version1); err != nil {
+		return err
+	}
 	if err := writer.WriteVarInt(len(s.listeners)); err != nil {
 		return err
 	}
@@ -123,42 +130,51 @@ func (s *mapStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
 
 func (s *mapStateMachine) Recover(reader *statemachine.SnapshotReader) error {
 	s.Log().Infow("Recovering Map from snapshot")
-	n, err := reader.ReadVarInt()
+	version, err := reader.ReadVarUint32()
 	if err != nil {
 		return err
 	}
-	for i := 0; i < n; i++ {
-		proposalID, err := reader.ReadVarUint64()
+	switch version {
+	case version1:
+		n, err := reader.ReadVarInt()
 		if err != nil {
 			return err
 		}
-		proposal, ok := s.MapContext.Events().Get(statemachine.ProposalID(proposalID))
-		if !ok {
-			return errors.NewFault("cannot find proposal %d", proposalID)
-		}
-		listener := &mapprotocolv1.MapListener{}
-		if err := reader.ReadMessage(listener); err != nil {
-			return err
-		}
-		s.listeners[proposal.ID()] = listener
-		proposal.Watch(func(state statemachine.ProposalState) {
-			if state != statemachine.Running {
-				delete(s.listeners, proposal.ID())
+		for i := 0; i < n; i++ {
+			proposalID, err := reader.ReadVarUint64()
+			if err != nil {
+				return err
 			}
-		})
-	}
+			proposal, ok := s.MapContext.Events().Get(statemachine.ProposalID(proposalID))
+			if !ok {
+				return errors.NewFault("cannot find proposal %d", proposalID)
+			}
+			listener := &mapprotocolv1.MapListener{}
+			if err := reader.ReadMessage(listener); err != nil {
+				return err
+			}
+			s.listeners[proposal.ID()] = listener
+			proposal.Watch(func(state statemachine.ProposalState) {
+				if state != statemachine.Running {
+					delete(s.listeners, proposal.ID())
+				}
+			})
+		}
 
-	n, err = reader.ReadVarInt()
-	if err != nil {
-		return err
-	}
-	for i := 0; i < n; i++ {
-		entry := &mapprotocolv1.MapEntry{}
-		if err := reader.ReadMessage(entry); err != nil {
+		n, err = reader.ReadVarInt()
+		if err != nil {
 			return err
 		}
-		s.entries[entry.Key] = entry
-		s.scheduleTTL(entry.Key, entry)
+		for i := 0; i < n; i++ {
+			entry := &mapprotocolv1.MapEntry{}
+			if err := reader.ReadMessage(entry); err != nil {
+				return err
+			}
+			s.entries[entry.Key] = entry
+			s.scheduleTTL(entry.Key, entry)
+		}
+	default:
+		return errors.NewInvalid("unknown snapshot version %d", version)
 	}
 	return nil
 }

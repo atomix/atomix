@@ -22,6 +22,10 @@ var PrimitiveType = protocol.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
+const (
+	version1 uint32 = 1
+)
+
 func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
 	statemachine.RegisterPrimitiveType[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput](registry)(PrimitiveType,
 		func(context statemachine.PrimitiveContext[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput]) statemachine.PrimitiveStateMachine[*multimapprotocolv1.MultiMapInput, *multimapprotocolv1.MultiMapOutput] {
@@ -101,6 +105,9 @@ type multiMapStateMachine struct {
 
 func (s *multiMapStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
 	s.Log().Infow("Persisting MultiMap to snapshot")
+	if err := writer.WriteVarUint32(version1); err != nil {
+		return err
+	}
 	if err := writer.WriteVarInt(len(s.listeners)); err != nil {
 		return err
 	}
@@ -134,53 +141,62 @@ func (s *multiMapStateMachine) Snapshot(writer *statemachine.SnapshotWriter) err
 
 func (s *multiMapStateMachine) Recover(reader *statemachine.SnapshotReader) error {
 	s.Log().Infow("Recovering MultiMap from snapshot")
-	n, err := reader.ReadVarInt()
+	version, err := reader.ReadVarUint32()
 	if err != nil {
 		return err
 	}
-	for i := 0; i < n; i++ {
-		proposalID, err := reader.ReadVarUint64()
+	switch version {
+	case version1:
+		n, err := reader.ReadVarInt()
 		if err != nil {
 			return err
 		}
-		proposal, ok := s.MultiMapContext.Events().Get(statemachine.ProposalID(proposalID))
-		if !ok {
-			return errors.NewFault("cannot find proposal %d", proposalID)
-		}
-		listener := &multimapprotocolv1.MultiMapListener{}
-		if err := reader.ReadMessage(listener); err != nil {
-			return err
-		}
-		s.listeners[proposal.ID()] = listener
-		proposal.Watch(func(state statemachine.ProposalState) {
-			if state != statemachine.Running {
-				delete(s.listeners, proposal.ID())
-			}
-		})
-	}
-
-	n, err = reader.ReadVarInt()
-	if err != nil {
-		return err
-	}
-	for i := 0; i < n; i++ {
-		key, err := reader.ReadString()
-		if err != nil {
-			return err
-		}
-		m, err := reader.ReadVarInt()
-		if err != nil {
-			return err
-		}
-		values := make(map[string]bool)
-		for j := 0; j < m; j++ {
-			value, err := reader.ReadString()
+		for i := 0; i < n; i++ {
+			proposalID, err := reader.ReadVarUint64()
 			if err != nil {
 				return err
 			}
-			values[value] = true
+			proposal, ok := s.MultiMapContext.Events().Get(statemachine.ProposalID(proposalID))
+			if !ok {
+				return errors.NewFault("cannot find proposal %d", proposalID)
+			}
+			listener := &multimapprotocolv1.MultiMapListener{}
+			if err := reader.ReadMessage(listener); err != nil {
+				return err
+			}
+			s.listeners[proposal.ID()] = listener
+			proposal.Watch(func(state statemachine.ProposalState) {
+				if state != statemachine.Running {
+					delete(s.listeners, proposal.ID())
+				}
+			})
 		}
-		s.entries[key] = values
+
+		n, err = reader.ReadVarInt()
+		if err != nil {
+			return err
+		}
+		for i := 0; i < n; i++ {
+			key, err := reader.ReadString()
+			if err != nil {
+				return err
+			}
+			m, err := reader.ReadVarInt()
+			if err != nil {
+				return err
+			}
+			values := make(map[string]bool)
+			for j := 0; j < m; j++ {
+				value, err := reader.ReadString()
+				if err != nil {
+					return err
+				}
+				values[value] = true
+			}
+			s.entries[key] = values
+		}
+	default:
+		return errors.NewInvalid("unknown snapshot version %d", version)
 	}
 	return nil
 }

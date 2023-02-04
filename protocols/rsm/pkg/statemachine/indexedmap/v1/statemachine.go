@@ -23,6 +23,10 @@ var PrimitiveType = protocol.PrimitiveType{
 	APIVersion: APIVersion,
 }
 
+const (
+	version1 uint32 = 1
+)
+
 func RegisterStateMachine(registry *statemachine.PrimitiveTypeRegistry) {
 	statemachine.RegisterPrimitiveType[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput](registry)(PrimitiveType,
 		func(context statemachine.PrimitiveContext[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput]) statemachine.PrimitiveStateMachine[*indexedmapprotocolv1.IndexedMapInput, *indexedmapprotocolv1.IndexedMapOutput] {
@@ -115,6 +119,9 @@ type indexedMapStateMachine struct {
 
 func (s *indexedMapStateMachine) Snapshot(writer *statemachine.SnapshotWriter) error {
 	s.Log().Infow("Persisting IndexedMap to snapshot")
+	if err := writer.WriteVarUint32(version1); err != nil {
+		return err
+	}
 	if err := s.snapshotEntries(writer); err != nil {
 		return err
 	}
@@ -158,11 +165,20 @@ func (s *indexedMapStateMachine) snapshotStreams(writer *statemachine.SnapshotWr
 
 func (s *indexedMapStateMachine) Recover(reader *statemachine.SnapshotReader) error {
 	s.Log().Infow("Recovering IndexedMap from snapshot")
-	if err := s.recoverEntries(reader); err != nil {
+	version, err := reader.ReadVarUint32()
+	if err != nil {
 		return err
 	}
-	if err := s.recoverStreams(reader); err != nil {
-		return err
+	switch version {
+	case version1:
+		if err := s.recoverEntries(reader); err != nil {
+			return err
+		}
+		if err := s.recoverStreams(reader); err != nil {
+			return err
+		}
+	default:
+		return errors.NewInvalid("unknown snapshot version %d", version)
 	}
 	return nil
 }
