@@ -3,7 +3,7 @@ module github.com/atomix/atomix/stores/shared-memory
 go 1.19
 
 require (
-	github.com/atomix/atomix/controller v0.3.0
+	github.com/atomix/atomix/controller v1.0.0
 	github.com/atomix/atomix/protocols/rsm v1.0.0
 	github.com/atomix/atomix/runtime v1.0.0
 	github.com/go-logr/logr v1.2.0

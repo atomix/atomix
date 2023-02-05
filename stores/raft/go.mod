@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/atomix/atomix/api v1.0.0
-	github.com/atomix/atomix/controller v0.5.0
+	github.com/atomix/atomix/controller v1.0.0
 	github.com/atomix/atomix/protocols/rsm v1.0.0
 	github.com/atomix/atomix/runtime v1.0.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
