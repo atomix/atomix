@@ -4,8 +4,8 @@ go 1.19
 
 require (
 	github.com/atomix/atomix/controller v0.3.0
-	github.com/atomix/atomix/protocols/rsm v0.6.0
-	github.com/atomix/atomix/runtime v0.8.2
+	github.com/atomix/atomix/protocols/rsm v1.0.0
+	github.com/atomix/atomix/runtime v1.0.0
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/spf13/cobra v1.4.0
@@ -20,7 +20,7 @@ require (
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/atomix/atomix/api v0.8.0 // indirect
+	github.com/atomix/atomix/api v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.3.1 // indirect
 	github.com/bits-and-blooms/bloom/v3 v3.3.1 // indirect
