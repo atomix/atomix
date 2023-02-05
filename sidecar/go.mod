@@ -29,7 +29,7 @@ require (
 )
 
 require (
-	github.com/atomix/atomix/controller v0.2.1
+	github.com/atomix/atomix/controller v1.0.0
 	github.com/go-logr/logr v1.2.0
 	k8s.io/api v0.24.0
 	k8s.io/apimachinery v0.24.0
