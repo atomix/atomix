@@ -3,9 +3,9 @@ module github.com/atomix/atomix/bench
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v0.7.0
-	github.com/atomix/atomix/runtime v0.7.0
-	github.com/atomix/go-sdk v0.10.1-0.20230129004124-3ad0ceef9dde
+	github.com/atomix/atomix/api v1.0.0
+	github.com/atomix/atomix/runtime v1.0.0
+	github.com/atomix/go-sdk v0.12.7
 	github.com/google/uuid v1.1.2
 	github.com/spf13/cobra v1.4.0
 )
