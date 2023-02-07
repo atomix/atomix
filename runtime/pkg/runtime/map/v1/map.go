@@ -37,6 +37,8 @@ type MapProxy interface {
 	Events(*mapv1.EventsRequest, mapv1.Map_EventsServer) error
 	// Entries lists all entries in the map
 	Entries(*mapv1.EntriesRequest, mapv1.Map_EntriesServer) error
+	// Commit commits a transactional change to the map
+	Commit(context.Context, *mapv1.CommitRequest) (*mapv1.CommitResponse, error)
 }
 
 func NewMapServer(rt *runtime.Runtime) mapv1.MapServer {
@@ -246,6 +248,28 @@ func (s *mapServer) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (*
 	}
 	log.Debugw("Unlock",
 		logging.Trunc64("UnlockResponse", response))
+	return response, nil
+}
+
+func (s *mapServer) Commit(ctx context.Context, request *mapv1.CommitRequest) (*mapv1.CommitResponse, error) {
+	log.Debugw("Commit",
+		logging.Trunc64("CommitRequest", request))
+	client, err := s.primitives.Get(request.ID)
+	if err != nil {
+		log.Warnw("Commit",
+			logging.Trunc64("CommitRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response, err := client.Commit(ctx, request)
+	if err != nil {
+		log.Debugw("Commit",
+			logging.Trunc64("CommitRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	log.Debugw("Commit",
+		logging.Trunc64("CommitResponse", response))
 	return response, nil
 }
 
