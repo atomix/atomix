@@ -311,8 +311,7 @@ func newPrimitive[I, O any](parent SessionContext, id protocol.PrimitiveID, spec
 
 type primitiveExecutor[I, O any] struct {
 	*primitiveContext[I, O]
-	log logging.Logger
-	sm  PrimitiveStateMachine[I, O]
+	sm PrimitiveStateMachine[I, O]
 }
 
 func (p *primitiveExecutor[I, O]) Snapshot(writer *SnapshotWriter) error {
