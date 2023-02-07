@@ -78,19 +78,19 @@ func Proposal[T ProposalResponse](primitive *PrimitiveClient) *ProposalContext[T
 	}
 	return &ProposalContext[T]{
 		session: primitive.session,
-		headers: headers,
+		Headers: headers,
 	}
 }
 
 type ProposalContext[T ProposalResponse] struct {
 	session *SessionClient
-	headers *protocol.ProposalRequestHeaders
+	Headers *protocol.ProposalRequestHeaders
 }
 
 func (c *ProposalContext[T]) Run(f func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (T, error)) (T, bool, error) {
-	c.session.recorder.Start(c.headers.SequenceNum)
-	defer c.session.recorder.End(c.headers.SequenceNum)
-	response, err := f(c.session.conn, c.headers)
+	c.session.recorder.Start(c.Headers.SequenceNum)
+	defer c.session.recorder.End(c.Headers.SequenceNum)
+	response, err := f(c.session.conn, c.Headers)
 	if err != nil {
 		return response, false, err
 	}

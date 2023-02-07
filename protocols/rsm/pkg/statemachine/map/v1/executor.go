@@ -32,16 +32,20 @@ func newExecutor(sm MapStateMachine) *mapExecutor {
 }
 
 type mapExecutor struct {
-	sm     MapStateMachine
-	put    statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.PutInput, *mapprotocolv1.PutOutput]
-	insert statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.InsertInput, *mapprotocolv1.InsertOutput]
-	update statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.UpdateInput, *mapprotocolv1.UpdateOutput]
-	remove statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.RemoveInput, *mapprotocolv1.RemoveOutput]
-	clear  statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.ClearInput, *mapprotocolv1.ClearOutput]
-	events statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.EventsInput, *mapprotocolv1.EventsOutput]
-	size   statemachine.Querier[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.SizeInput, *mapprotocolv1.SizeOutput]
-	get    statemachine.Querier[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.GetInput, *mapprotocolv1.GetOutput]
-	list   statemachine.Querier[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.EntriesInput, *mapprotocolv1.EntriesOutput]
+	sm      MapStateMachine
+	put     statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.PutInput, *mapprotocolv1.PutOutput]
+	insert  statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.InsertInput, *mapprotocolv1.InsertOutput]
+	update  statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.UpdateInput, *mapprotocolv1.UpdateOutput]
+	remove  statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.RemoveInput, *mapprotocolv1.RemoveOutput]
+	clear   statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.ClearInput, *mapprotocolv1.ClearOutput]
+	prepare statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.PrepareInput, *mapprotocolv1.PrepareOutput]
+	commit  statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.CommitInput, *mapprotocolv1.CommitOutput]
+	abort   statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.AbortInput, *mapprotocolv1.AbortOutput]
+	apply   statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.ApplyInput, *mapprotocolv1.ApplyOutput]
+	events  statemachine.Proposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.EventsInput, *mapprotocolv1.EventsOutput]
+	size    statemachine.Querier[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.SizeInput, *mapprotocolv1.SizeOutput]
+	get     statemachine.Querier[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.GetInput, *mapprotocolv1.GetOutput]
+	list    statemachine.Querier[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.EntriesInput, *mapprotocolv1.EntriesOutput]
 }
 
 func (s *mapExecutor) init() {
@@ -120,6 +124,66 @@ func (s *mapExecutor) init() {
 			}
 		}).
 		Build(s.sm.Clear)
+	s.prepare = statemachine.NewProposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.PrepareInput, *mapprotocolv1.PrepareOutput]("Prepare").
+		Decoder(func(input *mapprotocolv1.MapInput) (*mapprotocolv1.PrepareInput, bool) {
+			if clear, ok := input.Input.(*mapprotocolv1.MapInput_Prepare); ok {
+				return clear.Prepare, true
+			}
+			return nil, false
+		}).
+		Encoder(func(output *mapprotocolv1.PrepareOutput) *mapprotocolv1.MapOutput {
+			return &mapprotocolv1.MapOutput{
+				Output: &mapprotocolv1.MapOutput_Prepare{
+					Prepare: output,
+				},
+			}
+		}).
+		Build(s.sm.Prepare)
+	s.commit = statemachine.NewProposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.CommitInput, *mapprotocolv1.CommitOutput]("Commit").
+		Decoder(func(input *mapprotocolv1.MapInput) (*mapprotocolv1.CommitInput, bool) {
+			if clear, ok := input.Input.(*mapprotocolv1.MapInput_Commit); ok {
+				return clear.Commit, true
+			}
+			return nil, false
+		}).
+		Encoder(func(output *mapprotocolv1.CommitOutput) *mapprotocolv1.MapOutput {
+			return &mapprotocolv1.MapOutput{
+				Output: &mapprotocolv1.MapOutput_Commit{
+					Commit: output,
+				},
+			}
+		}).
+		Build(s.sm.Commit)
+	s.abort = statemachine.NewProposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.AbortInput, *mapprotocolv1.AbortOutput]("Abort").
+		Decoder(func(input *mapprotocolv1.MapInput) (*mapprotocolv1.AbortInput, bool) {
+			if clear, ok := input.Input.(*mapprotocolv1.MapInput_Abort); ok {
+				return clear.Abort, true
+			}
+			return nil, false
+		}).
+		Encoder(func(output *mapprotocolv1.AbortOutput) *mapprotocolv1.MapOutput {
+			return &mapprotocolv1.MapOutput{
+				Output: &mapprotocolv1.MapOutput_Abort{
+					Abort: output,
+				},
+			}
+		}).
+		Build(s.sm.Abort)
+	s.apply = statemachine.NewProposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.ApplyInput, *mapprotocolv1.ApplyOutput]("Apply").
+		Decoder(func(input *mapprotocolv1.MapInput) (*mapprotocolv1.ApplyInput, bool) {
+			if clear, ok := input.Input.(*mapprotocolv1.MapInput_Apply); ok {
+				return clear.Apply, true
+			}
+			return nil, false
+		}).
+		Encoder(func(output *mapprotocolv1.ApplyOutput) *mapprotocolv1.MapOutput {
+			return &mapprotocolv1.MapOutput{
+				Output: &mapprotocolv1.MapOutput_Apply{
+					Apply: output,
+				},
+			}
+		}).
+		Build(s.sm.Apply)
 	s.events = statemachine.NewProposer[*mapprotocolv1.MapInput, *mapprotocolv1.MapOutput, *mapprotocolv1.EventsInput, *mapprotocolv1.EventsOutput]("Events").
 		Decoder(func(input *mapprotocolv1.MapInput) (*mapprotocolv1.EventsInput, bool) {
 			if events, ok := input.Input.(*mapprotocolv1.MapInput_Events); ok {
@@ -202,6 +266,14 @@ func (s *mapExecutor) Propose(proposal statemachine.Proposal[*mapprotocolv1.MapI
 		s.remove(proposal)
 	case *mapprotocolv1.MapInput_Clear:
 		s.clear(proposal)
+	case *mapprotocolv1.MapInput_Prepare:
+		s.prepare(proposal)
+	case *mapprotocolv1.MapInput_Commit:
+		s.commit(proposal)
+	case *mapprotocolv1.MapInput_Abort:
+		s.abort(proposal)
+	case *mapprotocolv1.MapInput_Apply:
+		s.apply(proposal)
 	case *mapprotocolv1.MapInput_Events:
 		s.events(proposal)
 	default:

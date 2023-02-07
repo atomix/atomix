@@ -269,6 +269,106 @@ func (s *mapServer) Unlock(ctx context.Context, request *mapprotocolv1.UnlockReq
 	return response, nil
 }
 
+func (s *mapServer) Prepare(ctx context.Context, request *mapprotocolv1.PrepareRequest) (*mapprotocolv1.PrepareResponse, error) {
+	log.Debugw("Prepare",
+		logging.Trunc128("PrepareRequest", request))
+	input := &mapprotocolv1.MapInput{
+		Input: &mapprotocolv1.MapInput_Prepare{
+			Prepare: request.PrepareInput,
+		},
+	}
+	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
+	if err != nil {
+		log.Warnw("Prepare",
+			logging.Trunc128("PrepareRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response := &mapprotocolv1.PrepareResponse{
+		Headers:       headers,
+		PrepareOutput: output.GetPrepare(),
+	}
+	log.Debugw("Prepare",
+		logging.Trunc128("PrepareRequest", request),
+		logging.Trunc128("PrepareResponse", response))
+	return response, nil
+}
+
+func (s *mapServer) Commit(ctx context.Context, request *mapprotocolv1.CommitRequest) (*mapprotocolv1.CommitResponse, error) {
+	log.Debugw("Commit",
+		logging.Trunc128("CommitRequest", request))
+	input := &mapprotocolv1.MapInput{
+		Input: &mapprotocolv1.MapInput_Commit{
+			Commit: request.CommitInput,
+		},
+	}
+	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
+	if err != nil {
+		log.Warnw("Commit",
+			logging.Trunc128("CommitRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response := &mapprotocolv1.CommitResponse{
+		Headers:      headers,
+		CommitOutput: output.GetCommit(),
+	}
+	log.Debugw("Commit",
+		logging.Trunc128("CommitRequest", request),
+		logging.Trunc128("CommitResponse", response))
+	return response, nil
+}
+
+func (s *mapServer) Abort(ctx context.Context, request *mapprotocolv1.AbortRequest) (*mapprotocolv1.AbortResponse, error) {
+	log.Debugw("Abort",
+		logging.Trunc128("AbortRequest", request))
+	input := &mapprotocolv1.MapInput{
+		Input: &mapprotocolv1.MapInput_Abort{
+			Abort: request.AbortInput,
+		},
+	}
+	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
+	if err != nil {
+		log.Warnw("Abort",
+			logging.Trunc128("AbortRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response := &mapprotocolv1.AbortResponse{
+		Headers:     headers,
+		AbortOutput: output.GetAbort(),
+	}
+	log.Debugw("Abort",
+		logging.Trunc128("AbortRequest", request),
+		logging.Trunc128("AbortResponse", response))
+	return response, nil
+}
+
+func (s *mapServer) Apply(ctx context.Context, request *mapprotocolv1.ApplyRequest) (*mapprotocolv1.ApplyResponse, error) {
+	log.Debugw("Apply",
+		logging.Trunc128("ApplyRequest", request))
+	input := &mapprotocolv1.MapInput{
+		Input: &mapprotocolv1.MapInput_Apply{
+			Apply: request.ApplyInput,
+		},
+	}
+	output, headers, err := s.handler.Propose(ctx, input, request.Headers)
+	if err != nil {
+		log.Warnw("Apply",
+			logging.Trunc128("ApplyRequest", request),
+			logging.Error("Error", err))
+		return nil, err
+	}
+	response := &mapprotocolv1.ApplyResponse{
+		Headers:     headers,
+		ApplyOutput: output.GetApply(),
+	}
+	log.Debugw("Apply",
+		logging.Trunc128("ApplyRequest", request),
+		logging.Trunc128("ApplyResponse", response))
+	return response, nil
+}
+
 func (s *mapServer) Events(request *mapprotocolv1.EventsRequest, server mapprotocolv1.Map_EventsServer) error {
 	log.Debugw("Events",
 		logging.Trunc128("EventsRequest", request))

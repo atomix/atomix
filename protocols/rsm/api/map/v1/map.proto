@@ -37,16 +37,28 @@ service Map {
     rpc Clear (ClearRequest) returns (ClearResponse);
 
     // Lock locks a key in the map
-    rpc Lock(LockRequest) returns (LockResponse);
+    rpc Lock (LockRequest) returns (LockResponse);
 
     // Unlock unlocks a key in the map
-    rpc Unlock(UnlockRequest) returns (UnlockResponse);
+    rpc Unlock (UnlockRequest) returns (UnlockResponse);
 
     // Events listens for change events
     rpc Events (EventsRequest) returns (stream EventsResponse);
 
     // Entries lists all entries in the map
     rpc Entries (EntriesRequest) returns (stream EntriesResponse);
+
+    // Prepare prepares a transaction
+    rpc Prepare (PrepareRequest) returns (PrepareResponse);
+
+    // Commit commits a transaction
+    rpc Commit (CommitRequest) returns (CommitResponse);
+
+    // Abort aborts a transaction
+    rpc Abort (AbortRequest) returns (AbortResponse);
+
+    // Apply prepares and commits a transaction in a single request
+    rpc Apply (ApplyRequest) returns (ApplyResponse);
 }
 
 message SizeRequest {
@@ -175,6 +187,62 @@ message UnlockResponse {
     ];
 }
 
+message PrepareRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    PrepareInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message PrepareResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    PrepareOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message CommitRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    CommitInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message CommitResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    CommitOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message AbortRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    AbortInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message AbortResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    AbortOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ApplyRequest {
+    atomix.protocols.rsm.v1.ProposalRequestHeaders headers = 1;
+    ApplyInput input = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
+message ApplyResponse {
+    atomix.protocols.rsm.v1.ProposalResponseHeaders headers = 1;
+    ApplyOutput output = 2 [
+        (gogoproto.embed) = true
+    ];
+}
+
 message EntriesRequest {
     atomix.protocols.rsm.v1.QueryRequestHeaders headers = 1;
     EntriesInput input = 2 [
@@ -238,6 +306,10 @@ message MapInput {
         UnlockInput unlock = 9;
         EntriesInput entries = 10;
         EventsInput events = 11;
+        PrepareInput prepare = 12;
+        CommitInput commit = 13;
+        AbortInput abort = 14;
+        ApplyInput apply = 15;
     }
 }
 
@@ -254,6 +326,10 @@ message MapOutput {
         UnlockOutput unlock = 9;
         EntriesOutput entries = 10;
         EventsOutput events = 11;
+        PrepareOutput prepare = 12;
+        CommitOutput commit = 13;
+        AbortOutput abort = 14;
+        ApplyOutput apply = 15;
     }
 }
 
@@ -368,6 +444,53 @@ message UnlockInput {
 
 message UnlockOutput {
 
+}
+
+message PrepareInput {
+    uint64 sequence_num = 1 [
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/api/v1.SequenceNum"
+    ];
+    repeated MapInput inputs = 2 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message PrepareOutput {
+
+}
+
+message CommitInput {
+    uint64 sequence_num = 1 [
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/api/v1.SequenceNum"
+    ];
+}
+
+message CommitOutput {
+    repeated MapOutput outputs = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message AbortInput {
+    uint64 sequence_num = 1 [
+        (gogoproto.casttype) = "github.com/atomix/atomix/protocols/rsm/api/v1.SequenceNum"
+    ];
+}
+
+message AbortOutput {
+
+}
+
+message ApplyInput {
+    repeated MapInput inputs = 1 [
+        (gogoproto.nullable) = false
+    ];
+}
+
+message ApplyOutput {
+    repeated MapOutput outputs = 1 [
+        (gogoproto.nullable) = false
+    ];
 }
 
 message EntriesInput {

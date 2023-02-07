@@ -566,6 +566,306 @@ func (s *MapSession) Unlock(ctx context.Context, request *mapv1.UnlockRequest) (
 	return response, nil
 }
 
+func (s *MapSession) Commit(ctx context.Context, request *mapv1.CommitRequest) (*mapv1.CommitResponse, error) {
+	log.Debugw("Commit",
+		logging.Trunc128("CommitRequest", request))
+
+	if len(request.Operations) == 0 {
+		response := &mapv1.CommitResponse{}
+		log.Debugw("Commit",
+			logging.Trunc128("CommitRequest", request),
+			logging.Trunc128("CommitResponse", response))
+		return response, nil
+	}
+
+	indexes := make(map[protocol.PartitionID][]int)
+	clients := make(map[protocol.PartitionID]*client.PartitionClient)
+	inputs := make([]mapprotocolv1.MapInput, len(request.Operations))
+	for i, operation := range request.Operations {
+		var partition *client.PartitionClient
+		switch o := operation.Operation.(type) {
+		case *mapv1.CommitRequest_Operation_Put:
+			partition = s.PartitionBy([]byte(o.Put.Key))
+			inputs[i] = mapprotocolv1.MapInput{
+				Input: &mapprotocolv1.MapInput_Put{
+					Put: &mapprotocolv1.PutInput{
+						Key:       o.Put.Key,
+						Value:     o.Put.Value,
+						TTL:       o.Put.TTL,
+						PrevIndex: protocol.Index(o.Put.PrevVersion),
+					},
+				},
+			}
+		case *mapv1.CommitRequest_Operation_Insert:
+			partition = s.PartitionBy([]byte(o.Insert.Key))
+			inputs[i] = mapprotocolv1.MapInput{
+				Input: &mapprotocolv1.MapInput_Insert{
+					Insert: &mapprotocolv1.InsertInput{
+						Key:   o.Insert.Key,
+						Value: o.Insert.Value,
+						TTL:   o.Insert.TTL,
+					},
+				},
+			}
+		case *mapv1.CommitRequest_Operation_Update:
+			partition = s.PartitionBy([]byte(o.Update.Key))
+			inputs[i] = mapprotocolv1.MapInput{
+				Input: &mapprotocolv1.MapInput_Update{
+					Update: &mapprotocolv1.UpdateInput{
+						Key:       o.Update.Key,
+						Value:     o.Update.Value,
+						TTL:       o.Update.TTL,
+						PrevIndex: protocol.Index(o.Update.PrevVersion),
+					},
+				},
+			}
+		case *mapv1.CommitRequest_Operation_Remove:
+			partition = s.PartitionBy([]byte(o.Remove.Key))
+			inputs[i] = mapprotocolv1.MapInput{
+				Input: &mapprotocolv1.MapInput_Remove{
+					Remove: &mapprotocolv1.RemoveInput{
+						Key:       o.Remove.Key,
+						PrevIndex: protocol.Index(o.Remove.PrevVersion),
+					},
+				},
+			}
+		}
+		clients[partition.ID()] = partition
+		indexes[partition.ID()] = append(indexes[partition.ID()], i)
+	}
+
+	var outputs []mapprotocolv1.MapOutput
+	if len(indexes) == 1 {
+		for _, partition := range clients {
+			session, err := partition.GetSession(ctx)
+			if err != nil {
+				log.Warnw("Commit",
+					logging.Trunc128("CommitRequest", request),
+					logging.Error("Error", err))
+				return nil, err
+			}
+			primitive, err := session.GetPrimitive(request.ID.Name)
+			if err != nil {
+				log.Warnw("Commit",
+					logging.Trunc128("CommitRequest", request),
+					logging.Error("Error", err))
+				return nil, err
+			}
+
+			apply := client.Proposal[*mapprotocolv1.ApplyResponse](primitive)
+			response, ok, err := apply.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*mapprotocolv1.ApplyResponse, error) {
+				return mapprotocolv1.NewMapClient(conn).Apply(ctx, &mapprotocolv1.ApplyRequest{
+					Headers: headers,
+					ApplyInput: &mapprotocolv1.ApplyInput{
+						Inputs: inputs,
+					},
+				})
+			})
+			if !ok {
+				log.Warnw("Apply",
+					logging.Trunc128("ApplyRequest", request),
+					logging.Error("Error", err))
+				return nil, err
+			} else if err != nil {
+				log.Debugw("Apply",
+					logging.Trunc128("ApplyRequest", request),
+					logging.Error("Error", err))
+				return nil, err
+			}
+			outputs = response.Outputs
+		}
+	} else {
+		partitions := make([]*client.PartitionClient, 0, len(indexes))
+		primitives := make([]*client.PrimitiveClient, 0, len(indexes))
+		proposals := make([]*client.ProposalContext[*mapprotocolv1.PrepareResponse], 0, len(indexes))
+		for _, partition := range clients {
+			partitions = append(partitions, partition)
+			session, err := partition.GetSession(ctx)
+			if err != nil {
+				log.Warnw("Commit",
+					logging.Trunc128("CommitRequest", request),
+					logging.Error("Error", err))
+				return nil, err
+			}
+			primitive, err := session.GetPrimitive(request.ID.Name)
+			if err != nil {
+				log.Warnw("Commit",
+					logging.Trunc128("CommitRequest", request),
+					logging.Error("Error", err))
+				return nil, err
+			}
+			primitives = append(primitives, primitive)
+			proposals = append(proposals, client.Proposal[*mapprotocolv1.PrepareResponse](primitive))
+		}
+
+		err := async.IterAsync(len(partitions), func(i int) error {
+			partitionClient := partitions[i]
+			partitionIndexes := indexes[partitionClient.ID()]
+			partitionInputs := make([]mapprotocolv1.MapInput, len(partitionIndexes))
+			for j, index := range partitionIndexes {
+				partitionInputs[j] = inputs[index]
+			}
+
+			prepare := proposals[i]
+			_, ok, err := prepare.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*mapprotocolv1.PrepareResponse, error) {
+				return mapprotocolv1.NewMapClient(conn).Prepare(ctx, &mapprotocolv1.PrepareRequest{
+					Headers: headers,
+					PrepareInput: &mapprotocolv1.PrepareInput{
+						SequenceNum: prepare.Headers.SequenceNum,
+						Inputs:      partitionInputs,
+					},
+				})
+			})
+			if !ok {
+				log.Warnw("Prepare",
+					logging.Trunc128("PrepareRequest", request),
+					logging.Error("Error", err))
+				return err
+			} else if err != nil {
+				log.Debugw("Prepare",
+					logging.Trunc128("PrepareRequest", request),
+					logging.Error("Error", err))
+				return err
+			}
+			return nil
+		})
+		if err != nil {
+			_ = async.IterAsync(len(partitions), func(i int) error {
+				primitive := primitives[i]
+				prepare := proposals[i]
+				proposal := client.Proposal[*mapprotocolv1.AbortResponse](primitive)
+				_, ok, err := proposal.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*mapprotocolv1.AbortResponse, error) {
+					return mapprotocolv1.NewMapClient(conn).Abort(ctx, &mapprotocolv1.AbortRequest{
+						Headers: headers,
+						AbortInput: &mapprotocolv1.AbortInput{
+							SequenceNum: prepare.Headers.SequenceNum,
+						},
+					})
+				})
+				if !ok {
+					log.Warnw("Abort",
+						logging.Trunc128("AbortRequest", request),
+						logging.Error("Error", err))
+					return err
+				} else if err != nil {
+					log.Debugw("Abort",
+						logging.Trunc128("AbortRequest", request),
+						logging.Error("Error", err))
+					return err
+				}
+				return nil
+			})
+			return nil, err
+		}
+
+		outputMaps, err := async.ExecuteAsync[map[int]mapprotocolv1.MapOutput](len(partitions), func(i int) (map[int]mapprotocolv1.MapOutput, error) {
+			partition := partitions[i]
+			primitive := primitives[i]
+			prepare := proposals[i]
+			commit := client.Proposal[*mapprotocolv1.CommitResponse](primitive)
+			response, ok, err := commit.Run(func(conn *grpc.ClientConn, headers *protocol.ProposalRequestHeaders) (*mapprotocolv1.CommitResponse, error) {
+				return mapprotocolv1.NewMapClient(conn).Commit(ctx, &mapprotocolv1.CommitRequest{
+					Headers: headers,
+					CommitInput: &mapprotocolv1.CommitInput{
+						SequenceNum: prepare.Headers.SequenceNum,
+					},
+				})
+			})
+			if !ok {
+				log.Warnw("Commit",
+					logging.Trunc128("CommitRequest", request),
+					logging.Error("Error", err))
+				return nil, err
+			} else if err != nil {
+				log.Debugw("Commit",
+					logging.Trunc128("CommitRequest", request),
+					logging.Error("Error", err))
+				return nil, err
+			}
+
+			partitionIndexes := indexes[partition.ID()]
+			partitionOutputs := make(map[int]mapprotocolv1.MapOutput)
+			for j, output := range response.Outputs {
+				partitionOutputs[partitionIndexes[j]] = output
+			}
+			return partitionOutputs, nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		outputs = make([]mapprotocolv1.MapOutput, len(request.Operations))
+		for _, outputMap := range outputMaps {
+			for index, output := range outputMap {
+				outputs[index] = output
+			}
+		}
+	}
+
+	results := make([]mapv1.CommitResponse_Result, len(request.Operations))
+	for i, output := range outputs {
+		switch o := output.Output.(type) {
+		case *mapprotocolv1.MapOutput_Put:
+			result := &mapv1.CommitResponse_Put{
+				Version: uint64(o.Put.Index),
+			}
+			if o.Put.PrevValue != nil {
+				result.PrevValue = &mapv1.VersionedValue{
+					Value:   o.Put.PrevValue.Value,
+					Version: uint64(o.Put.PrevValue.Index),
+				}
+			}
+			results[i] = mapv1.CommitResponse_Result{
+				Result: &mapv1.CommitResponse_Result_Put{
+					Put: result,
+				},
+			}
+		case *mapprotocolv1.MapOutput_Insert:
+			result := &mapv1.CommitResponse_Insert{
+				Version: uint64(o.Insert.Index),
+			}
+			results[i] = mapv1.CommitResponse_Result{
+				Result: &mapv1.CommitResponse_Result_Insert{
+					Insert: result,
+				},
+			}
+		case *mapprotocolv1.MapOutput_Update:
+			result := &mapv1.CommitResponse_Update{
+				Version: uint64(o.Update.Index),
+				PrevValue: mapv1.VersionedValue{
+					Value:   o.Update.PrevValue.Value,
+					Version: uint64(o.Update.PrevValue.Index),
+				},
+			}
+			results[i] = mapv1.CommitResponse_Result{
+				Result: &mapv1.CommitResponse_Result_Update{
+					Update: result,
+				},
+			}
+		case *mapprotocolv1.MapOutput_Remove:
+			result := &mapv1.CommitResponse_Remove{
+				Value: mapv1.VersionedValue{
+					Value:   o.Remove.Value.Value,
+					Version: uint64(o.Remove.Value.Index),
+				},
+			}
+			results[i] = mapv1.CommitResponse_Result{
+				Result: &mapv1.CommitResponse_Result_Remove{
+					Remove: result,
+				},
+			}
+		}
+	}
+
+	response := &mapv1.CommitResponse{
+		Results: results,
+	}
+	log.Debugw("Commit",
+		logging.Trunc128("CommitRequest", request),
+		logging.Trunc128("CommitResponse", response))
+	return response, nil
+}
+
 func (s *MapSession) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsServer) error {
 	log.Debugw("Events received",
 		logging.Trunc128("EventsRequest", request))
