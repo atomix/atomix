@@ -251,6 +251,10 @@ func (c *etcdMap) Clear(ctx context.Context, request *mapv1.ClearRequest) (*mapv
 	return &mapv1.ClearResponse{}, nil
 }
 
+func (c *etcdMap) Commit(ctx context.Context, request *mapv1.CommitRequest) (*mapv1.CommitResponse, error) {
+	return nil, errors.NewNotSupported("Commit not supported by etcd driver")
+}
+
 func (c *etcdMap) Lock(ctx context.Context, request *mapv1.LockRequest) (*mapv1.LockResponse, error) {
 	return nil, errors.NewNotSupported("Lock not supported by etcd driver")
 }

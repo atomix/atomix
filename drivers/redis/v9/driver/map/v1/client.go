@@ -129,3 +129,7 @@ func (c *redisMap) Events(request *mapv1.EventsRequest, server mapv1.Map_EventsS
 func (c *redisMap) Entries(request *mapv1.EntriesRequest, server mapv1.Map_EntriesServer) error {
 	return errors.NewNotSupported("Entries not supported")
 }
+
+func (c *redisMap) Commit(ctx context.Context, request *mapv1.CommitRequest) (*mapv1.CommitResponse, error) {
+	return nil, errors.NewNotSupported("Commit not supported")
+}
