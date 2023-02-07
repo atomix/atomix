@@ -92,10 +92,7 @@ func (i *SidecarInjector) Handle(ctx context.Context, request admission.Request)
 	}
 
 	// Get the pull policy for the sidecar image
-	imagePullPolicy, ok := pod.Annotations[sidecarImagePullPolicyAnnotation]
-	if !ok {
-		imagePullPolicy = string(corev1.PullAlways)
-	}
+	imagePullPolicy := pod.Annotations[sidecarImagePullPolicyAnnotation]
 
 	var args []string
 	logLevel, ok := pod.Annotations[sidecarLogLevelAnnotation]
