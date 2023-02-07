@@ -52,6 +52,9 @@ service Map {
     // Entries lists all entries in the map
     rpc Entries (EntriesRequest) returns (stream EntriesResponse);
 
+    // Commit commits a transactional change to the map
+    rpc Commit (CommitRequest) returns (CommitResponse);
+
     // Create creates the Map
     // Deprecated: use the Maps service instead
     rpc Create (CreateRequest) returns (CreateResponse) {
@@ -212,6 +215,96 @@ message EntriesResponse {
     Entry entry = 1 [
         (gogoproto.nullable) = false
     ];
+}
+
+message CommitRequest {
+    atomix.runtime.v1.PrimitiveID id = 1 [
+        (gogoproto.customname) = "ID",
+        (gogoproto.nullable) = false
+    ];
+    repeated Operation operations = 2 [
+        (gogoproto.nullable) = false
+    ];
+
+    message Operation {
+        oneof operation {
+            Put put = 1;
+            Insert insert = 2;
+            Update update = 3;
+            Remove remove = 4;
+        }
+    }
+
+    message Put {
+        string key = 1;
+        bytes value = 2;
+        google.protobuf.Duration ttl = 3 [
+            (gogoproto.customname) = "TTL",
+            (gogoproto.stdduration) = true
+        ];
+        uint64 prev_version = 4;
+    }
+
+    message Insert {
+        string key = 1;
+        bytes value = 2;
+        google.protobuf.Duration ttl = 3 [
+            (gogoproto.customname) = "TTL",
+            (gogoproto.stdduration) = true
+        ];
+    }
+
+    message Update {
+        string key = 1;
+        bytes value = 2;
+        google.protobuf.Duration ttl = 3 [
+            (gogoproto.customname) = "TTL",
+            (gogoproto.stdduration) = true
+        ];
+        uint64 prev_version = 4;
+    }
+
+    message Remove {
+        string key = 1;
+        uint64 prev_version = 2;
+    }
+}
+
+message CommitResponse {
+    repeated Result results = 1 [
+        (gogoproto.nullable) = false
+    ];
+
+    message Result {
+        oneof result {
+            Put put = 1;
+            Insert insert = 2;
+            Update update = 3;
+            Remove remove = 4;
+        }
+    }
+
+    message Put {
+        uint64 version = 1;
+        VersionedValue prev_value = 2;
+    }
+
+    message Insert {
+        uint64 version = 1;
+    }
+
+    message Update {
+        uint64 version = 1;
+        VersionedValue prev_value = 2 [
+            (gogoproto.nullable) = false
+        ];
+    }
+
+    message Remove {
+        VersionedValue value = 1 [
+            (gogoproto.nullable) = false
+        ];
+    }
 }
 
 message EventsRequest {

@@ -6,6 +6,18 @@
 - [runtime/map/v1/map.proto](#runtime_map_v1_map-proto)
     - [ClearRequest](#atomix-runtime-map-v1-ClearRequest)
     - [ClearResponse](#atomix-runtime-map-v1-ClearResponse)
+    - [CommitRequest](#atomix-runtime-map-v1-CommitRequest)
+    - [CommitRequest.Insert](#atomix-runtime-map-v1-CommitRequest-Insert)
+    - [CommitRequest.Operation](#atomix-runtime-map-v1-CommitRequest-Operation)
+    - [CommitRequest.Put](#atomix-runtime-map-v1-CommitRequest-Put)
+    - [CommitRequest.Remove](#atomix-runtime-map-v1-CommitRequest-Remove)
+    - [CommitRequest.Update](#atomix-runtime-map-v1-CommitRequest-Update)
+    - [CommitResponse](#atomix-runtime-map-v1-CommitResponse)
+    - [CommitResponse.Insert](#atomix-runtime-map-v1-CommitResponse-Insert)
+    - [CommitResponse.Put](#atomix-runtime-map-v1-CommitResponse-Put)
+    - [CommitResponse.Remove](#atomix-runtime-map-v1-CommitResponse-Remove)
+    - [CommitResponse.Result](#atomix-runtime-map-v1-CommitResponse-Result)
+    - [CommitResponse.Update](#atomix-runtime-map-v1-CommitResponse-Update)
     - [EntriesRequest](#atomix-runtime-map-v1-EntriesRequest)
     - [EntriesResponse](#atomix-runtime-map-v1-EntriesResponse)
     - [Entry](#atomix-runtime-map-v1-Entry)
@@ -65,6 +77,204 @@
 
 ### ClearResponse
 
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-CommitRequest"></a>
+
+### CommitRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [atomix.runtime.v1.PrimitiveID](#atomix-runtime-v1-PrimitiveID) |  |  |
+| operations | [CommitRequest.Operation](#atomix-runtime-map-v1-CommitRequest-Operation) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-CommitRequest-Insert"></a>
+
+### CommitRequest.Insert
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [bytes](#bytes) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-CommitRequest-Operation"></a>
+
+### CommitRequest.Operation
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| put | [CommitRequest.Put](#atomix-runtime-map-v1-CommitRequest-Put) |  |  |
+| insert | [CommitRequest.Insert](#atomix-runtime-map-v1-CommitRequest-Insert) |  |  |
+| update | [CommitRequest.Update](#atomix-runtime-map-v1-CommitRequest-Update) |  |  |
+| remove | [CommitRequest.Remove](#atomix-runtime-map-v1-CommitRequest-Remove) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-CommitRequest-Put"></a>
+
+### CommitRequest.Put
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [bytes](#bytes) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+| prev_version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-CommitRequest-Remove"></a>
+
+### CommitRequest.Remove
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| prev_version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-CommitRequest-Update"></a>
+
+### CommitRequest.Update
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [bytes](#bytes) |  |  |
+| ttl | [google.protobuf.Duration](#google-protobuf-Duration) |  |  |
+| prev_version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-CommitResponse"></a>
+
+### CommitResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| results | [CommitResponse.Result](#atomix-runtime-map-v1-CommitResponse-Result) | repeated |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-CommitResponse-Insert"></a>
+
+### CommitResponse.Insert
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-CommitResponse-Put"></a>
+
+### CommitResponse.Put
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [uint64](#uint64) |  |  |
+| prev_value | [VersionedValue](#atomix-runtime-map-v1-VersionedValue) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-CommitResponse-Remove"></a>
+
+### CommitResponse.Remove
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [VersionedValue](#atomix-runtime-map-v1-VersionedValue) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-CommitResponse-Result"></a>
+
+### CommitResponse.Result
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| put | [CommitResponse.Put](#atomix-runtime-map-v1-CommitResponse-Put) |  |  |
+| insert | [CommitResponse.Insert](#atomix-runtime-map-v1-CommitResponse-Insert) |  |  |
+| update | [CommitResponse.Update](#atomix-runtime-map-v1-CommitResponse-Update) |  |  |
+| remove | [CommitResponse.Remove](#atomix-runtime-map-v1-CommitResponse-Remove) |  |  |
+
+
+
+
+
+
+<a name="atomix-runtime-map-v1-CommitResponse-Update"></a>
+
+### CommitResponse.Update
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [uint64](#uint64) |  |  |
+| prev_value | [VersionedValue](#atomix-runtime-map-v1-VersionedValue) |  |  |
 
 
 
@@ -503,6 +713,7 @@ Map is a service for a map primitive
 | Unlock | [UnlockRequest](#atomix-runtime-map-v1-UnlockRequest) | [UnlockResponse](#atomix-runtime-map-v1-UnlockResponse) | Unlock unlocks a key in the map |
 | Events | [EventsRequest](#atomix-runtime-map-v1-EventsRequest) | [EventsResponse](#atomix-runtime-map-v1-EventsResponse) stream | Events listens for change events |
 | Entries | [EntriesRequest](#atomix-runtime-map-v1-EntriesRequest) | [EntriesResponse](#atomix-runtime-map-v1-EntriesResponse) stream | Entries lists all entries in the map |
+| Commit | [CommitRequest](#atomix-runtime-map-v1-CommitRequest) | [CommitResponse](#atomix-runtime-map-v1-CommitResponse) | Commit commits a transactional change to the map |
 | Create | [CreateRequest](#atomix-runtime-map-v1-CreateRequest) | [CreateResponse](#atomix-runtime-map-v1-CreateResponse) | Create creates the Map Deprecated: use the Maps service instead |
 | Close | [CloseRequest](#atomix-runtime-map-v1-CloseRequest) | [CloseResponse](#atomix-runtime-map-v1-CloseResponse) | Close closes the Map Deprecated: use the Maps service instead |
 

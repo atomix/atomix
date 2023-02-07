@@ -1048,6 +1048,764 @@ func (m *EntriesResponse) GetEntry() Entry {
 	return Entry{}
 }
 
+type CommitRequest struct {
+	ID         v1.PrimitiveID            `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
+	Operations []CommitRequest_Operation `protobuf:"bytes,2,rep,name=operations,proto3" json:"operations"`
+}
+
+func (m *CommitRequest) Reset()         { *m = CommitRequest{} }
+func (m *CommitRequest) String() string { return proto.CompactTextString(m) }
+func (*CommitRequest) ProtoMessage()    {}
+func (*CommitRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7498de5246e2fda8, []int{20}
+}
+func (m *CommitRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitRequest.Merge(m, src)
+}
+func (m *CommitRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitRequest proto.InternalMessageInfo
+
+func (m *CommitRequest) GetID() v1.PrimitiveID {
+	if m != nil {
+		return m.ID
+	}
+	return v1.PrimitiveID{}
+}
+
+func (m *CommitRequest) GetOperations() []CommitRequest_Operation {
+	if m != nil {
+		return m.Operations
+	}
+	return nil
+}
+
+type CommitRequest_Operation struct {
+	// Types that are valid to be assigned to Operation:
+	//	*CommitRequest_Operation_Put
+	//	*CommitRequest_Operation_Insert
+	//	*CommitRequest_Operation_Update
+	//	*CommitRequest_Operation_Remove
+	Operation isCommitRequest_Operation_Operation `protobuf_oneof:"operation"`
+}
+
+func (m *CommitRequest_Operation) Reset()         { *m = CommitRequest_Operation{} }
+func (m *CommitRequest_Operation) String() string { return proto.CompactTextString(m) }
+func (*CommitRequest_Operation) ProtoMessage()    {}
+func (*CommitRequest_Operation) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7498de5246e2fda8, []int{20, 0}
+}
+func (m *CommitRequest_Operation) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitRequest_Operation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitRequest_Operation.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitRequest_Operation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitRequest_Operation.Merge(m, src)
+}
+func (m *CommitRequest_Operation) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitRequest_Operation) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitRequest_Operation.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitRequest_Operation proto.InternalMessageInfo
+
+type isCommitRequest_Operation_Operation interface {
+	isCommitRequest_Operation_Operation()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type CommitRequest_Operation_Put struct {
+	Put *CommitRequest_Put `protobuf:"bytes,1,opt,name=put,proto3,oneof" json:"put,omitempty"`
+}
+type CommitRequest_Operation_Insert struct {
+	Insert *CommitRequest_Insert `protobuf:"bytes,2,opt,name=insert,proto3,oneof" json:"insert,omitempty"`
+}
+type CommitRequest_Operation_Update struct {
+	Update *CommitRequest_Update `protobuf:"bytes,3,opt,name=update,proto3,oneof" json:"update,omitempty"`
+}
+type CommitRequest_Operation_Remove struct {
+	Remove *CommitRequest_Remove `protobuf:"bytes,4,opt,name=remove,proto3,oneof" json:"remove,omitempty"`
+}
+
+func (*CommitRequest_Operation_Put) isCommitRequest_Operation_Operation()    {}
+func (*CommitRequest_Operation_Insert) isCommitRequest_Operation_Operation() {}
+func (*CommitRequest_Operation_Update) isCommitRequest_Operation_Operation() {}
+func (*CommitRequest_Operation_Remove) isCommitRequest_Operation_Operation() {}
+
+func (m *CommitRequest_Operation) GetOperation() isCommitRequest_Operation_Operation {
+	if m != nil {
+		return m.Operation
+	}
+	return nil
+}
+
+func (m *CommitRequest_Operation) GetPut() *CommitRequest_Put {
+	if x, ok := m.GetOperation().(*CommitRequest_Operation_Put); ok {
+		return x.Put
+	}
+	return nil
+}
+
+func (m *CommitRequest_Operation) GetInsert() *CommitRequest_Insert {
+	if x, ok := m.GetOperation().(*CommitRequest_Operation_Insert); ok {
+		return x.Insert
+	}
+	return nil
+}
+
+func (m *CommitRequest_Operation) GetUpdate() *CommitRequest_Update {
+	if x, ok := m.GetOperation().(*CommitRequest_Operation_Update); ok {
+		return x.Update
+	}
+	return nil
+}
+
+func (m *CommitRequest_Operation) GetRemove() *CommitRequest_Remove {
+	if x, ok := m.GetOperation().(*CommitRequest_Operation_Remove); ok {
+		return x.Remove
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*CommitRequest_Operation) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*CommitRequest_Operation_Put)(nil),
+		(*CommitRequest_Operation_Insert)(nil),
+		(*CommitRequest_Operation_Update)(nil),
+		(*CommitRequest_Operation_Remove)(nil),
+	}
+}
+
+type CommitRequest_Put struct {
+	Key         string         `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value       []byte         `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	TTL         *time.Duration `protobuf:"bytes,3,opt,name=ttl,proto3,stdduration" json:"ttl,omitempty"`
+	PrevVersion uint64         `protobuf:"varint,4,opt,name=prev_version,json=prevVersion,proto3" json:"prev_version,omitempty"`
+}
+
+func (m *CommitRequest_Put) Reset()         { *m = CommitRequest_Put{} }
+func (m *CommitRequest_Put) String() string { return proto.CompactTextString(m) }
+func (*CommitRequest_Put) ProtoMessage()    {}
+func (*CommitRequest_Put) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7498de5246e2fda8, []int{20, 1}
+}
+func (m *CommitRequest_Put) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitRequest_Put) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitRequest_Put.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitRequest_Put) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitRequest_Put.Merge(m, src)
+}
+func (m *CommitRequest_Put) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitRequest_Put) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitRequest_Put.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitRequest_Put proto.InternalMessageInfo
+
+func (m *CommitRequest_Put) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+func (m *CommitRequest_Put) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *CommitRequest_Put) GetTTL() *time.Duration {
+	if m != nil {
+		return m.TTL
+	}
+	return nil
+}
+
+func (m *CommitRequest_Put) GetPrevVersion() uint64 {
+	if m != nil {
+		return m.PrevVersion
+	}
+	return 0
+}
+
+type CommitRequest_Insert struct {
+	Key   string         `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value []byte         `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	TTL   *time.Duration `protobuf:"bytes,3,opt,name=ttl,proto3,stdduration" json:"ttl,omitempty"`
+}
+
+func (m *CommitRequest_Insert) Reset()         { *m = CommitRequest_Insert{} }
+func (m *CommitRequest_Insert) String() string { return proto.CompactTextString(m) }
+func (*CommitRequest_Insert) ProtoMessage()    {}
+func (*CommitRequest_Insert) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7498de5246e2fda8, []int{20, 2}
+}
+func (m *CommitRequest_Insert) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitRequest_Insert) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitRequest_Insert.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitRequest_Insert) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitRequest_Insert.Merge(m, src)
+}
+func (m *CommitRequest_Insert) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitRequest_Insert) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitRequest_Insert.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitRequest_Insert proto.InternalMessageInfo
+
+func (m *CommitRequest_Insert) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+func (m *CommitRequest_Insert) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *CommitRequest_Insert) GetTTL() *time.Duration {
+	if m != nil {
+		return m.TTL
+	}
+	return nil
+}
+
+type CommitRequest_Update struct {
+	Key         string         `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value       []byte         `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	TTL         *time.Duration `protobuf:"bytes,3,opt,name=ttl,proto3,stdduration" json:"ttl,omitempty"`
+	PrevVersion uint64         `protobuf:"varint,4,opt,name=prev_version,json=prevVersion,proto3" json:"prev_version,omitempty"`
+}
+
+func (m *CommitRequest_Update) Reset()         { *m = CommitRequest_Update{} }
+func (m *CommitRequest_Update) String() string { return proto.CompactTextString(m) }
+func (*CommitRequest_Update) ProtoMessage()    {}
+func (*CommitRequest_Update) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7498de5246e2fda8, []int{20, 3}
+}
+func (m *CommitRequest_Update) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitRequest_Update) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitRequest_Update.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitRequest_Update) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitRequest_Update.Merge(m, src)
+}
+func (m *CommitRequest_Update) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitRequest_Update) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitRequest_Update.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitRequest_Update proto.InternalMessageInfo
+
+func (m *CommitRequest_Update) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+func (m *CommitRequest_Update) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *CommitRequest_Update) GetTTL() *time.Duration {
+	if m != nil {
+		return m.TTL
+	}
+	return nil
+}
+
+func (m *CommitRequest_Update) GetPrevVersion() uint64 {
+	if m != nil {
+		return m.PrevVersion
+	}
+	return 0
+}
+
+type CommitRequest_Remove struct {
+	Key         string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	PrevVersion uint64 `protobuf:"varint,2,opt,name=prev_version,json=prevVersion,proto3" json:"prev_version,omitempty"`
+}
+
+func (m *CommitRequest_Remove) Reset()         { *m = CommitRequest_Remove{} }
+func (m *CommitRequest_Remove) String() string { return proto.CompactTextString(m) }
+func (*CommitRequest_Remove) ProtoMessage()    {}
+func (*CommitRequest_Remove) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7498de5246e2fda8, []int{20, 4}
+}
+func (m *CommitRequest_Remove) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitRequest_Remove) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitRequest_Remove.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitRequest_Remove) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitRequest_Remove.Merge(m, src)
+}
+func (m *CommitRequest_Remove) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitRequest_Remove) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitRequest_Remove.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitRequest_Remove proto.InternalMessageInfo
+
+func (m *CommitRequest_Remove) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+func (m *CommitRequest_Remove) GetPrevVersion() uint64 {
+	if m != nil {
+		return m.PrevVersion
+	}
+	return 0
+}
+
+type CommitResponse struct {
+	Results []CommitResponse_Result `protobuf:"bytes,1,rep,name=results,proto3" json:"results"`
+}
+
+func (m *CommitResponse) Reset()         { *m = CommitResponse{} }
+func (m *CommitResponse) String() string { return proto.CompactTextString(m) }
+func (*CommitResponse) ProtoMessage()    {}
+func (*CommitResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7498de5246e2fda8, []int{21}
+}
+func (m *CommitResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitResponse.Merge(m, src)
+}
+func (m *CommitResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitResponse proto.InternalMessageInfo
+
+func (m *CommitResponse) GetResults() []CommitResponse_Result {
+	if m != nil {
+		return m.Results
+	}
+	return nil
+}
+
+type CommitResponse_Result struct {
+	// Types that are valid to be assigned to Result:
+	//	*CommitResponse_Result_Put
+	//	*CommitResponse_Result_Insert
+	//	*CommitResponse_Result_Update
+	//	*CommitResponse_Result_Remove
+	Result isCommitResponse_Result_Result `protobuf_oneof:"result"`
+}
+
+func (m *CommitResponse_Result) Reset()         { *m = CommitResponse_Result{} }
+func (m *CommitResponse_Result) String() string { return proto.CompactTextString(m) }
+func (*CommitResponse_Result) ProtoMessage()    {}
+func (*CommitResponse_Result) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7498de5246e2fda8, []int{21, 0}
+}
+func (m *CommitResponse_Result) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitResponse_Result) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitResponse_Result.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitResponse_Result) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitResponse_Result.Merge(m, src)
+}
+func (m *CommitResponse_Result) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitResponse_Result) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitResponse_Result.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitResponse_Result proto.InternalMessageInfo
+
+type isCommitResponse_Result_Result interface {
+	isCommitResponse_Result_Result()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type CommitResponse_Result_Put struct {
+	Put *CommitResponse_Put `protobuf:"bytes,1,opt,name=put,proto3,oneof" json:"put,omitempty"`
+}
+type CommitResponse_Result_Insert struct {
+	Insert *CommitResponse_Insert `protobuf:"bytes,2,opt,name=insert,proto3,oneof" json:"insert,omitempty"`
+}
+type CommitResponse_Result_Update struct {
+	Update *CommitResponse_Update `protobuf:"bytes,3,opt,name=update,proto3,oneof" json:"update,omitempty"`
+}
+type CommitResponse_Result_Remove struct {
+	Remove *CommitResponse_Remove `protobuf:"bytes,4,opt,name=remove,proto3,oneof" json:"remove,omitempty"`
+}
+
+func (*CommitResponse_Result_Put) isCommitResponse_Result_Result()    {}
+func (*CommitResponse_Result_Insert) isCommitResponse_Result_Result() {}
+func (*CommitResponse_Result_Update) isCommitResponse_Result_Result() {}
+func (*CommitResponse_Result_Remove) isCommitResponse_Result_Result() {}
+
+func (m *CommitResponse_Result) GetResult() isCommitResponse_Result_Result {
+	if m != nil {
+		return m.Result
+	}
+	return nil
+}
+
+func (m *CommitResponse_Result) GetPut() *CommitResponse_Put {
+	if x, ok := m.GetResult().(*CommitResponse_Result_Put); ok {
+		return x.Put
+	}
+	return nil
+}
+
+func (m *CommitResponse_Result) GetInsert() *CommitResponse_Insert {
+	if x, ok := m.GetResult().(*CommitResponse_Result_Insert); ok {
+		return x.Insert
+	}
+	return nil
+}
+
+func (m *CommitResponse_Result) GetUpdate() *CommitResponse_Update {
+	if x, ok := m.GetResult().(*CommitResponse_Result_Update); ok {
+		return x.Update
+	}
+	return nil
+}
+
+func (m *CommitResponse_Result) GetRemove() *CommitResponse_Remove {
+	if x, ok := m.GetResult().(*CommitResponse_Result_Remove); ok {
+		return x.Remove
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*CommitResponse_Result) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*CommitResponse_Result_Put)(nil),
+		(*CommitResponse_Result_Insert)(nil),
+		(*CommitResponse_Result_Update)(nil),
+		(*CommitResponse_Result_Remove)(nil),
+	}
+}
+
+type CommitResponse_Put struct {
+	Version   uint64          `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
+	PrevValue *VersionedValue `protobuf:"bytes,2,opt,name=prev_value,json=prevValue,proto3" json:"prev_value,omitempty"`
+}
+
+func (m *CommitResponse_Put) Reset()         { *m = CommitResponse_Put{} }
+func (m *CommitResponse_Put) String() string { return proto.CompactTextString(m) }
+func (*CommitResponse_Put) ProtoMessage()    {}
+func (*CommitResponse_Put) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7498de5246e2fda8, []int{21, 1}
+}
+func (m *CommitResponse_Put) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitResponse_Put) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitResponse_Put.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitResponse_Put) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitResponse_Put.Merge(m, src)
+}
+func (m *CommitResponse_Put) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitResponse_Put) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitResponse_Put.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitResponse_Put proto.InternalMessageInfo
+
+func (m *CommitResponse_Put) GetVersion() uint64 {
+	if m != nil {
+		return m.Version
+	}
+	return 0
+}
+
+func (m *CommitResponse_Put) GetPrevValue() *VersionedValue {
+	if m != nil {
+		return m.PrevValue
+	}
+	return nil
+}
+
+type CommitResponse_Insert struct {
+	Version uint64 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
+}
+
+func (m *CommitResponse_Insert) Reset()         { *m = CommitResponse_Insert{} }
+func (m *CommitResponse_Insert) String() string { return proto.CompactTextString(m) }
+func (*CommitResponse_Insert) ProtoMessage()    {}
+func (*CommitResponse_Insert) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7498de5246e2fda8, []int{21, 2}
+}
+func (m *CommitResponse_Insert) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitResponse_Insert) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitResponse_Insert.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitResponse_Insert) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitResponse_Insert.Merge(m, src)
+}
+func (m *CommitResponse_Insert) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitResponse_Insert) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitResponse_Insert.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitResponse_Insert proto.InternalMessageInfo
+
+func (m *CommitResponse_Insert) GetVersion() uint64 {
+	if m != nil {
+		return m.Version
+	}
+	return 0
+}
+
+type CommitResponse_Update struct {
+	Version   uint64         `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
+	PrevValue VersionedValue `protobuf:"bytes,2,opt,name=prev_value,json=prevValue,proto3" json:"prev_value"`
+}
+
+func (m *CommitResponse_Update) Reset()         { *m = CommitResponse_Update{} }
+func (m *CommitResponse_Update) String() string { return proto.CompactTextString(m) }
+func (*CommitResponse_Update) ProtoMessage()    {}
+func (*CommitResponse_Update) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7498de5246e2fda8, []int{21, 3}
+}
+func (m *CommitResponse_Update) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitResponse_Update) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitResponse_Update.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitResponse_Update) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitResponse_Update.Merge(m, src)
+}
+func (m *CommitResponse_Update) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitResponse_Update) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitResponse_Update.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitResponse_Update proto.InternalMessageInfo
+
+func (m *CommitResponse_Update) GetVersion() uint64 {
+	if m != nil {
+		return m.Version
+	}
+	return 0
+}
+
+func (m *CommitResponse_Update) GetPrevValue() VersionedValue {
+	if m != nil {
+		return m.PrevValue
+	}
+	return VersionedValue{}
+}
+
+type CommitResponse_Remove struct {
+	Value VersionedValue `protobuf:"bytes,1,opt,name=value,proto3" json:"value"`
+}
+
+func (m *CommitResponse_Remove) Reset()         { *m = CommitResponse_Remove{} }
+func (m *CommitResponse_Remove) String() string { return proto.CompactTextString(m) }
+func (*CommitResponse_Remove) ProtoMessage()    {}
+func (*CommitResponse_Remove) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7498de5246e2fda8, []int{21, 4}
+}
+func (m *CommitResponse_Remove) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CommitResponse_Remove) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CommitResponse_Remove.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CommitResponse_Remove) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitResponse_Remove.Merge(m, src)
+}
+func (m *CommitResponse_Remove) XXX_Size() int {
+	return m.Size()
+}
+func (m *CommitResponse_Remove) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitResponse_Remove.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitResponse_Remove proto.InternalMessageInfo
+
+func (m *CommitResponse_Remove) GetValue() VersionedValue {
+	if m != nil {
+		return m.Value
+	}
+	return VersionedValue{}
+}
+
 type EventsRequest struct {
 	ID  v1.PrimitiveID `protobuf:"bytes,1,opt,name=id,proto3" json:"id"`
 	Key string         `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
@@ -1057,7 +1815,7 @@ func (m *EventsRequest) Reset()         { *m = EventsRequest{} }
 func (m *EventsRequest) String() string { return proto.CompactTextString(m) }
 func (*EventsRequest) ProtoMessage()    {}
 func (*EventsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7498de5246e2fda8, []int{20}
+	return fileDescriptor_7498de5246e2fda8, []int{22}
 }
 func (m *EventsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1108,7 +1866,7 @@ func (m *EventsResponse) Reset()         { *m = EventsResponse{} }
 func (m *EventsResponse) String() string { return proto.CompactTextString(m) }
 func (*EventsResponse) ProtoMessage()    {}
 func (*EventsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7498de5246e2fda8, []int{21}
+	return fileDescriptor_7498de5246e2fda8, []int{23}
 }
 func (m *EventsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1157,7 +1915,7 @@ func (m *Event) Reset()         { *m = Event{} }
 func (m *Event) String() string { return proto.CompactTextString(m) }
 func (*Event) ProtoMessage()    {}
 func (*Event) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7498de5246e2fda8, []int{22}
+	return fileDescriptor_7498de5246e2fda8, []int{24}
 }
 func (m *Event) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1258,7 +2016,7 @@ func (m *Event_Inserted) Reset()         { *m = Event_Inserted{} }
 func (m *Event_Inserted) String() string { return proto.CompactTextString(m) }
 func (*Event_Inserted) ProtoMessage()    {}
 func (*Event_Inserted) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7498de5246e2fda8, []int{22, 0}
+	return fileDescriptor_7498de5246e2fda8, []int{24, 0}
 }
 func (m *Event_Inserted) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1303,7 +2061,7 @@ func (m *Event_Updated) Reset()         { *m = Event_Updated{} }
 func (m *Event_Updated) String() string { return proto.CompactTextString(m) }
 func (*Event_Updated) ProtoMessage()    {}
 func (*Event_Updated) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7498de5246e2fda8, []int{22, 1}
+	return fileDescriptor_7498de5246e2fda8, []int{24, 1}
 }
 func (m *Event_Updated) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1355,7 +2113,7 @@ func (m *Event_Removed) Reset()         { *m = Event_Removed{} }
 func (m *Event_Removed) String() string { return proto.CompactTextString(m) }
 func (*Event_Removed) ProtoMessage()    {}
 func (*Event_Removed) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7498de5246e2fda8, []int{22, 2}
+	return fileDescriptor_7498de5246e2fda8, []int{24, 2}
 }
 func (m *Event_Removed) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1407,7 +2165,7 @@ func (m *Entry) Reset()         { *m = Entry{} }
 func (m *Entry) String() string { return proto.CompactTextString(m) }
 func (*Entry) ProtoMessage()    {}
 func (*Entry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7498de5246e2fda8, []int{23}
+	return fileDescriptor_7498de5246e2fda8, []int{25}
 }
 func (m *Entry) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1459,7 +2217,7 @@ func (m *VersionedValue) Reset()         { *m = VersionedValue{} }
 func (m *VersionedValue) String() string { return proto.CompactTextString(m) }
 func (*VersionedValue) ProtoMessage()    {}
 func (*VersionedValue) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7498de5246e2fda8, []int{24}
+	return fileDescriptor_7498de5246e2fda8, []int{26}
 }
 func (m *VersionedValue) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1523,6 +2281,18 @@ func init() {
 	proto.RegisterType((*UnlockResponse)(nil), "atomix.runtime.map.v1.UnlockResponse")
 	proto.RegisterType((*EntriesRequest)(nil), "atomix.runtime.map.v1.EntriesRequest")
 	proto.RegisterType((*EntriesResponse)(nil), "atomix.runtime.map.v1.EntriesResponse")
+	proto.RegisterType((*CommitRequest)(nil), "atomix.runtime.map.v1.CommitRequest")
+	proto.RegisterType((*CommitRequest_Operation)(nil), "atomix.runtime.map.v1.CommitRequest.Operation")
+	proto.RegisterType((*CommitRequest_Put)(nil), "atomix.runtime.map.v1.CommitRequest.Put")
+	proto.RegisterType((*CommitRequest_Insert)(nil), "atomix.runtime.map.v1.CommitRequest.Insert")
+	proto.RegisterType((*CommitRequest_Update)(nil), "atomix.runtime.map.v1.CommitRequest.Update")
+	proto.RegisterType((*CommitRequest_Remove)(nil), "atomix.runtime.map.v1.CommitRequest.Remove")
+	proto.RegisterType((*CommitResponse)(nil), "atomix.runtime.map.v1.CommitResponse")
+	proto.RegisterType((*CommitResponse_Result)(nil), "atomix.runtime.map.v1.CommitResponse.Result")
+	proto.RegisterType((*CommitResponse_Put)(nil), "atomix.runtime.map.v1.CommitResponse.Put")
+	proto.RegisterType((*CommitResponse_Insert)(nil), "atomix.runtime.map.v1.CommitResponse.Insert")
+	proto.RegisterType((*CommitResponse_Update)(nil), "atomix.runtime.map.v1.CommitResponse.Update")
+	proto.RegisterType((*CommitResponse_Remove)(nil), "atomix.runtime.map.v1.CommitResponse.Remove")
 	proto.RegisterType((*EventsRequest)(nil), "atomix.runtime.map.v1.EventsRequest")
 	proto.RegisterType((*EventsResponse)(nil), "atomix.runtime.map.v1.EventsResponse")
 	proto.RegisterType((*Event)(nil), "atomix.runtime.map.v1.Event")
@@ -1536,72 +2306,90 @@ func init() {
 func init() { proto.RegisterFile("runtime/map/v1/map.proto", fileDescriptor_7498de5246e2fda8) }
 
 var fileDescriptor_7498de5246e2fda8 = []byte{
-	// 1031 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x56, 0x4b, 0x6f, 0xdb, 0x46,
-	0x10, 0xd6, 0x8a, 0x7a, 0x79, 0xf4, 0x48, 0xb0, 0x70, 0x01, 0x85, 0x28, 0x64, 0x65, 0x1b, 0x17,
-	0x42, 0x0f, 0x54, 0x95, 0x1e, 0x9a, 0xb6, 0x97, 0x54, 0x76, 0x90, 0xca, 0xb5, 0x11, 0x81, 0x89,
-	0x1d, 0x20, 0x40, 0x11, 0xd0, 0xd1, 0xc6, 0x25, 0x2c, 0x91, 0x2c, 0x5f, 0x8d, 0x73, 0xea, 0xb1,
-	0xc7, 0x1e, 0xfd, 0x27, 0xfa, 0x13, 0x7a, 0xcf, 0xa5, 0x80, 0x8f, 0xbd, 0xd4, 0x2d, 0xe4, 0x3f,
-	0x52, 0xec, 0xcb, 0xa2, 0x9c, 0x90, 0x42, 0x0a, 0xfa, 0xd0, 0x9e, 0xb8, 0xdc, 0x9d, 0xf9, 0xe6,
-	0xdb, 0xdd, 0x6f, 0x67, 0x06, 0xda, 0x7e, 0xe4, 0x84, 0xf6, 0x8c, 0xf6, 0x67, 0x96, 0xd7, 0x8f,
-	0x07, 0xec, 0x63, 0x78, 0xbe, 0x1b, 0xba, 0xf8, 0x03, 0x2b, 0x74, 0x67, 0xf6, 0x2b, 0x43, 0x1a,
-	0x18, 0x6c, 0x25, 0x1e, 0xe8, 0x9d, 0x23, 0xd7, 0x3d, 0x9a, 0xd2, 0x3e, 0x37, 0x3a, 0x8c, 0x5e,
-	0xf6, 0x27, 0x91, 0x6f, 0x85, 0xb6, 0xeb, 0x08, 0x37, 0xfd, 0x12, 0x30, 0x1e, 0xf4, 0x95, 0xab,
-	0x58, 0xb9, 0xf5, 0x76, 0xa8, 0x40, 0x2e, 0xad, 0x1f, 0xb9, 0x47, 0x2e, 0x1f, 0xf6, 0xd9, 0x48,
-	0xcc, 0x92, 0x11, 0xd4, 0x1f, 0xdb, 0xaf, 0xa9, 0x49, 0x7f, 0x88, 0x68, 0x10, 0xe2, 0x2f, 0xa1,
-	0x68, 0x4f, 0xda, 0xa8, 0x8b, 0x7a, 0xf5, 0xbb, 0x1d, 0xe3, 0x0a, 0xbb, 0x78, 0x60, 0x8c, 0x7d,
-	0x7b, 0x66, 0x87, 0x76, 0x4c, 0x47, 0xdb, 0x43, 0x78, 0x73, 0xbe, 0x51, 0x98, 0x9f, 0x6f, 0x14,
-	0x47, 0xdb, 0x66, 0xd1, 0x9e, 0x10, 0x02, 0x0d, 0x01, 0x15, 0x78, 0xae, 0x13, 0x50, 0x8c, 0xa1,
-	0x14, 0xd8, 0xaf, 0x29, 0x47, 0x6b, 0x9a, 0x7c, 0x4c, 0x7e, 0x47, 0x00, 0xe3, 0x28, 0xcc, 0x21,
-	0x1c, 0xbe, 0x09, 0xda, 0x31, 0x3d, 0x69, 0x17, 0xbb, 0xa8, 0xb7, 0x66, 0xb2, 0x21, 0x5e, 0x87,
-	0x72, 0x6c, 0x4d, 0x23, 0xda, 0xd6, 0xba, 0xa8, 0xd7, 0x30, 0xc5, 0x0f, 0xbe, 0x07, 0x5a, 0x18,
-	0x4e, 0xdb, 0x25, 0x1e, 0xe4, 0x96, 0x21, 0x8e, 0xd6, 0x50, 0x47, 0x6b, 0x6c, 0xcb, 0xa3, 0x1d,
-	0xd6, 0xe7, 0xe7, 0x1b, 0xda, 0x93, 0x27, 0xbb, 0xa7, 0x7f, 0x6d, 0x20, 0x93, 0xb9, 0xe0, 0xdb,
-	0xd0, 0xf0, 0x7c, 0x1a, 0x3f, 0x8f, 0xa9, 0x1f, 0xd8, 0xae, 0xd3, 0x2e, 0x77, 0x51, 0xaf, 0x64,
-	0xd6, 0xd9, 0xdc, 0x81, 0x98, 0x22, 0x33, 0xa8, 0xf3, 0xed, 0xc8, 0x2d, 0xb7, 0xa1, 0xaa, 0x8c,
-	0x11, 0x37, 0x56, 0xbf, 0x78, 0x1b, 0x40, 0x60, 0x71, 0x82, 0x45, 0x4e, 0x66, 0xd3, 0x78, 0xe7,
-	0xf5, 0x1b, 0x12, 0x9c, 0x4e, 0x0e, 0x98, 0xb1, 0xb9, 0xc6, 0x03, 0xb2, 0x21, 0xf9, 0x15, 0x41,
-	0x73, 0xe4, 0x04, 0xd4, 0xff, 0x6f, 0x9c, 0x20, 0xf9, 0x04, 0x5a, 0x8a, 0xee, 0xaa, 0x13, 0x22,
-	0x67, 0x08, 0x9a, 0xfb, 0xde, 0xc4, 0x0a, 0xe9, 0xff, 0x46, 0x1d, 0x31, 0xb4, 0xd4, 0x8e, 0x56,
-	0x0a, 0x64, 0xe7, 0x5f, 0x0b, 0x64, 0x58, 0x62, 0x7b, 0x4f, 0xca, 0xe4, 0x19, 0xc0, 0x43, 0x7a,
-	0x3d, 0x12, 0x21, 0x63, 0xa8, 0x73, 0x6c, 0xb9, 0xa1, 0xaf, 0xd5, 0xa9, 0xa2, 0xf7, 0x67, 0x2c,
-	0x3c, 0xc9, 0x4f, 0x08, 0x9a, 0x26, 0x9d, 0xb9, 0xf1, 0x35, 0x5d, 0xfc, 0xd5, 0x8b, 0xd2, 0xde,
-	0xbe, 0xa8, 0xc7, 0xd0, 0x52, 0x0c, 0xf2, 0xdb, 0xd7, 0x0e, 0x34, 0xb6, 0xa6, 0xd4, 0xf2, 0xf3,
-	0xc8, 0xad, 0x37, 0xa0, 0x29, 0xb1, 0x04, 0x3f, 0x72, 0x8a, 0xa0, 0xbe, 0xeb, 0xbe, 0x38, 0xce,
-	0xe3, 0xc8, 0x30, 0x94, 0x8e, 0xe9, 0x49, 0xd0, 0x2e, 0x76, 0xb5, 0xde, 0x9a, 0xc9, 0xc7, 0xf8,
-	0x0b, 0xa8, 0x32, 0x57, 0x37, 0x0a, 0xf9, 0x79, 0x65, 0xbe, 0x8d, 0x12, 0x7f, 0x14, 0xca, 0x9e,
-	0xb4, 0xa0, 0x21, 0x98, 0x49, 0xaa, 0xcf, 0xa1, 0xb9, 0xef, 0x4c, 0xaf, 0x8f, 0x2b, 0xb9, 0x09,
-	0x2d, 0x15, 0x40, 0x86, 0x3c, 0x84, 0xd6, 0x03, 0x27, 0xf4, 0x6d, 0x1a, 0xe4, 0x11, 0x73, 0x1d,
-	0xca, 0x3f, 0x5a, 0xe1, 0x8b, 0xef, 0xb9, 0xa8, 0x6a, 0xa6, 0xf8, 0x21, 0xdf, 0xc2, 0x8d, 0xcb,
-	0x18, 0x52, 0x34, 0xf7, 0xa0, 0x4c, 0x9d, 0xd0, 0x3f, 0x91, 0x71, 0x3e, 0x4c, 0x11, 0x0d, 0x73,
-	0x3b, 0x51, 0x5a, 0xe1, 0x0e, 0xe4, 0x3b, 0x68, 0x3e, 0x88, 0xa9, 0x13, 0x06, 0xd7, 0xf3, 0x68,
-	0x77, 0xa0, 0xa5, 0xe0, 0x13, 0x54, 0xd9, 0x8c, 0xcc, 0x34, 0xa9, 0x54, 0x99, 0xcd, 0x25, 0x55,
-	0xf6, 0x43, 0x7e, 0x2b, 0x41, 0x99, 0x4f, 0xab, 0x38, 0x68, 0xf1, 0xd4, 0xb6, 0xa0, 0x66, 0xf3,
-	0x7c, 0x4f, 0x27, 0x2b, 0x52, 0x18, 0x47, 0x30, 0x46, 0xd2, 0xf8, 0x9b, 0x82, 0x79, 0xe9, 0x88,
-	0xef, 0x43, 0x35, 0xe2, 0x59, 0x73, 0x22, 0xa5, 0x77, 0x27, 0x13, 0x43, 0x64, 0x58, 0x06, 0xa1,
-	0xdc, 0x18, 0x82, 0xcf, 0x9f, 0xf3, 0x44, 0x26, 0xf6, 0x6c, 0x04, 0xf1, 0xf4, 0x39, 0x82, 0x74,
-	0xd3, 0xf7, 0xa0, 0xa6, 0xb8, 0xe5, 0x90, 0x0a, 0xf4, 0x53, 0x04, 0x55, 0xc9, 0x33, 0x07, 0xb8,
-	0x3c, 0x6b, 0x85, 0xfe, 0x12, 0xaa, 0x72, 0xff, 0x79, 0x30, 0x6b, 0x43, 0x95, 0xbe, 0xf2, 0x6c,
-	0x5f, 0xde, 0x7f, 0xcd, 0x54, 0xbf, 0xc3, 0xaa, 0x14, 0x1c, 0x39, 0x80, 0x32, 0x7f, 0x00, 0xef,
-	0x90, 0xcf, 0x57, 0x8a, 0xc0, 0x7b, 0xf5, 0x47, 0x32, 0xdd, 0xde, 0x87, 0xd6, 0xf2, 0xc2, 0xa2,
-	0xe2, 0xa3, 0x64, 0xc5, 0x4f, 0x94, 0xe0, 0xe2, 0x52, 0x09, 0xbe, 0xfb, 0x67, 0x0d, 0xb4, 0x3d,
-	0xcb, 0xc3, 0x8f, 0xa0, 0xc4, 0x1a, 0x59, 0x4c, 0x52, 0xe2, 0x27, 0x1a, 0x66, 0xfd, 0xa3, 0x4c,
-	0x1b, 0xf9, 0xd8, 0x76, 0x41, 0x1b, 0x47, 0x21, 0xbe, 0x9d, 0x62, 0xbb, 0x68, 0x88, 0x75, 0x92,
-	0x65, 0x22, 0xd1, 0xf6, 0xa1, 0x22, 0xb4, 0x89, 0xd3, 0x64, 0xbd, 0xd4, 0x22, 0xea, 0x9b, 0x2b,
-	0xac, 0x16, 0xb0, 0x42, 0xa2, 0xa9, 0xb0, 0x4b, 0xdd, 0x59, 0x2a, 0xec, 0x95, 0x8e, 0x67, 0x17,
-	0xb4, 0x87, 0x34, 0x7d, 0xef, 0x8b, 0x3e, 0x25, 0x75, 0xef, 0xc9, 0x76, 0x63, 0x1f, 0x2a, 0x42,
-	0xad, 0xa9, 0x24, 0x97, 0x3a, 0x89, 0x54, 0x92, 0x57, 0xaa, 0xbd, 0x09, 0x65, 0x5e, 0x5e, 0x71,
-	0xda, 0x75, 0x26, 0x0b, 0xb9, 0x7e, 0x27, 0xdb, 0x48, 0x62, 0x3e, 0x82, 0x12, 0x2b, 0x83, 0xa9,
-	0x2a, 0x4a, 0x54, 0xef, 0x54, 0x15, 0x25, 0xeb, 0x28, 0xbf, 0x20, 0x5e, 0xe6, 0xd2, 0x2f, 0x28,
-	0x59, 0x66, 0xd3, 0x2f, 0x68, 0xa9, 0x56, 0xe2, 0xa7, 0x50, 0x11, 0xb5, 0x01, 0x67, 0x66, 0xc9,
-	0x60, 0x15, 0xec, 0x72, 0x81, 0xf9, 0x14, 0xe1, 0x67, 0x50, 0x95, 0x05, 0x12, 0x6f, 0x66, 0x54,
-	0xc2, 0x45, 0x91, 0xd6, 0x3f, 0x5e, 0x65, 0x96, 0xc0, 0xae, 0x6c, 0xf9, 0x34, 0x4b, 0xac, 0x62,
-	0x79, 0x15, 0x69, 0x65, 0x25, 0xfb, 0x06, 0xed, 0xe7, 0x22, 0xc2, 0x4f, 0x99, 0x18, 0xdc, 0x80,
-	0x66, 0x88, 0xc1, 0x0d, 0xe8, 0x6a, 0x31, 0x70, 0xa3, 0x04, 0xf0, 0xf0, 0xf3, 0x37, 0xf3, 0x0e,
-	0x3a, 0x9b, 0x77, 0xd0, 0xdf, 0xf3, 0x0e, 0xfa, 0xe5, 0xa2, 0x53, 0x38, 0xbb, 0xe8, 0x14, 0xfe,
-	0xb8, 0xe8, 0x14, 0x60, 0xdd, 0x76, 0x15, 0x8c, 0xe5, 0xd9, 0x12, 0x62, 0x58, 0xde, 0xb3, 0xbc,
-	0x83, 0xc1, 0x18, 0x1d, 0x56, 0x78, 0xcf, 0xf5, 0xd9, 0x3f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x59,
-	0x0f, 0xc0, 0xa2, 0x49, 0x10, 0x00, 0x00,
+	// 1323 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x58, 0x4b, 0x6f, 0x1b, 0xd5,
+	0x17, 0xf7, 0x9d, 0xf1, 0x23, 0x3e, 0x8e, 0xdd, 0xea, 0x2a, 0x7f, 0xc9, 0x1d, 0xfd, 0xe5, 0xa4,
+	0x43, 0x8b, 0xcc, 0x43, 0x63, 0x52, 0x16, 0x94, 0x47, 0xa5, 0xe2, 0x3c, 0x9a, 0xa4, 0x89, 0x62,
+	0x4d, 0x1e, 0x95, 0x22, 0xa1, 0xca, 0xa9, 0x6f, 0xc3, 0x10, 0xdb, 0x33, 0xcc, 0x8b, 0x26, 0x2b,
+	0x96, 0x08, 0x09, 0x89, 0x1d, 0xf9, 0x0a, 0x08, 0xb1, 0x63, 0xcb, 0xbe, 0x1b, 0xa4, 0x88, 0x15,
+	0xab, 0x80, 0x92, 0x2f, 0x82, 0xee, 0x63, 0x26, 0xe3, 0xc7, 0xd8, 0x06, 0xc6, 0x08, 0x58, 0xf9,
+	0xce, 0xcc, 0x39, 0xbf, 0x7b, 0xee, 0x39, 0xbf, 0x73, 0xce, 0x3d, 0x86, 0xb2, 0xed, 0x75, 0x5d,
+	0xa3, 0x43, 0x6a, 0x9d, 0xa6, 0x55, 0xf3, 0x17, 0xe9, 0x8f, 0x66, 0xd9, 0xa6, 0x6b, 0xe2, 0xff,
+	0x35, 0x5d, 0xb3, 0x63, 0xbc, 0xd0, 0x84, 0x80, 0x46, 0xbf, 0xf8, 0x8b, 0x4a, 0xe5, 0xc8, 0x34,
+	0x8f, 0xda, 0xa4, 0xc6, 0x84, 0x0e, 0xbd, 0xe7, 0xb5, 0x96, 0x67, 0x37, 0x5d, 0xc3, 0xec, 0x72,
+	0x35, 0x25, 0x04, 0xf4, 0x17, 0x6b, 0x81, 0x2a, 0xff, 0x72, 0x6b, 0x70, 0x2b, 0x47, 0x7c, 0x9a,
+	0x3b, 0x32, 0x8f, 0x4c, 0xb6, 0xac, 0xd1, 0x15, 0x7f, 0xab, 0xae, 0x43, 0x61, 0xc7, 0x38, 0x25,
+	0x3a, 0xf9, 0xd4, 0x23, 0x8e, 0x8b, 0xdf, 0x03, 0xc9, 0x68, 0x95, 0xd1, 0x02, 0xaa, 0x16, 0xee,
+	0x55, 0xb4, 0x3e, 0xeb, 0xfc, 0x45, 0xad, 0x61, 0x1b, 0x1d, 0xc3, 0x35, 0x7c, 0xb2, 0xbe, 0x5c,
+	0x87, 0x97, 0x17, 0xf3, 0xa9, 0xcb, 0x8b, 0x79, 0x69, 0x7d, 0x59, 0x97, 0x8c, 0x96, 0xaa, 0xc2,
+	0x2c, 0x87, 0x72, 0x2c, 0xb3, 0xeb, 0x10, 0x8c, 0x21, 0xed, 0x18, 0xa7, 0x84, 0xa1, 0x15, 0x75,
+	0xb6, 0x56, 0x7f, 0x42, 0x00, 0x0d, 0xcf, 0x4d, 0x60, 0x3b, 0x7c, 0x13, 0xe4, 0x63, 0x72, 0x52,
+	0x96, 0x16, 0x50, 0x35, 0xaf, 0xd3, 0x25, 0x9e, 0x83, 0x8c, 0xdf, 0x6c, 0x7b, 0xa4, 0x2c, 0x2f,
+	0xa0, 0xea, 0xac, 0xce, 0x1f, 0xf0, 0x7d, 0x90, 0x5d, 0xb7, 0x5d, 0x4e, 0xb3, 0x4d, 0x6e, 0x69,
+	0xdc, 0xb5, 0x5a, 0xe0, 0x5a, 0x6d, 0x59, 0xb8, 0xb6, 0x5e, 0xb8, 0xbc, 0x98, 0x97, 0x77, 0x77,
+	0x37, 0xcf, 0x7e, 0x9d, 0x47, 0x3a, 0x55, 0xc1, 0xb7, 0x61, 0xd6, 0xb2, 0x89, 0xff, 0xd4, 0x27,
+	0xb6, 0x63, 0x98, 0xdd, 0x72, 0x66, 0x01, 0x55, 0xd3, 0x7a, 0x81, 0xbe, 0xdb, 0xe7, 0xaf, 0xd4,
+	0x0e, 0x14, 0xd8, 0x71, 0xc4, 0x91, 0xcb, 0x90, 0x0b, 0x84, 0x11, 0x13, 0x0e, 0x1e, 0xf1, 0x32,
+	0x00, 0xc7, 0x62, 0x06, 0x4a, 0xcc, 0x98, 0xbb, 0xda, 0xd0, 0xf0, 0x6b, 0x02, 0x9c, 0xb4, 0xf6,
+	0xa9, 0xb0, 0x9e, 0x67, 0x1b, 0xd2, 0xa5, 0xfa, 0x3d, 0x82, 0xe2, 0x7a, 0xd7, 0x21, 0xf6, 0xbf,
+	0xc3, 0x83, 0xea, 0xeb, 0x50, 0x0a, 0xcc, 0x1d, 0xe7, 0x21, 0xf5, 0x1c, 0x41, 0x71, 0xcf, 0x6a,
+	0x35, 0x5d, 0xf2, 0x9f, 0x61, 0x87, 0x0f, 0xa5, 0xe0, 0x44, 0x63, 0x09, 0xb2, 0xf1, 0xa7, 0x09,
+	0x52, 0x4f, 0xd3, 0xb3, 0x47, 0x69, 0x72, 0x00, 0xf0, 0x88, 0x4c, 0x87, 0x22, 0x6a, 0x03, 0x0a,
+	0x0c, 0x5b, 0x1c, 0xe8, 0xc3, 0xc0, 0xab, 0xe8, 0x8f, 0x5b, 0xcc, 0x35, 0xd5, 0xcf, 0x11, 0x14,
+	0x75, 0xd2, 0x31, 0xfd, 0x29, 0x05, 0xbe, 0x3f, 0x50, 0xf2, 0x60, 0xa0, 0x76, 0xa0, 0x14, 0x58,
+	0x90, 0xdc, 0xb9, 0x36, 0x60, 0x76, 0xa9, 0x4d, 0x9a, 0x76, 0x12, 0xb5, 0xf5, 0x06, 0x14, 0x05,
+	0x16, 0xb7, 0x4f, 0x3d, 0x43, 0x50, 0xd8, 0x34, 0x9f, 0x1d, 0x27, 0xe1, 0x32, 0x0c, 0xe9, 0x63,
+	0x72, 0xe2, 0x94, 0xa5, 0x05, 0xb9, 0x9a, 0xd7, 0xd9, 0x1a, 0xbf, 0x0b, 0x39, 0xaa, 0x6a, 0x7a,
+	0x2e, 0xf3, 0xd7, 0xc8, 0xdc, 0x48, 0xb3, 0xa4, 0x08, 0xe4, 0xd5, 0x12, 0xcc, 0x72, 0xcb, 0x84,
+	0xa9, 0x4f, 0xa1, 0xb8, 0xd7, 0x6d, 0x4f, 0xcf, 0x56, 0xf5, 0x26, 0x94, 0x82, 0x0d, 0xc4, 0x96,
+	0x87, 0x50, 0x5a, 0xe9, 0xba, 0xb6, 0x41, 0x9c, 0x24, 0xf6, 0x9c, 0x83, 0xcc, 0x67, 0x4d, 0xf7,
+	0xd9, 0xc7, 0x8c, 0x54, 0x33, 0x3a, 0x7f, 0x50, 0x1f, 0xc3, 0x8d, 0x70, 0x0f, 0x41, 0x9a, 0xfb,
+	0x90, 0x21, 0x5d, 0xd7, 0x3e, 0x11, 0xfb, 0xfc, 0x3f, 0x86, 0x34, 0x54, 0xed, 0x24, 0xe0, 0x0a,
+	0x53, 0x50, 0xbf, 0xc9, 0x41, 0x71, 0xc9, 0xec, 0x74, 0x8c, 0x44, 0xb2, 0x76, 0x17, 0xc0, 0xb4,
+	0x08, 0x8f, 0x0e, 0x77, 0x55, 0xe1, 0x9e, 0x16, 0x63, 0x4c, 0xcf, 0xae, 0xda, 0x76, 0xa0, 0x26,
+	0xcc, 0x8b, 0xe0, 0x28, 0xdf, 0x49, 0x90, 0x0f, 0xbf, 0xe3, 0x0f, 0x40, 0xb6, 0x3c, 0x57, 0x18,
+	0x58, 0x9d, 0x08, 0xbc, 0xe1, 0xb9, 0x6b, 0x29, 0x9d, 0xaa, 0xe1, 0x15, 0xc8, 0x1a, 0xac, 0x31,
+	0x88, 0x4a, 0xf7, 0xc6, 0x44, 0x00, 0xbc, 0x97, 0xac, 0xa5, 0x74, 0xa1, 0x4c, 0x61, 0x3c, 0x56,
+	0x60, 0x05, 0x49, 0x27, 0x83, 0xe1, 0x35, 0x99, 0xc2, 0x70, 0x65, 0x0a, 0x63, 0xb3, 0xf4, 0x17,
+	0x7d, 0x60, 0x32, 0x18, 0x5e, 0x31, 0x28, 0x0c, 0x57, 0xae, 0x17, 0x20, 0x1f, 0xba, 0x4b, 0xf9,
+	0x12, 0x81, 0xdc, 0xf0, 0xdc, 0xa0, 0x1e, 0xa1, 0x21, 0x8d, 0x48, 0x1a, 0xd2, 0x88, 0xe4, 0xbf,
+	0xde, 0x88, 0xd2, 0x03, 0xf5, 0x4d, 0xf9, 0x04, 0xb2, 0xdc, 0x77, 0xd3, 0x37, 0x47, 0xf9, 0x0a,
+	0x41, 0x96, 0x7b, 0xf8, 0x9f, 0x71, 0xf6, 0x07, 0x90, 0xe5, 0x91, 0x1a, 0x62, 0x4e, 0xbf, 0xba,
+	0x34, 0xd8, 0x1a, 0x7e, 0xce, 0x40, 0x29, 0x88, 0xbb, 0x48, 0xf3, 0x4d, 0xc8, 0xd9, 0xc4, 0xf1,
+	0xda, 0xae, 0x53, 0x46, 0x2c, 0xb7, 0xde, 0x1c, 0xc3, 0x17, 0xae, 0xa7, 0xe9, 0x4c, 0x49, 0x64,
+	0x56, 0x00, 0xa1, 0x7c, 0x2b, 0x51, 0x03, 0xe9, 0x1a, 0x3f, 0x88, 0xe6, 0xd4, 0x6b, 0x93, 0x81,
+	0x46, 0x92, 0x6a, 0xb5, 0x2f, 0xa9, 0x26, 0x34, 0x6b, 0x20, 0xab, 0x56, 0xfb, 0xb2, 0x6a, 0x42,
+	0x9c, 0x81, 0xb4, 0x5a, 0xed, 0x4b, 0xab, 0x89, 0xdd, 0xd4, 0x97, 0x57, 0x33, 0x14, 0x87, 0x3a,
+	0x48, 0x21, 0x3c, 0xa7, 0xa6, 0x7c, 0xcd, 0x56, 0xd4, 0x30, 0x5d, 0x62, 0x77, 0x52, 0xba, 0x21,
+	0xcb, 0xff, 0x96, 0x3b, 0x9d, 0xf2, 0x38, 0xa4, 0x71, 0x02, 0x57, 0x93, 0x8f, 0xa0, 0xb8, 0xe2,
+	0x93, 0xae, 0xeb, 0x4c, 0xe7, 0x8e, 0xb8, 0x01, 0xa5, 0x00, 0x3e, 0xd2, 0x19, 0xe9, 0x1b, 0xe1,
+	0x84, 0xd8, 0xce, 0x48, 0x65, 0xc2, 0xce, 0x48, 0x1f, 0xd4, 0x1f, 0xd3, 0x90, 0x61, 0xaf, 0x87,
+	0xa4, 0xef, 0x12, 0xcc, 0x70, 0xca, 0x92, 0xd6, 0x18, 0xef, 0x32, 0x04, 0xc1, 0x74, 0xd2, 0x5a,
+	0x4b, 0xe9, 0xa1, 0x22, 0x7e, 0x08, 0x39, 0xce, 0xd7, 0x96, 0xa0, 0xfb, 0x9d, 0x91, 0x18, 0x3c,
+	0xe8, 0x14, 0x22, 0x50, 0xa3, 0x08, 0x9c, 0xa9, 0x2d, 0x41, 0xf4, 0xd1, 0x08, 0x3c, 0x8c, 0x0c,
+	0x41, 0xa8, 0x29, 0x5b, 0x30, 0x13, 0xd8, 0x96, 0x40, 0x78, 0x95, 0x33, 0x04, 0x39, 0x61, 0x67,
+	0x02, 0x70, 0x89, 0xd2, 0xf8, 0x39, 0xe4, 0xc4, 0xf9, 0x93, 0xb0, 0xac, 0x0c, 0x39, 0xf2, 0xc2,
+	0x32, 0x6c, 0x11, 0xff, 0x19, 0x3d, 0x78, 0xac, 0xe7, 0x04, 0xe1, 0xd4, 0x7d, 0xc8, 0xb0, 0xfb,
+	0xd6, 0x10, 0xfa, 0xbc, 0x1f, 0x6d, 0x46, 0x13, 0xd7, 0x09, 0x91, 0x42, 0x0f, 0xa1, 0xd4, 0xfb,
+	0xe1, 0xba, 0xb7, 0xa1, 0x68, 0x6f, 0x8b, 0x54, 0x07, 0xa9, 0xa7, 0x3a, 0xdc, 0xfb, 0x21, 0x0f,
+	0xf2, 0x56, 0xd3, 0xc2, 0xdb, 0x90, 0xde, 0x31, 0x4e, 0x09, 0x56, 0x63, 0xf6, 0x8f, 0xfc, 0x3f,
+	0xa3, 0xbc, 0x32, 0x52, 0x26, 0xec, 0x4f, 0xac, 0x4a, 0xde, 0x8e, 0x91, 0xbd, 0xfe, 0xff, 0x45,
+	0x51, 0x47, 0x89, 0x08, 0xb4, 0xbd, 0xb0, 0x18, 0xc6, 0xd1, 0xba, 0xe7, 0x1f, 0x09, 0xe5, 0xee,
+	0x18, 0xa9, 0x6b, 0x58, 0x51, 0x3f, 0xe3, 0x60, 0x7b, 0xfe, 0x0c, 0x88, 0x85, 0xed, 0x1b, 0xb0,
+	0x37, 0x41, 0x7e, 0x44, 0xe2, 0xcf, 0x7e, 0x3d, 0x16, 0xc7, 0x9e, 0x3d, 0x3a, 0xdd, 0xee, 0x85,
+	0x45, 0x37, 0xce, 0xc8, 0x9e, 0xc1, 0x35, 0xd6, 0xc8, 0xbe, 0xe1, 0x52, 0x87, 0x0c, 0x9b, 0xe6,
+	0x70, 0x5c, 0x38, 0xa3, 0x73, 0xa3, 0x72, 0x67, 0xb4, 0x90, 0xc0, 0xdc, 0x86, 0x34, 0x9d, 0xba,
+	0x62, 0x59, 0x14, 0x19, 0x16, 0x63, 0x59, 0x14, 0x1d, 0xdb, 0x58, 0x80, 0xd8, 0x54, 0x15, 0x1f,
+	0xa0, 0xe8, 0x54, 0x17, 0x1f, 0xa0, 0x9e, 0xd1, 0x0c, 0x3f, 0x81, 0x2c, 0xef, 0x0d, 0x78, 0x64,
+	0x95, 0x74, 0xc6, 0xc1, 0xf6, 0x36, 0x98, 0xb7, 0x10, 0x3e, 0x80, 0x9c, 0x98, 0xc7, 0xf0, 0xdd,
+	0x11, 0x83, 0xd7, 0xf5, 0x4c, 0xa8, 0xbc, 0x3a, 0x4e, 0x2c, 0xc4, 0xde, 0x83, 0x2c, 0xbf, 0xa4,
+	0xc4, 0x1a, 0xdd, 0x33, 0x1a, 0xc4, 0x1a, 0xdd, 0x77, 0x91, 0x3c, 0x80, 0xec, 0x92, 0x4d, 0x46,
+	0xe5, 0x00, 0xff, 0x3c, 0x16, 0x56, 0x48, 0x89, 0xe9, 0x57, 0xfe, 0x42, 0x42, 0xf8, 0x09, 0xe5,
+	0x98, 0xe9, 0x90, 0x11, 0x1c, 0x33, 0x1d, 0x32, 0x9e, 0x63, 0x4c, 0x28, 0x02, 0x5c, 0x7f, 0xe7,
+	0xe5, 0x65, 0x05, 0x9d, 0x5f, 0x56, 0xd0, 0x6f, 0x97, 0x15, 0xf4, 0xf5, 0x55, 0x25, 0x75, 0x7e,
+	0x55, 0x49, 0xfd, 0x72, 0x55, 0x49, 0xc1, 0x9c, 0x61, 0x06, 0x30, 0x4d, 0xcb, 0x10, 0x10, 0xf5,
+	0xcc, 0x56, 0xd3, 0xda, 0x5f, 0x6c, 0xa0, 0xc3, 0x2c, 0xbb, 0xd0, 0xbf, 0xfd, 0x7b, 0x00, 0x00,
+	0x00, 0xff, 0xff, 0x24, 0xb5, 0x74, 0xb9, 0x0f, 0x17, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1638,6 +2426,8 @@ type MapClient interface {
 	Events(ctx context.Context, in *EventsRequest, opts ...grpc.CallOption) (Map_EventsClient, error)
 	// Entries lists all entries in the map
 	Entries(ctx context.Context, in *EntriesRequest, opts ...grpc.CallOption) (Map_EntriesClient, error)
+	// Commit commits a transactional change to the map
+	Commit(ctx context.Context, in *CommitRequest, opts ...grpc.CallOption) (*CommitResponse, error)
 	// Create creates the Map
 	// Deprecated: use the Maps service instead
 	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error)
@@ -1799,6 +2589,15 @@ func (x *mapEntriesClient) Recv() (*EntriesResponse, error) {
 	return m, nil
 }
 
+func (c *mapClient) Commit(ctx context.Context, in *CommitRequest, opts ...grpc.CallOption) (*CommitResponse, error) {
+	out := new(CommitResponse)
+	err := c.cc.Invoke(ctx, "/atomix.runtime.map.v1.Map/Commit", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Deprecated: Do not use.
 func (c *mapClient) Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error) {
 	out := new(CreateResponse)
@@ -1843,6 +2642,8 @@ type MapServer interface {
 	Events(*EventsRequest, Map_EventsServer) error
 	// Entries lists all entries in the map
 	Entries(*EntriesRequest, Map_EntriesServer) error
+	// Commit commits a transactional change to the map
+	Commit(context.Context, *CommitRequest) (*CommitResponse, error)
 	// Create creates the Map
 	// Deprecated: use the Maps service instead
 	Create(context.Context, *CreateRequest) (*CreateResponse, error)
@@ -1887,6 +2688,9 @@ func (*UnimplementedMapServer) Events(req *EventsRequest, srv Map_EventsServer) 
 }
 func (*UnimplementedMapServer) Entries(req *EntriesRequest, srv Map_EntriesServer) error {
 	return status.Errorf(codes.Unimplemented, "method Entries not implemented")
+}
+func (*UnimplementedMapServer) Commit(ctx context.Context, req *CommitRequest) (*CommitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Commit not implemented")
 }
 func (*UnimplementedMapServer) Create(ctx context.Context, req *CreateRequest) (*CreateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
@@ -2103,6 +2907,24 @@ func (x *mapEntriesServer) Send(m *EntriesResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Map_Commit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MapServer).Commit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/atomix.runtime.map.v1.Map/Commit",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MapServer).Commit(ctx, req.(*CommitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Map_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateRequest)
 	if err := dec(in); err != nil {
@@ -2178,6 +3000,10 @@ var _Map_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Unlock",
 			Handler:    _Map_Unlock_Handler,
+		},
+		{
+			MethodName: "Commit",
+			Handler:    _Map_Commit_Handler,
 		},
 		{
 			MethodName: "Create",
@@ -2974,6 +3800,647 @@ func (m *EntriesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *CommitRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Operations) > 0 {
+		for iNdEx := len(m.Operations) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Operations[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintMap(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	{
+		size, err := m.ID.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintMap(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *CommitRequest_Operation) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitRequest_Operation) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitRequest_Operation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Operation != nil {
+		{
+			size := m.Operation.Size()
+			i -= size
+			if _, err := m.Operation.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CommitRequest_Operation_Put) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitRequest_Operation_Put) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Put != nil {
+		{
+			size, err := m.Put.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintMap(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CommitRequest_Operation_Insert) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitRequest_Operation_Insert) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Insert != nil {
+		{
+			size, err := m.Insert.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintMap(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CommitRequest_Operation_Update) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitRequest_Operation_Update) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Update != nil {
+		{
+			size, err := m.Update.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintMap(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CommitRequest_Operation_Remove) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitRequest_Operation_Remove) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Remove != nil {
+		{
+			size, err := m.Remove.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintMap(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CommitRequest_Put) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitRequest_Put) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitRequest_Put) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.PrevVersion != 0 {
+		i = encodeVarintMap(dAtA, i, uint64(m.PrevVersion))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.TTL != nil {
+		n25, err25 := github_com_gogo_protobuf_types.StdDurationMarshalTo(*m.TTL, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdDuration(*m.TTL):])
+		if err25 != nil {
+			return 0, err25
+		}
+		i -= n25
+		i = encodeVarintMap(dAtA, i, uint64(n25))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Value) > 0 {
+		i -= len(m.Value)
+		copy(dAtA[i:], m.Value)
+		i = encodeVarintMap(dAtA, i, uint64(len(m.Value)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Key) > 0 {
+		i -= len(m.Key)
+		copy(dAtA[i:], m.Key)
+		i = encodeVarintMap(dAtA, i, uint64(len(m.Key)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CommitRequest_Insert) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitRequest_Insert) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitRequest_Insert) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.TTL != nil {
+		n26, err26 := github_com_gogo_protobuf_types.StdDurationMarshalTo(*m.TTL, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdDuration(*m.TTL):])
+		if err26 != nil {
+			return 0, err26
+		}
+		i -= n26
+		i = encodeVarintMap(dAtA, i, uint64(n26))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Value) > 0 {
+		i -= len(m.Value)
+		copy(dAtA[i:], m.Value)
+		i = encodeVarintMap(dAtA, i, uint64(len(m.Value)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Key) > 0 {
+		i -= len(m.Key)
+		copy(dAtA[i:], m.Key)
+		i = encodeVarintMap(dAtA, i, uint64(len(m.Key)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CommitRequest_Update) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitRequest_Update) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitRequest_Update) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.PrevVersion != 0 {
+		i = encodeVarintMap(dAtA, i, uint64(m.PrevVersion))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.TTL != nil {
+		n27, err27 := github_com_gogo_protobuf_types.StdDurationMarshalTo(*m.TTL, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdDuration(*m.TTL):])
+		if err27 != nil {
+			return 0, err27
+		}
+		i -= n27
+		i = encodeVarintMap(dAtA, i, uint64(n27))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Value) > 0 {
+		i -= len(m.Value)
+		copy(dAtA[i:], m.Value)
+		i = encodeVarintMap(dAtA, i, uint64(len(m.Value)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Key) > 0 {
+		i -= len(m.Key)
+		copy(dAtA[i:], m.Key)
+		i = encodeVarintMap(dAtA, i, uint64(len(m.Key)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CommitRequest_Remove) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitRequest_Remove) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitRequest_Remove) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.PrevVersion != 0 {
+		i = encodeVarintMap(dAtA, i, uint64(m.PrevVersion))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Key) > 0 {
+		i -= len(m.Key)
+		copy(dAtA[i:], m.Key)
+		i = encodeVarintMap(dAtA, i, uint64(len(m.Key)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CommitResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Results) > 0 {
+		for iNdEx := len(m.Results) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Results[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintMap(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CommitResponse_Result) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitResponse_Result) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitResponse_Result) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Result != nil {
+		{
+			size := m.Result.Size()
+			i -= size
+			if _, err := m.Result.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CommitResponse_Result_Put) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitResponse_Result_Put) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Put != nil {
+		{
+			size, err := m.Put.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintMap(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CommitResponse_Result_Insert) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitResponse_Result_Insert) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Insert != nil {
+		{
+			size, err := m.Insert.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintMap(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CommitResponse_Result_Update) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitResponse_Result_Update) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Update != nil {
+		{
+			size, err := m.Update.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintMap(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CommitResponse_Result_Remove) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitResponse_Result_Remove) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Remove != nil {
+		{
+			size, err := m.Remove.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintMap(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CommitResponse_Put) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitResponse_Put) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitResponse_Put) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.PrevValue != nil {
+		{
+			size, err := m.PrevValue.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintMap(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Version != 0 {
+		i = encodeVarintMap(dAtA, i, uint64(m.Version))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CommitResponse_Insert) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitResponse_Insert) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitResponse_Insert) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Version != 0 {
+		i = encodeVarintMap(dAtA, i, uint64(m.Version))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CommitResponse_Update) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitResponse_Update) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitResponse_Update) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.PrevValue.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintMap(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if m.Version != 0 {
+		i = encodeVarintMap(dAtA, i, uint64(m.Version))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CommitResponse_Remove) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CommitResponse_Remove) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CommitResponse_Remove) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.Value.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintMap(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
 func (m *EventsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -3648,6 +5115,296 @@ func (m *EntriesResponse) Size() (n int) {
 	var l int
 	_ = l
 	l = m.Entry.Size()
+	n += 1 + l + sovMap(uint64(l))
+	return n
+}
+
+func (m *CommitRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ID.Size()
+	n += 1 + l + sovMap(uint64(l))
+	if len(m.Operations) > 0 {
+		for _, e := range m.Operations {
+			l = e.Size()
+			n += 1 + l + sovMap(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *CommitRequest_Operation) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Operation != nil {
+		n += m.Operation.Size()
+	}
+	return n
+}
+
+func (m *CommitRequest_Operation_Put) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Put != nil {
+		l = m.Put.Size()
+		n += 1 + l + sovMap(uint64(l))
+	}
+	return n
+}
+func (m *CommitRequest_Operation_Insert) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Insert != nil {
+		l = m.Insert.Size()
+		n += 1 + l + sovMap(uint64(l))
+	}
+	return n
+}
+func (m *CommitRequest_Operation_Update) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Update != nil {
+		l = m.Update.Size()
+		n += 1 + l + sovMap(uint64(l))
+	}
+	return n
+}
+func (m *CommitRequest_Operation_Remove) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Remove != nil {
+		l = m.Remove.Size()
+		n += 1 + l + sovMap(uint64(l))
+	}
+	return n
+}
+func (m *CommitRequest_Put) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Key)
+	if l > 0 {
+		n += 1 + l + sovMap(uint64(l))
+	}
+	l = len(m.Value)
+	if l > 0 {
+		n += 1 + l + sovMap(uint64(l))
+	}
+	if m.TTL != nil {
+		l = github_com_gogo_protobuf_types.SizeOfStdDuration(*m.TTL)
+		n += 1 + l + sovMap(uint64(l))
+	}
+	if m.PrevVersion != 0 {
+		n += 1 + sovMap(uint64(m.PrevVersion))
+	}
+	return n
+}
+
+func (m *CommitRequest_Insert) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Key)
+	if l > 0 {
+		n += 1 + l + sovMap(uint64(l))
+	}
+	l = len(m.Value)
+	if l > 0 {
+		n += 1 + l + sovMap(uint64(l))
+	}
+	if m.TTL != nil {
+		l = github_com_gogo_protobuf_types.SizeOfStdDuration(*m.TTL)
+		n += 1 + l + sovMap(uint64(l))
+	}
+	return n
+}
+
+func (m *CommitRequest_Update) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Key)
+	if l > 0 {
+		n += 1 + l + sovMap(uint64(l))
+	}
+	l = len(m.Value)
+	if l > 0 {
+		n += 1 + l + sovMap(uint64(l))
+	}
+	if m.TTL != nil {
+		l = github_com_gogo_protobuf_types.SizeOfStdDuration(*m.TTL)
+		n += 1 + l + sovMap(uint64(l))
+	}
+	if m.PrevVersion != 0 {
+		n += 1 + sovMap(uint64(m.PrevVersion))
+	}
+	return n
+}
+
+func (m *CommitRequest_Remove) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Key)
+	if l > 0 {
+		n += 1 + l + sovMap(uint64(l))
+	}
+	if m.PrevVersion != 0 {
+		n += 1 + sovMap(uint64(m.PrevVersion))
+	}
+	return n
+}
+
+func (m *CommitResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Results) > 0 {
+		for _, e := range m.Results {
+			l = e.Size()
+			n += 1 + l + sovMap(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *CommitResponse_Result) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Result != nil {
+		n += m.Result.Size()
+	}
+	return n
+}
+
+func (m *CommitResponse_Result_Put) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Put != nil {
+		l = m.Put.Size()
+		n += 1 + l + sovMap(uint64(l))
+	}
+	return n
+}
+func (m *CommitResponse_Result_Insert) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Insert != nil {
+		l = m.Insert.Size()
+		n += 1 + l + sovMap(uint64(l))
+	}
+	return n
+}
+func (m *CommitResponse_Result_Update) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Update != nil {
+		l = m.Update.Size()
+		n += 1 + l + sovMap(uint64(l))
+	}
+	return n
+}
+func (m *CommitResponse_Result_Remove) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Remove != nil {
+		l = m.Remove.Size()
+		n += 1 + l + sovMap(uint64(l))
+	}
+	return n
+}
+func (m *CommitResponse_Put) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Version != 0 {
+		n += 1 + sovMap(uint64(m.Version))
+	}
+	if m.PrevValue != nil {
+		l = m.PrevValue.Size()
+		n += 1 + l + sovMap(uint64(l))
+	}
+	return n
+}
+
+func (m *CommitResponse_Insert) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Version != 0 {
+		n += 1 + sovMap(uint64(m.Version))
+	}
+	return n
+}
+
+func (m *CommitResponse_Update) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Version != 0 {
+		n += 1 + sovMap(uint64(m.Version))
+	}
+	l = m.PrevValue.Size()
+	n += 1 + l + sovMap(uint64(l))
+	return n
+}
+
+func (m *CommitResponse_Remove) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.Value.Size()
 	n += 1 + l + sovMap(uint64(l))
 	return n
 }
@@ -5904,6 +7661,1541 @@ func (m *EntriesResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.Entry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CommitRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CommitRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ID.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Operations", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Operations = append(m.Operations, CommitRequest_Operation{})
+			if err := m.Operations[len(m.Operations)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitRequest_Operation) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Operation: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Operation: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Put", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &CommitRequest_Put{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Operation = &CommitRequest_Operation_Put{v}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Insert", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &CommitRequest_Insert{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Operation = &CommitRequest_Operation_Insert{v}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Update", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &CommitRequest_Update{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Operation = &CommitRequest_Operation_Update{v}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Remove", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &CommitRequest_Remove{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Operation = &CommitRequest_Operation_Remove{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitRequest_Put) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Put: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Put: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Key = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Value = append(m.Value[:0], dAtA[iNdEx:postIndex]...)
+			if m.Value == nil {
+				m.Value = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TTL", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.TTL == nil {
+				m.TTL = new(time.Duration)
+			}
+			if err := github_com_gogo_protobuf_types.StdDurationUnmarshal(m.TTL, dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PrevVersion", wireType)
+			}
+			m.PrevVersion = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PrevVersion |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitRequest_Insert) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Insert: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Insert: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Key = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Value = append(m.Value[:0], dAtA[iNdEx:postIndex]...)
+			if m.Value == nil {
+				m.Value = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TTL", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.TTL == nil {
+				m.TTL = new(time.Duration)
+			}
+			if err := github_com_gogo_protobuf_types.StdDurationUnmarshal(m.TTL, dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitRequest_Update) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Update: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Update: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Key = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Value = append(m.Value[:0], dAtA[iNdEx:postIndex]...)
+			if m.Value == nil {
+				m.Value = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TTL", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.TTL == nil {
+				m.TTL = new(time.Duration)
+			}
+			if err := github_com_gogo_protobuf_types.StdDurationUnmarshal(m.TTL, dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PrevVersion", wireType)
+			}
+			m.PrevVersion = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PrevVersion |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitRequest_Remove) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Remove: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Remove: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Key = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PrevVersion", wireType)
+			}
+			m.PrevVersion = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PrevVersion |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CommitResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CommitResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Results", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Results = append(m.Results, CommitResponse_Result{})
+			if err := m.Results[len(m.Results)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitResponse_Result) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Result: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Result: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Put", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &CommitResponse_Put{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Result = &CommitResponse_Result_Put{v}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Insert", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &CommitResponse_Insert{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Result = &CommitResponse_Result_Insert{v}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Update", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &CommitResponse_Update{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Result = &CommitResponse_Result_Update{v}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Remove", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &CommitResponse_Remove{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Result = &CommitResponse_Result_Remove{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitResponse_Put) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Put: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Put: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			m.Version = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Version |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PrevValue", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.PrevValue == nil {
+				m.PrevValue = &VersionedValue{}
+			}
+			if err := m.PrevValue.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitResponse_Insert) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Insert: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Insert: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			m.Version = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Version |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitResponse_Update) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Update: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Update: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			m.Version = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Version |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PrevValue", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.PrevValue.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMap(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMap
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CommitResponse_Remove) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMap
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Remove: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Remove: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMap
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMap
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMap
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Value.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
