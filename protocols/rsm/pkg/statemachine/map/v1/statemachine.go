@@ -308,19 +308,16 @@ func (s *mapStateMachine) watchSession(session statemachine.Session) {
 						for _, input := range inputs {
 							switch i := input.Input.(type) {
 							case *mapprotocolv1.MapInput_Put:
-								s.applyPut(i.Put)
 								delete(s.locks, i.Put.Key)
 							case *mapprotocolv1.MapInput_Insert:
-								s.applyInsert(i.Insert)
 								delete(s.locks, i.Insert.Key)
 							case *mapprotocolv1.MapInput_Update:
-								s.applyUpdate(i.Update)
 								delete(s.locks, i.Update.Key)
 							case *mapprotocolv1.MapInput_Remove:
-								s.applyRemove(i.Remove)
 								delete(s.locks, i.Remove.Key)
 							}
 						}
+						delete(s.transactions, lockID)
 					}
 				}
 				for key, lockID := range s.locks {
