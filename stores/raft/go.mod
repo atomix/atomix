@@ -3,10 +3,10 @@ module github.com/atomix/atomix/stores/raft
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v1.0.0
+	github.com/atomix/atomix/api v1.1.0
 	github.com/atomix/atomix/controller v1.0.0
-	github.com/atomix/atomix/protocols/rsm v1.0.0
-	github.com/atomix/atomix/runtime v1.0.0
+	github.com/atomix/atomix/protocols/rsm v1.1.1
+	github.com/atomix/atomix/runtime v1.1.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
