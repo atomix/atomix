@@ -66,6 +66,8 @@ github.com/atomix/atomix/controller v1.0.0 h1:Ic4YQvyoPxWAblGAfQHz0PsLh3B4OE+1Kd
 github.com/atomix/atomix/controller v1.0.0/go.mod h1:y2eGC8VoqCZw7wB8MgSO4LZxrK9rWLvBLH2S9uuX8/I=
 github.com/atomix/atomix/runtime v1.1.0 h1:K1fUQqfngOqkXTk+1CwbPLO9STQ6gUVe6qXLlg9ageM=
 github.com/atomix/atomix/runtime v1.1.0/go.mod h1:7PtAhumBMs3TE3L/qXUSr4cNqqOWKGBFTvcHw+ZIQZ8=
+github.com/atomix/atomix/runtime v1.1.1 h1:mikJXDbiwVH04pg9NA6TeH4861Y39mm52egVx16+Tac=
+github.com/atomix/atomix/runtime v1.1.1/go.mod h1:7PtAhumBMs3TE3L/qXUSr4cNqqOWKGBFTvcHw+ZIQZ8=
 github.com/benbjohnson/clock v1.0.3/go.mod h1:bGMdMPoPVvcYyt1gHDf4J2KE153Yf9BuiUKYMaxlTDM=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
