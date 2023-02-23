@@ -78,7 +78,7 @@ func (c *primitiveManager[P, C]) Create(ctx context.Context, primitiveID runtime
 	value, ok := c.runtime.primitives.Load(primitiveID)
 	if ok {
 		if _, ok := value.(P); !ok {
-			return config, errors.NewForbidden("cannot create primitive of type '%s/%s': a primitive of another type already exists with that name", c.primitiveType.Name, c.primitiveType.APIVersion)
+			return config, errors.NewAlreadyExists("cannot create primitive of type '%s/%s': a primitive of another type already exists with that name", c.primitiveType.Name, c.primitiveType.APIVersion)
 		}
 		return config, nil
 	}
@@ -127,7 +127,7 @@ func (c *primitiveRegistry[P]) Get(primitiveID runtimev1.PrimitiveID) (P, error)
 	var primitive P
 	value, ok := c.runtime.primitives.Load(primitiveID)
 	if !ok {
-		return primitive, errors.NewForbidden("primitive not found for '%s'", primitiveID.Name)
+		return primitive, errors.NewUnavailable("primitive not found for '%s'", primitiveID.Name)
 	}
 	return value.(P), nil
 }
