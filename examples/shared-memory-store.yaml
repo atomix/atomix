@@ -6,21 +6,14 @@ apiVersion: sharedmemory.atomix.io/v1beta1
 kind: SharedMemoryStore
 metadata:
   name: shared-memory-example-store
-spec:
-  image: atomix/shared-memory-node:latest
-  imagePullPolicy: Never
 ---
-apiVersion: atomix.io/v3beta3
+apiVersion: atomix.io/v3beta4
 kind: StorageProfile
 metadata:
   name: shared-memory-example
 spec:
-  proxy:
-    # Configure the proxy to use locally built images
-    image: atomix/proxy:latest
-    imagePullPolicy: Never
-  # Bind the profile to the shared-memory-example-store
-  bindings:
+  # Route the profile to the shared-memory-example-store
+  routes:
     - store:
         name: shared-memory-example-store
 ---
@@ -39,10 +32,10 @@ spec:
     metadata:
       labels:
         app: shared-memory-example
-        # Inject the proxy into the pods
-        proxy.atomix.io/inject: "true"
-        # Configure the proxy to use the shared-memory-example profile
-        proxy.atomix.io/profile: shared-memory-example
+        # Inject the sidecar into the pods
+        sidecar.atomix.io/inject: "true"
+        # Configure the sidecar to use the shared-memory-example profile
+        runtime.atomix.io/profile: shared-memory-example
     spec:
       containers:
         - name: sleep

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Create a DataStore with the configuration for the store
-apiVersion: atomix.io/v3beta3
+apiVersion: atomix.io/v3beta4
 kind: DataStore
 metadata:
   name: etcd-example-store
@@ -18,17 +18,13 @@ spec:
       - etcd:2379
 ---
 # Create a StorageProfile to bind your application to the store
-apiVersion: atomix.io/v3beta3
+apiVersion: atomix.io/v3beta4
 kind: StorageProfile
 metadata:
   name: etcd-example
 spec:
-  # Configure the proxy to use locally built images
-  proxy:
-    image: atomix/proxy:latest
-    imagePullPolicy: Never
-  # Bind the profile to the etcd-example-store
-  bindings:
+  # Route the profile to the etcd-example-store
+  routes:
     - store:
         name: etcd-example-store
 ---
@@ -48,10 +44,10 @@ spec:
     metadata:
       labels:
         app: etcd-example
-        # Inject the proxy into the pods
-        proxy.atomix.io/inject: "true"
-        # Configure the proxy to use the etcd-example profile
-        proxy.atomix.io/profile: etcd-example
+        # Inject the sidecar into the pods
+        sidecar.atomix.io/inject: "true"
+        # Configure the sidecar to use the etcd-example profile
+        runtime.atomix.io/profile: etcd-example
     spec:
       containers:
         - name: sleep

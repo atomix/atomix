@@ -2,16 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-apiVersion: raft.atomix.io/v1beta2
+apiVersion: raft.atomix.io/v1beta3
 kind: RaftCluster
 metadata:
   name: multi-raft-example-cluster
 spec:
   replicas: 5
-  image: atomix/raft-node:latest
-  imagePullPolicy: Never
 ---
-apiVersion: raft.atomix.io/v1beta2
+apiVersion: raft.atomix.io/v1beta3
 kind: RaftStore
 metadata:
   name: multi-raft-example-store
@@ -21,17 +19,13 @@ spec:
   partitions: 30
   replicationFactor: 3
 ---
-apiVersion: atomix.io/v3beta3
+apiVersion: atomix.io/v3beta4
 kind: StorageProfile
 metadata:
   name: multi-raft-example
 spec:
-  # Configure the proxy to use locally built images
-  proxy:
-    image: atomix/proxy:latest
-    imagePullPolicy: Never
-  # Bind the profile to the multi-raft-example-store
-  bindings:
+  # Route the profile to the multi-raft-example-store
+  routes:
     - store:
         name: multi-raft-example-store
 ---
@@ -50,10 +44,10 @@ spec:
     metadata:
       labels:
         app: multi-raft-example
-        # Inject the proxy into the pods
-        proxy.atomix.io/inject: "true"
-        # Configure the proxy to use the multi-raft-example profile
-        proxy.atomix.io/profile: multi-raft-example
+        # Inject the sidecar into the pods
+        sidecar.atomix.io/inject: "true"
+        # Configure the sidecar to use the multi-raft-example profile
+        runtime.atomix.io/profile: multi-raft-example
     spec:
       containers:
         - name: sleep

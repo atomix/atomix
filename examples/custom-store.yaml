@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Create a DataStore with the configuration for the store
-apiVersion: atomix.io/v3beta3
+apiVersion: atomix.io/v3beta4
 kind: DataStore
 metadata:
   name: custom-example-store
@@ -17,16 +17,13 @@ spec:
     address: custom-store:1234
 ---
 # Create a StorageProfile to bind your application to the store
-apiVersion: atomix.io/v3beta3
+apiVersion: atomix.io/v3beta4
 kind: StorageProfile
 metadata:
   name: custom-example
 spec:
-  # Configure the profile to use a custom-built proxy image
-  proxy:
-    image: atomix/proxy:custom-store-1.0.0
-  # Bind the profile to the custom-example-store
-  bindings:
+  # Route the profile to the custom-example-store
+  routes:
     - store:
         name: custom-example-store
 ---
@@ -46,10 +43,13 @@ spec:
     metadata:
       labels:
         app: custom-example
-        # Inject the proxy into the pods
-        proxy.atomix.io/inject: "true"
-        # Configure the proxy to use the custom-example profile
-        proxy.atomix.io/profile: custom-example
+        # Inject the sidecar into the pods
+        sidecar.atomix.io/inject: "true"
+        # Configure the sidecar to use the custom-example profile
+        runtime.atomix.io/profile: custom-example
+      annotations:
+        # Configure the sidecar to use a custom-built proxy image
+        sidecar.atomix.io/image: atomix/proxy:custom-store-1.0.0
     spec:
       containers:
         - name: sleep

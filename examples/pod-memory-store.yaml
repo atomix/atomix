@@ -7,17 +7,13 @@ kind: PodMemoryStore
 metadata:
   name: pod-memory-example-store
 ---
-apiVersion: atomix.io/v3beta3
+apiVersion: atomix.io/v3beta4
 kind: StorageProfile
 metadata:
   name: pod-memory-example
 spec:
-  # Configure the proxy to use locally built images
-  proxy:
-    image: atomix/proxy:latest
-    imagePullPolicy: Never
-  # Bind the profile to the pod-memory-example-store
-  bindings:
+  # Route the profile to the pod-memory-example-store
+  routes:
     - store:
         name: pod-memory-example-store
 ---
@@ -36,10 +32,10 @@ spec:
     metadata:
       labels:
         app: pod-memory-example
-        # Inject the proxy into the pods
-        proxy.atomix.io/inject: "true"
-        # Configure the proxy to use the pod-memory-example profile
-        proxy.atomix.io/profile: pod-memory-example
+        # Inject the sidecar into the pods
+        sidecar.atomix.io/inject: "true"
+        # Configure the sidecar to use the pod-memory-example profile
+        runtime.atomix.io/profile: pod-memory-example
     spec:
       containers:
         - name: sleep

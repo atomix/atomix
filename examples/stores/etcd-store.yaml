@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Create a DataStore with the configuration for the store
-apiVersion: atomix.io/v3beta3
+apiVersion: atomix.io/v3beta4
 kind: DataStore
 metadata:
   name: etcd-store

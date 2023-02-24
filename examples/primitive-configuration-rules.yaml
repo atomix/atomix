@@ -6,24 +6,17 @@ apiVersion: sharedmemory.atomix.io/v1beta1
 kind: SharedMemoryStore
 metadata:
   name: primitive-example-store
-spec:
-  image: atomix/shared-memory-node:latest
-  imagePullPolicy: Never
 ---
-apiVersion: atomix.io/v3beta3
+apiVersion: atomix.io/v3beta4
 kind: StorageProfile
 metadata:
   name: primitive-example
 spec:
-  proxy:
-    # Configure the proxy to use locally built images
-    image: atomix/proxy:latest
-    imagePullPolicy: Never
-  # Bind the profile to the primitive-example-store
-  bindings:
+  # Route the profile to the primitive-example-store
+  routes:
     - store:
         name: primitive-example-store
-      primitives:
+      rules:
         # Enable caching for Map primitives tagged "cached"
         - kind: Map
           apiVersion: v1
@@ -35,7 +28,8 @@ spec:
         # Enable caching for the Set primitive named "cached-set"
         - kind: Set
           apiVersion: v1
-          name: cached-set
+          names:
+            - cached-set
           config:
             cache:
               enabled: true
@@ -55,10 +49,10 @@ spec:
     metadata:
       labels:
         app: primitive-example
-        # Inject the proxy into the pods
-        proxy.atomix.io/inject: "true"
-        # Configure the proxy to use the primitive-example profile
-        proxy.atomix.io/profile: primitive-example
+        # Inject the sidecar into the pods
+        sidecar.atomix.io/inject: "true"
+        # Configure the sidecar to use the primitive-example profile
+        runtime.atomix.io/profile: primitive-example
     spec:
       containers:
         - name: sleep

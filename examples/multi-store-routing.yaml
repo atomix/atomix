@@ -3,17 +3,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Create a Raft cluster
-apiVersion: raft.atomix.io/v1beta2
+apiVersion: raft.atomix.io/v1beta3
 kind: RaftCluster
 metadata:
   name: example-raft-cluster
 spec:
   replicas: 5
-  image: atomix/raft-node:latest
-  imagePullPolicy: Never
 ---
 # Create a store in the Raft cluster
-apiVersion: raft.atomix.io/v1beta2
+apiVersion: raft.atomix.io/v1beta3
 kind: RaftStore
 metadata:
   name: example-raft-store
@@ -22,7 +20,7 @@ spec:
     name: example-raft-cluster
 ---
 # Create a multi-partition store in the same Raft cluster
-apiVersion: raft.atomix.io/v1beta2
+apiVersion: raft.atomix.io/v1beta3
 kind: RaftStore
 metadata:
   name: example-multi-raft-store
@@ -41,33 +39,32 @@ spec:
   image: atomix/shared-memory-node:latest
   imagePullPolicy: Never
 ---
-apiVersion: atomix.io/v3beta3
+apiVersion: atomix.io/v3beta4
 kind: StorageProfile
 metadata:
   name: multi-store-example
 spec:
-  # Configure the proxy to use locally built images
-  proxy:
-    image: atomix/proxy:latest
-    imagePullPolicy: Never
-  # Bind the profile to the stores and tag bindings to route specific primitives to specific stores
-  bindings:
+  # Route the profile to the stores and tag bindings to route specific primitives to specific stores
+  routes:
     # Route to the multi-raft store primitives tagged "persistent" and "partitioned"
     - store:
         name: example-multi-raft-store
-      tags:
-        - persistent
-        - partitioned
+      rules:
+        - tags:
+            - persistent
+            - partitioned
     # Route to the single raft store primitives tagged only "persistent"
     - store:
         name: example-raft-store
-      tags:
-        - persistent
+      rules:
+        - tags:
+            - persistent
     # Route to the in-memory store primitives tagged "volatile"
     - store:
         name: example-memory-store
-      tags:
-        - volatile
+      rules:
+        - tags:
+            - volatile
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -84,10 +81,10 @@ spec:
     metadata:
       labels:
         app: multi-store-example
-        # Inject the proxy into the pods
-        proxy.atomix.io/inject: "true"
-        # Configure the proxy to use the multi-store-example profile
-        proxy.atomix.io/profile: multi-store-example
+        # Inject the sidecar into the pods
+        sidecar.atomix.io/inject: "true"
+        # Configure the sidecar to use the multi-store-example profile
+        runtime.atomix.io/profile: multi-store-example
     spec:
       containers:
         - name: sleep
