@@ -19,10 +19,6 @@ RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix ./cmd/atomix
 
 FROM goreleaser/goreleaser-cross:v1.19
 
-RUN adduser atomix && adduser atomix atomix
-
-USER atomix
-
 COPY --from=build /build/dist/bin/atomix /usr/local/bin/atomix
 
 ENV CC=gcc
