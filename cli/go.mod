@@ -1,12 +1,12 @@
-module github.com/atomix/atomix/build
+module github.com/atomix/atomix/cli
 
 go 1.19
 
 require (
-	github.com/atomix/atomix/api v1.1.0
 	github.com/atomix/atomix/runtime v1.1.0
 	github.com/rogpeppe/go-internal v1.8.1
 	github.com/spf13/cobra v1.4.0
+	github.com/stretchr/testify v1.8.0
 )
 
 require (
@@ -20,9 +20,11 @@ require (
 )
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	go.uber.org/goleak v1.1.12 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 )

@@ -6,12 +6,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/atomix/atomix/build/internal/atomix-build"
+	"github.com/atomix/atomix/cli/internal/atomix"
 	"os"
 )
 
 func main() {
-	cmd := atomix_build.GetCommand()
+	cmd := atomix.GetCommand()
 	if err := cmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

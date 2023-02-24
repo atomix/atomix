@@ -2,12 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Release Build Tools
+name: Release CLI
 
 on:
   push:
     tags:
-      - 'build/v*'
+      - 'cli/v*'
 
 jobs:
   publish-build:
@@ -22,7 +22,7 @@ jobs:
       - name: Publish Docker image
         uses: ./.github/actions/docker/publish
         with:
-          component: build
+          component: cli
           file: build/Dockerfile
           repository: atomix/build
           username: ${{ secrets.DOCKER_USERNAME }}

@@ -47,6 +47,7 @@ func (c *Cmd) Env(env ...string) *Cmd {
 
 func (c *Cmd) Run(args ...string) error {
 	c.cmd.Args = append(c.cmd.Args, args...)
+	println(strings.Join(c.cmd.Args, " "))
 	return c.cmd.Run()
 }
 

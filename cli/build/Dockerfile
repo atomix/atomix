@@ -15,7 +15,7 @@ RUN go mod download -x
 COPY ./cmd /build/cmd
 COPY ./internal /build/internal
 
-RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix-build ./cmd/atomix-build
+RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix ./cmd/atomix
 
 FROM goreleaser/goreleaser-cross:v1.19
 
@@ -23,6 +23,10 @@ RUN adduser atomix && adduser atomix atomix
 
 USER atomix
 
-COPY --from=build /build/dist/bin/atomix-build /usr/local/bin/atomix-build
+COPY --from=build /build/dist/bin/atomix /usr/local/bin/atomix
 
-ENTRYPOINT ["atomix-build"]
+ENV CC=gcc
+ENV CXX=g++
+ENV ATOMIX_CC_ENABLED=true
+
+ENTRYPOINT ["atomix"]
