@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Release Build Tools
+
+on:
+  push:
+    tags:
+      - 'build/v*'
+
+jobs:
+  publish-build:
+    name: Build and publish build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Publish Docker image
+        uses: ./.github/actions/docker/publish
+        with:
+          component: build
+          file: build/Dockerfile
+          repository: atomix/build
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
