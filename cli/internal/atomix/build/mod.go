@@ -79,12 +79,16 @@ func getDirMod(dir, path string) (string, *modfile.File, bool, error) {
 	} else if ok && modFile.Module.Mod.Path == path {
 		return dir, modFile, true, nil
 	}
-	if modFile, ok, err := getModFile(path); err != nil {
+	modDir, err := filepath.Abs(path)
+	if err != nil {
+		return "", nil, false, err
+	}
+	if modFile, ok, err := getModFile(modDir); err != nil {
 		return "", nil, false, err
 	} else if ok {
-		return path, modFile, true, nil
+		return modDir, modFile, true, nil
 	}
-	modDir, err := filepath.Abs(filepath.Join(dir, path))
+	modDir, err = filepath.Abs(filepath.Join(dir, path))
 	if err != nil {
 		return "", nil, false, err
 	}
