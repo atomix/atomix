@@ -165,7 +165,7 @@ func fetchModFromMain(pathVersion string) (string, *modfile.File, error) {
 		}
 		modPath = filepath.Dir(modPath)
 	}
-	return "", nil, errors.New(fmt.Sprintf("could not resolve module %s", pathVersion))
+	return "", nil, fmt.Errorf("could not resolve module %s", pathVersion)
 }
 
 func fetchMod(pathVersion string) (string, *modfile.File, error) {
@@ -179,7 +179,7 @@ func fetchMod(pathVersion string) (string, *modfile.File, error) {
 	} else if ok {
 		return modDir, modFile, err
 	}
-	return "", nil, errors.New(fmt.Sprintf("could not resolve module %s", pathVersion))
+	return "", nil, fmt.Errorf("could not resolve module %s", pathVersion)
 }
 
 func copyDir(sourceDir, destDir string) error {
