@@ -21,11 +21,11 @@ import (
 // module directory root.
 // Examples:
 //
-//	getLocalModFromMain("./cmd/atomix") from module root at /Users/dev/atomix => ("/Users/dev/atomix", *modfile.File, true, nil)
-//	getLocalModFromMain("github.com/atomix/atomix/cli/cmd/atomix") from github.com/atomix/atomix/cli module root at /Users/dev/atomix => ("/Users/dev/atomix", *modfile.File, true, nil)
-//	getLocalModFromMain("github.com/atomix/atomix/cli/cmd/atomix@v1.0.0") from github.com/atomix/atomix/cli module root => ("", nil, false, nil)
-//	getLocalModFromMain("github.com/atomix/atomix/cli/cmd/atomix") from outside github.com/atomix/atomix/cli module root => ("", nil, false, nil)
-//	getLocalModFromMain("github.com/atomix/atomix/cli/cmd/atomix@v1.0.0") from outside github.com/atomix/atomix/cli module root => ("", nil, false, nil)
+//	getLocalModFromMain("./cmd/foo") from module root at /path/to/atomix => ("/path/to/atomix", *modfile.File, true, nil)
+//	getLocalModFromMain("github.com/some/mod/cmd/foo") from github.com/some/mod module root at /path/to/atomix => ("/path/to/atomix", *modfile.File, true, nil)
+//	getLocalModFromMain("github.com/some/mod/cmd/foo@v1.0.0") from github.com/some/mod module root => ("", nil, false, nil)
+//	getLocalModFromMain("github.com/some/mod/cmd/foo") from outside github.com/some/mod module root => ("", nil, false, nil)
+//	getLocalModFromMain("github.com/some/mod/cmd/foo@v1.0.0") from outside github.com/some/mod module root => ("", nil, false, nil)
 func getLocalModFromMain(path string) (string, *modfile.File, bool, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -57,12 +57,13 @@ func getDirModFromMain(dir, path string) (string, *modfile.File, bool, error) {
 // it returns the absolute path to the module on the local file system.
 // Examples:
 //
-//	getLocalMod(".") from root of a valid module at /Users/dev/atomix => ("/Users/dev/atomix", *modfile.File, true, nil)
-//	getLocalMod("../../some") where ../../some resolves to the root of a valid module at /Users/dev/some => ("/Users/dev/some", *modfile.File, true, nil)
-//	getLocalMod("github.com/atomix/atomix/cli") from github.com/atomix/atomix/cli module root => ("/Users/dev/atomix", *modfile.File, true, nil)
-//	getLocalMod("github.com/atomix/atomix/cli@v1.0.0") from github.com/atomix/atomix/cli module root => ("", nil, false, nil)
-//	getLocalMod("github.com/atomix/atomix/cli") from outside github.com/atomix/atomix/cli module root => ("", nil, false, nil)
-//	getLocalMod("github.com/atomix/atomix/cli@v1.0.0") from outside github.com/atomix/atomix/cli module root => ("", nil, false, nil)
+//		getLocalMod(".") from root of a valid module at /path/to/atomix => ("/path/to/atomix", *modfile.File, true, nil)
+//		getLocalMod("../../some/mod") where ../../some/mod resolves to the root of a valid module at /path/to/some/mod => ("/path/to/some/mod", *modfile.File, true, nil)
+//	    getLocalMod("/path/to/some/mod") where /path/to/some/mod is the root of a valid module => ("/path/to/some/mod", *modfile.File, true, nil)
+//		getLocalMod("github.com/some/mod") from github.com/some/mod module root => ("/path/to/atomix", *modfile.File, true, nil)
+//		getLocalMod("github.com/some/mod@v1.0.0") from github.com/some/mod module root => ("", nil, false, nil)
+//		getLocalMod("github.com/some/mod") from outside github.com/some/mod module root => ("", nil, false, nil)
+//		getLocalMod("github.com/some/mod@v1.0.0") from outside github.com/some/mod module root => ("", nil, false, nil)
 func getLocalMod(path string) (string, *modfile.File, bool, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -77,6 +78,11 @@ func getDirMod(dir, path string) (string, *modfile.File, bool, error) {
 		return "", nil, false, err
 	} else if ok && modFile.Module.Mod.Path == path {
 		return dir, modFile, true, nil
+	}
+	if modFile, ok, err := getModFile(path); err != nil {
+		return "", nil, false, err
+	} else if ok {
+		return path, modFile, true, nil
 	}
 	modDir, err := filepath.Abs(filepath.Join(dir, path))
 	if err != nil {

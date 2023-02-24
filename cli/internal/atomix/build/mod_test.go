@@ -72,6 +72,12 @@ func TestGetMod(t *testing.T) {
 	assert.True(t, ok)
 	assert.NoError(t, err)
 
+	dir, file, ok, err = getDirMod(cliRoot, runtimeRoot)
+	assert.Equal(t, runtimeRoot, dir)
+	assert.NotNil(t, file)
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
 	dir, file, ok, err = getDirMod(cliRoot, "../foo")
 	assert.False(t, ok)
 	assert.NoError(t, err)
