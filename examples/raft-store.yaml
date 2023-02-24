@@ -48,7 +48,7 @@ spec:
         runtime.atomix.io/profile: raft-example
       annotations:
         sidecar.atomix.io/image: atomix/sidecar:latest
-        sidecar.atomix.io/imagePullPolicy: Never
+        sidecar.atomix.io/imagePullPolicy: IfNotPresent
     spec:
       containers:
         - name: sleep
