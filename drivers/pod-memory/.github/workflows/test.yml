@@ -28,6 +28,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Setup Go
+        uses: ./.github/actions/setup-go
+
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
 
@@ -36,50 +39,20 @@ jobs:
         with:
           cluster_name: test
 
-      - name: Build atomix/controller
-        uses: docker/build-push-action@v3
-        with:
-          context: controller
-          file: controller/build/controller/Dockerfile
-          tags: atomix/controller
-          load: true
-          push: false
+      - name: Build sidecar
+        run: docker build . -t atomix/sidecar -f drivers/pod-memory/test/Dockerfile
 
-      - name: Build atomix/controller-init
-        uses: docker/build-push-action@v3
-        with:
-          context: controller
-          file: controller/build/controller-init/Dockerfile
-          tags: atomix/controller-init
-          load: true
-          push: false
+      - name: Build controller
+        run: make
+        working-directory: controller
 
-      - name: Build atomix/sidecar
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: drivers/pod-memory/test/Dockerfile
-          tags: atomix/sidecar
-          load: true
-          push: false
+      - name: Build sidecar controller
+        run: make controller
+        working-directory: sidecar
 
-      - name: Build atomix/sidecar-controller
-        uses: docker/build-push-action@v3
-        with:
-          context: sidecar
-          file: sidecar/build/controller/Dockerfile
-          tags: atomix/sidecar-controller
-          load: true
-          push: false
-
-      - name: Build atomix/pod-memory-controller
-        uses: docker/build-push-action@v3
-        with:
-          context: stores/pod-memory
-          file: stores/pod-memory/build/controller/Dockerfile
-          tags: atomix/pod-memory-controller
-          load: true
-          push: false
+      - name: Build store
+        run: make
+        working-directory: stores/pod-memory
 
       - name: Load images
         run: kind load docker-image atomix/controller atomix/controller-init atomix/sidecar atomix/sidecar-controller atomix/pod-memory-controller --name test
@@ -94,4 +67,4 @@ jobs:
         run: helm install -n kube-system atomix-pod-memory-controller ./stores/pod-memory/chart --wait
 
       - name: Run tests
-        run: ct install --charts ./store/pod-memory/test
+        run: ct install --charts ./drivers/pod-memory/test

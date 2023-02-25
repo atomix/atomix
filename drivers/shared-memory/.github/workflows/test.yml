@@ -28,6 +28,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Setup Go
+        uses: ./.github/actions/setup-go
+
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
 
@@ -36,59 +39,20 @@ jobs:
         with:
           cluster_name: test
 
-      - name: Build atomix/controller
-        uses: docker/build-push-action@v3
-        with:
-          context: controller
-          file: controller/build/controller/Dockerfile
-          tags: atomix/controller
-          load: true
-          push: false
+      - name: Build sidecar
+        run: docker build . -t atomix/sidecar -f drivers/shared-memory/test/Dockerfile
 
-      - name: Build atomix/controller-init
-        uses: docker/build-push-action@v3
-        with:
-          context: controller
-          file: controller/build/controller-init/Dockerfile
-          tags: atomix/controller-init
-          load: true
-          push: false
+      - name: Build controller
+        run: make
+        working-directory: controller
 
-      - name: Build atomix/sidecar
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: drivers/shared-memory/test/Dockerfile
-          tags: atomix/sidecar
-          load: true
-          push: false
+      - name: Build sidecar controller
+        run: make controller
+        working-directory: sidecar
 
-      - name: Build atomix/sidecar-controller
-        uses: docker/build-push-action@v3
-        with:
-          context: sidecar
-          file: sidecar/build/controller/Dockerfile
-          tags: atomix/sidecar-controller
-          load: true
-          push: false
-
-      - name: Build atomix/shared-memory-controller
-        uses: docker/build-push-action@v3
-        with:
-          context: stores/shared-memory
-          file: stores/shared-memory/build/controller/Dockerfile
-          tags: atomix/shared-memory-controller
-          load: true
-          push: false
-
-      - name: Build atomix/shared-memory-node
-        uses: docker/build-push-action@v3
-        with:
-          context: stores/shared-memory
-          file: stores/shared-memory/build/node/Dockerfile
-          tags: atomix/shared-memory-node
-          load: true
-          push: false
+      - name: Build store
+        run: make
+        working-directory: stores/shared-memory
 
       - name: Load images
         run: kind load docker-image atomix/controller atomix/controller-init atomix/sidecar atomix/sidecar-controller atomix/shared-memory-controller atomix/shared-memory-node --name test
@@ -103,4 +67,4 @@ jobs:
         run: helm install -n kube-system atomix-shared-memory-controller ./stores/shared-memory/chart --wait
 
       - name: Run tests
-        run: ct install --charts ./store/shared-memory/test
+        run: ct install --charts ./drivers/shared-memory/test

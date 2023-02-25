@@ -3,27 +3,26 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: test docker
-
-.PHONY: test
-test:
-	go test github.com/atomix/atomix/controller/pkg/... -p 1
-
-.PHONY: docker
-docker: build-controller-init build-controller
+build: build-controller-init build-controller
 
 build-controller-init:
-	docker build . -t atomix/controller-init:latest -f build/controller-init/Dockerfile
+	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/controller-init/atomix-controller-init ./cmd/atomix-controller-init
+	docker build ./build/controller-init -t atomix/controller-init
 
 build-controller:
-	docker build . -t atomix/controller:latest -f build/controller/Dockerfile
+	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/controller/atomix-controller ./cmd/atomix-controller
+	docker build ./build/controller -t atomix/controller
 
 kind: kind-controller-init kind-controller
 
 kind-controller-init: build-controller-init
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
-	kind load docker-image atomix/controller-init:latest
+	kind load docker-image atomix/controller-init
 
 kind-controller: build-controller
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
-	kind load docker-image atomix/controller:latest
+	kind load docker-image atomix/controller
+
+.PHONY: test
+test:
+	go test github.com/atomix/atomix/controller/pkg/... -p 1

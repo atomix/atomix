@@ -28,6 +28,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Setup Go
+        uses: ./.github/actions/setup-go
+
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
 
@@ -36,59 +39,20 @@ jobs:
         with:
           cluster_name: test
 
-      - name: Build atomix/controller
-        uses: docker/build-push-action@v3
-        with:
-          context: controller
-          file: controller/build/controller/Dockerfile
-          tags: atomix/controller
-          load: true
-          push: false
+      - name: Build sidecar
+        run: docker build . -t atomix/sidecar -f drivers/raft/test/Dockerfile
 
-      - name: Build atomix/controller-init
-        uses: docker/build-push-action@v3
-        with:
-          context: controller
-          file: controller/build/controller-init/Dockerfile
-          tags: atomix/controller-init
-          load: true
-          push: false
+      - name: Build controller
+        run: make
+        working-directory: controller
 
-      - name: Build atomix/sidecar
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: drivers/raft/test/Dockerfile
-          tags: atomix/sidecar
-          load: true
-          push: false
+      - name: Build sidecar controller
+        run: make controller
+        working-directory: sidecar
 
-      - name: Build atomix/sidecar-controller
-        uses: docker/build-push-action@v3
-        with:
-          context: sidecar
-          file: sidecar/build/controller/Dockerfile
-          tags: atomix/sidecar-controller
-          load: true
-          push: false
-
-      - name: Build atomix/raft-controller
-        uses: docker/build-push-action@v3
-        with:
-          context: stores/raft
-          file: stores/raft/build/controller/Dockerfile
-          tags: atomix/raft-controller
-          load: true
-          push: false
-
-      - name: Build atomix/raft-node
-        uses: docker/build-push-action@v3
-        with:
-          context: stores/raft
-          file: stores/raft/build/node/Dockerfile
-          tags: atomix/raft-node
-          load: true
-          push: false
+      - name: Build store
+        run: make
+        working-directory: stores/raft
 
       - name: Load images
         run: kind load docker-image atomix/controller atomix/controller-init atomix/sidecar atomix/sidecar-controller atomix/raft-controller atomix/raft-node --name test
@@ -103,4 +67,4 @@ jobs:
         run: helm install -n kube-system atomix-raft-controller ./stores/raft/chart --wait
 
       - name: Run tests
-        run: ct install --charts ./store/raft/test
+        run: ct install --charts ./drivers/raft/test

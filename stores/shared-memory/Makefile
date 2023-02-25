@@ -3,26 +3,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: test docker
+build: node controller
+
+node:
+	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/node/atomix-shared-memory-node ./cmd/atomix-shared-memory-node
+	docker build ./build/node -t atomix/shared-memory-node
+
+controller:
+	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/controller/atomix-shared-memory-controller ./cmd/atomix-shared-memory-controller
+	docker build ./build/controller -t atomix/shared-memory-controller
+
+kind: node controller
+	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
+	kind load docker-image atomix/shared-memory-node
+	kind load docker-image atomix/shared-memory-controller
 
 .PHONY: test
 test:
 	go test github.com/atomix/atomix/stores/shared-memory/pkg/... -p 1
-
-.PHONY: docker
-docker: docker-controller docker-node
-
-docker-controller:
-	docker build . -t atomix/shared-memory-controller:latest -f build/controller/Dockerfile
-
-docker-node:
-	docker build . -t atomix/shared-memory-node:latest -f build/node/Dockerfile
-
-kind: kind-node kind-controller
-kind-node: docker-node
-	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
-	kind load docker-image atomix/shared-memory-node:latest
-
-kind-controller: docker-controller
-	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
-	kind load docker-image atomix/shared-memory-controller:latest
