@@ -1,0 +1,90 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Verify Raft Driver
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'actions'
+    paths:
+      - 'controller/**'
+      - 'sidecar/**'
+      - 'drivers/raft/**'
+      - 'stores/raft/**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: ./.github/common/test.yml
+    with:
+      component: drivers/raft
+      package: github.com/atomix/atomix/drivers/raft/v1/...
+
+  lint:
+    uses: ./.github/common/lint.yml
+    with:
+      component: drivers/raft
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs:
+      - test
+      - lint
+    steps:
+      - name: Setup test environment
+        uses: ./.github/actions/setup-helm
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.4.0
+
+      - name: Build sidecar
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: drivers/raft/test/Dockerfile
+          tags: atomix/sidecar
+          load: true
+          push: false
+
+      - name: Build core controller
+        uses: docker/build-push-action@v3
+        with:
+          context: controller
+          file: build/Dockerfile
+          tags: atomix/controller
+          load: true
+          push: false
+
+      - name: Build store controller
+        uses: docker/build-push-action@v3
+        with:
+          context: stores/raft
+          file: build/controller/Dockerfile
+          tags: atomix/raft-controller
+          load: true
+          push: false
+
+      - name: Build store node
+        uses: docker/build-push-action@v3
+        with:
+          context: stores/raft
+          file: build/node/Dockerfile
+          tags: atomix/raft-node
+          load: true
+          push: false
+
+      - name: Load images
+        run: kind load docker-image atomix/sidecar atomix/controller atomix/raft-controller atomix/raft-node
+
+      - name: Install core controller
+        run: helm install -n kube-system atomix-controller ./controller/chart --wait
+
+      - name: Install store controller
+        run: helm install -n kube-system atomix-raft-controller ./store/raft/chart --wait
+
+      - name: Run tests
+        run: ct install --charts store/raft/test

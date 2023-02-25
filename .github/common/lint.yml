@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+on:
+  workflow_call:
+    inputs:
+      component:
+        description: "The component to lint"
+        required: true
+
+      chart:
+        description: "The path to the Helm chart relative to the component root"
+        required: false
+        default: "chart"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Go environment
+        uses: ./.github/actions/setup-go
+
+      - name: Go lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          working-directory: ${{ inputs.component }}
+          args: --timeout=5m
+
+      - name: Setup Helm environment
+        uses: ./.github/actions/setup-helm
+        if: inputs.chart != ''
+
+      - name: Helm lint
+        run: ct lint --charts ${{ inputs.component }}/${{ inputs.chart }} --target-branch ${{ github.event.repository.default_branch }} --validate-maintainers=false
+        if: inputs.chart != ''

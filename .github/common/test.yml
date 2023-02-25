@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+on:
+  workflow_call:
+    inputs:
+      component:
+        description: "The component path"
+        required: true
+
+      package:
+        description: "The package to test"
+        required: false
+        default: ''
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Go environment
+        uses: ./.github/actions/setup-go
+
+      - name: Run tests
+        run: go test ${{ inputs.package || format('github.com/atomix/atomix/{0}/...', inputs.component) }}
+        working-directory: ${{ inputs.component }}

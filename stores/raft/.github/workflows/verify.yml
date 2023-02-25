@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Verify Raft Store
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'actions'
+    paths:
+      - 'stores/raft/**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: ./.github/common/test.yml
+    with:
+      component: stores/raft
+
+  lint:
+    uses: ./.github/common/lint.yml
+    with:
+      component: stores/raft
+      chart: chart
