@@ -50,7 +50,7 @@ runs:
 
     - name: Install Atomix
       shell: bash
-      run: helm install -n kube-system atomix atomix/atomix --wait
+      run: helm install -n kube-system atomix atomix --repo https://charts.atomix.io --wait
 
     - name: Run tests
       shell: bash
