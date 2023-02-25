@@ -105,6 +105,7 @@ func TestMap(t *testing.T) {
 	assert.NotNil(t, value)
 
 	entries, err := m.List(context.Background())
+	assert.NoError(t, err)
 	for {
 		entry, err := entries.Next()
 		if err == io.EOF {

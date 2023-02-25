@@ -5,13 +5,10 @@
 package main
 
 import (
-	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/test/internal/tests"
 	"github.com/spf13/cobra"
 	"testing"
 )
-
-var log = logging.GetLogger()
 
 func main() {
 	cmd := getCommand()
