@@ -10,10 +10,12 @@ on:
       - 'master'
       - 'actions'
     paths:
+      - 'cli/**'
       - 'controller/**'
       - 'sidecar/**'
       - 'drivers/shared-memory/**'
       - 'stores/shared-memory/**'
+      - 'test/**'
   pull_request:
   workflow_dispatch:
 
